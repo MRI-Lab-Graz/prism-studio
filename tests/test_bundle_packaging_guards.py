@@ -23,6 +23,15 @@ def test_build_script_explicitly_includes_pyreadstat() -> None:
     assert '"--collect-binaries=pyreadstat"' in content
 
 
+def test_build_script_explicitly_includes_pyreadr() -> None:
+    content = BUILD_SCRIPT.read_text(encoding="utf-8")
+
+    assert '"--hidden-import=pyreadr"' in content
+    assert '"--collect-submodules=pyreadr"' in content
+    assert '"--collect-data=pyreadr"' in content
+    assert '"--collect-binaries=pyreadr"' in content
+
+
 def test_bundle_smoke_isolates_runner_site_packages() -> None:
     content = BUNDLE_SMOKE.read_text(encoding="utf-8")
 

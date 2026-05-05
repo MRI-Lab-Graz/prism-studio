@@ -483,7 +483,7 @@ export function initSurveyConvert(elements) {
         return window.PrismFileSystemMode.pickFile({
             title: 'Select Survey File on Server',
             confirmLabel: 'Use This File',
-            extensions: '.xlsx,.lsa,.csv,.tsv',
+            extensions: '.xlsx,.lsa,.csv,.tsv,.sav,.rds,.rdata,.rda',
             startPath: convertServerFilePath || ''
         });
     }

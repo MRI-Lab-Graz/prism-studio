@@ -23,6 +23,20 @@ from .conversion_utils import (
     resolve_validation_library_path,
 )
 
+_SUPPORTED_SURVEY_TABULAR_SUFFIXES = {
+    ".xlsx",
+    ".csv",
+    ".tsv",
+    ".sav",
+    ".rds",
+    ".rdata",
+    ".rda",
+}
+_SUPPORTED_SURVEY_INPUT_SUFFIXES = _SUPPORTED_SURVEY_TABULAR_SUFFIXES | {".lsa"}
+_SUPPORTED_SURVEY_INPUT_MESSAGE = (
+    "Supported formats: .xlsx, .lsa, .csv, .tsv, .sav, .rds, .rdata, .rda"
+)
+
 
 class _LocalPathUpload:
     """Minimal upload-like wrapper backed by a local filesystem path."""
@@ -217,8 +231,8 @@ def handle_api_survey_convert_preview(
 
     filename = secure_filename(uploaded_file.filename)
     suffix = Path(filename).suffix.lower()
-    if suffix not in {".xlsx", ".lsa", ".csv", ".tsv"}:
-        return jsonify({"error": "Supported formats: .xlsx, .lsa, .csv, .tsv"}), 400
+    if suffix not in _SUPPORTED_SURVEY_INPUT_SUFFIXES:
+        return jsonify({"error": _SUPPORTED_SURVEY_INPUT_MESSAGE}), 400
 
     alias_filename = None
     if alias_upload and getattr(alias_upload, "filename", ""):
@@ -366,7 +380,7 @@ def handle_api_survey_convert_preview(
 
         output_root = tmp_dir_path / "rawdata"
 
-        if suffix in {".xlsx", ".csv", ".tsv"}:
+        if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
             result = run_survey_with_official_fallback(
                 convert_survey_xlsx_to_prism_dataset,
                 input_path=input_path,
@@ -453,7 +467,7 @@ def handle_api_survey_convert_preview(
                 validate_root = tmp_dir_path / "rawdata_validate"
                 validate_root.mkdir(parents=True, exist_ok=True)
 
-                if suffix in {".xlsx", ".csv", ".tsv"}:
+                if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
                     run_survey_with_official_fallback(
                         convert_survey_xlsx_to_prism_dataset,
                         input_path=input_path,

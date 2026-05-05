@@ -803,7 +803,7 @@ def handle_get_citation_status(get_current_project, project_manager):
 def handle_regenerate_citation(
     get_current_project, get_bids_file_path, project_manager
 ):
-    """Regenerate CITATION.cff from dataset_description.json for current project."""
+    """Regenerate CITATION.cff from canonical project metadata for current project."""
     payload = request.get_json(silent=True) or {}
     project_path, error_message, status_code = (
         _resolve_requested_or_current_project_root(
@@ -814,34 +814,8 @@ def handle_regenerate_citation(
     if project_path is None:
         return jsonify({"success": False, "error": error_message}), status_code
 
-    desc_path = get_bids_file_path(project_path, "dataset_description.json")
-    if not desc_path.exists():
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "error": "dataset_description.json not found",
-                }
-            ),
-            404,
-        )
-
     try:
-        with open(desc_path, "r", encoding="utf-8") as f:
-            description = json.load(f)
-
-        if not isinstance(description, dict):
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "error": "dataset_description.json has invalid structure",
-                    }
-                ),
-                400,
-            )
-
-        project_manager.update_citation_cff(project_path, description)
+        project_manager.regenerate_citation_cff(project_path)
         _remove_legacy_contributor_files(project_path)
         status = project_manager.get_citation_cff_status(project_path)
 

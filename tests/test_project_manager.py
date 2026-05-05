@@ -562,6 +562,37 @@ class TestProjectManager(unittest.TestCase):
         self.assertFalse(status.get("consistent"))
         self.assertTrue(status.get("issues"))
 
+    def test_metadata_sync_status_ignores_citation_only_drift(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            created = manager.create_project(
+                str(project_path),
+                {
+                    "name": "demo_project",
+                    "authors": ["Jane Doe"],
+                    "license": "CC-BY-4.0",
+                    "doi": "10.1000/demo",
+                },
+            )
+            self.assertTrue(created.get("success"), created)
+
+            citation_path = project_path / "CITATION.cff"
+            content = citation_path.read_text(encoding="utf-8")
+            citation_path.write_text(
+                content.replace('title: "demo_project"', 'title: "manual edit"', 1),
+                encoding="utf-8",
+            )
+
+            status = manager.get_metadata_sync_status(project_path)
+
+        self.assertTrue(status.get("project_json_exists"))
+        self.assertTrue(status.get("dataset_description_exists"))
+        self.assertTrue(status.get("citation_exists"))
+        self.assertTrue(status.get("consistent"))
+        self.assertEqual(status.get("issues"), [])
+
     def test_validate_structure_does_not_require_participants_for_empty_project(self):
         manager = ProjectManager()
 

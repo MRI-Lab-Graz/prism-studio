@@ -2023,6 +2023,13 @@ Subfolders:
         config = self._build_citation_config(name, description, Path(project_path))
         return self._create_citation_cff(name, config)
 
+    def regenerate_citation_cff(self, project_path: Path) -> None:
+        """Regenerate CITATION.cff from canonical project metadata."""
+        normalized_project_path = Path(project_path)
+        content = self._build_expected_citation_cff_content(normalized_project_path)
+        citation_path = normalized_project_path / "CITATION.cff"
+        CrossPlatformFile.write_text(str(citation_path), content)
+
     @staticmethod
     def _normalize_citation_content_for_comparison(content: str) -> str:
         normalized_lines: List[str] = []
@@ -2171,15 +2178,6 @@ Subfolders:
                 issues.append(
                     "project.json keywords do not match dataset_description.json."
                 )
-
-        if citation_status.get("exists") and citation_status.get("consistent") is False:
-            issues.extend(
-                [
-                    str(issue_text).strip()
-                    for issue_text in citation_status.get("consistency_issues") or []
-                    if str(issue_text or "").strip()
-                ]
-            )
 
         deduped_issues: List[str] = []
         seen = set()

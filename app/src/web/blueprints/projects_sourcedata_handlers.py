@@ -27,7 +27,17 @@ def handle_get_sourcedata_files(get_current_project):
     if not sourcedata_dir.exists() or not sourcedata_dir.is_dir():
         return jsonify({"files": [], "sourcedata_exists": False})
 
-    supported_extensions = {".xlsx", ".csv", ".tsv", ".lsa", ".lss"}
+    supported_extensions = {
+        ".xlsx",
+        ".csv",
+        ".tsv",
+        ".sav",
+        ".rds",
+        ".rdata",
+        ".rda",
+        ".lsa",
+        ".lss",
+    }
     files = []
     for candidate in sorted(sourcedata_dir.rglob("*")):
         if candidate.is_file() and candidate.suffix.lower() in supported_extensions:

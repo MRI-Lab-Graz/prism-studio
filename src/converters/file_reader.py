@@ -9,7 +9,7 @@ duplicated across survey, biometrics, and participants converters:
   • Empty-file guard before pandas even opens the file
   • Column-name whitespace stripping
   • Friendly rewriting of pandas tokenization errors
-  • Enforce dtype=str across all formats (no silent type inference)
+    • Enforce dtype=str across all formats (no silent type inference)
 
 Usage::
 
@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import csv
 import io
+import importlib
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -49,6 +50,19 @@ class ReadResult:
 # ---------------------------------------------------------------------------
 
 _ENCODING_CANDIDATES = ["utf-8-sig", "utf-8", "latin-1", "cp1252"]
+_SUPPORTED_SUFFIX_TO_KIND = {
+    ".csv": "csv",
+    ".tsv": "tsv",
+    ".xlsx": "xlsx",
+    ".xls": "xls",
+    ".sav": "sav",
+    ".rds": "rds",
+    ".rdata": "rdata",
+    ".rda": "rdata",
+}
+
+SUPPORTED_TABULAR_SUFFIXES = frozenset(_SUPPORTED_SUFFIX_TO_KIND)
+SUPPORTED_TABULAR_KINDS = frozenset(_SUPPORTED_SUFFIX_TO_KIND.values())
 
 # ---------------------------------------------------------------------------
 # Internal helpers
@@ -115,6 +129,53 @@ def _strip_columns(df: Any) -> Any:
     return df.rename(columns={c: str(c).strip() for c in df.columns})
 
 
+def _coerce_values_to_str(df: Any, pd_module: Any) -> Any:
+    """Normalize imported dataframe values to string-like columns."""
+
+    def _coerce(value: Any) -> Any:
+        if pd_module.isna(value):
+            return pd_module.NA
+        return str(value)
+
+    return df.apply(lambda series: series.map(_coerce))
+
+
+def _import_optional_module(module_name: str, *, feature_label: str):
+    """Import an optional dependency and raise a setup-oriented ValueError on failure."""
+    try:
+        return importlib.import_module(module_name)
+    except Exception as exc:
+        raise ValueError(
+            f"{feature_label} support requires optional dependency '{module_name}'. "
+            "Install dependencies via setup.sh."
+        ) from exc
+
+
+def _select_first_r_dataframe(result: Any, *, filename: str) -> tuple[Any, list[str]]:
+    """Return the first dataframe-like object from a pyreadr result mapping."""
+    dataframes: list[tuple[str, Any]] = []
+    for object_name, value in getattr(result, "items", lambda: [])():
+        if hasattr(value, "columns") and hasattr(value, "empty"):
+            dataframes.append((str(object_name or "").strip(), value))
+
+    if not dataframes:
+        raise ValueError(f"No readable data frame found in R data file: {filename}")
+
+    warnings: list[str] = []
+    if len(dataframes) > 1:
+        labels = ", ".join(name or "<unnamed>" for name, _ in dataframes[:5])
+        warnings.append(
+            f"R data file contains multiple data frames ({labels}). Using the first object."
+        )
+
+    return dataframes[0][1], warnings
+
+
+def infer_tabular_kind(path: str | Path) -> str | None:
+    """Infer a supported tabular kind from a file suffix."""
+    return _SUPPORTED_SUFFIX_TO_KIND.get(Path(path).suffix.lower())
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -128,14 +189,15 @@ def read_tabular_file(
     separator: str | None = None,
     encoding: str | None = None,
 ) -> ReadResult:
-    """Read a CSV / TSV / XLSX / XLS file into a :class:`ReadResult`.
+    """Read a CSV / TSV / XLSX / XLS / SAV / RData / RDS file into a :class:`ReadResult`.
 
     Parameters
     ----------
     path:
         Path to the file to read.
     kind:
-        Format hint: ``"csv"``, ``"tsv"``, ``"xlsx"``, ``"xls"``.
+        Format hint: ``"csv"``, ``"tsv"``, ``"xlsx"``, ``"xls"``, ``"sav"``,
+        ``"rds"``, or ``"rdata"``.
         If *None* the extension of *path* is used.
     sheet:
         Sheet name or 0-based index for Excel files (ignored for text formats).
@@ -166,10 +228,50 @@ def read_tabular_file(
 
     # Resolve kind from extension when not given
     if kind is None:
-        ext = path.suffix.lower().lstrip(".")
-        kind = ext if ext in ("csv", "tsv", "xlsx", "xls") else "csv"
+        kind = infer_tabular_kind(path) or "csv"
 
     EmptyDataError = getattr(pd.errors, "EmptyDataError", ValueError)
+
+    # ------------------------------------------------------------------
+    # SPSS / R binary tables
+    # ------------------------------------------------------------------
+    if kind == "sav":
+        pyreadstat = _import_optional_module(
+            "pyreadstat", feature_label="SPSS .sav import"
+        )
+        try:
+            df, _meta = pyreadstat.read_sav(str(path))
+        except Exception as exc:
+            raise ValueError(f"Failed to read SPSS .sav file {path.name}: {exc}") from exc
+
+        if df is None or df.empty:
+            raise ValueError(f"Input SPSS .sav file is empty: {path.name}")
+
+        return ReadResult(
+            df=_strip_columns(_coerce_values_to_str(df, pd)),
+            encoding_used="binary/sav",
+            delimiter_used=None,
+        )
+
+    if kind in ("rds", "rdata"):
+        pyreadr = _import_optional_module(
+            "pyreadr", feature_label="R dataframe import"
+        )
+        try:
+            result = pyreadr.read_r(str(path))
+        except Exception as exc:
+            raise ValueError(f"Failed to read R data file {path.name}: {exc}") from exc
+
+        df, warnings = _select_first_r_dataframe(result, filename=path.name)
+        if df is None or df.empty:
+            raise ValueError(f"Input R data file is empty: {path.name}")
+
+        return ReadResult(
+            df=_strip_columns(_coerce_values_to_str(df, pd)),
+            encoding_used=f"binary/{kind}",
+            delimiter_used=None,
+            warnings=warnings,
+        )
 
     # ------------------------------------------------------------------
     # Excel

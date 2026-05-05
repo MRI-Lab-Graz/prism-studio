@@ -14,7 +14,7 @@ from flask import (
     session,
 )
 from werkzeug.utils import secure_filename
-from src.converters.file_reader import read_tabular_file
+from src.converters.file_reader import infer_tabular_kind, read_tabular_file
 from src.participants_id_selection import resolve_participants_id_selection
 from src.participants_backend import (
     apply_participants_merge,
@@ -45,8 +45,19 @@ from .projects_helpers import _resolve_project_root_path
 
 conversion_participants_bp = Blueprint("conversion_participants", __name__)
 
-_SUPPORTED_PARTICIPANTS_UPLOAD_SUFFIXES = {".xlsx", ".csv", ".tsv", ".lsa"}
-_SUPPORTED_PARTICIPANTS_UPLOAD_MESSAGE = "Supported formats: .xlsx, .csv, .tsv, .lsa"
+_SUPPORTED_PARTICIPANTS_UPLOAD_SUFFIXES = {
+    ".xlsx",
+    ".csv",
+    ".tsv",
+    ".sav",
+    ".rds",
+    ".rdata",
+    ".rda",
+    ".lsa",
+}
+_SUPPORTED_PARTICIPANTS_UPLOAD_MESSAGE = (
+    "Supported formats: .xlsx, .csv, .tsv, .sav, .rds, .rdata, .rda, .lsa"
+)
 
 
 def _save_participants_upload_to_temp(
@@ -104,8 +115,13 @@ def _read_participants_input_table(
     sheet_arg: str | int,
     separator_option: str,
 ):
-    if suffix in {".xlsx", ".csv", ".tsv"}:
-        kind = "xlsx" if suffix == ".xlsx" else suffix.lstrip(".")
+    if suffix == ".lsa":
+        from src.converters.survey import _read_lsa_as_dataframe
+
+        return _read_lsa_as_dataframe(input_path)
+
+    kind = infer_tabular_kind(input_path)
+    if kind in {"xlsx", "csv", "tsv", "sav", "rds", "rdata"}:
         result = read_tabular_file(
             input_path,
             kind=kind,
@@ -113,11 +129,6 @@ def _read_participants_input_table(
             separator=_expected_delimiter_for_suffix(suffix, separator_option),
         )
         return result.df
-
-    if suffix == ".lsa":
-        from src.converters.survey import _read_lsa_as_dataframe
-
-        return _read_lsa_as_dataframe(input_path)
 
     raise ValueError(_SUPPORTED_PARTICIPANTS_UPLOAD_MESSAGE)
 
