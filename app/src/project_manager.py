@@ -37,6 +37,7 @@ from src.cross_platform import CrossPlatformFile
 from src.issues import get_fix_hint, infer_code_from_message
 from src.schema_manager import load_schema
 from src.readme_generator import ReadmeGenerator
+from src.system_files import filter_system_files
 from jsonschema import Draft7Validator
 
 # Available PRISM modalities
@@ -96,10 +97,19 @@ class ProjectManager:
 
         # Validate path doesn't exist or is empty
         if project_path.exists():
-            if any(project_path.iterdir()):
+            existing_entries = filter_system_files(
+                [entry.name for entry in project_path.iterdir()]
+            )
+            if existing_entries:
                 return {
                     "success": False,
-                    "error": f"Directory '{path}' already exists and is not empty",
+                    "error": (
+                        f"Directory '{path}' already exists and is not empty. "
+                        "Project Location must be the parent folder where the new "
+                        "project directory will be created. Choose a different "
+                        "project name or parent folder, or use Open Existing Project "
+                        "if this project already exists."
+                    ),
                 }
 
         # In the new YODA layout, sessions and modalities are not pre-selected.
@@ -1897,6 +1907,297 @@ Subfolders:
         citation_path = Path(project_path) / "CITATION.cff"
         CrossPlatformFile.write_text(str(citation_path), content)
 
+    @staticmethod
+    def _clean_citation_source_text(value: Any) -> str:
+        text = str(value or "").strip()
+        if not text:
+            return ""
+
+        lowered = text.lower()
+        if lowered == "[object object]":
+            return ""
+        if (
+            lowered.startswith("required.")
+            or lowered.startswith("recommended.")
+            or lowered.startswith("optional.")
+        ):
+            return ""
+        return text
+
+    def _clean_citation_source_list(self, value: Any) -> List[str]:
+        if isinstance(value, list):
+            values = value
+        elif value in (None, "", {}, []):
+            values = []
+        else:
+            values = [value]
+
+        cleaned: List[str] = []
+        for item in values:
+            text = self._clean_citation_source_text(item)
+            if text:
+                cleaned.append(text)
+        return cleaned
+
+    @staticmethod
+    def _load_json_dict(path: Path) -> Dict[str, Any]:
+        if not path.exists():
+            return {}
+
+        try:
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+
+        return loaded if isinstance(loaded, dict) else {}
+
+    def _build_citation_status_description(self, project_path: Path) -> Dict[str, Any]:
+        dataset_desc = self._load_json_dict(Path(project_path) / "dataset_description.json")
+        project_data = self._load_json_dict(Path(project_path) / "project.json")
+        payload = dict(dataset_desc)
+
+        basics = project_data.get("Basics")
+        if not isinstance(basics, dict):
+            basics = {}
+
+        name = (
+            self._clean_citation_source_text(payload.get("Name"))
+            or self._clean_citation_source_text(basics.get("Name"))
+            or self._clean_citation_source_text(basics.get("DatasetName"))
+            or self._clean_citation_source_text(project_data.get("name"))
+            or Path(project_path).name
+        )
+        if name:
+            payload["Name"] = name
+
+        description_authors = self._clean_citation_source_list(payload.get("Authors"))
+        basic_authors = self._clean_citation_source_list(basics.get("Authors"))
+        if description_authors:
+            payload["Authors"] = description_authors
+        elif basic_authors:
+            payload["Authors"] = basic_authors
+
+        text_fallbacks = {
+            "License": ("License", "license"),
+            "HowToAcknowledge": ("HowToAcknowledge", "how_to_acknowledge"),
+            "DatasetDOI": ("DatasetDOI", "DOI", "doi"),
+            "DatasetVersion": ("DatasetVersion", "Version", "version"),
+        }
+        for target_key, source_keys in text_fallbacks.items():
+            value = self._clean_citation_source_text(payload.get(target_key))
+            if not value:
+                for source_key in source_keys:
+                    value = self._clean_citation_source_text(basics.get(source_key))
+                    if value:
+                        break
+            if value:
+                payload[target_key] = value
+            else:
+                payload.pop(target_key, None)
+
+        references = self._clean_citation_source_list(payload.get("ReferencesAndLinks"))
+        if not references:
+            references = self._clean_citation_source_list(
+                basics.get("ReferencesAndLinks")
+            )
+        if not references:
+            references = self._clean_citation_source_list(project_data.get("References"))
+        if references:
+            payload["ReferencesAndLinks"] = references
+        else:
+            payload.pop("ReferencesAndLinks", None)
+
+        keywords = self._clean_citation_source_list(payload.get("Keywords"))
+        if not keywords:
+            keywords = self._clean_citation_source_list(basics.get("Keywords"))
+        if keywords:
+            payload["Keywords"] = keywords
+        else:
+            payload.pop("Keywords", None)
+
+        return payload
+
+    def _build_expected_citation_cff_content(self, project_path: Path) -> str:
+        description = self._build_citation_status_description(project_path)
+        name = description.get("Name") or Path(project_path).name
+        config = self._build_citation_config(name, description, Path(project_path))
+        return self._create_citation_cff(name, config)
+
+    @staticmethod
+    def _normalize_citation_content_for_comparison(content: str) -> str:
+        normalized_lines: List[str] = []
+        for raw_line in str(content or "").splitlines():
+            stripped = raw_line.strip()
+            if not stripped:
+                continue
+            if stripped.startswith("date-released:"):
+                continue
+            normalized_lines.append(raw_line.rstrip())
+        return "\n".join(normalized_lines).strip()
+
+    def sync_dataset_metadata_to_project_json(
+        self, project_path: Path, description: Dict[str, Any]
+    ) -> None:
+        """Mirror dataset-level metadata into project.json for app-side consistency."""
+        project_json = Path(project_path) / "project.json"
+        payload = self._load_json_dict(project_json)
+
+        basics = payload.get("Basics")
+        if not isinstance(basics, dict):
+            basics = {}
+
+        dataset_name = self._clean_citation_source_text(description.get("Name"))
+        if dataset_name:
+            payload["name"] = dataset_name
+            basics["Name"] = dataset_name
+            basics["DatasetName"] = dataset_name
+
+        scalar_fields = {
+            "BIDSVersion": self._clean_citation_source_text(
+                description.get("BIDSVersion")
+            ),
+            "DatasetType": self._clean_citation_source_text(
+                description.get("DatasetType")
+            ),
+            "DatasetDOI": self._clean_citation_source_text(
+                description.get("DatasetDOI")
+            ),
+            "License": self._clean_citation_source_text(description.get("License")),
+            "HowToAcknowledge": self._clean_citation_source_text(
+                description.get("HowToAcknowledge")
+            ),
+            "Description": self._clean_citation_source_text(
+                description.get("Description")
+            ),
+            "HEDVersion": self._clean_citation_source_text(
+                description.get("HEDVersion")
+            ),
+            "Acknowledgements": self._clean_citation_source_text(
+                description.get("Acknowledgements")
+            ),
+        }
+        for key, value in scalar_fields.items():
+            basics[key] = value
+
+        basics["Keywords"] = self._normalize_keywords(description.get("Keywords"))
+        basics["ReferencesAndLinks"] = self._clean_citation_source_list(
+            description.get("ReferencesAndLinks")
+        )
+        basics["Authors"] = [
+            author_name
+            for author_name in (
+                self._author_display_name(author)
+                for author in self._normalize_list(description.get("Authors"))
+            )
+            if author_name
+        ]
+
+        payload["Basics"] = basics
+        CrossPlatformFile.write_text(
+            str(project_json), json.dumps(payload, indent=2, ensure_ascii=False)
+        )
+
+    def get_metadata_sync_status(self, project_path: Path) -> Dict[str, Any]:
+        """Return consistency status for project.json and generated metadata files."""
+        project_json_path = Path(project_path) / "project.json"
+        dataset_desc_path = Path(project_path) / "dataset_description.json"
+
+        project_exists = project_json_path.exists()
+        dataset_exists = dataset_desc_path.exists()
+        citation_status = self.get_citation_cff_status(Path(project_path))
+
+        issues: List[str] = []
+
+        if not project_exists:
+            issues.append("project.json is missing at the dataset root.")
+        if not dataset_exists:
+            issues.append("dataset_description.json is missing at the dataset root.")
+
+        project_data = self._load_json_dict(project_json_path)
+        dataset_desc = self._load_json_dict(dataset_desc_path)
+
+        if project_data and dataset_desc:
+            basics = project_data.get("Basics")
+            if not isinstance(basics, dict):
+                basics = {}
+
+            project_name = (
+                self._clean_citation_source_text(project_data.get("name"))
+                or self._clean_citation_source_text(basics.get("DatasetName"))
+                or self._clean_citation_source_text(basics.get("Name"))
+            )
+            dataset_name = self._clean_citation_source_text(dataset_desc.get("Name"))
+            if project_name and dataset_name and project_name != dataset_name:
+                issues.append(
+                    "project.json name does not match dataset_description.json Name."
+                )
+
+            comparisons = [
+                (
+                    "BIDS version",
+                    self._clean_citation_source_text(basics.get("BIDSVersion")),
+                    self._clean_citation_source_text(dataset_desc.get("BIDSVersion")),
+                ),
+                (
+                    "Dataset type",
+                    self._clean_citation_source_text(basics.get("DatasetType")),
+                    self._clean_citation_source_text(dataset_desc.get("DatasetType")),
+                ),
+                (
+                    "Dataset DOI",
+                    self._clean_citation_source_text(basics.get("DatasetDOI")),
+                    self._clean_citation_source_text(dataset_desc.get("DatasetDOI")),
+                ),
+                (
+                    "Description",
+                    self._clean_citation_source_text(basics.get("Description")),
+                    self._clean_citation_source_text(dataset_desc.get("Description")),
+                ),
+                (
+                    "HED version",
+                    self._clean_citation_source_text(basics.get("HEDVersion")),
+                    self._clean_citation_source_text(dataset_desc.get("HEDVersion")),
+                ),
+            ]
+            for label, project_value, dataset_value in comparisons:
+                if project_value and dataset_value and project_value != dataset_value:
+                    issues.append(
+                        f"project.json {label.lower()} does not match dataset_description.json."
+                    )
+
+            project_keywords = self._normalize_keywords(basics.get("Keywords"))
+            dataset_keywords = self._normalize_keywords(dataset_desc.get("Keywords"))
+            if project_keywords and dataset_keywords and project_keywords != dataset_keywords:
+                issues.append(
+                    "project.json keywords do not match dataset_description.json."
+                )
+
+        if citation_status.get("exists") and citation_status.get("consistent") is False:
+            issues.extend(
+                [
+                    str(issue_text).strip()
+                    for issue_text in citation_status.get("consistency_issues") or []
+                    if str(issue_text or "").strip()
+                ]
+            )
+
+        deduped_issues: List[str] = []
+        seen = set()
+        for issue in issues:
+            key = issue.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped_issues.append(issue)
+
+        return {
+            "project_json_exists": project_exists,
+            "dataset_description_exists": dataset_exists,
+            "citation_exists": bool(citation_status.get("exists")),
+            "consistent": len(deduped_issues) == 0,
+            "issues": deduped_issues,
+        }
+
     def get_citation_cff_status(self, project_path: Path) -> Dict[str, Any]:
         """Return lightweight CITATION.cff health information for UI warnings."""
         citation_path = Path(project_path) / "CITATION.cff"
@@ -1905,6 +2206,8 @@ Subfolders:
                 "exists": False,
                 "valid": False,
                 "issues": ["CITATION.cff is missing at the dataset root."],
+                "consistent": False,
+                "consistency_issues": [],
             }
 
         try:
@@ -1914,6 +2217,8 @@ Subfolders:
                 "exists": True,
                 "valid": False,
                 "issues": [f"CITATION.cff could not be read: {exc}"],
+                "consistent": False,
+                "consistency_issues": [],
             }
 
         issues: List[str] = []
@@ -1967,10 +2272,33 @@ Subfolders:
                         f"Reference #{index} is missing required key: authors."
                     )
 
+        consistency_issues: List[str] = []
+        has_canonical_metadata = any(
+            (Path(project_path) / filename).exists()
+            for filename in ("dataset_description.json", "project.json")
+        )
+        if len(issues) == 0 and has_canonical_metadata:
+            try:
+                expected_content = self._build_expected_citation_cff_content(
+                    Path(project_path)
+                )
+                if self._normalize_citation_content_for_comparison(content) != (
+                    self._normalize_citation_content_for_comparison(expected_content)
+                ):
+                    consistency_issues.append(
+                        "CITATION.cff differs from the metadata managed in PRISM Studio. Regenerate CITATION.cff or review the manual edits."
+                    )
+            except Exception as exc:
+                consistency_issues.append(
+                    f"CITATION.cff consistency check could not be completed: {exc}"
+                )
+
         return {
             "exists": True,
             "valid": len(issues) == 0,
             "issues": issues,
+            "consistent": len(consistency_issues) == 0,
+            "consistency_issues": consistency_issues,
         }
 
     def _create_data_dictionary(self) -> str:

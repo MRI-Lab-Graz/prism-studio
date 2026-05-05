@@ -32,6 +32,7 @@ from .projects_participants_handlers import (
     handle_save_participants_schema,
 )
 from .projects_description_handlers import (
+    handle_get_metadata_status,
     handle_get_citation_status,
     handle_get_dataset_description,
     handle_regenerate_citation,
@@ -385,6 +386,15 @@ def validate_dataset_description_draft():
 def get_citation_status():
     """Get CITATION.cff health status for the current project."""
     return handle_get_citation_status(
+        get_current_project=get_current_project,
+        project_manager=_project_manager,
+    )
+
+
+@projects_bp.route("/api/projects/metadata/status", methods=["GET"])
+def get_metadata_status():
+    """Get cross-file metadata consistency status for the current project."""
+    return handle_get_metadata_status(
         get_current_project=get_current_project,
         project_manager=_project_manager,
     )

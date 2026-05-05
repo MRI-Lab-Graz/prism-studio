@@ -1,5 +1,63 @@
 # PRISM Studio — Roadmap
 
+## Priority 1.30 — Mirror dataset metadata into project.json and warn on drift ✅ DONE
+
+Keep `project.json` aligned with dataset-level metadata saved through Studio and
+surface cross-file drift in the metadata UI.
+
+**What was done:**
+- Added dataset-metadata mirroring in `app/src/project_manager.py` so saving
+  dataset metadata also updates `project.json` top-level `name` plus
+  `Basics` mirror fields such as DOI, license, keywords, references, and
+  acknowledgements.
+- Added metadata consistency status checks in `app/src/project_manager.py`
+  comparing `project.json`, `dataset_description.json`, and existing citation
+  consistency signals.
+- Exposed a new API route `GET /api/projects/metadata/status` in
+  `app/src/web/blueprints/projects.py`.
+- Updated Projects metadata UI in
+  `app/static/js/modules/projects/metadata.js` to show a new `Metadata Sync`
+  row and refresh it after load/save/regenerate actions.
+- Updated save-hint copy to reflect that metadata saves now update
+  `project.json`, `dataset_description.json`, `CITATION.cff`, and `README.md`.
+- Added focused regression coverage in `tests/test_project_manager.py`,
+  `tests/test_projects_description_handlers.py`, and
+  `tests/test_projects_workflow_wiring.py`.
+
+**Lessons learned:**
+- If `project.json` is intended to become the internal metadata hub, Studio must
+  mirror dataset-level saves into it immediately; drift detection alone is not
+  enough.
+- Citation-owned fields can still be omitted from `dataset_description.json`
+  for BIDS/CFF compatibility while remaining mirrored in `project.json` for the
+  app's internal snapshot.
+- Consistency warnings need to live in the same UI where users edit metadata,
+  not only in project-load summaries.
+
+## Priority 1.29 — Detect manual CITATION drift in Studio ✅ DONE
+
+Warn when `CITATION.cff` remains CFF-valid but has been manually edited away from
+the metadata currently managed in PRISM Studio.
+
+**What was done:**
+- Extended citation status checks in `app/src/project_manager.py` to distinguish
+  CFF validity from metadata consistency.
+- Added a consistency comparison against the Studio-managed metadata snapshot,
+  while ignoring generator-only `date-released` drift.
+- Updated Projects metadata UI in
+  `app/static/js/modules/projects/metadata.js` so the Citation Health badge now
+  reports when `CITATION.cff` is out of sync with project metadata.
+- Added focused regression coverage in `tests/test_project_manager.py` for
+  missing citation files, valid generated files, and manual drift detection.
+
+**Lessons learned:**
+- `CITATION.cff` being syntactically valid is not the same as being consistent
+  with PRISM-managed metadata.
+- Drift should be surfaced as a frontend warning, not a validation failure,
+  because manual edits can still produce a valid CFF file.
+- If Studio owns generated metadata files, status APIs need separate signals for
+  `valid` and `consistent`.
+
 ## Priority 1.28 — Server file picker parity in File Management ✅ DONE
 
 When global Connected to server mode is enabled, File Management cards should

@@ -374,6 +374,32 @@ def _sync_authors_to_project_json(project_path: Path, authors_value) -> None:
         pass  # best-effort; don't fail the main save
 
 
+def handle_get_metadata_status(get_current_project, project_manager):
+    """Return metadata-file consistency status for the current project."""
+    project_path, error_message, status_code = (
+        _resolve_requested_or_current_project_root(
+            get_current_project,
+            request.args.get("project_path"),
+        )
+    )
+    if project_path is None:
+        return jsonify({"success": False, "error": error_message}), status_code
+
+    try:
+        status = project_manager.get_metadata_sync_status(project_path)
+        return jsonify({"success": True, **status})
+    except Exception as exc:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": f"Could not read metadata consistency status: {exc}",
+                }
+            ),
+            500,
+        )
+
+
 def _remove_legacy_contributor_files(project_path: Path) -> None:
     """Delete legacy contributor files once project.json becomes canonical."""
     for legacy_name in ("contributors.json", "contributor.json"):
@@ -640,6 +666,9 @@ def handle_save_dataset_description(
         citation_updated = False
         try:
             project_manager.update_citation_cff(project_path, citation_payload)
+            project_manager.sync_dataset_metadata_to_project_json(
+                project_path, description
+            )
             _sync_authors_to_project_json(
                 project_path, submitted_citation_fields.get("Authors")
             )

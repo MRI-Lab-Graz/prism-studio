@@ -36,6 +36,9 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         self.handle_get_dataset_description = (
             description_handlers.handle_get_dataset_description
         )
+        self.handle_get_metadata_status = (
+            description_handlers.handle_get_metadata_status
+        )
         self.handle_save_dataset_description = (
             description_handlers.handle_save_dataset_description
         )
@@ -619,6 +622,61 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         self.assertIn('given-names: "Andreas"', citation_text)
         self.assertIn('license: "CC-BY-4.0"', citation_text)
         self.assertIn('url: "https://example.org/paper"', citation_text)
+
+        project_payload = json.loads(
+            (self.project_path / "project.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(project_payload.get("name"), "Demo")
+        basics = project_payload.get("Basics") or {}
+        self.assertEqual(basics.get("DatasetName"), "Demo")
+        self.assertEqual(basics.get("DatasetDOI"), "10.1234/demo")
+        self.assertEqual(basics.get("License"), "CC-BY-4.0")
+
+    def test_get_metadata_status_reports_consistency_issues(self):
+        (self.project_path / "project.json").write_text(
+            json.dumps(
+                {
+                    "name": "Project Name",
+                    "Basics": {
+                        "DatasetName": "Project Name",
+                        "DatasetDOI": "10.1000/project",
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        (self.project_path / "dataset_description.json").write_text(
+            json.dumps(
+                {
+                    "Name": "Dataset Name",
+                    "BIDSVersion": "1.10.1",
+                    "DatasetType": "raw",
+                    "DatasetDOI": "10.1000/dataset",
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        def get_current_project():
+            return {"path": str(self.project_path), "name": "demo_project"}
+
+        with self.app.test_request_context(
+            "/api/projects/metadata/status",
+            method="GET",
+        ):
+            response = self.handle_get_metadata_status(
+                get_current_project=get_current_project,
+                project_manager=self.project_manager,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        payload = resp_obj.get_json()
+
+        self.assertEqual(status_code, 200)
+        self.assertTrue(payload.get("success"))
+        self.assertFalse(payload.get("consistent"))
+        self.assertTrue(payload.get("issues"))
 
     def test_save_dataset_description_regenerates_citation_and_deletes_legacy_contributors(self):
         (self.project_path / "dataset_description.json").write_text(

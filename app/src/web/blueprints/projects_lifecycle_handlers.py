@@ -9,6 +9,7 @@ import requests
 from .projects_helpers import _load_recent_projects, _save_recent_projects
 from .projects_helpers import _resolve_project_json_path, _resolve_project_root_path
 from .projects_citation_helpers import _validate_recruitment_payload
+from src.system_files import filter_system_files
 
 _RECRUITMENT_GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 _RECRUITMENT_GEOCODING_TIMEOUT_SECONDS = 5
@@ -277,15 +278,24 @@ def handle_project_path_status():
         path_obj = Path(path)
         exists = path_obj.exists()
         is_file = path_obj.is_file()
+        is_dir = path_obj.is_dir()
         is_project_json = is_file and path_obj.name == "project.json"
         resolved_project_json = _resolve_project_json_path(path)
+        non_system_entries = []
+        if is_dir:
+            non_system_entries = filter_system_files(
+                [entry.name for entry in path_obj.iterdir()]
+            )
 
         return jsonify(
             {
                 "success": True,
                 "exists": exists,
                 "is_file": is_file,
+                "is_dir": is_dir,
                 "is_project_json": is_project_json,
+                "is_empty_dir": (is_dir and not non_system_entries),
+                "has_non_system_entries": (is_dir and bool(non_system_entries)),
                 "available": bool(resolved_project_json),
                 "project_json_path": (
                     str(resolved_project_json) if resolved_project_json else None
