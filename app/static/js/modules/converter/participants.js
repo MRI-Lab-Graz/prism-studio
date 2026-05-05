@@ -87,7 +87,7 @@ export function initParticipants() {
         return window.PrismFileSystemMode.pickFile({
             title: 'Select Participants File on Server',
             confirmLabel: 'Use This File',
-            extensions: '.xlsx,.csv,.tsv,.lsa',
+            extensions: '.xlsx,.csv,.tsv,.sav,.rds,.rdata,.rda,.lsa',
             startPath: getParticipantsSelectedServerFilePath(),
         });
     }
@@ -778,6 +778,10 @@ export function initParticipants() {
             name.endsWith('.xlsx')
             || name.endsWith('.csv')
             || name.endsWith('.tsv')
+            || name.endsWith('.sav')
+            || name.endsWith('.rds')
+            || name.endsWith('.rdata')
+            || name.endsWith('.rda')
             || name.endsWith('.lsa')
         );
     }
@@ -940,7 +944,7 @@ export function initParticipants() {
             setParticipantsIdColumnOptions([], '', false);
             setParticipantsIdSelectionRequired(true);
             if (idHint) {
-                idHint.textContent = 'Unsupported file format. Use .xlsx, .csv, .tsv, or .lsa.';
+                idHint.textContent = 'Unsupported file format. Use .xlsx, .csv, .tsv, .sav, .rds, .rdata, .rda, or .lsa.';
             }
             if (idGroup) idGroup.classList.remove('d-none');
             return;

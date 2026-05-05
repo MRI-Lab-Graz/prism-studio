@@ -23,6 +23,9 @@ from src.web.reporting_utils import sanitize_jsonable
 from src.web.validation import run_validation
 from src.web.services.project_registration import register_session_in_project
 from .conversion_survey_preview_handlers import (
+    _SUPPORTED_SURVEY_INPUT_MESSAGE,
+    _SUPPORTED_SURVEY_INPUT_SUFFIXES,
+    _SUPPORTED_SURVEY_TABULAR_SUFFIXES,
     handle_api_survey_convert_preview,
     handle_api_survey_languages,
 )
@@ -326,7 +329,7 @@ def _infer_tasks_against_official_templates(
         uploaded_file.save(str(input_path))
 
         preflight_output_root = tmp_dir_path / "preflight_rawdata"
-        if suffix in {".xlsx", ".csv", ".tsv"}:
+        if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
             result = _run_survey_with_official_fallback(
                 convert_survey_xlsx_to_prism_dataset,
                 input_path=input_path,
@@ -375,7 +378,7 @@ def _infer_tasks_against_official_templates(
                 fallback_project_path=project_path,
             )
         else:
-            raise ValueError("Supported formats: .xlsx, .lsa, .csv, .tsv")
+            raise ValueError(_SUPPORTED_SURVEY_INPUT_MESSAGE)
 
         tasks = sorted(set(getattr(result, "tasks_included", []) or []))
         copy_summary = _copy_official_templates_to_project(
@@ -437,7 +440,7 @@ def _detect_survey_version_contexts(
         separator = expected_delimiter_for_suffix(suffix, separator_option)
 
         def _run_detection(candidate_library_dir: Path):
-            if suffix in {".xlsx", ".csv", ".tsv"}:
+            if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
                 return convert_survey_xlsx_to_prism_dataset(
                     input_path=input_path,
                     library_dir=str(candidate_library_dir),
@@ -486,7 +489,7 @@ def _detect_survey_version_contexts(
                     project_path=project_path,
                     template_version_overrides=template_version_overrides,
                 )
-            raise ValueError("Supported formats: .xlsx, .lsa, .csv, .tsv")
+            raise ValueError(_SUPPORTED_SURVEY_INPUT_MESSAGE)
 
         try:
             used_library_dir = base_library_dir
@@ -887,8 +890,8 @@ def api_survey_check_project_templates():
     if uploaded_file and getattr(uploaded_file, "filename", ""):
         filename = secure_filename(uploaded_file.filename)
         suffix = Path(filename).suffix.lower()
-        if suffix not in {".xlsx", ".lsa", ".csv", ".tsv"}:
-            return jsonify({"error": "Supported formats: .xlsx, .lsa, .csv, .tsv"}), 400
+        if suffix not in _SUPPORTED_SURVEY_INPUT_SUFFIXES:
+            return jsonify({"error": _SUPPORTED_SURVEY_INPUT_MESSAGE}), 400
 
         matching_summary["input_file"] = filename
         try:
@@ -1055,8 +1058,8 @@ def api_survey_detect_version_context():
 
     filename = secure_filename(uploaded_file.filename)
     suffix = Path(filename).suffix.lower()
-    if suffix not in {".xlsx", ".lsa", ".csv", ".tsv"}:
-        return jsonify({"error": "Supported formats: .xlsx, .lsa, .csv, .tsv"}), 400
+    if suffix not in _SUPPORTED_SURVEY_INPUT_SUFFIXES:
+        return jsonify({"error": _SUPPORTED_SURVEY_INPUT_MESSAGE}), 400
 
     survey_filter = (request.form.get("survey") or "").strip() or None
     try:
@@ -1171,8 +1174,8 @@ def api_survey_convert():
 
     filename = secure_filename(uploaded_file.filename)
     suffix = Path(filename).suffix.lower()
-    if suffix not in {".xlsx", ".lsa", ".csv", ".tsv"}:
-        return jsonify({"error": "Supported formats: .xlsx, .lsa, .csv, .tsv"}), 400
+    if suffix not in _SUPPORTED_SURVEY_INPUT_SUFFIXES:
+        return jsonify({"error": _SUPPORTED_SURVEY_INPUT_MESSAGE}), 400
 
     alias_filename = None
     if alias_upload and getattr(alias_upload, "filename", ""):
@@ -1303,7 +1306,7 @@ def api_survey_convert():
         preflight_output_root = tmp_dir_path / "preflight_rawdata"
         preflight_result = None
         try:
-            if suffix in {".xlsx", ".csv", ".tsv"}:
+            if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
                 preflight_result = _run_survey_with_official_fallback(
                     convert_survey_xlsx_to_prism_dataset,
                     input_path=input_path,
@@ -1443,7 +1446,7 @@ def api_survey_convert():
                 pass
 
         try:
-            if suffix in {".xlsx", ".csv", ".tsv"}:
+            if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
                 _run_survey_with_official_fallback(
                     convert_survey_xlsx_to_prism_dataset,
                     input_path=input_path,
@@ -1652,11 +1655,11 @@ def api_survey_convert_validate():
 
     filename = secure_filename(uploaded_file.filename)
     suffix = Path(filename).suffix.lower()
-    if suffix not in {".xlsx", ".lsa", ".csv", ".tsv"}:
+    if suffix not in _SUPPORTED_SURVEY_INPUT_SUFFIXES:
         return (
             jsonify(
                 {
-                    "error": "Supported formats: .xlsx, .lsa, .csv, .tsv",
+                    "error": _SUPPORTED_SURVEY_INPUT_MESSAGE,
                     "log": log_messages,
                 }
             ),
@@ -1794,7 +1797,7 @@ def api_survey_convert_validate():
         preflight_output_root = tmp_dir_path / "preflight_rawdata"
         preflight_result = None
         try:
-            if suffix in {".xlsx", ".csv", ".tsv"}:
+            if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
                 preflight_result = _run_survey_with_official_fallback(
                     convert_survey_xlsx_to_prism_dataset,
                     input_path=input_path,
@@ -1974,7 +1977,7 @@ def api_survey_convert_validate():
 
         convert_result = None
         try:
-            if suffix in {".xlsx", ".csv", ".tsv"}:
+            if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
                 convert_result = _run_survey_with_official_fallback(
                     convert_survey_xlsx_to_prism_dataset,
                     input_path=input_path,

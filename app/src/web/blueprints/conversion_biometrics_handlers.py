@@ -44,6 +44,19 @@ except ImportError:
 
 LOGGER = logging.getLogger(__name__)
 
+_SUPPORTED_BIOMETRICS_SUFFIXES = {
+    ".csv",
+    ".xlsx",
+    ".tsv",
+    ".sav",
+    ".rds",
+    ".rdata",
+    ".rda",
+}
+_SUPPORTED_BIOMETRICS_MESSAGE = (
+    "Supported formats: .csv, .xlsx, .tsv, .sav, .rds, .rdata, .rda"
+)
+
 
 class _LocalPathUpload:
     """Minimal upload-like wrapper backed by a local filesystem path."""
@@ -260,8 +273,8 @@ def api_biometrics_convert():
 
     filename = secure_filename(uploaded_file.filename)
     suffix = Path(filename).suffix.lower()
-    if suffix not in {".csv", ".xlsx", ".tsv"}:
-        return jsonify({"error": "Supported formats: .csv, .xlsx, .tsv"}), 400
+    if suffix not in _SUPPORTED_BIOMETRICS_SUFFIXES:
+        return jsonify({"error": _SUPPORTED_BIOMETRICS_MESSAGE}), 400
 
     requested_project_root, error_response = _resolve_requested_project_root_or_error()
     if error_response is not None:

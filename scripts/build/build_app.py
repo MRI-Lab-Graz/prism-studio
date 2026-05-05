@@ -288,6 +288,7 @@ def main() -> int:
         "--hidden-import=flask",
         "--hidden-import=pandas",
         "--hidden-import=pyreadstat",
+        "--hidden-import=pyreadr",
         # pandas can otherwise be bundled as an incomplete top-level package on
         # some platforms, which breaks both frozen imports and the bundle smoke test.
         "--collect-submodules=pandas",
@@ -298,6 +299,11 @@ def main() -> int:
         "--collect-submodules=pyreadstat",
         "--collect-data=pyreadstat",
         "--collect-binaries=pyreadstat",
+        # pyreadr provides R .rds/.rdata import through native extension modules.
+        # Collect the full package so converter imports keep working in frozen builds.
+        "--collect-submodules=pyreadr",
+        "--collect-data=pyreadr",
+        "--collect-binaries=pyreadr",
         # Exclude pandas test suite — collected by --collect-submodules but never
         # needed at runtime; skipping it saves ~50 MB and significant build time.
         "--exclude-module=pandas.tests",

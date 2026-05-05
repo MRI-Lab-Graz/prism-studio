@@ -363,6 +363,81 @@ def test_survey_preview_passes_selected_near_match_tasks(monkeypatch, tmp_path):
     assert calls[0]["near_match_tasks"] == {"ads"}
 
 
+def test_survey_preview_accepts_sav_input(monkeypatch, tmp_path):
+    app = Flask(__name__)
+    app.secret_key = os.urandom(32)
+
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    library_root = tmp_path / "library"
+    library_root.mkdir()
+    (library_root / "survey-ads.json").write_text("{}", encoding="utf-8")
+
+    calls = []
+
+    def fake_run_survey_with_official_fallback(_converter, **kwargs):
+        calls.append(kwargs.copy())
+        return SimpleNamespace(
+            dry_run_preview={
+                "summary": {
+                    "total_participants": 1,
+                    "unique_participants": 1,
+                    "tasks": ["ads"],
+                    "session_column": None,
+                    "run_column": None,
+                    "total_files": 1,
+                    "total_files_to_create": 1,
+                },
+                "participants": [],
+                "column_mapping": {},
+                "files_to_create": [],
+                "data_issues": [],
+            },
+            tasks_included=["ads"],
+            unknown_columns=[],
+            missing_items_by_task={},
+            id_column="ID",
+            session_column=None,
+            run_column=None,
+            detected_sessions=[],
+            conversion_warnings=[],
+            task_runs={},
+            template_matches=None,
+            tool_columns=[],
+            near_match_candidates=[],
+            near_match_applied=False,
+        )
+
+    with app.test_request_context(
+        "/api/survey-convert-preview",
+        method="POST",
+        data={
+            "file": (io.BytesIO(b"stub"), "demo.sav"),
+            "id_column": "ID",
+            "validate": "false",
+        },
+        content_type="multipart/form-data",
+    ):
+        session["current_project_path"] = str(project_root)
+
+        response = handle_api_survey_convert_preview(
+            convert_survey_xlsx_to_prism_dataset=object(),
+            convert_survey_lsa_to_prism_dataset=object(),
+            resolve_effective_library_path=lambda: library_root,
+            run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
+            validate_project_templates_for_tasks=lambda **_kwargs: [],
+            format_unmatched_groups_response=lambda _error: {},
+            id_column_not_detected_error_cls=ValueError,
+            unmatched_groups_error_cls=RuntimeError,
+        )
+
+    payload = response.get_json()
+
+    assert payload["tasks_included"] == ["ads"]
+    assert calls
+    assert calls[0]["input_path"].suffix == ".sav"
+
+
 def test_survey_converter_preserves_numeric_subject_ids_as_strings(tmp_path):
     input_path = tmp_path / "demo.csv"
     input_path.write_text(

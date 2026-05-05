@@ -112,7 +112,7 @@ export function initEnvironment(elements) {
         return window.PrismFileSystemMode.pickFile({
             title: 'Select Environment File on Server',
             confirmLabel: 'Use This File',
-            extensions: '.xlsx,.csv,.tsv',
+            extensions: '.xlsx,.csv,.tsv,.sav,.rds,.rdata,.rda',
             startPath: envServerFilePath || ''
         });
     }

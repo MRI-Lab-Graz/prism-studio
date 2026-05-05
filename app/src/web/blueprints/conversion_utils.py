@@ -9,7 +9,7 @@ import unicodedata
 from pathlib import Path
 from flask import current_app
 import pandas as pd
-from src.converters.file_reader import read_tabular_file
+from src.converters.file_reader import infer_tabular_kind, read_tabular_file
 
 SEPARATOR_MAP: dict[str, str] = {
     "comma": ",",
@@ -369,14 +369,8 @@ def read_tabular_dataframe_robust(
 
     This helper keeps parser behavior consistent across converter endpoints.
     """
-    suffix = input_path.suffix.lower()
-    if suffix == ".xlsx":
-        kind = "xlsx"
-    elif suffix == ".tsv":
-        kind = "tsv"
-    elif suffix == ".csv":
-        kind = "csv"
-    else:
+    kind = infer_tabular_kind(input_path)
+    if kind is None:
         kind = "tsv" if expected_delimiter == "\t" else "csv"
 
     try:
@@ -391,7 +385,7 @@ def read_tabular_dataframe_robust(
             )
         return result.df
     except ValueError as primary_error:
-        if kind == "xlsx":
+        if kind in {"xlsx", "sav", "rds", "rdata"}:
             raise
 
         attempts: list[dict] = []

@@ -180,6 +180,41 @@ def test_sourcedata_helpers_prefer_explicit_project_path(tmp_path):
     assert file_response.get_data(as_text=True) == "other"
 
 
+def test_sourcedata_files_include_sav_and_r_data(tmp_path):
+    project_root = tmp_path / "project"
+    sourcedata = project_root / "sourcedata"
+    sourcedata.mkdir(parents=True)
+
+    for name in (
+        "survey.xlsx",
+        "survey.sav",
+        "survey.rds",
+        "survey.rdata",
+        "survey.rda",
+        "survey.lsa",
+        "ignore.txt",
+    ):
+        (sourcedata / name).write_text("placeholder", encoding="utf-8")
+
+    app = _build_app(str(project_root))
+
+    with app.test_client() as client:
+        response = client.get("/api/projects/sourcedata-files")
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    names = {entry["name"] for entry in payload.get("files", [])}
+    assert {
+        "survey.xlsx",
+        "survey.sav",
+        "survey.rds",
+        "survey.rdata",
+        "survey.rda",
+        "survey.lsa",
+    } <= names
+    assert "ignore.txt" not in names
+
+
 def test_survey_check_project_templates_prefers_explicit_project_path(tmp_path):
     current_project = tmp_path / "project-current"
     other_project = tmp_path / "project-other"

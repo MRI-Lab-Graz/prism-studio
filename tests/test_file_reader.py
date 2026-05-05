@@ -1,7 +1,7 @@
 """Tests for the shared tabular file reader (app/src/converters/file_reader.py).
 
 Covers:
-- Basic CSV / TSV / XLSX reading
+- Basic CSV / TSV / XLSX / SAV / RData / RDS reading
 - BOM / encoding detection (UTF-8-sig, latin-1, cp1252)
 - Empty-file guard
 - Wrong-delimiter detection and auto-sniff recovery
@@ -62,6 +62,42 @@ class TestBasicFormats:
         result = read_tabular_file(f)
         assert list(result.df.columns) == ["id", "age"]
         assert result.delimiter_used is None
+
+    def test_sav_basic(self, tmp_path):
+        pyreadstat = pytest.importorskip("pyreadstat")
+
+        f = tmp_path / "data.sav"
+        df = pd.DataFrame({"id": ["001", "002"], "age": ["25", "30"]})
+        pyreadstat.write_sav(df, str(f))
+
+        result = read_tabular_file(f)
+        assert list(result.df.columns) == ["id", "age"]
+        assert result.delimiter_used is None
+        assert result.df["age"].tolist() == ["25", "30"]
+
+    def test_rds_basic(self, tmp_path):
+        pyreadr = pytest.importorskip("pyreadr")
+
+        f = tmp_path / "data.rds"
+        df = pd.DataFrame({"id": ["001", "002"], "age": ["25", "30"]})
+        pyreadr.write_rds(str(f), df)
+
+        result = read_tabular_file(f)
+        assert list(result.df.columns) == ["id", "age"]
+        assert result.delimiter_used is None
+        assert result.df["age"].tolist() == ["25", "30"]
+
+    def test_rdata_basic(self, tmp_path):
+        pyreadr = pytest.importorskip("pyreadr")
+
+        f = tmp_path / "data.rdata"
+        df = pd.DataFrame({"id": ["001", "002"], "age": ["25", "30"]})
+        pyreadr.write_rdata(str(f), df, df_name="participants")
+
+        result = read_tabular_file(f)
+        assert list(result.df.columns) == ["id", "age"]
+        assert result.delimiter_used is None
+        assert result.df["age"].tolist() == ["25", "30"]
 
     def test_kind_overrides_extension(self, tmp_path):
         # File has .txt extension but is comma-separated; kind="csv" forces CSV parsing

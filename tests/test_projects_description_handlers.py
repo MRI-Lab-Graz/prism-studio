@@ -39,6 +39,9 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         self.handle_get_metadata_status = (
             description_handlers.handle_get_metadata_status
         )
+        self.handle_regenerate_citation = (
+            description_handlers.handle_regenerate_citation
+        )
         self.handle_save_dataset_description = (
             description_handlers.handle_save_dataset_description
         )
@@ -840,6 +843,67 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         self.assertEqual(citation_text.count('family-names: "Lovelace"'), 1)
         self.assertEqual(citation_text.count('given-names: "Ada"'), 1)
         self.assertIn('email: "ada@example.org"', citation_text)
+
+    def test_regenerate_citation_uses_canonical_project_metadata(self):
+        dataset_description = {
+            "Name": "Demo",
+            "BIDSVersion": "1.10.1",
+            "DatasetType": "raw",
+            "Authors": ["Ada Lovelace"],
+        }
+        (self.project_path / "dataset_description.json").write_text(
+            json.dumps(dataset_description),
+            encoding="utf-8",
+        )
+        (self.project_path / "project.json").write_text(
+            json.dumps(
+                {
+                    "name": "demo_project",
+                    "Basics": {
+                        "Authors": ["Ada Lovelace"],
+                        "License": "CC-BY-4.0",
+                        "DOI": "10.1000/demo",
+                        "HowToAcknowledge": "Please cite Demo.",
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        self.project_manager.update_citation_cff(self.project_path, dataset_description)
+        stale_status = self.project_manager.get_citation_cff_status(self.project_path)
+        self.assertFalse(stale_status.get("consistent"))
+
+        def get_current_project():
+            return {"path": str(self.project_path), "name": "demo_project"}
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        with self.app.test_request_context(
+            "/api/projects/citation/regenerate",
+            method="POST",
+            json={"project_path": str(self.project_path)},
+        ):
+            response = self.handle_regenerate_citation(
+                get_current_project=get_current_project,
+                get_bids_file_path=get_bids_file_path,
+                project_manager=self.project_manager,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+
+        self.assertEqual(status_code, 200)
+        payload = resp_obj.get_json()
+        self.assertTrue(payload.get("success"))
+        self.assertTrue(payload.get("consistent"), payload)
+        self.assertEqual(payload.get("consistency_issues"), [])
+
+        citation_text = (self.project_path / "CITATION.cff").read_text(encoding="utf-8")
+        self.assertIn('doi: "10.1000/demo"', citation_text)
+        self.assertIn('license: "CC-BY-4.0"', citation_text)
+        self.assertIn("message: >-", citation_text)
 
     def test_save_dataset_description_omits_citation_fields_when_citation_refresh_fails(self):
         (self.project_path / "dataset_description.json").write_text(

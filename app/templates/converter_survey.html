@@ -44,7 +44,7 @@
                             <!-- Row 1: File upload -->
                             <div class="row g-3 mb-3">
                                 <div class="col-12 studio-file-picker">
-                                    <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .lsa)</label>
+                                    <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .sav, .rds, .rdata, .lsa)</label>
                                     {% if current_project.path %}
                                     <div id="sourcedataQuickSelect" class="d-none mb-2">
                                         <div class="input-group input-group-sm">
@@ -56,7 +56,7 @@
                                     </div>
                                     {% endif %}
                                     <div class="input-group">
-                                        <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv" data-help-key="convertExcelFile">
+                                        <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv,.sav,.rds,.rdata,.rda" data-help-key="convertExcelFile">
                                         <button class="btn btn-outline-secondary d-none" type="button" id="browseServerSurveyFileBtn" aria-label="Browse server survey file" title="Browse server survey file">
                                             <i class="fas fa-server me-1"></i>Server
                                         </button>
@@ -65,7 +65,7 @@
                                         </button>
                                     </div>
                                     <div class="form-text" id="convertFileHint">
-                                        <span class="text-info"><i class="fas fa-info-circle me-1"></i>LimeSurvey responses (.lsa) or Data Dictionary (.xlsx/.csv/.tsv)</span>
+                                        <span class="text-info"><i class="fas fa-info-circle me-1"></i>LimeSurvey responses (.lsa) or tabular survey data (.xlsx/.csv/.tsv/.sav/.rds/.rdata)</span>
                                     </div>
                                 </div>
                                 <div class="col-md-4 d-none" id="surveySeparatorGroup">
