@@ -78,6 +78,23 @@
     position: relative;
 }
 
+.studio-theme .navbar.studio-navbar-shell,
+.studio-theme .navbar.studio-navbar-shell.bg-white {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    box-shadow: 0 10px 22px rgba(31, 35, 40, 0.08);
+}
+
+@supports ((-webkit-backdrop-filter: blur(10px)) or (backdrop-filter: blur(10px))) {
+    .studio-theme .studio-navbar-shell,
+    .studio-theme .studio-navbar-shell.bg-white {
+        background-color: rgba(255, 255, 255, 0.92) !important;
+        -webkit-backdrop-filter: saturate(140%) blur(10px);
+        backdrop-filter: saturate(140%) blur(10px);
+    }
+}
+
 .studio-theme .navbar::after {
     content: "";
     position: absolute;

@@ -8,7 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.1.3/dist/litera/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/studio-theme.css', v='20260420-hover') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/studio-theme.css', v='20260505-sticky-header') }}" rel="stylesheet">
     {% block styles %}{% endblock %}
     <style>
         .upload-area {
@@ -208,7 +208,7 @@
     {% set prism_app_runner_available = endpoint_exists('tools.prism_app_runner') %}
     {% set derivatives_available = survey_generator_available or recipes_available or recipe_builder_available or prism_app_runner_available %}
     {% set derivatives_enabled = current_project.path and derivatives_available %}
-    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top studio-navbar-shell">
         <div class="container-xxl px-3 px-xxl-4">
             <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
                 <img src="{{ url_for('static', filename='img/MRI_Lab_Logo.png') }}" alt="MRI-Lab Graz logo" class="brand-logo me-3">
