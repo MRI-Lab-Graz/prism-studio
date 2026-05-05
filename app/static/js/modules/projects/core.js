@@ -34,6 +34,48 @@ let currentProjectName = '';
 const recentProjectsKey = 'prism_recent_projects';
 const beginnerHelpModeKey = 'prism_beginner_help_mode';
 const recentProjectStatusCache = new Map();
+let createTargetStatusRequestToken = 0;
+let createTargetStatusDebounceTimer = null;
+
+function setCreateResultHtml(html, scope = 'server') {
+    const resultDiv = document.getElementById('createResult');
+    if (!resultDiv) return;
+
+    resultDiv.dataset.scope = scope;
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = html;
+}
+
+function clearCreateResult(scope = null) {
+    const resultDiv = document.getElementById('createResult');
+    if (!resultDiv) return;
+    if (scope && resultDiv.dataset.scope !== scope) return;
+
+    resultDiv.style.display = 'none';
+    resultDiv.innerHTML = '';
+    delete resultDiv.dataset.scope;
+}
+
+function joinProjectTargetPath(projectPath, projectName) {
+    const parentPath = String(projectPath || '').trim();
+    const name = String(projectName || '').trim();
+    if (!parentPath || !name) return '';
+
+    if (parentPath.endsWith('/') || parentPath.endsWith('\\')) {
+        return parentPath + name;
+    }
+
+    const separator = parentPath.includes('/') ? '/' : '\\';
+    return parentPath + separator + name;
+}
+
+function resetCreateTargetStatusChecks() {
+    if (createTargetStatusDebounceTimer) {
+        window.clearTimeout(createTargetStatusDebounceTimer);
+        createTargetStatusDebounceTimer = null;
+    }
+    createTargetStatusRequestToken += 1;
+}
 
 function setGlobalProjectState(path, name) {
     setProjectStateSnapshot(path, name);
@@ -642,6 +684,94 @@ async function isRecentProjectAvailable(path) {
     return statusPromise;
 }
 
+async function checkCreateTargetStatus() {
+    const projectName = document.getElementById('projectName')?.value.trim() || '';
+    const projectPath = document.getElementById('projectPath')?.value.trim() || '';
+    const validProjectName = /^[a-zA-Z0-9_-]+$/.test(projectName);
+
+    if (!projectName || !projectPath || !validProjectName) {
+        clearCreateResult('preflight');
+        return { conflict: false };
+    }
+
+    const targetPath = joinProjectTargetPath(projectPath, projectName);
+    const requestToken = ++createTargetStatusRequestToken;
+
+    try {
+        const response = await fetchWithApiFallback('/api/projects/path-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: targetPath })
+        });
+        const status = await response.json().catch(() => null);
+
+        if (requestToken !== createTargetStatusRequestToken) {
+            return { conflict: false, stale: true };
+        }
+
+        if (!status || status.success !== true || status.exists !== true) {
+            clearCreateResult('preflight');
+            return { conflict: false, targetPath };
+        }
+
+        if (status.is_dir && status.is_empty_dir) {
+            clearCreateResult('preflight');
+            return { conflict: false, targetPath, status };
+        }
+
+        let title = 'Target Folder Already Exists';
+        let message = `The target folder <code>${escapeHtml(targetPath)}</code> already exists and contains files. Project Location must be the parent folder where PRISM creates a new project folder.`;
+
+        if (status.is_file) {
+            title = 'Target Path Is A File';
+            message = `The target path <code>${escapeHtml(targetPath)}</code> already exists as a file. Project Location must be the parent folder, not the final project path.`;
+        } else if (status.available) {
+            title = 'Project Already Exists';
+            message = `The target folder <code>${escapeHtml(targetPath)}</code> already contains a <code>project.json</code>. Use Open Existing Project instead of Create New Project.`;
+        }
+
+        const actionHtml = status.available
+            ? `
+                <div class="mt-3">
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-outline-primary"
+                        data-action="open-existing-project"
+                        data-path="${escapeHtml(status.project_json_path || targetPath)}"
+                    >
+                        <i class="fas fa-folder-open me-1"></i>Open Existing Project
+                    </button>
+                </div>
+            `
+            : '';
+
+        setCreateResultHtml(
+            `
+                <div class="alert alert-warning">
+                    <h5><i class="fas fa-exclamation-triangle me-2"></i>${title}</h5>
+                    <p class="mb-0">${message}</p>
+                    ${actionHtml}
+                </div>
+            `,
+            'preflight'
+        );
+
+        return { conflict: true, targetPath, status };
+    } catch (_error) {
+        if (requestToken === createTargetStatusRequestToken) {
+            clearCreateResult('preflight');
+        }
+        return { conflict: false, targetPath };
+    }
+}
+
+function scheduleCreateTargetStatusCheck() {
+    resetCreateTargetStatusChecks();
+    createTargetStatusDebounceTimer = window.setTimeout(() => {
+        checkCreateTargetStatus().catch(() => {});
+    }, 200);
+}
+
 export function renderRecentProjects() {
     const block = document.getElementById('recentProjectsBlock');
     const listEl = document.getElementById('recentProjectsList');
@@ -768,51 +898,6 @@ async function loadDedicatedTerminalSetting() {
     }
 }
 
-function shouldShowOpenValidationFromNavbar() {
-    try {
-        const params = new URLSearchParams(window.location.search || '');
-        return params.get('show_open_validation') === '1';
-    } catch (_) {
-        return false;
-    }
-}
-
-function clearShowOpenValidationFlagFromUrl() {
-    try {
-        const url = new URL(window.location.href);
-        if (!url.searchParams.has('show_open_validation')) {
-            return;
-        }
-        url.searchParams.delete('show_open_validation');
-        const nextUrl = `${url.pathname}${url.search}${url.hash}`;
-        window.history.replaceState({}, '', nextUrl);
-    } catch (_) {
-        // no-op: keep original URL if parsing fails
-    }
-}
-
-async function maybeRunOpenValidationFromNavbar() {
-    if (!shouldShowOpenValidationFromNavbar()) {
-        return;
-    }
-
-    const path = String(currentProjectPath || '').trim();
-    const existingPathInput = document.getElementById('existingPath');
-    const openProjectForm = document.getElementById('openProjectForm');
-    if (!path || !existingPathInput || !openProjectForm) {
-        clearShowOpenValidationFlagFromUrl();
-        return;
-    }
-
-    try {
-        selectProjectType('open');
-        existingPathInput.value = path;
-        await runProjectValidation(path);
-    } finally {
-        clearShowOpenValidationFlagFromUrl();
-    }
-}
-
 async function ensureOpenSectionVisibleForLoadedProject() {
     const path = String(currentProjectPath || '').trim();
     if (!path || !shouldHideProjectTypeSelectionWhenLoaded()) {
@@ -829,14 +914,30 @@ async function ensureOpenSectionVisibleForLoadedProject() {
         existingPathInput.value = path;
     }
 
-    if (shouldShowOpenValidationFromNavbar()) {
-        updateQuickValidateButtonState();
-        return;
-    }
-
     await loadProjectWithoutValidation(path);
 
     updateQuickValidateButtonState();
+}
+
+function submitOpenProjectPath(path) {
+    const normalizedPath = String(path || '').trim();
+    const existingPathInput = document.getElementById('existingPath');
+    const openProjectForm = document.getElementById('openProjectForm');
+    if (!normalizedPath || !existingPathInput || !openProjectForm) {
+        return;
+    }
+
+    existingPathInput.value = normalizedPath;
+    selectProjectType('open');
+
+    if (typeof openProjectForm.requestSubmit === 'function') {
+        openProjectForm.requestSubmit();
+        return;
+    }
+
+    openProjectForm.dispatchEvent(
+        new Event('submit', { bubbles: true, cancelable: true })
+    );
 }
 
 async function saveDedicatedTerminalSetting(enabled) {
@@ -1253,11 +1354,8 @@ export function selectProjectType(type) {
     }
 
     if (type === 'create') {
-        const createResult = document.getElementById('createResult');
-        if (createResult) {
-            createResult.style.display = 'none';
-            createResult.innerHTML = '';
-        }
+        clearCreateResult();
+        resetCreateTargetStatusChecks();
         const projectNameInput = document.getElementById('projectName');
         if (projectNameInput) {
             projectNameInput.value = '';
@@ -1323,6 +1421,7 @@ if (browseProjectPath) {
                 pathField.value = selectedPath;
                 // Trigger validation after setting the value
                 validateProjectField('projectPath');
+                clearCreateResult();
                 // Also dispatch change event in case other handlers are listening
                 pathField.dispatchEvent(new Event('change', { bubbles: true }));
             }
@@ -1596,6 +1695,23 @@ if (projectNameInput) {
             e.target.classList.remove('is-invalid');
             errorDiv.textContent = '';
         }
+
+        clearCreateResult();
+        scheduleCreateTargetStatusCheck();
+    });
+}
+
+const projectPathInput = document.getElementById('projectPath');
+if (projectPathInput) {
+    projectPathInput.addEventListener('input', function() {
+        this.classList.remove('is-invalid');
+        clearCreateResult();
+        scheduleCreateTargetStatusCheck();
+    });
+    projectPathInput.addEventListener('change', function() {
+        this.classList.remove('is-invalid');
+        clearCreateResult();
+        scheduleCreateTargetStatusCheck();
     });
 }
 
@@ -1680,6 +1796,17 @@ if (createProjectFormEl) {
             return;
         }
 
+        if (!/^[a-zA-Z0-9_-]+$/.test(projectName)) {
+            alert('Invalid project name. Only letters, numbers, underscores and hyphens allowed.');
+            return;
+        }
+
+        resetCreateTargetStatusChecks();
+        const targetStatus = await checkCreateTargetStatus();
+        if (targetStatus.conflict) {
+            return;
+        }
+
         const validation = validateAllMandatoryFields();
         if (!validation.isValid && !forcePreliminary) {
             const issues = [
@@ -1691,11 +1818,6 @@ if (createProjectFormEl) {
         }
 
         await validateDatasetDescriptionDraftLive();
-
-        if (!/^[a-zA-Z0-9_-]+$/.test(projectName)) {
-            alert('Invalid project name. Only letters, numbers, underscores and hyphens allowed.');
-            return;
-        }
 
         const createButtons = [
             document.getElementById('createProjectSubmitBtn'),
@@ -1714,8 +1836,7 @@ if (createProjectFormEl) {
         createButtons.forEach(btn => { btn.disabled = true; });
         preliminaryButtons.forEach(btn => { btn.disabled = true; });
 
-        const separator = projectPath.includes('/') ? '/' : '\\';
-        const fullPath = projectPath + separator + projectName;
+        const fullPath = joinProjectTargetPath(projectPath, projectName);
 
         const data = {
             path: fullPath,
@@ -1794,11 +1915,8 @@ if (createProjectFormEl) {
             });
             const result = await response.json();
 
-            const resultDiv = document.getElementById('createResult');
-            resultDiv.style.display = 'block';
-
             if (result.success) {
-                resultDiv.innerHTML = `
+                setCreateResultHtml(`
                     <div class="alert alert-success">
                         <h5><i class="fas fa-check-circle me-2"></i>Project Created Successfully!</h5>
                         <p class="mb-2">${escapeHtml(result.message)}</p>
@@ -1820,7 +1938,7 @@ if (createProjectFormEl) {
                             </small>
                         </div>
                     </div>
-                `;
+                `);
 
                 applyCurrentProject(result.current_project);
                 try {
@@ -1834,21 +1952,20 @@ if (createProjectFormEl) {
                 showExportCard();
                 showMethodsCard();
             } else {
-                resultDiv.innerHTML = `
+                setCreateResultHtml(`
                     <div class="alert alert-danger">
                         <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
                         <p class="mb-0">${escapeHtml(result.error)}</p>
                     </div>
-                `;
+                `);
             }
         } catch (error) {
-            document.getElementById('createResult').innerHTML = `
+            setCreateResultHtml(`
                 <div class="alert alert-danger">
                     <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
                     <p class="mb-0">${escapeHtml(error.message)}</p>
                 </div>
-            `;
-            document.getElementById('createResult').style.display = 'block';
+            `);
         } finally {
             if (activeBtn) {
                 setButtonLoading(activeBtn, false, null, originalText);
@@ -2010,12 +2127,28 @@ function renderLoadedProjectState(loadedName, loadedPath, summary) {
             <h5><i class="fas fa-folder-open me-2"></i>Project Loaded</h5>
             <p class="mb-1"><strong>${escapeHtml(loadedName || 'Current project')}:</strong> <code>${escapeHtml(loadedPath)}</code></p>
             ${quickSummaryHtml}
-            <div class="d-flex justify-content-end mt-3">
-                <button type="button" class="btn btn-outline-warning" id="projectBoxPreliminarySaveBtn">
-                    <i class="fas fa-save me-2"></i>Save Preliminary Project State
-                </button>
+            <div class="alert alert-info mt-3 mb-0" role="status">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                    <div>
+                        <strong>Not validated yet.</strong>
+                        <span class="ms-1">Use Validate now or Quick Validate to run a manual project check.</span>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="validate-project" data-path="${escapeHtml(loadedPath)}">
+                        <i class="fas fa-bolt me-1"></i>Validate now
+                    </button>
+                </div>
             </div>
-            <p class="mb-0 mt-3 text-muted"><i class="fas fa-bolt me-1"></i>Use Quick Validate (next to Load Project) to run a manual project check.</p>
+            <div class="d-flex flex-column align-items-end mt-3">
+                <div class="d-flex gap-2 flex-wrap justify-content-end">
+                    <button type="button" class="btn btn-outline-warning" id="projectBoxPreliminarySaveBtn">
+                        <i class="fas fa-save me-2"></i>Save Preliminary Project State
+                    </button>
+                    <button type="button" class="btn btn-info" id="projectBoxSaveBtn">
+                        <i class="fas fa-save me-2"></i>Save Changes to Project
+                    </button>
+                </div>
+                <small class="text-muted mt-1" id="projectBoxSaveStatus" aria-live="polite"></small>
+            </div>
         </div>
     `);
 }
@@ -2167,7 +2300,7 @@ async function runProjectValidation(path, triggerButton = null) {
                 <div class="mb-3">
                     <h6 class="mb-1">Project Metadata</h6>
                     <small class="text-muted d-block" id="projectBoxSaveHint">
-                        <i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, and README.md.
+                        <i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, CITATION.cff, and README.md.
                     </small>
                 </div>` : ''}
 
@@ -2357,7 +2490,7 @@ if (openProjectForm) {
     openProjectForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         const btn = this.querySelector('button[type="submit"]');
-        await runProjectValidation(getOpenProjectActionPath(), btn);
+        await loadProjectWithoutValidation(getOpenProjectActionPath(), btn);
     });
 }
 
@@ -2491,7 +2624,6 @@ function initProjectsPage() {
     renderRecentProjects();
     loadRecentProjectsFromServer();
     ensureOpenSectionVisibleForLoadedProject();
-    maybeRunOpenValidationFromNavbar();
 
     if (currentProjectPath) {
         addRecentProject(currentProjectName, currentProjectPath);
@@ -2536,7 +2668,11 @@ function initProjectsPage() {
             const fixAllBtn = event.target.closest('[data-action="fix-all"]');
             if (fixAllBtn) { fixAllIssues(fixAllBtn.dataset.path); return; }
             const fixOneBtn = event.target.closest('[data-action="fix-issue"]');
-            if (fixOneBtn) { fixIssue(fixOneBtn.dataset.path, fixOneBtn.dataset.code); }
+            if (fixOneBtn) { fixIssue(fixOneBtn.dataset.path, fixOneBtn.dataset.code); return; }
+            const validateProjectBtn = event.target.closest('[data-action="validate-project"]');
+            if (validateProjectBtn) {
+                runProjectValidation(validateProjectBtn.dataset.path || getOpenProjectActionPath());
+            }
         });
     }
 
@@ -2547,10 +2683,19 @@ function initProjectsPage() {
             if (!btn) return;
             const path = btn.getAttribute('data-path');
             if (path) {
-                document.getElementById('existingPath').value = path;
-                selectProjectType('open');
-                document.getElementById('openProjectForm').dispatchEvent(new Event('submit'));
+                submitOpenProjectPath(path);
             }
+        });
+    }
+
+    const createResultDiv = document.getElementById('createResult');
+    if (createResultDiv) {
+        createResultDiv.addEventListener('click', (event) => {
+            const openExistingBtn = event.target.closest('[data-action="open-existing-project"]');
+            if (!openExistingBtn) return;
+            const path = openExistingBtn.getAttribute('data-path');
+            if (!path) return;
+            submitOpenProjectPath(path);
         });
     }
 

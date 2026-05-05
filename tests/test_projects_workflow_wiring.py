@@ -18,6 +18,7 @@ PROJECTS_VALIDATION_MODULE = (
 OPEN_FORM_TEMPLATE = (
     REPO_ROOT / "app" / "templates" / "includes" / "projects" / "open_form.html"
 )
+PROJECTS_PAGE_TEMPLATE = REPO_ROOT / "app" / "templates" / "projects.html"
 STUDY_METADATA_TEMPLATE = (
     REPO_ROOT / "app" / "templates" / "includes" / "projects" / "study_metadata.html"
 )
@@ -198,6 +199,29 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("showExportCard();", content)
         self.assertIn("showMethodsCard();", content)
 
+    def test_create_flow_checks_target_path_before_submitting(self):
+        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("async function checkCreateTargetStatus() {", content)
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/projects/path-status', {",
+            content,
+        )
+        self.assertIn("const targetStatus = await checkCreateTargetStatus();", content)
+        self.assertIn("if (targetStatus.conflict) {", content)
+        self.assertIn("const fullPath = joinProjectTargetPath(projectPath, projectName);", content)
+
+    def test_create_conflict_warning_can_open_existing_project(self):
+        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("function submitOpenProjectPath(path) {", content)
+        self.assertIn('data-action="open-existing-project"', content)
+        self.assertIn(
+            "const openExistingBtn = event.target.closest('[data-action=\"open-existing-project\"]');",
+            content,
+        )
+        self.assertIn("submitOpenProjectPath(path);", content)
+
     def test_open_project_flow_separates_load_and_validation(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
@@ -210,7 +234,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "await runProjectValidation(getOpenProjectActionPath(), btn);",
+            "await loadProjectWithoutValidation(getOpenProjectActionPath(), btn);",
             content,
         )
         self.assertIn(
@@ -226,6 +250,40 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("const projectSummary = result.project_summary", content)
         self.assertIn("renderLoadedProjectState(loadedName, loadedPath, projectSummary);", content)
 
+    def test_loaded_project_state_exposes_validate_now_action(self):
+        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("<strong>Not validated yet.</strong>", content)
+        self.assertIn('data-action="validate-project"', content)
+        self.assertIn(
+            "const validateProjectBtn = event.target.closest('[data-action=\"validate-project\"]');",
+            content,
+        )
+        self.assertIn(
+            "runProjectValidation(validateProjectBtn.dataset.path || getOpenProjectActionPath());",
+            content,
+        )
+        self.assertIn("id=\"projectBoxSaveBtn\"", content)
+        self.assertIn("Save Changes to Project", content)
+
+    def test_open_project_copy_describes_load_then_optional_validation(self):
+        open_form_content = OPEN_FORM_TEMPLATE.read_text(encoding="utf-8")
+        projects_page_content = PROJECTS_PAGE_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "Load first, then run Quick Validate only when you need it",
+            open_form_content,
+        )
+        self.assertIn(
+            "Loading sets the current project. Validation is optional and can be run afterwards.",
+            open_form_content,
+        )
+        self.assertIn(
+            "Load a project you already use in PRISM Studio and validate it only when needed.",
+            projects_page_content,
+        )
+        self.assertIn("Load only", projects_page_content)
+
     def test_preserved_project_shows_open_section_without_validation(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
@@ -234,14 +292,14 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("selectProjectType('open');", content)
         self.assertIn("ensureOpenSectionVisibleForLoadedProject();", content)
 
-    def test_navbar_recent_project_redirect_requests_auto_validation(self):
+    def test_navbar_recent_project_redirect_preserves_current_project_only(self):
         content = BASE_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn(
-            'window.location.href = "{{ url_for(\'projects.projects_page\') }}?preserve_current=1&show_open_validation=1";',
+            'window.location.href = "{{ url_for(\'projects.projects_page\') }}?preserve_current=1";',
             content,
         )
-        self.assertIn("show_open_validation=1", content)
+        self.assertNotIn("show_open_validation=1", content)
 
     def test_metadata_reset_clears_validation_state(self):
         content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
@@ -267,6 +325,10 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
+            "_withProjectPathQuery('/api/projects/metadata/status', requestProjectPath)",
+            content,
+        )
+        self.assertIn(
             "body: JSON.stringify({ project_path: requestProjectPath })", content
         )
         self.assertIn(
@@ -277,6 +339,16 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "_withProjectPathQuery('/api/projects/description', requestProjectPath)",
             content,
         )
+
+    def test_metadata_sync_warning_exposes_repair_actions(self):
+        content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("function requestMetadataRepairSave() {", content)
+        self.assertIn("function _renderMetadataRepairHint() {", content)
+        self.assertIn('data-action="repair-metadata-sync"', content)
+        self.assertIn('data-action="regenerate-citation-sync"', content)
+        self.assertIn("requestMetadataRepairSave();", content)
+        self.assertIn("regenerateCitationCff();", content)
         self.assertIn(
             "_withProjectPathQuery('/api/projects/study-metadata', requestProjectPath)",
             content,

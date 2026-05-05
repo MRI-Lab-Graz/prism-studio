@@ -73,6 +73,33 @@ class TestProjectManager(unittest.TestCase):
             self.assertIn("recipes/", content)
             self.assertNotIn("CITATION.cff", content)
 
+    def test_create_project_ignores_system_files_in_existing_target(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "Desktop.ini").write_text("", encoding="utf-8")
+            (project_path / "Thumbs.db").write_text("", encoding="utf-8")
+
+            result = manager.create_project(str(project_path), {"name": "demo_project"})
+
+            self.assertTrue(result.get("success"), result)
+
+    def test_create_project_reports_existing_nonempty_target_actionably(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "notes.txt").write_text("existing", encoding="utf-8")
+
+            result = manager.create_project(str(project_path), {"name": "demo_project"})
+
+            self.assertFalse(result.get("success"))
+            self.assertIn("parent folder", result.get("error", ""))
+            self.assertIn("Open Existing Project", result.get("error", ""))
+
     def test_create_bidsignore_excludes_eyetracking_passthrough(self):
         manager = ProjectManager()
 
@@ -417,6 +444,123 @@ class TestProjectManager(unittest.TestCase):
         self.assertTrue(status.get("exists"))
         self.assertTrue(status.get("valid"))
         self.assertEqual(status.get("issues"), [])
+        self.assertTrue(status.get("consistent"))
+        self.assertEqual(status.get("consistency_issues"), [])
+
+    def test_citation_status_reports_manual_cff_drift(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            created = manager.create_project(
+                str(project_path),
+                {
+                    "name": "demo_project",
+                    "authors": ["Jane Doe"],
+                    "license": "CC-BY-4.0",
+                    "doi": "10.1000/demo",
+                },
+            )
+            self.assertTrue(created.get("success"), created)
+
+            citation_path = project_path / "CITATION.cff"
+            content = citation_path.read_text(encoding="utf-8")
+            citation_path.write_text(
+                content.replace('title: "demo_project"', 'title: "manual edit"', 1),
+                encoding="utf-8",
+            )
+
+            status = manager.get_citation_cff_status(project_path)
+
+        self.assertTrue(status.get("exists"))
+        self.assertTrue(status.get("valid"))
+        self.assertEqual(status.get("issues"), [])
+        self.assertFalse(status.get("consistent"))
+        self.assertTrue(status.get("consistency_issues"))
+
+    def test_sync_dataset_metadata_to_project_json_updates_basics_and_name(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp)
+            (project_path / "project.json").write_text(
+                json.dumps(
+                    {"name": "old-name", "Basics": {"DatasetName": "old-name"}}
+                ),
+                encoding="utf-8",
+            )
+
+            manager.sync_dataset_metadata_to_project_json(
+                project_path,
+                {
+                    "Name": "new-name",
+                    "BIDSVersion": "1.10.1",
+                    "DatasetType": "raw",
+                    "DatasetDOI": "10.1000/demo",
+                    "License": "CC-BY-4.0",
+                    "HowToAcknowledge": "Please cite this dataset.",
+                    "Description": "Dataset summary",
+                    "Keywords": ["memory", "attention"],
+                    "ReferencesAndLinks": ["https://example.org/paper"],
+                    "Authors": ["Jane Doe"],
+                },
+            )
+
+            payload = json.loads(
+                (project_path / "project.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(payload.get("name"), "new-name")
+        basics = payload.get("Basics") or {}
+        self.assertEqual(basics.get("DatasetName"), "new-name")
+        self.assertEqual(basics.get("DatasetDOI"), "10.1000/demo")
+        self.assertEqual(basics.get("License"), "CC-BY-4.0")
+        self.assertEqual(
+            basics.get("HowToAcknowledge"), "Please cite this dataset."
+        )
+        self.assertEqual(basics.get("Keywords"), ["memory", "attention"])
+        self.assertEqual(
+            basics.get("ReferencesAndLinks"), ["https://example.org/paper"]
+        )
+        self.assertEqual(basics.get("Authors"), ["Jane Doe"])
+
+    def test_metadata_sync_status_reports_project_and_dataset_mismatch(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp)
+            (project_path / "project.json").write_text(
+                json.dumps(
+                    {
+                        "name": "project-name",
+                        "Basics": {
+                            "DatasetName": "project-name",
+                            "DatasetDOI": "10.1000/project",
+                            "Keywords": ["memory"],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (project_path / "dataset_description.json").write_text(
+                json.dumps(
+                    {
+                        "Name": "dataset-name",
+                        "BIDSVersion": "1.10.1",
+                        "DatasetType": "raw",
+                        "DatasetDOI": "10.1000/dataset",
+                        "Keywords": ["attention"],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            status = manager.get_metadata_sync_status(project_path)
+
+        self.assertTrue(status.get("project_json_exists"))
+        self.assertTrue(status.get("dataset_description_exists"))
+        self.assertFalse(status.get("consistent"))
+        self.assertTrue(status.get("issues"))
 
     def test_validate_structure_does_not_require_participants_for_empty_project(self):
         manager = ProjectManager()
