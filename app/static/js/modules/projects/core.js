@@ -355,6 +355,20 @@ function groupValidationRecordsByCode(records, {
         .sort((a, b) => (b.count - a.count || a.code.localeCompare(b.code)));
 }
 
+function getProjectValidationAction(code) {
+    const normalizedCode = String(code || '').trim().toUpperCase();
+
+    if (normalizedCode === 'PRISM707') {
+        return {
+            href: '/converter?tab=participants',
+            label: 'Open Sociodemographics',
+            iconClass: 'fas fa-users',
+        };
+    }
+
+    return null;
+}
+
 function renderGroupedValidationHint(fixHints, label = 'Hint') {
     if (!Array.isArray(fixHints) || fixHints.length === 0) {
         return '';
@@ -1853,13 +1867,20 @@ if (createProjectFormEl) {
         }
 
         const validation = validateAllMandatoryFields();
-        if (!validation.isValid && !forcePreliminary) {
+        const requiredIssueCount = (validation.emptyFields?.length || 0) + (validation.requiredInvalidFields?.length || 0);
+        const optionalIssueCount = validation.optionalInvalidFields?.length || 0;
+        if (requiredIssueCount > 0 && !forcePreliminary) {
             const issues = [
                 ...validation.emptyFields.map(f => `• ${f}`),
-                ...(validation.invalidFields || []).map(f => `• ${f}`)
+                ...(validation.requiredInvalidFields || []).map(f => `• ${f}`)
             ];
             const confirmed = await _showIncompleteMetadataModal(issues);
             if (!confirmed) return;
+        }
+
+        if (optionalIssueCount > 0) {
+            alert(validation.optionalInvalidFields.join('\n'));
+            return;
         }
 
         await validateDatasetDescriptionDraftLive();
@@ -2400,6 +2421,7 @@ async function runProjectValidation(path, triggerButton = null) {
             issueGroups.forEach((issueGroup, index) => {
                 const collapseId = `project-issue-group-${index}`;
                 const previewMessage = issueGroup.messages[0] ? issueGroup.messages[0].message : 'Validation issue';
+                const groupAction = getProjectValidationAction(issueGroup.code);
 
                 html += `
                     <div class="issue-item ${issueGroup.hasFixable ? 'fixable' : 'not-fixable'} project-validation-group">
@@ -2420,6 +2442,10 @@ async function runProjectValidation(path, triggerButton = null) {
                                 <button class="btn btn-sm btn-outline-warning flex-shrink-0" data-action="fix-issue" data-path="${escapeHtml(validationPath)}" data-code="${escapeHtml(issueGroup.code)}" aria-label="Apply fix for ${escapeHtml(issueGroup.code)}">
                                     <i class="fas fa-wrench"></i>
                                 </button>
+                            ` : groupAction ? `
+                                <a href="${escapeHtml(groupAction.href)}" class="btn btn-sm btn-outline-success flex-shrink-0" aria-label="${escapeHtml(groupAction.label)} for ${escapeHtml(issueGroup.code)}">
+                                    <i class="${escapeHtml(groupAction.iconClass)} me-1"></i>${escapeHtml(groupAction.label)}
+                                </a>
                             ` : `
                                 <span class="badge bg-secondary flex-shrink-0">Manual fix required</span>
                             `}

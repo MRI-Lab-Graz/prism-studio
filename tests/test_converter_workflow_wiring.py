@@ -43,6 +43,20 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "window.addEventListener('prism-project-changed', function() {", content
         )
 
+    def test_converter_bootstrap_supports_tab_query_parameter(self):
+        content = CONVERTER_BOOTSTRAP.read_text(encoding="utf-8")
+
+        self.assertIn("function activateConverterTabFromQuery() {", content)
+        self.assertIn(
+            "const requestedTab = new URLSearchParams(window.location.search).get('tab');",
+            content,
+        )
+        self.assertIn(
+            "window.bootstrap.Tab.getOrCreateInstance(tabButton).show();",
+            content,
+        )
+        self.assertIn("activateConverterTabFromQuery();", content)
+
     def test_shared_api_exports_fetch_installer_using_native_fetch(self):
         content = SHARED_API.read_text(encoding="utf-8")
 
