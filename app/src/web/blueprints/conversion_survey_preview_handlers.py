@@ -666,6 +666,11 @@ def handle_api_survey_convert_preview(
             ),
         }
 
+        if getattr(result, "participant_registry_warning", None):
+            response_data["participant_registry_warning"] = (
+                result.participant_registry_warning
+            )
+
         if near_match_candidates:
             response_data["near_match_candidates"] = near_match_candidates
         if near_match_applied:
@@ -689,6 +694,10 @@ def handle_api_survey_convert_preview(
             conv_summary["tool_columns"] = result.tool_columns
         if result.conversion_warnings:
             conv_summary["conversion_warnings"] = result.conversion_warnings
+        if getattr(result, "participant_registry_warning", None):
+            conv_summary["participant_registry_warning"] = (
+                result.participant_registry_warning
+            )
         if near_match_candidates:
             conv_summary["near_match_candidates"] = near_match_candidates
         if near_match_applied:
