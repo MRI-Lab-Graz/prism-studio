@@ -31,6 +31,11 @@ let _bidsVersion = '1.10.1';
 let metadataLoadToken = 0;
 let methodsRequestToken = 0;
 let lastMethodsProjectPath = '';
+let studyMetadataLoadInFlight = false;
+let studyMetadataLoadInFlightToken = 0;
+let studyMetadataReadyProjectPath = '';
+let studyMetadataBaselineSnapshot = '';
+let studyMetadataSubmitInFlight = false;
 
 function _withProjectPathQuery(baseUrl, projectPath) {
     if (!projectPath) return baseUrl;
@@ -82,6 +87,70 @@ function _setCurrentProjectName(name) {
     }
 
     setProjectStateSnapshot(currentPath, trimmedName);
+}
+
+function _snapshotStudyMetadataForm() {
+    const form = document.getElementById('studyMetadataForm');
+    if (!form) {
+        return '';
+    }
+
+    const values = [];
+    const fields = form.querySelectorAll('input, textarea, select');
+
+    fields.forEach((field) => {
+        const key = field.id || field.name;
+        if (!key) {
+            return;
+        }
+
+        if (field.type === 'button' || field.type === 'submit' || field.type === 'reset' || field.disabled) {
+            return;
+        }
+
+        if (field.type === 'checkbox' || field.type === 'radio') {
+            values.push(`${key}:${field.checked ? '1' : '0'}`);
+            return;
+        }
+
+        if (field.tagName === 'SELECT' && field.multiple) {
+            const selectedValues = Array.from(field.selectedOptions || []).map((option) => option.value);
+            values.push(`${key}:${selectedValues.join('\u001f')}`);
+            return;
+        }
+
+        values.push(`${key}:${String(field.value || '').trim()}`);
+    });
+
+    return values.join('\u001e');
+}
+
+function _captureStudyMetadataBaseline() {
+    studyMetadataBaselineSnapshot = _snapshotStudyMetadataForm();
+}
+
+function _resetStudyMetadataTracking() {
+    studyMetadataLoadInFlight = false;
+    studyMetadataLoadInFlightToken = 0;
+    studyMetadataReadyProjectPath = '';
+    studyMetadataBaselineSnapshot = '';
+}
+
+function _isStudyMetadataReadyForCurrentProject() {
+    const currentProjectPath = _getCurrentProjectPath();
+    return Boolean(currentProjectPath) && studyMetadataReadyProjectPath === currentProjectPath;
+}
+
+export function isStudyMetadataBusy() {
+    return studyMetadataLoadInFlight || studyMetadataSubmitInFlight;
+}
+
+export function hasUnsavedStudyMetadataChanges() {
+    if (!_isStudyMetadataReadyForCurrentProject() || studyMetadataLoadInFlight || studyMetadataSubmitInFlight) {
+        return false;
+    }
+
+    return _snapshotStudyMetadataForm() !== studyMetadataBaselineSnapshot;
 }
 
 // ===== AUTHORS =====
@@ -307,9 +376,8 @@ function requestMetadataRepairSave() {
     const form = document.getElementById('studyMetadataForm');
     if (!form) return;
 
-    const preferredSubmitter = document.getElementById('projectBoxSaveBtn')
-        || document.getElementById('createProjectSubmitBtn')
-        || document.getElementById('projectBoxPreliminarySaveBtn');
+    const preferredSubmitter = document.getElementById('createProjectSubmitBtn');
+    form.dataset.submitIntent = 'standard';
 
     const active = document.activeElement;
     if (active instanceof HTMLElement && form.contains(active) && typeof active.blur === 'function') {
@@ -2023,12 +2091,6 @@ export function updateCreateProjectButton() {
     };
 
     const hasOutputFolder = Boolean((document.getElementById('projectPath')?.value || '').trim());
-
-    const validation = validateAllMandatoryFields();
-    _updateRequirementGapInlineAlert(validation);
-    _updateProjectBoxRequirementAlert(validation);
-    _updateProjectMetadataStat(validation);
-
     const createSection = document.getElementById('section-create');
     const createActive = createSection && createSection.classList.contains('active');
     const isCreateMode = Boolean(createActive);
@@ -2036,6 +2098,33 @@ export function updateCreateProjectButton() {
         document.getElementById('metadataActionHint'),
         document.getElementById('projectBoxSaveHint')
     ].filter(Boolean);
+
+    const currentProjectPath = _getCurrentProjectPath();
+    const metadataReadyForCurrentProject = Boolean(currentProjectPath)
+        && !studyMetadataLoadInFlight
+        && studyMetadataReadyProjectPath === currentProjectPath;
+
+    if (!isCreateMode && currentProjectPath && !metadataReadyForCurrentProject) {
+        const loadingMessage = studyMetadataLoadInFlight
+            ? 'Loading project metadata...'
+            : 'Project metadata could not be loaded yet.';
+        setCreateButtonDisabled(true);
+        setPreliminaryDisabled(true);
+        setCreateTitle(loadingMessage);
+        setPreliminaryTitle(loadingMessage);
+        setMetadataSaveStatus(loadingMessage, studyMetadataLoadInFlight ? 'muted' : 'warning');
+        actionHints.forEach(actionHint => {
+            actionHint.innerHTML = studyMetadataLoadInFlight
+                ? '<i class="fas fa-spinner fa-spin me-1"></i>Loading project metadata before save actions become available.'
+                : '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>Project metadata is unavailable right now, so save actions are temporarily disabled.';
+        });
+        return;
+    }
+
+    const validation = validateAllMandatoryFields();
+    _updateRequirementGapInlineAlert(validation);
+    _updateProjectBoxRequirementAlert(validation);
+    _updateProjectMetadataStat(validation);
 
     _updateProjectsPreliminaryBadge(validation, isCreateMode);
 
@@ -2520,9 +2609,9 @@ export function displayMetadataIssues(issues) {
     feedbackDiv.innerHTML = html;
 }
 
-export async function saveDatasetDescription() {
+export async function saveDatasetDescription(projectPath = null) {
     try {
-        const requestProjectPath = _getCurrentProjectPath();
+        const requestProjectPath = String(projectPath || _getCurrentProjectPath()).trim();
         if (!requestProjectPath) {
             throw new Error('No project selected');
         }
@@ -2593,8 +2682,10 @@ export async function saveDatasetDescription() {
         if (result.success) {
             await saveProjectSchemaConfig();
             displayMetadataIssues(result.issues || []);
-            await refreshCitationHealthStatus();
-            await refreshMetadataSyncStatus();
+            if (requestProjectPath === _getCurrentProjectPath()) {
+                await refreshCitationHealthStatus();
+                await refreshMetadataSyncStatus();
+            }
 
             if (requestProjectPath === _getCurrentProjectPath() && description.Name && description.Name !== _getCurrentProjectName()) {
                 _setCurrentProjectName(description.Name);
@@ -2772,11 +2863,21 @@ function _applyHints(hints) {
 }
 
 export async function loadStudyMetadata() {
+    let requestProjectPath = '';
+    let requestToken = null;
+    let loadSucceeded = false;
+
     try {
-        const requestProjectPath = _getCurrentProjectPath();
+        requestProjectPath = _getCurrentProjectPath();
         if (!requestProjectPath) return;
 
-        const requestToken = ++metadataLoadToken;
+        requestToken = ++metadataLoadToken;
+        studyMetadataLoadInFlight = true;
+        studyMetadataLoadInFlightToken = requestToken;
+        studyMetadataReadyProjectPath = '';
+        studyMetadataBaselineSnapshot = '';
+        updateCreateProjectButton();
+
         await loadDatasetDescriptionFields();
         if (!_isProjectRequestCurrent(requestProjectPath, requestToken)) {
             return;
@@ -2789,7 +2890,10 @@ export async function loadStudyMetadata() {
         if (!_isProjectRequestCurrent(requestProjectPath, requestToken)) {
             return;
         }
-        if (!data.success) return;
+        if (!data.success) {
+            setMetadataSaveStatus('Project metadata could not be loaded.', 'danger');
+            return;
+        }
 
         const sm = data.study_metadata;
 
@@ -2879,8 +2983,30 @@ export async function loadStudyMetadata() {
 
         await refreshCitationHealthStatus();
         await refreshMetadataSyncStatus();
+        loadSucceeded = true;
     } catch (error) {
         console.error('Error loading study metadata:', error);
+        if (requestToken !== null && _isProjectRequestCurrent(requestProjectPath, requestToken)) {
+            setMetadataSaveStatus('Project metadata could not be loaded.', 'danger');
+        }
+    } finally {
+        if (requestToken !== null && requestToken === studyMetadataLoadInFlightToken) {
+            studyMetadataLoadInFlight = false;
+        }
+
+        if (requestToken !== null && _isProjectRequestCurrent(requestProjectPath, requestToken)) {
+            if (loadSucceeded) {
+                studyMetadataReadyProjectPath = requestProjectPath;
+                _captureStudyMetadataBaseline();
+                if (!studyMetadataSubmitInFlight) {
+                    setMetadataSaveStatus('', 'muted');
+                }
+            } else {
+                studyMetadataReadyProjectPath = '';
+            }
+
+            updateCreateProjectButton();
+        }
     }
 }
 
@@ -3471,8 +3597,6 @@ if (createProjectForm) {
     createProjectForm.addEventListener('change', scheduleLiveDescriptionValidation);
 }
 
-let studyMetadataSubmitInFlight = false;
-
 function shouldSubmitStudyMetadataFromPrimaryButton() {
     const createSection = document.getElementById('section-create');
     const createActive = Boolean(createSection && createSection.classList.contains('active'));
@@ -3542,6 +3666,10 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
     }
     studyMetadataSubmitInFlight = true;
 
+    const submitIntent = String(this.dataset.submitIntent || 'standard').trim().toLowerCase();
+    delete this.dataset.submitIntent;
+    const forcePreliminarySave = submitIntent === 'preliminary';
+
     const releaseSubmitLock = () => {
         studyMetadataSubmitInFlight = false;
     };
@@ -3555,17 +3683,19 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
             ...(requiredValidation.emptyFields || []),
             ...((requiredValidation.invalidFields || []).map(msg => `Invalid: ${msg}`))
         ];
-        const confirmed = await _showPreliminarySaveModal(issues);
-        if (!confirmed) {
-            const missingCount = requiredValidation.emptyFields.length;
-            const invalidCount = requiredValidation.invalidFields?.length || 0;
-            const issueCount = missingCount + invalidCount;
-            showTopFeedback(`Fill out all required fields (${issueCount} remaining).`, 'warning');
-            setMetadataSaveStatus(`Save cancelled. ${issueCount} required field(s) still missing.`, 'warning');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            updateCreateProjectButton();
-            releaseSubmitLock();
-            return;
+        if (!forcePreliminarySave) {
+            const confirmed = await _showPreliminarySaveModal(issues);
+            if (!confirmed) {
+                const missingCount = requiredValidation.emptyFields.length;
+                const invalidCount = requiredValidation.invalidFields?.length || 0;
+                const issueCount = missingCount + invalidCount;
+                showTopFeedback(`Fill out all required fields (${issueCount} remaining).`, 'warning');
+                setMetadataSaveStatus(`Save cancelled. ${issueCount} required field(s) still missing.`, 'warning');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                updateCreateProjectButton();
+                releaseSubmitLock();
+                return;
+            }
         }
 
         isPreliminarySave = true;
@@ -3711,34 +3841,12 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
 
         const result = await response.json();
         if (result.success) {
-            saveSucceeded = true;
-            // Show visual success feedback on button
-            saveButtons.forEach(button => {
-                button.innerHTML = '<i class="fas fa-check me-1"></i>Saved Successfully!';
-                button.classList.add('btn-success');
-                button.classList.remove('btn-info', 'btn-warning');
-                button.disabled = false;
-            });
-
-            // Show toast and top feedback
-            showToast('Study metadata saved successfully', 'success');
-            showTopFeedback('Study metadata saved successfully.', 'success');
-            setMetadataSaveStatus('Saved successfully. Metadata and derived files were updated.', 'success');
-
-            // Always scroll to top and briefly highlight stats grid
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            const statsGrid = document.querySelector('.stats-grid');
-            if (statsGrid) {
-                statsGrid.classList.add('highlight-success');
-                setTimeout(() => statsGrid.classList.remove('highlight-success'), 1200);
-            }
-
             // Keep frontend readiness scoring semantics stable by recomputing from
             // the current form state after save.
             updateCompletenessUI(computeLocalCompleteness());
             let datasetDescriptionSaved = true;
             try {
-                await saveDatasetDescription();
+                await saveDatasetDescription(requestProjectPath);
                 showToast('Dataset description saved', 'success');
             } catch (error) {
                 if (!isPreliminarySave) {
@@ -3748,22 +3856,53 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
                 console.warn('Preliminary save: dataset_description save deferred:', error);
             }
 
-            await refreshMetadataSyncStatus();
+            const readmeResult = await generateReadmeSilent(requestProjectPath);
+
+            if (requestProjectPath === _getCurrentProjectPath()) {
+                await refreshMetadataSyncStatus();
+                _captureStudyMetadataBaseline();
+            }
+
+            saveSucceeded = true;
+            saveButtons.forEach(button => {
+                button.innerHTML = '<i class="fas fa-check me-1"></i>Saved Successfully!';
+                button.classList.add('btn-success');
+                button.classList.remove('btn-info', 'btn-warning');
+                button.disabled = false;
+            });
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            const statsGrid = document.querySelector('.stats-grid');
+            if (statsGrid) {
+                statsGrid.classList.add('highlight-success');
+                setTimeout(() => statsGrid.classList.remove('highlight-success'), 1200);
+            }
 
             if (isPreliminarySave) {
                 if (datasetDescriptionSaved) {
-                    showTopFeedback('Preliminary project state saved. You can complete required metadata later.', 'warning');
-                    setMetadataSaveStatus('Preliminary state saved. Required metadata is still incomplete.', 'warning');
+                    const preliminaryMessage = readmeResult.success
+                        ? 'Preliminary project state saved. You can complete required metadata later.'
+                        : 'Preliminary project state saved, but README generation failed. You can complete required metadata later.';
+                    showTopFeedback(preliminaryMessage, 'warning');
+                    setMetadataSaveStatus(
+                        readmeResult.success
+                            ? 'Preliminary state saved. Required metadata is still incomplete.'
+                            : 'Preliminary state saved. README generation failed.',
+                        'warning'
+                    );
                 } else {
                     showTopFeedback('Preliminary study metadata saved. Dataset description save deferred until required fields are complete.', 'warning');
                     setMetadataSaveStatus('Preliminary save completed. Dataset description update deferred.', 'warning');
                 }
+            } else if (readmeResult.success) {
+                showToast('Study metadata saved successfully', 'success');
+                showTopFeedback('Study metadata saved successfully.', 'success');
+                setMetadataSaveStatus('Saved successfully. Metadata and derived files were updated.', 'success');
+            } else {
+                showToast('Study metadata saved, but README generation failed.', 'warning');
+                showTopFeedback('Study metadata saved, but README generation failed.', 'warning');
+                setMetadataSaveStatus('Saved metadata files, but README generation failed.', 'warning');
             }
-            // Generate README silently in background (don't break save flow on error)
-            generateReadmeSilent().catch(err => {
-                console.error('README generation failed:', err);
-                // Silently fail - save was already successful
-            });
 
             // Reset button to original state after 2 seconds
             setTimeout(() => {
@@ -3904,10 +4043,10 @@ export function downloadMethods(format) {
  * Generate README silently without confirmation (for auto-generation during save)
  * @private
  */
-async function generateReadmeSilent() {
-    const requestProjectPath = _getCurrentProjectPath();
+async function generateReadmeSilent(projectPath = null) {
+    const requestProjectPath = String(projectPath || _getCurrentProjectPath()).trim();
     if (!requestProjectPath) {
-        return;
+        return { success: false, skipped: true };
     }
 
     try {
@@ -3924,17 +4063,14 @@ async function generateReadmeSilent() {
         const data = await response.json();
         if (data.success) {
             console.log('README.md generated in background');
-            if (data.merge_note) {
-                showToast(`README.md auto-generated. ${data.merge_note}`, 'info');
-            } else {
-                showToast('README.md auto-generated', 'success');
-            }
+            return { success: true, mergeNote: data.merge_note || '' };
         } else {
             console.warn('README generation failed:', data.error);
+            return { success: false, error: data.error || 'README generation failed' };
         }
     } catch (error) {
         console.error('README generation error:', error);
-        // Don't show error to avoid cluttering the save success feedback
+        return { success: false, error: error.message || 'README generation failed' };
     }
 }
 
@@ -3988,6 +4124,10 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('prism-project-changed', () => {
         metadataLoadToken += 1;
         methodsRequestToken += 1;
+        _resetStudyMetadataTracking();
+        if (!studyMetadataSubmitInFlight) {
+            updateCreateProjectButton();
+        }
     });
     initOverviewListFields();
     initRecMethodPicker();

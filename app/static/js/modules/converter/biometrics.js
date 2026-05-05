@@ -90,7 +90,7 @@ export function initBiometrics(elements) {
         return window.PrismFileSystemMode.pickFile({
             title: 'Select Biometrics File on Server',
             confirmLabel: 'Use This File',
-            extensions: '.xlsx,.csv,.tsv',
+            extensions: '.xlsx,.csv,.tsv,.sav,.rds,.rdata,.rda',
             startPath: biometricsServerFilePath || ''
         });
     }

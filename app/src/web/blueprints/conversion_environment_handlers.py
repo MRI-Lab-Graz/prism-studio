@@ -1,7 +1,7 @@
 """
 Environment conversion handlers for the Prism Web UI.
 
-Accepts a tabular file (xlsx/csv/tsv) from a survey export, maps columns for
+Accepts a tabular file (xlsx/csv/tsv/sav/rds/rdata) from a survey export, maps columns for
 timestamp, participant ID, session, and optional location, then derives
 privacy-safe environmental context metadata (time-based anchors, sun/moon
 phase, season) and writes a PRISM-compatible environment.tsv.
@@ -35,7 +35,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import pandas as pd
-from src.converters.file_reader import read_tabular_file
+from src.converters.file_reader import infer_tabular_kind, read_tabular_file
 import requests
 from flask import request, jsonify, session
 from werkzeug.utils import secure_filename
@@ -94,7 +94,7 @@ def _resolve_uploaded_or_source_file(*, field_names: tuple[str, ...]):
     return _LocalPathUpload(source_path), None
 
 
-ALLOWED_SUFFIXES = {".xlsx", ".csv", ".tsv"}
+ALLOWED_SUFFIXES = {".xlsx", ".csv", ".tsv", ".sav", ".rds", ".rdata", ".rda"}
 WEATHER_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
@@ -903,7 +903,11 @@ def _load_environment_dataframe(
     suffix: str,
     separator_option: str,
 ) -> pd.DataFrame:
-    kind = "xlsx" if suffix == ".xlsx" else suffix.lstrip(".")
+    kind = infer_tabular_kind(input_path)
+    if kind is None:
+        raise ValueError(
+            "Unsupported file type. Use .xlsx, .csv, .tsv, .sav, .rds, .rdata, or .rda"
+        )
     delimiter = expected_delimiter_for_suffix(suffix, separator_option)
     result = read_tabular_file(
         input_path,
@@ -1897,7 +1901,12 @@ def api_environment_preview():
     if suffix not in ALLOWED_SUFFIXES:
         return (
             jsonify(
-                {"error": f"Unsupported file type '{suffix}'. Use .xlsx, .csv, or .tsv"}
+                {
+                    "error": (
+                        f"Unsupported file type '{suffix}'. Use .xlsx, .csv, .tsv, .sav, "
+                        ".rds, .rdata, or .rda"
+                    )
+                }
             ),
             400,
         )

@@ -6,6 +6,8 @@
 import { setButtonLoading, textToArray as _textToArray } from './helpers.js';
 import { validateProjectField } from './validation.js';
 import {
+    hasUnsavedStudyMetadataChanges,
+    isStudyMetadataBusy,
     validateAllMandatoryFields,
     validateDatasetDescriptionDraftLive,
     getCitationAuthorsList,
@@ -123,11 +125,12 @@ function applyCurrentProject(project) {
     setGlobalProjectState(currentProjectPath, currentProjectName);
 }
 
-function requestStudyMetadataSaveFromProjectBox() {
+function requestStudyMetadataSaveFromProjectBox(submitIntent = 'standard') {
     const studyMetadataForm = document.getElementById('studyMetadataForm');
     if (!studyMetadataForm) return;
 
     const primarySubmitButton = document.getElementById('createProjectSubmitBtn');
+    studyMetadataForm.dataset.submitIntent = submitIntent;
     const active = document.activeElement;
     if (active instanceof HTMLElement && studyMetadataForm.contains(active) && typeof active.blur === 'function') {
         active.blur();
@@ -166,7 +169,9 @@ function bindProjectBoxActionButtons() {
             }
             event.preventDefault();
             button.dataset.pointerTriggeredSubmit = '1';
-            requestStudyMetadataSaveFromProjectBox();
+            requestStudyMetadataSaveFromProjectBox(
+                button.id === 'projectBoxPreliminarySaveBtn' ? 'preliminary' : 'standard'
+            );
         });
 
         button.addEventListener('click', (event) => {
@@ -177,7 +182,9 @@ function bindProjectBoxActionButtons() {
                 return;
             }
 
-            requestStudyMetadataSaveFromProjectBox();
+            requestStudyMetadataSaveFromProjectBox(
+                button.id === 'projectBoxPreliminarySaveBtn' ? 'preliminary' : 'standard'
+            );
         });
     });
 }
@@ -914,7 +921,7 @@ async function ensureOpenSectionVisibleForLoadedProject() {
         existingPathInput.value = path;
     }
 
-    await loadProjectWithoutValidation(path);
+    await loadProjectWithoutValidation(path, null, { skipContextGuard: true });
 
     updateQuickValidateButtonState();
 }
@@ -1287,6 +1294,40 @@ function hasUnsavedNewProjectDraft() {
     return Boolean(ethicsChoice || fundingChoice);
 }
 
+function confirmProjectContextChange(actionLabel = 'continue', targetPath = '') {
+    const normalizedTargetPath = String(targetPath || '').trim();
+    const normalizedCurrentPath = String(currentProjectPath || '').trim();
+
+    if (normalizedTargetPath && normalizedCurrentPath && normalizedTargetPath === normalizedCurrentPath) {
+        return true;
+    }
+
+    if (isStudyMetadataBusy()) {
+        alert('Please wait until project metadata finishes loading or saving before switching projects.');
+        return false;
+    }
+
+    if (normalizedCurrentPath && hasUnsavedStudyMetadataChanges()) {
+        return confirm(
+            '⚠️ Unsaved project metadata changes detected.\n\n' +
+            `If you ${actionLabel}, the current changes will be lost.\n\n` +
+            'Do you want to continue?'
+        );
+    }
+
+    const createSection = document.getElementById('section-create');
+    const createAlreadyActive = createSection && createSection.classList.contains('active');
+    if (!normalizedCurrentPath && createAlreadyActive && hasUnsavedNewProjectDraft()) {
+        return confirm(
+            '⚠️ Unsaved New Project data detected.\n\n' +
+            `If you ${actionLabel}, the current project and study metadata draft will be lost.\n\n` +
+            'Do you want to continue?'
+        );
+    }
+
+    return true;
+}
+
 function clearCurrentProjectForNewDraft() {
     currentProjectPath = '';
     currentProjectName = '';
@@ -1462,6 +1503,10 @@ if (initBidsSubmitBtn) {
         if (!bidsPath) {
             alert('Please select or enter the BIDS dataset root folder.');
             document.getElementById('initBidsPath')?.focus();
+            return;
+        }
+
+        if (!confirmProjectContextChange('initialise a PRISM project on another dataset', bidsPath)) {
             return;
         }
 
@@ -2123,7 +2168,7 @@ function renderProjectQuickSummary(summary) {
 function renderLoadedProjectState(loadedName, loadedPath, summary) {
     const quickSummaryHtml = renderProjectQuickSummary(summary);
     setProjectValidationResult(`
-        <div class="validation-result valid">
+        <div class="validation-result pending">
             <h5><i class="fas fa-folder-open me-2"></i>Project Loaded</h5>
             <p class="mb-1"><strong>${escapeHtml(loadedName || 'Current project')}:</strong> <code>${escapeHtml(loadedPath)}</code></p>
             ${quickSummaryHtml}
@@ -2170,10 +2215,15 @@ function updateQuickValidateButtonState() {
     quickValidateBtn.disabled = !Boolean(getOpenProjectActionPath());
 }
 
-async function loadProjectWithoutValidation(path, triggerButton = null) {
+async function loadProjectWithoutValidation(path, triggerButton = null, options = {}) {
     const normalizedPath = String(path || '').trim();
+    const skipContextGuard = Boolean(options.skipContextGuard);
     if (!normalizedPath) {
         showOpenProjectError('Please provide a project folder or a project.json path.', 'Selection Error');
+        return false;
+    }
+
+    if (!skipContextGuard && !confirmProjectContextChange('load another project', normalizedPath)) {
         return false;
     }
 
@@ -2210,6 +2260,7 @@ async function loadProjectWithoutValidation(path, triggerButton = null) {
 
         renderLoadedProjectState(loadedName, loadedPath, projectSummary);
         bindProjectBoxActionButtons();
+        updateCreateProjectButton();
 
         return true;
     } catch (error) {

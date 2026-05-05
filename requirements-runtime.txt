@@ -12,5 +12,6 @@ pandas
 openpyxl
 waitress
 pyreadstat
+pyreadr
 defusedxml
 cryptography>=46.0.7

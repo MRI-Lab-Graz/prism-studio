@@ -316,6 +316,10 @@ class ParticipantsConverter:
                 ".csv": "csv",
                 ".tsv": "tsv",
                 ".txt": "tsv",
+                ".sav": "sav",
+                ".rds": "rds",
+                ".rdata": "rdata",
+                ".rda": "rdata",
             }
             kind = kind_map.get(file_ext)
             if kind is None:

@@ -7,6 +7,10 @@
     background-color: #d1e7dd;
     border: 1px solid #badbcc;
 }
+.validation-result.pending {
+    background-color: #e7f1ff;
+    border: 1px solid #bfd7ff;
+}
 .validation-result.invalid {
     background-color: #f8d7da;
     border: 1px solid #f5c2c7;

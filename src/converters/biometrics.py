@@ -17,7 +17,10 @@ from typing import Any
 import re
 
 
-from src.converters.file_reader import read_tabular_file as _read_tabular_file
+from src.converters.file_reader import (
+    infer_tabular_kind as _infer_tabular_kind,
+    read_tabular_file as _read_tabular_file,
+)
 from src.utils.io import read_json as _read_json, write_json as _write_json
 from src.utils.naming import norm_key as _norm_key
 
@@ -79,11 +82,11 @@ def _normalize_ses_id(value: Any, *, default_session: str = "ses-1") -> str:
 def _read_table_as_dataframe(
     *, input_path: Path, sheet: str | int | None = None
 ) -> "Any":
-    suffix = input_path.suffix.lower()
-    kind_map = {".csv": "csv", ".tsv": "tsv", ".xlsx": "xlsx"}
-    kind = kind_map.get(suffix)
-    if kind is None:
-        raise ValueError("Supported formats: .csv, .xlsx, .tsv")
+    kind = _infer_tabular_kind(input_path)
+    if kind not in {"csv", "tsv", "xlsx", "sav", "rds", "rdata"}:
+        raise ValueError(
+            "Supported formats: .csv, .xlsx, .tsv, .sav, .rds, .rdata, .rda"
+        )
     resolved_sheet: str | int = sheet if sheet is not None else 0
     result = _read_tabular_file(input_path, kind=kind, sheet=resolved_sheet)
     for w in result.warnings:

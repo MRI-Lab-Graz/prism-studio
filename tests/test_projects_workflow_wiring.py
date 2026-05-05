@@ -226,7 +226,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
         self.assertIn(
-            "async function loadProjectWithoutValidation(path, triggerButton = null)",
+            "async function loadProjectWithoutValidation(path, triggerButton = null, options = {})",
             content,
         )
         self.assertIn(
@@ -245,7 +245,10 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "const response = await fetchWithApiFallback('/api/projects/validate', {",
             content,
         )
-        self.assertIn("await loadProjectWithoutValidation(path);", content)
+        self.assertIn(
+            "await loadProjectWithoutValidation(path, null, { skipContextGuard: true });",
+            content,
+        )
         self.assertIn("function renderProjectQuickSummary(summary) {", content)
         self.assertIn("const projectSummary = result.project_summary", content)
         self.assertIn("renderLoadedProjectState(loadedName, loadedPath, projectSummary);", content)
@@ -254,6 +257,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("<strong>Not validated yet.</strong>", content)
+        self.assertIn('<div class="validation-result pending">', content)
         self.assertIn('data-action="validate-project"', content)
         self.assertIn(
             "const validateProjectBtn = event.target.closest('[data-action=\"validate-project\"]');",
@@ -345,23 +349,106 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
         self.assertIn("function requestMetadataRepairSave() {", content)
         self.assertIn("function _renderMetadataRepairHint() {", content)
+        self.assertIn(
+            "const preferredSubmitter = document.getElementById('createProjectSubmitBtn');",
+            content,
+        )
         self.assertIn('data-action="repair-metadata-sync"', content)
         self.assertIn('data-action="regenerate-citation-sync"', content)
         self.assertIn("requestMetadataRepairSave();", content)
         self.assertIn("regenerateCitationCff();", content)
+
+    def test_project_box_save_buttons_set_distinct_submit_intents(self):
+        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+
         self.assertIn(
-            "_withProjectPathQuery('/api/projects/study-metadata', requestProjectPath)",
+            "function requestStudyMetadataSaveFromProjectBox(submitIntent = 'standard') {",
+            content,
+        )
+        self.assertIn("studyMetadataForm.dataset.submitIntent = submitIntent;", content)
+        self.assertIn(
+            "button.id === 'projectBoxPreliminarySaveBtn' ? 'preliminary' : 'standard'",
             content,
         )
         self.assertIn(
-            "body: JSON.stringify({ project_path: requestProjectPath, language: lang, detail_level: detailLevel, continuous: continuous })",
+            "const submitIntent = String(this.dataset.submitIntent || 'standard').trim().toLowerCase();",
+            PROJECTS_METADATA_MODULE.read_text(encoding="utf-8"),
+        )
+
+    def test_project_switch_actions_guard_busy_and_unsaved_metadata(self):
+        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("hasUnsavedStudyMetadataChanges,", content)
+        self.assertIn("isStudyMetadataBusy,", content)
+        self.assertIn(
+            "function confirmProjectContextChange(actionLabel = 'continue', targetPath = '') {",
+            content,
+        )
+        self.assertIn("if (isStudyMetadataBusy()) {", content)
+        self.assertIn(
+            "if (normalizedCurrentPath && hasUnsavedStudyMetadataChanges()) {",
             content,
         )
         self.assertIn(
-            "if (requestToken !== methodsRequestToken || requestProjectPath !== _getCurrentProjectPath()) {",
+            "await loadProjectWithoutValidation(path, null, { skipContextGuard: true });",
             content,
         )
-        self.assertIn("if (currentProjectPath !== lastMethodsProjectPath) {", content)
+        self.assertIn(
+            "if (!skipContextGuard && !confirmProjectContextChange('load another project', normalizedPath)) {",
+            content,
+        )
+        self.assertIn(
+            "if (!confirmProjectContextChange('initialise a PRISM project on another dataset', bidsPath)) {",
+            content,
+        )
+
+    def test_loaded_project_save_actions_wait_for_metadata_readiness(self):
+        content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("let studyMetadataLoadInFlight = false;", content)
+        self.assertIn("let studyMetadataReadyProjectPath = '';", content)
+        self.assertIn(
+            "const metadataReadyForCurrentProject = Boolean(currentProjectPath)",
+            content,
+        )
+        self.assertIn(
+            "if (!isCreateMode && currentProjectPath && !metadataReadyForCurrentProject) {",
+            content,
+        )
+        self.assertIn(
+            "setMetadataSaveStatus(loadingMessage, studyMetadataLoadInFlight ? 'muted' : 'warning');",
+            content,
+        )
+        self.assertIn(
+            "renderLoadedProjectState(loadedName, loadedPath, projectSummary);\n        bindProjectBoxActionButtons();\n        updateCreateProjectButton();",
+            core_content,
+        )
+
+    def test_metadata_save_transaction_reuses_request_project_path(self):
+        content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "export async function saveDatasetDescription(projectPath = null) {",
+            content,
+        )
+        self.assertIn(
+            "const requestProjectPath = String(projectPath || _getCurrentProjectPath()).trim();",
+            content,
+        )
+        self.assertIn("await saveDatasetDescription(requestProjectPath);", content)
+        self.assertIn(
+            "const readmeResult = await generateReadmeSilent(requestProjectPath);",
+            content,
+        )
+        self.assertIn(
+            "async function generateReadmeSilent(projectPath = null) {",
+            content,
+        )
+        self.assertIn(
+            "if (requestProjectPath === _getCurrentProjectPath()) {\n                await refreshMetadataSyncStatus();\n                _captureStudyMetadataBaseline();\n            }\n\n            saveSucceeded = true;",
+            content,
+        )
 
     def test_file_browser_template_announces_dynamic_updates(self):
         content = OPEN_FORM_TEMPLATE.read_text(encoding="utf-8")
@@ -383,7 +470,11 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
         self.assertIn('id="projectBoxPreliminarySaveBtn"', content)
         self.assertIn("document.getElementById('projectBoxPreliminarySaveBtn')", content)
-        self.assertIn("requestStudyMetadataSaveFromProjectBox();", content)
+        self.assertIn("requestStudyMetadataSaveFromProjectBox(", content)
+        self.assertIn(
+            "button.id === 'projectBoxPreliminarySaveBtn' ? 'preliminary' : 'standard'",
+            content,
+        )
 
     def test_eligibility_requires_two_combined_criteria_instead_of_both_lists(self):
         metadata_content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
