@@ -270,6 +270,14 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("id=\"projectBoxSaveBtn\"", content)
         self.assertIn("Save Changes to Project", content)
 
+    def test_project_validation_surfaces_sociodemographics_action_for_participants_mismatch(self):
+        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("function getProjectValidationAction(code) {", content)
+        self.assertIn("normalizedCode === 'PRISM707'", content)
+        self.assertIn("/converter?tab=participants", content)
+        self.assertIn("Open Sociodemographics", content)
+
     def test_open_project_copy_describes_load_then_optional_validation(self):
         open_form_content = OPEN_FORM_TEMPLATE.read_text(encoding="utf-8")
         projects_page_content = PROJECTS_PAGE_TEMPLATE.read_text(encoding="utf-8")
@@ -374,6 +382,17 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "const submitIntent = String(this.dataset.submitIntent || 'standard').trim().toLowerCase();",
             PROJECTS_METADATA_MODULE.read_text(encoding="utf-8"),
         )
+
+    def test_preliminary_state_only_tracks_required_metadata_issues(self):
+        content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("requiredInvalidFields", content)
+        self.assertIn("optionalInvalidFields", content)
+        self.assertIn(
+            "Required fields are complete, but remaining validation errors must be fixed before saving changes.",
+            content,
+        )
+        self.assertIn("Please fix metadata validation errors before saving.", content)
 
     def test_project_switch_actions_guard_busy_and_unsaved_metadata(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")

@@ -596,8 +596,13 @@ def _sanitize_spss_variable_name(name: str) -> str:
 
     SPSS names must not contain punctuation/spaces and must start with a
     letter-like token, so names beginning with digits get a `v_` prefix.
+    Preserve Unicode letters such as German umlauts because pyreadstat can
+    write and round-trip them correctly in SAV variable names.
     """
-    cleaned = re.sub(r"[^A-Za-z0-9_]", "_", str(name or ""))
+    cleaned = "".join(
+        char if char.isalnum() or char == "_" else "_"
+        for char in str(name or "")
+    )
     cleaned = re.sub(r"_+", "_", cleaned).strip("_")
     if not cleaned:
         cleaned = "var"

@@ -224,6 +224,10 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "Sessions array is empty — no procedure defined yet",
         "fix_hint": "Define your study procedure in the Sessions array, or convert data with save-to-project to auto-register",
     },
+    "PRISM707": {
+        "message": "participants.tsv does not cover all subject folders on disk",
+        "fix_hint": "Open Sociodemographics and import or add the missing participants so participants.tsv lists every subject already saved in the dataset",
+    },
     # Internal/System (9xx)
     "PRISM901": {
         "message": "Internal validation error",
@@ -286,6 +290,11 @@ FIX_TOOLS: Dict[str, Dict[str, str]] = {
         "tool": "json-editor",
         "label": "Edit .bidsignore",
         "target": ".bidsignore",
+    },
+    "PRISM707": {
+        "tool": "converter",
+        "label": "Open Sociodemographics",
+        "target": "participants",
     },
 }
 
@@ -449,6 +458,14 @@ def infer_code_from_message(message: str) -> str:
         return "PRISM003"
     elif "no subjects found" in msg_lower:
         return "PRISM002"
+    elif (
+        "participants.tsv mismatch with dataset subject folders" in msg_lower
+        or (
+            "subjects present as sub-* folders" in msg_lower
+            and "missing in participants.tsv" in msg_lower
+        )
+    ):
+        return "PRISM707"
     elif (
         "consistency" in msg_lower
         or "mislabeled" in msg_lower

@@ -4,6 +4,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
@@ -697,6 +698,41 @@ class TestProjectManager(unittest.TestCase):
             (issue.get("message") or "").lower() for issue in result.get("issues", [])
         ]
         self.assertFalse(any("derivatives dataset" in msg for msg in issue_messages))
+
+    def test_validate_structure_maps_participants_mismatch_to_actionable_issue(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            created = manager.create_project(
+                str(project_path), {"name": "demo_project"}
+            )
+            self.assertTrue(created.get("success"), created)
+
+            runner_issues = [
+                (
+                    "ERROR",
+                    "participants.tsv mismatch with dataset subject folders. "
+                    "Subjects present as sub-* folders but missing in participants.tsv: sub-002",
+                    str(project_path / "participants.tsv"),
+                )
+            ]
+
+            with patch(
+                "src.core.validation.validate_dataset",
+                return_value=(runner_issues, None),
+            ):
+                result = manager.validate_structure(str(project_path))
+
+        issues_by_code = {
+            issue.get("code"): issue for issue in result.get("issues", [])
+        }
+        mismatch_issue = issues_by_code.get("PRISM707")
+        self.assertIsNotNone(mismatch_issue)
+        self.assertIn(
+            "Open Sociodemographics",
+            mismatch_issue.get("fix_hint", ""),
+        )
 
     def test_validate_structure_does_not_flag_missing_sidecar_for_beh(self):
         manager = ProjectManager()

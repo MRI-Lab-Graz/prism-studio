@@ -1197,6 +1197,112 @@ export function initSurveyConvert(elements) {
         return { target, countNote };
     }
 
+    function openConverterTab(target) {
+        const normalizedTarget = String(target || '').trim().toLowerCase();
+        if (!normalizedTarget) {
+            return false;
+        }
+
+        const tabButton = document.getElementById(`${normalizedTarget}-tab`);
+        if (!tabButton) {
+            return false;
+        }
+
+        if (window.bootstrap && window.bootstrap.Tab && typeof window.bootstrap.Tab.getOrCreateInstance === 'function') {
+            window.bootstrap.Tab.getOrCreateInstance(tabButton).show();
+        } else {
+            tabButton.click();
+        }
+
+        if (typeof tabButton.focus === 'function') {
+            tabButton.focus();
+        }
+        return true;
+    }
+
+    function showConvertInfoMessage(message, options = {}) {
+        if (!convertInfo) {
+            return;
+        }
+
+        const {
+            variant = 'info',
+            iconClass = 'fas fa-info-circle',
+            action = null,
+        } = options;
+
+        convertInfo.classList.remove('d-none', 'alert-info', 'alert-success', 'alert-warning', 'alert-danger');
+        convertInfo.classList.add('alert', `alert-${variant}`);
+        convertInfo.innerHTML = '';
+
+        const wrapper = document.createElement('div');
+        if (action && action.type === 'open_converter_tab') {
+            wrapper.className = 'd-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2';
+        }
+
+        const messageContainer = document.createElement('div');
+        const icon = document.createElement('i');
+        icon.className = `${iconClass} me-2`;
+        messageContainer.appendChild(icon);
+
+        const messageText = document.createElement('span');
+        messageText.textContent = String(message || '');
+        messageContainer.appendChild(messageText);
+        wrapper.appendChild(messageContainer);
+
+        if (action && action.type === 'open_converter_tab') {
+            const actionButton = document.createElement('button');
+            actionButton.type = 'button';
+            actionButton.className = 'btn btn-sm btn-outline-dark align-self-start align-self-md-center';
+
+            const buttonIcon = document.createElement('i');
+            buttonIcon.className = 'fas fa-users me-1';
+            actionButton.appendChild(buttonIcon);
+            actionButton.appendChild(document.createTextNode(String(action.label || 'Open')));
+            actionButton.addEventListener('click', () => {
+                if (!openConverterTab(action.target)) {
+                    appendLog('Could not open the requested converter tab.', 'warning');
+                }
+            });
+            wrapper.appendChild(actionButton);
+        }
+
+        convertInfo.appendChild(wrapper);
+        convertInfo.classList.remove('d-none');
+    }
+
+    function getParticipantRegistryWarning(payload) {
+        if (payload && typeof payload.participant_registry_warning === 'object' && payload.participant_registry_warning) {
+            return payload.participant_registry_warning;
+        }
+
+        if (payload && payload.conversion_summary && typeof payload.conversion_summary.participant_registry_warning === 'object') {
+            return payload.conversion_summary.participant_registry_warning;
+        }
+
+        if (payload && payload.preview && typeof payload.preview.participant_registry_warning === 'object') {
+            return payload.preview.participant_registry_warning;
+        }
+
+        const previewIssues = payload && payload.preview && Array.isArray(payload.preview.data_issues)
+            ? payload.preview.data_issues
+            : [];
+        return previewIssues.find((issue) => issue && issue.type === 'missing_from_participants_tsv') || null;
+    }
+
+    function showParticipantRegistryWarning(messagePrefix, warning) {
+        if (!warning) {
+            return;
+        }
+
+        const parts = [messagePrefix, warning.message, warning.details].filter((value) => typeof value === 'string' && value.trim());
+        showConvertInfoMessage(parts.join(' '), {
+            variant: 'warning',
+            iconClass: 'fas fa-exclamation-triangle',
+            action: warning.action || null,
+        });
+    }
+
     function isDelimitedSurveyFilename(filename) {
         return filename.endsWith('.csv') || filename.endsWith('.tsv');
     }
@@ -3550,6 +3656,8 @@ convertError.classList.remove('d-none');
         .then(data => {
             if (!data) return;  // Handled by resolution UI (e.g. unmatched groups)
 
+            const participantRegistryWarning = getParticipantRegistryWarning(data);
+
             // Logs already processed above for JSON responses
 
             // Display conversion summary (template matches, tool columns, unmatched) before validation
@@ -3587,10 +3695,38 @@ convertError.classList.remove('d-none');
             if (data.project_saved) {
                 const saveSummary = getProjectSaveSummary(data);
                 appendLog(`✓ Data saved to project: ${saveSummary.target}${saveSummary.countNote}`, 'success');
-                convertInfo.textContent = `Conversion complete. First saved path: ${saveSummary.target}${saveSummary.countNote}`;
+                if (participantRegistryWarning) {
+                    appendLog(`⚠ ${participantRegistryWarning.message}`, 'warning');
+                    if (participantRegistryWarning.details) {
+                        appendLog(`   ${participantRegistryWarning.details}`, 'warning');
+                    }
+                    if (participantRegistryWarning.next_step) {
+                        appendLog(`   ${participantRegistryWarning.next_step}`, 'warning');
+                    }
+                    showParticipantRegistryWarning(
+                        `Conversion complete. First saved path: ${saveSummary.target}${saveSummary.countNote}`,
+                        participantRegistryWarning,
+                    );
+                } else {
+                    convertInfo.textContent = `Conversion complete. First saved path: ${saveSummary.target}${saveSummary.countNote}`;
+                }
             } else {
                 appendLog('⚠ Conversion finished, but nothing was copied into the project.', 'warning');
-                convertInfo.textContent = 'Conversion finished, but nothing was copied into the project. Review the conversion log.';
+                if (participantRegistryWarning) {
+                    appendLog(`⚠ ${participantRegistryWarning.message}`, 'warning');
+                    if (participantRegistryWarning.details) {
+                        appendLog(`   ${participantRegistryWarning.details}`, 'warning');
+                    }
+                    if (participantRegistryWarning.next_step) {
+                        appendLog(`   ${participantRegistryWarning.next_step}`, 'warning');
+                    }
+                    showParticipantRegistryWarning(
+                        'Conversion finished, but nothing was copied into the project. Review the conversion log.',
+                        participantRegistryWarning,
+                    );
+                } else {
+                    convertInfo.textContent = 'Conversion finished, but nothing was copied into the project. Review the conversion log.';
+                }
             }
 
             // Final completion message
@@ -3839,6 +3975,7 @@ convertError.classList.remove('d-none');
             }
 
             const preview = data.preview;
+            const participantRegistryWarning = getParticipantRegistryWarning(data);
 
             if (!preview) {
                 appendLog('⚠ No preview data received', 'warning');
@@ -3995,6 +4132,13 @@ convertError.classList.remove('d-none');
                         appendLog(`   → Column: ${issue.column} (task: ${issue.task}, item: ${issue.item})`, 'warning');
                         appendLog(`   → Expected range: ${issue.range}`, 'warning');
                         appendLog(`   → Out of range count: ${issue.out_of_range_count}`, 'warning');
+                    } else if (issue.type === 'missing_from_participants_tsv') {
+                        if (issue.details) {
+                            appendLog(`   → ${issue.details}`, 'warning');
+                        }
+                        if (issue.next_step) {
+                            appendLog(`   → ${issue.next_step}`, 'warning');
+                        }
                     }
                     appendLog('', 'warning');
                 });
@@ -4204,6 +4348,13 @@ convertError.classList.remove('d-none');
                 appendLog('✓ Preview completed successfully', 'success');
                 convertInfo.innerHTML = '<i class="fas fa-info-circle me-2"></i>Preview complete. Review the log above, then click <strong>Convert</strong> to proceed.';
                 setTemplateEditorErrorCtaVisible(false);
+            }
+
+            if (!(templateWorkflowGate && templateWorkflowGate.blocked) && participantRegistryWarning) {
+                const prefix = previewErrorCount > 0
+                    ? 'Preview found additional issues.'
+                    : 'Preview completed with a participant registry warning.';
+                showParticipantRegistryWarning(prefix, participantRegistryWarning);
             }
 
             // ── ISSUES RECAP ────────────────────────────────────────────────

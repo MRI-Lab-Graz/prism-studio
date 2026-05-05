@@ -223,6 +223,105 @@ def test_survey_convert_rejects_stale_project_path(tmp_path, monkeypatch):
     assert "no longer exists" in payload["error"].lower()
 
 
+def test_survey_convert_validate_returns_participant_registry_warning(
+    tmp_path, monkeypatch
+):
+    app, _biometrics, survey, _physio, _environment = _build_app_and_handlers()
+    library_root = tmp_path / "library"
+    survey_dir = library_root / "survey"
+    survey_dir.mkdir(parents=True, exist_ok=True)
+    (survey_dir / "survey-demo.json").write_text("{}", encoding="utf-8")
+
+    project_root = tmp_path / "project"
+    project_root.mkdir(parents=True, exist_ok=True)
+    (project_root / "participants.tsv").write_text(
+        "participant_id\nsub-01\n",
+        encoding="utf-8",
+    )
+
+    warning_payload = {
+        "type": "missing_from_participants_tsv",
+        "severity": "warning",
+        "message": "1 imported participant is missing from participants.tsv.",
+        "details": "Missing IDs: sub-02",
+        "next_step": "Open Sociodemographics to import or add the missing participants.",
+        "missing_count": 1,
+        "missing_participants": ["sub-02"],
+        "participants_tsv": str(project_root / "participants.tsv"),
+        "action": {
+            "type": "open_converter_tab",
+            "target": "participants",
+            "label": "Open Sociodemographics",
+        },
+    }
+
+    monkeypatch.setattr(survey, "_resolve_effective_library_path", lambda: library_root)
+    monkeypatch.setattr(
+        survey,
+        "_validate_project_templates_for_tasks",
+        lambda **_kwargs: [],
+    )
+
+    def fake_run_survey_with_official_fallback(_converter, **kwargs):
+        output_root = Path(kwargs["output_root"])
+        if not kwargs.get("dry_run"):
+            output_file = (
+                output_root
+                / "sub-01"
+                / "ses-01"
+                / "survey"
+                / "sub-01_ses-01_task-demo_survey.tsv"
+            )
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+            output_file.write_text("participant_id\tscore\nsub-01\t1\n", encoding="utf-8")
+
+        return SimpleNamespace(
+            tasks_included=["demo"],
+            unknown_columns=[],
+            task_runs={},
+            tool_columns=[],
+            template_matches=None,
+            near_match_candidates=[],
+            near_match_applied=False,
+            conversion_warnings=[],
+            participant_registry_warning=warning_payload,
+        )
+
+    monkeypatch.setattr(
+        survey,
+        "_run_survey_with_official_fallback",
+        fake_run_survey_with_official_fallback,
+    )
+
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess["current_project_path"] = str(project_root)
+
+        response = client.post(
+            "/api/survey-convert-validate",
+            data={
+                "id_column": "participant_id",
+                "validate": "false",
+                "session": "01",
+                "excel": (
+                    io.BytesIO(b"participant_id,score\nsub-01,1\nsub-02,2\n"),
+                    "survey.csv",
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["project_saved"] is True
+    assert payload["participant_registry_warning"]["missing_participants"] == [
+        "sub-02"
+    ]
+    assert payload["conversion_summary"]["participant_registry_warning"][
+        "action"
+    ]["target"] == "participants"
+
+
 def test_batch_convert_start_rejects_stale_project_path(tmp_path):
     app, _biometrics, _survey, _physio, _environment = _build_app_and_handlers()
 

@@ -535,6 +535,120 @@ def test_survey_converter_preserves_existing_prefixed_ids_exactly(tmp_path):
     )
 
 
+def test_survey_converter_reports_missing_project_participants_in_preview(tmp_path):
+    input_path = tmp_path / "demo.csv"
+    input_path.write_text(
+        "Code,session,run,ADS01\n1,pre,1,3\n2,pre,1,2\n",
+        encoding="utf-8",
+    )
+
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    (project_root / "participants.tsv").write_text(
+        "participant_id\tage\nsub-1\t29\n",
+        encoding="utf-8",
+    )
+
+    library_root = tmp_path / "library"
+    library_root.mkdir()
+    (library_root / "survey-ads.json").write_text(
+        """
+        {
+            "Study": {
+                "TaskName": "ads"
+            },
+            "ADS01": {
+                "Levels": {"1": "low", "2": "mid", "3": "high"}
+            }
+        }
+        """.strip(),
+        encoding="utf-8",
+    )
+
+    result = SurveyResponsesConverter().convert_xlsx(
+        input_path=input_path,
+        library_dir=library_root,
+        output_root=tmp_path / "out",
+        id_column="Code",
+        session_column="session",
+        run_column="run",
+        session="all",
+        dry_run=True,
+        skip_participants=True,
+        separator=",",
+        project_path=project_root,
+    )
+
+    warning = result.participant_registry_warning
+    assert warning is not None
+    assert warning["type"] == "missing_from_participants_tsv"
+    assert warning["missing_count"] == 1
+    assert warning["missing_participants"] == ["sub-2"]
+    assert warning["action"]["label"] == "Open Sociodemographics"
+    assert any(
+        "missing from participants.tsv" in message
+        for message in result.conversion_warnings
+    )
+
+    preview = result.dry_run_preview or {}
+    assert preview["participant_registry_warning"]["missing_participants"] == [
+        "sub-2"
+    ]
+    assert any(
+        issue.get("type") == "missing_from_participants_tsv"
+        for issue in preview.get("data_issues", [])
+    )
+
+
+def test_survey_converter_skips_registry_warning_when_participants_are_written(tmp_path):
+    input_path = tmp_path / "demo.csv"
+    input_path.write_text(
+        "Code,session,run,ADS01\n1,pre,1,3\n2,pre,1,2\n",
+        encoding="utf-8",
+    )
+
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    (project_root / "participants.tsv").write_text(
+        "participant_id\tage\nsub-1\t29\n",
+        encoding="utf-8",
+    )
+
+    library_root = tmp_path / "library"
+    library_root.mkdir()
+    (library_root / "survey-ads.json").write_text(
+        """
+        {
+            "Study": {
+                "TaskName": "ads"
+            },
+            "ADS01": {
+                "Levels": {"1": "low", "2": "mid", "3": "high"}
+            }
+        }
+        """.strip(),
+        encoding="utf-8",
+    )
+
+    result = SurveyResponsesConverter().convert_xlsx(
+        input_path=input_path,
+        library_dir=library_root,
+        output_root=tmp_path / "out",
+        id_column="Code",
+        session_column="session",
+        run_column="run",
+        session="all",
+        dry_run=True,
+        skip_participants=False,
+        separator=",",
+        project_path=project_root,
+    )
+
+    assert result.participant_registry_warning is None
+    preview = result.dry_run_preview or {}
+    assert "participant_registry_warning" not in preview
+
+
 def test_csv_import_does_not_trigger_tool_limesurvey_sidecars(tmp_path):
     input_path = tmp_path / "demo.csv"
     input_path.write_text(

@@ -28,6 +28,8 @@ from issues import (
     issues_to_dict,
     summarize_issues,
     ERROR_CODES,
+    infer_code_from_message,
+    get_fix_hint,
 )
 from config import PrismConfig, load_config, save_config, find_config_file
 from schema_manager import load_schema, load_all_schemas, get_available_schema_versions
@@ -138,6 +140,16 @@ class TestIssues:
         for code, data in ERROR_CODES.items():
             assert "message" in data, f"{code} missing message"
             assert "fix_hint" in data, f"{code} missing fix_hint"
+
+    def test_infer_code_for_participants_registry_mismatch(self):
+        """participants.tsv mismatch should map to the actionable project issue code"""
+        message = (
+            "participants.tsv mismatch with dataset subject folders. "
+            "Subjects present as sub-* folders but missing in participants.tsv: sub-002"
+        )
+
+        assert infer_code_from_message(message) == "PRISM707"
+        assert "Sociodemographics" in get_fix_hint("PRISM707", message)
 
 
 class TestConfig:

@@ -1693,7 +1693,8 @@ export function getRecPeriodRangeError() {
 export function validateAllMandatoryFields() {
     const completeness = computeLocalCompleteness();
     const emptyFields = [];
-    const invalidFields = [];
+    const requiredInvalidFields = [];
+    const optionalInvalidFields = [];
 
     const labels = {
         Basics: {
@@ -1735,60 +1736,85 @@ export function validateAllMandatoryFields() {
 
     const periodError = getRecPeriodRangeError();
     if (periodError) {
-        invalidFields.push(periodError);
+        requiredInvalidFields.push(periodError);
     }
 
     const datasetName = _cleanMetadataText(document.getElementById('metadataName')?.value || '');
     if (datasetName.length > 0 && datasetName.length < 3) {
-        invalidFields.push('Dataset Name must be at least 3 characters long.');
+        requiredInvalidFields.push('Dataset Name must be at least 3 characters long.');
     }
 
     const authorState = getAuthorState();
     if (authorState.completeCount < 1 && authorState.incompleteCount === 0) {
-        invalidFields.push('At least one Author with first and last name is required.');
+        requiredInvalidFields.push('At least one Author with first and last name is required.');
     } else if (authorState.incompleteCount > 0) {
-        invalidFields.push('Each Author entry must include both first and last name.');
+        requiredInvalidFields.push('Each Author entry must include both first and last name.');
     }
 
     if (!hasCorrespondingAuthor()) {
-        invalidFields.push('At least one author has to be corresponding author!');
+        requiredInvalidFields.push('At least one author has to be corresponding author!');
     } else {
         const correspondingEmail = getCorrespondingAuthorEmail();
         if (!correspondingEmail) {
-            invalidFields.push('Corresponding Author must provide an email address.');
+            requiredInvalidFields.push('Corresponding Author must provide an email address.');
         }
     }
 
     if (!hasEthicsChoice()) {
-        invalidFields.push('Please select Ethics Approvals: Yes or No.');
+        requiredInvalidFields.push('Please select Ethics Approvals: Yes or No.');
     } else if (!hasValidEthicsResponse()) {
-        invalidFields.push('Ethics details are required when Ethics Approvals is set to Yes.');
+        requiredInvalidFields.push('Ethics details are required when Ethics Approvals is set to Yes.');
     }
 
     if (!hasFundingChoice()) {
-        invalidFields.push('Please select Funding: Yes or No.');
+        requiredInvalidFields.push('Please select Funding: Yes or No.');
     } else if (!hasValidFundingResponse()) {
-        invalidFields.push('Funding details are required when Funding is set to Yes.');
+        requiredInvalidFields.push('Funding details are required when Funding is set to Yes.');
     }
 
     const keywords = (document.getElementById('metadataKeywords')?.value || '')
         .split(',').map(s => _cleanMetadataText(s)).filter(Boolean);
     if (keywords.length < 3) {
-        invalidFields.push('At least 3 Keywords are required (comma-separated).');
+        requiredInvalidFields.push('At least 3 Keywords are required (comma-separated).');
     }
 
     const doiValue = _cleanMetadataText(document.getElementById('metadataDOI')?.value || '');
     if (doiValue && !_isValidDoiFormat(doiValue)) {
-        invalidFields.push('Dataset DOI format is invalid (use 10.xxxx/... or https://doi.org/10.xxxx/...).');
+        optionalInvalidFields.push('Dataset DOI format is invalid (use 10.xxxx/... or https://doi.org/10.xxxx/...).');
     }
 
-    invalidFields.push(..._getAuthorOptionalFormatErrors());
+    optionalInvalidFields.push(..._getAuthorOptionalFormatErrors());
+
+    const invalidFields = [...requiredInvalidFields, ...optionalInvalidFields];
 
     return {
         isValid: emptyFields.length === 0 && invalidFields.length === 0,
         emptyFields,
-        invalidFields
+        invalidFields,
+        requiredInvalidFields,
+        optionalInvalidFields,
+        hasRequiredIssues: emptyFields.length > 0 || requiredInvalidFields.length > 0,
+        hasOptionalValidationIssues: optionalInvalidFields.length > 0,
     };
+}
+
+function _getRequiredValidationIssueCount(validation) {
+    return (validation?.emptyFields?.length || 0) + (validation?.requiredInvalidFields?.length || 0);
+}
+
+function _getOptionalValidationIssueCount(validation) {
+    return validation?.optionalInvalidFields?.length || 0;
+}
+
+function _hasRequiredValidationIssues(validation) {
+    return _getRequiredValidationIssueCount(validation) > 0;
+}
+
+function _getRequiredValidationIssueMessages(validation) {
+    return [
+        ...(validation?.emptyFields || []),
+        ...((validation?.requiredInvalidFields || []).map(msg => `Invalid: ${msg}`))
+    ];
 }
 
 function refreshMetadataValidationState(options = {}) {
@@ -1941,14 +1967,13 @@ function _updateProjectBoxRequirementAlert(validation) {
         return;
     }
 
-    if (!validation || validation.isValid) {
+    if (!validation || !_hasRequiredValidationIssues(validation)) {
         alertEl.classList.add('d-none');
         textEl.textContent = '';
         return;
     }
 
-    const issueCount =
-        validation.emptyFields.length + (validation.invalidFields?.length || 0);
+    const issueCount = _getRequiredValidationIssueCount(validation);
     textEl.textContent =
         `Fill out all required fields (${issueCount} remaining). This project was loaded with missing current requirements.`;
     alertEl.classList.remove('d-none');
@@ -1961,7 +1986,7 @@ function _updateProjectMetadataStat(validation) {
         return;
     }
 
-    const hasIssues = validation && !validation.isValid;
+    const hasIssues = _hasRequiredValidationIssues(validation);
     if (!hasIssues) {
         statItem.classList.remove('border', 'border-danger');
         statValue.classList.remove('text-danger');
@@ -1970,8 +1995,7 @@ function _updateProjectMetadataStat(validation) {
         return;
     }
 
-    const issueCount =
-        validation.emptyFields.length + (validation.invalidFields?.length || 0);
+    const issueCount = _getRequiredValidationIssueCount(validation);
     statItem.classList.add('border', 'border-danger');
     statValue.classList.remove('text-success');
     statValue.classList.add('text-danger');
@@ -1985,14 +2009,14 @@ function _updateRequirementGapInlineAlert(validation) {
         return;
     }
 
-    if (!validation || validation.isValid) {
+    if (!validation || !_hasRequiredValidationIssues(validation)) {
         alertEl.classList.add('d-none');
         textEl.textContent = 'Fill out all required fields.';
         return;
     }
 
     const missing = validation.emptyFields || [];
-    const invalid = validation.invalidFields || [];
+    const invalid = validation.requiredInvalidFields || [];
     const total = missing.length + invalid.length;
     const firstIssues = [...missing, ...invalid].slice(0, 3);
     const suffix =
@@ -2002,7 +2026,7 @@ function _updateRequirementGapInlineAlert(validation) {
 
     textEl.textContent =
         `Fill out all required fields (${total} remaining). `
-        + (firstIssues.length ? `Missing: ${firstIssues.join(' • ')}${suffix}` : '');
+        + (firstIssues.length ? `Issues: ${firstIssues.join(' • ')}${suffix}` : '');
     alertEl.classList.remove('d-none');
 }
 
@@ -2013,7 +2037,7 @@ function _updateProjectsPreliminaryBadge(validation, isCreateMode) {
     }
 
     const hasCurrentProject = Boolean(_getCurrentProjectPath());
-    const issueCount = (validation?.emptyFields?.length || 0) + (validation?.invalidFields?.length || 0);
+    const issueCount = _getRequiredValidationIssueCount(validation);
     const shouldShow = !isCreateMode && hasCurrentProject && issueCount > 0;
 
     badge.classList.toggle('d-none', !shouldShow);
@@ -2128,25 +2152,31 @@ export function updateCreateProjectButton() {
 
     _updateProjectsPreliminaryBadge(validation, isCreateMode);
 
+    const requiredIssueCount = _getRequiredValidationIssueCount(validation);
+    const optionalIssueCount = _getOptionalValidationIssueCount(validation);
+
     if (!isCreateMode) {
         setPreliminaryHidden(true);
         setCreateButtonDisabled(false);
-        const count = validation.emptyFields.length + (validation.invalidFields?.length || 0);
         removeCreateClasses('btn-secondary', 'btn-success', 'btn-warning', 'btn-info');
-        if (validation.isValid) {
+        if (requiredIssueCount === 0) {
             addCreateClass('btn-info');
             setCreateButtonHtml('<i class="fas fa-save me-2"></i>Save Changes to Project');
-            setCreateTitle('');
+            setCreateTitle(optionalIssueCount > 0
+                ? `${optionalIssueCount} metadata validation issue${optionalIssueCount > 1 ? 's need' : ' needs'} to be fixed before saving.`
+                : '');
         } else {
             addCreateClass('btn-warning');
             setCreateButtonHtml('<i class="fas fa-save me-2"></i>Save Preliminary Project State');
-            setCreateTitle(`${count} required field${count > 1 ? 's' : ''} still missing — save preliminary state and finish metadata later.`);
+            setCreateTitle(`${requiredIssueCount} required field${requiredIssueCount > 1 ? 's' : ''} still missing — save preliminary state and finish metadata later.`);
         }
         actionHints.forEach(actionHint => {
-            if (validation.isValid) {
+            if (requiredIssueCount === 0 && optionalIssueCount === 0) {
                 actionHint.innerHTML = '<i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, CITATION.cff, and README.md.';
+            } else if (requiredIssueCount === 0) {
+                actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${optionalIssueCount} metadata validation issue${optionalIssueCount > 1 ? 's' : ''} detected.</strong> Required fields are complete, but remaining validation errors must be fixed before saving changes.`;
             } else {
-                actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${count} required field${count > 1 ? 's' : ''} missing.</strong> You can save a preliminary project state now and complete metadata later.`;
+                actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${requiredIssueCount} required field${requiredIssueCount > 1 ? 's' : ''} missing.</strong> You can save a preliminary project state now and complete metadata later.`;
             }
         });
         return;
@@ -2155,24 +2185,27 @@ export function updateCreateProjectButton() {
     setCreateButtonHtml('<i class="fas fa-folder-plus me-2"></i>Create Project');
     removeCreateClasses('btn-info');
 
-    if (validation.isValid) {
+    if (requiredIssueCount === 0) {
         setPreliminaryHidden(true);
         setPreliminaryDisabled(false);
         setPreliminaryTitle('');
         setCreateButtonDisabled(false);
         createButtons.forEach(btn => { btn.dataset.incomplete = ''; });
         removeCreateClasses('btn-secondary', 'btn-warning');
-        addCreateClass('btn-success');
-        setCreateTitle('');
+        addCreateClass(optionalIssueCount > 0 ? 'btn-warning' : 'btn-success');
+        setCreateTitle(optionalIssueCount > 0
+            ? `${optionalIssueCount} metadata validation issue${optionalIssueCount > 1 ? 's must' : ' must'} be fixed before project creation.`
+            : '');
         actionHints.forEach(actionHint => {
-            actionHint.innerHTML = '<i class="fas fa-info-circle me-1"></i>All required fields are complete. You can now create the project.';
+            actionHint.innerHTML = optionalIssueCount > 0
+                ? `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${optionalIssueCount} metadata validation issue${optionalIssueCount > 1 ? 's' : ''} detected.</strong> Required fields are complete, but remaining validation errors must be fixed before creating the project.`
+                : '<i class="fas fa-info-circle me-1"></i>All required fields are complete. You can now create the project.';
         });
     } else {
-        const count = validation.emptyFields.length + (validation.invalidFields?.length || 0);
         setPreliminaryHidden(false);
         setPreliminaryDisabled(!hasOutputFolder);
         if (hasOutputFolder) {
-            setPreliminaryTitle(`Create project now as preliminary (${count} required field${count > 1 ? 's' : ''} still missing).`);
+            setPreliminaryTitle(`Create project now as preliminary (${requiredIssueCount} required field${requiredIssueCount > 1 ? 's' : ''} still missing).`);
         } else {
             setPreliminaryTitle('Select a Project Location (output folder) to enable Preliminary Save.');
         }
@@ -2180,9 +2213,9 @@ export function updateCreateProjectButton() {
         createButtons.forEach(btn => { btn.dataset.incomplete = '1'; });
         removeCreateClasses('btn-success', 'btn-secondary');
         addCreateClass('btn-warning');
-        setCreateTitle(`${count} required field${count > 1 ? 's' : ''} still missing — click to create anyway with incomplete metadata.`);
+        setCreateTitle(`${requiredIssueCount} required field${requiredIssueCount > 1 ? 's' : ''} still missing — click to create anyway with incomplete metadata.`);
         actionHints.forEach(actionHint => {
-            actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${count} required field${count > 1 ? 's' : ''} missing.</strong> You can still create the project — it will be saved with incomplete metadata.`;
+            actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${requiredIssueCount} required field${requiredIssueCount > 1 ? 's' : ''} missing.</strong> You can still create the project — it will be saved with incomplete metadata.`;
         });
     }
 }
@@ -3677,20 +3710,16 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
     setMetadataSaveStatus('Checking fields...', 'muted');
 
     const requiredValidation = validateAllMandatoryFields();
+    const requiredIssueCount = _getRequiredValidationIssueCount(requiredValidation);
+    const optionalIssueCount = _getOptionalValidationIssueCount(requiredValidation);
     let isPreliminarySave = false;
-    if (!requiredValidation.isValid) {
-        const issues = [
-            ...(requiredValidation.emptyFields || []),
-            ...((requiredValidation.invalidFields || []).map(msg => `Invalid: ${msg}`))
-        ];
+    if (requiredIssueCount > 0) {
+        const issues = _getRequiredValidationIssueMessages(requiredValidation);
         if (!forcePreliminarySave) {
             const confirmed = await _showPreliminarySaveModal(issues);
             if (!confirmed) {
-                const missingCount = requiredValidation.emptyFields.length;
-                const invalidCount = requiredValidation.invalidFields?.length || 0;
-                const issueCount = missingCount + invalidCount;
-                showTopFeedback(`Fill out all required fields (${issueCount} remaining).`, 'warning');
-                setMetadataSaveStatus(`Save cancelled. ${issueCount} required field(s) still missing.`, 'warning');
+                showTopFeedback(`Fill out all required fields (${requiredIssueCount} remaining).`, 'warning');
+                setMetadataSaveStatus(`Save cancelled. ${requiredIssueCount} required field(s) still missing.`, 'warning');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 updateCreateProjectButton();
                 releaseSubmitLock();
@@ -3699,10 +3728,17 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
         }
 
         isPreliminarySave = true;
-        const invalidCount = requiredValidation.invalidFields?.length || 0;
-        const issueCount = (requiredValidation.emptyFields?.length || 0) + invalidCount;
-        showTopFeedback(`Preliminary save selected (${issueCount} field issue${issueCount > 1 ? 's' : ''} remaining).`, 'warning');
-        setMetadataSaveStatus(`Saving preliminary state (${issueCount} required field issue${issueCount > 1 ? 's' : ''} remaining)...`, 'warning');
+        showTopFeedback(`Preliminary save selected (${requiredIssueCount} field issue${requiredIssueCount > 1 ? 's' : ''} remaining).`, 'warning');
+        setMetadataSaveStatus(`Saving preliminary state (${requiredIssueCount} required field issue${requiredIssueCount > 1 ? 's' : ''} remaining)...`, 'warning');
+    } else if (optionalIssueCount > 0) {
+        const firstIssue = requiredValidation.optionalInvalidFields?.[0] || 'Please fix metadata validation errors before saving.';
+        showToast(firstIssue, 'warning');
+        showTopFeedback('Please fix metadata validation errors before saving.', 'warning');
+        setMetadataSaveStatus(`Save blocked: ${optionalIssueCount} metadata validation issue${optionalIssueCount > 1 ? 's require' : ' requires'} attention.`, 'warning');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        updateCreateProjectButton();
+        releaseSubmitLock();
+        return;
     }
 
     if (!isPreliminarySave && !this.checkValidity()) {
