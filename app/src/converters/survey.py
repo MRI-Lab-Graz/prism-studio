@@ -403,6 +403,124 @@ def _resolve_dataset_root(output_root: Path) -> Path:
     return Path(*parts[:cut_idx])
 
 
+def _resolve_existing_project_root(project_path: str | Path | None) -> Path | None:
+    if not project_path:
+        return None
+
+    try:
+        resolved = Path(project_path).expanduser().resolve()
+    except Exception:
+        return None
+
+    if resolved.is_file():
+        resolved = resolved.parent
+    if not resolved.exists() or not resolved.is_dir():
+        return None
+    return resolved
+
+
+def _summarize_labels(values: list[str], limit: int = 10) -> str:
+    if len(values) <= limit:
+        return ", ".join(values)
+    remaining = len(values) - limit
+    return f"{', '.join(values[:limit])}, +{remaining} more"
+
+
+def _format_participant_registry_warning_message(warning: dict[str, object]) -> str:
+    parts = [
+        str(warning.get("message") or "").strip(),
+        str(warning.get("details") or "").strip(),
+        str(warning.get("next_step") or "").strip(),
+    ]
+    return " ".join(part for part in parts if part)
+
+
+def _build_participant_registry_warning(
+    *,
+    df,
+    res_id_col: str,
+    normalize_sub_fn,
+    project_path: str | Path | None,
+) -> dict[str, object] | None:
+    project_root = _resolve_existing_project_root(project_path)
+    if project_root is None:
+        return None
+
+    participants_tsv = project_root / "participants.tsv"
+    if not participants_tsv.exists() or not participants_tsv.is_file():
+        return None
+
+    imported_ids = sorted(
+        {
+            normalized
+            for raw_value in df[res_id_col].tolist()
+            if (normalized := normalize_sub_fn(raw_value))
+        }
+    )
+    if not imported_ids:
+        return None
+
+    try:
+        from ..participants_converter import (
+            ParticipantsConverter as DatasetParticipantsConverter,
+        )
+    except Exception:
+        return None
+
+    existing_ids: set[str] = set()
+    try:
+        with participants_tsv.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle, delimiter="\t")
+            headers = [str(field) for field in (reader.fieldnames or []) if field]
+            if not headers:
+                return None
+
+            id_column = (
+                "participant_id"
+                if "participant_id" in headers
+                else DatasetParticipantsConverter._find_participant_id_source_column(
+                    headers
+                )
+            )
+            if not id_column:
+                return None
+
+            for row in reader:
+                normalized = DatasetParticipantsConverter._normalize_participant_id(
+                    (row or {}).get(id_column)
+                )
+                if normalized:
+                    existing_ids.add(normalized)
+    except Exception:
+        return None
+
+    missing_ids = sorted(
+        participant_id for participant_id in imported_ids if participant_id not in existing_ids
+    )
+    if not missing_ids:
+        return None
+
+    participant_label = "participant" if len(missing_ids) == 1 else "participants"
+    verb = "is" if len(missing_ids) == 1 else "are"
+    return {
+        "type": "missing_from_participants_tsv",
+        "severity": "warning",
+        "message": (
+            f"{len(missing_ids)} imported {participant_label} {verb} missing from participants.tsv."
+        ),
+        "details": f"Missing IDs: {_summarize_labels(missing_ids)}",
+        "next_step": "Open Sociodemographics to import or add the missing participants.",
+        "missing_count": len(missing_ids),
+        "missing_participants": missing_ids,
+        "participants_tsv": str(participants_tsv),
+        "action": {
+            "type": "open_converter_tab",
+            "target": "participants",
+            "label": "Open Sociodemographics",
+        },
+    }
+
+
 @dataclass(frozen=True)
 class SurveyConvertResult:
     tasks_included: list[str]
@@ -424,6 +542,7 @@ class SurveyConvertResult:
         None  # Structural match results per group (LSA only)
     )
     tool_columns: list[str] = field(default_factory=list)  # LimeSurvey system columns
+    participant_registry_warning: dict | None = None
 
 
 class ParticipantsConverter:
@@ -1703,6 +1822,21 @@ def _convert_survey_dataframe_to_prism_dataset(
         res_ses_col = _res_ses_override
     conversion_warnings.extend(duplicate_warnings)
 
+    participant_registry_warning = None
+    if skip_participants:
+        participant_registry_warning = _build_participant_registry_warning(
+            df=df,
+            res_id_col=res_id_col,
+            normalize_sub_fn=_normalize_sub_id,
+            project_path=project_path,
+        )
+        if participant_registry_warning:
+            conversion_warnings.append(
+                _format_participant_registry_warning_message(
+                    participant_registry_warning
+                )
+            )
+
     col_to_mapping, unknown_cols, map_warnings, task_runs = _map_survey_columns(
         df=df,
         item_to_task=item_to_task,
@@ -1782,6 +1916,13 @@ def _convert_survey_dataframe_to_prism_dataset(
             task_runs=task_runs,
             task_context_acq_map=task_context_acq_map,
         )
+        if participant_registry_warning:
+            dry_run_preview["participant_registry_warning"] = (
+                participant_registry_warning
+            )
+            dry_run_preview.setdefault("data_issues", []).append(
+                participant_registry_warning
+            )
 
         return SurveyConvertResult(
             tasks_included=sorted(tasks_with_data),
@@ -1796,6 +1937,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             dry_run_preview=dry_run_preview,
             template_matches=_template_matches,
             tool_columns=ls_system_cols or [],
+            participant_registry_warning=participant_registry_warning,
         )
 
     # --- Write Output ---
@@ -1911,6 +2053,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         task_runs=task_runs,
         template_matches=_template_matches,
         tool_columns=ls_system_cols or [],
+        participant_registry_warning=participant_registry_warning,
     )
 
 

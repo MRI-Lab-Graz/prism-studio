@@ -2324,8 +2324,16 @@ def api_survey_convert_validate():
                 summary["near_match_applied"] = True
             if conversion_warnings:
                 summary["conversion_warnings"] = conversion_warnings
+            if getattr(convert_result, "participant_registry_warning", None):
+                summary["participant_registry_warning"] = (
+                    convert_result.participant_registry_warning
+                )
             if summary:
                 response_payload["conversion_summary"] = summary
+            if getattr(convert_result, "participant_registry_warning", None):
+                response_payload["participant_registry_warning"] = (
+                    convert_result.participant_registry_warning
+                )
             response_payload["multivariant_tasks"] = (
                 collect_multivariant_tasks_from_library(
                     library_dir=effective_survey_dir,
