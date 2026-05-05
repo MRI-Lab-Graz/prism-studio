@@ -163,9 +163,37 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertEqual(status_code, 200)
         self.assertTrue(body["success"])
         self.assertTrue(body["available"])
+        self.assertTrue(body["is_dir"])
+        self.assertFalse(body["is_empty_dir"])
+        self.assertTrue(body["has_non_system_entries"])
         self.assertEqual(
             body["project_json_path"], str(self.project_root / "project.json")
         )
+
+    def test_project_path_status_ignores_system_files_for_empty_directory(self):
+        target_root = Path(self.tmp_dir.name) / "empty_target"
+        target_root.mkdir(parents=True, exist_ok=True)
+        (target_root / "Thumbs.db").write_text("", encoding="utf-8")
+        (target_root / ".DS_Store").write_text("", encoding="utf-8")
+
+        with self.app.test_request_context(
+            "/api/projects/path-status",
+            method="POST",
+            json={"path": str(target_root)},
+        ):
+            response = self.handle_project_path_status()
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        body = resp_obj.get_json()
+
+        self.assertEqual(status_code, 200)
+        self.assertTrue(body["success"])
+        self.assertTrue(body["exists"])
+        self.assertTrue(body["is_dir"])
+        self.assertTrue(body["is_empty_dir"])
+        self.assertFalse(body["has_non_system_entries"])
+        self.assertFalse(body["available"])
 
     def test_project_state_flow_load_switch_create_mode_and_recent_reload(self):
         (self.project_root / "project.json").write_text(
