@@ -115,8 +115,26 @@ function bindProjectBoxActionButtons() {
             return;
         }
         button.dataset.bound = '1';
+
+        // Mirror the primary save button behavior so first pointer interaction
+        // cannot be consumed by blur/change processing before submit is issued.
+        button.addEventListener('pointerdown', (event) => {
+            if (event.button !== 0) {
+                return;
+            }
+            event.preventDefault();
+            button.dataset.pointerTriggeredSubmit = '1';
+            requestStudyMetadataSaveFromProjectBox();
+        });
+
         button.addEventListener('click', (event) => {
             event.preventDefault();
+
+            if (button.dataset.pointerTriggeredSubmit === '1') {
+                button.dataset.pointerTriggeredSubmit = '0';
+                return;
+            }
+
             requestStudyMetadataSaveFromProjectBox();
         });
     });
