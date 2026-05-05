@@ -106,6 +106,11 @@ def test_sanitize_spss_variable_name_prefixes_leading_digits() -> None:
     assert _sanitize_spss_variable_name("item-1.2 3") == "item_1_2_3"
 
 
+def test_sanitize_spss_variable_name_preserves_unicode_letters() -> None:
+    assert _sanitize_spss_variable_name("Händigkeit") == "Händigkeit"
+    assert _sanitize_spss_variable_name("größe-ä") == "größe_ä"
+
+
 def test_build_spss_rename_map_handles_collisions() -> None:
     rename_map = _build_spss_rename_map(["a-b", "a.b", "20D_item1", "ok_name"])
 

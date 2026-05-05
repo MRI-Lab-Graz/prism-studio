@@ -905,6 +905,67 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         self.assertIn('license: "CC-BY-4.0"', citation_text)
         self.assertIn("message: >-", citation_text)
 
+    def test_regenerate_citation_preserves_governance_contact_metadata(self):
+        dataset_description = {
+            "Name": "Demo",
+            "BIDSVersion": "1.10.1",
+            "DatasetType": "raw",
+        }
+        (self.project_path / "dataset_description.json").write_text(
+            json.dumps(dataset_description),
+            encoding="utf-8",
+        )
+        (self.project_path / "project.json").write_text(
+            json.dumps(
+                {
+                    "name": "demo_project",
+                    "Basics": {
+                        "Authors": ["Ada Lovelace"],
+                    },
+                    "governance": {
+                        "contacts": [
+                            {
+                                "name": "Lovelace, Ada",
+                                "email": "ada@example.org",
+                                "orcid": "https://orcid.org/0000-0000-0000-0001",
+                                "corresponding": True,
+                            }
+                        ]
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        def get_current_project():
+            return {"path": str(self.project_path), "name": "demo_project"}
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        with self.app.test_request_context(
+            "/api/projects/citation/regenerate",
+            method="POST",
+            json={"project_path": str(self.project_path)},
+        ):
+            response = self.handle_regenerate_citation(
+                get_current_project=get_current_project,
+                get_bids_file_path=get_bids_file_path,
+                project_manager=self.project_manager,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+
+        self.assertEqual(status_code, 200)
+        payload = resp_obj.get_json()
+        self.assertTrue(payload.get("success"))
+
+        citation_text = (self.project_path / "CITATION.cff").read_text(encoding="utf-8")
+        self.assertIn('email: "ada@example.org"', citation_text)
+        self.assertIn('orcid: "https://orcid.org/0000-0000-0000-0001"', citation_text)
+        self.assertIn("contact:", citation_text)
+
     def test_save_dataset_description_omits_citation_fields_when_citation_refresh_fails(self):
         (self.project_path / "dataset_description.json").write_text(
             json.dumps({"Name": "Demo", "BIDSVersion": "1.10.1", "DatasetType": "raw"}),

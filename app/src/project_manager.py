@@ -1371,6 +1371,9 @@ Subfolders:
             if affiliation_value:
                 author_entry["affiliation"] = affiliation_value
 
+            if contact.get("corresponding"):
+                author_entry["corresponding"] = True
+
             return author_entry
 
         display = str(contact or "").strip()
@@ -1970,10 +1973,13 @@ Subfolders:
         if name:
             payload["Name"] = name
 
-        description_authors = self._clean_citation_source_list(payload.get("Authors"))
+        description_authors = self._normalize_list(payload.get("Authors"))
+        project_authors = self._extract_project_authors(project_data, project_path)
         basic_authors = self._clean_citation_source_list(basics.get("Authors"))
         if description_authors:
             payload["Authors"] = description_authors
+        elif project_authors:
+            payload["Authors"] = project_authors
         elif basic_authors:
             payload["Authors"] = basic_authors
 

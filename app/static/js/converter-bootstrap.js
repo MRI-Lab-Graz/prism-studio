@@ -15,6 +15,30 @@ installApiFetchFallback();
 document.addEventListener('DOMContentLoaded', function() {
     let sessionPickerRequestToken = 0;
 
+    function activateConverterTabFromQuery() {
+        const requestedTab = new URLSearchParams(window.location.search).get('tab');
+        const normalizedTab = String(requestedTab || '').trim().toLowerCase();
+        if (!normalizedTab) {
+            return;
+        }
+
+        const tabButton = document.getElementById(`${normalizedTab}-tab`);
+        if (!tabButton) {
+            return;
+        }
+
+        if (
+            window.bootstrap
+            && window.bootstrap.Tab
+            && typeof window.bootstrap.Tab.getOrCreateInstance === 'function'
+        ) {
+            window.bootstrap.Tab.getOrCreateInstance(tabButton).show();
+            return;
+        }
+
+        tabButton.click();
+    }
+
     function appendLog(message, type = 'info', logElement = null) {
         const colors = {
             info: '#17a2b8',
@@ -196,6 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const registerSessionInProject = createSessionRegistrar(populateSessionPickers);
 
     populateSessionPickers();
+    activateConverterTabFromQuery();
     window.addEventListener('prism-project-changed', function() {
         populateSessionPickers();
     });
