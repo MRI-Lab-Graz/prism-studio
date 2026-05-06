@@ -4,6 +4,8 @@ from pathlib import Path
 import json
 from typing import Any
 
+from src.utils.naming import sanitize_id
+
 
 def _coerce_version_value(raw_value: Any) -> str:
     """Collapse payload values into a concrete version string."""
@@ -26,20 +28,17 @@ def _coerce_version_value(raw_value: Any) -> str:
 
 
 def _normalize_session_id(session_id: str | None) -> str | None:
-    text = str(session_id or "").strip()
+    text = sanitize_id(str(session_id or "").strip())
     if not text:
         return None
+    if text.lower() == "nan":
+        return None
 
-    if not text.lower().startswith("ses-"):
-        text = f"ses-{text}"
-
-    text = f"ses-{text[4:]}"
-    num_part = text[4:]
-    try:
-        num_value = int(num_part)
-        return f"ses-{num_value:02d}"
-    except ValueError:
-        return f"ses-{num_part.lower()}"
+    label = text[4:] if text[:4].lower() == "ses-" else text
+    label = "".join(ch for ch in label if ch.isalnum())
+    if not label:
+        return None
+    return f"ses-{label}"
 
 
 def _normalize_run_value(run_value: Any) -> str | None:

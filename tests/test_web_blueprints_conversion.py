@@ -1020,6 +1020,74 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
                 {"wellbeing": "7-likert"},
             )
 
+    def test_api_survey_convert_registers_detected_sessions_for_all(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-convert",
+            view_func=handlers.api_survey_convert,
+            methods=["POST"],
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            library_root = tmp_path / "library"
+            survey_dir = library_root / "survey"
+            survey_dir.mkdir(parents=True, exist_ok=True)
+            (survey_dir / "survey-wellbeing.json").write_text("{}", encoding="utf-8")
+
+            project_root = tmp_path / "project"
+            project_root.mkdir(parents=True, exist_ok=True)
+
+            with (
+                patch.object(
+                    handlers,
+                    "_resolve_effective_library_path",
+                    return_value=library_root,
+                ),
+                patch.object(
+                    handlers,
+                    "_run_survey_with_official_fallback",
+                    return_value=SimpleNamespace(
+                        tasks_included=["wellbeing"],
+                        detected_sessions=["1", "2"],
+                    ),
+                ),
+                patch.object(
+                    handlers,
+                    "_extract_tasks_from_output",
+                    return_value=["wellbeing"],
+                ),
+                patch.object(
+                    handlers,
+                    "_register_session_in_project",
+                ) as register_mock,
+            ):
+                with app.test_client() as client:
+                    with client.session_transaction() as sess:
+                        sess["current_project_path"] = str(project_root)
+
+                    response = client.post(
+                        "/api/survey-convert",
+                        data={
+                            "file": (io.BytesIO(b"dummy"), "input.xlsx"),
+                            "session": "all",
+                            "save_to_project": "true",
+                        },
+                        content_type="multipart/form-data",
+                    )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(register_mock.call_count, 2)
+            registered_sessions = [call.args[1] for call in register_mock.call_args_list]
+            self.assertEqual(registered_sessions, ["1", "2"])
+
 
 class TestSurveyProjectTemplateCheckEndpoint(unittest.TestCase):
     """Tests for explicit local project template pre-check endpoint."""

@@ -143,8 +143,43 @@ def test_register_session_prefers_explicit_project_path(tmp_path):
     current_payload = _read_project_json(current_project)
     other_payload = _read_project_json(other_project)
     assert current_payload["Sessions"] == []
-    assert other_payload["Sessions"][0]["id"] == "ses-01"
+    assert other_payload["Sessions"][0]["id"] == "ses-1"
     assert other_payload["TaskDefinitions"]["demo"]["modality"] == "survey"
+
+
+def test_register_session_keeps_numeric_like_session_strings_distinct(tmp_path):
+    project_root = tmp_path / "project"
+    _write_project_json(project_root, {"Sessions": [], "TaskDefinitions": {}})
+
+    app = _build_app(str(project_root))
+
+    with app.test_client() as client:
+        response_one = client.post(
+            "/api/projects/sessions/register",
+            json={
+                "session_id": "1",
+                "tasks": ["demo"],
+                "modality": "survey",
+                "source_file": "input-1.xlsx",
+                "converter": "survey-xlsx",
+            },
+        )
+        response_zero_one = client.post(
+            "/api/projects/sessions/register",
+            json={
+                "session_id": "01",
+                "tasks": ["demo"],
+                "modality": "survey",
+                "source_file": "input-01.xlsx",
+                "converter": "survey-xlsx",
+            },
+        )
+
+    assert response_one.status_code == 200
+    assert response_zero_one.status_code == 200
+
+    payload = _read_project_json(project_root)
+    assert [entry["id"] for entry in payload["Sessions"]] == ["ses-1", "ses-01"]
 
 
 def test_sourcedata_helpers_prefer_explicit_project_path(tmp_path):

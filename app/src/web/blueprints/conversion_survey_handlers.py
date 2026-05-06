@@ -53,6 +53,7 @@ convert_survey_lsa_to_prism_dataset: Any = None
 infer_lsa_metadata: Any = None
 MissingIdMappingError: Any = None
 UnmatchedGroupsError: Any = None
+resolve_effective_template_version_overrides: Any = None
 _NON_ITEM_TOPLEVEL_KEYS: set[str] = set()
 
 try:
@@ -60,6 +61,7 @@ try:
         MissingIdMappingError,
         UnmatchedGroupsError,
         _NON_ITEM_TOPLEVEL_KEYS,
+        _resolve_effective_template_version_overrides,
         convert_survey_lsa_to_prism_dataset,
         convert_survey_xlsx_to_prism_dataset,
         infer_lsa_metadata,
@@ -83,6 +85,44 @@ _normalize_filename = normalize_filename
 _should_retry_with_official_library = should_retry_with_official_library
 _extract_tasks_from_output = extract_tasks_from_output
 _register_session_in_project = register_session_in_project
+_resolve_effective_template_version_overrides = (
+    _resolve_effective_template_version_overrides
+)
+
+
+def _get_effective_template_version_overrides(
+    *,
+    project_path: str | Path | None,
+    template_version_overrides: object,
+):
+    if _resolve_effective_template_version_overrides is None:
+        return template_version_overrides
+    return _resolve_effective_template_version_overrides(
+        project_path=project_path,
+        template_version_overrides=template_version_overrides,
+    )
+
+
+def _iter_session_registration_values(
+    *,
+    session_override: str | None,
+    detected_sessions: list[str] | None,
+) -> list[str]:
+    normalized_override = str(session_override or "").strip()
+    if not normalized_override:
+        return []
+    if normalized_override.lower() != "all":
+        return [normalized_override]
+
+    values: list[str] = []
+    seen: set[str] = set()
+    for raw_value in detected_sessions or []:
+        candidate = str(raw_value or "").strip()
+        if not candidate or candidate.lower() == "all" or candidate in seen:
+            continue
+        seen.add(candidate)
+        values.append(candidate)
+    return values
 
 
 class _LocalPathUpload:
@@ -1000,6 +1040,10 @@ def api_survey_check_project_templates():
     multivariant_tasks = collect_multivariant_tasks_from_library(
         library_dir=project_root / "code" / "library" / "survey",
         tasks=tasks,
+        selected_versions=_get_effective_template_version_overrides(
+            project_path=project_root,
+            template_version_overrides=None,
+        ),
     )
 
     if issues:
@@ -1083,6 +1127,10 @@ def api_survey_detect_version_context():
         return jsonify({"error": str(error)}), 400
 
     project_path = session.get("current_project_path")
+    effective_template_version_overrides = _get_effective_template_version_overrides(
+        project_path=project_path,
+        template_version_overrides=template_version_overrides,
+    )
 
     library_path = None
     try:
@@ -1109,7 +1157,7 @@ def api_survey_detect_version_context():
             sheet=sheet,
             duplicate_handling=duplicate_handling,
             separator_option=separator_option,
-            template_version_overrides=template_version_overrides,
+            template_version_overrides=effective_template_version_overrides,
         )
     except IdColumnNotDetectedError as error:
         return (
@@ -1233,6 +1281,11 @@ def api_survey_convert():
         )
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
+    current_project_path = session.get("current_project_path")
+    effective_template_version_overrides = _get_effective_template_version_overrides(
+        project_path=current_project_path,
+        template_version_overrides=template_version_overrides,
+    )
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None
     session_override = (request.form.get("session") or "").strip() or None
@@ -1330,7 +1383,7 @@ def api_survey_convert():
                     duplicate_handling=duplicate_handling,
                     skip_participants=True,
                     fallback_project_path=fallback_project_path,
-                    template_version_overrides=template_version_overrides,
+                    template_version_overrides=effective_template_version_overrides,
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
                 )
@@ -1358,7 +1411,7 @@ def api_survey_convert():
                     skip_participants=True,
                     project_path=current_project_path,
                     fallback_project_path=fallback_project_path,
-                    template_version_overrides=template_version_overrides,
+                    template_version_overrides=effective_template_version_overrides,
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
                 )
@@ -1447,7 +1500,7 @@ def api_survey_convert():
 
         try:
             if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
-                _run_survey_with_official_fallback(
+                convert_result = _run_survey_with_official_fallback(
                     convert_survey_xlsx_to_prism_dataset,
                     input_path=input_path,
                     library_dir=str(effective_survey_dir),
@@ -1470,12 +1523,12 @@ def api_survey_convert():
                     duplicate_handling=duplicate_handling,
                     skip_participants=True,
                     fallback_project_path=fallback_project_path,
-                    template_version_overrides=template_version_overrides,
+                    template_version_overrides=effective_template_version_overrides,
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
                 )
             elif suffix == ".lsa":
-                _run_survey_with_official_fallback(
+                convert_result = _run_survey_with_official_fallback(
                     convert_survey_lsa_to_prism_dataset,
                     input_path=input_path,
                     library_dir=str(effective_survey_dir),
@@ -1498,7 +1551,7 @@ def api_survey_convert():
                     skip_participants=True,
                     project_path=current_project_path,
                     fallback_project_path=fallback_project_path,
-                    template_version_overrides=template_version_overrides,
+                    template_version_overrides=effective_template_version_overrides,
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
                 )
@@ -1545,18 +1598,27 @@ def api_survey_convert():
                 archive_dest = sourcedata_dir / filename
                 shutil.copy2(input_path, archive_dest)
 
-            if session_override:
+            registration_sessions = _iter_session_registration_values(
+                session_override=session_override,
+                detected_sessions=(
+                    list(getattr(convert_result, "detected_sessions", []) or [])
+                    if convert_result
+                    else []
+                ),
+            )
+            if registration_sessions:
                 conv_type = "survey-lsa" if suffix == ".lsa" else "survey-xlsx"
                 tasks_out = _extract_tasks_from_output(output_root)
-                _register_session_in_project(
-                    project_root,
-                    session_override,
-                    tasks_out,
-                    "survey",
-                    filename,
-                    conv_type,
-                    template_version_overrides=template_version_overrides,
-                )
+                for registration_session in registration_sessions:
+                    _register_session_in_project(
+                        project_root,
+                        registration_session,
+                        tasks_out,
+                        "survey",
+                        filename,
+                        conv_type,
+                        template_version_overrides=effective_template_version_overrides,
+                    )
 
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
@@ -1697,6 +1759,11 @@ def api_survey_convert_validate():
         )
     except ValueError as error:
         return jsonify({"error": str(error), "log": log_messages}), 400
+    current_project_path = session.get("current_project_path")
+    effective_template_version_overrides = _get_effective_template_version_overrides(
+        project_path=current_project_path,
+        template_version_overrides=template_version_overrides,
+    )
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None
     session_override = (request.form.get("session") or "").strip() or None
@@ -1822,7 +1889,7 @@ def api_survey_convert_validate():
                     skip_participants=True,
                     fallback_project_path=fallback_project_path,
                     log_fn=add_log,
-                    template_version_overrides=template_version_overrides,
+                    template_version_overrides=effective_template_version_overrides,
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
                 )
@@ -1851,7 +1918,7 @@ def api_survey_convert_validate():
                     project_path=current_project_path,
                     fallback_project_path=fallback_project_path,
                     log_fn=add_log,
-                    template_version_overrides=template_version_overrides,
+                    template_version_overrides=effective_template_version_overrides,
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
                 )
@@ -2002,7 +2069,7 @@ def api_survey_convert_validate():
                     skip_participants=True,
                     fallback_project_path=current_project_path,
                     log_fn=add_log,
-                    template_version_overrides=template_version_overrides,
+                    template_version_overrides=effective_template_version_overrides,
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
                 )
@@ -2031,7 +2098,7 @@ def api_survey_convert_validate():
                     project_path=current_project_path,
                     fallback_project_path=current_project_path,
                     log_fn=add_log,
-                    template_version_overrides=template_version_overrides,
+                    template_version_overrides=effective_template_version_overrides,
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
                 )
@@ -2262,7 +2329,15 @@ def api_survey_convert_validate():
                 shutil.copy2(input_path, archive_dest)
                 add_log(f"Archived original file to sourcedata/{filename}", "info")
 
-            if session_override:
+            registration_sessions = _iter_session_registration_values(
+                session_override=session_override,
+                detected_sessions=(
+                    list(getattr(convert_result, "detected_sessions", []) or [])
+                    if convert_result
+                    else []
+                ),
+            )
+            if registration_sessions:
                 conv_type = "survey-lsa" if suffix == ".lsa" else "survey-xlsx"
                 tasks_out = (
                     convert_result.tasks_included
@@ -2270,17 +2345,19 @@ def api_survey_convert_validate():
                     and getattr(convert_result, "tasks_included", None)
                     else _extract_tasks_from_output(output_root)
                 )
-                _register_session_in_project(
-                    project_root,
-                    session_override,
-                    tasks_out,
-                    "survey",
-                    filename,
-                    conv_type,
-                    template_version_overrides=template_version_overrides,
-                )
+                for registration_session in registration_sessions:
+                    _register_session_in_project(
+                        project_root,
+                        registration_session,
+                        tasks_out,
+                        "survey",
+                        filename,
+                        conv_type,
+                        template_version_overrides=effective_template_version_overrides,
+                    )
                 add_log(
-                    f"Registered in project.json: ses-{session_override} → {', '.join(tasks_out)}",
+                    "Registered in project.json: "
+                    f"{', '.join(registration_sessions)} → {', '.join(tasks_out)}",
                     "info",
                 )
 
@@ -2338,7 +2415,7 @@ def api_survey_convert_validate():
                 collect_multivariant_tasks_from_library(
                     library_dir=effective_survey_dir,
                     tasks=list(getattr(convert_result, "tasks_included", []) or []),
-                    selected_versions=template_version_overrides,
+                    selected_versions=effective_template_version_overrides,
                 )
             )
 
