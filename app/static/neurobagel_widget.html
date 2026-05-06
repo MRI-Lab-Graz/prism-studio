@@ -1344,7 +1344,7 @@ window.renderNeurobagelEditor = function(colName, colData) {
         }))
       : [];
 
-    // Categorical levels with editable descriptions
+    // Categorical levels
     html += `
       <div class="nb-field-group">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -1358,11 +1358,16 @@ window.renderNeurobagelEditor = function(colName, colData) {
             Add Level
           </button>
         </div>
+        <div style="display: grid; grid-template-columns: 80px 16px 1fr auto; gap: 8px; align-items: center; padding: 0 10px 4px 10px;">
+          <span style="font-size: 11px; color: #888; font-weight: 600;">Dataset code</span>
+          <span></span>
+          <span style="font-size: 11px; color: #888; font-weight: 600;">Label</span>
+          <span></span>
+        </div>
         <div class="nb-value-list">
     `;
     
     for (const [levelKey, levelData] of Object.entries(colData.levels)) {
-      const description = levelData.description || '';
       const uniqueId = `nb-cat-${colName}-${levelKey}`;
       // Only pre-select if the user explicitly set a mapping via the dropdown.
       // Do not auto-select via alias resolution (that would imply recoding).
@@ -1410,12 +1415,6 @@ window.renderNeurobagelEditor = function(colName, colData) {
               Remove
             </button>
           </div>
-          <textarea 
-            class="nb-categorical-desc" 
-            id="${uniqueId}-desc" 
-            placeholder="Description (e.g., Healthy control group)"
-            style="width: 100%; height: 40px; padding: 6px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px;"
-          >${description}</textarea>
           ${canonicalSelector}
           ${levelData.uri ? `<div style="margin-top: 6px; font-size: 11px; color: #666;">🔗 <code>${levelData.uri}</code></div>` : ''}
         </div>
@@ -1480,16 +1479,9 @@ window.renderNeurobagelEditor = function(colName, colData) {
     for (const levelKey of Object.keys(colData.levels)) {
       const uniqueId = `nb-cat-${colName}-${levelKey}`;
       const labelField = document.getElementById(`${uniqueId}-label`);
-      const descField = document.getElementById(`${uniqueId}-desc`);
       
       bindLiveUpdate(labelField, function() {
           colData.levels[levelKey].label = this.value || levelKey;
-          console.log(`Updated label for ${colName}/${levelKey}:`, this.value);
-      });
-      
-      bindLiveUpdate(descField, function() {
-          colData.levels[levelKey].description = this.value;
-          console.log(`Updated description for ${colName}/${levelKey}:`, this.value);
       });
     }
 

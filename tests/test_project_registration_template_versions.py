@@ -42,7 +42,7 @@ def test_register_session_persists_template_versions_with_task_session_run(
 
     project_data = _read_project_json(tmp_path)
 
-    assert project_data["Sessions"][0]["id"] == "ses-01"
+    assert project_data["Sessions"][0]["id"] == "ses-1"
     assert project_data["TaskDefinitions"]["wellbeing"]["modality"] == "survey"
 
     selections = project_data.get("TemplateVersionSelections")
@@ -55,19 +55,19 @@ def test_register_session_persists_template_versions_with_task_session_run(
         for entry in selections
     }
     assert selection_map[("wellbeing", "ses-pre", "run-2")] == "10-vas"
-    assert selection_map[("wellbeing", "ses-01", None)] == "10-likert"
+    assert selection_map[("wellbeing", "ses-1", None)] == "10-likert"
 
 
 def test_register_session_merges_template_versions_by_task_session_run(tmp_path: Path):
     _write_project_json(
         tmp_path,
         {
-            "Sessions": [{"id": "ses-01", "label": "ses-01", "tasks": []}],
+            "Sessions": [{"id": "ses-1", "label": "ses-1", "tasks": []}],
             "TaskDefinitions": {"wellbeing": {"modality": "survey"}},
             "TemplateVersionSelections": [
                 {
                     "task": "wellbeing",
-                    "session": "ses-01",
+                    "session": "ses-1",
                     "version": "old-version",
                 },
                 {
@@ -82,7 +82,7 @@ def test_register_session_merges_template_versions_by_task_session_run(tmp_path:
 
     register_session_in_project(
         project_path=tmp_path,
-        session_id="ses-01",
+        session_id="ses-1",
         tasks=["wellbeing"],
         modality="survey",
         source_file="responses.xlsx",
@@ -108,7 +108,7 @@ def test_register_session_merges_template_versions_by_task_session_run(tmp_path:
         )
         for entry in selections
     }
-    assert selection_map[("wellbeing", "ses-01", None)] == "new-version"
+    assert selection_map[("wellbeing", "ses-1", None)] == "new-version"
     assert selection_map[("wellbeing", "ses-pre", "run-1")] == "v2"
     assert len(selection_map) == 2
 
@@ -142,3 +142,40 @@ def test_register_session_preserves_alphanumeric_run_entities(tmp_path: Path):
         and entry.get("version") == "10-vas"
         for entry in selections
     )
+
+
+def test_register_session_keeps_numeric_like_session_strings_distinct(tmp_path: Path):
+    _write_project_json(tmp_path, {"Sessions": [], "TaskDefinitions": {}})
+
+    register_session_in_project(
+        project_path=tmp_path,
+        session_id="1",
+        tasks=["wellbeing"],
+        modality="survey",
+        source_file="responses-1.xlsx",
+        converter="survey-xlsx",
+        template_version_overrides=[{"task": "wellbeing", "version": "v1"}],
+    )
+    register_session_in_project(
+        project_path=tmp_path,
+        session_id="01",
+        tasks=["wellbeing"],
+        modality="survey",
+        source_file="responses-01.xlsx",
+        converter="survey-xlsx",
+        template_version_overrides=[{"task": "wellbeing", "version": "v01"}],
+    )
+
+    project_data = _read_project_json(tmp_path)
+
+    session_ids = {entry.get("id") for entry in project_data.get("Sessions") or []}
+    assert session_ids == {"ses-1", "ses-01"}
+
+    selection_map = {
+        (entry.get("task"), entry.get("session"), entry.get("run")): entry.get(
+            "version"
+        )
+        for entry in project_data.get("TemplateVersionSelections") or []
+    }
+    assert selection_map[("wellbeing", "ses-1", None)] == "v1"
+    assert selection_map[("wellbeing", "ses-01", None)] == "v01"

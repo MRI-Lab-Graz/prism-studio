@@ -1696,7 +1696,7 @@ Subfolders:
                 if parsed_given:
                     given = parsed_given
 
-            author_entry: Dict[str, str] = {}
+            author_entry: Dict[str, Any] = {}
             if family:
                 author_entry["family-names"] = family
                 if given:
@@ -1856,10 +1856,10 @@ Subfolders:
         if has_governance_contacts or has_basic_authors:
             return self._dedupe_authors(basic_authors)
 
-        merged_authors: List[Any] = []
-        merged_authors.extend(provided_authors)
-        merged_authors.extend(basic_authors)
-        return self._dedupe_authors(merged_authors)
+        combined_authors: List[Any] = []
+        combined_authors.extend(provided_authors)
+        combined_authors.extend(basic_authors)
+        return self._dedupe_authors(combined_authors)
 
     def apply_project_metadata_precedence(
         self,

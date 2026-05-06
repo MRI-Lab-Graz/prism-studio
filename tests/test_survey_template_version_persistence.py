@@ -6,6 +6,7 @@ from src.converters.survey import (
     _load_project_template_version_overrides,
     _merge_template_version_overrides,
     _persist_project_template_version_overrides,
+    _resolve_effective_template_version_overrides,
 )
 
 
@@ -93,3 +94,40 @@ def test_persist_project_template_version_overrides_updates_multiversion_only(
         for entry in selections
     )
     assert not any(entry.get("task") == "single" for entry in selections)
+
+
+def test_resolve_effective_template_version_overrides_falls_back_to_project(
+    tmp_path,
+) -> None:
+    project_json = tmp_path / "project.json"
+    project_json.write_text(
+        json.dumps(
+            {
+                "TemplateVersionSelections": [
+                    {
+                        "task": "wb",
+                        "session": "ses-01",
+                        "version": "long",
+                    },
+                    {"task": "mood", "version": "v1"},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    merged = _resolve_effective_template_version_overrides(
+        project_path=tmp_path,
+        template_version_overrides=[
+            {"task": "wb", "session": "ses-01", "version": "short"}
+        ],
+    )
+
+    merged_map = {
+        (entry.get("task"), entry.get("session"), entry.get("run")): entry.get(
+            "version"
+        )
+        for entry in merged
+    }
+    assert merged_map[("wb", "ses-01", None)] == "short"
+    assert merged_map[("mood", None, None)] == "v1"

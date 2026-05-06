@@ -4,6 +4,8 @@ from pathlib import Path
 
 from flask import jsonify, request
 
+from src.web.services.project_registration import _normalize_session_id
+
 from .projects_helpers import (
     _resolve_project_root_path,
     _resolve_requested_or_current_project_root,
@@ -129,14 +131,7 @@ def handle_register_session(get_current_project, read_project_json, write_projec
     if not session_id:
         return jsonify({"success": False, "error": "session_id is required"}), 400
 
-    if not session_id.startswith("ses-"):
-        session_id = f"ses-{session_id}"
-    num_part = session_id[4:]
-    try:
-        n = int(num_part)
-        session_id = f"ses-{n:02d}"
-    except ValueError:
-        pass
+    session_id = _normalize_session_id(session_id) or ""
 
     if not re.match(r"^ses-[a-zA-Z0-9]+$", session_id):
         return (
