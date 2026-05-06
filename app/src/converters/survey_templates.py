@@ -239,6 +239,52 @@ def _coerce_study_version_value(raw_value: Any) -> str | None:
     return None
 
 
+def _collapse_template_version_overrides_for_loading(
+    template_version_overrides: object,
+) -> dict[str, str]:
+    """Collapse override payloads to task-level defaults for template loading.
+
+    Contextual overrides from the frontend arrive as a list of task/session/run
+    entries. Template loading can only apply one base Study.Version per task, so
+    only tasks with a single unambiguous selected version are pre-applied here.
+    Context-specific selection still happens later during task-context planning.
+    """
+
+    collapsed: dict[str, str] = {}
+
+    if isinstance(template_version_overrides, dict):
+        for raw_task, raw_value in template_version_overrides.items():
+            task = str(raw_task or "").strip().lower()
+            if not task:
+                continue
+            if isinstance(raw_value, dict) and "version" in raw_value:
+                version = _coerce_study_version_value(raw_value.get("version"))
+            else:
+                version = _coerce_study_version_value(raw_value)
+            if version:
+                collapsed[task] = version
+        return collapsed
+
+    if not isinstance(template_version_overrides, list):
+        return collapsed
+
+    versions_by_task: dict[str, set[str]] = {}
+    for entry in template_version_overrides:
+        if not isinstance(entry, dict):
+            continue
+        task = str(entry.get("task") or "").strip().lower()
+        version = _coerce_study_version_value(entry.get("version"))
+        if not task or not version:
+            continue
+        versions_by_task.setdefault(task, set()).add(version)
+
+    for task, versions in versions_by_task.items():
+        if len(versions) == 1:
+            collapsed[task] = next(iter(versions))
+
+    return collapsed
+
+
 def _apply_variant_scale_overrides(
     item_def: dict[str, Any], active_version: str
 ) -> dict[str, Any]:
@@ -904,7 +950,7 @@ def _load_and_preprocess_templates(
     canonical_aliases: dict[str, list[str]] | None,
     compare_with_global: bool = True,
     *,
-    template_version_overrides: dict[str, str] | None = None,
+    template_version_overrides: object = None,
     read_json_fn=_read_json,
     canonicalize_template_items_fn=None,  # Dependency injection
     non_item_keys=_NON_ITEM_TOPLEVEL_KEYS,
@@ -936,6 +982,9 @@ def _load_and_preprocess_templates(
     global_templates: dict[str, dict] = {}
     global_library_path = load_global_library_path_fn()
     is_using_global_library = False
+    requested_versions_by_task = _collapse_template_version_overrides_for_loading(
+        template_version_overrides
+    )
 
     if compare_with_global and global_library_path:
         try:
@@ -969,7 +1018,7 @@ def _load_and_preprocess_templates(
                     sidecar=sidecar, canonical_aliases=canonical_aliases
                 )
 
-            requested_version = (template_version_overrides or {}).get(task_norm)
+            requested_version = requested_versions_by_task.get(task_norm)
             sidecar = _apply_template_version_selection(
                 sidecar,
                 task=task_norm,

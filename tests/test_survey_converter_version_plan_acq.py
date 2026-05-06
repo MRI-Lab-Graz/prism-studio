@@ -18,6 +18,7 @@ from src.converters.survey import (
     _load_and_preprocess_templates,
     convert_survey_xlsx_to_prism_dataset,
 )
+from src.converters.survey_io import _lookup_task_context_value
 from src.converters.survey_templates import _apply_template_version_selection
 
 
@@ -122,6 +123,57 @@ def test_selected_template_version_filters_applicable_items(tmp_path):
     assert "WB03" in template
     assert item_to_task["WB03"] == "wellbeing-multi"
     assert "WB02" not in item_to_task
+    assert duplicates == {}
+    assert warnings == {}
+
+
+def test_contextual_template_versions_preseed_base_template_when_unambiguous(tmp_path):
+    library_dir = tmp_path / "survey"
+    library_dir.mkdir()
+    (library_dir / "survey-wellbeing-multi.json").write_text(
+        json.dumps(
+            {
+                "Study": {
+                    "TaskName": "wellbeing-multi",
+                    "Version": "10-likert",
+                    "Versions": ["10-likert", "10-vas"],
+                },
+                "WB01": {
+                    "Description": "Shared item",
+                    "MinValue": 1,
+                    "MaxValue": 5,
+                    "Levels": {str(index): str(index) for index in range(1, 6)},
+                    "VariantScales": [
+                        {
+                            "VariantID": "10-vas",
+                            "MinValue": 0,
+                            "MaxValue": 100,
+                            "Levels": {
+                                str(index): str(index) for index in range(0, 101)
+                            },
+                        }
+                    ],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    templates, item_to_task, duplicates, warnings = _load_and_preprocess_templates(
+        library_dir=library_dir,
+        canonical_aliases=None,
+        compare_with_global=False,
+        template_version_overrides=[
+            {"task": "wellbeing-multi", "session": "ses-1", "version": "10-vas"},
+            {"task": "wellbeing-multi", "session": "ses-2", "version": "10-vas"},
+        ],
+    )
+
+    template = templates["wellbeing-multi"]["json"]
+    assert template["Study"]["Version"] == "10-vas"
+    assert template["WB01"]["MinValue"] == 0
+    assert template["WB01"]["MaxValue"] == 100
+    assert item_to_task["WB01"] == "wellbeing-multi"
     assert duplicates == {}
     assert warnings == {}
 
@@ -290,6 +342,23 @@ def test_session_and_run_specific_template_versions_accept_language_map_values()
         "WB02" not in task_context_templates[("wellbeing-multi", "ses-post", "run-2")]
     )
     assert "WB03" in task_context_templates[("wellbeing-multi", "ses-post", "run-2")]
+
+
+def test_task_context_lookup_does_not_borrow_other_session_variant():
+    mapping = {
+        ("wellbeing-multi", "ses-1", None): {"Study": {"Version": "10-likert"}},
+        ("wellbeing-multi", "ses-2", None): {"Study": {"Version": "10-vas"}},
+    }
+
+    assert (
+        _lookup_task_context_value(
+            mapping,
+            task="wellbeing-multi",
+            session="ses-02",
+            run=None,
+        )
+        is None
+    )
 
 
 def test_selected_template_version_applies_variant_scales_to_shared_items():
