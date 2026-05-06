@@ -81,20 +81,20 @@ def _build_citation_refresh_payload(project_data: dict, dataset_desc):
         basics = {}
 
     name = (
-        _clean_metadata_text(payload.get("Name"))
+        _clean_metadata_text(basics.get("DatasetName"))
         or _clean_metadata_text(basics.get("Name"))
-        or _clean_metadata_text(basics.get("DatasetName"))
         or _clean_metadata_text(project_data.get("name") if isinstance(project_data, dict) else "")
+        or _clean_metadata_text(payload.get("Name"))
     )
     if name:
         payload["Name"] = name
 
     description_authors = _clean_metadata_list(payload.get("Authors"))
     basic_authors = _clean_metadata_list(basics.get("Authors"))
-    if description_authors:
-        payload["Authors"] = description_authors
-    elif basic_authors:
+    if basic_authors:
         payload["Authors"] = basic_authors
+    elif description_authors:
+        payload["Authors"] = description_authors
 
     text_fallbacks = {
         "License": ("License", "license"),
@@ -103,30 +103,31 @@ def _build_citation_refresh_payload(project_data: dict, dataset_desc):
         "DatasetVersion": ("DatasetVersion", "Version", "version"),
     }
     for target_key, source_keys in text_fallbacks.items():
-        value = _clean_metadata_text(payload.get(target_key))
+        value = ""
+        for source_key in source_keys:
+            value = _clean_metadata_text(basics.get(source_key))
+            if value:
+                break
         if not value:
-            for source_key in source_keys:
-                value = _clean_metadata_text(basics.get(source_key))
-                if value:
-                    break
+            value = _clean_metadata_text(payload.get(target_key))
         if value:
             payload[target_key] = value
         else:
             payload.pop(target_key, None)
 
-    references = _clean_metadata_list(payload.get("ReferencesAndLinks"))
-    if not references:
-        references = _clean_metadata_list(basics.get("ReferencesAndLinks"))
+    references = _clean_metadata_list(basics.get("ReferencesAndLinks"))
     if not references and isinstance(project_data, dict):
         references = _clean_metadata_list(project_data.get("References"))
+    if not references:
+        references = _clean_metadata_list(payload.get("ReferencesAndLinks"))
     if references:
         payload["ReferencesAndLinks"] = references
     else:
         payload.pop("ReferencesAndLinks", None)
 
-    keywords = _clean_metadata_list(payload.get("Keywords"))
+    keywords = _clean_metadata_list(basics.get("Keywords"))
     if not keywords:
-        keywords = _clean_metadata_list(basics.get("Keywords"))
+        keywords = _clean_metadata_list(payload.get("Keywords"))
     if keywords:
         payload["Keywords"] = keywords
     else:
