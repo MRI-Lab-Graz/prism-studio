@@ -21,7 +21,7 @@ import csv
 import zipfile
 import defusedxml.ElementTree as ET
 import re
-from typing import cast
+from typing import Sequence, cast
 
 try:
     import pandas as pd
@@ -1641,6 +1641,10 @@ def _convert_survey_dataframe_to_prism_dataset(
     participant_template = participants_converter.normalize_template(
         raw_participant_template
     )
+    effective_template_version_overrides = _resolve_effective_template_version_overrides(
+        project_path=project_path,
+        template_version_overrides=template_version_overrides,
+    )
     participant_columns_lower: set[str] = set()
     if participant_template:
         participant_columns_lower = {
@@ -1661,6 +1665,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             library_dir,
             canonical_aliases,
             compare_with_global=True,
+            template_version_overrides=effective_template_version_overrides,
         )
     )
     if duplicates:
@@ -1915,7 +1920,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         res_run_col=res_run_col,
         task_run_columns=task_run_columns,
         templates=templates,
-        template_version_overrides=template_version_overrides,
+        template_version_overrides=effective_template_version_overrides,
         normalize_ses_fn=_normalize_ses_id,
     )
 
@@ -2390,8 +2395,8 @@ def _map_survey_columns(
 
         approved_candidates: list[dict[str, object]] = []
         for task, candidates in task_candidates.items():
-            primary_items = task_primary_items.get(task)
-            if not primary_items:
+            task_primary_item_set = task_primary_items.get(task)
+            if not task_primary_item_set:
                 continue
 
             has_explicit_run_context = any(
@@ -2405,7 +2410,7 @@ def _map_survey_columns(
 
             if not has_explicit_run_context:
                 exact_items = exact_mapped_by_task.get(task, set())
-                missing_items = primary_items - exact_items
+                missing_items = task_primary_item_set - exact_items
                 if proposed_items != missing_items or len(candidates) != len(
                     missing_items
                 ):
@@ -2880,7 +2885,7 @@ def _load_and_preprocess_templates(
     library_dir: Path,
     canonical_aliases: dict[str, list[str]] | None,
     compare_with_global: bool = True,
-    template_version_overrides: dict[str, str] | None = None,
+    template_version_overrides: object = None,
 ) -> tuple[
     dict[str, dict],
     dict[str, str],
@@ -3032,6 +3037,28 @@ def _merge_template_version_overrides(
             continue
         merged.append(entry)
     return merged
+
+
+def _resolve_effective_template_version_overrides(
+    *,
+    project_path: str | Path | None,
+    template_version_overrides: object,
+) -> list[dict[str, object]]:
+    """Merge request overrides with project-stored version selections."""
+
+    project_root: Path | None = None
+    if project_path is not None and project_path != "":
+        candidate = Path(project_path).expanduser().resolve()
+        project_root = candidate.parent if candidate.is_file() else candidate
+
+    project_overrides: list[dict[str, object]] = []
+    if project_root is not None:
+        project_overrides = _load_project_template_version_overrides(project_root)
+
+    return _merge_template_version_overrides(
+        primary_overrides=template_version_overrides,
+        fallback_overrides=project_overrides,
+    )
 
 
 def _load_project_template_version_overrides(dataset_root: Path) -> list[dict[str, object]]:
@@ -3195,6 +3222,9 @@ def _build_task_context_maps(
     dict[tuple[str, str | None, str | int | None], str | None],
 ]:
     """Build per task/run template variants and their acq labels."""
+    normalized_version_overrides = _normalize_template_version_overrides(
+        template_version_overrides
+    )
     task_contexts: set[tuple[str, str | None, str | int | None]] = set()
     detected_session_values: list[str] = []
     if res_ses_col and res_ses_col in df.columns:
@@ -3248,6 +3278,20 @@ def _build_task_context_maps(
             task_contexts.add((task, None, None))
             continue
 
+        task_override_sessions = sorted(
+            {
+                normalize_ses_fn(entry["session"])
+                for entry in normalized_version_overrides
+                if entry.get("task") == task and entry.get("session") not in {None, ""}
+            }
+        )
+        task_override_runs = sorted(
+            {
+                str(entry["run"]).strip()
+                for entry in normalized_version_overrides
+                if entry.get("task") == task and entry.get("run") not in {None, ""}
+            }
+        )
         task_specific_runs = sorted(
             {
                 run
@@ -3256,13 +3300,19 @@ def _build_task_context_maps(
             }
         )
         contextual_sessions = (
-            detected_session_values if len(detected_session_values) > 1 else []
+            detected_session_values
+            if len(detected_session_values) > 1 or task_override_sessions
+            else []
         )
-        contextual_runs = (
-            task_specific_runs
-            if len(task_specific_runs) > 1
-            else (detected_run_values if len(detected_run_values) > 1 else [])
-        )
+        contextual_runs: Sequence[str | int]
+        if len(task_specific_runs) > 1:
+            contextual_runs = task_specific_runs
+        elif len(detected_run_values) > 1 or task_override_runs:
+            contextual_runs = (
+                detected_run_values or task_specific_runs or task_override_runs
+            )
+        else:
+            contextual_runs = []
 
         if not contextual_sessions and not contextual_runs:
             task_contexts.add((task, None, None))

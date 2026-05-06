@@ -344,6 +344,53 @@ def test_session_and_run_specific_template_versions_accept_language_map_values()
     assert "WB03" in task_context_templates[("wellbeing-multi", "ses-post", "run-2")]
 
 
+def test_single_filtered_session_keeps_contextual_version_override():
+    templates = {
+        "wellbeing-multi": {
+            "json": {
+                "Study": {
+                    "TaskName": "wellbeing-multi",
+                    "Version": "10-likert",
+                    "Versions": ["10-likert", "10-vas"],
+                },
+                "WB01": {"Description": "Shared item"},
+                "WB02": {
+                    "Description": "Likert-only",
+                    "ApplicableVersions": ["10-likert"],
+                },
+                "WB03": {
+                    "Description": "VAS-only",
+                    "ApplicableVersions": ["10-vas"],
+                },
+            }
+        }
+    }
+
+    task_context_templates, task_context_acq_map = _build_task_context_maps(
+        tasks_with_data={"wellbeing-multi"},
+        df=pd.DataFrame({"session": ["1", "1"]}),
+        res_ses_col="session",
+        session="1",
+        res_run_col=None,
+        task_run_columns={("wellbeing-multi", None): ["WB01", "WB02", "WB03"]},
+        templates=templates,
+        template_version_overrides=[
+            {
+                "task": "wellbeing-multi",
+                "session": "ses-1",
+                "version": "10-vas",
+            }
+        ],
+        normalize_ses_fn=lambda value: (
+            f"ses-{value}" if not str(value).startswith("ses-") else str(value)
+        ),
+    )
+
+    assert task_context_acq_map[("wellbeing-multi", "ses-1", None)] == "10-vas"
+    assert "WB02" not in task_context_templates[("wellbeing-multi", "ses-1", None)]
+    assert "WB03" in task_context_templates[("wellbeing-multi", "ses-1", None)]
+
+
 def test_task_context_lookup_does_not_borrow_other_session_variant():
     mapping = {
         ("wellbeing-multi", "ses-1", None): {"Study": {"Version": "10-likert"}},

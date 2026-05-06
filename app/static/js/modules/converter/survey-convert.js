@@ -491,7 +491,9 @@ export function initSurveyConvert(elements) {
     function normalizeVersionSelectionSession(session) {
         const value = String(session || '').trim();
         if (!value) return null;
-        return `ses-${value.replace(/^ses-/i, '').toLowerCase()}`;
+        const label = value.replace(/^ses-/i, '').replace(/[^a-zA-Z0-9]+/g, '');
+        if (!label) return null;
+        return `ses-${label}`;
     }
 
     function normalizeVersionSelectionRun(run) {
@@ -555,7 +557,6 @@ export function initSurveyConvert(elements) {
     function normalizeTimelineSessionToken(value) {
         return String(value || '')
             .trim()
-            .toLowerCase()
             .replace(/^ses-/, '')
             .replace(/[_\s]+/g, '-');
     }
@@ -563,12 +564,7 @@ export function initSurveyConvert(elements) {
     function getTimelineSessionSortMeta(value) {
         const token = normalizeTimelineSessionToken(value);
         if (!token) {
-            return { group: 3, order: Number.MAX_SAFE_INTEGER, token: '' };
-        }
-
-        const numericMatch = token.match(/^(?:session-|visit-|wave-|timepoint-|tp-|t)?0*(\d+)$/);
-        if (numericMatch) {
-            return { group: 0, order: Number(numericMatch[1]), token };
+            return { group: 2, order: Number.MAX_SAFE_INTEGER, token: '' };
         }
 
         const aliasOrder = [
@@ -589,12 +585,12 @@ export function initSurveyConvert(elements) {
             'fu',
             'end'
         ];
-        const aliasIndex = aliasOrder.indexOf(token);
+        const aliasIndex = aliasOrder.indexOf(token.toLowerCase());
         if (aliasIndex >= 0) {
-            return { group: 1, order: aliasIndex, token };
+            return { group: 0, order: aliasIndex, token };
         }
 
-        return { group: 2, order: Number.MAX_SAFE_INTEGER, token };
+        return { group: 1, order: Number.MAX_SAFE_INTEGER, token };
     }
 
     function compareTimelineSessions(left, right) {

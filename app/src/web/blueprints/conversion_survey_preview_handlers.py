@@ -1,6 +1,7 @@
 import shutil
 import tempfile
 import zipfile
+from collections.abc import Callable
 from pathlib import Path
 
 from flask import current_app, jsonify, request, session
@@ -22,6 +23,33 @@ from .conversion_utils import (
     parse_template_version_overrides,
     resolve_validation_library_path,
 )
+
+_resolve_effective_template_version_overrides: (
+    Callable[..., list[dict[str, object]]] | None
+) = None
+try:
+    from src.converters.survey import (
+        _resolve_effective_template_version_overrides as _survey_resolve_effective_template_version_overrides,
+    )
+
+    _resolve_effective_template_version_overrides = (
+        _survey_resolve_effective_template_version_overrides
+    )
+except ImportError:
+    pass
+
+
+def _get_effective_template_version_overrides(
+    *,
+    project_path: str | Path | None,
+    template_version_overrides: object,
+):
+    if _resolve_effective_template_version_overrides is None:
+        return template_version_overrides
+    return _resolve_effective_template_version_overrides(
+        project_path=project_path,
+        template_version_overrides=template_version_overrides,
+    )
 
 _SUPPORTED_SURVEY_TABULAR_SUFFIXES = {
     ".xlsx",
@@ -298,6 +326,11 @@ def handle_api_survey_convert_preview(
         )
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
+    current_project_path = session.get("current_project_path")
+    effective_template_version_overrides = _get_effective_template_version_overrides(
+        project_path=current_project_path,
+        template_version_overrides=template_version_overrides,
+    )
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None
     session_override = (request.form.get("session") or "").strip() or None
@@ -404,7 +437,7 @@ def handle_api_survey_convert_preview(
                 duplicate_handling=duplicate_handling,
                 skip_participants=True,
                 fallback_project_path=str(project_path) if project_path else None,
-                template_version_overrides=template_version_overrides,
+                template_version_overrides=effective_template_version_overrides,
                 allow_near_item_match=allow_near_item_match,
                 near_match_tasks=near_match_tasks,
             )
@@ -493,7 +526,7 @@ def handle_api_survey_convert_preview(
                         fallback_project_path=(
                             str(project_path) if project_path else None
                         ),
-                        template_version_overrides=template_version_overrides,
+                        template_version_overrides=effective_template_version_overrides,
                         allow_near_item_match=allow_near_item_match,
                         near_match_tasks=near_match_tasks,
                     )
@@ -662,7 +695,7 @@ def handle_api_survey_convert_preview(
             "multivariant_tasks": collect_multivariant_tasks_from_library(
                 library_dir=effective_survey_dir,
                 tasks=list(result.tasks_included or []),
-                selected_versions=template_version_overrides,
+                selected_versions=effective_template_version_overrides,
             ),
         }
 
