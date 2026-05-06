@@ -66,9 +66,13 @@ def _lookup_task_context_value(
         if key in mapping:
             return mapping[key]
 
-    for key, value in mapping.items():
-        if isinstance(key, tuple) and len(key) == 3 and key[0] == task:
-            return value
+    task_matches = [
+        value
+        for key, value in mapping.items()
+        if isinstance(key, tuple) and len(key) == 3 and key[0] == task
+    ]
+    if len(task_matches) == 1:
+        return task_matches[0]
     return None
 
 
