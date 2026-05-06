@@ -468,6 +468,152 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
             )
         )
 
+    def test_get_dataset_description_enriches_string_authors_from_project_contacts(self):
+        dataset_description = {
+            "Name": "Demo",
+            "BIDSVersion": "1.10.1",
+            "DatasetType": "raw",
+            "Authors": ["Koschutnig, Karl"],
+        }
+        (self.project_path / "dataset_description.json").write_text(
+            json.dumps(dataset_description), encoding="utf-8"
+        )
+
+        (self.project_path / "project.json").write_text(
+            json.dumps(
+                {
+                    "name": "demo_project",
+                    "governance": {
+                        "contacts": [
+                            {
+                                "name": "Koschutnig, Karl",
+                                "roles": ["Data curation"],
+                                "orcid": "https://orcid.org/0000-0001-6234-0498",
+                                "email": "karl.koschutnig@uni-graz.at",
+                                "corresponding": True,
+                            }
+                        ]
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        def get_current_project():
+            return {"path": str(self.project_path), "name": "demo_project"}
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        with self.app.test_request_context("/api/projects/description", method="GET"):
+            response = self.handle_get_dataset_description(
+                get_current_project=get_current_project,
+                get_bids_file_path=get_bids_file_path,
+                read_citation_cff_fields=self.read_citation_cff_fields,
+                merge_citation_fields=self.merge_citation_fields,
+                project_manager=self.project_manager,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+
+        self.assertEqual(status_code, 200)
+        payload = resp_obj.get_json()
+        self.assertTrue(payload.get("success"))
+        returned_authors = payload.get("description", {}).get("Authors") or []
+        self.assertTrue(isinstance(returned_authors[0], dict))
+        self.assertEqual(returned_authors[0].get("family-names"), "Koschutnig")
+        self.assertEqual(returned_authors[0].get("given-names"), "Karl")
+        self.assertEqual(
+            returned_authors[0].get("orcid"),
+            "https://orcid.org/0000-0001-6234-0498",
+        )
+        self.assertEqual(
+            returned_authors[0].get("email"),
+            "karl.koschutnig@uni-graz.at",
+        )
+        self.assertEqual(returned_authors[0].get("roles"), ["Data curation"])
+        self.assertTrue(returned_authors[0].get("corresponding"))
+
+    def test_get_dataset_description_prefers_project_json_over_stale_derived_metadata(self):
+        (self.project_path / "dataset_description.json").write_text(
+            json.dumps(
+                {
+                    "Name": "Stale Dataset",
+                    "BIDSVersion": "1.10.1",
+                    "DatasetType": "raw",
+                    "DatasetDOI": "10.1111/stale",
+                    "License": "CC-BY-4.0",
+                    "Funding": ["Old funding"],
+                    "EthicsApprovals": ["OLD-001"],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        (self.project_path / "project.json").write_text(
+            json.dumps(
+                {
+                    "name": "Canonical Dataset",
+                    "Basics": {
+                        "DatasetName": "Canonical Dataset",
+                        "DatasetDOI": "10.2222/canonical",
+                        "License": "CC0-1.0",
+                        "Funding": ["FWF P12345"],
+                        "EthicsApprovals": ["EK-2026-001"],
+                        "Keywords": ["memory", "attention"],
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        (self.project_path / "CITATION.cff").write_text(
+            "\n".join(
+                [
+                    "cff-version: 1.2.0",
+                    'title: "Manual citation edit"',
+                    'message: "Please cite manually edited citation."',
+                    'license: "CC-BY-4.0"',
+                    "type: dataset",
+                    "authors:",
+                    '  - family-names: "Doe"',
+                    '    given-names: "Jane"',
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        def get_current_project():
+            return {"path": str(self.project_path), "name": "demo_project"}
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        with self.app.test_request_context("/api/projects/description", method="GET"):
+            response = self.handle_get_dataset_description(
+                get_current_project=get_current_project,
+                get_bids_file_path=get_bids_file_path,
+                read_citation_cff_fields=self.read_citation_cff_fields,
+                merge_citation_fields=self.merge_citation_fields,
+                project_manager=self.project_manager,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+
+        self.assertEqual(status_code, 200)
+        payload = resp_obj.get_json()
+        self.assertTrue(payload.get("success"))
+        returned = payload.get("description", {})
+        self.assertEqual(returned.get("Name"), "Canonical Dataset")
+        self.assertEqual(returned.get("DatasetDOI"), "10.2222/canonical")
+        self.assertEqual(returned.get("License"), "CC0-1.0")
+        self.assertEqual(returned.get("Funding"), ["FWF P12345"])
+        self.assertEqual(returned.get("EthicsApprovals"), ["EK-2026-001"])
+        self.assertEqual(returned.get("Keywords"), ["memory", "attention"])
+
     def test_save_dataset_description_syncs_contributors_orcid(self):
         (self.project_path / "dataset_description.json").write_text(
             json.dumps({"Name": "Demo", "BIDSVersion": "1.10.1", "DatasetType": "raw"}),
@@ -870,7 +1016,16 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
             encoding="utf-8",
         )
 
-        self.project_manager.update_citation_cff(self.project_path, dataset_description)
+        (self.project_path / "CITATION.cff").write_text(
+            self.project_manager._create_citation_cff(
+                "Demo",
+                {
+                    "name": "Demo",
+                    "authors": ["Ada Lovelace"],
+                },
+            ),
+            encoding="utf-8",
+        )
         stale_status = self.project_manager.get_citation_cff_status(self.project_path)
         self.assertFalse(stale_status.get("consistent"))
 

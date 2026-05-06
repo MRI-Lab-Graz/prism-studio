@@ -379,3 +379,60 @@ class TestProjectsStudyMetadataHandlers(unittest.TestCase):
         citation_desc = manager.update_calls[0]["dataset_desc"]
         self.assertEqual(citation_desc.get("Name"), "Preliminary Study")
         self.assertEqual(citation_desc.get("Authors"), ["Ada Lovelace"])
+
+    def test_save_study_metadata_prefers_project_basics_over_stale_dataset_description(self):
+        (self.project_root / "dataset_description.json").write_text(
+            json.dumps(
+                {
+                    "Name": "Stale Study",
+                    "Authors": ["Stale Author"],
+                    "License": "CC-BY-4.0",
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        def get_current_project():
+            return {"path": str(self.project_root), "name": "demo_project"}
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        def compute_methods_completeness(project_data, dataset_desc):
+            return {"score": 0}
+
+        payload = {
+            "Basics": {
+                "Name": "Canonical Study",
+                "Authors": ["Ada Lovelace"],
+                "License": "CC0-1.0",
+            }
+        }
+
+        manager = _DummyProjectManager()
+        with self.app.test_request_context(
+            "/api/projects/study-metadata",
+            method="POST",
+            json=payload,
+        ):
+            response = self.handle_save_study_metadata(
+                get_current_project=get_current_project,
+                read_project_json=self.read_project_json,
+                write_project_json=self.write_project_json,
+                get_bids_file_path=get_bids_file_path,
+                editable_sections=("Basics",),
+                compute_methods_completeness=compute_methods_completeness,
+                project_manager=manager,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+
+        self.assertEqual(status_code, 200)
+        self.assertTrue(resp_obj.get_json().get("success"))
+        self.assertEqual(len(manager.update_calls), 1)
+
+        citation_desc = manager.update_calls[0]["dataset_desc"]
+        self.assertEqual(citation_desc.get("Name"), "Canonical Study")
+        self.assertEqual(citation_desc.get("Authors"), ["Ada Lovelace"])
+        self.assertEqual(citation_desc.get("License"), "CC0-1.0")

@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 from flask import Flask
 
@@ -110,3 +111,40 @@ def test_handle_api_recipes_surveys_rejects_invalid_id_length() -> None:
     assert status_code == 400
     payload = response.get_json()
     assert "invalid id_length" in payload["error"].lower()
+
+
+def test_handle_api_recipes_surveys_returns_user_error_for_missing_recipes(
+    tmp_path: Path,
+) -> None:
+    handlers = _import_handlers_module()
+    app = _build_app()
+
+    dataset_path = tmp_path / "dataset"
+    dataset_path.mkdir()
+
+    recipe_dir = tmp_path / "recipes"
+    recipe_dir.mkdir()
+
+    error_message = (
+        f"No derivative recipes found in: {recipe_dir}. Expected recipe-*.json"
+    )
+
+    with app.app_context(), patch(
+        "src.web.validation.run_validation", return_value=([], {})
+    ), patch(
+        "src.cli.commands.recipes.run_recipes_job",
+        side_effect=ValueError(error_message),
+    ):
+        response, status_code = handlers.handle_api_recipes_surveys(
+            {
+                "dataset_path": str(dataset_path),
+                "recipe_dir": str(recipe_dir),
+                "modality": "survey",
+                "format": "sav",
+            }
+        )
+
+    assert status_code == 400
+    payload = response.get_json()
+    assert payload["error"] == error_message
+    assert "traceback" not in payload["error"].lower()

@@ -538,8 +538,9 @@ def handle_get_dataset_description(
                 citation_fields,
             )
 
-        description["Authors"] = _enrich_authors_with_roles(
-            project_path, description.get("Authors")
+        description = project_manager.apply_project_metadata_precedence(
+            description,
+            project_path=project_path,
         )
 
         validation_citation_fields = dict(citation_fields or {})
@@ -663,15 +664,21 @@ def handle_save_dataset_description(
             if value not in (None, "", [], {}):
                 citation_payload[key] = value
 
+        project_metadata_payload = dict(description)
+        for key, value in submitted_citation_fields.items():
+            if value is None:
+                continue
+            project_metadata_payload[key] = value
+
         citation_updated = False
         try:
-            project_manager.update_citation_cff(project_path, citation_payload)
             project_manager.sync_dataset_metadata_to_project_json(
-                project_path, description
+                project_path, project_metadata_payload
             )
             _sync_authors_to_project_json(
                 project_path, submitted_citation_fields.get("Authors")
             )
+            project_manager.update_citation_cff(project_path, project_metadata_payload)
             _remove_legacy_contributor_files(project_path)
             citation_updated = True
         except Exception as e:

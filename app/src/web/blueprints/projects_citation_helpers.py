@@ -4,6 +4,11 @@ from pathlib import Path
 from typing import Any
 
 _DEFAULT_CITATION_MESSAGE = (
+    "If you use this dataset, please cite both the preferred-citation "
+    "and the dataset itself."
+)
+
+_LEGACY_DEFAULT_CITATION_MESSAGE = (
     "If you use this dataset, please cite both the article from "
     "preferred-citation and the dataset itself."
 )
@@ -32,7 +37,11 @@ def _is_placeholder_citation_message(value: str) -> bool:
     normalized = re.sub(r"\s+", " ", str(value or "").strip()).lower()
     if not normalized:
         return False
-    if normalized == _DEFAULT_CITATION_MESSAGE.lower():
+    if normalized in {
+        _DEFAULT_CITATION_MESSAGE.lower(),
+        _LEGACY_DEFAULT_CITATION_MESSAGE.lower(),
+        "if you use this dataset, please cite it using the metadata from this file.",
+    }:
         return True
     return all(snippet in normalized for snippet in _PLACEHOLDER_CITATION_MESSAGE_SNIPPETS)
 
