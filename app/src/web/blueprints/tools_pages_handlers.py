@@ -6,6 +6,9 @@ from flask import jsonify, render_template
 from .tools_helpers import _default_library_root_for_templates, _global_recipes_root
 
 
+_RECIPE_FILENAME_GLOB = "recipe-*.json"
+
+
 def _detect_available_recipe_modalities(project_root: Path) -> tuple[list[dict], str]:
     """Detect recipe modalities available for the current project."""
     roots = [project_root]
@@ -40,7 +43,7 @@ def _detect_available_recipe_modalities(project_root: Path) -> tuple[list[dict],
                 if candidate not in candidates:
                     candidates.append(candidate)
         for folder in candidates:
-            if folder.is_dir() and any(folder.glob("*.json")):
+            if folder.is_dir() and any(folder.glob(_RECIPE_FILENAME_GLOB)):
                 return True
         return False
 

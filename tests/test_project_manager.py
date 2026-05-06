@@ -142,6 +142,80 @@ class TestProjectManager(unittest.TestCase):
         self.assertIn('affiliation: "Example Institute"', content)
         self.assertIn('email: "alex@example.org"', content)
 
+    def test_create_citation_cff_preserves_unicode_text(self):
+        manager = ProjectManager()
+
+        content = manager._create_citation_cff(
+            "demo_project",
+            {
+                "name": "Depressivitäts-Studie",
+                "authors": [
+                    {
+                        "family-names": "Müller",
+                        "given-names": "Jörg",
+                    }
+                ],
+                "abstract": "Strukturelle Veränderungen werden באמצעות MRT erfasst.",
+            },
+        )
+
+        self.assertIn('title: "Depressivitäts-Studie"', content)
+        self.assertIn('family-names: "Müller"', content)
+        self.assertIn('given-names: "Jörg"', content)
+        self.assertIn('abstract: "Strukturelle Veränderungen werden באמצעות MRT erfasst."', content)
+        self.assertNotIn('\\u00', content)
+        self.assertNotIn('\\u05', content)
+
+    def test_update_citation_cff_prefers_richer_project_contact_metadata(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp)
+            (project_path / "project.json").write_text(
+                json.dumps(
+                    {
+                        "name": "demo_project",
+                        "governance": {
+                            "contacts": [
+                                {
+                                    "name": "Koschutnig, Karl",
+                                    "email": "karl.koschutnig@uni-graz.at",
+                                    "orcid": "https://orcid.org/0000-0001-6234-0498",
+                                    "corresponding": True,
+                                    "roles": ["Data curation"],
+                                }
+                            ]
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            manager.update_citation_cff(
+                project_path,
+                {
+                    "Name": "Demo",
+                    "BIDSVersion": "1.10.1",
+                    "DatasetType": "raw",
+                    "Authors": ["Koschutnig, Karl"],
+                },
+            )
+
+            citation_content = (project_path / "CITATION.cff").read_text(
+                encoding="utf-8"
+            )
+            self.assertIn('family-names: "Koschutnig"', citation_content)
+            self.assertIn('given-names: "Karl"', citation_content)
+            self.assertIn(
+                'orcid: "https://orcid.org/0000-0001-6234-0498"',
+                citation_content,
+            )
+            self.assertIn(
+                'email: "karl.koschutnig@uni-graz.at"',
+                citation_content,
+            )
+            self.assertIn("contact:", citation_content)
+
     def test_create_citation_cff_deduplicates_duplicate_author_entries(self):
         manager = ProjectManager()
 
@@ -209,9 +283,10 @@ class TestProjectManager(unittest.TestCase):
         self.assertIn('doi: "10.60817/9fzf-v802"', content)
         self.assertIn("message: >-", content)
         self.assertIn(
-            "If you use this dataset, please cite both the article from preferred-citation and the dataset itself.",
+            "If you use this dataset, please cite it using the metadata from this file.",
             content,
         )
+        self.assertNotIn("preferred-citation:", content)
         self.assertIn('license: "CC-BY-4.0"', content)
         self.assertIn('license-url: "https://example.org/license"', content)
         self.assertIn('url: "https://example.org/dataset"', content)
@@ -249,7 +324,7 @@ class TestProjectManager(unittest.TestCase):
         self.assertIn('  - "longitudinal"', content)
         self.assertNotIn('  - "email-lists; social-media"', content)
 
-    def test_create_citation_cff_uses_default_message_for_url_acknowledgement(self):
+    def test_create_citation_cff_builds_preferred_citation_from_url_acknowledgement(self):
         manager = ProjectManager()
 
         content = manager._create_citation_cff(
@@ -262,10 +337,48 @@ class TestProjectManager(unittest.TestCase):
 
         self.assertIn("message: >-", content)
         self.assertIn(
-            "If you use this dataset, please cite both the article from preferred-citation and the dataset itself.",
+            "If you use this dataset, please cite both the preferred-citation and the dataset itself.",
             content,
         )
+        self.assertIn("preferred-citation:", content)
+        self.assertIn('title: "Preferred citation"', content)
+        self.assertIn('doi: "10.1007/s00429-024-02885-2"', content)
         self.assertNotIn('message: "https://doi.org/10.1007/s00429-024-02885-2"', content)
+
+    def test_create_citation_cff_uses_matching_reference_as_preferred_citation(self):
+        manager = ProjectManager()
+
+        content = manager._create_citation_cff(
+            "demo_project",
+            {
+                "name": "demo_project",
+                "authors": ["Jane Doe"],
+                "how_to_acknowledge": "10.1000/preferred",
+                "references": [
+                    {
+                        "type": "article",
+                        "title": "Dataset paper",
+                        "doi": "10.1000/preferred",
+                        "journal": "Journal of Datasets",
+                        "year": 2026,
+                        "authors": [{"family-names": "Doe", "given-names": "Jane"}],
+                    },
+                    {
+                        "type": "article",
+                        "title": "Background paper",
+                        "doi": "10.1000/background",
+                    },
+                ],
+            },
+        )
+
+        self.assertIn("preferred-citation:", content)
+        self.assertIn('type: "article"', content)
+        self.assertIn('title: "Dataset paper"', content)
+        self.assertIn('journal: "Journal of Datasets"', content)
+        self.assertIn('year: "2026"', content)
+        self.assertEqual(content.count('doi: "10.1000/preferred"'), 1)
+        self.assertIn('doi: "10.1000/background"', content)
 
     def test_build_citation_config_uses_project_json_fallbacks(self):
         manager = ProjectManager()
@@ -502,7 +615,10 @@ class TestProjectManager(unittest.TestCase):
                     "HowToAcknowledge": "Please cite this dataset.",
                     "Description": "Dataset summary",
                     "Keywords": ["memory", "attention"],
+                    "DatasetLinks": {"landing": "https://example.org/dataset"},
                     "ReferencesAndLinks": ["https://example.org/paper"],
+                    "Funding": ["FWF P12345"],
+                    "EthicsApprovals": ["EK-2026-001"],
                     "Authors": ["Jane Doe"],
                 },
             )
@@ -521,9 +637,60 @@ class TestProjectManager(unittest.TestCase):
         )
         self.assertEqual(basics.get("Keywords"), ["memory", "attention"])
         self.assertEqual(
+            basics.get("DatasetLinks"),
+            {"landing": "https://example.org/dataset"},
+        )
+        self.assertEqual(
             basics.get("ReferencesAndLinks"), ["https://example.org/paper"]
         )
+        self.assertEqual(basics.get("Funding"), ["FWF P12345"])
+        self.assertEqual(basics.get("EthicsApprovals"), ["EK-2026-001"])
         self.assertEqual(basics.get("Authors"), ["Jane Doe"])
+
+    def test_build_citation_config_prefers_project_json_dataset_links(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp)
+            (project_path / "project.json").write_text(
+                json.dumps(
+                    {
+                        "name": "demo",
+                        "Basics": {
+                            "DatasetLinks": {
+                                "landing": "https://example.org/dataset",
+                                "docs": "https://example.org/docs",
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            config = manager._build_citation_config(
+                "demo",
+                {
+                    "Name": "demo",
+                    "Authors": ["Jane Doe"],
+                    "DatasetLinks": {"landing": "https://stale.example.org/dataset"},
+                    "ReferencesAndLinks": [
+                        {"title": "Code", "url": "https://github.com/example/repo"}
+                    ],
+                },
+                project_path,
+            )
+
+        self.assertEqual(config.get("url"), "https://example.org/dataset")
+        self.assertEqual(
+            config.get("identifiers"),
+            [
+                {
+                    "type": "url",
+                    "value": "https://example.org/docs",
+                    "description": "Dataset link: docs",
+                }
+            ],
+        )
 
     def test_metadata_sync_status_reports_project_and_dataset_mismatch(self):
         manager = ProjectManager()

@@ -283,21 +283,24 @@ def handle_api_recipes_surveys(data: dict):
             app_root=str(current_app.root_path),
         )
 
-        result = run_recipes_job(
-            prism_root=Path(dataset_path),
-            repo_root=Path(repo_root_str),
-            recipe_dir=effective_recipe_dir,
-            recipe_filter=survey_filter,
-            sessions_filter=sessions,
-            out_format=out_format,
-            modality=modality,
-            lang=lang,
-            layout=layout,
-            include_raw=include_raw,
-            boilerplate=boilerplate,
-            merge_all=merge_all,
-            anonymized=anonymize,
-        )
+        try:
+            result = run_recipes_job(
+                prism_root=Path(dataset_path),
+                repo_root=Path(repo_root_str),
+                recipe_dir=effective_recipe_dir,
+                recipe_filter=survey_filter,
+                sessions_filter=sessions,
+                out_format=out_format,
+                modality=modality,
+                lang=lang,
+                layout=layout,
+                include_raw=include_raw,
+                boilerplate=boilerplate,
+                merge_all=merge_all,
+                anonymized=anonymize,
+            )
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
 
         mapping_file: str | None = None
         anonymized_count = 0
