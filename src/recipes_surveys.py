@@ -2564,33 +2564,6 @@ def compute_survey_recipes(
 
                 if rows_accum:
                     df = pd.DataFrame(rows_accum)
-                    # Attach participant variables once to avoid repeated merge columns.
-                    if participants_df is not None and len(merge_all_dfs) == 0:
-                        participant_cols = [
-                            c
-                            for c in participants_df.columns
-                            if c != "participant_id" and c not in df.columns
-                        ]
-                        if participant_cols:
-                            left = df.copy()
-                            left["__pid_key"] = left["participant_id"].map(
-                                _participant_join_key
-                            )
-                            right = participants_df[
-                                ["participant_id"] + participant_cols
-                            ].copy()
-                            right["__pid_key"] = right["participant_id"].map(
-                                _participant_join_key
-                            )
-                            right = right[right["__pid_key"].notna()].drop_duplicates(
-                                subset="__pid_key", keep="first"
-                            )
-                            df = left.merge(
-                                right.drop(columns=["participant_id"]),
-                                on="__pid_key",
-                                how="left",
-                            )
-                            df = df.drop(columns=["__pid_key"])
                     merge_all_dfs.append(df)
                     merge_all_recipe_by_id[recipe_id] = recipe
                     written_recipe_ids.add(recipe_id)
@@ -2686,16 +2659,36 @@ def compute_survey_recipes(
                 df, on=merge_keys, how="outer", suffixes=("", "_dup")
             )
 
+        combined_participant_cols: list[str] = []
+        if participants_df is not None:
+            combined_participant_cols = [
+                c
+                for c in participants_df.columns
+                if c != "participant_id" and c not in combined_df.columns
+            ]
+            if combined_participant_cols:
+                left = combined_df.copy()
+                left["__pid_key"] = left["participant_id"].map(_participant_join_key)
+                right = participants_df[
+                    ["participant_id"] + combined_participant_cols
+                ].copy()
+                right["__pid_key"] = right["participant_id"].map(
+                    _participant_join_key
+                )
+                right = right[right["__pid_key"].notna()].drop_duplicates(
+                    subset="__pid_key", keep="first"
+                )
+                combined_df = left.merge(
+                    right.drop(columns=["participant_id"]),
+                    on="__pid_key",
+                    how="left",
+                )
+                combined_df = combined_df.drop(columns=["__pid_key"])
+
         _ensure_dir(out_root)
         out_stem = f"combined_{modality}"
         ext_map = {"csv": ".csv", "xlsx": ".xlsx", "sav": ".sav"}
         out_path = out_root / f"{out_stem}{ext_map.get(out_format, '.csv')}"
-
-        combined_participant_cols: list[str] = []
-        if participants_df is not None:
-            combined_participant_cols = [
-                c for c in participants_df.columns if c != "participant_id"
-            ]
 
         if layout == "wide":
             try:

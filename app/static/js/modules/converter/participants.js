@@ -2333,6 +2333,7 @@ export function initParticipants() {
                                 <select class="form-select form-select-sm participants-session-resolution-action">
                                     <option value="" ${selectedAction ? '' : 'selected'}>Choose...</option>
                                     <option value="pick_session" ${selectedAction === 'pick_session' ? 'selected' : ''}>Take one session</option>
+                                    <option value="pick_latest_session" ${selectedAction === 'pick_latest_session' ? 'selected' : ''}>Take latest session</option>
                                     <option value="split_sessions" ${selectedAction === 'split_sessions' ? 'selected' : ''}>Keep all sessions as columns</option>
                                 </select>
                             </div>
@@ -2790,7 +2791,7 @@ export function initParticipants() {
             }
 
             const action = String(rawEntry.action || '').trim().toLowerCase();
-            if (!['pick_session', 'split_sessions'].includes(action)) {
+            if (!['pick_session', 'pick_latest_session', 'split_sessions'].includes(action)) {
                 return;
             }
 

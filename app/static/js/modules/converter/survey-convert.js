@@ -1140,6 +1140,15 @@ export function initSurveyConvert(elements) {
             return false;
         }
 
+        const normalizedSessions = [...new Set(
+            detectedSessions
+                .map((value) => String(value || '').trim())
+                .filter(Boolean)
+        )];
+        if (normalizedSessions.length === 0) {
+            return false;
+        }
+
         while (convertSessionSelect.options.length > 1) {
             convertSessionSelect.remove(1);
         }
@@ -1149,7 +1158,7 @@ export function initSurveyConvert(elements) {
         allOpt.textContent = '✓ All sessions';
         convertSessionSelect.appendChild(allOpt);
 
-        detectedSessions.forEach((ses) => {
+        normalizedSessions.forEach((ses) => {
             const opt = document.createElement('option');
             opt.value = ses;
             opt.textContent = ses;
@@ -1157,7 +1166,7 @@ export function initSurveyConvert(elements) {
         });
 
         if (!getSurveySessionValue()) {
-            convertSessionSelect.value = 'all';
+            convertSessionSelect.value = normalizedSessions.length === 1 ? normalizedSessions[0] : 'all';
         }
         if (convertSessionCustom) {
             convertSessionCustom.value = '';
