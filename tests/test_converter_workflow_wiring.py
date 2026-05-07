@@ -35,6 +35,8 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn("installApiFetchFallback();", content)
         self.assertIn("let sessionPickerRequestToken = 0;", content)
+        self.assertIn("function hasManualCustomValue(selectEl) {", content)
+        self.assertIn("if (sessions.length === 1 && !hasManualCustomValue(sel)) {", content)
         self.assertIn(
             "const requestUrl = `/api/projects/sessions/declared?project_path=${encodeURIComponent(projectPath)}`;",
             content,
@@ -188,6 +190,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "window.addEventListener('prism-project-changed', function() {", content
+        )
+        self.assertIn(
+            "convertSessionSelect.value = normalizedSessions.length === 1 ? normalizedSessions[0] : 'all';",
+            content,
         )
 
     def test_converter_modules_surface_backend_save_paths(self):

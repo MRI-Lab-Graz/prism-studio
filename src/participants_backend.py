@@ -37,7 +37,11 @@ ParticipantLogCallback = Callable[[str, str], None]
 
 _PARTICIPANT_ID_PATTERN = re.compile(r"(sub-[A-Za-z0-9]+)")
 _MISSING_TOKENS = {"", "n/a", "na", "nan", "none"}
-_SESSION_RESOLUTION_ACTIONS = {"pick_session", "split_sessions"}
+_SESSION_RESOLUTION_ACTIONS = {
+    "pick_session",
+    "pick_latest_session",
+    "split_sessions",
+}
 
 
 def normalize_participant_mapping(mapping: object) -> dict:
@@ -1113,7 +1117,11 @@ def _build_participants_merge_input(
                 "column": standard_column,
                 "source_column": source_column,
                 "session_column": session_column,
-                "available_actions": ["pick_session", "split_sessions"],
+                "available_actions": [
+                    "pick_session",
+                    "pick_latest_session",
+                    "split_sessions",
+                ],
                 "available_sessions": available_sessions,
                 "selected_action": decision_entry["action"],
                 "selected_session": _normalize_session_value(decision_entry["session"]),
@@ -1172,6 +1180,25 @@ def _build_participants_merge_input(
                     lambda pid: value_by_pid_session.get(
                         str(pid or "").strip(), {}
                     ).get(selected_session, "n/a")
+                )
+                candidates.append(candidate)
+                continue
+
+            if action == "pick_latest_session":
+                latest_session = available_sessions[-1] if available_sessions else ""
+                if not latest_session:
+                    unresolved_columns.append(standard_column)
+                    candidates.append(candidate)
+                    continue
+
+                candidate["selected_action"] = "pick_latest_session"
+                candidate["selected_session"] = latest_session
+                normalized_decisions[standard_column]["session"] = latest_session
+
+                output_df[standard_column] = output_df["participant_id"].map(
+                    lambda pid: value_by_pid_session.get(
+                        str(pid or "").strip(), {}
+                    ).get(latest_session, "n/a")
                 )
                 candidates.append(candidate)
                 continue
