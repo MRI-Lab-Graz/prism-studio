@@ -300,6 +300,166 @@ class TestSurveyVersionContextEndpoint(unittest.TestCase):
         self.assertEqual(payload.get("run_column"), "run")
         self.assertIn("wellbeing-multi", payload.get("multivariant_tasks", {}))
 
+    def test_detect_version_context_forwards_retry_resolution_hints(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-detect-version-contexts",
+            view_func=handlers.api_survey_detect_version_context,
+            methods=["POST"],
+        )
+
+        with patch.object(
+            handlers,
+            "_resolve_effective_library_path",
+            return_value=Path("/tmp/library"),
+        ):
+            with patch.object(
+                handlers,
+                "_detect_survey_version_contexts",
+                return_value={
+                    "tasks_included": ["pss10"],
+                    "detected_sessions": ["ses-1"],
+                    "task_runs": {},
+                    "session_column": "session",
+                    "run_column": None,
+                    "multivariant_tasks": {},
+                },
+            ) as detect_mock:
+                with app.test_client() as client:
+                    response = client.post(
+                        "/api/survey-detect-version-contexts",
+                        data={
+                            "excel": (
+                                io.BytesIO(b"session,Code,PSS_01\n1,1,5\n"),
+                                "input.csv",
+                            ),
+                            "id_column": "Code",
+                            "session_column": "session",
+                            "allow_near_item_match": "true",
+                            "near_match_tasks": json.dumps(["pss10"]),
+                            "value_offsets": json.dumps({"pss10": -1}),
+                        },
+                        content_type="multipart/form-data",
+                    )
+
+        self.assertEqual(response.status_code, 200)
+        call_kwargs = detect_mock.call_args.kwargs
+        self.assertTrue(call_kwargs.get("allow_near_item_match"))
+        self.assertEqual(call_kwargs.get("near_match_tasks"), {"pss10"})
+        self.assertEqual(call_kwargs.get("task_value_offsets"), {"pss10": -1.0})
+
+
+class TestSurveyConvertValidateEndpoint(unittest.TestCase):
+    def test_validate_uses_official_fallback_when_project_library_is_empty(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-convert-validate",
+            view_func=handlers.api_survey_convert_validate,
+            methods=["POST"],
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            project_root = tmp_path / "project"
+            (project_root / "code" / "library").mkdir(parents=True, exist_ok=True)
+            official_dir = tmp_path / "official" / "library" / "survey"
+            official_dir.mkdir(parents=True, exist_ok=True)
+            (official_dir / "survey-pss.json").write_text(
+                json.dumps({"Study": {"TaskName": "pss"}}),
+                encoding="utf-8",
+            )
+
+            call_library_dirs = []
+
+            def fake_run_survey_with_official_fallback(_converter, **kwargs):
+                call_library_dirs.append(Path(kwargs["library_dir"]))
+                output_root = Path(kwargs["output_root"])
+                output_root.mkdir(parents=True, exist_ok=True)
+                if not kwargs.get("dry_run"):
+                    (output_root / "sub-001_task-pss_events.tsv").write_text(
+                        "participant_id\tPSS01\nsub-001\t4\n",
+                        encoding="utf-8",
+                    )
+                return SimpleNamespace(
+                    tasks_included=["pss"],
+                    detected_sessions=[],
+                    task_runs={},
+                    template_matches={},
+                    unknown_columns=[],
+                    tool_columns=[],
+                    near_match_candidates=[],
+                    near_match_applied=False,
+                    applied_value_offsets={},
+                    value_offset_application_counts={},
+                    conversion_warnings=[],
+                    missing_cells_by_subject={},
+                )
+
+            with patch.object(
+                handlers,
+                "convert_survey_xlsx_to_prism_dataset",
+                object(),
+            ), patch.object(
+                handlers,
+                "convert_survey_lsa_to_prism_dataset",
+                object(),
+            ), patch.object(
+                handlers,
+                "_resolve_effective_library_path",
+                return_value=project_root / "code" / "library",
+            ), patch.object(
+                handlers,
+                "_resolve_official_survey_dir",
+                return_value=official_dir,
+            ), patch.object(
+                handlers,
+                "_run_survey_with_official_fallback",
+                side_effect=fake_run_survey_with_official_fallback,
+            ), patch.object(
+                handlers,
+                "_validate_project_templates_for_tasks",
+                return_value=[],
+            ), patch.object(
+                handlers,
+                "_log_file_head",
+                return_value=None,
+            ):
+                with app.test_client() as client:
+                    with client.session_transaction() as client_session:
+                        client_session["current_project_path"] = str(project_root)
+
+                    response = client.post(
+                        "/api/survey-convert-validate",
+                        data={
+                            "excel": (
+                                io.BytesIO(b"ID,PSS01\nsub-001,4\n"),
+                                "input.csv",
+                            ),
+                            "id_column": "ID",
+                            "session": "ses-1",
+                        },
+                        content_type="multipart/form-data",
+                    )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertTrue(payload.get("success"))
+        self.assertEqual(call_library_dirs, [official_dir, official_dir])
+
 
 class TestValidationLibraryResolution(unittest.TestCase):
     """Ensure validation uses one context (project or fallback), never mixed."""
@@ -739,6 +899,57 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
             self.assertIn("SoftwarePlatform", issue_text)
             self.assertIn("TaskName", issue_text)
             self.assertIn("LicenseID", issue_text)
+
+    def test_project_template_validation_accepts_legacy_platform_for_paper(self):
+        import importlib
+        import json
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_root = Path(tmp) / "project"
+            template_dir = project_root / "code" / "library" / "survey"
+            template_dir.mkdir(parents=True, exist_ok=True)
+
+            (template_dir / "survey-stai.json").write_text(
+                json.dumps(
+                    {
+                        "Technical": {
+                            "StimulusType": "Questionnaire",
+                            "FileFormat": "tsv",
+                            "SoftwarePlatform": "Legacy/Imported",
+                            "SoftwareVersion": "legacy",
+                            "Language": "en",
+                            "Respondent": "self",
+                            "AdministrationMethod": "paper",
+                        },
+                        "Study": {
+                            "TaskName": "stai",
+                            "OriginalName": "STAI",
+                            "Citation": "Spielberger et al.",
+                            "License": "Proprietary",
+                            "LicenseID": "Proprietary",
+                            "Version": "1.0",
+                        },
+                        "Metadata": {
+                            "SchemaVersion": "1.1.1",
+                            "CreationDate": "2026-03-05",
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            issues = handlers._validate_project_templates_for_tasks(
+                tasks=["stai"],
+                project_path=str(project_root),
+                schema_version="stable",
+            )
+
+            issue_text = "\n".join(i.get("message", "") for i in issues)
+            self.assertNotIn("SoftwarePlatform", issue_text)
 
     def test_project_template_version_required_when_project_has_multiple_versions(
         self,
@@ -1425,6 +1636,54 @@ class TestSurveySidecarDefaults(unittest.TestCase):
             self.assertIn("Technical", payload)
             self.assertIn("SoftwarePlatform", payload["Technical"])
             self.assertEqual(payload["Technical"]["SoftwarePlatform"], "")
+
+    def test_write_task_sidecars_normalizes_legacy_platform_for_paper(self):
+        import importlib
+
+        survey_io = importlib.import_module("src.converters.survey_io")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            dataset_root = Path(tmp)
+
+            def write_json(path, payload):
+                path.write_text(json.dumps(payload), encoding="utf-8")
+
+            survey_io._write_task_sidecars(
+                tasks_with_data={"stai"},
+                dataset_root=dataset_root,
+                templates={
+                    "stai": {
+                        "json": {
+                            "Study": {"TaskName": "stai"},
+                            "Technical": {
+                                "AdministrationMethod": "paper",
+                                "SoftwarePlatform": "Legacy/Imported",
+                                "SoftwareVersion": "legacy",
+                                "Language": "en",
+                                "Respondent": "self",
+                            },
+                        }
+                    }
+                },
+                task_acq_map={"stai": None},
+                language=None,
+                force=True,
+                technical_overrides=None,
+                missing_token="n/a",
+                localize_survey_template_fn=lambda template, language: template,
+                inject_missing_token_fn=lambda template, token: template,
+                apply_technical_overrides_fn=lambda template, overrides: template,
+                strip_internal_keys_fn=lambda template: template,
+                write_json_fn=write_json,
+            )
+
+            payload = json.loads(
+                (dataset_root / "task-stai_survey.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                payload["Technical"]["SoftwarePlatform"], "Paper and Pencil"
+            )
+            self.assertEqual(payload["Technical"]["SoftwareVersion"], "")
 
     def test_write_task_sidecars_uses_acq_variant_filename(self):
         import importlib

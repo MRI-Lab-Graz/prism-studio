@@ -525,6 +525,18 @@ def build_prism_tools_parsers(
             "or --template-version wellbeing;session=ses-02;run=2=10-vas"
         ),
     )
+    parser_survey_convert.add_argument(
+        "--value-offset",
+        dest="value_offsets",
+        action="append",
+        default=None,
+        metavar="TASK=OFFSET",
+        help=(
+            "Apply a numeric value offset before level/range validation for the given task. "
+            "Repeat for multiple tasks, e.g. --value-offset pss=-1. "
+            "Use --value-offset *=-1 as a global fallback."
+        ),
+    )
 
     parser_biometrics = subparsers.add_parser(
         "biometrics", help="Biometrics library operations"

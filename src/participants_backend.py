@@ -1456,14 +1456,16 @@ def _plan_participants_merge(
 
         mapping_pairs: list[dict[str, str]] = []
         for incoming_code, existing_code in sorted(incoming_to_existing_map.items()):
+            incoming_label = str(incoming_display.get(incoming_code, incoming_code))
+            existing_label = str(existing_display.get(existing_code, existing_code))
             mapping_pairs.append(
                 {
                     "incoming_value": _canonical_display_text(
-                        incoming_display.get(incoming_code, incoming_code),
+                        incoming_label,
                         incoming_display,
                     ),
                     "existing_value": _canonical_display_text(
-                        existing_display.get(existing_code, existing_code),
+                        existing_label,
                         existing_display,
                     ),
                 }

@@ -66,6 +66,47 @@ def test_template_editor_save_writes_only_to_project_code_library(
     }
 
 
+def test_template_editor_save_normalizes_legacy_platform_for_paper(
+    tmp_path, monkeypatch
+):
+    app, handlers = _build_app_and_handlers()
+
+    monkeypatch.setattr(handlers, "_load_prism_schema", lambda **kwargs: {})
+    monkeypatch.setattr(handlers, "_validate_against_schema", lambda **kwargs: [])
+
+    template = {
+        "Study": {"TaskName": "stai", "ShortName": "stai"},
+        "Technical": {
+            "Language": "en",
+            "Respondent": "self",
+            "AdministrationMethod": "paper",
+            "SoftwarePlatform": "Legacy/Imported",
+            "SoftwareVersion": "legacy",
+        },
+    }
+
+    with app.test_request_context(
+        "/api/template-editor/save",
+        method="POST",
+        json={
+            "modality": "survey",
+            "schema_version": "stable",
+            "filename": "survey-stai.json",
+            "template": template,
+        },
+    ):
+        session["current_project_path"] = str(tmp_path)
+        response, status_code = handlers.api_template_editor_save()
+
+    assert status_code == 200
+    assert response.get_json()["ok"] is True
+
+    saved_path = tmp_path / "code" / "library" / "survey" / "survey-stai.json"
+    saved_payload = json.loads(saved_path.read_text(encoding="utf-8"))
+    assert saved_payload["Technical"]["SoftwarePlatform"] == "Paper and Pencil"
+    assert saved_payload["Technical"]["SoftwareVersion"] == ""
+
+
 def test_template_editor_save_relaxes_schema_when_copying_global_template(
     tmp_path, monkeypatch
 ):
