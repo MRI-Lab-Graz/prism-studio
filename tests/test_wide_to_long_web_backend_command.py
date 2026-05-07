@@ -89,6 +89,28 @@ def test_wide_to_long_preview_accepts_dotted_session_indicators_with_labels():
     assert {row["session"] for row in body["rows"]} == {"1", "2"}
 
 
+def test_wide_to_long_preview_rejects_non_unique_selected_id_column():
+    app = _build_app()
+    client = app.test_client()
+
+    csv_bytes = b"slim_id,T1_score,T2_score\n164,1,2\n164,3,4\n"
+
+    response = client.post(
+        "/api/file-management/wide-to-long-preview",
+        data={
+            "data": (io.BytesIO(csv_bytes), "survey.csv"),
+            "session_column": "session",
+            "session_indicators": "T1_,T2_",
+            "id_column": "slim_id",
+        },
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 400
+    body = response.get_json()
+    assert "non-unique values for the selected ID column 'slim_id'" in body["error"]
+
+
 def test_wide_to_long_convert_executes_backend_command_and_returns_file():
     app = _build_app()
     client = app.test_client()
