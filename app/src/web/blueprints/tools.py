@@ -1168,20 +1168,22 @@ def recipe_builder():
 
 @tools_bp.route("/api/recipe-builder/surveys", methods=["GET"])
 def api_recipe_builder_surveys():
-    """List survey template JSON files in the project (and optionally the official library)."""
+    """List modality template JSON files in the project (and optionally official)."""
     return handle_api_recipe_builder_surveys(
         dataset_path=(request.args.get("dataset_path") or "").strip(),
         include_global=request.args.get("include_global", "").lower() in ("1", "true"),
+        modality=(request.args.get("modality") or "survey").strip().lower(),
     )
 
 
 @tools_bp.route("/api/recipe-builder/items", methods=["GET"])
 def api_recipe_builder_items():
-    """Return item IDs for a specific survey task."""
+    """Return item IDs for a specific task and modality."""
     return handle_api_recipe_builder_items(
         dataset_path=(request.args.get("dataset_path") or "").strip(),
         task=(request.args.get("task") or "").strip(),
         include_global=request.args.get("include_global", "").lower() in ("1", "true"),
+        modality=(request.args.get("modality") or "survey").strip().lower(),
     )
 
 
@@ -1191,6 +1193,7 @@ def api_recipe_builder_load():
     return handle_api_recipe_builder_load(
         dataset_path=(request.args.get("dataset_path") or "").strip(),
         task=(request.args.get("task") or "").strip(),
+        modality=(request.args.get("modality") or "survey").strip().lower(),
     )
 
 

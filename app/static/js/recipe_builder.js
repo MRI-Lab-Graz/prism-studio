@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!root) return;
 
     // ── Element refs ──────────────────────────────────────────────────────
+    const modalityPicker     = document.getElementById('rbModalityPicker');
     const surveyPicker       = document.getElementById('rbSurveyPicker');
     const includeGlobalToggle= document.getElementById('rbIncludeGlobal');
     const variationRow       = document.getElementById('rbVariationRow');
@@ -54,6 +55,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const previewBtn         = document.getElementById('rbPreviewBtn');
     const statusEl           = document.getElementById('rbStatus');
     const emptyState         = document.getElementById('rbEmptyState');
+    const emptyStateText     = emptyState ? emptyState.querySelector('.rb-empty-text') : null;
     const compatibilityNotice= document.getElementById('rbCompatibilityNotice');
 
     const jsonModal          = new bootstrap.Modal(document.getElementById('rbJsonModal'));
@@ -167,6 +169,29 @@ document.addEventListener('DOMContentLoaded', function () {
         return projectPath;
     }
 
+    function selectedModality() {
+        const raw = String((modalityPicker && modalityPicker.value) || 'survey').trim().toLowerCase();
+        return raw === 'biometrics' ? 'biometrics' : 'survey';
+    }
+
+    function selectedInfoKey() {
+        return selectedModality() === 'biometrics' ? 'Biometrics' : 'Survey';
+    }
+
+    function selectedTaskKey() {
+        return selectedModality() === 'biometrics' ? 'BiometricName' : 'TaskName';
+    }
+
+    function modalityTemplateLabel() {
+        return selectedModality() === 'biometrics' ? 'biometrics' : 'survey';
+    }
+
+    function updateEmptyStateCopy() {
+        if (!emptyStateText) return;
+        emptyStateText.textContent =
+            'Select a ' + modalityTemplateLabel() + ' template above to start building a recipe.';
+    }
+
     function resetBuilderState() {
         selectedTask = '';
         state.allItems = [];
@@ -200,6 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
         resetVariationSelect();
         renderInversionBox();
         showBuilderArea(false);
+        updateEmptyStateCopy();
     }
 
     function showStatus(msg, type = 'success') {
@@ -360,20 +386,23 @@ document.addEventListener('DOMContentLoaded', function () {
     // ── Survey picker ─────────────────────────────────────────────────────
     async function loadSurveyList() {
         const path = resolveProjectPath();
+        const modality = selectedModality();
+        const modalityLabel = modalityTemplateLabel();
         if (!path) {
             surveyPicker.innerHTML = '<option value="" disabled selected>— no project loaded —</option>';
             return;
         }
         const includeGlobal = includeGlobalToggle && includeGlobalToggle.checked ? '&include_global=1' : '';
+        const modalityQuery = '&modality=' + encodeURIComponent(modality);
         const requestToken = ++surveyListRequestToken;
 
-        surveyPicker.innerHTML = '<option value="" disabled selected>— loading survey templates —</option>';
+        surveyPicker.innerHTML = '<option value="" disabled selected>— loading ' + modalityLabel + ' templates —</option>';
 
         try {
             const response = await fetchWithApiFallback(
-                '/api/recipe-builder/surveys?dataset_path=' + encodeURIComponent(path) + includeGlobal
+                '/api/recipe-builder/surveys?dataset_path=' + encodeURIComponent(path) + includeGlobal + modalityQuery
             );
-            const data = await parseApiJsonResponse(response, 'Failed to load survey templates.');
+            const data = await parseApiJsonResponse(response, 'Failed to load templates.');
             if (requestToken !== surveyListRequestToken) return;
 
             const surveys = data.surveys || [];
@@ -381,14 +410,14 @@ document.addEventListener('DOMContentLoaded', function () {
             if (surveys.length === 0) {
                 const opt = document.createElement('option');
                 opt.value    = '';
-                opt.textContent = '— no survey templates found in project library —';
+                opt.textContent = '— no ' + modalityLabel + ' templates found in project library —';
                 opt.disabled = true;
                 opt.selected = true;
                 surveyPicker.appendChild(opt);
             } else {
                 const placeholder = document.createElement('option');
                 placeholder.value       = '';
-                placeholder.textContent = '— select a survey template —';
+                placeholder.textContent = '— select a ' + modalityLabel + ' template —';
                 surveyPicker.appendChild(placeholder);
                 // Group by source if mixed
                 const hasOfficial = surveys.some(s => s.source === 'official');
@@ -446,7 +475,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function loadItemsAndRecipe(task) {
         const path = resolveProjectPath();
+        const modality = selectedModality();
         const includeGlobal = includeGlobalToggle && includeGlobalToggle.checked ? '&include_global=1' : '';
+        const modalityQuery = '&modality=' + encodeURIComponent(modality);
         const requestToken = ++loadRequestToken;
 
         // Immediately clear the builder to avoid stale state showing briefly
@@ -460,11 +491,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const [itemsResponse, recipeResponse] = await Promise.all([
                 fetchWithApiFallback(
                     '/api/recipe-builder/items?task=' + encodeURIComponent(task) +
-                    '&dataset_path=' + encodeURIComponent(path) + includeGlobal
+                    '&dataset_path=' + encodeURIComponent(path) + includeGlobal + modalityQuery
                 ),
                 fetchWithApiFallback(
                     '/api/recipe-builder/load?task=' + encodeURIComponent(task) +
-                    '&dataset_path=' + encodeURIComponent(path)
+                    '&dataset_path=' + encodeURIComponent(path) + modalityQuery
                 ),
             ]);
 
@@ -528,13 +559,13 @@ document.addEventListener('DOMContentLoaded', function () {
             showBuilderArea(true);
         } catch (error) {
             if (requestToken !== loadRequestToken || task !== selectedTask) return;
-            showStatus(_escHtml(error.message || 'Failed to load survey data.'), 'danger');
+            showStatus(_escHtml(error.message || 'Failed to load template data.'), 'danger');
         }
     }
 
     // ── Import existing recipe ────────────────────────────────────────────
     function importRecipe(recipe) {
-        const s = recipe.Survey || {};
+        const s = recipe.Biometrics || recipe.Survey || {};
         document.getElementById('rbMetaName').value     = s.Name        || '';
         document.getElementById('rbMetaDesc').value     = s.Description || '';
         document.getElementById('rbMetaCitation').value = s.Citation    || '';
@@ -1231,16 +1262,19 @@ document.addEventListener('DOMContentLoaded', function () {
         const desc = document.getElementById('rbMetaDesc').value.trim();
         const cite = document.getElementById('rbMetaCitation').value.trim();
         const doi  = document.getElementById('rbMetaDoi').value.trim();
+        const modality = selectedModality();
+        const infoKey = selectedInfoKey();
+        const taskKey = selectedTaskKey();
 
         const recipe = {
             RecipeVersion: '1.0',
-            Kind:    'survey',
-            Survey:  { TaskName: selectedTask },
+            Kind: modality,
+            [infoKey]: { [taskKey]: selectedTask },
         };
-        if (name) recipe.Survey.Name        = name;
-        if (desc) recipe.Survey.Description = desc;
-        if (cite) recipe.Survey.Citation    = cite;
-        if (doi)  recipe.Survey.DOI         = doi;
+        if (name) recipe[infoKey].Name        = name;
+        if (desc) recipe[infoKey].Description = desc;
+        if (cite) recipe[infoKey].Citation    = cite;
+        if (doi)  recipe[infoKey].DOI         = doi;
 
         if (state.inverted.size > 0) {
             // Global fallback scale (most common range across inverted items)
@@ -1306,16 +1340,20 @@ document.addEventListener('DOMContentLoaded', function () {
     saveBtn.addEventListener('click', async () => {
         const path = resolveProjectPath();
         if (!path)         { showStatus('No project loaded.', 'warning');   return; }
-        if (!selectedTask) { showStatus('No survey selected.', 'warning');  return; }
+        if (!selectedTask) {
+            showStatus('No ' + modalityTemplateLabel() + ' selected.', 'warning');
+            return;
+        }
 
         const recipe = buildRecipeJSON();
+        const modality = selectedModality();
         saveBtn.disabled = true;
 
         try {
             const response = await fetchWithApiFallback('/api/recipe-builder/save', {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ dataset_path: path, task: selectedTask, recipe }),
+                body:    JSON.stringify({ dataset_path: path, task: selectedTask, modality, recipe }),
             });
             const data = await parseApiJsonResponse(response, 'Failed to save recipe.');
             showStatus('Saved to <code>' + _escHtml(data.path || '') + '</code>', 'success');
@@ -1334,5 +1372,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ── Init ──────────────────────────────────────────────────────────────
     showBuilderArea(false);
+    updateEmptyStateCopy();
     loadSurveyList();
+
+    modalityPicker && modalityPicker.addEventListener('change', () => {
+        surveyListRequestToken += 1;
+        loadRequestToken += 1;
+        resetBuilderState();
+        loadSurveyList();
+    });
 });

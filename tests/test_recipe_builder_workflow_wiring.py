@@ -7,6 +7,13 @@ RECIPE_BUILDER_SCRIPT = REPO_ROOT / "app" / "static" / "js" / "recipe_builder.js
 
 
 class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
+    def test_recipe_builder_template_has_modality_picker_with_survey_default(self):
+        content = RECIPE_BUILDER_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="rbModalityPicker"', content)
+        self.assertIn('<option value="survey" selected>survey</option>', content)
+        self.assertIn('<option value="biometrics">biometrics</option>', content)
+
     def test_recipe_builder_template_links_to_projects_page_when_no_project_loaded(
         self,
     ):
@@ -21,19 +28,22 @@ class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
         self.assertIn("async function fetchWithApiFallback(", content)
         self.assertIn("const response = await fetchWithApiFallback(", content)
         self.assertIn(
-            "'/api/recipe-builder/surveys?dataset_path=' + encodeURIComponent(path) + includeGlobal",
+            "'/api/recipe-builder/surveys?dataset_path=' + encodeURIComponent(path) + includeGlobal + modalityQuery",
             content,
         )
         self.assertIn(
-            "'/api/recipe-builder/items?task=' + encodeURIComponent(task) +", content
+            "'&dataset_path=' + encodeURIComponent(path) + includeGlobal + modalityQuery",
+            content,
         )
         self.assertIn(
-            "'/api/recipe-builder/load?task=' + encodeURIComponent(task) +", content
+            "'&dataset_path=' + encodeURIComponent(path) + modalityQuery",
+            content,
         )
         self.assertIn(
             "const response = await fetchWithApiFallback('/api/recipe-builder/save', {",
             content,
         )
+        self.assertIn("const modality = selectedModality();", content)
 
     def test_recipe_builder_script_ignores_stale_async_load_responses(self):
         content = RECIPE_BUILDER_SCRIPT.read_text(encoding="utf-8")
@@ -55,7 +65,7 @@ class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
         self.assertIn("function resetBuilderState() {", content)
         self.assertIn("selectedTask = '';", content)
         self.assertIn(
-            "surveyPicker.innerHTML = '<option value=\"\" disabled selected>— loading survey templates —</option>';",
+            "surveyPicker.innerHTML = '<option value=\"\" disabled selected>— loading ' + modalityLabel + ' templates —</option>';",
             content,
         )
         self.assertIn(
@@ -68,6 +78,7 @@ class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
         self.assertIn("projectPath = getCurrentProjectPath();", content)
         self.assertIn("resetBuilderState();", content)
         self.assertIn("loadSurveyList();", content)
+        self.assertIn("modalityPicker && modalityPicker.addEventListener('change', () => {", content)
 
 
 if __name__ == "__main__":

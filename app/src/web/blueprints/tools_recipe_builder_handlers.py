@@ -1,7 +1,7 @@
 """Handlers for the Recipe Builder page.
 
-These endpoints support creating and editing survey recipe JSON files
-interactively in the browser, without touching the recipe *runner* logic.
+These endpoints support creating and editing survey or biometrics recipe JSON
+files interactively in the browser, without touching the recipe *runner* logic.
 """
 
 import json
@@ -46,13 +46,15 @@ _RESERVED_KEYS = {
     "Questions",
 }
 
+_SUPPORTED_MODALITIES = {"survey", "biometrics"}
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 
 def _global_library_root() -> Path | None:
-    """Return the global survey library root (mirrors tools_helpers logic)."""
+    """Return the global template library root (mirrors tools_helpers logic)."""
     try:
         base_dir = Path(current_app.root_path)
         for candidate in [
@@ -72,7 +74,10 @@ def _global_library_root() -> Path | None:
 
 
 def _library_search_roots(
-    dataset_path: str, include_global: bool = False
+    dataset_path: str,
+    *,
+    modality: str,
+    include_global: bool = False,
 ) -> list[Path]:
     """Return candidate library folders in priority order.
 
@@ -81,7 +86,12 @@ def _library_search_roots(
     """
     roots: list[Path] = []
     project = Path(dataset_path)
-    for sub in ("code/library/survey", "code/library", "library/survey", "library"):
+    for sub in (
+        f"code/library/{modality}",
+        "code/library",
+        f"library/{modality}",
+        "library",
+    ):
         candidate = project / sub
         if candidate.is_dir():
             roots.append(candidate)
@@ -89,40 +99,58 @@ def _library_search_roots(
         global_root = _global_library_root()
         if global_root:
             roots.append(global_root)
-            for sub in ("survey",):
+            for sub in (modality,):
                 candidate = global_root / sub
                 if candidate.is_dir():
                     roots.append(candidate)
     return roots
 
 
-def _task_from_template_filename(filename: str) -> str | None:
-    """Extract the task name from a survey template filename.
+def _task_from_template_filename(filename: str, *, modality: str) -> str | None:
+    """Extract the task name from a survey/biometrics template filename.
 
-    Handles both::
+    Survey handles::
 
         task-personality_survey.json  →  personality
         survey-wellbeing.json         →  wellbeing
+    Biometrics handles::
+
+        task-ukk_biometrics.json  →  ukk
+        biometrics-ukk.json       →  ukk
     """
     stem = Path(filename).stem  # drop .json
-    # BIDS style: task-<name>_survey
-    m = re.search(r"(?:^|_)task-([^_]+)", stem)
+    if modality == "survey":
+        # BIDS style: task-<name>_survey
+        m = re.search(r"(?:^|_)task-([^_]+)", stem)
+        if m:
+            return m.group(1)
+        # Legacy style: survey-<name>
+        m = re.match(r"survey-(.+)", stem)
+        if m:
+            return m.group(1)
+        return None
+
+    # BIDS style: task-<name>_biometrics
+    m = re.search(r"(?:^|_)task-([^_]+)_biometrics(?:_|$)", stem)
     if m:
         return m.group(1)
-    # Legacy style: survey-<name>
-    m = re.match(r"survey-(.+)", stem)
+    # Legacy style: biometrics-<name>
+    m = re.match(r"biometrics-(.+)", stem)
     if m:
         return m.group(1)
     return None
 
 
-def _find_survey_templates(
-    dataset_path: str, include_global: bool = False
+def _find_templates(
+    dataset_path: str,
+    *,
+    modality: str,
+    include_global: bool = False,
 ) -> list[dict]:
-    """Return deduplicated survey template JSON files found in library folders.
+    """Return deduplicated modality template JSON files found in library folders.
 
     Each entry:
-      - ``task``      – instrument identifier (e.g. ``wellbeing``)
+    - ``task``      – instrument identifier (e.g. ``wellbeing``, ``ukk``)
       - ``label``     – human-readable display name (from template or task)
       - ``file``      – display path (relative where possible)
       - ``source``    – ``"project"`` or ``"official"``
@@ -132,18 +160,22 @@ def _find_survey_templates(
     dataset_root = Path(dataset_path)
     global_root = _global_library_root()
 
-    for root in _library_search_roots(dataset_path, include_global=include_global):
+    for root in _library_search_roots(
+        dataset_path,
+        modality=modality,
+        include_global=include_global,
+    ):
         for json_file in sorted(root.glob("*.json")):
             cleaned = filter_system_files([json_file.name])
             if not cleaned:
                 continue
-            task = _task_from_template_filename(json_file.name)
+            task = _task_from_template_filename(json_file.name, modality=modality)
             if not task:
                 continue
             if task in found:
                 continue
 
-            # Quick check: must look like a survey template (has Technical or Study)
+            # Quick check: must look like a template (has Technical or Study)
             try:
                 with open(json_file, encoding="utf-8") as fh:
                     data = json.load(fh)
@@ -157,9 +189,18 @@ def _find_survey_templates(
             label = task
             study = data.get("Study") or {}
             if isinstance(study, dict):
-                name = study.get("TaskName") or study.get("Name") or ""
+                if modality == "biometrics":
+                    name = (
+                        study.get("BiometricName")
+                        or _pick_item_description(study.get("ShortName"))
+                        or _pick_item_description(study.get("OriginalName"))
+                        or study.get("Name")
+                        or ""
+                    )
+                else:
+                    name = study.get("TaskName") or study.get("Name") or ""
                 if name:
-                    label = name
+                    label = str(name).strip()
 
             try:
                 rel = json_file.relative_to(dataset_root)
@@ -187,8 +228,8 @@ def _find_survey_templates(
     return sorted(found.values(), key=lambda d: d["task"])
 
 
-def _extract_items_from_template(json_path: str) -> list[str]:
-    """Return the item/question IDs from a survey template JSON."""
+def _extract_items_from_template(json_path: str, *, modality: str) -> list[str]:
+    """Return item/question IDs from a modality template JSON."""
     cleaned = filter_system_files([os.path.basename(json_path)])
     if not cleaned:
         return []
@@ -203,15 +244,16 @@ def _extract_items_from_template(json_path: str) -> list[str]:
     if not isinstance(data, dict):
         return []
 
-    # Prefer explicit Questions dict (newer PRISM format)
-    if "Questions" in data and isinstance(data["Questions"], dict):
-        return [
-            k
-            for k, v in data["Questions"].items()
-            if isinstance(v, dict) and not v.get("_exclude", False)
-        ]
+    if modality == "survey":
+        # Prefer explicit Questions dict (newer PRISM format)
+        if "Questions" in data and isinstance(data["Questions"], dict):
+            return [
+                k
+                for k, v in data["Questions"].items()
+                if isinstance(v, dict) and not v.get("_exclude", False)
+            ]
 
-    # Fallback: top-level keys that look like items
+    # Fallback: top-level keys that look like items (also used for biometrics)
     return [
         k
         for k, v in data.items()
@@ -239,6 +281,8 @@ def _pick_item_description(value) -> str:
 
 def _extract_item_description_metadata_from_template(
     json_path: str,
+    *,
+    modality: str,
 ) -> tuple[dict[str, str], dict[str, dict[str, str]], list[str], str]:
     """Return flattened and language-aware item description metadata.
 
@@ -269,7 +313,7 @@ def _extract_item_description_metadata_from_template(
         if isinstance(maybe_lang, str):
             template_language = maybe_lang.strip()
 
-    items_src = get_survey_item_map(data)
+    items_src = _template_item_map(data, modality=modality)
     descriptions: dict[str, str] = {}
     descriptions_i18n: dict[str, dict[str, str]] = {}
     languages: set[str] = set()
@@ -304,15 +348,20 @@ def _extract_item_description_metadata_from_template(
     return descriptions, descriptions_i18n, sorted(languages), template_language
 
 
-def _extract_item_descriptions_from_template(json_path: str) -> dict[str, str]:
+def _extract_item_descriptions_from_template(
+    json_path: str, *, modality: str
+) -> dict[str, str]:
     """Return item descriptions keyed by item ID from a survey template JSON."""
     descriptions, _i18n, _languages, _template_language = (
-        _extract_item_description_metadata_from_template(json_path)
+        _extract_item_description_metadata_from_template(
+            json_path,
+            modality=modality,
+        )
     )
     return descriptions
 
 
-def _detect_scale_ranges(json_path: str) -> dict:
+def _detect_scale_ranges(json_path: str, *, modality: str) -> dict:
     """Return per-variant scale ranges detected from template items.
 
     The returned dict has:
@@ -335,7 +384,7 @@ def _detect_scale_ranges(json_path: str) -> dict:
 
     data = apply_implicit_numeric_level_ranges(data)
 
-    items_src = get_survey_item_map(data)
+    items_src = _template_item_map(data, modality=modality)
 
     # counts[variant_id][(min, max)] = frequency
     from collections import defaultdict
@@ -370,7 +419,7 @@ def _detect_scale_ranges(json_path: str) -> dict:
     return result
 
 
-def _extract_item_ranges_from_template(json_path: str) -> dict:
+def _extract_item_ranges_from_template(json_path: str, *, modality: str) -> dict:
     """Return per-item, per-variant scale ranges from a template.
 
     Shape: {itemId: {"": {min, max}, variantId: {min, max}, ...}}
@@ -389,7 +438,7 @@ def _extract_item_ranges_from_template(json_path: str) -> dict:
 
     data = apply_implicit_numeric_level_ranges(data)
 
-    items_src = get_survey_item_map(data)
+    items_src = _template_item_map(data, modality=modality)
     result: dict = {}
     for item_id, v in items_src.items():
         if not isinstance(v, dict):
@@ -412,7 +461,7 @@ def _extract_item_ranges_from_template(json_path: str) -> dict:
     return result
 
 
-def _extract_template_reversed_items(json_path: str) -> list[str]:
+def _extract_template_reversed_items(json_path: str, *, modality: str) -> list[str]:
     """Return item IDs with template flag Reversed=true."""
     path = Path(json_path)
     if not path.is_file():
@@ -425,7 +474,7 @@ def _extract_template_reversed_items(json_path: str) -> list[str]:
     if not isinstance(data, dict):
         return []
 
-    items_src = get_survey_item_map(data)
+    items_src = _template_item_map(data, modality=modality)
     reversed_items: list[str] = []
     for item_id, item_def in items_src.items():
         if item_id in _RESERVED_KEYS or not isinstance(item_def, dict):
@@ -437,7 +486,9 @@ def _extract_template_reversed_items(json_path: str) -> list[str]:
     return reversed_items
 
 
-def _extract_items_missing_ranges_from_template(json_path: str) -> list[str]:
+def _extract_items_missing_ranges_from_template(
+    json_path: str, *, modality: str
+) -> list[str]:
     """Return item IDs missing a usable MinValue/MaxValue after inference."""
     path = Path(json_path)
     if not path.is_file():
@@ -451,7 +502,7 @@ def _extract_items_missing_ranges_from_template(json_path: str) -> list[str]:
         return []
 
     data = apply_implicit_numeric_level_ranges(data)
-    items_src = get_survey_item_map(data)
+    items_src = _template_item_map(data, modality=modality)
     missing: list[str] = []
     for item_id, item_def in items_src.items():
         if item_id in _RESERVED_KEYS or not isinstance(item_def, dict):
@@ -477,17 +528,38 @@ def _extract_items_missing_ranges_from_template(json_path: str) -> list[str]:
     return missing
 
 
-def _recipe_output_path(dataset_path: str) -> Path:
+def _template_item_map(data: dict, *, modality: str) -> dict[str, dict]:
+    """Return modality-aware template item mappings."""
+    if modality == "survey":
+        items = get_survey_item_map(data)
+        return {
+            k: v
+            for k, v in items.items()
+            if isinstance(v, dict)
+        }
+
+    return {
+        k: v
+        for k, v in data.items()
+        if k not in _RESERVED_KEYS and isinstance(v, dict)
+    }
+
+
+def _recipe_output_path(dataset_path: str, *, modality: str) -> Path:
     """Return the canonical project-local recipe folder (YODA convention)."""
-    return Path(dataset_path) / "code" / "recipes" / "survey"
+    return Path(dataset_path) / "code" / "recipes" / modality
 
 
-def _task_exists_for_recipe_builder(dataset_path: str, task: str) -> bool:
+def _task_exists_for_recipe_builder(dataset_path: str, task: str, *, modality: str) -> bool:
     """Return True when the task exists in the project or official library."""
     if not dataset_path or not task:
         return False
 
-    templates = _find_survey_templates(dataset_path, include_global=True)
+    templates = _find_templates(
+        dataset_path,
+        modality=modality,
+        include_global=True,
+    )
     return any(template["task"] == task for template in templates)
 
 
@@ -496,15 +568,27 @@ def _task_exists_for_recipe_builder(dataset_path: str, task: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
-def handle_api_recipe_builder_surveys(dataset_path: str, include_global: bool = False):
-    """Return list of survey template JSON files available in the project.
+def handle_api_recipe_builder_surveys(
+    dataset_path: str,
+    include_global: bool = False,
+    modality: str = "survey",
+):
+    """Return list of modality template JSON files available in the project.
 
     Pass ``include_global=True`` to also include the official PRISM library.
     """
+    modality = (modality or "survey").strip().lower()
+    if modality not in _SUPPORTED_MODALITIES:
+        return jsonify({"error": "Invalid modality"}), 400
+
     if not dataset_path or not os.path.isdir(dataset_path):
         return jsonify({"surveys": []}), 200
 
-    templates = _find_survey_templates(dataset_path, include_global=include_global)
+    templates = _find_templates(
+        dataset_path,
+        modality=modality,
+        include_global=include_global,
+    )
     client = [
         {
             "task": t["task"],
@@ -514,35 +598,62 @@ def handle_api_recipe_builder_surveys(dataset_path: str, include_global: bool = 
         }
         for t in templates
     ]
-    return jsonify({"surveys": client, "include_global": include_global}), 200
+    return (
+        jsonify(
+            {
+                "surveys": client,
+                "include_global": include_global,
+                "modality": modality,
+            }
+        ),
+        200,
+    )
 
 
 def handle_api_recipe_builder_items(
-    dataset_path: str, task: str, include_global: bool = False
+    dataset_path: str,
+    task: str,
+    include_global: bool = False,
+    modality: str = "survey",
 ):
-    """Return item IDs for a given survey task, extracted from its template JSON."""
+    """Return item IDs for a given task, extracted from a modality template JSON."""
+    modality = (modality or "survey").strip().lower()
+    if modality not in _SUPPORTED_MODALITIES:
+        return jsonify({"error": "Invalid modality"}), 400
+
     if not dataset_path or not task:
         return jsonify({"items": []}), 200
     if not os.path.isdir(dataset_path):
         return jsonify({"error": "Project path not found"}), 400
 
-    templates = _find_survey_templates(dataset_path, include_global=include_global)
+    templates = _find_templates(
+        dataset_path,
+        modality=modality,
+        include_global=include_global,
+    )
     match = next((t for t in templates if t["task"] == task), None)
     if match is None:
         return jsonify({"items": []}), 200
 
-    items = _extract_items_from_template(match["full_path"])
+    items = _extract_items_from_template(match["full_path"], modality=modality)
     (
         item_descriptions,
         item_descriptions_i18n,
         item_description_languages,
         template_language,
-    ) = _extract_item_description_metadata_from_template(match["full_path"])
-    scale_ranges = _detect_scale_ranges(match["full_path"])
-    item_ranges = _extract_item_ranges_from_template(match["full_path"])
-    template_reversed_items = _extract_template_reversed_items(match["full_path"])
+    ) = _extract_item_description_metadata_from_template(
+        match["full_path"],
+        modality=modality,
+    )
+    scale_ranges = _detect_scale_ranges(match["full_path"], modality=modality)
+    item_ranges = _extract_item_ranges_from_template(match["full_path"], modality=modality)
+    template_reversed_items = _extract_template_reversed_items(
+        match["full_path"],
+        modality=modality,
+    )
     items_missing_ranges = _extract_items_missing_ranges_from_template(
-        match["full_path"]
+        match["full_path"],
+        modality=modality,
     )
     return (
         jsonify(
@@ -562,20 +673,28 @@ def handle_api_recipe_builder_items(
     )
 
 
-def handle_api_recipe_builder_load(dataset_path: str, task: str):
+def handle_api_recipe_builder_load(
+    dataset_path: str,
+    task: str,
+    modality: str = "survey",
+):
     """Load an existing recipe JSON for the given task (if one exists)."""
+    modality = (modality or "survey").strip().lower()
+    if modality not in _SUPPORTED_MODALITIES:
+        return jsonify({"error": "Invalid modality"}), 400
+
     if not dataset_path or not task:
         return jsonify({"recipe": None}), 200
 
     candidates: list[Path] = [
-        Path(dataset_path) / "code" / "recipes" / "survey" / f"recipe-{task}.json",
+        Path(dataset_path) / "code" / "recipes" / modality / f"recipe-{task}.json",
         Path(dataset_path)
         / "code"
         / "recipes"
-        / "survey"
-        / f"recipe-{task}_survey.json",
-        Path(dataset_path) / "recipe" / "survey" / f"recipe-{task}.json",
-        Path(dataset_path) / "recipe" / "survey" / f"recipe-{task}_survey.json",
+        / modality
+        / f"recipe-{task}_{modality}.json",
+        Path(dataset_path) / "recipe" / modality / f"recipe-{task}.json",
+        Path(dataset_path) / "recipe" / modality / f"recipe-{task}_{modality}.json",
     ]
     for candidate in candidates:
         if candidate.is_file():
@@ -590,7 +709,7 @@ def handle_api_recipe_builder_load(dataset_path: str, task: str):
 
 
 def handle_api_recipe_builder_save(data: dict):
-    """Save a recipe JSON to the project's code/recipes/survey folder."""
+    """Save a recipe JSON to the project's code/recipes/{modality} folder."""
     dataset_path = (data.get("dataset_path") or "").strip()
     recipe = data.get("recipe")
 
@@ -601,9 +720,24 @@ def handle_api_recipe_builder_save(data: dict):
     if not isinstance(recipe, dict):
         return jsonify({"error": "recipe payload is required"}), 400
 
-    task_name = ((recipe.get("Survey") or {}).get("TaskName") or "").strip()
+    modality = (
+        str(data.get("modality") or recipe.get("Kind") or "survey")
+        .strip()
+        .lower()
+    )
+    if modality not in _SUPPORTED_MODALITIES:
+        return jsonify({"error": "Invalid modality"}), 400
+
+    recipe_kind = str(recipe.get("Kind") or "").strip().lower()
+    if recipe_kind and recipe_kind != modality:
+        return jsonify({"error": "Recipe Kind does not match selected modality"}), 400
+
+    info_key = "Survey" if modality == "survey" else "Biometrics"
+    task_key = "TaskName" if modality == "survey" else "BiometricName"
+
+    task_name = ((recipe.get(info_key) or {}).get(task_key) or "").strip()
     if not task_name:
-        return jsonify({"error": "Recipe must have Survey.TaskName"}), 400
+        return jsonify({"error": f"Recipe must have {info_key}.{task_key}"}), 400
 
     if not re.fullmatch(r"[a-zA-Z0-9\-]+", task_name):
         return jsonify({"error": "TaskName contains invalid characters"}), 400
@@ -620,17 +754,21 @@ def handle_api_recipe_builder_save(data: dict):
             400,
         )
 
-    if not _task_exists_for_recipe_builder(dataset_path, task_name):
+    if not _task_exists_for_recipe_builder(dataset_path, task_name, modality=modality):
         return (
             jsonify(
                 {
-                    "error": "Survey template not found in the target project or official library"
+                    "error": (
+                        "Survey template not found in the target project or official library"
+                        if modality == "survey"
+                        else "Biometrics template not found in the target project or official library"
+                    )
                 }
             ),
             400,
         )
 
-    out_dir = _recipe_output_path(dataset_path)
+    out_dir = _recipe_output_path(dataset_path, modality=modality)
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"recipe-{task_name}.json"
 

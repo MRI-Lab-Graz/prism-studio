@@ -13,7 +13,7 @@
   {{ page_header(
     'fas fa-flask',
     'Recipe Builder',
-    'Create and edit scoring recipes for survey instruments. Select a template from your library to begin.'
+    'Create and edit scoring recipes for survey or biometrics instruments. Select a template from your library to begin.'
   ) }}
 
   {% if not current_project.path %}
@@ -23,9 +23,17 @@
   </div>
   {% else %}
 
-  <!-- ── 1. Top bar: survey picker + variation ────────────────────────────── -->
+  <!-- ── 1. Top bar: modality + template picker + variation ─────────────────── -->
   <div class="card mb-3">
     <div class="card-body py-2 d-flex align-items-center gap-3 flex-wrap">
+      <label class="fw-semibold text-nowrap mb-0" for="rbModalityPicker">
+        <i class="fas fa-layer-group me-1 text-secondary"></i>Modality
+      </label>
+      <select class="form-select form-select-sm" id="rbModalityPicker" style="max-width:180px;">
+        <option value="survey" selected>survey</option>
+        <option value="biometrics">biometrics</option>
+      </select>
+
       <label class="fw-semibold text-nowrap mb-0" for="rbSurveyPicker">
         <i class="fas fa-file-code me-1 text-secondary"></i>Template
       </label>
@@ -175,7 +183,7 @@
   <!-- Empty state -->
   <div id="rbEmptyState" class="text-center text-muted py-5">
     <i class="fas fa-flask fa-3x mb-3 d-block" style="opacity:.2;"></i>
-    Select a survey template above to start building a recipe.
+    <span class="rb-empty-text">Select a template above to start building a recipe.</span>
   </div>
 
   <!-- JSON preview modal -->

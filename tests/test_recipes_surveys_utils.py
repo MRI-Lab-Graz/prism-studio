@@ -4,6 +4,7 @@ import json
 import sys
 import os
 import pytest
+import pandas as pd
 from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -43,6 +44,7 @@ from src.recipes_surveys import (
     _find_tsv_files,
     _load_participants_data,
     _load_and_validate_recipes,
+    _export_recipe_legacy,
 )
 
 
@@ -898,6 +900,24 @@ class TestCalculateDerivedVariables:
         )
         assert float(row["diff"]) == pytest.approx(2.0)
 
+    def test_formula_method_allows_string_condition(self):
+        row = self._row(sex="M", q1="5", q2="3")
+        _calculate_derived_variables(
+            [
+                {
+                    "Name": "conditional",
+                    "Method": "formula",
+                    "Items": ["sex", "q1", "q2"],
+                    "Formula": "{q1} if ({sex} == 'M') else {q2}",
+                }
+            ],
+            row,
+            set(),
+            None,
+            None,
+        )
+        assert float(row["conditional"]) == pytest.approx(5.0)
+
     def test_formula_method_blocks_unsafe_expression(self):
         row = self._row(q1="5")
         _calculate_derived_variables(
@@ -1009,6 +1029,78 @@ class TestCalculateScores:
             None,
         )
         assert float(result["combo"]) == pytest.approx(3.0)
+
+    def test_formula_method_allows_ifelse_function(self):
+        row = self._row(sex="2", q1="10", q2="20")
+        result = _calculate_scores(
+            [
+                {
+                    "Name": "combo",
+                    "Method": "formula",
+                    "Items": ["sex", "q1", "q2"],
+                    "Formula": "ifelse({sex} == 2, {q1}, {q2})",
+                }
+            ],
+            row,
+            set(),
+            None,
+            None,
+        )
+        assert float(result["combo"]) == pytest.approx(10.0)
+
+    def test_formula_method_allows_python_if_else_expression(self):
+        row = self._row(sex="1", q1="10", q2="20")
+        result = _calculate_scores(
+            [
+                {
+                    "Name": "combo",
+                    "Method": "formula",
+                    "Items": ["sex", "q1", "q2"],
+                    "Formula": "{q1} if ({sex} == 2) else {q2}",
+                }
+            ],
+            row,
+            set(),
+            None,
+            None,
+        )
+        assert float(result["combo"]) == pytest.approx(20.0)
+
+    def test_formula_method_allows_string_condition(self):
+        row = self._row(sex="M", q1="10", q2="20")
+        result = _calculate_scores(
+            [
+                {
+                    "Name": "combo",
+                    "Method": "formula",
+                    "Items": ["sex", "q1", "q2"],
+                    "Formula": "{q1} if ({sex} == 'M') else {q2}",
+                }
+            ],
+            row,
+            set(),
+            None,
+            None,
+        )
+        assert float(result["combo"]) == pytest.approx(10.0)
+
+    def test_formula_method_allows_numeric_condition(self):
+        row = self._row(age="35", q1="10", q2="20")
+        result = _calculate_scores(
+            [
+                {
+                    "Name": "combo",
+                    "Method": "formula",
+                    "Items": ["age", "q1", "q2"],
+                    "Formula": "{q1} if ({age} > 30) else {q2}",
+                }
+            ],
+            row,
+            set(),
+            None,
+            None,
+        )
+        assert float(result["combo"]) == pytest.approx(10.0)
 
     def test_formula_method_blocks_unsafe_expression(self):
         row = self._row(q1="1")
@@ -1235,6 +1327,61 @@ class TestLoadParticipantsData:
         js.write_text("{not valid json")
         df, meta = _load_participants_data(tmp_path)
         assert meta == {}
+
+
+def test_formula_can_use_participants_values_in_legacy_export(tmp_path: Path) -> None:
+    tsv_path = (
+        tmp_path
+        / "sub-001"
+        / "ses-1"
+        / "biometrics"
+        / "sub-001_ses-1_task-ukk_biometrics.tsv"
+    )
+    tsv_path.parent.mkdir(parents=True, exist_ok=True)
+    tsv_path.write_text(
+        "UKK03\tUKK04\tUKK06\n"
+        "17.5\t145\t23\n",
+        encoding="utf-8",
+    )
+
+    recipe = {
+        "RecipeVersion": "1.0",
+        "Kind": "biometrics",
+        "Biometrics": {"BiometricName": "ukk"},
+        "Scores": [
+            {
+                "Name": "UKK07",
+                "Method": "formula",
+                "Items": ["UKK03", "UKK04", "UKK06", "age", "sex"],
+                "Formula": "(184.9 - 4.65*{UKK03} - 0.22*{UKK04} - 0.26*{age} - 1.05*{UKK06}) if ({sex} == 'M') else (116.2 - 2.98*{UKK03} - 0.11*{UKK04} - 0.14*{age} - 0.39*{UKK06})",
+            }
+        ],
+    }
+
+    participants_df = pd.DataFrame(
+        [{"participant_id": "sub-001", "age": "40", "sex": "M"}]
+    )
+
+    flat_rows: list[dict] = []
+    flat_key_to_idx: dict[tuple, int] = {}
+
+    processed_count, written_count = _export_recipe_legacy(
+        recipe_id="ukk",
+        recipe=recipe,
+        matching=[tsv_path],
+        out_root=tmp_path / "derivatives" / "biometrics",
+        out_format="flat",
+        modality="biometrics",
+        include_raw=False,
+        flat_rows=flat_rows,
+        flat_key_to_idx=flat_key_to_idx,
+        participants_df=participants_df,
+    )
+
+    assert processed_count == 1
+    assert written_count == 1
+    assert len(flat_rows) == 1
+    assert float(flat_rows[0]["UKK07"]) == pytest.approx(37.075)
 
 
 # ---------------------------------------------------------------------------
