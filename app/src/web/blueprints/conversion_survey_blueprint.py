@@ -3,6 +3,7 @@ from flask import Blueprint
 from .conversion_survey_handlers import (
     api_survey_languages,
     api_survey_check_project_templates,
+    api_survey_prepare_workflow,
     api_survey_detect_version_context,
     api_survey_convert_preview,
     api_survey_convert,
@@ -21,6 +22,11 @@ conversion_survey_bp.add_url_rule(
     "/api/survey-check-project-templates",
     view_func=api_survey_check_project_templates,
     methods=["GET", "POST"],
+)
+conversion_survey_bp.add_url_rule(
+    "/api/survey-prepare-workflow",
+    view_func=api_survey_prepare_workflow,
+    methods=["POST"],
 )
 conversion_survey_bp.add_url_rule(
     "/api/survey-detect-version-contexts",

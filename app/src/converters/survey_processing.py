@@ -83,24 +83,43 @@ def _suggest_offsets_for_invalid_value(
 
     suggestions: list[float | int] = []
 
-    numeric_levels = sorted(
-        n for n in (_to_float(key) for key in levels.keys()) if n is not None
-    )
-    if len(numeric_levels) >= 2:
-        min_level = numeric_levels[0]
-        max_level = numeric_levels[-1]
-        if value_num < min_level:
-            suggestions.append(_coerce_offset_suggestion(min_level - value_num))
-        elif value_num > max_level:
-            suggestions.append(_coerce_offset_suggestion(max_level - value_num))
+    raw_allowed_values = item_schema.get("AllowedValues")
+    if isinstance(raw_allowed_values, list) and raw_allowed_values:
+        numeric_allowed_values = sorted(
+            n for n in (_to_float(entry) for entry in raw_allowed_values) if n is not None
+        )
+        if numeric_allowed_values:
+            min_distance = min(
+                abs(allowed_value - value_num)
+                for allowed_value in numeric_allowed_values
+            )
+            for allowed_value in numeric_allowed_values:
+                if abs(abs(allowed_value - value_num) - min_distance) > 1e-9:
+                    continue
+                suggestions.append(
+                    _coerce_offset_suggestion(allowed_value - value_num)
+                )
 
-    min_v = _to_float(item_schema.get("MinValue"))
-    max_v = _to_float(item_schema.get("MaxValue"))
-    if min_v is not None and max_v is not None:
-        if value_num < min_v:
-            suggestions.append(_coerce_offset_suggestion(min_v - value_num))
-        elif value_num > max_v:
-            suggestions.append(_coerce_offset_suggestion(max_v - value_num))
+    if not suggestions:
+        numeric_levels = sorted(
+            n for n in (_to_float(key) for key in levels.keys()) if n is not None
+        )
+        if len(numeric_levels) >= 2:
+            min_level = numeric_levels[0]
+            max_level = numeric_levels[-1]
+            if value_num < min_level:
+                suggestions.append(_coerce_offset_suggestion(min_level - value_num))
+            elif value_num > max_level:
+                suggestions.append(_coerce_offset_suggestion(max_level - value_num))
+
+    if not suggestions:
+        min_v = _to_float(item_schema.get("MinValue"))
+        max_v = _to_float(item_schema.get("MaxValue"))
+        if min_v is not None and max_v is not None:
+            if value_num < min_v:
+                suggestions.append(_coerce_offset_suggestion(min_v - value_num))
+            elif value_num > max_v:
+                suggestions.append(_coerce_offset_suggestion(max_v - value_num))
 
     deduped: list[float | int] = []
     seen = set()
