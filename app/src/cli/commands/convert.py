@@ -16,6 +16,7 @@ from src.converters.wide_to_long import (
     convert_wide_to_long_dataframe,
     detect_wide_session_prefixes,
     inspect_wide_to_long_columns,
+    resolve_wide_to_long_id_uniqueness,
 )
 from src.cross_platform import normalize_path
 
@@ -369,6 +370,8 @@ def _wide_to_long_json_payload(
     long_df: pd.DataFrame | None = None,
     output_path: Path | None = None,
     error: str | None = None,
+    id_column_checked: str | None = None,
+    id_uniqueness: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "filename": input_path.name,
@@ -387,6 +390,8 @@ def _wide_to_long_json_payload(
         "rows_shown": 0,
         "columns": [],
         "rows": [],
+        "id_column_checked": id_column_checked,
+        "id_uniqueness": id_uniqueness or {},
     }
 
     if long_df is not None:
@@ -468,6 +473,14 @@ def cmd_convert_wide_to_long(args) -> None:
         preview_limit = max(1, int(args.preview_limit))
         sheet_arg = int(args.sheet) if str(args.sheet).isdigit() else args.sheet
         df = _read_wide_to_long_input(input_path, sheet=sheet_arg)
+        id_check = resolve_wide_to_long_id_uniqueness(
+            df,
+            source_format=input_path.suffix.lower(),
+            explicit_id_column=getattr(args, "id_column", None),
+        )
+        id_column_checked = str(id_check.get("id_column") or "")
+        id_uniqueness = id_check.get("id_uniqueness") or {}
+
         indicators = _parse_session_indicators(args.session_indicators)
         indicators = indicators or detect_wide_session_prefixes(
             list(df.columns), min_count=2
@@ -503,6 +516,8 @@ def cmd_convert_wide_to_long(args) -> None:
                             plan=plan,
                             preview_limit=preview_limit,
                             long_df=long_df,
+                            id_column_checked=id_column_checked,
+                            id_uniqueness=id_uniqueness,
                         ),
                         ensure_ascii=True,
                     )
@@ -510,6 +525,7 @@ def cmd_convert_wide_to_long(args) -> None:
                 return
 
             _print_wide_to_long_plan(plan, preview_limit=preview_limit)
+            print(f"ID uniqueness check passed for column: {id_column_checked}")
             if not can_convert:
                 sys.exit(2)
             print("\nInspect-only mode: no output file written.")
@@ -527,12 +543,15 @@ def cmd_convert_wide_to_long(args) -> None:
                             error=(
                                 "Ambiguous session indicator matches found. Use a more specific indicator."
                             ),
+                            id_column_checked=id_column_checked,
+                            id_uniqueness=id_uniqueness,
                         ),
                         ensure_ascii=True,
                     )
                 )
             else:
                 _print_wide_to_long_plan(plan, preview_limit=preview_limit)
+                print(f"ID uniqueness check passed for column: {id_column_checked}")
             sys.exit(2)
 
         output_path = (
@@ -554,6 +573,8 @@ def cmd_convert_wide_to_long(args) -> None:
                             plan=plan,
                             preview_limit=preview_limit,
                             error=message,
+                            id_column_checked=id_column_checked,
+                            id_uniqueness=id_uniqueness,
                         ),
                         ensure_ascii=True,
                     )
@@ -581,6 +602,8 @@ def cmd_convert_wide_to_long(args) -> None:
                         preview_limit=preview_limit,
                         long_df=long_df,
                         output_path=output_path,
+                        id_column_checked=id_column_checked,
+                        id_uniqueness=id_uniqueness,
                     ),
                     ensure_ascii=True,
                 )
@@ -588,6 +611,7 @@ def cmd_convert_wide_to_long(args) -> None:
             return
 
         _print_wide_to_long_plan(plan, preview_limit=preview_limit)
+        print(f"ID uniqueness check passed for column: {id_column_checked}")
 
         print("\nConversion complete")
         print("=" * 50)

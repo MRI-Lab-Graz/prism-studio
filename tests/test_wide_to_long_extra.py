@@ -10,6 +10,7 @@ from src.converters.wide_to_long import (
     detect_wide_session_prefixes,
     inspect_wide_to_long_columns,
     convert_wide_to_long_dataframe,
+    resolve_wide_to_long_id_uniqueness,
     _find_indicator_spans,
     _strip_indicator_from_column_name,
     _format_ambiguous_indicator_error,
@@ -211,3 +212,63 @@ class TestConvertWideLongDataframe:
             run_indicators=["run1", "run2"],
         )
         assert "run" in result.columns
+
+
+class TestWideToLongIdUniqueness:
+    def test_requires_explicit_id_when_participant_id_missing(self):
+        import pandas as pd
+
+        df = pd.DataFrame(
+            {
+                "slim_id": ["101", "102"],
+                "T1_score": [1, 2],
+                "T2_score": [3, 4],
+            }
+        )
+
+        with pytest.raises(ValueError, match="Select the ID column"):
+            resolve_wide_to_long_id_uniqueness(
+                df,
+                source_format="csv",
+                explicit_id_column=None,
+            )
+
+    def test_rejects_non_unique_selected_id_values(self):
+        import pandas as pd
+
+        df = pd.DataFrame(
+            {
+                "slim_id": ["164", "164"],
+                "T1_score": [1, 2],
+                "T2_score": [3, 4],
+            }
+        )
+
+        with pytest.raises(
+            ValueError,
+            match="non-unique values for the selected ID column 'slim_id'",
+        ):
+            resolve_wide_to_long_id_uniqueness(
+                df,
+                source_format="csv",
+                explicit_id_column="slim_id",
+            )
+
+    def test_passes_for_unique_participant_id(self):
+        import pandas as pd
+
+        df = pd.DataFrame(
+            {
+                "participant_id": ["sub-001", "sub-002"],
+                "T1_score": [1, 2],
+                "T2_score": [3, 4],
+            }
+        )
+
+        result = resolve_wide_to_long_id_uniqueness(
+            df,
+            source_format="csv",
+            explicit_id_column=None,
+        )
+        assert result["id_column"] == "participant_id"
+        assert result["id_uniqueness"]["non_unique_id_count"] == 0

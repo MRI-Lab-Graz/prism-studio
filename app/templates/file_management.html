@@ -730,13 +730,20 @@
                                 </div>
 
                                 <div class="row g-3 mb-2">
-                                    <div class="col-md-6">
-                                        <label for="wideLongIndicators" class="form-label fw-bold">2. Session Indicators (optional)</label>
+                                    <div class="col-md-4">
+                                        <label for="wideLongIdColumn" class="form-label fw-bold">2. ID Column (uniqueness check)</label>
+                                        <select class="form-select" id="wideLongIdColumn">
+                                            <option value="">Auto-detect from file columns</option>
+                                        </select>
+                                        <small class="text-muted">Used for early duplicate-ID validation before conversion. Change this if your participant ID is not <code>participant_id</code>.</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="wideLongIndicators" class="form-label fw-bold">3. Session Indicators (optional)</label>
                                         <input type="text" class="form-control" id="wideLongIndicators" placeholder="e.g. _s1:pre,_s2:post or just _s1,_s2">
                                         <small class="text-muted">Use <code>indicator:label</code> to rename, or plain tokens for no rename. Leave empty for auto-detection.</small>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label for="wideLongRunIndicators" class="form-label fw-bold">3. Run Indicators (optional)</label>
+                                    <div class="col-md-4">
+                                        <label for="wideLongRunIndicators" class="form-label fw-bold">4. Run Indicators (optional)</label>
                                         <input type="text" class="form-control" id="wideLongRunIndicators" placeholder="e.g. r1:1,r2:2 or r1,r2">
                                         <small class="text-muted">Second-pass split by run. Use <code>indicator:label</code> pairs to rename. Leave empty to skip run splitting.</small>
                                     </div>

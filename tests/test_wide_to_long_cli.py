@@ -147,3 +147,31 @@ def test_wide_to_long_cli_json_inspect_output(tmp_path: Path) -> None:
     assert payload["detected_indicators"] == ["T1_", "T2_"]
     assert payload["rows_total"] == 2
     assert payload["column_rename_preview"][0]["output_column"] == "score"
+
+
+def test_wide_to_long_cli_rejects_non_unique_selected_id_column(
+    tmp_path: Path,
+) -> None:
+    input_path = tmp_path / "wide.csv"
+    pd.DataFrame(
+        {
+            "slim_id": ["164", "164"],
+            "T1_score": ["1", "2"],
+            "T2_score": ["3", "4"],
+        }
+    ).to_csv(input_path, index=False)
+
+    result = _run_prism_tools(
+        "wide-to-long",
+        "--input",
+        str(input_path),
+        "--session-indicators",
+        "T1_,T2_",
+        "--id-column",
+        "slim_id",
+        "--inspect-only",
+    )
+
+    output = (result.stdout or "") + (result.stderr or "")
+    assert result.returncode == 2, output
+    assert "non-unique values for the selected ID column 'slim_id'" in output

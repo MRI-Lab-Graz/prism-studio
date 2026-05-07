@@ -9,6 +9,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from src.participants_id_selection import resolve_participants_id_selection
+
 _PREFIX_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"^(?P<prefix>T\d+)[_-].+", re.IGNORECASE),
     re.compile(r"^(?P<prefix>tp\d+)[_-].+", re.IGNORECASE),
@@ -259,6 +261,107 @@ def _format_ambiguous_indicator_error(ambiguous_columns: list[dict[str, Any]]) -
     if examples:
         message += " Examples: " + "; ".join(examples)
     return message
+
+
+def summarize_non_unique_id_values(
+    df: Any,
+    *,
+    id_column: str,
+    max_examples: int = 5,
+) -> dict[str, Any]:
+    """Summarize non-unique non-empty values for an ID column."""
+    import pandas as pd
+
+    column_name = str(id_column or "").strip()
+    if not column_name:
+        raise ValueError("ID column must be provided for uniqueness checks")
+    if column_name not in df.columns:
+        raise ValueError(f"Selected ID column '{column_name}' not found in input")
+
+    counts: dict[str, int] = {}
+    non_empty_rows = 0
+    for value in df[column_name].tolist():
+        if pd.isna(value):
+            continue
+        text = str(value).strip()
+        if not text:
+            continue
+        non_empty_rows += 1
+        counts[text] = counts.get(text, 0) + 1
+
+    duplicates = [
+        {"id_value": value, "row_count": count}
+        for value, count in counts.items()
+        if count > 1
+    ]
+    duplicates.sort(key=lambda item: (-int(item["row_count"]), str(item["id_value"])))
+
+    return {
+        "id_column": column_name,
+        "rows_total": int(len(df)),
+        "non_empty_id_rows": non_empty_rows,
+        "non_unique_id_count": len(duplicates),
+        "non_unique_examples": duplicates[: max(int(max_examples or 1), 1)],
+    }
+
+
+def resolve_wide_to_long_id_uniqueness(
+    df: Any,
+    *,
+    source_format: str,
+    explicit_id_column: str | None = None,
+    max_examples: int = 5,
+) -> dict[str, Any]:
+    """Resolve the wide-table ID column and enforce non-empty ID uniqueness."""
+    columns = [str(column) for column in df.columns]
+    resolution = resolve_participants_id_selection(
+        columns,
+        source_format,
+        explicit_id_column=explicit_id_column,
+    )
+
+    if bool(resolution.get("id_selection_required")):
+        suggested = str(resolution.get("suggested_id_column") or "").strip()
+        suffix = f" Suggested column: '{suggested}'." if suggested else ""
+        raise ValueError(
+            "Select the ID column for wide-to-long uniqueness checks before conversion."
+            + suffix
+        )
+
+    id_column = str(resolution.get("resolved_id_column") or "").strip()
+    if not id_column:
+        raise ValueError(
+            "Could not resolve an ID column for wide-to-long uniqueness checks."
+        )
+
+    summary = summarize_non_unique_id_values(
+        df,
+        id_column=id_column,
+        max_examples=max_examples,
+    )
+
+    duplicate_count = int(summary.get("non_unique_id_count") or 0)
+    if duplicate_count > 0:
+        examples = summary.get("non_unique_examples") or []
+        example_text = ", ".join(
+            f"{item.get('id_value')} x{item.get('row_count')}"
+            for item in examples
+            if isinstance(item, dict)
+        )
+        if example_text:
+            example_text = f" Examples: {example_text}."
+        raise ValueError(
+            "Selected input data has non-unique values for the selected ID column "
+            f"'{id_column}'. Found {duplicate_count} duplicate ID value(s)."
+            f"{example_text} "
+            "Ensure each ID appears only once in the wide table before conversion."
+        )
+
+    return {
+        "id_column": id_column,
+        "id_resolution": resolution,
+        "id_uniqueness": summary,
+    }
 
 
 def convert_wide_to_long_dataframe(
