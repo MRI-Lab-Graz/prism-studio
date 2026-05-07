@@ -31,12 +31,24 @@ def _import_recipe_modules():
     return recipe_validation, recipes_surveys
 
 
-def _write_recipe_builder_template(dataset_path: Path, task_name: str) -> Path:
-    library_dir = dataset_path / "code" / "library" / "survey"
+def _write_recipe_builder_template(
+    dataset_path: Path, task_name: str, modality: str = "survey"
+) -> Path:
+    library_dir = dataset_path / "code" / "library" / modality
     library_dir.mkdir(parents=True, exist_ok=True)
-    template_path = library_dir / f"survey-{task_name}.json"
+    template_filename = (
+        f"survey-{task_name}.json"
+        if modality == "survey"
+        else f"biometrics-{task_name}.json"
+    )
+    template_path = library_dir / template_filename
+    study_payload = (
+        {"TaskName": task_name}
+        if modality == "survey"
+        else {"BiometricName": task_name}
+    )
     template_path.write_text(
-        json.dumps({"Study": {"TaskName": task_name}}),
+        json.dumps({"Study": study_payload}),
         encoding="utf-8",
     )
     return template_path
@@ -252,6 +264,61 @@ def test_recipe_builder_save_rejects_task_missing_from_target_dataset(tmp_path):
     ).exists()
 
 
+def test_recipe_builder_surveys_supports_biometrics_modality(tmp_path):
+    app, handlers = _build_app_and_handlers()
+    _write_recipe_builder_template(tmp_path, "ukk", modality="biometrics")
+
+    with app.test_request_context("/api/recipe-builder/surveys"):
+        response, status_code = handlers.handle_api_recipe_builder_surveys(
+            str(tmp_path),
+            include_global=False,
+            modality="biometrics",
+        )
+
+    assert status_code == 200
+    data = response.get_json()
+    assert data["modality"] == "biometrics"
+    assert data["surveys"] == [
+        {
+            "task": "ukk",
+            "label": "ukk",
+            "file": "code/library/biometrics/biometrics-ukk.json",
+            "source": "project",
+        }
+    ]
+
+
+def test_recipe_builder_save_writes_biometrics_recipes_to_biometrics_folder(tmp_path):
+    app, handlers = _build_app_and_handlers()
+    _write_recipe_builder_template(tmp_path, "ukk", modality="biometrics")
+
+    recipe = {
+        "RecipeVersion": "1.0",
+        "Kind": "biometrics",
+        "Biometrics": {"BiometricName": "ukk"},
+        "Scores": [
+            {
+                "Name": "ukk_total",
+                "Method": "mean",
+                "Items": ["distance", "time"],
+            }
+        ],
+    }
+
+    with app.test_request_context("/api/recipe-builder/save"):
+        response, status_code = handlers.handle_api_recipe_builder_save(
+            {"dataset_path": str(tmp_path), "modality": "biometrics", "recipe": recipe}
+        )
+
+    assert status_code == 200
+    data = response.get_json()
+    assert data["saved"] is True
+
+    saved_path = tmp_path / "code" / "recipes" / "biometrics" / "recipe-ukk.json"
+    assert saved_path.exists()
+    assert json.loads(saved_path.read_text(encoding="utf-8")) == recipe
+
+
 def test_validate_recipe_accepts_versioned_scores_without_top_level_scores():
     recipe_validation, _ = _import_recipe_modules()
 
@@ -393,9 +460,12 @@ def test_recipe_builder_detects_ranges_from_contiguous_numeric_levels(tmp_path):
     )
 
     with app.app_context():
-        assert handlers._detect_scale_ranges(str(template_path)) == {
+        assert handlers._detect_scale_ranges(str(template_path), modality="survey") == {
             "": {"min": 0, "max": 3}
         }
-        assert handlers._extract_item_ranges_from_template(str(template_path)) == {
+        assert handlers._extract_item_ranges_from_template(
+            str(template_path),
+            modality="survey",
+        ) == {
             "BFI01": {"": {"min": 0, "max": 3}}
         }

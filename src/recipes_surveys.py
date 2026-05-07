@@ -45,6 +45,20 @@ _SAFE_FORMULA_UNARYOPS: dict[type[ast.unaryop], Any] = {
     ast.USub: operator.neg,
 }
 
+_SAFE_FORMULA_CMPOPS: dict[type[ast.cmpop], Any] = {
+    ast.Eq: operator.eq,
+    ast.NotEq: operator.ne,
+    ast.Lt: operator.lt,
+    ast.LtE: operator.le,
+    ast.Gt: operator.gt,
+    ast.GtE: operator.ge,
+}
+
+_SAFE_FORMULA_BOOLOPS: dict[type[ast.boolop], Any] = {
+    ast.And: all,
+    ast.Or: any,
+}
+
 _SAFE_FORMULA_FUNCTIONS: dict[str, Any] = {
     "abs": abs,
     "round": round,
@@ -54,6 +68,9 @@ _SAFE_FORMULA_FUNCTIONS: dict[str, Any] = {
     "sqrt": math.sqrt,
     "exp": math.exp,
     "log": math.log,
+    "ifelse": lambda condition, true_value, false_value: (
+        true_value if bool(condition) else false_value
+    ),
 }
 
 _SAFE_FORMULA_MATH_FUNCTIONS: dict[str, Any] = {
@@ -66,15 +83,16 @@ _SAFE_FORMULA_MATH_FUNCTIONS: dict[str, Any] = {
 def _evaluate_formula_ast(node: ast.AST) -> Any:
     """Evaluate a restricted formula AST.
 
-    Allowed constructs are numeric literals, arithmetic operators, lists/tuples,
-    and calls to a very small allow-list of numeric functions.
+    Allowed constructs are literals, arithmetic/comparison operators,
+    boolean/conditional expressions, lists/tuples, and calls to a small
+    allow-list of functions.
     """
     if isinstance(node, ast.Expression):
         return _evaluate_formula_ast(node.body)
 
     if isinstance(node, ast.Constant):
-        if isinstance(node.value, bool) or not isinstance(node.value, (int, float)):
-            raise ValueError("Non-numeric constant")
+        if isinstance(node.value, bool) or not isinstance(node.value, (int, float, str)):
+            raise ValueError("Unsupported constant")
         return node.value
 
     ast_num = getattr(ast, "Num", None)
@@ -97,6 +115,33 @@ def _evaluate_formula_ast(node: ast.AST) -> Any:
             raise ValueError("Unsafe unary operator")
         operand = _evaluate_formula_ast(node.operand)
         return op(operand)
+
+    if isinstance(node, ast.Compare):
+        if not node.ops or len(node.ops) != len(node.comparators):
+            raise ValueError("Invalid comparison expression")
+        left = _evaluate_formula_ast(node.left)
+        for op_node, comparator in zip(node.ops, node.comparators):
+            op = _SAFE_FORMULA_CMPOPS.get(type(op_node))
+            if op is None:
+                raise ValueError("Unsafe comparison operator")
+            right = _evaluate_formula_ast(comparator)
+            if not op(left, right):
+                return False
+            left = right
+        return True
+
+    if isinstance(node, ast.BoolOp):
+        op = _SAFE_FORMULA_BOOLOPS.get(type(node.op))
+        if op is None:
+            raise ValueError("Unsafe boolean operator")
+        values = [_evaluate_formula_ast(value) for value in node.values]
+        return op(bool(v) for v in values)
+
+    if isinstance(node, ast.IfExp):
+        test = _evaluate_formula_ast(node.test)
+        if bool(test):
+            return _evaluate_formula_ast(node.body)
+        return _evaluate_formula_ast(node.orelse)
 
     if isinstance(node, ast.List):
         return [_evaluate_formula_ast(element) for element in node.elts]
@@ -838,6 +883,57 @@ def _participant_join_key(value: str | None) -> str | None:
     return token
 
 
+def _is_missing_cell_value(value: Any) -> bool:
+    if value is None:
+        return True
+    text = str(value).strip().lower()
+    return text in {"", "n/a", "na", "nan", "none", "null"}
+
+
+def _build_participant_value_lookup(participants_df: Any) -> dict[str, dict[str, str]]:
+    """Return participant values keyed by normalized participant join key."""
+    lookup: dict[str, dict[str, str]] = {}
+    if participants_df is None:
+        return lookup
+    if "participant_id" not in participants_df.columns:
+        return lookup
+
+    participant_cols = [c for c in participants_df.columns if c != "participant_id"]
+    if not participant_cols:
+        return lookup
+
+    for _index, row in participants_df.iterrows():
+        key = _participant_join_key(row.get("participant_id"))
+        if not key or key in lookup:
+            continue
+        values: dict[str, str] = {}
+        for col in participant_cols:
+            raw = row.get(col)
+            if _is_missing_cell_value(raw):
+                continue
+            values[col] = str(raw).strip()
+        lookup[key] = values
+
+    return lookup
+
+
+def _inject_participant_values_into_rows(
+    rows: list[dict[str, str]], participant_values: dict[str, str]
+) -> list[dict[str, str]]:
+    """Return row copies with participant-level values filled where missing."""
+    if not participant_values:
+        return rows
+
+    out_rows: list[dict[str, str]] = []
+    for row in rows:
+        merged = row.copy()
+        for col, val in participant_values.items():
+            if col not in merged or _is_missing_cell_value(merged.get(col)):
+                merged[col] = val
+        out_rows.append(merged)
+    return out_rows
+
+
 def _parse_numeric_cell(val: str | None) -> float | None:
     if val is None:
         return None
@@ -875,6 +971,50 @@ def _format_numeric_cell(val: Any) -> str:
         return str(val)
 
 
+def _lookup_item_raw_value(item_id: str, data: dict) -> Any:
+    """Return raw cell value by item id, using case-insensitive fallback."""
+    raw = data.get(item_id)
+    if raw is None and item_id not in data:
+        item_id_lower = str(item_id).strip().lower()
+        for key, value in data.items():
+            if str(key).strip().lower() == item_id_lower:
+                raw = value
+                break
+    return raw
+
+
+def _resolve_formula_placeholder(
+    item_id: str,
+    data: dict,
+    invert_items: set[str],
+    invert_min: Any,
+    invert_max: Any,
+    item_scales: dict | None = None,
+) -> str | None:
+    """Resolve a formula placeholder to a numeric token or quoted string token."""
+    numeric_value = _get_item_value(
+        item_id,
+        data,
+        invert_items,
+        invert_min,
+        invert_max,
+        item_scales,
+    )
+    if numeric_value is not None:
+        return str(numeric_value)
+
+    raw = _lookup_item_raw_value(item_id, data)
+    if raw is None:
+        return None
+
+    raw_text = str(raw).strip()
+    if not raw_text or raw_text.lower() == "n/a":
+        return None
+
+    # Use JSON encoding so strings remain quoted/escaped and parse safely.
+    return json.dumps(raw_text)
+
+
 def _get_item_value(
     item_id: str,
     data: dict,
@@ -883,13 +1023,7 @@ def _get_item_value(
     invert_max: Any,
     item_scales: dict | None = None,
 ) -> float | None:
-    raw = data.get(item_id)
-    if raw is None and item_id not in data:
-        item_id_lower = str(item_id).strip().lower()
-        for key, value in data.items():
-            if str(key).strip().lower() == item_id_lower:
-                raw = value
-                break
+    raw = _lookup_item_raw_value(item_id, data)
     v = _parse_numeric_cell(raw)
     if v is None:
         return None
@@ -993,7 +1127,7 @@ def _calculate_derived_variables(
                 expr = str(formula)
                 any_missing = False
                 for item_id in d_items:
-                    v = _get_item_value(
+                    token = _resolve_formula_placeholder(
                         item_id,
                         current_row,
                         invert_items,
@@ -1001,11 +1135,10 @@ def _calculate_derived_variables(
                         invert_max,
                         item_scales,
                     )
-                    if v is None:
+                    if token is None:
                         any_missing = True
                         break
-                    val_str = str(v)
-                    expr = expr.replace(f"{{{item_id}}}", val_str)
+                    expr = expr.replace(f"{{{item_id}}}", token)
                 if not any_missing:
                     d_result = _safe_eval_formula_expression(expr)
 
@@ -1057,7 +1190,7 @@ def _calculate_scores(
                 expr = formula
                 # Replace {item_id} with value from current_row (which includes derived)
                 for item_id in items:
-                    v = _get_item_value(
+                    token = _resolve_formula_placeholder(
                         item_id,
                         current_row,
                         invert_items,
@@ -1065,8 +1198,10 @@ def _calculate_scores(
                         invert_max,
                         item_scales,
                     )
-                    val_str = str(v) if v is not None else "0.0"
-                    expr = expr.replace(f"{{{item_id}}}", val_str)
+                    expr = expr.replace(
+                        f"{{{item_id}}}",
+                        token if token is not None else "0.0",
+                    )
                 result = _safe_eval_formula_expression(expr)
         elif method == "map":
             source = score.get("Source")
@@ -1770,6 +1905,7 @@ def _export_recipe_aggregated(
     rows_accum: list[dict[str, Any]] = []
     processed_count = 0
     final_header = []
+    participant_lookup = _build_participant_value_lookup(participants_df)
 
     for in_path in matching:
         processed_count += 1
@@ -1787,6 +1923,9 @@ def _export_recipe_aggregated(
         if not in_header or not in_rows:
             continue
 
+        participant_values = participant_lookup.get(_participant_join_key(sub_id), {})
+        scoring_rows = _inject_participant_values_into_rows(in_rows, participant_values)
+
         resolved_ver = _resolve_variant_for_path(
             output_prism_root,
             survey_task,
@@ -1794,7 +1933,10 @@ def _export_recipe_aggregated(
             modality=modality,
         )
         out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
-            recipe, in_rows, include_raw=include_raw, resolved_version=resolved_ver
+            recipe,
+            scoring_rows,
+            include_raw=include_raw,
+            resolved_version=resolved_ver,
         )
         if not out_header:
             continue
@@ -1840,7 +1982,9 @@ def _export_recipe_aggregated(
     participant_cols: list[str] = []
     # Merge participant variables (age, sex, etc.) if available
     if participants_df is not None:
-        participant_cols = [c for c in participants_df.columns if c != "participant_id"]
+        participant_cols = [
+            c for c in participants_df.columns if c != "participant_id" and c not in df.columns
+        ]
         if participant_cols:
             left = df.copy()
             left["__pid_key"] = left["participant_id"].map(_participant_join_key)
@@ -2033,11 +2177,13 @@ def _export_recipe_legacy(
     include_raw: bool,
     flat_rows: list[dict],
     flat_key_to_idx: dict[tuple, int],
+    participants_df: Optional[Any] = None,
     output_prism_root: Path | None = None,
 ) -> tuple[int, int]:
     """Process all files for one recipe using legacy (PRISM/Flat) per-file logic."""
     processed_count = 0
     written_count = 0
+    participant_lookup = _build_participant_value_lookup(participants_df)
 
     # Extract task name for version resolution
     task_key = "BiometricName" if modality == "biometrics" else "TaskName"
@@ -2062,6 +2208,9 @@ def _export_recipe_legacy(
         if not in_header or not in_rows:
             continue
 
+        participant_values = participant_lookup.get(_participant_join_key(sub_id), {})
+        scoring_rows = _inject_participant_values_into_rows(in_rows, participant_values)
+
         resolved_ver = (
             _resolve_variant_for_path(
                 output_prism_root,
@@ -2073,7 +2222,10 @@ def _export_recipe_legacy(
             else None
         )
         out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
-            recipe, in_rows, include_raw=include_raw, resolved_version=resolved_ver
+            recipe,
+            scoring_rows,
+            include_raw=include_raw,
+            resolved_version=resolved_ver,
         )
         if not out_header:
             break
@@ -2415,7 +2567,9 @@ def compute_survey_recipes(
                     # Attach participant variables once to avoid repeated merge columns.
                     if participants_df is not None and len(merge_all_dfs) == 0:
                         participant_cols = [
-                            c for c in participants_df.columns if c != "participant_id"
+                            c
+                            for c in participants_df.columns
+                            if c != "participant_id" and c not in df.columns
                         ]
                         if participant_cols:
                             left = df.copy()
@@ -2488,6 +2642,7 @@ def compute_survey_recipes(
                 include_raw=include_raw,
                 flat_rows=flat_rows,
                 flat_key_to_idx=flat_key_to_idx,
+                participants_df=participants_df,
             )
             processed_files += p_count
             written_files += w_count

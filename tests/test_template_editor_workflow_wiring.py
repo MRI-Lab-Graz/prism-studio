@@ -15,6 +15,17 @@ TEMPLATE_EDITOR_BLUEPRINT = (
 
 
 class TestTemplateEditorWorkflowWiring(unittest.TestCase):
+    def test_template_editor_exposes_modality_selector_with_survey_default(self):
+        content = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="modality"', content)
+        self.assertIn('<option value="survey" selected>survey</option>', content)
+        self.assertIn('<option value="biometrics">biometrics</option>', content)
+        self.assertIn(
+            'Choose modality first (default: survey), then select a template from the dropdown to load it, or click Create to start a new one.',
+            content,
+        )
+
     def test_template_editor_save_tooltip_matches_guarded_overwrite_flow(self):
         content = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
 
@@ -67,6 +78,34 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         self.assertIn("hasUserInteracted = true;", content)
         self.assertIn("hasExplicitTemplate = true;", content)
         self.assertIn("clearTemplateSelections();", content)
+
+    def test_template_editor_filename_normalization_uses_biometrics_test_name(self):
+        content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("function getTemplateNameCandidate(obj, modality) {", content)
+        self.assertIn("extractTemplateNameValue(study.BiometricName)", content)
+        self.assertIn("extractTemplateNameValue(study.OriginalName)", content)
+        self.assertIn(
+            "const expectedPrefix = modality === 'biometrics' ? 'biometrics-' : 'survey-';",
+            content,
+        )
+        self.assertIn(
+            "const finalStem = safeStem === 'template' ? fallbackStem : safeStem;",
+            content,
+        )
+
+    def test_template_editor_save_replaces_generic_placeholder_filenames(self):
+        content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("function isGenericTemplateFilename(filename, modality) {", content)
+        self.assertIn("function resolveTemplateFilenameForSave(templateObj, modality) {", content)
+        self.assertIn("return ['template', 'new', 'imported'].includes(stem);", content)
+        self.assertIn("if (isGenericTemplateFilename(currentTemplateFilename, modality)) {", content)
+        self.assertIn("const filename = resolveTemplateFilenameForSave(obj, modality);", content)
+        self.assertIn(
+            "const filename = resolveTemplateFilenameForSave(obj, modalityEl.value);",
+            content,
+        )
 
     def test_template_editor_import_and_delete_restore_visible_state(self):
         content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
