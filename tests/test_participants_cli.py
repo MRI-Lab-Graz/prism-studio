@@ -204,6 +204,45 @@ def test_participants_merge_cli_json_apply_updates_tsv_and_json(tmp_path: Path) 
     assert set(participants_json) >= {"participant_id", "sex", "age", "group"}
 
 
+def test_participants_merge_cli_json_preview_auto_resolves_equivalent_values(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "participants.tsv").write_text(
+        "participant_id\tage\tsex\n"
+        "sub-001\t34.0\tM\n"
+        "sub-002\t20.0\tF\n",
+        encoding="utf-8",
+    )
+
+    source_path = tmp_path / "participants_source.csv"
+    source_path.write_text(
+        "participant_id,age,sex\n"
+        "sub-001,34,2\n"
+        "sub-002,20,1\n",
+        encoding="utf-8",
+    )
+
+    result = _run_prism_tools(
+        "participants",
+        "merge",
+        "--input",
+        str(source_path),
+        "--project",
+        str(tmp_path),
+        "--json",
+    )
+
+    output = (result.stdout or "") + (result.stderr or "")
+    assert result.returncode == 0, output
+
+    payload = json.loads(result.stdout)
+    assert payload["status"] == "success"
+    assert payload["action"] == "preview"
+    assert payload["conflict_count"] == 0
+    assert payload["can_apply"] is True
+    assert payload["auto_resolved_equivalent_count"] == 4
+
+
 def test_participants_merge_cli_conflicts_csv_exports_full_report(
     tmp_path: Path,
 ) -> None:

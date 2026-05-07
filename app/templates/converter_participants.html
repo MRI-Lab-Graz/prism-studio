@@ -108,6 +108,9 @@
                         <i class="fas fa-play me-2"></i><strong id="participantsConvertBtnLabel">3. Create Participant Files</strong>
                     </button>
                     <small class="form-text text-muted" id="convertBtnHint">Run step 1 first</small>
+                    <div class="mt-1">
+                        <span class="badge d-none" id="participantsMergeApplyStatusBadge"></span>
+                    </div>
                     <small class="form-text text-muted">Unsaved metadata edits are included automatically.</small>
                 </div>
             </div>
@@ -133,6 +136,21 @@
                 <div class="small mb-2" id="participantsMergeSummaryText"></div>
                 <div class="small text-muted d-none" id="participantsMergeColumnsText"></div>
                 <ul class="small mb-0 mt-2 d-none" id="participantsMergeConflictList"></ul>
+                <div class="mt-3 d-none" id="participantsMergeHarmonizationSection">
+                    <div class="small fw-semibold">Harmonization Decisions</div>
+                    <div class="small text-muted" id="participantsMergeHarmonizationHint">
+                        Equivalent value codings were detected. Choose which coding should be authoritative before applying merge.
+                    </div>
+                    <div class="small mt-1 d-none" id="participantsMergeHarmonizationStatus"></div>
+                    <div class="mt-2" id="participantsMergeHarmonizationList"></div>
+                </div>
+                <div class="mt-3 d-none" id="participantsMergeSessionResolutionSection">
+                    <div class="small fw-semibold">Session Resolution</div>
+                    <div class="small text-muted" id="participantsMergeSessionResolutionHint">
+                        Some participant values differ across sessions. Choose whether to keep one session or split into session-specific columns.
+                    </div>
+                    <div class="mt-2" id="participantsMergeSessionResolutionList"></div>
+                </div>
                 <div class="mt-3 d-none" id="participantsMergeConflictActions">
                     <button class="btn btn-outline-dark btn-sm" type="button" id="participantsDownloadMergeConflictsBtn">
                         <i class="fas fa-download me-1"></i>Download Full Conflict Report
