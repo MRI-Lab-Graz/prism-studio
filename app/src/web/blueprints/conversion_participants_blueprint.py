@@ -1016,6 +1016,28 @@ def _parse_participants_merge_request(
         except json.JSONDecodeError:
             neurobagel_schema = {}
 
+    harmonization_decisions_json = request.form.get("harmonization_decisions")
+    harmonization_decisions: dict[str, object] = {}
+    if harmonization_decisions_json:
+        try:
+            decoded = json.loads(harmonization_decisions_json)
+            if isinstance(decoded, dict):
+                harmonization_decisions = decoded
+        except json.JSONDecodeError:
+            harmonization_decisions = {}
+
+    session_resolution_decisions_json = request.form.get(
+        "session_resolution_decisions"
+    )
+    session_resolution_decisions: dict[str, object] = {}
+    if session_resolution_decisions_json:
+        try:
+            decoded = json.loads(session_resolution_decisions_json)
+            if isinstance(decoded, dict):
+                session_resolution_decisions = decoded
+        except json.JSONDecodeError:
+            session_resolution_decisions = {}
+
     logs = []
 
     def log_msg(level, message):
@@ -1054,6 +1076,8 @@ def _parse_participants_merge_request(
         "separator": _expected_delimiter_for_suffix(suffix, separator_option),
         "preview_limit": preview_limit,
         "neurobagel_schema": neurobagel_schema,
+        "harmonization_decisions": harmonization_decisions,
+        "session_resolution_decisions": session_resolution_decisions,
         "context": context,
         "mapping": mapping,
         "logs": logs,
@@ -1965,6 +1989,8 @@ def api_participants_merge():
         separator = merge_request["separator"]
         preview_limit = int(merge_request["preview_limit"])
         neurobagel_schema = merge_request["neurobagel_schema"]
+        harmonization_decisions = merge_request["harmonization_decisions"]
+        session_resolution_decisions = merge_request["session_resolution_decisions"]
         mapping = merge_request["mapping"]
 
         validated_context, error_response = (
@@ -1986,6 +2012,8 @@ def api_participants_merge():
             sheet=sheet_arg,
             preview_limit=preview_limit,
             neurobagel_schema=neurobagel_schema,
+            harmonization_decisions=harmonization_decisions,
+            session_resolution_decisions=session_resolution_decisions,
             log_callback=log_msg,
         )
 
@@ -2028,7 +2056,7 @@ def api_participants_merge():
 
         if not bool(preview_payload.get("can_apply")):
             preview_payload["error"] = (
-                "Merge preview contains conflicting values. Resolve them before applying."
+                "Merge preview is not apply-ready. Resolve conflicts and session-resolution blockers before applying."
             )
             return jsonify(preview_payload), 409
 
@@ -2040,6 +2068,8 @@ def api_participants_merge():
             sheet=sheet_arg,
             preview_limit=preview_limit,
             neurobagel_schema=neurobagel_schema,
+            harmonization_decisions=harmonization_decisions,
+            session_resolution_decisions=session_resolution_decisions,
             log_callback=log_msg,
         )
         apply_payload.update(
@@ -2100,6 +2130,10 @@ def api_participants_merge_conflicts():
             sheet=merge_request["sheet_arg"],
             preview_limit=int(merge_request["preview_limit"]),
             neurobagel_schema=merge_request["neurobagel_schema"],
+            harmonization_decisions=merge_request["harmonization_decisions"],
+            session_resolution_decisions=merge_request[
+                "session_resolution_decisions"
+            ],
             log_callback=log_msg,
         )
         response = Response(csv_text, mimetype="text/csv")

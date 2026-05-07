@@ -32,6 +32,7 @@ export function initParticipants() {
     let participantsFileAction = 'replace';
     let participantsSelectedCaseId = '1';
     let participantsServerFilePath = '';
+    let participantsMergeHarmonizationRefreshTimer = null;
 
     const PARTICIPANTS_CASE_CONFIG = {
         '1': { mode: 'file', fileAction: 'replace' },
@@ -241,6 +242,81 @@ export function initParticipants() {
             .filter(Boolean);
     }
 
+    function assessParticipantsMergeHarmonizationState(previewData = window.lastParticipantsPreviewData) {
+        const candidates = Array.isArray(previewData?.harmonization_candidates)
+            ? previewData.harmonization_candidates
+            : [];
+
+        if (!previewData || !previewData.merge_mode || candidates.length === 0) {
+            return {
+                hasInvalidKeepBoth: false,
+                invalidByColumn: {},
+                keepBothCount: 0,
+            };
+        }
+
+        const decisions = getParticipantsMergeHarmonizationDecisions();
+        const serverDecisions = (previewData.harmonization_decisions && typeof previewData.harmonization_decisions === 'object')
+            ? previewData.harmonization_decisions
+            : {};
+        const serverKeepBothColumns = new Set(
+            Object.values(serverDecisions)
+                .filter((entry) => entry && typeof entry === 'object' && String(entry.action || '').trim() === 'keep_both')
+                .map((entry) => String(entry.new_column || '').trim())
+                .filter(Boolean)
+        );
+        const reservedColumns = new Set(
+            (Array.isArray(previewData.columns) ? previewData.columns : [])
+                .map((columnName) => String(columnName || '').trim())
+                .filter((columnName) => Boolean(columnName) && !serverKeepBothColumns.has(columnName))
+        );
+
+        const usedKeepBothColumns = new Map();
+        const invalidByColumn = {};
+        let keepBothCount = 0;
+
+        candidates.forEach((candidate) => {
+            const columnName = String(candidate?.column || '').trim();
+            if (!columnName) {
+                return;
+            }
+
+            const decision = decisions[columnName] && typeof decisions[columnName] === 'object'
+                ? decisions[columnName]
+                : { action: 'keep_existing', new_column: '' };
+            const action = String(decision.action || 'keep_existing').trim();
+            if (action !== 'keep_both') {
+                return;
+            }
+
+            keepBothCount += 1;
+
+            const selectedColumn = String(decision.new_column || '').trim();
+            if (!selectedColumn) {
+                invalidByColumn[columnName] = 'Enter a new column name for Keep both.';
+                return;
+            }
+
+            if (reservedColumns.has(selectedColumn)) {
+                invalidByColumn[columnName] = `Column name "${selectedColumn}" already exists.`;
+                return;
+            }
+
+            const existingOwner = usedKeepBothColumns.get(selectedColumn);
+            if (existingOwner && existingOwner !== columnName) {
+                invalidByColumn[columnName] = `Column name "${selectedColumn}" is already used by ${existingOwner}.`;
+                return;
+            }
+            usedKeepBothColumns.set(selectedColumn, columnName);
+        });
+
+        return {
+            hasInvalidKeepBoth: Object.keys(invalidByColumn).length > 0,
+            invalidByColumn,
+            keepBothCount,
+        };
+    }
+
     function canApplyParticipantsConversion() {
         if (!participantsPreviewCompleted) {
             return false;
@@ -248,10 +324,59 @@ export function initParticipants() {
 
         const previewData = window.lastParticipantsPreviewData;
         if (previewData && previewData.merge_mode) {
-            return Boolean(previewData.can_apply);
+            const harmonizationState = assessParticipantsMergeHarmonizationState(previewData);
+            return Boolean(previewData.can_apply) && !harmonizationState.hasInvalidKeepBoth;
         }
 
         return true;
+    }
+
+    function updateParticipantsMergeApplyStatusBadge(previewData = window.lastParticipantsPreviewData) {
+        const badge = document.getElementById('participantsMergeApplyStatusBadge');
+        if (!badge) {
+            return;
+        }
+
+        const isMergePreview = Boolean(previewData && previewData.merge_mode);
+        if (!participantsPreviewCompleted || !isMergePreview) {
+            badge.classList.add('d-none');
+            badge.textContent = '';
+            badge.className = 'badge d-none';
+            return;
+        }
+
+        const harmonizationState = assessParticipantsMergeHarmonizationState(previewData);
+        const conflictCount = Number(previewData.conflict_count || 0);
+        const sessionResolutionRequired = Boolean(previewData.session_resolution_required);
+
+        badge.classList.remove('d-none', 'bg-success', 'bg-warning', 'bg-danger', 'bg-secondary', 'text-dark');
+
+        if (harmonizationState.hasInvalidKeepBoth) {
+            badge.classList.add('bg-danger');
+            badge.textContent = 'Apply blocked: invalid Keep both names';
+            return;
+        }
+
+        if (conflictCount > 0) {
+            badge.classList.add('bg-warning', 'text-dark');
+            badge.textContent = 'Apply blocked: unresolved conflicts';
+            return;
+        }
+
+        if (sessionResolutionRequired) {
+            badge.classList.add('bg-warning', 'text-dark');
+            badge.textContent = 'Apply blocked: choose session resolution';
+            return;
+        }
+
+        if (Boolean(previewData.can_apply)) {
+            badge.classList.add('bg-success');
+            badge.textContent = 'Apply ready';
+            return;
+        }
+
+        badge.classList.add('bg-secondary');
+        badge.textContent = 'Apply blocked';
     }
 
     function getParticipantsCaseDetails(caseId) {
@@ -675,6 +800,7 @@ export function initParticipants() {
         const forceOverwrite = document.getElementById('participantsForceOverwrite');
         const convertBtn = document.getElementById('participantsConvertBtn');
         const convertHint = document.getElementById('convertBtnHint');
+        const applyStatusBadge = document.getElementById('participantsMergeApplyStatusBadge');
         const saveAnnotBtn = document.getElementById('saveNeurobagelBtn');
         const previewTableHead = document.querySelector('#participantsPreviewTable thead');
         const previewTableBody = document.querySelector('#participantsPreviewTable tbody');
@@ -712,6 +838,10 @@ export function initParticipants() {
             convertBtn.classList.add('btn-outline-secondary');
         }
         if (convertHint) convertHint.textContent = getParticipantsWorkflowUiCopy().convertPendingHint;
+        if (applyStatusBadge) {
+            applyStatusBadge.className = 'badge d-none';
+            applyStatusBadge.textContent = '';
+        }
         if (saveAnnotBtn) saveAnnotBtn.disabled = true;
     
         if (previewTableHead) previewTableHead.innerHTML = '';
@@ -732,6 +862,8 @@ export function initParticipants() {
         window.pendingAdditionalParticipantColumns = [];
         window.currentAdditionalParticipantColumns = [];
         window.excludedParticipantColumns = [];
+        window.participantsMergeHarmonizationDecisions = {};
+        window.participantsMergeSessionResolutionDecisions = {};
         setParticipantsAdditionalVariablesEnabled(false);
     
         const widgetContainer = document.getElementById('neurobagelWidgetContainer');
@@ -1029,6 +1161,7 @@ export function initParticipants() {
             if (warningDiv) warningDiv.classList.add('d-none');
             updateParticipantsInputVisibility();
             updateParticipantsSelectedFileName();
+            updateParticipantsMergeApplyStatusBadge();
             return;
         }
 
@@ -1043,6 +1176,7 @@ export function initParticipants() {
             if (warningDiv) warningDiv.classList.add('d-none');
             updateParticipantsInputVisibility();
             updateParticipantsSelectedFileName();
+            updateParticipantsMergeApplyStatusBadge();
             return;
         }
         
@@ -1069,6 +1203,7 @@ export function initParticipants() {
         }
     
         updateParticipantsSelectedFileName();
+        updateParticipantsMergeApplyStatusBadge();
     }
     
     // Attach event listener
@@ -2037,14 +2172,27 @@ export function initParticipants() {
         const conflictList = document.getElementById('participantsMergeConflictList');
         const conflictActions = document.getElementById('participantsMergeConflictActions');
         const downloadButton = document.getElementById('participantsDownloadMergeConflictsBtn');
+        const harmonizationSection = document.getElementById('participantsMergeHarmonizationSection');
+        const harmonizationHint = document.getElementById('participantsMergeHarmonizationHint');
+        const harmonizationStatus = document.getElementById('participantsMergeHarmonizationStatus');
+        const harmonizationList = document.getElementById('participantsMergeHarmonizationList');
+        const sessionResolutionSection = document.getElementById('participantsMergeSessionResolutionSection');
+        const sessionResolutionHint = document.getElementById('participantsMergeSessionResolutionHint');
+        const sessionResolutionList = document.getElementById('participantsMergeSessionResolutionList');
 
-        if (!summary || !title || !matchedBadge || !newParticipantsBadge || !fillBadge || !conflictBadge || !summaryText || !columnsText || !conflictList || !conflictActions || !downloadButton) {
+        if (!summary || !title || !matchedBadge || !newParticipantsBadge || !fillBadge || !conflictBadge || !summaryText || !columnsText || !conflictList || !conflictActions || !downloadButton || !harmonizationSection || !harmonizationHint || !harmonizationStatus || !harmonizationList || !sessionResolutionSection || !sessionResolutionHint || !sessionResolutionList) {
             return;
         }
 
         if (!previewData || !previewData.merge_mode) {
             summary.classList.add('d-none');
             conflictActions.classList.add('d-none');
+            harmonizationSection.classList.add('d-none');
+            harmonizationStatus.classList.add('d-none');
+            harmonizationStatus.textContent = '';
+            harmonizationList.innerHTML = '';
+            sessionResolutionSection.classList.add('d-none');
+            sessionResolutionList.innerHTML = '';
             downloadButton.disabled = true;
             return;
         }
@@ -2058,6 +2206,19 @@ export function initParticipants() {
             ? previewData.new_columns.map((col) => String(col || '').trim()).filter(Boolean)
             : [];
         const conflicts = Array.isArray(previewData.conflicts) ? previewData.conflicts : [];
+        const harmonizationCandidates = Array.isArray(previewData.harmonization_candidates)
+            ? previewData.harmonization_candidates
+            : [];
+        const serverDecisions = (previewData.harmonization_decisions && typeof previewData.harmonization_decisions === 'object')
+            ? previewData.harmonization_decisions
+            : {};
+        const sessionResolutionCandidates = Array.isArray(previewData.session_resolution_candidates)
+            ? previewData.session_resolution_candidates
+            : [];
+        const sessionResolutionDecisions = (previewData.session_resolution_decisions && typeof previewData.session_resolution_decisions === 'object')
+            ? previewData.session_resolution_decisions
+            : {};
+        const sessionResolutionRequired = Boolean(previewData.session_resolution_required);
         const canApply = Boolean(previewData.can_apply);
 
         matchedBadge.textContent = `${matchedCount} matched`;
@@ -2073,6 +2234,8 @@ export function initParticipants() {
             summaryText.textContent = existingOnlyCount > 0
                 ? `This merge can be applied safely. ${existingOnlyCount} existing participant${existingOnlyCount === 1 ? '' : 's'} will stay unchanged.`
                 : 'This merge can be applied safely. All overlapping non-empty values agree.';
+        } else if (sessionResolutionRequired && conflictCount === 0) {
+            summaryText.textContent = 'This merge is blocked until session resolution is chosen for columns that vary across repeated participant rows.';
         } else {
             summaryText.textContent = 'This merge is blocked because conflicting non-empty values were found. Existing participants.tsv remains authoritative until conflicts are resolved.';
         }
@@ -2113,6 +2276,419 @@ export function initParticipants() {
             conflictActions.classList.add('d-none');
             downloadButton.disabled = true;
         }
+
+        if (!(window.participantsMergeSessionResolutionDecisions && typeof window.participantsMergeSessionResolutionDecisions === 'object')) {
+            window.participantsMergeSessionResolutionDecisions = {};
+        }
+
+        if (sessionResolutionCandidates.length > 0) {
+            sessionResolutionCandidates.forEach((candidate) => {
+                const columnName = String(candidate && candidate.column ? candidate.column : '').trim();
+                if (!columnName) {
+                    return;
+                }
+
+                const serverEntry = sessionResolutionDecisions[columnName];
+                const selectedAction = String(serverEntry?.action || candidate.selected_action || '').trim();
+                const selectedSession = String(serverEntry?.session || candidate.selected_session || '').trim();
+                const sessionColumn = String(candidate.session_column || '').trim();
+                window.participantsMergeSessionResolutionDecisions[columnName] = {
+                    action: selectedAction,
+                    session: selectedSession,
+                    session_column: sessionColumn,
+                };
+            });
+
+            const sessionColumnName = String(previewData.session_resolution_column || sessionResolutionCandidates[0]?.session_column || 'session').trim();
+            sessionResolutionHint.textContent = `Columns vary across repeated participant rows. Choose how to resolve values by ${sessionColumnName || 'session'}.`;
+
+            sessionResolutionList.innerHTML = sessionResolutionCandidates.map((candidate, index) => {
+                const columnName = String(candidate && candidate.column ? candidate.column : '').trim();
+                if (!columnName) {
+                    return '';
+                }
+
+                const decision = window.participantsMergeSessionResolutionDecisions[columnName] || { action: '', session: '' };
+                const selectedAction = String(decision.action || '').trim();
+                const selectedSession = String(decision.session || '').trim();
+                const availableSessions = Array.isArray(candidate.available_sessions)
+                    ? candidate.available_sessions.map((value) => String(value || '').trim()).filter(Boolean)
+                    : [];
+                const generatedColumns = Array.isArray(candidate.generated_columns)
+                    ? candidate.generated_columns.map((value) => String(value || '').trim()).filter(Boolean)
+                    : [];
+                const generatedPreview = generatedColumns.length > 0
+                    ? generatedColumns.join(', ')
+                    : (availableSessions.length > 0
+                        ? availableSessions.map((sessionValue) => `${columnName}@ses-${sessionValue}`).join(', ')
+                        : 'session-specific columns');
+                const sessionSelectId = `participantsSessionResolution_${index}`;
+
+                return `
+                    <div class="border rounded p-2 mb-2" data-session-resolution-column="${escapeHtml(columnName)}">
+                        <div class="small mb-1"><strong>${escapeHtml(columnName)}</strong></div>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-5">
+                                <label class="form-label form-label-sm mb-1">Resolution</label>
+                                <select class="form-select form-select-sm participants-session-resolution-action">
+                                    <option value="" ${selectedAction ? '' : 'selected'}>Choose...</option>
+                                    <option value="pick_session" ${selectedAction === 'pick_session' ? 'selected' : ''}>Take one session</option>
+                                    <option value="split_sessions" ${selectedAction === 'split_sessions' ? 'selected' : ''}>Keep all sessions as columns</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label form-label-sm mb-1">Session (for Take one)</label>
+                                <select id="${escapeHtml(sessionSelectId)}" class="form-select form-select-sm participants-session-resolution-session" ${selectedAction === 'pick_session' ? '' : 'disabled'}>
+                                    <option value="">Choose session...</option>
+                                    ${availableSessions.map((sessionValue) => `<option value="${escapeHtml(sessionValue)}" ${selectedSession === sessionValue ? 'selected' : ''}>${escapeHtml(sessionValue)}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="small text-muted">${selectedAction === 'split_sessions' ? `Creates: ${escapeHtml(generatedPreview)}` : ''}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            sessionResolutionSection.classList.remove('d-none');
+
+            sessionResolutionList.querySelectorAll('.participants-session-resolution-action').forEach((selectEl) => {
+                selectEl.addEventListener('change', () => {
+                    const row = selectEl.closest('[data-session-resolution-column]');
+                    if (!row) {
+                        return;
+                    }
+
+                    const columnName = String(row.getAttribute('data-session-resolution-column') || '').trim();
+                    if (!columnName) {
+                        return;
+                    }
+
+                    const sessionSelect = row.querySelector('.participants-session-resolution-session');
+                    const action = String(selectEl.value || '').trim();
+                    const sessionValue = sessionSelect ? String(sessionSelect.value || '').trim() : '';
+                    if (sessionSelect) {
+                        sessionSelect.disabled = action !== 'pick_session';
+                    }
+
+                    window.participantsMergeSessionResolutionDecisions[columnName] = {
+                        action,
+                        session: action === 'pick_session' ? sessionValue : '',
+                        session_column: String(previewData.session_resolution_column || '').trim(),
+                    };
+
+                    scheduleParticipantsMergePreviewRefresh();
+                });
+            });
+
+            sessionResolutionList.querySelectorAll('.participants-session-resolution-session').forEach((sessionEl) => {
+                sessionEl.addEventListener('change', () => {
+                    const row = sessionEl.closest('[data-session-resolution-column]');
+                    if (!row) {
+                        return;
+                    }
+
+                    const columnName = String(row.getAttribute('data-session-resolution-column') || '').trim();
+                    if (!columnName) {
+                        return;
+                    }
+
+                    const actionSelect = row.querySelector('.participants-session-resolution-action');
+                    const action = actionSelect ? String(actionSelect.value || '').trim() : '';
+                    if (action !== 'pick_session') {
+                        return;
+                    }
+
+                    window.participantsMergeSessionResolutionDecisions[columnName] = {
+                        action,
+                        session: String(sessionEl.value || '').trim(),
+                        session_column: String(previewData.session_resolution_column || '').trim(),
+                    };
+
+                    scheduleParticipantsMergePreviewRefresh();
+                });
+            });
+        } else {
+            sessionResolutionSection.classList.add('d-none');
+            sessionResolutionList.innerHTML = '';
+        }
+
+        if (!(window.participantsMergeHarmonizationDecisions && typeof window.participantsMergeHarmonizationDecisions === 'object')) {
+            window.participantsMergeHarmonizationDecisions = {};
+        }
+
+        if (harmonizationCandidates.length === 0) {
+            harmonizationSection.classList.add('d-none');
+            harmonizationStatus.classList.add('d-none');
+            harmonizationStatus.textContent = '';
+            harmonizationList.innerHTML = '';
+
+            const convertBtn = document.getElementById('participantsConvertBtn');
+            const convertHint = document.getElementById('convertBtnHint');
+            const canConvert = canApplyParticipantsConversion();
+            if (convertBtn) {
+                convertBtn.disabled = !canConvert;
+                convertBtn.classList.remove('btn-outline-secondary', 'btn-success');
+                convertBtn.classList.add(canConvert ? 'btn-success' : 'btn-outline-secondary');
+            }
+            if (convertHint) {
+                if (sessionResolutionRequired && conflictCount === 0) {
+                    convertHint.textContent = 'Choose session resolution before applying merge';
+                } else {
+                    convertHint.textContent = canConvert
+                        ? 'Ready to apply conflict-free merge'
+                        : 'Resolve merge conflicts first';
+                }
+            }
+            updateParticipantsMergeApplyStatusBadge(previewData);
+            return;
+        }
+
+        harmonizationCandidates.forEach((candidate) => {
+            const columnName = String(candidate && candidate.column ? candidate.column : '').trim();
+            if (!columnName) {
+                return;
+            }
+
+            const serverEntry = serverDecisions[columnName];
+            const fallbackAction = String(candidate.selected_action || 'keep_existing').trim().toLowerCase();
+            const fallbackNewColumn = String(candidate.selected_new_column || candidate.default_new_column || '').trim();
+
+            let selectedAction = fallbackAction;
+            let selectedNewColumn = fallbackNewColumn;
+
+            if (serverEntry && typeof serverEntry === 'object') {
+                selectedAction = String(serverEntry.action || fallbackAction).trim().toLowerCase();
+                selectedNewColumn = String(serverEntry.new_column || fallbackNewColumn).trim();
+            }
+
+            if (!['keep_existing', 'use_incoming', 'keep_both'].includes(selectedAction)) {
+                selectedAction = 'keep_existing';
+            }
+
+            window.participantsMergeHarmonizationDecisions[columnName] = {
+                action: selectedAction,
+                new_column: selectedAction === 'keep_both' ? selectedNewColumn : '',
+            };
+        });
+
+        harmonizationHint.textContent = `Equivalent coding detected in ${harmonizationCandidates.length} column(s). Choose how merge should harmonize these values.`;
+
+        harmonizationList.innerHTML = harmonizationCandidates.map((candidate, index) => {
+            const columnName = String(candidate && candidate.column ? candidate.column : '').trim();
+            if (!columnName) {
+                return '';
+            }
+
+            const decision = window.participantsMergeHarmonizationDecisions[columnName] || { action: 'keep_existing', new_column: '' };
+            const selectedAction = String(decision.action || 'keep_existing');
+            const selectedNewColumn = String(decision.new_column || candidate.selected_new_column || candidate.default_new_column || '').trim();
+            const mappingPairs = Array.isArray(candidate.mapping_pairs) ? candidate.mapping_pairs : [];
+            const mappingText = mappingPairs.length > 0
+                ? mappingPairs
+                    .map((pair) => `${escapeHtml(String(pair.incoming_value || ''))} -> ${escapeHtml(String(pair.existing_value || ''))}`)
+                    .join(', ')
+                : 'Equivalent coding detected.';
+            const matchedPairCount = Number(candidate.matched_pair_count || 0);
+            const inputId = `participantsHarmonizationColumn_${index}`;
+
+            return `
+                <div class="border rounded p-2 mb-2" data-harmonization-column="${escapeHtml(columnName)}">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div class="small"><strong>${escapeHtml(columnName)}</strong></div>
+                        <span class="badge bg-light text-dark">${matchedPairCount} matched pair${matchedPairCount === 1 ? '' : 's'}</span>
+                    </div>
+                    <div class="small text-muted mt-1">Detected mapping: ${mappingText}</div>
+                    <div class="row g-2 mt-1">
+                        <div class="col-md-5">
+                            <label class="form-label form-label-sm mb-1">Action</label>
+                            <select class="form-select form-select-sm participants-merge-harmonization-action">
+                                <option value="keep_existing" ${selectedAction === 'keep_existing' ? 'selected' : ''}>Keep existing coding</option>
+                                <option value="use_incoming" ${selectedAction === 'use_incoming' ? 'selected' : ''}>Use incoming coding</option>
+                                <option value="keep_both" ${selectedAction === 'keep_both' ? 'selected' : ''}>Keep both (add column)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label form-label-sm mb-1">New column (for Keep both)</label>
+                            <input
+                                id="${escapeHtml(inputId)}"
+                                class="form-control form-control-sm participants-merge-harmonization-column"
+                                type="text"
+                                value="${escapeHtml(selectedNewColumn)}"
+                                placeholder="${escapeHtml(String(candidate.default_new_column || `${columnName}_incoming`))}"
+                                ${selectedAction === 'keep_both' ? '' : 'disabled'}
+                            >
+                            <div class="invalid-feedback participants-merge-harmonization-feedback"></div>
+                            <div class="form-text participants-merge-harmonization-column-hint"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        harmonizationSection.classList.remove('d-none');
+
+        const refreshHarmonizationUiState = () => {
+            const harmonizationState = assessParticipantsMergeHarmonizationState(previewData);
+            const invalidByColumn = harmonizationState.invalidByColumn || {};
+
+            harmonizationList.querySelectorAll('[data-harmonization-column]').forEach((row) => {
+                const columnName = String(row.getAttribute('data-harmonization-column') || '').trim();
+                const inputEl = row.querySelector('.participants-merge-harmonization-column');
+                const actionEl = row.querySelector('.participants-merge-harmonization-action');
+                const feedbackEl = row.querySelector('.participants-merge-harmonization-feedback');
+                const hintEl = row.querySelector('.participants-merge-harmonization-column-hint');
+
+                if (!inputEl || !actionEl || !feedbackEl || !hintEl) {
+                    return;
+                }
+
+                const action = String(actionEl.value || 'keep_existing').trim();
+                if (action !== 'keep_both') {
+                    inputEl.classList.remove('is-invalid');
+                    feedbackEl.textContent = '';
+                    hintEl.textContent = 'No extra column will be created for this field.';
+                    return;
+                }
+
+                const errorText = String(invalidByColumn[columnName] || '').trim();
+                if (errorText) {
+                    inputEl.classList.add('is-invalid');
+                    feedbackEl.textContent = errorText;
+                    hintEl.textContent = '';
+                } else {
+                    inputEl.classList.remove('is-invalid');
+                    feedbackEl.textContent = '';
+                    const targetName = String(inputEl.value || '').trim();
+                    hintEl.textContent = targetName
+                        ? `Incoming coding will be written to ${targetName}.`
+                        : 'Enter the new incoming-coded column name.';
+                }
+            });
+
+            harmonizationStatus.classList.remove('d-none', 'text-danger', 'text-warning', 'text-muted', 'text-success');
+            if (harmonizationState.hasInvalidKeepBoth) {
+                harmonizationStatus.classList.add('text-danger');
+                harmonizationStatus.textContent = 'Fix Keep both column names before applying merge.';
+            } else if (participantsMergeHarmonizationRefreshTimer !== null) {
+                harmonizationStatus.classList.add('text-muted');
+                harmonizationStatus.textContent = 'Refreshing merge preview with updated harmonization settings...';
+            } else if (conflictCount > 0) {
+                harmonizationStatus.classList.add('text-warning');
+                harmonizationStatus.textContent = 'Harmonization can resolve equivalent coding only. Remaining conflicts must be fixed in source data.';
+            } else {
+                harmonizationStatus.classList.add('text-success');
+                harmonizationStatus.textContent = 'Merge is conflict-free. Confirm harmonization choices, then apply merge.';
+            }
+
+            const convertBtn = document.getElementById('participantsConvertBtn');
+            const convertHint = document.getElementById('convertBtnHint');
+            const canConvert = canApplyParticipantsConversion();
+            if (convertBtn) {
+                convertBtn.disabled = !canConvert;
+                convertBtn.classList.remove('btn-outline-secondary', 'btn-success');
+                convertBtn.classList.add(canConvert ? 'btn-success' : 'btn-outline-secondary');
+            }
+            if (convertHint) {
+                if (harmonizationState.hasInvalidKeepBoth) {
+                    convertHint.textContent = 'Fix Keep both column names before applying merge';
+                } else if (sessionResolutionRequired && conflictCount === 0) {
+                    convertHint.textContent = 'Choose session resolution before applying merge';
+                } else {
+                    convertHint.textContent = canConvert
+                        ? 'Ready to apply conflict-free merge'
+                        : 'Resolve merge conflicts first';
+                }
+            }
+
+            updateParticipantsMergeApplyStatusBadge(previewData);
+        };
+
+        harmonizationList.querySelectorAll('.participants-merge-harmonization-action').forEach((selectEl) => {
+            selectEl.addEventListener('change', () => {
+                const row = selectEl.closest('[data-harmonization-column]');
+                if (!row) {
+                    return;
+                }
+
+                const columnName = String(row.getAttribute('data-harmonization-column') || '').trim();
+                if (!columnName) {
+                    return;
+                }
+
+                const inputEl = row.querySelector('.participants-merge-harmonization-column');
+                const action = String(selectEl.value || 'keep_existing').trim();
+                const newColumn = inputEl ? String(inputEl.value || '').trim() : '';
+
+                if (inputEl) {
+                    inputEl.disabled = action !== 'keep_both';
+                }
+
+                window.participantsMergeHarmonizationDecisions[columnName] = {
+                    action,
+                    new_column: action === 'keep_both' ? newColumn : '',
+                };
+
+                refreshHarmonizationUiState();
+                scheduleParticipantsMergePreviewRefresh();
+            });
+        });
+
+        harmonizationList.querySelectorAll('.participants-merge-harmonization-column').forEach((inputEl) => {
+            inputEl.addEventListener('input', () => {
+                const row = inputEl.closest('[data-harmonization-column]');
+                if (!row) {
+                    return;
+                }
+
+                const columnName = String(row.getAttribute('data-harmonization-column') || '').trim();
+                if (!columnName) {
+                    return;
+                }
+
+                const actionEl = row.querySelector('.participants-merge-harmonization-action');
+                const action = actionEl ? String(actionEl.value || 'keep_existing').trim() : 'keep_existing';
+                if (action !== 'keep_both') {
+                    return;
+                }
+
+                window.participantsMergeHarmonizationDecisions[columnName] = {
+                    action,
+                    new_column: String(inputEl.value || '').trim(),
+                };
+
+                refreshHarmonizationUiState();
+            });
+
+            inputEl.addEventListener('change', () => {
+                const row = inputEl.closest('[data-harmonization-column]');
+                if (!row) {
+                    return;
+                }
+
+                const columnName = String(row.getAttribute('data-harmonization-column') || '').trim();
+                if (!columnName) {
+                    return;
+                }
+
+                const actionEl = row.querySelector('.participants-merge-harmonization-action');
+                const action = actionEl ? String(actionEl.value || 'keep_existing').trim() : 'keep_existing';
+                if (action !== 'keep_both') {
+                    return;
+                }
+
+                window.participantsMergeHarmonizationDecisions[columnName] = {
+                    action,
+                    new_column: String(inputEl.value || '').trim(),
+                };
+
+                refreshHarmonizationUiState();
+                scheduleParticipantsMergePreviewRefresh();
+            });
+        });
+
+        refreshHarmonizationUiState();
     }
 
     function appendParticipantsFileImportFields(formData) {
@@ -2159,9 +2735,117 @@ export function initParticipants() {
         return selectedSource;
     }
 
+    function getParticipantsMergeHarmonizationDecisions() {
+        const rawDecisions = (window.participantsMergeHarmonizationDecisions && typeof window.participantsMergeHarmonizationDecisions === 'object')
+            ? window.participantsMergeHarmonizationDecisions
+            : {};
+
+        const normalizedDecisions = {};
+        Object.entries(rawDecisions).forEach(([columnName, rawEntry]) => {
+            const cleanedColumn = String(columnName || '').trim();
+            if (!cleanedColumn) {
+                return;
+            }
+
+            let action = 'keep_existing';
+            let newColumn = '';
+
+            if (typeof rawEntry === 'string') {
+                action = String(rawEntry || '').trim().toLowerCase();
+            } else if (rawEntry && typeof rawEntry === 'object') {
+                action = String(rawEntry.action || '').trim().toLowerCase();
+                newColumn = String(rawEntry.new_column || '').trim();
+            }
+
+            if (!['keep_existing', 'use_incoming', 'keep_both'].includes(action)) {
+                action = 'keep_existing';
+            }
+
+            normalizedDecisions[cleanedColumn] = {
+                action,
+                new_column: action === 'keep_both' ? newColumn : '',
+            };
+        });
+
+        return normalizedDecisions;
+    }
+
+    function appendParticipantsMergeHarmonizationDecisions(formData) {
+        const decisions = getParticipantsMergeHarmonizationDecisions();
+        if (Object.keys(decisions).length > 0) {
+            formData.append('harmonization_decisions', JSON.stringify(decisions));
+        }
+    }
+
+    function getParticipantsMergeSessionResolutionDecisions() {
+        const rawDecisions = (window.participantsMergeSessionResolutionDecisions && typeof window.participantsMergeSessionResolutionDecisions === 'object')
+            ? window.participantsMergeSessionResolutionDecisions
+            : {};
+
+        const normalizedDecisions = {};
+        Object.entries(rawDecisions).forEach(([columnName, rawEntry]) => {
+            const cleanedColumn = String(columnName || '').trim();
+            if (!cleanedColumn || !rawEntry || typeof rawEntry !== 'object') {
+                return;
+            }
+
+            const action = String(rawEntry.action || '').trim().toLowerCase();
+            if (!['pick_session', 'split_sessions'].includes(action)) {
+                return;
+            }
+
+            const decision = { action };
+            if (action === 'pick_session') {
+                const sessionValue = String(rawEntry.session || '').trim();
+                decision.session = sessionValue;
+            }
+
+            const sessionColumn = String(rawEntry.session_column || '').trim();
+            if (sessionColumn) {
+                decision.session_column = sessionColumn;
+            }
+
+            normalizedDecisions[cleanedColumn] = decision;
+        });
+
+        return normalizedDecisions;
+    }
+
+    function appendParticipantsMergeSessionResolutionDecisions(formData) {
+        const decisions = getParticipantsMergeSessionResolutionDecisions();
+        if (Object.keys(decisions).length > 0) {
+            formData.append('session_resolution_decisions', JSON.stringify(decisions));
+        }
+    }
+
+    function scheduleParticipantsMergePreviewRefresh() {
+        const previewBtn = document.getElementById('participantsPreviewBtn');
+        if (!previewBtn || previewBtn.disabled) {
+            return;
+        }
+
+        const harmonizationStatus = document.getElementById('participantsMergeHarmonizationStatus');
+        if (harmonizationStatus) {
+            harmonizationStatus.classList.remove('d-none', 'text-danger', 'text-warning', 'text-success');
+            harmonizationStatus.classList.add('text-muted');
+            harmonizationStatus.textContent = 'Refreshing merge preview with updated harmonization settings...';
+        }
+
+        if (participantsMergeHarmonizationRefreshTimer !== null) {
+            window.clearTimeout(participantsMergeHarmonizationRefreshTimer);
+        }
+
+        participantsMergeHarmonizationRefreshTimer = window.setTimeout(() => {
+            participantsMergeHarmonizationRefreshTimer = null;
+            previewBtn.click();
+        }, 200);
+    }
+
     function buildParticipantsMergeConflictFormData() {
         const formData = new FormData();
         appendParticipantsFileImportFields(formData);
+        appendParticipantsMergeHarmonizationDecisions(formData);
+        appendParticipantsMergeSessionResolutionDecisions(formData);
         return formData;
     }
 
@@ -2252,6 +2936,10 @@ export function initParticipants() {
 
             if (mode === 'file') {
                 appendParticipantsFileImportFields(formData);
+                if (previewEndpoint === '/api/participants-merge') {
+                    appendParticipantsMergeHarmonizationDecisions(formData);
+                    appendParticipantsMergeSessionResolutionDecisions(formData);
+                }
             } else {
                 if (!canModifyExistingParticipants()) {
                     throw new Error('Modify existing mode requires an existing participants.tsv in the current project.');
@@ -2469,9 +3157,12 @@ export function initParticipants() {
             const rawMessage = String(error && error.message ? error.message : error || 'Preview failed');
             const normalized = rawMessage.trim().toLowerCase();
             const genericPatternMessage = normalized === 'the string did not match the expected pattern.';
+            const nonUniqueSelectedIdMessage = normalized.includes('non-unique values for the selected id column');
     
             if (genericPatternMessage) {
                 errorDiv.textContent = `Preview failed in UI stage "${previewStage}" due to an invalid value pattern. Please retry once, and if it persists, keep separator on Semicolon and use ID column "ID" manually.`;
+            } else if (nonUniqueSelectedIdMessage) {
+                errorDiv.textContent = rawMessage;
             } else {
                 errorDiv.textContent = `${rawMessage} [${previewStage}]`;
             }
@@ -2573,13 +3264,22 @@ export function initParticipants() {
             convertBtn.classList.remove('btn-outline-secondary', 'btn-success');
             convertBtn.classList.add(canConvert ? 'btn-success' : 'btn-outline-secondary');
             if (previewData && previewData.merge_mode) {
-                convertHint.textContent = canConvert
-                    ? 'Ready to apply conflict-free merge'
-                    : 'Resolve merge conflicts first';
+                const harmonizationState = assessParticipantsMergeHarmonizationState(previewData);
+                if (harmonizationState.hasInvalidKeepBoth) {
+                    convertHint.textContent = 'Fix Keep both column names before applying merge';
+                } else if (Boolean(previewData.session_resolution_required) && Number(previewData.conflict_count || 0) === 0) {
+                    convertHint.textContent = 'Choose session resolution before applying merge';
+                } else {
+                    convertHint.textContent = canConvert
+                        ? 'Ready to apply conflict-free merge'
+                        : 'Resolve merge conflicts first';
+                }
             } else {
                 convertHint.textContent = workflowUiCopy.convertReadyHint;
             }
         }
+
+        updateParticipantsMergeApplyStatusBadge(previewData);
     
         const saveAnnotBtn = document.getElementById('saveNeurobagelBtn');
         if (saveAnnotBtn) {
@@ -2830,7 +3530,7 @@ export function initParticipants() {
             return;
         }
         if (useMergeRoute && window.lastParticipantsPreviewData && !window.lastParticipantsPreviewData.can_apply) {
-            errorDiv.textContent = 'Resolve merge conflicts first. Conflict-free merge preview is required before apply.';
+            errorDiv.textContent = 'Resolve merge blockers first (conflicts or missing session resolution). An apply-ready merge preview is required before apply.';
             errorDiv.classList.remove('d-none');
             return;
         }
@@ -2867,6 +3567,8 @@ export function initParticipants() {
                 }
 
                 if (useMergeRoute) {
+                    appendParticipantsMergeHarmonizationDecisions(formData);
+                    appendParticipantsMergeSessionResolutionDecisions(formData);
                     formData.append('apply', 'true');
                 }
             } else {

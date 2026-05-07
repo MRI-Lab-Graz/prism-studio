@@ -22,10 +22,22 @@ import pandas as pd
 
 from src.participants_converter import ParticipantsConverter
 
+
+def _import_read_tabular_file():
+    try:
+        from src.converters.file_reader import read_tabular_file
+    except ImportError:
+        from converters.file_reader import read_tabular_file
+    return read_tabular_file
+
+
+_read_tabular_file = _import_read_tabular_file()
+
 ParticipantLogCallback = Callable[[str, str], None]
 
 _PARTICIPANT_ID_PATTERN = re.compile(r"(sub-[A-Za-z0-9]+)")
 _MISSING_TOKENS = {"", "n/a", "na", "nan", "none"}
+_SESSION_RESOLUTION_ACTIONS = {"pick_session", "split_sessions"}
 
 
 def normalize_participant_mapping(mapping: object) -> dict:
@@ -518,6 +530,292 @@ def _participant_value_text(value: Any, *, default: str = "n/a") -> str:
     return str(value).strip()
 
 
+def _parse_participant_numeric_value(value: Any) -> float | None:
+    if _is_missing_participant_value(value):
+        return None
+
+    text = str(value).strip()
+    if not text:
+        return None
+
+    normalized_text = text.replace(",", ".")
+    try:
+        return float(normalized_text)
+    except Exception:
+        return None
+
+
+def _participant_values_numeric_equivalent(
+    existing_value: Any,
+    incoming_value: Any,
+) -> bool:
+    existing_numeric = _parse_participant_numeric_value(existing_value)
+    incoming_numeric = _parse_participant_numeric_value(incoming_value)
+    if existing_numeric is None or incoming_numeric is None:
+        return False
+    return abs(existing_numeric - incoming_numeric) < 1e-12
+
+
+def _normalized_participant_text(value: Any) -> str:
+    return str(value).strip().lower()
+
+
+def _normalize_session_resolution_decision_entry(raw_entry: Any) -> dict[str, str]:
+    action = ""
+    session = ""
+
+    if isinstance(raw_entry, str):
+        action = str(raw_entry).strip().lower()
+    elif isinstance(raw_entry, dict):
+        action = str(raw_entry.get("action") or "").strip().lower()
+        session = str(raw_entry.get("session") or "").strip()
+
+    if action not in _SESSION_RESOLUTION_ACTIONS:
+        action = ""
+
+    return {
+        "action": action,
+        "session": session,
+    }
+
+
+def _resolve_source_column_for_standard_variable(
+    mapping: dict[str, Any],
+    standard_variable: str,
+) -> str:
+    mappings = mapping.get("mappings") if isinstance(mapping, dict) else None
+    if not isinstance(mappings, dict):
+        return ""
+
+    target_standard = str(standard_variable or "").strip()
+    for spec in mappings.values():
+        if not isinstance(spec, dict):
+            continue
+        spec_standard = str(spec.get("standard_variable") or "").strip()
+        if spec_standard != target_standard:
+            continue
+        source_column = str(spec.get("source_column") or "").strip()
+        if source_column:
+            return source_column
+
+    return ""
+
+
+def _normalize_session_value(value: Any) -> str:
+    if _is_missing_participant_value(value):
+        return ""
+
+    text = str(value).strip()
+    if not text:
+        return ""
+
+    numeric_value = _parse_participant_numeric_value(text)
+    if numeric_value is not None and abs(numeric_value - round(numeric_value)) < 1e-12:
+        return str(int(round(numeric_value)))
+
+    return text
+
+
+def _sanitize_session_token(value: str) -> str:
+    token = re.sub(r"[^A-Za-z0-9]+", "-", str(value or "").strip())
+    token = re.sub(r"-+", "-", token).strip("-")
+    if not token:
+        token = "unknown"
+    return token.lower()
+
+
+def _find_session_column_name(columns: list[str], preferred: str = "") -> str:
+    if not columns:
+        return ""
+
+    by_lower = {str(column).strip().lower(): str(column) for column in columns}
+    preferred_clean = str(preferred or "").strip()
+    if preferred_clean and preferred_clean.lower() in by_lower:
+        return by_lower[preferred_clean.lower()]
+
+    canonical_order = [
+        "session",
+        "ses",
+        "session_id",
+        "sessionid",
+        "visit",
+        "timepoint",
+        "wave",
+        "run",
+    ]
+    for name in canonical_order:
+        if name in by_lower:
+            return by_lower[name]
+
+    for column in columns:
+        lowered = str(column).strip().lower()
+        if any(token in lowered for token in ("session", "ses", "visit", "timepoint", "wave", "run")):
+            return str(column)
+
+    return ""
+
+
+def _sorted_session_values(values: set[str]) -> list[str]:
+    def sort_key(raw: str) -> tuple[int, float | str]:
+        numeric = _parse_participant_numeric_value(raw)
+        if numeric is not None:
+            return (0, numeric)
+        return (1, str(raw))
+
+    return sorted((str(value).strip() for value in values if str(value).strip()), key=sort_key)
+
+
+def _unique_column_name(base: str, existing_columns: list[str]) -> str:
+    candidate = str(base or "").strip() or "column"
+    used = set(existing_columns)
+    if candidate not in used:
+        return candidate
+
+    index = 2
+    next_candidate = f"{candidate}_{index}"
+    while next_candidate in used:
+        index += 1
+        next_candidate = f"{candidate}_{index}"
+    return next_candidate
+
+
+_HARMONIZATION_ACTIONS = {"keep_existing", "use_incoming", "keep_both"}
+
+
+def _next_available_participant_column_name(
+    base_column: str,
+    *,
+    existing_columns: list[str],
+) -> str:
+    base = str(base_column or "").strip() or "variable"
+    candidate = f"{base}_incoming"
+    index = 2
+    used = {str(column).strip() for column in existing_columns}
+    while candidate in used:
+        candidate = f"{base}_incoming_{index}"
+        index += 1
+    return candidate
+
+
+def _normalize_harmonization_decision_entry(
+    raw_entry: Any,
+) -> tuple[str, str | None]:
+    action = "keep_existing"
+    new_column: str | None = None
+
+    if isinstance(raw_entry, str):
+        action = str(raw_entry).strip().lower()
+    elif isinstance(raw_entry, dict):
+        action = str(raw_entry.get("action") or "").strip().lower()
+        new_column_text = str(raw_entry.get("new_column") or "").strip()
+        if new_column_text:
+            new_column = new_column_text
+
+    if action not in _HARMONIZATION_ACTIONS:
+        action = "keep_existing"
+
+    return action, new_column
+
+
+def _canonical_display_text(
+    text_value: str,
+    fallback_map: dict[str, str],
+) -> str:
+    normalized = _normalized_participant_text(text_value)
+    return str(fallback_map.get(normalized) or text_value).strip()
+
+
+def _infer_low_cardinality_code_equivalence_maps(
+    existing_rows_by_id: dict[str, dict[str, Any]],
+    incoming_rows_by_id: dict[str, dict[str, Any]],
+    *,
+    matched_ids: list[str],
+    shared_columns: list[str],
+    max_unique_values: int = 12,
+    min_unique_values: int = 2,
+) -> dict[str, dict[str, Any]]:
+    """Infer safe incoming->existing code maps for categorical low-cardinality fields.
+
+    This supports merge cases where two sources encode the same field using
+    different but consistent codings (e.g., F/M vs 1/2).
+    """
+    inferred_maps: dict[str, dict[str, Any]] = {}
+
+    for column in shared_columns:
+        existing_to_incoming: dict[str, set[str]] = {}
+        incoming_to_existing: dict[str, set[str]] = {}
+        existing_display: dict[str, str] = {}
+        incoming_display: dict[str, str] = {}
+        pair_count = 0
+
+        for participant_id in matched_ids:
+            existing_row = existing_rows_by_id.get(participant_id) or {}
+            incoming_row = incoming_rows_by_id.get(participant_id) or {}
+
+            existing_value = existing_row.get(column)
+            incoming_value = incoming_row.get(column)
+            if _is_missing_participant_value(
+                existing_value
+            ) or _is_missing_participant_value(incoming_value):
+                continue
+
+            if _participant_values_numeric_equivalent(existing_value, incoming_value):
+                continue
+
+            existing_text = _normalized_participant_text(existing_value)
+            incoming_text = _normalized_participant_text(incoming_value)
+            if not existing_text or not incoming_text or existing_text == incoming_text:
+                continue
+
+            pair_count += 1
+            existing_to_incoming.setdefault(existing_text, set()).add(incoming_text)
+            incoming_to_existing.setdefault(incoming_text, set()).add(existing_text)
+            existing_display.setdefault(existing_text, str(existing_value).strip())
+            incoming_display.setdefault(incoming_text, str(incoming_value).strip())
+
+        if not existing_to_incoming:
+            continue
+
+        if (
+            len(existing_to_incoming) < min_unique_values
+            or len(incoming_to_existing) < min_unique_values
+        ):
+            continue
+
+        if (
+            len(existing_to_incoming) > max_unique_values
+            or len(incoming_to_existing) > max_unique_values
+        ):
+            continue
+
+        if any(len(values) != 1 for values in existing_to_incoming.values()):
+            continue
+        if any(len(values) != 1 for values in incoming_to_existing.values()):
+            continue
+
+        if len(existing_to_incoming) != len(incoming_to_existing):
+            continue
+
+        incoming_to_existing_map = {
+            incoming_code: next(iter(existing_codes))
+            for incoming_code, existing_codes in incoming_to_existing.items()
+        }
+        existing_to_incoming_map = {
+            existing_code: next(iter(incoming_codes))
+            for existing_code, incoming_codes in existing_to_incoming.items()
+        }
+
+        inferred_maps[column] = {
+            "incoming_to_existing": incoming_to_existing_map,
+            "existing_to_incoming": existing_to_incoming_map,
+            "incoming_display": incoming_display,
+            "existing_display": existing_display,
+            "pair_count": pair_count,
+        }
+
+    return inferred_maps
+
+
 def _collect_preview_column_values(
     df: pd.DataFrame | None, *, max_values: int = 50
 ) -> dict[str, list[str]]:
@@ -617,8 +915,9 @@ def _build_participants_merge_input(
     *,
     separator: str | None = None,
     sheet: str | int = 0,
+    session_resolution_decisions: dict[str, Any] | None = None,
     log_callback: ParticipantLogCallback | None = None,
-) -> tuple[pd.DataFrame, list[str]]:
+) -> tuple[pd.DataFrame, list[str], dict[str, Any]]:
     source_path = Path(source_file).expanduser().resolve()
     if not source_path.exists():
         raise ValueError(f"Input file not found: {source_path}")
@@ -671,28 +970,275 @@ def _build_participants_merge_input(
             ]
         return []
 
-    if any(
-        "Multiple rows per participant had differing values" in str(message)
-        for message in messages
-    ):
-        source_id_column = _selected_source_id_column()
-        conflict_columns = _repeated_row_conflict_columns(messages)
+    def _repeated_row_conflict_error_text(
+        source_id_column: str,
+        conflict_columns: list[str],
+    ) -> str:
         conflict_columns_text = (
             f" Conflicting selected columns: {', '.join(conflict_columns)}."
             if conflict_columns
             else ""
         )
-        raise ValueError(
+        return (
             "Selected input data has non-unique values for the selected ID column "
             f"'{source_id_column}' (normalized to participant_id)."
             f"{conflict_columns_text} "
-            "Ensure each participant has one consistent value per selected merge column before merging."
+            "Ensure each participant has one consistent value per selected merge column before merging. "
+            "Tip: If this started after using Add More Columns, remove the listed conflicting column(s) "
+            "or make repeated source rows consistent for those columns."
         )
+
+    has_repeated_row_conflicts = any(
+        "Multiple rows per participant had differing values" in str(message)
+        for message in messages
+    )
+
+    session_resolution_payload: dict[str, Any] = {
+        "session_column": "",
+        "candidates": [],
+        "decisions": {},
+        "unresolved_columns": [],
+        "intra_session_conflicts": [],
+    }
+
+    if has_repeated_row_conflicts:
+        source_id_column = _selected_source_id_column()
+        conflict_columns = _repeated_row_conflict_columns(messages)
+
+        if not conflict_columns:
+            raise ValueError(
+                _repeated_row_conflict_error_text(source_id_column, conflict_columns)
+            )
+
+        file_ext = source_path.suffix.lower()
+        kind_map = {
+            ".xlsx": "xlsx",
+            ".xls": "xlsx",
+            ".csv": "csv",
+            ".tsv": "tsv",
+            ".txt": "tsv",
+            ".sav": "sav",
+            ".rds": "rds",
+            ".rdata": "rdata",
+            ".rda": "rdata",
+        }
+        kind = kind_map.get(file_ext, "csv")
+        separator_value = None if (separator or "auto") == "auto" else separator
+        try:
+            source_result = _read_tabular_file(
+                source_path,
+                kind=kind,
+                separator=separator_value,
+                sheet=sheet,
+            )
+        except Exception:
+            raise ValueError(
+                _repeated_row_conflict_error_text(source_id_column, conflict_columns)
+            )
+
+        source_df = source_result.df.copy()
+        source_columns = [str(column) for column in source_df.columns]
+        if source_id_column not in source_columns:
+            raise ValueError(
+                _repeated_row_conflict_error_text(source_id_column, conflict_columns)
+            )
+
+        preferred_session_column = ""
+        if isinstance(session_resolution_decisions, dict):
+            for raw_decision in session_resolution_decisions.values():
+                if not isinstance(raw_decision, dict):
+                    continue
+                preferred_session_column = str(
+                    raw_decision.get("session_column") or ""
+                ).strip()
+                if preferred_session_column:
+                    break
+
+        session_column = _find_session_column_name(
+            source_columns,
+            preferred=preferred_session_column,
+        )
+        if not session_column:
+            raise ValueError(
+                _repeated_row_conflict_error_text(source_id_column, conflict_columns)
+            )
+
+        source_df["_participant_id"] = source_df[source_id_column].map(
+            ParticipantsConverter._normalize_participant_id
+        )
+        source_df["_session_value"] = source_df[session_column].map(
+            _normalize_session_value
+        )
+
+        available_sessions = _sorted_session_values(
+            {
+                str(value).strip()
+                for value in source_df["_session_value"].tolist()
+                if str(value).strip()
+            }
+        )
+        if not available_sessions:
+            raise ValueError(
+                _repeated_row_conflict_error_text(source_id_column, conflict_columns)
+            )
+
+        decisions_payload = (
+            session_resolution_decisions
+            if isinstance(session_resolution_decisions, dict)
+            else {}
+        )
+        normalized_decisions: dict[str, dict[str, str]] = {}
+        unresolved_columns: list[str] = []
+        intra_session_conflicts: list[dict[str, Any]] = []
+        candidates: list[dict[str, Any]] = []
+        output_columns = [str(column) for column in output_df.columns]
+
+        for standard_column in conflict_columns:
+            source_column = _resolve_source_column_for_standard_variable(
+                mapping,
+                standard_column,
+            )
+            if not source_column and standard_column in source_columns:
+                source_column = standard_column
+
+            decision_entry = _normalize_session_resolution_decision_entry(
+                decisions_payload.get(standard_column)
+            )
+            normalized_decisions[standard_column] = {
+                "action": decision_entry["action"],
+                "session": _normalize_session_value(decision_entry["session"]),
+            }
+
+            candidate: dict[str, Any] = {
+                "column": standard_column,
+                "source_column": source_column,
+                "session_column": session_column,
+                "available_actions": ["pick_session", "split_sessions"],
+                "available_sessions": available_sessions,
+                "selected_action": decision_entry["action"],
+                "selected_session": _normalize_session_value(decision_entry["session"]),
+                "generated_columns": [],
+            }
+
+            if not source_column or source_column not in source_columns:
+                unresolved_columns.append(standard_column)
+                candidates.append(candidate)
+                continue
+
+            value_sets: dict[str, dict[str, set[str]]] = {}
+            for row in source_df.to_dict(orient="records"):
+                participant_id = str(row.get("_participant_id") or "").strip()
+                session_value = str(row.get("_session_value") or "").strip()
+                raw_value = row.get(source_column)
+                if not participant_id or not session_value or _is_missing_participant_value(raw_value):
+                    continue
+
+                text_value = str(raw_value).strip()
+                if not text_value:
+                    continue
+
+                value_sets.setdefault(participant_id, {}).setdefault(
+                    session_value, set()
+                ).add(text_value)
+
+            value_by_pid_session: dict[str, dict[str, str]] = {}
+            for participant_id, sessions_map in value_sets.items():
+                for session_value, values_set in sessions_map.items():
+                    if len(values_set) > 1:
+                        intra_session_conflicts.append(
+                            {
+                                "column": standard_column,
+                                "participant_id": participant_id,
+                                "session": session_value,
+                                "values": sorted(values_set),
+                            }
+                        )
+                    value_by_pid_session.setdefault(participant_id, {})[
+                        session_value
+                    ] = sorted(values_set)[0]
+
+            action = decision_entry["action"]
+            selected_session = _normalize_session_value(decision_entry["session"])
+            if action == "pick_session":
+                if not selected_session or selected_session not in available_sessions:
+                    unresolved_columns.append(standard_column)
+                    candidates.append(candidate)
+                    continue
+
+                candidate["selected_action"] = "pick_session"
+                candidate["selected_session"] = selected_session
+
+                output_df[standard_column] = output_df["participant_id"].map(
+                    lambda pid: value_by_pid_session.get(
+                        str(pid or "").strip(), {}
+                    ).get(selected_session, "n/a")
+                )
+                candidates.append(candidate)
+                continue
+
+            if action == "split_sessions":
+                generated_columns: list[str] = []
+                for session_value in available_sessions:
+                    base_column_name = (
+                        f"{standard_column}@ses-{_sanitize_session_token(session_value)}"
+                    )
+                    resolved_column_name = _unique_column_name(
+                        base_column_name,
+                        output_columns + generated_columns,
+                    )
+                    generated_columns.append(resolved_column_name)
+                    output_df[resolved_column_name] = output_df["participant_id"].map(
+                        lambda pid, _session=session_value: value_by_pid_session.get(
+                            str(pid or "").strip(), {}
+                        ).get(_session, "n/a")
+                    )
+
+                if standard_column in output_df.columns:
+                    output_df = output_df.drop(columns=[standard_column])
+                output_columns = [
+                    column for column in output_columns if column != standard_column
+                ] + generated_columns
+
+                candidate["selected_action"] = "split_sessions"
+                candidate["generated_columns"] = generated_columns
+                candidates.append(candidate)
+                continue
+
+            unresolved_columns.append(standard_column)
+            candidates.append(candidate)
+
+        blocking_columns = {item.get("column") for item in intra_session_conflicts}
+        unresolved_columns.extend(
+            sorted(
+                str(column)
+                for column in blocking_columns
+                if str(column or "").strip()
+            )
+        )
+
+        # Preserve stable column order with participant_id first.
+        ordered_columns = [
+            "participant_id",
+            *[
+                column
+                for column in output_df.columns
+                if str(column) != "participant_id"
+            ],
+        ]
+        output_df = output_df.loc[:, [col for col in ordered_columns if col in output_df.columns]]
+
+        session_resolution_payload = {
+            "session_column": session_column,
+            "candidates": candidates,
+            "decisions": normalized_decisions,
+            "unresolved_columns": sorted(set(unresolved_columns)),
+            "intra_session_conflicts": intra_session_conflicts,
+        }
 
     if output_df.empty:
         raise ValueError("Converted participant merge input is empty")
 
-    return output_df, messages
+    return output_df, messages, session_resolution_payload
 
 
 def _build_merged_participants_schema(
@@ -768,6 +1314,8 @@ def _plan_participants_merge(
     sheet: str | int = 0,
     preview_limit: int = 20,
     neurobagel_schema: dict | None = None,
+    harmonization_decisions: dict[str, Any] | None = None,
+    session_resolution_decisions: dict[str, Any] | None = None,
     log_callback: ParticipantLogCallback | None = None,
     include_all_conflicts: bool = False,
 ) -> tuple[dict[str, Any], pd.DataFrame, dict[str, Any]]:
@@ -775,12 +1323,13 @@ def _plan_participants_merge(
     source_path = Path(source_file).expanduser().resolve()
     existing_df = _load_existing_participants_table(resolved_root)
     existing_schema = _load_existing_participants_schema(resolved_root)
-    incoming_df, messages = _build_participants_merge_input(
+    incoming_df, messages, session_resolution_payload = _build_participants_merge_input(
         resolved_root,
         source_path,
         mapping,
         separator=separator,
         sheet=sheet,
+        session_resolution_decisions=session_resolution_decisions,
         log_callback=log_callback,
     )
 
@@ -807,6 +1356,107 @@ def _plan_participants_merge(
     existing_id_set = set(existing_ids)
     incoming_id_set = set(incoming_ids)
 
+    matched_ids = sorted(existing_id_set & incoming_id_set)
+    new_participant_ids = sorted(incoming_id_set - existing_id_set)
+    existing_only_ids = sorted(existing_id_set - incoming_id_set)
+
+    existing_rows_by_id = {
+        str(row.get("participant_id") or "").strip(): row for row in existing_rows
+    }
+    incoming_rows_by_id = {
+        str(row.get("participant_id") or "").strip(): row for row in incoming_rows
+    }
+    inferred_code_maps = _infer_low_cardinality_code_equivalence_maps(
+        existing_rows_by_id,
+        incoming_rows_by_id,
+        matched_ids=matched_ids,
+        shared_columns=shared_columns,
+    )
+
+    user_harmonization_decisions = (
+        harmonization_decisions if isinstance(harmonization_decisions, dict) else {}
+    )
+    applied_harmonization_decisions: dict[str, dict[str, str]] = {}
+    harmonization_candidates: list[dict[str, Any]] = []
+    keep_both_target_columns: dict[str, str] = {}
+    harmonize_to_existing_columns: set[str] = set()
+    harmonize_to_incoming_columns: set[str] = set()
+
+    for column in sorted(inferred_code_maps):
+        map_data = inferred_code_maps.get(column) or {}
+        incoming_to_existing_map = map_data.get("incoming_to_existing")
+        existing_to_incoming_map = map_data.get("existing_to_incoming")
+        incoming_display = map_data.get("incoming_display")
+        existing_display = map_data.get("existing_display")
+
+        if not isinstance(incoming_to_existing_map, dict) or not isinstance(
+            existing_to_incoming_map, dict
+        ):
+            continue
+        if not isinstance(incoming_display, dict):
+            incoming_display = {}
+        if not isinstance(existing_display, dict):
+            existing_display = {}
+
+        action, requested_new_column = _normalize_harmonization_decision_entry(
+            user_harmonization_decisions.get(column)
+        )
+
+        resolved_new_column = ""
+        if action == "keep_both":
+            candidate = str(requested_new_column or "").strip()
+            if not candidate or candidate == column or candidate in full_columns:
+                candidate = _next_available_participant_column_name(
+                    column,
+                    existing_columns=full_columns,
+                )
+            resolved_new_column = candidate
+            keep_both_target_columns[column] = resolved_new_column
+            if resolved_new_column not in full_columns:
+                full_columns.append(resolved_new_column)
+            if resolved_new_column not in new_columns:
+                new_columns.append(resolved_new_column)
+
+        if action == "use_incoming":
+            harmonize_to_incoming_columns.add(column)
+        else:
+            harmonize_to_existing_columns.add(column)
+
+        applied_harmonization_decisions[column] = {
+            "action": action,
+            "new_column": resolved_new_column,
+        }
+
+        mapping_pairs: list[dict[str, str]] = []
+        for incoming_code, existing_code in sorted(incoming_to_existing_map.items()):
+            mapping_pairs.append(
+                {
+                    "incoming_value": _canonical_display_text(
+                        incoming_display.get(incoming_code, incoming_code),
+                        incoming_display,
+                    ),
+                    "existing_value": _canonical_display_text(
+                        existing_display.get(existing_code, existing_code),
+                        existing_display,
+                    ),
+                }
+            )
+
+        harmonization_candidates.append(
+            {
+                "column": column,
+                "available_actions": ["keep_existing", "use_incoming", "keep_both"],
+                "selected_action": action,
+                "selected_new_column": resolved_new_column,
+                "default_new_column": _next_available_participant_column_name(
+                    column,
+                    existing_columns=full_columns,
+                ),
+                "matched_pair_count": int(map_data.get("pair_count") or 0),
+                "mapping_pairs": mapping_pairs,
+            }
+        )
+
     merged_by_id: dict[str, dict[str, Any]] = {}
     for row in existing_rows:
         participant_id = str(row["participant_id"]).strip()
@@ -815,14 +1465,11 @@ def _plan_participants_merge(
         }
         merged_by_id[participant_id]["participant_id"] = participant_id
 
-    matched_ids = sorted(existing_id_set & incoming_id_set)
-    new_participant_ids = sorted(incoming_id_set - existing_id_set)
-    existing_only_ids = sorted(existing_id_set - incoming_id_set)
-
     fill_actions: list[dict[str, str]] = []
     conflicts: list[dict[str, str]] = []
     fillable_value_count = 0
     conflict_count = 0
+    auto_resolved_equivalent_count = 0
 
     for row in incoming_rows:
         participant_id = str(row["participant_id"]).strip()
@@ -834,7 +1481,11 @@ def _plan_participants_merge(
             for column in incoming_columns:
                 if column == "participant_id":
                     continue
-                new_row[column] = _participant_value_text(incoming_values.get(column))
+                incoming_text = _participant_value_text(incoming_values.get(column))
+                new_row[column] = incoming_text
+                keep_both_column = keep_both_target_columns.get(column)
+                if keep_both_column:
+                    new_row[keep_both_column] = incoming_text
             merged_by_id[participant_id] = new_row
             continue
 
@@ -845,10 +1496,14 @@ def _plan_participants_merge(
 
             incoming_value = incoming_values.get(column)
             existing_value = merged_row.get(column)
+            keep_both_column = keep_both_target_columns.get(column)
 
             if column not in existing_columns:
                 merged_row[column] = _participant_value_text(incoming_value)
                 continue
+
+            if keep_both_column and not _is_missing_participant_value(incoming_value):
+                merged_row[keep_both_column] = _participant_value_text(incoming_value)
 
             if _is_missing_participant_value(
                 existing_value
@@ -875,6 +1530,29 @@ def _plan_participants_merge(
             existing_text = str(existing_value).strip()
             incoming_text = str(incoming_value).strip()
             if existing_text != incoming_text:
+                if _participant_values_numeric_equivalent(existing_text, incoming_text):
+                    auto_resolved_equivalent_count += 1
+                    continue
+
+                map_data = inferred_code_maps.get(column) or {}
+                incoming_to_existing_map = map_data.get("incoming_to_existing")
+                if not isinstance(incoming_to_existing_map, dict):
+                    incoming_to_existing_map = {}
+
+                mapped_existing_text = incoming_to_existing_map.get(
+                    _normalized_participant_text(incoming_text)
+                )
+                if mapped_existing_text and mapped_existing_text == _normalized_participant_text(
+                    existing_text
+                ):
+                    auto_resolved_equivalent_count += 1
+                    decision = (applied_harmonization_decisions.get(column) or {}).get(
+                        "action", "keep_existing"
+                    )
+                    if decision == "use_incoming":
+                        merged_row[column] = incoming_text
+                    continue
+
                 conflict_count += 1
                 if include_all_conflicts or len(conflicts) < preview_limit:
                     conflicts.append(
@@ -885,6 +1563,62 @@ def _plan_participants_merge(
                             "incoming_value": incoming_text,
                         }
                     )
+
+    for column in harmonize_to_existing_columns:
+        map_data = inferred_code_maps.get(column) or {}
+        incoming_to_existing_map = map_data.get("incoming_to_existing")
+        existing_display = map_data.get("existing_display")
+        if not isinstance(incoming_to_existing_map, dict) or not isinstance(
+            existing_display, dict
+        ):
+            continue
+
+        for row in merged_by_id.values():
+            current_value = row.get(column)
+            if _is_missing_participant_value(current_value):
+                continue
+
+            current_text = str(current_value).strip()
+            normalized = _normalized_participant_text(current_text)
+            target_code = incoming_to_existing_map.get(normalized, normalized)
+            if target_code in existing_display:
+                row[column] = str(existing_display[target_code]).strip()
+
+    for column in harmonize_to_incoming_columns:
+        map_data = inferred_code_maps.get(column) or {}
+        existing_to_incoming_map = map_data.get("existing_to_incoming")
+        incoming_display = map_data.get("incoming_display")
+        if not isinstance(existing_to_incoming_map, dict) or not isinstance(
+            incoming_display, dict
+        ):
+            continue
+
+        for row in merged_by_id.values():
+            current_value = row.get(column)
+            if _is_missing_participant_value(current_value):
+                continue
+
+            current_text = str(current_value).strip()
+            normalized = _normalized_participant_text(current_text)
+            target_code = existing_to_incoming_map.get(normalized, normalized)
+            if target_code in incoming_display:
+                row[column] = str(incoming_display[target_code]).strip()
+
+    for source_column, incoming_column in keep_both_target_columns.items():
+        map_data = inferred_code_maps.get(source_column) or {}
+        incoming_display = map_data.get("incoming_display")
+        if not isinstance(incoming_display, dict):
+            incoming_display = {}
+
+        for row in merged_by_id.values():
+            current_value = row.get(incoming_column)
+            if _is_missing_participant_value(current_value):
+                continue
+
+            current_text = str(current_value).strip()
+            normalized = _normalized_participant_text(current_text)
+            if normalized in incoming_display:
+                row[incoming_column] = str(incoming_display[normalized]).strip()
 
     merged_rows: list[dict[str, Any]] = []
     for participant_id in existing_ids:
@@ -913,6 +1647,11 @@ def _plan_participants_merge(
     preview_df = merged_df.head(max(int(preview_limit or 20), 1)).astype(object)
     preview_df = preview_df.where(preview_df.notna(), None)
 
+    session_resolution_required = bool(
+        (session_resolution_payload.get("unresolved_columns") or [])
+        or (session_resolution_payload.get("intra_session_conflicts") or [])
+    )
+
     payload: dict[str, Any] = {
         "status": "success",
         "project_root": str(resolved_root),
@@ -929,9 +1668,16 @@ def _plan_participants_merge(
         "new_columns": new_columns,
         "shared_columns": shared_columns,
         "fillable_value_count": fillable_value_count,
+        "auto_resolved_equivalent_count": auto_resolved_equivalent_count,
         "conflict_count": conflict_count,
-        "can_apply": conflict_count == 0,
+        "can_apply": conflict_count == 0 and not session_resolution_required,
         "requires_conflict_resolution": conflict_count > 0,
+        "session_resolution_required": session_resolution_required,
+        "session_resolution_column": session_resolution_payload.get("session_column") or "",
+        "session_resolution_candidates": session_resolution_payload.get("candidates") or [],
+        "session_resolution_decisions": session_resolution_payload.get("decisions") or {},
+        "session_resolution_unresolved_columns": session_resolution_payload.get("unresolved_columns") or [],
+        "session_resolution_blockers": session_resolution_payload.get("intra_session_conflicts") or [],
         "matched_participants": matched_ids[:preview_limit],
         "new_participants": new_participant_ids[:preview_limit],
         "existing_only_participants": existing_only_ids[:preview_limit],
@@ -942,6 +1688,8 @@ def _plan_participants_merge(
         "messages": messages,
         "schema_fields_added": schema_fields_added,
         "neurobagel_fields_merged": neurobagel_merged,
+        "harmonization_candidates": harmonization_candidates,
+        "harmonization_decisions": applied_harmonization_decisions,
     }
     return payload, merged_df, merged_schema
 
@@ -955,6 +1703,8 @@ def preview_participants_merge(
     sheet: str | int = 0,
     preview_limit: int = 20,
     neurobagel_schema: dict | None = None,
+    harmonization_decisions: dict[str, Any] | None = None,
+    session_resolution_decisions: dict[str, Any] | None = None,
     log_callback: ParticipantLogCallback | None = None,
 ) -> dict[str, Any]:
     """Preview a safe merge from a source table into an existing participants.tsv."""
@@ -966,6 +1716,8 @@ def preview_participants_merge(
         sheet=sheet,
         preview_limit=preview_limit,
         neurobagel_schema=neurobagel_schema,
+        harmonization_decisions=harmonization_decisions,
+        session_resolution_decisions=session_resolution_decisions,
         log_callback=log_callback,
     )
     payload["action"] = "preview"
@@ -981,6 +1733,8 @@ def apply_participants_merge(
     sheet: str | int = 0,
     preview_limit: int = 20,
     neurobagel_schema: dict | None = None,
+    harmonization_decisions: dict[str, Any] | None = None,
+    session_resolution_decisions: dict[str, Any] | None = None,
     log_callback: ParticipantLogCallback | None = None,
     create_backups: bool = True,
 ) -> dict[str, Any]:
@@ -993,12 +1747,14 @@ def apply_participants_merge(
         sheet=sheet,
         preview_limit=preview_limit,
         neurobagel_schema=neurobagel_schema,
+        harmonization_decisions=harmonization_decisions,
+        session_resolution_decisions=session_resolution_decisions,
         log_callback=log_callback,
     )
 
-    if int(payload.get("conflict_count") or 0) > 0:
+    if not bool(payload.get("can_apply")):
         raise ValueError(
-            "Merge preview contains conflicting values. Resolve them before applying."
+            "Merge preview is not apply-ready. Resolve conflicts and session-resolution blockers before applying."
         )
 
     resolved_root = project_root.expanduser().resolve()
@@ -1037,6 +1793,8 @@ def export_participants_merge_conflicts_csv(
     sheet: str | int = 0,
     preview_limit: int = 20,
     neurobagel_schema: dict | None = None,
+    harmonization_decisions: dict[str, Any] | None = None,
+    session_resolution_decisions: dict[str, Any] | None = None,
     log_callback: ParticipantLogCallback | None = None,
 ) -> str:
     """Return a CSV report with every blocking merge conflict."""
@@ -1048,6 +1806,8 @@ def export_participants_merge_conflicts_csv(
         sheet=sheet,
         preview_limit=preview_limit,
         neurobagel_schema=neurobagel_schema,
+        harmonization_decisions=harmonization_decisions,
+        session_resolution_decisions=session_resolution_decisions,
         log_callback=log_callback,
         include_all_conflicts=True,
     )

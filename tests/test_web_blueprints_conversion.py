@@ -3195,6 +3195,204 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         participants_module, "_load_survey_template_item_ids", return_value=set()
     )
     @patch.object(participants_module, "resolve_effective_library_path")
+    def test_merge_preview_exposes_harmonization_candidates(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        (self.project_root / "participants.tsv").write_text(
+            "participant_id\tsex\nsub-001\tM\nsub-002\tF\n",
+            encoding="utf-8",
+        )
+
+        response = self.client.post(
+            "/api/participants-merge",
+            data={
+                "separator": "comma",
+                "id_column": "participant_id",
+                "file": (
+                    io.BytesIO(b"participant_id,sex\nsub-001,2\nsub-002,1\nsub-003,2\n"),
+                    "participants.csv",
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json() or {}
+        self.assertTrue(payload.get("merge_mode"))
+        self.assertEqual(payload.get("conflict_count"), 0)
+        self.assertTrue(payload.get("can_apply"))
+
+        candidates = payload.get("harmonization_candidates") or []
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(candidates[0].get("column"), "sex")
+
+        decisions = payload.get("harmonization_decisions") or {}
+        self.assertEqual((decisions.get("sex") or {}).get("action"), "keep_existing")
+
+        preview_rows = payload.get("preview_rows") or []
+        self.assertEqual(preview_rows[0].get("sex"), "M")
+        self.assertEqual(preview_rows[2].get("participant_id"), "sub-003")
+        self.assertEqual(preview_rows[2].get("sex"), "M")
+
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_merge_preview_keep_both_adds_incoming_column(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        (self.project_root / "participants.tsv").write_text(
+            "participant_id\tsex\nsub-001\tM\nsub-002\tF\n",
+            encoding="utf-8",
+        )
+
+        response = self.client.post(
+            "/api/participants-merge",
+            data={
+                "separator": "comma",
+                "id_column": "participant_id",
+                "harmonization_decisions": json.dumps(
+                    {"sex": {"action": "keep_both", "new_column": "sex_code"}}
+                ),
+                "file": (
+                    io.BytesIO(b"participant_id,sex\nsub-001,2\nsub-002,1\nsub-003,1\n"),
+                    "participants.csv",
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json() or {}
+        self.assertEqual(payload.get("conflict_count"), 0)
+        self.assertIn("sex_code", payload.get("new_columns") or [])
+
+        decisions = payload.get("harmonization_decisions") or {}
+        self.assertEqual((decisions.get("sex") or {}).get("action"), "keep_both")
+        self.assertEqual((decisions.get("sex") or {}).get("new_column"), "sex_code")
+
+        preview_rows = payload.get("preview_rows") or []
+        self.assertEqual(preview_rows[0].get("sex"), "M")
+        self.assertEqual(preview_rows[0].get("sex_code"), "2")
+        self.assertEqual(preview_rows[2].get("participant_id"), "sub-003")
+        self.assertEqual(preview_rows[2].get("sex"), "F")
+        self.assertEqual(preview_rows[2].get("sex_code"), "1")
+
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_merge_preview_session_resolution_candidates_block_apply_until_decided(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        (self.project_root / "participants.tsv").write_text(
+            "participant_id\tage\nsub-001\t21\nsub-002\t22\n",
+            encoding="utf-8",
+        )
+
+        response = self.client.post(
+            "/api/participants-merge",
+            data={
+                "separator": "comma",
+                "id_column": "participant_id",
+                "extra_columns": json.dumps(["BMI"]),
+                "file": (
+                    io.BytesIO(
+                        b"participant_id,session,BMI\n"
+                        b"sub-001,1,20.1\n"
+                        b"sub-001,2,24.2\n"
+                        b"sub-002,1,30.0\n"
+                        b"sub-002,2,31.0\n"
+                    ),
+                    "participants.csv",
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json() or {}
+        self.assertTrue(payload.get("merge_mode"))
+        self.assertEqual(payload.get("conflict_count"), 0)
+        self.assertTrue(payload.get("session_resolution_required"))
+        self.assertFalse(payload.get("can_apply"))
+
+        candidates = payload.get("session_resolution_candidates") or []
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(candidates[0].get("column"), "BMI")
+        self.assertEqual(candidates[0].get("session_column"), "session")
+        self.assertEqual(candidates[0].get("available_sessions"), ["1", "2"])
+
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_merge_preview_session_pick_resolves_repeated_row_blocker(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        (self.project_root / "participants.tsv").write_text(
+            "participant_id\tage\nsub-001\t21\nsub-002\t22\n",
+            encoding="utf-8",
+        )
+
+        response = self.client.post(
+            "/api/participants-merge",
+            data={
+                "separator": "comma",
+                "id_column": "participant_id",
+                "extra_columns": json.dumps(["BMI"]),
+                "session_resolution_decisions": json.dumps(
+                    {"BMI": {"action": "pick_session", "session": "1"}}
+                ),
+                "file": (
+                    io.BytesIO(
+                        b"participant_id,session,BMI\n"
+                        b"sub-001,1,20.1\n"
+                        b"sub-001,2,24.2\n"
+                        b"sub-002,1,30.0\n"
+                        b"sub-002,2,31.0\n"
+                    ),
+                    "participants.csv",
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json() or {}
+        self.assertFalse(payload.get("session_resolution_required"))
+        self.assertEqual(payload.get("conflict_count"), 0)
+        self.assertTrue(payload.get("can_apply"))
+
+        preview_rows = payload.get("preview_rows") or []
+        bmi_key = "BMI" if preview_rows and "BMI" in preview_rows[0] else "bmi"
+        self.assertEqual(preview_rows[0].get(bmi_key), "20.1")
+        self.assertEqual(preview_rows[1].get(bmi_key), "30.0")
+
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
     def test_merge_apply_updates_participants_and_creates_backups(
         self,
         mock_resolve_library,
@@ -3257,6 +3455,49 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             (out_json.get("handedness") or {}).get("Description"),
             "Preferred hand",
         )
+
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_merge_apply_use_incoming_harmonization_rewrites_existing_codes(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        participants_tsv = self.project_root / "participants.tsv"
+        participants_tsv.write_text(
+            "participant_id\tsex\nsub-001\tM\nsub-002\tF\n",
+            encoding="utf-8",
+        )
+
+        response = self.client.post(
+            "/api/participants-merge",
+            data={
+                "separator": "comma",
+                "id_column": "participant_id",
+                "apply": "true",
+                "harmonization_decisions": json.dumps(
+                    {"sex": {"action": "use_incoming"}}
+                ),
+                "file": (
+                    io.BytesIO(b"participant_id,sex\nsub-001,2\nsub-002,1\nsub-003,2\n"),
+                    "participants.csv",
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json() or {}
+        self.assertEqual(payload.get("conflict_count"), 0)
+        self.assertEqual(payload.get("status"), "success")
+
+        out_df = pd.read_csv(participants_tsv, sep="\t").fillna("")
+        self.assertEqual([str(value) for value in out_df["sex"].tolist()], ["2", "1", "2"])
 
     @patch.object(
         participants_module, "_load_survey_template_item_ids", return_value=set()
