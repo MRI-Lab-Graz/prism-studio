@@ -184,6 +184,111 @@ def test_survey_converter_rejects_offset_when_allowed_values_conflict(tmp_path):
     assert error.expected_levels == ["1", "2", "3", "4", "5"]
 
 
+def test_survey_converter_suggests_offset_from_allowed_values_when_levels_conflict(tmp_path):
+    input_path = tmp_path / "survey.csv"
+    input_path.write_text("ID,PSS01\nsub-001,6\n", encoding="utf-8")
+
+    library_root = tmp_path / "library"
+    library_root.mkdir(parents=True, exist_ok=True)
+    (library_root / "survey-pss.json").write_text(
+        json.dumps(
+            {
+                "Study": {"TaskName": "pss"},
+                "PSS01": {
+                    "AllowedValues": [1, 2, 3, 4, 5],
+                    "Levels": {
+                        "0": "never",
+                        "1": "almost never",
+                        "2": "sometimes",
+                        "3": "fairly often",
+                        "4": "very often",
+                    },
+                    "MinValue": 0,
+                    "MaxValue": 4,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SurveyValueOutOfBoundsError) as error_info:
+        SurveyResponsesConverter().convert_xlsx(
+            input_path=input_path,
+            library_dir=library_root,
+            output_root=tmp_path / "out",
+            id_column="ID",
+            session="all",
+            dry_run=False,
+            force=True,
+            skip_participants=True,
+            separator=",",
+        )
+
+    error = error_info.value
+    assert error.expected_levels == ["1", "2", "3", "4", "5"]
+    assert error.suggested_offsets == [-1]
+
+
+def test_survey_converter_clears_unsafe_task_wide_offset_suggestion(tmp_path):
+    input_path = tmp_path / "survey.csv"
+    input_path.write_text("ID,PSS01,PSS02\nsub-001,5,1\n", encoding="utf-8")
+
+    library_root = tmp_path / "library"
+    library_root.mkdir(parents=True, exist_ok=True)
+    (library_root / "survey-pss.json").write_text(
+        json.dumps(
+            {
+                "Study": {"TaskName": "pss"},
+                "PSS01": {
+                    "Levels": {
+                        "0": "never",
+                        "1": "almost never",
+                        "2": "sometimes",
+                        "3": "fairly often",
+                        "4": "very often",
+                    },
+                    "MinValue": 0,
+                    "MaxValue": 4,
+                },
+                "PSS02": {
+                    "AllowedValues": [1, 2, 3, 4, 5],
+                    "Levels": {
+                        "0": "never",
+                        "1": "almost never",
+                        "2": "sometimes",
+                        "3": "fairly often",
+                        "4": "very often",
+                    },
+                    "MinValue": 0,
+                    "MaxValue": 4,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SurveyValueOutOfBoundsError) as error_info:
+        SurveyResponsesConverter().convert_xlsx(
+            input_path=input_path,
+            library_dir=library_root,
+            output_root=tmp_path / "out",
+            id_column="ID",
+            session="all",
+            dry_run=False,
+            force=True,
+            skip_participants=True,
+            separator=",",
+        )
+
+    error = error_info.value
+    evidence = getattr(error, "offset_evidence", None)
+    assert isinstance(evidence, dict)
+    assert evidence.get("best_offset") == -1
+    assert evidence.get("invalid_with_best_offset") == 1
+    assert evidence.get("newly_invalid_with_best_offset") == 1
+    assert error.suggested_offsets == []
+
+
 def test_sync_project_survey_recipe_offsets_updates_metadata(tmp_path):
     project_root = tmp_path / "project"
     recipe_dir = project_root / "code" / "recipes" / "survey"
@@ -257,6 +362,7 @@ def test_survey_preview_returns_value_offset_confirmation_payload(tmp_path):
             resolve_effective_library_path=lambda: library_root,
             run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
             validate_project_templates_for_tasks=lambda **_kwargs: [],
+            build_template_completion_gate=lambda _issues: None,
             format_unmatched_groups_response=lambda _error: {},
             id_column_not_detected_error_cls=ValueError,
             unmatched_groups_error_cls=RuntimeError,
@@ -351,6 +457,7 @@ def test_survey_preview_passes_value_offsets_to_converter(tmp_path):
             resolve_effective_library_path=lambda: library_root,
             run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
             validate_project_templates_for_tasks=lambda **_kwargs: [],
+            build_template_completion_gate=lambda _issues: None,
             format_unmatched_groups_response=lambda _error: {},
             id_column_not_detected_error_cls=ValueError,
             unmatched_groups_error_cls=RuntimeError,
@@ -440,6 +547,7 @@ def test_survey_preview_validate_path_returns_value_offset_confirmation(tmp_path
             resolve_effective_library_path=lambda: library_root,
             run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
             validate_project_templates_for_tasks=lambda **_kwargs: [],
+            build_template_completion_gate=lambda _issues: None,
             format_unmatched_groups_response=lambda _error: {},
             id_column_not_detected_error_cls=ValueError,
             unmatched_groups_error_cls=RuntimeError,

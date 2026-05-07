@@ -81,8 +81,7 @@ export function initSurveyConvert(elements) {
     let sourcedataRequestToken = 0;
     let convertServerFilePath = '';
     let lastDetectedSurveyFingerprint = '';
-    let nearMatchRetryState = null;
-    let valueOffsetRetryState = null;
+    let confirmedNearMatchTasks = [];
     let confirmedTaskValueOffsets = {};
     let versionWizardRetryGateMode = null;
     let isConvertRunning = false;
@@ -92,6 +91,7 @@ export function initSurveyConvert(elements) {
     let runProgressLabel = '';
     let runProgressTimer = null;
     let runProgressHideTimer = null;
+    let isSurveyRunAwaitingConfirmation = false;
     let activeRunAbortController = null;
     let activeRunMode = null;
     let activeRunCancelledByUser = false;
@@ -517,8 +517,7 @@ export function initSurveyConvert(elements) {
     }
 
     function clearRetryResolutionState() {
-        nearMatchRetryState = null;
-        valueOffsetRetryState = null;
+        confirmedNearMatchTasks = [];
         confirmedTaskValueOffsets = {};
     }
 
@@ -622,6 +621,7 @@ export function initSurveyConvert(elements) {
         runProgressMode = null;
         runProgressPercent = 0;
         runProgressLabel = '';
+        isSurveyRunAwaitingConfirmation = false;
 
         if (!surveyRunProgressContainer || !surveyRunProgressBar) {
             return;
@@ -636,6 +636,25 @@ export function initSurveyConvert(elements) {
         if (surveyRunProgressLabel) {
             surveyRunProgressLabel.textContent = 'Preparing preview...';
         }
+    }
+
+    function startSurveyRunProgressTimer(mode) {
+        stopSurveyRunProgressTimer();
+
+        runProgressTimer = window.setInterval(() => {
+            if (runProgressMode !== mode || isSurveyRunAwaitingConfirmation) {
+                stopSurveyRunProgressTimer();
+                return;
+            }
+
+            const cap = mode === 'convert' ? 94 : 90;
+            const increment = runProgressPercent < 25
+                ? 7
+                : (runProgressPercent < 50 ? 4 : (runProgressPercent < 75 ? 2 : 1));
+
+            runProgressPercent = Math.min(cap, runProgressPercent + increment);
+            renderSurveyRunProgress();
+        }, 800);
     }
 
     function setSurveyRunProgress({
@@ -673,9 +692,8 @@ export function initSurveyConvert(elements) {
             return;
         }
 
-        stopSurveyRunProgressTimer();
-
         const modeLabel = getSurveyRunModeLabel(mode);
+        isSurveyRunAwaitingConfirmation = false;
         setSurveyRunProgress({
             mode,
             percent: 8,
@@ -684,20 +702,7 @@ export function initSurveyConvert(elements) {
             animated: true,
         });
 
-        runProgressTimer = window.setInterval(() => {
-            if (runProgressMode !== mode) {
-                stopSurveyRunProgressTimer();
-                return;
-            }
-
-            const cap = mode === 'convert' ? 94 : 90;
-            const increment = runProgressPercent < 25
-                ? 7
-                : (runProgressPercent < 50 ? 4 : (runProgressPercent < 75 ? 2 : 1));
-
-            runProgressPercent = Math.min(cap, runProgressPercent + increment);
-            renderSurveyRunProgress();
-        }, 800);
+        startSurveyRunProgressTimer(mode);
     }
 
     function advanceSurveyRunProgress(mode, percent, label) {
@@ -719,11 +724,52 @@ export function initSurveyConvert(elements) {
         renderSurveyRunProgress();
     }
 
+    function pauseSurveyRunProgress(mode, label) {
+        if (!surveyRunProgressContainer || !surveyRunProgressBar) {
+            return;
+        }
+        if (runProgressMode !== mode) {
+            return;
+        }
+
+        isSurveyRunAwaitingConfirmation = true;
+        stopSurveyRunProgressTimer();
+        if (typeof label === 'string' && label.trim()) {
+            runProgressLabel = label.trim();
+        }
+        setSurveyRunProgressAppearance('warning', false);
+        renderSurveyRunProgress();
+        updateConvertBtn();
+    }
+
+    function resumeSurveyRunProgress(mode, percent, label) {
+        if (!surveyRunProgressContainer || !surveyRunProgressBar) {
+            return;
+        }
+        if (runProgressMode !== mode) {
+            return;
+        }
+
+        isSurveyRunAwaitingConfirmation = false;
+        const nextPercent = Number(percent);
+        if (Number.isFinite(nextPercent)) {
+            runProgressPercent = Math.max(runProgressPercent, Math.min(100, nextPercent));
+        }
+        if (typeof label === 'string' && label.trim()) {
+            runProgressLabel = label.trim();
+        }
+        setSurveyRunProgressAppearance('info', true);
+        renderSurveyRunProgress();
+        startSurveyRunProgressTimer(mode);
+        updateConvertBtn();
+    }
+
     function finishSurveyRunProgress(mode, outcome) {
         if (!surveyRunProgressContainer || !surveyRunProgressBar) {
             return;
         }
 
+        isSurveyRunAwaitingConfirmation = false;
         stopSurveyRunProgressTimer();
         const modeTitle = mode === 'convert' ? 'Conversion' : 'Preview';
 
@@ -796,45 +842,6 @@ export function initSurveyConvert(elements) {
         hideSurveyRunProgress();
     }
 
-    function markRunAwaitingUserConfirmation(mode, label) {
-        if (mode === 'convert') {
-            isConvertRunning = false;
-        } else {
-            isPreviewRunning = false;
-        }
-        updateConvertBtn();
-        setSurveyRunProgress({
-            mode,
-            percent: 100,
-            label,
-            variant: 'warning',
-            animated: false,
-        });
-    }
-
-    function getRetryStateForMode(state, mode) {
-        if (!state || state.mode !== mode) {
-            return null;
-        }
-        const currentFingerprint = getSelectedSurveyFingerprint();
-        if (!currentFingerprint) {
-            return null;
-        }
-        const stateFingerprint = String(state.fingerprint || '').trim();
-        if (stateFingerprint && stateFingerprint !== currentFingerprint) {
-            return null;
-        }
-        return state;
-    }
-
-    function buildRetryState(mode, payload) {
-        return {
-            mode,
-            fingerprint: getSelectedSurveyFingerprint(),
-            ...payload,
-        };
-    }
-
     function mergeNearMatchTasks(existingTasks, nextTasks) {
         return [...new Set(
             ([])
@@ -886,6 +893,13 @@ export function initSurveyConvert(elements) {
         return offsetsAreEqual(configuredOffset, appliedOffset);
     }
 
+    function getConfiguredOffsetFailureTask(payload, selectedOffsets) {
+        if (!isConfiguredOffsetFailureForCurrentSelection(payload, selectedOffsets)) {
+            return null;
+        }
+        return normalizeNearMatchTaskName(payload && payload.task);
+    }
+
     function removeTaskOffset(offsetMap, taskName) {
         const normalized = normalizeTaskValueOffsets(offsetMap);
         const task = normalizeNearMatchTaskName(taskName);
@@ -895,7 +909,14 @@ export function initSurveyConvert(elements) {
         return normalized;
     }
 
-    function getEffectiveTaskValueOffsets(retryOffsets) {
+    function getEffectiveNearMatchTasks(nextTasks = null) {
+        return mergeNearMatchTasks(
+            confirmedNearMatchTasks,
+            Array.isArray(nextTasks) ? nextTasks : []
+        );
+    }
+
+    function getEffectiveTaskValueOffsets(retryOffsets = null) {
         return mergeTaskValueOffsetMaps(
             confirmedTaskValueOffsets,
             normalizeTaskValueOffsets(retryOffsets)
@@ -952,34 +973,286 @@ export function initSurveyConvert(elements) {
         });
     }
 
-    async function maybePauseAutoRerunForVersionSelection({
+    function applyPreparedSurveyWorkflowContext(data) {
+        const multivariantTasks = (data && typeof data.multivariant_tasks === 'object' && data.multivariant_tasks)
+            ? data.multivariant_tasks
+            : {};
+        if (Object.keys(multivariantTasks).length > 0) {
+            buildVersionWizard(
+                multivariantTasks,
+                (data && typeof data.task_runs === 'object' && data.task_runs) || {},
+                Array.isArray(data?.preview_participants) ? data.preview_participants : [],
+                Array.isArray(data?.detected_sessions) ? data.detected_sessions : []
+            );
+        } else {
+            hideVersionWizard();
+        }
+
+        templateWorkflowGate = (
+            data
+            && data.workflow_gate
+            && typeof data.workflow_gate === 'object'
+        ) ? data.workflow_gate : null;
+        setTemplateEditorErrorCtaVisible(Boolean(templateWorkflowGate && templateWorkflowGate.blocked));
+
+        if (data && typeof data.applied_value_offsets === 'object' && data.applied_value_offsets) {
+            confirmedTaskValueOffsets = mergeTaskValueOffsetMaps(
+                confirmedTaskValueOffsets,
+                data.applied_value_offsets,
+            );
+        }
+
+        return multivariantTasks;
+    }
+
+    function getPreparationRunOutcome(outcome) {
+        if (outcome === 'blocked') {
+            return 'action_required';
+        }
+        if (outcome === 'paused') {
+            return 'paused';
+        }
+        if (outcome === 'error') {
+            return 'error';
+        }
+        return 'canceled';
+    }
+
+    function finishPreparationPhase(mode, outcome) {
+        const resolvedOutcome = getPreparationRunOutcome(outcome);
+        const modeTitle = mode === 'convert' ? 'Conversion' : 'Preview';
+        const hasInfoMessage = Boolean(String(convertInfo?.textContent || '').trim());
+
+        clearActiveSurveyRun(mode);
+        if (mode === 'convert') {
+            isConvertRunning = false;
+        } else {
+            isPreviewRunning = false;
+        }
+
+        if (resolvedOutcome === 'canceled' && !hasInfoMessage) {
+            convertInfo.textContent = `${modeTitle} canceled.`;
+            convertInfo.classList.remove('d-none');
+        }
+
+        finishSurveyRunProgress(mode, resolvedOutcome);
+        updateConvertBtn();
+        return resolvedOutcome;
+    }
+
+    function handleLateSetupBlocker(mode, payload, selectedValueOffsets = {}) {
+        const modeTitle = mode === 'convert' ? 'Conversion' : 'Preview';
+        const rerunInstruction = mode === 'convert'
+            ? 'Run Preview again to refresh setup, then rerun conversion.'
+            : 'Run Preview again to refresh setup.';
+        const blockingError = String(payload?.blocking_error || payload?.error || '').trim();
+
+        if (blockingError === 'value_offset_confirmation_required') {
+            const failedTask = normalizeNearMatchTaskName(payload && payload.task) || 'unknown task';
+            const failedOffset = parseNumericOffsetValue(payload && payload.configured_offset);
+            const failedOffsetLabel = failedOffset === null ? 'configured offset' : formatSignedOffset(failedOffset);
+            if (isConfiguredOffsetFailureForCurrentSelection(payload, selectedValueOffsets) && failedTask !== 'unknown task') {
+                confirmedTaskValueOffsets = removeTaskOffset(confirmedTaskValueOffsets, failedTask);
+                appendLog(
+                    `Prepared value offset for task ${failedTask} (${failedOffsetLabel}) no longer fits this dataset. ${rerunInstruction}`,
+                    'error'
+                );
+                convertInfo.textContent = `Prepared offset ${failedOffsetLabel} for ${failedTask} no longer fits this dataset. ${rerunInstruction}`;
+            } else {
+                appendLog(
+                    `Backend setup reported a new task-level value offset requirement after ${modeTitle.toLowerCase()} started. ${rerunInstruction}`,
+                    'warning'
+                );
+                convertInfo.textContent = `A task-level value offset still needs confirmation. ${rerunInstruction}`;
+            }
+            convertInfo.classList.remove('d-none');
+            return true;
+        }
+
+        if (blockingError === 'near_item_match_confirmation_required') {
+            appendLog(
+                `Backend setup reported new near-item matches after ${modeTitle.toLowerCase()} started. ${rerunInstruction}`,
+                'warning'
+            );
+            convertInfo.textContent = `Near item matches still need confirmation. ${rerunInstruction}`;
+            convertInfo.classList.remove('d-none');
+            return true;
+        }
+
+        if (blockingError === 'project_template_completion_required') {
+            templateWorkflowGate = payload.workflow_gate || {
+                blocked: true,
+                message: payload.message || 'Project templates must be completed before import can continue.'
+            };
+            setTemplateEditorErrorCtaVisible(true);
+
+            appendLog('Template metadata updates are required before import.', 'warning');
+            appendLog(`   ${templateWorkflowGate.message}`, 'warning');
+            if (Array.isArray(templateWorkflowGate.next_steps)) {
+                templateWorkflowGate.next_steps.forEach(step => appendLog(`   • ${step}`, 'warning'));
+            }
+            if (Array.isArray(payload.template_issues) && payload.template_issues.length) {
+                payload.template_issues.slice(0, 20).forEach(issue => {
+                    const name = (issue.file || '').split('/').pop() || 'template';
+                    appendLog(`   - ${name}: ${issue.message}`, 'warning');
+                });
+                if (payload.template_issues.length > 20) {
+                    appendLog(`   ... and ${payload.template_issues.length - 20} more template item(s)`, 'warning');
+                }
+            }
+
+            convertInfo.innerHTML = '<i class="fas fa-clipboard-check me-2"></i>Some copied survey templates still need project-level metadata. Complete them in Template Editor, then run Preview again.';
+            convertInfo.classList.remove('d-none');
+            return true;
+        }
+
+        if (String(payload?.message || '').trim()) {
+            appendLog(payload.message, 'warning');
+            convertInfo.textContent = payload.message;
+            convertInfo.classList.remove('d-none');
+            return true;
+        }
+
+        return false;
+    }
+
+    async function prepareSurveyWorkflow({
         mode,
-        nearMatchTasks,
-        valueOffsets,
+        nearMatchTasks = [],
+        valueOffsets = {},
+        signal = null,
     }) {
-        const context = await syncVersionWizardContext({
-            showErrors: false,
-            allowNearItemMatch: Array.isArray(nearMatchTasks) && nearMatchTasks.length > 0,
-            nearMatchTasks,
-            taskValueOffsets: valueOffsets,
-        });
-        if (!context || !context.hasMultivariant) {
-            return false;
-        }
-
-        if (hasCompleteVersionWizardSelections()) {
-            return false;
-        }
-
-        versionWizardRetryGateMode = mode;
         const modeLabel = mode === 'convert' ? 'conversion' : 'preview';
-        appendLog(
-            `Multi-version questionnaire options detected. Review the version selector and run ${modeLabel} again.`,
-            'info'
-        );
-        convertInfo.textContent = `Multi-version options are available. Review the selector below, then run ${modeLabel} again.`;
-        convertInfo.classList.remove('d-none');
-        return true;
+        let selectedNearMatchTasks = getEffectiveNearMatchTasks(nearMatchTasks);
+        let selectedValueOffsets = getEffectiveTaskValueOffsets(valueOffsets);
+
+        while (true) {
+            const workflowRequest = buildSurveyWorkflowRequestFormData({
+                allowNearItemMatch: selectedNearMatchTasks.length > 0,
+                nearMatchTasks: selectedNearMatchTasks,
+                taskValueOffsets: selectedValueOffsets,
+                includeValidation: false,
+            });
+            if (!workflowRequest.filename) {
+                return { ready: false, outcome: 'canceled' };
+            }
+
+            let response;
+            let data;
+            try {
+                advanceSurveyRunProgress(mode, 16, `Running ${modeLabel} setup...`);
+                response = await fetch('/api/survey-prepare-workflow', {
+                    method: 'POST',
+                    body: workflowRequest.formData,
+                    signal,
+                });
+                data = await response.json();
+            } catch (error) {
+                if (isAbortError(error)) {
+                    return { ready: false, outcome: 'canceled' };
+                }
+                convertError.textContent = enrichSurveyRunErrorMessage(error.message || 'Survey preparation failed');
+                convertError.classList.remove('d-none');
+                return { ready: false, outcome: 'error' };
+            }
+
+            if (!response.ok) {
+                if (data.error === 'value_offset_confirmation_required') {
+                    pauseSurveyRunProgress(mode, 'Waiting for value-offset confirmation...');
+                    const failedConfiguredOffsetTask = getConfiguredOffsetFailureTask(
+                        data,
+                        selectedValueOffsets,
+                    );
+                    const failedConfiguredOffset = parseNumericOffsetValue(
+                        data && data.configured_offset,
+                    );
+                    if (failedConfiguredOffsetTask) {
+                        confirmedTaskValueOffsets = removeTaskOffset(
+                            confirmedTaskValueOffsets,
+                            failedConfiguredOffsetTask,
+                        );
+                        selectedValueOffsets = removeTaskOffset(
+                            selectedValueOffsets,
+                            failedConfiguredOffsetTask,
+                        );
+                    }
+                    const selection = await promptValueOffsetSelection(data, mode === 'convert' ? 'conversion setup' : 'preview setup');
+                    if (selection.approved && selection.task) {
+                        if (
+                            failedConfiguredOffsetTask
+                            && selection.task === failedConfiguredOffsetTask
+                            && failedConfiguredOffset !== null
+                            && offsetsAreEqual(selection.offset, failedConfiguredOffset)
+                        ) {
+                            window.alert('This offset was already tried and did not resolve the task. Enter a different offset or cancel.');
+                            resumeSurveyRunProgress(mode, 32, 'Retrying setup...');
+                            continue;
+                        }
+                        confirmedTaskValueOffsets = mergeTaskValueOffsetMaps(
+                            confirmedTaskValueOffsets,
+                            selection.offsets,
+                        );
+                        selectedValueOffsets = getEffectiveTaskValueOffsets(selection.offsets);
+                        resumeSurveyRunProgress(mode, 36, 'Value offset confirmed. Continuing setup...');
+                        continue;
+                    }
+
+                    convertInfo.textContent = 'Import requires a confirmed value offset before it can continue.';
+                    convertInfo.classList.remove('d-none');
+                    return { ready: false, outcome: 'canceled' };
+                }
+
+                if (data.error === 'near_item_match_confirmation_required') {
+                    pauseSurveyRunProgress(mode, 'Waiting for near-match confirmation...');
+                    const selection = await promptNearMatchSelection(data, mode === 'convert' ? 'conversion setup' : 'preview setup');
+                    if (selection.approved && selection.selectedTasks.length > 0) {
+                        confirmedNearMatchTasks = mergeNearMatchTasks(
+                            confirmedNearMatchTasks,
+                            selection.selectedTasks,
+                        );
+                        selectedNearMatchTasks = getEffectiveNearMatchTasks(selection.selectedTasks);
+                        resumeSurveyRunProgress(mode, 36, 'Near matches confirmed. Continuing setup...');
+                        continue;
+                    }
+
+                    convertInfo.textContent = 'Near item matches were detected but not approved. Import setup was canceled.';
+                    convertInfo.classList.remove('d-none');
+                    return { ready: false, outcome: 'canceled' };
+                }
+
+                if (data && data.workflow_gate && typeof data.workflow_gate === 'object') {
+                    templateWorkflowGate = data.workflow_gate;
+                    setTemplateEditorErrorCtaVisible(Boolean(templateWorkflowGate.blocked));
+                }
+
+                convertError.textContent = String(data?.message || data?.error || 'Survey preparation failed');
+                convertError.classList.remove('d-none');
+                return { ready: false, outcome: 'error' };
+            }
+
+            const multivariantTasks = applyPreparedSurveyWorkflowContext(data);
+            if (templateWorkflowGate && templateWorkflowGate.blocked) {
+                convertInfo.textContent = templateWorkflowGate.message || 'Template completion is required before import can continue.';
+                convertInfo.classList.remove('d-none');
+                return { ready: false, outcome: 'blocked' };
+            }
+
+            if (Object.keys(multivariantTasks).length > 0 && !hasCompleteVersionWizardSelections()) {
+                versionWizardRetryGateMode = mode;
+                const modeLabel = mode === 'convert' ? 'conversion' : 'preview';
+                convertInfo.textContent = `Multi-version options are available. Review the selector below, then run ${modeLabel} again.`;
+                convertInfo.classList.remove('d-none');
+                return { ready: false, outcome: 'paused' };
+            }
+
+            versionWizardRetryGateMode = null;
+            advanceSurveyRunProgress(mode, 48, `Setup complete. Starting ${modeLabel}...`);
+            return {
+                ready: true,
+                nearMatchTasks: selectedNearMatchTasks,
+                valueOffsets: selectedValueOffsets,
+            };
+        }
     }
 
     function collectSuggestedValueOffsets(payload) {
@@ -1007,6 +1280,7 @@ export function initSurveyConvert(elements) {
         const task = normalizeNearMatchTaskName(payload && payload.task) || '*';
         const itemId = String(payload && payload.item_id || '').trim();
         const rawValue = payload && payload.raw_value;
+        const configuredOffsetFailed = parseNumericOffsetValue(payload && payload.configured_offset) !== null;
         const offsetEvidence = (
             payload
             && payload.offset_evidence
@@ -1040,9 +1314,7 @@ export function initSurveyConvert(elements) {
             : [];
         const suggestedOffsets = collectSuggestedValueOffsets(payload);
         const configuredOffset = parseNumericOffsetValue(payload && payload.configured_offset);
-        const defaultOffset = configuredOffset !== null
-            ? configuredOffset
-            : (suggestedOffsets.length > 0 ? suggestedOffsets[0] : null);
+        const defaultOffset = suggestedOffsets.length > 0 ? suggestedOffsets[0] : null;
 
         const messageLines = [
             `A survey response is outside template levels during ${String(actionLabel || 'import')}.`,
@@ -1051,6 +1323,9 @@ export function initSurveyConvert(elements) {
             rawValue !== undefined ? `Observed value: ${String(rawValue)}` : null,
             expectedLevels.length > 0
                 ? `Expected levels: ${expectedLevels.slice(0, 15).join(', ')}`
+                : null,
+            configuredOffsetFailed && configuredOffset !== null
+                ? `Previously tried offset: ${formatSignedOffset(configuredOffset)} (did not resolve this task)`
                 : null,
             suggestedOffsets.length > 0
                 ? `Suggested offsets: ${suggestedOffsets.map((entry) => formatSignedOffset(entry)).join(', ')}`
@@ -1075,6 +1350,9 @@ export function initSurveyConvert(elements) {
                 ? 'Interpretation: item-level input issues likely.'
                 : null,
             evidenceSummary ? `Pattern check: ${evidenceSummary}` : null,
+            configuredOffsetFailed
+                ? 'Enter a different numeric offset, or cancel if no single task-wide offset fits this data.'
+                : null,
             '',
             'Enter a numeric offset to apply to this whole survey task (examples: -1, +1).',
             'Leave empty or press Cancel to abort.',
@@ -1487,6 +1765,95 @@ export function initSurveyConvert(elements) {
         return selections;
     }
 
+    function buildSurveyWorkflowRequestFormData({
+        allowNearItemMatch = false,
+        nearMatchTasks = null,
+        taskValueOffsets = null,
+        includeValidation = false,
+        includeIdMap = true,
+    } = {}) {
+        const formData = new FormData();
+        const inputSelection = appendSurveyInputToFormData(formData);
+        const filename = inputSelection.filename || getSelectedSurveyFilename();
+        if (!inputSelection.filename) {
+            return {
+                formData,
+                inputSelection,
+                filename: '',
+                templateSelections: [],
+                selectedNearMatchTasks: [],
+                normalizedOffsets: {},
+            };
+        }
+
+        const idMap = isAdvancedOptionsEnabled() && convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0];
+        if (includeIdMap && idMap) {
+            formData.append('id_map', idMap);
+        }
+
+        const idValue = String(document.getElementById('convertIdColumn')?.value || '').trim();
+        if (idValue && idValue !== 'auto') {
+            formData.append('id_column', idValue);
+        }
+
+        const sessionVal = getSurveySessionValue();
+        if (sessionVal) {
+            formData.append('session', sessionVal);
+        }
+
+        const sessionColVal = (convertSessionColumnOverride && convertSessionColumnOverride.value.trim()) || '';
+        const runColVal = (convertRunColumnOverride && convertRunColumnOverride.value.trim()) || '';
+        if (sessionColVal) {
+            formData.append('session_column', sessionColVal);
+        }
+        if (runColVal) {
+            formData.append('run_column', runColVal);
+        }
+
+        if (isAdvancedOptionsEnabled() && convertDatasetName && convertDatasetName.value.trim()) {
+            formData.append('survey', convertDatasetName.value.trim());
+        }
+        formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
+        formData.append('separator', getSelectedSeparator(filename.toLowerCase()));
+
+        const templateSelections = getTemplateVersionSelections();
+        if (templateSelections.length > 0) {
+            formData.append('template_versions', JSON.stringify(templateSelections));
+        }
+
+        const selectedNearMatchTasks = Array.isArray(nearMatchTasks)
+            ? [...new Set(
+                nearMatchTasks
+                    .map((task) => normalizeNearMatchTaskName(task))
+                    .filter(Boolean)
+            )]
+            : [];
+        if (allowNearItemMatch) {
+            formData.append('allow_near_item_match', 'true');
+            if (selectedNearMatchTasks.length > 0) {
+                formData.append('near_match_tasks', JSON.stringify(selectedNearMatchTasks));
+            }
+        }
+
+        const normalizedOffsets = normalizeTaskValueOffsets(taskValueOffsets);
+        if (Object.keys(normalizedOffsets).length > 0) {
+            formData.append('value_offsets', JSON.stringify(normalizedOffsets));
+        }
+
+        if (!includeValidation) {
+            formData.append('validate', 'false');
+        }
+
+        return {
+            formData,
+            inputSelection,
+            filename,
+            templateSelections,
+            selectedNearMatchTasks,
+            normalizedOffsets,
+        };
+    }
+
     function cancelVersionWizardSync() {
         versionWizardSyncRequestId += 1;
         if (versionWizardSyncTimer) {
@@ -1515,67 +1882,23 @@ export function initSurveyConvert(elements) {
             return { hasMultivariant: false, skipped: true };
         }
 
-        const filename = getSelectedSurveyFilename();
         const requestId = ++versionWizardSyncRequestId;
-        const formData = new FormData();
-        const inputSelection = appendSurveyInputToFormData(formData);
-        if (!inputSelection.filename) {
+        const workflowRequest = buildSurveyWorkflowRequestFormData({
+            allowNearItemMatch,
+            nearMatchTasks,
+            taskValueOffsets,
+            includeValidation: false,
+            includeIdMap: false,
+        });
+        if (!workflowRequest.filename) {
             hideVersionWizard();
             return { hasMultivariant: false, skipped: true };
-        }
-
-        const idValue = String(document.getElementById('convertIdColumn')?.value || '').trim();
-        if (idValue && idValue !== 'auto') {
-            formData.append('id_column', idValue);
-        }
-
-        const sessionVal = getSurveySessionValue();
-        if (sessionVal) {
-            formData.append('session', sessionVal);
-        }
-
-        const sessionColVal = (convertSessionColumnOverride && convertSessionColumnOverride.value.trim()) || '';
-        const runColVal = (convertRunColumnOverride && convertRunColumnOverride.value.trim()) || '';
-        if (sessionColVal) {
-            formData.append('session_column', sessionColVal);
-        }
-        if (runColVal) {
-            formData.append('run_column', runColVal);
-        }
-
-        if (isAdvancedOptionsEnabled() && convertDatasetName && convertDatasetName.value.trim()) {
-            formData.append('survey', convertDatasetName.value.trim());
-        }
-        formData.append('separator', getSelectedSeparator(filename.toLowerCase()));
-
-        const templateSelections = getTemplateVersionSelections();
-        if (templateSelections.length > 0) {
-            formData.append('template_versions', JSON.stringify(templateSelections));
-        }
-
-        const selectedNearMatchTasks = Array.isArray(nearMatchTasks)
-            ? [...new Set(
-                nearMatchTasks
-                    .map((task) => normalizeNearMatchTaskName(task))
-                    .filter(Boolean)
-            )]
-            : [];
-        if (allowNearItemMatch) {
-            formData.append('allow_near_item_match', 'true');
-            if (selectedNearMatchTasks.length > 0) {
-                formData.append('near_match_tasks', JSON.stringify(selectedNearMatchTasks));
-            }
-        }
-
-        const normalizedOffsets = normalizeTaskValueOffsets(taskValueOffsets);
-        if (Object.keys(normalizedOffsets).length > 0) {
-            formData.append('value_offsets', JSON.stringify(normalizedOffsets));
         }
 
         try {
             const response = await fetch('/api/survey-detect-version-contexts', {
                 method: 'POST',
-                body: formData,
+                body: workflowRequest.formData,
             });
             const data = await response.json();
             if (requestId !== versionWizardSyncRequestId) {
@@ -2262,6 +2585,7 @@ export function initSurveyConvert(elements) {
         const blockedByTemplateGate = Boolean(templateWorkflowGate && templateWorkflowGate.blocked);
         const hasProjectLoaded = resolveCurrentProjectPath() !== '';
         const hasRunningRequest = isConvertRunning || isPreviewRunning;
+        const isAwaitingConfirmation = hasRunningRequest && isSurveyRunAwaitingConfirmation;
 
         convertBtn.disabled = !hasFile || blockedByTemplateGate;
         if (checkProjectTemplatesBtn) {
@@ -2295,7 +2619,9 @@ export function initSurveyConvert(elements) {
         // Keep a visible in-flight indicator while preview/convert requests are running.
         if (isConvertRunning) {
             convertBtn.disabled = true;
-            convertBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Converting...';
+            convertBtn.innerHTML = isAwaitingConfirmation
+                ? '<i class="fas fa-pause-circle me-2"></i>Awaiting confirmation...'
+                : '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Converting...';
             if (previewBtn) {
                 previewBtn.disabled = true;
             }
@@ -2304,7 +2630,9 @@ export function initSurveyConvert(elements) {
         if (isPreviewRunning) {
             if (previewBtn) {
                 previewBtn.disabled = true;
-                previewBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Running...';
+                previewBtn.innerHTML = isAwaitingConfirmation
+                    ? '<i class="fas fa-pause-circle me-2"></i>Awaiting confirmation...'
+                    : '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Running...';
             }
             convertBtn.disabled = true;
         }
@@ -4149,37 +4477,11 @@ convertError.classList.remove('d-none');
         convertInfo.textContent = '';
         resetConversionUI();
         templateWorkflowGate = null;
-        if (nearMatchRetryState && nearMatchRetryState.mode !== 'convert') {
-            nearMatchRetryState = null;
-        }
-        if (valueOffsetRetryState && valueOffsetRetryState.mode !== 'convert') {
-            valueOffsetRetryState = null;
-        }
-        const nearMatchRetryForConvert = getRetryStateForMode(nearMatchRetryState, 'convert');
-        if (!nearMatchRetryForConvert && nearMatchRetryState && nearMatchRetryState.mode === 'convert') {
-            nearMatchRetryState = null;
-        }
-        const valueOffsetRetryForConvert = getRetryStateForMode(valueOffsetRetryState, 'convert');
-        if (!valueOffsetRetryForConvert && valueOffsetRetryState && valueOffsetRetryState.mode === 'convert') {
-            valueOffsetRetryState = null;
-        }
-        const allowNearItemMatch = Boolean(nearMatchRetryForConvert);
-        const applyValueOffsets = Boolean(valueOffsetRetryForConvert);
-        const selectedNearMatchTasks = allowNearItemMatch
-            ? [...new Set(
-                (Array.isArray(nearMatchRetryForConvert.tasks) ? nearMatchRetryForConvert.tasks : [])
-                    .map((task) => normalizeNearMatchTaskName(task))
-                    .filter(Boolean)
-            )]
-            : [];
-        const selectedValueOffsets = getEffectiveTaskValueOffsets(
-            applyValueOffsets
-                ? valueOffsetRetryForConvert.offsets
-                : null
-        );
+        let selectedNearMatchTasks = getEffectiveNearMatchTasks();
+        let selectedValueOffsets = getEffectiveTaskValueOffsets();
+        let allowNearItemMatch = selectedNearMatchTasks.length > 0;
+        let applyValueOffsets = Object.keys(selectedValueOffsets).length > 0;
         let convertRunOutcome = 'running';
-        const convertRunAbortController = new AbortController();
-        setActiveSurveyRun('convert', convertRunAbortController);
 
         // Hide template results and participant metadata section
         if (templateResultsContainer) {
@@ -4244,14 +4546,25 @@ convertError.classList.remove('d-none');
             return;
         }
 
-        const pausedForVersionsBeforeConvert = await maybePauseAutoRerunForVersionSelection({
+        const convertRunAbortController = new AbortController();
+        setActiveSurveyRun('convert', convertRunAbortController);
+        isConvertRunning = true;
+        updateConvertBtn();
+        startSurveyRunProgress('convert');
+        const preparation = await prepareSurveyWorkflow({
             mode: 'convert',
             nearMatchTasks: selectedNearMatchTasks,
             valueOffsets: selectedValueOffsets,
+            signal: convertRunAbortController.signal,
         });
-        if (pausedForVersionsBeforeConvert) {
+        if (!preparation.ready) {
+            finishPreparationPhase('convert', preparation.outcome);
             return;
         }
+        selectedNearMatchTasks = preparation.nearMatchTasks;
+        selectedValueOffsets = preparation.valueOffsets;
+        allowNearItemMatch = selectedNearMatchTasks.length > 0;
+        applyValueOffsets = Object.keys(selectedValueOffsets).length > 0;
 
         const formData = new FormData();
         appendSurveyInputToFormData(formData);
@@ -4309,6 +4622,7 @@ convertError.classList.remove('d-none');
         formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
         formData.append('separator', getSelectedSeparator(filename));
         formData.append('validate', 'true');  // Request validation
+        formData.append('prepared_workflow', 'true');
         const templateSelections = appendTemplateVersionSelections(formData);
         if (templateSelections.length > 0) {
             appendLog(`Template versions: ${templateSelections.map((entry) => `${entry.task}${entry.session ? `;session=${entry.session}` : ''}${entry.run ? `;run=${entry.run}` : ''}=${entry.version}`).join(', ')}`, 'step');
@@ -4330,11 +4644,7 @@ convertError.classList.remove('d-none');
                 .join(', ');
             appendLog(`Applying confirmed value offset(s): ${offsetSummary}.`, 'warning');
         }
-
-        isConvertRunning = true;
-        updateConvertBtn();
-        startSurveyRunProgress('convert');
-        advanceSurveyRunProgress('convert', 12, 'Uploading file and starting conversion...');
+        advanceSurveyRunProgress('convert', 20, 'Uploading file and starting conversion...');
         appendLog('Uploading file and starting conversion...', 'info');
 
         fetch('/api/survey-convert-validate', {
@@ -4357,100 +4667,9 @@ convertError.classList.remove('d-none');
                 }
                 
                 if (!response.ok) {
-                    if (data.error === 'value_offset_confirmation_required') {
-                        if (isConfiguredOffsetFailureForCurrentSelection(data, selectedValueOffsets)) {
-                            const failedTask = normalizeNearMatchTaskName(data && data.task) || 'unknown task';
-                            const failedOffset = parseNumericOffsetValue(data && data.configured_offset);
-                            convertRunOutcome = 'action_required';
-                            valueOffsetRetryState = null;
-                            confirmedTaskValueOffsets = removeTaskOffset(confirmedTaskValueOffsets, failedTask);
-                            appendLog(
-                                `Configured value offset for task ${failedTask} (${formatSignedOffset(failedOffset)}) did not resolve this dataset. Choose a different offset or fix source/template values.`,
-                                'error'
-                            );
-                            markRunAwaitingUserConfirmation(
-                                'convert',
-                                `Offset ${formatSignedOffset(failedOffset)} for ${failedTask} did not resolve values. Choose a different offset and run again.`
-                            );
-                            convertInfo.textContent = `The configured offset ${formatSignedOffset(failedOffset)} for ${failedTask} did not resolve out-of-range values. Choose a different offset and rerun conversion.`;
-                            convertInfo.classList.remove('d-none');
-                            return null;
-                        }
+                    if (data.error === 'workflow_preparation_stale') {
                         convertRunOutcome = 'action_required';
-                        markRunAwaitingUserConfirmation(
-                            'convert',
-                            'Waiting for value-offset confirmation...'
-                        );
-                        const selection = await promptValueOffsetSelection(data, 'conversion');
-                        if (selection.approved && selection.task) {
-                            const mergedOffsets = mergeTaskValueOffsetMaps(
-                                selectedValueOffsets,
-                                selection.offsets,
-                            );
-                            confirmedTaskValueOffsets = mergeTaskValueOffsetMaps(
-                                confirmedTaskValueOffsets,
-                                selection.offsets,
-                            );
-                            valueOffsetRetryState = buildRetryState('convert', {
-                                offsets: mergedOffsets,
-                            });
-                            appendLog(
-                                `Value offset confirmed for task ${selection.task}: ${formatSignedOffset(selection.offset)}. Re-running conversion with saved offset selections.`,
-                                'warning'
-                            );
-                            const pausedForVersions = await maybePauseAutoRerunForVersionSelection({
-                                mode: 'convert',
-                                nearMatchTasks: selectedNearMatchTasks,
-                                valueOffsets: mergedOffsets,
-                            });
-                            if (pausedForVersions) {
-                                convertRunOutcome = 'paused';
-                                return null;
-                            }
-                            convertRunOutcome = 'retrying';
-                        } else {
-                            convertRunOutcome = 'canceled';
-                            appendLog('Value offset was not confirmed. Conversion was canceled.', 'info');
-                            convertInfo.textContent = 'Import requires a confirmed value offset. Conversion was canceled.';
-                            convertInfo.classList.remove('d-none');
-                        }
-                        return null;
-                    }
-                    if (data.error === 'near_item_match_confirmation_required') {
-                        convertRunOutcome = 'action_required';
-                        markRunAwaitingUserConfirmation(
-                            'convert',
-                            'Waiting for near-match confirmation...'
-                        );
-                        const selection = await promptNearMatchSelection(data, 'conversion');
-                        if (selection.approved && selection.selectedTasks.length > 0) {
-                            const mergedTasks = mergeNearMatchTasks(
-                                selectedNearMatchTasks,
-                                selection.selectedTasks,
-                            );
-                            nearMatchRetryState = buildRetryState('convert', {
-                                tasks: mergedTasks,
-                            });
-                            appendLog(
-                                `Near matches confirmed for ${selection.selectedTasks.length} survey task(s) and ${selection.selectedCandidateCount} item(s). Re-running conversion with saved selections.`,
-                                'warning'
-                            );
-                            const pausedForVersions = await maybePauseAutoRerunForVersionSelection({
-                                mode: 'convert',
-                                nearMatchTasks: mergedTasks,
-                                valueOffsets: selectedValueOffsets,
-                            });
-                            if (pausedForVersions) {
-                                convertRunOutcome = 'paused';
-                                return null;
-                            }
-                            convertRunOutcome = 'retrying';
-                        } else {
-                            convertRunOutcome = 'canceled';
-                            appendLog('Near matches not approved. Conversion remained exact-only and was canceled.', 'info');
-                            convertInfo.textContent = 'Near item matches were detected but not approved. Conversion was canceled.';
-                            convertInfo.classList.remove('d-none');
-                        }
+                        handleLateSetupBlocker('convert', data, selectedValueOffsets);
                         return null;
                     }
                     if (data.error === 'id_column_required') {
@@ -4464,33 +4683,6 @@ convertError.classList.remove('d-none');
                     if (data.error === 'unmatched_groups') {
                         convertRunOutcome = 'action_required';
                         displayUnmatchedGroupsError(data);
-                        return null;
-                    }
-                    if (data.error === 'project_template_completion_required') {
-                        convertRunOutcome = 'action_required';
-                        templateWorkflowGate = data.workflow_gate || {
-                            blocked: true,
-                            message: data.message || 'Project templates must be completed before import can continue.'
-                        };
-                        setTemplateEditorErrorCtaVisible(true);
-
-                        appendLog('Template metadata updates are required before import.', 'warning');
-                        appendLog(`   ${templateWorkflowGate.message}`, 'warning');
-                        if (Array.isArray(templateWorkflowGate.next_steps)) {
-                            templateWorkflowGate.next_steps.forEach(step => appendLog(`   • ${step}`, 'warning'));
-                        }
-                        if (Array.isArray(data.template_issues) && data.template_issues.length) {
-                            data.template_issues.slice(0, 20).forEach(issue => {
-                                const name = (issue.file || '').split('/').pop() || 'template';
-                                appendLog(`   - ${name}: ${issue.message}`, 'warning');
-                            });
-                            if (data.template_issues.length > 20) {
-                                appendLog(`   ... and ${data.template_issues.length - 20} more template item(s)`, 'warning');
-                            }
-                        }
-
-                        convertInfo.innerHTML = '<i class="fas fa-clipboard-check me-2"></i>Some copied survey templates still need project-level metadata. Complete them in Template Editor, then run Preview again.';
-                        convertInfo.classList.remove('d-none');
                         return null;
                     }
                     templateWorkflowGate = null;
@@ -4619,16 +4811,6 @@ convertError.classList.remove('d-none');
             isConvertRunning = false;
             const canceledByUser = activeRunMode === 'convert' && activeRunCancelledByUser;
             clearActiveSurveyRun('convert');
-            const shouldRetryWithNearMatch = Boolean(
-                nearMatchRetryState
-                && nearMatchRetryState.mode === 'convert'
-                && !allowNearItemMatch
-            );
-            const shouldRetryWithValueOffset = Boolean(
-                valueOffsetRetryState
-                && valueOffsetRetryState.mode === 'convert'
-                && !applyValueOffsets
-            );
             const blockedByVersionWizardGate = versionWizardRetryGateMode === 'convert';
             if (convertRunOutcome === 'running') {
                 convertRunOutcome = blockedByVersionWizardGate ? 'paused' : 'canceled';
@@ -4638,11 +4820,6 @@ convertError.classList.remove('d-none');
             }
             finishSurveyRunProgress('convert', convertRunOutcome);
             updateConvertBtn();
-            if (!canceledByUser && !blockedByVersionWizardGate && (shouldRetryWithNearMatch || shouldRetryWithValueOffset)) {
-                setTimeout(() => {
-                    convertBtn.click();
-                }, 0);
-            }
         });
     });
 
@@ -4656,37 +4833,11 @@ convertError.classList.remove('d-none');
         setTemplateEditorErrorCtaVisible(false);
         convertInfo.textContent = '';
         resetConversionUI();
-        if (nearMatchRetryState && nearMatchRetryState.mode !== 'preview') {
-            nearMatchRetryState = null;
-        }
-        if (valueOffsetRetryState && valueOffsetRetryState.mode !== 'preview') {
-            valueOffsetRetryState = null;
-        }
-        const nearMatchRetryForPreview = getRetryStateForMode(nearMatchRetryState, 'preview');
-        if (!nearMatchRetryForPreview && nearMatchRetryState && nearMatchRetryState.mode === 'preview') {
-            nearMatchRetryState = null;
-        }
-        const valueOffsetRetryForPreview = getRetryStateForMode(valueOffsetRetryState, 'preview');
-        if (!valueOffsetRetryForPreview && valueOffsetRetryState && valueOffsetRetryState.mode === 'preview') {
-            valueOffsetRetryState = null;
-        }
-        const allowNearItemMatch = Boolean(nearMatchRetryForPreview);
-        const applyValueOffsets = Boolean(valueOffsetRetryForPreview);
-        const selectedNearMatchTasks = allowNearItemMatch
-            ? [...new Set(
-                (Array.isArray(nearMatchRetryForPreview.tasks) ? nearMatchRetryForPreview.tasks : [])
-                    .map((task) => normalizeNearMatchTaskName(task))
-                    .filter(Boolean)
-            )]
-            : [];
-        const selectedValueOffsets = getEffectiveTaskValueOffsets(
-            applyValueOffsets
-                ? valueOffsetRetryForPreview.offsets
-                : null
-        );
+        let selectedNearMatchTasks = getEffectiveNearMatchTasks();
+        let selectedValueOffsets = getEffectiveTaskValueOffsets();
+        let allowNearItemMatch = selectedNearMatchTasks.length > 0;
+        let applyValueOffsets = Object.keys(selectedValueOffsets).length > 0;
         let previewRunOutcome = 'running';
-        const previewRunAbortController = new AbortController();
-        setActiveSurveyRun('preview', previewRunAbortController);
 
         const filenameRaw = getSelectedSurveyFilename();
         if (!filenameRaw) {
@@ -4721,14 +4872,25 @@ convertError.classList.remove('d-none');
             return;
         }
 
-        const pausedForVersionsBeforePreview = await maybePauseAutoRerunForVersionSelection({
+        const previewRunAbortController = new AbortController();
+        setActiveSurveyRun('preview', previewRunAbortController);
+        isPreviewRunning = true;
+        updateConvertBtn();
+        startSurveyRunProgress('preview');
+        const preparation = await prepareSurveyWorkflow({
             mode: 'preview',
             nearMatchTasks: selectedNearMatchTasks,
             valueOffsets: selectedValueOffsets,
+            signal: previewRunAbortController.signal,
         });
-        if (pausedForVersionsBeforePreview) {
+        if (!preparation.ready) {
+            finishPreparationPhase('preview', preparation.outcome);
             return;
         }
+        selectedNearMatchTasks = preparation.nearMatchTasks;
+        selectedValueOffsets = preparation.valueOffsets;
+        allowNearItemMatch = selectedNearMatchTasks.length > 0;
+        applyValueOffsets = Object.keys(selectedValueOffsets).length > 0;
 
         const formData = new FormData();
         appendSurveyInputToFormData(formData);
@@ -4768,6 +4930,7 @@ convertError.classList.remove('d-none');
 
         // Default: run validation in preview
         formData.append('validate', 'true');
+        formData.append('prepared_workflow', 'true');
         if (allowNearItemMatch) {
             formData.append('allow_near_item_match', 'true');
             if (selectedNearMatchTasks.length > 0) {
@@ -4814,11 +4977,7 @@ convertError.classList.remove('d-none');
             id_map: idMap ? idMap.name : null,
             id_map_size: idMap ? idMap.size : null
         });
-
-        isPreviewRunning = true;
-        updateConvertBtn();
-        startSurveyRunProgress('preview');
-        advanceSurveyRunProgress('preview', 12, 'Uploading file and starting preview...');
+    advanceSurveyRunProgress('preview', 20, 'Uploading file and starting preview...');
 
         fetch('/api/survey-convert-preview', {
             method: 'POST',
@@ -4840,100 +4999,9 @@ convertError.classList.remove('d-none');
             });
 
             if (!response.ok) {
-                if (data.error === 'value_offset_confirmation_required') {
-                    if (isConfiguredOffsetFailureForCurrentSelection(data, selectedValueOffsets)) {
-                        const failedTask = normalizeNearMatchTaskName(data && data.task) || 'unknown task';
-                        const failedOffset = parseNumericOffsetValue(data && data.configured_offset);
-                        previewRunOutcome = 'action_required';
-                        valueOffsetRetryState = null;
-                        confirmedTaskValueOffsets = removeTaskOffset(confirmedTaskValueOffsets, failedTask);
-                        appendLog(
-                            `Configured value offset for task ${failedTask} (${formatSignedOffset(failedOffset)}) did not resolve this dataset. Choose a different offset or fix source/template values.`,
-                            'error'
-                        );
-                        markRunAwaitingUserConfirmation(
-                            'preview',
-                            `Offset ${formatSignedOffset(failedOffset)} for ${failedTask} did not resolve values. Choose a different offset and run again.`
-                        );
-                        convertInfo.textContent = `The configured offset ${formatSignedOffset(failedOffset)} for ${failedTask} did not resolve out-of-range values. Choose a different offset and rerun preview.`;
-                        convertInfo.classList.remove('d-none');
-                        return null;
-                    }
+                if (data.error === 'workflow_preparation_stale') {
                     previewRunOutcome = 'action_required';
-                    markRunAwaitingUserConfirmation(
-                        'preview',
-                        'Waiting for value-offset confirmation...'
-                    );
-                    const selection = await promptValueOffsetSelection(data, 'preview');
-                    if (selection.approved && selection.task) {
-                        const mergedOffsets = mergeTaskValueOffsetMaps(
-                            selectedValueOffsets,
-                            selection.offsets,
-                        );
-                        confirmedTaskValueOffsets = mergeTaskValueOffsetMaps(
-                            confirmedTaskValueOffsets,
-                            selection.offsets,
-                        );
-                        valueOffsetRetryState = buildRetryState('preview', {
-                            offsets: mergedOffsets,
-                        });
-                        appendLog(
-                            `Value offset confirmed for task ${selection.task}: ${formatSignedOffset(selection.offset)}. Re-running preview with saved offset selections.`,
-                            'warning'
-                        );
-                        const pausedForVersions = await maybePauseAutoRerunForVersionSelection({
-                            mode: 'preview',
-                            nearMatchTasks: selectedNearMatchTasks,
-                            valueOffsets: mergedOffsets,
-                        });
-                        if (pausedForVersions) {
-                            previewRunOutcome = 'paused';
-                            return null;
-                        }
-                        previewRunOutcome = 'retrying';
-                    } else {
-                        previewRunOutcome = 'canceled';
-                        appendLog('Value offset was not confirmed. Preview was canceled.', 'info');
-                        convertInfo.textContent = 'Import requires a confirmed value offset. Preview was canceled.';
-                        convertInfo.classList.remove('d-none');
-                    }
-                    return null;
-                }
-                if (data.error === 'near_item_match_confirmation_required') {
-                    previewRunOutcome = 'action_required';
-                    markRunAwaitingUserConfirmation(
-                        'preview',
-                        'Waiting for near-match confirmation...'
-                    );
-                    const selection = await promptNearMatchSelection(data, 'preview');
-                    if (selection.approved && selection.selectedTasks.length > 0) {
-                        const mergedTasks = mergeNearMatchTasks(
-                            selectedNearMatchTasks,
-                            selection.selectedTasks,
-                        );
-                        nearMatchRetryState = buildRetryState('preview', {
-                            tasks: mergedTasks,
-                        });
-                        appendLog(
-                            `Near matches confirmed for ${selection.selectedTasks.length} survey task(s) and ${selection.selectedCandidateCount} item(s). Re-running preview with saved selections.`,
-                            'warning'
-                        );
-                        const pausedForVersions = await maybePauseAutoRerunForVersionSelection({
-                            mode: 'preview',
-                            nearMatchTasks: mergedTasks,
-                            valueOffsets: selectedValueOffsets,
-                        });
-                        if (pausedForVersions) {
-                            previewRunOutcome = 'paused';
-                            return null;
-                        }
-                        previewRunOutcome = 'retrying';
-                    } else {
-                        previewRunOutcome = 'canceled';
-                        appendLog('Near matches not approved. Preview remained exact-only and was canceled.', 'info');
-                        convertInfo.textContent = 'Near item matches were detected but not approved. Preview was canceled.';
-                        convertInfo.classList.remove('d-none');
-                    }
+                    handleLateSetupBlocker('preview', data, selectedValueOffsets);
                     return null;
                 }
                 if (data.error === 'id_column_required') {
@@ -5492,16 +5560,6 @@ convertError.classList.remove('d-none');
             isPreviewRunning = false;
             const canceledByUser = activeRunMode === 'preview' && activeRunCancelledByUser;
             clearActiveSurveyRun('preview');
-            const shouldRetryWithNearMatch = Boolean(
-                nearMatchRetryState
-                && nearMatchRetryState.mode === 'preview'
-                && !allowNearItemMatch
-            );
-            const shouldRetryWithValueOffset = Boolean(
-                valueOffsetRetryState
-                && valueOffsetRetryState.mode === 'preview'
-                && !applyValueOffsets
-            );
             const blockedByVersionWizardGate = versionWizardRetryGateMode === 'preview';
             if (previewRunOutcome === 'running') {
                 previewRunOutcome = blockedByVersionWizardGate ? 'paused' : 'canceled';
@@ -5511,11 +5569,6 @@ convertError.classList.remove('d-none');
             }
             finishSurveyRunProgress('preview', previewRunOutcome);
             updateConvertBtn();
-            if (!canceledByUser && !blockedByVersionWizardGate && (shouldRetryWithNearMatch || shouldRetryWithValueOffset)) {
-                setTimeout(() => {
-                    previewBtn.click();
-                }, 0);
-            }
         });
     });
 }

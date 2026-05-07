@@ -98,6 +98,84 @@ def _resolve_uploaded_or_source_file(*, field_names: tuple[str, ...]):
     return _LocalPathUpload(source_path), None
 
 
+def _collect_project_template_issues(
+    *,
+    validate_project_templates_for_tasks,
+    tasks: list[str],
+    project_path: Path | None,
+    schema_version: str = "stable",
+) -> list[dict[str, str]]:
+    if not project_path:
+        return []
+
+    project_template_issues = validate_project_templates_for_tasks(
+        tasks=tasks,
+        project_path=str(project_path),
+        schema_version=schema_version,
+    )
+
+    template_dir = project_path / "code" / "library" / "survey"
+    if not template_dir.is_dir():
+        return project_template_issues
+
+    all_local_tasks = [
+        path.stem.replace("survey-", "")
+        for path in template_dir.glob("survey-*.json")
+        if path.is_file()
+    ]
+    extra_tasks = [task for task in all_local_tasks if task not in tasks]
+    if not extra_tasks:
+        return project_template_issues
+
+    extra_issues = validate_project_templates_for_tasks(
+        tasks=extra_tasks,
+        project_path=str(project_path),
+        schema_version=schema_version,
+    )
+    return project_template_issues + extra_issues
+
+
+def _is_prepared_workflow_request() -> bool:
+    prepared_raw = (request.form.get("prepared_workflow") or "").strip().lower()
+    return prepared_raw in {"1", "true", "yes", "on"}
+
+
+def _format_workflow_preparation_stale_response(
+    payload: dict[str, object],
+    *,
+    log_messages: list[dict[str, str]] | None = None,
+) -> dict[str, object]:
+    normalized_payload = dict(payload or {})
+    blocking_error = str(normalized_payload.get("error") or "").strip()
+
+    if log_messages is not None:
+        normalized_payload["log"] = log_messages
+
+    if not _is_prepared_workflow_request() or not blocking_error:
+        return normalized_payload
+
+    message = str(normalized_payload.get("message") or "").strip()
+    if not message:
+        message = "Survey setup changed after preparation."
+
+    if (
+        blocking_error
+        in {
+            "near_item_match_confirmation_required",
+            "value_offset_confirmation_required",
+        }
+        and "Run Preview again" not in message
+    ):
+        message = (
+            f"{message} Run Preview again to refresh setup before continuing."
+        )
+
+    normalized_payload["blocking_error"] = blocking_error
+    normalized_payload["error"] = "workflow_preparation_stale"
+    normalized_payload["message"] = message
+    return normalized_payload
+
+
 def handle_api_survey_languages(participant_json_candidates):
     """List available languages for the selected survey template library folder."""
     library_path = (request.args.get("library_path") or "").strip()
@@ -238,11 +316,13 @@ def handle_api_survey_convert_preview(
     resolve_effective_library_path,
     run_survey_with_official_fallback,
     validate_project_templates_for_tasks,
+    build_template_completion_gate,
     format_unmatched_groups_response,
     id_column_not_detected_error_cls,
     unmatched_groups_error_cls,
     survey_value_out_of_bounds_error_cls=None,
     format_value_offset_confirmation_response=None,
+    force_validate_preview: bool = False,
 ):
     """Run a dry-run conversion to preview what will be created without writing files."""
     if (
@@ -372,7 +452,7 @@ def handle_api_survey_convert_preview(
             400,
         )
     validate_raw = (request.form.get("validate") or "").strip().lower()
-    validate_preview = (
+    validate_preview = force_validate_preview or (
         True if validate_raw == "" else validate_raw in {"1", "true", "yes", "on"}
     )
     duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
@@ -486,24 +566,40 @@ def handle_api_survey_convert_preview(
         )
         near_match_applied = bool(getattr(result, "near_match_applied", False))
         if near_match_candidates and not allow_near_item_match:
+            near_match_payload = {
+                "error": "near_item_match_confirmation_required",
+                "message": (
+                    "Exact matching left item-like columns unmapped. "
+                    "Safe near matches are available (minimal separator/zero-padding differences). "
+                    "Confirm to apply them."
+                ),
+                "near_match_candidates": near_match_candidates,
+                "near_match_count": len(near_match_candidates),
+            }
             return (
                 jsonify(
-                    {
-                        "error": "near_item_match_confirmation_required",
-                        "message": (
-                            "Exact matching left item-like columns unmapped. "
-                            "Safe near matches are available (minimal separator/zero-padding differences). "
-                            "Confirm to apply them."
-                        ),
-                        "near_match_candidates": near_match_candidates,
-                        "near_match_count": len(near_match_candidates),
-                    }
+                    _format_workflow_preparation_stale_response(
+                        near_match_payload
+                    )
                 ),
                 409,
             )
 
+        project_template_issues = _collect_project_template_issues(
+            validate_project_templates_for_tasks=validate_project_templates_for_tasks,
+            tasks=list(getattr(result, "tasks_included", []) or []),
+            project_path=project_path,
+            schema_version="stable",
+        )
+
         validation_result = None
         workflow_gate = None
+        if project_template_issues:
+            workflow_gate = build_template_completion_gate(
+                tasks=list(getattr(result, "tasks_included", []) or []),
+                issues=project_template_issues,
+            )
+
         if validate_preview:
             try:
                 validate_root = tmp_dir_path / "rawdata_validate"
@@ -594,70 +690,7 @@ def handle_api_survey_convert_preview(
 
                     validation_result = {"formatted": formatted}
                     validation_result.update(formatted)
-
-                    project_template_issues = validate_project_templates_for_tasks(
-                        tasks=(
-                            result.tasks_included
-                            if result and getattr(result, "tasks_included", None)
-                            else []
-                        ),
-                        project_path=(str(project_path) if project_path else None),
-                        schema_version="stable",
-                    )
-
-                    # Also validate ALL local project templates (not just matched ones)
-                    # so that broken templates are flagged even when their columns are unmatched.
-                    if project_path:
-                        all_local_tasks = [
-                            p.stem.replace("survey-", "")
-                            for p in (
-                                project_path / "code" / "library" / "survey"
-                            ).glob("survey-*.json")
-                            if p.is_file()
-                        ]
-                        extra_tasks = [
-                            t
-                            for t in all_local_tasks
-                            if t not in (result.tasks_included or [])
-                        ]
-                        if extra_tasks:
-                            extra_issues = validate_project_templates_for_tasks(
-                                tasks=extra_tasks,
-                                project_path=str(project_path),
-                                schema_version="stable",
-                            )
-                            project_template_issues = (
-                                project_template_issues + extra_issues
-                            )
                     if project_template_issues:
-                        workflow_gate = {
-                            "blocked": True,
-                            "reason": "project_template_completion_required",
-                            "title": "Template Completion Required",
-                            "message": (
-                                "Official templates were copied to your project library. "
-                                "Some required project-level fields still need to be completed in these templates before importing survey data."
-                            ),
-                            "tasks": sorted(
-                                {
-                                    task
-                                    for task in (
-                                        result.tasks_included
-                                        if result
-                                        and getattr(result, "tasks_included", None)
-                                        else []
-                                    )
-                                    if task
-                                }
-                            ),
-                            "issue_count": len(project_template_issues),
-                            "next_steps": [
-                                "Open Template Editor for the copied survey templates in code/library/survey.",
-                                "Fill project-specific administration fields in Technical (for example AdministrationMethod, SoftwarePlatform, SoftwareVersion) and any remaining required metadata.",
-                                "Run Preview again. Import is unlocked automatically after template validation passes.",
-                            ],
-                        }
-
                         template_group = {
                             "code": "PRISM301-TEMPLATE",
                             "message": "Project templates need completion",
@@ -695,21 +728,19 @@ def handle_api_survey_convert_preview(
                     and issubclass(survey_value_out_of_bounds_error_cls, BaseException)
                     and isinstance(validation_error, survey_value_out_of_bounds_error_cls)
                 ):
+                    payload: dict[str, object]
                     if callable(format_value_offset_confirmation_response):
-                        return (
-                            jsonify(
-                                format_value_offset_confirmation_response(
-                                    validation_error
-                                )
-                            ),
-                            409,
+                        payload = format_value_offset_confirmation_response(
+                            validation_error
                         )
+                    else:
+                        payload = {
+                            "error": "value_offset_confirmation_required",
+                            "message": str(validation_error),
+                        }
                     return (
                         jsonify(
-                            {
-                                "error": "value_offset_confirmation_required",
-                                "message": str(validation_error),
-                            }
+                            _format_workflow_preparation_stale_response(payload)
                         ),
                         409,
                     )
@@ -798,15 +829,16 @@ def handle_api_survey_convert_preview(
             and issubclass(survey_value_out_of_bounds_error_cls, BaseException)
             and isinstance(error, survey_value_out_of_bounds_error_cls)
         ):
+            payload: dict[str, object]
             if callable(format_value_offset_confirmation_response):
-                return jsonify(format_value_offset_confirmation_response(error)), 409
+                payload = format_value_offset_confirmation_response(error)
+            else:
+                payload = {
+                    "error": "value_offset_confirmation_required",
+                    "message": str(error),
+                }
             return (
-                jsonify(
-                    {
-                        "error": "value_offset_confirmation_required",
-                        "message": str(error),
-                    }
-                ),
+                jsonify(_format_workflow_preparation_stale_response(payload)),
                 409,
             )
 

@@ -26,6 +26,7 @@ from .conversion_survey_preview_handlers import (
     _SUPPORTED_SURVEY_INPUT_MESSAGE,
     _SUPPORTED_SURVEY_INPUT_SUFFIXES,
     _SUPPORTED_SURVEY_TABULAR_SUFFIXES,
+    _format_workflow_preparation_stale_response,
     handle_api_survey_convert_preview,
     handle_api_survey_languages,
 )
@@ -647,6 +648,20 @@ def _detect_survey_version_contexts(
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
+def _coerce_flask_response(response_value):
+    """Normalize a Flask view return value to a response object and status code."""
+
+    response = response_value
+    status_code = None
+    if isinstance(response_value, tuple):
+        response = response_value[0]
+        if len(response_value) > 1:
+            status_code = response_value[1]
+    if status_code is None:
+        status_code = getattr(response, "status_code", 200)
+    return response, status_code
+
+
 def _run_survey_with_official_fallback(
     converter_fn,
     *,
@@ -732,6 +747,54 @@ def _run_survey_with_official_fallback(
             else:
                 print(f"[PRISM DEBUG] {msg}")
         raise
+
+
+def api_survey_prepare_workflow():
+    """Run the survey setup phase without starting preview or conversion output."""
+
+    preview_response = handle_api_survey_convert_preview(
+        convert_survey_xlsx_to_prism_dataset=convert_survey_xlsx_to_prism_dataset,
+        convert_survey_lsa_to_prism_dataset=convert_survey_lsa_to_prism_dataset,
+        resolve_effective_library_path=_resolve_effective_library_path,
+        run_survey_with_official_fallback=_run_survey_with_official_fallback,
+        validate_project_templates_for_tasks=_validate_project_templates_for_tasks,
+        build_template_completion_gate=_build_template_completion_gate,
+        format_unmatched_groups_response=_format_unmatched_groups_response,
+        id_column_not_detected_error_cls=IdColumnNotDetectedError,
+        unmatched_groups_error_cls=UnmatchedGroupsError,
+        survey_value_out_of_bounds_error_cls=SurveyValueOutOfBoundsError,
+        format_value_offset_confirmation_response=_format_value_offset_confirmation_response,
+        force_validate_preview=True,
+    )
+
+    response, status_code = _coerce_flask_response(preview_response)
+    if status_code != 200:
+        return preview_response
+
+    payload = response.get_json(silent=True) or {}
+    preview_payload = payload.get("preview") if isinstance(payload.get("preview"), dict) else {}
+    prepared_payload: dict[str, Any] = {
+        "ok": True,
+        "tasks_included": list(payload.get("tasks_included") or []),
+        "detected_sessions": list(payload.get("detected_sessions") or []),
+        "task_runs": payload.get("task_runs") or {},
+        "session_column": payload.get("session_column"),
+        "run_column": payload.get("run_column"),
+        "multivariant_tasks": payload.get("multivariant_tasks") or {},
+        "preview_participants": list(preview_payload.get("participants") or []),
+        "applied_value_offsets": payload.get("applied_value_offsets") or {},
+        "value_offset_application_counts": payload.get("value_offset_application_counts")
+        or {},
+        "requires_template_completion": bool(
+            payload.get("requires_template_completion")
+        ),
+    }
+    if payload.get("workflow_gate") is not None:
+        prepared_payload["workflow_gate"] = payload.get("workflow_gate")
+    if payload.get("near_match_applied"):
+        prepared_payload["near_match_applied"] = True
+
+    return jsonify(prepared_payload)
 
 
 def _validate_project_templates_for_tasks(
@@ -1302,6 +1365,7 @@ def api_survey_convert_preview():
         resolve_effective_library_path=_resolve_effective_library_path,
         run_survey_with_official_fallback=_run_survey_with_official_fallback,
         validate_project_templates_for_tasks=_validate_project_templates_for_tasks,
+        build_template_completion_gate=_build_template_completion_gate,
         format_unmatched_groups_response=_format_unmatched_groups_response,
         id_column_not_detected_error_cls=IdColumnNotDetectedError,
         unmatched_groups_error_cls=UnmatchedGroupsError,
@@ -1555,25 +1619,35 @@ def api_survey_convert():
             return jsonify(_format_unmatched_groups_response(uge)), 409
         except Exception as error:
             if _is_value_offset_confirmation_error(error):
-                return jsonify(_format_value_offset_confirmation_response(error)), 409
+                return (
+                    jsonify(
+                        _format_workflow_preparation_stale_response(
+                            _format_value_offset_confirmation_response(error)
+                        )
+                    ),
+                    409,
+                )
             raise
 
         preflight_near_match_candidates = list(
             getattr(preflight_result, "near_match_candidates", []) or []
         )
         if preflight_near_match_candidates and not allow_near_item_match:
+            near_match_payload = {
+                "error": "near_item_match_confirmation_required",
+                "message": (
+                    "Exact matching left item-like columns unmapped. "
+                    "Safe near matches are available (minimal separator/zero-padding differences). "
+                    "Confirm to apply them."
+                ),
+                "near_match_candidates": preflight_near_match_candidates,
+                "near_match_count": len(preflight_near_match_candidates),
+            }
             return (
                 jsonify(
-                    {
-                        "error": "near_item_match_confirmation_required",
-                        "message": (
-                            "Exact matching left item-like columns unmapped. "
-                            "Safe near matches are available (minimal separator/zero-padding differences). "
-                            "Confirm to apply them."
-                        ),
-                        "near_match_candidates": preflight_near_match_candidates,
-                        "near_match_count": len(preflight_near_match_candidates),
-                    }
+                    _format_workflow_preparation_stale_response(
+                        near_match_payload
+                    )
                 ),
                 409,
             )
@@ -1589,14 +1663,17 @@ def api_survey_convert():
                 tasks=preflight_tasks,
                 issues=project_template_issues,
             )
+            template_gate_payload = {
+                "error": "project_template_completion_required",
+                "message": workflow_gate["message"],
+                "workflow_gate": workflow_gate,
+                "template_issues": project_template_issues,
+            }
             return (
                 jsonify(
-                    {
-                        "error": "project_template_completion_required",
-                        "message": workflow_gate["message"],
-                        "workflow_gate": workflow_gate,
-                        "template_issues": project_template_issues,
-                    }
+                    _format_workflow_preparation_stale_response(
+                        template_gate_payload
+                    )
                 ),
                 409,
             )
@@ -1701,7 +1778,14 @@ def api_survey_convert():
             return jsonify(_format_unmatched_groups_response(uge)), 409
         except Exception as error:
             if _is_value_offset_confirmation_error(error):
-                return jsonify(_format_value_offset_confirmation_response(error)), 409
+                return (
+                    jsonify(
+                        _format_workflow_preparation_stale_response(
+                            _format_value_offset_confirmation_response(error)
+                        )
+                    ),
+                    409,
+                )
             raise
 
         if save_to_project:
@@ -2118,9 +2202,12 @@ def api_survey_convert_validate():
                 add_log("Value offset confirmation is required before conversion can continue.", "warning")
                 return (
                     jsonify(
-                        _format_value_offset_confirmation_response(
-                            error,
-                            log_messages,
+                        _format_workflow_preparation_stale_response(
+                            _format_value_offset_confirmation_response(
+                                error,
+                                log_messages,
+                            ),
+                            log_messages=log_messages,
                         )
                     ),
                     409,
@@ -2132,19 +2219,22 @@ def api_survey_convert_validate():
         )
         if preflight_near_match_candidates and not allow_near_item_match:
             add_log("Near item matches detected and awaiting confirmation", "warning")
+            near_match_payload = {
+                "error": "near_item_match_confirmation_required",
+                "message": (
+                    "Exact matching left item-like columns unmapped. "
+                    "Safe near matches are available (minimal separator/zero-padding differences). "
+                    "Confirm to apply them."
+                ),
+                "near_match_candidates": preflight_near_match_candidates,
+                "near_match_count": len(preflight_near_match_candidates),
+            }
             return (
                 jsonify(
-                    {
-                        "error": "near_item_match_confirmation_required",
-                        "message": (
-                            "Exact matching left item-like columns unmapped. "
-                            "Safe near matches are available (minimal separator/zero-padding differences). "
-                            "Confirm to apply them."
-                        ),
-                        "near_match_candidates": preflight_near_match_candidates,
-                        "near_match_count": len(preflight_near_match_candidates),
-                        "log": log_messages,
-                    }
+                    _format_workflow_preparation_stale_response(
+                        near_match_payload,
+                        log_messages=log_messages,
+                    )
                 ),
                 409,
             )
@@ -2169,15 +2259,18 @@ def api_survey_convert_validate():
                     f"  ... and {len(project_template_issues) - 20} more template issue(s)",
                     "error",
                 )
+            template_gate_payload = {
+                "error": "project_template_completion_required",
+                "message": workflow_gate["message"],
+                "workflow_gate": workflow_gate,
+                "template_issues": project_template_issues,
+            }
             return (
                 jsonify(
-                    {
-                        "error": "project_template_completion_required",
-                        "message": workflow_gate["message"],
-                        "workflow_gate": workflow_gate,
-                        "template_issues": project_template_issues,
-                        "log": log_messages,
-                    }
+                    _format_workflow_preparation_stale_response(
+                        template_gate_payload,
+                        log_messages=log_messages,
+                    )
                 ),
                 409,
             )
@@ -2317,9 +2410,12 @@ def api_survey_convert_validate():
                 )
                 return (
                     jsonify(
-                        _format_value_offset_confirmation_response(
-                            conv_err,
-                            log_messages,
+                        _format_workflow_preparation_stale_response(
+                            _format_value_offset_confirmation_response(
+                                conv_err,
+                                log_messages,
+                            ),
+                            log_messages=log_messages,
                         )
                     ),
                     409,
