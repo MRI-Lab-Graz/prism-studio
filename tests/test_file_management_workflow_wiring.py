@@ -95,6 +95,7 @@ class TestFileManagementWorkflowWiring(unittest.TestCase):
         content = FILE_MANAGEMENT_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn('id="organizeFlatStructure" disabled', content)
+        self.assertIn('id="wideLongIdColumn"', content)
         self.assertIn(
             "Project root keeps PRISM folders; use rawdata or sourcedata for flat copies.",
             content,
@@ -113,6 +114,7 @@ class TestFileManagementWorkflowWiring(unittest.TestCase):
 
         self.assertIn("formData.append('server_file_paths', entry.sourcePath);", content)
         self.assertIn("formData.append('server_file_paths', serverFilePath);", content)
+        self.assertIn("formData.append('id_column', ((wideLongIdColumn && wideLongIdColumn.value) || '').trim());", content)
         self.assertIn("const organizeBrowseServerFileBtn = document.getElementById('organizeBrowseServerFileBtn');", content)
         self.assertIn("const renamerBrowseServerFileBtn = document.getElementById('renamerBrowseServerFileBtn');", content)
 

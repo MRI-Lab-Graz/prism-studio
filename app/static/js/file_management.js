@@ -77,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const wideLongSessionColumn = null; // fixed to 'session'
     const wideLongIndicators = document.getElementById('wideLongIndicators');
     const wideLongRunColumn = null; // fixed to 'run'
+    const wideLongIdColumn = document.getElementById('wideLongIdColumn');
     const wideLongRunIndicators = document.getElementById('wideLongRunIndicators');
     const wideLongDataPreviewBtn = document.getElementById('wideLongDataPreviewBtn');
     const wideLongConvertBtn = document.getElementById('wideLongConvertBtn');
@@ -319,6 +320,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             if (!data.columns || !data.columns.length) return;
 
+            updateWideLongIdColumnOptions(
+                data.columns,
+                String(data.suggested_id_column || '').trim()
+            );
+
             // Column chips
             if (wideLongRawColumns) {
                 wideLongRawColumns.innerHTML = data.columns.map(col =>
@@ -339,8 +345,37 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (wideLongRawPeek) wideLongRawPeek.classList.remove('d-none');
+            updateWideLongPreview();
         } catch (_) {
             // Non-fatal — peek is optional
+        }
+    }
+
+    function updateWideLongIdColumnOptions(columns, suggestedIdColumn = '') {
+        if (!wideLongIdColumn) {
+            return;
+        }
+
+        const columnList = Array.isArray(columns)
+            ? columns.map((column) => String(column || '').trim()).filter(Boolean)
+            : [];
+        const currentValue = String(wideLongIdColumn.value || '').trim();
+        const suggestedValue = String(suggestedIdColumn || '').trim();
+
+        const options = ['<option value="">Auto-detect from file columns</option>'];
+        columnList.forEach((column) => {
+            options.push(`<option value="${escapeHtml(column)}">${escapeHtml(column)}</option>`);
+        });
+        wideLongIdColumn.innerHTML = options.join('');
+
+        if (suggestedValue && columnList.includes(suggestedValue)) {
+            wideLongIdColumn.value = suggestedValue;
+        } else if (currentValue && columnList.includes(currentValue)) {
+            wideLongIdColumn.value = currentValue;
+        } else if (columnList.includes('participant_id')) {
+            wideLongIdColumn.value = 'participant_id';
+        } else {
+            wideLongIdColumn.value = '';
         }
     }
 
@@ -363,6 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!wideLongPreview) return;
 
         const file = (wideLongFile && wideLongFile.files && wideLongFile.files[0]) ? wideLongFile.files[0].name : '<file>';
+        const idColumnRaw = ((wideLongIdColumn && wideLongIdColumn.value) || '').trim();
         const indicatorsRaw = ((wideLongIndicators && wideLongIndicators.value) || '').trim();
         const runIndicatorsRaw = ((wideLongRunIndicators && wideLongRunIndicators.value) || '').trim();
 
@@ -371,6 +407,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const lines = [];
         lines.push(`$ prism wide-to-long --input ${file}`);
+        if (idColumnRaw) {
+            lines.push(`  --id-column ${idColumnRaw}`);
+        } else {
+            lines.push('  --id-column <auto-detect-from-file>');
+        }
         if (indicatorsRaw) {
             lines.push(`  --session-indicators ${indicatorsRaw}`);
         } else {
@@ -513,6 +554,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (wideLongFileName) {
             wideLongFileName.value = 'No file selected';
         }
+        if (wideLongIdColumn) {
+            wideLongIdColumn.innerHTML = '<option value="">Auto-detect from file columns</option>';
+            wideLongIdColumn.value = '';
+        }
         // session column is fixed to 'session'
         if (wideLongIndicators) {
             wideLongIndicators.value = '';
@@ -619,6 +664,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (wideLongIdColumn) {
+        wideLongIdColumn.addEventListener('change', () => {
+            hideWideLongTablePreview();
+            updateWideLongPreview();
+        });
+    }
+
     if (wideLongRunIndicators) {
         wideLongRunIndicators.addEventListener('input', () => {
             hideWideLongTablePreview();
@@ -649,6 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.append('source_file_path', wideLongServerFilePath);
             }
             formData.append('session_column', 'session');
+            formData.append('id_column', ((wideLongIdColumn && wideLongIdColumn.value) || '').trim());
             formData.append('session_indicators', (wideLongIndicators && wideLongIndicators.value || '').trim());
             formData.append('run_column', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim() ? 'run' : '');
             formData.append('run_indicators', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim());
@@ -716,6 +769,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.append('source_file_path', wideLongServerFilePath);
             }
             formData.append('session_column', 'session');
+            formData.append('id_column', ((wideLongIdColumn && wideLongIdColumn.value) || '').trim());
             formData.append('session_indicators', (wideLongIndicators && wideLongIndicators.value || '').trim());
             formData.append('run_column', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim() ? 'run' : '');
             formData.append('run_indicators', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim());

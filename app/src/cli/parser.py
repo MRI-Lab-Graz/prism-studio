@@ -69,6 +69,13 @@ def build_prism_tools_parsers(
         help="Output column name for the session label (default: session)",
     )
     parser_wide_to_long.add_argument(
+        "--id-column",
+        help=(
+            "Column used for early uniqueness checks before conversion. "
+            "If omitted, participant_id is preferred and other IDs require manual selection."
+        ),
+    )
+    parser_wide_to_long.add_argument(
         "--session-indicators",
         default="",
         help="Comma-separated exact indicators to match anywhere in a column name, e.g. T1_,T2_,T3_ or _pre,_post",

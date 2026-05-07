@@ -80,7 +80,9 @@ from src.converters.wide_to_long import (
     detect_wide_session_prefixes,
     inspect_wide_to_long_columns,
     convert_wide_to_long_dataframe,
+    resolve_wide_to_long_id_uniqueness,
 )
+from src.participants_id_selection import resolve_participants_id_selection
 
 try:
     from .tools_prism_app_runner_handlers import (
@@ -652,6 +654,8 @@ def _wide_to_long_json_payload(
     long_df: pd.DataFrame | None = None,
     output_path: Path | None = None,
     error: str | None = None,
+    id_column_checked: str | None = None,
+    id_uniqueness: dict[str, object] | None = None,
 ) -> dict[str, object]:
     matched_columns = list(cast(list, plan.get("matched_columns") or []))
     ambiguous_columns = list(cast(list, plan.get("ambiguous_columns") or []))
@@ -672,6 +676,8 @@ def _wide_to_long_json_payload(
         "rows_shown": 0,
         "columns": [],
         "rows": [],
+        "id_column_checked": id_column_checked,
+        "id_uniqueness": id_uniqueness or {},
     }
 
     if long_df is not None:
@@ -705,6 +711,7 @@ def _run_wide_to_long_backend_command(
     raw_run_indicators: str = "",
     preview_limit: int,
     inspect_only: bool,
+    explicit_id_column: str | None = None,
 ):
     """Execute wide-to-long backend logic in-process and return JSON plus output bytes."""
 
@@ -715,6 +722,19 @@ def _run_wide_to_long_backend_command(
 
         try:
             df = _read_wide_to_long_input(input_path, sheet=0)
+            id_check = resolve_wide_to_long_id_uniqueness(
+                df,
+                source_format=suffix,
+                explicit_id_column=explicit_id_column,
+            )
+            id_column_checked = str(id_check.get("id_column") or "")
+            raw_id_uniqueness = id_check.get("id_uniqueness")
+            id_uniqueness = (
+                cast(dict[str, object], raw_id_uniqueness)
+                if isinstance(raw_id_uniqueness, dict)
+                else {}
+            )
+
             indicators, session_value_map = _parse_combined_indicators(raw_indicators)
             if not indicators:
                 indicators = detect_wide_session_prefixes(list(df.columns), min_count=2)
@@ -770,6 +790,8 @@ def _run_wide_to_long_backend_command(
                 preview_limit=preview_limit,
                 long_df=long_df,
                 output_path=output_path,
+                id_column_checked=id_column_checked,
+                id_uniqueness=id_uniqueness,
             )
             response_payload["filename"] = filename
             output_bytes = output_path.read_bytes() if output_path is not None else None
@@ -833,6 +855,11 @@ def api_file_management_raw_peek():
             return jsonify({"error": f"Could not parse file: {exc}"}), 400
 
     peek_df = df.head(5).fillna("").astype(str)
+    id_resolution = resolve_participants_id_selection(
+        [str(column) for column in df.columns],
+        suffix,
+        explicit_id_column=None,
+    )
     return jsonify(
         {
             "filename": filename,
@@ -840,6 +867,9 @@ def api_file_management_raw_peek():
             "rows": peek_df.to_dict(orient="records"),
             "total_rows": len(df),
             "total_columns": len(df.columns),
+            "suggested_id_column": id_resolution.get("suggested_id_column"),
+            "participant_id_found": bool(id_resolution.get("participant_id_found")),
+            "id_selection_required": bool(id_resolution.get("id_selection_required")),
         }
     )
 
@@ -869,6 +899,7 @@ def api_file_management_wide_to_long_preview():
         raw_indicators=raw_indicators,
         run_column_name=run_col_name,
         raw_run_indicators=raw_run_indicators,
+        explicit_id_column=(request.form.get("id_column") or "").strip() or None,
         preview_limit=preview_limit,
         inspect_only=True,
     )
@@ -919,6 +950,7 @@ def api_file_management_wide_to_long():
         raw_indicators=raw_indicators,
         run_column_name=run_col_name,
         raw_run_indicators=raw_run_indicators,
+        explicit_id_column=(request.form.get("id_column") or "").strip() or None,
         preview_limit=preview_limit,
         inspect_only=False,
     )

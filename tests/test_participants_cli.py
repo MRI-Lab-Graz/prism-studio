@@ -240,3 +240,37 @@ def test_participants_merge_cli_conflicts_csv_exports_full_report(
     assert rows[0]["column"] == "age"
     assert rows[1]["participant_id"] == "sub-002"
     assert rows[1]["column"] == "sex"
+
+
+def test_participants_merge_cli_json_preview_repeated_id_conflict_message(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "participants.tsv").write_text(
+        "participant_id\tage\n" "sub-001\t21\n",
+        encoding="utf-8",
+    )
+
+    source_path = tmp_path / "participants_source.csv"
+    source_path.write_text(
+        "participant_id,group\n" "sub-001,control\n" "sub-001,patient\n",
+        encoding="utf-8",
+    )
+
+    result = _run_prism_tools(
+        "participants",
+        "merge",
+        "--input",
+        str(source_path),
+        "--project",
+        str(tmp_path),
+        "--json",
+    )
+
+    output = (result.stdout or "") + (result.stderr or "")
+    assert result.returncode == 2, output
+
+    payload = json.loads(result.stdout)
+    error_text = str(payload.get("error") or "")
+    assert "non-unique values for the selected ID column" in error_text
+    assert "'participant_id'" in error_text
+    assert "Conflicting selected columns: group." in error_text

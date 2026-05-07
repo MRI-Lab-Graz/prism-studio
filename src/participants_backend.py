@@ -637,13 +637,56 @@ def _build_participants_merge_input(
         message = "; ".join(str(item) for item in messages if str(item).strip())
         raise ValueError(message or "Failed to build participant merge input")
 
+    def _selected_source_id_column() -> str:
+        mapping_entries = mapping.get("mappings") if isinstance(mapping, dict) else None
+        if not isinstance(mapping_entries, dict):
+            return "participant_id"
+
+        for spec in mapping_entries.values():
+            if not isinstance(spec, dict):
+                continue
+            standard_variable = str(spec.get("standard_variable") or "").strip()
+            if standard_variable != "participant_id":
+                continue
+            source_column = str(spec.get("source_column") or "").strip()
+            if source_column:
+                return source_column
+        return "participant_id"
+
+    def _repeated_row_conflict_columns(message_items: list[str]) -> list[str]:
+        prefix = "Multiple rows per participant had differing values;"
+        for item in message_items:
+            text = str(item or "").strip()
+            if prefix not in text:
+                continue
+            if "for:" not in text:
+                return []
+            columns_text = text.split("for:", 1)[1].strip()
+            if not columns_text:
+                return []
+            return [
+                column.strip()
+                for column in columns_text.split(",")
+                if column.strip()
+            ]
+        return []
+
     if any(
         "Multiple rows per participant had differing values" in str(message)
         for message in messages
     ):
+        source_id_column = _selected_source_id_column()
+        conflict_columns = _repeated_row_conflict_columns(messages)
+        conflict_columns_text = (
+            f" Conflicting selected columns: {', '.join(conflict_columns)}."
+            if conflict_columns
+            else ""
+        )
         raise ValueError(
-            "Source participant table contains conflicting repeated participant rows. "
-            "Resolve those conflicts before merging."
+            "Selected input data has non-unique values for the selected ID column "
+            f"'{source_id_column}' (normalized to participant_id)."
+            f"{conflict_columns_text} "
+            "Ensure each participant has one consistent value per selected merge column before merging."
         )
 
     if output_df.empty:
