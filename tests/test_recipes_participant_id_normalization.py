@@ -6,6 +6,7 @@ from src.recipes_surveys import (
     _build_spss_rename_map,
     _build_combined_output_metadata,
     _coerce_value_labeled_columns_for_sav,
+    compute_survey_recipes,
     _load_participants_data,
     _participant_join_key,
     _normalize_participant_id_for_join,
@@ -118,3 +119,64 @@ def test_build_spss_rename_map_handles_collisions() -> None:
     assert rename_map["a.b"] == "a_b_2"
     assert rename_map["20D_item1"] == "v_20D_item1"
     assert "ok_name" not in rename_map
+
+
+def _write_minimal_recipe(path: Path, task_name: str) -> None:
+    path.write_text(
+        (
+            "{\n"
+            '  "Kind": "survey",\n'
+            '  "RecipeVersion": "1.0",\n'
+            f'  "Survey": {{"TaskName": "{task_name}"}},\n'
+            '  "Scores": [\n'
+            '    {"Name": "Total", "Method": "sum", "Items": ["Q1"]}\n'
+            "  ]\n"
+            "}\n"
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_merge_all_keeps_participant_columns_for_all_subjects(tmp_path: Path) -> None:
+    project_root = tmp_path / "project"
+    recipe_dir = tmp_path / "recipes"
+    project_root.mkdir(parents=True)
+    recipe_dir.mkdir(parents=True)
+
+    (project_root / "participants.tsv").write_text(
+        "participant_id\tage\nsub-001\t20\nsub-002\t30\n",
+        encoding="utf-8",
+    )
+
+    subject_a_dir = project_root / "sub-001" / "ses-1" / "survey"
+    subject_a_dir.mkdir(parents=True)
+    (subject_a_dir / "sub-001_ses-1_task-aaa_survey.tsv").write_text(
+        "Q1\n1\n",
+        encoding="utf-8",
+    )
+
+    subject_b_dir = project_root / "sub-002" / "ses-1" / "survey"
+    subject_b_dir.mkdir(parents=True)
+    (subject_b_dir / "sub-002_ses-1_task-bbb_survey.tsv").write_text(
+        "Q1\n2\n",
+        encoding="utf-8",
+    )
+
+    _write_minimal_recipe(recipe_dir / "recipe-aaa.json", "aaa")
+    _write_minimal_recipe(recipe_dir / "recipe-bbb.json", "bbb")
+
+    result = compute_survey_recipes(
+        prism_root=project_root,
+        repo_root=tmp_path,
+        recipe_dir=recipe_dir,
+        modality="survey",
+        out_format="csv",
+        merge_all=True,
+    )
+
+    combined_csv = result.out_root / "combined_survey.csv"
+    assert combined_csv.exists()
+
+    out_df = pd.read_csv(combined_csv, dtype=str).set_index("participant_id")
+    assert out_df.loc["sub-001", "age"] == "20"
+    assert out_df.loc["sub-002", "age"] == "30"

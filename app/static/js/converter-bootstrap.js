@@ -169,6 +169,25 @@ document.addEventListener('DOMContentLoaded', function() {
             selects.filter(Boolean).map((selectEl) => [selectEl, selectEl.value])
         );
 
+        function hasManualCustomValue(selectEl) {
+            if (!selectEl) {
+                return false;
+            }
+            let customInputId = '';
+            if (selectEl.id === 'convertSessionSelect') {
+                customInputId = 'convertSessionCustom';
+            } else if (selectEl.id === 'biometricsSessionSelect') {
+                customInputId = 'biometricsSessionCustom';
+            }
+
+            if (!customInputId) {
+                return false;
+            }
+
+            const customInput = document.getElementById(customInputId);
+            return Boolean(customInput && String(customInput.value || '').trim());
+        }
+
         selects.forEach((sel) => {
             if (!sel) return;
             while (sel.options.length > 1) sel.remove(1);
@@ -200,8 +219,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
 
                     const previousValue = previousSelections.get(sel) || '';
-                    if (previousValue && Array.from(sel.options).some((option) => option.value === previousValue)) {
+                    const restoredPrevious = previousValue
+                        && Array.from(sel.options).some((option) => option.value === previousValue);
+                    if (restoredPrevious) {
                         sel.value = previousValue;
+                        return;
+                    }
+
+                    if (sessions.length === 1 && !hasManualCustomValue(sel)) {
+                        const onlySessionValue = String((sessions[0] && sessions[0].id) || '').replace(/^ses-/, '');
+                        if (onlySessionValue && Array.from(sel.options).some((option) => option.value === onlySessionValue)) {
+                            sel.value = onlySessionValue;
+                        }
                     }
                 });
             })

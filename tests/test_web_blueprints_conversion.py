@@ -3393,6 +3393,60 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         participants_module, "_load_survey_template_item_ids", return_value=set()
     )
     @patch.object(participants_module, "resolve_effective_library_path")
+    def test_merge_preview_pick_latest_session_resolves_to_highest_session(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        (self.project_root / "participants.tsv").write_text(
+            "participant_id\tage\nsub-001\t21\nsub-002\t22\n",
+            encoding="utf-8",
+        )
+
+        response = self.client.post(
+            "/api/participants-merge",
+            data={
+                "separator": "comma",
+                "id_column": "participant_id",
+                "extra_columns": json.dumps(["BMI"]),
+                "session_resolution_decisions": json.dumps(
+                    {"BMI": {"action": "pick_latest_session"}}
+                ),
+                "file": (
+                    io.BytesIO(
+                        b"participant_id,session,BMI\n"
+                        b"sub-001,1,20.1\n"
+                        b"sub-001,2,24.2\n"
+                        b"sub-002,1,30.0\n"
+                        b"sub-002,2,31.0\n"
+                    ),
+                    "participants.csv",
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json() or {}
+        self.assertFalse(payload.get("session_resolution_required"))
+        self.assertTrue(payload.get("can_apply"))
+
+        preview_rows = payload.get("preview_rows") or []
+        bmi_key = "BMI" if preview_rows and "BMI" in preview_rows[0] else "bmi"
+        self.assertEqual(preview_rows[0].get(bmi_key), "24.2")
+        self.assertEqual(preview_rows[1].get(bmi_key), "31.0")
+
+        decisions = payload.get("session_resolution_decisions") or {}
+        self.assertEqual((decisions.get("BMI") or {}).get("action"), "pick_latest_session")
+        self.assertEqual((decisions.get("BMI") or {}).get("session"), "2")
+
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
     def test_merge_apply_updates_participants_and_creates_backups(
         self,
         mock_resolve_library,
