@@ -131,6 +131,27 @@ def test_convert_wide_to_long_dataframe_matches_middle_indicators() -> None:
     assert set(out["session"].unique()) == {"_T1_", "_T2_"}
 
 
+def test_convert_wide_to_long_dataframe_matches_dotted_suffix_indicators() -> None:
+    df = pd.DataFrame(
+        {
+            "participant_id": ["sub-01"],
+            "ADS.1": [1],
+            "ADS.2": [2],
+        }
+    )
+
+    out = convert_wide_to_long_dataframe(
+        df,
+        session_indicators=[".1", ".2"],
+        session_column_name="session",
+        session_value_map={".1": "1", ".2": "2"},
+    )
+
+    assert set(out.columns) == {"participant_id", "ADS", "session"}
+    assert list(out["ADS"]) == [1, 2]
+    assert list(out["session"]) == ["1", "2"]
+
+
 def test_inspect_wide_to_long_columns_reports_ambiguous_repeated_indicator() -> None:
     plan = inspect_wide_to_long_columns(
         ["ADS_1_1 item name ADS_1", "participant_id"],

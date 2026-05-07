@@ -577,6 +577,49 @@
     return safe || 'template';
   }
 
+  function extractTemplateNameValue(value) {
+    if (typeof value === 'string') {
+      return value.trim();
+    }
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return '';
+    }
+    for (const preferredKey of ['en', 'de']) {
+      const preferredValue = value[preferredKey];
+      if (typeof preferredValue === 'string' && preferredValue.trim()) {
+        return preferredValue.trim();
+      }
+    }
+    for (const candidate of Object.values(value)) {
+      if (typeof candidate === 'string' && candidate.trim()) {
+        return candidate.trim();
+      }
+    }
+    return '';
+  }
+
+  function getTemplateNameCandidate(obj, modality) {
+    const metadata = (obj && typeof obj.Metadata === 'object' && obj.Metadata) ? obj.Metadata : {};
+    const study = (obj && typeof obj.Study === 'object' && obj.Study) ? obj.Study : {};
+
+    const candidates = modality === 'biometrics'
+      ? [
+          extractTemplateNameValue(study.BiometricName),
+          extractTemplateNameValue(study.ShortName),
+          extractTemplateNameValue(study.OriginalName),
+          extractTemplateNameValue(metadata.TaskName),
+          extractTemplateNameValue(study.TaskName),
+        ]
+      : [
+          extractTemplateNameValue(metadata.TaskName),
+          extractTemplateNameValue(study.TaskName),
+          extractTemplateNameValue(study.ShortName),
+          extractTemplateNameValue(study.OriginalName),
+        ];
+
+    return candidates.find((candidate) => candidate && candidate.trim()) || 'template';
+  }
+
   function stripScoreAnnotation(text) {
     if (text === undefined || text === null) return '';
     return String(text).replace(/^\s*\{\s*score\s*=\s*-?\d+\s*\}\s*/i, '').trimStart();
@@ -584,11 +627,7 @@
 
   function buildTemplateFilename(obj, modality) {
     const prefix = (modality === 'biometrics') ? 'biometrics-' : 'survey-';
-    const nameCandidate = (
-      (obj && obj.Metadata && obj.Metadata.TaskName) ||
-      (obj && obj.Study && obj.Study.TaskName) ||
-      'template'
-    );
+    const nameCandidate = getTemplateNameCandidate(obj, modality);
     const safeName = sanitizeTaskNameForFilename(nameCandidate);
     return `${prefix}${safeName}.json`;
   }
@@ -599,7 +638,36 @@
     if (!raw || raw.includes('/') || raw.includes('\\')) {
       return fallback;
     }
-    return raw.toLowerCase().endsWith('.json') ? raw : `${raw}.json`;
+
+    const normalized = raw.toLowerCase().endsWith('.json') ? raw : `${raw}.json`;
+    const expectedPrefix = modality === 'biometrics' ? 'biometrics-' : 'survey-';
+    const fallbackStem = fallback.replace(/\.json$/i, '').replace(/^(survey|biometrics)-/i, '');
+    const normalizedStem = normalized.replace(/\.json$/i, '').replace(/^(survey|biometrics)-/i, '');
+    const safeStem = sanitizeTaskNameForFilename(normalizedStem);
+    const finalStem = safeStem === 'template' ? fallbackStem : safeStem;
+
+    return `${expectedPrefix}${finalStem}.json`;
+  }
+
+  function isGenericTemplateFilename(filename, modality) {
+    const raw = String(filename || '').trim();
+    if (!raw || raw.includes('/') || raw.includes('\\')) {
+      return true;
+    }
+    const normalized = normalizeTemplateFilename(raw, modality, {});
+    const stem = normalized.replace(/\.json$/i, '').replace(/^(survey|biometrics)-/i, '');
+    return ['template', 'new', 'imported'].includes(stem);
+  }
+
+  function resolveTemplateFilenameForSave(templateObj, modality) {
+    const derived = buildTemplateFilename(templateObj, modality);
+    if (!currentTemplateFilename) {
+      return derived;
+    }
+    if (isGenericTemplateFilename(currentTemplateFilename, modality)) {
+      return derived;
+    }
+    return normalizeTemplateFilename(currentTemplateFilename, modality, templateObj);
   }
 
   function clearTemplateSelections() {
@@ -4866,8 +4934,7 @@
       return;
     }
 
-    // Keep original filename when editing an existing template to avoid accidental duplicate files.
-    const filename = currentTemplateFilename || buildTemplateFilename(obj, modality);
+    const filename = resolveTemplateFilenameForSave(obj, modality);
 
     const validationPassed = await validateCurrent();
     if (!validationPassed) {
@@ -4928,7 +4995,7 @@
 
     ensureTemplateNormalized();
     
-    const filename = currentTemplateFilename || buildTemplateFilename(obj, modalityEl.value);
+    const filename = resolveTemplateFilenameForSave(obj, modalityEl.value);
 
     const res = await fetchWithApiFallback('/api/template-editor/download', {
       method: 'POST',

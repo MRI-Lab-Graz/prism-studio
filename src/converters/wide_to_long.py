@@ -74,7 +74,9 @@ def detect_wide_session_prefixes(columns: list[str], min_count: int = 3) -> list
 
 
 def _indicator_uses_structural_delimiters(indicator: str) -> bool:
-    return any(char in str(indicator) for char in "_- ")
+    # Any punctuation-delimited token (e.g. ".1", "_pre", "-post") should
+    # be matched as a structural marker rather than requiring word boundaries.
+    return any(char in str(indicator) for char in "_.- ")
 
 
 def _find_indicator_spans(column_name: str, indicator: str) -> list[tuple[int, int]]:

@@ -65,6 +65,30 @@ def test_wide_to_long_preview_handles_stdout_with_non_json_prefix():
     assert body["column_rename_preview"][0]["output_column"] == "ADS01"
 
 
+def test_wide_to_long_preview_accepts_dotted_session_indicators_with_labels():
+    app = _build_app()
+    client = app.test_client()
+
+    csv_bytes = b"participant_id,ADS.1,ADS.2\nsub-01,1,2\n"
+
+    response = client.post(
+        "/api/file-management/wide-to-long-preview",
+        data={
+            "data": (io.BytesIO(csv_bytes), "survey.csv"),
+            "session_column": "session",
+            "session_indicators": ".1:1; .2:2",
+        },
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["can_convert"] is True
+    assert body["column_rename_preview"][0]["output_column"] == "ADS"
+    assert body["rows_total"] == 2
+    assert {row["session"] for row in body["rows"]} == {"1", "2"}
+
+
 def test_wide_to_long_convert_executes_backend_command_and_returns_file():
     app = _build_app()
     client = app.test_client()

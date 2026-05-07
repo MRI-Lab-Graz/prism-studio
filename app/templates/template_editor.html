@@ -17,6 +17,24 @@
     <div class="card feature-card mb-4">
       <div class="card-body p-4">
         <div class="row g-3 mb-4">
+          <div class="col-md-6 col-lg-4">
+            <label class="form-label fw-bold">Modality</label>
+            <select id="modality" class="form-select">
+              <option value="survey" selected>survey</option>
+              <option value="biometrics">biometrics</option>
+            </select>
+          </div>
+          <div class="col-md-6 col-lg-4">
+            <label class="form-label fw-bold">Schema version</label>
+            <select id="schemaVersion" class="form-select">
+              {% for v in schema_versions %}
+              <option value="{{ v }}" {% if v == default_schema_version %}selected{% endif %}>{{ v }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-4">
           <div class="col-md-6">
             <label class="form-label fw-bold"><i class="fas fa-folder text-success me-1"></i>Project Templates</label>
             <select id="projectTemplateSelect" class="form-select">
@@ -37,29 +55,12 @@
           </button>
         </div>
         <div class="form-text mb-1 text-muted">Status badges in the dropdown reflect the saved file on disk. Use Validate to check your current editor state.</div>
-        <div class="form-text mb-4" id="loadTemplateHint">Select a template from the dropdown to load it, or click Create to start a new one.</div>
+        <div class="form-text mb-4" id="loadTemplateHint">Choose modality first (default: survey), then select a template from the dropdown to load it, or click Create to start a new one.</div>
 
         <div class="collapse mb-4" id="templateSourceSection">
           <div class="card border-success-subtle bg-light" id="templateSourceCard">
             <div class="card-body py-3">
             <h6 class="mb-3"><i class="fas fa-file-import text-success me-2"></i>Create or Import Template Source</h6>
-            <div class="row g-3 mb-3">
-              <div class="col-md-6">
-                <label class="form-label fw-bold">Modality</label>
-                <select id="modality" class="form-select">
-                  <option value="survey" selected>survey</option>
-                  <option value="biometrics">biometrics</option>
-                </select>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label fw-bold">Schema version</label>
-                <select id="schemaVersion" class="form-select">
-                  {% for v in schema_versions %}
-                  <option value="{{ v }}" {% if v == default_schema_version %}selected{% endif %}>{{ v }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
             <div class="d-grid gap-2 d-md-flex">
               <button class="btn btn-outline-primary flex-fill" id="btnNew" type="button">
                 <i class="fas fa-file-circle-plus me-1"></i>Create Blank Template
