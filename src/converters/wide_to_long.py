@@ -289,12 +289,14 @@ def summarize_non_unique_id_values(
         non_empty_rows += 1
         counts[text] = counts.get(text, 0) + 1
 
+    duplicate_counts: list[tuple[str, int]] = [
+        (value, count) for value, count in counts.items() if count > 1
+    ]
+    duplicate_counts.sort(key=lambda item: (-item[1], item[0]))
     duplicates = [
         {"id_value": value, "row_count": count}
-        for value, count in counts.items()
-        if count > 1
+        for value, count in duplicate_counts
     ]
-    duplicates.sort(key=lambda item: (-int(item["row_count"]), str(item["id_value"])))
 
     return {
         "id_column": column_name,

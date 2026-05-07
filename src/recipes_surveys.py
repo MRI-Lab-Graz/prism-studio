@@ -1923,7 +1923,10 @@ def _export_recipe_aggregated(
         if not in_header or not in_rows:
             continue
 
-        participant_values = participant_lookup.get(_participant_join_key(sub_id), {})
+        participant_key = _participant_join_key(sub_id)
+        participant_values = (
+            participant_lookup.get(participant_key, {}) if participant_key else {}
+        )
         scoring_rows = _inject_participant_values_into_rows(in_rows, participant_values)
 
         resolved_ver = _resolve_variant_for_path(
@@ -2208,7 +2211,10 @@ def _export_recipe_legacy(
         if not in_header or not in_rows:
             continue
 
-        participant_values = participant_lookup.get(_participant_join_key(sub_id), {})
+        participant_key = _participant_join_key(sub_id)
+        participant_values = (
+            participant_lookup.get(participant_key, {}) if participant_key else {}
+        )
         scoring_rows = _inject_participant_values_into_rows(in_rows, participant_values)
 
         resolved_ver = (
@@ -2514,6 +2520,7 @@ def compute_survey_recipes(
                 import pandas as pd
 
                 rows_accum: list[dict[str, Any]] = []
+                participant_lookup = _build_participant_value_lookup(participants_df)
 
                 for in_path in matching:
                     processed_files += 1
@@ -2531,6 +2538,16 @@ def compute_survey_recipes(
                     if not in_header or not in_rows:
                         continue
 
+                    participant_key = _participant_join_key(sub_id)
+                    participant_values = (
+                        participant_lookup.get(participant_key, {})
+                        if participant_key
+                        else {}
+                    )
+                    scoring_rows = _inject_participant_values_into_rows(
+                        in_rows, participant_values
+                    )
+
                     resolved_ver = _resolve_variant_for_path(
                         output_prism_root,
                         survey_task,
@@ -2539,7 +2556,7 @@ def compute_survey_recipes(
                     )
                     out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
                         recipe,
-                        in_rows,
+                        scoring_rows,
                         include_raw=include_raw,
                         resolved_version=resolved_ver,
                     )

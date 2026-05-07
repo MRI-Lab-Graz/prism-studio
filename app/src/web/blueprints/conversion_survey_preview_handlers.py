@@ -20,6 +20,7 @@ from .conversion_utils import (
     expected_delimiter_for_suffix,
     normalize_separator_option,
     parse_near_item_match_task_allowlist,
+    parse_task_value_offsets,
     parse_template_version_overrides,
     resolve_validation_library_path,
 )
@@ -240,6 +241,8 @@ def handle_api_survey_convert_preview(
     format_unmatched_groups_response,
     id_column_not_detected_error_cls,
     unmatched_groups_error_cls,
+    survey_value_out_of_bounds_error_cls=None,
+    format_value_offset_confirmation_response=None,
 ):
     """Run a dry-run conversion to preview what will be created without writing files."""
     if (
@@ -355,6 +358,10 @@ def handle_api_survey_convert_preview(
         )
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
+    try:
+        task_value_offsets = parse_task_value_offsets(request.form.get("value_offsets"))
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
     if allow_near_item_match and near_match_tasks is not None and not near_match_tasks:
         return (
             jsonify(
@@ -440,6 +447,7 @@ def handle_api_survey_convert_preview(
                 template_version_overrides=effective_template_version_overrides,
                 allow_near_item_match=allow_near_item_match,
                 near_match_tasks=near_match_tasks,
+                task_value_offsets=task_value_offsets,
             )
         elif suffix == ".lsa":
             result = run_survey_with_official_fallback(
@@ -468,6 +476,7 @@ def handle_api_survey_convert_preview(
                 template_version_overrides=template_version_overrides,
                 allow_near_item_match=allow_near_item_match,
                 near_match_tasks=near_match_tasks,
+                task_value_offsets=task_value_offsets,
             )
         else:
             return jsonify({"error": "Unsupported file format"}), 400
@@ -529,6 +538,7 @@ def handle_api_survey_convert_preview(
                         template_version_overrides=effective_template_version_overrides,
                         allow_near_item_match=allow_near_item_match,
                         near_match_tasks=near_match_tasks,
+                        task_value_offsets=task_value_offsets,
                     )
                 elif suffix == ".lsa":
                     run_survey_with_official_fallback(
@@ -559,6 +569,7 @@ def handle_api_survey_convert_preview(
                         template_version_overrides=template_version_overrides,
                         allow_near_item_match=allow_near_item_match,
                         near_match_tasks=near_match_tasks,
+                        task_value_offsets=task_value_offsets,
                     )
 
                 v_res = run_validation(
@@ -679,6 +690,30 @@ def handle_api_survey_convert_preview(
                             project_template_issues
                         )
             except Exception as validation_error:
+                if (
+                    isinstance(survey_value_out_of_bounds_error_cls, type)
+                    and issubclass(survey_value_out_of_bounds_error_cls, BaseException)
+                    and isinstance(validation_error, survey_value_out_of_bounds_error_cls)
+                ):
+                    if callable(format_value_offset_confirmation_response):
+                        return (
+                            jsonify(
+                                format_value_offset_confirmation_response(
+                                    validation_error
+                                )
+                            ),
+                            409,
+                        )
+                    return (
+                        jsonify(
+                            {
+                                "error": "value_offset_confirmation_required",
+                                "message": str(validation_error),
+                            }
+                        ),
+                        409,
+                    )
+
                 validation_result = {"error": str(validation_error)}
 
         response_data = {
@@ -708,6 +743,12 @@ def handle_api_survey_convert_preview(
             response_data["near_match_candidates"] = near_match_candidates
         if near_match_applied:
             response_data["near_match_applied"] = True
+        if getattr(result, "applied_value_offsets", None):
+            response_data["applied_value_offsets"] = result.applied_value_offsets
+        if getattr(result, "value_offset_application_counts", None):
+            response_data["value_offset_application_counts"] = (
+                result.value_offset_application_counts
+            )
 
         if validation_result is not None:
             response_data["validation"] = validation_result
@@ -735,6 +776,12 @@ def handle_api_survey_convert_preview(
             conv_summary["near_match_candidates"] = near_match_candidates
         if near_match_applied:
             conv_summary["near_match_applied"] = True
+        if getattr(result, "applied_value_offsets", None):
+            conv_summary["applied_value_offsets"] = result.applied_value_offsets
+        if getattr(result, "value_offset_application_counts", None):
+            conv_summary["value_offset_application_counts"] = (
+                result.value_offset_application_counts
+            )
 
         if result.template_matches:
             response_data["template_matches"] = result.template_matches
@@ -746,6 +793,23 @@ def handle_api_survey_convert_preview(
         return jsonify(response_data)
 
     except Exception as error:
+        if (
+            isinstance(survey_value_out_of_bounds_error_cls, type)
+            and issubclass(survey_value_out_of_bounds_error_cls, BaseException)
+            and isinstance(error, survey_value_out_of_bounds_error_cls)
+        ):
+            if callable(format_value_offset_confirmation_response):
+                return jsonify(format_value_offset_confirmation_response(error)), 409
+            return (
+                jsonify(
+                    {
+                        "error": "value_offset_confirmation_required",
+                        "message": str(error),
+                    }
+                ),
+                409,
+            )
+
         if (
             isinstance(id_column_not_detected_error_cls, type)
             and issubclass(id_column_not_detected_error_cls, BaseException)
