@@ -346,7 +346,7 @@ def handle_api_survey_convert_preview(
         return jsonify({"error": _SUPPORTED_SURVEY_INPUT_MESSAGE}), 400
 
     alias_filename = None
-    if alias_upload and getattr(alias_upload, "filename", ""):
+    if alias_upload is not None and alias_upload.filename:
         alias_filename = secure_filename(alias_upload.filename)
         alias_suffix = Path(alias_filename).suffix.lower()
         if alias_suffix and alias_suffix not in {".tsv", ".txt"}:
@@ -356,7 +356,7 @@ def handle_api_survey_convert_preview(
             )
 
     id_map_filename = None
-    if id_map_upload and getattr(id_map_upload, "filename", ""):
+    if id_map_upload is not None and id_map_upload.filename:
         id_map_filename = secure_filename(id_map_upload.filename)
         id_map_suffix = Path(id_map_filename).suffix.lower()
         if id_map_suffix and id_map_suffix not in {".tsv", ".txt", ".csv"}:
@@ -471,12 +471,12 @@ def handle_api_survey_convert_preview(
         uploaded_file.save(str(input_path))
 
         alias_path = None
-        if alias_filename:
+        if alias_filename and alias_upload is not None:
             alias_path = tmp_dir_path / alias_filename
             alias_upload.save(str(alias_path))
 
         id_map_path = None
-        if id_map_filename:
+        if id_map_filename and id_map_upload is not None:
             id_map_path = tmp_dir_path / id_map_filename
             id_map_upload.save(str(id_map_path))
 
@@ -728,19 +728,21 @@ def handle_api_survey_convert_preview(
                     and issubclass(survey_value_out_of_bounds_error_cls, BaseException)
                     and isinstance(validation_error, survey_value_out_of_bounds_error_cls)
                 ):
-                    payload: dict[str, object]
+                    validation_confirmation_payload: dict[str, object]
                     if callable(format_value_offset_confirmation_response):
-                        payload = format_value_offset_confirmation_response(
+                        validation_confirmation_payload = format_value_offset_confirmation_response(
                             validation_error
                         )
                     else:
-                        payload = {
+                        validation_confirmation_payload = {
                             "error": "value_offset_confirmation_required",
                             "message": str(validation_error),
                         }
                     return (
                         jsonify(
-                            _format_workflow_preparation_stale_response(payload)
+                            _format_workflow_preparation_stale_response(
+                                validation_confirmation_payload
+                            )
                         ),
                         409,
                     )
@@ -829,16 +831,22 @@ def handle_api_survey_convert_preview(
             and issubclass(survey_value_out_of_bounds_error_cls, BaseException)
             and isinstance(error, survey_value_out_of_bounds_error_cls)
         ):
-            payload: dict[str, object]
+            error_confirmation_payload: dict[str, object]
             if callable(format_value_offset_confirmation_response):
-                payload = format_value_offset_confirmation_response(error)
+                error_confirmation_payload = format_value_offset_confirmation_response(
+                    error
+                )
             else:
-                payload = {
+                error_confirmation_payload = {
                     "error": "value_offset_confirmation_required",
                     "message": str(error),
                 }
             return (
-                jsonify(_format_workflow_preparation_stale_response(payload)),
+                jsonify(
+                    _format_workflow_preparation_stale_response(
+                        error_confirmation_payload
+                    )
+                ),
                 409,
             )
 
