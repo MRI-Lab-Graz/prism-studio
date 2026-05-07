@@ -77,6 +77,32 @@ def _parse_template_version_args(values) -> list[dict[str, object]]:
     return overrides
 
 
+def _parse_task_value_offset_args(values) -> dict[str, float]:
+    offsets: dict[str, float] = {}
+    for raw_value in values or []:
+        text = str(raw_value or "").strip()
+        if not text:
+            continue
+        if "=" not in text:
+            raise ValueError(
+                "Invalid --value-offset value. Use TASK=OFFSET (for example pss=-1)."
+            )
+        raw_task, raw_offset = text.split("=", 1)
+        task = str(raw_task or "").strip().lower()
+        offset_text = str(raw_offset or "").strip()
+        if not task or not offset_text:
+            raise ValueError(
+                "Invalid --value-offset value. Use TASK=OFFSET (for example pss=-1)."
+            )
+        try:
+            offsets[task] = float(offset_text)
+        except ValueError as exc:
+            raise ValueError(
+                f"Invalid --value-offset numeric value for task '{task}': {offset_text}"
+            ) from exc
+    return offsets
+
+
 def cmd_survey_import_excel(args):
     """Import survey library from Excel."""
     excel_path = Path(args.excel).resolve()
@@ -208,6 +234,9 @@ def cmd_survey_convert(args):
         template_version_overrides = _parse_template_version_args(
             getattr(args, "template_versions", None)
         )
+        task_value_offsets = _parse_task_value_offset_args(
+            getattr(args, "value_offsets", None)
+        )
 
         project_path: Path | None = None
         if getattr(args, "project", None):
@@ -232,6 +261,7 @@ def cmd_survey_convert(args):
             skip_participants=True,
             project_path=project_path,
             template_version_overrides=template_version_overrides,
+            task_value_offsets=task_value_offsets,
         )
     except Exception as e:
         print(f"Error: {e}")
@@ -272,6 +302,13 @@ def cmd_survey_convert(args):
                         item.get("run") or 0,
                     ),
                 )
+            )
+        )
+    if task_value_offsets:
+        print(
+            "Value offsets: "
+            + ", ".join(
+                f"{task}={offset:g}" for task, offset in sorted(task_value_offsets.items())
             )
         )
     print(f"ID col:  {result.id_column}")

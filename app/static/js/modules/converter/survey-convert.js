@@ -25,6 +25,11 @@ export function initSurveyConvert(elements) {
         convertLanguage,
         convertError,
         convertInfo,
+        surveyRunProgressContainer,
+        surveyRunProgressBar,
+        surveyRunProgressLabel,
+        surveyRunProgressPercent,
+        surveyRunCancelBtn,
         convertIdColumnGroup,
         convertIdColumn,
         convertTemplateExportGroup,
@@ -77,6 +82,19 @@ export function initSurveyConvert(elements) {
     let convertServerFilePath = '';
     let lastDetectedSurveyFingerprint = '';
     let nearMatchRetryState = null;
+    let valueOffsetRetryState = null;
+    let confirmedTaskValueOffsets = {};
+    let versionWizardRetryGateMode = null;
+    let isConvertRunning = false;
+    let isPreviewRunning = false;
+    let runProgressMode = null;
+    let runProgressPercent = 0;
+    let runProgressLabel = '';
+    let runProgressTimer = null;
+    let runProgressHideTimer = null;
+    let activeRunAbortController = null;
+    let activeRunMode = null;
+    let activeRunCancelledByUser = false;
 
     function getSelectedSurveyFile() {
         return (convertExcelFile && convertExcelFile.files && convertExcelFile.files[0])
@@ -129,6 +147,7 @@ export function initSurveyConvert(elements) {
 
     function resetSurveyRefreshFingerprint() {
         lastDetectedSurveyFingerprint = '';
+        clearRetryResolutionState();
     }
 
     async function refreshSurveyColumnsBeforeRun() {
@@ -452,6 +471,641 @@ export function initSurveyConvert(elements) {
 
             updateSelectionUi();
             modal.show();
+        });
+    }
+
+    function parseNumericOffsetValue(rawValue) {
+        if (rawValue === null || rawValue === undefined) {
+            return null;
+        }
+        const normalized = String(rawValue).trim().replace(',', '.');
+        if (!normalized) {
+            return null;
+        }
+        const parsed = Number(normalized);
+        if (!Number.isFinite(parsed)) {
+            return null;
+        }
+        return parsed;
+    }
+
+    function formatSignedOffset(offset) {
+        const numeric = Number(offset);
+        if (!Number.isFinite(numeric)) {
+            return String(offset);
+        }
+        const rounded = Number.isInteger(numeric)
+            ? String(numeric)
+            : numeric.toFixed(6).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+        return `${numeric >= 0 ? '+' : ''}${rounded}`;
+    }
+
+    function normalizeTaskValueOffsets(offsetMap) {
+        if (!offsetMap || typeof offsetMap !== 'object') {
+            return {};
+        }
+        const normalized = {};
+        Object.entries(offsetMap).forEach(([rawTask, rawOffset]) => {
+            const task = normalizeNearMatchTaskName(rawTask);
+            const parsedOffset = parseNumericOffsetValue(rawOffset);
+            if (!task || parsedOffset === null) {
+                return;
+            }
+            normalized[task] = parsedOffset;
+        });
+        return normalized;
+    }
+
+    function clearRetryResolutionState() {
+        nearMatchRetryState = null;
+        valueOffsetRetryState = null;
+        confirmedTaskValueOffsets = {};
+    }
+
+    function isAbortError(error) {
+        if (!error) {
+            return false;
+        }
+        const errorName = String(error.name || '').toLowerCase();
+        if (errorName === 'aborterror') {
+            return true;
+        }
+        const errorMessage = String(error.message || '').toLowerCase();
+        return errorMessage.includes('aborted') || errorMessage.includes('aborterror');
+    }
+
+    function setActiveSurveyRun(mode, controller) {
+        activeRunMode = mode;
+        activeRunAbortController = controller;
+        activeRunCancelledByUser = false;
+    }
+
+    function clearActiveSurveyRun(mode = null) {
+        if (mode && activeRunMode && activeRunMode !== mode) {
+            return;
+        }
+        activeRunMode = null;
+        activeRunAbortController = null;
+        activeRunCancelledByUser = false;
+    }
+
+    function cancelActiveSurveyRun() {
+        if (!activeRunAbortController) {
+            return false;
+        }
+        activeRunCancelledByUser = true;
+        activeRunAbortController.abort();
+        return true;
+    }
+
+    function stopSurveyRunProgressTimer() {
+        if (runProgressTimer !== null) {
+            window.clearInterval(runProgressTimer);
+            runProgressTimer = null;
+        }
+    }
+
+    function clearSurveyRunProgressHideTimer() {
+        if (runProgressHideTimer !== null) {
+            window.clearTimeout(runProgressHideTimer);
+            runProgressHideTimer = null;
+        }
+    }
+
+    function getSurveyRunModeLabel(mode) {
+        return mode === 'convert' ? 'conversion' : 'preview';
+    }
+
+    function setSurveyRunProgressAppearance(variant = 'info', animated = true) {
+        if (!surveyRunProgressContainer || !surveyRunProgressBar) {
+            return;
+        }
+
+        const normalizedVariant = variant === 'danger' ? 'danger' : (
+            variant === 'success' ? 'success' : (
+                variant === 'warning' ? 'warning' : 'info'
+            )
+        );
+
+        surveyRunProgressContainer.classList.remove('alert-info', 'alert-success', 'alert-warning', 'alert-danger');
+        surveyRunProgressContainer.classList.add(`alert-${normalizedVariant}`);
+
+        surveyRunProgressBar.classList.remove('bg-info', 'bg-success', 'bg-warning', 'bg-danger');
+        surveyRunProgressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+        surveyRunProgressBar.classList.add(`bg-${normalizedVariant}`);
+
+        if (animated) {
+            surveyRunProgressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+        }
+    }
+
+    function renderSurveyRunProgress() {
+        if (!surveyRunProgressContainer || !surveyRunProgressBar) {
+            return;
+        }
+
+        const rounded = Math.max(0, Math.min(100, Math.round(runProgressPercent)));
+        surveyRunProgressBar.style.width = `${rounded}%`;
+        surveyRunProgressBar.setAttribute('aria-valuenow', String(rounded));
+
+        if (surveyRunProgressPercent) {
+            surveyRunProgressPercent.textContent = `${rounded}%`;
+        }
+        if (surveyRunProgressLabel) {
+            surveyRunProgressLabel.textContent = runProgressLabel || 'Running...';
+        }
+    }
+
+    function hideSurveyRunProgress() {
+        stopSurveyRunProgressTimer();
+        clearSurveyRunProgressHideTimer();
+        runProgressMode = null;
+        runProgressPercent = 0;
+        runProgressLabel = '';
+
+        if (!surveyRunProgressContainer || !surveyRunProgressBar) {
+            return;
+        }
+
+        surveyRunProgressContainer.classList.add('d-none');
+        surveyRunProgressBar.style.width = '0%';
+        surveyRunProgressBar.setAttribute('aria-valuenow', '0');
+        if (surveyRunProgressPercent) {
+            surveyRunProgressPercent.textContent = '0%';
+        }
+        if (surveyRunProgressLabel) {
+            surveyRunProgressLabel.textContent = 'Preparing preview...';
+        }
+    }
+
+    function setSurveyRunProgress({
+        mode,
+        percent,
+        label,
+        variant = 'info',
+        animated = true,
+    }) {
+        if (!surveyRunProgressContainer || !surveyRunProgressBar) {
+            return;
+        }
+
+        clearSurveyRunProgressHideTimer();
+        surveyRunProgressContainer.classList.remove('d-none');
+
+        if (mode) {
+            runProgressMode = mode;
+        }
+
+        if (Number.isFinite(Number(percent))) {
+            runProgressPercent = Math.max(0, Math.min(100, Number(percent)));
+        }
+
+        if (typeof label === 'string' && label.trim()) {
+            runProgressLabel = label.trim();
+        }
+
+        setSurveyRunProgressAppearance(variant, animated);
+        renderSurveyRunProgress();
+    }
+
+    function startSurveyRunProgress(mode) {
+        if (!surveyRunProgressContainer || !surveyRunProgressBar) {
+            return;
+        }
+
+        stopSurveyRunProgressTimer();
+
+        const modeLabel = getSurveyRunModeLabel(mode);
+        setSurveyRunProgress({
+            mode,
+            percent: 8,
+            label: `Preparing ${modeLabel}...`,
+            variant: 'info',
+            animated: true,
+        });
+
+        runProgressTimer = window.setInterval(() => {
+            if (runProgressMode !== mode) {
+                stopSurveyRunProgressTimer();
+                return;
+            }
+
+            const cap = mode === 'convert' ? 94 : 90;
+            const increment = runProgressPercent < 25
+                ? 7
+                : (runProgressPercent < 50 ? 4 : (runProgressPercent < 75 ? 2 : 1));
+
+            runProgressPercent = Math.min(cap, runProgressPercent + increment);
+            renderSurveyRunProgress();
+        }, 800);
+    }
+
+    function advanceSurveyRunProgress(mode, percent, label) {
+        if (!surveyRunProgressContainer || !surveyRunProgressBar) {
+            return;
+        }
+        if (runProgressMode !== mode) {
+            return;
+        }
+
+        const nextPercent = Number(percent);
+        if (Number.isFinite(nextPercent)) {
+            runProgressPercent = Math.max(runProgressPercent, Math.min(100, nextPercent));
+        }
+        if (typeof label === 'string' && label.trim()) {
+            runProgressLabel = label.trim();
+        }
+        setSurveyRunProgressAppearance('info', true);
+        renderSurveyRunProgress();
+    }
+
+    function finishSurveyRunProgress(mode, outcome) {
+        if (!surveyRunProgressContainer || !surveyRunProgressBar) {
+            return;
+        }
+
+        stopSurveyRunProgressTimer();
+        const modeTitle = mode === 'convert' ? 'Conversion' : 'Preview';
+
+        if (outcome === 'success') {
+            setSurveyRunProgress({
+                mode,
+                percent: 100,
+                label: `${modeTitle} completed.`,
+                variant: 'success',
+                animated: false,
+            });
+            runProgressHideTimer = window.setTimeout(() => {
+                hideSurveyRunProgress();
+            }, 1800);
+            return;
+        }
+
+        if (outcome === 'paused') {
+            setSurveyRunProgress({
+                mode,
+                percent: 100,
+                label: `${modeTitle} paused. Select a questionnaire version, then run again.`,
+                variant: 'warning',
+                animated: false,
+            });
+            return;
+        }
+
+        if (outcome === 'action_required') {
+            setSurveyRunProgress({
+                mode,
+                percent: 100,
+                label: `${modeTitle} stopped. Resolve required issues and run again.`,
+                variant: 'warning',
+                animated: false,
+            });
+            return;
+        }
+
+        if (outcome === 'error') {
+            setSurveyRunProgress({
+                mode,
+                percent: 100,
+                label: `${modeTitle} failed.`,
+                variant: 'danger',
+                animated: false,
+            });
+            return;
+        }
+
+        if (outcome === 'canceled') {
+            setSurveyRunProgress({
+                mode,
+                percent: 100,
+                label: `${modeTitle} canceled.`,
+                variant: 'warning',
+                animated: false,
+            });
+            runProgressHideTimer = window.setTimeout(() => {
+                hideSurveyRunProgress();
+            }, 1800);
+            return;
+        }
+
+        if (outcome === 'retrying') {
+            hideSurveyRunProgress();
+            return;
+        }
+
+        hideSurveyRunProgress();
+    }
+
+    function markRunAwaitingUserConfirmation(mode, label) {
+        if (mode === 'convert') {
+            isConvertRunning = false;
+        } else {
+            isPreviewRunning = false;
+        }
+        updateConvertBtn();
+        setSurveyRunProgress({
+            mode,
+            percent: 100,
+            label,
+            variant: 'warning',
+            animated: false,
+        });
+    }
+
+    function getRetryStateForMode(state, mode) {
+        if (!state || state.mode !== mode) {
+            return null;
+        }
+        const currentFingerprint = getSelectedSurveyFingerprint();
+        if (!currentFingerprint) {
+            return null;
+        }
+        const stateFingerprint = String(state.fingerprint || '').trim();
+        if (stateFingerprint && stateFingerprint !== currentFingerprint) {
+            return null;
+        }
+        return state;
+    }
+
+    function buildRetryState(mode, payload) {
+        return {
+            mode,
+            fingerprint: getSelectedSurveyFingerprint(),
+            ...payload,
+        };
+    }
+
+    function mergeNearMatchTasks(existingTasks, nextTasks) {
+        return [...new Set(
+            ([])
+                .concat(Array.isArray(existingTasks) ? existingTasks : [])
+                .concat(Array.isArray(nextTasks) ? nextTasks : [])
+                .map((task) => normalizeNearMatchTaskName(task))
+                .filter(Boolean)
+        )];
+    }
+
+    function mergeTaskValueOffsetMaps(existingOffsets, nextOffsets) {
+        return normalizeTaskValueOffsets({
+            ...normalizeTaskValueOffsets(existingOffsets),
+            ...normalizeTaskValueOffsets(nextOffsets),
+        });
+    }
+
+    function offsetsAreEqual(left, right, tolerance = 1e-9) {
+        const leftValue = Number(left);
+        const rightValue = Number(right);
+        if (!Number.isFinite(leftValue) || !Number.isFinite(rightValue)) {
+            return false;
+        }
+        return Math.abs(leftValue - rightValue) <= tolerance;
+    }
+
+    function getAppliedTaskOffset(offsetMap, taskName) {
+        const normalizedOffsets = normalizeTaskValueOffsets(offsetMap);
+        const normalizedTask = normalizeNearMatchTaskName(taskName);
+        if (normalizedTask && Object.prototype.hasOwnProperty.call(normalizedOffsets, normalizedTask)) {
+            return normalizedOffsets[normalizedTask];
+        }
+        if (Object.prototype.hasOwnProperty.call(normalizedOffsets, '*')) {
+            return normalizedOffsets['*'];
+        }
+        return null;
+    }
+
+    function isConfiguredOffsetFailureForCurrentSelection(payload, selectedOffsets) {
+        const configuredOffset = parseNumericOffsetValue(payload && payload.configured_offset);
+        if (configuredOffset === null) {
+            return false;
+        }
+        const task = normalizeNearMatchTaskName(payload && payload.task);
+        const appliedOffset = getAppliedTaskOffset(selectedOffsets, task);
+        if (appliedOffset === null) {
+            return false;
+        }
+        return offsetsAreEqual(configuredOffset, appliedOffset);
+    }
+
+    function removeTaskOffset(offsetMap, taskName) {
+        const normalized = normalizeTaskValueOffsets(offsetMap);
+        const task = normalizeNearMatchTaskName(taskName);
+        if (task && Object.prototype.hasOwnProperty.call(normalized, task)) {
+            delete normalized[task];
+        }
+        return normalized;
+    }
+
+    function getEffectiveTaskValueOffsets(retryOffsets) {
+        return mergeTaskValueOffsetMaps(
+            confirmedTaskValueOffsets,
+            normalizeTaskValueOffsets(retryOffsets)
+        );
+    }
+
+    function hasCompleteVersionWizardSelections() {
+        const multivariantTasks = (
+            versionWizardState
+            && versionWizardState.multivariantTasks
+            && typeof versionWizardState.multivariantTasks === 'object'
+        )
+            ? versionWizardState.multivariantTasks
+            : {};
+
+        const entries = Object.entries(multivariantTasks).filter(([, info]) => {
+            return Array.isArray(info?.versions) && info.versions.length > 1;
+        });
+        if (entries.length === 0) {
+            return true;
+        }
+
+        const contexts = deriveDetectedContexts(
+            versionWizardState?.taskRuns || {},
+            versionWizardState?.previewParticipants || [],
+            versionWizardState?.detectedSessions || []
+        );
+        const effectiveContexts = Array.isArray(contexts) && contexts.length > 0
+            ? contexts
+            : [{ session: null, run: null }];
+
+        return entries.every(([task, info]) => {
+            const allowedVersions = info.versions
+                .map((value) => String(value || '').trim())
+                .filter(Boolean);
+
+            if (allowedVersions.length <= 1) {
+                return true;
+            }
+
+            return effectiveContexts.every((context) => {
+                const selectionKey = buildVersionSelectionKey({
+                    task,
+                    session: context && Object.prototype.hasOwnProperty.call(context, 'session')
+                        ? context.session
+                        : null,
+                    run: context && Object.prototype.hasOwnProperty.call(context, 'run')
+                        ? context.run
+                        : null,
+                });
+                const selectedVersion = String(selectedTemplateVersions[selectionKey] || '').trim();
+                return Boolean(selectedVersion && allowedVersions.includes(selectedVersion));
+            });
+        });
+    }
+
+    async function maybePauseAutoRerunForVersionSelection({
+        mode,
+        nearMatchTasks,
+        valueOffsets,
+    }) {
+        const context = await syncVersionWizardContext({
+            showErrors: false,
+            allowNearItemMatch: Array.isArray(nearMatchTasks) && nearMatchTasks.length > 0,
+            nearMatchTasks,
+            taskValueOffsets: valueOffsets,
+        });
+        if (!context || !context.hasMultivariant) {
+            return false;
+        }
+
+        if (hasCompleteVersionWizardSelections()) {
+            return false;
+        }
+
+        versionWizardRetryGateMode = mode;
+        const modeLabel = mode === 'convert' ? 'conversion' : 'preview';
+        appendLog(
+            `Multi-version questionnaire options detected. Review the version selector and run ${modeLabel} again.`,
+            'info'
+        );
+        convertInfo.textContent = `Multi-version options are available. Review the selector below, then run ${modeLabel} again.`;
+        convertInfo.classList.remove('d-none');
+        return true;
+    }
+
+    function collectSuggestedValueOffsets(payload) {
+        if (!Array.isArray(payload && payload.suggested_offsets)) {
+            return [];
+        }
+        const deduped = [];
+        const seen = new Set();
+        payload.suggested_offsets.forEach((entry) => {
+            const parsed = parseNumericOffsetValue(entry);
+            if (parsed === null) {
+                return;
+            }
+            const key = parsed.toFixed(6);
+            if (seen.has(key)) {
+                return;
+            }
+            seen.add(key);
+            deduped.push(parsed);
+        });
+        return deduped;
+    }
+
+    function promptValueOffsetSelection(payload, actionLabel) {
+        const task = normalizeNearMatchTaskName(payload && payload.task) || '*';
+        const itemId = String(payload && payload.item_id || '').trim();
+        const rawValue = payload && payload.raw_value;
+        const offsetEvidence = (
+            payload
+            && payload.offset_evidence
+            && typeof payload.offset_evidence === 'object'
+        ) ? payload.offset_evidence : null;
+        const evidenceSummary = offsetEvidence && typeof offsetEvidence.summary_message === 'string'
+            ? offsetEvidence.summary_message.trim()
+            : '';
+        const evidenceClassification = offsetEvidence && typeof offsetEvidence.classification === 'string'
+            ? offsetEvidence.classification.trim()
+            : '';
+        const sampledCount = Number(offsetEvidence && offsetEvidence.sampled_numeric_values);
+        const outOfRangeCount = Number(offsetEvidence && offsetEvidence.invalid_without_offset);
+        const outOfRangePercent = Number(offsetEvidence && offsetEvidence.invalid_without_offset_percent);
+        const correctedCount = Number(offsetEvidence && offsetEvidence.corrected_by_best_offset);
+        const correctedPercent = Number(offsetEvidence && offsetEvidence.corrected_by_best_offset_percent);
+        const remainingCount = Number(offsetEvidence && offsetEvidence.invalid_with_best_offset);
+        const remainingPercent = Number(offsetEvidence && offsetEvidence.invalid_with_best_offset_percent);
+        const hasOverviewMetrics = Number.isFinite(sampledCount)
+            && Number.isFinite(outOfRangeCount)
+            && sampledCount > 0
+            && outOfRangeCount >= 0;
+        const hasOffsetImpactMetrics = Number.isFinite(correctedCount)
+            && Number.isFinite(correctedPercent)
+            && Number.isFinite(remainingCount)
+            && Number.isFinite(remainingPercent)
+            && outOfRangeCount > 0;
+        const likelyTyposByCount = hasOverviewMetrics && outOfRangeCount > 0 && outOfRangeCount <= 2;
+        const expectedLevels = Array.isArray(payload && payload.expected_levels)
+            ? payload.expected_levels.map((entry) => String(entry)).filter(Boolean)
+            : [];
+        const suggestedOffsets = collectSuggestedValueOffsets(payload);
+        const configuredOffset = parseNumericOffsetValue(payload && payload.configured_offset);
+        const defaultOffset = configuredOffset !== null
+            ? configuredOffset
+            : (suggestedOffsets.length > 0 ? suggestedOffsets[0] : null);
+
+        const messageLines = [
+            `A survey response is outside template levels during ${String(actionLabel || 'import')}.`,
+            `Task: ${task}`,
+            itemId ? `Item: ${itemId}` : null,
+            rawValue !== undefined ? `Observed value: ${String(rawValue)}` : null,
+            expectedLevels.length > 0
+                ? `Expected levels: ${expectedLevels.slice(0, 15).join(', ')}`
+                : null,
+            suggestedOffsets.length > 0
+                ? `Suggested offsets: ${suggestedOffsets.map((entry) => formatSignedOffset(entry)).join(', ')}`
+                : null,
+            `Scope: applies to all items in task ${task}`,
+            hasOverviewMetrics
+                ? `Out-of-range in task sample: ${outOfRangeCount}/${sampledCount} (${outOfRangePercent.toFixed(1)}%)`
+                : null,
+            hasOffsetImpactMetrics
+                ? `If applied, this offset fixes ${correctedCount}/${outOfRangeCount} (${correctedPercent.toFixed(1)}%) and leaves ${remainingCount} invalid (${remainingPercent.toFixed(1)}% of sampled values).`
+                : null,
+            likelyTyposByCount
+                ? 'Only 1-2 values are outside range in this task sample. This is often a typo pattern, not a structural offset.'
+                : null,
+            evidenceClassification === 'structural_offset_likely'
+                ? 'Interpretation: structural task-level offset likely.'
+                : null,
+            evidenceClassification === 'mixed_offset_and_item_issues'
+                ? 'Interpretation: mixed pattern (offset + item-level issues).'
+                : null,
+            evidenceClassification === 'item_issues_likely'
+                ? 'Interpretation: item-level input issues likely.'
+                : null,
+            evidenceSummary ? `Pattern check: ${evidenceSummary}` : null,
+            '',
+            'Enter a numeric offset to apply to this whole survey task (examples: -1, +1).',
+            'Leave empty or press Cancel to abort.',
+        ].filter(Boolean);
+
+        return new Promise((resolve) => {
+            window.setTimeout(() => {
+                const entered = window.prompt(
+                    messageLines.join('\n'),
+                    defaultOffset !== null ? String(defaultOffset) : ''
+                );
+
+                if (entered === null) {
+                    resolve({ approved: false, offsets: {}, task: null, offset: null });
+                    return;
+                }
+
+                const parsed = parseNumericOffsetValue(entered);
+                if (parsed === null) {
+                    window.alert('Invalid offset. Please enter a numeric value such as -1 or +1.');
+                    resolve({ approved: false, offsets: {}, task: null, offset: null });
+                    return;
+                }
+
+                resolve({
+                    approved: true,
+                    offsets: { [task]: parsed },
+                    task,
+                    offset: parsed,
+                });
+            }, 0);
         });
     }
 
@@ -850,10 +1504,15 @@ export function initSurveyConvert(elements) {
         return Boolean(idValue && idValue !== 'auto');
     }
 
-    async function syncVersionWizardContext({ showErrors = false } = {}) {
+    async function syncVersionWizardContext({
+        showErrors = false,
+        allowNearItemMatch = false,
+        nearMatchTasks = null,
+        taskValueOffsets = null,
+    } = {}) {
         if (!shouldSyncVersionWizardContext()) {
             hideVersionWizard();
-            return;
+            return { hasMultivariant: false, skipped: true };
         }
 
         const filename = getSelectedSurveyFilename();
@@ -862,7 +1521,7 @@ export function initSurveyConvert(elements) {
         const inputSelection = appendSurveyInputToFormData(formData);
         if (!inputSelection.filename) {
             hideVersionWizard();
-            return;
+            return { hasMultivariant: false, skipped: true };
         }
 
         const idValue = String(document.getElementById('convertIdColumn')?.value || '').trim();
@@ -894,6 +1553,25 @@ export function initSurveyConvert(elements) {
             formData.append('template_versions', JSON.stringify(templateSelections));
         }
 
+        const selectedNearMatchTasks = Array.isArray(nearMatchTasks)
+            ? [...new Set(
+                nearMatchTasks
+                    .map((task) => normalizeNearMatchTaskName(task))
+                    .filter(Boolean)
+            )]
+            : [];
+        if (allowNearItemMatch) {
+            formData.append('allow_near_item_match', 'true');
+            if (selectedNearMatchTasks.length > 0) {
+                formData.append('near_match_tasks', JSON.stringify(selectedNearMatchTasks));
+            }
+        }
+
+        const normalizedOffsets = normalizeTaskValueOffsets(taskValueOffsets);
+        if (Object.keys(normalizedOffsets).length > 0) {
+            formData.append('value_offsets', JSON.stringify(normalizedOffsets));
+        }
+
         try {
             const response = await fetch('/api/survey-detect-version-contexts', {
                 method: 'POST',
@@ -909,12 +1587,13 @@ export function initSurveyConvert(elements) {
                     convertError.textContent = data.error;
                     convertError.classList.remove('d-none');
                 }
-                return;
+                return { hasMultivariant: false, error: true };
             }
 
             const mvTasks = (data && typeof data.multivariant_tasks === 'object' && data.multivariant_tasks)
                 ? data.multivariant_tasks
                 : {};
+            const hasMultivariant = Object.keys(mvTasks).length > 0;
             if (Object.keys(mvTasks).length > 0) {
                 buildVersionWizard(
                     mvTasks,
@@ -925,15 +1604,17 @@ export function initSurveyConvert(elements) {
             } else {
                 hideVersionWizard();
             }
+            return { hasMultivariant };
         } catch (error) {
             if (requestId !== versionWizardSyncRequestId) {
-                return;
+                return { hasMultivariant: false, skipped: true };
             }
             hideVersionWizard();
             if (showErrors) {
                 convertError.textContent = error.message;
                 convertError.classList.remove('d-none');
             }
+            return { hasMultivariant: false, error: true };
         }
     }
 
@@ -1580,6 +2261,7 @@ export function initSurveyConvert(elements) {
         const hasFile = hasSelectedSurveyInput();
         const blockedByTemplateGate = Boolean(templateWorkflowGate && templateWorkflowGate.blocked);
         const hasProjectLoaded = resolveCurrentProjectPath() !== '';
+        const hasRunningRequest = isConvertRunning || isPreviewRunning;
 
         convertBtn.disabled = !hasFile || blockedByTemplateGate;
         if (checkProjectTemplatesBtn) {
@@ -1594,6 +2276,7 @@ export function initSurveyConvert(elements) {
         if (previewBtn) {
             previewBtn.disabled = !hasFile;
             previewBtn.style.display = '';
+            previewBtn.innerHTML = '<i class="fas fa-eye me-2"></i>Preview (Dry-Run)';
             convertBtn.parentElement.classList.remove('col-12');
             convertBtn.parentElement.classList.add('col-md-6');
         }
@@ -1609,7 +2292,57 @@ export function initSurveyConvert(elements) {
             }
         }
 
+        // Keep a visible in-flight indicator while preview/convert requests are running.
+        if (isConvertRunning) {
+            convertBtn.disabled = true;
+            convertBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Converting...';
+            if (previewBtn) {
+                previewBtn.disabled = true;
+            }
+        }
+
+        if (isPreviewRunning) {
+            if (previewBtn) {
+                previewBtn.disabled = true;
+                previewBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Running...';
+            }
+            convertBtn.disabled = true;
+        }
+
+        if (surveyRunCancelBtn) {
+            if (hasRunningRequest) {
+                const modeLabel = isConvertRunning ? 'Conversion' : 'Preview';
+                surveyRunCancelBtn.classList.remove('d-none');
+                surveyRunCancelBtn.disabled = !activeRunAbortController;
+                surveyRunCancelBtn.innerHTML = `<i class="fas fa-stop-circle me-2"></i>Cancel ${modeLabel}`;
+            } else {
+                surveyRunCancelBtn.classList.add('d-none');
+                surveyRunCancelBtn.disabled = true;
+                surveyRunCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Run';
+            }
+        }
+
         clearConvertExcelFileBtn?.classList.toggle('d-none', !hasFile);
+    }
+
+    if (surveyRunCancelBtn) {
+        surveyRunCancelBtn.addEventListener('click', function() {
+            const mode = activeRunMode || runProgressMode;
+            const modeLabel = mode === 'convert' ? 'conversion' : 'preview';
+            const canceled = cancelActiveSurveyRun();
+            if (!canceled) {
+                return;
+            }
+            appendLog(`Cancel requested: stopping current ${modeLabel} run...`, 'warning');
+            setSurveyRunProgress({
+                mode: mode || 'preview',
+                percent: Math.max(15, runProgressPercent),
+                label: `Canceling ${modeLabel}...`,
+                variant: 'warning',
+                animated: true,
+            });
+            surveyRunCancelBtn.disabled = true;
+        });
     }
 
     convertExcelFile.addEventListener('change', async function() {
@@ -2084,6 +2817,7 @@ convertError.classList.remove('d-none');
     }
 
     function resetConversionUI() {
+        hideSurveyRunProgress();
         conversionLogContainer.classList.add('d-none');
         validationResultsContainer.classList.add('d-none');
         if (conversionSummaryContainer) conversionSummaryContainer.classList.add('d-none');
@@ -3407,6 +4141,7 @@ convertError.classList.remove('d-none');
     let currentTemplateData = null;
 
     convertBtn.addEventListener('click', async function() {
+        versionWizardRetryGateMode = null;
         convertError.classList.add('d-none');
         convertInfo.classList.add('d-none');
         convertError.textContent = '';
@@ -3417,11 +4152,19 @@ convertError.classList.remove('d-none');
         if (nearMatchRetryState && nearMatchRetryState.mode !== 'convert') {
             nearMatchRetryState = null;
         }
-        const nearMatchRetryForConvert = (
-            nearMatchRetryState
-            && nearMatchRetryState.mode === 'convert'
-        ) ? nearMatchRetryState : null;
+        if (valueOffsetRetryState && valueOffsetRetryState.mode !== 'convert') {
+            valueOffsetRetryState = null;
+        }
+        const nearMatchRetryForConvert = getRetryStateForMode(nearMatchRetryState, 'convert');
+        if (!nearMatchRetryForConvert && nearMatchRetryState && nearMatchRetryState.mode === 'convert') {
+            nearMatchRetryState = null;
+        }
+        const valueOffsetRetryForConvert = getRetryStateForMode(valueOffsetRetryState, 'convert');
+        if (!valueOffsetRetryForConvert && valueOffsetRetryState && valueOffsetRetryState.mode === 'convert') {
+            valueOffsetRetryState = null;
+        }
         const allowNearItemMatch = Boolean(nearMatchRetryForConvert);
+        const applyValueOffsets = Boolean(valueOffsetRetryForConvert);
         const selectedNearMatchTasks = allowNearItemMatch
             ? [...new Set(
                 (Array.isArray(nearMatchRetryForConvert.tasks) ? nearMatchRetryForConvert.tasks : [])
@@ -3429,9 +4172,14 @@ convertError.classList.remove('d-none');
                     .filter(Boolean)
             )]
             : [];
-        if (allowNearItemMatch) {
-            nearMatchRetryState = null;
-        }
+        const selectedValueOffsets = getEffectiveTaskValueOffsets(
+            applyValueOffsets
+                ? valueOffsetRetryForConvert.offsets
+                : null
+        );
+        let convertRunOutcome = 'running';
+        const convertRunAbortController = new AbortController();
+        setActiveSurveyRun('convert', convertRunAbortController);
 
         // Hide template results and participant metadata section
         if (templateResultsContainer) {
@@ -3493,6 +4241,15 @@ convertError.classList.remove('d-none');
                 idSelect.classList.add('border-danger');
                 idSelect.focus();
             }
+            return;
+        }
+
+        const pausedForVersionsBeforeConvert = await maybePauseAutoRerunForVersionSelection({
+            mode: 'convert',
+            nearMatchTasks: selectedNearMatchTasks,
+            valueOffsets: selectedValueOffsets,
+        });
+        if (pausedForVersionsBeforeConvert) {
             return;
         }
 
@@ -3566,17 +4323,29 @@ convertError.classList.remove('d-none');
                 : 'all detected survey tasks';
             appendLog(`Applying confirmed near item matches for ${nearMatchScope} (minimal formatting differences only).`, 'warning');
         }
+        if (Object.keys(selectedValueOffsets).length > 0) {
+            formData.append('value_offsets', JSON.stringify(selectedValueOffsets));
+            const offsetSummary = Object.entries(selectedValueOffsets)
+                .map(([task, offset]) => `${task}: ${formatSignedOffset(offset)}`)
+                .join(', ');
+            appendLog(`Applying confirmed value offset(s): ${offsetSummary}.`, 'warning');
+        }
 
-        convertBtn.disabled = true;
+        isConvertRunning = true;
+        updateConvertBtn();
+        startSurveyRunProgress('convert');
+        advanceSurveyRunProgress('convert', 12, 'Uploading file and starting conversion...');
         appendLog('Uploading file and starting conversion...', 'info');
 
         fetch('/api/survey-convert-validate', {
             method: 'POST',
             body: formData,
+            signal: convertRunAbortController.signal,
         })
         .then(async response => {
             const contentType = response.headers.get('content-type') || '';
             let data = null;
+            advanceSurveyRunProgress('convert', 38, 'Server response received. Validating conversion request...');
             
             if (contentType.includes('application/json')) {
                 data = await response.json();
@@ -3588,18 +4357,96 @@ convertError.classList.remove('d-none');
                 }
                 
                 if (!response.ok) {
-                    if (data.error === 'near_item_match_confirmation_required') {
-                        const selection = await promptNearMatchSelection(data, 'conversion');
-                        if (selection.approved && selection.selectedTasks.length > 0) {
-                            nearMatchRetryState = {
-                                mode: 'convert',
-                                tasks: selection.selectedTasks,
-                            };
+                    if (data.error === 'value_offset_confirmation_required') {
+                        if (isConfiguredOffsetFailureForCurrentSelection(data, selectedValueOffsets)) {
+                            const failedTask = normalizeNearMatchTaskName(data && data.task) || 'unknown task';
+                            const failedOffset = parseNumericOffsetValue(data && data.configured_offset);
+                            convertRunOutcome = 'action_required';
+                            valueOffsetRetryState = null;
+                            confirmedTaskValueOffsets = removeTaskOffset(confirmedTaskValueOffsets, failedTask);
                             appendLog(
-                                `Near matches confirmed for ${selection.selectedTasks.length} survey task(s) and ${selection.selectedCandidateCount} item(s). Re-running conversion.`,
+                                `Configured value offset for task ${failedTask} (${formatSignedOffset(failedOffset)}) did not resolve this dataset. Choose a different offset or fix source/template values.`,
+                                'error'
+                            );
+                            markRunAwaitingUserConfirmation(
+                                'convert',
+                                `Offset ${formatSignedOffset(failedOffset)} for ${failedTask} did not resolve values. Choose a different offset and run again.`
+                            );
+                            convertInfo.textContent = `The configured offset ${formatSignedOffset(failedOffset)} for ${failedTask} did not resolve out-of-range values. Choose a different offset and rerun conversion.`;
+                            convertInfo.classList.remove('d-none');
+                            return null;
+                        }
+                        convertRunOutcome = 'action_required';
+                        markRunAwaitingUserConfirmation(
+                            'convert',
+                            'Waiting for value-offset confirmation...'
+                        );
+                        const selection = await promptValueOffsetSelection(data, 'conversion');
+                        if (selection.approved && selection.task) {
+                            const mergedOffsets = mergeTaskValueOffsetMaps(
+                                selectedValueOffsets,
+                                selection.offsets,
+                            );
+                            confirmedTaskValueOffsets = mergeTaskValueOffsetMaps(
+                                confirmedTaskValueOffsets,
+                                selection.offsets,
+                            );
+                            valueOffsetRetryState = buildRetryState('convert', {
+                                offsets: mergedOffsets,
+                            });
+                            appendLog(
+                                `Value offset confirmed for task ${selection.task}: ${formatSignedOffset(selection.offset)}. Re-running conversion with saved offset selections.`,
                                 'warning'
                             );
+                            const pausedForVersions = await maybePauseAutoRerunForVersionSelection({
+                                mode: 'convert',
+                                nearMatchTasks: selectedNearMatchTasks,
+                                valueOffsets: mergedOffsets,
+                            });
+                            if (pausedForVersions) {
+                                convertRunOutcome = 'paused';
+                                return null;
+                            }
+                            convertRunOutcome = 'retrying';
                         } else {
+                            convertRunOutcome = 'canceled';
+                            appendLog('Value offset was not confirmed. Conversion was canceled.', 'info');
+                            convertInfo.textContent = 'Import requires a confirmed value offset. Conversion was canceled.';
+                            convertInfo.classList.remove('d-none');
+                        }
+                        return null;
+                    }
+                    if (data.error === 'near_item_match_confirmation_required') {
+                        convertRunOutcome = 'action_required';
+                        markRunAwaitingUserConfirmation(
+                            'convert',
+                            'Waiting for near-match confirmation...'
+                        );
+                        const selection = await promptNearMatchSelection(data, 'conversion');
+                        if (selection.approved && selection.selectedTasks.length > 0) {
+                            const mergedTasks = mergeNearMatchTasks(
+                                selectedNearMatchTasks,
+                                selection.selectedTasks,
+                            );
+                            nearMatchRetryState = buildRetryState('convert', {
+                                tasks: mergedTasks,
+                            });
+                            appendLog(
+                                `Near matches confirmed for ${selection.selectedTasks.length} survey task(s) and ${selection.selectedCandidateCount} item(s). Re-running conversion with saved selections.`,
+                                'warning'
+                            );
+                            const pausedForVersions = await maybePauseAutoRerunForVersionSelection({
+                                mode: 'convert',
+                                nearMatchTasks: mergedTasks,
+                                valueOffsets: selectedValueOffsets,
+                            });
+                            if (pausedForVersions) {
+                                convertRunOutcome = 'paused';
+                                return null;
+                            }
+                            convertRunOutcome = 'retrying';
+                        } else {
+                            convertRunOutcome = 'canceled';
                             appendLog('Near matches not approved. Conversion remained exact-only and was canceled.', 'info');
                             convertInfo.textContent = 'Near item matches were detected but not approved. Conversion was canceled.';
                             convertInfo.classList.remove('d-none');
@@ -3615,10 +4462,12 @@ convertError.classList.remove('d-none');
                         throw new Error('Please select the participant ID column.');
                     }
                     if (data.error === 'unmatched_groups') {
+                        convertRunOutcome = 'action_required';
                         displayUnmatchedGroupsError(data);
                         return null;
                     }
                     if (data.error === 'project_template_completion_required') {
+                        convertRunOutcome = 'action_required';
                         templateWorkflowGate = data.workflow_gate || {
                             blocked: true,
                             message: data.message || 'Project templates must be completed before import can continue.'
@@ -3648,6 +4497,7 @@ convertError.classList.remove('d-none');
                     setTemplateEditorErrorCtaVisible(false);
                     throw new Error(data.error || 'Conversion failed');
                 }
+                advanceSurveyRunProgress('convert', 68, 'Applying conversion output and validation details...');
                 return data;
             } else {
                 // Fallback: direct ZIP download (old API)
@@ -3655,11 +4505,14 @@ convertError.classList.remove('d-none');
                     throw new Error('Conversion failed');
                 }
                 const blob = await response.blob();
+                advanceSurveyRunProgress('convert', 68, 'Processing conversion output...');
                 return { blob, validation: null };
             }
         })
         .then(data => {
             if (!data) return;  // Handled by resolution UI (e.g. unmatched groups)
+
+            advanceSurveyRunProgress('convert', 84, 'Finalizing conversion results...');
 
             const participantRegistryWarning = getParticipantRegistryWarning(data);
 
@@ -3740,8 +4593,19 @@ convertError.classList.remove('d-none');
             appendLog('═══════════════════════════════════════════════', 'info');
 
             convertInfo.classList.remove('d-none');
+            convertRunOutcome = 'success';
+            advanceSurveyRunProgress('convert', 100, 'Conversion completed.');
         })
         .catch(err => {
+            if (isAbortError(err)) {
+                convertRunOutcome = 'canceled';
+                appendLog('Conversion canceled by user.', 'warning');
+                convertError.classList.add('d-none');
+                convertInfo.textContent = 'Conversion canceled.';
+                convertInfo.classList.remove('d-none');
+                return;
+            }
+            convertRunOutcome = 'error';
             const enrichedMessage = enrichSurveyRunErrorMessage(err.message);
             appendLog(`Error: ${enrichedMessage}`, 'error');
             if (enrichedMessage !== err.message) {
@@ -3752,13 +4616,29 @@ convertError.classList.remove('d-none');
             setTemplateEditorErrorCtaVisible(Boolean(templateWorkflowGate && templateWorkflowGate.blocked));
         })
         .finally(() => {
+            isConvertRunning = false;
+            const canceledByUser = activeRunMode === 'convert' && activeRunCancelledByUser;
+            clearActiveSurveyRun('convert');
             const shouldRetryWithNearMatch = Boolean(
                 nearMatchRetryState
                 && nearMatchRetryState.mode === 'convert'
                 && !allowNearItemMatch
             );
+            const shouldRetryWithValueOffset = Boolean(
+                valueOffsetRetryState
+                && valueOffsetRetryState.mode === 'convert'
+                && !applyValueOffsets
+            );
+            const blockedByVersionWizardGate = versionWizardRetryGateMode === 'convert';
+            if (convertRunOutcome === 'running') {
+                convertRunOutcome = blockedByVersionWizardGate ? 'paused' : 'canceled';
+            }
+            if (canceledByUser && convertRunOutcome !== 'success') {
+                convertRunOutcome = 'canceled';
+            }
+            finishSurveyRunProgress('convert', convertRunOutcome);
             updateConvertBtn();
-            if (shouldRetryWithNearMatch) {
+            if (!canceledByUser && !blockedByVersionWizardGate && (shouldRetryWithNearMatch || shouldRetryWithValueOffset)) {
                 setTimeout(() => {
                     convertBtn.click();
                 }, 0);
@@ -3769,6 +4649,7 @@ convertError.classList.remove('d-none');
     // ===== PREVIEW HANDLER (DRY-RUN) =====
 
     previewBtn.addEventListener('click', async function() {
+        versionWizardRetryGateMode = null;
         convertError.classList.add('d-none');
         convertInfo.classList.add('d-none');
         convertError.textContent = '';
@@ -3778,11 +4659,19 @@ convertError.classList.remove('d-none');
         if (nearMatchRetryState && nearMatchRetryState.mode !== 'preview') {
             nearMatchRetryState = null;
         }
-        const nearMatchRetryForPreview = (
-            nearMatchRetryState
-            && nearMatchRetryState.mode === 'preview'
-        ) ? nearMatchRetryState : null;
+        if (valueOffsetRetryState && valueOffsetRetryState.mode !== 'preview') {
+            valueOffsetRetryState = null;
+        }
+        const nearMatchRetryForPreview = getRetryStateForMode(nearMatchRetryState, 'preview');
+        if (!nearMatchRetryForPreview && nearMatchRetryState && nearMatchRetryState.mode === 'preview') {
+            nearMatchRetryState = null;
+        }
+        const valueOffsetRetryForPreview = getRetryStateForMode(valueOffsetRetryState, 'preview');
+        if (!valueOffsetRetryForPreview && valueOffsetRetryState && valueOffsetRetryState.mode === 'preview') {
+            valueOffsetRetryState = null;
+        }
         const allowNearItemMatch = Boolean(nearMatchRetryForPreview);
+        const applyValueOffsets = Boolean(valueOffsetRetryForPreview);
         const selectedNearMatchTasks = allowNearItemMatch
             ? [...new Set(
                 (Array.isArray(nearMatchRetryForPreview.tasks) ? nearMatchRetryForPreview.tasks : [])
@@ -3790,9 +4679,14 @@ convertError.classList.remove('d-none');
                     .filter(Boolean)
             )]
             : [];
-        if (allowNearItemMatch) {
-            nearMatchRetryState = null;
-        }
+        const selectedValueOffsets = getEffectiveTaskValueOffsets(
+            applyValueOffsets
+                ? valueOffsetRetryForPreview.offsets
+                : null
+        );
+        let previewRunOutcome = 'running';
+        const previewRunAbortController = new AbortController();
+        setActiveSurveyRun('preview', previewRunAbortController);
 
         const filenameRaw = getSelectedSurveyFilename();
         if (!filenameRaw) {
@@ -3824,6 +4718,15 @@ convertError.classList.remove('d-none');
                 idSelect.classList.add('border-danger');
                 idSelect.focus();
             }
+            return;
+        }
+
+        const pausedForVersionsBeforePreview = await maybePauseAutoRerunForVersionSelection({
+            mode: 'preview',
+            nearMatchTasks: selectedNearMatchTasks,
+            valueOffsets: selectedValueOffsets,
+        });
+        if (pausedForVersionsBeforePreview) {
             return;
         }
 
@@ -3875,6 +4778,13 @@ convertError.classList.remove('d-none');
                 : 'all detected survey tasks';
             appendLog(`Applying confirmed near item matches for ${nearMatchScope} (minimal formatting differences only).`, 'warning');
         }
+        if (Object.keys(selectedValueOffsets).length > 0) {
+            formData.append('value_offsets', JSON.stringify(selectedValueOffsets));
+            const offsetSummary = Object.entries(selectedValueOffsets)
+                .map(([task, offset]) => `${task}: ${formatSignedOffset(offset)}`)
+                .join(', ');
+            appendLog(`Applying confirmed value offset(s): ${offsetSummary}.`, 'warning');
+        }
         templateWorkflowGate = null;
 
         // Show log container
@@ -3905,16 +4815,19 @@ convertError.classList.remove('d-none');
             id_map_size: idMap ? idMap.size : null
         });
 
-        previewBtn.disabled = true;
-        previewBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Running…';
-        convertBtn.disabled = true;
+        isPreviewRunning = true;
+        updateConvertBtn();
+        startSurveyRunProgress('preview');
+        advanceSurveyRunProgress('preview', 12, 'Uploading file and starting preview...');
 
         fetch('/api/survey-convert-preview', {
             method: 'POST',
             body: formData,
+            signal: previewRunAbortController.signal,
         })
         .then(async response => {
             const data = await response.json();
+            advanceSurveyRunProgress('preview', 38, 'Server response received. Building preview summary...');
             
             // DEBUG: Log the FULL response to understand structure
             console.log('[SURVEY-PREVIEW FULL RESPONSE]', data);
@@ -3927,18 +4840,96 @@ convertError.classList.remove('d-none');
             });
 
             if (!response.ok) {
-                if (data.error === 'near_item_match_confirmation_required') {
-                    const selection = await promptNearMatchSelection(data, 'preview');
-                    if (selection.approved && selection.selectedTasks.length > 0) {
-                        nearMatchRetryState = {
-                            mode: 'preview',
-                            tasks: selection.selectedTasks,
-                        };
+                if (data.error === 'value_offset_confirmation_required') {
+                    if (isConfiguredOffsetFailureForCurrentSelection(data, selectedValueOffsets)) {
+                        const failedTask = normalizeNearMatchTaskName(data && data.task) || 'unknown task';
+                        const failedOffset = parseNumericOffsetValue(data && data.configured_offset);
+                        previewRunOutcome = 'action_required';
+                        valueOffsetRetryState = null;
+                        confirmedTaskValueOffsets = removeTaskOffset(confirmedTaskValueOffsets, failedTask);
                         appendLog(
-                            `Near matches confirmed for ${selection.selectedTasks.length} survey task(s) and ${selection.selectedCandidateCount} item(s). Re-running preview.`,
+                            `Configured value offset for task ${failedTask} (${formatSignedOffset(failedOffset)}) did not resolve this dataset. Choose a different offset or fix source/template values.`,
+                            'error'
+                        );
+                        markRunAwaitingUserConfirmation(
+                            'preview',
+                            `Offset ${formatSignedOffset(failedOffset)} for ${failedTask} did not resolve values. Choose a different offset and run again.`
+                        );
+                        convertInfo.textContent = `The configured offset ${formatSignedOffset(failedOffset)} for ${failedTask} did not resolve out-of-range values. Choose a different offset and rerun preview.`;
+                        convertInfo.classList.remove('d-none');
+                        return null;
+                    }
+                    previewRunOutcome = 'action_required';
+                    markRunAwaitingUserConfirmation(
+                        'preview',
+                        'Waiting for value-offset confirmation...'
+                    );
+                    const selection = await promptValueOffsetSelection(data, 'preview');
+                    if (selection.approved && selection.task) {
+                        const mergedOffsets = mergeTaskValueOffsetMaps(
+                            selectedValueOffsets,
+                            selection.offsets,
+                        );
+                        confirmedTaskValueOffsets = mergeTaskValueOffsetMaps(
+                            confirmedTaskValueOffsets,
+                            selection.offsets,
+                        );
+                        valueOffsetRetryState = buildRetryState('preview', {
+                            offsets: mergedOffsets,
+                        });
+                        appendLog(
+                            `Value offset confirmed for task ${selection.task}: ${formatSignedOffset(selection.offset)}. Re-running preview with saved offset selections.`,
                             'warning'
                         );
+                        const pausedForVersions = await maybePauseAutoRerunForVersionSelection({
+                            mode: 'preview',
+                            nearMatchTasks: selectedNearMatchTasks,
+                            valueOffsets: mergedOffsets,
+                        });
+                        if (pausedForVersions) {
+                            previewRunOutcome = 'paused';
+                            return null;
+                        }
+                        previewRunOutcome = 'retrying';
                     } else {
+                        previewRunOutcome = 'canceled';
+                        appendLog('Value offset was not confirmed. Preview was canceled.', 'info');
+                        convertInfo.textContent = 'Import requires a confirmed value offset. Preview was canceled.';
+                        convertInfo.classList.remove('d-none');
+                    }
+                    return null;
+                }
+                if (data.error === 'near_item_match_confirmation_required') {
+                    previewRunOutcome = 'action_required';
+                    markRunAwaitingUserConfirmation(
+                        'preview',
+                        'Waiting for near-match confirmation...'
+                    );
+                    const selection = await promptNearMatchSelection(data, 'preview');
+                    if (selection.approved && selection.selectedTasks.length > 0) {
+                        const mergedTasks = mergeNearMatchTasks(
+                            selectedNearMatchTasks,
+                            selection.selectedTasks,
+                        );
+                        nearMatchRetryState = buildRetryState('preview', {
+                            tasks: mergedTasks,
+                        });
+                        appendLog(
+                            `Near matches confirmed for ${selection.selectedTasks.length} survey task(s) and ${selection.selectedCandidateCount} item(s). Re-running preview with saved selections.`,
+                            'warning'
+                        );
+                        const pausedForVersions = await maybePauseAutoRerunForVersionSelection({
+                            mode: 'preview',
+                            nearMatchTasks: mergedTasks,
+                            valueOffsets: selectedValueOffsets,
+                        });
+                        if (pausedForVersions) {
+                            previewRunOutcome = 'paused';
+                            return null;
+                        }
+                        previewRunOutcome = 'retrying';
+                    } else {
+                        previewRunOutcome = 'canceled';
                         appendLog('Near matches not approved. Preview remained exact-only and was canceled.', 'info');
                         convertInfo.textContent = 'Near item matches were detected but not approved. Preview was canceled.';
                         convertInfo.classList.remove('d-none');
@@ -3954,6 +4945,7 @@ convertError.classList.remove('d-none');
                     throw new Error('Please select the participant ID column.');
                 }
                 if (data.error === 'unmatched_groups') {
+                    previewRunOutcome = 'action_required';
                     displayUnmatchedGroupsError(data);
                     return null;
                 }
@@ -3961,6 +4953,8 @@ convertError.classList.remove('d-none');
                 setTemplateEditorErrorCtaVisible(false);
                 throw new Error(data.error || 'Preview failed');
             }
+
+            advanceSurveyRunProgress('preview', 65, 'Processing preview details and validation results...');
 
             const sessionsLoaded = populateSurveySessionPickerFromDetected(data.detected_sessions);
             if (sessionsLoaded) {
@@ -3983,6 +4977,7 @@ convertError.classList.remove('d-none');
             const participantRegistryWarning = getParticipantRegistryWarning(data);
 
             if (!preview) {
+                previewRunOutcome = 'action_required';
                 appendLog('⚠ No preview data received', 'warning');
                 return;
             }
@@ -4324,11 +5319,13 @@ convertError.classList.remove('d-none');
             console.log(`Counts - Errors: ${previewErrorCount}, Warnings: ${previewWarningCount}`);
             
             if (templateWorkflowGate && templateWorkflowGate.blocked) {
+                previewRunOutcome = 'action_required';
                 appendLog('Preview paused: update copied template metadata first.', 'warning');
                 appendLog(`   ${templateWorkflowGate.issue_count || previewErrorCount || 1} template item(s) need edits before import`, 'warning');
                 convertInfo.innerHTML = '<i class="fas fa-clipboard-check me-2"></i>Some copied survey templates still need project-level metadata. Complete them in Template Editor, then run Preview again.';
                 setTemplateEditorErrorCtaVisible(true);
             } else if (previewErrorCount > 0) {
+                previewRunOutcome = 'action_required';
                 appendLog('Preview complete: validation issues found.', 'warning');
                 appendLog(`   ${previewErrorCount} error(s) must be fixed before converting`, 'error');
                 if (previewWarningCount > 0) {
@@ -4340,6 +5337,7 @@ convertError.classList.remove('d-none');
                 convertInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Preview completed, but validation found errors. Fix these issues before converting.';
                 setTemplateEditorErrorCtaVisible(true);
             } else if (previewWarningCount > 0 || dataIssueCount > 0) {
+                previewRunOutcome = 'success';
                 appendLog('✓ Preview completed (with warnings)', 'warning');
                 if (previewWarningCount > 0) {
                     appendLog(`   ${previewWarningCount} warning(s) - review recommended`, 'warning');
@@ -4350,6 +5348,7 @@ convertError.classList.remove('d-none');
                 convertInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Preview completed with warnings. Review above before converting.';
                 setTemplateEditorErrorCtaVisible(false);
             } else {
+                previewRunOutcome = 'success';
                 appendLog('✓ Preview completed successfully', 'success');
                 convertInfo.innerHTML = '<i class="fas fa-info-circle me-2"></i>Preview complete. Review the log above, then click <strong>Convert</strong> to proceed.';
                 setTemplateEditorErrorCtaVisible(false);
@@ -4465,8 +5464,21 @@ convertError.classList.remove('d-none');
             }
 
             convertInfo.classList.remove('d-none');
+            if (previewRunOutcome === 'running') {
+                previewRunOutcome = 'success';
+            }
+            advanceSurveyRunProgress('preview', 100, 'Preview completed.');
         })
         .catch(err => {
+            if (isAbortError(err)) {
+                previewRunOutcome = 'canceled';
+                appendLog('Preview canceled by user.', 'warning');
+                convertError.classList.add('d-none');
+                convertInfo.textContent = 'Preview canceled.';
+                convertInfo.classList.remove('d-none');
+                return;
+            }
+            previewRunOutcome = 'error';
             const enrichedMessage = enrichSurveyRunErrorMessage(err.message);
             appendLog(`Error: ${enrichedMessage}`, 'error');
             if (enrichedMessage !== err.message) {
@@ -4477,14 +5489,29 @@ convertError.classList.remove('d-none');
             setTemplateEditorErrorCtaVisible(Boolean(templateWorkflowGate && templateWorkflowGate.blocked));
         })
         .finally(() => {
+            isPreviewRunning = false;
+            const canceledByUser = activeRunMode === 'preview' && activeRunCancelledByUser;
+            clearActiveSurveyRun('preview');
             const shouldRetryWithNearMatch = Boolean(
                 nearMatchRetryState
                 && nearMatchRetryState.mode === 'preview'
                 && !allowNearItemMatch
             );
-            previewBtn.innerHTML = '<i class="fas fa-eye me-2"></i>Preview (Dry-Run)';
+            const shouldRetryWithValueOffset = Boolean(
+                valueOffsetRetryState
+                && valueOffsetRetryState.mode === 'preview'
+                && !applyValueOffsets
+            );
+            const blockedByVersionWizardGate = versionWizardRetryGateMode === 'preview';
+            if (previewRunOutcome === 'running') {
+                previewRunOutcome = blockedByVersionWizardGate ? 'paused' : 'canceled';
+            }
+            if (canceledByUser && previewRunOutcome !== 'success') {
+                previewRunOutcome = 'canceled';
+            }
+            finishSurveyRunProgress('preview', previewRunOutcome);
             updateConvertBtn();
-            if (shouldRetryWithNearMatch) {
+            if (!canceledByUser && !blockedByVersionWizardGate && (shouldRetryWithNearMatch || shouldRetryWithValueOffset)) {
                 setTimeout(() => {
                     previewBtn.click();
                 }, 0);

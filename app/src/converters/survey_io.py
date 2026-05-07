@@ -17,6 +17,42 @@ from pathlib import Path
 from typing import Any
 
 
+_VALID_SOFTWARE_PLATFORMS = {
+    "LimeSurvey",
+    "PsychoPy",
+    "Pavlovia",
+    "Paper and Pencil",
+    "Other",
+}
+
+
+def normalize_paper_software_platform(payload: object) -> object:
+    """Normalise legacy paper-admin software metadata for schema compatibility."""
+    if not isinstance(payload, dict):
+        return payload
+
+    technical = payload.get("Technical")
+    if not isinstance(technical, dict):
+        return payload
+
+    administration_method = str(technical.get("AdministrationMethod", "")).strip().lower()
+    software_platform = str(technical.get("SoftwarePlatform", "")).strip()
+
+    if administration_method != "paper":
+        return payload
+
+    if software_platform in _VALID_SOFTWARE_PLATFORMS:
+        return payload
+
+    normalized_technical = dict(technical)
+    normalized_technical["SoftwarePlatform"] = "Paper and Pencil"
+    normalized_technical["SoftwareVersion"] = ""
+
+    normalized_payload = dict(payload)
+    normalized_payload["Technical"] = normalized_technical
+    return normalized_payload
+
+
 def _utc_creation_date() -> str:
     """Return a stable UTC calendar date string for sidecar metadata."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -105,10 +141,12 @@ def _process_and_write_responses(
     ensure_dir_fn,
     process_survey_row_with_run_fn,
     build_bids_survey_filename_fn,
-) -> tuple[dict[str, int], dict[str, set[str]]]:
+    task_value_offsets: dict[str, float] | None = None,
+) -> tuple[dict[str, int], dict[str, set[str]], dict[str, int]]:
     """Process all response rows and write survey TSV files."""
     missing_cells_by_subject: dict[str, int] = {}
     items_using_tolerance: dict[str, set[str]] = {}
+    offset_application_counts: dict[str, int] = {}
 
     # Sort rows by (session, run, participant) so files are created in a stable order.
     sort_cols = [
@@ -170,6 +208,8 @@ def _process_and_write_responses(
                 items_using_tolerance=items_using_tolerance,
                 is_missing_fn=is_missing_fn,
                 normalize_val_fn=normalize_item_fn,
+                task_value_offsets=task_value_offsets,
+                offset_application_counts=offset_application_counts,
             )
             missing_cells_by_subject[sub_id] = (
                 missing_cells_by_subject.get(sub_id, 0) + missing_count
@@ -206,7 +246,7 @@ def _process_and_write_responses(
                 writer.writeheader()
                 writer.writerow(out_row)
 
-    return missing_cells_by_subject, items_using_tolerance
+    return missing_cells_by_subject, items_using_tolerance, offset_application_counts
 
 
 def _build_tolerance_warnings(
@@ -331,6 +371,10 @@ def _write_task_sidecars(
                 study["LicenseID"] = "Other"
             if "License" not in study:
                 study["License"] = ""
+
+            normalized_localized = normalize_paper_software_platform(localized)
+            if isinstance(normalized_localized, dict):
+                localized = normalized_localized
 
             cleaned = strip_internal_keys_fn(localized)
             write_json_fn(sidecar_path, cleaned)
