@@ -538,6 +538,16 @@ def _attach_offset_evidence_to_error(
     if best_offset is None:
         return
 
+    invalid_with_best_offset = int(
+        _to_float_or_none(evidence.get("invalid_with_best_offset")) or 0
+    )
+    newly_invalid_with_best_offset = int(
+        _to_float_or_none(evidence.get("newly_invalid_with_best_offset")) or 0
+    )
+    if invalid_with_best_offset > 0 or newly_invalid_with_best_offset > 0:
+        setattr(error, "suggested_offsets", [])
+        return
+
     existing_offsets = _normalize_candidate_offsets(
         getattr(error, "suggested_offsets", [])
     )
