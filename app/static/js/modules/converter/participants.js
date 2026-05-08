@@ -12,6 +12,7 @@ export function initParticipants() {
     let participantsShowSheetSelector = null;
     let participantsSheetMetadataPending = false;
     let participantsIdSelectionRequired = false;
+    let participantsRememberedIdColumn = '';
     let participantsExistingFilesInfo = {
         exists: false,
         files: {},
@@ -1031,6 +1032,7 @@ export function initParticipants() {
         if (!preserveImportConfig) {
             if (sheetInput) sheetInput.value = '';
             if (separator) separator.value = 'auto';
+            clearRememberedParticipantsIdColumn();
             setParticipantsIdColumnOptions([], 'auto', true);
             setParticipantsIdSelectionRequired(false);
             if (idGroup) idGroup.classList.add('d-none');
@@ -1185,6 +1187,43 @@ export function initParticipants() {
         }
     }
 
+    function clearRememberedParticipantsIdColumn() {
+        participantsRememberedIdColumn = '';
+    }
+
+    function rememberParticipantsIdColumn(value) {
+        const cleanedValue = String(value || '').trim();
+        participantsRememberedIdColumn = cleanedValue && cleanedValue !== 'auto'
+            ? cleanedValue
+            : '';
+        return participantsRememberedIdColumn;
+    }
+
+    function getRememberedParticipantsIdColumn(columns = null) {
+        const cleanedValue = String(participantsRememberedIdColumn || '').trim();
+        if (!cleanedValue) {
+            return '';
+        }
+
+        if (!Array.isArray(columns) || columns.length === 0) {
+            return cleanedValue;
+        }
+
+        return columns.some((columnName) => String(columnName || '').trim() === cleanedValue)
+            ? cleanedValue
+            : '';
+    }
+
+    function getCurrentParticipantsIdColumnValue(columns = null) {
+        const currentValue = String(document.getElementById('participantsIdColumn')?.value || '').trim();
+        if (currentValue && currentValue !== 'auto') {
+            rememberParticipantsIdColumn(currentValue);
+            return currentValue;
+        }
+
+        return getRememberedParticipantsIdColumn(columns);
+    }
+
     function hasParticipantsResolvedIdSelection() {
         if (getParticipantsWorkflowMode() !== 'file') {
             return true;
@@ -1198,7 +1237,7 @@ export function initParticipants() {
             return true;
         }
 
-        const idColumn = String(document.getElementById('participantsIdColumn')?.value || '').trim();
+        const idColumn = getCurrentParticipantsIdColumnValue();
         return Boolean(idColumn && idColumn !== 'auto');
     }
 
@@ -1245,6 +1284,11 @@ export function initParticipants() {
         } else {
             idSelect.value = '';
         }
+
+        const resolvedValue = String(idSelect.value || '').trim();
+        if (resolvedValue && resolvedValue !== 'auto') {
+            rememberParticipantsIdColumn(resolvedValue);
+        }
     }
     
     async function autoDetectParticipantsIdColumn() {
@@ -1260,6 +1304,7 @@ export function initParticipants() {
             participantsExcelSheetCount = null;
             participantsShowSheetSelector = null;
             participantsSheetMetadataPending = false;
+            clearRememberedParticipantsIdColumn();
             setParticipantsIdColumnOptions([], 'auto', true);
             setParticipantsIdSelectionRequired(false);
             updateParticipantsInputVisibility();
@@ -1271,6 +1316,7 @@ export function initParticipants() {
             participantsExcelSheetCount = null;
             participantsShowSheetSelector = null;
             participantsSheetMetadataPending = false;
+            clearRememberedParticipantsIdColumn();
             updateParticipantsInputVisibility();
             setParticipantsIdColumnOptions([], '', false);
             setParticipantsIdSelectionRequired(true);
@@ -1308,7 +1354,7 @@ export function initParticipants() {
             updateParticipantsSheetMetadata(data);
 
             const idSelectionRequired = Boolean(data.id_selection_required);
-            const selectedId = String(data.source_id_column || data.id_column || data.suggested_id_column || '').trim();
+                const selectedId = String(data.source_id_column || data.suggested_id_column || data.id_column || '').trim();
 
             setParticipantsIdSelectionRequired(idSelectionRequired);
             setParticipantsIdColumnOptions(
@@ -1323,6 +1369,11 @@ export function initParticipants() {
                 if (idSelect && selectedId) idSelect.value = selectedId;
                 if (idHint) idHint.textContent = 'Confirm or change the detected source ID column. It will be renamed to participant_id in output.';
             }
+            if (selectedId && selectedId !== 'participant_id') {
+                rememberParticipantsIdColumn(selectedId);
+            } else if (idSelectionRequired) {
+                clearRememberedParticipantsIdColumn();
+            }
             if (idGroup) idGroup.classList.remove('d-none');
         } catch (error) {
             participantsExcelSheetCount = null;
@@ -1330,6 +1381,7 @@ export function initParticipants() {
             participantsSheetMetadataPending = false;
             updateParticipantsInputVisibility();
             console.warn('Participants ID auto-detection failed:', error);
+            clearRememberedParticipantsIdColumn();
             setParticipantsIdColumnOptions([], '', false);
             setParticipantsIdSelectionRequired(true);
             if (idHint) idHint.textContent = 'Automatic detection unavailable. Select the source ID column manually.';
@@ -1500,6 +1552,7 @@ export function initParticipants() {
     const participantsIdColumn = document.getElementById('participantsIdColumn');
     if (participantsIdColumn) {
         participantsIdColumn.addEventListener('change', function() {
+            rememberParticipantsIdColumn(this.value);
             resetParticipantsPanelState({ preserveImportConfig: true });
             updateParticipantsButtonState({ skipIdAutoDetect: true });
         });
@@ -1720,8 +1773,10 @@ export function initParticipants() {
     function getProtectedParticipantVariableColumns(previewData = window.lastParticipantsPreviewData) {
         const protectedColumns = new Set(['participantid']);
         const selectedSourceId = String(
-            previewData?.source_id_column
-            || document.getElementById('participantsIdColumn')?.value
+            getCurrentParticipantsIdColumnValue(
+                Array.isArray(previewData?.source_columns) ? previewData.source_columns : null
+            )
+            || previewData?.source_id_column
             || ''
         ).trim();
         const normalizedSourceId = normalizeParticipantAdditionalColumn(selectedSourceId);
@@ -3050,7 +3105,11 @@ export function initParticipants() {
         const selectedSource = localFile || sourceFilePath;
 
         const sheet = document.getElementById('participantsSheet')?.value || '';
-        const idColumn = document.getElementById('participantsIdColumn')?.value || '';
+        const idColumn = getCurrentParticipantsIdColumnValue(
+            Array.isArray(window.lastParticipantsPreviewData?.source_columns)
+                ? window.lastParticipantsPreviewData.source_columns
+                : null
+        );
         const separator = document.getElementById('participantsSeparator')?.value || 'auto';
         const idSelectionRequired = participantsIdSelectionRequired;
 
@@ -3329,16 +3388,22 @@ export function initParticipants() {
                 const idSelect = document.getElementById('participantsIdColumn');
                 const idGroup = document.getElementById('participantsIdColumnGroup');
                 const idHint = document.getElementById('participantsIdColumnHint');
-                const currentIdValue = String(idSelect?.value || '').trim();
-                const selectedSourceId = currentIdValue || data.source_id_column || data.id_column || data.suggested_id_column;
+                const availableSourceColumns = Array.isArray(data.source_columns)
+                    ? data.source_columns
+                    : (Array.isArray(data.columns) ? data.columns : []);
+                const currentIdValue = getCurrentParticipantsIdColumnValue(availableSourceColumns);
+                const selectedSourceId = currentIdValue || data.source_id_column || data.suggested_id_column || data.id_column;
                 const idSelectionRequired = participantsIdSelectionRequired || Boolean(data.id_selection_required);
                 setParticipantsIdSelectionRequired(idSelectionRequired);
                 setParticipantsIdColumnOptions(
-                    data.source_columns || data.columns || [],
+                    availableSourceColumns,
                     selectedSourceId || (idSelectionRequired ? '' : 'auto'),
                     !idSelectionRequired
                 );
                 if (idSelect && selectedSourceId) idSelect.value = selectedSourceId;
+                if (selectedSourceId && selectedSourceId !== 'participant_id') {
+                    rememberParticipantsIdColumn(selectedSourceId);
+                }
                 if (idHint) {
                     idHint.textContent = idSelectionRequired
                         ? 'Confirm the source ID column. It will be renamed to participant_id in output.'
