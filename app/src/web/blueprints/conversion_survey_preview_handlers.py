@@ -18,8 +18,10 @@ from src.web.validation import run_validation
 from .conversion_utils import (
     collect_multivariant_tasks_from_library,
     expected_delimiter_for_suffix,
+    merge_selected_survey_filter,
     normalize_separator_option,
     parse_near_item_match_task_allowlist,
+    parse_selected_survey_tasks,
     parse_task_value_offsets,
     parse_template_version_overrides,
     resolve_validation_library_path,
@@ -135,6 +137,83 @@ def _collect_project_template_issues(
     return project_template_issues + extra_issues
 
 
+def _collect_task_manual_review_payloads(
+    *,
+    tasks: list[str],
+    validate_task_fn,
+    survey_value_out_of_bounds_error_cls,
+    format_value_offset_confirmation_response,
+) -> dict[str, dict[str, object]]:
+    payloads: dict[str, dict[str, object]] = {}
+
+    for task in sorted({str(task).strip().lower() for task in tasks if str(task).strip()}):
+        try:
+            validate_task_fn(task)
+        except Exception as error:
+            if not (
+                isinstance(survey_value_out_of_bounds_error_cls, type)
+                and issubclass(survey_value_out_of_bounds_error_cls, BaseException)
+                and isinstance(error, survey_value_out_of_bounds_error_cls)
+            ):
+                continue
+
+            if callable(format_value_offset_confirmation_response):
+                payload = format_value_offset_confirmation_response(error)
+            else:
+                payload = {
+                    "error": "value_offset_manual_review_required",
+                    "message": str(error),
+                    "task": task,
+                }
+            payload_task = str(payload.get("task") or task).strip().lower()
+            payloads[payload_task] = payload
+
+    return payloads
+
+
+def _build_survey_task_summaries(
+    *,
+    tasks: list[str],
+    task_runs: dict[str, int | None] | None,
+    selected_tasks: set[str] | None,
+    manual_review_payloads: dict[str, dict[str, object]] | None = None,
+) -> list[dict[str, object]]:
+    summaries: list[dict[str, object]] = []
+    normalized_selected = {
+        str(task).strip().lower() for task in (selected_tasks or set()) if str(task).strip()
+    }
+    normalized_reviews = manual_review_payloads or {}
+    normalized_task_runs = task_runs or {}
+
+    for task in sorted({str(task).strip().lower() for task in tasks if str(task).strip()}):
+        summary: dict[str, object] = {
+            "task": task,
+            "selected": True if not normalized_selected else task in normalized_selected,
+            "run_count": normalized_task_runs.get(task),
+        }
+
+        review_payload = normalized_reviews.get(task)
+        if isinstance(review_payload, dict):
+            out_of_range = {
+                "message": review_payload.get("message"),
+                "item_id": review_payload.get("item_id"),
+                "raw_value": review_payload.get("raw_value"),
+                "expected_levels": review_payload.get("expected_levels") or [],
+                "suggested_offsets": review_payload.get("suggested_offsets") or [],
+                "configured_offset": review_payload.get("configured_offset"),
+                "offset_evidence": review_payload.get("offset_evidence"),
+                "manual_action": review_payload.get("manual_action"),
+            }
+            summary["manual_review_required"] = True
+            summary["out_of_range"] = out_of_range
+        else:
+            summary["manual_review_required"] = False
+
+        summaries.append(summary)
+
+    return summaries
+
+
 def _is_prepared_workflow_request() -> bool:
     prepared_raw = (request.form.get("prepared_workflow") or "").strip().lower()
     return prepared_raw in {"1", "true", "yes", "on"}
@@ -162,7 +241,7 @@ def _format_workflow_preparation_stale_response(
         blocking_error
         in {
             "near_item_match_confirmation_required",
-            "value_offset_confirmation_required",
+            "value_offset_manual_review_required",
         }
         and "Run Preview again" not in message
     ):
@@ -402,7 +481,14 @@ def handle_api_survey_convert_preview(
             400,
         )
 
-    survey_filter = (request.form.get("survey") or "").strip() or None
+    raw_survey_filter = (request.form.get("survey") or "").strip() or None
+    try:
+        selected_tasks = parse_selected_survey_tasks(
+            request.form.get("selected_tasks")
+        )
+        survey_filter = merge_selected_survey_filter(raw_survey_filter, selected_tasks)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
     try:
         template_version_overrides = parse_template_version_overrides(
             request.form.get("template_versions")
@@ -594,6 +680,7 @@ def handle_api_survey_convert_preview(
 
         validation_result = None
         workflow_gate = None
+        task_manual_review_payloads: dict[str, dict[str, object]] = {}
         if project_template_issues:
             workflow_gate = build_template_completion_gate(
                 tasks=list(getattr(result, "tasks_included", []) or []),
@@ -601,17 +688,20 @@ def handle_api_survey_convert_preview(
             )
 
         if validate_preview:
-            try:
-                validate_root = tmp_dir_path / "rawdata_validate"
-                validate_root.mkdir(parents=True, exist_ok=True)
+            validate_root = tmp_dir_path / "rawdata_validate"
+            validate_root.mkdir(parents=True, exist_ok=True)
+
+            def _validate_single_task(task_name: str):
+                task_validate_root = validate_root / task_name
+                task_validate_root.mkdir(parents=True, exist_ok=True)
 
                 if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
-                    run_survey_with_official_fallback(
+                    return run_survey_with_official_fallback(
                         convert_survey_xlsx_to_prism_dataset,
                         input_path=input_path,
                         library_dir=str(effective_survey_dir),
-                        output_root=validate_root,
-                        survey=survey_filter,
+                        output_root=task_validate_root,
+                        survey=task_name,
                         id_column=id_column,
                         session_column=session_column,
                         run_column=run_column,
@@ -636,13 +726,13 @@ def handle_api_survey_convert_preview(
                         near_match_tasks=near_match_tasks,
                         task_value_offsets=task_value_offsets,
                     )
-                elif suffix == ".lsa":
-                    run_survey_with_official_fallback(
+                if suffix == ".lsa":
+                    return run_survey_with_official_fallback(
                         convert_survey_lsa_to_prism_dataset,
                         input_path=input_path,
                         library_dir=str(effective_survey_dir),
-                        output_root=validate_root,
-                        survey=survey_filter,
+                        output_root=task_validate_root,
+                        survey=task_name,
                         id_column=id_column,
                         session_column=session_column,
                         run_column=run_column,
@@ -667,91 +757,173 @@ def handle_api_survey_convert_preview(
                         near_match_tasks=near_match_tasks,
                         task_value_offsets=task_value_offsets,
                     )
+                return None
 
-                v_res = run_validation(
-                    str(validate_root),
-                    schema_version="stable",
-                    library_path=str(
-                        resolve_validation_library_path(
-                            project_path=(str(project_path) if project_path else None),
-                            fallback_library_root=library_path,
-                        )
-                    ),
-                    project_path=(str(project_path) if project_path else None),
-                )
-                if v_res and isinstance(v_res, tuple):
-                    issues, stats = v_res
+            task_manual_review_payloads = _collect_task_manual_review_payloads(
+                tasks=list(getattr(result, "tasks_included", []) or []),
+                validate_task_fn=_validate_single_task,
+                survey_value_out_of_bounds_error_cls=survey_value_out_of_bounds_error_cls,
+                format_value_offset_confirmation_response=format_value_offset_confirmation_response,
+            )
 
-                    from src.web.reporting_utils import format_validation_results
+            if not task_manual_review_payloads:
+                try:
+                    if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
+                        run_survey_with_official_fallback(
+                            convert_survey_xlsx_to_prism_dataset,
+                            input_path=input_path,
+                            library_dir=str(effective_survey_dir),
+                            output_root=validate_root,
+                            survey=survey_filter,
+                            id_column=id_column,
+                            session_column=session_column,
+                            run_column=run_column,
+                            session=session_override,
+                            sheet=sheet,
+                            unknown=unknown,
+                            dry_run=False,
+                            force=True,
+                            name="preview",
+                            authors=[],
+                            language=language,
+                            alias_file=alias_path,
+                            id_map_file=id_map_path,
+                            separator=separator,
+                            duplicate_handling=duplicate_handling,
+                            skip_participants=True,
+                            fallback_project_path=(
+                                str(project_path) if project_path else None
+                            ),
+                            template_version_overrides=effective_template_version_overrides,
+                            allow_near_item_match=allow_near_item_match,
+                            near_match_tasks=near_match_tasks,
+                            task_value_offsets=task_value_offsets,
+                        )
+                    elif suffix == ".lsa":
+                        run_survey_with_official_fallback(
+                            convert_survey_lsa_to_prism_dataset,
+                            input_path=input_path,
+                            library_dir=str(effective_survey_dir),
+                            output_root=validate_root,
+                            survey=survey_filter,
+                            id_column=id_column,
+                            session_column=session_column,
+                            run_column=run_column,
+                            session=session_override,
+                            unknown=unknown,
+                            dry_run=False,
+                            force=True,
+                            name="preview",
+                            authors=[],
+                            language=language,
+                            alias_file=alias_path,
+                            id_map_file=id_map_path,
+                            strict_levels=True if strict_levels else None,
+                            duplicate_handling=duplicate_handling,
+                            skip_participants=True,
+                            project_path=str(project_path) if project_path else None,
+                            fallback_project_path=(
+                                str(project_path) if project_path else None
+                            ),
+                            template_version_overrides=template_version_overrides,
+                            allow_near_item_match=allow_near_item_match,
+                            near_match_tasks=near_match_tasks,
+                            task_value_offsets=task_value_offsets,
+                        )
 
-                    formatted = format_validation_results(
-                        issues, stats, str(validate_root)
-                    )
-
-                    validation_result = {"formatted": formatted}
-                    validation_result.update(formatted)
-                    if project_template_issues:
-                        template_group = {
-                            "code": "PRISM301-TEMPLATE",
-                            "message": "Project templates need completion",
-                            "description": "Used project templates still need required project-level fields.",
-                            "files": [
-                                {
-                                    "file": issue["file"],
-                                    "message": issue["message"],
-                                }
-                                for issue in project_template_issues
-                            ],
-                            "count": len(project_template_issues),
-                        }
-                        validation_result.setdefault("formatted", {}).setdefault(
-                            "errors", []
-                        ).append(template_group)
-                        # Keep formatted error groups homogeneous for the frontend UI.
-                        # Appending plain strings here would be rendered as "undefined" cards.
-                        if "formatted" not in validation_result:
-                            validation_result.setdefault("errors", []).extend(
-                                [
-                                    f"{Path(i['file']).name}: {i['message']}"
-                                    for i in project_template_issues
-                                ]
-                            )
-                        validation_result.setdefault("summary", {}).setdefault(
-                            "total_errors", 0
-                        )
-                        validation_result["summary"]["total_errors"] += len(
-                            project_template_issues
-                        )
-            except Exception as validation_error:
-                if (
-                    isinstance(survey_value_out_of_bounds_error_cls, type)
-                    and issubclass(survey_value_out_of_bounds_error_cls, BaseException)
-                    and isinstance(validation_error, survey_value_out_of_bounds_error_cls)
-                ):
-                    validation_confirmation_payload: dict[str, object]
-                    if callable(format_value_offset_confirmation_response):
-                        validation_confirmation_payload = format_value_offset_confirmation_response(
-                            validation_error
-                        )
-                    else:
-                        validation_confirmation_payload = {
-                            "error": "value_offset_confirmation_required",
-                            "message": str(validation_error),
-                        }
-                    return (
-                        jsonify(
-                            _format_workflow_preparation_stale_response(
-                                validation_confirmation_payload
+                    v_res = run_validation(
+                        str(validate_root),
+                        schema_version="stable",
+                        library_path=str(
+                            resolve_validation_library_path(
+                                project_path=(str(project_path) if project_path else None),
+                                fallback_library_root=library_path,
                             )
                         ),
-                        409,
+                        project_path=(str(project_path) if project_path else None),
                     )
+                    if v_res and isinstance(v_res, tuple):
+                        issues, stats = v_res
 
-                validation_result = {"error": str(validation_error)}
+                        from src.web.reporting_utils import format_validation_results
+
+                        formatted = format_validation_results(
+                            issues, stats, str(validate_root)
+                        )
+
+                        validation_result = {"formatted": formatted}
+                        validation_result.update(formatted)
+                        if project_template_issues:
+                            template_group = {
+                                "code": "PRISM301-TEMPLATE",
+                                "message": "Project templates need completion",
+                                "description": "Used project templates still need required project-level fields.",
+                                "files": [
+                                    {
+                                        "file": issue["file"],
+                                        "message": issue["message"],
+                                    }
+                                    for issue in project_template_issues
+                                ],
+                                "count": len(project_template_issues),
+                            }
+                            validation_result.setdefault("formatted", {}).setdefault(
+                                "errors", []
+                            ).append(template_group)
+                            if "formatted" not in validation_result:
+                                validation_result.setdefault("errors", []).extend(
+                                    [
+                                        f"{Path(i['file']).name}: {i['message']}"
+                                        for i in project_template_issues
+                                    ]
+                                )
+                            validation_result.setdefault("summary", {}).setdefault(
+                                "total_errors", 0
+                            )
+                            validation_result["summary"]["total_errors"] += len(
+                                project_template_issues
+                            )
+                except Exception as validation_error:
+                    if (
+                        isinstance(survey_value_out_of_bounds_error_cls, type)
+                        and issubclass(
+                            survey_value_out_of_bounds_error_cls, BaseException
+                        )
+                        and isinstance(
+                            validation_error, survey_value_out_of_bounds_error_cls
+                        )
+                    ):
+                        validation_confirmation_payload: dict[str, object]
+                        if callable(format_value_offset_confirmation_response):
+                            validation_confirmation_payload = format_value_offset_confirmation_response(
+                                validation_error
+                            )
+                        else:
+                            validation_confirmation_payload = {
+                                "error": "value_offset_manual_review_required",
+                                "message": str(validation_error),
+                            }
+                        task_key = str(
+                            validation_confirmation_payload.get("task") or ""
+                        ).strip().lower()
+                        if task_key:
+                            task_manual_review_payloads[task_key] = (
+                                validation_confirmation_payload
+                            )
+                    else:
+                        validation_result = {"error": str(validation_error)}
+
+        survey_tasks = _build_survey_task_summaries(
+            tasks=list(getattr(result, "tasks_included", []) or []),
+            task_runs=getattr(result, "task_runs", {}) or {},
+            selected_tasks=selected_tasks,
+            manual_review_payloads=task_manual_review_payloads,
+        )
 
         response_data = {
             "preview": result.dry_run_preview,
             "tasks_included": result.tasks_included,
+            "survey_tasks": survey_tasks,
             "unknown_columns": result.unknown_columns,
             "missing_items_by_task": result.missing_items_by_task,
             "id_column": result.id_column,
@@ -793,6 +965,8 @@ def handle_api_survey_convert_preview(
         conv_summary = {}
         if result.tasks_included:
             conv_summary["tasks_included"] = result.tasks_included
+        if survey_tasks:
+            conv_summary["survey_tasks"] = survey_tasks
         if result.task_runs:
             conv_summary["task_runs"] = result.task_runs
         if result.unknown_columns:
@@ -838,7 +1012,7 @@ def handle_api_survey_convert_preview(
                 )
             else:
                 error_confirmation_payload = {
-                    "error": "value_offset_confirmation_required",
+                    "error": "value_offset_manual_review_required",
                     "message": str(error),
                 }
             return (

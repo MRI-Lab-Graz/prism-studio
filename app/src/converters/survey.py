@@ -241,324 +241,6 @@ def _coerce_offset_for_metadata(value: float) -> float | int:
     return float(round(value, 6))
 
 
-def _to_float_or_none(value: object) -> float | None:
-    try:
-        return float(str(value).strip())
-    except (TypeError, ValueError, AttributeError):
-        return None
-
-
-def _schema_supports_numeric_offset(item_schema: object) -> bool:
-    if not isinstance(item_schema, dict):
-        return False
-
-    levels = item_schema.get("Levels")
-    if isinstance(levels, dict):
-        numeric_levels = [
-            level_num
-            for raw_level in levels.keys()
-            if (level_num := _to_float_or_none(raw_level)) is not None
-        ]
-        if len(numeric_levels) >= 2:
-            return True
-
-    min_value = _to_float_or_none(item_schema.get("MinValue"))
-    max_value = _to_float_or_none(item_schema.get("MaxValue"))
-    return min_value is not None and max_value is not None
-
-
-def _normalize_candidate_offsets(raw_offsets: object) -> list[float]:
-    if not isinstance(raw_offsets, list):
-        return []
-
-    candidates: list[float] = []
-    seen: set[str] = set()
-    for raw_offset in raw_offsets:
-        numeric = _to_float_or_none(raw_offset)
-        if numeric is None:
-            continue
-        key = f"{numeric:.6f}"
-        if key in seen:
-            continue
-        seen.add(key)
-        candidates.append(float(numeric))
-    return candidates
-
-
-def _is_missing_value_for_offset_analysis(value: object) -> bool:
-    if pd is not None:
-        try:
-            if pd.isna(value):
-                return True
-        except Exception:
-            pass
-    return isinstance(value, str) and value.strip() == ""
-
-
-def _is_value_valid_for_offset_analysis(
-    *,
-    task: str,
-    item_id: str,
-    item_schema: dict,
-    raw_value: object,
-    strict_levels: bool,
-    offset: float | None,
-) -> bool:
-    offset_map = {task: float(offset)} if offset is not None else None
-    try:
-        _validate_survey_item_value(
-            item_id=item_id,
-            val=raw_value,
-            item_schema=item_schema,
-            sub_id="analysis",
-            task=task,
-            strict_levels=strict_levels,
-            items_using_tolerance={},
-            normalize_fn=_normalize_item_value,
-            is_missing_fn=_is_missing_value_for_offset_analysis,
-            task_value_offsets=offset_map,
-            offset_application_counts=None,
-        )
-        return True
-    except SurveyValueOutOfBoundsError:
-        return False
-    except ValueError:
-        return False
-
-
-def _analyze_task_offset_evidence(
-    *,
-    error: Exception,
-    df,
-    col_to_mapping: dict,
-    templates: dict,
-    task_context_templates: dict,
-    strict_levels: bool,
-    max_samples: int = 4000,
-) -> dict[str, object] | None:
-    task = str(getattr(error, "task", "") or "").strip().lower()
-    if not task:
-        return None
-
-    candidate_offsets = _normalize_candidate_offsets(
-        getattr(error, "suggested_offsets", [])
-    )
-    if not candidate_offsets:
-        return None
-
-    task_columns: list[tuple[str, object]] = []
-    for column_name, mapping in col_to_mapping.items():
-        mapping_task = str(getattr(mapping, "task", "") or "").strip().lower()
-        if mapping_task != task:
-            continue
-        if str(column_name) not in df.columns:
-            continue
-        task_columns.append((str(column_name), mapping))
-
-    if not task_columns:
-        return None
-
-    baseline_invalid = 0
-    sampled_values = 0
-    numeric_items_checked: set[str] = set()
-    offset_stats: dict[float, dict[str, int]] = {
-        offset: {
-            "invalid_with_offset": 0,
-            "corrected": 0,
-            "introduced": 0,
-        }
-        for offset in candidate_offsets
-    }
-
-    for column_name, mapping in task_columns:
-        mapping_task_raw = str(getattr(mapping, "task", "") or "").strip()
-        mapping_run = getattr(mapping, "run", None)
-        item_id = str(getattr(mapping, "base_item", "") or "").strip()
-        if not item_id:
-            continue
-
-        schema = _survey_io._lookup_task_context_value(
-            task_context_templates,
-            task=mapping_task_raw,
-            session=None,
-            run=mapping_run,
-        )
-        if not isinstance(schema, dict):
-            template_payload = templates.get(mapping_task_raw) or templates.get(task)
-            if isinstance(template_payload, dict):
-                schema = template_payload.get("json")
-        if not isinstance(schema, dict):
-            continue
-
-        item_schema = schema.get(item_id)
-        if not _schema_supports_numeric_offset(item_schema):
-            continue
-        if not isinstance(item_schema, dict):
-            continue
-
-        numeric_items_checked.add(item_id)
-
-        for raw_value in df[column_name].tolist():
-            if pd is not None:
-                try:
-                    if pd.isna(raw_value):
-                        continue
-                except Exception:
-                    pass
-            if isinstance(raw_value, str) and raw_value.strip() == "":
-                continue
-
-            sampled_values += 1
-            baseline_valid = _is_value_valid_for_offset_analysis(
-                task=task,
-                item_id=item_id,
-                item_schema=item_schema,
-                raw_value=raw_value,
-                strict_levels=strict_levels,
-                offset=None,
-            )
-            if not baseline_valid:
-                baseline_invalid += 1
-
-            for offset in candidate_offsets:
-                with_offset_valid = _is_value_valid_for_offset_analysis(
-                    task=task,
-                    item_id=item_id,
-                    item_schema=item_schema,
-                    raw_value=raw_value,
-                    strict_levels=strict_levels,
-                    offset=offset,
-                )
-                if not with_offset_valid:
-                    offset_stats[offset]["invalid_with_offset"] += 1
-                if (not baseline_valid) and with_offset_valid:
-                    offset_stats[offset]["corrected"] += 1
-                if baseline_valid and (not with_offset_valid):
-                    offset_stats[offset]["introduced"] += 1
-
-            if sampled_values >= max_samples:
-                break
-        if sampled_values >= max_samples:
-            break
-
-    if sampled_values <= 0 or baseline_invalid <= 0:
-        return None
-
-    best_offset = min(
-        candidate_offsets,
-        key=lambda value: (
-            offset_stats[value]["invalid_with_offset"],
-            offset_stats[value]["introduced"],
-            -offset_stats[value]["corrected"],
-            abs(value),
-        ),
-    )
-    best_stats = offset_stats[best_offset]
-
-    corrected = int(best_stats["corrected"])
-    introduced = int(best_stats["introduced"])
-    invalid_with_offset = int(best_stats["invalid_with_offset"])
-    corrected_ratio = corrected / baseline_invalid if baseline_invalid else 0.0
-    outside_ratio = baseline_invalid / sampled_values if sampled_values else 0.0
-    outside_percent = round(outside_ratio * 100.0, 1)
-    corrected_percent = round(corrected_ratio * 100.0, 1) if baseline_invalid else 0.0
-    remaining_percent = (
-        round((invalid_with_offset / sampled_values) * 100.0, 1)
-        if sampled_values
-        else 0.0
-    )
-    introduced_percent = (
-        round((introduced / sampled_values) * 100.0, 1) if sampled_values else 0.0
-    )
-    introduced_limit = max(1, sampled_values // 50)
-
-    if baseline_invalid <= 2:
-        classification = "item_issues_likely"
-        summary = (
-            f"Only {baseline_invalid}/{sampled_values} values ({outside_percent:.1f}%) are out of range "
-            f"for this task sample. This usually indicates isolated typos rather than a structural scale shift."
-        )
-    elif (
-        baseline_invalid >= 3
-        and corrected_ratio >= 0.8
-        and introduced <= introduced_limit
-    ):
-        classification = "structural_offset_likely"
-        summary = (
-            f"Task-wide check suggests a structural offset: {baseline_invalid}/{sampled_values} "
-            f"values are out of range ({outside_percent:.1f}%), and {corrected}/{baseline_invalid} "
-            f"({corrected_percent:.1f}%) are fixed by {best_offset:+g}."
-        )
-    elif corrected <= max(1, baseline_invalid // 3):
-        classification = "item_issues_likely"
-        summary = (
-            f"Task-wide check suggests isolated data issues: {baseline_invalid}/{sampled_values} "
-            f"values are out of range ({outside_percent:.1f}%), but only {corrected}/{baseline_invalid} "
-            f"({corrected_percent:.1f}%) are fixed by {best_offset:+g}."
-        )
-    else:
-        classification = "mixed_offset_and_item_issues"
-        summary = (
-            f"Task-wide check found a mixed pattern: {baseline_invalid}/{sampled_values} "
-            f"values are out of range ({outside_percent:.1f}); {corrected}/{baseline_invalid} "
-            f"({corrected_percent:.1f}%) are fixed by {best_offset:+g}, but {invalid_with_offset} "
-            f"({remaining_percent:.1f}% of sampled values) remain invalid."
-        )
-
-    return {
-        "task": task,
-        "scope": "task",
-        "classification": classification,
-        "summary_message": summary,
-        "sampled_numeric_values": int(sampled_values),
-        "numeric_items_checked": int(len(numeric_items_checked)),
-        "invalid_without_offset": int(baseline_invalid),
-        "invalid_without_offset_percent": float(outside_percent),
-        "best_offset": _coerce_offset_for_metadata(best_offset),
-        "invalid_with_best_offset": int(invalid_with_offset),
-        "invalid_with_best_offset_percent": float(remaining_percent),
-        "corrected_by_best_offset": int(corrected),
-        "corrected_by_best_offset_percent": float(corrected_percent),
-        "newly_invalid_with_best_offset": int(introduced),
-        "newly_invalid_with_best_offset_percent": float(introduced_percent),
-    }
-
-
-def _attach_offset_evidence_to_error(
-    *,
-    error: Exception,
-    evidence: dict[str, object] | None,
-) -> None:
-    if not evidence:
-        return
-
-    setattr(error, "offset_evidence", evidence)
-
-    best_offset = _to_float_or_none(evidence.get("best_offset"))
-    if best_offset is None:
-        return
-
-    invalid_with_best_offset = int(
-        _to_float_or_none(evidence.get("invalid_with_best_offset")) or 0
-    )
-    newly_invalid_with_best_offset = int(
-        _to_float_or_none(evidence.get("newly_invalid_with_best_offset")) or 0
-    )
-    if invalid_with_best_offset > 0 or newly_invalid_with_best_offset > 0:
-        setattr(error, "suggested_offsets", [])
-        return
-
-    existing_offsets = _normalize_candidate_offsets(
-        getattr(error, "suggested_offsets", [])
-    )
-    reordered: list[float | int] = [best_offset]
-    for offset in existing_offsets:
-        if abs(offset - best_offset) < 1e-9:
-            continue
-        reordered.append(offset)
-    setattr(error, "suggested_offsets", [_coerce_offset_for_metadata(v) for v in reordered])
-
-
 def sync_project_survey_recipe_offsets(
     *,
     project_root: str | Path,
@@ -2327,24 +2009,20 @@ def _convert_survey_dataframe_to_prism_dataset(
     )
 
     # --- Extract LimeSurvey System Columns ---
-    # Tool-limesurvey sidecars are only meaningful for native LimeSurvey imports
-    # (.lsa/.lss). CSV/XLSX/TSV sources may legitimately contain columns named
-    # like startdate/submitdate, but we should not emit tool-* sidecars there.
-    source_format_norm = str(source_format or "").strip().lower()
-    ls_system_cols: list[str] = []
-    if source_format_norm in {"lsa", "lss"}:
-        detected_ls_system_cols, _ = _extract_limesurvey_columns(list(df.columns))
-        if detected_ls_system_cols:
-            shown = ", ".join(detected_ls_system_cols[:8])
-            more = (
-                ""
-                if len(detected_ls_system_cols) <= 8
-                else f" (+{len(detected_ls_system_cols) - 8} more)"
-            )
-            conversion_warnings.append(
-                f"LimeSurvey system columns detected ({len(detected_ls_system_cols)}): {shown}{more}"
-            )
-        ls_system_cols = detected_ls_system_cols
+    # These platform metadata columns are excluded from PRISM survey output
+    # but preserved in a separate tool-limesurvey sidecar file.
+    detected_ls_system_cols, _ = _extract_limesurvey_columns(list(df.columns))
+    if detected_ls_system_cols:
+        shown = ", ".join(detected_ls_system_cols[:8])
+        more = (
+            ""
+            if len(detected_ls_system_cols) <= 8
+            else f" (+{len(detected_ls_system_cols) - 8} more)"
+        )
+        conversion_warnings.append(
+            f"LimeSurvey system columns detected ({len(detected_ls_system_cols)}): {shown}{more}"
+        )
+    ls_system_cols: list[str] = detected_ls_system_cols
 
     # Handle duplicate IDs based on duplicate_handling parameter
     df, _res_ses_override, duplicate_warnings = _survey_core._handle_duplicate_ids(
@@ -2525,46 +2203,33 @@ def _convert_survey_dataframe_to_prism_dataset(
     )
 
     # --- Process and Write Responses ---
-    try:
-        missing_cells_by_subject, items_using_tolerance, offset_application_counts = (
-            _survey_io._process_and_write_responses(
-                df=df,
-                res_id_col=res_id_col,
-                res_ses_col=res_ses_col,
-                res_run_col=res_run_col,
-                session=session,
-                output_root=output_root,
-                task_run_columns=task_run_columns,
-                selected_tasks=selected_tasks,
-                templates=templates,
-                task_context_templates=task_context_templates,
-                col_to_mapping=col_to_mapping,
-                strict_levels=strict_levels,
-                task_runs=task_runs,
-                task_context_acq_map=task_context_acq_map,
-                non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
-                normalize_sub_fn=_normalize_sub_id,
-                normalize_ses_fn=_normalize_ses_id,
-                normalize_item_fn=_normalize_item_value,
-                is_missing_fn=_is_missing_value,
-                ensure_dir_fn=_ensure_dir,
-                process_survey_row_with_run_fn=_process_survey_row_with_run,
-                build_bids_survey_filename_fn=_build_bids_survey_filename,
-                task_value_offsets=normalized_task_value_offsets,
-            )
+    missing_cells_by_subject, items_using_tolerance, offset_application_counts = (
+        _survey_io._process_and_write_responses(
+            df=df,
+            res_id_col=res_id_col,
+            res_ses_col=res_ses_col,
+            res_run_col=res_run_col,
+            session=session,
+            output_root=output_root,
+            task_run_columns=task_run_columns,
+            selected_tasks=selected_tasks,
+            templates=templates,
+            task_context_templates=task_context_templates,
+            col_to_mapping=col_to_mapping,
+            strict_levels=strict_levels,
+            task_runs=task_runs,
+            task_context_acq_map=task_context_acq_map,
+            non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
+            normalize_sub_fn=_normalize_sub_id,
+            normalize_ses_fn=_normalize_ses_id,
+            normalize_item_fn=_normalize_item_value,
+            is_missing_fn=_is_missing_value,
+            ensure_dir_fn=_ensure_dir,
+            process_survey_row_with_run_fn=_process_survey_row_with_run,
+            build_bids_survey_filename_fn=_build_bids_survey_filename,
+            task_value_offsets=normalized_task_value_offsets,
         )
-    except SurveyValueOutOfBoundsError as offset_error:
-        if getattr(offset_error, "configured_offset", None) is None:
-            evidence = _analyze_task_offset_evidence(
-                error=offset_error,
-                df=df,
-                col_to_mapping=col_to_mapping,
-                templates=templates,
-                task_context_templates=task_context_templates,
-                strict_levels=strict_levels,
-            )
-            _attach_offset_evidence_to_error(error=offset_error, evidence=evidence)
-        raise
+    )
 
     # Add summary for items using numeric range tolerance
     conversion_warnings.extend(

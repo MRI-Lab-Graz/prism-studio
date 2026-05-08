@@ -4,6 +4,7 @@
  */
 
 import { pollJobStatus } from '../../shared/job-polling.js';
+import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 
 export function initEnvironment(elements) {
     const STATUS_POLL_INTERVAL_MS = 500;
@@ -57,6 +58,9 @@ export function initEnvironment(elements) {
     } = elements;
 
     let envServerFilePath = '';
+    let envSourcedataRequestToken = 0;
+    let envSourcedataQuickSelectEl = null;
+    let envSourcedataFileSelectEl = null;
 
     let progressDisplayPct = 0;
     let progressTargetPct = 0;
@@ -138,6 +142,146 @@ export function initEnvironment(elements) {
         }
 
         updateFileBtn();
+    }
+
+    function ensureEnvironmentSourcedataQuickSelectElements() {
+        if (envSourcedataQuickSelectEl && envSourcedataFileSelectEl) {
+            return;
+        }
+        if (!envDataFile) {
+            return;
+        }
+
+        const pickerContainer = envDataFile.closest('.studio-file-picker');
+        if (!pickerContainer) {
+            return;
+        }
+
+        envSourcedataQuickSelectEl = pickerContainer.querySelector('#envSourcedataQuickSelect');
+        envSourcedataFileSelectEl = pickerContainer.querySelector('#envSourcedataFileSelect');
+
+        if (envSourcedataQuickSelectEl && envSourcedataFileSelectEl) {
+            return;
+        }
+
+        const inputGroup = envDataFile.closest('.input-group');
+        if (!inputGroup || !inputGroup.parentElement) {
+            return;
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.id = 'envSourcedataQuickSelect';
+        wrapper.className = 'd-none mb-2';
+        wrapper.innerHTML = `
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light"><i class="fas fa-folder-open text-muted"></i></span>
+                <select class="form-select form-select-sm" id="envSourcedataFileSelect">
+                    <option value="">Loading sourcedata files...</option>
+                </select>
+            </div>
+        `;
+
+        inputGroup.parentElement.insertBefore(wrapper, inputGroup);
+        envSourcedataQuickSelectEl = wrapper;
+        envSourcedataFileSelectEl = wrapper.querySelector('#envSourcedataFileSelect');
+    }
+
+    function resetEnvironmentSourcedataQuickSelect() {
+        ensureEnvironmentSourcedataQuickSelectElements();
+        if (!envSourcedataFileSelectEl) {
+            return;
+        }
+
+        envSourcedataFileSelectEl.value = '';
+        while (envSourcedataFileSelectEl.options.length > 1) {
+            envSourcedataFileSelectEl.remove(1);
+        }
+    }
+
+    function setEnvironmentSourcedataPlaceholder(label, { disabled = true } = {}) {
+        ensureEnvironmentSourcedataQuickSelectElements();
+        if (!envSourcedataQuickSelectEl || !envSourcedataFileSelectEl) {
+            return;
+        }
+
+        envSourcedataQuickSelectEl.classList.remove('d-none');
+        resetEnvironmentSourcedataQuickSelect();
+
+        let placeholderOption = envSourcedataFileSelectEl.options[0];
+        if (!placeholderOption) {
+            placeholderOption = document.createElement('option');
+            envSourcedataFileSelectEl.appendChild(placeholderOption);
+        }
+
+        placeholderOption.value = '';
+        placeholderOption.textContent = label;
+        placeholderOption.disabled = disabled;
+        envSourcedataFileSelectEl.selectedIndex = 0;
+        envSourcedataFileSelectEl.disabled = disabled;
+    }
+
+    function refreshEnvironmentSourcedataQuickSelect(projectPath = resolveCurrentProjectPath()) {
+        ensureEnvironmentSourcedataQuickSelectElements();
+        if (!envSourcedataQuickSelectEl || !envSourcedataFileSelectEl) {
+            return;
+        }
+
+        const previousValue = envSourcedataFileSelectEl.value;
+        const requestToken = ++envSourcedataRequestToken;
+        setEnvironmentSourcedataPlaceholder('Loading sourcedata files...', { disabled: true });
+
+        const effectiveProjectPath = String(projectPath || '').trim();
+        const endpoint = effectiveProjectPath
+            ? `/api/projects/sourcedata-files?kind=environment&project_path=${encodeURIComponent(effectiveProjectPath)}`
+            : '/api/projects/sourcedata-files?kind=environment';
+
+        fetch(endpoint)
+            .then((response) => response.json())
+            .then((data) => {
+                if (requestToken !== envSourcedataRequestToken) {
+                    return;
+                }
+
+                if (data.sourcedata_exists && Array.isArray(data.files) && data.files.length > 0) {
+                    envSourcedataQuickSelectEl.classList.remove('d-none');
+                    resetEnvironmentSourcedataQuickSelect();
+                    envSourcedataFileSelectEl.disabled = false;
+
+                    const placeholderOption = envSourcedataFileSelectEl.options[0];
+                    if (placeholderOption) {
+                        placeholderOption.textContent = 'Load from sourcedata/...';
+                        placeholderOption.disabled = false;
+                    }
+
+                    data.files.forEach((entry) => {
+                        const option = document.createElement('option');
+                        option.value = entry.name;
+                        const sizeKB = (entry.size / 1024).toFixed(1);
+                        option.textContent = `${entry.name} (${sizeKB} KB)`;
+                        envSourcedataFileSelectEl.appendChild(option);
+                    });
+
+                    if (previousValue && Array.from(envSourcedataFileSelectEl.options).some((option) => option.value === previousValue)) {
+                        envSourcedataFileSelectEl.value = previousValue;
+                    }
+                } else if (data.sourcedata_exists) {
+                    setEnvironmentSourcedataPlaceholder('No environment-compatible files found in sourcedata/', {
+                        disabled: true,
+                    });
+                } else {
+                    setEnvironmentSourcedataPlaceholder('No sourcedata folder found for the current project', {
+                        disabled: true,
+                    });
+                }
+            })
+            .catch(() => {
+                if (requestToken !== envSourcedataRequestToken) {
+                    return;
+                }
+                setEnvironmentSourcedataPlaceholder('Could not load sourcedata files', {
+                    disabled: true,
+                });
+            });
     }
 
     // ── UI helpers ────────────────────────────────────────────────────────────
@@ -364,6 +508,12 @@ export function initEnvironment(elements) {
         applyEnvironmentPickerUiState();
     });
 
+    window.addEventListener('prism-project-changed', () => {
+        resetUI();
+        updateFileBtn();
+        refreshEnvironmentSourcedataQuickSelect();
+    });
+
     if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
         window.PrismFileSystemMode.init().then(() => {
             applyEnvironmentPickerUiState();
@@ -373,6 +523,44 @@ export function initEnvironment(elements) {
     }
 
     applyEnvironmentPickerUiState();
+
+    ensureEnvironmentSourcedataQuickSelectElements();
+    if (envSourcedataQuickSelectEl && envSourcedataFileSelectEl) {
+        refreshEnvironmentSourcedataQuickSelect();
+
+        envSourcedataFileSelectEl.addEventListener('change', async function() {
+            const filename = this.value;
+            if (!filename) {
+                return;
+            }
+
+            try {
+                const currentProjectPath = resolveCurrentProjectPath();
+                const endpoint = currentProjectPath
+                    ? `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}`
+                    : `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}`;
+
+                const response = await fetch(endpoint);
+                if (!response.ok) {
+                    throw new Error('Failed to load sourcedata file');
+                }
+
+                const blob = await response.blob();
+                const file = new File([blob], filename, { type: blob.type });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                envDataFile.files = dataTransfer.files;
+                envDataFile.dispatchEvent(new Event('change', { bubbles: true }));
+            } catch (_error) {
+                if (envError) {
+                    envError.textContent = `Failed to load ${filename} from sourcedata.`;
+                    envError.classList.remove('d-none');
+                }
+            } finally {
+                refreshEnvironmentSourcedataQuickSelect();
+            }
+        });
+    }
 
     if (envTimestampCol) {
         envTimestampCol.addEventListener('change', updateConvertBtn);

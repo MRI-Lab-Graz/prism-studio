@@ -39,6 +39,9 @@ export function initBiometrics(elements) {
     } = elements;
 
     let biometricsServerFilePath = '';
+    let biometricsSourcedataRequestToken = 0;
+    let biometricsSourcedataQuickSelectEl = null;
+    let biometricsSourcedataFileSelectEl = null;
 
     function prefersServerPicker() {
         return Boolean(
@@ -116,6 +119,146 @@ export function initBiometrics(elements) {
         }
 
         updateBiometricsBtn();
+    }
+
+    function ensureBiometricsSourcedataQuickSelectElements() {
+        if (biometricsSourcedataQuickSelectEl && biometricsSourcedataFileSelectEl) {
+            return;
+        }
+        if (!biometricsDataFile) {
+            return;
+        }
+
+        const pickerContainer = biometricsDataFile.closest('.studio-file-picker');
+        if (!pickerContainer) {
+            return;
+        }
+
+        biometricsSourcedataQuickSelectEl = pickerContainer.querySelector('#biometricsSourcedataQuickSelect');
+        biometricsSourcedataFileSelectEl = pickerContainer.querySelector('#biometricsSourcedataFileSelect');
+
+        if (biometricsSourcedataQuickSelectEl && biometricsSourcedataFileSelectEl) {
+            return;
+        }
+
+        const inputGroup = biometricsDataFile.closest('.input-group');
+        if (!inputGroup || !inputGroup.parentElement) {
+            return;
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.id = 'biometricsSourcedataQuickSelect';
+        wrapper.className = 'd-none mb-2';
+        wrapper.innerHTML = `
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light"><i class="fas fa-folder-open text-muted"></i></span>
+                <select class="form-select form-select-sm" id="biometricsSourcedataFileSelect">
+                    <option value="">Loading sourcedata files...</option>
+                </select>
+            </div>
+        `;
+
+        inputGroup.parentElement.insertBefore(wrapper, inputGroup);
+        biometricsSourcedataQuickSelectEl = wrapper;
+        biometricsSourcedataFileSelectEl = wrapper.querySelector('#biometricsSourcedataFileSelect');
+    }
+
+    function resetBiometricsSourcedataQuickSelect() {
+        ensureBiometricsSourcedataQuickSelectElements();
+        if (!biometricsSourcedataFileSelectEl) {
+            return;
+        }
+
+        biometricsSourcedataFileSelectEl.value = '';
+        while (biometricsSourcedataFileSelectEl.options.length > 1) {
+            biometricsSourcedataFileSelectEl.remove(1);
+        }
+    }
+
+    function setBiometricsSourcedataPlaceholder(label, { disabled = true } = {}) {
+        ensureBiometricsSourcedataQuickSelectElements();
+        if (!biometricsSourcedataQuickSelectEl || !biometricsSourcedataFileSelectEl) {
+            return;
+        }
+
+        biometricsSourcedataQuickSelectEl.classList.remove('d-none');
+        resetBiometricsSourcedataQuickSelect();
+
+        let placeholderOption = biometricsSourcedataFileSelectEl.options[0];
+        if (!placeholderOption) {
+            placeholderOption = document.createElement('option');
+            biometricsSourcedataFileSelectEl.appendChild(placeholderOption);
+        }
+
+        placeholderOption.value = '';
+        placeholderOption.textContent = label;
+        placeholderOption.disabled = disabled;
+        biometricsSourcedataFileSelectEl.selectedIndex = 0;
+        biometricsSourcedataFileSelectEl.disabled = disabled;
+    }
+
+    function refreshBiometricsSourcedataQuickSelect(projectPath = resolveCurrentProjectPath()) {
+        ensureBiometricsSourcedataQuickSelectElements();
+        if (!biometricsSourcedataQuickSelectEl || !biometricsSourcedataFileSelectEl) {
+            return;
+        }
+
+        const previousValue = biometricsSourcedataFileSelectEl.value;
+        const requestToken = ++biometricsSourcedataRequestToken;
+        setBiometricsSourcedataPlaceholder('Loading sourcedata files...', { disabled: true });
+
+        const effectiveProjectPath = String(projectPath || '').trim();
+        const endpoint = effectiveProjectPath
+            ? `/api/projects/sourcedata-files?kind=biometrics&project_path=${encodeURIComponent(effectiveProjectPath)}`
+            : '/api/projects/sourcedata-files?kind=biometrics';
+
+        fetch(endpoint)
+            .then((response) => response.json())
+            .then((data) => {
+                if (requestToken !== biometricsSourcedataRequestToken) {
+                    return;
+                }
+
+                if (data.sourcedata_exists && Array.isArray(data.files) && data.files.length > 0) {
+                    biometricsSourcedataQuickSelectEl.classList.remove('d-none');
+                    resetBiometricsSourcedataQuickSelect();
+                    biometricsSourcedataFileSelectEl.disabled = false;
+
+                    const placeholderOption = biometricsSourcedataFileSelectEl.options[0];
+                    if (placeholderOption) {
+                        placeholderOption.textContent = 'Load from sourcedata/...';
+                        placeholderOption.disabled = false;
+                    }
+
+                    data.files.forEach((entry) => {
+                        const option = document.createElement('option');
+                        option.value = entry.name;
+                        const sizeKB = (entry.size / 1024).toFixed(1);
+                        option.textContent = `${entry.name} (${sizeKB} KB)`;
+                        biometricsSourcedataFileSelectEl.appendChild(option);
+                    });
+
+                    if (previousValue && Array.from(biometricsSourcedataFileSelectEl.options).some((option) => option.value === previousValue)) {
+                        biometricsSourcedataFileSelectEl.value = previousValue;
+                    }
+                } else if (data.sourcedata_exists) {
+                    setBiometricsSourcedataPlaceholder('No biometrics-compatible files found in sourcedata/', {
+                        disabled: true,
+                    });
+                } else {
+                    setBiometricsSourcedataPlaceholder('No sourcedata folder found for the current project', {
+                        disabled: true,
+                    });
+                }
+            })
+            .catch(() => {
+                if (requestToken !== biometricsSourcedataRequestToken) {
+                    return;
+                }
+                setBiometricsSourcedataPlaceholder('Could not load sourcedata files', {
+                    disabled: true,
+                });
+            });
     }
 
     // ===== UI RESET FUNCTIONS =====
@@ -203,6 +346,7 @@ export function initBiometrics(elements) {
     window.addEventListener('prism-project-changed', function() {
         resetBiometricsWorkflowState();
         updateBiometricsBtn();
+        refreshBiometricsSourcedataQuickSelect();
     });
 
     window.addEventListener('prism-library-settings-changed', function() {
@@ -218,6 +362,42 @@ export function initBiometrics(elements) {
     }
 
     applyBiometricsPickerUiState();
+
+    ensureBiometricsSourcedataQuickSelectElements();
+    if (biometricsSourcedataQuickSelectEl && biometricsSourcedataFileSelectEl) {
+        refreshBiometricsSourcedataQuickSelect();
+
+        biometricsSourcedataFileSelectEl.addEventListener('change', async function() {
+            const filename = this.value;
+            if (!filename) {
+                return;
+            }
+
+            try {
+                const currentProjectPath = resolveCurrentProjectPath();
+                const endpoint = currentProjectPath
+                    ? `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}`
+                    : `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}`;
+
+                const response = await fetch(endpoint);
+                if (!response.ok) {
+                    throw new Error('Failed to load sourcedata file');
+                }
+
+                const blob = await response.blob();
+                const file = new File([blob], filename, { type: blob.type });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                biometricsDataFile.files = dataTransfer.files;
+                biometricsDataFile.dispatchEvent(new Event('change', { bubbles: true }));
+            } catch (_error) {
+                biometricsError.textContent = `Failed to load ${filename} from sourcedata.`;
+                biometricsError.classList.remove('d-none');
+            } finally {
+                refreshBiometricsSourcedataQuickSelect();
+            }
+        });
+    }
 
     // ===== PREVIEW / DRY-RUN HANDLER =====
 
