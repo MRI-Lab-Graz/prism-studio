@@ -311,10 +311,15 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn('id="convertValueOffsetRows"', template_content)
         self.assertIn('id="convertValueOffsetsKnownTasks"', template_content)
         self.assertIn('id="convertValueOffsetsEmptyState"', template_content)
+        self.assertIn('id="convertApplyValueOffsetsBtn"', template_content)
+        self.assertIn('id="convertValueOffsetsStatus"', template_content)
         self.assertIn('class="form-control d-none" id="convertValueOffsets"', template_content)
 
         self.assertIn("let taskValueOffsetEditorState = [];", module_content)
+        self.assertIn("let appliedTaskValueOffsetSelectionSignature = '';", module_content)
         self.assertIn("function getAvailableSurveyTasksForValueOffsets() {", module_content)
+        self.assertIn("function hasAppliedTaskValueOffsetSelections() {", module_content)
+        self.assertIn("function updateTaskValueOffsetApplyState() {", module_content)
         self.assertIn("function renderTaskValueOffsetEditor() {", module_content)
         self.assertIn("function focusTaskValueOffsetEditor(rowId = null) {", module_content)
         self.assertIn("function ensureTaskValueOffsetEditorRow(task = '') {", module_content)
@@ -323,6 +328,12 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("data-role=\"operator\"", module_content)
         self.assertIn("data-role=\"magnitude\"", module_content)
         self.assertIn("convertAddValueOffsetRowBtn.addEventListener('click'", module_content)
+        self.assertIn("convertApplyValueOffsetsBtn?.addEventListener('click'", module_content)
+        self.assertIn("valueOffsetSelectionsPending", module_content)
+        self.assertIn(
+            "if (Object.keys(multivariantTasks).length > 0 && !hasAppliedVersionWizardSelections()) {",
+            module_content,
+        )
 
     def test_converter_modules_surface_backend_save_paths(self):
         biometrics_content = BIOMETRICS_MODULE.read_text(encoding="utf-8")
