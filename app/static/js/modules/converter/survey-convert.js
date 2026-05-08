@@ -64,6 +64,11 @@ export function initSurveyConvert(elements) {
     const convertAdvancedToggle = document.getElementById('convertAdvancedToggle');
     const surveyAdvancedOptionsPanel = document.getElementById('surveyAdvancedOptions');
     const convertValueOffsets = document.getElementById('convertValueOffsets');
+    const convertValueOffsetsEditor = document.getElementById('convertValueOffsetsEditor');
+    const convertValueOffsetRows = document.getElementById('convertValueOffsetRows');
+    const convertAddValueOffsetRowBtn = document.getElementById('convertAddValueOffsetRowBtn');
+    const convertValueOffsetsKnownTasks = document.getElementById('convertValueOffsetsKnownTasks');
+    const convertValueOffsetsEmptyState = document.getElementById('convertValueOffsetsEmptyState');
     const convertValueOffsetAdvice = document.getElementById('convertValueOffsetAdvice');
     const browseServerSurveyFileBtn = document.getElementById('browseServerSurveyFileBtn');
     const convertSessionColumnOverride = document.getElementById('convertSessionColumnOverride');
@@ -72,7 +77,10 @@ export function initSurveyConvert(elements) {
     const surveyVersionWizard = document.getElementById('surveyVersionWizard');
     const surveyVersionWizardBody = document.getElementById('surveyVersionWizardBody');
     const surveyVersionWizardCount = document.getElementById('surveyVersionWizardCount');
+    const surveyVersionWizardStatus = document.getElementById('surveyVersionWizardStatus');
+    const surveyVersionWizardApplyBtn = document.getElementById('surveyVersionWizardApplyBtn');
     let selectedTemplateVersions = {};
+    let appliedTemplateVersionSelectionSignature = '';
     let versionWizardState = {
         multivariantTasks: {},
         taskRuns: {},
@@ -99,6 +107,8 @@ export function initSurveyConvert(elements) {
     let activeRunCancelledByUser = false;
     let sourcedataQuickSelectEl = sourcedataQuickSelect || null;
     let sourcedataFileSelectEl = sourcedataFileSelect || null;
+    let taskValueOffsetRowSequence = 0;
+    let taskValueOffsetEditorState = [];
     let surveyPreviewSelectionState = {
         previewKey: '',
         availableTasks: [],
@@ -259,6 +269,7 @@ export function initSurveyConvert(elements) {
             availableTasks: [],
             selectedTasks: []
         };
+        renderTaskValueOffsetEditor();
     }
 
     function setSurveyPreviewSelectionState(taskSummaries, previewKey = getSurveyPreviewContextKey()) {
@@ -280,6 +291,7 @@ export function initSurveyConvert(elements) {
             availableTasks,
             selectedTasks: selectedTasks.length > 0 ? selectedTasks : [...availableTasks]
         };
+        renderTaskValueOffsetEditor();
     }
 
     function hasFreshSurveyPreviewSelectionState() {
@@ -650,6 +662,16 @@ export function initSurveyConvert(elements) {
         return `${numeric >= 0 ? '+' : ''}${rounded}`;
     }
 
+    function formatOffsetMagnitude(offset) {
+        const numeric = Math.abs(Number(offset));
+        if (!Number.isFinite(numeric)) {
+            return '';
+        }
+        return Number.isInteger(numeric)
+            ? String(numeric)
+            : numeric.toFixed(6).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+    }
+
     function normalizeTaskValueOffsets(offsetMap) {
         if (!offsetMap || typeof offsetMap !== 'object') {
             return {};
@@ -664,6 +686,279 @@ export function initSurveyConvert(elements) {
             normalized[task] = parsedOffset;
         });
         return normalized;
+    }
+
+    function createTaskValueOffsetRow(task = '', offset = null) {
+        const normalizedTask = normalizeSurveyTaskName(task);
+        const parsedOffset = parseNumericOffsetValue(offset);
+        return {
+            id: ++taskValueOffsetRowSequence,
+            task: normalizedTask,
+            operator: parsedOffset !== null && parsedOffset < 0 ? '-' : '+',
+            magnitude: parsedOffset !== null ? formatOffsetMagnitude(parsedOffset) : ''
+        };
+    }
+
+    function getAvailableSurveyTasksForValueOffsets() {
+        const ordered = [];
+        const seen = new Set();
+        const pushTask = (value) => {
+            const task = normalizeSurveyTaskName(value);
+            if (!task || seen.has(task)) {
+                return;
+            }
+            seen.add(task);
+            ordered.push(task);
+        };
+
+        (surveyPreviewSelectionState.selectedTasks || []).forEach(pushTask);
+        (surveyPreviewSelectionState.availableTasks || []).forEach(pushTask);
+        getTemplateVersionSelections().forEach((entry) => pushTask(entry && entry.task));
+        const previewTasks = Array.isArray(window.lastPreviewData && window.lastPreviewData.survey_tasks)
+            ? window.lastPreviewData.survey_tasks
+            : [];
+        previewTasks.forEach((entry) => pushTask(entry && entry.task));
+        taskValueOffsetEditorState.forEach((entry) => pushTask(entry && entry.task));
+
+        return ordered;
+    }
+
+    function getTaskValueOffsetMapFromEditorState() {
+        const normalized = {};
+        taskValueOffsetEditorState.forEach((entry) => {
+            const task = normalizeSurveyTaskName(entry && entry.task);
+            const magnitude = parseNumericOffsetValue(entry && entry.magnitude);
+            if (!task || magnitude === null) {
+                return;
+            }
+            normalized[task] = entry && entry.operator === '-'
+                ? -Math.abs(magnitude)
+                : Math.abs(magnitude);
+        });
+        return normalized;
+    }
+
+    function getPreferredTaskValueOffsetTask() {
+        const availableTasks = getAvailableSurveyTasksForValueOffsets();
+        if (availableTasks.length === 0) {
+            return '';
+        }
+
+        const usedTasks = new Set(
+            taskValueOffsetEditorState
+                .map((entry) => normalizeSurveyTaskName(entry && entry.task))
+                .filter(Boolean)
+        );
+        return availableTasks.find((task) => !usedTasks.has(task)) || availableTasks[0] || '';
+    }
+
+    function syncTaskValueOffsetTextFromState() {
+        if (!convertValueOffsets) {
+            return;
+        }
+        const offsetMap = getTaskValueOffsetMapFromEditorState();
+        convertValueOffsets.value = Object.entries(offsetMap)
+            .map(([task, offset]) => `${task} = ${formatSignedOffset(offset)}`)
+            .join('\n');
+    }
+
+    function setTaskValueOffsetEditorStateFromText(rawText) {
+        let parsed = {};
+        try {
+            parsed = parseTaskValueOffsetsText(rawText);
+        } catch (error) {
+            console.warn('Could not parse seeded task value offsets:', error);
+        }
+
+        taskValueOffsetEditorState = Object.entries(normalizeTaskValueOffsets(parsed))
+            .map(([task, offset]) => createTaskValueOffsetRow(task, offset));
+        renderTaskValueOffsetEditor();
+        syncTaskValueOffsetTextFromState();
+    }
+
+    function clearTaskValueOffsetEditorState() {
+        taskValueOffsetEditorState = [];
+        renderTaskValueOffsetEditor();
+        syncTaskValueOffsetTextFromState();
+    }
+
+    function ensureTaskValueOffsetEditorRow(task = '') {
+        const normalizedTask = normalizeSurveyTaskName(task);
+        if (normalizedTask) {
+            const existing = taskValueOffsetEditorState.find((entry) => normalizeSurveyTaskName(entry && entry.task) === normalizedTask);
+            if (existing) {
+                return existing.id;
+            }
+        }
+
+        const defaultTask = normalizedTask || getPreferredTaskValueOffsetTask();
+        const nextRow = createTaskValueOffsetRow(defaultTask);
+        taskValueOffsetEditorState.push(nextRow);
+        renderTaskValueOffsetEditor();
+        syncTaskValueOffsetTextFromState();
+        return nextRow.id;
+    }
+
+    function focusTaskValueOffsetEditor(rowId = null) {
+        const focusRoot = rowId && convertValueOffsetRows
+            ? convertValueOffsetRows.querySelector(`[data-offset-row-id="${rowId}"]`)
+            : convertValueOffsetsEditor;
+        const target = focusRoot && typeof focusRoot.querySelector === 'function'
+            ? focusRoot.querySelector('[data-role="task"]:not([disabled]), [data-role="magnitude"]:not([disabled])')
+            : null;
+
+        if (convertValueOffsetsEditor && typeof convertValueOffsetsEditor.scrollIntoView === 'function') {
+            convertValueOffsetsEditor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        if (target && typeof target.focus === 'function') {
+            target.focus();
+            return;
+        }
+
+        if (convertAddValueOffsetRowBtn && typeof convertAddValueOffsetRowBtn.focus === 'function') {
+            convertAddValueOffsetRowBtn.focus();
+            return;
+        }
+
+        convertValueOffsets?.focus();
+    }
+
+    function renderTaskValueOffsetEditor() {
+        if (!convertValueOffsetRows) {
+            return;
+        }
+
+        const enabled = isAdvancedOptionsEnabled();
+        const availableTasks = getAvailableSurveyTasksForValueOffsets();
+
+        if (enabled && taskValueOffsetEditorState.length === 0 && availableTasks.length > 0) {
+            taskValueOffsetEditorState = [createTaskValueOffsetRow(getPreferredTaskValueOffsetTask())];
+        }
+
+        if (convertValueOffsetsKnownTasks) {
+            convertValueOffsetsKnownTasks.textContent = availableTasks.length > 0
+                ? `Available tasks: ${availableTasks.join(', ')}`
+                : 'Run Preview to populate available survey tasks.';
+        }
+
+        if (convertAddValueOffsetRowBtn) {
+            convertAddValueOffsetRowBtn.disabled = !enabled || availableTasks.length === 0;
+        }
+
+        if (convertValueOffsetsEditor) {
+            convertValueOffsetsEditor.classList.toggle('opacity-75', !enabled);
+        }
+
+        if (taskValueOffsetEditorState.length === 0) {
+            convertValueOffsetRows.innerHTML = '';
+            if (convertValueOffsetsEmptyState) {
+                convertValueOffsetsEmptyState.textContent = availableTasks.length > 0
+                    ? 'No offset rows configured yet.'
+                    : 'Run Preview to populate available survey tasks.';
+                convertValueOffsetsEmptyState.classList.remove('d-none');
+            }
+            return;
+        }
+
+        if (convertValueOffsetsEmptyState) {
+            convertValueOffsetsEmptyState.classList.add('d-none');
+        }
+
+        const rowsHtml = taskValueOffsetEditorState.map((entry) => {
+            const optionTasks = [];
+            const seenTasks = new Set();
+            const pushTask = (value) => {
+                const task = normalizeSurveyTaskName(value);
+                if (!task || seenTasks.has(task)) {
+                    return;
+                }
+                seenTasks.add(task);
+                optionTasks.push(task);
+            };
+
+            pushTask(entry && entry.task);
+            availableTasks.forEach(pushTask);
+
+            const taskOptionsHtml = optionTasks.length > 0
+                ? [
+                    '<option value="">Choose survey task</option>',
+                    ...optionTasks.map((task) => {
+                        const selected = normalizeSurveyTaskName(entry && entry.task) === task ? ' selected' : '';
+                        return `<option value="${escapeHtml(task)}"${selected}>${escapeHtml(task)}</option>`;
+                    })
+                ].join('')
+                : '<option value="">Run Preview to populate tasks</option>';
+
+            const operator = entry && entry.operator === '-' ? '-' : '+';
+            const magnitude = entry && entry.magnitude ? escapeHtml(String(entry.magnitude)) : '';
+
+            return `
+                <div class="row g-2 align-items-end" data-offset-row-id="${entry.id}">
+                    <div class="col-md-6">
+                        <label class="form-label small mb-1" for="convertValueOffsetTask-${entry.id}">Task</label>
+                        <select
+                            class="form-select form-select-sm"
+                            id="convertValueOffsetTask-${entry.id}"
+                            data-role="task"
+                            ${!enabled ? 'disabled' : ''}
+                        >
+                            ${taskOptionsHtml}
+                        </select>
+                    </div>
+                    <div class="col-md-2 col-lg-2">
+                        <label class="form-label small mb-1" for="convertValueOffsetOperator-${entry.id}">Operator</label>
+                        <select
+                            class="form-select form-select-sm"
+                            id="convertValueOffsetOperator-${entry.id}"
+                            data-role="operator"
+                            ${!enabled ? 'disabled' : ''}
+                        >
+                            <option value="+" ${operator === '+' ? 'selected' : ''}>+</option>
+                            <option value="-" ${operator === '-' ? 'selected' : ''}>-</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-lg-3">
+                        <label class="form-label small mb-1" for="convertValueOffsetMagnitude-${entry.id}">Value</label>
+                        <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            class="form-control form-control-sm"
+                            id="convertValueOffsetMagnitude-${entry.id}"
+                            data-role="magnitude"
+                            placeholder="1"
+                            value="${magnitude}"
+                            ${!enabled ? 'disabled' : ''}
+                        />
+                    </div>
+                    <div class="col-md-1 col-lg-1 d-grid">
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary btn-sm"
+                            data-role="remove"
+                            aria-label="Remove task value offset row"
+                            ${!enabled ? 'disabled' : ''}
+                        >
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        convertValueOffsetRows.innerHTML = rowsHtml;
+    }
+
+    function handleTaskValueOffsetEditorChanged() {
+        clearManualValueOffsetAdvice();
+        clearRetryResolutionState();
+        convertError?.classList.add('d-none');
+        if (convertError) {
+            convertError.textContent = '';
+        }
+        syncTaskValueOffsetTextFromState();
+        updateConvertBtn();
     }
 
     function clearManualValueOffsetAdvice() {
@@ -693,10 +988,7 @@ export function initSurveyConvert(elements) {
 
     function openAdvancedOptionsValueOffsetEditor() {
         ensureSurveyAdvancedOptionsVisible();
-        if (convertValueOffsets && typeof convertValueOffsets.scrollIntoView === 'function') {
-            convertValueOffsets.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            convertValueOffsets.focus();
-        }
+        focusTaskValueOffsetEditor();
     }
 
     function parseTaskValueOffsetsText(rawText) {
@@ -735,6 +1027,10 @@ export function initSurveyConvert(elements) {
     function getManualTaskValueOffsets() {
         if (!isAdvancedOptionsEnabled() || !convertValueOffsets) {
             return {};
+        }
+        if (convertValueOffsetRows) {
+            syncTaskValueOffsetTextFromState();
+            return getTaskValueOffsetMapFromEditorState();
         }
         return parseTaskValueOffsetsText(convertValueOffsets.value);
     }
@@ -796,7 +1092,8 @@ export function initSurveyConvert(elements) {
         }
         convertInfo.classList.remove('d-none');
         appendLog(getManualValueOffsetReviewMessage(payload, mode), 'warning');
-        convertValueOffsets?.focus();
+        const rowId = ensureTaskValueOffsetEditorRow(task);
+        focusTaskValueOffsetEditor(rowId);
     }
 
     function clearRetryResolutionState() {
@@ -1073,7 +1370,7 @@ export function initSurveyConvert(elements) {
             setSurveyRunProgress({
                 mode,
                 percent: 100,
-                label: `${modeTitle} paused. Select a questionnaire version, then run again.`,
+                label: `${modeTitle} paused. Apply questionnaire versions, then run again.`,
                 variant: 'warning',
                 animated: false,
             });
@@ -1449,7 +1746,7 @@ export function initSurveyConvert(elements) {
             if (Object.keys(multivariantTasks).length > 0 && !hasCompleteVersionWizardSelections()) {
                 versionWizardRetryGateMode = mode;
                 const modeLabel = mode === 'convert' ? 'conversion' : 'preview';
-                convertInfo.textContent = `Multi-version options are available. Review the selector below, then run ${modeLabel} again.`;
+                convertInfo.textContent = `Multi-version options are available. Review the selector below, click Use These Versions, then run ${modeLabel} again.`;
                 convertInfo.classList.remove('d-none');
                 return { ready: false, outcome: 'paused' };
             }
@@ -1576,12 +1873,118 @@ export function initSurveyConvert(elements) {
             .filter(Boolean);
     }
 
+    function hasMultiVersionWizardTasks() {
+        return Object.values(versionWizardState?.multivariantTasks || {}).some((info) => {
+            return Array.isArray(info?.versions) && info.versions.length > 1;
+        });
+    }
+
+    function getCurrentTemplateVersionSelectionSignature() {
+        if (!hasMultiVersionWizardTasks()) {
+            return '';
+        }
+
+        const multivariantTasks = Object.entries(versionWizardState?.multivariantTasks || {})
+            .map(([task, info]) => {
+                const versions = Array.isArray(info?.versions)
+                    ? info.versions.map((value) => String(value || '').trim()).filter(Boolean).sort()
+                    : [];
+
+                return {
+                    task: normalizeSurveyTaskName(task),
+                    versions,
+                };
+            })
+            .filter((entry) => entry.task && entry.versions.length > 1)
+            .sort((left, right) => left.task.localeCompare(right.task));
+
+        const selections = getTemplateVersionSelections()
+            .map((entry) => ({
+                task: normalizeSurveyTaskName(entry && entry.task),
+                session: entry && entry.session ? String(entry.session) : '',
+                run: entry && entry.run ? String(entry.run) : '',
+                version: entry && entry.version ? String(entry.version) : '',
+            }))
+            .sort((left, right) => {
+                const leftKey = `${left.task}::${left.session}::${left.run}::${left.version}`;
+                const rightKey = `${right.task}::${right.session}::${right.run}::${right.version}`;
+                return leftKey.localeCompare(rightKey);
+            });
+
+        return JSON.stringify({ multivariantTasks, selections });
+    }
+
+    function hasAppliedVersionWizardSelections() {
+        if (!hasMultiVersionWizardTasks()) {
+            return true;
+        }
+        if (!hasCompleteVersionWizardSelections()) {
+            return false;
+        }
+
+        const currentSignature = getCurrentTemplateVersionSelectionSignature();
+        return Boolean(
+            currentSignature
+            && appliedTemplateVersionSelectionSignature
+            && currentSignature === appliedTemplateVersionSelectionSignature
+        );
+    }
+
+    function updateVersionWizardActionState() {
+        const wizardVisible = Boolean(
+            surveyVersionWizard
+            && !surveyVersionWizard.classList.contains('d-none')
+            && hasMultiVersionWizardTasks()
+        );
+        const hasCompleteSelections = hasCompleteVersionWizardSelections();
+        const hasAppliedSelections = wizardVisible && hasAppliedVersionWizardSelections();
+
+        if (surveyVersionWizardApplyBtn) {
+            surveyVersionWizardApplyBtn.classList.toggle('d-none', !wizardVisible);
+            surveyVersionWizardApplyBtn.disabled = !wizardVisible || !hasCompleteSelections || isConvertRunning || isPreviewRunning;
+            surveyVersionWizardApplyBtn.innerHTML = hasAppliedSelections
+                ? '<i class="fas fa-check me-2"></i>Questionnaire Versions Applied'
+                : '<i class="fas fa-list-check me-2"></i>Use These Versions';
+            surveyVersionWizardApplyBtn.classList.remove('btn-outline-primary', 'btn-success');
+            surveyVersionWizardApplyBtn.classList.add(hasAppliedSelections ? 'btn-success' : 'btn-outline-primary');
+
+            if (!wizardVisible) {
+                surveyVersionWizardApplyBtn.removeAttribute('title');
+            } else if (!hasCompleteSelections) {
+                surveyVersionWizardApplyBtn.title = 'Choose a version for each questionnaire context first.';
+            } else if (isConvertRunning || isPreviewRunning) {
+                surveyVersionWizardApplyBtn.title = 'Wait for the current run to finish.';
+            } else if (hasAppliedSelections) {
+                surveyVersionWizardApplyBtn.title = 'Preview is unlocked for the current questionnaire version selection.';
+            } else {
+                surveyVersionWizardApplyBtn.title = 'Apply these questionnaire versions before running Preview.';
+            }
+        }
+
+        if (surveyVersionWizardStatus) {
+            surveyVersionWizardStatus.classList.toggle('d-none', !wizardVisible);
+            surveyVersionWizardStatus.classList.remove('text-muted', 'text-success');
+
+            if (!wizardVisible) {
+                surveyVersionWizardStatus.textContent = '';
+            } else if (hasAppliedSelections) {
+                surveyVersionWizardStatus.classList.add('text-success');
+                surveyVersionWizardStatus.textContent = 'Selections applied. Preview is available.';
+            } else {
+                surveyVersionWizardStatus.classList.add('text-muted');
+                surveyVersionWizardStatus.textContent = 'Review the selectors, then click Use These Versions before running Preview.';
+            }
+        }
+    }
+
     function hideVersionWizard() {
         if (surveyVersionWizard) surveyVersionWizard.classList.add('d-none');
         if (surveyVersionWizardBody) surveyVersionWizardBody.innerHTML = '';
         if (surveyVersionWizardCount) surveyVersionWizardCount.textContent = '';
         selectedTemplateVersions = {};
+        appliedTemplateVersionSelectionSignature = '';
         versionWizardState = { multivariantTasks: {}, taskRuns: {}, previewParticipants: [], detectedSessions: [] };
+        updateVersionWizardActionState();
     }
 
     function normalizeTimelineSessionToken(value) {
@@ -1834,9 +2237,13 @@ export function initSurveyConvert(elements) {
                 if (!task) return;
                 const selectionKey = buildVersionSelectionKey({ task, session: sessionValue || null, run: rawRun || null });
                 selectedTemplateVersions[selectionKey] = selectEl.value;
+                updateVersionWizardActionState();
+                updateConvertBtn();
             });
         });
         surveyVersionWizard.classList.remove('d-none');
+        updateVersionWizardActionState();
+        updateConvertBtn();
     }
 
     function rebuildVersionWizardFromState() {
@@ -2077,7 +2484,11 @@ export function initSurveyConvert(elements) {
             convertValueOffsets.disabled = !enabled;
             if (!enabled) {
                 convertValueOffsets.value = '';
+                clearTaskValueOffsetEditorState();
                 clearManualValueOffsetAdvice();
+            } else {
+                renderTaskValueOffsetEditor();
+                syncTaskValueOffsetTextFromState();
             }
         }
 
@@ -2102,6 +2513,85 @@ export function initSurveyConvert(elements) {
         });
     }
 
+    if (convertAddValueOffsetRowBtn) {
+        convertAddValueOffsetRowBtn.addEventListener('click', () => {
+            const rowId = ensureTaskValueOffsetEditorRow();
+            handleTaskValueOffsetEditorChanged();
+            focusTaskValueOffsetEditor(rowId);
+        });
+    }
+
+    if (convertValueOffsetRows) {
+        const getRowIdFromTarget = (target) => {
+            const row = target && typeof target.closest === 'function'
+                ? target.closest('[data-offset-row-id]')
+                : null;
+            return row ? Number(row.getAttribute('data-offset-row-id')) : null;
+        };
+
+        const getRowState = (rowId) => taskValueOffsetEditorState.find((entry) => entry.id === rowId) || null;
+
+        convertValueOffsetRows.addEventListener('change', (event) => {
+            const target = event.target;
+            const role = target && target.getAttribute ? target.getAttribute('data-role') : '';
+            const rowId = getRowIdFromTarget(target);
+            const rowState = rowId !== null ? getRowState(rowId) : null;
+            if (!rowState) {
+                return;
+            }
+
+            if (role === 'task') {
+                rowState.task = normalizeSurveyTaskName(target.value);
+                handleTaskValueOffsetEditorChanged();
+                return;
+            }
+
+            if (role === 'operator') {
+                rowState.operator = target.value === '-' ? '-' : '+';
+                handleTaskValueOffsetEditorChanged();
+            }
+        });
+
+        convertValueOffsetRows.addEventListener('input', (event) => {
+            const target = event.target;
+            const role = target && target.getAttribute ? target.getAttribute('data-role') : '';
+            if (role !== 'magnitude') {
+                return;
+            }
+
+            const rowId = getRowIdFromTarget(target);
+            const rowState = rowId !== null ? getRowState(rowId) : null;
+            if (!rowState) {
+                return;
+            }
+
+            const rawValue = String(target.value || '').trim();
+            const parsedValue = parseNumericOffsetValue(rawValue);
+            rowState.magnitude = rawValue && parsedValue !== null
+                ? formatOffsetMagnitude(parsedValue)
+                : rawValue;
+            handleTaskValueOffsetEditorChanged();
+        });
+
+        convertValueOffsetRows.addEventListener('click', (event) => {
+            const target = event.target && typeof event.target.closest === 'function'
+                ? event.target.closest('[data-role="remove"]')
+                : null;
+            if (!target) {
+                return;
+            }
+
+            const rowId = getRowIdFromTarget(target);
+            if (rowId === null) {
+                return;
+            }
+
+            taskValueOffsetEditorState = taskValueOffsetEditorState.filter((entry) => entry.id !== rowId);
+            renderTaskValueOffsetEditor();
+            handleTaskValueOffsetEditorChanged();
+        });
+    }
+
     if (convertDatasetName) {
         convertDatasetName.addEventListener('input', () => {
             updateConvertBtn();
@@ -2113,6 +2603,8 @@ export function initSurveyConvert(elements) {
             updateConvertBtn();
         });
     }
+
+    setTaskValueOffsetEditorStateFromText(convertValueOffsets ? convertValueOffsets.value : '');
 
     // ID Map file handlers
     if (convertIdMapFile) {
@@ -2713,6 +3205,7 @@ export function initSurveyConvert(elements) {
         const hasProjectLoaded = resolveCurrentProjectPath() !== '';
         const hasRunningRequest = isConvertRunning || isPreviewRunning;
         const isAwaitingConfirmation = hasRunningRequest && isSurveyRunAwaitingConfirmation;
+        const versionSelectionsPending = hasMultiVersionWizardTasks() && !hasAppliedVersionWizardSelections();
         const hasFreshPreviewReview = hasFreshSurveyPreviewSelectionState();
         const selectedPreviewTasks = getSelectedSurveyTasksForConversion();
         const hasSelectedPreviewTasks = selectedPreviewTasks.length > 0;
@@ -2728,11 +3221,19 @@ export function initSurveyConvert(elements) {
         }
         
         if (previewBtn) {
-            previewBtn.disabled = !hasFile;
+            previewBtn.disabled = !hasFile || versionSelectionsPending;
             previewBtn.style.display = '';
             previewBtn.innerHTML = '<i class="fas fa-eye me-2"></i>Preview (Dry-Run)';
             convertBtn.parentElement.classList.remove('col-12');
             convertBtn.parentElement.classList.add('col-md-6');
+
+            if (!hasFile) {
+                previewBtn.title = 'Select a survey file first.';
+            } else if (versionSelectionsPending) {
+                previewBtn.title = 'Apply questionnaire version selections first.';
+            } else {
+                previewBtn.removeAttribute('title');
+            }
         }
 
         if (convertBtn) {
@@ -3145,7 +3646,7 @@ export function initSurveyConvert(elements) {
                         [],
                         Array.isArray(data.detected_sessions) ? data.detected_sessions : []
                     );
-                    appendLog(`Multi-version questionnaire(s) detected: ${Object.keys(mvTasks).join(', ')}. Choose the version in the selector below before previewing or converting.`, 'info');
+                    appendLog(`Multi-version questionnaire(s) detected: ${Object.keys(mvTasks).join(', ')}. Review the selector below, click Use These Versions, then preview or convert.`, 'info');
                 } else {
                     hideVersionWizard();
                 }
@@ -3159,6 +3660,26 @@ export function initSurveyConvert(elements) {
             }
         });
     }
+
+    surveyVersionWizardApplyBtn?.addEventListener('click', function() {
+        if (!hasMultiVersionWizardTasks() || !hasCompleteVersionWizardSelections()) {
+            updateVersionWizardActionState();
+            return;
+        }
+
+        appliedTemplateVersionSelectionSignature = getCurrentTemplateVersionSelectionSignature();
+        versionWizardRetryGateMode = null;
+
+        const hasBlockedTemplateGate = Boolean(templateWorkflowGate && templateWorkflowGate.blocked);
+        const infoText = String(convertInfo?.textContent || '').trim().toLowerCase();
+        if (!hasBlockedTemplateGate && (infoText.includes('multi-version') || infoText.includes('questionnaire version'))) {
+            convertInfo.classList.add('d-none');
+            convertInfo.textContent = '';
+        }
+
+        updateVersionWizardActionState();
+        updateConvertBtn();
+    });
 
     function resetSourcedataQuickSelect() {
         ensureSourcedataQuickSelectElements();
@@ -3388,6 +3909,8 @@ convertError.classList.remove('d-none');
                         const offsetEvidence = review && typeof review.offset_evidence === 'object'
                             ? review.offset_evidence
                             : null;
+                        const offsetClassification = String(offsetEvidence && offsetEvidence.classification || '').trim().toLowerCase();
+                        const structuralOffsetLikely = offsetClassification === 'structural_offset_likely';
                         const sampledValues = Number(offsetEvidence && offsetEvidence.sampled_numeric_values);
                         const invalidWithoutOffset = Number(offsetEvidence && offsetEvidence.invalid_without_offset);
                         const invalidWithoutOffsetPercent = Number(offsetEvidence && offsetEvidence.invalid_without_offset_percent);
@@ -3429,8 +3952,8 @@ convertError.classList.remove('d-none');
                                                 ${review.raw_value !== undefined && review.raw_value !== null ? `<div>Observed value: <code>${escapeHtml(String(review.raw_value))}</code></div>` : ''}
                                                 ${expectedLevels.length > 0 ? `<div>Expected levels: <code>${expectedLevels.map((value) => escapeHtml(String(value))).join('</code>, <code>')}</code></div>` : ''}
                                                 ${outOfRangeRateText ? `<div>Out-of-range share: <code>${escapeHtml(outOfRangeRateText)}</code></div>` : ''}
-                                                ${suggestedOffsets.length > 0 ? `<div>Possible structural offsets: <code>${suggestedOffsets.join('</code>, <code>')}</code></div>` : ''}
-                                                <div class="text-muted mt-1">Use Advanced options if you are confident the offset is structural, or deselect this survey before converting.</div>
+                                                ${suggestedOffsets.length > 0 && structuralOffsetLikely ? `<div>Possible structural offsets: <code>${suggestedOffsets.join('</code>, <code>')}</code></div>` : ''}
+                                                <div class="text-muted mt-1">${structuralOffsetLikely ? 'Use Advanced options if you are confident the offset is structural, or deselect this survey before converting.' : 'This does not yet look like a task-wide structural offset. Use Advanced options only if you can confirm the survey scale was shifted.'}</div>
                                             </div>
                                         ` : ''}
                                     </label>
@@ -4854,7 +5377,7 @@ convertError.classList.remove('d-none');
             convertError.textContent = error.message || 'Invalid task value offsets in Advanced options.';
             convertError.classList.remove('d-none');
             ensureSurveyAdvancedOptionsVisible();
-            convertValueOffsets?.focus();
+            focusTaskValueOffsetEditor();
             return;
         }
         let allowNearItemMatch = selectedNearMatchTasks.length > 0;
@@ -5213,6 +5736,16 @@ convertError.classList.remove('d-none');
         clearManualValueOffsetAdvice();
         setTemplateEditorErrorCtaVisible(false);
         convertInfo.textContent = '';
+
+        if (hasMultiVersionWizardTasks() && !hasAppliedVersionWizardSelections()) {
+            convertInfo.textContent = 'Review the selector below, click Use These Versions, then run Preview again.';
+            convertInfo.classList.remove('d-none');
+            surveyVersionWizardApplyBtn?.focus();
+            updateVersionWizardActionState();
+            updateConvertBtn();
+            return;
+        }
+
         clearSurveyPreviewSelectionState();
         resetConversionUI();
         let selectedNearMatchTasks = getEffectiveNearMatchTasks();
@@ -5223,7 +5756,7 @@ convertError.classList.remove('d-none');
             convertError.textContent = error.message || 'Invalid task value offsets in Advanced options.';
             convertError.classList.remove('d-none');
             ensureSurveyAdvancedOptionsVisible();
-            convertValueOffsets?.focus();
+            focusTaskValueOffsetEditor();
             return;
         }
         let allowNearItemMatch = selectedNearMatchTasks.length > 0;

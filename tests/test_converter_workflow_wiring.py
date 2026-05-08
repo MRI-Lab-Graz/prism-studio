@@ -26,6 +26,7 @@ ENVIRONMENT_MODULE = (
 PARTICIPANTS_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "participants.js"
 )
+SURVEY_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter_survey.html"
 
 
 class TestConverterWorkflowWiring(unittest.TestCase):
@@ -288,6 +289,28 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "convertSessionSelect.value = normalizedSessions.length === 1 ? normalizedSessions[0] : 'all';",
             content,
         )
+
+    def test_survey_converter_uses_structured_value_offset_editor(self):
+        module_content = SURVEY_CONVERT_MODULE.read_text(encoding="utf-8")
+        template_content = SURVEY_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="convertValueOffsetsEditor"', template_content)
+        self.assertIn('id="convertAddValueOffsetRowBtn"', template_content)
+        self.assertIn('id="convertValueOffsetRows"', template_content)
+        self.assertIn('id="convertValueOffsetsKnownTasks"', template_content)
+        self.assertIn('id="convertValueOffsetsEmptyState"', template_content)
+        self.assertIn('class="form-control d-none" id="convertValueOffsets"', template_content)
+
+        self.assertIn("let taskValueOffsetEditorState = [];", module_content)
+        self.assertIn("function getAvailableSurveyTasksForValueOffsets() {", module_content)
+        self.assertIn("function renderTaskValueOffsetEditor() {", module_content)
+        self.assertIn("function focusTaskValueOffsetEditor(rowId = null) {", module_content)
+        self.assertIn("function ensureTaskValueOffsetEditorRow(task = '') {", module_content)
+        self.assertIn("syncTaskValueOffsetTextFromState();", module_content)
+        self.assertIn("surveyPreviewSelectionState.availableTasks", module_content)
+        self.assertIn("data-role=\"operator\"", module_content)
+        self.assertIn("data-role=\"magnitude\"", module_content)
+        self.assertIn("convertAddValueOffsetRowBtn.addEventListener('click'", module_content)
 
     def test_converter_modules_surface_backend_save_paths(self):
         biometrics_content = BIOMETRICS_MODULE.read_text(encoding="utf-8")

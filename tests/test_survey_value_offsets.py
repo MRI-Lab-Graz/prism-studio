@@ -11,6 +11,9 @@ from src.converters.survey import (
     SurveyValueOutOfBoundsError,
     sync_project_survey_recipe_offsets,
 )
+from src.web.blueprints.conversion_survey_handlers import (
+    _format_value_offset_confirmation_response,
+)
 from src.web.blueprints.conversion_survey_preview_handlers import (
     handle_api_survey_convert_preview,
 )
@@ -287,6 +290,29 @@ def test_survey_converter_clears_unsafe_task_wide_offset_suggestion(tmp_path):
     assert evidence.get("invalid_with_best_offset") == 1
     assert evidence.get("newly_invalid_with_best_offset") == 1
     assert error.suggested_offsets == []
+
+
+def test_value_offset_confirmation_message_avoids_structural_claim_for_item_issue():
+    error = SurveyValueOutOfBoundsError(
+        task="pss",
+        item_id="PSS01",
+        sub_id="sub-001",
+        raw_value="5",
+        expected_levels=["0", "1", "2", "3", "4"],
+        suggested_offsets=[-1],
+        offset_evidence={
+            "classification": "item_issues_likely",
+            "invalid_without_offset": 1,
+            "sampled_numeric_values": 1,
+            "invalid_without_offset_percent": 100.0,
+        },
+        message="Invalid value '5' for 'PSS01'. Suggested task offset(s): -1",
+    )
+
+    payload = _format_value_offset_confirmation_response(error)
+
+    assert "do not yet support a task-wide structural offset" in payload["message"]
+    assert "Suggested task offset" not in payload["message"]
 
 
 def test_sync_project_survey_recipe_offsets_updates_metadata(tmp_path):

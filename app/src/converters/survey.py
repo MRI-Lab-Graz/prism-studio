@@ -16,13 +16,12 @@ GUI can call the same logic without invoking subprocesses or relying on `sys.exi
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from pathlib import Path
 import csv
 import zipfile
 import defusedxml.ElementTree as ET
 import re
-from typing import Sequence, cast
+from typing import cast
 
 try:
     import pandas as pd
@@ -88,8 +87,6 @@ from . import survey_templates as _survey_templates
 from . import survey_processing as _survey_processing
 from . import survey_core as _survey_core
 from . import survey_participants_logic as _survey_participants_logic
-
-SurveyValueOutOfBoundsError = _survey_processing.SurveyValueOutOfBoundsError
 
 # Compatibility re-exports for external imports that still reference helpers
 # from this module during the incremental decomposition phase.
@@ -183,167 +180,6 @@ def _normalize_run_id(value: object) -> str | None:
     if not label:
         return None
     return f"run-{label}"
-
-
-def _normalize_task_value_offsets(value_offsets: object) -> dict[str, float]:
-    """Normalize user-supplied task value offsets to a lower-cased mapping.
-
-    Supported payloads:
-    - ``{"task": -1}``
-    - ``{"*": -1}`` (global fallback)
-    - numeric literal (applies to all tasks)
-    - JSON string encoding one of the above
-    """
-
-    if value_offsets is None:
-        return {}
-
-    payload = value_offsets
-    if isinstance(payload, str):
-        text = payload.strip()
-        if not text:
-            return {}
-        try:
-            import json
-
-            payload = json.loads(text)
-        except Exception as exc:
-            raise ValueError(
-                "Invalid value_offsets payload. Expected JSON object with numeric offsets."
-            ) from exc
-
-    if isinstance(payload, (int, float)) and not isinstance(payload, bool):
-        return {"*": float(payload)}
-
-    if not isinstance(payload, dict):
-        raise ValueError(
-            "Invalid value_offsets payload. Expected object like {\"pss\": -1}."
-        )
-
-    normalized: dict[str, float] = {}
-    for raw_task, raw_offset in payload.items():
-        task_key = str(raw_task or "").strip().lower()
-        if not task_key:
-            continue
-        if not isinstance(raw_offset, (int, float)) or isinstance(raw_offset, bool):
-            raise ValueError(
-                f"Invalid value offset for task '{task_key}'. Expected a numeric value."
-            )
-        normalized[task_key] = float(raw_offset)
-
-    return normalized
-
-
-def _coerce_offset_for_metadata(value: float) -> float | int:
-    rounded = round(value)
-    if abs(float(value) - float(rounded)) < 1e-9:
-        return int(rounded)
-    return float(round(value, 6))
-
-
-def sync_project_survey_recipe_offsets(
-    *,
-    project_root: str | Path,
-    task_value_offsets: dict[str, float] | None,
-    offset_application_counts: dict[str, int] | None = None,
-) -> dict[str, list[str]]:
-    """Persist confirmed import value offsets to matching project recipe metadata.
-
-    This writes provenance metadata only and intentionally does not alter scoring
-    formulas or scale logic.
-    """
-
-    normalized_offsets = _normalize_task_value_offsets(task_value_offsets)
-    summary: dict[str, list[str]] = {
-        "updated_tasks": [],
-        "missing_tasks": [],
-        "errors": [],
-        "recipe_paths": [],
-    }
-    if not normalized_offsets:
-        return summary
-
-    resolved_root = Path(project_root).expanduser().resolve()
-
-    counts = offset_application_counts or {}
-    tasks_to_sync: dict[str, float] = {}
-    if counts:
-        for raw_task, raw_count in counts.items():
-            task = str(raw_task or "").strip().lower()
-            if not task:
-                continue
-            try:
-                count = int(raw_count)
-            except (TypeError, ValueError):
-                continue
-            if count <= 0:
-                continue
-
-            if task in normalized_offsets:
-                tasks_to_sync[task] = float(normalized_offsets[task])
-                continue
-            if "*" in normalized_offsets:
-                tasks_to_sync[task] = float(normalized_offsets["*"])
-    else:
-        for task, offset in normalized_offsets.items():
-            if task == "*":
-                continue
-            tasks_to_sync[task] = float(offset)
-
-    if not tasks_to_sync:
-        return summary
-
-    timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
-
-    for task, raw_offset in sorted(tasks_to_sync.items()):
-        offset = _coerce_offset_for_metadata(raw_offset)
-        recipe_candidates = [
-            resolved_root / "code" / "recipes" / "survey" / f"recipe-{task}.json",
-            resolved_root / "recipe" / "survey" / f"recipe-{task}.json",
-        ]
-        recipe_path = next(
-            (candidate for candidate in recipe_candidates if candidate.exists()),
-            None,
-        )
-
-        if recipe_path is None:
-            summary["missing_tasks"].append(task)
-            continue
-
-        try:
-            payload = _read_json(recipe_path)
-            if not isinstance(payload, dict):
-                raise ValueError("Recipe payload must be a JSON object")
-
-            survey_section = payload.get("Survey")
-            if not isinstance(survey_section, dict):
-                survey_section = {}
-                payload["Survey"] = survey_section
-
-            survey_section["ImportValueOffset"] = offset
-            survey_section["ImportValueOffsetSource"] = "survey-import"
-            survey_section["ImportValueOffsetUpdatedAt"] = timestamp
-
-            history = survey_section.get("ImportValueOffsetHistory")
-            if not isinstance(history, list):
-                history = []
-
-            history_entry = {
-                "offset": offset,
-                "updated_at": timestamp,
-                "source": "survey-import",
-            }
-            if not history or history[-1] != history_entry:
-                history.append(history_entry)
-            survey_section["ImportValueOffsetHistory"] = history[-20:]
-
-            _write_json(recipe_path, payload)
-            summary["updated_tasks"].append(task)
-            summary["recipe_paths"].append(str(recipe_path))
-        except Exception as exc:
-            summary["errors"].append(f"{task}: {exc}")
-
-    return summary
 
 
 def _sanitize_answer_code_for_ls(code: str) -> str:
@@ -697,8 +533,6 @@ class SurveyConvertResult:
     missing_cells_by_subject: dict[str, int] = field(default_factory=dict)
     missing_value_token: str = _MISSING_TOKEN
     conversion_warnings: list[str] = field(default_factory=list)
-    applied_value_offsets: dict[str, float] = field(default_factory=dict)
-    value_offset_application_counts: dict[str, int] = field(default_factory=dict)
     task_runs: dict[str, int | None] = field(
         default_factory=dict
     )  # task -> max run number (None if single occurrence)
@@ -802,7 +636,6 @@ class SurveyResponsesConverter:
         template_version_overrides: dict[str, str] | None = None,
         allow_near_item_match: bool = False,
         near_match_tasks: set[str] | None = None,
-        task_value_offsets: dict[str, float] | None = None,
     ) -> SurveyConvertResult:
         return _convert_survey_xlsx_to_prism_dataset_impl(
             input_path=input_path,
@@ -829,7 +662,6 @@ class SurveyResponsesConverter:
             template_version_overrides=template_version_overrides,
             allow_near_item_match=allow_near_item_match,
             near_match_tasks=near_match_tasks,
-            task_value_offsets=task_value_offsets,
         )
 
     def convert_lsa(
@@ -858,7 +690,6 @@ class SurveyResponsesConverter:
         template_version_overrides: dict[str, str] | None = None,
         allow_near_item_match: bool = False,
         near_match_tasks: set[str] | None = None,
-        task_value_offsets: dict[str, float] | None = None,
     ) -> SurveyConvertResult:
         return _convert_survey_lsa_to_prism_dataset_impl(
             input_path=input_path,
@@ -884,7 +715,6 @@ class SurveyResponsesConverter:
             template_version_overrides=template_version_overrides,
             allow_near_item_match=allow_near_item_match,
             near_match_tasks=near_match_tasks,
-            task_value_offsets=task_value_offsets,
         )
 
 
@@ -937,7 +767,6 @@ def _convert_survey_xlsx_to_prism_dataset_impl(
     template_version_overrides: dict[str, str] | None = None,
     allow_near_item_match: bool = False,
     near_match_tasks: set[str] | None = None,
-    task_value_offsets: dict[str, float] | None = None,
 ) -> SurveyConvertResult:
     """Convert a wide survey Excel table into a PRISM dataset.
 
@@ -958,7 +787,6 @@ def _convert_survey_xlsx_to_prism_dataset_impl(
         raise ValueError("Supported formats: .xlsx, .csv, .tsv")
 
     kind = "xlsx" if suffix == ".xlsx" else ("csv" if suffix == ".csv" else "tsv")
-    normalized_task_value_offsets = _normalize_task_value_offsets(task_value_offsets)
     df = _read_table_as_dataframe(
         input_path=input_path,
         kind=kind,
@@ -991,7 +819,6 @@ def _convert_survey_xlsx_to_prism_dataset_impl(
         template_version_overrides=template_version_overrides,
         allow_near_item_match=allow_near_item_match,
         near_match_tasks=near_match_tasks,
-        task_value_offsets=normalized_task_value_offsets,
     )
 
 
@@ -1075,7 +902,6 @@ def _convert_survey_lsa_to_prism_dataset_impl(
     template_version_overrides: dict[str, str] | None = None,
     allow_near_item_match: bool = False,
     near_match_tasks: set[str] | None = None,
-    task_value_offsets: dict[str, float] | None = None,
 ) -> SurveyConvertResult:
     """Convert a LimeSurvey response archive (.lsa) into a PRISM dataset.
 
@@ -1107,7 +933,6 @@ def _convert_survey_lsa_to_prism_dataset_impl(
             infer_lsa_language_and_tech_fn=_infer_lsa_language_and_tech,
         )
     )
-    normalized_task_value_offsets = _normalize_task_value_offsets(task_value_offsets)
 
     return _convert_survey_dataframe_to_prism_dataset(
         df=df,
@@ -1137,7 +962,6 @@ def _convert_survey_lsa_to_prism_dataset_impl(
         template_version_overrides=template_version_overrides,
         allow_near_item_match=allow_near_item_match,
         near_match_tasks=near_match_tasks,
-        task_value_offsets=normalized_task_value_offsets,
     )
 
 
@@ -1167,7 +991,6 @@ def convert_survey_xlsx_to_prism_dataset(
     template_version_overrides: dict[str, str] | None = None,
     allow_near_item_match: bool = False,
     near_match_tasks: set[str] | None = None,
-    task_value_offsets: dict[str, float] | None = None,
 ) -> SurveyConvertResult:
     """Backward-compatible wrapper around ``SurveyResponsesConverter``.
 
@@ -1198,7 +1021,6 @@ def convert_survey_xlsx_to_prism_dataset(
         template_version_overrides=template_version_overrides,
         allow_near_item_match=allow_near_item_match,
         near_match_tasks=near_match_tasks,
-        task_value_offsets=task_value_offsets,
     )
 
 
@@ -1227,7 +1049,6 @@ def convert_survey_lsa_to_prism_dataset(
     template_version_overrides: dict[str, str] | None = None,
     allow_near_item_match: bool = False,
     near_match_tasks: set[str] | None = None,
-    task_value_offsets: dict[str, float] | None = None,
 ) -> SurveyConvertResult:
     """Backward-compatible wrapper around ``SurveyResponsesConverter``.
 
@@ -1257,7 +1078,6 @@ def convert_survey_lsa_to_prism_dataset(
         template_version_overrides=template_version_overrides,
         allow_near_item_match=allow_near_item_match,
         near_match_tasks=near_match_tasks,
-        task_value_offsets=task_value_offsets,
     )
 
 
@@ -1729,7 +1549,6 @@ def _convert_survey_dataframe_to_prism_dataset(
     template_version_overrides: dict[str, str] | None = None,
     allow_near_item_match: bool = False,
     near_match_tasks: set[str] | None = None,
-    task_value_offsets: dict[str, float] | None = None,
 ) -> SurveyConvertResult:
     if unknown not in {"error", "warn", "ignore"}:
         raise ValueError("unknown must be one of: error, warn, ignore")
@@ -1740,7 +1559,6 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     library_dir = Path(library_dir).resolve()
     output_root = Path(output_root).resolve()
-    normalized_task_value_offsets = _normalize_task_value_offsets(task_value_offsets)
 
     if not library_dir.exists() or not library_dir.is_dir():
         raise ValueError(
@@ -1823,10 +1641,6 @@ def _convert_survey_dataframe_to_prism_dataset(
     participant_template = participants_converter.normalize_template(
         raw_participant_template
     )
-    effective_template_version_overrides = _resolve_effective_template_version_overrides(
-        project_path=project_path,
-        template_version_overrides=template_version_overrides,
-    )
     participant_columns_lower: set[str] = set()
     if participant_template:
         participant_columns_lower = {
@@ -1847,7 +1661,6 @@ def _convert_survey_dataframe_to_prism_dataset(
             library_dir,
             canonical_aliases,
             compare_with_global=True,
-            template_version_overrides=effective_template_version_overrides,
         )
     )
     if duplicates:
@@ -2102,7 +1915,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         res_run_col=res_run_col,
         task_run_columns=task_run_columns,
         templates=templates,
-        template_version_overrides=effective_template_version_overrides,
+        template_version_overrides=template_version_overrides,
         normalize_ses_fn=_normalize_ses_id,
     )
 
@@ -2159,7 +1972,6 @@ def _convert_survey_dataframe_to_prism_dataset(
             run_column=res_run_col,
             detected_sessions=detected_sessions,
             conversion_warnings=conversion_warnings,
-            applied_value_offsets=normalized_task_value_offsets,
             task_runs=task_runs,
             dry_run_preview=dry_run_preview,
             template_matches=_template_matches,
@@ -2203,7 +2015,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     )
 
     # --- Process and Write Responses ---
-    missing_cells_by_subject, items_using_tolerance, offset_application_counts = (
+    missing_cells_by_subject, items_using_tolerance = (
         _survey_io._process_and_write_responses(
             df=df,
             res_id_col=res_id_col,
@@ -2227,7 +2039,6 @@ def _convert_survey_dataframe_to_prism_dataset(
             ensure_dir_fn=_ensure_dir,
             process_survey_row_with_run_fn=_process_survey_row_with_run,
             build_bids_survey_filename_fn=_build_bids_survey_filename,
-            task_value_offsets=normalized_task_value_offsets,
         )
     )
 
@@ -2280,8 +2091,6 @@ def _convert_survey_dataframe_to_prism_dataset(
         missing_cells_by_subject=missing_cells_by_subject,
         missing_value_token=_MISSING_TOKEN,
         conversion_warnings=conversion_warnings,
-        applied_value_offsets=normalized_task_value_offsets,
-        value_offset_application_counts=offset_application_counts,
         task_runs=task_runs,
         template_matches=_template_matches,
         tool_columns=ls_system_cols or [],
@@ -2581,8 +2390,8 @@ def _map_survey_columns(
 
         approved_candidates: list[dict[str, object]] = []
         for task, candidates in task_candidates.items():
-            task_primary_item_set = task_primary_items.get(task)
-            if not task_primary_item_set:
+            primary_items = task_primary_items.get(task)
+            if not primary_items:
                 continue
 
             has_explicit_run_context = any(
@@ -2596,7 +2405,7 @@ def _map_survey_columns(
 
             if not has_explicit_run_context:
                 exact_items = exact_mapped_by_task.get(task, set())
-                missing_items = task_primary_item_set - exact_items
+                missing_items = primary_items - exact_items
                 if proposed_items != missing_items or len(candidates) != len(
                     missing_items
                 ):
@@ -3071,7 +2880,7 @@ def _load_and_preprocess_templates(
     library_dir: Path,
     canonical_aliases: dict[str, list[str]] | None,
     compare_with_global: bool = True,
-    template_version_overrides: object = None,
+    template_version_overrides: dict[str, str] | None = None,
 ) -> tuple[
     dict[str, dict],
     dict[str, str],
@@ -3223,28 +3032,6 @@ def _merge_template_version_overrides(
             continue
         merged.append(entry)
     return merged
-
-
-def _resolve_effective_template_version_overrides(
-    *,
-    project_path: str | Path | None,
-    template_version_overrides: object,
-) -> list[dict[str, object]]:
-    """Merge request overrides with project-stored version selections."""
-
-    project_root: Path | None = None
-    if project_path is not None and project_path != "":
-        candidate = Path(project_path).expanduser().resolve()
-        project_root = candidate.parent if candidate.is_file() else candidate
-
-    project_overrides: list[dict[str, object]] = []
-    if project_root is not None:
-        project_overrides = _load_project_template_version_overrides(project_root)
-
-    return _merge_template_version_overrides(
-        primary_overrides=template_version_overrides,
-        fallback_overrides=project_overrides,
-    )
 
 
 def _load_project_template_version_overrides(dataset_root: Path) -> list[dict[str, object]]:
@@ -3408,9 +3195,6 @@ def _build_task_context_maps(
     dict[tuple[str, str | None, str | int | None], str | None],
 ]:
     """Build per task/run template variants and their acq labels."""
-    normalized_version_overrides = _normalize_template_version_overrides(
-        template_version_overrides
-    )
     task_contexts: set[tuple[str, str | None, str | int | None]] = set()
     detected_session_values: list[str] = []
     if res_ses_col and res_ses_col in df.columns:
@@ -3464,20 +3248,6 @@ def _build_task_context_maps(
             task_contexts.add((task, None, None))
             continue
 
-        task_override_sessions = sorted(
-            {
-                normalize_ses_fn(entry["session"])
-                for entry in normalized_version_overrides
-                if entry.get("task") == task and entry.get("session") not in {None, ""}
-            }
-        )
-        task_override_runs = sorted(
-            {
-                str(entry["run"]).strip()
-                for entry in normalized_version_overrides
-                if entry.get("task") == task and entry.get("run") not in {None, ""}
-            }
-        )
         task_specific_runs = sorted(
             {
                 run
@@ -3486,19 +3256,13 @@ def _build_task_context_maps(
             }
         )
         contextual_sessions = (
-            detected_session_values
-            if len(detected_session_values) > 1 or task_override_sessions
-            else []
+            detected_session_values if len(detected_session_values) > 1 else []
         )
-        contextual_runs: Sequence[str | int]
-        if len(task_specific_runs) > 1:
-            contextual_runs = task_specific_runs
-        elif len(detected_run_values) > 1 or task_override_runs:
-            contextual_runs = (
-                detected_run_values or task_specific_runs or task_override_runs
-            )
-        else:
-            contextual_runs = []
+        contextual_runs = (
+            task_specific_runs
+            if len(task_specific_runs) > 1
+            else (detected_run_values if len(detected_run_values) > 1 else [])
+        )
 
         if not contextual_sessions and not contextual_runs:
             task_contexts.add((task, None, None))
@@ -3673,8 +3437,6 @@ def _process_survey_row(
     items_using_tolerance: dict[str, set[str]],
     is_missing_fn,
     normalize_val_fn,
-    task_value_offsets: dict[str, float] | None = None,
-    offset_application_counts: dict[str, int] | None = None,
 ) -> tuple[dict[str, str], int]:
     """Process a single task's data for one subject/session."""
     return _survey_processing._process_survey_row(
@@ -3687,8 +3449,6 @@ def _process_survey_row(
         items_using_tolerance=items_using_tolerance,
         is_missing_fn=is_missing_fn,
         normalize_val_fn=normalize_val_fn,
-        task_value_offsets=task_value_offsets,
-        offset_application_counts=offset_application_counts,
         non_item_keys=_NON_ITEM_TOPLEVEL_KEYS,
         missing_token=_MISSING_TOKEN,
         validate_item_fn=_validate_survey_item_value,
@@ -3708,8 +3468,6 @@ def _process_survey_row_with_run(
     items_using_tolerance: dict[str, set[str]],
     is_missing_fn,
     normalize_val_fn,
-    task_value_offsets: dict[str, float] | None = None,
-    offset_application_counts: dict[str, int] | None = None,
 ) -> tuple[dict[str, str], int]:
     """Process a single task/run's data for one subject/session."""
     return _survey_processing._process_survey_row_with_run(
@@ -3724,8 +3482,6 @@ def _process_survey_row_with_run(
         items_using_tolerance=items_using_tolerance,
         is_missing_fn=is_missing_fn,
         normalize_val_fn=normalize_val_fn,
-        task_value_offsets=task_value_offsets,
-        offset_application_counts=offset_application_counts,
         non_item_keys=_NON_ITEM_TOPLEVEL_KEYS,
         missing_token=_MISSING_TOKEN,
         validate_item_fn=_validate_survey_item_value,
@@ -3743,8 +3499,6 @@ def _validate_survey_item_value(
     items_using_tolerance: dict[str, set[str]],
     normalize_fn,
     is_missing_fn,
-    task_value_offsets: dict[str, float] | None = None,
-    offset_application_counts: dict[str, int] | None = None,
 ):
     """Internal validation for a single survey item value."""
     return _survey_processing._validate_survey_item_value(
@@ -3759,8 +3513,6 @@ def _validate_survey_item_value(
         is_missing_fn=is_missing_fn,
         find_matching_level_key_fn=_find_matching_level_key,
         missing_token=_MISSING_TOKEN,
-        task_value_offsets=task_value_offsets,
-        offset_application_counts=offset_application_counts,
     )
 
 

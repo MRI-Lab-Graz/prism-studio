@@ -167,9 +167,28 @@ def _format_value_offset_confirmation_response(
 
     configured_offset = getattr(error, "configured_offset", None)
     offset_evidence = getattr(error, "offset_evidence", None)
-    review_message = str(error).strip() or (
+    evidence_classification = ""
+    if isinstance(offset_evidence, dict):
+        evidence_classification = str(
+            offset_evidence.get("classification") or ""
+        ).strip().lower()
+
+    fallback_message = (
         "Survey values are outside template levels. Review task value offsets in Advanced options before continuing."
     )
+    review_message = str(error).strip() or fallback_message
+    if configured_offset is None and evidence_classification in {
+        "item_issues_likely",
+        "structural_offset_likely",
+    }:
+        if evidence_classification == "structural_offset_likely":
+            review_message = (
+                "Sampled out-of-range values are consistent with a task-wide structural offset."
+            )
+        else:
+            review_message = (
+                "Sampled out-of-range values do not yet support a task-wide structural offset."
+            )
     if configured_offset is not None:
         review_message += (
             " Review the manual task value offset in Advanced options and run Preview again."

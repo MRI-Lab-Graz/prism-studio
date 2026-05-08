@@ -155,6 +155,7 @@ def handle_api_recipes_surveys(data: dict):
     include_raw = bool(data.get("include_raw", False))
     boilerplate = bool(data.get("boilerplate", False))
     merge_all = bool(data.get("merge_all", False))
+    include_recipe_prefix = bool(data.get("include_recipe_prefix", True))
     anonymize = bool(data.get("anonymize", False))
     mask_questions = bool(data.get("mask_questions", False))
     id_length, id_length_error = _parse_id_length(data.get("id_length", 8))
@@ -272,6 +273,8 @@ def handle_api_recipes_surveys(data: dict):
             cmd_parts.append("--include-raw")
         if merge_all:
             cmd_parts.append("--merge-all")
+        if not include_recipe_prefix:
+            cmd_parts.append("--no-recipe-prefix")
         if boilerplate:
             cmd_parts.append("--boilerplate")
         if lang != "en":
@@ -297,6 +300,7 @@ def handle_api_recipes_surveys(data: dict):
                 include_raw=include_raw,
                 boilerplate=boilerplate,
                 merge_all=merge_all,
+                include_recipe_prefix=include_recipe_prefix,
                 anonymized=anonymize,
             )
         except ValueError as e:

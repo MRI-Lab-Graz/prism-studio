@@ -493,6 +493,100 @@ def _build_survey_metadata(recipe: dict, lang: str = "en") -> dict:
     return meta
 
 
+def _clean_export_context_value(value: Any) -> str | None:
+    text = str(value or "").strip()
+    if not text or text.lower() in {"", "n/a", "na", "nan", "none", "null"}:
+        return None
+    return text
+
+
+def _distinct_export_context_values(values: Any) -> list[str]:
+    if values is None:
+        return []
+
+    if hasattr(values, "dropna"):
+        try:
+            iterable = values.dropna().tolist()
+        except Exception:
+            iterable = list(values)
+    else:
+        iterable = list(values)
+
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for value in iterable:
+        text = _clean_export_context_value(value)
+        if not text or text in seen:
+            continue
+        cleaned.append(text)
+        seen.add(text)
+    return cleaned
+
+
+def _build_export_context_key(
+    *, session: Any = None, run: Any = None, include_session: bool, include_run: bool
+) -> str:
+    parts: list[str] = []
+
+    if include_session:
+        session_text = _clean_export_context_value(session)
+        if session_text:
+            parts.append(session_text)
+
+    if include_run:
+        run_text = _clean_export_context_value(run)
+        if run_text:
+            parts.append(run_text)
+
+    return "_".join(parts)
+
+
+def _prefixed_recipe_column_name(recipe_id: str, column: str) -> str:
+    column_text = str(column)
+    if column_text.lower().startswith(recipe_id.lower()):
+        return column_text
+    return f"{recipe_id}_{column_text}"
+
+
+def _strip_export_context_suffix(column: str) -> str:
+    return re.sub(r"_(?:ses[_-][^_]+(?:_run-[^_]+)?|run-[^_]+)$", "", str(column))
+
+
+def _plan_merge_all_column_renames(
+    recipe_frames: list[tuple[str, Any]],
+    *,
+    merge_keys: set[str],
+    include_recipe_prefix: bool,
+) -> dict[str, dict[str, str]]:
+    desired_by_owner: dict[tuple[str, str], str] = {}
+    owners_by_name: dict[str, list[tuple[str, str]]] = {}
+
+    for recipe_id, frame in recipe_frames:
+        for column in frame.columns:
+            column_text = str(column)
+            if column_text in merge_keys:
+                continue
+
+            desired = (
+                _prefixed_recipe_column_name(recipe_id, column_text)
+                if include_recipe_prefix
+                else column_text
+            )
+            owner = (recipe_id, column_text)
+            desired_by_owner[owner] = desired
+            owners_by_name.setdefault(desired, []).append(owner)
+
+    rename_maps: dict[str, dict[str, str]] = {}
+    for (recipe_id, column_text), desired in desired_by_owner.items():
+        final_name = desired
+        if len(owners_by_name.get(desired, [])) > 1:
+            final_name = _prefixed_recipe_column_name(recipe_id, column_text)
+        if final_name != column_text:
+            rename_maps.setdefault(recipe_id, {})[column_text] = final_name
+
+    return rename_maps
+
+
 def _build_combined_output_metadata(
     columns: list[str],
     participants_meta: dict,
@@ -501,7 +595,7 @@ def _build_combined_output_metadata(
     dataset_path: Optional[Path] = None,
     modality: str = "survey",
 ) -> tuple[dict[str, str], dict[str, dict], dict[str, dict]]:
-    """Build metadata for combined outputs with prefixed recipe columns."""
+    """Build metadata for combined outputs with recipe prefixes when needed."""
     variable_labels: dict[str, str] = {
         "participant_id": "Participant identifier",
         "session": "Session identifier",
@@ -530,10 +624,14 @@ def _build_combined_output_metadata(
             for sidecar_key, col_meta in sidecar.items():
                 if not isinstance(col_meta, dict):
                     continue
+                candidate_names = {
+                    sidecar_key,
+                    _prefixed_recipe_column_name(recipe_id, sidecar_key),
+                }
                 # Match bare column OR stripped session-suffix variant
                 for col in col_set:
-                    bare = re.sub(r"_ses[_-]\w+$", "", col)
-                    if bare != sidecar_key:
+                    bare = _strip_export_context_suffix(col)
+                    if bare not in candidate_names:
                         continue
                     desc = (
                         col_meta.get("Description") or col_meta.get("description") or ""
@@ -550,44 +648,41 @@ def _build_combined_output_metadata(
             score_name = str(score.get("Name", "")).strip()
             if not score_name:
                 continue
-            # Only add prefix if score_name doesn't already start with recipe_id
-            # (e.g., avoid "ads_ADS_total" when "ADS_total" already has the prefix)
-            score_lower = score_name.lower()
-            prefix_lower = recipe_id.lower()
-            if score_lower.startswith(prefix_lower):
-                prefixed = score_name  # Already has prefix
-            else:
-                prefixed = f"{recipe_id}_{score_name}"
-            if prefixed not in columns:
-                continue
+            candidate_names = [
+                score_name,
+                _prefixed_recipe_column_name(recipe_id, score_name),
+            ]
+            for candidate in dict.fromkeys(candidate_names):
+                if candidate not in columns:
+                    continue
 
-            desc = score.get("Description") or ""
-            if desc:
-                variable_labels[prefixed] = get_i18n_text(desc, lang)
+                desc = score.get("Description") or ""
+                if desc:
+                    variable_labels[candidate] = get_i18n_text(desc, lang)
 
-            interp = score.get("Interpretation")
-            if interp and isinstance(interp, dict):
-                value_labels[prefixed] = {
-                    str(k): get_i18n_text(v, lang) for k, v in interp.items()
-                }
+                interp = score.get("Interpretation")
+                if interp and isinstance(interp, dict):
+                    value_labels[candidate] = {
+                        str(k): get_i18n_text(v, lang) for k, v in interp.items()
+                    }
 
-            details: dict[str, Any] = {}
-            if score.get("Method"):
-                details["method"] = score["Method"]
-            if score.get("Items"):
-                details["items"] = score["Items"]
-            if score.get("Range"):
-                details["range"] = score["Range"]
-            if score.get("Note"):
-                details["note"] = get_i18n_text(score["Note"], lang)
-            if score.get("Missing"):
-                details["missing_handling"] = score["Missing"]
-            if score.get("MinValid") is not None:
-                details["min_valid"] = score["MinValid"]
-            if score.get("Interpretation"):
-                details["interpretation"] = score["Interpretation"]
-            if details:
-                score_details[prefixed] = details
+                details: dict[str, Any] = {}
+                if score.get("Method"):
+                    details["method"] = score["Method"]
+                if score.get("Items"):
+                    details["items"] = score["Items"]
+                if score.get("Range"):
+                    details["range"] = score["Range"]
+                if score.get("Note"):
+                    details["note"] = get_i18n_text(score["Note"], lang)
+                if score.get("Missing"):
+                    details["missing_handling"] = score["Missing"]
+                if score.get("MinValid") is not None:
+                    details["min_valid"] = score["MinValid"]
+                if score.get("Interpretation"):
+                    details["interpretation"] = score["Interpretation"]
+                if details:
+                    score_details[candidate] = details
 
     return variable_labels, value_labels, score_details
 
@@ -1779,35 +1874,47 @@ def _handle_wide_pivot(
     import pandas as pd
 
     try:
-        valid_runs = pd.Series(dtype="string")
-        if "run" in df.columns:
-            valid_runs = (
-                df["run"]
-                .dropna()
-                .astype(str)
-                .str.strip()
-            )
-            valid_runs = valid_runs[
-                ~valid_runs.str.lower().isin({"", "n/a", "na", "nan", "none", "null"})
-            ]
+        valid_sessions = (
+            _distinct_export_context_values(df["session"])
+            if "session" in df.columns
+            else []
+        )
+        valid_runs = (
+            _distinct_export_context_values(df["run"])
+            if "run" in df.columns
+            else []
+        )
 
-        include_run = "run" in df.columns and valid_runs.nunique() > 1
-        if include_run:
-            df = df.copy()
+        include_session = len(valid_sessions) > 1
+        include_run = "run" in df.columns and len(valid_runs) > 1
+
+        df = df.copy()
+        if include_session and include_run:
             df["_pivot_key"] = (
                 df["session"].astype(str) + "_" + df["run"].fillna("").astype(str)
             ).str.rstrip("_")
-            pivot_col = "_pivot_key"
+        elif include_session:
+            df["_pivot_key"] = df["session"].astype(str)
+        elif include_run:
+            df["_pivot_key"] = df["run"].fillna("").astype(str)
         else:
-            pivot_col = "session"
+            df["_pivot_key"] = ""
+
+        pivot_col = "_pivot_key"
 
         # Pivot the score columns
         df_wide = df.pivot(index="participant_id", columns=pivot_col, values=out_header)
-        # Flatten multi-index columns: "total_score_ses-1" or "total_score_ses-1_run-01"
+        # Flatten multi-index columns: "total_score_ses-1", "total_score_run-01",
+        # or "total_score_ses-1_run-01" depending on the exported context.
         if isinstance(df_wide.columns, pd.MultiIndex):
-            df_wide.columns = [f"{val}_{key}" for val, key in df_wide.columns]
+            df_wide.columns = [
+                val if not key else f"{val}_{key}" for val, key in df_wide.columns
+            ]
         else:
-            df_wide.columns = [f"{out_header[0]}_{key}" for key in df_wide.columns]
+            df_wide.columns = [
+                out_header[0] if not key else f"{out_header[0]}_{key}"
+                for key in df_wide.columns
+            ]
 
         df = df_wide.reset_index().fillna("n/a")
         # Update out_header to reflect new columns for metadata building
@@ -1856,17 +1963,6 @@ def _filter_tsv_files_by_sessions(
         if ses_id in selected:
             filtered.append(p)
     return filtered
-
-
-def _apply_session_suffix(
-    columns: list[str], *, session: str, ignore: set[str]
-) -> dict[str, str]:
-    """Return rename map to append session suffix to selected columns."""
-    return {
-        c: f"{c}_{session}"
-        for c in columns
-        if c not in ignore and not c.endswith(f"_{session}")
-    }
 
 
 def _make_project_prefix(prism_root: Path) -> str:
@@ -2012,19 +2108,6 @@ def _export_recipe_aggregated(
                 + [c for c in final_header if c in df.columns]
             )
             df = df.loc[:, [c for c in ordered_cols if c in df.columns]]
-
-    if (
-        out_format in {"csv", "sav"}
-        and layout == "long"
-        and selected_sessions
-        and len(selected_sessions) == 1
-    ):
-        ignore = {"participant_id", "session"} | set(participant_cols)
-        rename_map = _apply_session_suffix(
-            list(df.columns), session=selected_sessions[0], ignore=ignore
-        )
-        if rename_map:
-            df = df.rename(columns=rename_map)
 
     # Metadata building
     sidecar_meta = _get_sidecar_for_task(output_prism_root, modality, survey_task)
@@ -2387,6 +2470,7 @@ def compute_survey_recipes(
     include_raw: bool = False,
     boilerplate: bool = False,
     merge_all: bool = False,
+    include_recipe_prefix: bool = True,
     anonymized: bool = False,
 ) -> SurveyRecipesResult:
     """Compute survey scores in a PRISM dataset using recipes.
@@ -2403,6 +2487,8 @@ def compute_survey_recipes(
             include_raw: If True, include original columns in the output.
             boilerplate: If True, generate a methods boilerplate.
             merge_all: If True, combine all surveys into one output file.
+            include_recipe_prefix: If True, prefix combined-export columns with the
+                recipe name when possible.
             anonymized: If True, append '_anon' to output subfolder name.
 
     Raises:
@@ -2483,7 +2569,7 @@ def compute_survey_recipes(
     fallback_note: str | None = None
 
     # For merge_all mode, collect per-recipe frames and merge them once at the end.
-    merge_all_dfs: list[Any] = []
+    merge_all_frames: list[tuple[str, Any]] = []
     merge_all_recipe_by_id: dict[str, dict] = {}
 
     # If modality=survey/biometrics we will write one flat file per survey/biometric (recipe)
@@ -2568,20 +2654,17 @@ def compute_survey_recipes(
                         if run_id is not None:
                             merged["run"] = run_id
                         for col in out_header:
-                            # Only add prefix if column doesn't already start with recipe_id
-                            # (e.g., avoid "ads_ADS01" when "ADS01" already has the prefix)
-                            col_lower = col.lower()
-                            prefix_lower = recipe_id.lower()
-                            if col_lower.startswith(prefix_lower):
-                                prefixed_col = col  # Already has prefix
-                            else:
-                                prefixed_col = f"{recipe_id}_{col}"
+                            prefixed_col = (
+                                _prefixed_recipe_column_name(recipe_id, col)
+                                if include_recipe_prefix
+                                else col
+                            )
                             merged[prefixed_col] = score_row.get(col, "n/a")
                         rows_accum.append(merged)
 
                 if rows_accum:
                     df = pd.DataFrame(rows_accum)
-                    merge_all_dfs.append(df)
+                    merge_all_frames.append((recipe_id, df))
                     merge_all_recipe_by_id[recipe_id] = recipe
                     written_recipe_ids.add(recipe_id)
             else:
@@ -2644,22 +2727,36 @@ def compute_survey_recipes(
         missing_input_tasks = tuple(sorted(observed_task_ids - matched_task_ids))
 
     # In merge_all mode, combine per-recipe frames into a single output file.
-    if merge_all and merge_all_dfs:
+    if merge_all and merge_all_frames:
         import pandas as pd
 
+        merge_all_rename_maps = _plan_merge_all_column_renames(
+            merge_all_frames,
+            merge_keys={"participant_id", "session", "run"},
+            include_recipe_prefix=include_recipe_prefix,
+        )
+
         include_run_in_merge = False
-        for _df in merge_all_dfs:
+        has_any_run_in_merge = False
+        for _recipe_id, _df in merge_all_frames:
             if "run" not in _df.columns:
                 continue
+            has_any_run_in_merge = True
             runs = _df["run"].dropna().astype(str).str.strip()
             runs = runs[~runs.str.lower().isin({"", "n/a", "na", "nan", "none", "null"})]
             if runs.nunique() > 1:
                 include_run_in_merge = True
                 break
 
+        if layout == "long" and has_any_run_in_merge:
+            include_run_in_merge = True
+
         prepared_frames: list[Any] = []
-        for _df in merge_all_dfs:
+        for recipe_id, _df in merge_all_frames:
             working = _df.copy()
+            rename_map = merge_all_rename_maps.get(recipe_id, {})
+            if rename_map:
+                working = working.rename(columns=rename_map)
             if include_run_in_merge:
                 if "run" not in working.columns:
                     working["run"] = "n/a"
@@ -2717,16 +2814,18 @@ def compute_survey_recipes(
                 id_cols = ["participant_id", "session"] + participant_cols_in_df
                 include_run_in_wide = False
                 if "run" in combined_df.columns:
-                    run_values = combined_df["run"].dropna().astype(str).str.strip()
-                    run_values = run_values[
-                        ~run_values.str.lower().isin({"", "n/a", "na", "nan", "none", "null"})
-                    ]
-                    include_run_in_wide = run_values.nunique() > 1
+                    run_values = _distinct_export_context_values(combined_df["run"])
+                    include_run_in_wide = len(run_values) > 1
+
+                session_values = _distinct_export_context_values(combined_df["session"])
+                include_session_in_wide = len(session_values) > 1
 
                 if include_run_in_wide:
                     id_cols = ["participant_id", "session", "run"] + participant_cols_in_df
 
-                score_cols = [c for c in combined_df.columns if c not in id_cols]
+                score_cols = [
+                    c for c in combined_df.columns if c not in set(id_cols) | {"run"}
+                ]
 
                 if score_cols:
                     df_melt = combined_df.melt(
@@ -2735,7 +2834,7 @@ def compute_survey_recipes(
                         var_name="variable",
                         value_name="value",
                     ).dropna(subset=["value"])
-                    if include_run_in_wide:
+                    if include_session_in_wide and include_run_in_wide:
                         df_melt["col_name"] = (
                             df_melt["variable"].astype(str)
                             + "_"
@@ -2743,12 +2842,20 @@ def compute_survey_recipes(
                             + "_"
                             + df_melt["run"].fillna("").astype(str)
                         ).str.rstrip("_")
-                    else:
+                    elif include_session_in_wide:
                         df_melt["col_name"] = (
                             df_melt["variable"].astype(str)
                             + "_"
                             + df_melt["session"].astype(str)
                         )
+                    elif include_run_in_wide:
+                        df_melt["col_name"] = (
+                            df_melt["variable"].astype(str)
+                            + "_"
+                            + df_melt["run"].fillna("").astype(str)
+                        ).str.rstrip("_")
+                    else:
+                        df_melt["col_name"] = df_melt["variable"].astype(str)
 
                     pivot_index = ["participant_id"] + participant_cols_in_df
                     df_wide = df_melt.pivot(
@@ -2796,19 +2903,6 @@ def compute_survey_recipes(
                 combined_value_labels,
                 combined_score_details,
             )
-
-        if (
-            out_format in {"csv", "sav"}
-            and layout == "long"
-            and selected_sessions
-            and len(selected_sessions) == 1
-        ):
-            ignore = {"participant_id", "session"} | set(combined_participant_cols)
-            rename_map = _apply_session_suffix(
-                list(combined_df.columns), session=selected_sessions[0], ignore=ignore
-            )
-            if rename_map:
-                combined_df = combined_df.rename(columns=rename_map)
 
         if out_format == "csv":
             combined_df.to_csv(out_path, index=False)
@@ -2860,7 +2954,7 @@ def compute_survey_recipes(
                 fallback_note = f"SPSS export failed ({e}); wrote CSV instead"
         written_files = 1
         flat_out_path = out_path
-        print(f"✓ Combined {len(merge_all_dfs)} surveys into: {out_path.name}")
+        print(f"✓ Combined {len(merge_all_frames)} surveys into: {out_path.name}")
 
     if written_files == 0:
         raise ValueError(f"No matching {modality} recipes applied.")
