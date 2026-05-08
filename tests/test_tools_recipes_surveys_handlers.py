@@ -7,6 +7,8 @@ from unittest.mock import patch
 
 from flask import Flask
 
+from src.recipes_surveys import SurveyRecipesResult
+
 
 def _import_handlers_module():
     app_root = Path(__file__).resolve().parents[1] / "app"
@@ -148,3 +150,40 @@ def test_handle_api_recipes_surveys_returns_user_error_for_missing_recipes(
     payload = response.get_json()
     assert payload["error"] == error_message
     assert "traceback" not in payload["error"].lower()
+
+
+def test_handle_api_recipes_surveys_forwards_recipe_prefix_flag(
+    tmp_path: Path,
+) -> None:
+    handlers = _import_handlers_module()
+    app = _build_app()
+
+    dataset_path = tmp_path / "dataset"
+    dataset_path.mkdir()
+    out_root = dataset_path / "derivatives" / "survey" / "wide_en"
+
+    result = SurveyRecipesResult(
+        processed_files=1,
+        written_files=1,
+        out_format="csv",
+        out_root=out_root,
+        flat_out_path=out_root / "combined_survey.csv",
+    )
+
+    with app.app_context(), patch(
+        "src.web.validation.run_validation", return_value=([], {})
+    ), patch(
+        "src.cli.commands.recipes.run_recipes_job", return_value=result
+    ) as run_job:
+        response = handlers.handle_api_recipes_surveys(
+            {
+                "dataset_path": str(dataset_path),
+                "modality": "survey",
+                "format": "csv",
+                "merge_all": True,
+                "include_recipe_prefix": False,
+            }
+        )
+
+    assert response.status_code == 200
+    assert run_job.call_args.kwargs["include_recipe_prefix"] is False

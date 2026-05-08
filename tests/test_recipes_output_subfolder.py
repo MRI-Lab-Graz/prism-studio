@@ -385,9 +385,133 @@ class TestMergeAllWideLayout:
         assert "b_Total_ses-2_run-01" in fieldnames
         assert "b_Total_ses-2_run-02" in fieldnames
 
+    def test_merge_all_wide_single_session_omits_session_suffix_and_allows_bare_items(
+        self, tmp_path: Path
+    ) -> None:
+        """Single-session combined exports keep item names bare when recipe prefixes are disabled."""
+        project_root = tmp_path / "project"
+        recipe_dir = tmp_path / "recipes"
+
+        survey_dir = project_root / "sub-001" / "ses-1" / "survey"
+        survey_dir.mkdir(parents=True, exist_ok=True)
+        (survey_dir / "sub-001_ses-1_task-panas_survey.tsv").write_text(
+            "panas07\n5\n", encoding="utf-8"
+        )
+        (survey_dir / "sub-001_ses-1_task-pss_survey.tsv").write_text(
+            "pss01\n2\n", encoding="utf-8"
+        )
+
+        recipe_dir.mkdir(parents=True, exist_ok=True)
+        (recipe_dir / "recipe-panas.json").write_text(
+            (
+                "{\n"
+                '  "Kind": "survey",\n'
+                '  "RecipeVersion": "1.0",\n'
+                '  "Survey": {"TaskName": "panas"},\n'
+                '  "Scores": [\n'
+                '    {"Name": "Total", "Method": "sum", "Items": ["panas07"]}\n'
+                "  ]\n"
+                "}\n"
+            ),
+            encoding="utf-8",
+        )
+        (recipe_dir / "recipe-pss.json").write_text(
+            (
+                "{\n"
+                '  "Kind": "survey",\n'
+                '  "RecipeVersion": "1.0",\n'
+                '  "Survey": {"TaskName": "pss"},\n'
+                '  "Scores": [\n'
+                '    {"Name": "Total", "Method": "sum", "Items": ["pss01"]}\n'
+                "  ]\n"
+                "}\n"
+            ),
+            encoding="utf-8",
+        )
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+            layout="wide",
+            include_raw=True,
+            merge_all=True,
+            include_recipe_prefix=False,
+            lang="en",
+        )
+
+        out_csv = result.out_root / "combined_survey.csv"
+        with out_csv.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames or []
+
+        assert "panas07" in fieldnames
+        assert "pss01" in fieldnames
+        assert "panas_Total" in fieldnames
+        assert "pss_Total" in fieldnames
+        assert not any("_ses-" in name for name in fieldnames)
+
+    def test_merge_all_long_single_run_keeps_run_column_without_name_suffixes(
+        self, tmp_path: Path
+    ) -> None:
+        """Long combined exports keep the dedicated run column even for one run value."""
+        project_root, recipe_dir = self._setup_merge_all_project(
+            tmp_path, runs=["run-01"]
+        )
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+            layout="long",
+            merge_all=True,
+            lang="en",
+        )
+
+        out_csv = result.out_root / "combined_survey.csv"
+        with out_csv.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames or []
+
+        assert "run" in fieldnames
+        score_fields = [
+            name for name in fieldnames if name not in {"participant_id", "session", "run"}
+        ]
+        assert score_fields
+        assert not any("_ses-" in name or "_run-" in name for name in score_fields)
+
 
 class TestOutputFilesInSubfolder:
     """Test that output files are written to the correct subfolder."""
+
+    def test_long_single_selected_session_omits_session_postfix(
+        self, tmp_path: Path
+    ) -> None:
+        """Long exports keep bare variable names when only one session is exported."""
+        project_root, recipe_dir = _setup_minimal_project(tmp_path, task_name="mytest")
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+            layout="long",
+            sessions="ses-1",
+            lang="en",
+        )
+
+        csv_file = result.out_root / "mytest.csv"
+        with csv_file.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames or []
+
+        assert "Total" in fieldnames
+        assert not any(name.endswith("_ses-1") for name in fieldnames)
 
     def test_csv_files_in_subfolder(self, tmp_path: Path) -> None:
         """CSV output files are created in the config subfolder."""
