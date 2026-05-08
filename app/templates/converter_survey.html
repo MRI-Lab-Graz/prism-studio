@@ -170,12 +170,18 @@
                                             <div class="border rounded p-3 bg-light-subtle" id="convertValueOffsetsEditor">
                                                 <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-3">
                                                     <small class="text-muted" id="convertValueOffsetsKnownTasks">Run Preview to populate available survey tasks.</small>
-                                                    <button class="btn btn-outline-secondary btn-sm align-self-start align-self-lg-auto" type="button" id="convertAddValueOffsetRowBtn">
-                                                        <i class="fas fa-plus me-1"></i>Add offset
-                                                    </button>
+                                                    <div class="d-flex flex-wrap gap-2 align-self-start align-self-lg-auto">
+                                                        <button class="btn btn-outline-secondary btn-sm" type="button" id="convertAddValueOffsetRowBtn">
+                                                            <i class="fas fa-plus me-1"></i>Add offset
+                                                        </button>
+                                                        <button class="btn btn-outline-primary btn-sm" type="button" id="convertApplyValueOffsetsBtn">
+                                                            <i class="fas fa-list-check me-1"></i>Apply offsets
+                                                        </button>
+                                                    </div>
                                                 </div>
                                                 <div id="convertValueOffsetRows" class="d-flex flex-column gap-2"></div>
                                                 <div class="small text-muted" id="convertValueOffsetsEmptyState">No offset rows configured yet.</div>
+                                                <small class="text-muted d-none mt-2" id="convertValueOffsetsStatus"></small>
                                             </div>
                                             <div class="form-text">Choose a survey task, then apply a <code>+</code> or <code>-</code> numeric offset. After editing offsets, rerun Preview.</div>
                                             <div class="alert alert-warning d-none mt-2 mb-0 small" id="convertValueOffsetAdvice" style="white-space: pre-line;"></div>
