@@ -1353,12 +1353,15 @@ export function initParticipants() {
     
             updateParticipantsSheetMetadata(data);
 
-            const idSelectionRequired = Boolean(data.id_selection_required);
-                const selectedId = String(data.source_id_column || data.suggested_id_column || data.id_column || '').trim();
+                const availableSourceColumns = Array.isArray(data.columns) ? data.columns : [];
+                const preservedId = getCurrentParticipantsIdColumnValue(availableSourceColumns);
+                const idSelectionRequired = Boolean(data.id_selection_required);
+                const detectedId = String(data.source_id_column || data.suggested_id_column || data.id_column || '').trim();
+                const selectedId = preservedId || detectedId;
 
             setParticipantsIdSelectionRequired(idSelectionRequired);
             setParticipantsIdColumnOptions(
-                data.columns || [],
+                    availableSourceColumns,
                 selectedId,
                 false
             );
@@ -1369,7 +1372,7 @@ export function initParticipants() {
                 if (idSelect && selectedId) idSelect.value = selectedId;
                 if (idHint) idHint.textContent = 'Confirm or change the detected source ID column. It will be renamed to participant_id in output.';
             }
-            if (selectedId && selectedId !== 'participant_id') {
+            if (selectedId) {
                 rememberParticipantsIdColumn(selectedId);
             } else if (idSelectionRequired) {
                 clearRememberedParticipantsIdColumn();
@@ -2616,6 +2619,9 @@ export function initParticipants() {
         const sessionResolutionDecisions = (previewData.session_resolution_decisions && typeof previewData.session_resolution_decisions === 'object')
             ? previewData.session_resolution_decisions
             : {};
+        const mergeQuality = (previewData.merge_quality && typeof previewData.merge_quality === 'object')
+            ? previewData.merge_quality
+            : {};
         const sessionResolutionRequired = Boolean(previewData.session_resolution_required);
         const canApply = Boolean(previewData.can_apply);
 
@@ -2632,6 +2638,17 @@ export function initParticipants() {
             summaryText.textContent = existingOnlyCount > 0
                 ? `This merge can be applied safely. ${existingOnlyCount} existing participant${existingOnlyCount === 1 ? '' : 's'} will stay unchanged.`
                 : 'This merge can be applied safely. All overlapping non-empty values agree.';
+
+            const incomingTotalCells = Number(mergeQuality.incoming_new_participant_total_value_cells || 0);
+            const incomingMissingCells = Number(mergeQuality.incoming_new_participant_missing_value_cells || 0);
+            const incomingAllMissingRows = Number(mergeQuality.incoming_new_participants_all_missing_values || 0);
+            if (newParticipantCount > 0 && incomingTotalCells > 0 && incomingMissingCells > 0) {
+                const missingPercent = Math.round((incomingMissingCells / incomingTotalCells) * 100);
+                const allMissingNote = incomingAllMissingRows > 0
+                    ? ` ${incomingAllMissingRows} new participant row${incomingAllMissingRows === 1 ? ' is' : 's are'} fully empty in the imported file.`
+                    : '';
+                summaryText.textContent += ` Imported values for new participants are sparse (${incomingMissingCells}/${incomingTotalCells} missing cells, ${missingPercent}%).${allMissingNote}`;
+            }
         } else if (sessionResolutionRequired && conflictCount === 0) {
             summaryText.textContent = 'This merge is blocked until session resolution is chosen for columns that vary across repeated participant rows.';
         } else {
@@ -3362,9 +3379,14 @@ export function initParticipants() {
                 if (response.status === 409 && data.error === 'id_column_required') {
                     const idGroup = document.getElementById('participantsIdColumnGroup');
                     const idHint = document.getElementById('participantsIdColumnHint');
+                    const currentIdValue = getCurrentParticipantsIdColumnValue(data.columns || []);
                     const suggestedId = String(data.suggested_id_column || '').trim();
                     setParticipantsIdSelectionRequired(true);
-                    setParticipantsIdColumnOptions(data.columns || [], suggestedId, false);
+                    setParticipantsIdColumnOptions(
+                        data.columns || [],
+                        currentIdValue || suggestedId,
+                        false
+                    );
                     if (idHint) idHint.textContent = 'Select the source ID column manually. It will be renamed to participant_id.';
                     if (idGroup) idGroup.classList.remove('d-none');
                 }
@@ -4017,6 +4039,9 @@ export function initParticipants() {
             const writtenFiles = Array.isArray(data.files_created) ? data.files_created : [];
             const outputDirectory = typeof data.output_directory === 'string' ? data.output_directory.trim() : '';
             const backupFiles = Array.isArray(data.backup_files) ? data.backup_files : [];
+            const mergeQuality = (data.merge_quality && typeof data.merge_quality === 'object')
+                ? data.merge_quality
+                : {};
             const replacedExisting = mode === 'file' && !useMergeRoute && Boolean(data.overwrote_existing);
             const updatedExisting = mode === 'existing';
             const successTitle = data.merge_mode
@@ -4040,6 +4065,15 @@ export function initParticipants() {
             const locationNote = outputDirectory
                 ? `<div class="mt-1 small text-muted">Written to: <code>${escapeHtml(outputDirectory)}</code></div>`
                 : '';
+            const mergeConfirmationNote = data.merge_mode
+                ? `<div class="mt-2"><strong>Merge completed successfully.</strong> participants.tsv and participants.json were updated in the current project.</div>`
+                : '';
+            const incomingTotalCells = Number(mergeQuality.incoming_new_participant_total_value_cells || 0);
+            const incomingMissingCells = Number(mergeQuality.incoming_new_participant_missing_value_cells || 0);
+            const incomingAllMissingRows = Number(mergeQuality.incoming_new_participants_all_missing_values || 0);
+            const sparseMergeNote = data.merge_mode && incomingTotalCells > 0 && incomingMissingCells > 0
+                ? `<div class="mt-2 small text-muted"><i class="fas fa-circle-info me-1"></i>Imported rows already contained many empty values (${incomingMissingCells}/${incomingTotalCells} missing cells${incomingAllMissingRows > 0 ? `; ${incomingAllMissingRows} row(s) fully empty` : ''}). Merge preserves these missing values and only fills where source data exists.</div>`
+                : '';
 
             // Show success
             successDiv.innerHTML = `
@@ -4048,8 +4082,10 @@ export function initParticipants() {
                 <ul class="mb-0 mt-2">
                     ${writtenFiles.map(f => `<li><code>${escapeHtml(f.split('/').pop())}</code></li>`).join('')}
                 </ul>
+                ${mergeConfirmationNote}
                 ${operationNote}
                 ${backupNote}
+                ${sparseMergeNote}
                 ${locationNote}
                 <div class="mt-2 small text-muted">Refreshing preview…</div>
             `;

@@ -289,6 +289,18 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "convertSessionSelect.value = normalizedSessions.length === 1 ? normalizedSessions[0] : 'all';",
             content,
         )
+        self.assertIn(
+            "async function parseJsonResponse(response, requestLabel = 'Request') {",
+            content,
+        )
+        self.assertIn(
+            "Server response could not be parsed. Please retry once.",
+            content,
+        )
+        self.assertIn(
+            "data = await parseJsonResponse(response, 'Survey preparation');",
+            content,
+        )
 
     def test_survey_converter_uses_structured_value_offset_editor(self):
         module_content = SURVEY_CONVERT_MODULE.read_text(encoding="utf-8")

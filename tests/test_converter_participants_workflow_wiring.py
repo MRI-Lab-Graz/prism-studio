@@ -148,6 +148,18 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
+            "const preservedId = getCurrentParticipantsIdColumnValue(availableSourceColumns);",
+            content,
+        )
+        self.assertIn(
+            "const selectedId = preservedId || detectedId;",
+            content,
+        )
+        self.assertIn(
+            "currentIdValue || suggestedId,",
+            content,
+        )
+        self.assertIn(
             "resetParticipantsPanelState({ preserveImportConfig: true });",
             content,
         )

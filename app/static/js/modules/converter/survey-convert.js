@@ -70,6 +70,7 @@ export function initSurveyConvert(elements) {
     const convertValueOffsetsKnownTasks = document.getElementById('convertValueOffsetsKnownTasks');
     const convertValueOffsetsEmptyState = document.getElementById('convertValueOffsetsEmptyState');
     const convertValueOffsetAdvice = document.getElementById('convertValueOffsetAdvice');
+    const surveyWorkflowHint = document.getElementById('surveyWorkflowHint');
     const browseServerSurveyFileBtn = document.getElementById('browseServerSurveyFileBtn');
     const convertSessionColumnOverride = document.getElementById('convertSessionColumnOverride');
     const convertRunColumnOverride = document.getElementById('convertRunColumnOverride');
@@ -227,7 +228,7 @@ export function initSurveyConvert(elements) {
         return `id-map:${selectedFile.name}:${selectedFile.size}:${lastModified}`;
     }
 
-    function getSurveyPreviewContextKey() {
+    function getSurveyPreviewContextKey({ includeValueOffsets = true } = {}) {
         const templateSelections = getTemplateVersionSelections()
             .map((entry) => ({
                 task: normalizeSurveyTaskName(entry && entry.task),
@@ -255,7 +256,7 @@ export function initSurveyConvert(elements) {
                 ? String(convertLanguage.value || 'auto').trim().toLowerCase()
                 : 'auto',
             separator: getSelectedSeparator(getSelectedSurveyFilename().toLowerCase()),
-            valueOffsetsText: isAdvancedOptionsEnabled() && convertValueOffsets
+            valueOffsetsText: includeValueOffsets && isAdvancedOptionsEnabled() && convertValueOffsets
                 ? String(convertValueOffsets.value || '').trim()
                 : '',
             nearMatchTasks: getEffectiveNearMatchTasks().map(normalizeSurveyTaskName).sort(),
@@ -302,6 +303,82 @@ export function initSurveyConvert(elements) {
         );
     }
 
+    function isPreviewStaleOnlyByOffsetChanges() {
+        if (!surveyPreviewSelectionState.previewKey || surveyPreviewSelectionState.availableTasks.length === 0) {
+            return false;
+        }
+
+        let previousPayload;
+        let currentPayload;
+        try {
+            previousPayload = JSON.parse(surveyPreviewSelectionState.previewKey);
+            currentPayload = JSON.parse(getSurveyPreviewContextKey());
+        } catch (_error) {
+            return false;
+        }
+
+        if (!previousPayload || !currentPayload || typeof previousPayload !== 'object' || typeof currentPayload !== 'object') {
+            return false;
+        }
+
+        const previousWithoutOffsets = { ...previousPayload, valueOffsetsText: '' };
+        const currentWithoutOffsets = { ...currentPayload, valueOffsetsText: '' };
+
+        return (
+            JSON.stringify(previousWithoutOffsets) === JSON.stringify(currentWithoutOffsets)
+            && String(previousPayload.valueOffsetsText || '') !== String(currentPayload.valueOffsetsText || '')
+        );
+    }
+
+    function updateSurveyWorkflowHint({
+        hasFile,
+        blockedByTemplateGate,
+        versionSelectionsPending,
+        hasFreshPreviewReview,
+        hasSelectedPreviewTasks,
+        isConvertRunning,
+        isPreviewRunning,
+    }) {
+        if (!surveyWorkflowHint) {
+            return;
+        }
+
+        let message = '';
+        let className = 'form-text text-muted mb-2';
+
+        if (isConvertRunning) {
+            message = 'Step 5 is running. Wait for conversion to finish before changing workflow inputs.';
+            className = 'form-text text-warning mb-2';
+        } else if (isPreviewRunning) {
+            message = 'Step 4 is running. Review output when preview completes.';
+            className = 'form-text text-info mb-2';
+        } else if (!hasFile) {
+            message = 'Step 1: Choose a survey source file to begin.';
+        } else if (versionSelectionsPending) {
+            message = 'Apply questionnaire version selections, then continue with Step 4 (Preview).';
+            className = 'form-text text-warning mb-2';
+        } else if (blockedByTemplateGate) {
+            message = 'Project template metadata is incomplete. Finish template edits, then rerun Step 4 (Preview).';
+            className = 'form-text text-warning mb-2';
+        } else if (!hasFreshPreviewReview) {
+            if (isPreviewStaleOnlyByOffsetChanges()) {
+                message = 'Manual offsets changed. Run Step 4 (Preview) again to validate the new scale handling before Step 5 unlocks.';
+            } else {
+                message = 'Run Step 4 (Preview) after your latest changes before converting.';
+            }
+            className = 'form-text text-warning mb-2';
+        } else if (!hasSelectedPreviewTasks) {
+            message = 'Select at least one survey in Preview Review, then continue to Step 5.';
+            className = 'form-text text-warning mb-2';
+        } else {
+            message = 'Ready for Step 5: Convert selected surveys.';
+            className = 'form-text text-success mb-2';
+        }
+
+        surveyWorkflowHint.className = className;
+        surveyWorkflowHint.textContent = message;
+    }
+
     function getSelectedSurveyTasksForConversion() {
         const selectedTasks = Array.isArray(surveyPreviewSelectionState.selectedTasks)
             ? surveyPreviewSelectionState.selectedTasks.map(normalizeSurveyTaskName).filter(Boolean)
@@ -333,6 +410,10 @@ export function initSurveyConvert(elements) {
     function enrichSurveyRunErrorMessage(message) {
         const baseMessage = String(message || 'Conversion failed');
         const normalized = baseMessage.toLowerCase();
+        const isGenericPatternMessage = normalized === 'the string did not match the expected pattern.';
+        if (isGenericPatternMessage) {
+            return 'Server response could not be parsed. Please retry once. If it persists, check backend logs for survey prepare/preview endpoint errors.';
+        }
         const isDuplicateNormalizationError = normalized.includes('duplicate entries after normalization');
         if (!isDuplicateNormalizationError) {
             return baseMessage;
@@ -343,6 +424,48 @@ export function initSurveyConvert(elements) {
         }
 
         return baseMessage;
+    }
+
+    function summarizeServerResponseText(rawText) {
+        const compact = String(rawText || '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        if (!compact) {
+            return '';
+        }
+        if (compact.length <= 220) {
+            return compact;
+        }
+        return `${compact.slice(0, 217)}...`;
+    }
+
+    async function parseJsonResponse(response, requestLabel = 'Request') {
+        const statusCode = Number(response && response.status);
+        const statusText = String((response && response.statusText) || '').trim();
+        const statusLabel = Number.isFinite(statusCode) && statusCode > 0
+            ? `HTTP ${statusCode}${statusText ? ` ${statusText}` : ''}`
+            : 'HTTP response';
+
+        let responseText = '';
+        try {
+            responseText = await response.text();
+        } catch (_readError) {
+            throw new Error(`${requestLabel} returned an unreadable response (${statusLabel}).`);
+        }
+
+        const trimmed = String(responseText || '').trim();
+        if (!trimmed) {
+            return {};
+        }
+
+        try {
+            return JSON.parse(trimmed);
+        } catch (_parseError) {
+            const snippet = summarizeServerResponseText(trimmed);
+            const suffix = snippet ? ` Response: ${snippet}` : '';
+            throw new Error(`${requestLabel} returned a non-JSON response (${statusLabel}).${suffix}`);
+        }
     }
 
     function normalizeNearMatchTaskName(value) {
@@ -1040,6 +1163,7 @@ export function initSurveyConvert(elements) {
         const task = normalizeNearMatchTaskName(payload && payload.task) || 'unknown task';
         const itemId = String(payload && payload.item_id || '').trim();
         const rawValue = payload && payload.raw_value;
+        const backendMessage = String(payload && payload.message || '').trim();
         const expectedLevels = Array.isArray(payload && payload.expected_levels)
             ? payload.expected_levels.map((entry) => String(entry)).filter(Boolean)
             : [];
@@ -1053,6 +1177,15 @@ export function initSurveyConvert(elements) {
         const summary = offsetEvidence && typeof offsetEvidence.summary_message === 'string'
             ? offsetEvidence.summary_message.trim()
             : '';
+        const evidenceClassification = offsetEvidence && typeof offsetEvidence.classification === 'string'
+            ? offsetEvidence.classification.trim().toLowerCase()
+            : '';
+        const classificationHint = evidenceClassification === 'structural_offset_likely'
+            ? 'Flag: this pattern looks like a possible task-wide scale offset.'
+            : evidenceClassification === 'item_issues_likely'
+                ? 'Flag: this pattern may not be a single task-wide scale offset.'
+                : '';
+        const reviewSummary = summary || classificationHint || backendMessage;
 
         const lines = [
             `Survey ${modeLabel} stopped because task ${task} has values outside the template scale.`,
@@ -1065,7 +1198,7 @@ export function initSurveyConvert(elements) {
             suggestedOffsets.length > 0
                 ? `Suggested offset${suggestedOffsets.length === 1 ? '' : 's'}: ${suggestedOffsets.map((entry) => formatSignedOffset(entry)).join(', ')}`
                 : null,
-            summary || null,
+            reviewSummary || null,
             'If you are certain this task is coded on the wrong numeric scale, enter a manual task offset below and run Preview again.',
         ].filter(Boolean);
 
@@ -1692,7 +1825,7 @@ export function initSurveyConvert(elements) {
                     body: workflowRequest.formData,
                     signal,
                 });
-                data = await response.json();
+                data = await parseJsonResponse(response, 'Survey preparation');
             } catch (error) {
                 if (isAbortError(error)) {
                     return { ready: false, outcome: 'canceled' };
@@ -2401,7 +2534,7 @@ export function initSurveyConvert(elements) {
                 method: 'POST',
                 body: workflowRequest.formData,
             });
-            const data = await response.json();
+            const data = await parseJsonResponse(response, 'Version context sync');
             if (requestId !== versionWizardSyncRequestId) {
                 return;
             }
@@ -3223,7 +3356,7 @@ export function initSurveyConvert(elements) {
         if (previewBtn) {
             previewBtn.disabled = !hasFile || versionSelectionsPending;
             previewBtn.style.display = '';
-            previewBtn.innerHTML = '<i class="fas fa-eye me-2"></i>Preview (Dry-Run)';
+            previewBtn.innerHTML = '<i class="fas fa-eye me-2"></i>Step 4: Preview (Dry-Run)';
             convertBtn.parentElement.classList.remove('col-12');
             convertBtn.parentElement.classList.add('col-md-6');
 
@@ -3237,7 +3370,7 @@ export function initSurveyConvert(elements) {
         }
 
         if (convertBtn) {
-            convertBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles me-2"></i>Convert';
+            convertBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles me-2"></i>Step 5: Convert';
             convertBtn.classList.remove('btn-success');
             convertBtn.classList.add('btn-warning');
             if (blockedByTemplateGate) {
@@ -3286,6 +3419,16 @@ export function initSurveyConvert(elements) {
                 surveyRunCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Run';
             }
         }
+
+        updateSurveyWorkflowHint({
+            hasFile,
+            blockedByTemplateGate,
+            versionSelectionsPending,
+            hasFreshPreviewReview,
+            hasSelectedPreviewTasks,
+            isConvertRunning,
+            isPreviewRunning,
+        });
 
         clearConvertExcelFileBtn?.classList.toggle('d-none', !hasFile);
     }
@@ -3534,7 +3677,7 @@ export function initSurveyConvert(elements) {
                     method: 'POST',
                     body: formData,
                 });
-                const data = await response.json();
+                const data = await parseJsonResponse(response, 'Template check');
 
                 if (!response.ok) {
                     if (data.error === 'id_column_required') {
@@ -5910,7 +6053,7 @@ convertError.classList.remove('d-none');
             signal: previewRunAbortController.signal,
         })
         .then(async response => {
-            const data = await response.json();
+            const data = await parseJsonResponse(response, 'Survey preview');
             advanceSurveyRunProgress('preview', 38, 'Server response received. Building preview summary...');
             
             // DEBUG: Log the FULL response to understand structure

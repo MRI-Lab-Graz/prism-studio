@@ -357,6 +357,65 @@ class TestSurveyVersionContextEndpoint(unittest.TestCase):
 
 
 class TestSurveyPrepareWorkflowEndpoint(unittest.TestCase):
+    def test_run_survey_with_official_fallback_filters_unsupported_converter_kwargs(
+        self,
+    ):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        captured: dict[str, object] = {}
+
+        def legacy_converter(
+            *,
+            library_dir,
+            input_path,
+            output_root,
+            dry_run=False,
+            force=False,
+        ):
+            captured["library_dir"] = library_dir
+            captured["input_path"] = str(input_path)
+            captured["output_root"] = str(output_root)
+            captured["dry_run"] = dry_run
+            captured["force"] = force
+            return SimpleNamespace(tasks_included=[])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            input_path = tmp_path / "input.csv"
+            input_path.write_text("ID,Q1\nsub-001,1\n", encoding="utf-8")
+
+            result = handlers._run_survey_with_official_fallback(
+                legacy_converter,
+                library_dir=tmp_path,
+                fallback_project_path=None,
+                input_path=input_path,
+                output_root=tmp_path / "rawdata",
+                dry_run=True,
+                force=True,
+                task_value_offsets={"pss": -1},
+                allow_near_item_match=False,
+                near_match_tasks=None,
+            )
+
+        self.assertEqual(getattr(result, "tasks_included", None), [])
+        self.assertEqual(captured.get("library_dir"), str(tmp_path))
+        self.assertEqual(captured.get("dry_run"), True)
+        self.assertEqual(captured.get("force"), True)
+
+    def test_prepare_workflow_keeps_converter_bindings_available(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        self.assertTrue(callable(handlers.convert_survey_xlsx_to_prism_dataset))
+        self.assertTrue(callable(handlers.convert_survey_lsa_to_prism_dataset))
+
     def test_prepare_workflow_passes_through_blocking_confirmation(self):
         import importlib
 
@@ -391,6 +450,33 @@ class TestSurveyPrepareWorkflowEndpoint(unittest.TestCase):
         self.assertEqual(response.status_code, 409)
         payload = response.get_json()
         self.assertEqual(payload["error"], "near_item_match_confirmation_required")
+
+    def test_prepare_workflow_returns_json_error_on_unexpected_exception(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-prepare-workflow",
+            view_func=handlers.api_survey_prepare_workflow,
+            methods=["POST"],
+        )
+
+        with patch.object(
+            handlers,
+            "handle_api_survey_convert_preview",
+            side_effect=RuntimeError("prepare blew up"),
+        ):
+            with app.test_client() as client:
+                response = client.post("/api/survey-prepare-workflow")
+
+        self.assertEqual(response.status_code, 500)
+        payload = response.get_json()
+        self.assertEqual(payload["error"], "prepare blew up")
 
     def test_prepare_workflow_returns_trimmed_ready_payload(self):
         import importlib
@@ -3900,6 +3986,19 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         self.assertEqual(payload.get("new_participant_count"), 1)
         self.assertEqual(payload.get("new_columns"), ["handedness"])
         self.assertFalse(payload.get("can_apply"))
+        merge_quality = payload.get("merge_quality") or {}
+        self.assertEqual(
+            merge_quality.get("incoming_new_participant_total_value_cells"),
+            2,
+        )
+        self.assertEqual(
+            merge_quality.get("incoming_new_participant_missing_value_cells"),
+            0,
+        )
+        self.assertEqual(
+            merge_quality.get("incoming_new_participants_all_missing_values"),
+            0,
+        )
 
         preview_rows = payload.get("preview_rows") or []
         self.assertEqual(preview_rows[0].get("participant_id"), "sub-001")
@@ -4206,6 +4305,19 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         self.assertEqual(payload.get("status"), "success")
         self.assertEqual(payload.get("conflict_count"), 0)
         self.assertEqual(payload.get("output_directory"), str(self.project_root))
+        merge_quality = payload.get("merge_quality") or {}
+        self.assertEqual(
+            merge_quality.get("incoming_new_participant_total_value_cells"),
+            3,
+        )
+        self.assertEqual(
+            merge_quality.get("incoming_new_participant_missing_value_cells"),
+            0,
+        )
+        self.assertEqual(
+            merge_quality.get("incoming_new_participants_all_missing_values"),
+            0,
+        )
         self.assertEqual(
             set(payload.get("files_created") or []),
             {str(participants_tsv), str(participants_json)},
