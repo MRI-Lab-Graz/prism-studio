@@ -150,6 +150,34 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
             content,
         )
 
+    def test_participants_module_applies_live_exclusions_to_preview_payload(self):
+        content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "function applyExcludedColumnsToParticipantsPreviewData(previewData) {",
+            content,
+        )
+        self.assertIn(
+            "const excludedColumns = getUniqueExcludedParticipantColumns()",
+            content,
+        )
+        self.assertIn(
+            "const protectedColumns = getProtectedParticipantVariableColumns(previewData);",
+            content,
+        )
+        self.assertIn(
+            "previewData.columns = previewColumns;",
+            content,
+        )
+        self.assertIn(
+            "previewData.preview_rows = previewData.preview_rows.map((row) => {",
+            content,
+        )
+        self.assertIn(
+            "applyExcludedColumnsToParticipantsPreviewData(data);",
+            content,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
