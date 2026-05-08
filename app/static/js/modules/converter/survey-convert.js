@@ -67,8 +67,10 @@ export function initSurveyConvert(elements) {
     const convertValueOffsetsEditor = document.getElementById('convertValueOffsetsEditor');
     const convertValueOffsetRows = document.getElementById('convertValueOffsetRows');
     const convertAddValueOffsetRowBtn = document.getElementById('convertAddValueOffsetRowBtn');
+    const convertApplyValueOffsetsBtn = document.getElementById('convertApplyValueOffsetsBtn');
     const convertValueOffsetsKnownTasks = document.getElementById('convertValueOffsetsKnownTasks');
     const convertValueOffsetsEmptyState = document.getElementById('convertValueOffsetsEmptyState');
+    const convertValueOffsetsStatus = document.getElementById('convertValueOffsetsStatus');
     const convertValueOffsetAdvice = document.getElementById('convertValueOffsetAdvice');
     const surveyWorkflowHint = document.getElementById('surveyWorkflowHint');
     const browseServerSurveyFileBtn = document.getElementById('browseServerSurveyFileBtn');
@@ -110,6 +112,7 @@ export function initSurveyConvert(elements) {
     let sourcedataFileSelectEl = sourcedataFileSelect || null;
     let taskValueOffsetRowSequence = 0;
     let taskValueOffsetEditorState = [];
+    let appliedTaskValueOffsetSelectionSignature = '';
     let surveyPreviewSelectionState = {
         previewKey: '',
         availableTasks: [],
@@ -334,6 +337,7 @@ export function initSurveyConvert(elements) {
         hasFile,
         blockedByTemplateGate,
         versionSelectionsPending,
+        valueOffsetSelectionsPending,
         hasFreshPreviewReview,
         hasSelectedPreviewTasks,
         isConvertRunning,
@@ -356,6 +360,9 @@ export function initSurveyConvert(elements) {
             message = 'Step 1: Choose a survey source file to begin.';
         } else if (versionSelectionsPending) {
             message = 'Apply questionnaire version selections, then continue with Step 4 (Preview).';
+            className = 'form-text text-warning mb-2';
+        } else if (valueOffsetSelectionsPending) {
+            message = 'Apply manual offsets, then continue with Step 4 (Preview).';
             className = 'form-text text-warning mb-2';
         } else if (blockedByTemplateGate) {
             message = 'Project template metadata is incomplete. Finish template edits, then rerun Step 4 (Preview).';
@@ -861,6 +868,93 @@ export function initSurveyConvert(elements) {
         return normalized;
     }
 
+    function getCurrentTaskValueOffsetSelectionSignature() {
+        const offsets = Object.entries(getTaskValueOffsetMapFromEditorState())
+            .map(([task, offset]) => [normalizeSurveyTaskName(task), Number(offset)])
+            .filter(([task, offset]) => task && Number.isFinite(offset))
+            .sort((left, right) => String(left[0]).localeCompare(String(right[0])));
+        if (offsets.length === 0) {
+            return '';
+        }
+        return JSON.stringify(offsets);
+    }
+
+    function hasManualTaskValueOffsets() {
+        return Object.keys(getTaskValueOffsetMapFromEditorState()).length > 0;
+    }
+
+    function hasIncompleteTaskValueOffsetRows() {
+        return taskValueOffsetEditorState.some((entry) => {
+            const task = normalizeSurveyTaskName(entry && entry.task);
+            const magnitudeRaw = String(entry && entry.magnitude ? entry.magnitude : '').trim();
+            const parsedMagnitude = parseNumericOffsetValue(magnitudeRaw);
+            return (Boolean(task) || Boolean(magnitudeRaw)) && (!task || parsedMagnitude === null);
+        });
+    }
+
+    function hasAppliedTaskValueOffsetSelections() {
+        if (!hasManualTaskValueOffsets()) {
+            return true;
+        }
+        const currentSignature = getCurrentTaskValueOffsetSelectionSignature();
+        return Boolean(
+            currentSignature
+            && appliedTaskValueOffsetSelectionSignature
+            && currentSignature === appliedTaskValueOffsetSelectionSignature
+        );
+    }
+
+    function updateTaskValueOffsetApplyState() {
+        const enabled = isAdvancedOptionsEnabled();
+        const hasRows = taskValueOffsetEditorState.length > 0;
+        const hasIncompleteRows = hasIncompleteTaskValueOffsetRows();
+        const hasManualOffsets = hasManualTaskValueOffsets();
+        const hasAppliedOffsets = hasAppliedTaskValueOffsetSelections();
+
+        if (convertApplyValueOffsetsBtn) {
+            convertApplyValueOffsetsBtn.disabled = !enabled || !hasRows || isConvertRunning || isPreviewRunning;
+            convertApplyValueOffsetsBtn.classList.remove('btn-outline-primary', 'btn-success');
+            convertApplyValueOffsetsBtn.classList.add(hasManualOffsets && hasAppliedOffsets ? 'btn-success' : 'btn-outline-primary');
+            convertApplyValueOffsetsBtn.innerHTML = hasManualOffsets && hasAppliedOffsets
+                ? '<i class="fas fa-check me-1"></i>Offsets applied'
+                : '<i class="fas fa-list-check me-1"></i>Apply offsets';
+
+            if (!enabled) {
+                convertApplyValueOffsetsBtn.title = 'Enable advanced options to configure manual offsets.';
+            } else if (!hasRows) {
+                convertApplyValueOffsetsBtn.title = 'Add at least one task offset row first.';
+            } else if (hasIncompleteRows) {
+                convertApplyValueOffsetsBtn.title = 'Complete each offset row with a task and numeric value, then click Apply offsets.';
+            } else if (isConvertRunning || isPreviewRunning) {
+                convertApplyValueOffsetsBtn.title = 'Wait for the current run to finish.';
+            } else if (hasAppliedOffsets) {
+                convertApplyValueOffsetsBtn.title = 'Offsets are applied. Run Preview to validate with these settings.';
+            } else {
+                convertApplyValueOffsetsBtn.title = 'Apply these offsets, then rerun Preview.';
+            }
+        }
+
+        if (convertValueOffsetsStatus) {
+            convertValueOffsetsStatus.classList.toggle('d-none', !enabled);
+            convertValueOffsetsStatus.classList.remove('text-muted', 'text-success', 'text-warning');
+            if (!enabled) {
+                convertValueOffsetsStatus.textContent = '';
+            } else if (!hasRows) {
+                convertValueOffsetsStatus.classList.add('text-muted');
+                convertValueOffsetsStatus.textContent = 'No manual offsets configured.';
+            } else if (hasIncompleteRows) {
+                convertValueOffsetsStatus.classList.add('text-warning');
+                convertValueOffsetsStatus.textContent = 'Complete each row with a task and numeric value, then click Apply offsets.';
+            } else if (hasAppliedOffsets) {
+                convertValueOffsetsStatus.classList.add('text-success');
+                convertValueOffsetsStatus.textContent = 'Offsets applied. Run Preview to validate the current scale settings.';
+            } else {
+                convertValueOffsetsStatus.classList.add('text-warning');
+                convertValueOffsetsStatus.textContent = 'Offsets changed. Click Apply offsets, then run Preview again.';
+            }
+        }
+    }
+
     function getPreferredTaskValueOffsetTask() {
         const availableTasks = getAvailableSurveyTasksForValueOffsets();
         if (availableTasks.length === 0) {
@@ -897,12 +991,15 @@ export function initSurveyConvert(elements) {
             .map(([task, offset]) => createTaskValueOffsetRow(task, offset));
         renderTaskValueOffsetEditor();
         syncTaskValueOffsetTextFromState();
+        updateTaskValueOffsetApplyState();
     }
 
     function clearTaskValueOffsetEditorState() {
         taskValueOffsetEditorState = [];
+        appliedTaskValueOffsetSelectionSignature = '';
         renderTaskValueOffsetEditor();
         syncTaskValueOffsetTextFromState();
+        updateTaskValueOffsetApplyState();
     }
 
     function ensureTaskValueOffsetEditorRow(task = '') {
@@ -1050,7 +1147,7 @@ export function initSurveyConvert(elements) {
                             class="form-control form-control-sm"
                             id="convertValueOffsetMagnitude-${entry.id}"
                             data-role="magnitude"
-                            placeholder="1"
+                            placeholder="e.g. 1"
                             value="${magnitude}"
                             ${!enabled ? 'disabled' : ''}
                         />
@@ -1071,16 +1168,17 @@ export function initSurveyConvert(elements) {
         }).join('');
 
         convertValueOffsetRows.innerHTML = rowsHtml;
+        updateTaskValueOffsetApplyState();
     }
 
     function handleTaskValueOffsetEditorChanged() {
         clearManualValueOffsetAdvice();
-        clearRetryResolutionState();
         convertError?.classList.add('d-none');
         if (convertError) {
             convertError.textContent = '';
         }
         syncTaskValueOffsetTextFromState();
+        updateTaskValueOffsetApplyState();
         updateConvertBtn();
     }
 
@@ -1606,8 +1704,11 @@ export function initSurveyConvert(elements) {
     }
 
     function getEffectiveTaskValueOffsets(retryOffsets = null) {
+        const appliedManualOffsets = hasAppliedTaskValueOffsetSelections()
+            ? getManualTaskValueOffsets()
+            : {};
         return normalizeTaskValueOffsets({
-            ...getManualTaskValueOffsets(),
+            ...appliedManualOffsets,
             ...normalizeTaskValueOffsets(retryOffsets),
         });
     }
@@ -1876,7 +1977,7 @@ export function initSurveyConvert(elements) {
                 return { ready: false, outcome: 'blocked' };
             }
 
-            if (Object.keys(multivariantTasks).length > 0 && !hasCompleteVersionWizardSelections()) {
+            if (Object.keys(multivariantTasks).length > 0 && !hasAppliedVersionWizardSelections()) {
                 versionWizardRetryGateMode = mode;
                 const modeLabel = mode === 'convert' ? 'conversion' : 'preview';
                 convertInfo.textContent = `Multi-version options are available. Review the selector below, click Use These Versions, then run ${modeLabel} again.`;
@@ -2090,7 +2191,7 @@ export function initSurveyConvert(elements) {
             } else if (hasAppliedSelections) {
                 surveyVersionWizardApplyBtn.title = 'Preview is unlocked for the current questionnaire version selection.';
             } else {
-                surveyVersionWizardApplyBtn.title = 'Apply these questionnaire versions before running Preview.';
+                surveyVersionWizardApplyBtn.title = 'Apply these questionnaire versions before Preview validation can run.';
             }
         }
 
@@ -2102,10 +2203,10 @@ export function initSurveyConvert(elements) {
                 surveyVersionWizardStatus.textContent = '';
             } else if (hasAppliedSelections) {
                 surveyVersionWizardStatus.classList.add('text-success');
-                surveyVersionWizardStatus.textContent = 'Selections applied. Preview is available.';
+                surveyVersionWizardStatus.textContent = 'Selections applied. Preview validation is available.';
             } else {
                 surveyVersionWizardStatus.classList.add('text-muted');
-                surveyVersionWizardStatus.textContent = 'Review the selectors, then click Use These Versions before running Preview.';
+                surveyVersionWizardStatus.textContent = 'Review the selectors, then click Use These Versions before running Preview validation.';
             }
         }
     }
@@ -2619,6 +2720,7 @@ export function initSurveyConvert(elements) {
                 convertValueOffsets.value = '';
                 clearTaskValueOffsetEditorState();
                 clearManualValueOffsetAdvice();
+                appliedTaskValueOffsetSelectionSignature = '';
             } else {
                 renderTaskValueOffsetEditor();
                 syncTaskValueOffsetTextFromState();
@@ -2629,6 +2731,7 @@ export function initSurveyConvert(elements) {
             clearIdMapFileBtn.disabled = !enabled;
         }
 
+        updateTaskValueOffsetApplyState();
         updateConvertBtn();
     }
 
@@ -2639,9 +2742,9 @@ export function initSurveyConvert(elements) {
     if (convertValueOffsets) {
         convertValueOffsets.addEventListener('input', () => {
             clearManualValueOffsetAdvice();
-            clearRetryResolutionState();
             convertError?.classList.add('d-none');
             convertError.textContent = '';
+            updateTaskValueOffsetApplyState();
             updateConvertBtn();
         });
     }
@@ -3339,11 +3442,17 @@ export function initSurveyConvert(elements) {
         const hasRunningRequest = isConvertRunning || isPreviewRunning;
         const isAwaitingConfirmation = hasRunningRequest && isSurveyRunAwaitingConfirmation;
         const versionSelectionsPending = hasMultiVersionWizardTasks() && !hasAppliedVersionWizardSelections();
+        const valueOffsetSelectionsPending = hasManualTaskValueOffsets() && !hasAppliedTaskValueOffsetSelections();
         const hasFreshPreviewReview = hasFreshSurveyPreviewSelectionState();
         const selectedPreviewTasks = getSelectedSurveyTasksForConversion();
         const hasSelectedPreviewTasks = selectedPreviewTasks.length > 0;
 
-        convertBtn.disabled = !hasFile || blockedByTemplateGate || !hasFreshPreviewReview || !hasSelectedPreviewTasks;
+        convertBtn.disabled = !hasFile
+            || blockedByTemplateGate
+            || versionSelectionsPending
+            || valueOffsetSelectionsPending
+            || !hasFreshPreviewReview
+            || !hasSelectedPreviewTasks;
         if (checkProjectTemplatesBtn) {
             checkProjectTemplatesBtn.disabled = !hasProjectLoaded;
             if (!hasProjectLoaded) {
@@ -3354,7 +3463,7 @@ export function initSurveyConvert(elements) {
         }
         
         if (previewBtn) {
-            previewBtn.disabled = !hasFile || versionSelectionsPending;
+            previewBtn.disabled = !hasFile || versionSelectionsPending || valueOffsetSelectionsPending;
             previewBtn.style.display = '';
             previewBtn.innerHTML = '<i class="fas fa-eye me-2"></i>Step 4: Preview (Dry-Run)';
             convertBtn.parentElement.classList.remove('col-12');
@@ -3364,6 +3473,8 @@ export function initSurveyConvert(elements) {
                 previewBtn.title = 'Select a survey file first.';
             } else if (versionSelectionsPending) {
                 previewBtn.title = 'Apply questionnaire version selections first.';
+            } else if (valueOffsetSelectionsPending) {
+                previewBtn.title = 'Apply manual offsets first.';
             } else {
                 previewBtn.removeAttribute('title');
             }
@@ -3377,6 +3488,10 @@ export function initSurveyConvert(elements) {
                 convertBtn.title = 'Complete required project template fields first, then run Preview again.';
             } else if (!hasFile) {
                 convertBtn.title = 'Select a survey file first.';
+            } else if (versionSelectionsPending) {
+                convertBtn.title = 'Apply questionnaire version selections and rerun Preview before converting.';
+            } else if (valueOffsetSelectionsPending) {
+                convertBtn.title = 'Apply manual offsets and rerun Preview before converting.';
             } else if (!hasFreshPreviewReview) {
                 convertBtn.title = 'Run Preview after the latest changes before converting.';
             } else if (!hasSelectedPreviewTasks) {
@@ -3420,10 +3535,13 @@ export function initSurveyConvert(elements) {
             }
         }
 
+        updateTaskValueOffsetApplyState();
+
         updateSurveyWorkflowHint({
             hasFile,
             blockedByTemplateGate,
             versionSelectionsPending,
+            valueOffsetSelectionsPending,
             hasFreshPreviewReview,
             hasSelectedPreviewTasks,
             isConvertRunning,
@@ -3821,6 +3939,42 @@ export function initSurveyConvert(elements) {
         }
 
         updateVersionWizardActionState();
+        updateConvertBtn();
+    });
+
+    convertApplyValueOffsetsBtn?.addEventListener('click', function() {
+        if (!isAdvancedOptionsEnabled()) {
+            updateTaskValueOffsetApplyState();
+            return;
+        }
+
+        if (hasIncompleteTaskValueOffsetRows()) {
+            convertInfo.textContent = 'Complete each offset row with a task and numeric value, then click Apply offsets.';
+            convertInfo.classList.remove('d-none');
+            focusTaskValueOffsetEditor();
+            updateTaskValueOffsetApplyState();
+            updateConvertBtn();
+            return;
+        }
+
+        const currentSignature = getCurrentTaskValueOffsetSelectionSignature();
+        if (!currentSignature) {
+            appliedTaskValueOffsetSelectionSignature = '';
+            updateTaskValueOffsetApplyState();
+            updateConvertBtn();
+            return;
+        }
+
+        appliedTaskValueOffsetSelectionSignature = currentSignature;
+
+        const hasBlockedTemplateGate = Boolean(templateWorkflowGate && templateWorkflowGate.blocked);
+        const infoText = String(convertInfo?.textContent || '').trim().toLowerCase();
+        if (!hasBlockedTemplateGate && infoText.includes('offset')) {
+            convertInfo.classList.add('d-none');
+            convertInfo.textContent = '';
+        }
+
+        updateTaskValueOffsetApplyState();
         updateConvertBtn();
     });
 
@@ -5495,6 +5649,22 @@ convertError.classList.remove('d-none');
         clearManualValueOffsetAdvice();
         setTemplateEditorErrorCtaVisible(false);
         convertInfo.textContent = '';
+        if (hasMultiVersionWizardTasks() && !hasAppliedVersionWizardSelections()) {
+            convertInfo.textContent = 'Review the selector below, click Use These Versions, then run Preview again.';
+            convertInfo.classList.remove('d-none');
+            surveyVersionWizardApplyBtn?.focus();
+            updateVersionWizardActionState();
+            updateConvertBtn();
+            return;
+        }
+        if (hasManualTaskValueOffsets() && !hasAppliedTaskValueOffsetSelections()) {
+            convertInfo.textContent = 'Manual offsets changed. Click Apply offsets, then run Preview again.';
+            convertInfo.classList.remove('d-none');
+            convertApplyValueOffsetsBtn?.focus();
+            updateTaskValueOffsetApplyState();
+            updateConvertBtn();
+            return;
+        }
         const hasFreshPreviewReview = hasFreshSurveyPreviewSelectionState();
         const selectedSurveyTasks = getSelectedSurveyTasksForConversion();
         if (!hasFreshPreviewReview) {
@@ -5885,6 +6055,15 @@ convertError.classList.remove('d-none');
             convertInfo.classList.remove('d-none');
             surveyVersionWizardApplyBtn?.focus();
             updateVersionWizardActionState();
+            updateConvertBtn();
+            return;
+        }
+
+        if (hasManualTaskValueOffsets() && !hasAppliedTaskValueOffsetSelections()) {
+            convertInfo.textContent = 'Manual offsets changed. Click Apply offsets, then run Preview again.';
+            convertInfo.classList.remove('d-none');
+            convertApplyValueOffsetsBtn?.focus();
+            updateTaskValueOffsetApplyState();
             updateConvertBtn();
             return;
         }
