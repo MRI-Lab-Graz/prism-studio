@@ -30,15 +30,31 @@ class TestParticipantsNeurobagelWidgetWiring(unittest.TestCase):
         participants_content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
 
         self.assertIn(
+            "function getProtectedParticipantVariableColumns(previewData = window.lastParticipantsPreviewData) {",
+            participants_content,
+        )
+        self.assertIn(
             "window.canRemoveParticipantVariable = function(variableName) {",
             participants_content,
         )
         self.assertIn(
-            "const protectedColumns = new Set(['participantid']);",
+            "previewData?.source_id_column",
+            participants_content,
+        )
+        self.assertIn(
+            "document.getElementById('participantsIdColumn')?.value",
+            participants_content,
+        )
+        self.assertIn(
+            "const protectedColumns = getProtectedParticipantVariableColumns();",
             participants_content,
         )
         self.assertIn(
             "window.removeAdditionalParticipantVariable = async function(variableName) {",
+            participants_content,
+        )
+        self.assertIn(
+            "if (normalizedTarget && protectedColumns.has(normalizedTarget)) {",
             participants_content,
         )
         self.assertIn(

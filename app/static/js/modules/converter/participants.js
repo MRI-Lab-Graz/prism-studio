@@ -1717,14 +1717,28 @@ export function initParticipants() {
 
     window.setParticipantsAdditionalVariablesEnabled = setParticipantsAdditionalVariablesEnabled;
 
+    function getProtectedParticipantVariableColumns(previewData = window.lastParticipantsPreviewData) {
+        const protectedColumns = new Set(['participantid']);
+        const selectedSourceId = String(
+            previewData?.source_id_column
+            || document.getElementById('participantsIdColumn')?.value
+            || ''
+        ).trim();
+        const normalizedSourceId = normalizeParticipantAdditionalColumn(selectedSourceId);
+        if (normalizedSourceId) {
+            protectedColumns.add(normalizedSourceId);
+        }
+        return protectedColumns;
+    }
+
     window.canRemoveParticipantVariable = function(variableName) {
         const normalizedTarget = normalizeParticipantAdditionalColumn(variableName);
         if (!normalizedTarget) {
             return false;
         }
 
-        // Never allow deleting the required participant ID column.
-        const protectedColumns = new Set(['participantid']);
+        // Never allow deleting the required participant ID column or its active source alias.
+        const protectedColumns = getProtectedParticipantVariableColumns();
         if (protectedColumns.has(normalizedTarget)) {
             return false;
         }
@@ -1750,6 +1764,74 @@ export function initParticipants() {
             normalizeParticipantAdditionalColumn(columnName) === normalizedTarget
         ));
     };
+
+    function applyExcludedColumnsToParticipantsPreviewData(previewData) {
+        if (!previewData || typeof previewData !== 'object') {
+            return previewData;
+        }
+
+        const excludedColumns = getUniqueExcludedParticipantColumns()
+            .map(normalizeParticipantAdditionalColumn)
+            .filter(Boolean);
+        if (excludedColumns.length === 0) {
+            return previewData;
+        }
+
+        const protectedColumns = getProtectedParticipantVariableColumns(previewData);
+        const excludedColumnSet = new Set(
+            excludedColumns.filter((columnName) => !protectedColumns.has(columnName))
+        );
+        if (excludedColumnSet.size === 0) {
+            return previewData;
+        }
+
+        const previewColumns = Array.isArray(previewData.columns)
+            ? previewData.columns.filter((columnName) => {
+                const normalized = normalizeParticipantAdditionalColumn(columnName);
+                return !normalized || !excludedColumnSet.has(normalized);
+            })
+            : [];
+        const allowedColumns = new Set(
+            previewColumns.map(normalizeParticipantAdditionalColumn).filter(Boolean)
+        );
+
+        previewData.columns = previewColumns;
+        previewData.extracted_columns = previewColumns.length;
+
+        if (previewData.column_values && typeof previewData.column_values === 'object') {
+            previewData.column_values = Object.fromEntries(
+                Object.entries(previewData.column_values).filter(([columnName]) => {
+                    const normalized = normalizeParticipantAdditionalColumn(columnName);
+                    return !normalized || allowedColumns.has(normalized);
+                })
+            );
+        }
+
+        if (Array.isArray(previewData.preview_rows)) {
+            previewData.preview_rows = previewData.preview_rows.map((row) => {
+                if (!row || typeof row !== 'object') {
+                    return row;
+                }
+
+                const filteredRow = {};
+                previewColumns.forEach((columnName) => {
+                    filteredRow[columnName] = row[columnName];
+                });
+                return filteredRow;
+            });
+        }
+
+        if (previewData.neurobagel_schema && typeof previewData.neurobagel_schema === 'object') {
+            previewData.neurobagel_schema = Object.fromEntries(
+                Object.entries(previewData.neurobagel_schema).filter(([columnName]) => {
+                    const normalized = normalizeParticipantAdditionalColumn(columnName);
+                    return !normalized || allowedColumns.has(normalized);
+                })
+            );
+        }
+
+        return previewData;
+    }
 
     function refreshParticipantsPreviewAfterAdditionalVariableChange() {
         const previewBtn = document.getElementById('participantsPreviewBtn');
@@ -2077,6 +2159,12 @@ export function initParticipants() {
     window.removeAdditionalParticipantVariable = async function(variableName) {
         const cleanedName = String(variableName || '').trim();
         if (!cleanedName) return;
+
+        const normalizedTarget = normalizeParticipantAdditionalColumn(cleanedName);
+        const protectedColumns = getProtectedParticipantVariableColumns();
+        if (normalizedTarget && protectedColumns.has(normalizedTarget)) {
+            return;
+        }
 
         if (Array.isArray(window.pendingAdditionalParticipantColumns)) {
             window.pendingAdditionalParticipantColumns = window.pendingAdditionalParticipantColumns
@@ -3234,6 +3322,8 @@ export function initParticipants() {
                 }
                 throw new Error(errorMessage);
             }
+
+            applyExcludedColumnsToParticipantsPreviewData(data);
     
             if (data.id_column) {
                 const idSelect = document.getElementById('participantsIdColumn');
