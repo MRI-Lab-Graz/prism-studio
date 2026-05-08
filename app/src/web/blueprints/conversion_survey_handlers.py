@@ -1,6 +1,7 @@
 """Survey conversion handlers extracted from the conversion blueprint."""
 
 from copy import deepcopy
+import inspect
 import io
 import json
 import shutil
@@ -58,7 +59,7 @@ infer_lsa_metadata: Any = None
 MissingIdMappingError: Any = None
 UnmatchedGroupsError: Any = None
 SurveyValueOutOfBoundsError: Any = None
-resolve_effective_template_version_overrides: Any = None
+_resolve_effective_template_version_overrides: Any = None
 sync_project_survey_recipe_offsets: Any = None
 _NON_ITEM_TOPLEVEL_KEYS: set[str] = set()
 normalize_paper_software_platform: Any = None
@@ -66,14 +67,47 @@ normalize_paper_software_platform: Any = None
 try:
     from src.converters.survey import (
         MissingIdMappingError,
-        SurveyValueOutOfBoundsError,
         UnmatchedGroupsError,
         _NON_ITEM_TOPLEVEL_KEYS,
-        _resolve_effective_template_version_overrides,
         convert_survey_lsa_to_prism_dataset,
         convert_survey_xlsx_to_prism_dataset,
         infer_lsa_metadata,
-        sync_project_survey_recipe_offsets,
+    )
+except ImportError:
+    pass
+
+try:
+    from src.converters.survey import (
+        SurveyValueOutOfBoundsError as _SurveyValueOutOfBoundsError,
+    )
+
+    SurveyValueOutOfBoundsError = _SurveyValueOutOfBoundsError
+except ImportError:
+    try:
+        from src.converters.survey_processing import (
+            SurveyValueOutOfBoundsError as _SurveyValueOutOfBoundsError,
+        )
+
+        SurveyValueOutOfBoundsError = _SurveyValueOutOfBoundsError
+    except ImportError:
+        pass
+
+try:
+    from src.converters.survey import (
+        sync_project_survey_recipe_offsets as _sync_project_survey_recipe_offsets,
+    )
+
+    sync_project_survey_recipe_offsets = _sync_project_survey_recipe_offsets
+except ImportError:
+    pass
+
+try:
+    from src.converters.survey import (
+        _resolve_effective_template_version_overrides as _survey_resolve_effective_template_version_overrides,
+    )
+
+    _resolve_effective_template_version_overrides = (
+        _survey_resolve_effective_template_version_overrides
     )
 except ImportError:
     pass
@@ -103,9 +137,6 @@ _normalize_filename = normalize_filename
 _should_retry_with_official_library = should_retry_with_official_library
 _extract_tasks_from_output = extract_tasks_from_output
 _register_session_in_project = register_session_in_project
-_resolve_effective_template_version_overrides = (
-    _resolve_effective_template_version_overrides
-)
 
 
 def _get_effective_template_version_overrides(
@@ -709,9 +740,39 @@ def _run_survey_with_official_fallback(
     if fallback_project_path:
         kwargs.setdefault("project_path", fallback_project_path)
 
+    converter_kwargs = dict(kwargs)
+    try:
+        signature = inspect.signature(converter_fn)
+        accepts_var_kwargs = any(
+            parameter.kind == inspect.Parameter.VAR_KEYWORD
+            for parameter in signature.parameters.values()
+        )
+        if not accepts_var_kwargs:
+            accepted_names = set(signature.parameters.keys())
+            unsupported = sorted(
+                key for key in converter_kwargs.keys() if key not in accepted_names
+            )
+            if unsupported:
+                converter_name = str(getattr(converter_fn, "__name__", "converter"))
+                msg = (
+                    f"Converter '{converter_name}' does not accept options "
+                    f"{', '.join(unsupported)}; skipping unsupported options."
+                )
+                if log_fn:
+                    log_fn(msg, "warning")
+                else:
+                    print(f"[PRISM WARN] {msg}")
+                converter_kwargs = {
+                    key: value
+                    for key, value in converter_kwargs.items()
+                    if key in accepted_names
+                }
+    except (TypeError, ValueError):
+        pass
+
     result = None
     try:
-        result = converter_fn(library_dir=str(library_dir), **kwargs)
+        result = converter_fn(library_dir=str(library_dir), **converter_kwargs)
         tasks_included = getattr(result, "tasks_included", []) or []
         _copy_official_templates_to_project(
             official_dir=Path(library_dir),
@@ -742,7 +803,7 @@ def _run_survey_with_official_fallback(
                         print(f"[PRISM DEBUG] {msg}")
                     try:
                         result = converter_fn(
-                            library_dir=str(project_local_dir), **kwargs
+                            library_dir=str(project_local_dir), **converter_kwargs
                         )
                         return result
                     except Exception:
@@ -761,7 +822,9 @@ def _run_survey_with_official_fallback(
                     log_fn(msg, "info")
                 else:
                     print(f"[PRISM DEBUG] {msg}")
-                result = converter_fn(library_dir=str(official_dir), **kwargs)
+                result = converter_fn(
+                    library_dir=str(official_dir), **converter_kwargs
+                )
                 tasks_included = getattr(result, "tasks_included", []) or []
                 _copy_official_templates_to_project(
                     official_dir=official_dir,
@@ -783,49 +846,58 @@ def _run_survey_with_official_fallback(
 
 def api_survey_prepare_workflow():
     """Run the survey setup phase without starting preview or conversion output."""
+    try:
+        preview_response = handle_api_survey_convert_preview(
+            convert_survey_xlsx_to_prism_dataset=convert_survey_xlsx_to_prism_dataset,
+            convert_survey_lsa_to_prism_dataset=convert_survey_lsa_to_prism_dataset,
+            resolve_effective_library_path=_resolve_effective_library_path,
+            run_survey_with_official_fallback=_run_survey_with_official_fallback,
+            validate_project_templates_for_tasks=_validate_project_templates_for_tasks,
+            build_template_completion_gate=_build_template_completion_gate,
+            format_unmatched_groups_response=_format_unmatched_groups_response,
+            id_column_not_detected_error_cls=IdColumnNotDetectedError,
+            unmatched_groups_error_cls=UnmatchedGroupsError,
+            survey_value_out_of_bounds_error_cls=SurveyValueOutOfBoundsError,
+            format_value_offset_confirmation_response=_format_value_offset_confirmation_response,
+        )
 
-    preview_response = handle_api_survey_convert_preview(
-        convert_survey_xlsx_to_prism_dataset=convert_survey_xlsx_to_prism_dataset,
-        convert_survey_lsa_to_prism_dataset=convert_survey_lsa_to_prism_dataset,
-        resolve_effective_library_path=_resolve_effective_library_path,
-        run_survey_with_official_fallback=_run_survey_with_official_fallback,
-        validate_project_templates_for_tasks=_validate_project_templates_for_tasks,
-        build_template_completion_gate=_build_template_completion_gate,
-        format_unmatched_groups_response=_format_unmatched_groups_response,
-        id_column_not_detected_error_cls=IdColumnNotDetectedError,
-        unmatched_groups_error_cls=UnmatchedGroupsError,
-        survey_value_out_of_bounds_error_cls=SurveyValueOutOfBoundsError,
-        format_value_offset_confirmation_response=_format_value_offset_confirmation_response,
-    )
+        response, status_code = _coerce_flask_response(preview_response)
+        if status_code != 200:
+            return preview_response
 
-    response, status_code = _coerce_flask_response(preview_response)
-    if status_code != 200:
-        return preview_response
+        payload = response.get_json(silent=True) or {}
+        preview_payload = (
+            payload.get("preview") if isinstance(payload.get("preview"), dict) else {}
+        )
+        prepared_payload: dict[str, Any] = {
+            "ok": True,
+            "tasks_included": list(payload.get("tasks_included") or []),
+            "detected_sessions": list(payload.get("detected_sessions") or []),
+            "task_runs": payload.get("task_runs") or {},
+            "session_column": payload.get("session_column"),
+            "run_column": payload.get("run_column"),
+            "multivariant_tasks": payload.get("multivariant_tasks") or {},
+            "preview_participants": list(preview_payload.get("participants") or []),
+            "applied_value_offsets": payload.get("applied_value_offsets") or {},
+            "value_offset_application_counts": payload.get(
+                "value_offset_application_counts"
+            )
+            or {},
+            "requires_template_completion": bool(
+                payload.get("requires_template_completion")
+            ),
+        }
+        if payload.get("workflow_gate") is not None:
+            prepared_payload["workflow_gate"] = payload.get("workflow_gate")
+        if payload.get("near_match_applied"):
+            prepared_payload["near_match_applied"] = True
 
-    payload = response.get_json(silent=True) or {}
-    preview_payload = payload.get("preview") if isinstance(payload.get("preview"), dict) else {}
-    prepared_payload: dict[str, Any] = {
-        "ok": True,
-        "tasks_included": list(payload.get("tasks_included") or []),
-        "detected_sessions": list(payload.get("detected_sessions") or []),
-        "task_runs": payload.get("task_runs") or {},
-        "session_column": payload.get("session_column"),
-        "run_column": payload.get("run_column"),
-        "multivariant_tasks": payload.get("multivariant_tasks") or {},
-        "preview_participants": list(preview_payload.get("participants") or []),
-        "applied_value_offsets": payload.get("applied_value_offsets") or {},
-        "value_offset_application_counts": payload.get("value_offset_application_counts")
-        or {},
-        "requires_template_completion": bool(
-            payload.get("requires_template_completion")
-        ),
-    }
-    if payload.get("workflow_gate") is not None:
-        prepared_payload["workflow_gate"] = payload.get("workflow_gate")
-    if payload.get("near_match_applied"):
-        prepared_payload["near_match_applied"] = True
-
-    return jsonify(prepared_payload)
+        return jsonify(prepared_payload)
+    except Exception as error:
+        if has_app_context():
+            current_app.logger.exception("Survey workflow preparation failed")
+        message = str(error).strip() or "Survey workflow preparation failed."
+        return jsonify({"error": message}), 500
 
 
 def _validate_project_templates_for_tasks(

@@ -143,6 +143,10 @@ def test_participants_merge_cli_json_preview_reports_conflicts(tmp_path: Path) -
     assert payload["new_participant_count"] == 1
     assert payload["new_columns"] == ["group"]
     assert payload["can_apply"] is False
+    merge_quality = payload.get("merge_quality") or {}
+    assert merge_quality.get("incoming_new_participant_total_value_cells") == 2
+    assert merge_quality.get("incoming_new_participant_missing_value_cells") == 0
+    assert merge_quality.get("incoming_new_participants_all_missing_values") == 0
     assert payload["conflicts"][0]["participant_id"] == "sub-001"
     assert payload["conflicts"][0]["column"] == "age"
 
@@ -187,6 +191,10 @@ def test_participants_merge_cli_json_apply_updates_tsv_and_json(tmp_path: Path) 
     assert payload["status"] == "success"
     assert payload["action"] == "apply"
     assert payload["merged_participant_count"] == 2
+    merge_quality = payload.get("merge_quality") or {}
+    assert merge_quality.get("incoming_new_participant_total_value_cells") == 2
+    assert merge_quality.get("incoming_new_participant_missing_value_cells") == 0
+    assert merge_quality.get("incoming_new_participants_all_missing_values") == 0
     assert len(payload["backup_files"]) == 2
     for backup_path in payload["backup_files"]:
         assert Path(backup_path).exists()
