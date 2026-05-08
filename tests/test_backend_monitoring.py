@@ -1130,3 +1130,89 @@ def test_emit_backend_request_action_includes_environment_convert_start_command(
     assert "--lat 47.0667" in captured
     assert "--lon 15.45" in captured
     assert "--json" in captured
+
+
+def test_emit_backend_request_action_includes_survey_prepare_workflow_command(capsys):
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/survey-prepare-workflow",
+        endpoint="conversion_survey.api_survey_prepare_workflow",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/survey-prepare-workflow",
+        method="POST",
+        data={
+            "file": (io.BytesIO(b"x"), "T1.xlsx"),
+            "id_column": "slim_id",
+        },
+        content_type="multipart/form-data",
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "POST /api/survey-prepare-workflow -> survey prepare workflow" in captured
+    assert "endpoint=conversion_survey.api_survey_prepare_workflow" in captured
+    assert "cmd=python prism_tools.py survey convert --input T1.xlsx" in captured
+    assert "--id-column slim_id" in captured
+    assert "--dry-run --force" in captured
+
+
+def test_emit_backend_request_action_resolves_survey_detect_context_by_path_when_endpoint_unknown(
+    capsys,
+):
+    app = Flask(__name__)
+
+    with app.test_request_context(
+        "/api/survey-detect-version-contexts",
+        method="POST",
+        data={
+            "source_file_path": "wide_to_long/laufstudie_descriptives_long.merge_resolved.csv",
+            "id_column": "slim_id",
+        },
+        content_type="multipart/form-data",
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert (
+        "POST /api/survey-detect-version-contexts -> survey detect version contexts"
+        in captured
+    )
+    assert "endpoint=conversion_survey.api_survey_detect_version_context" in captured
+    assert "cmd=python prism_tools.py survey convert" in captured
+    assert "--input wide_to_long/laufstudie_descriptives_long.merge_resolved.csv" in captured
+    assert "--id-column slim_id" in captured
+    assert "--dry-run --force" in captured
+
+
+def test_emit_backend_request_action_resolves_survey_preview_by_path_when_endpoint_unknown(
+    capsys,
+):
+    app = Flask(__name__)
+
+    with app.test_request_context(
+        "/api/survey-convert-preview",
+        method="POST",
+        data={
+            "source_file_path": "sourcedata/surveys/demo.csv",
+            "id_column": "participant_id",
+            "validate": "true",
+        },
+        content_type="multipart/form-data",
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "POST /api/survey-convert-preview -> survey convert preview" in captured
+    assert "endpoint=conversion_survey.api_survey_convert_preview" in captured
+    assert "cmd=python prism_tools.py survey convert" in captured
+    assert "--input sourcedata/surveys/demo.csv" in captured
+    assert "--id-column participant_id" in captured
+    assert "--dry-run --force" in captured
