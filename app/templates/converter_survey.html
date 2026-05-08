@@ -122,8 +122,18 @@
                                     <div class="row g-3 mb-3">
                                         <div class="col-12">
                                             <label for="convertValueOffsets" class="form-label">Task Value Offsets (manual override only)</label>
-                                            <textarea class="form-control" id="convertValueOffsets" rows="3" placeholder="pss10 = -1"></textarea>
-                                            <div class="form-text">Optional. Use only when you are certain a specific survey task is coded on the wrong numeric scale. Enter one task per line using <code>task = offset</code> or <code>task: offset</code>.</div>
+                                            <textarea class="form-control d-none" id="convertValueOffsets" rows="3" placeholder="pss10 = -1" aria-hidden="true" tabindex="-1"></textarea>
+                                            <div class="border rounded p-3 bg-light-subtle" id="convertValueOffsetsEditor">
+                                                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-3">
+                                                    <small class="text-muted" id="convertValueOffsetsKnownTasks">Run Preview to populate available survey tasks.</small>
+                                                    <button class="btn btn-outline-secondary btn-sm align-self-start align-self-lg-auto" type="button" id="convertAddValueOffsetRowBtn">
+                                                        <i class="fas fa-plus me-1"></i>Add offset
+                                                    </button>
+                                                </div>
+                                                <div id="convertValueOffsetRows" class="d-flex flex-column gap-2"></div>
+                                                <div class="small text-muted" id="convertValueOffsetsEmptyState">No offset rows configured yet.</div>
+                                            </div>
+                                            <div class="form-text">Optional. Choose a survey task, then apply a <code>+</code> or <code>-</code> numeric offset before validation. Add one row per task.</div>
                                             <div class="alert alert-warning d-none mt-2 mb-0 small" id="convertValueOffsetAdvice" style="white-space: pre-line;"></div>
                                         </div>
                                     </div>
@@ -200,6 +210,12 @@
                                     <span class="badge text-bg-light" id="surveyVersionWizardCount"></span>
                                 </div>
                                 <div id="surveyVersionWizardBody" class="row g-3 mt-1"></div>
+                                <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mt-3">
+                                    <small class="text-muted d-none" id="surveyVersionWizardStatus"></small>
+                                    <button class="btn btn-sm btn-outline-primary d-none" type="button" id="surveyVersionWizardApplyBtn">
+                                        <i class="fas fa-list-check me-2"></i>Use These Versions
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- Row 6: Convert button -->

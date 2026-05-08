@@ -16,6 +16,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from . import survey_processing as _survey_processing
+
 
 _VALID_SOFTWARE_PLATFORMS = {
     "LimeSurvey",
@@ -147,6 +149,10 @@ def _process_and_write_responses(
     missing_cells_by_subject: dict[str, int] = {}
     items_using_tolerance: dict[str, set[str]] = {}
     offset_application_counts: dict[str, int] = {}
+    task_offset_evidence_cache: dict[
+        tuple[str, str | None, str | int | None, tuple[str, ...]],
+        tuple[dict[str, Any], list[float | int]],
+    ] = {}
 
     # Sort rows by (session, run, participant) so files are created in a stable order.
     sort_cols = [
@@ -196,21 +202,55 @@ def _process_and_write_responses(
 
             run_col_mapping = {col_to_mapping[c].base_item: c for c in columns}
 
-            out_row, missing_count = process_survey_row_with_run_fn(
-                row=row,
-                df_cols=df.columns,
-                task=task,
-                run=run,
-                schema=schema,
-                run_col_mapping=run_col_mapping,
-                sub_id=sub_id,
-                strict_levels=strict_levels,
-                items_using_tolerance=items_using_tolerance,
-                is_missing_fn=is_missing_fn,
-                normalize_val_fn=normalize_item_fn,
-                task_value_offsets=task_value_offsets,
-                offset_application_counts=offset_application_counts,
-            )
+            try:
+                out_row, missing_count = process_survey_row_with_run_fn(
+                    row=row,
+                    df_cols=df.columns,
+                    task=task,
+                    run=run,
+                    schema=schema,
+                    run_col_mapping=run_col_mapping,
+                    sub_id=sub_id,
+                    strict_levels=strict_levels,
+                    items_using_tolerance=items_using_tolerance,
+                    is_missing_fn=is_missing_fn,
+                    normalize_val_fn=normalize_item_fn,
+                    task_value_offsets=task_value_offsets,
+                    offset_application_counts=offset_application_counts,
+                )
+            except _survey_processing.SurveyValueOutOfBoundsError as error:
+                cache_key = (task, ses_id, effective_run, tuple(sorted(columns)))
+                evidence_payload = task_offset_evidence_cache.get(cache_key)
+                if evidence_payload is None:
+                    context_df = df
+                    if res_ses_col and res_ses_col in df.columns:
+                        session_mask = df[res_ses_col].map(normalize_ses_fn) == ses_id
+                        context_df = df[session_mask]
+                    if row_run is not None and res_run_col and res_run_col in context_df.columns:
+                        run_mask = context_df[res_run_col].map(_normalize_run_entity) == row_run
+                        context_df = context_df[run_mask]
+
+                    evidence_payload = _survey_processing._build_task_offset_evidence(
+                        df=context_df,
+                        column_items=[
+                            (column, col_to_mapping[column].base_item)
+                            for column in columns
+                            if column in col_to_mapping
+                        ],
+                        schema=schema,
+                        strict_levels=strict_levels,
+                        normalize_fn=normalize_item_fn,
+                        is_missing_fn=is_missing_fn,
+                        missing_token="n/a",
+                        suggested_offsets=list(getattr(error, "suggested_offsets", []) or []),
+                    )
+                    task_offset_evidence_cache[cache_key] = evidence_payload
+
+                evidence, safe_offsets = evidence_payload
+                error.offset_evidence = evidence
+                if evidence.get("sampled_numeric_values", 0) > 0:
+                    error.suggested_offsets = safe_offsets
+                raise
             missing_cells_by_subject[sub_id] = (
                 missing_cells_by_subject.get(sub_id, 0) + missing_count
             )

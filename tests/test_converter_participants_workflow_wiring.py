@@ -107,6 +107,49 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         self.assertIn("resetParticipantsPanelState();", content)
         self.assertIn("updateParticipantsButtonState();", content)
 
+    def test_participants_module_clears_sourcedata_backed_file_selection(self):
+        content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("function clearParticipantsSelectedFile(", content)
+        self.assertIn(
+            "clearParticipantsSelectedFile({ resetSourcedataSelection: true });",
+            content,
+        )
+        self.assertIn(
+            "if (!filename) {\n                clearParticipantsSelectedFile();\n                resetParticipantsPanelState();\n                updateParticipantsButtonState();\n                return;\n            }",
+            content,
+        )
+
+    def test_participants_module_keeps_manual_id_requirement_through_preview(self):
+        content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("let participantsIdSelectionRequired = false;", content)
+        self.assertIn("participantsIdSelectionRequired = Boolean(isRequired);", content)
+        self.assertIn(
+            "function resetParticipantsPanelState({ preserveImportConfig = false } = {}) {",
+            content,
+        )
+        self.assertIn(
+            "function updateParticipantsButtonState({ skipIdAutoDetect = false } = {}) {",
+            content,
+        )
+        self.assertIn(
+            "const idSelectionRequired = participantsIdSelectionRequired;",
+            content,
+        )
+        self.assertIn(
+            "const idSelectionRequired = participantsIdSelectionRequired || Boolean(data.id_selection_required);",
+            content,
+        )
+        self.assertIn(
+            "resetParticipantsPanelState({ preserveImportConfig: true });",
+            content,
+        )
+        self.assertIn(
+            "updateParticipantsButtonState({ skipIdAutoDetect: true });",
+            content,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

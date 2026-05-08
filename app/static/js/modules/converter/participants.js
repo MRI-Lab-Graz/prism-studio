@@ -11,6 +11,7 @@ export function initParticipants() {
     let participantsExcelSheetCount = null;
     let participantsShowSheetSelector = null;
     let participantsSheetMetadataPending = false;
+    let participantsIdSelectionRequired = false;
     let participantsExistingFilesInfo = {
         exists: false,
         files: {},
@@ -81,6 +82,27 @@ export function initParticipants() {
 
     function hasParticipantsFileSelection() {
         return Boolean(getParticipantsSelectedLocalFile() || getParticipantsSelectedServerFilePath());
+    }
+
+    function clearParticipantsSelectedFile({ resetSourcedataSelection = false } = {}) {
+        participantsServerFilePath = '';
+
+        const fileInput = document.getElementById('participantsDataFile');
+        if (fileInput) {
+            fileInput.value = '';
+            if (typeof DataTransfer === 'function') {
+                try {
+                    const emptySelection = new DataTransfer();
+                    fileInput.files = emptySelection.files;
+                } catch (_error) {
+                    // Keep the value reset fallback when file lists are read-only.
+                }
+            }
+        }
+
+        if (resetSourcedataSelection && participantsSourcedataFileSelectEl) {
+            participantsSourcedataFileSelectEl.value = '';
+        }
     }
 
     function ensureParticipantsSourcedataQuickSelectElements() {
@@ -467,6 +489,10 @@ export function initParticipants() {
             return false;
         }
 
+        if (!hasParticipantsResolvedIdSelection()) {
+            return false;
+        }
+
         const previewData = window.lastParticipantsPreviewData;
         if (previewData && previewData.merge_mode) {
             const harmonizationState = assessParticipantsMergeHarmonizationState(previewData);
@@ -495,6 +521,12 @@ export function initParticipants() {
         const sessionResolutionRequired = Boolean(previewData.session_resolution_required);
 
         badge.classList.remove('d-none', 'bg-success', 'bg-warning', 'bg-danger', 'bg-secondary', 'text-dark');
+
+        if (!hasParticipantsResolvedIdSelection()) {
+            badge.classList.add('bg-warning', 'text-dark');
+            badge.textContent = 'Apply blocked: choose ID column';
+            return;
+        }
 
         if (harmonizationState.hasInvalidKeepBoth) {
             badge.classList.add('bg-danger');
@@ -925,11 +957,13 @@ export function initParticipants() {
         fileNameField.value = selected || 'No file selected';
     }
     
-    function resetParticipantsPanelState() {
+    function resetParticipantsPanelState({ preserveImportConfig = false } = {}) {
         participantsPreviewCompleted = false;
-        participantsExcelSheetCount = null;
-        participantsShowSheetSelector = null;
-        participantsSheetMetadataPending = false;
+        if (!preserveImportConfig) {
+            participantsExcelSheetCount = null;
+            participantsShowSheetSelector = null;
+            participantsSheetMetadataPending = false;
+        }
     
         const previewResults = document.getElementById('participantsPreviewResults');
         const schemaPreview = document.getElementById('neurobagelSchemaPreview');
@@ -994,11 +1028,13 @@ export function initParticipants() {
         if (previewCount) previewCount.textContent = '0 participants';
         if (schemaJsonCode) schemaJsonCode.textContent = '';
     
-        if (sheetInput) sheetInput.value = '';
-        if (separator) separator.value = 'auto';
-        setParticipantsIdColumnOptions([], 'auto', true);
-        setParticipantsIdSelectionRequired(false);
-        if (idGroup) idGroup.classList.add('d-none');
+        if (!preserveImportConfig) {
+            if (sheetInput) sheetInput.value = '';
+            if (separator) separator.value = 'auto';
+            setParticipantsIdColumnOptions([], 'auto', true);
+            setParticipantsIdSelectionRequired(false);
+            if (idGroup) idGroup.classList.add('d-none');
+        }
     
         window.lastParticipantsPreviewData = null;
         window.neurobagelSchema = null;
@@ -1132,6 +1168,7 @@ export function initParticipants() {
     }
     
     function setParticipantsIdSelectionRequired(isRequired) {
+        participantsIdSelectionRequired = Boolean(isRequired);
         const idLabel = document.getElementById('participantsIdColumnLabel');
         const idHint = document.getElementById('participantsIdColumnHint');
 
@@ -1146,6 +1183,23 @@ export function initParticipants() {
                 ? 'Select the source ID column. It will be renamed to participant_id.'
                 : 'Detected source ID column. It will be renamed to participant_id in output.';
         }
+    }
+
+    function hasParticipantsResolvedIdSelection() {
+        if (getParticipantsWorkflowMode() !== 'file') {
+            return true;
+        }
+
+        if (!hasParticipantsFileSelection()) {
+            return false;
+        }
+
+        if (!participantsIdSelectionRequired) {
+            return true;
+        }
+
+        const idColumn = String(document.getElementById('participantsIdColumn')?.value || '').trim();
+        return Boolean(idColumn && idColumn !== 'auto');
     }
 
     function setParticipantsIdColumnOptions(columns, selectedValue = 'auto', allowAutoOption = true) {
@@ -1284,7 +1338,7 @@ export function initParticipants() {
     }
     
     // Enable/disable buttons based on file selection and preview state
-    function updateParticipantsButtonState() {
+    function updateParticipantsButtonState({ skipIdAutoDetect = false } = {}) {
         const mode = getParticipantsWorkflowMode();
         const hasSelectedCase = hasParticipantsSelectedCase();
         const selectedSource = getParticipantsSelectedLocalFile() || getParticipantsSelectedServerFilePath();
@@ -1326,16 +1380,20 @@ export function initParticipants() {
         }
         
         if (hasFile) {
-            participantsExcelSheetCount = null;
-            participantsShowSheetSelector = null;
-            participantsSheetMetadataPending = isExcelParticipantsFile(selectedSource);
+            if (!skipIdAutoDetect) {
+                participantsExcelSheetCount = null;
+                participantsShowSheetSelector = null;
+                participantsSheetMetadataPending = isExcelParticipantsFile(selectedSource);
+            }
             if (previewBtn) previewBtn.disabled = false;
             // Convert is only enabled if preview has been completed
             if (convertBtn) convertBtn.disabled = !canApplyParticipantsConversion();
             if (saveAnnotBtn) saveAnnotBtn.disabled = !participantsPreviewCompleted;
             if (warningDiv) warningDiv.classList.add('d-none');
             updateParticipantsInputVisibility();
-            autoDetectParticipantsIdColumn();
+            if (!skipIdAutoDetect) {
+                autoDetectParticipantsIdColumn();
+            }
         } else {
             participantsExcelSheetCount = null;
             participantsShowSheetSelector = null;
@@ -1368,6 +1426,9 @@ export function initParticipants() {
         participantsSourcedataFileSelectEl.addEventListener('change', async function() {
             const filename = this.value;
             if (!filename) {
+                clearParticipantsSelectedFile();
+                resetParticipantsPanelState();
+                updateParticipantsButtonState();
                 return;
             }
 
@@ -1430,10 +1491,17 @@ export function initParticipants() {
     const participantsClearFileBtn = document.getElementById('participantsClearFileBtn');
     if (participantsClearFileBtn && fileInput) {
         participantsClearFileBtn.addEventListener('click', function() {
-            participantsServerFilePath = '';
-            fileInput.value = '';
+            clearParticipantsSelectedFile({ resetSourcedataSelection: true });
             resetParticipantsPanelState();
             updateParticipantsButtonState();
+        });
+    }
+
+    const participantsIdColumn = document.getElementById('participantsIdColumn');
+    if (participantsIdColumn) {
+        participantsIdColumn.addEventListener('change', function() {
+            resetParticipantsPanelState({ preserveImportConfig: true });
+            updateParticipantsButtonState({ skipIdAutoDetect: true });
         });
     }
     
@@ -2894,10 +2962,9 @@ export function initParticipants() {
         const selectedSource = localFile || sourceFilePath;
 
         const sheet = document.getElementById('participantsSheet')?.value || '';
-        const idGroup = document.getElementById('participantsIdColumnGroup');
         const idColumn = document.getElementById('participantsIdColumn')?.value || '';
         const separator = document.getElementById('participantsSeparator')?.value || 'auto';
-        const idSelectionRequired = Boolean(idGroup && !idGroup.classList.contains('d-none'));
+        const idSelectionRequired = participantsIdSelectionRequired;
 
         if (sheet && isExcelParticipantsFile(selectedSource)) {
             formData.append('sheet', sheet);
@@ -3172,8 +3239,9 @@ export function initParticipants() {
                 const idSelect = document.getElementById('participantsIdColumn');
                 const idGroup = document.getElementById('participantsIdColumnGroup');
                 const idHint = document.getElementById('participantsIdColumnHint');
-                const selectedSourceId = data.source_id_column || data.id_column || data.suggested_id_column;
-                const idSelectionRequired = Boolean(data.id_selection_required);
+                const currentIdValue = String(idSelect?.value || '').trim();
+                const selectedSourceId = currentIdValue || data.source_id_column || data.id_column || data.suggested_id_column;
+                const idSelectionRequired = participantsIdSelectionRequired || Boolean(data.id_selection_required);
                 setParticipantsIdSelectionRequired(idSelectionRequired);
                 setParticipantsIdColumnOptions(
                     data.source_columns || data.columns || [],
@@ -3183,7 +3251,7 @@ export function initParticipants() {
                 if (idSelect && selectedSourceId) idSelect.value = selectedSourceId;
                 if (idHint) {
                     idHint.textContent = idSelectionRequired
-                        ? 'Select the source ID column manually. It will be renamed to participant_id.'
+                        ? 'Confirm the source ID column. It will be renamed to participant_id in output.'
                         : 'ID column is already participant_id in source file.';
                 }
                 if (idGroup) idGroup.classList.toggle('d-none', !idSelectionRequired);

@@ -499,8 +499,40 @@ window.canonicalizeCategoricalLevels = function(colData, mapping) {
   }
 };
 
+function normalizeNeurobagelColumnStateKey(value) {
+  return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+window.resolveNeurobagelColumnStateKey = function(colName) {
+  const allColumns = window.neurobagelWidgetState?.allColumns;
+  if (!allColumns || typeof allColumns !== 'object') {
+    return null;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(allColumns, colName)) {
+    return colName;
+  }
+
+  const normalizedTarget = normalizeNeurobagelColumnStateKey(colName);
+  if (!normalizedTarget) {
+    return null;
+  }
+
+  return Object.keys(allColumns).find(key => (
+    normalizeNeurobagelColumnStateKey(key) === normalizedTarget
+  )) || null;
+};
+
+window.getNeurobagelColumnState = function(colName) {
+  const actualColName = window.resolveNeurobagelColumnStateKey(colName);
+  if (!actualColName) {
+    return null;
+  }
+  return window.neurobagelWidgetState?.allColumns?.[actualColName] || null;
+};
+
 window.mapObservedLevelToCanonicalKey = function(colName, sourceKey, canonicalKey) {
-  const colData = window.neurobagelWidgetState?.allColumns?.[colName];
+  const colData = window.getNeurobagelColumnState(colName);
   if (!colData || !colData.levels || !Object.prototype.hasOwnProperty.call(colData.levels, sourceKey)) {
     return;
   }
@@ -540,7 +572,8 @@ window.applyNeurobagelEnrichment = function(colName) {
   const mapping = window.neurobagelCommonMappings[concept];
   if (!mapping) return;
   
-  const colData = window.neurobagelWidgetState.allColumns[colName];
+  const colData = window.getNeurobagelColumnState(colName);
+  if (!colData) return;
   
   // Apply the enrichment
   colData.standardized_variable = mapping.standardized_variable;
@@ -585,7 +618,7 @@ window.applyNeurobagelEnrichment = function(colName) {
 };
 
 window.clearNeurobagelEnrichment = function(colName) {
-  const colData = window.neurobagelWidgetState.allColumns[colName];
+  const colData = window.getNeurobagelColumnState(colName);
   if (!colData) return;
 
   colData.standardized_variable = null;
@@ -605,6 +638,7 @@ window.clearNeurobagelEnrichment = function(colName) {
 };
 
 window.removeNeurobagelVariable = async function(colName) {
+  const actualColName = window.resolveNeurobagelColumnStateKey(colName);
   const removeHandler = window.removeAdditionalParticipantVariable;
   if (typeof removeHandler === 'function') {
     try {
@@ -615,14 +649,16 @@ window.removeNeurobagelVariable = async function(colName) {
     }
   }
 
+  const keysToDelete = new Set([colName, actualColName].filter(Boolean));
+
   if (window.neurobagelWidgetState && window.neurobagelWidgetState.allColumns) {
-    delete window.neurobagelWidgetState.allColumns[colName];
+    keysToDelete.forEach(key => delete window.neurobagelWidgetState.allColumns[key]);
   }
   if (window.existingParticipantsData && typeof window.existingParticipantsData === 'object') {
-    delete window.existingParticipantsData[colName];
+    keysToDelete.forEach(key => delete window.existingParticipantsData[key]);
   }
   if (window.participantsTsvData && typeof window.participantsTsvData === 'object') {
-    delete window.participantsTsvData[colName];
+    keysToDelete.forEach(key => delete window.participantsTsvData[key]);
   }
 
   window.neurobagelWidgetState.selectedColumn = null;
@@ -644,7 +680,7 @@ window.removeNeurobagelVariable = async function(colName) {
 };
 
 window.addNeurobagelLevel = function(colName) {
-  const colData = window.neurobagelWidgetState.allColumns[colName];
+  const colData = window.getNeurobagelColumnState(colName);
   if (!colData) return;
   if (!colData.levels || typeof colData.levels !== 'object') {
     colData.levels = {};
@@ -670,7 +706,7 @@ window.syncNeurobagelActiveEditorToState = function() {
   const selectedCol = window.neurobagelWidgetState?.selectedColumn;
   if (!selectedCol) return;
 
-  const colData = window.neurobagelWidgetState?.allColumns?.[selectedCol];
+  const colData = window.getNeurobagelColumnState(selectedCol);
   if (!colData) return;
 
   const descField = document.getElementById(`nb-desc-${selectedCol}`);
@@ -876,6 +912,10 @@ window.renderNeurobagelWidget = async function() {
     return;
   }
   console.log('✅ Data has properties:', Object.keys(data.properties).length, 'columns');
+  const hasActivePreview = Boolean(window.lastParticipantsPreviewData && Array.isArray(window.lastParticipantsPreviewData.columns));
+  const activePreviewColumns = hasActivePreview && window.participantsTsvData && typeof window.participantsTsvData === 'object'
+    ? new Set(Object.keys(window.participantsTsvData).map(colName => String(colName || '').trim()).filter(Boolean))
+    : null;
   
   // Merge TSV unique values with NeuroBagel data for categorical columns
   const enrichedData = data.properties;
@@ -950,6 +990,11 @@ window.renderNeurobagelWidget = async function() {
   if (window.existingParticipantsData) {
     console.log('🔄 Merging existing participants.json data into widget');
     for (const [colName, colMeta] of Object.entries(window.existingParticipantsData)) {
+      const cleanedColName = String(colName || '').trim();
+      if (activePreviewColumns && !activePreviewColumns.has(cleanedColName)) {
+        continue;
+      }
+
       if (!enrichedData[colName]) {
         // Add columns that exist in JSON but not in standard NeuroBagel/TSV
         enrichedData[colName] = {
@@ -1200,6 +1245,12 @@ window.renderNeurobagelSidebar = function() {
 };
 
 window.selectNeurobagelColumn = function(colName, activeElement) {
+  const colData = window.getNeurobagelColumnState(colName);
+  if (!colData) {
+    console.warn(`Could not resolve NeuroBagel column state for ${colName}`);
+    return;
+  }
+
   window.neurobagelWidgetState.selectedColumn = colName;
   
   // Update active state
@@ -1211,12 +1262,15 @@ window.selectNeurobagelColumn = function(colName, activeElement) {
   }
   
   // Render editor
-  const colData = window.neurobagelWidgetState.allColumns[colName];
   window.renderNeurobagelEditor(colName, colData);
 };
 
 window.renderNeurobagelEditor = function(colName, colData) {
   const editor = document.getElementById('neurobagelEditor');
+  if (!editor || !colData) {
+    return;
+  }
+
   const dataType = colData.data_type || 'unknown';
   const canRemoveVariable = typeof window.canRemoveParticipantVariable === 'function'
     ? window.canRemoveParticipantVariable(colName)
@@ -1490,7 +1544,7 @@ window.renderNeurobagelEditor = function(colName, colData) {
       btn.addEventListener('click', function() {
         const targetCol = this.getAttribute('data-col-name');
         const targetLevel = this.getAttribute('data-level-key');
-        const targetColData = window.neurobagelWidgetState.allColumns[targetCol];
+        const targetColData = window.getNeurobagelColumnState(targetCol);
         if (!targetColData || !targetColData.levels || !Object.prototype.hasOwnProperty.call(targetColData.levels, targetLevel)) {
           return;
         }
@@ -1507,7 +1561,7 @@ window.renderNeurobagelEditor = function(colName, colData) {
         const targetCol = this.getAttribute('data-col-name');
         const sourceLevel = this.getAttribute('data-level-key');
         const canonicalKey = String(this.value || '').trim();
-        const targetColData = window.neurobagelWidgetState?.allColumns?.[targetCol];
+        const targetColData = window.getNeurobagelColumnState(targetCol);
         if (!targetColData || !targetColData.levels || !Object.prototype.hasOwnProperty.call(targetColData.levels, sourceLevel)) {
           return;
         }
@@ -1528,7 +1582,10 @@ window.renderNeurobagelEditor = function(colName, colData) {
 };
 
 window.applyNeurobagelLevel = function(colName, levelKey) {
-  const colData = window.neurobagelWidgetState.allColumns[colName];
+  const colData = window.getNeurobagelColumnState(colName);
+  if (!colData || !colData.levels || !Object.prototype.hasOwnProperty.call(colData.levels, levelKey)) {
+    return;
+  }
   const levelData = colData.levels[levelKey];
   
   // Find matching form fields and fill with level info

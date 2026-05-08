@@ -712,6 +712,13 @@ def build_prism_tools_parsers(
         help="Combine all matched recipes into one output file",
     )
     parser_deriv_surveys.add_argument(
+        "--no-recipe-prefix",
+        dest="include_recipe_prefix",
+        action="store_false",
+        default=True,
+        help="In combined exports, keep bare variable names where possible instead of always prefixing with the recipe name",
+    )
+    parser_deriv_surveys.add_argument(
         "--boilerplate",
         action="store_true",
         help="Generate a scientific methods boilerplate describing the scoring logic",
@@ -781,6 +788,13 @@ def build_prism_tools_parsers(
         "--merge-all",
         action="store_true",
         help="Combine all matched recipes into one output file",
+    )
+    parser_deriv_biometrics.add_argument(
+        "--no-recipe-prefix",
+        dest="include_recipe_prefix",
+        action="store_false",
+        default=True,
+        help="In combined exports, keep bare variable names where possible instead of always prefixing with the recipe name",
     )
     parser_deriv_biometrics.add_argument(
         "--anonymized",
