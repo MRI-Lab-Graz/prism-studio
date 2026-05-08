@@ -5,6 +5,90 @@ from flask import jsonify, request, send_file
 from .projects_helpers import _resolve_project_root_path
 
 
+_SOURCEDATA_KIND_EXTENSIONS: dict[str, set[str]] = {
+    "survey": {
+        ".xlsx",
+        ".csv",
+        ".tsv",
+        ".sav",
+        ".rds",
+        ".rdata",
+        ".rda",
+        ".lsa",
+        ".lss",
+    },
+    "biometrics": {
+        ".xlsx",
+        ".csv",
+        ".tsv",
+        ".sav",
+        ".rds",
+        ".rdata",
+        ".rda",
+    },
+    "environment": {
+        ".xlsx",
+        ".csv",
+        ".tsv",
+        ".sav",
+        ".rds",
+        ".rdata",
+        ".rda",
+    },
+    "participants": {
+        ".xlsx",
+        ".csv",
+        ".tsv",
+        ".sav",
+        ".rds",
+        ".rdata",
+        ".rda",
+        ".lsa",
+    },
+    "physio": {
+        ".raw",
+        ".vpd",
+    },
+    "eyetracking": {
+        ".edf",
+        ".asc",
+        ".tsv",
+        ".tsv.gz",
+    },
+}
+
+
+def _resolve_sourcedata_kind_extensions(kind: str | None) -> set[str]:
+    normalized_kind = str(kind or "").strip().lower()
+    if not normalized_kind:
+        normalized_kind = "survey"
+
+    if normalized_kind == "all":
+        all_extensions: set[str] = set()
+        for extension_group in _SOURCEDATA_KIND_EXTENSIONS.values():
+            all_extensions.update(extension_group)
+        return all_extensions
+
+    return _SOURCEDATA_KIND_EXTENSIONS.get(
+        normalized_kind,
+        _SOURCEDATA_KIND_EXTENSIONS["survey"],
+    )
+
+
+def _matches_supported_extension(candidate: Path, supported_extensions: set[str]) -> bool:
+    candidate_name = candidate.name.lower()
+    candidate_suffix = candidate.suffix.lower()
+
+    if candidate_suffix in supported_extensions:
+        return True
+
+    for extension in supported_extensions:
+        if extension.endswith(".gz") and candidate_name.endswith(extension):
+            return True
+
+    return False
+
+
 def handle_get_sourcedata_files(get_current_project):
     """List survey-compatible files in the project's sourcedata/ folder."""
     explicit_project_path = str(request.args.get("project_path") or "").strip()
@@ -27,20 +111,14 @@ def handle_get_sourcedata_files(get_current_project):
     if not sourcedata_dir.exists() or not sourcedata_dir.is_dir():
         return jsonify({"files": [], "sourcedata_exists": False})
 
-    supported_extensions = {
-        ".xlsx",
-        ".csv",
-        ".tsv",
-        ".sav",
-        ".rds",
-        ".rdata",
-        ".rda",
-        ".lsa",
-        ".lss",
-    }
+    supported_extensions = _resolve_sourcedata_kind_extensions(
+        request.args.get("kind")
+    )
     files = []
     for candidate in sorted(sourcedata_dir.rglob("*")):
-        if candidate.is_file() and candidate.suffix.lower() in supported_extensions:
+        if candidate.is_file() and _matches_supported_extension(
+            candidate, supported_extensions
+        ):
             # Use a posix-style relative path so subdirectory files are found
             # (e.g. "wide_to_long/data.csv"). The serve endpoint reconstructs
             # the full path via project/sourcedata/<name>, which pathlib handles

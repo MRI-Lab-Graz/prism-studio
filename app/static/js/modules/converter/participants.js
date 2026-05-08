@@ -33,6 +33,9 @@ export function initParticipants() {
     let participantsSelectedCaseId = '1';
     let participantsServerFilePath = '';
     let participantsMergeHarmonizationRefreshTimer = null;
+    let participantsSourcedataRequestToken = 0;
+    let participantsSourcedataQuickSelectEl = null;
+    let participantsSourcedataFileSelectEl = null;
 
     const PARTICIPANTS_CASE_CONFIG = {
         '1': { mode: 'file', fileAction: 'replace' },
@@ -78,6 +81,148 @@ export function initParticipants() {
 
     function hasParticipantsFileSelection() {
         return Boolean(getParticipantsSelectedLocalFile() || getParticipantsSelectedServerFilePath());
+    }
+
+    function ensureParticipantsSourcedataQuickSelectElements() {
+        if (participantsSourcedataQuickSelectEl && participantsSourcedataFileSelectEl) {
+            return;
+        }
+
+        const fileInput = document.getElementById('participantsDataFile');
+        if (!fileInput) {
+            return;
+        }
+
+        const pickerContainer = fileInput.closest('.studio-file-picker');
+        if (!pickerContainer) {
+            return;
+        }
+
+        participantsSourcedataQuickSelectEl = pickerContainer.querySelector('#participantsSourcedataQuickSelect');
+        participantsSourcedataFileSelectEl = pickerContainer.querySelector('#participantsSourcedataFileSelect');
+
+        if (participantsSourcedataQuickSelectEl && participantsSourcedataFileSelectEl) {
+            return;
+        }
+
+        const inputGroup = pickerContainer.querySelector('.input-group');
+        if (!inputGroup || !inputGroup.parentElement) {
+            return;
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.id = 'participantsSourcedataQuickSelect';
+        wrapper.className = 'd-none mb-2';
+        wrapper.innerHTML = `
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light"><i class="fas fa-folder-open text-muted"></i></span>
+                <select class="form-select form-select-sm" id="participantsSourcedataFileSelect">
+                    <option value="">Loading sourcedata files...</option>
+                </select>
+            </div>
+        `;
+
+        inputGroup.parentElement.insertBefore(wrapper, inputGroup);
+        participantsSourcedataQuickSelectEl = wrapper;
+        participantsSourcedataFileSelectEl = wrapper.querySelector('#participantsSourcedataFileSelect');
+    }
+
+    function resetParticipantsSourcedataQuickSelect() {
+        ensureParticipantsSourcedataQuickSelectElements();
+        if (!participantsSourcedataFileSelectEl) {
+            return;
+        }
+
+        participantsSourcedataFileSelectEl.value = '';
+        while (participantsSourcedataFileSelectEl.options.length > 1) {
+            participantsSourcedataFileSelectEl.remove(1);
+        }
+    }
+
+    function setParticipantsSourcedataPlaceholder(label, { disabled = true } = {}) {
+        ensureParticipantsSourcedataQuickSelectElements();
+        if (!participantsSourcedataQuickSelectEl || !participantsSourcedataFileSelectEl) {
+            return;
+        }
+
+        participantsSourcedataQuickSelectEl.classList.remove('d-none');
+        resetParticipantsSourcedataQuickSelect();
+
+        let placeholderOption = participantsSourcedataFileSelectEl.options[0];
+        if (!placeholderOption) {
+            placeholderOption = document.createElement('option');
+            participantsSourcedataFileSelectEl.appendChild(placeholderOption);
+        }
+
+        placeholderOption.value = '';
+        placeholderOption.textContent = label;
+        placeholderOption.disabled = disabled;
+        participantsSourcedataFileSelectEl.selectedIndex = 0;
+        participantsSourcedataFileSelectEl.disabled = disabled;
+    }
+
+    function refreshParticipantsSourcedataQuickSelect(projectPath = resolveCurrentProjectPath()) {
+        ensureParticipantsSourcedataQuickSelectElements();
+        if (!participantsSourcedataQuickSelectEl || !participantsSourcedataFileSelectEl) {
+            return;
+        }
+
+        const previousValue = participantsSourcedataFileSelectEl.value;
+        const requestToken = ++participantsSourcedataRequestToken;
+        setParticipantsSourcedataPlaceholder('Loading sourcedata files...', { disabled: true });
+
+        const effectiveProjectPath = String(projectPath || '').trim();
+        const endpoint = effectiveProjectPath
+            ? `/api/projects/sourcedata-files?kind=participants&project_path=${encodeURIComponent(effectiveProjectPath)}`
+            : '/api/projects/sourcedata-files?kind=participants';
+
+        fetch(endpoint)
+            .then((response) => response.json())
+            .then((data) => {
+                if (requestToken !== participantsSourcedataRequestToken) {
+                    return;
+                }
+
+                if (data.sourcedata_exists && Array.isArray(data.files) && data.files.length > 0) {
+                    participantsSourcedataQuickSelectEl.classList.remove('d-none');
+                    resetParticipantsSourcedataQuickSelect();
+                    participantsSourcedataFileSelectEl.disabled = false;
+
+                    const placeholderOption = participantsSourcedataFileSelectEl.options[0];
+                    if (placeholderOption) {
+                        placeholderOption.textContent = 'Load from sourcedata/...';
+                        placeholderOption.disabled = false;
+                    }
+
+                    data.files.forEach((entry) => {
+                        const option = document.createElement('option');
+                        option.value = entry.name;
+                        const sizeKB = (entry.size / 1024).toFixed(1);
+                        option.textContent = `${entry.name} (${sizeKB} KB)`;
+                        participantsSourcedataFileSelectEl.appendChild(option);
+                    });
+
+                    if (previousValue && Array.from(participantsSourcedataFileSelectEl.options).some((option) => option.value === previousValue)) {
+                        participantsSourcedataFileSelectEl.value = previousValue;
+                    }
+                } else if (data.sourcedata_exists) {
+                    setParticipantsSourcedataPlaceholder('No participants-compatible files found in sourcedata/', {
+                        disabled: true,
+                    });
+                } else {
+                    setParticipantsSourcedataPlaceholder('No sourcedata folder found for the current project', {
+                        disabled: true,
+                    });
+                }
+            })
+            .catch(() => {
+                if (requestToken !== participantsSourcedataRequestToken) {
+                    return;
+                }
+                setParticipantsSourcedataPlaceholder('Could not load sourcedata files', {
+                    disabled: true,
+                });
+            });
     }
 
     async function pickServerParticipantsFile() {
@@ -1215,6 +1360,47 @@ export function initParticipants() {
             updateParticipantsButtonState();
         });
     }
+
+    ensureParticipantsSourcedataQuickSelectElements();
+    if (participantsSourcedataQuickSelectEl && participantsSourcedataFileSelectEl && fileInput) {
+        refreshParticipantsSourcedataQuickSelect();
+
+        participantsSourcedataFileSelectEl.addEventListener('change', async function() {
+            const filename = this.value;
+            if (!filename) {
+                return;
+            }
+
+            try {
+                const currentProjectPath = resolveCurrentProjectPath();
+                const endpoint = currentProjectPath
+                    ? `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}`
+                    : `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}`;
+
+                const response = await fetch(endpoint);
+                if (!response.ok) {
+                    throw new Error('Failed to load sourcedata file');
+                }
+
+                const blob = await response.blob();
+                const file = new File([blob], filename, { type: blob.type });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+
+                participantsServerFilePath = '';
+                fileInput.files = dataTransfer.files;
+                fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+            } catch (_error) {
+                const participantsError = document.getElementById('participantsError');
+                if (participantsError) {
+                    participantsError.textContent = `Failed to load ${filename} from sourcedata.`;
+                    participantsError.classList.remove('d-none');
+                }
+            } finally {
+                refreshParticipantsSourcedataQuickSelect();
+            }
+        });
+    }
     
     const participantsChooseFileBtn = document.getElementById('participantsChooseFileBtn');
     if (participantsChooseFileBtn && fileInput) {
@@ -1279,6 +1465,7 @@ export function initParticipants() {
         window.addEventListener('prism-project-changed', function() {
             resetParticipantsPanelState();
             updateParticipantsButtonState();
+            refreshParticipantsSourcedataQuickSelect();
         });
         window.__participantsProjectChangeListenerBound = true;
     }

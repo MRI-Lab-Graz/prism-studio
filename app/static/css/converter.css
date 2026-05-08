@@ -249,6 +249,35 @@
     margin-top: 0;
 }
 
+.survey-version-group-compact {
+    padding: 0.8rem 0.9rem;
+    border-radius: 14px;
+}
+
+.survey-version-group-compact .survey-version-group-header {
+    padding-bottom: 0.55rem;
+    margin-bottom: 0.55rem;
+}
+
+.survey-version-group-compact .survey-version-group-title {
+    font-size: 1.1rem;
+}
+
+.survey-version-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.survey-version-row {
+    border-top: 1px solid #d6dde5;
+    padding: 0.55rem 0;
+}
+
+.survey-version-row:first-child {
+    border-top: none;
+}
+
 .survey-version-context-line {
     display: flex;
     flex-wrap: wrap;
@@ -307,6 +336,10 @@
 
     .survey-version-context-chip {
         font-size: 0.85rem;
+    }
+
+    .survey-version-row {
+        padding: 0.45rem 0;
     }
 
     .survey-version-task-name {

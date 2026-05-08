@@ -1,5 +1,99 @@
 # PRISM Studio — Roadmap
 
+## Priority 1.33 — Survey review signal and compact version selector ✅ DONE
+
+Improve survey conversion ergonomics by making out-of-range diagnostics more
+informative and reducing visual footprint of multi-version controls.
+
+**What was done:**
+- Updated `app/static/js/modules/converter/survey-convert.js` to display
+  out-of-range share in Preview Review cards using backend evidence
+  (`invalid_without_offset_percent` and sampled counts).
+- Added a direct `Advanced options` jump action in Preview Review that opens
+  and scrolls to manual task value offset controls.
+- Refactored questionnaire version selector rendering to a compact list-style
+  row layout per context instead of large card blocks.
+- Added compact layout styles in `app/static/css/converter.css`.
+- Extended wiring coverage in
+  `tests/test_converter_workflow_wiring.py` for percentage rendering and
+  advanced-options jump controls.
+
+**Lessons learned:**
+- Percent context (`x%` and count basis) is crucial for deciding whether a
+  task-level issue is structural or isolated.
+- High-density workflows need compact controls by default; card-heavy layouts
+  hide primary actions and increase scroll friction.
+
+## Priority 1.32 — Sourcedata quick-select across converter tabs ✅ DONE
+
+Restore and standardize sourcedata quick-select so users can load files from
+the active project's sourcedata folder across all converter tabs, not only
+Survey.
+
+**What was done:**
+- Extended sourcedata backend listing in
+  `app/src/web/blueprints/projects_sourcedata_handlers.py` with
+  `kind`-specific extension filtering for `survey`, `biometrics`,
+  `environment`, `participants`, `physio`, and `eyetracking`, including
+  `.tsv.gz` support for eyetracking.
+- Updated route docs in `app/src/web/blueprints/projects.py` to describe the
+  new `kind` query parameter.
+- Added per-tab quick-select wiring in converter modules:
+  `app/static/js/modules/converter/biometrics.js`,
+  `app/static/js/modules/converter/environment.js`,
+  `app/static/js/modules/converter/physio.js`,
+  `app/static/js/modules/converter/eyetracking.js`, and
+  `app/static/js/modules/converter/participants.js`.
+- Ensured quick-select controls refresh on `prism-project-changed`, degrade
+  cleanly when sourcedata is missing, and hydrate file inputs via
+  `/api/projects/sourcedata-file`.
+- Added focused regressions in
+  `tests/test_converter_project_context_helpers.py` and
+  `tests/test_converter_workflow_wiring.py` for kind filtering and tab wiring.
+
+**Lessons learned:**
+- Quick-select UI must not depend on server-rendered project state only;
+  project changes happen after page load, so controls must refresh from the
+  active project context event.
+- Backend kind filters are required to keep frontend UX simple and avoid
+  cross-modality file confusion.
+
+## Priority 1.31 — Survey preview review checkpoint and task deselection ✅ DONE
+
+Move the survey import workflow to a stricter backend-owned sequence:
+near-match confirmation, multi-version selection, preview review, then
+conversion. Preview should list the detected surveys, flag per-survey
+out-of-range issues, and let users deselect surveys before the real write step.
+
+**What was done:**
+- Updated survey preview handlers in
+  `app/src/web/blueprints/conversion_survey_preview_handlers.py` to return a
+  backend-built `survey_tasks` summary, including per-task manual-review /
+  out-of-range diagnostics instead of blocking preview with a 409.
+- Added a shared selected-task request contract in
+  `app/src/web/blueprints/conversion_utils.py` and wired it through survey
+  preview / convert handlers so conversion can target only the tasks approved
+  during preview review.
+- Updated survey convert handlers in
+  `app/src/web/blueprints/conversion_survey_handlers.py` so prepare-workflow no
+  longer forces offset review before preview, and convert requests now accept
+  explicit `selected_tasks` filtering.
+- Updated the survey converter UI in
+  `app/static/js/modules/converter/survey-convert.js` to render a Preview
+  Review checklist, show per-survey out-of-range guidance, and require a fresh
+  preview before enabling Convert.
+- Added focused regression coverage in `tests/test_survey_value_offsets.py` and
+  `tests/test_web_blueprints_conversion.py` for preview advisory payloads,
+  selected-task filtering, and the shifted prepare-workflow contract.
+
+**Lessons learned:**
+- Survey deselection must be a backend contract (`selected_tasks`), not a
+  frontend-only filter, or preview and convert drift apart.
+- Preview is the right review boundary for risky survey-specific data issues;
+  setup should not trap users in another pre-preview blocker loop.
+- Per-task diagnostics need a backend summary object. Reconstructing survey
+  review state from log lines or generic `data_issues` is too brittle.
+
 ## Priority 1.30 — Mirror dataset metadata into project.json and warn on drift ✅ DONE
 
 Keep `project.json` aligned with dataset-level metadata saved through Studio and

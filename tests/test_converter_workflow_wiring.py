@@ -20,9 +20,34 @@ PHYSIO_MODULE = (
 EYETRACKING_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "eyetracking.js"
 )
+ENVIRONMENT_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "environment.js"
+)
+PARTICIPANTS_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "participants.js"
+)
 
 
 class TestConverterWorkflowWiring(unittest.TestCase):
+    def test_converter_tabs_sourcedata_quick_select_smoke(self):
+        module_expectations = {
+            SURVEY_CONVERT_MODULE: "sourcedata-files?project_path=${encodeURIComponent(effectiveProjectPath)}",
+            BIOMETRICS_MODULE: "sourcedata-files?kind=biometrics&project_path=${encodeURIComponent(effectiveProjectPath)}",
+            ENVIRONMENT_MODULE: "sourcedata-files?kind=environment&project_path=${encodeURIComponent(effectiveProjectPath)}",
+            PHYSIO_MODULE: "sourcedata-files?kind=physio&project_path=${encodeURIComponent(effectiveProjectPath)}",
+            EYETRACKING_MODULE: "sourcedata-files?kind=eyetracking&project_path=${encodeURIComponent(effectiveProjectPath)}",
+            PARTICIPANTS_MODULE: "sourcedata-files?kind=participants&project_path=${encodeURIComponent(effectiveProjectPath)}",
+        }
+
+        for module_path, list_snippet in module_expectations.items():
+            content = module_path.read_text(encoding="utf-8")
+            self.assertIn(list_snippet, content)
+            self.assertIn(
+                "/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}",
+                content,
+            )
+            self.assertIn("prism-project-changed", content)
+
     def test_converter_bootstrap_installs_page_wide_api_fallback(self):
         content = CONVERTER_BOOTSTRAP.read_text(encoding="utf-8")
 
@@ -93,6 +118,17 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn(
             "window.addEventListener('prism-project-changed', function() {", content
         )
+        self.assertIn(
+            "sourcedata-files?kind=biometrics&project_path=${encodeURIComponent(effectiveProjectPath)}",
+            content,
+        )
+        self.assertIn(
+            "window.addEventListener('prism-project-changed', function() {", content
+        )
+        self.assertIn(
+            "refreshBiometricsSourcedataQuickSelect();",
+            content,
+        )
         self.assertIn("formData.append('project_path', currentProjectPath);", content)
         self.assertIn("Please select a project first from the top of the page", content)
 
@@ -115,6 +151,14 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "window.addEventListener('prism-project-changed', function() {",
+            physio_content,
+        )
+        self.assertIn(
+            "sourcedata-files?kind=physio&project_path=${encodeURIComponent(effectiveProjectPath)}",
+            physio_content,
+        )
+        self.assertIn(
+            "refreshPhysioSourcedataQuickSelect();",
             physio_content,
         )
         self.assertIn(
@@ -142,12 +186,52 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             eyetracking_content,
         )
         self.assertIn(
+            "sourcedata-files?kind=eyetracking&project_path=${encodeURIComponent(effectiveProjectPath)}",
+            eyetracking_content,
+        )
+        self.assertIn(
+            "refreshEyetrackingSourcedataQuickSelect();",
+            eyetracking_content,
+        )
+        self.assertIn(
             "formData.append('project_path', currentProjectPath);", eyetracking_content
         )
         self.assertIn(
             "Please select a project first from the top of the page",
             eyetracking_content,
         )
+
+    def test_environment_and_participants_modules_include_sourcedata_quick_select(self):
+        environment_content = ENVIRONMENT_MODULE.read_text(encoding="utf-8")
+        participants_content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "import { resolveCurrentProjectPath } from '../../shared/project-state.js';",
+            environment_content,
+        )
+        self.assertIn(
+            "sourcedata-files?kind=environment&project_path=${encodeURIComponent(effectiveProjectPath)}",
+            environment_content,
+        )
+        self.assertIn(
+            "window.addEventListener('prism-project-changed', () => {",
+            environment_content,
+        )
+        self.assertIn("refreshEnvironmentSourcedataQuickSelect();", environment_content)
+
+        self.assertIn(
+            "import { resolveCurrentProjectPath } from '../../shared/project-state.js';",
+            participants_content,
+        )
+        self.assertIn(
+            "sourcedata-files?kind=participants&project_path=${encodeURIComponent(effectiveProjectPath)}",
+            participants_content,
+        )
+        self.assertIn(
+            "window.addEventListener('prism-project-changed', function() {",
+            participants_content,
+        )
+        self.assertIn("refreshParticipantsSourcedataQuickSelect();", participants_content)
 
     def test_eyetracking_template_references_bids_modality(self):
         content = EYETRACKING_TEMPLATE.read_text(encoding="utf-8")
@@ -181,7 +265,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "fetch(`/api/projects/sourcedata-files?project_path=${encodeURIComponent(projectPath)}`)",
+            "`/api/projects/sourcedata-files?project_path=${encodeURIComponent(effectiveProjectPath)}`",
+            content,
+        )
+        self.assertIn(
+            "fetch(endpoint)",
             content,
         )
         self.assertIn(
@@ -191,6 +279,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn(
             "window.addEventListener('prism-project-changed', function() {", content
         )
+        self.assertIn("function buildVersionWizard(", content)
+        self.assertIn("function formatVersionWizardRunLabel(run)", content)
+        self.assertIn("Out-of-range share:", content)
+        self.assertIn("data-survey-open-advanced", content)
+        self.assertIn("openAdvancedOptionsValueOffsetEditor", content)
         self.assertIn(
             "convertSessionSelect.value = normalizedSessions.length === 1 ? normalizedSessions[0] : 'all';",
             content,
