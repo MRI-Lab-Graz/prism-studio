@@ -33,6 +33,9 @@ export function initEyetracking(elements) {
     } = elements;
 
     let eyetrackingServerFolderPath = '';
+    let eyetrackingSourcedataRequestToken = 0;
+    let eyetrackingSourcedataQuickSelectEl = null;
+    let eyetrackingSourcedataFileSelectEl = null;
 
     function prefersServerPicker() {
         return Boolean(
@@ -59,6 +62,146 @@ export function initEyetracking(elements) {
             confirmLabel: 'Use This Folder',
             startPath: eyetrackingServerFolderPath || '',
         });
+    }
+
+    function ensureEyetrackingSourcedataQuickSelectElements() {
+        if (eyetrackingSourcedataQuickSelectEl && eyetrackingSourcedataFileSelectEl) {
+            return;
+        }
+        if (!eyetrackingBatchFiles) {
+            return;
+        }
+
+        const pickerContainer = eyetrackingBatchFiles.closest('.studio-file-picker');
+        if (!pickerContainer) {
+            return;
+        }
+
+        eyetrackingSourcedataQuickSelectEl = pickerContainer.querySelector('#eyetrackingSourcedataQuickSelect');
+        eyetrackingSourcedataFileSelectEl = pickerContainer.querySelector('#eyetrackingSourcedataFileSelect');
+
+        if (eyetrackingSourcedataQuickSelectEl && eyetrackingSourcedataFileSelectEl) {
+            return;
+        }
+
+        const inputGroup = eyetrackingBatchFiles.closest('.input-group');
+        if (!inputGroup || !inputGroup.parentElement) {
+            return;
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.id = 'eyetrackingSourcedataQuickSelect';
+        wrapper.className = 'd-none mb-2';
+        wrapper.innerHTML = `
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light"><i class="fas fa-folder-open text-muted"></i></span>
+                <select class="form-select form-select-sm" id="eyetrackingSourcedataFileSelect">
+                    <option value="">Loading sourcedata files...</option>
+                </select>
+            </div>
+        `;
+
+        inputGroup.parentElement.insertBefore(wrapper, inputGroup);
+        eyetrackingSourcedataQuickSelectEl = wrapper;
+        eyetrackingSourcedataFileSelectEl = wrapper.querySelector('#eyetrackingSourcedataFileSelect');
+    }
+
+    function resetEyetrackingSourcedataQuickSelect() {
+        ensureEyetrackingSourcedataQuickSelectElements();
+        if (!eyetrackingSourcedataFileSelectEl) {
+            return;
+        }
+
+        eyetrackingSourcedataFileSelectEl.value = '';
+        while (eyetrackingSourcedataFileSelectEl.options.length > 1) {
+            eyetrackingSourcedataFileSelectEl.remove(1);
+        }
+    }
+
+    function setEyetrackingSourcedataPlaceholder(label, { disabled = true } = {}) {
+        ensureEyetrackingSourcedataQuickSelectElements();
+        if (!eyetrackingSourcedataQuickSelectEl || !eyetrackingSourcedataFileSelectEl) {
+            return;
+        }
+
+        eyetrackingSourcedataQuickSelectEl.classList.remove('d-none');
+        resetEyetrackingSourcedataQuickSelect();
+
+        let placeholderOption = eyetrackingSourcedataFileSelectEl.options[0];
+        if (!placeholderOption) {
+            placeholderOption = document.createElement('option');
+            eyetrackingSourcedataFileSelectEl.appendChild(placeholderOption);
+        }
+
+        placeholderOption.value = '';
+        placeholderOption.textContent = label;
+        placeholderOption.disabled = disabled;
+        eyetrackingSourcedataFileSelectEl.selectedIndex = 0;
+        eyetrackingSourcedataFileSelectEl.disabled = disabled;
+    }
+
+    function refreshEyetrackingSourcedataQuickSelect(projectPath = resolveCurrentProjectPath()) {
+        ensureEyetrackingSourcedataQuickSelectElements();
+        if (!eyetrackingSourcedataQuickSelectEl || !eyetrackingSourcedataFileSelectEl) {
+            return;
+        }
+
+        const previousValue = eyetrackingSourcedataFileSelectEl.value;
+        const requestToken = ++eyetrackingSourcedataRequestToken;
+        setEyetrackingSourcedataPlaceholder('Loading sourcedata files...', { disabled: true });
+
+        const effectiveProjectPath = String(projectPath || '').trim();
+        const endpoint = effectiveProjectPath
+            ? `/api/projects/sourcedata-files?kind=eyetracking&project_path=${encodeURIComponent(effectiveProjectPath)}`
+            : '/api/projects/sourcedata-files?kind=eyetracking';
+
+        fetch(endpoint)
+            .then((response) => response.json())
+            .then((data) => {
+                if (requestToken !== eyetrackingSourcedataRequestToken) {
+                    return;
+                }
+
+                if (data.sourcedata_exists && Array.isArray(data.files) && data.files.length > 0) {
+                    eyetrackingSourcedataQuickSelectEl.classList.remove('d-none');
+                    resetEyetrackingSourcedataQuickSelect();
+                    eyetrackingSourcedataFileSelectEl.disabled = false;
+
+                    const placeholderOption = eyetrackingSourcedataFileSelectEl.options[0];
+                    if (placeholderOption) {
+                        placeholderOption.textContent = 'Load from sourcedata/...';
+                        placeholderOption.disabled = false;
+                    }
+
+                    data.files.forEach((entry) => {
+                        const option = document.createElement('option');
+                        option.value = entry.name;
+                        const sizeKB = (entry.size / 1024).toFixed(1);
+                        option.textContent = `${entry.name} (${sizeKB} KB)`;
+                        eyetrackingSourcedataFileSelectEl.appendChild(option);
+                    });
+
+                    if (previousValue && Array.from(eyetrackingSourcedataFileSelectEl.options).some((option) => option.value === previousValue)) {
+                        eyetrackingSourcedataFileSelectEl.value = previousValue;
+                    }
+                } else if (data.sourcedata_exists) {
+                    setEyetrackingSourcedataPlaceholder('No eyetracking files found in sourcedata/', {
+                        disabled: true,
+                    });
+                } else {
+                    setEyetrackingSourcedataPlaceholder('No sourcedata folder found for the current project', {
+                        disabled: true,
+                    });
+                }
+            })
+            .catch(() => {
+                if (requestToken !== eyetrackingSourcedataRequestToken) {
+                    return;
+                }
+                setEyetrackingSourcedataPlaceholder('Could not load sourcedata files', {
+                    disabled: true,
+                });
+            });
     }
 
     // --- Eyetracking Batch Convert ---
@@ -136,6 +279,7 @@ export function initEyetracking(elements) {
     window.addEventListener('prism-project-changed', function() {
         resetEyetrackingWorkflowState();
         updateEyetrackingBatchBtn();
+        refreshEyetrackingSourcedataQuickSelect();
     });
 
     window.addEventListener('prism-library-settings-changed', function() {
@@ -151,6 +295,53 @@ export function initEyetracking(elements) {
     }
 
     applyEyetrackingPickerUiState();
+
+    ensureEyetrackingSourcedataQuickSelectElements();
+    if (eyetrackingSourcedataQuickSelectEl && eyetrackingSourcedataFileSelectEl) {
+        refreshEyetrackingSourcedataQuickSelect();
+
+        eyetrackingSourcedataFileSelectEl.addEventListener('change', async function() {
+            const filename = this.value;
+            if (!filename) {
+                return;
+            }
+
+            try {
+                const currentProjectPath = resolveCurrentProjectPath();
+                const endpoint = currentProjectPath
+                    ? `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}`
+                    : `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}`;
+
+                const response = await fetch(endpoint);
+                if (!response.ok) {
+                    throw new Error('Failed to load sourcedata file');
+                }
+
+                const blob = await response.blob();
+                const file = new File([blob], filename, { type: blob.type });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+
+                if (eyetrackingBatchFiles) {
+                    eyetrackingBatchFiles.files = dataTransfer.files;
+                    eyetrackingBatchFiles.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+
+                eyetrackingServerFolderPath = '';
+                if (eyetrackingServerFolderHint) {
+                    eyetrackingServerFolderHint.textContent = '';
+                    eyetrackingServerFolderHint.classList.add('d-none');
+                }
+            } catch (_error) {
+                if (eyetrackingBatchError) {
+                    eyetrackingBatchError.textContent = `Failed to load ${filename} from sourcedata.`;
+                    eyetrackingBatchError.classList.remove('d-none');
+                }
+            } finally {
+                refreshEyetrackingSourcedataQuickSelect();
+            }
+        });
+    }
 
     if (eyetrackingBatchLogClearBtn) {
         eyetrackingBatchLogClearBtn.addEventListener('click', () => {

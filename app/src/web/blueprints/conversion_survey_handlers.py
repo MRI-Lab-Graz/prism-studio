@@ -36,9 +36,11 @@ from .conversion_utils import (
     expected_delimiter_for_suffix,
     extract_tasks_from_output,
     log_file_head,
+    merge_selected_survey_filter,
     normalize_separator_option,
     normalize_filename,
     parse_near_item_match_task_allowlist,
+    parse_selected_survey_tasks,
     parse_task_value_offsets,
     parse_template_version_overrides,
     participant_json_candidates,
@@ -165,10 +167,20 @@ def _format_value_offset_confirmation_response(
 
     configured_offset = getattr(error, "configured_offset", None)
     offset_evidence = getattr(error, "offset_evidence", None)
+    review_message = str(error).strip() or (
+        "Survey values are outside template levels. Review task value offsets in Advanced options before continuing."
+    )
+    if configured_offset is not None:
+        review_message += (
+            " Review the manual task value offset in Advanced options and run Preview again."
+        )
+    else:
+        review_message += (
+            " If you are certain this survey task uses a shifted numeric scale, add a manual task value offset in Advanced options and run Preview again."
+        )
     payload: dict[str, Any] = {
-        "error": "value_offset_confirmation_required",
-        "message": str(error)
-        or "Survey value is outside configured template levels. Confirm a value offset to continue.",
+        "error": "value_offset_manual_review_required",
+        "message": review_message,
         "task": task,
         "item_id": item_id,
         "raw_value": raw_value,
@@ -181,6 +193,7 @@ def _format_value_offset_confirmation_response(
         payload["configured_offset"] = configured_offset
     if isinstance(offset_evidence, dict):
         payload["offset_evidence"] = offset_evidence
+    payload["manual_action"] = "advanced_value_offsets"
     if log_messages is not None:
         payload["log"] = log_messages
     return payload
@@ -764,7 +777,6 @@ def api_survey_prepare_workflow():
         unmatched_groups_error_cls=UnmatchedGroupsError,
         survey_value_out_of_bounds_error_cls=SurveyValueOutOfBoundsError,
         format_value_offset_confirmation_response=_format_value_offset_confirmation_response,
-        force_validate_preview=True,
     )
 
     response, status_code = _coerce_flask_response(preview_response)
@@ -1253,7 +1265,14 @@ def api_survey_detect_version_context():
     if suffix not in _SUPPORTED_SURVEY_INPUT_SUFFIXES:
         return jsonify({"error": _SUPPORTED_SURVEY_INPUT_MESSAGE}), 400
 
-    survey_filter = (request.form.get("survey") or "").strip() or None
+    raw_survey_filter = (request.form.get("survey") or "").strip() or None
+    try:
+        selected_tasks = parse_selected_survey_tasks(
+            request.form.get("selected_tasks")
+        )
+        survey_filter = merge_selected_survey_filter(raw_survey_filter, selected_tasks)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
     try:
         template_version_overrides = parse_template_version_overrides(
             request.form.get("template_versions")
@@ -1445,7 +1464,14 @@ def api_survey_convert():
         # mechanism will copy matched templates to the project library afterwards.
         effective_survey_dir = official_fallback
 
-    survey_filter = (request.form.get("survey") or "").strip() or None
+    raw_survey_filter = (request.form.get("survey") or "").strip() or None
+    try:
+        selected_tasks = parse_selected_survey_tasks(
+            request.form.get("selected_tasks")
+        )
+        survey_filter = merge_selected_survey_filter(raw_survey_filter, selected_tasks)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
     try:
         template_version_overrides = parse_template_version_overrides(
             request.form.get("template_versions")

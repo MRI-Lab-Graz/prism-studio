@@ -551,7 +551,7 @@ class TestSurveyPrepareWorkflowEndpoint(unittest.TestCase):
         )
         self.assertEqual(payload.get("workflow_gate", {}).get("tasks"), ["pss"])
 
-    def test_prepare_workflow_detects_value_offset_before_preview_starts(self):
+    def test_prepare_workflow_keeps_value_offset_review_for_preview(self):
         import importlib
 
         handlers = importlib.import_module(
@@ -574,24 +574,27 @@ class TestSurveyPrepareWorkflowEndpoint(unittest.TestCase):
             (survey_dir / "survey-pss.json").write_text("{}", encoding="utf-8")
 
             preview_result = SimpleNamespace(
+                dry_run_preview={"participants": []},
                 tasks_included=["pss"],
                 near_match_candidates=[],
                 near_match_applied=False,
+                unknown_columns=[],
+                missing_items_by_task={},
+                id_column="ID",
+                conversion_warnings=[],
+                task_runs={},
+                detected_sessions=[],
+                session_column=None,
+                run_column=None,
+                template_matches=None,
+                tool_columns=[],
+                applied_value_offsets={},
+                value_offset_application_counts={},
             )
 
             def fake_run_survey_with_official_fallback(_converter, **kwargs):
-                if kwargs.get("dry_run"):
-                    return preview_result
-                raise handlers.SurveyValueOutOfBoundsError(
-                    task="pss",
-                    item_id="PSS01",
-                    sub_id="sub-001",
-                    raw_value="5",
-                    expected_levels=["0", "1", "2", "3"],
-                    suggested_offsets=[-1],
-                    configured_offset=None,
-                    message="Task values appear to be offset by +1.",
-                )
+                self.assertTrue(kwargs.get("dry_run"))
+                return preview_result
 
             with (
                 patch.object(
@@ -634,11 +637,11 @@ class TestSurveyPrepareWorkflowEndpoint(unittest.TestCase):
                         content_type="multipart/form-data",
                     )
 
-        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.status_code, 200)
         payload = response.get_json()
-        self.assertEqual(payload.get("error"), "value_offset_confirmation_required")
-        self.assertEqual(payload.get("task"), "pss")
-        self.assertEqual(payload.get("suggested_offsets"), [-1])
+        self.assertTrue(payload.get("ok"))
+        self.assertEqual(payload.get("tasks_included"), ["pss"])
+        self.assertEqual(payload.get("preview_participants"), [])
 
 
 class TestSurveyConvertPreviewEndpoint(unittest.TestCase):

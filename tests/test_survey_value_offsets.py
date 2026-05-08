@@ -368,7 +368,7 @@ def test_survey_preview_returns_value_offset_confirmation_payload(tmp_path):
             unmatched_groups_error_cls=RuntimeError,
             survey_value_out_of_bounds_error_cls=SurveyValueOutOfBoundsError,
             format_value_offset_confirmation_response=lambda error: {
-                "error": "value_offset_confirmation_required",
+                "error": "value_offset_manual_review_required",
                 "task": error.task,
                 "item_id": error.item_id,
                 "suggested_offsets": list(error.suggested_offsets),
@@ -383,7 +383,7 @@ def test_survey_preview_returns_value_offset_confirmation_payload(tmp_path):
 
     payload = flask_response.get_json()
     assert status_code == 409
-    assert payload["error"] == "value_offset_confirmation_required"
+    assert payload["error"] == "value_offset_manual_review_required"
     assert payload["task"] == "pss"
     assert payload["item_id"] == "PSS01"
     assert payload["suggested_offsets"] == [-1]
@@ -469,7 +469,89 @@ def test_survey_preview_passes_value_offsets_to_converter(tmp_path):
     assert payload["applied_value_offsets"] == {"pss": -1.0}
 
 
-def test_survey_preview_validate_path_returns_value_offset_confirmation(tmp_path):
+def test_survey_preview_merges_selected_tasks_filter(tmp_path):
+    app = Flask(__name__)
+    app.secret_key = os.urandom(32)
+
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    library_root = tmp_path / "library"
+    _write_basic_survey_template(library_root, task="pss")
+
+    calls = []
+
+    def fake_run_survey_with_official_fallback(_converter, **kwargs):
+        calls.append(kwargs)
+        return type(
+            "Result",
+            (),
+            {
+                "dry_run_preview": {
+                    "summary": {
+                        "total_participants": 1,
+                        "unique_participants": 1,
+                        "tasks": ["pss"],
+                        "session_column": None,
+                        "run_column": None,
+                        "total_files": 1,
+                        "total_files_to_create": 1,
+                    },
+                    "participants": [],
+                    "files_to_create": [],
+                    "data_issues": [],
+                    "column_mapping": {},
+                },
+                "tasks_included": ["pss"],
+                "unknown_columns": [],
+                "missing_items_by_task": {},
+                "id_column": "ID",
+                "session_column": None,
+                "run_column": None,
+                "detected_sessions": [],
+                "conversion_warnings": [],
+                "task_runs": {},
+                "template_matches": None,
+                "tool_columns": [],
+                "near_match_candidates": [],
+                "near_match_applied": False,
+                "applied_value_offsets": {},
+                "value_offset_application_counts": {},
+            },
+        )()
+
+    with app.test_request_context(
+        "/api/survey-convert-preview",
+        method="POST",
+        data={
+            "file": (io.BytesIO(b"ID,PSS01\nsub-001,5\n"), "demo.csv"),
+            "id_column": "ID",
+            "validate": "false",
+            "survey": "pss,gad",
+            "selected_tasks": '["pss"]',
+        },
+        content_type="multipart/form-data",
+    ):
+        session["current_project_path"] = str(project_root)
+        response = handle_api_survey_convert_preview(
+            convert_survey_xlsx_to_prism_dataset=object(),
+            convert_survey_lsa_to_prism_dataset=object(),
+            resolve_effective_library_path=lambda: library_root,
+            run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
+            validate_project_templates_for_tasks=lambda **_kwargs: [],
+            build_template_completion_gate=lambda _issues: None,
+            format_unmatched_groups_response=lambda _error: {},
+            id_column_not_detected_error_cls=ValueError,
+            unmatched_groups_error_cls=RuntimeError,
+        )
+
+    payload = response.get_json()
+    assert calls
+    assert calls[0]["survey"] == "pss"
+    assert payload["survey_tasks"][0]["task"] == "pss"
+    assert payload["survey_tasks"][0]["selected"] is True
+
+
+def test_survey_preview_validate_path_returns_task_review_summary(tmp_path):
     app = Flask(__name__)
     app.secret_key = os.urandom(32)
 
@@ -553,22 +635,18 @@ def test_survey_preview_validate_path_returns_value_offset_confirmation(tmp_path
             unmatched_groups_error_cls=RuntimeError,
             survey_value_out_of_bounds_error_cls=SurveyValueOutOfBoundsError,
             format_value_offset_confirmation_response=lambda error: {
-                "error": "value_offset_confirmation_required",
+                "error": "value_offset_manual_review_required",
                 "task": error.task,
                 "item_id": error.item_id,
                 "suggested_offsets": list(error.suggested_offsets),
             },
         )
 
-    if isinstance(response, tuple):
-        flask_response, status_code = response
-    else:
-        flask_response = response
-        status_code = response.status_code
-
-    payload = flask_response.get_json()
-    assert status_code == 409
-    assert payload["error"] == "value_offset_confirmation_required"
-    assert payload["task"] == "pss"
-    assert payload["item_id"] == "PSS01"
-    assert payload["suggested_offsets"] == [-1]
+    payload = response.get_json()
+    assert response.status_code == 200
+    assert call_count["count"] == 2
+    assert payload["tasks_included"] == ["pss"]
+    assert payload["survey_tasks"][0]["task"] == "pss"
+    assert payload["survey_tasks"][0]["manual_review_required"] is True
+    assert payload["survey_tasks"][0]["out_of_range"]["item_id"] == "PSS01"
+    assert payload["survey_tasks"][0]["out_of_range"]["suggested_offsets"] == [-1]

@@ -45,7 +45,6 @@
                             <div class="row g-3 mb-3">
                                 <div class="col-12 studio-file-picker">
                                     <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .sav, .rds, .rdata, .lsa)</label>
-                                    {% if current_project.path %}
                                     <div id="sourcedataQuickSelect" class="d-none mb-2">
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text bg-light"><i class="fas fa-folder-open text-muted"></i></span>
@@ -54,7 +53,6 @@
                                             </select>
                                         </div>
                                     </div>
-                                    {% endif %}
                                     <div class="input-group">
                                         <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv,.sav,.rds,.rdata,.rda" data-help-key="convertExcelFile">
                                         <button class="btn btn-outline-secondary d-none" type="button" id="browseServerSurveyFileBtn" aria-label="Browse server survey file" title="Browse server survey file">
@@ -92,7 +90,7 @@
                                         <label class="form-check-label small text-muted" for="convertAdvancedToggle">Enable advanced</label>
                                     </div>
                                 </div>
-                                <div class="form-text">Optional settings for specific survey, language, and ID mapping.</div>
+                                <div class="form-text">Optional settings for specific survey, language, ID mapping, and manual task value offsets.</div>
 
                                 <div class="collapse mt-2" id="surveyAdvancedOptions">
                                     <div class="row g-3 mb-3">
@@ -118,6 +116,15 @@
                                                 </button>
                                             </div>
                                             <div class="form-text">Map source IDs to participant_id (two-column TSV/CSV).</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-12">
+                                            <label for="convertValueOffsets" class="form-label">Task Value Offsets (manual override only)</label>
+                                            <textarea class="form-control" id="convertValueOffsets" rows="3" placeholder="pss10 = -1"></textarea>
+                                            <div class="form-text">Optional. Use only when you are certain a specific survey task is coded on the wrong numeric scale. Enter one task per line using <code>task = offset</code> or <code>task: offset</code>.</div>
+                                            <div class="alert alert-warning d-none mt-2 mb-0 small" id="convertValueOffsetAdvice" style="white-space: pre-line;"></div>
                                         </div>
                                     </div>
 

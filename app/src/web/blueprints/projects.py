@@ -423,8 +423,13 @@ def get_participants_columns():
 def get_sourcedata_files():
     """List survey-compatible files in the project's sourcedata/ folder.
 
-    Returns files matching converter-supported extensions (.xlsx, .csv, .tsv, .sav, .rds, .rdata, .rda, .lsa, .lss)
-    found in the sourcedata/ directory recursively (includes subdirectories such as wide_to_long/).
+    Query params:
+        kind: optional converter kind filter (survey, biometrics, environment,
+              participants, physio, eyetracking, all). Defaults to survey.
+
+    Returns files matching converter-supported extensions found in the
+    sourcedata/ directory recursively (includes subdirectories such as
+    wide_to_long/).
     """
     return handle_get_sourcedata_files(get_current_project=get_current_project)
 
