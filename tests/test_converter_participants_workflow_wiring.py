@@ -124,7 +124,9 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("let participantsIdSelectionRequired = false;", content)
+        self.assertIn("let participantsRememberedIdColumn = '';", content)
         self.assertIn("participantsIdSelectionRequired = Boolean(isRequired);", content)
+        self.assertIn("function getCurrentParticipantsIdColumnValue(columns = null) {", content)
         self.assertIn(
             "function resetParticipantsPanelState({ preserveImportConfig = false } = {}) {",
             content,
@@ -142,6 +144,10 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
+            "const selectedSourceId = currentIdValue || data.source_id_column || data.suggested_id_column || data.id_column;",
+            content,
+        )
+        self.assertIn(
             "resetParticipantsPanelState({ preserveImportConfig: true });",
             content,
         )
@@ -149,6 +155,8 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
             "updateParticipantsButtonState({ skipIdAutoDetect: true });",
             content,
         )
+        self.assertIn("rememberParticipantsIdColumn(this.value);", content)
+        self.assertIn("const idColumn = getCurrentParticipantsIdColumnValue(", content)
 
     def test_participants_module_applies_live_exclusions_to_preview_payload(self):
         content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
