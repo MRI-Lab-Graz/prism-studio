@@ -452,6 +452,14 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             module_content,
         )
         self.assertIn(
+            "return surveyValueOffsetEditorController.getAvailableSurveyTasksForValueOffsets();",
+            module_content,
+        )
+        self.assertIn(
+            "return surveyValueOffsetEditorController.getManualTaskValueOffsets();",
+            module_content,
+        )
+        self.assertIn(
             "return surveyValueOffsetEditorController.hasAppliedTaskValueOffsetSelections();",
             module_content,
         )
@@ -487,6 +495,14 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "function hasAppliedTaskValueOffsetSelections()",
+            value_offset_editor_content,
+        )
+        self.assertIn(
+            "function getAvailableSurveyTasksForValueOffsets()",
+            value_offset_editor_content,
+        )
+        self.assertIn(
+            "function getManualTaskValueOffsets()",
             value_offset_editor_content,
         )
         self.assertIn(
@@ -818,6 +834,15 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "setAppliedTaskValueOffsetSelectionSignature: (value) => {",
+            survey_content,
+        )
+        self.assertIn(
+            "getSurveyPreviewSelectionState: () => surveyPreviewSelectionState,",
+            survey_content,
+        )
+        self.assertIn("getTemplateVersionSelections,", survey_content)
+        self.assertIn(
+            "getLastPreviewSurveyTasks: () => {",
             survey_content,
         )
         self.assertIn(

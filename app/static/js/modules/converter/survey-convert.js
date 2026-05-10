@@ -788,27 +788,7 @@ export function initSurveyConvert(elements) {
     }
 
     function getAvailableSurveyTasksForValueOffsets() {
-        const ordered = [];
-        const seen = new Set();
-        const pushTask = (value) => {
-            const task = normalizeSurveyTaskName(value);
-            if (!task || seen.has(task)) {
-                return;
-            }
-            seen.add(task);
-            ordered.push(task);
-        };
-
-        (surveyPreviewSelectionState.selectedTasks || []).forEach(pushTask);
-        (surveyPreviewSelectionState.availableTasks || []).forEach(pushTask);
-        getTemplateVersionSelections().forEach((entry) => pushTask(entry && entry.task));
-        const previewTasks = Array.isArray(window.lastPreviewData && window.lastPreviewData.survey_tasks)
-            ? window.lastPreviewData.survey_tasks
-            : [];
-        previewTasks.forEach((entry) => pushTask(entry && entry.task));
-        taskValueOffsetEditorState.forEach((entry) => pushTask(entry && entry.task));
-
-        return ordered;
+        return surveyValueOffsetEditorController.getAvailableSurveyTasksForValueOffsets();
     }
 
     function getTaskValueOffsetMapFromEditorState() {
@@ -898,14 +878,7 @@ export function initSurveyConvert(elements) {
     }
 
     function getManualTaskValueOffsets() {
-        if (!isAdvancedOptionsEnabled() || !convertValueOffsets) {
-            return {};
-        }
-        if (convertValueOffsetRows) {
-            syncTaskValueOffsetTextFromState();
-            return getTaskValueOffsetMapFromEditorState();
-        }
-        return parseTaskValueOffsetsText(convertValueOffsets.value);
+        return surveyValueOffsetEditorController.getManualTaskValueOffsets();
     }
 
     function getManualValueOffsetReviewMessage(payload, mode) {
@@ -1885,7 +1858,13 @@ export function initSurveyConvert(elements) {
         },
         updateConvertBtn,
         getNextTaskValueOffsetRowId: () => ++taskValueOffsetRowSequence,
-        getAvailableSurveyTasksForValueOffsets,
+        getSurveyPreviewSelectionState: () => surveyPreviewSelectionState,
+        getTemplateVersionSelections,
+        getLastPreviewSurveyTasks: () => {
+            return Array.isArray(window.lastPreviewData && window.lastPreviewData.survey_tasks)
+                ? window.lastPreviewData.survey_tasks
+                : [];
+        },
         getTaskValueOffsetEditorState: () => taskValueOffsetEditorState,
         setTaskValueOffsetEditorState: (nextState) => {
             taskValueOffsetEditorState = Array.isArray(nextState) ? nextState : [];
