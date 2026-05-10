@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 
 from flask import jsonify, request
+from src.participants_backend import merge_survey_selected_participants_schema
 from .projects_helpers import (
     _read_tabular_dataframe,
     _resolve_project_root_path,
@@ -179,7 +180,7 @@ def handle_get_participants_schema(get_current_project, get_bids_file_path):
 def handle_save_participants_schema(get_current_project, get_bids_file_path):
     """Save the participants.json schema for the current project."""
     data = request.get_json()
-    if not data or "schema" not in data:
+    if not data:
         return jsonify({"success": False, "error": "No schema provided"}), 400
 
     project_path, error_message, status_code = (
@@ -191,7 +192,50 @@ def handle_save_participants_schema(get_current_project, get_bids_file_path):
     if project_path is None:
         return jsonify({"success": False, "error": error_message}), status_code
 
-    schema = data["schema"]
+    participants_path = get_bids_file_path(project_path, "participants.json")
+
+    merge_survey_selected = bool(data.get("merge_survey_selected"))
+    if merge_survey_selected:
+        selected_schema = data.get("survey_selected_schema")
+        if not isinstance(selected_schema, dict):
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": "survey_selected_schema must be a dictionary",
+                    }
+                ),
+                400,
+            )
+
+        existing_schema: dict = {}
+        if participants_path.exists():
+            try:
+                with open(participants_path, "r", encoding="utf-8") as f:
+                    loaded_schema = json.load(f)
+                if isinstance(loaded_schema, dict):
+                    existing_schema = loaded_schema
+            except Exception as e:
+                return (
+                    jsonify(
+                        {
+                            "success": False,
+                            "error": f"Failed to read existing participants.json: {str(e)}",
+                        }
+                    ),
+                    500,
+                )
+
+        schema = merge_survey_selected_participants_schema(
+            existing_schema=existing_schema,
+            selected_schema=selected_schema,
+        )
+    else:
+        if "schema" not in data:
+            return jsonify({"success": False, "error": "No schema provided"}), 400
+
+        schema = data["schema"]
+
     if not isinstance(schema, dict):
         return jsonify({"success": False, "error": "Schema must be a dictionary"}), 400
 
@@ -206,8 +250,6 @@ def handle_save_participants_schema(get_current_project, get_bids_file_path):
         description = str(schema["participant_id"].get("Description") or "").strip()
         if not description:
             schema["participant_id"]["Description"] = "Unique participant identifier"
-
-    participants_path = get_bids_file_path(project_path, "participants.json")
 
     try:
         with open(participants_path, "w", encoding="utf-8") as f:

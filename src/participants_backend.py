@@ -211,6 +211,60 @@ def merge_neurobagel_schema_for_columns(
     return base_schema, merged_count
 
 
+def merge_survey_selected_participants_schema(
+    existing_schema: dict,
+    selected_schema: dict,
+) -> dict:
+    """Merge survey-selected participant fields into an existing participants schema.
+
+    Behavior mirrors the converter survey workflow contract:
+    - Remove stale survey-derived fields that are no longer selected.
+    - Preserve manually curated metadata on still-selected fields.
+    - Ensure participant_id is always present.
+    """
+    safe_existing = dict(existing_schema) if isinstance(existing_schema, dict) else {}
+    safe_selected = dict(selected_schema) if isinstance(selected_schema, dict) else {}
+
+    selected_source_fields: set[str] = set()
+    for value in safe_selected.values():
+        if not isinstance(value, dict):
+            continue
+        source_field = str(value.get("_sourceField") or "").strip()
+        if source_field:
+            selected_source_fields.add(source_field)
+
+    selected_target_fields = {str(name) for name in safe_selected.keys()}
+
+    merged = dict(safe_existing)
+
+    for field_name, field_spec in list(merged.items()):
+        if not isinstance(field_spec, dict):
+            continue
+        source_field = str(field_spec.get("_sourceField") or "").strip()
+        if not source_field:
+            continue
+
+        still_selected_by_source = source_field in selected_source_fields
+        still_selected_by_target = field_name in selected_target_fields
+        if not still_selected_by_source and not still_selected_by_target:
+            del merged[field_name]
+
+    for field_name, selected_spec in safe_selected.items():
+        existing_spec = merged.get(field_name)
+        if isinstance(existing_spec, dict) and isinstance(selected_spec, dict):
+            merged[field_name] = {
+                **existing_spec,
+                **selected_spec,
+            }
+        else:
+            merged[field_name] = selected_spec
+
+    if "participant_id" not in merged:
+        merged["participant_id"] = {"Description": "Unique participant identifier"}
+
+    return merged
+
+
 def collect_dataset_participants(
     project_root: Path,
     *,
