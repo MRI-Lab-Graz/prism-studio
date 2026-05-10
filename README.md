@@ -67,6 +67,18 @@ For detailed installation instructions, see the [documentation](https://prism-st
 
 ## Quick Usage
 
+### Run via RTK (recommended)
+
+After setup and virtual environment activation, use the `rtk` command for common workflows:
+
+```bash
+rtk studio
+rtk validator /path/to/dataset --bids
+rtk tools --help
+rtk test -q
+rtk git status
+```
+
 ### Run PRISM Studio (Web)
 
 ```bash

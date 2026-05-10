@@ -12,6 +12,11 @@ import { resolveCurrentProjectPath } from './shared/project-state.js';
 
 installApiFetchFallback();
 
+if (window.__prismConverterBootstrapInitialized) {
+    // Guard against duplicate module imports re-binding event handlers.
+} else {
+    window.__prismConverterBootstrapInitialized = true;
+
 document.addEventListener('DOMContentLoaded', function() {
     let sessionPickerRequestToken = 0;
 
@@ -445,3 +450,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+}
