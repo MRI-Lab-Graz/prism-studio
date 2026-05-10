@@ -26,6 +26,30 @@ SURVEY_WORKFLOW_PREPARE_MODULE = (
 SURVEY_WORKFLOW_PREVIEW_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "survey-workflow-preview.js"
 )
+SURVEY_WORKFLOW_CONVERT_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "survey-workflow-convert.js"
+)
+SURVEY_WORKFLOW_PROGRESS_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "survey-workflow-progress.js"
+)
+SURVEY_SOURCEDATA_QUICK_SELECT_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "survey-sourcedata-quick-select.js"
+)
+SURVEY_WORKFLOW_TEMPLATE_CHECK_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "survey-workflow-template-check.js"
+)
 PHYSIO_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "physio.js"
 )
@@ -52,7 +76,6 @@ class TestConverterWorkflowWiring(unittest.TestCase):
 
     def test_converter_tabs_sourcedata_quick_select_smoke(self):
         module_expectations = {
-            SURVEY_CONVERT_MODULE: "sourcedata-files?project_path=${encodeURIComponent(effectiveProjectPath)}",
             BIOMETRICS_MODULE: "sourcedata-files?kind=biometrics&project_path=${encodeURIComponent(effectiveProjectPath)}",
             ENVIRONMENT_MODULE: "sourcedata-files?kind=environment&project_path=${encodeURIComponent(effectiveProjectPath)}",
             PHYSIO_MODULE: "sourcedata-files?kind=physio&project_path=${encodeURIComponent(effectiveProjectPath)}",
@@ -68,6 +91,19 @@ class TestConverterWorkflowWiring(unittest.TestCase):
                 content,
             )
             self.assertIn("prism-project-changed", content)
+
+        survey_sourcedata_content = SURVEY_SOURCEDATA_QUICK_SELECT_MODULE.read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "sourcedata-files?project_path=${encodeURIComponent(effectiveProjectPath)}",
+            survey_sourcedata_content,
+        )
+        self.assertIn(
+            "/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}",
+            survey_sourcedata_content,
+        )
+        self.assertIn("prism-project-changed", survey_sourcedata_content)
 
     def test_converter_bootstrap_installs_page_wide_api_fallback(self):
         content = CONVERTER_BOOTSTRAP.read_text(encoding="utf-8")
@@ -282,28 +318,47 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         workflow_prepare_content = SURVEY_WORKFLOW_PREPARE_MODULE.read_text(
             encoding="utf-8"
         )
+        survey_sourcedata_content = (
+            SURVEY_SOURCEDATA_QUICK_SELECT_MODULE.read_text(encoding="utf-8")
+        )
+        workflow_template_check_content = (
+            SURVEY_WORKFLOW_TEMPLATE_CHECK_MODULE.read_text(encoding="utf-8")
+        )
 
-        self.assertIn("let sourcedataRequestToken = 0;", content)
-        self.assertIn("formData.append('project_path', currentProjectPath);", content)
         self.assertIn(
-            "function refreshSourcedataQuickSelect(projectPath = resolveCurrentProjectPath()) {",
+            "import { createSurveySourcedataQuickSelectController } from './survey-sourcedata-quick-select.js';",
             content,
+        )
+        self.assertIn(
+            "const surveySourcedataQuickSelectController = createSurveySourcedataQuickSelectController({",
+            content,
+        )
+        self.assertIn("surveySourcedataQuickSelectController.initialize();", content)
+        self.assertIn("surveySourcedataQuickSelectController.clearSelectedFile();", content)
+        self.assertIn("onProjectChanged: () => {", content)
+        self.assertIn("resetSurveyImportFormState();", content)
+        self.assertIn(
+            "formData.append('project_path', currentProjectPath);",
+            workflow_template_check_content,
+        )
+        self.assertIn(
+            "let requestToken = 0;",
+            survey_sourcedata_content,
         )
         self.assertIn(
             "`/api/projects/sourcedata-files?project_path=${encodeURIComponent(effectiveProjectPath)}`",
-            content,
+            survey_sourcedata_content,
         )
-        self.assertIn(
-            "fetch(endpoint)",
-            content,
-        )
+        self.assertIn("fetch(endpoint)", survey_sourcedata_content)
         self.assertIn(
             "/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}",
-            content,
+            survey_sourcedata_content,
         )
         self.assertIn(
-            "window.addEventListener('prism-project-changed', function() {", content
+            "window.addEventListener('prism-project-changed', function handleProjectChanged() {",
+            survey_sourcedata_content,
         )
+        self.assertIn("if (activeRequestToken !== requestToken)", survey_sourcedata_content)
         self.assertIn("function buildVersionWizard(", content)
         self.assertIn("function formatVersionWizardRunLabel(run)", content)
         self.assertIn("Out-of-range share:", content)
@@ -373,6 +428,18 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         workflow_preview_content = SURVEY_WORKFLOW_PREVIEW_MODULE.read_text(
             encoding="utf-8"
         )
+        workflow_convert_content = SURVEY_WORKFLOW_CONVERT_MODULE.read_text(
+            encoding="utf-8"
+        )
+        workflow_progress_content = SURVEY_WORKFLOW_PROGRESS_MODULE.read_text(
+            encoding="utf-8"
+        )
+        workflow_sourcedata_content = (
+            SURVEY_SOURCEDATA_QUICK_SELECT_MODULE.read_text(encoding="utf-8")
+        )
+        workflow_template_check_content = (
+            SURVEY_WORKFLOW_TEMPLATE_CHECK_MODULE.read_text(encoding="utf-8")
+        )
 
         self.assertIn(
             "import { createSurveyParticipantsMetadataController } from './survey-participants-metadata.js';",
@@ -384,6 +451,22 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "import { createSurveyWorkflowPreviewController } from './survey-workflow-preview.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "import { createSurveyWorkflowConvertController } from './survey-workflow-convert.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "import { createSurveyWorkflowProgressController } from './survey-workflow-progress.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "import { createSurveySourcedataQuickSelectController } from './survey-sourcedata-quick-select.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "import { createSurveyWorkflowTemplateCheckController } from './survey-workflow-template-check.js';",
             survey_content,
         )
         self.assertIn(
@@ -399,19 +482,55 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             survey_content,
         )
         self.assertIn(
+            "const surveyWorkflowConvertController = createSurveyWorkflowConvertController({",
+            survey_content,
+        )
+        self.assertIn(
+            "const surveyWorkflowProgressController = createSurveyWorkflowProgressController({",
+            survey_content,
+        )
+        self.assertIn(
+            "const surveySourcedataQuickSelectController = createSurveySourcedataQuickSelectController({",
+            survey_content,
+        )
+        self.assertIn(
+            "const surveyWorkflowTemplateCheckController = createSurveyWorkflowTemplateCheckController({",
+            survey_content,
+        )
+        self.assertIn(
             "participantsMetadataController.displayParticipantMetadataSection(data);",
             survey_content,
         )
         self.assertIn(
             "surveyWorkflowPrepareController.prepareSurveyWorkflow({",
-            survey_content,
+            workflow_preview_content,
+        )
+        self.assertIn(
+            "surveyWorkflowPrepareController.prepareSurveyWorkflow({",
+            workflow_convert_content,
         )
         self.assertIn(
             "surveyWorkflowPreviewController.handlePreviewClick();",
             survey_content,
         )
         self.assertIn(
-            "surveyWorkflowPrepareController.finishPreparationPhase('convert', preparation.outcome);",
+            "surveyWorkflowConvertController.handleConvertClick();",
+            survey_content,
+        )
+        self.assertIn(
+            "surveyWorkflowProgressController.startSurveyRunProgress(mode);",
+            survey_content,
+        )
+        self.assertIn(
+            "surveyWorkflowProgressController.finishSurveyRunProgress(mode, outcome);",
+            survey_content,
+        )
+        self.assertIn(
+            "surveySourcedataQuickSelectController.initialize();",
+            survey_content,
+        )
+        self.assertIn(
+            "surveyWorkflowTemplateCheckController.initialize();",
             survey_content,
         )
 
@@ -419,7 +538,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "export function createSurveyParticipantsMetadataController({ escapeHtml }) {",
             participants_content,
         )
-        self.assertIn("merge_survey_selected: true", participants_content)
+        self.assertIn(
+            "survey_schema_merge_mode: 'survey_selected'",
+            participants_content,
+        )
         self.assertIn("survey_selected_schema: schema", participants_content)
 
         self.assertIn(
@@ -442,6 +564,63 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn(
             "surveyWorkflowPrepareController.finishPreparationPhase('preview', preparation.outcome);",
             workflow_preview_content,
+        )
+
+        self.assertIn(
+            "export function createSurveyWorkflowConvertController({",
+            workflow_convert_content,
+        )
+        self.assertIn(
+            "async function handleConvertClick() {",
+            workflow_convert_content,
+        )
+        self.assertIn("fetch('/api/survey-convert-validate'", workflow_convert_content)
+        self.assertIn(
+            "surveyWorkflowPrepareController.finishPreparationPhase('convert', preparation.outcome);",
+            workflow_convert_content,
+        )
+
+        self.assertIn(
+            "export function createSurveyWorkflowProgressController({",
+            workflow_progress_content,
+        )
+        self.assertIn(
+            "function startSurveyRunProgress(mode)",
+            workflow_progress_content,
+        )
+        self.assertIn(
+            "function finishSurveyRunProgress(mode, outcome)",
+            workflow_progress_content,
+        )
+        self.assertIn(
+            "function getIsSurveyRunAwaitingConfirmation()",
+            workflow_progress_content,
+        )
+
+        self.assertIn(
+            "export function createSurveySourcedataQuickSelectController({",
+            workflow_sourcedata_content,
+        )
+        self.assertIn(
+            "window.addEventListener('prism-project-changed', function handleProjectChanged() {",
+            workflow_sourcedata_content,
+        )
+
+        self.assertIn(
+            "export function createSurveyWorkflowTemplateCheckController({",
+            workflow_template_check_content,
+        )
+        self.assertIn(
+            "async function handleCheckProjectTemplatesClick()",
+            workflow_template_check_content,
+        )
+        self.assertIn(
+            "fetch('/api/survey-check-project-templates'",
+            workflow_template_check_content,
+        )
+        self.assertIn(
+            "function initialize()",
+            workflow_template_check_content,
         )
 
     def test_converter_modules_surface_backend_save_paths(self):
