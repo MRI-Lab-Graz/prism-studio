@@ -50,6 +50,33 @@ SURVEY_WORKFLOW_TEMPLATE_CHECK_MODULE = (
     / "converter"
     / "survey-workflow-template-check.js"
 )
+SURVEY_TEMPLATE_RESULTS_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "survey-template-results.js"
+)
+SURVEY_VALUE_OFFSET_UTILS_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "survey-value-offset-utils.js"
+)
+SURVEY_VALUE_OFFSET_EDITOR_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "survey-value-offset-editor.js"
+)
 PHYSIO_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "physio.js"
 )
@@ -386,6 +413,9 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         workflow_prepare_content = SURVEY_WORKFLOW_PREPARE_MODULE.read_text(
             encoding="utf-8"
         )
+        value_offset_editor_content = SURVEY_VALUE_OFFSET_EDITOR_MODULE.read_text(
+            encoding="utf-8"
+        )
         template_content = SURVEY_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn('id="convertValueOffsetsEditor"', template_content)
@@ -407,11 +437,92 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("function ensureTaskValueOffsetEditorRow(task = '') {", module_content)
         self.assertIn("syncTaskValueOffsetTextFromState();", module_content)
         self.assertIn("surveyPreviewSelectionState.availableTasks", module_content)
-        self.assertIn("data-role=\"operator\"", module_content)
-        self.assertIn("data-role=\"magnitude\"", module_content)
-        self.assertIn("convertAddValueOffsetRowBtn.addEventListener('click'", module_content)
+        self.assertIn(
+            "import { createSurveyValueOffsetEditorController } from './survey-value-offset-editor.js';",
+            module_content,
+        )
+        self.assertIn(
+            "const surveyValueOffsetEditorController = createSurveyValueOffsetEditorController({",
+            module_content,
+        )
+        self.assertIn("surveyValueOffsetEditorController.initialize();", module_content)
+        self.assertIn("surveyValueOffsetEditorController.applyAdvancedOptionsState();", module_content)
+        self.assertIn(
+            "return surveyValueOffsetEditorController.hasManualTaskValueOffsets();",
+            module_content,
+        )
+        self.assertIn(
+            "return surveyValueOffsetEditorController.hasAppliedTaskValueOffsetSelections();",
+            module_content,
+        )
+        self.assertIn(
+            "surveyValueOffsetEditorController.updateTaskValueOffsetApplyState();",
+            module_content,
+        )
+        self.assertIn(
+            "return surveyValueOffsetEditorController.renderTaskValueOffsetEditor();",
+            module_content,
+        )
+        self.assertIn(
+            "return surveyValueOffsetEditorController.ensureTaskValueOffsetEditorRow(task);",
+            module_content,
+        )
+        self.assertNotIn("convertAddValueOffsetRowBtn.addEventListener('click'", module_content)
         self.assertIn("convertApplyValueOffsetsBtn?.addEventListener('click'", module_content)
         self.assertIn("valueOffsetSelectionsPending", module_content)
+
+        self.assertIn(
+            "export function createSurveyValueOffsetEditorController({",
+            value_offset_editor_content,
+        )
+        self.assertIn("function applyAdvancedOptionsState()", value_offset_editor_content)
+        self.assertIn("function initialize()", value_offset_editor_content)
+        self.assertIn(
+            "function getTaskValueOffsetMapFromEditorState()",
+            value_offset_editor_content,
+        )
+        self.assertIn(
+            "function hasManualTaskValueOffsets()",
+            value_offset_editor_content,
+        )
+        self.assertIn(
+            "function hasAppliedTaskValueOffsetSelections()",
+            value_offset_editor_content,
+        )
+        self.assertIn(
+            "function updateTaskValueOffsetApplyState()",
+            value_offset_editor_content,
+        )
+        self.assertIn(
+            "function renderTaskValueOffsetEditor()",
+            value_offset_editor_content,
+        )
+        self.assertIn(
+            "function setTaskValueOffsetEditorStateFromText(rawText)",
+            value_offset_editor_content,
+        )
+        self.assertIn("data-role=\"operator\"", value_offset_editor_content)
+        self.assertIn("data-role=\"magnitude\"", value_offset_editor_content)
+        self.assertIn(
+            "convertAdvancedToggle.addEventListener('change', applyAdvancedOptionsState);",
+            value_offset_editor_content,
+        )
+        self.assertIn(
+            "convertAddValueOffsetRowBtn.addEventListener('click', () => {",
+            value_offset_editor_content,
+        )
+        self.assertIn(
+            "convertValueOffsetRows.addEventListener('change', (event) => {",
+            value_offset_editor_content,
+        )
+        self.assertIn(
+            "convertValueOffsetRows.addEventListener('input', (event) => {",
+            value_offset_editor_content,
+        )
+        self.assertIn(
+            "convertValueOffsetRows.addEventListener('click', (event) => {",
+            value_offset_editor_content,
+        )
         self.assertIn(
             "if (Object.keys(multivariantTasks).length > 0 && !hasAppliedVersionWizardSelections()) {",
             workflow_prepare_content,
@@ -439,6 +550,15 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         workflow_template_check_content = (
             SURVEY_WORKFLOW_TEMPLATE_CHECK_MODULE.read_text(encoding="utf-8")
+        )
+        template_results_content = SURVEY_TEMPLATE_RESULTS_MODULE.read_text(
+            encoding="utf-8"
+        )
+        value_offset_utils_content = SURVEY_VALUE_OFFSET_UTILS_MODULE.read_text(
+            encoding="utf-8"
+        )
+        value_offset_editor_content = SURVEY_VALUE_OFFSET_EDITOR_MODULE.read_text(
+            encoding="utf-8"
         )
 
         self.assertIn(
@@ -470,6 +590,18 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             survey_content,
         )
         self.assertIn(
+            "import { createSurveyTemplateResultsController } from './survey-template-results.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "import { createSurveyValueOffsetEditorController } from './survey-value-offset-editor.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "from './survey-value-offset-utils.js';",
+            survey_content,
+        )
+        self.assertIn(
             "const participantsMetadataController = createSurveyParticipantsMetadataController({",
             survey_content,
         )
@@ -498,9 +630,45 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             survey_content,
         )
         self.assertIn(
+            "const surveyTemplateResultsController = createSurveyTemplateResultsController({",
+            survey_content,
+        )
+        self.assertIn(
+            "const surveyValueOffsetEditorController = createSurveyValueOffsetEditorController({",
+            survey_content,
+        )
+        self.assertIn(
             "participantsMetadataController.displayParticipantMetadataSection(data);",
             survey_content,
         )
+        self.assertIn(
+            "surveyTemplateResultsController.displayTemplateSingle(data);",
+            survey_content,
+        )
+        self.assertIn(
+            "surveyTemplateResultsController.displayTemplateGroups(data);",
+            survey_content,
+        )
+        self.assertIn(
+            "surveyTemplateResultsController.displayTemplateQuestions(data);",
+            survey_content,
+        )
+        self.assertIn("surveyValueOffsetEditorController.initialize();", survey_content)
+        self.assertIn(
+            "return normalizeTaskValueOffsetsMap(offsetMap, normalizeNearMatchTaskName);",
+            survey_content,
+        )
+        self.assertIn(
+            "return parseTaskValueOffsetsTextWithNormalizer(rawText, normalizeNearMatchTaskName);",
+            survey_content,
+        )
+        self.assertNotIn("function displayTemplateSingle(data)", survey_content)
+        self.assertNotIn("function displayTemplateGroups(data)", survey_content)
+        self.assertNotIn("function displayTemplateQuestions(data)", survey_content)
+        self.assertNotIn("function setupTemplateSaveToProject(data, mode)", survey_content)
+        self.assertNotIn("function parseNumericOffsetValue(rawValue)", survey_content)
+        self.assertNotIn("function formatSignedOffset(offset)", survey_content)
+        self.assertNotIn("function formatOffsetMagnitude(offset)", survey_content)
         self.assertIn(
             "surveyWorkflowPrepareController.prepareSurveyWorkflow({",
             workflow_preview_content,
@@ -617,6 +785,48 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn(
             "fetch('/api/survey-check-project-templates'",
             workflow_template_check_content,
+        )
+
+        self.assertIn(
+            "export function createSurveyTemplateResultsController({",
+            template_results_content,
+        )
+        self.assertIn(
+            "fetch('/api/limesurvey-save-to-project',",
+            template_results_content,
+        )
+        self.assertIn(
+            "fetch(`/api/library-template/${encodeURIComponent(templateKey)}`);",
+            template_results_content,
+        )
+
+        self.assertIn(
+            "export function parseNumericOffsetValue(rawValue)",
+            value_offset_utils_content,
+        )
+        self.assertIn(
+            "export function normalizeTaskValueOffsets(offsetMap, normalizeTaskName)",
+            value_offset_utils_content,
+        )
+        self.assertIn(
+            "export function parseTaskValueOffsetsText(rawText, normalizeTaskName)",
+            value_offset_utils_content,
+        )
+        self.assertIn(
+            "Wildcard offsets are disabled in Advanced options.",
+            value_offset_utils_content,
+        )
+        self.assertIn(
+            "setAppliedTaskValueOffsetSelectionSignature: (value) => {",
+            survey_content,
+        )
+        self.assertIn(
+            "getAppliedTaskValueOffsetSelectionSignature: () => appliedTaskValueOffsetSelectionSignature,",
+            survey_content,
+        )
+        self.assertIn(
+            "export function createSurveyValueOffsetEditorController({",
+            value_offset_editor_content,
         )
         self.assertIn(
             "function initialize()",

@@ -74,6 +74,45 @@ into backend contracts.
   - Extended wiring tests in `tests/test_converter_workflow_wiring.py` so
     template-check endpoint and project-path append ownership are asserted in
     `survey-workflow-template-check.js`.
+  - Extracted template result rendering/save orchestration into
+    `app/static/js/modules/converter/survey-template-results.js` and delegated
+    template result mode dispatch from `survey-convert.js` to
+    `createSurveyTemplateResultsController`.
+  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` to
+    assert template-results import/instantiation/delegation and endpoint
+    ownership (`/api/limesurvey-save-to-project` and `/api/library-template/`).
+  - Extracted shared survey value-offset parsing/normalization helpers into
+    `app/static/js/modules/converter/survey-value-offset-utils.js` and reduced
+    duplicate helper ownership in `survey-convert.js` to thin wrappers.
+  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` for the
+    new value-offset utility module and `survey-convert.js` delegation wrappers.
+  - Extracted value-offset editor apply-state and DOM event wiring into
+    `app/static/js/modules/converter/survey-value-offset-editor.js` and
+    delegated from `survey-convert.js` via
+    `createSurveyValueOffsetEditorController` while keeping existing offset
+    state/review logic in the orchestrator.
+  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` to
+    assert value-offset editor controller import/instantiation/initialization
+    and ownership of add-row/change/input/remove bindings.
+  - Shifted value-offset status/signature helper ownership
+    (`hasManualTaskValueOffsets`, `hasAppliedTaskValueOffsetSelections`,
+    `updateTaskValueOffsetApplyState`, and related map/signature helpers) into
+    `survey-value-offset-editor.js`, with `survey-convert.js` now delegating
+    through thin wrappers.
+  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` to
+    assert helper delegation in `survey-convert.js` and helper ownership in the
+    extracted value-offset editor controller.
+  - Moved value-offset editor state mutation/render internals
+    (`createTaskValueOffsetRow`, row rendering, text/state sync, ensure/focus,
+    and editor-change handlers) into
+    `app/static/js/modules/converter/survey-value-offset-editor.js`.
+  - Reduced `survey-convert.js` value-offset UI functions to thin delegation
+    wrappers and injected dependencies (task list provider, row-id allocator,
+    parser/normalizer utilities, and escape helper) into the controller.
+  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` to
+    assert delegation wrappers in `survey-convert.js` and row-markup ownership
+    (`data-role="operator"`, `data-role="magnitude"`) in the extracted
+    value-offset editor controller.
 
   **Assessment update (2026-05-10):**
   - Confirmed stale DOM-guarded branches still exist in `survey-convert.js`
@@ -103,6 +142,21 @@ into backend contracts.
 - Survey workflow complexity now comes more from feature accretion than missing
   capability; incremental extraction with strict backend ownership is safer than
   a rewrite.
+- Extraction patches in `survey-convert.js` should be applied in small hunks:
+  large monolith deletions can leave orphan fragments that focused wiring tests
+  catch quickly.
+- Shared offset parsing/formatting helpers are low-risk extraction targets that
+  reduce drift across preview/convert/manual-offset code paths before moving
+  larger stateful editor orchestration.
+- Extracting stateful editor wiring as a controller is a safe intermediate step:
+  keep one orchestrator-owned state model first, then move state and business
+  rules only after wiring tests pin behavior.
+- Status/signature helper extraction is a good next micro-step after event
+  wiring extraction: it trims orchestrator logic while preserving one shared
+  editor state model and minimizes behavior risk.
+- After wiring + status delegation, moving render/state helpers is still safe
+  if one shared state store remains in the orchestrator and the controller is
+  injected with narrow callbacks for state access and id allocation.
 
 ## Priority 1.34 — RTK command wrapper for repo workflows ✅ DONE
 
