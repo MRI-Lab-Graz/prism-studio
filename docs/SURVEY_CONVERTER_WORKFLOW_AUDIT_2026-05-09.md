@@ -106,6 +106,61 @@
 - Added wiring assertions in `tests/test_converter_workflow_wiring.py` to guard
   module import/usage and backend merge payload contract continuity.
 
+### Phase 3 Checkpoint (2026-05-10 update)
+- Extracted preview orchestration into
+  `app/static/js/modules/converter/survey-workflow-preview.js`.
+- `survey-convert.js` now delegates Preview button handling to
+  `createSurveyWorkflowPreviewController` while keeping behavior unchanged.
+- Updated `tests/test_converter_workflow_wiring.py` to assert preview module
+  import/instantiation/delegation and preview endpoint ownership.
+
+## Workflow Assessment Addendum (2026-05-10)
+
+### 1) Dead-adjacent DOM branches still in active survey controller
+- `survey-convert.js` still references controls that are not present in the
+  active survey template (`converter_survey.html`), including:
+  - `checkProjectTemplatesBtn`
+  - `surveyI18nWarning` / `surveyI18nMessage`
+  - `surveyStructureWarning` / `surveyStructureMessage`
+  - `convertLibraryPathInput` / `convertBrowseLibraryBtn`
+- Current behavior is guarded by null checks, so this does not crash, but it
+  keeps stale branches in the main workflow path and increases maintenance cost.
+
+### 2) Remaining monolith is now concentrated in convert-run path
+- `prepare` and `preview` orchestration are extracted, but convert-run
+  orchestration in `survey-convert.js` remains long/stateful.
+- The convert path still contains request assembly, progress control, API
+  handling, summary rendering, and error/retry transitions in one block.
+- This is currently the biggest readability and regression-risk hotspot.
+
+### 3) Legacy ZIP convert route is mounted but not used by current UI
+- Backend still exposes both:
+  - `POST /api/survey-convert` (ZIP style)
+  - `POST /api/survey-convert-validate` (workflow JSON)
+- Current frontend survey workflow uses `survey-convert-validate` and does not
+  call `/api/survey-convert`.
+- Keeping both routes is valid for compatibility, but should be explicitly
+  documented as compatibility mode to avoid drift.
+
+### 4) Project-switch stale-state risk remains
+- On `prism-project-changed`, survey tab currently refreshes sourcedata quick
+  select, but does not fully reset survey preview/conversion state.
+- Risk: old preview-selection context and uploaded/server-picked source state
+  can linger across project changes unless user manually clears inputs.
+
+## Recommended Next Refactor Order
+1. Extract convert-run orchestration into
+   `app/static/js/modules/converter/survey-workflow-convert.js` using the same
+   dependency-injected controller pattern as prepare/preview.
+2. Move shared request composition/progress helpers into a small shared survey
+   workflow module (or keep in `survey-convert.js` but isolate pure helpers).
+3. Add explicit project-switch reset policy for survey tab state
+   (clear selected source, clear preview selection state, rerun required).
+4. Mark `/api/survey-convert` as compatibility path and ensure tests cover only
+   intended consumers.
+5. Remove stale DOM branches once template-check and i18n/structure warning
+   controls are either restored in UI or explicitly retired.
+
 ### Phase 4: Endpoint consolidation
 - Keep one primary conversion command endpoint for UI workflow.
 - Keep legacy endpoint only as compatibility wrapper (or remove after migration).

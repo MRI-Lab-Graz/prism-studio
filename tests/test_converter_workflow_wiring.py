@@ -23,6 +23,9 @@ SURVEY_PARTICIPANTS_METADATA_MODULE = (
 SURVEY_WORKFLOW_PREPARE_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "survey-workflow-prepare.js"
 )
+SURVEY_WORKFLOW_PREVIEW_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "survey-workflow-preview.js"
+)
 PHYSIO_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "physio.js"
 )
@@ -367,6 +370,9 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         workflow_prepare_content = SURVEY_WORKFLOW_PREPARE_MODULE.read_text(
             encoding="utf-8"
         )
+        workflow_preview_content = SURVEY_WORKFLOW_PREVIEW_MODULE.read_text(
+            encoding="utf-8"
+        )
 
         self.assertIn(
             "import { createSurveyParticipantsMetadataController } from './survey-participants-metadata.js';",
@@ -374,6 +380,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "import { createSurveyWorkflowPrepareController } from './survey-workflow-prepare.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "import { createSurveyWorkflowPreviewController } from './survey-workflow-preview.js';",
             survey_content,
         )
         self.assertIn(
@@ -385,6 +395,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             survey_content,
         )
         self.assertIn(
+            "const surveyWorkflowPreviewController = createSurveyWorkflowPreviewController({",
+            survey_content,
+        )
+        self.assertIn(
             "participantsMetadataController.displayParticipantMetadataSection(data);",
             survey_content,
         )
@@ -393,11 +407,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             survey_content,
         )
         self.assertIn(
-            "surveyWorkflowPrepareController.finishPreparationPhase('convert', preparation.outcome);",
+            "surveyWorkflowPreviewController.handlePreviewClick();",
             survey_content,
         )
         self.assertIn(
-            "surveyWorkflowPrepareController.finishPreparationPhase('preview', preparation.outcome);",
+            "surveyWorkflowPrepareController.finishPreparationPhase('convert', preparation.outcome);",
             survey_content,
         )
 
@@ -415,6 +429,20 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("fetch('/api/survey-prepare-workflow'", workflow_prepare_content)
         self.assertIn("function finishPreparationPhase(mode, outcome)", workflow_prepare_content)
         self.assertIn("function handleLateSetupBlocker(mode, payload, selectedValueOffsets = {})", workflow_prepare_content)
+
+        self.assertIn(
+            "export function createSurveyWorkflowPreviewController({",
+            workflow_preview_content,
+        )
+        self.assertIn(
+            "async function handlePreviewClick() {",
+            workflow_preview_content,
+        )
+        self.assertIn("fetch('/api/survey-convert-preview'", workflow_preview_content)
+        self.assertIn(
+            "surveyWorkflowPrepareController.finishPreparationPhase('preview', preparation.outcome);",
+            workflow_preview_content,
+        )
 
     def test_converter_modules_surface_backend_save_paths(self):
         biometrics_content = BIOMETRICS_MODULE.read_text(encoding="utf-8")
