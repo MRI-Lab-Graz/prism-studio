@@ -183,6 +183,85 @@ class TestProjectsParticipantsHandlers(unittest.TestCase):
         self.assertEqual(saved["age"].get("Unit"), "years")
         self.assertIn("Annotations", saved["age"])
 
+    def test_save_schema_merge_mode_survey_selected_removes_stale_and_keeps_manual(
+        self,
+    ):
+        participants_json = self.project_root / "participants.json"
+        participants_json.write_text(
+            json.dumps(
+                {
+                    "participant_id": {"Description": "Unique participant identifier"},
+                    "age": {
+                        "Description": "Participant age",
+                        "Unit": "years",
+                        "Annotations": {
+                            "IsAbout": {
+                                "TermURL": "nb:Age",
+                                "Label": "Age",
+                            }
+                        },
+                        "_sourceField": "Q_AGE",
+                    },
+                    "sex": {
+                        "Description": "Participant sex",
+                        "Levels": {"M": "Male", "F": "Female"},
+                        "_sourceField": "Q_SEX",
+                    },
+                    "group": {
+                        "Description": "Study group",
+                    },
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        def get_current_project():
+            return {
+                "path": str(self.project_root / "project.json"),
+                "name": "demo_project",
+            }
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        payload = {
+            "survey_schema_merge_mode": "survey_selected",
+            "survey_selected_schema": {
+                "age": {
+                    "Description": "Age from survey",
+                    "_sourceField": "Q_AGE",
+                }
+            },
+        }
+
+        with self.app.test_request_context(
+            "/api/projects/participants",
+            method="POST",
+            json=payload,
+        ):
+            response = self.handle_save_participants_schema(
+                get_current_project=get_current_project,
+                get_bids_file_path=get_bids_file_path,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+
+        self.assertEqual(status_code, 200)
+        body = resp_obj.get_json()
+        self.assertTrue(body.get("success"))
+
+        saved = json.loads(participants_json.read_text(encoding="utf-8"))
+        self.assertIn("participant_id", saved)
+        self.assertIn("age", saved)
+        self.assertIn("group", saved)
+        self.assertNotIn("sex", saved)
+        self.assertEqual(saved["age"].get("Description"), "Age from survey")
+        self.assertEqual(saved["age"].get("Unit"), "years")
+        self.assertIn("Annotations", saved["age"])
+
     def test_save_schema_merge_survey_selected_requires_dict(self):
         def get_current_project():
             return {
@@ -215,6 +294,39 @@ class TestProjectsParticipantsHandlers(unittest.TestCase):
         body = resp_obj.get_json()
         self.assertFalse(body.get("success"))
         self.assertIn("survey_selected_schema", body.get("error", ""))
+
+    def test_save_schema_merge_mode_rejects_unsupported_value(self):
+        def get_current_project():
+            return {
+                "path": str(self.project_root / "project.json"),
+                "name": "demo_project",
+            }
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        payload = {
+            "survey_schema_merge_mode": "unknown",
+            "survey_selected_schema": {},
+        }
+
+        with self.app.test_request_context(
+            "/api/projects/participants",
+            method="POST",
+            json=payload,
+        ):
+            response = self.handle_save_participants_schema(
+                get_current_project=get_current_project,
+                get_bids_file_path=get_bids_file_path,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+
+        self.assertEqual(status_code, 400)
+        body = resp_obj.get_json()
+        self.assertFalse(body.get("success"))
+        self.assertIn("survey_schema_merge_mode", body.get("error", ""))
 
 
 class TestParticipantsAnnotationFilters(TestProjectsParticipantsHandlers):

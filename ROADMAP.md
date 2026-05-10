@@ -22,7 +22,7 @@ into backend contracts.
     `app/src/web/blueprints/projects_participants_handlers.py`.
   - Updated survey frontend save flow in
     `app/static/js/modules/converter/survey-convert.js` to send
-    `merge_survey_selected` + `survey_selected_schema`.
+    `survey_schema_merge_mode` + `survey_selected_schema`.
   - Added regression coverage in
     `tests/test_projects_participants_handlers.py`.
 
@@ -51,9 +51,29 @@ into backend contracts.
   - Extracted preview orchestration into
     `app/static/js/modules/converter/survey-workflow-preview.js` and delegated
     preview button handling from `survey-convert.js`.
+  - Extracted run-progress orchestration into
+    `app/static/js/modules/converter/survey-workflow-progress.js` and delegated
+    progress state/timer handling from `survey-convert.js`.
+  - Extracted survey sourcedata quick-select orchestration into
+    `app/static/js/modules/converter/survey-sourcedata-quick-select.js` and
+    delegated dropdown refresh/file-load/project-change reset wiring from
+    `survey-convert.js`.
+  - Extracted template-check orchestration into
+    `app/static/js/modules/converter/survey-workflow-template-check.js` and
+    delegated check button request/logging/gating/version-wizard branching from
+    `survey-convert.js`.
   - Extended wiring tests in `tests/test_converter_workflow_wiring.py` for
     preview module import/instantiation/delegation and preview endpoint
     ownership assertions.
+  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` for
+    progress module import/instantiation/delegation and run-progress API
+    ownership assertions.
+  - Updated wiring tests in `tests/test_converter_workflow_wiring.py` so
+    survey sourcedata endpoint and project-change ownership are asserted in the
+    extracted sourcedata module instead of `survey-convert.js`.
+  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` so
+    template-check endpoint and project-path append ownership are asserted in
+    `survey-workflow-template-check.js`.
 
   **Assessment update (2026-05-10):**
   - Confirmed stale DOM-guarded branches still exist in `survey-convert.js`

@@ -42,6 +42,7 @@ _SESSION_RESOLUTION_ACTIONS = {
     "pick_latest_session",
     "split_sessions",
 }
+_SURVEY_SCHEMA_MERGE_MODES = {"survey_selected"}
 
 
 def normalize_participant_mapping(mapping: object) -> dict:
@@ -263,6 +264,33 @@ def merge_survey_selected_participants_schema(
         merged["participant_id"] = {"Description": "Unique participant identifier"}
 
     return merged
+
+
+def resolve_survey_schema_merge_mode(payload: object) -> str | None:
+    """Resolve participants schema merge mode from request payload.
+
+    Supports a typed mode field and a legacy boolean fallback.
+    """
+    if not isinstance(payload, dict):
+        return None
+
+    raw_mode = payload.get("survey_schema_merge_mode")
+    if raw_mode is not None:
+        normalized_mode = str(raw_mode).strip().lower()
+        if not normalized_mode:
+            return None
+        if normalized_mode not in _SURVEY_SCHEMA_MERGE_MODES:
+            allowed = ", ".join(sorted(_SURVEY_SCHEMA_MERGE_MODES))
+            raise ValueError(
+                f"Unsupported survey_schema_merge_mode '{raw_mode}'. "
+                f"Allowed values: {allowed}."
+            )
+        return normalized_mode
+
+    if bool(payload.get("merge_survey_selected")):
+        return "survey_selected"
+
+    return None
 
 
 def collect_dataset_participants(

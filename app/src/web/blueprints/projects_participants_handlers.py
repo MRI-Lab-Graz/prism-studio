@@ -3,7 +3,10 @@ import re
 from pathlib import Path
 
 from flask import jsonify, request
-from src.participants_backend import merge_survey_selected_participants_schema
+from src.participants_backend import (
+    merge_survey_selected_participants_schema,
+    resolve_survey_schema_merge_mode,
+)
 from .projects_helpers import (
     _read_tabular_dataframe,
     _resolve_project_root_path,
@@ -194,8 +197,12 @@ def handle_save_participants_schema(get_current_project, get_bids_file_path):
 
     participants_path = get_bids_file_path(project_path, "participants.json")
 
-    merge_survey_selected = bool(data.get("merge_survey_selected"))
-    if merge_survey_selected:
+    try:
+        survey_schema_merge_mode = resolve_survey_schema_merge_mode(data)
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+    if survey_schema_merge_mode == "survey_selected":
         selected_schema = data.get("survey_selected_schema")
         if not isinstance(selected_schema, dict):
             return (
