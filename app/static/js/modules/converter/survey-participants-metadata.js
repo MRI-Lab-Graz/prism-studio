@@ -245,7 +245,7 @@ export function createSurveyParticipantsMetadataController({ escapeHtml }) {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            merge_survey_selected: true,
+                            survey_schema_merge_mode: 'survey_selected',
                             survey_selected_schema: schema,
                         })
                     });

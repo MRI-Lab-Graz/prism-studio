@@ -1,11 +1,23 @@
 ============================= test session starts ==============================
-platform darwin -- Python 3.14.4, pytest-9.0.3, pluggy-1.6.0
+platform darwin -- Python 3.14.4, pytest-9.0.3, pluggy-1.6.0 -- /Users/karl/work/github/prism-studio/.venv/bin/python3
+cachedir: .pytest_cache
 rootdir: /Users/karl/work/github/prism-studio
 configfile: pytest.ini
 plugins: cov-7.1.0, anyio-4.13.0
-collected 14 items / 13 deselected / 1 selected
+collecting ... collected 40 items
 
-tests/test_converter_workflow_wiring.py F                                [100%]
+tests/test_converter_workflow_wiring.py::TestConverterWorkflowWiring::test_biometrics_module_resets_stale_state_and_uses_explicit_project_path PASSED [  2%]
+tests/test_converter_workflow_wiring.py::TestConverterWorkflowWiring::test_converter_bootstrap_installs_page_wide_api_fallback PASSED [  5%]
+tests/test_converter_workflow_wiring.py::TestConverterWorkflowWiring::test_converter_bootstrap_supports_tab_query_parameter PASSED [  7%]
+tests/test_converter_workflow_wiring.py::TestConverterWorkflowWiring::test_converter_module_aggregator_uses_single_bootstrap_entrypoint PASSED [ 10%]
+tests/test_converter_workflow_wiring.py::TestConverterWorkflowWiring::test_converter_modules_surface_backend_save_paths PASSED [ 12%]
+tests/test_converter_workflow_wiring.py::TestConverterWorkflowWiring::test_converter_tabs_sourcedata_quick_select_smoke PASSED [ 15%]
+tests/test_converter_workflow_wiring.py::TestConverterWorkflowWiring::test_environment_and_participants_modules_include_sourcedata_quick_select PASSED [ 17%]
+tests/test_converter_workflow_wiring.py::TestConverterWorkflowWiring::test_eyetracking_template_references_bids_modality PASSED [ 20%]
+tests/test_converter_workflow_wiring.py::TestConverterWorkflowWiring::test_physio_and_eyetracking_modules_reset_stale_state_and_send_project_path PASSED [ 22%]
+tests/test_converter_workflow_wiring.py::TestConverterWorkflowWiring::test_session_registration_uses_visible_project_path PASSED [ 25%]
+tests/test_converter_workflow_wiring.py::TestConverterWorkflowWiring::test_shared_api_exports_fetch_installer_using_native_fetch PASSED [ 27%]
+tests/test_converter_workflow_wiring.py::TestConverterWorkflowWiring::test_survey_converter_refreshes_project_bound_helpers FAILED [ 30%]
 
 =================================== FAILURES ===================================
 _ TestConverterWorkflowWiring.test_survey_converter_refreshes_project_bound_helpers _
@@ -39,4 +51,5 @@ E       AssertionError: "formData.append('project_path', currentProjectPath);" n
 tests/test_converter_workflow_wiring.py:337: AssertionError
 =========================== short test summary info ============================
 FAILED tests/test_converter_workflow_wiring.py::TestConverterWorkflowWiring::test_survey_converter_refreshes_project_bound_helpers
-======================= 1 failed, 13 deselected in 0.03s =======================
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+========================= 1 failed, 11 passed in 0.28s =========================
