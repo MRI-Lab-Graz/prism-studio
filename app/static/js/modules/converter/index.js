@@ -26,15 +26,16 @@ export {
 } from '../../shared/dom.js';
 export { getLocalStorage, setLocalStorage, removeLocalStorage } from '../../shared/storage.js';
 
-import { initLimeSurveyQuickImport } from './survey.js';
-
 function initConverterModules() {
     const isConverterPage = document.getElementById('converterTabs');
     if (!isConverterPage) {
         return;
     }
 
-    initLimeSurveyQuickImport();
+    if (window.__prismConverterBootstrapLoadedViaAggregator) {
+        return;
+    }
+    window.__prismConverterBootstrapLoadedViaAggregator = true;
 
     import('../../converter-bootstrap.js');
 }

@@ -3,6 +3,9 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CONVERTER_BOOTSTRAP = REPO_ROOT / "app" / "static" / "js" / "converter-bootstrap.js"
+CONVERTER_INDEX = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "index.js"
+)
 SHARED_API = REPO_ROOT / "app" / "static" / "js" / "shared" / "api.js"
 SESSION_REGISTER = (
     REPO_ROOT / "app" / "static" / "js" / "shared" / "session-register.js"
@@ -13,6 +16,12 @@ BIOMETRICS_MODULE = (
 )
 SURVEY_CONVERT_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "survey-convert.js"
+)
+SURVEY_PARTICIPANTS_METADATA_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "survey-participants-metadata.js"
+)
+SURVEY_WORKFLOW_PREPARE_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "survey-workflow-prepare.js"
 )
 PHYSIO_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "physio.js"
@@ -30,6 +39,14 @@ SURVEY_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter_survey.html"
 
 
 class TestConverterWorkflowWiring(unittest.TestCase):
+    def test_converter_module_aggregator_uses_single_bootstrap_entrypoint(self):
+        content = CONVERTER_INDEX.read_text(encoding="utf-8")
+
+        self.assertIn("window.__prismConverterBootstrapLoadedViaAggregator", content)
+        self.assertIn("import('../../converter-bootstrap.js');", content)
+        self.assertNotIn("initLimeSurveyQuickImport", content)
+        self.assertNotIn("from './survey.js'", content)
+
     def test_converter_tabs_sourcedata_quick_select_smoke(self):
         module_expectations = {
             SURVEY_CONVERT_MODULE: "sourcedata-files?project_path=${encodeURIComponent(effectiveProjectPath)}",
@@ -60,6 +77,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn("installApiFetchFallback();", content)
+        self.assertIn("window.__prismConverterBootstrapInitialized", content)
         self.assertIn("let sessionPickerRequestToken = 0;", content)
         self.assertIn("function hasManualCustomValue(selectEl) {", content)
         self.assertIn("if (sessions.length === 1 && !hasManualCustomValue(sel)) {", content)
@@ -258,6 +276,9 @@ class TestConverterWorkflowWiring(unittest.TestCase):
 
     def test_survey_converter_refreshes_project_bound_helpers(self):
         content = SURVEY_CONVERT_MODULE.read_text(encoding="utf-8")
+        workflow_prepare_content = SURVEY_WORKFLOW_PREPARE_MODULE.read_text(
+            encoding="utf-8"
+        )
 
         self.assertIn("let sourcedataRequestToken = 0;", content)
         self.assertIn("formData.append('project_path', currentProjectPath);", content)
@@ -299,11 +320,14 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "data = await parseJsonResponse(response, 'Survey preparation');",
-            content,
+            workflow_prepare_content,
         )
 
     def test_survey_converter_uses_structured_value_offset_editor(self):
         module_content = SURVEY_CONVERT_MODULE.read_text(encoding="utf-8")
+        workflow_prepare_content = SURVEY_WORKFLOW_PREPARE_MODULE.read_text(
+            encoding="utf-8"
+        )
         template_content = SURVEY_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn('id="convertValueOffsetsEditor"', template_content)
@@ -332,8 +356,65 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("valueOffsetSelectionsPending", module_content)
         self.assertIn(
             "if (Object.keys(multivariantTasks).length > 0 && !hasAppliedVersionWizardSelections()) {",
-            module_content,
+            workflow_prepare_content,
         )
+
+    def test_survey_participants_metadata_is_extracted_module(self):
+        survey_content = SURVEY_CONVERT_MODULE.read_text(encoding="utf-8")
+        participants_content = SURVEY_PARTICIPANTS_METADATA_MODULE.read_text(
+            encoding="utf-8"
+        )
+        workflow_prepare_content = SURVEY_WORKFLOW_PREPARE_MODULE.read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            "import { createSurveyParticipantsMetadataController } from './survey-participants-metadata.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "import { createSurveyWorkflowPrepareController } from './survey-workflow-prepare.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "const participantsMetadataController = createSurveyParticipantsMetadataController({",
+            survey_content,
+        )
+        self.assertIn(
+            "const surveyWorkflowPrepareController = createSurveyWorkflowPrepareController({",
+            survey_content,
+        )
+        self.assertIn(
+            "participantsMetadataController.displayParticipantMetadataSection(data);",
+            survey_content,
+        )
+        self.assertIn(
+            "surveyWorkflowPrepareController.prepareSurveyWorkflow({",
+            survey_content,
+        )
+        self.assertIn(
+            "surveyWorkflowPrepareController.finishPreparationPhase('convert', preparation.outcome);",
+            survey_content,
+        )
+        self.assertIn(
+            "surveyWorkflowPrepareController.finishPreparationPhase('preview', preparation.outcome);",
+            survey_content,
+        )
+
+        self.assertIn(
+            "export function createSurveyParticipantsMetadataController({ escapeHtml }) {",
+            participants_content,
+        )
+        self.assertIn("merge_survey_selected: true", participants_content)
+        self.assertIn("survey_selected_schema: schema", participants_content)
+
+        self.assertIn(
+            "export function createSurveyWorkflowPrepareController({",
+            workflow_prepare_content,
+        )
+        self.assertIn("fetch('/api/survey-prepare-workflow'", workflow_prepare_content)
+        self.assertIn("function finishPreparationPhase(mode, outcome)", workflow_prepare_content)
+        self.assertIn("function handleLateSetupBlocker(mode, payload, selectedValueOffsets = {})", workflow_prepare_content)
 
     def test_converter_modules_surface_backend_save_paths(self):
         biometrics_content = BIOMETRICS_MODULE.read_text(encoding="utf-8")

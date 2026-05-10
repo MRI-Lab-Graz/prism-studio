@@ -44,6 +44,44 @@ activate the environment and retry.
 
 ---
 
+## 0.5) `rtk` - repo toolkit wrapper
+
+`rtk` is a lightweight command wrapper for common project workflows.
+
+Examples:
+
+```bash
+# Setup and dependency bootstrap
+rtk setup --dev
+
+# Start Studio
+rtk studio
+
+# Run validator
+rtk validator /data/study-01 --bids
+
+# Use prism_tools commands
+rtk tools survey convert --help
+
+# Run tests
+rtk test -q
+
+# RTK-first git and GitHub CLI usage
+rtk git status
+rtk gh pr list
+```
+
+Available subcommands:
+- `setup`
+- `studio`
+- `validator` (aliases: `validate`, `prism`)
+- `tools` (alias: `prism-tools`)
+- `test`
+- `git`
+- `gh`
+
+---
+
 ## 1) `prism.py` — the dataset validator
 
 ### Purpose

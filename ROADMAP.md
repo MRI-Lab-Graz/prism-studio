@@ -1,5 +1,89 @@
 # PRISM Studio — Roadmap
 
+## Priority 1.35 — Survey converter workflow audit and backend command consolidation 🚧 IN PROGRESS
+
+Reduce survey converter complexity by auditing active workflow paths, flagging
+outdated/revisited parts, and moving workflow commands from frontend orchestration
+into backend contracts.
+
+**Workflow analysis completed (survey scope):**
+- Documented current survey flow and flagged stale/revisited paths in
+  `docs/SURVEY_CONVERTER_WORKFLOW_AUDIT_2026-05-09.md`.
+- Confirmed active converter entrypoint is `app/static/js/converter-bootstrap.js`
+  while legacy converter module paths still exist.
+- Identified backend endpoint split (`/api/survey-convert` zip-style legacy path
+  vs `/api/survey-convert-validate` JSON workflow path) as a consolidation target.
+
+**Started implementation (backend-first):**
+- Moved survey participants schema merge orchestration from frontend JS into
+  backend save contract:
+  - Added canonical backend helper in `src/participants_backend.py`.
+  - Added merge mode handling in
+    `app/src/web/blueprints/projects_participants_handlers.py`.
+  - Updated survey frontend save flow in
+    `app/static/js/modules/converter/survey-convert.js` to send
+    `merge_survey_selected` + `survey_selected_schema`.
+  - Added regression coverage in
+    `tests/test_projects_participants_handlers.py`.
+
+  **Phase 2 progress (entrypoint consolidation):**
+  - Updated converter aggregator wiring in
+    `app/static/js/modules/converter/index.js` to stop invoking legacy
+    `survey.js` quick-import initialization.
+  - Added idempotent bootstrap guards in
+    `app/static/js/converter-bootstrap.js` and converter aggregator wiring to
+    prevent duplicate handler binding if imported through multiple paths.
+  - Added wiring assertions in `tests/test_converter_workflow_wiring.py` to
+    enforce single bootstrap entrypoint expectations.
+
+  **Phase 3 progress (module extraction, no behavior change):**
+  - Extracted survey participant-metadata workflow from
+    `app/static/js/modules/converter/survey-convert.js` into new module
+    `app/static/js/modules/converter/survey-participants-metadata.js`.
+  - Kept `survey-convert.js` as orchestrator and wired it to the extracted
+    controller (`createSurveyParticipantsMetadataController`).
+  - Extracted survey setup preparation orchestration into
+    `app/static/js/modules/converter/survey-workflow-prepare.js` and wired
+    `survey-convert.js` to delegate setup/late-blocker/finalization flows through
+    `createSurveyWorkflowPrepareController`.
+  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` to assert
+    extracted module wiring and backend merge payload contract.
+
+**Next steps:**
+- Consolidate converter survey entrypoints and remove unreachable legacy survey
+  quick-import module paths.
+- Split monolithic survey converter frontend into workflow-step modules
+  (prepare, preview, convert, participant-metadata).
+- Introduce one backend workflow command endpoint for preview/convert state
+  transitions so the frontend becomes a thin state renderer.
+
+**Lessons learned:**
+- Backend-first merge contracts reduce frontend state drift and avoid duplicate
+  merge logic in browser code.
+- Survey workflow complexity now comes more from feature accretion than missing
+  capability; incremental extraction with strict backend ownership is safer than
+  a rewrite.
+
+## Priority 1.34 — RTK command wrapper for repo workflows ✅ DONE
+
+Add a first-class `rtk` command so contributors can run PRISM, git, and gh
+workflows with one consistent entrypoint.
+
+**What was done:**
+- Added a new root launcher script `rtk` with cross-platform dispatch for
+  setup, Studio, validator, tools, tests, git, and GitHub CLI passthrough.
+- Registered `rtk` in `setup.py` script installation so editable installs expose
+  the command in `.venv/bin`.
+- Documented RTK usage in `README.md` and `docs/CLI_REFERENCE.md`.
+- Added CLI coverage in `tests/test_rtk_cli.py` for help output, validator/tools
+  forwarding, and git passthrough.
+
+**Lessons learned:**
+- A small repo-level wrapper is a low-risk way to standardize developer command
+  habits without changing backend business logic.
+- Installing wrapper scripts through `setup.py` keeps onboarding friction low:
+  setup creates one place to discover commands.
+
 ## Priority 1.33 — Survey review signal and compact version selector ✅ DONE
 
 Improve survey conversion ergonomics by making out-of-range diagnostics more
