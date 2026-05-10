@@ -11,6 +11,16 @@ import { createSurveyWorkflowPrepareController } from './survey-workflow-prepare
 import { createSurveyWorkflowConvertController } from './survey-workflow-convert.js';
 import { createSurveyWorkflowProgressController } from './survey-workflow-progress.js';
 import { createSurveySourcedataQuickSelectController } from './survey-sourcedata-quick-select.js';
+import { createSurveyTemplateResultsController } from './survey-template-results.js';
+import { createSurveyValueOffsetEditorController } from './survey-value-offset-editor.js';
+import {
+    collectSuggestedValueOffsets,
+    formatOffsetMagnitude,
+    formatSignedOffset,
+    normalizeTaskValueOffsets as normalizeTaskValueOffsetsMap,
+    parseNumericOffsetValue,
+    parseTaskValueOffsetsText as parseTaskValueOffsetsTextWithNormalizer,
+} from './survey-value-offset-utils.js';
 import { createSurveyWorkflowTemplateCheckController } from './survey-workflow-template-check.js';
 import { createSurveyWorkflowPreviewController } from './survey-workflow-preview.js';
 
@@ -769,67 +779,12 @@ export function initSurveyConvert(elements) {
         });
     }
 
-    function parseNumericOffsetValue(rawValue) {
-        if (rawValue === null || rawValue === undefined) {
-            return null;
-        }
-        const normalized = String(rawValue).trim().replace(',', '.');
-        if (!normalized) {
-            return null;
-        }
-        const parsed = Number(normalized);
-        if (!Number.isFinite(parsed)) {
-            return null;
-        }
-        return parsed;
-    }
-
-    function formatSignedOffset(offset) {
-        const numeric = Number(offset);
-        if (!Number.isFinite(numeric)) {
-            return String(offset);
-        }
-        const rounded = Number.isInteger(numeric)
-            ? String(numeric)
-            : numeric.toFixed(6).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
-        return `${numeric >= 0 ? '+' : ''}${rounded}`;
-    }
-
-    function formatOffsetMagnitude(offset) {
-        const numeric = Math.abs(Number(offset));
-        if (!Number.isFinite(numeric)) {
-            return '';
-        }
-        return Number.isInteger(numeric)
-            ? String(numeric)
-            : numeric.toFixed(6).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
-    }
-
     function normalizeTaskValueOffsets(offsetMap) {
-        if (!offsetMap || typeof offsetMap !== 'object') {
-            return {};
-        }
-        const normalized = {};
-        Object.entries(offsetMap).forEach(([rawTask, rawOffset]) => {
-            const task = normalizeNearMatchTaskName(rawTask);
-            const parsedOffset = parseNumericOffsetValue(rawOffset);
-            if (!task || parsedOffset === null) {
-                return;
-            }
-            normalized[task] = parsedOffset;
-        });
-        return normalized;
+        return normalizeTaskValueOffsetsMap(offsetMap, normalizeNearMatchTaskName);
     }
 
     function createTaskValueOffsetRow(task = '', offset = null) {
-        const normalizedTask = normalizeSurveyTaskName(task);
-        const parsedOffset = parseNumericOffsetValue(offset);
-        return {
-            id: ++taskValueOffsetRowSequence,
-            task: normalizedTask,
-            operator: parsedOffset !== null && parsedOffset < 0 ? '-' : '+',
-            magnitude: parsedOffset !== null ? formatOffsetMagnitude(parsedOffset) : ''
-        };
+        return surveyValueOffsetEditorController.createTaskValueOffsetRow(task, offset);
     }
 
     function getAvailableSurveyTasksForValueOffsets() {
@@ -857,340 +812,63 @@ export function initSurveyConvert(elements) {
     }
 
     function getTaskValueOffsetMapFromEditorState() {
-        const normalized = {};
-        taskValueOffsetEditorState.forEach((entry) => {
-            const task = normalizeSurveyTaskName(entry && entry.task);
-            const magnitude = parseNumericOffsetValue(entry && entry.magnitude);
-            if (!task || magnitude === null) {
-                return;
-            }
-            normalized[task] = entry && entry.operator === '-'
-                ? -Math.abs(magnitude)
-                : Math.abs(magnitude);
-        });
-        return normalized;
+        return surveyValueOffsetEditorController.getTaskValueOffsetMapFromEditorState();
     }
 
     function getCurrentTaskValueOffsetSelectionSignature() {
-        const offsets = Object.entries(getTaskValueOffsetMapFromEditorState())
-            .map(([task, offset]) => [normalizeSurveyTaskName(task), Number(offset)])
-            .filter(([task, offset]) => task && Number.isFinite(offset))
-            .sort((left, right) => String(left[0]).localeCompare(String(right[0])));
-        if (offsets.length === 0) {
-            return '';
-        }
-        return JSON.stringify(offsets);
+        return surveyValueOffsetEditorController.getCurrentTaskValueOffsetSelectionSignature();
     }
 
     function hasManualTaskValueOffsets() {
-        return Object.keys(getTaskValueOffsetMapFromEditorState()).length > 0;
+        return surveyValueOffsetEditorController.hasManualTaskValueOffsets();
     }
 
     function hasIncompleteTaskValueOffsetRows() {
-        return taskValueOffsetEditorState.some((entry) => {
-            const task = normalizeSurveyTaskName(entry && entry.task);
-            const magnitudeRaw = String(entry && entry.magnitude ? entry.magnitude : '').trim();
-            const parsedMagnitude = parseNumericOffsetValue(magnitudeRaw);
-            return (Boolean(task) || Boolean(magnitudeRaw)) && (!task || parsedMagnitude === null);
-        });
+        return surveyValueOffsetEditorController.hasIncompleteTaskValueOffsetRows();
     }
 
     function hasAppliedTaskValueOffsetSelections() {
-        if (!hasManualTaskValueOffsets()) {
-            return true;
-        }
-        const currentSignature = getCurrentTaskValueOffsetSelectionSignature();
-        return Boolean(
-            currentSignature
-            && appliedTaskValueOffsetSelectionSignature
-            && currentSignature === appliedTaskValueOffsetSelectionSignature
-        );
+        return surveyValueOffsetEditorController.hasAppliedTaskValueOffsetSelections();
     }
 
     function updateTaskValueOffsetApplyState() {
-        const enabled = isAdvancedOptionsEnabled();
-        const hasRows = taskValueOffsetEditorState.length > 0;
-        const hasIncompleteRows = hasIncompleteTaskValueOffsetRows();
-        const hasManualOffsets = hasManualTaskValueOffsets();
-        const hasAppliedOffsets = hasAppliedTaskValueOffsetSelections();
-
-        if (convertApplyValueOffsetsBtn) {
-            convertApplyValueOffsetsBtn.disabled = !enabled || !hasRows || isConvertRunning || isPreviewRunning;
-            convertApplyValueOffsetsBtn.classList.remove('btn-outline-primary', 'btn-success');
-            convertApplyValueOffsetsBtn.classList.add(hasManualOffsets && hasAppliedOffsets ? 'btn-success' : 'btn-outline-primary');
-            convertApplyValueOffsetsBtn.innerHTML = hasManualOffsets && hasAppliedOffsets
-                ? '<i class="fas fa-check me-1"></i>Offsets applied'
-                : '<i class="fas fa-list-check me-1"></i>Apply offsets';
-
-            if (!enabled) {
-                convertApplyValueOffsetsBtn.title = 'Enable advanced options to configure manual offsets.';
-            } else if (!hasRows) {
-                convertApplyValueOffsetsBtn.title = 'Add at least one task offset row first.';
-            } else if (hasIncompleteRows) {
-                convertApplyValueOffsetsBtn.title = 'Complete each offset row with a task and numeric value, then click Apply offsets.';
-            } else if (isConvertRunning || isPreviewRunning) {
-                convertApplyValueOffsetsBtn.title = 'Wait for the current run to finish.';
-            } else if (hasAppliedOffsets) {
-                convertApplyValueOffsetsBtn.title = 'Offsets are applied. Run Preview to validate with these settings.';
-            } else {
-                convertApplyValueOffsetsBtn.title = 'Apply these offsets, then rerun Preview.';
-            }
-        }
-
-        if (convertValueOffsetsStatus) {
-            convertValueOffsetsStatus.classList.toggle('d-none', !enabled);
-            convertValueOffsetsStatus.classList.remove('text-muted', 'text-success', 'text-warning');
-            if (!enabled) {
-                convertValueOffsetsStatus.textContent = '';
-            } else if (!hasRows) {
-                convertValueOffsetsStatus.classList.add('text-muted');
-                convertValueOffsetsStatus.textContent = 'No manual offsets configured.';
-            } else if (hasIncompleteRows) {
-                convertValueOffsetsStatus.classList.add('text-warning');
-                convertValueOffsetsStatus.textContent = 'Complete each row with a task and numeric value, then click Apply offsets.';
-            } else if (hasAppliedOffsets) {
-                convertValueOffsetsStatus.classList.add('text-success');
-                convertValueOffsetsStatus.textContent = 'Offsets applied. Run Preview to validate the current scale settings.';
-            } else {
-                convertValueOffsetsStatus.classList.add('text-warning');
-                convertValueOffsetsStatus.textContent = 'Offsets changed. Click Apply offsets, then run Preview again.';
-            }
-        }
+        surveyValueOffsetEditorController.updateTaskValueOffsetApplyState();
     }
 
     function getPreferredTaskValueOffsetTask() {
-        const availableTasks = getAvailableSurveyTasksForValueOffsets();
-        if (availableTasks.length === 0) {
-            return '';
-        }
-
-        const usedTasks = new Set(
-            taskValueOffsetEditorState
-                .map((entry) => normalizeSurveyTaskName(entry && entry.task))
-                .filter(Boolean)
-        );
-        return availableTasks.find((task) => !usedTasks.has(task)) || availableTasks[0] || '';
+        return surveyValueOffsetEditorController.getPreferredTaskValueOffsetTask();
     }
 
     function syncTaskValueOffsetTextFromState() {
-        if (!convertValueOffsets) {
-            return;
-        }
-        const offsetMap = getTaskValueOffsetMapFromEditorState();
-        convertValueOffsets.value = Object.entries(offsetMap)
-            .map(([task, offset]) => `${task} = ${formatSignedOffset(offset)}`)
-            .join('\n');
+        surveyValueOffsetEditorController.syncTaskValueOffsetTextFromState();
     }
 
     function setTaskValueOffsetEditorStateFromText(rawText) {
-        let parsed = {};
-        try {
-            parsed = parseTaskValueOffsetsText(rawText);
-        } catch (error) {
-            console.warn('Could not parse seeded task value offsets:', error);
-        }
-
-        taskValueOffsetEditorState = Object.entries(normalizeTaskValueOffsets(parsed))
-            .map(([task, offset]) => createTaskValueOffsetRow(task, offset));
-        renderTaskValueOffsetEditor();
-        syncTaskValueOffsetTextFromState();
-        updateTaskValueOffsetApplyState();
+        surveyValueOffsetEditorController.setTaskValueOffsetEditorStateFromText(rawText);
     }
 
     function clearTaskValueOffsetEditorState() {
-        taskValueOffsetEditorState = [];
-        appliedTaskValueOffsetSelectionSignature = '';
-        renderTaskValueOffsetEditor();
-        syncTaskValueOffsetTextFromState();
-        updateTaskValueOffsetApplyState();
+        surveyValueOffsetEditorController.clearTaskValueOffsetEditorState();
     }
 
     function ensureTaskValueOffsetEditorRow(task = '') {
-        const normalizedTask = normalizeSurveyTaskName(task);
-        if (normalizedTask) {
-            const existing = taskValueOffsetEditorState.find((entry) => normalizeSurveyTaskName(entry && entry.task) === normalizedTask);
-            if (existing) {
-                return existing.id;
-            }
-        }
-
-        const defaultTask = normalizedTask || getPreferredTaskValueOffsetTask();
-        const nextRow = createTaskValueOffsetRow(defaultTask);
-        taskValueOffsetEditorState.push(nextRow);
-        renderTaskValueOffsetEditor();
-        syncTaskValueOffsetTextFromState();
-        return nextRow.id;
+        return surveyValueOffsetEditorController.ensureTaskValueOffsetEditorRow(task);
     }
 
     function focusTaskValueOffsetEditor(rowId = null) {
-        const focusRoot = rowId && convertValueOffsetRows
-            ? convertValueOffsetRows.querySelector(`[data-offset-row-id="${rowId}"]`)
-            : convertValueOffsetsEditor;
-        const target = focusRoot && typeof focusRoot.querySelector === 'function'
-            ? focusRoot.querySelector('[data-role="task"]:not([disabled]), [data-role="magnitude"]:not([disabled])')
-            : null;
-
-        if (convertValueOffsetsEditor && typeof convertValueOffsetsEditor.scrollIntoView === 'function') {
-            convertValueOffsetsEditor.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-
-        if (target && typeof target.focus === 'function') {
-            target.focus();
-            return;
-        }
-
-        if (convertAddValueOffsetRowBtn && typeof convertAddValueOffsetRowBtn.focus === 'function') {
-            convertAddValueOffsetRowBtn.focus();
-            return;
-        }
-
-        convertValueOffsets?.focus();
+        surveyValueOffsetEditorController.focusTaskValueOffsetEditor(rowId);
     }
 
     function renderTaskValueOffsetEditor() {
-        if (!convertValueOffsetRows) {
-            return;
-        }
-
-        const enabled = isAdvancedOptionsEnabled();
-        const availableTasks = getAvailableSurveyTasksForValueOffsets();
-
-        if (enabled && taskValueOffsetEditorState.length === 0 && availableTasks.length > 0) {
-            taskValueOffsetEditorState = [createTaskValueOffsetRow(getPreferredTaskValueOffsetTask())];
-        }
-
-        if (convertValueOffsetsKnownTasks) {
-            convertValueOffsetsKnownTasks.textContent = availableTasks.length > 0
-                ? `Available tasks: ${availableTasks.join(', ')}`
-                : 'Run Preview to populate available survey tasks.';
-        }
-
-        if (convertAddValueOffsetRowBtn) {
-            convertAddValueOffsetRowBtn.disabled = !enabled || availableTasks.length === 0;
-        }
-
-        if (convertValueOffsetsEditor) {
-            convertValueOffsetsEditor.classList.toggle('opacity-75', !enabled);
-        }
-
-        if (taskValueOffsetEditorState.length === 0) {
-            convertValueOffsetRows.innerHTML = '';
-            if (convertValueOffsetsEmptyState) {
-                convertValueOffsetsEmptyState.textContent = availableTasks.length > 0
-                    ? 'No offset rows configured yet.'
-                    : 'Run Preview to populate available survey tasks.';
-                convertValueOffsetsEmptyState.classList.remove('d-none');
-            }
-            return;
-        }
-
-        if (convertValueOffsetsEmptyState) {
-            convertValueOffsetsEmptyState.classList.add('d-none');
-        }
-
-        const rowsHtml = taskValueOffsetEditorState.map((entry) => {
-            const optionTasks = [];
-            const seenTasks = new Set();
-            const pushTask = (value) => {
-                const task = normalizeSurveyTaskName(value);
-                if (!task || seenTasks.has(task)) {
-                    return;
-                }
-                seenTasks.add(task);
-                optionTasks.push(task);
-            };
-
-            pushTask(entry && entry.task);
-            availableTasks.forEach(pushTask);
-
-            const taskOptionsHtml = optionTasks.length > 0
-                ? [
-                    '<option value="">Choose survey task</option>',
-                    ...optionTasks.map((task) => {
-                        const selected = normalizeSurveyTaskName(entry && entry.task) === task ? ' selected' : '';
-                        return `<option value="${escapeHtml(task)}"${selected}>${escapeHtml(task)}</option>`;
-                    })
-                ].join('')
-                : '<option value="">Run Preview to populate tasks</option>';
-
-            const operator = entry && entry.operator === '-' ? '-' : '+';
-            const magnitude = entry && entry.magnitude ? escapeHtml(String(entry.magnitude)) : '';
-
-            return `
-                <div class="row g-2 align-items-end" data-offset-row-id="${entry.id}">
-                    <div class="col-md-6">
-                        <label class="form-label small mb-1" for="convertValueOffsetTask-${entry.id}">Task</label>
-                        <select
-                            class="form-select form-select-sm"
-                            id="convertValueOffsetTask-${entry.id}"
-                            data-role="task"
-                            ${!enabled ? 'disabled' : ''}
-                        >
-                            ${taskOptionsHtml}
-                        </select>
-                    </div>
-                    <div class="col-md-2 col-lg-2">
-                        <label class="form-label small mb-1" for="convertValueOffsetOperator-${entry.id}">Operator</label>
-                        <select
-                            class="form-select form-select-sm"
-                            id="convertValueOffsetOperator-${entry.id}"
-                            data-role="operator"
-                            ${!enabled ? 'disabled' : ''}
-                        >
-                            <option value="+" ${operator === '+' ? 'selected' : ''}>+</option>
-                            <option value="-" ${operator === '-' ? 'selected' : ''}>-</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 col-lg-3">
-                        <label class="form-label small mb-1" for="convertValueOffsetMagnitude-${entry.id}">Value</label>
-                        <input
-                            type="number"
-                            min="0"
-                            step="any"
-                            class="form-control form-control-sm"
-                            id="convertValueOffsetMagnitude-${entry.id}"
-                            data-role="magnitude"
-                            placeholder="e.g. 1"
-                            value="${magnitude}"
-                            ${!enabled ? 'disabled' : ''}
-                        />
-                    </div>
-                    <div class="col-md-1 col-lg-1 d-grid">
-                        <button
-                            type="button"
-                            class="btn btn-outline-secondary btn-sm"
-                            data-role="remove"
-                            aria-label="Remove task value offset row"
-                            ${!enabled ? 'disabled' : ''}
-                        >
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        convertValueOffsetRows.innerHTML = rowsHtml;
-        updateTaskValueOffsetApplyState();
+        return surveyValueOffsetEditorController.renderTaskValueOffsetEditor();
     }
 
     function handleTaskValueOffsetEditorChanged() {
-        clearManualValueOffsetAdvice();
-        convertError?.classList.add('d-none');
-        if (convertError) {
-            convertError.textContent = '';
-        }
-        syncTaskValueOffsetTextFromState();
-        updateTaskValueOffsetApplyState();
-        updateConvertBtn();
+        surveyValueOffsetEditorController.handleTaskValueOffsetEditorChanged();
     }
 
     function clearManualValueOffsetAdvice() {
-        if (!convertValueOffsetAdvice) {
-            return;
-        }
-        convertValueOffsetAdvice.classList.add('d-none');
-        convertValueOffsetAdvice.textContent = '';
+        surveyValueOffsetEditorController.clearManualValueOffsetAdvice();
     }
 
     function ensureSurveyAdvancedOptionsVisible() {
@@ -1216,36 +894,7 @@ export function initSurveyConvert(elements) {
     }
 
     function parseTaskValueOffsetsText(rawText) {
-        const normalized = {};
-        const lines = String(rawText || '').split(/\r?\n/);
-
-        lines.forEach((rawLine, index) => {
-            const line = String(rawLine || '').trim();
-            if (!line || line.startsWith('#')) {
-                return;
-            }
-
-            const match = line.match(/^([^:=]+?)\s*[:=]\s*(.+)$/);
-            if (!match) {
-                throw new Error(`Invalid task value offset on line ${index + 1}. Use "task = offset".`);
-            }
-
-            const task = normalizeNearMatchTaskName(match[1]);
-            const offset = parseNumericOffsetValue(match[2]);
-            if (!task) {
-                throw new Error(`Missing task name on line ${index + 1}.`);
-            }
-            if (task === '*') {
-                throw new Error('Use a specific survey task name for manual offsets. Wildcard offsets are disabled in Advanced options.');
-            }
-            if (offset === null) {
-                throw new Error(`Invalid numeric offset on line ${index + 1}.`);
-            }
-
-            normalized[task] = offset;
-        });
-
-        return normalized;
+        return parseTaskValueOffsetsTextWithNormalizer(rawText, normalizeNearMatchTaskName);
     }
 
     function getManualTaskValueOffsets() {
@@ -1532,27 +1181,6 @@ export function initSurveyConvert(elements) {
         setTemplateEditorErrorCtaVisible(Boolean(templateWorkflowGate && templateWorkflowGate.blocked));
 
         return multivariantTasks;
-    }
-
-    function collectSuggestedValueOffsets(payload) {
-        if (!Array.isArray(payload && payload.suggested_offsets)) {
-            return [];
-        }
-        const deduped = [];
-        const seen = new Set();
-        payload.suggested_offsets.forEach((entry) => {
-            const parsed = parseNumericOffsetValue(entry);
-            if (parsed === null) {
-                return;
-            }
-            const key = parsed.toFixed(6);
-            if (seen.has(key)) {
-                return;
-            }
-            seen.add(key);
-            deduped.push(parsed);
-        });
-        return deduped;
     }
 
     function prefersServerPicker() {
@@ -2232,139 +1860,47 @@ export function initSurveyConvert(elements) {
         return Boolean(convertAdvancedToggle && convertAdvancedToggle.checked);
     }
 
+    const surveyValueOffsetEditorController = createSurveyValueOffsetEditorController({
+        convertAdvancedToggle,
+        convertDatasetName,
+        convertLanguage,
+        convertIdMapFile,
+        clearIdMapFileBtn,
+        convertValueOffsets,
+        convertValueOffsetsEditor,
+        convertValueOffsetRows,
+        convertAddValueOffsetRowBtn,
+        convertApplyValueOffsetsBtn,
+        convertValueOffsetsKnownTasks,
+        convertValueOffsetsEmptyState,
+        convertValueOffsetsStatus,
+        convertValueOffsetAdvice,
+        convertError,
+        isAdvancedOptionsEnabled,
+        getIsConvertRunning: () => isConvertRunning,
+        getIsPreviewRunning: () => isPreviewRunning,
+        getAppliedTaskValueOffsetSelectionSignature: () => appliedTaskValueOffsetSelectionSignature,
+        setAppliedTaskValueOffsetSelectionSignature: (value) => {
+            appliedTaskValueOffsetSelectionSignature = value;
+        },
+        updateConvertBtn,
+        getNextTaskValueOffsetRowId: () => ++taskValueOffsetRowSequence,
+        getAvailableSurveyTasksForValueOffsets,
+        getTaskValueOffsetEditorState: () => taskValueOffsetEditorState,
+        setTaskValueOffsetEditorState: (nextState) => {
+            taskValueOffsetEditorState = Array.isArray(nextState) ? nextState : [];
+        },
+        normalizeSurveyTaskName,
+        parseTaskValueOffsetsText,
+        normalizeTaskValueOffsets,
+        parseNumericOffsetValue,
+        formatOffsetMagnitude,
+        formatSignedOffset,
+        escapeHtml,
+    });
+
     function applyAdvancedOptionsState() {
-        const enabled = isAdvancedOptionsEnabled();
-
-        if (convertDatasetName) {
-            convertDatasetName.disabled = !enabled;
-            if (!enabled) convertDatasetName.value = '';
-        }
-
-        if (convertLanguage) {
-            convertLanguage.disabled = !enabled;
-            if (!enabled) convertLanguage.value = 'auto';
-        }
-
-        if (convertIdMapFile) {
-            convertIdMapFile.disabled = !enabled;
-            if (!enabled) {
-                convertIdMapFile.value = '';
-                clearIdMapFileBtn?.classList.add('d-none');
-            }
-        }
-
-        if (convertValueOffsets) {
-            convertValueOffsets.disabled = !enabled;
-            if (!enabled) {
-                convertValueOffsets.value = '';
-                clearTaskValueOffsetEditorState();
-                clearManualValueOffsetAdvice();
-                appliedTaskValueOffsetSelectionSignature = '';
-            } else {
-                renderTaskValueOffsetEditor();
-                syncTaskValueOffsetTextFromState();
-            }
-        }
-
-        if (clearIdMapFileBtn) {
-            clearIdMapFileBtn.disabled = !enabled;
-        }
-
-        updateTaskValueOffsetApplyState();
-        updateConvertBtn();
-    }
-
-    if (convertAdvancedToggle) {
-        convertAdvancedToggle.addEventListener('change', applyAdvancedOptionsState);
-    }
-
-    if (convertValueOffsets) {
-        convertValueOffsets.addEventListener('input', () => {
-            clearManualValueOffsetAdvice();
-            convertError?.classList.add('d-none');
-            convertError.textContent = '';
-            updateTaskValueOffsetApplyState();
-            updateConvertBtn();
-        });
-    }
-
-    if (convertAddValueOffsetRowBtn) {
-        convertAddValueOffsetRowBtn.addEventListener('click', () => {
-            const rowId = ensureTaskValueOffsetEditorRow();
-            handleTaskValueOffsetEditorChanged();
-            focusTaskValueOffsetEditor(rowId);
-        });
-    }
-
-    if (convertValueOffsetRows) {
-        const getRowIdFromTarget = (target) => {
-            const row = target && typeof target.closest === 'function'
-                ? target.closest('[data-offset-row-id]')
-                : null;
-            return row ? Number(row.getAttribute('data-offset-row-id')) : null;
-        };
-
-        const getRowState = (rowId) => taskValueOffsetEditorState.find((entry) => entry.id === rowId) || null;
-
-        convertValueOffsetRows.addEventListener('change', (event) => {
-            const target = event.target;
-            const role = target && target.getAttribute ? target.getAttribute('data-role') : '';
-            const rowId = getRowIdFromTarget(target);
-            const rowState = rowId !== null ? getRowState(rowId) : null;
-            if (!rowState) {
-                return;
-            }
-
-            if (role === 'task') {
-                rowState.task = normalizeSurveyTaskName(target.value);
-                handleTaskValueOffsetEditorChanged();
-                return;
-            }
-
-            if (role === 'operator') {
-                rowState.operator = target.value === '-' ? '-' : '+';
-                handleTaskValueOffsetEditorChanged();
-            }
-        });
-
-        convertValueOffsetRows.addEventListener('input', (event) => {
-            const target = event.target;
-            const role = target && target.getAttribute ? target.getAttribute('data-role') : '';
-            if (role !== 'magnitude') {
-                return;
-            }
-
-            const rowId = getRowIdFromTarget(target);
-            const rowState = rowId !== null ? getRowState(rowId) : null;
-            if (!rowState) {
-                return;
-            }
-
-            const rawValue = String(target.value || '').trim();
-            const parsedValue = parseNumericOffsetValue(rawValue);
-            rowState.magnitude = rawValue && parsedValue !== null
-                ? formatOffsetMagnitude(parsedValue)
-                : rawValue;
-            handleTaskValueOffsetEditorChanged();
-        });
-
-        convertValueOffsetRows.addEventListener('click', (event) => {
-            const target = event.target && typeof event.target.closest === 'function'
-                ? event.target.closest('[data-role="remove"]')
-                : null;
-            if (!target) {
-                return;
-            }
-
-            const rowId = getRowIdFromTarget(target);
-            if (rowId === null) {
-                return;
-            }
-
-            taskValueOffsetEditorState = taskValueOffsetEditorState.filter((entry) => entry.id !== rowId);
-            renderTaskValueOffsetEditor();
-            handleTaskValueOffsetEditorChanged();
-        });
+        surveyValueOffsetEditorController.applyAdvancedOptionsState();
     }
 
     if (convertDatasetName) {
@@ -2379,7 +1915,7 @@ export function initSurveyConvert(elements) {
         });
     }
 
-    setTaskValueOffsetEditorStateFromText(convertValueOffsets ? convertValueOffsets.value : '');
+    surveyValueOffsetEditorController.initialize();
 
     // ID Map file handlers
     if (convertIdMapFile) {
@@ -2406,8 +1942,6 @@ export function initSurveyConvert(elements) {
 
         updateIdMapClearButtonState();
     }
-
-    applyAdvancedOptionsState();
 
     // Library path browser
     if (convertBrowseLibraryBtn && convertLibraryPathInput) {
@@ -4172,6 +3706,10 @@ export function initSurveyConvert(elements) {
         },
     });
 
+    const surveyTemplateResultsController = createSurveyTemplateResultsController({
+        escapeHtml,
+    });
+
     // ===== TEMPLATE GENERATION =====
 
     async function handleTemplateGeneration(file) {
@@ -4225,11 +3763,11 @@ export function initSurveyConvert(elements) {
 
             // Display results based on mode
             if (data.mode === 'combined') {
-                displayTemplateSingle(data);
+                surveyTemplateResultsController.displayTemplateSingle(data);
             } else if (data.mode === 'groups') {
-                displayTemplateGroups(data);
+                surveyTemplateResultsController.displayTemplateGroups(data);
             } else if (data.mode === 'questions') {
-                displayTemplateQuestions(data);
+                surveyTemplateResultsController.displayTemplateQuestions(data);
             }
 
             // Show participant metadata section for marking fields
@@ -4245,477 +3783,6 @@ export function initSurveyConvert(elements) {
         } finally {
             updateConvertBtn();
         }
-    }
-
-    function displayTemplateSingle(data) {
-        const container = document.getElementById('templateResultSingle');
-        if (!container) return;
-
-        container.classList.remove('d-none');
-        document.getElementById('templateQuestionCount').textContent = `${data.question_count} questions`;
-
-        // Show template match info if available
-        const matchContainer = document.getElementById('templateSingleMatch');
-        if (matchContainer) matchContainer.remove();
-        const m = data.template_match;
-        if (m) {
-            const badgeClass = {exact: 'bg-success', high: 'bg-success', medium: 'bg-warning text-dark', low: 'bg-secondary'}[m.confidence] || 'bg-secondary';
-            const icon = {exact: 'fa-check-circle', high: 'fa-check', medium: 'fa-question-circle', low: 'fa-minus-circle'}[m.confidence] || 'fa-circle';
-            const actionLabel = {use_library: 'Use library template instead', review: 'Review differences', create_new: 'Create new template'}[m.suggested_action] || '';
-            const details = [];
-            if (m.overlap_count !==undefined) details.push(`${m.overlap_count}/${m.template_items} items match`);
-            if (m.levels_match === true) details.push('levels verified');
-            const matchDiv = document.createElement('div');
-            matchDiv.id = 'templateSingleMatch';
-            matchDiv.className = 'alert alert-info py-2 mt-2 mb-0';
-            const srcLabel = m.source === 'project' ? 'project template' : 'library template';
-            const srcIcon = m.source === 'project' ? 'fa-folder' : 'fa-globe';
-            const leadIcon = document.createElement('i');
-            leadIcon.className = `fas ${icon} me-1`;
-            matchDiv.appendChild(leadIcon);
-
-            const confidenceBadge = document.createElement('span');
-            confidenceBadge.className = `badge ${badgeClass} me-2`;
-            confidenceBadge.textContent = m.confidence || 'unknown';
-            matchDiv.appendChild(confidenceBadge);
-
-            matchDiv.appendChild(document.createTextNode(`Matches ${srcLabel}: `));
-            const strong = document.createElement('strong');
-            strong.textContent = m.template_key || '';
-            matchDiv.appendChild(strong);
-            matchDiv.appendChild(document.createTextNode(' '));
-
-            const sourceBadge = document.createElement('span');
-            sourceBadge.className = 'badge bg-light text-dark border ms-1';
-            const sourceBadgeIcon = document.createElement('i');
-            sourceBadgeIcon.className = `fas ${srcIcon} me-1`;
-            sourceBadge.appendChild(sourceBadgeIcon);
-            sourceBadge.appendChild(document.createTextNode(m.source === 'project' ? 'project' : 'library'));
-            matchDiv.appendChild(sourceBadge);
-
-            const detailText = details.join(', ');
-            if (detailText) {
-                matchDiv.appendChild(document.createTextNode(` (${detailText})`));
-            }
-            if (actionLabel) {
-                matchDiv.appendChild(document.createTextNode(' — '));
-                const em = document.createElement('em');
-                em.textContent = actionLabel;
-                matchDiv.appendChild(em);
-            }
-            container.querySelector('.alert')?.after(matchDiv);
-        } else if (m === null) {
-            const matchDiv = document.createElement('div');
-            matchDiv.id = 'templateSingleMatch';
-            matchDiv.className = 'alert alert-light py-2 mt-2 mb-0 border';
-            const iconEl = document.createElement('i');
-            iconEl.className = 'fas fa-plus-circle me-1';
-            matchDiv.appendChild(iconEl);
-            matchDiv.appendChild(document.createTextNode('No matching library template found — this will be a new template.'));
-            container.querySelector('.alert')?.after(matchDiv);
-        }
-
-        // Setup preview button
-        const previewBtn = document.getElementById('templatePreviewBtn');
-        const previewDiv = document.getElementById('templatePreview');
-        const previewContent = document.getElementById('templatePreviewContent');
-
-        if (previewBtn && previewDiv && previewContent) {
-            previewBtn.onclick = () => {
-                previewDiv.classList.toggle('d-none');
-                previewContent.textContent = JSON.stringify(data.prism_json, null, 2);
-            };
-        }
-
-        // Setup download button
-        const downloadBtn = document.getElementById('templateDownloadBtn');
-        if (downloadBtn) {
-            downloadBtn.onclick = () => {
-                const blob = new Blob([JSON.stringify(data.prism_json, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = data.suggested_filename || 'survey-template.json';
-                a.click();
-                URL.revokeObjectURL(url);
-            };
-        }
-    }
-
-    function displayTemplateGroups(data) {
-        const container = document.getElementById('templateResultGroups');
-        if (!container) return;
-
-        container.classList.remove('d-none');
-        document.getElementById('templateGroupCount').textContent = `${data.questionnaire_count} groups`;
-        document.getElementById('templateTotalQuestions').textContent = `${data.total_questions} questions`;
-
-        const listEl = document.getElementById('templateGroupList');
-        if (listEl) {
-            listEl.innerHTML = '';
-            for (const [name, info] of Object.entries(data.questionnaires || {})) {
-                const card = document.createElement('div');
-                card.className = 'col-md-4';
-
-                // Build template match badge if available
-                let matchHtml = '';
-                const m = info.template_match;
-                if (m) {
-                    const badgeClass = {
-                        exact: 'bg-success',
-                        high: 'bg-success',
-                        medium: 'bg-warning text-dark',
-                        low: 'bg-secondary'
-                    }[m.confidence] || 'bg-secondary';
-                    const icon = {
-                        exact: 'fa-check-circle',
-                        high: 'fa-check',
-                        medium: 'fa-question-circle',
-                        low: 'fa-minus-circle'
-                    }[m.confidence] || 'fa-circle';
-                    const details = [];
-                    if (m.overlap_count !== undefined) details.push(`${m.overlap_count}/${m.template_items} items`);
-                    if (m.levels_match === true) details.push('levels verified');
-                    if (m.runs_detected > 1) details.push(`${m.runs_detected} runs`);
-                    const detailStr = details.length ? details.join(', ') : '';
-                    const diffParts = [];
-                    if (m.only_in_import && m.only_in_import.length) diffParts.push(`+${m.only_in_import.length} extra`);
-                    if (m.only_in_library && m.only_in_library.length) diffParts.push(`${m.only_in_library.length} missing`);
-                    const diffHtml = diffParts.length
-                        ? `<small class="d-block text-muted" style="font-size:0.7rem">${diffParts.join(', ')}</small>`
-                        : '';
-                    // Show "Use Library" button for exact/high matches (but not for participants matches)
-                    const sourceLabel = m.source === 'project' ? 'project' : 'library';
-                    const sourceIcon = m.source === 'project' ? 'fa-folder' : 'fa-globe';
-                    const safeName = escapeHtml(name || '');
-                    const safeTemplateKey = escapeHtml(m.template_key || '');
-                    const safeDetailStr = escapeHtml(detailStr);
-                    const safeSourceLabel = escapeHtml(sourceLabel);
-                    const safeConfidence = escapeHtml(m.confidence || 'unknown');
-                    // Don't show "Use library version" for participants matches - there's no participants template in the library
-                    const useLibBtn = (m.suggested_action === 'use_library' && !m.is_participants)
-                        ? `<button class="btn btn-sm btn-outline-primary use-library-btn mt-1" data-name="${safeName}" data-template-key="${safeTemplateKey}" data-is-participants="${m.is_participants || false}"><i class="fas fa-book me-1"></i>Use ${safeSourceLabel} version</button>`
-                        : '';
-                    matchHtml = `
-                        <div class="mt-1 pt-1 border-top">
-                            <span class="badge ${badgeClass}" title="${safeDetailStr}">
-                                <i class="fas ${icon} me-1"></i>${safeConfidence} match: ${safeTemplateKey}
-                            </span>
-                            <span class="badge bg-light text-dark border ms-1" title="Matched from ${safeSourceLabel}">
-                                <i class="fas ${sourceIcon} me-1"></i>${safeSourceLabel}
-                            </span>
-                            ${diffHtml}
-                            ${useLibBtn}
-                        </div>
-                    `;
-                } else if (m === null) {
-                    matchHtml = `
-                        <div class="mt-1 pt-1 border-top">
-                            <span class="badge bg-light text-dark border">
-                                <i class="fas fa-plus-circle me-1"></i>No library match
-                            </span>
-                        </div>
-                    `;
-                }
-
-                const safeName = escapeHtml(name || '');
-                const safeQuestionCount = escapeHtml(String(info.question_count ?? ''));
-                card.innerHTML = `
-                    <div class="card h-100">
-                        <div class="card-body py-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong>${safeName}</strong>
-                                    <small class="d-block text-muted">${safeQuestionCount} questions</small>
-                                </div>
-                                <button class="btn btn-sm btn-outline-success download-template-btn" data-name="${safeName}">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                            </div>
-                            ${matchHtml}
-                        </div>
-                    </div>
-                `;
-                listEl.appendChild(card);
-            }
-
-            // "Use Library" button handlers - swap generated template with library version
-            listEl.querySelectorAll('.use-library-btn').forEach(btn => {
-                btn.onclick = async () => {
-                    const groupName = btn.dataset.name;
-                    const templateKey = btn.dataset.templateKey;
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
-                    try {
-                        const resp = await fetch(`/api/library-template/${encodeURIComponent(templateKey)}`);
-                        const result = await resp.json();
-                        if (result.success && result.prism_json) {
-                            // Swap the template in the data object
-                            data.questionnaires[groupName].prism_json = result.prism_json;
-                            data.questionnaires[groupName].suggested_filename = result.filename;
-                            // Update the card visually
-                            const matchDiv = btn.closest('.border-top');
-                            if (matchDiv) {
-                                matchDiv.replaceChildren();
-                                const badge = document.createElement('span');
-                                badge.className = 'badge bg-success';
-                                const badgeIcon = document.createElement('i');
-                                badgeIcon.className = 'fas fa-check-circle me-1';
-                                badge.appendChild(badgeIcon);
-                                badge.appendChild(document.createTextNode(`Using library: ${templateKey || ''}`));
-                                matchDiv.appendChild(badge);
-
-                                const filenameEl = document.createElement('small');
-                                filenameEl.className = 'd-block text-muted mt-1';
-                                filenameEl.textContent = result.filename || '';
-                                matchDiv.appendChild(filenameEl);
-                            }
-                        } else {
-                            btn.disabled = false;
-                            btn.innerHTML = '<i class="fas fa-book me-1"></i>Use library version';
-                            alert('Error: ' + (result.error || 'Failed to load library template'));
-                        }
-                    } catch (e) {
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="fas fa-book me-1"></i>Use library version';
-                        alert('Error loading template: ' + e.message);
-                    }
-                };
-            });
-
-            // Add download handlers
-            listEl.querySelectorAll('.download-template-btn').forEach(btn => {
-                btn.onclick = () => {
-                    const name = btn.dataset.name;
-                    const info = data.questionnaires[name];
-                    if (info) {
-                        const blob = new Blob([JSON.stringify(info.prism_json, null, 2)], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = info.suggested_filename || `survey-${name}.json`;
-                        a.click();
-                        URL.revokeObjectURL(url);
-                    }
-                };
-            });
-        }
-
-        // Download all as ZIP (deduplicate runs of the same template)
-        const downloadAllBtn = document.getElementById('templateDownloadAllBtn');
-        if (downloadAllBtn) {
-            downloadAllBtn.onclick = async () => {
-                const JSZip = window.JSZip;
-                if (!JSZip) {
-                    alert('JSZip not loaded');
-                    return;
-                }
-                const zip = new JSZip();
-                const addedKeys = new Set();
-                for (const [name, info] of Object.entries(data.questionnaires || {})) {
-                    const m = info.template_match;
-                    // Skip participants templates
-                    if (m && m.is_participants) continue;
-                    // Deduplicate runs: use library filename, skip if already added
-                    const filename = (m && m.template_path) ? m.template_path : (info.suggested_filename || `survey-${name}.json`);
-                    const dedupeKey = (m && m.template_key) ? m.template_key : filename;
-                    if (addedKeys.has(dedupeKey)) continue;
-                    addedKeys.add(dedupeKey);
-                    zip.file(filename, JSON.stringify(info.prism_json, null, 2));
-                }
-                const blob = await zip.generateAsync({ type: 'blob' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'survey-templates.zip';
-                a.click();
-                URL.revokeObjectURL(url);
-            };
-        }
-
-        // Save to project button
-        setupTemplateSaveToProject(data, 'groups');
-    }
-
-    function displayTemplateQuestions(data) {
-        const container = document.getElementById('templateResultQuestions');
-        if (!container) return;
-
-        container.classList.remove('d-none');
-        document.getElementById('templateIndividualCount').textContent = `${data.question_count} templates`;
-
-        const listEl = document.getElementById('templateQuestionsList');
-        if (listEl) {
-            listEl.innerHTML = '';
-            for (const [groupName, groupInfo] of Object.entries(data.by_group || {})) {
-                const groupDiv = document.createElement('div');
-                groupDiv.className = 'col-12 mb-2';
-                const heading = document.createElement('h6');
-                heading.className = 'text-muted';
-                heading.textContent = groupName;
-                groupDiv.appendChild(heading);
-                listEl.appendChild(groupDiv);
-
-                for (const q of groupInfo.questions || []) {
-                    const qData = data.questions[q.code];
-                    if (!qData) continue;
-
-                    const card = document.createElement('div');
-                    card.className = 'col-md-3';
-
-                    const cardInner = document.createElement('div');
-                    cardInner.className = 'card h-100';
-                    const cardBody = document.createElement('div');
-                    cardBody.className = 'card-body py-2';
-                    const row = document.createElement('div');
-                    row.className = 'd-flex justify-content-between align-items-center';
-
-                    const textWrap = document.createElement('div');
-                    const strong = document.createElement('strong');
-                    strong.textContent = q.code || '';
-                    textWrap.appendChild(strong);
-                    const small = document.createElement('small');
-                    small.className = 'd-block text-muted';
-                    small.textContent = `${q.type || ''} (${String(q.item_count ?? '')} items)`;
-                    textWrap.appendChild(small);
-
-                    const button = document.createElement('button');
-                    button.className = 'btn btn-sm btn-outline-success download-q-btn';
-                    button.dataset.code = q.code || '';
-                    const buttonIcon = document.createElement('i');
-                    buttonIcon.className = 'fas fa-download';
-                    button.appendChild(buttonIcon);
-
-                    row.appendChild(textWrap);
-                    row.appendChild(button);
-                    cardBody.appendChild(row);
-                    cardInner.appendChild(cardBody);
-                    card.appendChild(cardInner);
-                    listEl.appendChild(card);
-                }
-            }
-
-            // Add download handlers
-            listEl.querySelectorAll('.download-q-btn').forEach(btn => {
-                btn.onclick = () => {
-                    const code = btn.dataset.code;
-                    const qData = data.questions[code];
-                    if (qData && qData.prism_json) {
-                        const blob = new Blob([JSON.stringify(qData.prism_json, null, 2)], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = qData.suggested_filename || `survey-${code}.json`;
-                        a.click();
-                        URL.revokeObjectURL(url);
-                    }
-                };
-            });
-        }
-
-        // Download all as ZIP
-        const downloadBtn = document.getElementById('templateDownloadQuestionsBtn');
-        if (downloadBtn) {
-            downloadBtn.onclick = async () => {
-                const JSZip = window.JSZip;
-                if (!JSZip) {
-                    alert('JSZip not loaded');
-                    return;
-                }
-                const zip = new JSZip();
-                for (const [code, qData] of Object.entries(data.questions || {})) {
-                    if (qData.prism_json) {
-                        zip.file(qData.suggested_filename || `survey-${code}.json`, JSON.stringify(qData.prism_json, null, 2));
-                    }
-                }
-                const blob = await zip.generateAsync({ type: 'blob' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'survey-question-templates.zip';
-                a.click();
-                URL.revokeObjectURL(url);
-            };
-        }
-
-        // Save to project button
-        setupTemplateSaveToProject(data, 'questions');
-    }
-
-    function setupTemplateSaveToProject(data, mode) {
-        const saveBtn = mode === 'groups'
-            ? document.getElementById('templateSaveToProjectBtn')
-            : document.getElementById('templateSaveQuestionsToProjectBtn');
-
-        if (!saveBtn) return;
-
-        saveBtn.onclick = async () => {
-            const templates = [];
-            const savedKeys = new Set();  // Deduplicate runs of same template
-
-            if (mode === 'groups') {
-                for (const [name, info] of Object.entries(data.questionnaires || {})) {
-                    const m = info.template_match;
-
-                    // Skip participants templates (handled separately)
-                    if (m && m.is_participants) continue;
-
-                    // Deduplicate: if multiple groups matched the same library
-                    // template (e.g. run1/run2/run3 of BRS), save only once
-                    // using the library filename
-                    if (m && m.template_key) {
-                        if (savedKeys.has(m.template_key)) continue;
-                        savedKeys.add(m.template_key);
-                        templates.push({
-                            filename: m.template_path || info.suggested_filename || `survey-${name}.json`,
-                            content: info.prism_json
-                        });
-                    } else {
-                        templates.push({
-                            filename: info.suggested_filename || `survey-${name}.json`,
-                            content: info.prism_json
-                        });
-                    }
-                }
-            } else {
-                for (const [code, qData] of Object.entries(data.questions || {})) {
-                    if (qData.prism_json) {
-                        templates.push({
-                            filename: qData.suggested_filename || `survey-${code}.json`,
-                            content: qData.prism_json
-                        });
-                    }
-                }
-            }
-
-            if (templates.length === 0) {
-                alert('No templates to save (all matched library templates or participants).');
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/limesurvey-save-to-project', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ templates })
-                });
-                const result = await response.json();
-
-                const successDiv = document.getElementById('templateSaveSuccess');
-                const msgSpan = document.getElementById('templateSaveSuccessMessage');
-                if (result.success) {
-                    successDiv?.classList.remove('d-none');
-                    const skipped = Object.keys(data.questionnaires || {}).length - templates.length;
-                    let msg = `Saved ${result.saved_files?.length || templates.length} template(s) to ${result.library_path}`;
-                    if (skipped > 0) msg += ` (${skipped} duplicate run(s) skipped)`;
-                    msgSpan.textContent = msg;
-                } else {
-                    alert('Error: ' + (result.error || 'Unknown error'));
-                }
-            } catch (e) {
-                alert('Error saving: ' + e.message);
-            }
-        };
     }
 
     // ===== PARTICIPANT METADATA MARKING =====
