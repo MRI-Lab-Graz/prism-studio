@@ -48,6 +48,26 @@ into backend contracts.
     `createSurveyWorkflowPrepareController`.
   - Extended wiring tests in `tests/test_converter_workflow_wiring.py` to assert
     extracted module wiring and backend merge payload contract.
+  - Extracted preview orchestration into
+    `app/static/js/modules/converter/survey-workflow-preview.js` and delegated
+    preview button handling from `survey-convert.js`.
+  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` for
+    preview module import/instantiation/delegation and preview endpoint
+    ownership assertions.
+
+  **Assessment update (2026-05-10):**
+  - Confirmed stale DOM-guarded branches still exist in `survey-convert.js`
+    for controls no longer present in `converter_survey.html`
+    (template-check button, i18n/structure warning containers, library path
+    picker controls).
+  - Confirmed legacy `POST /api/survey-convert` route is still mounted for
+    compatibility while current frontend workflow uses
+    `POST /api/survey-convert-validate`.
+  - Identified convert-run handler as the primary remaining monolith and next
+    extraction target.
+  - Identified project-switch stale-state risk: survey tab refreshes sourcedata
+    quick-select on `prism-project-changed` but does not fully reset
+    preview/conversion state.
 
 **Next steps:**
 - Consolidate converter survey entrypoints and remove unreachable legacy survey
