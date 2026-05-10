@@ -21,7 +21,9 @@ export function createSurveyValueOffsetEditorController({
     setAppliedTaskValueOffsetSelectionSignature,
     updateConvertBtn,
     getNextTaskValueOffsetRowId,
-    getAvailableSurveyTasksForValueOffsets,
+    getSurveyPreviewSelectionState,
+    getTemplateVersionSelections,
+    getLastPreviewSurveyTasks,
     getTaskValueOffsetEditorState,
     setTaskValueOffsetEditorState,
     normalizeSurveyTaskName,
@@ -32,6 +34,45 @@ export function createSurveyValueOffsetEditorController({
     formatSignedOffset,
     escapeHtml,
 }) {
+    function getAvailableSurveyTasksForValueOffsets() {
+        const ordered = [];
+        const seen = new Set();
+        const pushTask = (value) => {
+            const task = normalizeSurveyTaskName(value);
+            if (!task || seen.has(task)) {
+                return;
+            }
+            seen.add(task);
+            ordered.push(task);
+        };
+
+        const selectionState = (typeof getSurveyPreviewSelectionState === 'function')
+            ? getSurveyPreviewSelectionState()
+            : {};
+        const selectedTasks = Array.isArray(selectionState && selectionState.selectedTasks)
+            ? selectionState.selectedTasks
+            : [];
+        const availableTasks = Array.isArray(selectionState && selectionState.availableTasks)
+            ? selectionState.availableTasks
+            : [];
+        selectedTasks.forEach(pushTask);
+        availableTasks.forEach(pushTask);
+
+        const templateSelections = (typeof getTemplateVersionSelections === 'function')
+            ? getTemplateVersionSelections()
+            : [];
+        templateSelections.forEach((entry) => pushTask(entry && entry.task));
+
+        const previewTasks = (typeof getLastPreviewSurveyTasks === 'function')
+            ? getLastPreviewSurveyTasks()
+            : [];
+        previewTasks.forEach((entry) => pushTask(entry && entry.task));
+
+        getTaskValueOffsetEditorState().forEach((entry) => pushTask(entry && entry.task));
+
+        return ordered;
+    }
+
     function createTaskValueOffsetRow(task = '', offset = null) {
         const normalizedTask = normalizeSurveyTaskName(task);
         const parsedOffset = parseNumericOffsetValue(offset);
@@ -114,6 +155,17 @@ export function createSurveyValueOffsetEditorController({
             && appliedSignature
             && currentSignature === appliedSignature
         );
+    }
+
+    function getManualTaskValueOffsets() {
+        if (!isAdvancedOptionsEnabled() || !convertValueOffsets) {
+            return {};
+        }
+        if (convertValueOffsetRows) {
+            syncTaskValueOffsetTextFromState();
+            return getTaskValueOffsetMapFromEditorState();
+        }
+        return parseTaskValueOffsetsText(convertValueOffsets.value);
     }
 
     function syncTaskValueOffsetTextFromState() {
@@ -548,6 +600,7 @@ export function createSurveyValueOffsetEditorController({
         initialize,
         applyAdvancedOptionsState,
         createTaskValueOffsetRow,
+        getAvailableSurveyTasksForValueOffsets,
         getPreferredTaskValueOffsetTask,
         syncTaskValueOffsetTextFromState,
         setTaskValueOffsetEditorStateFromText,
@@ -559,6 +612,7 @@ export function createSurveyValueOffsetEditorController({
         clearManualValueOffsetAdvice,
         getTaskValueOffsetMapFromEditorState,
         getCurrentTaskValueOffsetSelectionSignature,
+        getManualTaskValueOffsets,
         hasManualTaskValueOffsets,
         hasIncompleteTaskValueOffsetRows,
         hasAppliedTaskValueOffsetSelections,

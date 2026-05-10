@@ -113,6 +113,13 @@ into backend contracts.
     assert delegation wrappers in `survey-convert.js` and row-markup ownership
     (`data-role="operator"`, `data-role="magnitude"`) in the extracted
     value-offset editor controller.
+  - Moved available-task derivation and manual-offset retrieval helper ownership
+    (`getAvailableSurveyTasksForValueOffsets`, `getManualTaskValueOffsets`)
+    into `survey-value-offset-editor.js`, with `survey-convert.js` keeping
+    thin delegation wrappers.
+  - Updated controller wiring to inject preview-selection/template-version/
+    preview-task providers instead of calculating those lists directly inside
+    `survey-convert.js`.
 
   **Assessment update (2026-05-10):**
   - Confirmed stale DOM-guarded branches still exist in `survey-convert.js`
@@ -157,6 +164,9 @@ into backend contracts.
 - After wiring + status delegation, moving render/state helpers is still safe
   if one shared state store remains in the orchestrator and the controller is
   injected with narrow callbacks for state access and id allocation.
+- The same injection pattern also works for cross-context task availability:
+  pass preview/template providers into the controller to avoid duplicating list
+  derivation while keeping workflow state ownership centralized.
 
 ## Priority 1.34 — RTK command wrapper for repo workflows ✅ DONE
 
