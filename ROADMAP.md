@@ -158,29 +158,71 @@ into backend contracts.
     (`getSurveyPreviewSelectionState`, `setSurveyPreviewSelectedTasks`) plus
     formatter/UI helpers into the summary controller.
   - Updated `tests/test_converter_workflow_wiring.py` to assert summary module
+  - Extracted conversion-result application from
+    `app/static/js/modules/converter/survey-workflow-convert.js` into new
+    module `app/static/js/modules/converter/survey-workflow-convert-results.js`
+    so the convert workflow controller now delegates validation/save-summary/
+    participant-registry result handling through
+    `createSurveyWorkflowConvertResultsController`.
+  - Removed unreachable survey-library/template-check DOM branches from
+    `app/static/js/modules/converter/survey-convert.js` and matching stale
+    bootstrap wiring in `app/static/js/converter-bootstrap.js`
+    (`convertLibraryPath`, `convertBrowseLibraryBtn`,
+    `checkProjectTemplatesBtn`, `surveyI18nWarning`,
+    `surveyStructureWarning`).
+  - Added unified backend adapter endpoint
+    `POST /api/survey-workflow-command` in
+    `app/src/web/blueprints/conversion_survey_handlers.py` and switched the
+    survey workflow prepare/preview/convert frontend modules to use that one
+    command endpoint with explicit `workflow_command` values while keeping the
+    legacy routes mounted as compatibility aliases.
+  - Extended focused coverage in `tests/test_converter_workflow_wiring.py`,
+    `tests/test_web_blueprints_conversion.py`, and
+    `tests/test_backend_monitoring.py` for the new convert-results controller,
+    stale survey UI cleanup, unified workflow-command route dispatch, and
+    backend monitoring command rendering.
     import/instantiation/delegation and to keep summary-specific strings/DOM
     bindings (`Out-of-range share`, `data-survey-open-advanced`) owned by the
     extracted module.
   - Extracted validation-results rendering/grouping behavior from
     `survey-convert.js` into new module
     `app/static/js/modules/converter/survey-validation-results.js` via
-    `createSurveyValidationResultsController`.
-  - Reduced `survey-convert.js` validation ownership to thin delegation
-    (`displayValidationResults`) and injected `escapeHtml` into the extracted
-    validation controller.
-  - Updated `tests/test_converter_workflow_wiring.py` to assert validation
+  - Confirmed legacy `POST /api/survey-convert` route is still mounted for
+    compatibility; current survey workflow now uses
+    `POST /api/survey-workflow-command` for prepare/preview/convert dispatch.
+  - Added canonical backend survey workflow stage service in
+    `src/survey_workflow_service.py` and switched
+    `api_survey_convert` / `api_survey_convert_validate` to delegate effective
+    survey-library fallback plus preflight/convert engine dispatch through that
+    one backend service while preserving existing Flask response shaping.
+  - Reduced the largest remaining backend duplication from engine dispatch to
+    request/form parsing and response assembly inside
+    `app/src/web/blueprints/conversion_survey_handlers.py`.
     module import/instantiation/delegation and to keep validation-specific
     grouping behavior (`files share this same issue`) owned by the extracted
     module.
   - Extracted conversion-log toggling/log-line formatting/reset-UI behavior from
     `survey-convert.js` into new module
-    `app/static/js/modules/converter/survey-conversion-log.js` via
-    `createSurveyConversionLogController`.
-  - Reduced `survey-convert.js` log/reset ownership to thin delegation
-    (`appendLog`, `resetConversionUI`) and controller initialization.
-  - Updated `tests/test_converter_workflow_wiring.py` to assert conversion-log
-    module import/instantiation/delegation and to keep log-toggle/log-format
+- Move shared survey request/form parsing, stale-workflow gate handling, and
+  response assembly out of
+  `app/src/web/blueprints/conversion_survey_handlers.py` into the canonical
+  backend workflow service under `src/`.
+- Reuse the canonical backend workflow stage service in the preview path so
+  survey engine dispatch/fallback rules live in one place across prepare /
+  preview / convert.
+- Reduce the legacy compatibility surface by routing old survey preview /
+  validate endpoints through the same backend command adapter or documenting
+  them as explicit aliases.
     ownership in the extracted module.
+  - Hardened survey project-switch reset handling in
+    `app/static/js/modules/converter/survey-convert.js` so
+    `prism-project-changed` clears project-bound survey selection state
+    (hidden file input plus sourcedata quick-select), resets version-wizard
+    retry/apply state, clears stale manual-offset guidance, and drops stale
+    preview/conversion UI before the next project workflow.
+  - Extended `tests/test_converter_workflow_wiring.py` to assert the
+    project-change reset contract and prevent stale survey selection/version
+    state from surviving project switches.
 
   **Assessment update (2026-05-10):**
   - Confirmed stale DOM-guarded branches still exist in `survey-convert.js`
@@ -192,9 +234,9 @@ into backend contracts.
     `POST /api/survey-convert-validate`.
   - Identified convert-run handler as the primary remaining monolith and next
     extraction target.
-  - Identified project-switch stale-state risk: survey tab refreshes sourcedata
-    quick-select on `prism-project-changed` but does not fully reset
-    preview/conversion state.
+  - Resolved project-switch stale-state risk: survey tab now clears
+    project-bound survey selection and version-gate state on
+    `prism-project-changed` before the next preview/convert cycle.
 
 **Next steps:**
 - Consolidate converter survey entrypoints and remove unreachable legacy survey
@@ -210,6 +252,9 @@ into backend contracts.
 - Survey workflow complexity now comes more from feature accretion than missing
   capability; incremental extraction with strict backend ownership is safer than
   a rewrite.
+- A backend service extraction is safest when it preserves the existing wrapper
+  contract first; calling raw converters directly dropped fallback behavior and
+  endpoint tests caught that immediately.
 - Extraction patches in `survey-convert.js` should be applied in small hunks:
   large monolith deletions can leave orphan fragments that focused wiring tests
   catch quickly.
@@ -246,6 +291,13 @@ into backend contracts.
 - Conversion-log behavior is also safe to extract as one controller when the
   orchestrator still owns workflow sequencing and only delegates append/reset
   operations plus UI toggle initialization.
+- Project-change handlers for sourcedata-backed inputs must clear both the
+  visible quick-select and the underlying file input; clearing only one leaves
+  the next project coupled to stale source state.
+- A thin adapter route is a low-risk first step for backend command
+  consolidation: switch the frontend to one endpoint first, keep legacy routes
+  as aliases, then collapse duplicated backend handler logic behind that
+  adapter instead of rewriting both layers at once.
 
 ## Priority 1.34 — RTK command wrapper for repo workflows ✅ DONE
 
