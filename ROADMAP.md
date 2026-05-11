@@ -120,6 +120,67 @@ into backend contracts.
   - Updated controller wiring to inject preview-selection/template-version/
     preview-task providers instead of calculating those lists directly inside
     `survey-convert.js`.
+  - Moved manual offset apply-click behavior (`convertApplyValueOffsetsBtn`)
+    into `survey-value-offset-editor.js` via
+    `handleApplyTaskValueOffsetsClick`, keeping `survey-convert.js` as a thin
+    event-binding delegator.
+  - Extended controller wiring with `getTemplateWorkflowGate` + `convertInfo`
+    so offset-apply gate-clearing/message behavior remains centralized in the
+    editor controller without changing workflow semantics.
+  - Updated `tests/test_converter_workflow_wiring.py` to assert apply-click
+    delegation ownership moved out of `survey-convert.js`.
+  - Moved version-wizard apply-click behavior (`surveyVersionWizardApplyBtn`)
+    into `survey-workflow-template-check.js`
+    (`handleVersionWizardApplyClick`) while keeping `survey-convert.js` as a
+    thin event-binding delegator.
+  - Extended template-check controller wiring with narrow selection-state
+    callbacks (`hasMultiVersionWizardTasks`,
+    `hasCompleteVersionWizardSelections`,
+    `getCurrentTemplateVersionSelectionSignature`,
+    `setAppliedTemplateVersionSelectionSignature`,
+    `setVersionWizardRetryGateMode`, and template-gate/action-state accessors)
+    to preserve behavior without duplicating orchestration logic.
+  - Updated `tests/test_converter_workflow_wiring.py` to assert version-wizard
+    apply ownership in the template-check controller and prevent reintroducing
+    inline apply branching in `survey-convert.js`.
+  - Moved `surveyVersionWizardApplyBtn` click-event binding into
+    `survey-workflow-template-check.js` `initialize()`, so both template-check
+    and version-apply interactions are owned by one workflow controller.
+  - Removed redundant version-apply listener wiring from
+    `survey-convert.js`, leaving the orchestrator free of this UI event
+    registration.
+  - Extracted preview/conversion summary rendering and selection-binding
+    behavior from `survey-convert.js` into new module
+    `app/static/js/modules/converter/survey-conversion-summary.js` via
+    `createSurveyConversionSummaryController`.
+  - Reduced `survey-convert.js` summary ownership to thin delegation
+    (`displayConversionSummary`) and injected narrow state callbacks
+    (`getSurveyPreviewSelectionState`, `setSurveyPreviewSelectedTasks`) plus
+    formatter/UI helpers into the summary controller.
+  - Updated `tests/test_converter_workflow_wiring.py` to assert summary module
+    import/instantiation/delegation and to keep summary-specific strings/DOM
+    bindings (`Out-of-range share`, `data-survey-open-advanced`) owned by the
+    extracted module.
+  - Extracted validation-results rendering/grouping behavior from
+    `survey-convert.js` into new module
+    `app/static/js/modules/converter/survey-validation-results.js` via
+    `createSurveyValidationResultsController`.
+  - Reduced `survey-convert.js` validation ownership to thin delegation
+    (`displayValidationResults`) and injected `escapeHtml` into the extracted
+    validation controller.
+  - Updated `tests/test_converter_workflow_wiring.py` to assert validation
+    module import/instantiation/delegation and to keep validation-specific
+    grouping behavior (`files share this same issue`) owned by the extracted
+    module.
+  - Extracted conversion-log toggling/log-line formatting/reset-UI behavior from
+    `survey-convert.js` into new module
+    `app/static/js/modules/converter/survey-conversion-log.js` via
+    `createSurveyConversionLogController`.
+  - Reduced `survey-convert.js` log/reset ownership to thin delegation
+    (`appendLog`, `resetConversionUI`) and controller initialization.
+  - Updated `tests/test_converter_workflow_wiring.py` to assert conversion-log
+    module import/instantiation/delegation and to keep log-toggle/log-format
+    ownership in the extracted module.
 
   **Assessment update (2026-05-10):**
   - Confirmed stale DOM-guarded branches still exist in `survey-convert.js`
@@ -167,6 +228,24 @@ into backend contracts.
 - The same injection pattern also works for cross-context task availability:
   pass preview/template providers into the controller to avoid duplicating list
   derivation while keeping workflow state ownership centralized.
+- The same approach also works for late-stage button-click extraction: keep one
+  orchestrator event binding, move branching behavior into the controller, and
+  inject narrow gate/message accessors instead of shifting workflow state
+  ownership.
+- Version-selector apply behavior is a good fit for the template-check module:
+  move click branching there first, keep shared state in the orchestrator, and
+  wire explicit getter/setter callbacks for apply signatures and retry gates.
+- Once branching is extracted, moving the corresponding click binding into the
+  same controller further reduces orchestration surface area with minimal risk.
+- The conversion summary block is a safe extraction unit when done as one
+  controller: keep preview selection state in the orchestrator and expose only
+  narrow getter/setter callbacks to avoid workflow-state drift.
+- Validation rendering is another safe extraction unit: keep DOM/state entry
+  points in the orchestrator and move formatting/grouping details behind a
+  single controller interface.
+- Conversion-log behavior is also safe to extract as one controller when the
+  orchestrator still owns workflow sequencing and only delegates append/reset
+  operations plus UI toggle initialization.
 
 ## Priority 1.34 — RTK command wrapper for repo workflows ✅ DONE
 

@@ -59,6 +59,33 @@ SURVEY_TEMPLATE_RESULTS_MODULE = (
     / "converter"
     / "survey-template-results.js"
 )
+SURVEY_CONVERSION_SUMMARY_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "survey-conversion-summary.js"
+)
+SURVEY_CONVERSION_LOG_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "survey-conversion-log.js"
+)
+SURVEY_VALIDATION_RESULTS_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "survey-validation-results.js"
+)
 SURVEY_VALUE_OFFSET_UTILS_MODULE = (
     REPO_ROOT
     / "app"
@@ -351,6 +378,9 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         workflow_template_check_content = (
             SURVEY_WORKFLOW_TEMPLATE_CHECK_MODULE.read_text(encoding="utf-8")
         )
+        conversion_summary_content = SURVEY_CONVERSION_SUMMARY_MODULE.read_text(
+            encoding="utf-8"
+        )
 
         self.assertIn(
             "import { createSurveySourcedataQuickSelectController } from './survey-sourcedata-quick-select.js';",
@@ -388,8 +418,8 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("if (activeRequestToken !== requestToken)", survey_sourcedata_content)
         self.assertIn("function buildVersionWizard(", content)
         self.assertIn("function formatVersionWizardRunLabel(run)", content)
-        self.assertIn("Out-of-range share:", content)
-        self.assertIn("data-survey-open-advanced", content)
+        self.assertIn("Out-of-range share:", conversion_summary_content)
+        self.assertIn("data-survey-open-advanced", conversion_summary_content)
         self.assertIn("openAdvancedOptionsValueOffsetEditor", content)
         self.assertIn(
             "convertSessionSelect.value = normalizedSessions.length === 1 ? normalizedSessions[0] : 'all';",
@@ -445,6 +475,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "const surveyValueOffsetEditorController = createSurveyValueOffsetEditorController({",
             module_content,
         )
+        self.assertIn("getTemplateWorkflowGate: () => templateWorkflowGate,", module_content)
         self.assertIn("surveyValueOffsetEditorController.initialize();", module_content)
         self.assertIn("surveyValueOffsetEditorController.applyAdvancedOptionsState();", module_content)
         self.assertIn(
@@ -475,8 +506,16 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "return surveyValueOffsetEditorController.ensureTaskValueOffsetEditorRow(task);",
             module_content,
         )
+        self.assertIn(
+            "surveyValueOffsetEditorController.handleApplyTaskValueOffsetsClick();",
+            module_content,
+        )
         self.assertNotIn("convertAddValueOffsetRowBtn.addEventListener('click'", module_content)
         self.assertIn("convertApplyValueOffsetsBtn?.addEventListener('click'", module_content)
+        self.assertNotIn(
+            "Complete each offset row with a task and numeric value, then click Apply offsets.",
+            module_content,
+        )
         self.assertIn("valueOffsetSelectionsPending", module_content)
 
         self.assertIn(
@@ -510,6 +549,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             value_offset_editor_content,
         )
         self.assertIn(
+            "function handleApplyTaskValueOffsetsClick()",
+            value_offset_editor_content,
+        )
+        self.assertIn(
             "function renderTaskValueOffsetEditor()",
             value_offset_editor_content,
         )
@@ -539,6 +582,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "convertValueOffsetRows.addEventListener('click', (event) => {",
             value_offset_editor_content,
         )
+        self.assertIn("handleApplyTaskValueOffsetsClick,", value_offset_editor_content)
         self.assertIn(
             "if (Object.keys(multivariantTasks).length > 0 && !hasAppliedVersionWizardSelections()) {",
             workflow_prepare_content,
@@ -568,6 +612,15 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             SURVEY_WORKFLOW_TEMPLATE_CHECK_MODULE.read_text(encoding="utf-8")
         )
         template_results_content = SURVEY_TEMPLATE_RESULTS_MODULE.read_text(
+            encoding="utf-8"
+        )
+        conversion_summary_content = SURVEY_CONVERSION_SUMMARY_MODULE.read_text(
+            encoding="utf-8"
+        )
+        conversion_log_content = SURVEY_CONVERSION_LOG_MODULE.read_text(
+            encoding="utf-8"
+        )
+        validation_results_content = SURVEY_VALIDATION_RESULTS_MODULE.read_text(
             encoding="utf-8"
         )
         value_offset_utils_content = SURVEY_VALUE_OFFSET_UTILS_MODULE.read_text(
@@ -607,6 +660,18 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "import { createSurveyTemplateResultsController } from './survey-template-results.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "import { createSurveyConversionSummaryController } from './survey-conversion-summary.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "import { createSurveyConversionLogController } from './survey-conversion-log.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "import { createSurveyValidationResultsController } from './survey-validation-results.js';",
             survey_content,
         )
         self.assertIn(
@@ -650,6 +715,18 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             survey_content,
         )
         self.assertIn(
+            "const surveyConversionSummaryController = createSurveyConversionSummaryController({",
+            survey_content,
+        )
+        self.assertIn(
+            "const surveyConversionLogController = createSurveyConversionLogController({",
+            survey_content,
+        )
+        self.assertIn(
+            "const surveyValidationResultsController = createSurveyValidationResultsController({",
+            survey_content,
+        )
+        self.assertIn(
             "const surveyValueOffsetEditorController = createSurveyValueOffsetEditorController({",
             survey_content,
         )
@@ -669,6 +746,23 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "surveyTemplateResultsController.displayTemplateQuestions(data);",
             survey_content,
         )
+        self.assertIn(
+            "surveyConversionSummaryController.displayConversionSummary(summary);",
+            survey_content,
+        )
+        self.assertIn("surveyConversionLogController.initialize();", survey_content)
+        self.assertIn(
+            "surveyConversionLogController.appendLog(message, type, logElement);",
+            survey_content,
+        )
+        self.assertIn(
+            "surveyConversionLogController.resetConversionUI();",
+            survey_content,
+        )
+        self.assertIn(
+            "surveyValidationResultsController.displayValidationResults(validation, prefix);",
+            survey_content,
+        )
         self.assertIn("surveyValueOffsetEditorController.initialize();", survey_content)
         self.assertIn(
             "return normalizeTaskValueOffsetsMap(offsetMap, normalizeNearMatchTaskName);",
@@ -685,6 +779,21 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertNotIn("function parseNumericOffsetValue(rawValue)", survey_content)
         self.assertNotIn("function formatSignedOffset(offset)", survey_content)
         self.assertNotIn("function formatOffsetMagnitude(offset)", survey_content)
+        self.assertNotIn("function normalizeValidationIssueText(value)", survey_content)
+        self.assertNotIn("function renderValidationGroupFiles(group)", survey_content)
+        self.assertNotIn("const colors = {", survey_content)
+        self.assertNotIn(
+            "function renderSurveyTaskReviewSummary(taskSummaries)",
+            survey_content,
+        )
+        self.assertNotIn(
+            "function bindSurveyTaskSelectionControls()",
+            survey_content,
+        )
+        self.assertNotIn(
+            "function updateSurveyTaskSelectionSummaryText()",
+            survey_content,
+        )
         self.assertIn(
             "surveyWorkflowPrepareController.prepareSurveyWorkflow({",
             workflow_preview_content,
@@ -802,6 +911,23 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "fetch('/api/survey-check-project-templates'",
             workflow_template_check_content,
         )
+        self.assertIn(
+            "function handleVersionWizardApplyClick()",
+            workflow_template_check_content,
+        )
+        self.assertIn(
+            "surveyVersionWizardApplyBtn?.addEventListener('click', handleVersionWizardApplyClick);",
+            workflow_template_check_content,
+        )
+        self.assertIn(
+            "setAppliedTemplateVersionSelectionSignature(currentSignature);",
+            workflow_template_check_content,
+        )
+        self.assertIn(
+            "setVersionWizardRetryGateMode(null);",
+            workflow_template_check_content,
+        )
+        self.assertIn("handleVersionWizardApplyClick,", workflow_template_check_content)
 
         self.assertIn(
             "export function createSurveyTemplateResultsController({",
@@ -814,6 +940,61 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn(
             "fetch(`/api/library-template/${encodeURIComponent(templateKey)}`);",
             template_results_content,
+        )
+
+        self.assertIn(
+            "export function createSurveyConversionSummaryController({",
+            conversion_summary_content,
+        )
+        self.assertIn(
+            "function displayConversionSummary(summary)",
+            conversion_summary_content,
+        )
+        self.assertIn(
+            "function bindSurveyTaskSelectionControls()",
+            conversion_summary_content,
+        )
+        self.assertIn(
+            "data-survey-open-advanced",
+            conversion_summary_content,
+        )
+
+        self.assertIn(
+            "export function createSurveyConversionLogController({",
+            conversion_log_content,
+        )
+        self.assertIn(
+            "function initialize()",
+            conversion_log_content,
+        )
+        self.assertIn(
+            "toggleLogBtn.addEventListener('click', function() {",
+            conversion_log_content,
+        )
+        self.assertIn(
+            "function appendLog(message, type = 'info', logElement = null)",
+            conversion_log_content,
+        )
+        self.assertIn(
+            "function resetConversionUI()",
+            conversion_log_content,
+        )
+
+        self.assertIn(
+            "export function createSurveyValidationResultsController({",
+            validation_results_content,
+        )
+        self.assertIn(
+            "function displayValidationResults(validation, prefix = '')",
+            validation_results_content,
+        )
+        self.assertIn(
+            "function renderValidationGroupFiles(group)",
+            validation_results_content,
+        )
+        self.assertIn(
+            "files share this same issue",
+            validation_results_content,
         )
 
         self.assertIn(
@@ -847,6 +1028,30 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "getAppliedTaskValueOffsetSelectionSignature: () => appliedTaskValueOffsetSelectionSignature,",
+            survey_content,
+        )
+        self.assertIn(
+            "hasMultiVersionWizardTasks,",
+            survey_content,
+        )
+        self.assertIn(
+            "setAppliedTemplateVersionSelectionSignature: (value) => {",
+            survey_content,
+        )
+        self.assertIn(
+            "surveyVersionWizardApplyBtn,",
+            survey_content,
+        )
+        self.assertIn(
+            "const surveyWorkflowTemplateCheckController = createSurveyWorkflowTemplateCheckController({",
+            survey_content,
+        )
+        self.assertNotIn(
+            "surveyVersionWizardApplyBtn?.addEventListener('click'",
+            survey_content,
+        )
+        self.assertNotIn(
+            "appliedTemplateVersionSelectionSignature = getCurrentTemplateVersionSelectionSignature();",
             survey_content,
         )
         self.assertIn(
