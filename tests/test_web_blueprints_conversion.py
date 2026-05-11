@@ -2055,6 +2055,62 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
         self.assertEqual(gate["issue_count"], 1)
         self.assertGreaterEqual(len(gate.get("next_steps", [])), 3)
 
+    def test_handlers_stale_wrapper_uses_prepared_workflow_flag(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+
+        with app.test_request_context(
+            "/api/survey-convert",
+            method="POST",
+            data={"prepared_workflow": "true"},
+        ):
+            payload = handlers._format_workflow_preparation_stale_response(
+                {
+                    "error": "near_item_match_confirmation_required",
+                    "message": "Confirm near matches.",
+                }
+            )
+
+        self.assertEqual(payload.get("error"), "workflow_preparation_stale")
+        self.assertEqual(
+            payload.get("blocking_error"),
+            "near_item_match_confirmation_required",
+        )
+        self.assertIn("Run Preview again", str(payload.get("message") or ""))
+
+    def test_handlers_stale_wrapper_keeps_unprepared_payload(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+
+        with app.test_request_context(
+            "/api/survey-convert",
+            method="POST",
+            data={},
+        ):
+            payload = handlers._format_workflow_preparation_stale_response(
+                {"error": "project_template_completion_required"},
+                log_messages=[{"message": "blocked", "level": "error"}],
+            )
+
+        self.assertEqual(payload.get("error"), "project_template_completion_required")
+        self.assertNotIn("blocking_error", payload)
+        self.assertEqual(
+            payload.get("log"),
+            [{"message": "blocked", "level": "error"}],
+        )
+
     def test_api_survey_convert_blocks_until_templates_completed(self):
         import importlib
 
