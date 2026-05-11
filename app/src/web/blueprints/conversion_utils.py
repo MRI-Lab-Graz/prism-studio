@@ -264,6 +264,133 @@ def parse_near_item_match_task_allowlist(raw_value: str | None) -> set[str] | No
     return selected_tasks
 
 
+def parse_selected_survey_tasks(raw_value: str | None) -> set[str] | None:
+    """Parse selected survey tasks from a JSON form field.
+
+    Returns:
+        None when no payload was provided, otherwise a lower-cased task-name set.
+
+    Raises:
+        ValueError: if payload is not valid JSON array/string input.
+    """
+
+    text = str(raw_value or "").strip()
+    if not text:
+        return None
+
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            "Invalid selected survey payload. Expected JSON array of task names."
+        ) from exc
+
+    if isinstance(payload, str):
+        payload = [payload]
+
+    if not isinstance(payload, list):
+        raise ValueError(
+            "Invalid selected survey payload. Expected JSON array of task names."
+        )
+
+    selected_tasks: set[str] = {
+        str(entry).strip().lower().replace("survey-", "")
+        for entry in payload
+        if str(entry).strip()
+    }
+    return selected_tasks or None
+
+
+def merge_selected_survey_filter(
+    survey_filter: str | None,
+    selected_tasks: set[str] | None,
+) -> str | None:
+    """Combine explicit survey filter text with selected-task UI choices."""
+
+    normalized_selected = {
+        str(task).strip().lower().replace("survey-", "")
+        for task in (selected_tasks or set())
+        if str(task).strip()
+    }
+    if not normalized_selected:
+        return survey_filter
+
+    if not survey_filter:
+        return ",".join(sorted(normalized_selected))
+
+    requested = {
+        part.strip().lower().replace("survey-", "")
+        for part in str(survey_filter).replace(";", ",").split(",")
+        if part.strip()
+    }
+    if not requested:
+        return ",".join(sorted(normalized_selected))
+
+    merged = requested.intersection(normalized_selected)
+    if not merged:
+        raise ValueError(
+            "Selected surveys do not overlap with the current survey filter."
+        )
+    return ",".join(sorted(merged))
+
+
+def parse_task_value_offsets(raw_value: str | None) -> dict[str, float]:
+    """Parse task-level numeric value offsets from a JSON form field.
+
+    Supported payloads:
+    - {"task": -1}
+    - {"*": -1} (fallback for all tasks)
+    - numeric literal, applied as {"*": value}
+    """
+    text = str(raw_value or "").strip()
+    if not text:
+        return {}
+
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            "Invalid value offset payload. Expected JSON object with numeric offsets."
+        ) from exc
+
+    if isinstance(payload, (int, float)) and not isinstance(payload, bool):
+        return {"*": float(payload)}
+
+    if not isinstance(payload, dict):
+        raise ValueError(
+            "Invalid value offset payload. Expected object like {\"pss\": -1}."
+        )
+
+    offsets: dict[str, float] = {}
+    for raw_task, raw_offset in payload.items():
+        task = str(raw_task or "").strip().lower()
+        if not task:
+            continue
+        if isinstance(raw_offset, bool):
+            raise ValueError(
+                f"Invalid value offset for task '{task}'. Expected a numeric value."
+            )
+        if isinstance(raw_offset, (int, float)):
+            offsets[task] = float(raw_offset)
+            continue
+        if isinstance(raw_offset, str):
+            parsed = raw_offset.strip()
+            if not parsed:
+                continue
+            try:
+                offsets[task] = float(parsed)
+                continue
+            except ValueError as exc:
+                raise ValueError(
+                    f"Invalid value offset for task '{task}'. Expected a numeric value."
+                ) from exc
+        raise ValueError(
+            f"Invalid value offset for task '{task}'. Expected a numeric value."
+        )
+
+    return offsets
+
+
 def collect_multivariant_tasks_from_library(
     *,
     library_dir: str | Path,

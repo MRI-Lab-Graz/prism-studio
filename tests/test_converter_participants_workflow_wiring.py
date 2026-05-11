@@ -107,6 +107,97 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         self.assertIn("resetParticipantsPanelState();", content)
         self.assertIn("updateParticipantsButtonState();", content)
 
+    def test_participants_module_clears_sourcedata_backed_file_selection(self):
+        content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("function clearParticipantsSelectedFile(", content)
+        self.assertIn(
+            "clearParticipantsSelectedFile({ resetSourcedataSelection: true });",
+            content,
+        )
+        self.assertIn(
+            "if (!filename) {\n                clearParticipantsSelectedFile();\n                resetParticipantsPanelState();\n                updateParticipantsButtonState();\n                return;\n            }",
+            content,
+        )
+
+    def test_participants_module_keeps_manual_id_requirement_through_preview(self):
+        content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("let participantsIdSelectionRequired = false;", content)
+        self.assertIn("let participantsRememberedIdColumn = '';", content)
+        self.assertIn("participantsIdSelectionRequired = Boolean(isRequired);", content)
+        self.assertIn("function getCurrentParticipantsIdColumnValue(columns = null) {", content)
+        self.assertIn(
+            "function resetParticipantsPanelState({ preserveImportConfig = false } = {}) {",
+            content,
+        )
+        self.assertIn(
+            "function updateParticipantsButtonState({ skipIdAutoDetect = false } = {}) {",
+            content,
+        )
+        self.assertIn(
+            "const idSelectionRequired = participantsIdSelectionRequired;",
+            content,
+        )
+        self.assertIn(
+            "const idSelectionRequired = participantsIdSelectionRequired || Boolean(data.id_selection_required);",
+            content,
+        )
+        self.assertIn(
+            "const selectedSourceId = currentIdValue || data.source_id_column || data.suggested_id_column || data.id_column;",
+            content,
+        )
+        self.assertIn(
+            "const preservedId = getCurrentParticipantsIdColumnValue(availableSourceColumns);",
+            content,
+        )
+        self.assertIn(
+            "const selectedId = preservedId || detectedId;",
+            content,
+        )
+        self.assertIn(
+            "currentIdValue || suggestedId,",
+            content,
+        )
+        self.assertIn(
+            "resetParticipantsPanelState({ preserveImportConfig: true });",
+            content,
+        )
+        self.assertIn(
+            "updateParticipantsButtonState({ skipIdAutoDetect: true });",
+            content,
+        )
+        self.assertIn("rememberParticipantsIdColumn(this.value);", content)
+        self.assertIn("const idColumn = getCurrentParticipantsIdColumnValue(", content)
+
+    def test_participants_module_applies_live_exclusions_to_preview_payload(self):
+        content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "function applyExcludedColumnsToParticipantsPreviewData(previewData) {",
+            content,
+        )
+        self.assertIn(
+            "const excludedColumns = getUniqueExcludedParticipantColumns()",
+            content,
+        )
+        self.assertIn(
+            "const protectedColumns = getProtectedParticipantVariableColumns(previewData);",
+            content,
+        )
+        self.assertIn(
+            "previewData.columns = previewColumns;",
+            content,
+        )
+        self.assertIn(
+            "previewData.preview_rows = previewData.preview_rows.map((row) => {",
+            content,
+        )
+        self.assertIn(
+            "applyExcludedColumnsToParticipantsPreviewData(data);",
+            content,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

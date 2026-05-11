@@ -174,6 +174,57 @@ class TestWideRunPostfix:
             "_run-" in c for c in score_cols
         ), f"Unexpected _run- suffix in columns: {sorted(score_cols)}"
 
+    def test_wide_single_session_omits_session_postfix(self, tmp_path: Path) -> None:
+        """Single-session wide output keeps bare variable names."""
+        project_root, recipe_dir = _setup_project_no_runs(
+            tmp_path, sessions=["ses-1"]
+        )
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+            layout="wide",
+            lang="en",
+        )
+
+        out_files = list(result.out_root.glob("*.csv"))
+        assert out_files, "No CSV output produced"
+
+        df = pd.read_csv(out_files[0], dtype=str)
+        score_cols = [c for c in df.columns if c != "participant_id"]
+        assert "Total" in score_cols
+        assert not any("_ses-" in c for c in score_cols)
+
+    def test_wide_single_session_multi_run_uses_run_only_postfix(
+        self, tmp_path: Path
+    ) -> None:
+        """Single-session multi-run wide output uses run-only suffixes."""
+        project_root, recipe_dir = _setup_project_with_runs(
+            tmp_path, sessions=["ses-1"], runs_per_session=["run-01", "run-02"]
+        )
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+            layout="wide",
+            lang="en",
+        )
+
+        out_files = list(result.out_root.glob("*.csv"))
+        assert out_files, "No CSV output produced"
+
+        df = pd.read_csv(out_files[0], dtype=str)
+        score_cols = [c for c in df.columns if c != "participant_id"]
+        assert "Total_run-01" in score_cols
+        assert "Total_run-02" in score_cols
+        assert not any("_ses-" in c for c in score_cols)
+
     def test_long_layout_with_run_has_run_column(self, tmp_path: Path) -> None:
         """Long-format output includes a 'run' column when files have run entities."""
         project_root, recipe_dir = _setup_project_with_runs(

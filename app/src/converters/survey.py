@@ -21,7 +21,7 @@ import csv
 import zipfile
 import defusedxml.ElementTree as ET
 import re
-from typing import Sequence, cast
+from typing import cast
 
 try:
     import pandas as pd
@@ -87,6 +87,8 @@ from . import survey_templates as _survey_templates
 from . import survey_processing as _survey_processing
 from . import survey_core as _survey_core
 from . import survey_participants_logic as _survey_participants_logic
+
+SurveyValueOutOfBoundsError = _survey_processing.SurveyValueOutOfBoundsError
 
 # Compatibility re-exports for external imports that still reference helpers
 # from this module during the incremental decomposition phase.
@@ -545,6 +547,8 @@ class SurveyConvertResult:
     participant_registry_warning: dict | None = None
     near_match_candidates: list[dict[str, object]] = field(default_factory=list)
     near_match_applied: bool = False
+    applied_value_offsets: dict[str, float] = field(default_factory=dict)
+    value_offset_application_counts: dict[str, int] = field(default_factory=dict)
 
 
 class ParticipantsConverter:
@@ -634,6 +638,7 @@ class SurveyResponsesConverter:
         skip_participants: bool = True,
         project_path: str | Path | None = None,
         template_version_overrides: dict[str, str] | None = None,
+        task_value_offsets: dict[str, float] | None = None,
         allow_near_item_match: bool = False,
         near_match_tasks: set[str] | None = None,
     ) -> SurveyConvertResult:
@@ -660,6 +665,7 @@ class SurveyResponsesConverter:
             skip_participants=skip_participants,
             project_path=project_path,
             template_version_overrides=template_version_overrides,
+            task_value_offsets=task_value_offsets,
             allow_near_item_match=allow_near_item_match,
             near_match_tasks=near_match_tasks,
         )
@@ -688,6 +694,7 @@ class SurveyResponsesConverter:
         skip_participants: bool = True,
         project_path: str | Path | None = None,
         template_version_overrides: dict[str, str] | None = None,
+        task_value_offsets: dict[str, float] | None = None,
         allow_near_item_match: bool = False,
         near_match_tasks: set[str] | None = None,
     ) -> SurveyConvertResult:
@@ -713,6 +720,7 @@ class SurveyResponsesConverter:
             skip_participants=skip_participants,
             project_path=project_path,
             template_version_overrides=template_version_overrides,
+            task_value_offsets=task_value_offsets,
             allow_near_item_match=allow_near_item_match,
             near_match_tasks=near_match_tasks,
         )
@@ -765,6 +773,7 @@ def _convert_survey_xlsx_to_prism_dataset_impl(
     skip_participants: bool = True,
     project_path: str | Path | None = None,
     template_version_overrides: dict[str, str] | None = None,
+    task_value_offsets: dict[str, float] | None = None,
     allow_near_item_match: bool = False,
     near_match_tasks: set[str] | None = None,
 ) -> SurveyConvertResult:
@@ -817,6 +826,7 @@ def _convert_survey_xlsx_to_prism_dataset_impl(
         source_format=kind,
         project_path=project_path,
         template_version_overrides=template_version_overrides,
+        task_value_offsets=task_value_offsets,
         allow_near_item_match=allow_near_item_match,
         near_match_tasks=near_match_tasks,
     )
@@ -900,6 +910,7 @@ def _convert_survey_lsa_to_prism_dataset_impl(
     skip_participants: bool = True,
     project_path: str | Path | None = None,
     template_version_overrides: dict[str, str] | None = None,
+    task_value_offsets: dict[str, float] | None = None,
     allow_near_item_match: bool = False,
     near_match_tasks: set[str] | None = None,
 ) -> SurveyConvertResult:
@@ -960,6 +971,7 @@ def _convert_survey_lsa_to_prism_dataset_impl(
         source_format="lsa",
         project_path=project_path,
         template_version_overrides=template_version_overrides,
+        task_value_offsets=task_value_offsets,
         allow_near_item_match=allow_near_item_match,
         near_match_tasks=near_match_tasks,
     )
@@ -989,6 +1001,7 @@ def convert_survey_xlsx_to_prism_dataset(
     skip_participants: bool = True,
     project_path: str | Path | None = None,
     template_version_overrides: dict[str, str] | None = None,
+    task_value_offsets: dict[str, float] | None = None,
     allow_near_item_match: bool = False,
     near_match_tasks: set[str] | None = None,
 ) -> SurveyConvertResult:
@@ -1019,6 +1032,7 @@ def convert_survey_xlsx_to_prism_dataset(
         skip_participants=skip_participants,
         project_path=project_path,
         template_version_overrides=template_version_overrides,
+        task_value_offsets=task_value_offsets,
         allow_near_item_match=allow_near_item_match,
         near_match_tasks=near_match_tasks,
     )
@@ -1047,6 +1061,7 @@ def convert_survey_lsa_to_prism_dataset(
     skip_participants: bool = True,
     project_path: str | Path | None = None,
     template_version_overrides: dict[str, str] | None = None,
+    task_value_offsets: dict[str, float] | None = None,
     allow_near_item_match: bool = False,
     near_match_tasks: set[str] | None = None,
 ) -> SurveyConvertResult:
@@ -1076,6 +1091,7 @@ def convert_survey_lsa_to_prism_dataset(
         skip_participants=skip_participants,
         project_path=project_path,
         template_version_overrides=template_version_overrides,
+        task_value_offsets=task_value_offsets,
         allow_near_item_match=allow_near_item_match,
         near_match_tasks=near_match_tasks,
     )
@@ -1547,6 +1563,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     source_format: str = "xlsx",
     project_path: str | Path | None = None,
     template_version_overrides: dict[str, str] | None = None,
+    task_value_offsets: dict[str, float] | None = None,
     allow_near_item_match: bool = False,
     near_match_tasks: set[str] | None = None,
 ) -> SurveyConvertResult:
@@ -1569,6 +1586,22 @@ def _convert_survey_dataframe_to_prism_dataset(
         raise ValueError(
             f"Output directory is not empty: {output_root}. Use force=True to write into a non-empty directory."
         )
+
+    normalized_task_value_offsets: dict[str, float] | None = None
+    if isinstance(task_value_offsets, dict) and task_value_offsets:
+        normalized_task_value_offsets = {}
+        for raw_task, raw_offset in task_value_offsets.items():
+            task_name = str(raw_task or "").strip().lower()
+            if not task_name:
+                continue
+            try:
+                normalized_task_value_offsets[task_name] = float(raw_offset)
+            except (TypeError, ValueError) as error:
+                raise ValueError(
+                    f"Invalid task value offset for '{raw_task}': {raw_offset!r}"
+                ) from error
+        if not normalized_task_value_offsets:
+            normalized_task_value_offsets = None
 
     try:
         import pandas as pd
@@ -1641,10 +1674,6 @@ def _convert_survey_dataframe_to_prism_dataset(
     participant_template = participants_converter.normalize_template(
         raw_participant_template
     )
-    effective_template_version_overrides = _resolve_effective_template_version_overrides(
-        project_path=project_path,
-        template_version_overrides=template_version_overrides,
-    )
     participant_columns_lower: set[str] = set()
     if participant_template:
         participant_columns_lower = {
@@ -1665,7 +1694,6 @@ def _convert_survey_dataframe_to_prism_dataset(
             library_dir,
             canonical_aliases,
             compare_with_global=True,
-            template_version_overrides=effective_template_version_overrides,
         )
     )
     if duplicates:
@@ -1920,7 +1948,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         res_run_col=res_run_col,
         task_run_columns=task_run_columns,
         templates=templates,
-        template_version_overrides=effective_template_version_overrides,
+        template_version_overrides=template_version_overrides,
         normalize_ses_fn=_normalize_ses_id,
     )
 
@@ -2020,7 +2048,11 @@ def _convert_survey_dataframe_to_prism_dataset(
     )
 
     # --- Process and Write Responses ---
-    missing_cells_by_subject, items_using_tolerance = (
+    (
+        missing_cells_by_subject,
+        items_using_tolerance,
+        value_offset_application_counts,
+    ) = (
         _survey_io._process_and_write_responses(
             df=df,
             res_id_col=res_id_col,
@@ -2044,8 +2076,20 @@ def _convert_survey_dataframe_to_prism_dataset(
             ensure_dir_fn=_ensure_dir,
             process_survey_row_with_run_fn=_process_survey_row_with_run,
             build_bids_survey_filename_fn=_build_bids_survey_filename,
+            task_value_offsets=normalized_task_value_offsets,
         )
     )
+
+    applied_value_offsets: dict[str, float] = {}
+    if normalized_task_value_offsets:
+        wildcard_offset = normalized_task_value_offsets.get("*")
+        for task_name, applications in value_offset_application_counts.items():
+            if applications <= 0:
+                continue
+            offset_value = normalized_task_value_offsets.get(task_name, wildcard_offset)
+            if offset_value is None:
+                continue
+            applied_value_offsets[task_name] = float(offset_value)
 
     # Add summary for items using numeric range tolerance
     conversion_warnings.extend(
@@ -2102,6 +2146,8 @@ def _convert_survey_dataframe_to_prism_dataset(
         participant_registry_warning=participant_registry_warning,
         near_match_candidates=near_match_candidates,
         near_match_applied=near_match_applied,
+        applied_value_offsets=applied_value_offsets,
+        value_offset_application_counts=value_offset_application_counts,
     )
 
 
@@ -2395,8 +2441,8 @@ def _map_survey_columns(
 
         approved_candidates: list[dict[str, object]] = []
         for task, candidates in task_candidates.items():
-            task_primary_item_set = task_primary_items.get(task)
-            if not task_primary_item_set:
+            primary_items = task_primary_items.get(task)
+            if not primary_items:
                 continue
 
             has_explicit_run_context = any(
@@ -2410,7 +2456,7 @@ def _map_survey_columns(
 
             if not has_explicit_run_context:
                 exact_items = exact_mapped_by_task.get(task, set())
-                missing_items = task_primary_item_set - exact_items
+                missing_items = primary_items - exact_items
                 if proposed_items != missing_items or len(candidates) != len(
                     missing_items
                 ):
@@ -2885,7 +2931,7 @@ def _load_and_preprocess_templates(
     library_dir: Path,
     canonical_aliases: dict[str, list[str]] | None,
     compare_with_global: bool = True,
-    template_version_overrides: object = None,
+    template_version_overrides: dict[str, str] | None = None,
 ) -> tuple[
     dict[str, dict],
     dict[str, str],
@@ -3037,28 +3083,6 @@ def _merge_template_version_overrides(
             continue
         merged.append(entry)
     return merged
-
-
-def _resolve_effective_template_version_overrides(
-    *,
-    project_path: str | Path | None,
-    template_version_overrides: object,
-) -> list[dict[str, object]]:
-    """Merge request overrides with project-stored version selections."""
-
-    project_root: Path | None = None
-    if project_path is not None and project_path != "":
-        candidate = Path(project_path).expanduser().resolve()
-        project_root = candidate.parent if candidate.is_file() else candidate
-
-    project_overrides: list[dict[str, object]] = []
-    if project_root is not None:
-        project_overrides = _load_project_template_version_overrides(project_root)
-
-    return _merge_template_version_overrides(
-        primary_overrides=template_version_overrides,
-        fallback_overrides=project_overrides,
-    )
 
 
 def _load_project_template_version_overrides(dataset_root: Path) -> list[dict[str, object]]:
@@ -3222,9 +3246,6 @@ def _build_task_context_maps(
     dict[tuple[str, str | None, str | int | None], str | None],
 ]:
     """Build per task/run template variants and their acq labels."""
-    normalized_version_overrides = _normalize_template_version_overrides(
-        template_version_overrides
-    )
     task_contexts: set[tuple[str, str | None, str | int | None]] = set()
     detected_session_values: list[str] = []
     if res_ses_col and res_ses_col in df.columns:
@@ -3278,20 +3299,6 @@ def _build_task_context_maps(
             task_contexts.add((task, None, None))
             continue
 
-        task_override_sessions = sorted(
-            {
-                normalize_ses_fn(entry["session"])
-                for entry in normalized_version_overrides
-                if entry.get("task") == task and entry.get("session") not in {None, ""}
-            }
-        )
-        task_override_runs = sorted(
-            {
-                str(entry["run"]).strip()
-                for entry in normalized_version_overrides
-                if entry.get("task") == task and entry.get("run") not in {None, ""}
-            }
-        )
         task_specific_runs = sorted(
             {
                 run
@@ -3300,19 +3307,13 @@ def _build_task_context_maps(
             }
         )
         contextual_sessions = (
-            detected_session_values
-            if len(detected_session_values) > 1 or task_override_sessions
-            else []
+            detected_session_values if len(detected_session_values) > 1 else []
         )
-        contextual_runs: Sequence[str | int]
-        if len(task_specific_runs) > 1:
-            contextual_runs = task_specific_runs
-        elif len(detected_run_values) > 1 or task_override_runs:
-            contextual_runs = (
-                detected_run_values or task_specific_runs or task_override_runs
-            )
-        else:
-            contextual_runs = []
+        contextual_runs = (
+            task_specific_runs
+            if len(task_specific_runs) > 1
+            else (detected_run_values if len(detected_run_values) > 1 else [])
+        )
 
         if not contextual_sessions and not contextual_runs:
             task_contexts.add((task, None, None))
@@ -3487,6 +3488,8 @@ def _process_survey_row(
     items_using_tolerance: dict[str, set[str]],
     is_missing_fn,
     normalize_val_fn,
+    task_value_offsets: dict[str, float] | None = None,
+    offset_application_counts: dict[str, int] | None = None,
 ) -> tuple[dict[str, str], int]:
     """Process a single task's data for one subject/session."""
     return _survey_processing._process_survey_row(
@@ -3499,6 +3502,8 @@ def _process_survey_row(
         items_using_tolerance=items_using_tolerance,
         is_missing_fn=is_missing_fn,
         normalize_val_fn=normalize_val_fn,
+        task_value_offsets=task_value_offsets,
+        offset_application_counts=offset_application_counts,
         non_item_keys=_NON_ITEM_TOPLEVEL_KEYS,
         missing_token=_MISSING_TOKEN,
         validate_item_fn=_validate_survey_item_value,
@@ -3518,6 +3523,8 @@ def _process_survey_row_with_run(
     items_using_tolerance: dict[str, set[str]],
     is_missing_fn,
     normalize_val_fn,
+    task_value_offsets: dict[str, float] | None = None,
+    offset_application_counts: dict[str, int] | None = None,
 ) -> tuple[dict[str, str], int]:
     """Process a single task/run's data for one subject/session."""
     return _survey_processing._process_survey_row_with_run(
@@ -3532,6 +3539,8 @@ def _process_survey_row_with_run(
         items_using_tolerance=items_using_tolerance,
         is_missing_fn=is_missing_fn,
         normalize_val_fn=normalize_val_fn,
+        task_value_offsets=task_value_offsets,
+        offset_application_counts=offset_application_counts,
         non_item_keys=_NON_ITEM_TOPLEVEL_KEYS,
         missing_token=_MISSING_TOKEN,
         validate_item_fn=_validate_survey_item_value,
@@ -3549,6 +3558,8 @@ def _validate_survey_item_value(
     items_using_tolerance: dict[str, set[str]],
     normalize_fn,
     is_missing_fn,
+    task_value_offsets: dict[str, float] | None = None,
+    offset_application_counts: dict[str, int] | None = None,
 ):
     """Internal validation for a single survey item value."""
     return _survey_processing._validate_survey_item_value(
@@ -3561,6 +3572,8 @@ def _validate_survey_item_value(
         items_using_tolerance=items_using_tolerance,
         normalize_fn=normalize_fn,
         is_missing_fn=is_missing_fn,
+        task_value_offsets=task_value_offsets,
+        offset_application_counts=offset_application_counts,
         find_matching_level_key_fn=_find_matching_level_key,
         missing_token=_MISSING_TOKEN,
     )

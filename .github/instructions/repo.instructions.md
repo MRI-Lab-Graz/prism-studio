@@ -38,3 +38,15 @@ Webinterface is BASED on prism.py - not a separate tool!
 - if you are adding a new feature, please add tests for it
 - make a roadmap and mark solved issues, add "lessions-learned"
 
+## autonomous execution mode (default)
+- continue end-to-end without asking for confirmation between safe incremental steps
+- after each implementation slice: run focused tests, update roadmap checkpoints, and continue
+- treat "continue", "proceed", and "keep going" as standing approval
+- ask only when genuinely blocked:
+	- destructive action risk
+	- missing credentials or secrets
+	- ambiguous product choice with multiple valid outcomes
+	- repeated failed repair attempts (for example 3 loops)
+- prefer smallest safe changes with immediate validation
+- if tests fail, attempt automatic self-repair before asking
+

@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+"""Repo Toolkit (RTK) command wrapper for PRISM Studio workflows."""
+
+from __future__ import annotations
+
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+
+HELP_TEXT = """Usage: rtk <command> [args...]
+
+RTK wrapper for common PRISM Studio, git, and gh workflows.
+
+Commands:
+    setup         Run repository setup (setup.sh or setup.ps1)
+    studio        Run PRISM Studio web app (prism-studio.py)
+    validator     Run PRISM validator (prism.py)
+    validate      Alias for validator
+    prism         Alias for validator
+    tools         Run prism_tools.py commands
+    prism-tools   Alias for tools
+    test          Run pytest in the current repository
+    git           Pass through to git
+    gh            Pass through to GitHub CLI
+
+Examples:
+    rtk studio
+    rtk validator /path/to/dataset --bids
+    rtk tools survey convert --help
+    rtk test -q
+    rtk git status
+"""
+
+
+def find_project_root() -> Path:
+    """Resolve the PRISM project root from either repo or .venv script locations."""
+    current = Path(__file__).resolve().parent
+
+    if current.name in {"bin", "Scripts"} and current.parent.name == ".venv":
+        return current.parent.parent
+
+    return current
+
+
+def _run(command: list[str], project_root: Path) -> int:
+    completed = subprocess.run(command, cwd=str(project_root), check=False)
+    return int(completed.returncode)
+
+
+def _require_file(path: Path, label: str) -> bool:
+    if path.exists():
+        return True
+
+    print(f"Error: {label} not found at {path}")
+    return False
+
+
+def _require_program(name: str) -> bool:
+    if shutil.which(name):
+        return True
+
+    print(f"Error: '{name}' is not installed or not available in PATH.")
+    return False
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = list(sys.argv[1:] if argv is None else argv)
+    if not args or args[0] in {"-h", "--help"}:
+        print(HELP_TEXT)
+        return 0
+
+    command = args[0]
+    forwarded_args = args[1:]
+
+    if command in {"validate", "prism"}:
+        command = "validator"
+    elif command == "prism-tools":
+        command = "tools"
+
+    project_root = find_project_root()
+
+    if command == "setup":
+        if sys.platform == "win32":
+            setup_script = project_root / "setup.ps1"
+            if not _require_file(setup_script, "setup.ps1"):
+                return 1
+            if not _require_program("powershell"):
+                return 1
+            command = [
+                "powershell",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(setup_script),
+                *forwarded_args,
+            ]
+            return _run(command, project_root)
+
+        setup_script = project_root / "setup.sh"
+        if not _require_file(setup_script, "setup.sh"):
+            return 1
+
+        command = ["bash", str(setup_script), *forwarded_args]
+        return _run(command, project_root)
+
+    if command == "studio":
+        wrapper = project_root / "prism-studio.py"
+        if not _require_file(wrapper, "prism-studio.py"):
+            return 1
+        return _run([sys.executable, str(wrapper), *forwarded_args], project_root)
+
+    if command == "validator":
+        wrapper = project_root / "prism.py"
+        if not _require_file(wrapper, "prism.py"):
+            return 1
+        return _run([sys.executable, str(wrapper), *forwarded_args], project_root)
+
+    if command == "tools":
+        wrapper = project_root / "prism_tools.py"
+        if not _require_file(wrapper, "prism_tools.py"):
+            return 1
+        return _run([sys.executable, str(wrapper), *forwarded_args], project_root)
+
+    if command == "test":
+        return _run([sys.executable, "-m", "pytest", *forwarded_args], project_root)
+
+    if command == "git":
+        if not _require_program("git"):
+            return 1
+        return _run(["git", *forwarded_args], project_root)
+
+    if command == "gh":
+        if not _require_program("gh"):
+            return 1
+        return _run(["gh", *forwarded_args], project_root)
+
+    print(f"Error: Unknown command '{command}'.\n")
+    print(HELP_TEXT)
+    return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

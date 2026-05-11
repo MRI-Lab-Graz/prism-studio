@@ -12,6 +12,11 @@ import { resolveCurrentProjectPath } from './shared/project-state.js';
 
 installApiFetchFallback();
 
+if (window.__prismConverterBootstrapInitialized) {
+    // Guard against duplicate module imports re-binding event handlers.
+} else {
+    window.__prismConverterBootstrapInitialized = true;
+
 document.addEventListener('DOMContentLoaded', function() {
     let sessionPickerRequestToken = 0;
 
@@ -277,6 +282,11 @@ document.addEventListener('DOMContentLoaded', function() {
             convertLanguage: document.getElementById('convertLanguage'),
             convertError: document.getElementById('convertError'),
             convertInfo: document.getElementById('convertInfo'),
+            surveyRunProgressContainer: document.getElementById('surveyRunProgressContainer'),
+            surveyRunProgressBar: document.getElementById('surveyRunProgressBar'),
+            surveyRunProgressLabel: document.getElementById('surveyRunProgressLabel'),
+            surveyRunProgressPercent: document.getElementById('surveyRunProgressPercent'),
+            surveyRunCancelBtn: document.getElementById('surveyRunCancelBtn'),
             convertIdColumnGroup: document.getElementById('convertIdColumnGroup'),
             convertIdColumn: document.getElementById('convertIdColumn'),
             convertTemplateExportGroup: document.getElementById('convertTemplateExportGroup'),
@@ -440,3 +450,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+}
