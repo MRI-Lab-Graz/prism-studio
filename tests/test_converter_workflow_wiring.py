@@ -29,6 +29,15 @@ SURVEY_WORKFLOW_PREVIEW_MODULE = (
 SURVEY_WORKFLOW_CONVERT_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "survey-workflow-convert.js"
 )
+SURVEY_WORKFLOW_CONVERT_RESULTS_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "survey-workflow-convert-results.js"
+)
 SURVEY_WORKFLOW_PROGRESS_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "survey-workflow-progress.js"
 )
@@ -416,6 +425,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             survey_sourcedata_content,
         )
         self.assertIn("if (activeRequestToken !== requestToken)", survey_sourcedata_content)
+        self.assertIn(
+            "resetSurveyImportFormState({ clearSelectedInput: true });",
+            content,
+        )
         self.assertIn("function buildVersionWizard(", content)
         self.assertIn("function formatVersionWizardRunLabel(run)", content)
         self.assertIn("Out-of-range share:", conversion_summary_content)
@@ -437,6 +450,53 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "data = await parseJsonResponse(response, 'Survey preparation');",
             workflow_prepare_content,
         )
+
+    def test_survey_converter_project_change_clears_project_bound_selection_state(self):
+        content = SURVEY_CONVERT_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "function resetSurveyImportFormState({ clearSelectedInput = false } = {}) {",
+            content,
+        )
+        self.assertIn(
+            "versionWizardRetryGateMode = null;\n        appliedTaskValueOffsetSelectionSignature = '';\n        hideVersionWizard();\n        clearManualValueOffsetAdvice();",
+            content,
+        )
+        self.assertIn(
+            "if (clearSelectedInput) {\n            convertServerFilePath = '';\n            if (convertExcelFile) {\n                convertExcelFile.value = '';\n            }\n        }\n        surveySourcedataQuickSelectController.clearSelectedFile();",
+            content,
+        )
+
+    def test_survey_converter_prunes_stale_library_and_template_check_ui_branches(self):
+        survey_content = SURVEY_CONVERT_MODULE.read_text(encoding="utf-8")
+        bootstrap_content = CONVERTER_BOOTSTRAP.read_text(encoding="utf-8")
+        template_content = SURVEY_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertNotIn("convertLibraryPathInput", survey_content)
+        self.assertNotIn("convertBrowseLibraryBtn", survey_content)
+        self.assertNotIn("checkProjectTemplatesBtn", survey_content)
+        self.assertNotIn("refreshConvertLanguages()", survey_content)
+        self.assertNotIn("surveyI18nWarning", survey_content)
+        self.assertNotIn("surveyStructureWarning", survey_content)
+
+        self.assertNotIn(
+            "convertLibraryPathInput: document.getElementById('convertLibraryPath')",
+            bootstrap_content,
+        )
+        self.assertNotIn(
+            "convertBrowseLibraryBtn: document.getElementById('convertBrowseLibraryBtn')",
+            bootstrap_content,
+        )
+        self.assertNotIn(
+            "checkProjectTemplatesBtn: document.getElementById('checkProjectTemplatesBtn')",
+            bootstrap_content,
+        )
+
+        self.assertNotIn('id="convertLibraryPath"', template_content)
+        self.assertNotIn('id="convertBrowseLibraryBtn"', template_content)
+        self.assertNotIn('id="checkProjectTemplatesBtn"', template_content)
+        self.assertNotIn('id="surveyI18nWarning"', template_content)
+        self.assertNotIn('id="surveyStructureWarning"', template_content)
 
     def test_survey_converter_uses_structured_value_offset_editor(self):
         module_content = SURVEY_CONVERT_MODULE.read_text(encoding="utf-8")
@@ -602,6 +662,9 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         workflow_convert_content = SURVEY_WORKFLOW_CONVERT_MODULE.read_text(
             encoding="utf-8"
         )
+        workflow_convert_results_content = (
+            SURVEY_WORKFLOW_CONVERT_RESULTS_MODULE.read_text(encoding="utf-8")
+        )
         workflow_progress_content = SURVEY_WORKFLOW_PROGRESS_MODULE.read_text(
             encoding="utf-8"
         )
@@ -644,6 +707,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "import { createSurveyWorkflowConvertController } from './survey-workflow-convert.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "import { createSurveyWorkflowConvertResultsController } from './survey-workflow-convert-results.js';",
             survey_content,
         )
         self.assertIn(
@@ -696,6 +763,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "const surveyWorkflowConvertController = createSurveyWorkflowConvertController({",
+            survey_content,
+        )
+        self.assertIn(
+            "const surveyWorkflowConvertResultsController = createSurveyWorkflowConvertResultsController({",
             survey_content,
         )
         self.assertIn(
@@ -841,7 +912,9 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "export function createSurveyWorkflowPrepareController({",
             workflow_prepare_content,
         )
-        self.assertIn("fetch('/api/survey-prepare-workflow'", workflow_prepare_content)
+        self.assertIn("formData.append('workflow_command', 'prepare');", workflow_prepare_content)
+        self.assertIn("fetch('/api/survey-workflow-command'", workflow_prepare_content)
+        self.assertNotIn("fetch('/api/survey-prepare-workflow'", workflow_prepare_content)
         self.assertIn("function finishPreparationPhase(mode, outcome)", workflow_prepare_content)
         self.assertIn("function handleLateSetupBlocker(mode, payload, selectedValueOffsets = {})", workflow_prepare_content)
 
@@ -853,7 +926,9 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "async function handlePreviewClick() {",
             workflow_preview_content,
         )
-        self.assertIn("fetch('/api/survey-convert-preview'", workflow_preview_content)
+        self.assertIn("formData.append('workflow_command', 'preview');", workflow_preview_content)
+        self.assertIn("fetch('/api/survey-workflow-command'", workflow_preview_content)
+        self.assertNotIn("fetch('/api/survey-convert-preview'", workflow_preview_content)
         self.assertIn(
             "surveyWorkflowPrepareController.finishPreparationPhase('preview', preparation.outcome);",
             workflow_preview_content,
@@ -867,10 +942,42 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "async function handleConvertClick() {",
             workflow_convert_content,
         )
-        self.assertIn("fetch('/api/survey-convert-validate'", workflow_convert_content)
+        self.assertIn("formData.append('workflow_command', 'convert');", workflow_convert_content)
+        self.assertIn("fetch('/api/survey-workflow-command'", workflow_convert_content)
+        self.assertNotIn("fetch('/api/survey-convert-validate'", workflow_convert_content)
+        self.assertIn("handleConvertSuccess(data, {", workflow_convert_content)
+        self.assertNotIn(
+            "appendLog('✓ Validation passed - dataset is valid!', 'success');",
+            workflow_convert_content,
+        )
+        self.assertNotIn(
+            "showParticipantRegistryWarning(",
+            workflow_convert_content,
+        )
         self.assertIn(
             "surveyWorkflowPrepareController.finishPreparationPhase('convert', preparation.outcome);",
             workflow_convert_content,
+        )
+
+        self.assertIn(
+            "export function createSurveyWorkflowConvertResultsController({",
+            workflow_convert_results_content,
+        )
+        self.assertIn(
+            "function handleConvertSuccess(data, { sourceFilename = '' } = {}) {",
+            workflow_convert_results_content,
+        )
+        self.assertIn(
+            "appendLog('✓ Validation passed - dataset is valid!', 'success');",
+            workflow_convert_results_content,
+        )
+        self.assertIn(
+            "showParticipantRegistryWarning(",
+            workflow_convert_results_content,
+        )
+        self.assertIn(
+            "registerSessionInProject(regSessionVal, regTasks, 'survey', normalizedFilename, convType);",
+            workflow_convert_results_content,
         )
 
         self.assertIn(
