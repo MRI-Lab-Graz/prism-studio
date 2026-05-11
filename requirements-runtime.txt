@@ -3,7 +3,7 @@
 jsonschema
 numpy
 Flask>=3.1.3
-Werkzeug>=3.1.6
+Werkzeug>=3.1.8
 bidsschematools>=0.8.0
 requests>=2.33.0
 urllib3>=2.6.3
