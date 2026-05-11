@@ -14,6 +14,7 @@ from flask import (
 )
 
 from src.config import load_config
+from src.converters.survey_io import normalize_paper_software_platform
 from src.survey_scale_inference import apply_implicit_numeric_level_ranges
 from src.utils.io import dump_json_text
 from .tools_helpers import (
@@ -202,6 +203,9 @@ def _prune_optional_variant_placeholders(template: dict) -> dict:
 def _normalize_template_for_validation(*, modality: str, template: dict) -> dict:
     template = _strip_template_editor_internal_keys(template)
     if modality == "survey":
+        normalized_template = normalize_paper_software_platform(template)
+        if isinstance(normalized_template, dict):
+            template = normalized_template
         template = _autofill_single_version_variant_ids(template)
         template = _prune_optional_variant_placeholders(template)
         template = apply_implicit_numeric_level_ranges(template)

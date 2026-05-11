@@ -6,6 +6,26 @@
 
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createSessionRegistrar } from '../../shared/session-register.js';
+import { createSurveyParticipantsMetadataController } from './survey-participants-metadata.js';
+import { createSurveyWorkflowPrepareController } from './survey-workflow-prepare.js';
+import { createSurveyWorkflowConvertController } from './survey-workflow-convert.js';
+import { createSurveyWorkflowProgressController } from './survey-workflow-progress.js';
+import { createSurveySourcedataQuickSelectController } from './survey-sourcedata-quick-select.js';
+import { createSurveyTemplateResultsController } from './survey-template-results.js';
+import { createSurveyConversionSummaryController } from './survey-conversion-summary.js';
+import { createSurveyConversionLogController } from './survey-conversion-log.js';
+import { createSurveyValidationResultsController } from './survey-validation-results.js';
+import { createSurveyValueOffsetEditorController } from './survey-value-offset-editor.js';
+import {
+    collectSuggestedValueOffsets,
+    formatOffsetMagnitude,
+    formatSignedOffset,
+    normalizeTaskValueOffsets as normalizeTaskValueOffsetsMap,
+    parseNumericOffsetValue,
+    parseTaskValueOffsetsText as parseTaskValueOffsetsTextWithNormalizer,
+} from './survey-value-offset-utils.js';
+import { createSurveyWorkflowTemplateCheckController } from './survey-workflow-template-check.js';
+import { createSurveyWorkflowPreviewController } from './survey-workflow-preview.js';
 
 export function initSurveyConvert(elements) {
     const {
@@ -25,6 +45,11 @@ export function initSurveyConvert(elements) {
         convertLanguage,
         convertError,
         convertInfo,
+        surveyRunProgressContainer,
+        surveyRunProgressBar,
+        surveyRunProgressLabel,
+        surveyRunProgressPercent,
+        surveyRunCancelBtn,
         convertIdColumnGroup,
         convertIdColumn,
         convertTemplateExportGroup,
@@ -57,6 +82,17 @@ export function initSurveyConvert(elements) {
     } = elements;
 
     const convertAdvancedToggle = document.getElementById('convertAdvancedToggle');
+    const surveyAdvancedOptionsPanel = document.getElementById('surveyAdvancedOptions');
+    const convertValueOffsets = document.getElementById('convertValueOffsets');
+    const convertValueOffsetsEditor = document.getElementById('convertValueOffsetsEditor');
+    const convertValueOffsetRows = document.getElementById('convertValueOffsetRows');
+    const convertAddValueOffsetRowBtn = document.getElementById('convertAddValueOffsetRowBtn');
+    const convertApplyValueOffsetsBtn = document.getElementById('convertApplyValueOffsetsBtn');
+    const convertValueOffsetsKnownTasks = document.getElementById('convertValueOffsetsKnownTasks');
+    const convertValueOffsetsEmptyState = document.getElementById('convertValueOffsetsEmptyState');
+    const convertValueOffsetsStatus = document.getElementById('convertValueOffsetsStatus');
+    const convertValueOffsetAdvice = document.getElementById('convertValueOffsetAdvice');
+    const surveyWorkflowHint = document.getElementById('surveyWorkflowHint');
     const browseServerSurveyFileBtn = document.getElementById('browseServerSurveyFileBtn');
     const convertSessionColumnOverride = document.getElementById('convertSessionColumnOverride');
     const convertRunColumnOverride = document.getElementById('convertRunColumnOverride');
@@ -64,7 +100,10 @@ export function initSurveyConvert(elements) {
     const surveyVersionWizard = document.getElementById('surveyVersionWizard');
     const surveyVersionWizardBody = document.getElementById('surveyVersionWizardBody');
     const surveyVersionWizardCount = document.getElementById('surveyVersionWizardCount');
+    const surveyVersionWizardStatus = document.getElementById('surveyVersionWizardStatus');
+    const surveyVersionWizardApplyBtn = document.getElementById('surveyVersionWizardApplyBtn');
     let selectedTemplateVersions = {};
+    let appliedTemplateVersionSelectionSignature = '';
     let versionWizardState = {
         multivariantTasks: {},
         taskRuns: {},
@@ -73,10 +112,80 @@ export function initSurveyConvert(elements) {
     };
     let versionWizardSyncTimer = null;
     let versionWizardSyncRequestId = 0;
-    let sourcedataRequestToken = 0;
     let convertServerFilePath = '';
     let lastDetectedSurveyFingerprint = '';
-    let nearMatchRetryState = null;
+    let confirmedNearMatchTasks = [];
+    let versionWizardRetryGateMode = null;
+    let isConvertRunning = false;
+    let isPreviewRunning = false;
+    let activeRunAbortController = null;
+    let activeRunMode = null;
+    let activeRunCancelledByUser = false;
+    let taskValueOffsetRowSequence = 0;
+    let taskValueOffsetEditorState = [];
+    let appliedTaskValueOffsetSelectionSignature = '';
+    let surveyPreviewSelectionState = {
+        previewKey: '',
+        availableTasks: [],
+        selectedTasks: []
+    };
+
+    const surveyWorkflowProgressController = createSurveyWorkflowProgressController({
+        surveyRunProgressContainer,
+        surveyRunProgressBar,
+        surveyRunProgressLabel,
+        surveyRunProgressPercent,
+        onProgressStateChanged: () => {
+            updateConvertBtn();
+        },
+    });
+
+    const surveySourcedataQuickSelectController = createSurveySourcedataQuickSelectController({
+        sourcedataQuickSelect,
+        sourcedataFileSelect,
+        convertExcelFile,
+        convertError,
+        resolveCurrentProjectPath,
+        onProjectChanged: () => {
+            cancelActiveSurveyRun();
+            resetSurveyImportFormState();
+        },
+    });
+
+    const surveyWorkflowTemplateCheckController = createSurveyWorkflowTemplateCheckController({
+        checkProjectTemplatesBtn,
+        surveyVersionWizardApplyBtn,
+        convertError,
+        conversionLogContainer,
+        conversionLogBody,
+        toggleLogBtn,
+        getSelectedSurveyFilename,
+        convertIdColumn,
+        appendLog,
+        resolveCurrentProjectPath,
+        appendSurveyInputToFormData,
+        getSelectedSeparator,
+        parseJsonResponse,
+        setTemplateWorkflowGate: (value) => {
+            templateWorkflowGate = (value && typeof value === 'object') ? value : null;
+        },
+        setTemplateEditorErrorCtaVisible,
+        convertInfo,
+        buildVersionWizard,
+        hideVersionWizard,
+        updateConvertBtn,
+        hasMultiVersionWizardTasks,
+        hasCompleteVersionWizardSelections,
+        getCurrentTemplateVersionSelectionSignature,
+        setAppliedTemplateVersionSelectionSignature: (value) => {
+            appliedTemplateVersionSelectionSignature = String(value || '');
+        },
+        setVersionWizardRetryGateMode: (value) => {
+            versionWizardRetryGateMode = value;
+        },
+        getTemplateWorkflowGate: () => templateWorkflowGate,
+        updateVersionWizardActionState,
+    });
 
     function getSelectedSurveyFile() {
         return (convertExcelFile && convertExcelFile.files && convertExcelFile.files[0])
@@ -129,6 +238,197 @@ export function initSurveyConvert(elements) {
 
     function resetSurveyRefreshFingerprint() {
         lastDetectedSurveyFingerprint = '';
+        clearRetryResolutionState();
+        clearSurveyPreviewSelectionState();
+    }
+
+    function normalizeSurveyTaskName(value) {
+        return normalizeNearMatchTaskName(value).replace(/^survey-/, '');
+    }
+
+    function getSelectedIdMapFingerprint() {
+        const selectedFile = convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0]
+            ? convertIdMapFile.files[0]
+            : null;
+        if (!selectedFile) {
+            return '';
+        }
+        const lastModified = Number.isFinite(Number(selectedFile.lastModified))
+            ? Number(selectedFile.lastModified)
+            : 0;
+        return `id-map:${selectedFile.name}:${selectedFile.size}:${lastModified}`;
+    }
+
+    function getSurveyPreviewContextKey({ includeValueOffsets = true } = {}) {
+        const templateSelections = getTemplateVersionSelections()
+            .map((entry) => ({
+                task: normalizeSurveyTaskName(entry && entry.task),
+                session: entry && entry.session ? String(entry.session) : '',
+                run: entry && entry.run ? String(entry.run) : '',
+                version: entry && entry.version ? String(entry.version) : ''
+            }))
+            .sort((left, right) => {
+                const leftKey = `${left.task}::${left.session}::${left.run}::${left.version}`;
+                const rightKey = `${right.task}::${right.session}::${right.run}::${right.version}`;
+                return leftKey.localeCompare(rightKey);
+            });
+
+        return JSON.stringify({
+            input: getSelectedSurveyFingerprint(),
+            idMap: getSelectedIdMapFingerprint(),
+            idColumn: String(convertIdColumn?.value || '').trim(),
+            session: String(getSurveySessionValue() || '').trim(),
+            sessionColumn: String(convertSessionColumnOverride?.value || '').trim(),
+            runColumn: String(convertRunColumnOverride?.value || '').trim(),
+            surveyFilter: isAdvancedOptionsEnabled() && convertDatasetName
+                ? String(convertDatasetName.value || '').trim().toLowerCase()
+                : '',
+            language: isAdvancedOptionsEnabled() && convertLanguage
+                ? String(convertLanguage.value || 'auto').trim().toLowerCase()
+                : 'auto',
+            separator: getSelectedSeparator(getSelectedSurveyFilename().toLowerCase()),
+            valueOffsetsText: includeValueOffsets && isAdvancedOptionsEnabled() && convertValueOffsets
+                ? String(convertValueOffsets.value || '').trim()
+                : '',
+            nearMatchTasks: getEffectiveNearMatchTasks().map(normalizeSurveyTaskName).sort(),
+            templateSelections,
+        });
+    }
+
+    function clearSurveyPreviewSelectionState() {
+        surveyPreviewSelectionState = {
+            previewKey: '',
+            availableTasks: [],
+            selectedTasks: []
+        };
+        renderTaskValueOffsetEditor();
+    }
+
+    function setSurveyPreviewSelectionState(taskSummaries, previewKey = getSurveyPreviewContextKey()) {
+        if (!Array.isArray(taskSummaries) || taskSummaries.length === 0) {
+            clearSurveyPreviewSelectionState();
+            return;
+        }
+
+        const availableTasks = taskSummaries
+            .map((entry) => normalizeSurveyTaskName(entry && entry.task))
+            .filter(Boolean);
+        const selectedTasks = taskSummaries
+            .filter((entry) => entry && entry.selected !== false)
+            .map((entry) => normalizeSurveyTaskName(entry && entry.task))
+            .filter(Boolean);
+
+        surveyPreviewSelectionState = {
+            previewKey,
+            availableTasks,
+            selectedTasks: selectedTasks.length > 0 ? selectedTasks : [...availableTasks]
+        };
+        renderTaskValueOffsetEditor();
+    }
+
+    function setSurveyPreviewSelectedTasks(selectedTasks) {
+        surveyPreviewSelectionState = {
+            ...surveyPreviewSelectionState,
+            selectedTasks: Array.isArray(selectedTasks) ? selectedTasks : []
+        };
+    }
+
+    function hasFreshSurveyPreviewSelectionState() {
+        return Boolean(
+            surveyPreviewSelectionState.previewKey
+            && surveyPreviewSelectionState.availableTasks.length > 0
+            && surveyPreviewSelectionState.previewKey === getSurveyPreviewContextKey()
+        );
+    }
+
+    function isPreviewStaleOnlyByOffsetChanges() {
+        if (!surveyPreviewSelectionState.previewKey || surveyPreviewSelectionState.availableTasks.length === 0) {
+            return false;
+        }
+
+        let previousPayload;
+        let currentPayload;
+        try {
+            previousPayload = JSON.parse(surveyPreviewSelectionState.previewKey);
+            currentPayload = JSON.parse(getSurveyPreviewContextKey());
+        } catch (_error) {
+            return false;
+        }
+
+        if (!previousPayload || !currentPayload || typeof previousPayload !== 'object' || typeof currentPayload !== 'object') {
+            return false;
+        }
+
+        const previousWithoutOffsets = { ...previousPayload, valueOffsetsText: '' };
+        const currentWithoutOffsets = { ...currentPayload, valueOffsetsText: '' };
+
+        return (
+            JSON.stringify(previousWithoutOffsets) === JSON.stringify(currentWithoutOffsets)
+            && String(previousPayload.valueOffsetsText || '') !== String(currentPayload.valueOffsetsText || '')
+        );
+    }
+
+    function updateSurveyWorkflowHint({
+        hasFile,
+        blockedByTemplateGate,
+        versionSelectionsPending,
+        valueOffsetSelectionsPending,
+        hasFreshPreviewReview,
+        hasSelectedPreviewTasks,
+        isConvertRunning,
+        isPreviewRunning,
+    }) {
+        if (!surveyWorkflowHint) {
+            return;
+        }
+
+        let message = '';
+        let className = 'form-text text-muted mb-2';
+
+        if (isConvertRunning) {
+            message = 'Step 5 is running. Wait for conversion to finish before changing workflow inputs.';
+            className = 'form-text text-warning mb-2';
+        } else if (isPreviewRunning) {
+            message = 'Step 4 is running. Review output when preview completes.';
+            className = 'form-text text-info mb-2';
+        } else if (!hasFile) {
+            message = 'Step 1: Choose a survey source file to begin.';
+        } else if (versionSelectionsPending) {
+            message = 'Apply questionnaire version selections, then continue with Step 4 (Preview).';
+            className = 'form-text text-warning mb-2';
+        } else if (valueOffsetSelectionsPending) {
+            message = 'Apply manual offsets, then continue with Step 4 (Preview).';
+            className = 'form-text text-warning mb-2';
+        } else if (blockedByTemplateGate) {
+            message = 'Project template metadata is incomplete. Finish template edits, then rerun Step 4 (Preview).';
+            className = 'form-text text-warning mb-2';
+        } else if (!hasFreshPreviewReview) {
+            if (isPreviewStaleOnlyByOffsetChanges()) {
+                message = 'Manual offsets changed. Run Step 4 (Preview) again to validate the new scale handling before Step 5 unlocks.';
+            } else {
+                message = 'Run Step 4 (Preview) after your latest changes before converting.';
+            }
+            className = 'form-text text-warning mb-2';
+        } else if (!hasSelectedPreviewTasks) {
+            message = 'Select at least one survey in Preview Review, then continue to Step 5.';
+            className = 'form-text text-warning mb-2';
+        } else {
+            message = 'Ready for Step 5: Convert selected surveys.';
+            className = 'form-text text-success mb-2';
+        }
+
+        surveyWorkflowHint.className = className;
+        surveyWorkflowHint.textContent = message;
+    }
+
+    function getSelectedSurveyTasksForConversion() {
+        const selectedTasks = Array.isArray(surveyPreviewSelectionState.selectedTasks)
+            ? surveyPreviewSelectionState.selectedTasks.map(normalizeSurveyTaskName).filter(Boolean)
+            : [];
+        const availableTaskSet = new Set(
+            (surveyPreviewSelectionState.availableTasks || []).map(normalizeSurveyTaskName).filter(Boolean)
+        );
+        return selectedTasks.filter((task) => availableTaskSet.has(task));
     }
 
     async function refreshSurveyColumnsBeforeRun() {
@@ -152,6 +452,10 @@ export function initSurveyConvert(elements) {
     function enrichSurveyRunErrorMessage(message) {
         const baseMessage = String(message || 'Conversion failed');
         const normalized = baseMessage.toLowerCase();
+        const isGenericPatternMessage = normalized === 'the string did not match the expected pattern.';
+        if (isGenericPatternMessage) {
+            return 'Server response could not be parsed. Please retry once. If it persists, check backend logs for survey prepare/preview endpoint errors.';
+        }
         const isDuplicateNormalizationError = normalized.includes('duplicate entries after normalization');
         if (!isDuplicateNormalizationError) {
             return baseMessage;
@@ -162,6 +466,48 @@ export function initSurveyConvert(elements) {
         }
 
         return baseMessage;
+    }
+
+    function summarizeServerResponseText(rawText) {
+        const compact = String(rawText || '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        if (!compact) {
+            return '';
+        }
+        if (compact.length <= 220) {
+            return compact;
+        }
+        return `${compact.slice(0, 217)}...`;
+    }
+
+    async function parseJsonResponse(response, requestLabel = 'Request') {
+        const statusCode = Number(response && response.status);
+        const statusText = String((response && response.statusText) || '').trim();
+        const statusLabel = Number.isFinite(statusCode) && statusCode > 0
+            ? `HTTP ${statusCode}${statusText ? ` ${statusText}` : ''}`
+            : 'HTTP response';
+
+        let responseText = '';
+        try {
+            responseText = await response.text();
+        } catch (_readError) {
+            throw new Error(`${requestLabel} returned an unreadable response (${statusLabel}).`);
+        }
+
+        const trimmed = String(responseText || '').trim();
+        if (!trimmed) {
+            return {};
+        }
+
+        try {
+            return JSON.parse(trimmed);
+        } catch (_parseError) {
+            const snippet = summarizeServerResponseText(trimmed);
+            const suffix = snippet ? ` Response: ${snippet}` : '';
+            throw new Error(`${requestLabel} returned a non-JSON response (${statusLabel}).${suffix}`);
+        }
     }
 
     function normalizeNearMatchTaskName(value) {
@@ -455,6 +801,387 @@ export function initSurveyConvert(elements) {
         });
     }
 
+    function normalizeTaskValueOffsets(offsetMap) {
+        return normalizeTaskValueOffsetsMap(offsetMap, normalizeNearMatchTaskName);
+    }
+
+    function createTaskValueOffsetRow(task = '', offset = null) {
+        return surveyValueOffsetEditorController.createTaskValueOffsetRow(task, offset);
+    }
+
+    function getAvailableSurveyTasksForValueOffsets() {
+        return surveyValueOffsetEditorController.getAvailableSurveyTasksForValueOffsets();
+    }
+
+    function getTaskValueOffsetMapFromEditorState() {
+        return surveyValueOffsetEditorController.getTaskValueOffsetMapFromEditorState();
+    }
+
+    function getCurrentTaskValueOffsetSelectionSignature() {
+        return surveyValueOffsetEditorController.getCurrentTaskValueOffsetSelectionSignature();
+    }
+
+    function hasManualTaskValueOffsets() {
+        return surveyValueOffsetEditorController.hasManualTaskValueOffsets();
+    }
+
+    function hasIncompleteTaskValueOffsetRows() {
+        return surveyValueOffsetEditorController.hasIncompleteTaskValueOffsetRows();
+    }
+
+    function hasAppliedTaskValueOffsetSelections() {
+        return surveyValueOffsetEditorController.hasAppliedTaskValueOffsetSelections();
+    }
+
+    function updateTaskValueOffsetApplyState() {
+        surveyValueOffsetEditorController.updateTaskValueOffsetApplyState();
+    }
+
+    function getPreferredTaskValueOffsetTask() {
+        return surveyValueOffsetEditorController.getPreferredTaskValueOffsetTask();
+    }
+
+    function syncTaskValueOffsetTextFromState() {
+        surveyValueOffsetEditorController.syncTaskValueOffsetTextFromState();
+    }
+
+    function setTaskValueOffsetEditorStateFromText(rawText) {
+        surveyValueOffsetEditorController.setTaskValueOffsetEditorStateFromText(rawText);
+    }
+
+    function clearTaskValueOffsetEditorState() {
+        surveyValueOffsetEditorController.clearTaskValueOffsetEditorState();
+    }
+
+    function ensureTaskValueOffsetEditorRow(task = '') {
+        return surveyValueOffsetEditorController.ensureTaskValueOffsetEditorRow(task);
+    }
+
+    function focusTaskValueOffsetEditor(rowId = null) {
+        surveyValueOffsetEditorController.focusTaskValueOffsetEditor(rowId);
+    }
+
+    function renderTaskValueOffsetEditor() {
+        return surveyValueOffsetEditorController.renderTaskValueOffsetEditor();
+    }
+
+    function handleTaskValueOffsetEditorChanged() {
+        surveyValueOffsetEditorController.handleTaskValueOffsetEditorChanged();
+    }
+
+    function clearManualValueOffsetAdvice() {
+        surveyValueOffsetEditorController.clearManualValueOffsetAdvice();
+    }
+
+    function handleApplyTaskValueOffsetsClick() {
+        surveyValueOffsetEditorController.handleApplyTaskValueOffsetsClick();
+    }
+
+    function ensureSurveyAdvancedOptionsVisible() {
+        if (convertAdvancedToggle && !convertAdvancedToggle.checked) {
+            convertAdvancedToggle.checked = true;
+        }
+        applyAdvancedOptionsState();
+        if (
+            surveyAdvancedOptionsPanel
+            && window.bootstrap
+            && window.bootstrap.Collapse
+        ) {
+            window.bootstrap.Collapse.getOrCreateInstance(
+                surveyAdvancedOptionsPanel,
+                { toggle: false },
+            ).show();
+        }
+    }
+
+    function openAdvancedOptionsValueOffsetEditor() {
+        ensureSurveyAdvancedOptionsVisible();
+        focusTaskValueOffsetEditor();
+    }
+
+    function parseTaskValueOffsetsText(rawText) {
+        return parseTaskValueOffsetsTextWithNormalizer(rawText, normalizeNearMatchTaskName);
+    }
+
+    function getManualTaskValueOffsets() {
+        return surveyValueOffsetEditorController.getManualTaskValueOffsets();
+    }
+
+    function getManualValueOffsetReviewMessage(payload, mode) {
+        const modeLabel = mode === 'convert' ? 'conversion' : 'preview';
+        const task = normalizeNearMatchTaskName(payload && payload.task) || 'unknown task';
+        const itemId = String(payload && payload.item_id || '').trim();
+        const rawValue = payload && payload.raw_value;
+        const backendMessage = String(payload && payload.message || '').trim();
+        const expectedLevels = Array.isArray(payload && payload.expected_levels)
+            ? payload.expected_levels.map((entry) => String(entry)).filter(Boolean)
+            : [];
+        const suggestedOffsets = collectSuggestedValueOffsets(payload);
+        const configuredOffset = parseNumericOffsetValue(payload && payload.configured_offset);
+        const offsetEvidence = (
+            payload
+            && payload.offset_evidence
+            && typeof payload.offset_evidence === 'object'
+        ) ? payload.offset_evidence : null;
+        const summary = offsetEvidence && typeof offsetEvidence.summary_message === 'string'
+            ? offsetEvidence.summary_message.trim()
+            : '';
+        const evidenceClassification = offsetEvidence && typeof offsetEvidence.classification === 'string'
+            ? offsetEvidence.classification.trim().toLowerCase()
+            : '';
+        const classificationHint = evidenceClassification === 'structural_offset_likely'
+            ? 'Flag: this pattern looks like a possible task-wide scale offset.'
+            : evidenceClassification === 'item_issues_likely'
+                ? 'Flag: this pattern may not be a single task-wide scale offset.'
+                : '';
+        const reviewSummary = summary || classificationHint || backendMessage;
+
+        const lines = [
+            `Survey ${modeLabel} stopped because task ${task} has values outside the template scale.`,
+            itemId ? `Item: ${itemId}` : null,
+            rawValue !== undefined ? `Observed value: ${String(rawValue)}` : null,
+            expectedLevels.length > 0 ? `Expected levels: ${expectedLevels.join(', ')}` : null,
+            configuredOffset !== null
+                ? `Current manual offset: ${formatSignedOffset(configuredOffset)} (did not resolve this dataset)`
+                : null,
+            suggestedOffsets.length > 0
+                ? `Suggested offset${suggestedOffsets.length === 1 ? '' : 's'}: ${suggestedOffsets.map((entry) => formatSignedOffset(entry)).join(', ')}`
+                : null,
+            reviewSummary || null,
+            'If you are certain this task is coded on the wrong numeric scale, enter a manual task offset below and run Preview again.',
+        ].filter(Boolean);
+
+        return lines.join('\n');
+    }
+
+    function showManualValueOffsetReview(payload, mode, selectedValueOffsets = {}) {
+        ensureSurveyAdvancedOptionsVisible();
+        if (convertValueOffsetAdvice) {
+            convertValueOffsetAdvice.textContent = getManualValueOffsetReviewMessage(payload, mode);
+            convertValueOffsetAdvice.classList.remove('d-none');
+        }
+
+        const task = normalizeNearMatchTaskName(payload && payload.task);
+        const configuredOffset = parseNumericOffsetValue(payload && payload.configured_offset);
+        if (
+            task
+            && configuredOffset !== null
+            && isConfiguredOffsetFailureForCurrentSelection(payload, selectedValueOffsets)
+        ) {
+            convertInfo.textContent = `Manual task offset ${formatSignedOffset(configuredOffset)} for ${task} did not resolve this dataset. Update Advanced options and run Preview again.`;
+        } else {
+            convertInfo.textContent = 'Review the task value offset guidance in Advanced options, then run Preview again if you want to apply a manual scale adjustment.';
+        }
+        convertInfo.classList.remove('d-none');
+        appendLog(getManualValueOffsetReviewMessage(payload, mode), 'warning');
+        const rowId = ensureTaskValueOffsetEditorRow(task);
+        focusTaskValueOffsetEditor(rowId);
+    }
+
+    function clearRetryResolutionState() {
+        confirmedNearMatchTasks = [];
+    }
+
+    function isAbortError(error) {
+        if (!error) {
+            return false;
+        }
+        const errorName = String(error.name || '').toLowerCase();
+        if (errorName === 'aborterror') {
+            return true;
+        }
+        const errorMessage = String(error.message || '').toLowerCase();
+        return errorMessage.includes('aborted') || errorMessage.includes('aborterror');
+    }
+
+    function setActiveSurveyRun(mode, controller) {
+        activeRunMode = mode;
+        activeRunAbortController = controller;
+        activeRunCancelledByUser = false;
+    }
+
+    function clearActiveSurveyRun(mode = null) {
+        if (mode && activeRunMode && activeRunMode !== mode) {
+            return;
+        }
+        activeRunMode = null;
+        activeRunAbortController = null;
+        activeRunCancelledByUser = false;
+    }
+
+    function cancelActiveSurveyRun() {
+        if (!activeRunAbortController) {
+            return false;
+        }
+        activeRunCancelledByUser = true;
+        activeRunAbortController.abort();
+        return true;
+    }
+
+    function setSurveyRunProgress(options) {
+        surveyWorkflowProgressController.setSurveyRunProgress(options);
+    }
+
+    function hideSurveyRunProgress() {
+        surveyWorkflowProgressController.hideSurveyRunProgress();
+    }
+
+    function startSurveyRunProgress(mode) {
+        surveyWorkflowProgressController.startSurveyRunProgress(mode);
+    }
+
+    function advanceSurveyRunProgress(mode, percent, label) {
+        surveyWorkflowProgressController.advanceSurveyRunProgress(mode, percent, label);
+    }
+
+    function pauseSurveyRunProgress(mode, label) {
+        surveyWorkflowProgressController.pauseSurveyRunProgress(mode, label);
+    }
+
+    function resumeSurveyRunProgress(mode, percent, label) {
+        surveyWorkflowProgressController.resumeSurveyRunProgress(mode, percent, label);
+    }
+
+    function finishSurveyRunProgress(mode, outcome) {
+        surveyWorkflowProgressController.finishSurveyRunProgress(mode, outcome);
+    }
+
+    function mergeNearMatchTasks(existingTasks, nextTasks) {
+        return [...new Set(
+            ([])
+                .concat(Array.isArray(existingTasks) ? existingTasks : [])
+                .concat(Array.isArray(nextTasks) ? nextTasks : [])
+                .map((task) => normalizeNearMatchTaskName(task))
+                .filter(Boolean)
+        )];
+    }
+
+    function offsetsAreEqual(left, right, tolerance = 1e-9) {
+        const leftValue = Number(left);
+        const rightValue = Number(right);
+        if (!Number.isFinite(leftValue) || !Number.isFinite(rightValue)) {
+            return false;
+        }
+        return Math.abs(leftValue - rightValue) <= tolerance;
+    }
+
+    function getAppliedTaskOffset(offsetMap, taskName) {
+        const normalizedOffsets = normalizeTaskValueOffsets(offsetMap);
+        const normalizedTask = normalizeNearMatchTaskName(taskName);
+        if (normalizedTask && Object.prototype.hasOwnProperty.call(normalizedOffsets, normalizedTask)) {
+            return normalizedOffsets[normalizedTask];
+        }
+        if (Object.prototype.hasOwnProperty.call(normalizedOffsets, '*')) {
+            return normalizedOffsets['*'];
+        }
+        return null;
+    }
+
+    function isConfiguredOffsetFailureForCurrentSelection(payload, selectedOffsets) {
+        const configuredOffset = parseNumericOffsetValue(payload && payload.configured_offset);
+        if (configuredOffset === null) {
+            return false;
+        }
+        const task = normalizeNearMatchTaskName(payload && payload.task);
+        const appliedOffset = getAppliedTaskOffset(selectedOffsets, task);
+        if (appliedOffset === null) {
+            return false;
+        }
+        return offsetsAreEqual(configuredOffset, appliedOffset);
+    }
+
+    function getEffectiveNearMatchTasks(nextTasks = null) {
+        return mergeNearMatchTasks(
+            confirmedNearMatchTasks,
+            Array.isArray(nextTasks) ? nextTasks : []
+        );
+    }
+
+    function getEffectiveTaskValueOffsets(retryOffsets = null) {
+        const appliedManualOffsets = hasAppliedTaskValueOffsetSelections()
+            ? getManualTaskValueOffsets()
+            : {};
+        return normalizeTaskValueOffsets({
+            ...appliedManualOffsets,
+            ...normalizeTaskValueOffsets(retryOffsets),
+        });
+    }
+
+    function hasCompleteVersionWizardSelections() {
+        const multivariantTasks = (
+            versionWizardState
+            && versionWizardState.multivariantTasks
+            && typeof versionWizardState.multivariantTasks === 'object'
+        )
+            ? versionWizardState.multivariantTasks
+            : {};
+
+        const entries = Object.entries(multivariantTasks).filter(([, info]) => {
+            return Array.isArray(info?.versions) && info.versions.length > 1;
+        });
+        if (entries.length === 0) {
+            return true;
+        }
+
+        const contexts = deriveDetectedContexts(
+            versionWizardState?.taskRuns || {},
+            versionWizardState?.previewParticipants || [],
+            versionWizardState?.detectedSessions || []
+        );
+        const effectiveContexts = Array.isArray(contexts) && contexts.length > 0
+            ? contexts
+            : [{ session: null, run: null }];
+
+        return entries.every(([task, info]) => {
+            const allowedVersions = info.versions
+                .map((value) => String(value || '').trim())
+                .filter(Boolean);
+
+            if (allowedVersions.length <= 1) {
+                return true;
+            }
+
+            return effectiveContexts.every((context) => {
+                const selectionKey = buildVersionSelectionKey({
+                    task,
+                    session: context && Object.prototype.hasOwnProperty.call(context, 'session')
+                        ? context.session
+                        : null,
+                    run: context && Object.prototype.hasOwnProperty.call(context, 'run')
+                        ? context.run
+                        : null,
+                });
+                const selectedVersion = String(selectedTemplateVersions[selectionKey] || '').trim();
+                return Boolean(selectedVersion && allowedVersions.includes(selectedVersion));
+            });
+        });
+    }
+
+    function applyPreparedSurveyWorkflowContext(data) {
+        const multivariantTasks = (data && typeof data.multivariant_tasks === 'object' && data.multivariant_tasks)
+            ? data.multivariant_tasks
+            : {};
+        if (Object.keys(multivariantTasks).length > 0) {
+            buildVersionWizard(
+                multivariantTasks,
+                (data && typeof data.task_runs === 'object' && data.task_runs) || {},
+                Array.isArray(data?.preview_participants) ? data.preview_participants : [],
+                Array.isArray(data?.detected_sessions) ? data.detected_sessions : []
+            );
+        } else {
+            hideVersionWizard();
+        }
+
+        templateWorkflowGate = (
+            data
+            && data.workflow_gate
+            && typeof data.workflow_gate === 'object'
+        ) ? data.workflow_gate : null;
+        setTemplateEditorErrorCtaVisible(Boolean(templateWorkflowGate && templateWorkflowGate.blocked));
+
+        return multivariantTasks;
+    }
+
     function prefersServerPicker() {
         return Boolean(
             window.PrismFileSystemMode
@@ -546,12 +1273,118 @@ export function initSurveyConvert(elements) {
             .filter(Boolean);
     }
 
+    function hasMultiVersionWizardTasks() {
+        return Object.values(versionWizardState?.multivariantTasks || {}).some((info) => {
+            return Array.isArray(info?.versions) && info.versions.length > 1;
+        });
+    }
+
+    function getCurrentTemplateVersionSelectionSignature() {
+        if (!hasMultiVersionWizardTasks()) {
+            return '';
+        }
+
+        const multivariantTasks = Object.entries(versionWizardState?.multivariantTasks || {})
+            .map(([task, info]) => {
+                const versions = Array.isArray(info?.versions)
+                    ? info.versions.map((value) => String(value || '').trim()).filter(Boolean).sort()
+                    : [];
+
+                return {
+                    task: normalizeSurveyTaskName(task),
+                    versions,
+                };
+            })
+            .filter((entry) => entry.task && entry.versions.length > 1)
+            .sort((left, right) => left.task.localeCompare(right.task));
+
+        const selections = getTemplateVersionSelections()
+            .map((entry) => ({
+                task: normalizeSurveyTaskName(entry && entry.task),
+                session: entry && entry.session ? String(entry.session) : '',
+                run: entry && entry.run ? String(entry.run) : '',
+                version: entry && entry.version ? String(entry.version) : '',
+            }))
+            .sort((left, right) => {
+                const leftKey = `${left.task}::${left.session}::${left.run}::${left.version}`;
+                const rightKey = `${right.task}::${right.session}::${right.run}::${right.version}`;
+                return leftKey.localeCompare(rightKey);
+            });
+
+        return JSON.stringify({ multivariantTasks, selections });
+    }
+
+    function hasAppliedVersionWizardSelections() {
+        if (!hasMultiVersionWizardTasks()) {
+            return true;
+        }
+        if (!hasCompleteVersionWizardSelections()) {
+            return false;
+        }
+
+        const currentSignature = getCurrentTemplateVersionSelectionSignature();
+        return Boolean(
+            currentSignature
+            && appliedTemplateVersionSelectionSignature
+            && currentSignature === appliedTemplateVersionSelectionSignature
+        );
+    }
+
+    function updateVersionWizardActionState() {
+        const wizardVisible = Boolean(
+            surveyVersionWizard
+            && !surveyVersionWizard.classList.contains('d-none')
+            && hasMultiVersionWizardTasks()
+        );
+        const hasCompleteSelections = hasCompleteVersionWizardSelections();
+        const hasAppliedSelections = wizardVisible && hasAppliedVersionWizardSelections();
+
+        if (surveyVersionWizardApplyBtn) {
+            surveyVersionWizardApplyBtn.classList.toggle('d-none', !wizardVisible);
+            surveyVersionWizardApplyBtn.disabled = !wizardVisible || !hasCompleteSelections || isConvertRunning || isPreviewRunning;
+            surveyVersionWizardApplyBtn.innerHTML = hasAppliedSelections
+                ? '<i class="fas fa-check me-2"></i>Questionnaire Versions Applied'
+                : '<i class="fas fa-list-check me-2"></i>Use These Versions';
+            surveyVersionWizardApplyBtn.classList.remove('btn-outline-primary', 'btn-success');
+            surveyVersionWizardApplyBtn.classList.add(hasAppliedSelections ? 'btn-success' : 'btn-outline-primary');
+
+            if (!wizardVisible) {
+                surveyVersionWizardApplyBtn.removeAttribute('title');
+            } else if (!hasCompleteSelections) {
+                surveyVersionWizardApplyBtn.title = 'Choose a version for each questionnaire context first.';
+            } else if (isConvertRunning || isPreviewRunning) {
+                surveyVersionWizardApplyBtn.title = 'Wait for the current run to finish.';
+            } else if (hasAppliedSelections) {
+                surveyVersionWizardApplyBtn.title = 'Preview is unlocked for the current questionnaire version selection.';
+            } else {
+                surveyVersionWizardApplyBtn.title = 'Apply these questionnaire versions before Preview validation can run.';
+            }
+        }
+
+        if (surveyVersionWizardStatus) {
+            surveyVersionWizardStatus.classList.toggle('d-none', !wizardVisible);
+            surveyVersionWizardStatus.classList.remove('text-muted', 'text-success');
+
+            if (!wizardVisible) {
+                surveyVersionWizardStatus.textContent = '';
+            } else if (hasAppliedSelections) {
+                surveyVersionWizardStatus.classList.add('text-success');
+                surveyVersionWizardStatus.textContent = 'Selections applied. Preview validation is available.';
+            } else {
+                surveyVersionWizardStatus.classList.add('text-muted');
+                surveyVersionWizardStatus.textContent = 'Review the selectors, then click Use These Versions before running Preview validation.';
+            }
+        }
+    }
+
     function hideVersionWizard() {
         if (surveyVersionWizard) surveyVersionWizard.classList.add('d-none');
         if (surveyVersionWizardBody) surveyVersionWizardBody.innerHTML = '';
         if (surveyVersionWizardCount) surveyVersionWizardCount.textContent = '';
         selectedTemplateVersions = {};
+        appliedTemplateVersionSelectionSignature = '';
         versionWizardState = { multivariantTasks: {}, taskRuns: {}, previewParticipants: [], detectedSessions: [] };
+        updateVersionWizardActionState();
     }
 
     function normalizeTimelineSessionToken(value) {
@@ -736,7 +1569,7 @@ export function initSurveyConvert(elements) {
             const group = document.createElement('div');
             group.className = 'col-12';
             group.innerHTML = `
-                <div class="survey-version-group">
+                <div class="survey-version-group survey-version-group-compact">
                     <div class="survey-version-group-header">
                         <div>
                             <div class="survey-version-group-label">Questionnaire</div>
@@ -747,11 +1580,11 @@ export function initSurveyConvert(elements) {
                             <span class="badge text-bg-secondary">${versions.length} versions</span>
                         </div>
                     </div>
-                    <div class="survey-version-group-grid row g-3"></div>
+                    <div class="survey-version-list"></div>
                 </div>
             `;
-            const groupGrid = group.querySelector('.survey-version-group-grid');
-            if (!groupGrid) return;
+            const groupList = group.querySelector('.survey-version-list');
+            if (!groupList) return;
 
             contexts.forEach((context) => {
                 timelineStep += 1;
@@ -766,22 +1599,18 @@ export function initSurveyConvert(elements) {
                 const contextSessionLabel = formatVersionWizardSessionLabel(context.session, sessionLabel);
                 const runLabel = formatVersionWizardRunLabel(context.run);
                 const selectorId = `surveyVersionSelect-${task}-${String(context.session || 'base').replace(/[^a-zA-Z0-9_-]/g, '_')}-${String(context.run || 'base').replace(/[^a-zA-Z0-9_-]/g, '_')}`;
-                const card = document.createElement('div');
-                card.className = 'col-12 col-xl-6';
-                card.innerHTML = `
-                    <div class="card border-0 shadow-sm h-100 survey-version-card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
-                                <div class="flex-grow-1">
-                                    <div class="small text-uppercase text-muted fw-semibold mb-2">Step ${timelineStep}</div>
-                                    <div class="survey-version-context-line mb-2" aria-label="${contextSessionLabel}, ${runLabel}">
-                                        <span class="survey-version-context-chip survey-version-context-chip-session">${contextSessionLabel}</span>
-                                        <span class="survey-version-context-chip survey-version-context-chip-run">${runLabel}</span>
-                                    </div>
-                                    <div class="fw-semibold survey-version-task-name">Select version for this context</div>
-                                </div>
-                                <span class="badge text-bg-secondary">Step ${timelineStep}</span>
+                const row = document.createElement('div');
+                row.className = 'survey-version-row';
+                row.innerHTML = `
+                    <div class="row g-2 align-items-center">
+                        <div class="col-12 col-lg-6">
+                            <div class="small text-uppercase text-muted fw-semibold mb-1">Step ${timelineStep}</div>
+                            <div class="survey-version-context-line" aria-label="${contextSessionLabel}, ${runLabel}">
+                                <span class="survey-version-context-chip survey-version-context-chip-session">${contextSessionLabel}</span>
+                                <span class="survey-version-context-chip survey-version-context-chip-run">${runLabel}</span>
                             </div>
+                        </div>
+                        <div class="col-12 col-lg-6">
                             <label class="form-label small mb-1" for="${selectorId}">Version</label>
                             <select class="form-select form-select-sm survey-version-select" id="${selectorId}" data-task="${task}" data-session="${context.session || ''}" data-run="${context.run === null ? '' : context.run}">
                                 ${versions.map((version) => `<option value="${version}"${version === preferredSelection ? ' selected' : ''}>${version}</option>`).join('')}
@@ -790,7 +1619,7 @@ export function initSurveyConvert(elements) {
                         </div>
                     </div>
                 `;
-                groupGrid.appendChild(card);
+                groupList.appendChild(row);
             });
 
             surveyVersionWizardBody.appendChild(group);
@@ -808,9 +1637,13 @@ export function initSurveyConvert(elements) {
                 if (!task) return;
                 const selectionKey = buildVersionSelectionKey({ task, session: sessionValue || null, run: rawRun || null });
                 selectedTemplateVersions[selectionKey] = selectEl.value;
+                updateVersionWizardActionState();
+                updateConvertBtn();
             });
         });
         surveyVersionWizard.classList.remove('d-none');
+        updateVersionWizardActionState();
+        updateConvertBtn();
     }
 
     function rebuildVersionWizardFromState() {
@@ -833,36 +1666,30 @@ export function initSurveyConvert(elements) {
         return selections;
     }
 
-    function cancelVersionWizardSync() {
-        versionWizardSyncRequestId += 1;
-        if (versionWizardSyncTimer) {
-            clearTimeout(versionWizardSyncTimer);
-            versionWizardSyncTimer = null;
-        }
-    }
-
-    function shouldSyncVersionWizardContext() {
-        const filename = getSelectedSurveyFilename();
-        if (!filename || filename.toLowerCase().endsWith('.lss')) {
-            return false;
-        }
-        const idValue = String(document.getElementById('convertIdColumn')?.value || '').trim();
-        return Boolean(idValue && idValue !== 'auto');
-    }
-
-    async function syncVersionWizardContext({ showErrors = false } = {}) {
-        if (!shouldSyncVersionWizardContext()) {
-            hideVersionWizard();
-            return;
-        }
-
-        const filename = getSelectedSurveyFilename();
-        const requestId = ++versionWizardSyncRequestId;
+    function buildSurveyWorkflowRequestFormData({
+        allowNearItemMatch = false,
+        nearMatchTasks = null,
+        taskValueOffsets = null,
+        includeValidation = false,
+        includeIdMap = true,
+    } = {}) {
         const formData = new FormData();
         const inputSelection = appendSurveyInputToFormData(formData);
+        const filename = inputSelection.filename || getSelectedSurveyFilename();
         if (!inputSelection.filename) {
-            hideVersionWizard();
-            return;
+            return {
+                formData,
+                inputSelection,
+                filename: '',
+                templateSelections: [],
+                selectedNearMatchTasks: [],
+                normalizedOffsets: {},
+            };
+        }
+
+        const idMap = isAdvancedOptionsEnabled() && convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0];
+        if (includeIdMap && idMap) {
+            formData.append('id_map', idMap);
         }
 
         const idValue = String(document.getElementById('convertIdColumn')?.value || '').trim();
@@ -887,6 +1714,7 @@ export function initSurveyConvert(elements) {
         if (isAdvancedOptionsEnabled() && convertDatasetName && convertDatasetName.value.trim()) {
             formData.append('survey', convertDatasetName.value.trim());
         }
+        formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
         formData.append('separator', getSelectedSeparator(filename.toLowerCase()));
 
         const templateSelections = getTemplateVersionSelections();
@@ -894,12 +1722,86 @@ export function initSurveyConvert(elements) {
             formData.append('template_versions', JSON.stringify(templateSelections));
         }
 
+        const selectedNearMatchTasks = Array.isArray(nearMatchTasks)
+            ? [...new Set(
+                nearMatchTasks
+                    .map((task) => normalizeNearMatchTaskName(task))
+                    .filter(Boolean)
+            )]
+            : [];
+        if (allowNearItemMatch) {
+            formData.append('allow_near_item_match', 'true');
+            if (selectedNearMatchTasks.length > 0) {
+                formData.append('near_match_tasks', JSON.stringify(selectedNearMatchTasks));
+            }
+        }
+
+        const normalizedOffsets = normalizeTaskValueOffsets(taskValueOffsets);
+        if (Object.keys(normalizedOffsets).length > 0) {
+            formData.append('value_offsets', JSON.stringify(normalizedOffsets));
+        }
+
+        if (!includeValidation) {
+            formData.append('validate', 'false');
+        }
+
+        return {
+            formData,
+            inputSelection,
+            filename,
+            templateSelections,
+            selectedNearMatchTasks,
+            normalizedOffsets,
+        };
+    }
+
+    function cancelVersionWizardSync() {
+        versionWizardSyncRequestId += 1;
+        if (versionWizardSyncTimer) {
+            clearTimeout(versionWizardSyncTimer);
+            versionWizardSyncTimer = null;
+        }
+    }
+
+    function shouldSyncVersionWizardContext() {
+        const filename = getSelectedSurveyFilename();
+        if (!filename || filename.toLowerCase().endsWith('.lss')) {
+            return false;
+        }
+        const idValue = String(document.getElementById('convertIdColumn')?.value || '').trim();
+        return Boolean(idValue && idValue !== 'auto');
+    }
+
+    async function syncVersionWizardContext({
+        showErrors = false,
+        allowNearItemMatch = false,
+        nearMatchTasks = null,
+        taskValueOffsets = null,
+    } = {}) {
+        if (!shouldSyncVersionWizardContext()) {
+            hideVersionWizard();
+            return { hasMultivariant: false, skipped: true };
+        }
+
+        const requestId = ++versionWizardSyncRequestId;
+        const workflowRequest = buildSurveyWorkflowRequestFormData({
+            allowNearItemMatch,
+            nearMatchTasks,
+            taskValueOffsets,
+            includeValidation: false,
+            includeIdMap: false,
+        });
+        if (!workflowRequest.filename) {
+            hideVersionWizard();
+            return { hasMultivariant: false, skipped: true };
+        }
+
         try {
             const response = await fetch('/api/survey-detect-version-contexts', {
                 method: 'POST',
-                body: formData,
+                body: workflowRequest.formData,
             });
-            const data = await response.json();
+            const data = await parseJsonResponse(response, 'Version context sync');
             if (requestId !== versionWizardSyncRequestId) {
                 return;
             }
@@ -909,12 +1811,13 @@ export function initSurveyConvert(elements) {
                     convertError.textContent = data.error;
                     convertError.classList.remove('d-none');
                 }
-                return;
+                return { hasMultivariant: false, error: true };
             }
 
             const mvTasks = (data && typeof data.multivariant_tasks === 'object' && data.multivariant_tasks)
                 ? data.multivariant_tasks
                 : {};
+            const hasMultivariant = Object.keys(mvTasks).length > 0;
             if (Object.keys(mvTasks).length > 0) {
                 buildVersionWizard(
                     mvTasks,
@@ -925,15 +1828,17 @@ export function initSurveyConvert(elements) {
             } else {
                 hideVersionWizard();
             }
+            return { hasMultivariant };
         } catch (error) {
             if (requestId !== versionWizardSyncRequestId) {
-                return;
+                return { hasMultivariant: false, skipped: true };
             }
             hideVersionWizard();
             if (showErrors) {
                 convertError.textContent = error.message;
                 convertError.classList.remove('d-none');
             }
+            return { hasMultivariant: false, error: true };
         }
     }
 
@@ -954,35 +1859,70 @@ export function initSurveyConvert(elements) {
         return Boolean(convertAdvancedToggle && convertAdvancedToggle.checked);
     }
 
+    const surveyValueOffsetEditorController = createSurveyValueOffsetEditorController({
+        convertAdvancedToggle,
+        convertDatasetName,
+        convertLanguage,
+        convertIdMapFile,
+        clearIdMapFileBtn,
+        convertValueOffsets,
+        convertValueOffsetsEditor,
+        convertValueOffsetRows,
+        convertAddValueOffsetRowBtn,
+        convertApplyValueOffsetsBtn,
+        convertValueOffsetsKnownTasks,
+        convertValueOffsetsEmptyState,
+        convertValueOffsetsStatus,
+        convertValueOffsetAdvice,
+        convertError,
+        convertInfo,
+        isAdvancedOptionsEnabled,
+        getTemplateWorkflowGate: () => templateWorkflowGate,
+        getIsConvertRunning: () => isConvertRunning,
+        getIsPreviewRunning: () => isPreviewRunning,
+        getAppliedTaskValueOffsetSelectionSignature: () => appliedTaskValueOffsetSelectionSignature,
+        setAppliedTaskValueOffsetSelectionSignature: (value) => {
+            appliedTaskValueOffsetSelectionSignature = value;
+        },
+        updateConvertBtn,
+        getNextTaskValueOffsetRowId: () => ++taskValueOffsetRowSequence,
+        getSurveyPreviewSelectionState: () => surveyPreviewSelectionState,
+        getTemplateVersionSelections,
+        getLastPreviewSurveyTasks: () => {
+            return Array.isArray(window.lastPreviewData && window.lastPreviewData.survey_tasks)
+                ? window.lastPreviewData.survey_tasks
+                : [];
+        },
+        getTaskValueOffsetEditorState: () => taskValueOffsetEditorState,
+        setTaskValueOffsetEditorState: (nextState) => {
+            taskValueOffsetEditorState = Array.isArray(nextState) ? nextState : [];
+        },
+        normalizeSurveyTaskName,
+        parseTaskValueOffsetsText,
+        normalizeTaskValueOffsets,
+        parseNumericOffsetValue,
+        formatOffsetMagnitude,
+        formatSignedOffset,
+        escapeHtml,
+    });
+
     function applyAdvancedOptionsState() {
-        const enabled = isAdvancedOptionsEnabled();
-
-        if (convertDatasetName) {
-            convertDatasetName.disabled = !enabled;
-            if (!enabled) convertDatasetName.value = '';
-        }
-
-        if (convertLanguage) {
-            convertLanguage.disabled = !enabled;
-            if (!enabled) convertLanguage.value = 'auto';
-        }
-
-        if (convertIdMapFile) {
-            convertIdMapFile.disabled = !enabled;
-            if (!enabled) {
-                convertIdMapFile.value = '';
-                clearIdMapFileBtn?.classList.add('d-none');
-            }
-        }
-
-        if (clearIdMapFileBtn) {
-            clearIdMapFileBtn.disabled = !enabled;
-        }
+        surveyValueOffsetEditorController.applyAdvancedOptionsState();
     }
 
-    if (convertAdvancedToggle) {
-        convertAdvancedToggle.addEventListener('change', applyAdvancedOptionsState);
+    if (convertDatasetName) {
+        convertDatasetName.addEventListener('input', () => {
+            updateConvertBtn();
+        });
     }
+
+    if (convertLanguage) {
+        convertLanguage.addEventListener('change', () => {
+            updateConvertBtn();
+        });
+    }
+
+    surveyValueOffsetEditorController.initialize();
 
     // ID Map file handlers
     if (convertIdMapFile) {
@@ -997,6 +1937,7 @@ export function initSurveyConvert(elements) {
                 console.log(`ID map file selected: ${f.name} (${f.size} bytes)`);
             }
             updateIdMapClearButtonState();
+            updateConvertBtn();
         });
 
         clearIdMapFileBtn?.addEventListener('click', () => {
@@ -1008,8 +1949,6 @@ export function initSurveyConvert(elements) {
 
         updateIdMapClearButtonState();
     }
-
-    applyAdvancedOptionsState();
 
     // Library path browser
     if (convertBrowseLibraryBtn && convertLibraryPathInput) {
@@ -1580,8 +2519,20 @@ export function initSurveyConvert(elements) {
         const hasFile = hasSelectedSurveyInput();
         const blockedByTemplateGate = Boolean(templateWorkflowGate && templateWorkflowGate.blocked);
         const hasProjectLoaded = resolveCurrentProjectPath() !== '';
+        const hasRunningRequest = isConvertRunning || isPreviewRunning;
+        const isAwaitingConfirmation = hasRunningRequest && surveyWorkflowProgressController.getIsSurveyRunAwaitingConfirmation();
+        const versionSelectionsPending = hasMultiVersionWizardTasks() && !hasAppliedVersionWizardSelections();
+        const valueOffsetSelectionsPending = hasManualTaskValueOffsets() && !hasAppliedTaskValueOffsetSelections();
+        const hasFreshPreviewReview = hasFreshSurveyPreviewSelectionState();
+        const selectedPreviewTasks = getSelectedSurveyTasksForConversion();
+        const hasSelectedPreviewTasks = selectedPreviewTasks.length > 0;
 
-        convertBtn.disabled = !hasFile || blockedByTemplateGate;
+        convertBtn.disabled = !hasFile
+            || blockedByTemplateGate
+            || versionSelectionsPending
+            || valueOffsetSelectionsPending
+            || !hasFreshPreviewReview
+            || !hasSelectedPreviewTasks;
         if (checkProjectTemplatesBtn) {
             checkProjectTemplatesBtn.disabled = !hasProjectLoaded;
             if (!hasProjectLoaded) {
@@ -1592,24 +2543,112 @@ export function initSurveyConvert(elements) {
         }
         
         if (previewBtn) {
-            previewBtn.disabled = !hasFile;
+            previewBtn.disabled = !hasFile || versionSelectionsPending || valueOffsetSelectionsPending;
             previewBtn.style.display = '';
+            previewBtn.innerHTML = '<i class="fas fa-eye me-2"></i>Step 4: Preview (Dry-Run)';
             convertBtn.parentElement.classList.remove('col-12');
             convertBtn.parentElement.classList.add('col-md-6');
+
+            if (!hasFile) {
+                previewBtn.title = 'Select a survey file first.';
+            } else if (versionSelectionsPending) {
+                previewBtn.title = 'Apply questionnaire version selections first.';
+            } else if (valueOffsetSelectionsPending) {
+                previewBtn.title = 'Apply manual offsets first.';
+            } else {
+                previewBtn.removeAttribute('title');
+            }
         }
 
         if (convertBtn) {
-            convertBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles me-2"></i>Convert';
+            convertBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles me-2"></i>Step 5: Convert';
             convertBtn.classList.remove('btn-success');
             convertBtn.classList.add('btn-warning');
             if (blockedByTemplateGate) {
                 convertBtn.title = 'Complete required project template fields first, then run Preview again.';
+            } else if (!hasFile) {
+                convertBtn.title = 'Select a survey file first.';
+            } else if (versionSelectionsPending) {
+                convertBtn.title = 'Apply questionnaire version selections and rerun Preview before converting.';
+            } else if (valueOffsetSelectionsPending) {
+                convertBtn.title = 'Apply manual offsets and rerun Preview before converting.';
+            } else if (!hasFreshPreviewReview) {
+                convertBtn.title = 'Run Preview after the latest changes before converting.';
+            } else if (!hasSelectedPreviewTasks) {
+                convertBtn.title = 'Select at least one survey in the Preview review list.';
             } else {
                 convertBtn.removeAttribute('title');
             }
         }
 
+        // Keep a visible in-flight indicator while preview/convert requests are running.
+        if (isConvertRunning) {
+            convertBtn.disabled = true;
+            convertBtn.innerHTML = isAwaitingConfirmation
+                ? '<i class="fas fa-pause-circle me-2"></i>Awaiting confirmation...'
+                : '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Converting...';
+            if (previewBtn) {
+                previewBtn.disabled = true;
+            }
+        }
+
+        if (isPreviewRunning) {
+            if (previewBtn) {
+                previewBtn.disabled = true;
+                previewBtn.innerHTML = isAwaitingConfirmation
+                    ? '<i class="fas fa-pause-circle me-2"></i>Awaiting confirmation...'
+                    : '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Running...';
+            }
+            convertBtn.disabled = true;
+        }
+
+        if (surveyRunCancelBtn) {
+            if (hasRunningRequest) {
+                const modeLabel = isConvertRunning ? 'Conversion' : 'Preview';
+                surveyRunCancelBtn.classList.remove('d-none');
+                surveyRunCancelBtn.disabled = !activeRunAbortController;
+                surveyRunCancelBtn.innerHTML = `<i class="fas fa-stop-circle me-2"></i>Cancel ${modeLabel}`;
+            } else {
+                surveyRunCancelBtn.classList.add('d-none');
+                surveyRunCancelBtn.disabled = true;
+                surveyRunCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Run';
+            }
+        }
+
+        updateTaskValueOffsetApplyState();
+
+        updateSurveyWorkflowHint({
+            hasFile,
+            blockedByTemplateGate,
+            versionSelectionsPending,
+            valueOffsetSelectionsPending,
+            hasFreshPreviewReview,
+            hasSelectedPreviewTasks,
+            isConvertRunning,
+            isPreviewRunning,
+        });
+
         clearConvertExcelFileBtn?.classList.toggle('d-none', !hasFile);
+    }
+
+    if (surveyRunCancelBtn) {
+        surveyRunCancelBtn.addEventListener('click', function() {
+            const mode = activeRunMode || surveyWorkflowProgressController.getRunProgressMode();
+            const modeLabel = mode === 'convert' ? 'conversion' : 'preview';
+            const canceled = cancelActiveSurveyRun();
+            if (!canceled) {
+                return;
+            }
+            appendLog(`Cancel requested: stopping current ${modeLabel} run...`, 'warning');
+            setSurveyRunProgress({
+                mode: mode || 'preview',
+                percent: Math.max(15, surveyWorkflowProgressController.getRunProgressPercent()),
+                label: `Canceling ${modeLabel}...`,
+                variant: 'warning',
+                animated: true,
+            });
+            surveyRunCancelBtn.disabled = true;
+        });
     }
 
     convertExcelFile.addEventListener('change', async function() {
@@ -1685,9 +2724,7 @@ export function initSurveyConvert(elements) {
         }
         applyAdvancedOptionsState();
 
-        if (sourcedataFileSelect) {
-            sourcedataFileSelect.value = '';
-        }
+        surveySourcedataQuickSelectController.clearSelectedFile();
 
         // Hide stale results from previous preview/convert runs.
         if (templateResultsContainer) {
@@ -1729,12 +2766,14 @@ export function initSurveyConvert(elements) {
     if (convertSessionColumnOverride) {
         convertSessionColumnOverride.addEventListener('change', function() {
             scheduleVersionWizardContextSync();
+            updateConvertBtn();
         });
     }
 
     if (convertRunColumnOverride) {
         convertRunColumnOverride.addEventListener('change', function() {
             scheduleVersionWizardContextSync();
+            updateConvertBtn();
         });
     }
 
@@ -1745,6 +2784,7 @@ export function initSurveyConvert(elements) {
             if (currentFilename && isDelimitedSurveyFilename(currentFilename.toLowerCase())) {
                 await detectFileColumns(currentFile, currentFile ? '' : convertServerFilePath);
             }
+            updateConvertBtn();
         });
     }
 
@@ -1794,402 +2834,25 @@ export function initSurveyConvert(elements) {
         });
     }
 
-    if (checkProjectTemplatesBtn) {
-        checkProjectTemplatesBtn.addEventListener('click', async function() {
-            convertError.classList.add('d-none');
-            convertError.textContent = '';
+    surveyWorkflowTemplateCheckController.initialize();
 
-            conversionLogContainer.classList.remove('d-none');
-            conversionLogBody.classList.remove('d-none');
-            const icon = toggleLogBtn.querySelector('i');
-            icon.classList.remove('fa-chevron-right');
-            icon.classList.add('fa-chevron-down');
+    convertApplyValueOffsetsBtn?.addEventListener('click', function() {
+        handleApplyTaskValueOffsetsClick();
+    });
 
-            const selectedFilename = getSelectedSurveyFilename();
-            const selectedIdColumn = (convertIdColumn && convertIdColumn.value && convertIdColumn.value !== 'auto')
-                ? convertIdColumn.value
-                : '';
-
-            if (selectedFilename) {
-                appendLog(`Checking official templates against input: ${selectedFilename}`, 'info');
-            }
-            appendLog('Checking local project survey templates...', 'info');
-            checkProjectTemplatesBtn.disabled = true;
-
-            try {
-                const formData = new FormData();
-                const currentProjectPath = resolveCurrentProjectPath();
-                appendSurveyInputToFormData(formData);
-                if (currentProjectPath) {
-                    formData.append('project_path', currentProjectPath);
-                }
-                if (selectedIdColumn) {
-                    formData.append('id_column', selectedIdColumn);
-                }
-                formData.append('separator', getSelectedSeparator(selectedFilename ? selectedFilename.toLowerCase() : ''));
-
-                const response = await fetch('/api/survey-check-project-templates', {
-                    method: 'POST',
-                    body: formData,
-                });
-                const data = await response.json();
-
-                if (!response.ok) {
-                    if (data.error === 'id_column_required') {
-                        if (convertIdColumn) {
-                            convertIdColumn.classList.add('border-danger');
-                            convertIdColumn.focus();
-                        }
-                        throw new Error('Please select a participant ID column, then run template check again.');
-                    }
-                    throw new Error(data.error || 'Template check could not be completed');
-                }
-
-                const templateCount = Number.isFinite(data.template_count) ? data.template_count : 0;
-                const tasks = Array.isArray(data.tasks) ? data.tasks : [];
-                const localTemplates = Array.isArray(data.local_templates) ? data.local_templates : [];
-                const templateWarnings = Array.isArray(data.warnings) ? data.warnings : [];
-                const matching = (data && typeof data.matching === 'object' && data.matching)
-                    ? data.matching
-                    : null;
-
-                if (matching && matching.input_file) {
-                    const officialCount = Number.isFinite(matching.official_template_count)
-                        ? matching.official_template_count
-                        : 0;
-                    appendLog(`Official templates available: ${officialCount}`, 'info');
-
-                    const matchedTasks = Array.isArray(matching.matched_tasks) ? matching.matched_tasks : [];
-                    if (matchedTasks.length > 0) {
-                        appendLog(`Official templates matched from input: ${matchedTasks.join(', ')}`, 'success');
-                    } else {
-                        appendLog('No official template matches were detected from the selected input file.', 'warning');
-                    }
-
-                    const copiedTasks = Array.isArray(matching.copied_tasks) ? matching.copied_tasks : [];
-                    if (copiedTasks.length > 0) {
-                        appendLog(`Copied to project library: ${copiedTasks.join(', ')}`, 'info');
-                    }
-
-                    const existingTasks = Array.isArray(matching.existing_tasks) ? matching.existing_tasks : [];
-                    if (existingTasks.length > 0) {
-                        appendLog(`Already present in project library: ${existingTasks.join(', ')}`, 'info');
-                    }
-
-                    const missingOfficial = Array.isArray(matching.missing_official_tasks)
-                        ? matching.missing_official_tasks
-                        : [];
-                    if (missingOfficial.length > 0) {
-                        appendLog(`Not found in official library by task name: ${missingOfficial.join(', ')}`, 'warning');
-                    }
-
-                    if (matching.match_error) {
-                        appendLog(`Template matching note: ${matching.match_error}`, 'warning');
-                    }
-                }
-
-                appendLog(`Local templates found (${templateCount}): ${localTemplates.length ? localTemplates.join(', ') : '(none)'}`, 'info');
-                if (tasks.length) {
-                    appendLog(`Tasks covered: ${tasks.join(', ')}`, 'info');
-                }
-                if (templateWarnings.length) {
-                    appendLog(`Template quality warnings: ${templateWarnings.length}`, 'warning');
-                    templateWarnings.slice(0, 30).forEach(warn => {
-                        const fileName = (warn.file || '').split('/').pop() || 'template';
-                        appendLog(`  - ${fileName}: ${warn.message}`, 'warning');
-                    });
-                    if (templateWarnings.length > 30) {
-                        appendLog(`  ... and ${templateWarnings.length - 30} more warning(s)`, 'warning');
-                    }
-                }
-
-                if (data.ok) {
-                    templateWorkflowGate = null;
-                    setTemplateEditorErrorCtaVisible(false);
-                    appendLog('Project template check passed.', 'success');
-                    convertInfo.innerHTML = '<i class="fas fa-check-circle me-2"></i>Project templates look good. Continue with Preview (Dry-Run).';
-                    convertInfo.classList.remove('d-none');
-                } else {                    templateWorkflowGate = data.workflow_gate || {
-                        blocked: true,
-                        message: data.message || 'Project templates require completion before import.'
-                    };
-                    setTemplateEditorErrorCtaVisible(true);
-
-                    appendLog('Template check found templates that still need project-level fields.', 'warning');
-                    appendLog(`  ${templateWorkflowGate.message}`, 'warning');
-                    if (Array.isArray(templateWorkflowGate.next_steps)) {
-                        templateWorkflowGate.next_steps.forEach(step => appendLog(`  - ${step}`, 'warning'));
-                    }
-
-                    const issues = Array.isArray(data.issues) ? data.issues : [];
-                    issues.slice(0, 30).forEach(issue => {
-                        const fileName = (issue.file || '').split('/').pop() || 'template';
-                        appendLog(`  - ${fileName}: ${issue.message}`, 'warning');
-                    });
-                    if (issues.length > 30) {
-                        appendLog(`  ... and ${issues.length - 30} more item(s)`, 'warning');
-                    }
-
-                    convertInfo.innerHTML = '<i class="fas fa-clipboard-check me-2"></i>Some copied survey templates still need project-level metadata. Complete them in Template Editor, then run Preview again.';
-                    convertInfo.classList.remove('d-none');
-                }
-
-                // Show version plan wizard for any detected multi-variant questionnaires
-                const mvTasks = (data && typeof data.multivariant_tasks === 'object' && data.multivariant_tasks)
-                    ? data.multivariant_tasks : {};
-                if (Object.keys(mvTasks).length > 0) {
-                    buildVersionWizard(
-                        mvTasks,
-                        (data && typeof data.task_runs === 'object' && data.task_runs) || {},
-                        [],
-                        Array.isArray(data.detected_sessions) ? data.detected_sessions : []
-                    );
-                    appendLog(`Multi-version questionnaire(s) detected: ${Object.keys(mvTasks).join(', ')}. Choose the version in the selector below before previewing or converting.`, 'info');
-                } else {
-                    hideVersionWizard();
-                }
-            } catch (err) {
-                appendLog(`Template check error: ${err.message}`, 'error');
-                convertError.textContent = err.message;
-                convertError.classList.remove('d-none');
-                setTemplateEditorErrorCtaVisible(true);
-            } finally {
-                updateConvertBtn();
-            }
-        });
-    }
-
-    function resetSourcedataQuickSelect() {
-        if (sourcedataFileSelect) {
-            sourcedataFileSelect.value = '';
-            while (sourcedataFileSelect.options.length > 1) {
-                sourcedataFileSelect.remove(1);
-            }
-        }
-        if (sourcedataQuickSelect) {
-            sourcedataQuickSelect.classList.add('d-none');
-        }
-    }
-
-    function refreshSourcedataQuickSelect(projectPath = resolveCurrentProjectPath()) {
-        if (!sourcedataQuickSelect || !sourcedataFileSelect) {
-            return;
-        }
-
-        const previousValue = sourcedataFileSelect.value;
-        const requestToken = ++sourcedataRequestToken;
-        resetSourcedataQuickSelect();
-
-        if (!projectPath) {
-            return;
-        }
-
-        fetch(`/api/projects/sourcedata-files?project_path=${encodeURIComponent(projectPath)}`)
-            .then(r => r.json())
-            .then(data => {
-                if (requestToken !== sourcedataRequestToken) {
-                    return;
-                }
-
-                if (data.sourcedata_exists && data.files && data.files.length > 0) {
-                    sourcedataQuickSelect.classList.remove('d-none');
-                    data.files.forEach(f => {
-                        const opt = document.createElement('option');
-                        opt.value = f.name;
-                        const sizeKB = (f.size / 1024).toFixed(1);
-                        opt.textContent = `${f.name} (${sizeKB} KB)`;
-                        sourcedataFileSelect.appendChild(opt);
-                    });
-
-                    if (previousValue && Array.from(sourcedataFileSelect.options).some((option) => option.value === previousValue)) {
-                        sourcedataFileSelect.value = previousValue;
-                    }
-                }
-            })
-            .catch(() => {
-                if (requestToken !== sourcedataRequestToken) {
-                    return;
-                }
-                resetSourcedataQuickSelect();
-            });
-    }
-
-    // Sourcedata quick-select
-    if (sourcedataQuickSelect && sourcedataFileSelect) {
-        refreshSourcedataQuickSelect();
-
-        sourcedataFileSelect.addEventListener('change', async function() {
-            const filename = this.value;
-            if (!filename) return;
-
-            try {
-                const currentProjectPath = resolveCurrentProjectPath();
-                if (!currentProjectPath) {
-                    throw new Error('No project selected');
-                }
-
-                const resp = await fetch(`/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}`);
-                if (!resp.ok) throw new Error('Failed to load file');
-                const blob = await resp.blob();
-                const file = new File([blob], filename, { type: blob.type });
-                const dt = new DataTransfer();
-                dt.items.add(file);
-                convertExcelFile.files = dt.files;
-                convertExcelFile.dispatchEvent(new Event('change', { bubbles: true }));
-            } catch (err) {
-                console.error('Failed to load sourcedata file:', err);
-                convertError.textContent = `Failed to load ${filename} from sourcedata.`;
-convertError.classList.remove('d-none');
-            }
-        });
-
-        window.addEventListener('prism-project-changed', function() {
-            refreshSourcedataQuickSelect();
-        });
-    }
-
-    if (toggleLogBtn) {
-        toggleLogBtn.addEventListener('click', function() {
-            conversionLogBody.classList.toggle('d-none');
-            const icon = toggleLogBtn.querySelector('i');
-            if (conversionLogBody.classList.contains('d-none')) {
-                icon.classList.remove('fa-chevron-down');
-                icon.classList.add('fa-chevron-right');
-            } else {
-                icon.classList.remove('fa-chevron-right');
-                icon.classList.add('fa-chevron-down');
-            }
-        });
-    }
+    surveySourcedataQuickSelectController.initialize();
+    surveyConversionLogController.initialize();
 
     function appendLog(message, type = 'info', logElement = null) {
-        const colors = {
-            'info': '#17a2b8',
-            'success': '#28a745',
-            'warning': '#ffc107',
-            'error': '#dc3545',
-            'step': '#6c757d'
-        };
-        const targetLog = logElement || conversionLog;
-        if (!targetLog) return;
-
-        const timestamp = new Date().toLocaleTimeString();
-        const color = colors[type] || colors.info;
-        const line = document.createElement('span');
-        line.style.color = color;
-        line.textContent = `[${timestamp}] ${String(message)}`;
-        targetLog.appendChild(line);
-        targetLog.appendChild(document.createTextNode('\n'));
-        targetLog.scrollTop = targetLog.scrollHeight;
+        surveyConversionLogController.appendLog(message, type, logElement);
     }
 
     function resetConversionUI() {
-        conversionLogContainer.classList.add('d-none');
-        validationResultsContainer.classList.add('d-none');
-        if (conversionSummaryContainer) conversionSummaryContainer.classList.add('d-none');
-        if (conversionSummaryBody) conversionSummaryBody.innerHTML = '';
-        conversionLog.innerHTML = '';
-        validationSummary.innerHTML = '';
-        validationDetails.innerHTML = '';
+        surveyConversionLogController.resetConversionUI();
     }
 
     function displayConversionSummary(summary) {
-        if (!conversionSummaryContainer || !conversionSummaryBody || !summary) return;
-
-        let html = '';
-
-        const matches = summary.template_matches;
-        if (matches && Object.keys(matches).length > 0) {
-            html += `<h6 class="mb-2"><i class="fas fa-puzzle-piece me-1"></i>Matched Templates</h6>`;
-            html += `<table class="table table-sm table-bordered mb-3"><thead><tr><th>Survey Group</th><th>Template</th><th>Confidence</th></tr></thead><tbody>`;
-            for (const [group, info] of Object.entries(matches)) {
-                if (!info) continue;
-                const tmpl = info.template_key || info.template || info.matched_template || 'None';
-                const conf = info.confidence || info.match_confidence || 'unknown';
-                let badgeClass = 'bg-secondary';
-                if (conf === 'exact' || conf === 'high') badgeClass = 'bg-success';
-                else if (conf === 'medium') badgeClass = 'bg-warning text-dark';
-                else if (conf === 'low') badgeClass = 'bg-danger';
-                html += `<tr><td>${group}</td><td><code>${tmpl}</code></td><td><span class="badge ${badgeClass}">${conf}</span></td></tr>`;
-            }
-            html += `</tbody></table>`;
-        }
-
-        const toolCols = summary.tool_columns;
-        if (toolCols && toolCols.length > 0) {
-            html += `<h6 class="mb-2"><i class="fas fa-wrench me-1"></i>Tool-Specific Columns <span class="badge bg-secondary">${toolCols.length}</span></h6>`;
-            html += `<div class="mb-3"><details><summary class="text-muted small" style="cursor:pointer;">LimeSurvey system columns (click to expand)</summary>`;
-            html += `<div class="mt-1"><code>${toolCols.join('</code>, <code>')}</code></div></details></div>`;
-        }
-
-        const nearMatchCandidates = summary.near_match_candidates;
-        if (nearMatchCandidates && nearMatchCandidates.length > 0) {
-            const applied = Boolean(summary.near_match_applied);
-            const stateBadgeClass = applied ? 'bg-success' : 'bg-info text-dark';
-            const stateLabel = applied ? 'Applied' : 'Available';
-            const previewLimit = 12;
-            const previewCandidates = nearMatchCandidates.slice(0, previewLimit);
-            const hiddenCount = nearMatchCandidates.length - previewCandidates.length;
-            html += `<h6 class="mb-2"><i class="fas fa-arrows-left-right me-1"></i>Near Item Matches <span class="badge ${stateBadgeClass}">${stateLabel}</span> <span class="badge bg-secondary">${nearMatchCandidates.length}</span></h6>`;
-            html += `<div class="mb-3"><details><summary class="text-muted small" style="cursor:pointer;">Show near-match mappings</summary><div class="mt-2">`;
-            html += previewCandidates
-                .map((candidate) => {
-                    const source = escapeHtml(String(candidate && candidate.source_column || '').trim());
-                    const target = escapeHtml(String(candidate && candidate.target_item || '').trim());
-                    const task = escapeHtml(String(candidate && candidate.task || '').trim());
-                    const run = (candidate && candidate.run !== undefined && candidate.run !== null)
-                        ? `, run ${escapeHtml(String(candidate.run))}`
-                        : '';
-                    return `<div><code>${source}</code> &rarr; <code>${target}</code> <span class="text-muted small">(task ${task}${run})</span></div>`;
-                })
-                .join('');
-            if (hiddenCount > 0) {
-                html += `<div class="text-muted small mt-1">...and ${hiddenCount} more</div>`;
-            }
-            html += `</div></details><small class="text-muted">Near matches only allow minimal formatting differences and require count-safe mapping.</small></div>`;
-        }
-
-        const unknownCols = summary.unknown_columns;
-        if (unknownCols && unknownCols.length > 0) {
-            const selectedSurveyFilter = (convertDatasetName && convertDatasetName.value)
-                ? String(convertDatasetName.value).trim()
-                : '';
-            html += `<h6 class="mb-2"><i class="fas fa-question-circle me-1 text-warning"></i>Unmatched Columns <span class="badge bg-warning text-dark">${unknownCols.length}</span></h6>`;
-            if (selectedSurveyFilter) {
-                const previewLimit = 20;
-                const previewCols = unknownCols.slice(0, previewLimit);
-                const hiddenCount = unknownCols.length - previewCols.length;
-                html += `<small class="text-muted d-block mb-1">Task filter active: <code>${escapeHtml(selectedSurveyFilter)}</code>. Most unmatched columns are likely from other tasks and are hidden by default.</small>`;
-                html += `<details class="mb-1"><summary class="text-muted small" style="cursor:pointer;">Show unmatched column names</summary>`;
-                html += `<div class="mt-2"><code>${previewCols.join('</code>, <code>')}</code></div>`;
-                if (hiddenCount > 0) {
-                    html += `<div class="text-muted small mt-1">...and ${hiddenCount} more</div>`;
-                }
-                html += `</details>`;
-            } else {
-                html += `<div class="mb-1"><code>${unknownCols.join('</code>, <code>')}</code></div>`;
-            }
-            html += `<small class="text-muted">These columns were not assigned to any template.</small>`;
-        }
-
-        if (html) {
-            conversionSummaryBody.innerHTML = html;
-            conversionSummaryContainer.classList.remove('d-none');
-
-            if (toggleSummaryBtn) {
-                toggleSummaryBtn.onclick = function() {
-                    const body = conversionSummaryBody;
-                    const icon = toggleSummaryBtn.querySelector('i');
-                    if (body.style.display === 'none') {
-                        body.style.display = '';
-                        icon.className = 'fas fa-chevron-down';
-                    } else {
-                        body.style.display = 'none';
-                        icon.className = 'fas fa-chevron-right';
-                    }
-                };
-            }
-        }
+        surveyConversionSummaryController.displayConversionSummary(summary);
     }
 
     function displayUnmatchedGroupsError(data) {
@@ -2287,204 +2950,8 @@ convertError.classList.remove('d-none');
         }
     }
 
-    function normalizeValidationIssueText(value) {
-        return String(value || '').trim().replace(/\s+/g, ' ');
-    }
-
-    function extractValidationIssueMessage(file, normalizedGroupMessage) {
-        const fileMessage = normalizeValidationIssueText(file && file.message);
-        if (fileMessage && fileMessage !== normalizedGroupMessage) {
-            return fileMessage;
-        }
-        return normalizedGroupMessage || fileMessage || 'Validation issue';
-    }
-
-    function renderValidationGroupFiles(group) {
-        const files = Array.isArray(group && group.files) ? group.files : [];
-        if (files.length === 0) {
-            return '';
-        }
-
-        const normalizedGroupMessage = normalizeValidationIssueText(group && group.message);
-        const issueMessages = files.map((file) => extractValidationIssueMessage(file, normalizedGroupMessage));
-        const uniqueMessages = [...new Set(issueMessages.filter(Boolean))];
-
-        // Collapse repeated copies of the same issue across many files.
-        if (files.length > 1 && uniqueMessages.length <= 1) {
-            const uniqueFiles = [...new Set(
-                files.map((file) => {
-                    const filePath = String((file && file.file) || '').trim();
-                    return filePath || 'unknown';
-                })
-            )];
-            const previewLimit = 8;
-            const previewFiles = uniqueFiles.slice(0, previewLimit);
-            const hiddenCount = uniqueFiles.length - previewFiles.length;
-
-            return `
-                <details class="ms-2 mb-0 smaller">
-                    <summary class="text-muted">${uniqueFiles.length} files share this same issue</summary>
-                    <div class="mt-2">
-                        ${previewFiles.map((filePath) => `<div><code class="text-dark">${escapeHtml(filePath)}</code></div>`).join('')}
-                        ${hiddenCount > 0 ? `<div class="text-muted mt-1">...and ${hiddenCount} more</div>` : ''}
-                    </div>
-                </details>
-            `;
-        }
-
-        return `
-            <ul class="list-unstyled ms-2 mb-0 smaller">
-                ${files.map((file) => `
-                    <li class="mb-1 border-bottom pb-1 last-child-no-border">
-                        <div class="d-flex justify-content-between">
-                            <code class="text-dark fw-bold">${escapeHtml(file.file || 'unknown')}</code>
-                            ${file.line ? `<span class="badge bg-secondary">Line ${file.line}</span>` : ''}
-                        </div>
-                        ${file.message && normalizeValidationIssueText(file.message) !== normalizedGroupMessage ? `<div class="text-muted mt-1">${escapeHtml(file.message)}</div>` : ''}
-                        ${file.evidence ? `<div class="text-muted italic ms-2 mt-1 p-1 bg-white border rounded" style="font-size: 0.85em; font-family: monospace;">${escapeHtml(file.evidence)}</div>` : ''}
-                    </li>
-                `).join('')}
-            </ul>
-        `;
-    }
-
     function displayValidationResults(validation, prefix = '') {
-        const getEl = (id) => document.getElementById(prefix ? prefix + id.charAt(0).toUpperCase() + id.slice(1) : id);
-        
-        const container = getEl('validationResultsContainer');
-        const card = getEl('validationResultsCard');
-        const header = getEl('validationResultsHeader');
-        const badge = getEl('validationBadge');
-        const summaryEl = getEl('validationSummary');
-        const detailsEl = getEl('validationDetails');
-
-        if (!container) return;
-        container.classList.remove('d-none');
-        
-        const errors = validation.errors || [];
-        const warnings = validation.warnings || [];
-        const isValid = errors.length === 0;
-        
-        card.classList.remove('border-success', 'border-warning', 'border-danger');
-        header.classList.remove('bg-success', 'bg-warning', 'bg-danger', 'text-white', 'text-dark');
-        
-        if (isValid && warnings.length === 0) {
-            card.classList.add('border-success');
-            header.classList.add('bg-success', 'text-white');
-            badge.className = 'badge bg-light text-success';
-            badge.textContent = '✓ Valid';
-        } else if (isValid) {
-            card.classList.add('border-warning');
-            header.classList.add('bg-warning', 'text-dark');
-            badge.className = 'badge bg-light text-warning';
-            badge.textContent = `⚠ ${warnings.length} Warning(s)`;
-        } else {
-            card.classList.add('border-danger');
-            header.classList.add('bg-danger', 'text-white');
-            badge.className = 'badge bg-light text-danger';
-            badge.textContent = `✗ ${errors.length} Error(s)`;
-        }
-        
-        const summary = validation.summary || {};
-        summaryEl.innerHTML = `
-            <div class="row text-center">
-                <div class="col-4">
-                    <div class="h4 mb-0 ${errors.length > 0 ? 'text-danger' : 'text-success'}">${errors.length}</div>
-                    <small class="text-muted">Errors</small>
-                </div>
-                <div class="col-4">
-                    <div class="h4 mb-0 ${warnings.length > 0 ? 'text-warning' : 'text-success'}">${warnings.length}</div>
-                    <small class="text-muted">Warnings</small>
-                </div>
-                <div class="col-4">
-                    <div class="h4 mb-0 text-info">${summary.total_files || summary.files_created || 'n/a'}</div>
-                    <small class="text-muted">Files</small>
-                </div>
-            </div>
-        `;
-        
-        let detailsHtml = '';
-        
-        if (validation.formatted) {
-            const f = validation.formatted;
-            
-            if (f.errors && f.errors.length > 0) {
-                detailsHtml += '<h6 class="text-danger mt-3"><i class="fas fa-times-circle me-1"></i>Errors</h6>';
-                f.errors.forEach(group => {
-                    detailsHtml += `
-                        <div class="validation-group mb-3 p-3 border rounded bg-light shadow-sm">
-<div class="d-flex justify-content-between align-items-start mb-2">
-                                <div class="fw-bold text-danger">
-                                    <span class="badge bg-danger me-2">${group.code}</span>
-                                    ${escapeHtml(group.message)}
-                                </div>
-                                ${group.documentation_url ? `
-                                    <a href="${group.documentation_url}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">
-                                        <i class="fas fa-book me-1"></i>Docs
-                                    </a>
-                                ` : ''}
-                            </div>
-                            
-                            ${group.fix_hint ? `
-                                <div class="alert alert-info py-2 px-3 mb-2 smaller">
-                                    <i class="fas fa-lightbulb me-2 text-warning"></i>
-                                    <strong>Fix Hint:</strong> ${escapeHtml(group.fix_hint)}
-                                </div>
-                            ` : ''}
-
-                            ${renderValidationGroupFiles(group)}
-                        </div>
-                    `;
-                });
-            }
-            
-            if (f.warnings && f.warnings.length > 0) {
-                detailsHtml += '<h6 class="text-warning mt-3"><i class="fas fa-exclamation-triangle me-1"></i>Warnings</h6>';
-                f.warnings.forEach(group => {
-                    detailsHtml += `
-                        <div class="validation-group mb-3 p-3 border rounded bg-light shadow-sm">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div class="fw-bold text-warning">
-                                    <span class="badge bg-warning text-dark me-2">${group.code}</span>
-                                    ${escapeHtml(group.message)}
-                                </div>
-                                ${group.documentation_url ? `
-                                    <a href="${group.documentation_url}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">
-                                        <i class="fas fa-book me-1"></i>Docs
-                                    </a>
-                                ` : ''}
-                            </div>
-
-                            ${group.fix_hint ? `
-                                <div class="alert alert-info py-2 px-3 mb-2 smaller">
-                                    <i class="fas fa-lightbulb me-2 text-warning"></i>
-                                    <strong>Fix Hint:</strong> ${escapeHtml(group.fix_hint)}
-                                </div>
-                            ` : ''}
-
-                            ${renderValidationGroupFiles(group)}
-                        </div>
-                    `;
-                });
-            }
-        } else {
-            if (errors.length > 0) {
-                detailsHtml += '<h6 class="text-danger mt-3"><i class="fas fa-times-circle me-1"></i>Errors</h6><ul class="list-unstyled">';
-                errors.forEach(e => {
-                    detailsHtml += `<li class="text-danger small"><i class="fas fa-times me-1"></i>${escapeHtml(e)}</li>`;
-                });
-                detailsHtml += '</ul>';
-            }
-            if (warnings.length > 0) {
-                detailsHtml += '<h6 class="text-warning mt-3"><i class="fas fa-exclamation-triangle me-1"></i>Warnings</h6><ul class="list-unstyled">';
-                warnings.forEach(w => {
-                    detailsHtml += `<li class="text-warning small"><i class="fas fa-exclamation me-1"></i>${escapeHtml(w)}</li>`;
-                });
-                detailsHtml += '</ul>';
-            }
-        }
-        
-        detailsEl.innerHTML = detailsHtml;
+        surveyValidationResultsController.displayValidationResults(validation, prefix);
     }
 
     function escapeHtml(text) {
@@ -2496,6 +2963,239 @@ convertError.classList.remove('d-none');
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
     }
+
+    const participantsMetadataController = createSurveyParticipantsMetadataController({
+        escapeHtml,
+    });
+
+    const surveyWorkflowPrepareController = createSurveyWorkflowPrepareController({
+        parseJsonResponse,
+        buildSurveyWorkflowRequestFormData,
+        getEffectiveNearMatchTasks,
+        normalizeTaskValueOffsets,
+        advanceSurveyRunProgress,
+        pauseSurveyRunProgress,
+        resumeSurveyRunProgress,
+        isAbortError,
+        enrichSurveyRunErrorMessage,
+        showManualValueOffsetReview,
+        promptNearMatchSelection,
+        mergeNearMatchTasks,
+        applyPreparedSurveyWorkflowContext,
+        hasAppliedVersionWizardSelections,
+        convertError,
+        convertInfo,
+        appendLog,
+        setTemplateEditorErrorCtaVisible,
+        clearActiveSurveyRun,
+        finishSurveyRunProgress,
+        updateConvertBtn,
+        setIsConvertRunning: (value) => {
+            isConvertRunning = Boolean(value);
+        },
+        setIsPreviewRunning: (value) => {
+            isPreviewRunning = Boolean(value);
+        },
+        getTemplateWorkflowGate: () => templateWorkflowGate,
+        setTemplateWorkflowGate: (value) => {
+            templateWorkflowGate = (value && typeof value === 'object') ? value : null;
+        },
+        setVersionWizardRetryGateMode: (value) => {
+            versionWizardRetryGateMode = value;
+        },
+        getConfirmedNearMatchTasks: () => confirmedNearMatchTasks,
+        setConfirmedNearMatchTasks: (value) => {
+            confirmedNearMatchTasks = Array.isArray(value) ? value : [];
+        },
+        isConfiguredOffsetFailureForCurrentSelection,
+        normalizeNearMatchTaskName,
+        parseNumericOffsetValue,
+        formatSignedOffset,
+    });
+
+    const surveyWorkflowPreviewController = createSurveyWorkflowPreviewController({
+        convertError,
+        convertInfo,
+        surveyVersionWizardApplyBtn,
+        convertApplyValueOffsetsBtn,
+        convertIdMapFile,
+        convertSessionColumnOverride,
+        convertRunColumnOverride,
+        convertLanguage,
+        convertDatasetName,
+        conversionLogContainer,
+        conversionLogBody,
+        toggleLogBtn,
+        surveyWorkflowPrepareController,
+        clearManualValueOffsetAdvice,
+        setTemplateEditorErrorCtaVisible,
+        hasMultiVersionWizardTasks,
+        hasAppliedVersionWizardSelections,
+        updateVersionWizardActionState,
+        updateConvertBtn,
+        hasManualTaskValueOffsets,
+        hasAppliedTaskValueOffsetSelections,
+        updateTaskValueOffsetApplyState,
+        clearSurveyPreviewSelectionState,
+        resetConversionUI,
+        getEffectiveNearMatchTasks,
+        getEffectiveTaskValueOffsets,
+        ensureSurveyAdvancedOptionsVisible,
+        focusTaskValueOffsetEditor,
+        getSurveyPreviewContextKey,
+        getSelectedSurveyFilename,
+        getSelectedSurveyFile,
+        isAdvancedOptionsEnabled,
+        refreshSurveyColumnsBeforeRun,
+        setActiveSurveyRun,
+        startSurveyRunProgress,
+        setIsPreviewRunning: (value) => {
+            isPreviewRunning = Boolean(value);
+        },
+        appendSurveyInputToFormData,
+        getSurveySessionValue,
+        getSelectedSeparator,
+        appendTemplateVersionSelections,
+        appendLog,
+        formatSignedOffset,
+        setTemplateWorkflowGate: (value) => {
+            templateWorkflowGate = (value && typeof value === 'object') ? value : null;
+        },
+        getTemplateWorkflowGate: () => templateWorkflowGate,
+        getConvertServerFilePath: () => convertServerFilePath,
+        advanceSurveyRunProgress,
+        parseJsonResponse,
+        displayUnmatchedGroupsError,
+        populateSurveySessionPickerFromDetected,
+        getParticipantRegistryWarning,
+        setSurveyPreviewSelectionState,
+        displayConversionSummary,
+        normalizeSurveyTaskName,
+        displayValidationResults,
+        formatVersionWizardRunLabel,
+        showParticipantRegistryWarning,
+        buildVersionWizard,
+        hideVersionWizard,
+        enrichSurveyRunErrorMessage,
+        isAbortError,
+        clearActiveSurveyRun,
+        finishSurveyRunProgress,
+        getActiveRunMode: () => activeRunMode,
+        getActiveRunCancelledByUser: () => activeRunCancelledByUser,
+        getVersionWizardRetryGateMode: () => versionWizardRetryGateMode,
+        setVersionWizardRetryGateMode: (value) => {
+            versionWizardRetryGateMode = value;
+        },
+    });
+
+    const surveyWorkflowConvertController = createSurveyWorkflowConvertController({
+        convertError,
+        convertInfo,
+        surveyVersionWizardApplyBtn,
+        convertApplyValueOffsetsBtn,
+        convertSessionCustom,
+        convertSessionSelect,
+        convertIdMapFile,
+        convertDatasetName,
+        convertLanguage,
+        convertIdColumn,
+        convertSessionColumnOverride,
+        convertRunColumnOverride,
+        conversionLogContainer,
+        conversionLogBody,
+        toggleLogBtn,
+        templateResultsContainer,
+        surveyWorkflowPrepareController,
+        clearManualValueOffsetAdvice,
+        setTemplateEditorErrorCtaVisible,
+        hasMultiVersionWizardTasks,
+        hasAppliedVersionWizardSelections,
+        updateVersionWizardActionState,
+        updateConvertBtn,
+        hasManualTaskValueOffsets,
+        hasAppliedTaskValueOffsetSelections,
+        updateTaskValueOffsetApplyState,
+        hasFreshSurveyPreviewSelectionState,
+        getSelectedSurveyTasksForConversion,
+        resetConversionUI,
+        getEffectiveNearMatchTasks,
+        getEffectiveTaskValueOffsets,
+        ensureSurveyAdvancedOptionsVisible,
+        focusTaskValueOffsetEditor,
+        getSelectedSurveyFilename,
+        getSelectedSurveyFile,
+        getSurveySessionValue,
+        isAdvancedOptionsEnabled,
+        refreshSurveyColumnsBeforeRun,
+        setActiveSurveyRun,
+        startSurveyRunProgress,
+        setIsConvertRunning: (value) => {
+            isConvertRunning = Boolean(value);
+        },
+        appendSurveyInputToFormData,
+        getConvertServerFilePath: () => convertServerFilePath,
+        appendLog,
+        getSelectedSeparator,
+        appendTemplateVersionSelections,
+        formatSignedOffset,
+        advanceSurveyRunProgress,
+        displayUnmatchedGroupsError,
+        displayConversionSummary,
+        registerSessionInProject,
+        getProjectSaveSummary,
+        getParticipantRegistryWarning,
+        showParticipantRegistryWarning,
+        displayValidationResults,
+        isAbortError,
+        enrichSurveyRunErrorMessage,
+        clearActiveSurveyRun,
+        finishSurveyRunProgress,
+        getActiveRunMode: () => activeRunMode,
+        getActiveRunCancelledByUser: () => activeRunCancelledByUser,
+        getVersionWizardRetryGateMode: () => versionWizardRetryGateMode,
+        setVersionWizardRetryGateMode: (value) => {
+            versionWizardRetryGateMode = value;
+        },
+        getTemplateWorkflowGate: () => templateWorkflowGate,
+        setTemplateWorkflowGate: (value) => {
+            templateWorkflowGate = (value && typeof value === 'object') ? value : null;
+        },
+    });
+
+    const surveyTemplateResultsController = createSurveyTemplateResultsController({
+        escapeHtml,
+    });
+
+    const surveyConversionSummaryController = createSurveyConversionSummaryController({
+        conversionSummaryContainer,
+        conversionSummaryBody,
+        toggleSummaryBtn,
+        convertDatasetName,
+        getSurveyPreviewSelectionState: () => surveyPreviewSelectionState,
+        setSurveyPreviewSelectedTasks,
+        normalizeSurveyTaskName,
+        formatSignedOffset,
+        escapeHtml,
+        openAdvancedOptionsValueOffsetEditor,
+        updateConvertBtn,
+    });
+
+    const surveyConversionLogController = createSurveyConversionLogController({
+        toggleLogBtn,
+        conversionLogBody,
+        conversionLogContainer,
+        validationResultsContainer,
+        conversionSummaryContainer,
+        conversionSummaryBody,
+        conversionLog,
+        validationSummary,
+        validationDetails,
+        hideSurveyRunProgress,
+    });
+
+    const surveyValidationResultsController = createSurveyValidationResultsController({
+        escapeHtml,
+    });
 
     // ===== TEMPLATE GENERATION =====
 
@@ -2550,15 +3250,15 @@ convertError.classList.remove('d-none');
 
             // Display results based on mode
             if (data.mode === 'combined') {
-                displayTemplateSingle(data);
+                surveyTemplateResultsController.displayTemplateSingle(data);
             } else if (data.mode === 'groups') {
-                displayTemplateGroups(data);
+                surveyTemplateResultsController.displayTemplateGroups(data);
             } else if (data.mode === 'questions') {
-                displayTemplateQuestions(data);
+                surveyTemplateResultsController.displayTemplateQuestions(data);
             }
 
             // Show participant metadata section for marking fields
-            displayParticipantMetadataSection(data);
+            participantsMetadataController.displayParticipantMetadataSection(data);
 
             convertInfo.textContent = 'Template generation complete!';
             convertInfo.classList.remove('d-none');
@@ -2572,1923 +3272,19 @@ convertError.classList.remove('d-none');
         }
     }
 
-    function displayTemplateSingle(data) {
-        const container = document.getElementById('templateResultSingle');
-        if (!container) return;
-
-        container.classList.remove('d-none');
-        document.getElementById('templateQuestionCount').textContent = `${data.question_count} questions`;
-
-        // Show template match info if available
-        const matchContainer = document.getElementById('templateSingleMatch');
-        if (matchContainer) matchContainer.remove();
-        const m = data.template_match;
-        if (m) {
-            const badgeClass = {exact: 'bg-success', high: 'bg-success', medium: 'bg-warning text-dark', low: 'bg-secondary'}[m.confidence] || 'bg-secondary';
-            const icon = {exact: 'fa-check-circle', high: 'fa-check', medium: 'fa-question-circle', low: 'fa-minus-circle'}[m.confidence] || 'fa-circle';
-            const actionLabel = {use_library: 'Use library template instead', review: 'Review differences', create_new: 'Create new template'}[m.suggested_action] || '';
-            const details = [];
-            if (m.overlap_count !==undefined) details.push(`${m.overlap_count}/${m.template_items} items match`);
-            if (m.levels_match === true) details.push('levels verified');
-            const matchDiv = document.createElement('div');
-            matchDiv.id = 'templateSingleMatch';
-            matchDiv.className = 'alert alert-info py-2 mt-2 mb-0';
-            const srcLabel = m.source === 'project' ? 'project template' : 'library template';
-            const srcIcon = m.source === 'project' ? 'fa-folder' : 'fa-globe';
-            const leadIcon = document.createElement('i');
-            leadIcon.className = `fas ${icon} me-1`;
-            matchDiv.appendChild(leadIcon);
-
-            const confidenceBadge = document.createElement('span');
-            confidenceBadge.className = `badge ${badgeClass} me-2`;
-            confidenceBadge.textContent = m.confidence || 'unknown';
-            matchDiv.appendChild(confidenceBadge);
-
-            matchDiv.appendChild(document.createTextNode(`Matches ${srcLabel}: `));
-            const strong = document.createElement('strong');
-            strong.textContent = m.template_key || '';
-            matchDiv.appendChild(strong);
-            matchDiv.appendChild(document.createTextNode(' '));
-
-            const sourceBadge = document.createElement('span');
-            sourceBadge.className = 'badge bg-light text-dark border ms-1';
-            const sourceBadgeIcon = document.createElement('i');
-            sourceBadgeIcon.className = `fas ${srcIcon} me-1`;
-            sourceBadge.appendChild(sourceBadgeIcon);
-            sourceBadge.appendChild(document.createTextNode(m.source === 'project' ? 'project' : 'library'));
-            matchDiv.appendChild(sourceBadge);
-
-            const detailText = details.join(', ');
-            if (detailText) {
-                matchDiv.appendChild(document.createTextNode(` (${detailText})`));
-            }
-            if (actionLabel) {
-                matchDiv.appendChild(document.createTextNode(' — '));
-                const em = document.createElement('em');
-                em.textContent = actionLabel;
-                matchDiv.appendChild(em);
-            }
-            container.querySelector('.alert')?.after(matchDiv);
-        } else if (m === null) {
-            const matchDiv = document.createElement('div');
-            matchDiv.id = 'templateSingleMatch';
-            matchDiv.className = 'alert alert-light py-2 mt-2 mb-0 border';
-            const iconEl = document.createElement('i');
-            iconEl.className = 'fas fa-plus-circle me-1';
-            matchDiv.appendChild(iconEl);
-            matchDiv.appendChild(document.createTextNode('No matching library template found — this will be a new template.'));
-            container.querySelector('.alert')?.after(matchDiv);
-        }
-
-        // Setup preview button
-        const previewBtn = document.getElementById('templatePreviewBtn');
-        const previewDiv = document.getElementById('templatePreview');
-        const previewContent = document.getElementById('templatePreviewContent');
-
-        if (previewBtn && previewDiv && previewContent) {
-            previewBtn.onclick = () => {
-                previewDiv.classList.toggle('d-none');
-                previewContent.textContent = JSON.stringify(data.prism_json, null, 2);
-            };
-        }
-
-        // Setup download button
-        const downloadBtn = document.getElementById('templateDownloadBtn');
-        if (downloadBtn) {
-            downloadBtn.onclick = () => {
-                const blob = new Blob([JSON.stringify(data.prism_json, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = data.suggested_filename || 'survey-template.json';
-                a.click();
-                URL.revokeObjectURL(url);
-            };
-        }
-    }
-
-    function displayTemplateGroups(data) {
-        const container = document.getElementById('templateResultGroups');
-        if (!container) return;
-
-        container.classList.remove('d-none');
-        document.getElementById('templateGroupCount').textContent = `${data.questionnaire_count} groups`;
-        document.getElementById('templateTotalQuestions').textContent = `${data.total_questions} questions`;
-
-        const listEl = document.getElementById('templateGroupList');
-        if (listEl) {
-            listEl.innerHTML = '';
-            for (const [name, info] of Object.entries(data.questionnaires || {})) {
-                const card = document.createElement('div');
-                card.className = 'col-md-4';
-
-                // Build template match badge if available
-                let matchHtml = '';
-                const m = info.template_match;
-                if (m) {
-                    const badgeClass = {
-                        exact: 'bg-success',
-                        high: 'bg-success',
-                        medium: 'bg-warning text-dark',
-                        low: 'bg-secondary'
-                    }[m.confidence] || 'bg-secondary';
-                    const icon = {
-                        exact: 'fa-check-circle',
-                        high: 'fa-check',
-                        medium: 'fa-question-circle',
-                        low: 'fa-minus-circle'
-                    }[m.confidence] || 'fa-circle';
-                    const details = [];
-                    if (m.overlap_count !== undefined) details.push(`${m.overlap_count}/${m.template_items} items`);
-                    if (m.levels_match === true) details.push('levels verified');
-                    if (m.runs_detected > 1) details.push(`${m.runs_detected} runs`);
-                    const detailStr = details.length ? details.join(', ') : '';
-                    const diffParts = [];
-                    if (m.only_in_import && m.only_in_import.length) diffParts.push(`+${m.only_in_import.length} extra`);
-                    if (m.only_in_library && m.only_in_library.length) diffParts.push(`${m.only_in_library.length} missing`);
-                    const diffHtml = diffParts.length
-                        ? `<small class="d-block text-muted" style="font-size:0.7rem">${diffParts.join(', ')}</small>`
-                        : '';
-                    // Show "Use Library" button for exact/high matches (but not for participants matches)
-                    const sourceLabel = m.source === 'project' ? 'project' : 'library';
-                    const sourceIcon = m.source === 'project' ? 'fa-folder' : 'fa-globe';
-                    const safeName = escapeHtml(name || '');
-                    const safeTemplateKey = escapeHtml(m.template_key || '');
-                    const safeDetailStr = escapeHtml(detailStr);
-                    const safeSourceLabel = escapeHtml(sourceLabel);
-                    const safeConfidence = escapeHtml(m.confidence || 'unknown');
-                    // Don't show "Use library version" for participants matches - there's no participants template in the library
-                    const useLibBtn = (m.suggested_action === 'use_library' && !m.is_participants)
-                        ? `<button class="btn btn-sm btn-outline-primary use-library-btn mt-1" data-name="${safeName}" data-template-key="${safeTemplateKey}" data-is-participants="${m.is_participants || false}"><i class="fas fa-book me-1"></i>Use ${safeSourceLabel} version</button>`
-                        : '';
-                    matchHtml = `
-                        <div class="mt-1 pt-1 border-top">
-                            <span class="badge ${badgeClass}" title="${safeDetailStr}">
-                                <i class="fas ${icon} me-1"></i>${safeConfidence} match: ${safeTemplateKey}
-                            </span>
-                            <span class="badge bg-light text-dark border ms-1" title="Matched from ${safeSourceLabel}">
-                                <i class="fas ${sourceIcon} me-1"></i>${safeSourceLabel}
-                            </span>
-                            ${diffHtml}
-                            ${useLibBtn}
-                        </div>
-                    `;
-                } else if (m === null) {
-                    matchHtml = `
-                        <div class="mt-1 pt-1 border-top">
-                            <span class="badge bg-light text-dark border">
-                                <i class="fas fa-plus-circle me-1"></i>No library match
-                            </span>
-                        </div>
-                    `;
-                }
-
-                const safeName = escapeHtml(name || '');
-                const safeQuestionCount = escapeHtml(String(info.question_count ?? ''));
-                card.innerHTML = `
-                    <div class="card h-100">
-                        <div class="card-body py-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong>${safeName}</strong>
-                                    <small class="d-block text-muted">${safeQuestionCount} questions</small>
-                                </div>
-                                <button class="btn btn-sm btn-outline-success download-template-btn" data-name="${safeName}">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                            </div>
-                            ${matchHtml}
-                        </div>
-                    </div>
-                `;
-                listEl.appendChild(card);
-            }
-
-            // "Use Library" button handlers - swap generated template with library version
-            listEl.querySelectorAll('.use-library-btn').forEach(btn => {
-                btn.onclick = async () => {
-                    const groupName = btn.dataset.name;
-                    const templateKey = btn.dataset.templateKey;
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
-                    try {
-                        const resp = await fetch(`/api/library-template/${encodeURIComponent(templateKey)}`);
-                        const result = await resp.json();
-                        if (result.success && result.prism_json) {
-                            // Swap the template in the data object
-                            data.questionnaires[groupName].prism_json = result.prism_json;
-                            data.questionnaires[groupName].suggested_filename = result.filename;
-                            // Update the card visually
-                            const matchDiv = btn.closest('.border-top');
-                            if (matchDiv) {
-                                matchDiv.replaceChildren();
-                                const badge = document.createElement('span');
-                                badge.className = 'badge bg-success';
-                                const badgeIcon = document.createElement('i');
-                                badgeIcon.className = 'fas fa-check-circle me-1';
-                                badge.appendChild(badgeIcon);
-                                badge.appendChild(document.createTextNode(`Using library: ${templateKey || ''}`));
-                                matchDiv.appendChild(badge);
-
-                                const filenameEl = document.createElement('small');
-                                filenameEl.className = 'd-block text-muted mt-1';
-                                filenameEl.textContent = result.filename || '';
-                                matchDiv.appendChild(filenameEl);
-                            }
-                        } else {
-                            btn.disabled = false;
-                            btn.innerHTML = '<i class="fas fa-book me-1"></i>Use library version';
-                            alert('Error: ' + (result.error || 'Failed to load library template'));
-                        }
-                    } catch (e) {
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="fas fa-book me-1"></i>Use library version';
-                        alert('Error loading template: ' + e.message);
-                    }
-                };
-            });
-
-            // Add download handlers
-            listEl.querySelectorAll('.download-template-btn').forEach(btn => {
-                btn.onclick = () => {
-                    const name = btn.dataset.name;
-                    const info = data.questionnaires[name];
-                    if (info) {
-                        const blob = new Blob([JSON.stringify(info.prism_json, null, 2)], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = info.suggested_filename || `survey-${name}.json`;
-                        a.click();
-                        URL.revokeObjectURL(url);
-                    }
-                };
-            });
-        }
-
-        // Download all as ZIP (deduplicate runs of the same template)
-        const downloadAllBtn = document.getElementById('templateDownloadAllBtn');
-        if (downloadAllBtn) {
-            downloadAllBtn.onclick = async () => {
-                const JSZip = window.JSZip;
-                if (!JSZip) {
-                    alert('JSZip not loaded');
-                    return;
-                }
-                const zip = new JSZip();
-                const addedKeys = new Set();
-                for (const [name, info] of Object.entries(data.questionnaires || {})) {
-                    const m = info.template_match;
-                    // Skip participants templates
-                    if (m && m.is_participants) continue;
-                    // Deduplicate runs: use library filename, skip if already added
-                    const filename = (m && m.template_path) ? m.template_path : (info.suggested_filename || `survey-${name}.json`);
-                    const dedupeKey = (m && m.template_key) ? m.template_key : filename;
-                    if (addedKeys.has(dedupeKey)) continue;
-                    addedKeys.add(dedupeKey);
-                    zip.file(filename, JSON.stringify(info.prism_json, null, 2));
-                }
-                const blob = await zip.generateAsync({ type: 'blob' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'survey-templates.zip';
-                a.click();
-                URL.revokeObjectURL(url);
-            };
-        }
-
-        // Save to project button
-        setupTemplateSaveToProject(data, 'groups');
-    }
-
-    function displayTemplateQuestions(data) {
-        const container = document.getElementById('templateResultQuestions');
-        if (!container) return;
-
-        container.classList.remove('d-none');
-        document.getElementById('templateIndividualCount').textContent = `${data.question_count} templates`;
-
-        const listEl = document.getElementById('templateQuestionsList');
-        if (listEl) {
-            listEl.innerHTML = '';
-            for (const [groupName, groupInfo] of Object.entries(data.by_group || {})) {
-                const groupDiv = document.createElement('div');
-                groupDiv.className = 'col-12 mb-2';
-                const heading = document.createElement('h6');
-                heading.className = 'text-muted';
-                heading.textContent = groupName;
-                groupDiv.appendChild(heading);
-                listEl.appendChild(groupDiv);
-
-                for (const q of groupInfo.questions || []) {
-                    const qData = data.questions[q.code];
-                    if (!qData) continue;
-
-                    const card = document.createElement('div');
-                    card.className = 'col-md-3';
-
-                    const cardInner = document.createElement('div');
-                    cardInner.className = 'card h-100';
-                    const cardBody = document.createElement('div');
-                    cardBody.className = 'card-body py-2';
-                    const row = document.createElement('div');
-                    row.className = 'd-flex justify-content-between align-items-center';
-
-                    const textWrap = document.createElement('div');
-                    const strong = document.createElement('strong');
-                    strong.textContent = q.code || '';
-                    textWrap.appendChild(strong);
-                    const small = document.createElement('small');
-                    small.className = 'd-block text-muted';
-                    small.textContent = `${q.type || ''} (${String(q.item_count ?? '')} items)`;
-                    textWrap.appendChild(small);
-
-                    const button = document.createElement('button');
-                    button.className = 'btn btn-sm btn-outline-success download-q-btn';
-                    button.dataset.code = q.code || '';
-                    const buttonIcon = document.createElement('i');
-                    buttonIcon.className = 'fas fa-download';
-                    button.appendChild(buttonIcon);
-
-                    row.appendChild(textWrap);
-                    row.appendChild(button);
-                    cardBody.appendChild(row);
-                    cardInner.appendChild(cardBody);
-                    card.appendChild(cardInner);
-                    listEl.appendChild(card);
-                }
-            }
-
-            // Add download handlers
-            listEl.querySelectorAll('.download-q-btn').forEach(btn => {
-                btn.onclick = () => {
-                    const code = btn.dataset.code;
-                    const qData = data.questions[code];
-                    if (qData && qData.prism_json) {
-                        const blob = new Blob([JSON.stringify(qData.prism_json, null, 2)], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = qData.suggested_filename || `survey-${code}.json`;
-                        a.click();
-                        URL.revokeObjectURL(url);
-                    }
-                };
-            });
-        }
-
-        // Download all as ZIP
-        const downloadBtn = document.getElementById('templateDownloadQuestionsBtn');
-        if (downloadBtn) {
-            downloadBtn.onclick = async () => {
-                const JSZip = window.JSZip;
-                if (!JSZip) {
-                    alert('JSZip not loaded');
-                    return;
-                }
-                const zip = new JSZip();
-                for (const [code, qData] of Object.entries(data.questions || {})) {
-                    if (qData.prism_json) {
-                        zip.file(qData.suggested_filename || `survey-${code}.json`, JSON.stringify(qData.prism_json, null, 2));
-                    }
-                }
-                const blob = await zip.generateAsync({ type: 'blob' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'survey-question-templates.zip';
-                a.click();
-                URL.revokeObjectURL(url);
-            };
-        }
-
-        // Save to project button
-        setupTemplateSaveToProject(data, 'questions');
-    }
-
-    function setupTemplateSaveToProject(data, mode) {
-        const saveBtn = mode === 'groups'
-            ? document.getElementById('templateSaveToProjectBtn')
-            : document.getElementById('templateSaveQuestionsToProjectBtn');
-
-        if (!saveBtn) return;
-
-        saveBtn.onclick = async () => {
-            const templates = [];
-            const savedKeys = new Set();  // Deduplicate runs of same template
-
-            if (mode === 'groups') {
-                for (const [name, info] of Object.entries(data.questionnaires || {})) {
-                    const m = info.template_match;
-
-                    // Skip participants templates (handled separately)
-                    if (m && m.is_participants) continue;
-
-                    // Deduplicate: if multiple groups matched the same library
-                    // template (e.g. run1/run2/run3 of BRS), save only once
-                    // using the library filename
-                    if (m && m.template_key) {
-                        if (savedKeys.has(m.template_key)) continue;
-                        savedKeys.add(m.template_key);
-                        templates.push({
-                            filename: m.template_path || info.suggested_filename || `survey-${name}.json`,
-                            content: info.prism_json
-                        });
-                    } else {
-                        templates.push({
-                            filename: info.suggested_filename || `survey-${name}.json`,
-                            content: info.prism_json
-                        });
-                    }
-                }
-            } else {
-                for (const [code, qData] of Object.entries(data.questions || {})) {
-                    if (qData.prism_json) {
-                        templates.push({
-                            filename: qData.suggested_filename || `survey-${code}.json`,
-                            content: qData.prism_json
-                        });
-                    }
-                }
-            }
-
-            if (templates.length === 0) {
-                alert('No templates to save (all matched library templates or participants).');
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/limesurvey-save-to-project', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ templates })
-                });
-                const result = await response.json();
-
-                const successDiv = document.getElementById('templateSaveSuccess');
-                const msgSpan = document.getElementById('templateSaveSuccessMessage');
-                if (result.success) {
-                    successDiv?.classList.remove('d-none');
-                    const skipped = Object.keys(data.questionnaires || {}).length - templates.length;
-                    let msg = `Saved ${result.saved_files?.length || templates.length} template(s) to ${result.library_path}`;
-                    if (skipped > 0) msg += ` (${skipped} duplicate run(s) skipped)`;
-                    msgSpan.textContent = msg;
-                } else {
-                    alert('Error: ' + (result.error || 'Unknown error'));
-                }
-            } catch (e) {
-                alert('Error saving: ' + e.message);
-            }
-        };
-    }
-
     // ===== PARTICIPANT METADATA MARKING =====
-
-    // Store selected participant fields
-    let selectedParticipantFields = {};
-
-    // BIDS standard field suggestions for auto-mapping
-    const bidsFieldMappings = {
-        // Common patterns -> BIDS field names
-        'participant_id': ['token', 'id', 'participant', 'subject', 'subj', 'respondent'],
-        'age': ['age', 'alter', 'years_old'],
-        'sex': ['sex', 'gender', 'geschlecht', 'm_f', 'male_female'],
-        'handedness': ['hand', 'handed', 'handedness', 'dominant_hand'],
-        'education_years': ['education', 'school', 'study_years', 'ausbildung'],
-        'native_language': ['language', 'native', 'mother_tongue', 'muttersprache']
-    };
-
-    // Display participant metadata section with extracted fields
-    function displayParticipantMetadataSection(data) {
-        const section = document.getElementById('participantMetadataSection');
-        const fieldsList = document.getElementById('participantFieldsList');
-        if (!section || !fieldsList) return;
-
-        // Extract all question codes/fields from the template data
-        const allFields = extractAllFields(data);
-
-        if (allFields.length === 0) {
-            section.classList.add('d-none');
-            return;
-        }
-
-        section.classList.remove('d-none');
-        selectedParticipantFields = {};
-
-        // Render field checkboxes
-        let html = '<div class="list-group list-group-flush">';
-        for (const field of allFields) {
-            const suggestedMapping = suggestBidsMapping(field.code);
-            const safeCode = escapeHtml(field.code || '');
-            const safeDescription = escapeHtml(field.description || '');
-            const safeType = escapeHtml(field.type || 'text');
-            const safeGroup = field.group ? escapeHtml(field.group) : '';
-            const safeSuggestedMapping = suggestedMapping ? escapeHtml(suggestedMapping) : '';
-            html += `
-                <label class="list-group-item list-group-item-action py-2 d-flex align-items-center">
-                    <input type="checkbox" class="form-check-input me-2 participant-field-checkbox"
-                           data-code="${safeCode}" data-description="${safeDescription}"
-                           data-type="${safeType}">
-                    <div class="flex-grow-1">
-                        <code class="me-2">${safeCode}</code>
-                        <small class="text-muted">${safeDescription || safeType || ''}</small>
-                        ${safeGroup ? `<span class="badge bg-light text-dark ms-2">${safeGroup}</span>` : ''}
-                    </div>
-                    ${suggestedMapping ? `
-                        <select class="form-select form-select-sm bids-mapping-select" style="width: 140px;" data-code="${safeCode}">
-                            <option value="">Map to...</option>
-                            <option value="${safeSuggestedMapping}" selected>${safeSuggestedMapping}</option>
-                            <option value="participant_id">participant_id</option>
-                            <option value="age">age</option>
-                            <option value="sex">sex</option>
-                            <option value="handedness">handedness</option>
-                            <option value="custom">Custom name</option>
-                        </select>
-                    ` : `
-                        <select class="form-select form-select-sm bids-mapping-select" style="width: 140px;" data-code="${safeCode}">
-                            <option value="">Map to...</option>
-                            <option value="participant_id">participant_id</option>
-                            <option value="age">age</option>
-                            <option value="sex">sex</option>
-                            <option value="handedness">handedness</option>
-                            <option value="education_years">education_years</option>
-                            <option value="custom">Custom name</option>
-                        </select>
-                    `}
-                </label>
-            `;
-        }
-        html += '</div>';
-        fieldsList.innerHTML = html;
-
-        // Add event listeners
-        fieldsList.querySelectorAll('.participant-field-checkbox').forEach(cb => {
-            cb.addEventListener('change', updateParticipantFieldSelection);
-        });
-
-        fieldsList.querySelectorAll('.bids-mapping-select').forEach(sel => {
-            sel.addEventListener('change', function() {
-                const code = this.dataset.code;
-                const checkbox = fieldsList.querySelector(`.participant-field-checkbox[data-code="${code}"]`);
-                if (this.value && checkbox && !checkbox.checked) {
-                    checkbox.checked = true;
-                    updateParticipantFieldSelection();
-                }
-            });
-        });
-
-        // Setup save/download button
-        setupParticipantsSaveButton();
-    }
-
-    // Extract all fields from template data (works for all modes)
-    function extractAllFields(data) {
-        const fields = [];
-
-        if (data.mode === 'combined' || data.mode === 'groups') {
-            // Extract from prism_json Items
-            const sources = data.mode === 'combined'
-                ? [{ json: data.prism_json, group: null }]
-                : Object.entries(data.questionnaires || {}).map(([name, info]) => ({ json: info.prism_json, group: name }));
-
-            for (const source of sources) {
-                const items = source.json?.Items || [];
-                for (const item of items) {
-                    if (item.SurveyItemID) {
-                        fields.push({
-                            code: item.SurveyItemID,
-                            description: item.Prompt || item.Description || '',
-                            type: item.ResponseType || 'text',
-                            group: source.group
-                        });
-                    }
-                }
-            }
-        } else if (data.mode === 'questions') {
-            // Extract from by_group structure
-            for (const [groupName, groupInfo] of Object.entries(data.by_group || {})) {
-                for (const q of groupInfo.questions || []) {
-                    fields.push({
-                        code: q.code,
-                        description: q.title || '',
-                        type: q.type || 'text',
-                        group: groupName
-                    });
-                }
-            }
-        }
-
-        return fields;
-    }
-
-    // Suggest BIDS field mapping based on field code
-    function suggestBidsMapping(code) {
-        const lowerCode = code.toLowerCase();
-        for (const [bidsField, patterns] of Object.entries(bidsFieldMappings)) {
-            for (const pattern of patterns) {
-                if (lowerCode.includes(pattern)) {
-                    return bidsField;
-                }
-            }
-        }
-        return null;
-    }
-
-    // Update selection state and count
-    function updateParticipantFieldSelection() {
-        selectedParticipantFields = {};
-        const checkboxes = document.querySelectorAll('.participant-field-checkbox:checked');
-
-        checkboxes.forEach(cb => {
-            const code = cb.dataset.code;
-            const description = cb.dataset.description;
-            const mappingSelect = document.querySelector(`.bids-mapping-select[data-code="${code}"]`);
-            const bidsName = mappingSelect?.value || code;
-
-            selectedParticipantFields[code] = {
-                originalCode: code,
-                bidsFieldName: bidsName || code,
-                description: description
-            };
-        });
-
-        // Update count
-        const countEl = document.getElementById('selectedParticipantFieldsCount');
-        if (countEl) {
-            countEl.textContent = Object.keys(selectedParticipantFields).length;
-        }
-
-        // Enable/disable save button
-        const saveBtn = document.getElementById('saveParticipantsJsonBtn') || document.getElementById('downloadParticipantsJsonBtn');
-        if (saveBtn) {
-            saveBtn.disabled = Object.keys(selectedParticipantFields).length === 0;
-        }
-    }
-
-    // Build participants.json schema from selections
-    function buildParticipantsJsonSchema() {
-        const schema = {};
-
-        for (const [code, info] of Object.entries(selectedParticipantFields)) {
-            const fieldName = info.bidsFieldName || code;
-
-            // Get description from original data
-            schema[fieldName] = {
-                Description: info.description || `Extracted from survey field: ${code}`
-            };
-
-            // Add standard properties for known BIDS fields
-            if (fieldName === 'age') {
-                schema[fieldName].Unit = 'years';
-            } else if (fieldName === 'sex') {
-                schema[fieldName].Levels = {
-                    'M': 'Male',
-                    'F': 'Female',
-                    'O': 'Other'
-                };
-            } else if (fieldName === 'handedness') {
-                schema[fieldName].Levels = {
-                    'R': 'Right',
-                    'L': 'Left',
-                    'A': 'Ambidextrous'
-                };
-            }
-
-            // Store source info for data conversion
-            schema[fieldName]._sourceField = code;
-        }
-
-        return schema;
-    }
-
-    function mergeSurveyParticipantsSchema(existingSchema, selectedSchema) {
-        const safeExisting = (existingSchema && typeof existingSchema === 'object') ? { ...existingSchema } : {};
-        const safeSelected = (selectedSchema && typeof selectedSchema === 'object') ? selectedSchema : {};
-
-        const selectedSourceFields = new Set(
-            Object.values(safeSelected)
-                .map(v => (v && typeof v === 'object') ? String(v._sourceField || '').trim() : '')
-                .filter(v => v.length > 0)
-        );
-
-        const selectedTargetFields = new Set(Object.keys(safeSelected));
-
-        // Start from existing schema and remove stale survey-derived fields that are no longer selected.
-        const merged = { ...safeExisting };
-        Object.entries(merged).forEach(([fieldName, fieldSpec]) => {
-            if (!fieldSpec || typeof fieldSpec !== 'object') return;
-            const sourceField = String(fieldSpec._sourceField || '').trim();
-            if (!sourceField) return;
-            const stillSelectedBySource = selectedSourceFields.has(sourceField);
-            const stillSelectedByTarget = selectedTargetFields.has(fieldName);
-            if (!stillSelectedBySource && !stillSelectedByTarget) {
-                delete merged[fieldName];
-            }
-        });
-
-        // Apply currently selected fields while preserving manually curated metadata
-        // (e.g., Annotations/Levels edits) for fields that remain selected.
-        Object.entries(safeSelected).forEach(([fieldName, selectedSpec]) => {
-            const existingSpec = merged[fieldName];
-            if (existingSpec && typeof existingSpec === 'object') {
-                merged[fieldName] = {
-                    ...existingSpec,
-                    ...selectedSpec,
-                };
-            } else {
-                merged[fieldName] = selectedSpec;
-            }
-        });
-
-        if (!merged.participant_id) {
-            merged.participant_id = { Description: 'Unique participant identifier' };
-        }
-
-        return merged;
-    }
-
-    // Setup save/download button
-    function setupParticipantsSaveButton() {
-        const saveBtn = document.getElementById('saveParticipantsJsonBtn');
-        const downloadBtn = document.getElementById('downloadParticipantsJsonBtn');
-        const statusDiv = document.getElementById('participantsSaveStatus');
-
-        if (saveBtn) {
-            saveBtn.onclick = async () => {
-                const schema = buildParticipantsJsonSchema();
-                if (Object.keys(schema).length === 0) {
-                    alert('No fields selected');
-                    return;
-                }
-
-                saveBtn.disabled = true;
-                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
-
-                try {
-                    // First get existing schema to merge
-                    const existingRes = await fetch('/api/projects/participants');
-                    const existingData = await existingRes.json();
-                    const existingSchema = existingData.success ? (existingData.schema || {}) : {};
-
-                    // Merge selected fields into existing schema while removing stale
-                    // survey-mapped fields that are no longer selected.
-                    const mergedSchema = mergeSurveyParticipantsSchema(existingSchema, schema);
-
-                    // Save merged schema
-                    const response = await fetch('/api/projects/participants', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ schema: mergedSchema })
-                    });
-                    const result = await response.json();
-
-                    if (result.success) {
-                        statusDiv.replaceChildren();
-                        const text = document.createElement('span');
-                        text.className = 'text-success';
-                        const icon = document.createElement('i');
-                        icon.className = 'fas fa-check-circle me-1';
-                        text.appendChild(icon);
-                        text.appendChild(document.createTextNode(`Saved ${Object.keys(schema).length} fields to participants.json!`));
-                        statusDiv.appendChild(text);
-                    } else {
-                        statusDiv.replaceChildren();
-                        const text = document.createElement('span');
-                        text.className = 'text-danger';
-                        const icon = document.createElement('i');
-                        icon.className = 'fas fa-exclamation-circle me-1';
-                        text.appendChild(icon);
-                        text.appendChild(document.createTextNode(result.error || 'Failed to save participants schema'));
-                        statusDiv.appendChild(text);
-                    }
-                } catch (e) {
-                    statusDiv.replaceChildren();
-                    const text = document.createElement('span');
-                    text.className = 'text-danger';
-                    const icon = document.createElement('i');
-                    icon.className = 'fas fa-exclamation-circle me-1';
-                    text.appendChild(icon);
-                    text.appendChild(document.createTextNode(e.message || 'Error'));
-                    statusDiv.appendChild(text);
-                } finally {
-                    saveBtn.disabled = false;
-                    saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>Save to participants.json';
-                }
-            };
-        }
-
-        if (downloadBtn) {
-            downloadBtn.onclick = () => {
-                const schema = buildParticipantsJsonSchema();
-                if (Object.keys(schema).length === 0) {
-                    alert('No fields selected');
-                    return;
-                }
-
-                // Ensure participant_id is present
-                if (!schema.participant_id) {
-                    schema.participant_id = { Description: 'Unique participant identifier' };
-                }
-
-                const blob = new Blob([JSON.stringify(schema, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'participants.json';
-                a.click();
-                URL.revokeObjectURL(url);
-            };
-        }
-    }
 
     // ===== MAIN CONVERT HANDLER =====
 
     let currentTemplateData = null;
 
-    convertBtn.addEventListener('click', async function() {
-        convertError.classList.add('d-none');
-        convertInfo.classList.add('d-none');
-        convertError.textContent = '';
-        setTemplateEditorErrorCtaVisible(false);
-        convertInfo.textContent = '';
-        resetConversionUI();
-        templateWorkflowGate = null;
-        if (nearMatchRetryState && nearMatchRetryState.mode !== 'convert') {
-            nearMatchRetryState = null;
-        }
-        const nearMatchRetryForConvert = (
-            nearMatchRetryState
-            && nearMatchRetryState.mode === 'convert'
-        ) ? nearMatchRetryState : null;
-        const allowNearItemMatch = Boolean(nearMatchRetryForConvert);
-        const selectedNearMatchTasks = allowNearItemMatch
-            ? [...new Set(
-                (Array.isArray(nearMatchRetryForConvert.tasks) ? nearMatchRetryForConvert.tasks : [])
-                    .map((task) => normalizeNearMatchTaskName(task))
-                    .filter(Boolean)
-            )]
-            : [];
-        if (allowNearItemMatch) {
-            nearMatchRetryState = null;
-        }
-
-        // Hide template results and participant metadata section
-        if (templateResultsContainer) {
-            templateResultsContainer.classList.add('d-none');
-            document.getElementById('templateResultSingle')?.classList.add('d-none');
-            document.getElementById('templateResultGroups')?.classList.add('d-none');
-            document.getElementById('templateResultQuestions')?.classList.add('d-none');
-            document.getElementById('participantMetadataSection')?.classList.add('d-none');
-        }
-
-        const filenameRaw = getSelectedSurveyFilename();
-        if (!filenameRaw) {
-            return;
-        }
-
-        const file = getSelectedSurveyFile();
-        const filename = filenameRaw.toLowerCase();
-        const isLssFile = filename.endsWith('.lss');
-        const isLimeSurveyFile = filename.endsWith('.lss') || filename.endsWith('.lsa');
-
-        // DATA CONVERSION MODE — session is required
-        const sessionVal = getSurveySessionValue();
-
-        if (!sessionVal) {
-            convertError.textContent = 'Please enter a session ID (e.g., 1, 2, 3).';
-            convertError.classList.remove('d-none');
-            (convertSessionCustom || convertSessionSelect)?.focus();
-            return;
-        }
-
-        // DATA CONVERSION MODE
-
-        // Prevent .lss files in data mode (they don't contain response data)
-        if (isLssFile) {
-            convertError.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i><strong>.lss files contain structure only</strong> (no response data). Use <a href="/template-editor" class="alert-link">Template Editor</a> for template generation, or upload a <strong>.lsa</strong> file (archive with responses).';
-            convertError.classList.remove('d-none');
-            return;
-        }
-
-        // Validate ID map before sending
-        const idMap = isAdvancedOptionsEnabled() && convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0];
-        if (idMap) {
-            if (idMap.size === 0) {
-                convertError.classList.remove('d-none');
-                convertError.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>ID map file is empty`;
-                return;
-            }
-        }
-
-        await refreshSurveyColumnsBeforeRun();
-
-        // Validate ID column selection for non-PRISM data
-        const idColumnVal = document.getElementById('convertIdColumn')?.value;
-        if (!window._isPrismData && (!idColumnVal || idColumnVal === 'auto' || idColumnVal === '')) {
-            convertError.classList.remove('d-none');
-            convertError.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Please select a participant ID column before converting.';
-            const idSelect = document.getElementById('convertIdColumn');
-            if (idSelect) {
-                idSelect.classList.add('border-danger');
-                idSelect.focus();
-            }
-            return;
-        }
-
-        const formData = new FormData();
-        appendSurveyInputToFormData(formData);
-        if (file) {
-            console.log(`[CLIENT DEBUG] Excel file: ${file.name}, size: ${file.size}`);
-        } else {
-            console.log(`[CLIENT DEBUG] Server source file: ${convertServerFilePath}`);
-        }
-
-        if (idMap) {
-            console.log(`[CLIENT DEBUG] ID map file before append: ${idMap.name}, size: ${idMap.size}, type: ${idMap.type}`);
-            formData.append('id_map', idMap);
-            console.log(`[CLIENT DEBUG] ID map appended to FormData`);
-            appendLog(`Using ID map file: ${idMap.name} (${idMap.size} bytes)`, 'step');
-        }
-
-        // Library path is now resolved automatically (project first, then global)
-        if (isAdvancedOptionsEnabled() && convertDatasetName && convertDatasetName.value.trim()) {
-            formData.append('survey', convertDatasetName.value.trim());
-        }
-
-        // Show log container
-        conversionLogContainer.classList.remove('d-none');
-        conversionLogBody.classList.remove('d-none');
-        const icon = toggleLogBtn.querySelector('i');
-        icon.classList.remove('fa-chevron-right');
-        icon.classList.add('fa-chevron-down');
-
-        appendLog(`Starting conversion of: ${filenameRaw}`, 'info');
-        appendLog(`Using library: Project library first, then global`, 'step');
-
-        // Always save to project's rawdata folder when a project is loaded
-        formData.append('save_to_project', 'true');
-        appendLog('Output will be saved under the active project', 'step');
-
-        // Add ID column if selected
-        if (idColumnVal && idColumnVal !== 'auto' && idColumnVal !== '') {
-            formData.append('id_column', idColumnVal);
-            appendLog(`Using ID column: ${idColumnVal}`, 'step');
-        }
-
-        formData.append('session', sessionVal);
-        appendLog(`Forcing session ID: ${sessionVal}`, 'step');
-
-        // Append session/run column overrides if user has specified them
-        const sessionColVal = (convertSessionColumnOverride && convertSessionColumnOverride.value.trim()) || '';
-        const runColVal = (convertRunColumnOverride && convertRunColumnOverride.value.trim()) || '';
-        if (sessionColVal) {
-            formData.append('session_column', sessionColVal);
-        }
-        if (runColVal) {
-            formData.append('run_column', runColVal);
-        }
-
-        formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
-        formData.append('separator', getSelectedSeparator(filename));
-        formData.append('validate', 'true');  // Request validation
-        const templateSelections = appendTemplateVersionSelections(formData);
-        if (templateSelections.length > 0) {
-            appendLog(`Template versions: ${templateSelections.map((entry) => `${entry.task}${entry.session ? `;session=${entry.session}` : ''}${entry.run ? `;run=${entry.run}` : ''}=${entry.version}`).join(', ')}`, 'step');
-        }
-        if (allowNearItemMatch) {
-            formData.append('allow_near_item_match', 'true');
-            if (selectedNearMatchTasks.length > 0) {
-                formData.append('near_match_tasks', JSON.stringify(selectedNearMatchTasks));
-            }
-            const nearMatchScope = selectedNearMatchTasks.length > 0
-                ? `${selectedNearMatchTasks.length} selected survey task(s)`
-                : 'all detected survey tasks';
-            appendLog(`Applying confirmed near item matches for ${nearMatchScope} (minimal formatting differences only).`, 'warning');
-        }
-
-        convertBtn.disabled = true;
-        appendLog('Uploading file and starting conversion...', 'info');
-
-        fetch('/api/survey-convert-validate', {
-            method: 'POST',
-            body: formData,
-        })
-        .then(async response => {
-            const contentType = response.headers.get('content-type') || '';
-            let data = null;
-            
-            if (contentType.includes('application/json')) {
-                data = await response.json();
-                // Process logs even if response is not ok
-                if (data.log && Array.isArray(data.log)) {
-                    data.log.forEach(entry => {
-                        appendLog(entry.message, entry.type || entry.level || 'info');
-                    });
-                }
-                
-                if (!response.ok) {
-                    if (data.error === 'near_item_match_confirmation_required') {
-                        const selection = await promptNearMatchSelection(data, 'conversion');
-                        if (selection.approved && selection.selectedTasks.length > 0) {
-                            nearMatchRetryState = {
-                                mode: 'convert',
-                                tasks: selection.selectedTasks,
-                            };
-                            appendLog(
-                                `Near matches confirmed for ${selection.selectedTasks.length} survey task(s) and ${selection.selectedCandidateCount} item(s). Re-running conversion.`,
-                                'warning'
-                            );
-                        } else {
-                            appendLog('Near matches not approved. Conversion remained exact-only and was canceled.', 'info');
-                            convertInfo.textContent = 'Near item matches were detected but not approved. Conversion was canceled.';
-                            convertInfo.classList.remove('d-none');
-                        }
-                        return null;
-                    }
-                    if (data.error === 'id_column_required') {
-                        const idSelect = document.getElementById('convertIdColumn');
-                        if (idSelect) {
-                            idSelect.classList.add('border-danger');
-                            idSelect.focus();
-                        }
-                        throw new Error('Please select the participant ID column.');
-                    }
-                    if (data.error === 'unmatched_groups') {
-                        displayUnmatchedGroupsError(data);
-                        return null;
-                    }
-                    if (data.error === 'project_template_completion_required') {
-                        templateWorkflowGate = data.workflow_gate || {
-                            blocked: true,
-                            message: data.message || 'Project templates must be completed before import can continue.'
-                        };
-                        setTemplateEditorErrorCtaVisible(true);
-
-                        appendLog('Template metadata updates are required before import.', 'warning');
-                        appendLog(`   ${templateWorkflowGate.message}`, 'warning');
-                        if (Array.isArray(templateWorkflowGate.next_steps)) {
-                            templateWorkflowGate.next_steps.forEach(step => appendLog(`   • ${step}`, 'warning'));
-                        }
-                        if (Array.isArray(data.template_issues) && data.template_issues.length) {
-                            data.template_issues.slice(0, 20).forEach(issue => {
-                                const name = (issue.file || '').split('/').pop() || 'template';
-                                appendLog(`   - ${name}: ${issue.message}`, 'warning');
-                            });
-                            if (data.template_issues.length > 20) {
-                                appendLog(`   ... and ${data.template_issues.length - 20} more template item(s)`, 'warning');
-                            }
-                        }
-
-                        convertInfo.innerHTML = '<i class="fas fa-clipboard-check me-2"></i>Some copied survey templates still need project-level metadata. Complete them in Template Editor, then run Preview again.';
-                        convertInfo.classList.remove('d-none');
-                        return null;
-                    }
-                    templateWorkflowGate = null;
-                    setTemplateEditorErrorCtaVisible(false);
-                    throw new Error(data.error || 'Conversion failed');
-                }
-                return data;
-            } else {
-                // Fallback: direct ZIP download (old API)
-                if (!response.ok) {
-                    throw new Error('Conversion failed');
-                }
-                const blob = await response.blob();
-                return { blob, validation: null };
-            }
-        })
-        .then(data => {
-            if (!data) return;  // Handled by resolution UI (e.g. unmatched groups)
-
-            const participantRegistryWarning = getParticipantRegistryWarning(data);
-
-            // Logs already processed above for JSON responses
-
-            // Display conversion summary (template matches, tool columns, unmatched) before validation
-            if (data.conversion_summary) {
-                displayConversionSummary(data.conversion_summary);
-            }
-
-            // Register conversion in project.json Sessions/TaskDefinitions
-            const regSessionVal = getSurveySessionValue();
-            const regTasks = (data.conversion_summary && data.conversion_summary.tasks_included) || [];
-            if (data.project_saved && regSessionVal && regTasks.length) {
-                const srcFile = file ? file.name : '';
-                const srcExt = srcFile.toLowerCase().split('.').pop();
-                const convType = (srcExt === 'lsa') ? 'survey-lsa' : 'survey-xlsx';
-                registerSessionInProject(regSessionVal, regTasks, 'survey', srcFile, convType);
-            }
-
-            if (data.validation) {
-                const v = data.validation;
-                const errorCount = (v.errors || []).length;
-                const warningCount = (v.warnings || []).length;
-                setTemplateEditorErrorCtaVisible(errorCount > 0);
-
-                if (errorCount === 0 && warningCount === 0) {
-                    appendLog('✓ Validation passed - dataset is valid!', 'success');
-                } else if (errorCount === 0) {
-                    appendLog(`⚠ Validation passed with ${warningCount} warning(s)`, 'warning');
-                } else {
-                    appendLog(`Validation found ${errorCount} error(s)`, 'error');
-                }
-
-                displayValidationResults(data.validation);
-            }
-
-            if (data.project_saved) {
-                const saveSummary = getProjectSaveSummary(data);
-                appendLog(`✓ Data saved to project: ${saveSummary.target}${saveSummary.countNote}`, 'success');
-                if (participantRegistryWarning) {
-                    appendLog(`⚠ ${participantRegistryWarning.message}`, 'warning');
-                    if (participantRegistryWarning.details) {
-                        appendLog(`   ${participantRegistryWarning.details}`, 'warning');
-                    }
-                    if (participantRegistryWarning.next_step) {
-                        appendLog(`   ${participantRegistryWarning.next_step}`, 'warning');
-                    }
-                    showParticipantRegistryWarning(
-                        `Conversion complete. First saved path: ${saveSummary.target}${saveSummary.countNote}`,
-                        participantRegistryWarning,
-                    );
-                } else {
-                    convertInfo.textContent = `Conversion complete. First saved path: ${saveSummary.target}${saveSummary.countNote}`;
-                }
-            } else {
-                appendLog('⚠ Conversion finished, but nothing was copied into the project.', 'warning');
-                if (participantRegistryWarning) {
-                    appendLog(`⚠ ${participantRegistryWarning.message}`, 'warning');
-                    if (participantRegistryWarning.details) {
-                        appendLog(`   ${participantRegistryWarning.details}`, 'warning');
-                    }
-                    if (participantRegistryWarning.next_step) {
-                        appendLog(`   ${participantRegistryWarning.next_step}`, 'warning');
-                    }
-                    showParticipantRegistryWarning(
-                        'Conversion finished, but nothing was copied into the project. Review the conversion log.',
-                        participantRegistryWarning,
-                    );
-                } else {
-                    convertInfo.textContent = 'Conversion finished, but nothing was copied into the project. Review the conversion log.';
-                }
-            }
-
-            // Final completion message
-            appendLog('═══════════════════════════════════════════════', 'info');
-            appendLog('✓ Conversion completed successfully', 'success');
-            appendLog('═══════════════════════════════════════════════', 'info');
-
-            convertInfo.classList.remove('d-none');
-        })
-        .catch(err => {
-            const enrichedMessage = enrichSurveyRunErrorMessage(err.message);
-            appendLog(`Error: ${enrichedMessage}`, 'error');
-            if (enrichedMessage !== err.message) {
-                appendLog('Tip: Save the spreadsheet in Excel and re-select it before running again.', 'warning');
-            }
-            convertError.textContent = enrichedMessage;
-            convertError.classList.remove('d-none');
-            setTemplateEditorErrorCtaVisible(Boolean(templateWorkflowGate && templateWorkflowGate.blocked));
-        })
-        .finally(() => {
-            const shouldRetryWithNearMatch = Boolean(
-                nearMatchRetryState
-                && nearMatchRetryState.mode === 'convert'
-                && !allowNearItemMatch
-            );
-            updateConvertBtn();
-            if (shouldRetryWithNearMatch) {
-                setTimeout(() => {
-                    convertBtn.click();
-                }, 0);
-            }
-        });
+    convertBtn.addEventListener('click', () => {
+        surveyWorkflowConvertController.handleConvertClick();
     });
 
     // ===== PREVIEW HANDLER (DRY-RUN) =====
 
-    previewBtn.addEventListener('click', async function() {
-        convertError.classList.add('d-none');
-        convertInfo.classList.add('d-none');
-        convertError.textContent = '';
-        setTemplateEditorErrorCtaVisible(false);
-        convertInfo.textContent = '';
-        resetConversionUI();
-        if (nearMatchRetryState && nearMatchRetryState.mode !== 'preview') {
-            nearMatchRetryState = null;
-        }
-        const nearMatchRetryForPreview = (
-            nearMatchRetryState
-            && nearMatchRetryState.mode === 'preview'
-        ) ? nearMatchRetryState : null;
-        const allowNearItemMatch = Boolean(nearMatchRetryForPreview);
-        const selectedNearMatchTasks = allowNearItemMatch
-            ? [...new Set(
-                (Array.isArray(nearMatchRetryForPreview.tasks) ? nearMatchRetryForPreview.tasks : [])
-                    .map((task) => normalizeNearMatchTaskName(task))
-                    .filter(Boolean)
-            )]
-            : [];
-        if (allowNearItemMatch) {
-            nearMatchRetryState = null;
-        }
-
-        const filenameRaw = getSelectedSurveyFilename();
-        if (!filenameRaw) {
-            return;
-        }
-        const file = getSelectedSurveyFile();
-
-        // Validate ID map before sending
-        const idMap = isAdvancedOptionsEnabled() && convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0];
-        if (idMap) {
-            // Just check that a file is selected; don't read it (avoids stream issues)
-            console.log(`[CLIENT DEBUG] ID map file selected: ${idMap.name} (size: ${idMap.size} bytes, type: ${idMap.type})`);
-            if (idMap.size === 0) {
-                convertError.classList.remove('d-none');
-                convertError.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>ID map file is empty`;
-                return;
-            }
-        }
-
-        await refreshSurveyColumnsBeforeRun();
-
-        // Validate ID column selection for non-PRISM data
-        const previewIdCol = document.getElementById('convertIdColumn')?.value;
-        if (!window._isPrismData && (!previewIdCol || previewIdCol === 'auto' || previewIdCol === '')) {
-            convertError.classList.remove('d-none');
-            convertError.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Please select a participant ID column before previewing.';
-            const idSelect = document.getElementById('convertIdColumn');
-            if (idSelect) {
-                idSelect.classList.add('border-danger');
-                idSelect.focus();
-            }
-            return;
-        }
-
-        const formData = new FormData();
-        appendSurveyInputToFormData(formData);
-
-        if (idMap) {
-            console.log(`[CLIENT DEBUG] About to append id_map to FormData: ${idMap.name} (size: ${idMap.size} bytes)`);
-            formData.append('id_map', idMap);
-            console.log(`[CLIENT DEBUG] Successfully appended id_map to FormData`);
-        }
-
-        // Add ID column if selected
-        if (previewIdCol && previewIdCol !== 'auto' && previewIdCol !== '') {
-            formData.append('id_column', previewIdCol);
-        }
-
-        const sessionVal = getSurveySessionValue();
-        if (sessionVal) {
-            formData.append('session', sessionVal);
-        }
-
-        // Append session/run column overrides if user has specified them
-        const previewSessionColVal = (convertSessionColumnOverride && convertSessionColumnOverride.value.trim()) || '';
-        const previewRunColVal = (convertRunColumnOverride && convertRunColumnOverride.value.trim()) || '';
-        if (previewSessionColVal) {
-            formData.append('session_column', previewSessionColVal);
-        }
-        if (previewRunColVal) {
-            formData.append('run_column', previewRunColVal);
-        }
-
-        formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
-        formData.append('separator', getSelectedSeparator(filenameRaw.toLowerCase()));
-        if (isAdvancedOptionsEnabled() && convertDatasetName && convertDatasetName.value.trim()) {
-            formData.append('survey', convertDatasetName.value.trim());
-        }
-        const templateSelections = appendTemplateVersionSelections(formData);
-
-        // Default: run validation in preview
-        formData.append('validate', 'true');
-        if (allowNearItemMatch) {
-            formData.append('allow_near_item_match', 'true');
-            if (selectedNearMatchTasks.length > 0) {
-                formData.append('near_match_tasks', JSON.stringify(selectedNearMatchTasks));
-            }
-            const nearMatchScope = selectedNearMatchTasks.length > 0
-                ? `${selectedNearMatchTasks.length} selected survey task(s)`
-                : 'all detected survey tasks';
-            appendLog(`Applying confirmed near item matches for ${nearMatchScope} (minimal formatting differences only).`, 'warning');
-        }
-        templateWorkflowGate = null;
-
-        // Show log container
-        conversionLogContainer.classList.remove('d-none');
-        conversionLogBody.classList.remove('d-none');
-        const icon = toggleLogBtn.querySelector('i');
-        icon.classList.remove('fa-chevron-right');
-        icon.classList.add('fa-chevron-down');
-
-        appendLog('🔍 PREVIEW MODE (Dry-Run)', 'info');
-        appendLog('═══════════════════════════════════════', 'info');
-        appendLog(`Analyzing file: ${filenameRaw}`, 'step');
-        if (idMap) {
-            appendLog(`With ID map: ${idMap.name}`, 'step');
-        }
-        if (templateSelections.length > 0) {
-            appendLog(`Template versions: ${templateSelections.map((entry) => `${entry.task}${entry.session ? `;session=${entry.session}` : ''}${entry.run ? `;run=${entry.run}` : ''}=${entry.version}`).join(', ')}`, 'step');
-        }
-        appendLog('Preview only — no files will be written to disk.', 'info');
-        appendLog('', 'info');
-
-        console.log(`[CLIENT DEBUG] FormData ready, sending to /api/survey-convert-preview`);
-        console.log(`[CLIENT DEBUG] FormData contains:`, {
-            excel: file ? file.name : null,
-            excel_size: file ? file.size : null,
-            source_file_path: file ? null : convertServerFilePath,
-            id_map: idMap ? idMap.name : null,
-            id_map_size: idMap ? idMap.size : null
-        });
-
-        previewBtn.disabled = true;
-        previewBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Running…';
-        convertBtn.disabled = true;
-
-        fetch('/api/survey-convert-preview', {
-            method: 'POST',
-            body: formData,
-        })
-        .then(async response => {
-            const data = await response.json();
-            
-            // DEBUG: Log the FULL response to understand structure
-            console.log('[SURVEY-PREVIEW FULL RESPONSE]', data);
-            console.log('[SURVEY-PREVIEW RESPONSE]', {
-                status: response.ok,
-                detected_sessions: data.detected_sessions,
-                session_column: data.session_column,
-                has_preview: !!data.preview,
-                all_keys: Object.keys(data)
-            });
-
-            if (!response.ok) {
-                if (data.error === 'near_item_match_confirmation_required') {
-                    const selection = await promptNearMatchSelection(data, 'preview');
-                    if (selection.approved && selection.selectedTasks.length > 0) {
-                        nearMatchRetryState = {
-                            mode: 'preview',
-                            tasks: selection.selectedTasks,
-                        };
-                        appendLog(
-                            `Near matches confirmed for ${selection.selectedTasks.length} survey task(s) and ${selection.selectedCandidateCount} item(s). Re-running preview.`,
-                            'warning'
-                        );
-                    } else {
-                        appendLog('Near matches not approved. Preview remained exact-only and was canceled.', 'info');
-                        convertInfo.textContent = 'Near item matches were detected but not approved. Preview was canceled.';
-                        convertInfo.classList.remove('d-none');
-                    }
-                    return null;
-                }
-                if (data.error === 'id_column_required') {
-                    const idSelect = document.getElementById('convertIdColumn');
-                    if (idSelect) {
-                        idSelect.classList.add('border-danger');
-                        idSelect.focus();
-                    }
-                    throw new Error('Please select the participant ID column.');
-                }
-                if (data.error === 'unmatched_groups') {
-                    displayUnmatchedGroupsError(data);
-                    return null;
-                }
-                templateWorkflowGate = null;
-                setTemplateEditorErrorCtaVisible(false);
-                throw new Error(data.error || 'Preview failed');
-            }
-
-            const sessionsLoaded = populateSurveySessionPickerFromDetected(data.detected_sessions);
-            if (sessionsLoaded) {
-                appendLog(`✓ Sessions auto-detected: ${data.detected_sessions.join(', ')}`, 'success');
-            } else if (data.session_column) {
-                appendLog(`⚠ Session column '${data.session_column}' found but no sessions detected. Enter session manually.`, 'warning');
-            }
-
-            // Update "Auto-detect" option label with what was actually detected
-            if (convertSessionColumnOverride) {
-                const autoOpt = convertSessionColumnOverride.querySelector('option[value=""]');
-                if (autoOpt) autoOpt.textContent = data.session_column ? `Auto-detect (${data.session_column})` : 'Auto-detect';
-            }
-            if (convertRunColumnOverride) {
-                const autoOpt = convertRunColumnOverride.querySelector('option[value=""]');
-                if (autoOpt) autoOpt.textContent = data.run_column ? `Auto-detect (${data.run_column})` : 'Auto-detect';
-            }
-
-            const preview = data.preview;
-            const participantRegistryWarning = getParticipantRegistryWarning(data);
-
-            if (!preview) {
-                appendLog('⚠ No preview data received', 'warning');
-                return;
-            }
-
-            // Display summary
-            appendLog('📊 SUMMARY', 'info');
-            appendLog(`   Total participants: ${preview.summary.total_participants}`, 'info');
-            appendLog(`   Unique participants: ${preview.summary.unique_participants}`, 'info');
-            appendLog(`   Tasks detected: ${preview.summary.tasks.join(', ')}`, 'info');
-            if (preview.summary.session_column) {
-                appendLog(`   Session column: ${preview.summary.session_column}`, 'info');
-            }
-            if (preview.summary.run_column) {
-                appendLog(`   Run column: ${preview.summary.run_column}`, 'info');
-            }
-            const totalFilesToCreate =
-                preview.summary.total_files ??
-                preview.summary.total_files_to_create ??
-                preview.summary.files_created ??
-                (Array.isArray(preview.files_to_create) ? preview.files_to_create.length : 'n/a');
-            appendLog(`   Total files to create: ${totalFilesToCreate}`, 'info');
-            appendLog('', 'info');
-
-            const previewFiles = Array.isArray(preview.files_to_create)
-                ? preview.files_to_create.map(fileEntry => {
-                    if (typeof fileEntry === 'string') {
-                        return {
-                            type: 'data',
-                            path: fileEntry,
-                            description: 'Survey data file'
-                        };
-                    }
-                    return {
-                        type: fileEntry.type || 'data',
-                        path: fileEntry.path || '',
-                        description: fileEntry.description || 'Survey data file'
-                    };
-                })
-                : [];
-
-            let validationSummaryErrors = 0;
-            let validationSummaryWarnings = 0;
-            let validationRuntimeError = '';
-
-            // Display conversion summary (template matches, tool columns, unmatched) before validation
-            if (data.conversion_summary) {
-                displayConversionSummary(data.conversion_summary);
-            }
-
-            if (data.workflow_gate && data.workflow_gate.blocked) {
-                templateWorkflowGate = data.workflow_gate;
-                setTemplateEditorErrorCtaVisible(true);
-                appendLog('Template metadata updates are required before import.', 'warning');
-                appendLog(`   ${data.workflow_gate.message}`, 'warning');
-                if (Array.isArray(data.workflow_gate.next_steps)) {
-                    data.workflow_gate.next_steps.forEach(step => appendLog(`   • ${step}`, 'warning'));
-                }
-            } else {
-                templateWorkflowGate = null;
-                setTemplateEditorErrorCtaVisible(false);
-            }
-
-            // Show validation results if backend ran validation during preview
-            if (data.validation) {
-                const v = data.validation;
-                const errorCount = (v.errors || []).length;
-                const warningCount = (v.warnings || []).length;
-                const parsedSummaryErrors = v.summary ? Number(v.summary.total_errors) : NaN;
-                const parsedSummaryWarnings = v.summary ? Number(v.summary.total_warnings) : NaN;
-                const summaryErrors = Number.isFinite(parsedSummaryErrors)
-                    ? parsedSummaryErrors
-                    : errorCount;
-                const summaryWarnings = Number.isFinite(parsedSummaryWarnings)
-                    ? parsedSummaryWarnings
-                    : warningCount;
-
-                validationSummaryErrors = summaryErrors;
-                validationSummaryWarnings = summaryWarnings;
-                validationRuntimeError = typeof v.error === 'string' ? v.error.trim() : '';
-
-                if (summaryErrors === 0 && summaryWarnings === 0) {
-                    appendLog('✓ Validation (preview) passed - dataset is valid!', 'success');
-                } else if (summaryErrors === 0) {
-                    appendLog(`⚠ Validation (preview) passed with ${summaryWarnings} warning(s)`, 'warning');
-                } else {
-                    appendLog(`✗ Validation (preview) failed with ${summaryErrors} error(s)`, 'error');
-                }
-
-                if (summaryErrors > 0) {
-                    let printed = 0;
-                    const maxToShow = 20;
-
-                    if (v.formatted && Array.isArray(v.formatted.errors)) {
-                        for (const group of v.formatted.errors) {
-                            for (const fileIssue of (group.files || [])) {
-                                if (printed >= maxToShow) break;
-                                const msg = (fileIssue && fileIssue.message) ? fileIssue.message : (group.message || 'Validation error');
-                                appendLog(`  - ${msg}`, 'error');
-                                printed++;
-                            }
-                            if (printed >= maxToShow) break;
-                        }
-                    }
-
-                    if (printed === 0 && Array.isArray(v.errors)) {
-                        for (const err of v.errors) {
-                            if (printed >= maxToShow) break;
-                            if (typeof err === 'string') {
-                                appendLog(`  - ${err}`, 'error');
-                                printed++;
-                            }
-                        }
-                    }
-
-                    if (summaryErrors > printed) {
-                        appendLog(`  ... and ${summaryErrors - printed} more errors (see details below)`, 'error');
-                    }
-                }
-
-                if (summaryWarnings > 0) {
-                    appendLog(`⚠ ${summaryWarnings} warning(s) found`, 'warning');
-                }
-
-                if (validationRuntimeError) {
-                    appendLog(`✗ Validation preview backend issue: ${validationRuntimeError}`, 'error');
-                }
-
-                displayValidationResults(data.validation);
-                appendLog('', 'info');
-            }
-
-            // Display data issues
-            if (preview.data_issues && preview.data_issues.length > 0) {
-                appendLog(`Data issues found (${preview.data_issues.length})`, 'warning');
-                appendLog('   Fix these issues before conversion:', 'warning');
-                appendLog('', 'warning');
-                
-                preview.data_issues.slice(0, 10).forEach(issue => {
-                    const severity = issue.severity.toUpperCase();
-                    appendLog(`   [${severity}] ${issue.type}`, 'warning');
-                    appendLog(`   → ${issue.message}`, 'warning');
-                    
-                    if (issue.type === 'duplicate_ids' && issue.details) {
-                        const dups = Object.keys(issue.details).slice(0, 5);
-                        appendLog(`   → Duplicates: ${dups.join(', ')}`, 'warning');
-                    } else if (issue.type === 'unexpected_values') {
-                        appendLog(`   → Column: ${issue.column} (task: ${issue.task}, item: ${issue.item})`, 'warning');
-                        if (issue.unexpected) {
-                            appendLog(`   → Unexpected values: ${issue.unexpected.slice(0, 5).join(', ')}`, 'warning');
-                        }
-                    } else if (issue.type === 'out_of_range') {
-                        appendLog(`   → Column: ${issue.column} (task: ${issue.task}, item: ${issue.item})`, 'warning');
-                        appendLog(`   → Expected range: ${issue.range}`, 'warning');
-                        appendLog(`   → Out of range count: ${issue.out_of_range_count}`, 'warning');
-                    } else if (issue.type === 'missing_from_participants_tsv') {
-                        if (issue.details) {
-                            appendLog(`   → ${issue.details}`, 'warning');
-                        }
-                        if (issue.next_step) {
-                            appendLog(`   → ${issue.next_step}`, 'warning');
-                        }
-                    }
-                    appendLog('', 'warning');
-                });
-                
-                if (preview.data_issues.length > 10) {
-                    appendLog(`   ... and ${preview.data_issues.length - 10} more issues`, 'warning');
-                }
-                appendLog('', 'info');
-            } else {
-                appendLog('✓ No data issues detected', 'success');
-                appendLog('', 'info');
-            }
-
-            if (typeof window.setParticipantsAdditionalVariablesEnabled === 'function') {
-                window.setParticipantsAdditionalVariablesEnabled(false);
-            }
-
-            // Display participants.tsv preview
-            if (preview.participants_tsv && Object.keys(preview.participants_tsv).length > 0) {
-                const tsv = preview.participants_tsv;
-                window.lastPreviewData = preview;
-                const hasAdditionalVariableCandidates = Boolean(tsv.unused_columns && tsv.unused_columns.length > 0);
-                if (typeof window.setParticipantsAdditionalVariablesEnabled === 'function') {
-                    window.setParticipantsAdditionalVariablesEnabled(hasAdditionalVariableCandidates);
-                }
-                
-                appendLog('📝 PARTICIPANTS.TSV PREVIEW', 'info');
-                appendLog('   This file will be created with the following structure:', 'info');
-                appendLog('', 'info');
-                
-                appendLog(`   Columns (${tsv.columns.length} total):`, 'info');
-                tsv.columns.forEach(col => {
-                    appendLog(`     • ${col}`, 'info');
-                });
-                
-                if (Object.keys(tsv.mappings).length > 0) {
-                    appendLog('', 'info');
-                    appendLog('   Column Mappings:', 'info');
-                    Object.entries(tsv.mappings).forEach(([outputCol, mappingInfo]) => {
-                        const hasMapping = mappingInfo.has_value_mapping;
-                        const indicator = hasMapping ? '🔄' : '✓';
-                        appendLog(`     ${indicator} ${outputCol} ← ${mappingInfo.source_column}`, 'info');
-                        if (hasMapping && Object.keys(mappingInfo.value_mapping).length > 0) {
-                            appendLog(`        (has value transformation mapping)`, 'info');
-                        }
-                    });
-                }
-                
-                if (tsv.sample_rows.length > 0) {
-                    appendLog('', 'info');
-                    const sampleCount = Math.min(5, tsv.sample_rows.length);
-                    appendLog(`   Sample Data (showing first ${sampleCount} of ${tsv.total_rows} participants):`, 'info');
-                    appendLog(`   ${'-'.repeat(100)}`, 'info');
-                    const header = tsv.columns.map(col => col.padEnd(20)).join(' | ');
-                    appendLog(`   ${header}`, 'info');
-                    appendLog(`   ${'-'.repeat(100)}`, 'info');
-                    tsv.sample_rows.slice(0, 5).forEach(rowData => {
-                        const row = tsv.columns.map(col => String(rowData[col] || 'n/a').padEnd(20)).join(' | ');
-                        appendLog(`   ${row}`, 'info');
-                    });
-                    if (tsv.sample_rows.length > 5) {
-                        appendLog(`   ... and ${tsv.sample_rows.length - 5} more rows shown above (total ${tsv.total_rows} participants)`, 'info');
-                    }
-                    appendLog(`   ${'-'.repeat(100)}`, 'info');
-                }
-                
-                if (tsv.notes.length > 0) {
-                    appendLog('', 'info');
-                    appendLog('   📌 Notes:', 'info');
-                    tsv.notes.forEach(note => {
-                        appendLog(`     • ${note}`, 'info');
-                    });
-                }
-                
-                if (tsv.unused_columns && tsv.unused_columns.length > 0) {
-                    appendLog('', 'info');
-                    appendLog(`   Unused columns (${tsv.unused_columns.length} available for participants.tsv):`, 'warning');
-                    appendLog(`      These columns are not being imported as survey data and could be included`, 'warning');
-                    appendLog(`      in participants.tsv if you create/update participants_mapping.json:`, 'warning');
-                    tsv.unused_columns.slice(0, 10).forEach(item => {
-                        if (typeof item === 'object') {
-                            const fieldCode = item.field_code || '';
-                            const description = item.description || '';
-                            appendLog(`      • ${fieldCode}`, 'warning');
-                            if (description) {
-                                appendLog(`        ↳ ${description}`, 'warning');
-                            }
-                        } else {
-                            appendLog(`      • ${item}`, 'warning');
-                        }
-                    });
-                    if (tsv.unused_columns.length > 10) {
-                        appendLog(`      ... and ${tsv.unused_columns.length - 10} more columns`, 'warning');
-                    }
-                    appendLog('', 'info');
-                    appendLog(`   💡 TIP: Click "Add Additional Variables (Optional)", save the mapping, then run "2. Extract & Convert" to apply it.`, 'info');
-                }
-                appendLog('', 'info');
-            }
-
-            // Display participant preview
-            appendLog('👥 PARTICIPANT PREVIEW (first 10)', 'info');
-            preview.participants.slice(0, 10).forEach(p => {
-                const completeness = p.completeness_percent;
-                const status = completeness > 80 ? '✓' : (completeness > 50 ? '⚠' : '✗');
-                const hasRun = p.run_id !== null && p.run_id !== undefined && p.run_id !== '';
-                const runLabel = hasRun ? `, ${formatVersionWizardRunLabel(p.run_id)}` : '';
-                appendLog(`   ${status} ${p.participant_id} (${p.session_id}${runLabel})`, 'info');
-                appendLog(`      Raw ID: ${p.raw_id}`, 'info');
-                appendLog(`      Completeness: ${completeness}% (${p.total_items - p.missing_values}/${p.total_items} items)`, 'info');
-            });
-            
-            if (preview.participants.length > 10) {
-                appendLog(`   ... and ${preview.participants.length - 10} more participants`, 'info');
-            }
-            appendLog('', 'info');
-
-            // Display column mapping preview
-            appendLog('📋 COLUMN MAPPING (first 15)', 'info');
-            const cols = Object.entries(preview.column_mapping).slice(0, 15);
-            if (cols.length === 0) {
-                appendLog('   (no mapped survey columns available in preview)', 'info');
-            } else {
-                cols.forEach(([col, info]) => {
-                    const run_info = info.run ? ` (run ${info.run})` : '';
-                    const status = info.has_unexpected_values ? '⚠' : '✓';
-                    appendLog(`   ${status} ${col}`, 'info');
-                    appendLog(`      → Task: ${info.task}${run_info}, Item: ${info.base_item}`, 'info');
-                    appendLog(`      → Missing: ${info.missing_percent}% (${info.missing_count} values)`, 'info');
-                    if (info.has_unexpected_values) {
-                        appendLog(`      ⚠ Has unexpected values!`, 'warning');
-                    }
-                });
-            }
-            
-            if (Object.keys(preview.column_mapping).length > 15) {
-                appendLog(`   ... and ${Object.keys(preview.column_mapping).length - 15} more columns`, 'info');
-            }
-            appendLog('', 'info');
-
-            // Display file structure
-            appendLog('📁 FILES TO CREATE', 'info');
-            const fileTypes = {};
-            previewFiles.forEach(f => {
-                fileTypes[f.type] = (fileTypes[f.type] || 0) + 1;
-            });
-            
-            appendLog(`   Metadata files: ${fileTypes.metadata || 0}`, 'info');
-            appendLog(`   Sidecar files: ${fileTypes.sidecar || 0}`, 'info');
-            appendLog(`   Data files: ${fileTypes.data || 0}`, 'info');
-            appendLog('', 'info');
-            
-            appendLog('   Sample files:', 'info');
-            const shownByType = {metadata: 0, sidecar: 0, data: 0};
-            previewFiles.forEach(f => {
-                if (shownByType[f.type] < 3) {
-                    appendLog(`   - ${f.path}`, 'info');
-                    appendLog(`     ${f.description}`, 'info');
-                    shownByType[f.type]++;
-                }
-            });
-
-            appendLog('', 'info');
-            appendLog('═══════════════════════════════════════', 'info');
-            
-            let previewErrorCount = validationSummaryErrors;
-            let previewWarningCount = validationSummaryWarnings;
-
-            if (validationRuntimeError && previewErrorCount === 0 && previewWarningCount === 0) {
-                previewErrorCount = 1;
-            }
-            
-            const dataIssueCount = preview.data_issues ? preview.data_issues.length : 0;
-            if (dataIssueCount > 0) {
-                previewWarningCount += dataIssueCount;
-            }
-            
-            console.log(`Counts - Errors: ${previewErrorCount}, Warnings: ${previewWarningCount}`);
-            
-            if (templateWorkflowGate && templateWorkflowGate.blocked) {
-                appendLog('Preview paused: update copied template metadata first.', 'warning');
-                appendLog(`   ${templateWorkflowGate.issue_count || previewErrorCount || 1} template item(s) need edits before import`, 'warning');
-                convertInfo.innerHTML = '<i class="fas fa-clipboard-check me-2"></i>Some copied survey templates still need project-level metadata. Complete them in Template Editor, then run Preview again.';
-                setTemplateEditorErrorCtaVisible(true);
-            } else if (previewErrorCount > 0) {
-                appendLog('Preview complete: validation issues found.', 'warning');
-                appendLog(`   ${previewErrorCount} error(s) must be fixed before converting`, 'error');
-                if (previewWarningCount > 0) {
-                    appendLog(`   ${previewWarningCount} warning(s)`, 'warning');
-                }
-                if (dataIssueCount > 0) {
-                    appendLog(`   ${dataIssueCount} data issue(s)`, 'warning');
-                }
-                convertInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Preview completed, but validation found errors. Fix these issues before converting.';
-                setTemplateEditorErrorCtaVisible(true);
-            } else if (previewWarningCount > 0 || dataIssueCount > 0) {
-                appendLog('✓ Preview completed (with warnings)', 'warning');
-                if (previewWarningCount > 0) {
-                    appendLog(`   ${previewWarningCount} warning(s) - review recommended`, 'warning');
-                }
-                if (dataIssueCount > 0) {
-                    appendLog(`   ${dataIssueCount} data issue(s)`, 'warning');
-                }
-                convertInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Preview completed with warnings. Review above before converting.';
-                setTemplateEditorErrorCtaVisible(false);
-            } else {
-                appendLog('✓ Preview completed successfully', 'success');
-                convertInfo.innerHTML = '<i class="fas fa-info-circle me-2"></i>Preview complete. Review the log above, then click <strong>Convert</strong> to proceed.';
-                setTemplateEditorErrorCtaVisible(false);
-            }
-
-            if (!(templateWorkflowGate && templateWorkflowGate.blocked) && participantRegistryWarning) {
-                const prefix = previewErrorCount > 0
-                    ? 'Preview found additional issues.'
-                    : 'Preview completed with a participant registry warning.';
-                showParticipantRegistryWarning(prefix, participantRegistryWarning);
-            }
-
-            // ── ISSUES RECAP ────────────────────────────────────────────────
-            // Re-print all errors and warnings at the very bottom so they are
-            // visible without scrolling back up through participants/column/file output.
-            if (previewErrorCount > 0 || previewWarningCount > 0 || validationRuntimeError) {
-                appendLog('', 'info');
-                appendLog('─── ISSUES RECAP ───────────────────────────────', 'warning');
-
-                // Validation errors
-                if (data.validation) {
-                    const v = data.validation;
-                    let recapPrinted = 0;
-                    const recapMax = 30;
-
-                    if (v.formatted && Array.isArray(v.formatted.errors)) {
-                        for (const group of v.formatted.errors) {
-                            for (const fileIssue of (group.files || [])) {
-                                if (recapPrinted >= recapMax) break;
-                                const msg = (fileIssue && fileIssue.message) ? fileIssue.message : (group.message || 'Validation error');
-                                appendLog(`  ✗ ${msg}`, 'error');
-                                recapPrinted++;
-                            }
-                            if (recapPrinted >= recapMax) break;
-                        }
-                    }
-
-                    if (recapPrinted === 0 && Array.isArray(v.errors)) {
-                        for (const err of v.errors) {
-                            if (recapPrinted >= recapMax) break;
-                            if (typeof err === 'string') {
-                                appendLog(`  ✗ ${err}`, 'error');
-                                recapPrinted++;
-                            }
-                        }
-                    }
-
-                    if (validationSummaryErrors > recapPrinted) {
-                        appendLog(`  ... and ${validationSummaryErrors - recapPrinted} more error(s) — scroll up for the full list`, 'error');
-                    }
-
-                    // Validation warnings
-                    if (v.formatted && Array.isArray(v.formatted.warnings)) {
-                        let warnPrinted = 0;
-                        for (const group of v.formatted.warnings) {
-                            for (const fileIssue of (group.files || [])) {
-                                if (warnPrinted >= recapMax) break;
-                                const msg = (fileIssue && fileIssue.message) ? fileIssue.message : (group.message || 'Validation warning');
-                                appendLog(`  ⚠ ${msg}`, 'warning');
-                                warnPrinted++;
-                            }
-                            if (warnPrinted >= recapMax) break;
-                        }
-                        if (validationSummaryWarnings > warnPrinted && warnPrinted > 0) {
-                            appendLog(`  ... and ${validationSummaryWarnings - warnPrinted} more warning(s) — scroll up for the full list`, 'warning');
-                        }
-                    } else if (validationSummaryWarnings > 0 && Array.isArray(v.warnings)) {
-                        let warnPrinted = 0;
-                        for (const w of v.warnings) {
-                            if (warnPrinted >= recapMax) break;
-                            if (typeof w === 'string') {
-                                appendLog(`  ⚠ ${w}`, 'warning');
-                                warnPrinted++;
-                            }
-                        }
-                    }
-
-                    if (validationRuntimeError) {
-                        appendLog(`  ✗ Backend issue: ${validationRuntimeError}`, 'error');
-                    }
-                }
-
-                // Data issues
-                if (preview.data_issues && preview.data_issues.length > 0) {
-                    preview.data_issues.forEach(issue => {
-                        const sev = issue.severity === 'error' ? '✗' : '⚠';
-                        const level = issue.severity === 'error' ? 'error' : 'warning';
-                        appendLog(`  ${sev} [${issue.type}] ${issue.message}`, level);
-                    });
-                }
-
-                appendLog('────────────────────────────────────────────────', 'warning');
-            }
-            // ── END RECAP ────────────────────────────────────────────────────
-
-            appendLog('═══════════════════════════════════════', 'info');
-
-            // Show version plan wizard for multi-variant questionnaires detected during preview
-            const mvTasks = (data && typeof data.multivariant_tasks === 'object' && data.multivariant_tasks)
-                ? data.multivariant_tasks : {};
-            if (Object.keys(mvTasks).length > 0) {
-                buildVersionWizard(
-                    mvTasks,
-                    (data && typeof data.task_runs === 'object' && data.task_runs)
-                        || (data.conversion_summary && typeof data.conversion_summary.task_runs === 'object' && data.conversion_summary.task_runs)
-                        || {},
-                    (preview && Array.isArray(preview.participants)) ? preview.participants : [],
-                    Array.isArray(data.detected_sessions) ? data.detected_sessions : []
-                );
-                appendLog(`Multi-version questionnaire(s) detected: ${Object.keys(mvTasks).join(', ')}. Adjust the version selector below if needed.`, 'info');
-            } else {
-                hideVersionWizard();
-            }
-
-            convertInfo.classList.remove('d-none');
-        })
-        .catch(err => {
-            const enrichedMessage = enrichSurveyRunErrorMessage(err.message);
-            appendLog(`Error: ${enrichedMessage}`, 'error');
-            if (enrichedMessage !== err.message) {
-                appendLog('Tip: Save the spreadsheet in Excel and re-select it before running again.', 'warning');
-            }
-            convertError.textContent = enrichedMessage;
-            convertError.classList.remove('d-none');
-            setTemplateEditorErrorCtaVisible(Boolean(templateWorkflowGate && templateWorkflowGate.blocked));
-        })
-        .finally(() => {
-            const shouldRetryWithNearMatch = Boolean(
-                nearMatchRetryState
-                && nearMatchRetryState.mode === 'preview'
-                && !allowNearItemMatch
-            );
-            previewBtn.innerHTML = '<i class="fas fa-eye me-2"></i>Preview (Dry-Run)';
-            updateConvertBtn();
-            if (shouldRetryWithNearMatch) {
-                setTimeout(() => {
-                    previewBtn.click();
-                }, 0);
-            }
-        });
+    previewBtn.addEventListener('click', () => {
+        surveyWorkflowPreviewController.handlePreviewClick();
     });
 }

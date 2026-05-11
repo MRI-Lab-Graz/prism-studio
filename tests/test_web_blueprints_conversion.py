@@ -300,6 +300,708 @@ class TestSurveyVersionContextEndpoint(unittest.TestCase):
         self.assertEqual(payload.get("run_column"), "run")
         self.assertIn("wellbeing-multi", payload.get("multivariant_tasks", {}))
 
+    def test_detect_version_context_forwards_retry_resolution_hints(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-detect-version-contexts",
+            view_func=handlers.api_survey_detect_version_context,
+            methods=["POST"],
+        )
+
+        with patch.object(
+            handlers,
+            "_resolve_effective_library_path",
+            return_value=Path("/tmp/library"),
+        ):
+            with patch.object(
+                handlers,
+                "_detect_survey_version_contexts",
+                return_value={
+                    "tasks_included": ["pss10"],
+                    "detected_sessions": ["ses-1"],
+                    "task_runs": {},
+                    "session_column": "session",
+                    "run_column": None,
+                    "multivariant_tasks": {},
+                },
+            ) as detect_mock:
+                with app.test_client() as client:
+                    response = client.post(
+                        "/api/survey-detect-version-contexts",
+                        data={
+                            "excel": (
+                                io.BytesIO(b"session,Code,PSS_01\n1,1,5\n"),
+                                "input.csv",
+                            ),
+                            "id_column": "Code",
+                            "session_column": "session",
+                            "allow_near_item_match": "true",
+                            "near_match_tasks": json.dumps(["pss10"]),
+                            "value_offsets": json.dumps({"pss10": -1}),
+                        },
+                        content_type="multipart/form-data",
+                    )
+
+        self.assertEqual(response.status_code, 200)
+        call_kwargs = detect_mock.call_args.kwargs
+        self.assertTrue(call_kwargs.get("allow_near_item_match"))
+        self.assertEqual(call_kwargs.get("near_match_tasks"), {"pss10"})
+        self.assertEqual(call_kwargs.get("task_value_offsets"), {"pss10": -1.0})
+
+
+class TestSurveyPrepareWorkflowEndpoint(unittest.TestCase):
+    def test_run_survey_with_official_fallback_filters_unsupported_converter_kwargs(
+        self,
+    ):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        captured: dict[str, object] = {}
+
+        def legacy_converter(
+            *,
+            library_dir,
+            input_path,
+            output_root,
+            dry_run=False,
+            force=False,
+        ):
+            captured["library_dir"] = library_dir
+            captured["input_path"] = str(input_path)
+            captured["output_root"] = str(output_root)
+            captured["dry_run"] = dry_run
+            captured["force"] = force
+            return SimpleNamespace(tasks_included=[])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            input_path = tmp_path / "input.csv"
+            input_path.write_text("ID,Q1\nsub-001,1\n", encoding="utf-8")
+
+            result = handlers._run_survey_with_official_fallback(
+                legacy_converter,
+                library_dir=tmp_path,
+                fallback_project_path=None,
+                input_path=input_path,
+                output_root=tmp_path / "rawdata",
+                dry_run=True,
+                force=True,
+                task_value_offsets={"pss": -1},
+                allow_near_item_match=False,
+                near_match_tasks=None,
+            )
+
+        self.assertEqual(getattr(result, "tasks_included", None), [])
+        self.assertEqual(captured.get("library_dir"), str(tmp_path))
+        self.assertEqual(captured.get("dry_run"), True)
+        self.assertEqual(captured.get("force"), True)
+
+    def test_prepare_workflow_keeps_converter_bindings_available(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        self.assertTrue(callable(handlers.convert_survey_xlsx_to_prism_dataset))
+        self.assertTrue(callable(handlers.convert_survey_lsa_to_prism_dataset))
+
+    def test_prepare_workflow_passes_through_blocking_confirmation(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-prepare-workflow",
+            view_func=handlers.api_survey_prepare_workflow,
+            methods=["POST"],
+        )
+
+        with app.app_context():
+            blocking_response = jsonify(
+                {
+                    "error": "near_item_match_confirmation_required",
+                    "near_match_candidates": [{"task": "pss10"}],
+                }
+            )
+
+        with patch.object(
+            handlers,
+            "handle_api_survey_convert_preview",
+            return_value=(blocking_response, 409),
+        ):
+            with app.test_client() as client:
+                response = client.post("/api/survey-prepare-workflow")
+
+        self.assertEqual(response.status_code, 409)
+        payload = response.get_json()
+        self.assertEqual(payload["error"], "near_item_match_confirmation_required")
+
+    def test_prepare_workflow_returns_json_error_on_unexpected_exception(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-prepare-workflow",
+            view_func=handlers.api_survey_prepare_workflow,
+            methods=["POST"],
+        )
+
+        with patch.object(
+            handlers,
+            "handle_api_survey_convert_preview",
+            side_effect=RuntimeError("prepare blew up"),
+        ):
+            with app.test_client() as client:
+                response = client.post("/api/survey-prepare-workflow")
+
+        self.assertEqual(response.status_code, 500)
+        payload = response.get_json()
+        self.assertEqual(payload["error"], "prepare blew up")
+
+    def test_prepare_workflow_returns_trimmed_ready_payload(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-prepare-workflow",
+            view_func=handlers.api_survey_prepare_workflow,
+            methods=["POST"],
+        )
+
+        ready_payload = {
+            "preview": {"participants": [{"participant_id": "sub-001"}]},
+            "tasks_included": ["pss10"],
+            "detected_sessions": ["ses-1"],
+            "task_runs": {"pss10": 2},
+            "session_column": "session",
+            "run_column": "run",
+            "multivariant_tasks": {"pss10": {"versions": ["v1", "v2"]}},
+            "applied_value_offsets": {"pss10": -1},
+            "value_offset_application_counts": {"pss10": 71},
+            "requires_template_completion": True,
+            "workflow_gate": {"blocked": True, "reason": "project_template_completion_required"},
+            "near_match_applied": True,
+        }
+
+        with app.app_context():
+            ready_response = jsonify(ready_payload)
+
+        with patch.object(
+            handlers,
+            "handle_api_survey_convert_preview",
+            return_value=ready_response,
+        ):
+            with app.test_client() as client:
+                response = client.post("/api/survey-prepare-workflow")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["tasks_included"], ["pss10"])
+        self.assertEqual(payload["preview_participants"], [{"participant_id": "sub-001"}])
+        self.assertEqual(payload["applied_value_offsets"], {"pss10": -1})
+        self.assertTrue(payload["requires_template_completion"])
+        self.assertTrue(payload["near_match_applied"])
+        self.assertNotIn("preview", payload)
+
+    def test_prepare_workflow_surfaces_template_gate_without_preview_validation(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-prepare-workflow",
+            view_func=handlers.api_survey_prepare_workflow,
+            methods=["POST"],
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            project_root = tmp_path / "project"
+            project_root.mkdir(parents=True, exist_ok=True)
+            library_root = tmp_path / "library"
+            survey_dir = library_root / "survey"
+            survey_dir.mkdir(parents=True, exist_ok=True)
+            (survey_dir / "survey-pss.json").write_text("{}", encoding="utf-8")
+
+            fake_result = SimpleNamespace(
+                dry_run_preview={"participants": [{"participant_id": "sub-001"}]},
+                tasks_included=["pss"],
+                unknown_columns=[],
+                missing_items_by_task={},
+                id_column="ID",
+                session_column=None,
+                run_column=None,
+                detected_sessions=[],
+                conversion_warnings=[],
+                task_runs={},
+                template_matches={},
+                near_match_candidates=[],
+                near_match_applied=False,
+                applied_value_offsets={},
+                value_offset_application_counts={},
+            )
+
+            with (
+                patch.object(
+                    handlers,
+                    "convert_survey_xlsx_to_prism_dataset",
+                    object(),
+                ),
+                patch.object(
+                    handlers,
+                    "convert_survey_lsa_to_prism_dataset",
+                    object(),
+                ),
+                patch.object(
+                    handlers,
+                    "_resolve_effective_library_path",
+                    return_value=library_root,
+                ),
+                patch.object(
+                    handlers,
+                    "_run_survey_with_official_fallback",
+                    return_value=fake_result,
+                ),
+                patch.object(
+                    handlers,
+                    "_validate_project_templates_for_tasks",
+                    return_value=[
+                        {
+                            "file": str(
+                                project_root
+                                / "code"
+                                / "library"
+                                / "survey"
+                                / "survey-pss.json"
+                            ),
+                            "message": "Technical.SoftwarePlatform is a required property",
+                        }
+                    ],
+                ),
+            ):
+                with app.test_client() as client:
+                    with client.session_transaction() as client_session:
+                        client_session["current_project_path"] = str(project_root)
+
+                    response = client.post(
+                        "/api/survey-prepare-workflow",
+                        data={
+                            "excel": (
+                                io.BytesIO(b"ID,PSS01\nsub-001,4\n"),
+                                "input.csv",
+                            ),
+                            "id_column": "ID",
+                            "validate": "false",
+                        },
+                        content_type="multipart/form-data",
+                    )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertTrue(payload["ok"])
+        self.assertTrue(payload["requires_template_completion"])
+        self.assertTrue(payload.get("workflow_gate", {}).get("blocked"))
+        self.assertEqual(
+            payload.get("workflow_gate", {}).get("reason"),
+            "project_template_completion_required",
+        )
+        self.assertEqual(payload.get("workflow_gate", {}).get("tasks"), ["pss"])
+
+    def test_prepare_workflow_keeps_value_offset_review_for_preview(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-prepare-workflow",
+            view_func=handlers.api_survey_prepare_workflow,
+            methods=["POST"],
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            library_root = tmp_path / "library"
+            survey_dir = library_root / "survey"
+            survey_dir.mkdir(parents=True, exist_ok=True)
+            (survey_dir / "survey-pss.json").write_text("{}", encoding="utf-8")
+
+            preview_result = SimpleNamespace(
+                dry_run_preview={"participants": []},
+                tasks_included=["pss"],
+                near_match_candidates=[],
+                near_match_applied=False,
+                unknown_columns=[],
+                missing_items_by_task={},
+                id_column="ID",
+                conversion_warnings=[],
+                task_runs={},
+                detected_sessions=[],
+                session_column=None,
+                run_column=None,
+                template_matches=None,
+                tool_columns=[],
+                applied_value_offsets={},
+                value_offset_application_counts={},
+            )
+
+            def fake_run_survey_with_official_fallback(_converter, **kwargs):
+                self.assertTrue(kwargs.get("dry_run"))
+                return preview_result
+
+            with (
+                patch.object(
+                    handlers,
+                    "convert_survey_xlsx_to_prism_dataset",
+                    object(),
+                ),
+                patch.object(
+                    handlers,
+                    "convert_survey_lsa_to_prism_dataset",
+                    object(),
+                ),
+                patch.object(
+                    handlers,
+                    "_resolve_effective_library_path",
+                    return_value=library_root,
+                ),
+                patch.object(
+                    handlers,
+                    "_run_survey_with_official_fallback",
+                    side_effect=fake_run_survey_with_official_fallback,
+                ),
+                patch.object(
+                    handlers,
+                    "_validate_project_templates_for_tasks",
+                    return_value=[],
+                ),
+            ):
+                with app.test_client() as client:
+                    response = client.post(
+                        "/api/survey-prepare-workflow",
+                        data={
+                            "excel": (
+                                io.BytesIO(b"ID,PSS01\nsub-001,5\n"),
+                                "input.csv",
+                            ),
+                            "id_column": "ID",
+                            "validate": "false",
+                        },
+                        content_type="multipart/form-data",
+                    )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertTrue(payload.get("ok"))
+        self.assertEqual(payload.get("tasks_included"), ["pss"])
+        self.assertEqual(payload.get("preview_participants"), [])
+
+
+class TestSurveyConvertPreviewEndpoint(unittest.TestCase):
+    def test_preview_wraps_setup_blocker_after_prepare(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-convert-preview",
+            view_func=handlers.api_survey_convert_preview,
+            methods=["POST"],
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            project_root = tmp_path / "project"
+            project_root.mkdir(parents=True, exist_ok=True)
+            library_root = tmp_path / "library"
+            survey_dir = library_root / "survey"
+            survey_dir.mkdir(parents=True, exist_ok=True)
+            (survey_dir / "survey-pss.json").write_text("{}", encoding="utf-8")
+
+            fake_result = SimpleNamespace(
+                near_match_candidates=[{"task": "pss"}],
+                near_match_applied=False,
+                tasks_included=["pss"],
+            )
+
+            with (
+                patch.object(
+                    handlers,
+                    "convert_survey_xlsx_to_prism_dataset",
+                    object(),
+                ),
+                patch.object(
+                    handlers,
+                    "convert_survey_lsa_to_prism_dataset",
+                    object(),
+                ),
+                patch.object(
+                    handlers,
+                    "_resolve_effective_library_path",
+                    return_value=library_root,
+                ),
+                patch.object(
+                    handlers,
+                    "_run_survey_with_official_fallback",
+                    return_value=fake_result,
+                ),
+                patch.object(
+                    handlers,
+                    "_validate_project_templates_for_tasks",
+                    return_value=[],
+                ),
+            ):
+                with app.test_client() as client:
+                    response = client.post(
+                        "/api/survey-convert-preview",
+                        data={
+                            "excel": (
+                                io.BytesIO(b"ID,PSS01\nsub-001,4\n"),
+                                "input.csv",
+                            ),
+                            "id_column": "ID",
+                            "prepared_workflow": "true",
+                        },
+                        content_type="multipart/form-data",
+                    )
+
+        self.assertEqual(response.status_code, 409)
+        payload = response.get_json()
+        self.assertEqual(payload.get("error"), "workflow_preparation_stale")
+        self.assertEqual(
+            payload.get("blocking_error"),
+            "near_item_match_confirmation_required",
+        )
+        self.assertEqual(payload.get("near_match_count"), 1)
+
+
+class TestSurveyConvertValidateEndpoint(unittest.TestCase):
+    def test_validate_wraps_setup_blocker_after_prepare(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-convert-validate",
+            view_func=handlers.api_survey_convert_validate,
+            methods=["POST"],
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            library_root = tmp_path / "library"
+            survey_dir = library_root / "survey"
+            survey_dir.mkdir(parents=True, exist_ok=True)
+            (survey_dir / "survey-pss.json").write_text("{}", encoding="utf-8")
+
+            fake_result = SimpleNamespace(
+                near_match_candidates=[{"task": "pss"}],
+                tasks_included=["pss"],
+            )
+
+            with (
+                patch.object(
+                    handlers,
+                    "convert_survey_xlsx_to_prism_dataset",
+                    object(),
+                ),
+                patch.object(
+                    handlers,
+                    "convert_survey_lsa_to_prism_dataset",
+                    object(),
+                ),
+                patch.object(
+                    handlers,
+                    "_resolve_effective_library_path",
+                    return_value=library_root,
+                ),
+                patch.object(
+                    handlers,
+                    "_run_survey_with_official_fallback",
+                    return_value=fake_result,
+                ),
+                patch.object(
+                    handlers,
+                    "_validate_project_templates_for_tasks",
+                    return_value=[],
+                ),
+                patch.object(
+                    handlers,
+                    "_log_file_head",
+                    return_value=None,
+                ),
+            ):
+                with app.test_client() as client:
+                    with client.session_transaction() as client_session:
+                        client_session["current_project_path"] = str(project_root)
+
+                    response = client.post(
+                        "/api/survey-convert-validate",
+                        data={
+                            "excel": (
+                                io.BytesIO(b"ID,PSS01\nsub-001,4\n"),
+                                "input.csv",
+                            ),
+                            "id_column": "ID",
+                            "session": "ses-1",
+                            "prepared_workflow": "true",
+                        },
+                        content_type="multipart/form-data",
+                    )
+
+        self.assertEqual(response.status_code, 409)
+        payload = response.get_json()
+        self.assertEqual(payload.get("error"), "workflow_preparation_stale")
+        self.assertEqual(
+            payload.get("blocking_error"),
+            "near_item_match_confirmation_required",
+        )
+        self.assertEqual(payload.get("near_match_count"), 1)
+
+    def test_validate_uses_official_fallback_when_project_library_is_empty(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-convert-validate",
+            view_func=handlers.api_survey_convert_validate,
+            methods=["POST"],
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            project_root = tmp_path / "project"
+            (project_root / "code" / "library").mkdir(parents=True, exist_ok=True)
+            official_dir = tmp_path / "official" / "library" / "survey"
+            official_dir.mkdir(parents=True, exist_ok=True)
+            (official_dir / "survey-pss.json").write_text(
+                json.dumps({"Study": {"TaskName": "pss"}}),
+                encoding="utf-8",
+            )
+
+            call_library_dirs = []
+
+            def fake_run_survey_with_official_fallback(_converter, **kwargs):
+                call_library_dirs.append(Path(kwargs["library_dir"]))
+                output_root = Path(kwargs["output_root"])
+                output_root.mkdir(parents=True, exist_ok=True)
+                if not kwargs.get("dry_run"):
+                    (output_root / "sub-001_task-pss_events.tsv").write_text(
+                        "participant_id\tPSS01\nsub-001\t4\n",
+                        encoding="utf-8",
+                    )
+                return SimpleNamespace(
+                    tasks_included=["pss"],
+                    detected_sessions=[],
+                    task_runs={},
+                    template_matches={},
+                    unknown_columns=[],
+                    tool_columns=[],
+                    near_match_candidates=[],
+                    near_match_applied=False,
+                    applied_value_offsets={},
+                    value_offset_application_counts={},
+                    conversion_warnings=[],
+                    missing_cells_by_subject={},
+                )
+
+            with patch.object(
+                handlers,
+                "convert_survey_xlsx_to_prism_dataset",
+                object(),
+            ), patch.object(
+                handlers,
+                "convert_survey_lsa_to_prism_dataset",
+                object(),
+            ), patch.object(
+                handlers,
+                "_resolve_effective_library_path",
+                return_value=project_root / "code" / "library",
+            ), patch.object(
+                handlers,
+                "_resolve_official_survey_dir",
+                return_value=official_dir,
+            ), patch.object(
+                handlers,
+                "_run_survey_with_official_fallback",
+                side_effect=fake_run_survey_with_official_fallback,
+            ), patch.object(
+                handlers,
+                "_validate_project_templates_for_tasks",
+                return_value=[],
+            ), patch.object(
+                handlers,
+                "_log_file_head",
+                return_value=None,
+            ):
+                with app.test_client() as client:
+                    with client.session_transaction() as client_session:
+                        client_session["current_project_path"] = str(project_root)
+
+                    response = client.post(
+                        "/api/survey-convert-validate",
+                        data={
+                            "excel": (
+                                io.BytesIO(b"ID,PSS01\nsub-001,4\n"),
+                                "input.csv",
+                            ),
+                            "id_column": "ID",
+                            "session": "ses-1",
+                        },
+                        content_type="multipart/form-data",
+                    )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertTrue(payload.get("success"))
+        self.assertEqual(call_library_dirs, [official_dir, official_dir])
+
 
 class TestValidationLibraryResolution(unittest.TestCase):
     """Ensure validation uses one context (project or fallback), never mixed."""
@@ -739,6 +1441,57 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
             self.assertIn("SoftwarePlatform", issue_text)
             self.assertIn("TaskName", issue_text)
             self.assertIn("LicenseID", issue_text)
+
+    def test_project_template_validation_accepts_legacy_platform_for_paper(self):
+        import importlib
+        import json
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_root = Path(tmp) / "project"
+            template_dir = project_root / "code" / "library" / "survey"
+            template_dir.mkdir(parents=True, exist_ok=True)
+
+            (template_dir / "survey-stai.json").write_text(
+                json.dumps(
+                    {
+                        "Technical": {
+                            "StimulusType": "Questionnaire",
+                            "FileFormat": "tsv",
+                            "SoftwarePlatform": "Legacy/Imported",
+                            "SoftwareVersion": "legacy",
+                            "Language": "en",
+                            "Respondent": "self",
+                            "AdministrationMethod": "paper",
+                        },
+                        "Study": {
+                            "TaskName": "stai",
+                            "OriginalName": "STAI",
+                            "Citation": "Spielberger et al.",
+                            "License": "Proprietary",
+                            "LicenseID": "Proprietary",
+                            "Version": "1.0",
+                        },
+                        "Metadata": {
+                            "SchemaVersion": "1.1.1",
+                            "CreationDate": "2026-03-05",
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            issues = handlers._validate_project_templates_for_tasks(
+                tasks=["stai"],
+                project_path=str(project_root),
+                schema_version="stable",
+            )
+
+            issue_text = "\n".join(i.get("message", "") for i in issues)
+            self.assertNotIn("SoftwarePlatform", issue_text)
 
     def test_project_template_version_required_when_project_has_multiple_versions(
         self,
@@ -1425,6 +2178,54 @@ class TestSurveySidecarDefaults(unittest.TestCase):
             self.assertIn("Technical", payload)
             self.assertIn("SoftwarePlatform", payload["Technical"])
             self.assertEqual(payload["Technical"]["SoftwarePlatform"], "")
+
+    def test_write_task_sidecars_normalizes_legacy_platform_for_paper(self):
+        import importlib
+
+        survey_io = importlib.import_module("src.converters.survey_io")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            dataset_root = Path(tmp)
+
+            def write_json(path, payload):
+                path.write_text(json.dumps(payload), encoding="utf-8")
+
+            survey_io._write_task_sidecars(
+                tasks_with_data={"stai"},
+                dataset_root=dataset_root,
+                templates={
+                    "stai": {
+                        "json": {
+                            "Study": {"TaskName": "stai"},
+                            "Technical": {
+                                "AdministrationMethod": "paper",
+                                "SoftwarePlatform": "Legacy/Imported",
+                                "SoftwareVersion": "legacy",
+                                "Language": "en",
+                                "Respondent": "self",
+                            },
+                        }
+                    }
+                },
+                task_acq_map={"stai": None},
+                language=None,
+                force=True,
+                technical_overrides=None,
+                missing_token="n/a",
+                localize_survey_template_fn=lambda template, language: template,
+                inject_missing_token_fn=lambda template, token: template,
+                apply_technical_overrides_fn=lambda template, overrides: template,
+                strip_internal_keys_fn=lambda template: template,
+                write_json_fn=write_json,
+            )
+
+            payload = json.loads(
+                (dataset_root / "task-stai_survey.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                payload["Technical"]["SoftwarePlatform"], "Paper and Pencil"
+            )
+            self.assertEqual(payload["Technical"]["SoftwareVersion"], "")
 
     def test_write_task_sidecars_uses_acq_variant_filename(self):
         import importlib
@@ -3185,6 +3986,19 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         self.assertEqual(payload.get("new_participant_count"), 1)
         self.assertEqual(payload.get("new_columns"), ["handedness"])
         self.assertFalse(payload.get("can_apply"))
+        merge_quality = payload.get("merge_quality") or {}
+        self.assertEqual(
+            merge_quality.get("incoming_new_participant_total_value_cells"),
+            2,
+        )
+        self.assertEqual(
+            merge_quality.get("incoming_new_participant_missing_value_cells"),
+            0,
+        )
+        self.assertEqual(
+            merge_quality.get("incoming_new_participants_all_missing_values"),
+            0,
+        )
 
         preview_rows = payload.get("preview_rows") or []
         self.assertEqual(preview_rows[0].get("participant_id"), "sub-001")
@@ -3491,6 +4305,19 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         self.assertEqual(payload.get("status"), "success")
         self.assertEqual(payload.get("conflict_count"), 0)
         self.assertEqual(payload.get("output_directory"), str(self.project_root))
+        merge_quality = payload.get("merge_quality") or {}
+        self.assertEqual(
+            merge_quality.get("incoming_new_participant_total_value_cells"),
+            3,
+        )
+        self.assertEqual(
+            merge_quality.get("incoming_new_participant_missing_value_cells"),
+            0,
+        )
+        self.assertEqual(
+            merge_quality.get("incoming_new_participants_all_missing_values"),
+            0,
+        )
         self.assertEqual(
             set(payload.get("files_created") or []),
             {str(participants_tsv), str(participants_json)},

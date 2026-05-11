@@ -21,6 +21,10 @@ convert_dataset_participants = _real.convert_dataset_participants
 describe_participants_workflow = _real.describe_participants_workflow
 export_participants_merge_conflicts_csv = _real.export_participants_merge_conflicts_csv
 merge_neurobagel_schema_for_columns = _real.merge_neurobagel_schema_for_columns
+merge_survey_selected_participants_schema = (
+    _real.merge_survey_selected_participants_schema
+)
+resolve_survey_schema_merge_mode = _real.resolve_survey_schema_merge_mode
 normalize_participant_mapping = _real.normalize_participant_mapping
 preview_dataset_participants = _real.preview_dataset_participants
 preview_participants_merge = _real.preview_participants_merge
@@ -36,6 +40,8 @@ __all__ = [
     "describe_participants_workflow",
     "export_participants_merge_conflicts_csv",
     "merge_neurobagel_schema_for_columns",
+    "merge_survey_selected_participants_schema",
+    "resolve_survey_schema_merge_mode",
     "normalize_participant_mapping",
     "preview_dataset_participants",
     "preview_participants_merge",

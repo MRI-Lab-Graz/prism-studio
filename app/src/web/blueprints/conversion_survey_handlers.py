@@ -1,6 +1,7 @@
 """Survey conversion handlers extracted from the conversion blueprint."""
 
 from copy import deepcopy
+import inspect
 import io
 import json
 import shutil
@@ -26,6 +27,7 @@ from .conversion_survey_preview_handlers import (
     _SUPPORTED_SURVEY_INPUT_MESSAGE,
     _SUPPORTED_SURVEY_INPUT_SUFFIXES,
     _SUPPORTED_SURVEY_TABULAR_SUFFIXES,
+    _format_workflow_preparation_stale_response,
     handle_api_survey_convert_preview,
     handle_api_survey_languages,
 )
@@ -35,9 +37,12 @@ from .conversion_utils import (
     expected_delimiter_for_suffix,
     extract_tasks_from_output,
     log_file_head,
+    merge_selected_survey_filter,
     normalize_separator_option,
     normalize_filename,
     parse_near_item_match_task_allowlist,
+    parse_selected_survey_tasks,
+    parse_task_value_offsets,
     parse_template_version_overrides,
     participant_json_candidates,
     require_existing_project_root,
@@ -53,19 +58,66 @@ convert_survey_lsa_to_prism_dataset: Any = None
 infer_lsa_metadata: Any = None
 MissingIdMappingError: Any = None
 UnmatchedGroupsError: Any = None
-resolve_effective_template_version_overrides: Any = None
+SurveyValueOutOfBoundsError: Any = None
+_resolve_effective_template_version_overrides: Any = None
+sync_project_survey_recipe_offsets: Any = None
 _NON_ITEM_TOPLEVEL_KEYS: set[str] = set()
+normalize_paper_software_platform: Any = None
 
 try:
     from src.converters.survey import (
         MissingIdMappingError,
         UnmatchedGroupsError,
         _NON_ITEM_TOPLEVEL_KEYS,
-        _resolve_effective_template_version_overrides,
         convert_survey_lsa_to_prism_dataset,
         convert_survey_xlsx_to_prism_dataset,
         infer_lsa_metadata,
     )
+except ImportError:
+    pass
+
+try:
+    from src.converters.survey import (
+        SurveyValueOutOfBoundsError as _SurveyValueOutOfBoundsError,
+    )
+
+    SurveyValueOutOfBoundsError = _SurveyValueOutOfBoundsError
+except ImportError:
+    try:
+        from src.converters.survey_processing import (
+            SurveyValueOutOfBoundsError as _SurveyValueOutOfBoundsError,
+        )
+
+        SurveyValueOutOfBoundsError = _SurveyValueOutOfBoundsError
+    except ImportError:
+        pass
+
+try:
+    from src.converters.survey import (
+        sync_project_survey_recipe_offsets as _sync_project_survey_recipe_offsets,
+    )
+
+    sync_project_survey_recipe_offsets = _sync_project_survey_recipe_offsets
+except ImportError:
+    pass
+
+try:
+    from src.converters.survey import (
+        _resolve_effective_template_version_overrides as _survey_resolve_effective_template_version_overrides,
+    )
+
+    _resolve_effective_template_version_overrides = (
+        _survey_resolve_effective_template_version_overrides
+    )
+except ImportError:
+    pass
+
+try:
+    from src.converters.survey_io import (
+        normalize_paper_software_platform as _normalize_paper_software_platform,
+    )
+
+    normalize_paper_software_platform = _normalize_paper_software_platform
 except ImportError:
     pass
 
@@ -85,9 +137,6 @@ _normalize_filename = normalize_filename
 _should_retry_with_official_library = should_retry_with_official_library
 _extract_tasks_from_output = extract_tasks_from_output
 _register_session_in_project = register_session_in_project
-_resolve_effective_template_version_overrides = (
-    _resolve_effective_template_version_overrides
-)
 
 
 def _get_effective_template_version_overrides(
@@ -123,6 +172,89 @@ def _iter_session_registration_values(
         seen.add(candidate)
         values.append(candidate)
     return values
+
+
+def _format_value_offset_confirmation_response(
+    error: Exception,
+    log_messages: list[dict[str, str]] | None = None,
+) -> dict[str, Any]:
+    task = str(getattr(error, "task", "") or "").strip().lower()
+    item_id = str(getattr(error, "item_id", "") or "").strip()
+    raw_value = getattr(error, "raw_value", None)
+    subject_id = str(getattr(error, "sub_id", "") or "").strip()
+    expected_levels = list(getattr(error, "expected_levels", []) or [])
+
+    suggested_offsets: list[float | int] = []
+    for raw_offset in list(getattr(error, "suggested_offsets", []) or []):
+        try:
+            numeric = float(raw_offset)
+        except (TypeError, ValueError):
+            continue
+        rounded = round(numeric)
+        if abs(numeric - rounded) < 1e-9:
+            suggested_offsets.append(int(rounded))
+        else:
+            suggested_offsets.append(round(numeric, 6))
+
+    configured_offset = getattr(error, "configured_offset", None)
+    offset_evidence = getattr(error, "offset_evidence", None)
+    evidence_classification = ""
+    if isinstance(offset_evidence, dict):
+        evidence_classification = str(
+            offset_evidence.get("classification") or ""
+        ).strip().lower()
+
+    fallback_message = (
+        "Survey values are outside template levels. Review task value offsets in Advanced options before continuing."
+    )
+    review_message = str(error).strip() or fallback_message
+    if configured_offset is None and evidence_classification in {
+        "item_issues_likely",
+        "structural_offset_likely",
+    }:
+        if evidence_classification == "structural_offset_likely":
+            review_message = (
+                "Sampled out-of-range values are consistent with a task-wide structural offset."
+            )
+        else:
+            review_message = (
+                "Sampled out-of-range values do not yet support a task-wide structural offset."
+            )
+    if configured_offset is not None:
+        review_message += (
+            " Review the manual task value offset in Advanced options and run Preview again."
+        )
+    else:
+        review_message += (
+            " If you are certain this survey task uses a shifted numeric scale, add a manual task value offset in Advanced options and run Preview again."
+        )
+    payload: dict[str, Any] = {
+        "error": "value_offset_manual_review_required",
+        "message": review_message,
+        "task": task,
+        "item_id": item_id,
+        "raw_value": raw_value,
+        "expected_levels": expected_levels,
+        "suggested_offsets": suggested_offsets,
+    }
+    if subject_id:
+        payload["subject_id"] = subject_id
+    if configured_offset is not None:
+        payload["configured_offset"] = configured_offset
+    if isinstance(offset_evidence, dict):
+        payload["offset_evidence"] = offset_evidence
+    payload["manual_action"] = "advanced_value_offsets"
+    if log_messages is not None:
+        payload["log"] = log_messages
+    return payload
+
+
+def _is_value_offset_confirmation_error(error: Exception) -> bool:
+    return (
+        isinstance(SurveyValueOutOfBoundsError, type)
+        and issubclass(SurveyValueOutOfBoundsError, BaseException)
+        and isinstance(error, SurveyValueOutOfBoundsError)
+    )
 
 
 class _LocalPathUpload:
@@ -461,6 +593,9 @@ def _detect_survey_version_contexts(
     duplicate_handling: str,
     separator_option: str,
     template_version_overrides: dict[str, str] | list[dict[str, object]] | None,
+    allow_near_item_match: bool = False,
+    near_match_tasks: set[str] | None = None,
+    task_value_offsets: dict[str, float] | None = None,
 ) -> dict[str, Any]:
     suffix = Path(filename).suffix.lower()
     official_dir = _resolve_official_survey_dir(project_path)
@@ -504,6 +639,9 @@ def _detect_survey_version_contexts(
                     skip_participants=True,
                     project_path=project_path,
                     template_version_overrides=template_version_overrides,
+                    allow_near_item_match=allow_near_item_match,
+                    near_match_tasks=near_match_tasks,
+                    task_value_offsets=task_value_offsets,
                 )
             if suffix == ".lsa":
                 return convert_survey_lsa_to_prism_dataset(
@@ -528,6 +666,9 @@ def _detect_survey_version_contexts(
                     skip_participants=True,
                     project_path=project_path,
                     template_version_overrides=template_version_overrides,
+                    allow_near_item_match=allow_near_item_match,
+                    near_match_tasks=near_match_tasks,
+                    task_value_offsets=task_value_offsets,
                 )
             raise ValueError(_SUPPORTED_SURVEY_INPUT_MESSAGE)
 
@@ -570,6 +711,20 @@ def _detect_survey_version_contexts(
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
+def _coerce_flask_response(response_value):
+    """Normalize a Flask view return value to a response object and status code."""
+
+    response = response_value
+    status_code = None
+    if isinstance(response_value, tuple):
+        response = response_value[0]
+        if len(response_value) > 1:
+            status_code = response_value[1]
+    if status_code is None:
+        status_code = getattr(response, "status_code", 200)
+    return response, status_code
+
+
 def _run_survey_with_official_fallback(
     converter_fn,
     *,
@@ -585,9 +740,39 @@ def _run_survey_with_official_fallback(
     if fallback_project_path:
         kwargs.setdefault("project_path", fallback_project_path)
 
+    converter_kwargs = dict(kwargs)
+    try:
+        signature = inspect.signature(converter_fn)
+        accepts_var_kwargs = any(
+            parameter.kind == inspect.Parameter.VAR_KEYWORD
+            for parameter in signature.parameters.values()
+        )
+        if not accepts_var_kwargs:
+            accepted_names = set(signature.parameters.keys())
+            unsupported = sorted(
+                key for key in converter_kwargs.keys() if key not in accepted_names
+            )
+            if unsupported:
+                converter_name = str(getattr(converter_fn, "__name__", "converter"))
+                msg = (
+                    f"Converter '{converter_name}' does not accept options "
+                    f"{', '.join(unsupported)}; skipping unsupported options."
+                )
+                if log_fn:
+                    log_fn(msg, "warning")
+                else:
+                    print(f"[PRISM WARN] {msg}")
+                converter_kwargs = {
+                    key: value
+                    for key, value in converter_kwargs.items()
+                    if key in accepted_names
+                }
+    except (TypeError, ValueError):
+        pass
+
     result = None
     try:
-        result = converter_fn(library_dir=str(library_dir), **kwargs)
+        result = converter_fn(library_dir=str(library_dir), **converter_kwargs)
         tasks_included = getattr(result, "tasks_included", []) or []
         _copy_official_templates_to_project(
             official_dir=Path(library_dir),
@@ -618,7 +803,7 @@ def _run_survey_with_official_fallback(
                         print(f"[PRISM DEBUG] {msg}")
                     try:
                         result = converter_fn(
-                            library_dir=str(project_local_dir), **kwargs
+                            library_dir=str(project_local_dir), **converter_kwargs
                         )
                         return result
                     except Exception:
@@ -637,7 +822,9 @@ def _run_survey_with_official_fallback(
                     log_fn(msg, "info")
                 else:
                     print(f"[PRISM DEBUG] {msg}")
-                result = converter_fn(library_dir=str(official_dir), **kwargs)
+                result = converter_fn(
+                    library_dir=str(official_dir), **converter_kwargs
+                )
                 tasks_included = getattr(result, "tasks_included", []) or []
                 _copy_official_templates_to_project(
                     official_dir=official_dir,
@@ -655,6 +842,62 @@ def _run_survey_with_official_fallback(
             else:
                 print(f"[PRISM DEBUG] {msg}")
         raise
+
+
+def api_survey_prepare_workflow():
+    """Run the survey setup phase without starting preview or conversion output."""
+    try:
+        preview_response = handle_api_survey_convert_preview(
+            convert_survey_xlsx_to_prism_dataset=convert_survey_xlsx_to_prism_dataset,
+            convert_survey_lsa_to_prism_dataset=convert_survey_lsa_to_prism_dataset,
+            resolve_effective_library_path=_resolve_effective_library_path,
+            run_survey_with_official_fallback=_run_survey_with_official_fallback,
+            validate_project_templates_for_tasks=_validate_project_templates_for_tasks,
+            build_template_completion_gate=_build_template_completion_gate,
+            format_unmatched_groups_response=_format_unmatched_groups_response,
+            id_column_not_detected_error_cls=IdColumnNotDetectedError,
+            unmatched_groups_error_cls=UnmatchedGroupsError,
+            survey_value_out_of_bounds_error_cls=SurveyValueOutOfBoundsError,
+            format_value_offset_confirmation_response=_format_value_offset_confirmation_response,
+        )
+
+        response, status_code = _coerce_flask_response(preview_response)
+        if status_code != 200:
+            return preview_response
+
+        payload = response.get_json(silent=True) or {}
+        preview_payload = (
+            payload.get("preview") if isinstance(payload.get("preview"), dict) else {}
+        )
+        prepared_payload: dict[str, Any] = {
+            "ok": True,
+            "tasks_included": list(payload.get("tasks_included") or []),
+            "detected_sessions": list(payload.get("detected_sessions") or []),
+            "task_runs": payload.get("task_runs") or {},
+            "session_column": payload.get("session_column"),
+            "run_column": payload.get("run_column"),
+            "multivariant_tasks": payload.get("multivariant_tasks") or {},
+            "preview_participants": list(preview_payload.get("participants") or []),
+            "applied_value_offsets": payload.get("applied_value_offsets") or {},
+            "value_offset_application_counts": payload.get(
+                "value_offset_application_counts"
+            )
+            or {},
+            "requires_template_completion": bool(
+                payload.get("requires_template_completion")
+            ),
+        }
+        if payload.get("workflow_gate") is not None:
+            prepared_payload["workflow_gate"] = payload.get("workflow_gate")
+        if payload.get("near_match_applied"):
+            prepared_payload["near_match_applied"] = True
+
+        return jsonify(prepared_payload)
+    except Exception as error:
+        if has_app_context():
+            current_app.logger.exception("Survey workflow preparation failed")
+        message = str(error).strip() or "Survey workflow preparation failed."
+        return jsonify({"error": message}), 500
 
 
 def _validate_project_templates_for_tasks(
@@ -731,7 +974,13 @@ def _validate_project_templates_for_tasks(
             )
             continue
 
-        for err in validator.iter_errors(payload):
+        normalized_payload = payload
+        if callable(normalize_paper_software_platform):
+            maybe_normalized_payload = normalize_paper_software_platform(payload)
+            if isinstance(maybe_normalized_payload, dict):
+                normalized_payload = maybe_normalized_payload
+
+        for err in validator.iter_errors(normalized_payload):
             field_path = " -> ".join([str(p) for p in err.path])
             prefix = f"{field_path}: " if field_path else ""
             issues.append(
@@ -741,7 +990,9 @@ def _validate_project_templates_for_tasks(
                 }
             )
 
-        if _has_multiple_versions(payload) and _is_missing_version(payload):
+        if _has_multiple_versions(normalized_payload) and _is_missing_version(
+            normalized_payload
+        ):
             issues.append(
                 {
                     "file": str(template_path),
@@ -1105,11 +1356,35 @@ def api_survey_detect_version_context():
     if suffix not in _SUPPORTED_SURVEY_INPUT_SUFFIXES:
         return jsonify({"error": _SUPPORTED_SURVEY_INPUT_MESSAGE}), 400
 
-    survey_filter = (request.form.get("survey") or "").strip() or None
+    raw_survey_filter = (request.form.get("survey") or "").strip() or None
+    try:
+        selected_tasks = parse_selected_survey_tasks(
+            request.form.get("selected_tasks")
+        )
+        survey_filter = merge_selected_survey_filter(raw_survey_filter, selected_tasks)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
     try:
         template_version_overrides = parse_template_version_overrides(
             request.form.get("template_versions")
         )
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    allow_near_item_match = request.form.get("allow_near_item_match") == "true"
+    near_match_tasks: set[str] | None = None
+    if allow_near_item_match:
+        try:
+            near_match_tasks = parse_near_item_match_task_allowlist(
+                request.form.get("near_match_tasks")
+            )
+        except ValueError as error:
+            return jsonify({"error": str(error)}), 400
+        if near_match_tasks is not None and not near_match_tasks:
+            return jsonify({"error": "No survey tasks selected for near matching."}), 400
+
+    try:
+        task_value_offsets = parse_task_value_offsets(request.form.get("value_offsets"))
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
 
@@ -1158,6 +1433,9 @@ def api_survey_detect_version_context():
             duplicate_handling=duplicate_handling,
             separator_option=separator_option,
             template_version_overrides=effective_template_version_overrides,
+            allow_near_item_match=allow_near_item_match,
+            near_match_tasks=near_match_tasks,
+            task_value_offsets=task_value_offsets,
         )
     except IdColumnNotDetectedError as error:
         return (
@@ -1197,9 +1475,12 @@ def api_survey_convert_preview():
         resolve_effective_library_path=_resolve_effective_library_path,
         run_survey_with_official_fallback=_run_survey_with_official_fallback,
         validate_project_templates_for_tasks=_validate_project_templates_for_tasks,
+        build_template_completion_gate=_build_template_completion_gate,
         format_unmatched_groups_response=_format_unmatched_groups_response,
         id_column_not_detected_error_cls=IdColumnNotDetectedError,
         unmatched_groups_error_cls=UnmatchedGroupsError,
+        survey_value_out_of_bounds_error_cls=SurveyValueOutOfBoundsError,
+        format_value_offset_confirmation_response=_format_value_offset_confirmation_response,
     )
 
 
@@ -1274,7 +1555,14 @@ def api_survey_convert():
         # mechanism will copy matched templates to the project library afterwards.
         effective_survey_dir = official_fallback
 
-    survey_filter = (request.form.get("survey") or "").strip() or None
+    raw_survey_filter = (request.form.get("survey") or "").strip() or None
+    try:
+        selected_tasks = parse_selected_survey_tasks(
+            request.form.get("selected_tasks")
+        )
+        survey_filter = merge_selected_survey_filter(raw_survey_filter, selected_tasks)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
     try:
         template_version_overrides = parse_template_version_overrides(
             request.form.get("template_versions")
@@ -1309,6 +1597,10 @@ def api_survey_convert():
         near_match_tasks = parse_near_item_match_task_allowlist(
             request.form.get("near_match_tasks")
         )
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+    try:
+        task_value_offsets = parse_task_value_offsets(request.form.get("value_offsets"))
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
     if allow_near_item_match and near_match_tasks is not None and not near_match_tasks:
@@ -1386,6 +1678,7 @@ def api_survey_convert():
                     template_version_overrides=effective_template_version_overrides,
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
+                    task_value_offsets=task_value_offsets,
                 )
             elif suffix == ".lsa":
                 preflight_result = _run_survey_with_official_fallback(
@@ -1414,6 +1707,7 @@ def api_survey_convert():
                     template_version_overrides=effective_template_version_overrides,
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
+                    task_value_offsets=task_value_offsets,
                 )
         except IdColumnNotDetectedError as e:
             return (
@@ -1440,23 +1734,37 @@ def api_survey_convert():
             )
         except UnmatchedGroupsError as uge:
             return jsonify(_format_unmatched_groups_response(uge)), 409
+        except Exception as error:
+            if _is_value_offset_confirmation_error(error):
+                return (
+                    jsonify(
+                        _format_workflow_preparation_stale_response(
+                            _format_value_offset_confirmation_response(error)
+                        )
+                    ),
+                    409,
+                )
+            raise
 
         preflight_near_match_candidates = list(
             getattr(preflight_result, "near_match_candidates", []) or []
         )
         if preflight_near_match_candidates and not allow_near_item_match:
+            near_match_payload = {
+                "error": "near_item_match_confirmation_required",
+                "message": (
+                    "Exact matching left item-like columns unmapped. "
+                    "Safe near matches are available (minimal separator/zero-padding differences). "
+                    "Confirm to apply them."
+                ),
+                "near_match_candidates": preflight_near_match_candidates,
+                "near_match_count": len(preflight_near_match_candidates),
+            }
             return (
                 jsonify(
-                    {
-                        "error": "near_item_match_confirmation_required",
-                        "message": (
-                            "Exact matching left item-like columns unmapped. "
-                            "Safe near matches are available (minimal separator/zero-padding differences). "
-                            "Confirm to apply them."
-                        ),
-                        "near_match_candidates": preflight_near_match_candidates,
-                        "near_match_count": len(preflight_near_match_candidates),
-                    }
+                    _format_workflow_preparation_stale_response(
+                        near_match_payload
+                    )
                 ),
                 409,
             )
@@ -1472,14 +1780,17 @@ def api_survey_convert():
                 tasks=preflight_tasks,
                 issues=project_template_issues,
             )
+            template_gate_payload = {
+                "error": "project_template_completion_required",
+                "message": workflow_gate["message"],
+                "workflow_gate": workflow_gate,
+                "template_issues": project_template_issues,
+            }
             return (
                 jsonify(
-                    {
-                        "error": "project_template_completion_required",
-                        "message": workflow_gate["message"],
-                        "workflow_gate": workflow_gate,
-                        "template_issues": project_template_issues,
-                    }
+                    _format_workflow_preparation_stale_response(
+                        template_gate_payload
+                    )
                 ),
                 409,
             )
@@ -1526,6 +1837,7 @@ def api_survey_convert():
                     template_version_overrides=effective_template_version_overrides,
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
+                    task_value_offsets=task_value_offsets,
                 )
             elif suffix == ".lsa":
                 convert_result = _run_survey_with_official_fallback(
@@ -1554,6 +1866,7 @@ def api_survey_convert():
                     template_version_overrides=effective_template_version_overrides,
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
+                    task_value_offsets=task_value_offsets,
                 )
         except IdColumnNotDetectedError as e:
             return (
@@ -1580,6 +1893,17 @@ def api_survey_convert():
             )
         except UnmatchedGroupsError as uge:
             return jsonify(_format_unmatched_groups_response(uge)), 409
+        except Exception as error:
+            if _is_value_offset_confirmation_error(error):
+                return (
+                    jsonify(
+                        _format_workflow_preparation_stale_response(
+                            _format_value_offset_confirmation_response(error)
+                        )
+                    ),
+                    409,
+                )
+            raise
 
         if save_to_project:
             dest_root = project_root
@@ -1619,6 +1943,28 @@ def api_survey_convert():
                         conv_type,
                         template_version_overrides=effective_template_version_overrides,
                     )
+
+            if (
+                convert_result
+                and callable(sync_project_survey_recipe_offsets)
+            ):
+                applied_offsets = (
+                    getattr(convert_result, "applied_value_offsets", {}) or {}
+                )
+                offset_application_counts = (
+                    getattr(convert_result, "value_offset_application_counts", {})
+                    or {}
+                )
+                if applied_offsets:
+                    try:
+                        sync_project_survey_recipe_offsets(
+                            project_root=project_root,
+                            task_value_offsets=applied_offsets,
+                            offset_application_counts=offset_application_counts,
+                        )
+                    except Exception:
+                        # Recipe metadata sync is best-effort and must not block import.
+                        pass
 
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
@@ -1742,15 +2088,22 @@ def api_survey_convert_validate():
 
     survey_templates = list(effective_survey_dir.glob("survey-*.json"))
     if not survey_templates:
-        return (
-            jsonify(
-                {
-                    "error": f"No survey templates found in: {effective_survey_dir}",
-                    "log": log_messages,
-                }
-            ),
-            400,
+        # Keep validate behavior aligned with convert: an empty project library
+        # should fall back to official templates and seed project-local copies.
+        official_fallback = _resolve_official_survey_dir(
+            session.get("current_project_path")
         )
+        if not official_fallback:
+            return (
+                jsonify(
+                    {
+                        "error": f"No survey templates found in: {effective_survey_dir}",
+                        "log": log_messages,
+                    }
+                ),
+                400,
+            )
+        effective_survey_dir = official_fallback
 
     survey_filter = (request.form.get("survey") or "").strip() or None
     try:
@@ -1787,6 +2140,10 @@ def api_survey_convert_validate():
         near_match_tasks = parse_near_item_match_task_allowlist(
             request.form.get("near_match_tasks")
         )
+    except ValueError as error:
+        return jsonify({"error": str(error), "log": log_messages}), 400
+    try:
+        task_value_offsets = parse_task_value_offsets(request.form.get("value_offsets"))
     except ValueError as error:
         return jsonify({"error": str(error), "log": log_messages}), 400
     if allow_near_item_match and near_match_tasks is not None and not near_match_tasks:
@@ -1892,6 +2249,7 @@ def api_survey_convert_validate():
                     template_version_overrides=effective_template_version_overrides,
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
+                    task_value_offsets=task_value_offsets,
                 )
             elif suffix == ".lsa":
                 preflight_result = _run_survey_with_official_fallback(
@@ -1921,6 +2279,7 @@ def api_survey_convert_validate():
                     template_version_overrides=effective_template_version_overrides,
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
+                    task_value_offsets=task_value_offsets,
                 )
         except IdColumnNotDetectedError as e:
             add_log(f"ID column not detected: {str(e)}", "error")
@@ -1955,25 +2314,44 @@ def api_survey_convert_validate():
                 jsonify(_format_unmatched_groups_response(uge, log_messages)),
                 409,
             )
+        except Exception as error:
+            if _is_value_offset_confirmation_error(error):
+                add_log("Value offset confirmation is required before conversion can continue.", "warning")
+                return (
+                    jsonify(
+                        _format_workflow_preparation_stale_response(
+                            _format_value_offset_confirmation_response(
+                                error,
+                                log_messages,
+                            ),
+                            log_messages=log_messages,
+                        )
+                    ),
+                    409,
+                )
+            raise
 
         preflight_near_match_candidates = list(
             getattr(preflight_result, "near_match_candidates", []) or []
         )
         if preflight_near_match_candidates and not allow_near_item_match:
             add_log("Near item matches detected and awaiting confirmation", "warning")
+            near_match_payload = {
+                "error": "near_item_match_confirmation_required",
+                "message": (
+                    "Exact matching left item-like columns unmapped. "
+                    "Safe near matches are available (minimal separator/zero-padding differences). "
+                    "Confirm to apply them."
+                ),
+                "near_match_candidates": preflight_near_match_candidates,
+                "near_match_count": len(preflight_near_match_candidates),
+            }
             return (
                 jsonify(
-                    {
-                        "error": "near_item_match_confirmation_required",
-                        "message": (
-                            "Exact matching left item-like columns unmapped. "
-                            "Safe near matches are available (minimal separator/zero-padding differences). "
-                            "Confirm to apply them."
-                        ),
-                        "near_match_candidates": preflight_near_match_candidates,
-                        "near_match_count": len(preflight_near_match_candidates),
-                        "log": log_messages,
-                    }
+                    _format_workflow_preparation_stale_response(
+                        near_match_payload,
+                        log_messages=log_messages,
+                    )
                 ),
                 409,
             )
@@ -1998,15 +2376,18 @@ def api_survey_convert_validate():
                     f"  ... and {len(project_template_issues) - 20} more template issue(s)",
                     "error",
                 )
+            template_gate_payload = {
+                "error": "project_template_completion_required",
+                "message": workflow_gate["message"],
+                "workflow_gate": workflow_gate,
+                "template_issues": project_template_issues,
+            }
             return (
                 jsonify(
-                    {
-                        "error": "project_template_completion_required",
-                        "message": workflow_gate["message"],
-                        "workflow_gate": workflow_gate,
-                        "template_issues": project_template_issues,
-                        "log": log_messages,
-                    }
+                    _format_workflow_preparation_stale_response(
+                        template_gate_payload,
+                        log_messages=log_messages,
+                    )
                 ),
                 409,
             )
@@ -2072,6 +2453,7 @@ def api_survey_convert_validate():
                     template_version_overrides=effective_template_version_overrides,
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
+                    task_value_offsets=task_value_offsets,
                 )
             elif suffix == ".lsa":
                 add_log(f"Processing LimeSurvey archive: {filename}", "info")
@@ -2101,6 +2483,7 @@ def api_survey_convert_validate():
                     template_version_overrides=effective_template_version_overrides,
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
+                    task_value_offsets=task_value_offsets,
                 )
             add_log("Conversion completed successfully", "success")
         except IdColumnNotDetectedError as e:
@@ -2137,6 +2520,23 @@ def api_survey_convert_validate():
                 409,
             )
         except Exception as conv_err:
+            if _is_value_offset_confirmation_error(conv_err):
+                add_log(
+                    "Value offset confirmation is required before conversion can continue.",
+                    "warning",
+                )
+                return (
+                    jsonify(
+                        _format_workflow_preparation_stale_response(
+                            _format_value_offset_confirmation_response(
+                                conv_err,
+                                log_messages,
+                            ),
+                            log_messages=log_messages,
+                        )
+                    ),
+                    409,
+                )
             import sys
             import traceback
 
@@ -2305,6 +2705,8 @@ def api_survey_convert_validate():
             else:
                 validation_result["warnings"].extend(conversion_warnings)
 
+        recipe_offset_sync_summary: dict[str, list[str]] | None = None
+
         if save_to_project:
             dest_root = project_root
             dest_root.mkdir(parents=True, exist_ok=True)
@@ -2361,6 +2763,47 @@ def api_survey_convert_validate():
                     "info",
                 )
 
+            if convert_result and callable(sync_project_survey_recipe_offsets):
+                applied_offsets = (
+                    getattr(convert_result, "applied_value_offsets", {}) or {}
+                )
+                offset_application_counts = (
+                    getattr(convert_result, "value_offset_application_counts", {})
+                    or {}
+                )
+                if applied_offsets:
+                    try:
+                        recipe_offset_sync_summary = sync_project_survey_recipe_offsets(
+                            project_root=project_root,
+                            task_value_offsets=applied_offsets,
+                            offset_application_counts=offset_application_counts,
+                        )
+                        updated = recipe_offset_sync_summary.get("updated_tasks", [])
+                        missing = recipe_offset_sync_summary.get("missing_tasks", [])
+                        errors = recipe_offset_sync_summary.get("errors", [])
+                        if updated:
+                            add_log(
+                                "Updated survey recipe offset metadata for: "
+                                + ", ".join(updated),
+                                "info",
+                            )
+                        if missing:
+                            add_log(
+                                "No matching survey recipe file found for: "
+                                + ", ".join(missing),
+                                "warning",
+                            )
+                        for sync_error in errors:
+                            add_log(
+                                f"Recipe offset sync warning: {sync_error}",
+                                "warning",
+                            )
+                    except Exception as sync_err:
+                        add_log(
+                            f"Recipe offset sync warning: {sync_err}",
+                            "warning",
+                        )
+
         response_payload = {
             "success": True,
             "log": log_messages,
@@ -2371,6 +2814,8 @@ def api_survey_convert_validate():
             "project_output_path": None,
             "project_output_count": len(copied_output_paths),
         }
+        if recipe_offset_sync_summary is not None:
+            response_payload["recipe_offset_sync"] = recipe_offset_sync_summary
 
         if copied_output_paths:
             output_paths = summarize_project_output_paths(
@@ -2399,6 +2844,14 @@ def api_survey_convert_validate():
                 summary["near_match_candidates"] = convert_result.near_match_candidates
             if getattr(convert_result, "near_match_applied", False):
                 summary["near_match_applied"] = True
+            if getattr(convert_result, "applied_value_offsets", None):
+                summary["applied_value_offsets"] = convert_result.applied_value_offsets
+            if getattr(convert_result, "value_offset_application_counts", None):
+                summary["value_offset_application_counts"] = (
+                    convert_result.value_offset_application_counts
+                )
+            if recipe_offset_sync_summary is not None:
+                summary["recipe_offset_sync"] = recipe_offset_sync_summary
             if conversion_warnings:
                 summary["conversion_warnings"] = conversion_warnings
             if getattr(convert_result, "participant_registry_warning", None):
