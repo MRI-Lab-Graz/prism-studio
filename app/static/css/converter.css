@@ -205,6 +205,27 @@
     border-radius: 14px;
 }
 
+#surveyVersionWizard.survey-version-card {
+    background: #edf2f6;
+    border: 1px solid #ccd6e1;
+    color: #22303c;
+}
+
+#surveyVersionWizard code {
+    color: #1f4d82;
+}
+
+#surveyVersionWizard .text-muted,
+#surveyVersionWizard .survey-version-help-text {
+    color: #4e5f72 !important;
+}
+
+.survey-version-count-badge {
+    background: #dbe5ee;
+    border: 1px solid #c3d0dd;
+    color: #2b3a49;
+}
+
 .survey-version-group {
     background: #eef2f5;
     border: 1px solid #d6dde5;
@@ -245,6 +266,18 @@
     justify-content: flex-end;
 }
 
+.survey-version-meta-badge {
+    background: #dde7f0;
+    border: 1px solid #c8d6e3;
+    color: #34475a;
+}
+
+.survey-version-meta-badge-strong {
+    background: #cfdeea;
+    border: 1px solid #b7cbdc;
+    color: #22384f;
+}
+
 .survey-version-group-grid {
     margin-top: 0;
 }
@@ -267,6 +300,43 @@
     display: flex;
     flex-direction: column;
     gap: 0;
+}
+
+.survey-version-bulk-controls {
+    margin-top: 0.4rem;
+}
+
+.survey-version-bulk-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.survey-version-bulk-toggle .form-check-input {
+    margin-top: 0;
+}
+
+.survey-version-bulk-label {
+    color: #304355;
+    font-weight: 600;
+}
+
+.survey-version-bulk-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-top: 0.45rem;
+}
+
+.survey-version-bulk-row .form-label {
+    margin-bottom: 0;
+    color: #45586c;
+    min-width: max-content;
+}
+
+.survey-version-bulk-select {
+    max-width: 15rem;
 }
 
 .survey-version-row {
@@ -313,6 +383,29 @@
     color: #24313d;
 }
 
+.survey-version-variant-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.survey-version-variant-badge {
+    background: #e6edf3;
+    border: 1px solid #cfdbe6;
+    color: #34495e;
+}
+
+.survey-version-variant-badge-active {
+    background: #cfe2f6;
+    border-color: #a7c2de;
+    color: #1e4e86;
+}
+
+.survey-version-select-locked {
+    background: #eaf0f6;
+    color: #2d3f52;
+}
+
 @media (max-width: 576px) {
     .participants-case-card-icon {
         width: 2.55rem;
@@ -336,6 +429,17 @@
 
     .survey-version-context-chip {
         font-size: 0.85rem;
+    }
+
+    .survey-version-bulk-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .survey-version-bulk-select {
+        max-width: 100%;
+        width: 100%;
     }
 
     .survey-version-row {

@@ -15,6 +15,9 @@ from flask import current_app, has_app_context, jsonify, request, send_file, ses
 from werkzeug.utils import secure_filename
 from src.participants_paths import participants_mapping_candidates
 from src.survey_workflow_service import (
+    SUPPORTED_SURVEY_INPUT_MESSAGE,
+    SUPPORTED_SURVEY_INPUT_SUFFIXES,
+    SUPPORTED_SURVEY_TABULAR_SUFFIXES,
     SurveyWorkflowStageOptions,
     SurveyWorkflowStageService,
 )
@@ -28,10 +31,6 @@ from src.web.reporting_utils import sanitize_jsonable
 from src.web.validation import run_validation
 from src.web.services.project_registration import register_session_in_project
 from .conversion_survey_preview_handlers import (
-    _SUPPORTED_SURVEY_INPUT_MESSAGE,
-    _SUPPORTED_SURVEY_INPUT_SUFFIXES,
-    _SUPPORTED_SURVEY_TABULAR_SUFFIXES,
-    _format_workflow_preparation_stale_response,
     handle_api_survey_convert_preview,
     handle_api_survey_languages,
 )
@@ -64,9 +63,13 @@ MissingIdMappingError: Any = None
 UnmatchedGroupsError: Any = None
 SurveyValueOutOfBoundsError: Any = None
 _resolve_effective_template_version_overrides: Any = None
+_normalize_template_version_overrides_for_requests: Any = None
 sync_project_survey_recipe_offsets: Any = None
 _NON_ITEM_TOPLEVEL_KEYS: set[str] = set()
 normalize_paper_software_platform: Any = None
+_SUPPORTED_SURVEY_INPUT_MESSAGE = SUPPORTED_SURVEY_INPUT_MESSAGE
+_SUPPORTED_SURVEY_INPUT_SUFFIXES = SUPPORTED_SURVEY_INPUT_SUFFIXES
+_SUPPORTED_SURVEY_TABULAR_SUFFIXES = SUPPORTED_SURVEY_TABULAR_SUFFIXES
 _survey_workflow_stage_service = SurveyWorkflowStageService(
     tabular_suffixes=_SUPPORTED_SURVEY_TABULAR_SUFFIXES,
 )
@@ -110,9 +113,13 @@ except ImportError:
 
 try:
     from src.converters.survey import (
+        _normalize_template_version_overrides as _survey_normalize_template_version_overrides,
         _resolve_effective_template_version_overrides as _survey_resolve_effective_template_version_overrides,
     )
 
+    _normalize_template_version_overrides_for_requests = (
+        _survey_normalize_template_version_overrides
+    )
     _resolve_effective_template_version_overrides = (
         _survey_resolve_effective_template_version_overrides
     )
@@ -152,10 +159,37 @@ def _get_effective_template_version_overrides(
     template_version_overrides: object,
 ):
     if _resolve_effective_template_version_overrides is None:
-        return template_version_overrides
-    return _resolve_effective_template_version_overrides(
-        project_path=project_path,
-        template_version_overrides=template_version_overrides,
+        effective_overrides = template_version_overrides
+    else:
+        effective_overrides = _resolve_effective_template_version_overrides(
+            project_path=project_path,
+            template_version_overrides=template_version_overrides,
+        )
+
+    if callable(_normalize_template_version_overrides_for_requests):
+        normalized_overrides = _normalize_template_version_overrides_for_requests(
+            effective_overrides
+        )
+        if normalized_overrides:
+            return normalized_overrides
+    return effective_overrides
+
+
+def _is_prepared_workflow_request() -> bool:
+    return _survey_workflow_stage_service.parse_prepared_workflow_flag(
+        request.form.get("prepared_workflow")
+    )
+
+
+def _format_workflow_preparation_stale_response(
+    payload: dict[str, object],
+    *,
+    log_messages: list[dict[str, str]] | None = None,
+) -> dict[str, object]:
+    return _survey_workflow_stage_service.format_workflow_preparation_stale_response(
+        payload=payload,
+        prepared_workflow=_is_prepared_workflow_request(),
+        log_messages=log_messages,
     )
 
 
@@ -179,6 +213,57 @@ def _iter_session_registration_values(
         seen.add(candidate)
         values.append(candidate)
     return values
+
+
+def _cleanup_stale_tool_limesurvey_sidecars(
+    *,
+    copied_output_paths: list[Path],
+    source_suffix: str,
+    log_fn=None,
+) -> list[Path]:
+    """Remove stale tool-limesurvey sidecars for non-LimeSurvey imports.
+
+    When converting non-LSA/LSS sources, older buggy runs may have left
+    `*_tool-limesurvey_survey.{tsv,json}` files in project survey folders.
+    If the current run does not emit such files, clean stale leftovers in the
+    survey directories touched by this save operation.
+    """
+
+    normalized_suffix = str(source_suffix or "").strip().lower()
+    if normalized_suffix in {".lsa", ".lss"}:
+        return []
+
+    if any("_tool-limesurvey_survey" in path.name for path in copied_output_paths):
+        return []
+
+    touched_survey_dirs = {
+        path.parent for path in copied_output_paths if path.parent.name == "survey"
+    }
+    removed_paths: list[Path] = []
+
+    for survey_dir in sorted(touched_survey_dirs):
+        for pattern in (
+            "*_tool-limesurvey_survey.tsv",
+            "*_tool-limesurvey_survey.json",
+        ):
+            for stale_path in survey_dir.glob(pattern):
+                if not stale_path.is_file():
+                    continue
+                try:
+                    stale_path.unlink()
+                    removed_paths.append(stale_path)
+                except OSError:
+                    continue
+
+    if removed_paths and callable(log_fn):
+        log_fn(
+            "Removed "
+            f"{len(removed_paths)} stale tool-limesurvey sidecar file(s) "
+            "for non-LimeSurvey import.",
+            "info",
+        )
+
+    return removed_paths
 
 
 def _format_value_offset_confirmation_response(
@@ -212,7 +297,7 @@ def _format_value_offset_confirmation_response(
         ).strip().lower()
 
     fallback_message = (
-        "Survey values are outside template levels. Review task value offsets in Advanced options before continuing."
+        "Survey values are outside template levels. Review and fix out-of-range source values before continuing."
     )
     review_message = str(error).strip() or fallback_message
     if configured_offset is None and evidence_classification in {
@@ -233,7 +318,8 @@ def _format_value_offset_confirmation_response(
         )
     else:
         review_message += (
-            " If you are certain this survey task uses a shifted numeric scale, add a manual task value offset in Advanced options and run Preview again."
+            " Recommended first: correct the out-of-range source values and run Preview again."
+            " Optional fallback: if you are certain this survey task uses a shifted numeric scale, add a manual task value offset in Advanced options and run Preview again."
         )
     payload: dict[str, Any] = {
         "error": "value_offset_manual_review_required",
@@ -909,10 +995,17 @@ def api_survey_prepare_workflow():
 
 def api_survey_workflow_command():
     """Dispatch survey workflow commands through one adapter endpoint."""
+    json_payload = request.get_json(silent=True)
+    if not isinstance(json_payload, dict):
+        json_payload = {}
+
     raw_command = (
         request.form.get("workflow_command")
         or request.form.get("command")
         or request.form.get("mode")
+        or json_payload.get("workflow_command")
+        or json_payload.get("command")
+        or json_payload.get("mode")
         or ""
     )
     normalized_command = str(raw_command).strip().lower()
@@ -1198,12 +1291,13 @@ def api_survey_check_project_templates():
     uploaded_file, upload_error = _resolve_uploaded_or_source_file(
         field_names=("excel", "file")
     )
-    id_column = (request.form.get("id_column") or "").strip() or None
-    session_column = (request.form.get("session_column") or "").strip() or None
-    sheet = (request.form.get("sheet") or "0").strip() or 0
-    duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
-    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
-        duplicate_handling = "error"
+    parsed_stage_fields = _survey_workflow_stage_service.parse_stage_form_fields(
+        form=request.form
+    )
+    id_column = parsed_stage_fields.id_column
+    session_column = parsed_stage_fields.session_column
+    sheet = parsed_stage_fields.sheet
+    duplicate_handling = parsed_stage_fields.duplicate_handling
     try:
         separator_option = normalize_separator_option(request.form.get("separator"))
     except ValueError as error:
@@ -1433,14 +1527,15 @@ def api_survey_detect_version_context():
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
 
-    id_column = (request.form.get("id_column") or "").strip() or None
-    session_column = (request.form.get("session_column") or "").strip() or None
-    run_column = (request.form.get("run_column") or "").strip() or None
-    session_override = (request.form.get("session") or "").strip() or None
-    sheet = (request.form.get("sheet") or "0").strip() or 0
-    duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
-    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
-        duplicate_handling = "error"
+    parsed_stage_fields = _survey_workflow_stage_service.parse_stage_form_fields(
+        form=request.form
+    )
+    id_column = parsed_stage_fields.id_column
+    session_column = parsed_stage_fields.session_column
+    run_column = parsed_stage_fields.run_column
+    session_override = parsed_stage_fields.session_override
+    sheet = parsed_stage_fields.sheet
+    duplicate_handling = parsed_stage_fields.duplicate_handling
     try:
         separator_option = normalize_separator_option(request.form.get("separator"))
     except ValueError as error:
@@ -1604,25 +1699,19 @@ def api_survey_convert():
         project_path=current_project_path,
         template_version_overrides=template_version_overrides,
     )
-    id_column = (request.form.get("id_column") or "").strip() or None
-    session_column = (request.form.get("session_column") or "").strip() or None
-    session_override = (request.form.get("session") or "").strip() or None
-    run_column = (request.form.get("run_column") or "").strip() or None
-    sheet = (request.form.get("sheet") or "0").strip() or 0
-    unknown = (request.form.get("unknown") or "warn").strip() or "warn"
-    dataset_name = (request.form.get("dataset_name") or "").strip() or None
-    language = (request.form.get("language") or "").strip() or None
-    strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
-    strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
-    allow_near_item_match_raw = (
-        request.form.get("allow_near_item_match") or ""
-    ).strip().lower()
-    allow_near_item_match = allow_near_item_match_raw in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
+    parsed_stage_fields = _survey_workflow_stage_service.parse_stage_form_fields(
+        form=request.form
+    )
+    id_column = parsed_stage_fields.id_column
+    session_column = parsed_stage_fields.session_column
+    session_override = parsed_stage_fields.session_override
+    run_column = parsed_stage_fields.run_column
+    sheet = parsed_stage_fields.sheet
+    unknown = parsed_stage_fields.unknown
+    dataset_name = parsed_stage_fields.dataset_name
+    language = parsed_stage_fields.language
+    strict_levels = parsed_stage_fields.strict_levels
+    allow_near_item_match = parsed_stage_fields.allow_near_item_match
     try:
         near_match_tasks = parse_near_item_match_task_allowlist(
             request.form.get("near_match_tasks")
@@ -1649,9 +1738,7 @@ def api_survey_convert():
         except (ValueError, FileNotFoundError) as error:
             return jsonify({"error": str(error)}), 400
         current_project_path = str(project_root)
-    duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
-    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
-        duplicate_handling = "error"
+    duplicate_handling = parsed_stage_fields.duplicate_handling
     try:
         separator_option = normalize_separator_option(request.form.get("separator"))
     except ValueError as error:
@@ -1756,16 +1843,9 @@ def api_survey_convert():
             getattr(preflight_result, "near_match_candidates", []) or []
         )
         if preflight_near_match_candidates and not allow_near_item_match:
-            near_match_payload = {
-                "error": "near_item_match_confirmation_required",
-                "message": (
-                    "Exact matching left item-like columns unmapped. "
-                    "Safe near matches are available (minimal separator/zero-padding differences). "
-                    "Confirm to apply them."
-                ),
-                "near_match_candidates": preflight_near_match_candidates,
-                "near_match_count": len(preflight_near_match_candidates),
-            }
+            near_match_payload = _survey_workflow_stage_service.build_near_match_confirmation_payload(
+                near_match_candidates=preflight_near_match_candidates
+            )
             return (
                 jsonify(
                     _format_workflow_preparation_stale_response(
@@ -1786,12 +1866,10 @@ def api_survey_convert():
                 tasks=preflight_tasks,
                 issues=project_template_issues,
             )
-            template_gate_payload = {
-                "error": "project_template_completion_required",
-                "message": workflow_gate["message"],
-                "workflow_gate": workflow_gate,
-                "template_issues": project_template_issues,
-            }
+            template_gate_payload = _survey_workflow_stage_service.build_template_completion_required_payload(
+                workflow_gate=workflow_gate,
+                template_issues=project_template_issues,
+            )
             return (
                 jsonify(
                     _format_workflow_preparation_stale_response(
@@ -2070,7 +2148,14 @@ def api_survey_convert_validate():
     except FileNotFoundError as error:
         return jsonify({"error": str(error), "log": log_messages}), 400
 
-    survey_filter = (request.form.get("survey") or "").strip() or None
+    raw_survey_filter = (request.form.get("survey") or "").strip() or None
+    try:
+        selected_tasks = parse_selected_survey_tasks(
+            request.form.get("selected_tasks")
+        )
+        survey_filter = merge_selected_survey_filter(raw_survey_filter, selected_tasks)
+    except ValueError as error:
+        return jsonify({"error": str(error), "log": log_messages}), 400
     try:
         template_version_overrides = parse_template_version_overrides(
             request.form.get("template_versions")
@@ -2082,25 +2167,19 @@ def api_survey_convert_validate():
         project_path=current_project_path,
         template_version_overrides=template_version_overrides,
     )
-    id_column = (request.form.get("id_column") or "").strip() or None
-    session_column = (request.form.get("session_column") or "").strip() or None
-    session_override = (request.form.get("session") or "").strip() or None
-    run_column = (request.form.get("run_column") or "").strip() or None
-    sheet = (request.form.get("sheet") or "0").strip() or 0
-    unknown = (request.form.get("unknown") or "warn").strip() or "warn"
-    dataset_name = (request.form.get("dataset_name") or "").strip() or None
-    language = (request.form.get("language") or "").strip() or None
-    strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
-    strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
-    allow_near_item_match_raw = (
-        request.form.get("allow_near_item_match") or ""
-    ).strip().lower()
-    allow_near_item_match = allow_near_item_match_raw in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
+    parsed_stage_fields = _survey_workflow_stage_service.parse_stage_form_fields(
+        form=request.form
+    )
+    id_column = parsed_stage_fields.id_column
+    session_column = parsed_stage_fields.session_column
+    session_override = parsed_stage_fields.session_override
+    run_column = parsed_stage_fields.run_column
+    sheet = parsed_stage_fields.sheet
+    unknown = parsed_stage_fields.unknown
+    dataset_name = parsed_stage_fields.dataset_name
+    language = parsed_stage_fields.language
+    strict_levels = parsed_stage_fields.strict_levels
+    allow_near_item_match = parsed_stage_fields.allow_near_item_match
     try:
         near_match_tasks = parse_near_item_match_task_allowlist(
             request.form.get("near_match_tasks")
@@ -2123,9 +2202,7 @@ def api_survey_convert_validate():
         )
     save_to_project = request.form.get("save_to_project", "true") == "true"
     archive_sourcedata = request.form.get("archive_sourcedata") == "true"
-    duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
-    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
-        duplicate_handling = "error"
+    duplicate_handling = parsed_stage_fields.duplicate_handling
 
     if not save_to_project:
         return (
@@ -2256,7 +2333,10 @@ def api_survey_convert_validate():
             )
         except Exception as error:
             if _is_value_offset_confirmation_error(error):
-                add_log("Value offset confirmation is required before conversion can continue.", "warning")
+                add_log(
+                    "Out-of-range survey values need review before conversion can continue.",
+                    "warning",
+                )
                 return (
                     jsonify(
                         _format_workflow_preparation_stale_response(
@@ -2276,16 +2356,9 @@ def api_survey_convert_validate():
         )
         if preflight_near_match_candidates and not allow_near_item_match:
             add_log("Near item matches detected and awaiting confirmation", "warning")
-            near_match_payload = {
-                "error": "near_item_match_confirmation_required",
-                "message": (
-                    "Exact matching left item-like columns unmapped. "
-                    "Safe near matches are available (minimal separator/zero-padding differences). "
-                    "Confirm to apply them."
-                ),
-                "near_match_candidates": preflight_near_match_candidates,
-                "near_match_count": len(preflight_near_match_candidates),
-            }
+            near_match_payload = _survey_workflow_stage_service.build_near_match_confirmation_payload(
+                near_match_candidates=preflight_near_match_candidates
+            )
             return (
                 jsonify(
                     _format_workflow_preparation_stale_response(
@@ -2316,12 +2389,10 @@ def api_survey_convert_validate():
                     f"  ... and {len(project_template_issues) - 20} more template issue(s)",
                     "error",
                 )
-            template_gate_payload = {
-                "error": "project_template_completion_required",
-                "message": workflow_gate["message"],
-                "workflow_gate": workflow_gate,
-                "template_issues": project_template_issues,
-            }
+            template_gate_payload = _survey_workflow_stage_service.build_template_completion_required_payload(
+                workflow_gate=workflow_gate,
+                template_issues=project_template_issues,
+            )
             return (
                 jsonify(
                     _format_workflow_preparation_stale_response(
@@ -2439,7 +2510,7 @@ def api_survey_convert_validate():
         except Exception as conv_err:
             if _is_value_offset_confirmation_error(conv_err):
                 add_log(
-                    "Value offset confirmation is required before conversion can continue.",
+                    "Out-of-range survey values need review before conversion can continue.",
                     "warning",
                 )
                 return (
@@ -2639,6 +2710,12 @@ def api_survey_convert_validate():
                     dest.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(item, dest)
                     copied_output_paths.append(dest)
+
+            _cleanup_stale_tool_limesurvey_sidecars(
+                copied_output_paths=copied_output_paths,
+                source_suffix=suffix,
+                log_fn=add_log,
+            )
             add_log("Project updated successfully!", "success")
 
             if archive_sourcedata:

@@ -13,6 +13,26 @@ export function createSurveyValidationResultsController({
         return normalizedGroupMessage || fileMessage || 'Validation issue';
     }
 
+    function extractValidationIssueKind(message) {
+        const normalized = normalizeValidationIssueText(message).toLowerCase();
+        if (!normalized) {
+            return '';
+        }
+
+        const schemaErrorMarker = 'schema error:';
+        const schemaErrorIndex = normalized.indexOf(schemaErrorMarker);
+        if (schemaErrorIndex >= 0) {
+            return normalized.slice(schemaErrorIndex).trim();
+        }
+
+        const firstColonIndex = normalized.indexOf(':');
+        if (firstColonIndex >= 0 && firstColonIndex < normalized.length - 1) {
+            return normalized.slice(firstColonIndex + 1).trim();
+        }
+
+        return normalized;
+    }
+
     function renderValidationGroupFiles(group) {
         const files = Array.isArray(group && group.files) ? group.files : [];
         if (files.length === 0) {
@@ -22,9 +42,12 @@ export function createSurveyValidationResultsController({
         const normalizedGroupMessage = normalizeValidationIssueText(group && group.message);
         const issueMessages = files.map((file) => extractValidationIssueMessage(file, normalizedGroupMessage));
         const uniqueMessages = [...new Set(issueMessages.filter(Boolean))];
+        const issueKinds = issueMessages.map((message) => extractValidationIssueKind(message));
+        const uniqueIssueKinds = [...new Set(issueKinds.filter(Boolean))];
 
-        // Collapse repeated copies of the same issue across many files.
-        if (files.length > 1 && uniqueMessages.length <= 1) {
+        // Collapse repeated copies of the same issue across many files,
+        // including cases where the full file message differs only by path.
+        if (files.length > 1 && (uniqueMessages.length <= 1 || uniqueIssueKinds.length <= 1)) {
             const uniqueFiles = [...new Set(
                 files.map((file) => {
                     const filePath = String((file && file.file) || '').trim();
@@ -34,10 +57,11 @@ export function createSurveyValidationResultsController({
             const previewLimit = 8;
             const previewFiles = uniqueFiles.slice(0, previewLimit);
             const hiddenCount = uniqueFiles.length - previewFiles.length;
+            const issueKindPreview = uniqueIssueKinds.length === 1 ? uniqueIssueKinds[0] : '';
 
             return `
                 <details class="ms-2 mb-0 smaller">
-                    <summary class="text-muted">${uniqueFiles.length} files share this same issue</summary>
+                    <summary class="text-muted">${uniqueFiles.length} files share this same issue${issueKindPreview ? `: ${escapeHtml(issueKindPreview)}` : ''}</summary>
                     <div class="mt-2">
                         ${previewFiles.map((filePath) => `<div><code class="text-dark">${escapeHtml(filePath)}</code></div>`).join('')}
                         ${hiddenCount > 0 ? `<div class="text-muted mt-1">...and ${hiddenCount} more</div>` : ''}

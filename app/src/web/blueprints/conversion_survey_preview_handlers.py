@@ -7,6 +7,12 @@ from pathlib import Path
 from flask import current_app, jsonify, request, session
 from werkzeug.utils import secure_filename
 from src.participants_paths import participants_mapping_candidates
+from src.survey_workflow_service import (
+    SUPPORTED_SURVEY_INPUT_MESSAGE,
+    SUPPORTED_SURVEY_INPUT_SUFFIXES,
+    SUPPORTED_SURVEY_TABULAR_SUFFIXES,
+    SurveyWorkflowStageService,
+)
 
 try:
     import defusedxml.ElementTree as ET
@@ -54,19 +60,9 @@ def _get_effective_template_version_overrides(
         template_version_overrides=template_version_overrides,
     )
 
-_SUPPORTED_SURVEY_TABULAR_SUFFIXES = {
-    ".xlsx",
-    ".csv",
-    ".tsv",
-    ".sav",
-    ".rds",
-    ".rdata",
-    ".rda",
-}
-_SUPPORTED_SURVEY_INPUT_SUFFIXES = _SUPPORTED_SURVEY_TABULAR_SUFFIXES | {".lsa"}
-_SUPPORTED_SURVEY_INPUT_MESSAGE = (
-    "Supported formats: .xlsx, .lsa, .csv, .tsv, .sav, .rds, .rdata, .rda"
-)
+_SUPPORTED_SURVEY_TABULAR_SUFFIXES = SUPPORTED_SURVEY_TABULAR_SUFFIXES
+_SUPPORTED_SURVEY_INPUT_SUFFIXES = SUPPORTED_SURVEY_INPUT_SUFFIXES
+_SUPPORTED_SURVEY_INPUT_MESSAGE = SUPPORTED_SURVEY_INPUT_MESSAGE
 
 
 class _LocalPathUpload:
@@ -146,6 +142,15 @@ def _collect_task_manual_review_payloads(
 ) -> dict[str, dict[str, object]]:
     payloads: dict[str, dict[str, object]] = {}
 
+    # Per-task validation is only needed when a specific out-of-bounds
+    # exception contract is configured. Otherwise this would duplicate full
+    # validation runs with no actionable manual-review payloads.
+    if not (
+        isinstance(survey_value_out_of_bounds_error_cls, type)
+        and issubclass(survey_value_out_of_bounds_error_cls, BaseException)
+    ):
+        return payloads
+
     for task in sorted({str(task).strip().lower() for task in tasks if str(task).strip()}):
         try:
             validate_task_fn(task)
@@ -215,8 +220,9 @@ def _build_survey_task_summaries(
 
 
 def _is_prepared_workflow_request() -> bool:
-    prepared_raw = (request.form.get("prepared_workflow") or "").strip().lower()
-    return prepared_raw in {"1", "true", "yes", "on"}
+    return SurveyWorkflowStageService.parse_prepared_workflow_flag(
+        request.form.get("prepared_workflow")
+    )
 
 
 def _format_workflow_preparation_stale_response(
@@ -224,35 +230,11 @@ def _format_workflow_preparation_stale_response(
     *,
     log_messages: list[dict[str, str]] | None = None,
 ) -> dict[str, object]:
-    normalized_payload = dict(payload or {})
-    blocking_error = str(normalized_payload.get("error") or "").strip()
-
-    if log_messages is not None:
-        normalized_payload["log"] = log_messages
-
-    if not _is_prepared_workflow_request() or not blocking_error:
-        return normalized_payload
-
-    message = str(normalized_payload.get("message") or "").strip()
-    if not message:
-        message = "Survey setup changed after preparation."
-
-    if (
-        blocking_error
-        in {
-            "near_item_match_confirmation_required",
-            "value_offset_manual_review_required",
-        }
-        and "Run Preview again" not in message
-    ):
-        message = (
-            f"{message} Run Preview again to refresh setup before continuing."
-        )
-
-    normalized_payload["blocking_error"] = blocking_error
-    normalized_payload["error"] = "workflow_preparation_stale"
-    normalized_payload["message"] = message
-    return normalized_payload
+    return SurveyWorkflowStageService.format_workflow_preparation_stale_response(
+        payload=payload,
+        prepared_workflow=_is_prepared_workflow_request(),
+        log_messages=log_messages,
+    )
 
 
 def handle_api_survey_languages(participant_json_candidates):
@@ -395,10 +377,10 @@ def handle_api_survey_convert_preview(
     resolve_effective_library_path,
     run_survey_with_official_fallback,
     validate_project_templates_for_tasks,
-    build_template_completion_gate,
     format_unmatched_groups_response,
     id_column_not_detected_error_cls,
     unmatched_groups_error_cls,
+    build_template_completion_gate=None,
     survey_value_out_of_bounds_error_cls=None,
     format_value_offset_confirmation_response=None,
     force_validate_preview: bool = False,
@@ -652,16 +634,11 @@ def handle_api_survey_convert_preview(
         )
         near_match_applied = bool(getattr(result, "near_match_applied", False))
         if near_match_candidates and not allow_near_item_match:
-            near_match_payload = {
-                "error": "near_item_match_confirmation_required",
-                "message": (
-                    "Exact matching left item-like columns unmapped. "
-                    "Safe near matches are available (minimal separator/zero-padding differences). "
-                    "Confirm to apply them."
-                ),
-                "near_match_candidates": near_match_candidates,
-                "near_match_count": len(near_match_candidates),
-            }
+            near_match_payload = (
+                SurveyWorkflowStageService.build_near_match_confirmation_payload(
+                    near_match_candidates=near_match_candidates
+                )
+            )
             return (
                 jsonify(
                     _format_workflow_preparation_stale_response(
@@ -682,10 +659,25 @@ def handle_api_survey_convert_preview(
         workflow_gate = None
         task_manual_review_payloads: dict[str, dict[str, object]] = {}
         if project_template_issues:
-            workflow_gate = build_template_completion_gate(
-                tasks=list(getattr(result, "tasks_included", []) or []),
-                issues=project_template_issues,
-            )
+            if callable(build_template_completion_gate):
+                workflow_gate = build_template_completion_gate(
+                    tasks=list(getattr(result, "tasks_included", []) or []),
+                    issues=project_template_issues,
+                )
+            else:
+                task_list = sorted(
+                    {
+                        str(task).strip().lower()
+                        for task in (getattr(result, "tasks_included", []) or [])
+                        if str(task).strip()
+                    }
+                )
+                workflow_gate = {
+                    "blocked": True,
+                    "reason": "project_template_completion_required",
+                    "tasks": task_list,
+                    "issue_count": len(project_template_issues),
+                }
 
         if validate_preview:
             validate_root = tmp_dir_path / "rawdata_validate"
