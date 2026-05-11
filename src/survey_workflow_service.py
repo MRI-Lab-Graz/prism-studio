@@ -2,7 +2,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, Mapping
+
+
+_BOOLEAN_TRUTHY_VALUES = {"1", "true", "yes", "on"}
+_VALID_DUPLICATE_HANDLING = {"error", "keep_first", "keep_last", "sessions"}
+_NEAR_MATCH_CONFIRMATION_MESSAGE = (
+    "Exact matching left item-like columns unmapped. "
+    "Safe near matches are available (minimal separator/zero-padding differences). "
+    "Confirm to apply them."
+)
 
 
 @dataclass(frozen=True)
@@ -40,9 +49,86 @@ class SurveyWorkflowStageOptions:
     task_value_offsets: dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class SurveyWorkflowStageFormFields:
+    id_column: str | None
+    session_column: str | None
+    run_column: str | None
+    session_override: str | None
+    sheet: str | int
+    unknown: str
+    dataset_name: str | None
+    language: str | None
+    strict_levels: bool
+    allow_near_item_match: bool
+    duplicate_handling: str
+
+
 class SurveyWorkflowStageService:
     def __init__(self, *, tabular_suffixes: Iterable[str]):
         self._tabular_suffixes = {str(value).lower() for value in tabular_suffixes}
+
+    @staticmethod
+    def _parse_optional_string(value: Any) -> str | None:
+        parsed = str(value or "").strip()
+        return parsed or None
+
+    def parse_stage_form_fields(
+        self,
+        *,
+        form: Mapping[str, Any],
+    ) -> SurveyWorkflowStageFormFields:
+        strict_levels_raw = str(form.get("strict_levels") or "").strip().lower()
+        allow_near_item_match_raw = (
+            str(form.get("allow_near_item_match") or "").strip().lower()
+        )
+        duplicate_handling = str(form.get("duplicate_handling") or "error").strip()
+        if duplicate_handling not in _VALID_DUPLICATE_HANDLING:
+            duplicate_handling = "error"
+
+        sheet = str(form.get("sheet") or "0").strip() or 0
+        unknown = str(form.get("unknown") or "warn").strip() or "warn"
+
+        return SurveyWorkflowStageFormFields(
+            id_column=self._parse_optional_string(form.get("id_column")),
+            session_column=self._parse_optional_string(form.get("session_column")),
+            run_column=self._parse_optional_string(form.get("run_column")),
+            session_override=self._parse_optional_string(form.get("session")),
+            sheet=sheet,
+            unknown=unknown,
+            dataset_name=self._parse_optional_string(form.get("dataset_name")),
+            language=self._parse_optional_string(form.get("language")),
+            strict_levels=strict_levels_raw in _BOOLEAN_TRUTHY_VALUES,
+            allow_near_item_match=allow_near_item_match_raw
+            in _BOOLEAN_TRUTHY_VALUES,
+            duplicate_handling=duplicate_handling,
+        )
+
+    @staticmethod
+    def build_near_match_confirmation_payload(
+        *,
+        near_match_candidates: list[dict[str, Any]] | None,
+    ) -> dict[str, Any]:
+        candidates = list(near_match_candidates or [])
+        return {
+            "error": "near_item_match_confirmation_required",
+            "message": _NEAR_MATCH_CONFIRMATION_MESSAGE,
+            "near_match_candidates": candidates,
+            "near_match_count": len(candidates),
+        }
+
+    @staticmethod
+    def build_template_completion_required_payload(
+        *,
+        workflow_gate: Mapping[str, Any],
+        template_issues: list[dict[str, Any]] | None,
+    ) -> dict[str, Any]:
+        return {
+            "error": "project_template_completion_required",
+            "message": str(workflow_gate.get("message") or "").strip(),
+            "workflow_gate": dict(workflow_gate),
+            "template_issues": list(template_issues or []),
+        }
 
     def resolve_effective_survey_dir(
         self,

@@ -64,6 +64,7 @@ MissingIdMappingError: Any = None
 UnmatchedGroupsError: Any = None
 SurveyValueOutOfBoundsError: Any = None
 _resolve_effective_template_version_overrides: Any = None
+_normalize_template_version_overrides_for_requests: Any = None
 sync_project_survey_recipe_offsets: Any = None
 _NON_ITEM_TOPLEVEL_KEYS: set[str] = set()
 normalize_paper_software_platform: Any = None
@@ -110,9 +111,13 @@ except ImportError:
 
 try:
     from src.converters.survey import (
+        _normalize_template_version_overrides as _survey_normalize_template_version_overrides,
         _resolve_effective_template_version_overrides as _survey_resolve_effective_template_version_overrides,
     )
 
+    _normalize_template_version_overrides_for_requests = (
+        _survey_normalize_template_version_overrides
+    )
     _resolve_effective_template_version_overrides = (
         _survey_resolve_effective_template_version_overrides
     )
@@ -152,11 +157,20 @@ def _get_effective_template_version_overrides(
     template_version_overrides: object,
 ):
     if _resolve_effective_template_version_overrides is None:
-        return template_version_overrides
-    return _resolve_effective_template_version_overrides(
-        project_path=project_path,
-        template_version_overrides=template_version_overrides,
-    )
+        effective_overrides = template_version_overrides
+    else:
+        effective_overrides = _resolve_effective_template_version_overrides(
+            project_path=project_path,
+            template_version_overrides=template_version_overrides,
+        )
+
+    if callable(_normalize_template_version_overrides_for_requests):
+        normalized_overrides = _normalize_template_version_overrides_for_requests(
+            effective_overrides
+        )
+        if normalized_overrides:
+            return normalized_overrides
+    return effective_overrides
 
 
 def _iter_session_registration_values(
@@ -961,10 +975,17 @@ def api_survey_prepare_workflow():
 
 def api_survey_workflow_command():
     """Dispatch survey workflow commands through one adapter endpoint."""
+    json_payload = request.get_json(silent=True)
+    if not isinstance(json_payload, dict):
+        json_payload = {}
+
     raw_command = (
         request.form.get("workflow_command")
         or request.form.get("command")
         or request.form.get("mode")
+        or json_payload.get("workflow_command")
+        or json_payload.get("command")
+        or json_payload.get("mode")
         or ""
     )
     normalized_command = str(raw_command).strip().lower()
@@ -1250,12 +1271,13 @@ def api_survey_check_project_templates():
     uploaded_file, upload_error = _resolve_uploaded_or_source_file(
         field_names=("excel", "file")
     )
-    id_column = (request.form.get("id_column") or "").strip() or None
-    session_column = (request.form.get("session_column") or "").strip() or None
-    sheet = (request.form.get("sheet") or "0").strip() or 0
-    duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
-    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
-        duplicate_handling = "error"
+    parsed_stage_fields = _survey_workflow_stage_service.parse_stage_form_fields(
+        form=request.form
+    )
+    id_column = parsed_stage_fields.id_column
+    session_column = parsed_stage_fields.session_column
+    sheet = parsed_stage_fields.sheet
+    duplicate_handling = parsed_stage_fields.duplicate_handling
     try:
         separator_option = normalize_separator_option(request.form.get("separator"))
     except ValueError as error:
@@ -1485,14 +1507,15 @@ def api_survey_detect_version_context():
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
 
-    id_column = (request.form.get("id_column") or "").strip() or None
-    session_column = (request.form.get("session_column") or "").strip() or None
-    run_column = (request.form.get("run_column") or "").strip() or None
-    session_override = (request.form.get("session") or "").strip() or None
-    sheet = (request.form.get("sheet") or "0").strip() or 0
-    duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
-    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
-        duplicate_handling = "error"
+    parsed_stage_fields = _survey_workflow_stage_service.parse_stage_form_fields(
+        form=request.form
+    )
+    id_column = parsed_stage_fields.id_column
+    session_column = parsed_stage_fields.session_column
+    run_column = parsed_stage_fields.run_column
+    session_override = parsed_stage_fields.session_override
+    sheet = parsed_stage_fields.sheet
+    duplicate_handling = parsed_stage_fields.duplicate_handling
     try:
         separator_option = normalize_separator_option(request.form.get("separator"))
     except ValueError as error:
@@ -1656,25 +1679,19 @@ def api_survey_convert():
         project_path=current_project_path,
         template_version_overrides=template_version_overrides,
     )
-    id_column = (request.form.get("id_column") or "").strip() or None
-    session_column = (request.form.get("session_column") or "").strip() or None
-    session_override = (request.form.get("session") or "").strip() or None
-    run_column = (request.form.get("run_column") or "").strip() or None
-    sheet = (request.form.get("sheet") or "0").strip() or 0
-    unknown = (request.form.get("unknown") or "warn").strip() or "warn"
-    dataset_name = (request.form.get("dataset_name") or "").strip() or None
-    language = (request.form.get("language") or "").strip() or None
-    strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
-    strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
-    allow_near_item_match_raw = (
-        request.form.get("allow_near_item_match") or ""
-    ).strip().lower()
-    allow_near_item_match = allow_near_item_match_raw in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
+    parsed_stage_fields = _survey_workflow_stage_service.parse_stage_form_fields(
+        form=request.form
+    )
+    id_column = parsed_stage_fields.id_column
+    session_column = parsed_stage_fields.session_column
+    session_override = parsed_stage_fields.session_override
+    run_column = parsed_stage_fields.run_column
+    sheet = parsed_stage_fields.sheet
+    unknown = parsed_stage_fields.unknown
+    dataset_name = parsed_stage_fields.dataset_name
+    language = parsed_stage_fields.language
+    strict_levels = parsed_stage_fields.strict_levels
+    allow_near_item_match = parsed_stage_fields.allow_near_item_match
     try:
         near_match_tasks = parse_near_item_match_task_allowlist(
             request.form.get("near_match_tasks")
@@ -1701,9 +1718,7 @@ def api_survey_convert():
         except (ValueError, FileNotFoundError) as error:
             return jsonify({"error": str(error)}), 400
         current_project_path = str(project_root)
-    duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
-    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
-        duplicate_handling = "error"
+    duplicate_handling = parsed_stage_fields.duplicate_handling
     try:
         separator_option = normalize_separator_option(request.form.get("separator"))
     except ValueError as error:
@@ -1808,16 +1823,9 @@ def api_survey_convert():
             getattr(preflight_result, "near_match_candidates", []) or []
         )
         if preflight_near_match_candidates and not allow_near_item_match:
-            near_match_payload = {
-                "error": "near_item_match_confirmation_required",
-                "message": (
-                    "Exact matching left item-like columns unmapped. "
-                    "Safe near matches are available (minimal separator/zero-padding differences). "
-                    "Confirm to apply them."
-                ),
-                "near_match_candidates": preflight_near_match_candidates,
-                "near_match_count": len(preflight_near_match_candidates),
-            }
+            near_match_payload = _survey_workflow_stage_service.build_near_match_confirmation_payload(
+                near_match_candidates=preflight_near_match_candidates
+            )
             return (
                 jsonify(
                     _format_workflow_preparation_stale_response(
@@ -1838,12 +1846,10 @@ def api_survey_convert():
                 tasks=preflight_tasks,
                 issues=project_template_issues,
             )
-            template_gate_payload = {
-                "error": "project_template_completion_required",
-                "message": workflow_gate["message"],
-                "workflow_gate": workflow_gate,
-                "template_issues": project_template_issues,
-            }
+            template_gate_payload = _survey_workflow_stage_service.build_template_completion_required_payload(
+                workflow_gate=workflow_gate,
+                template_issues=project_template_issues,
+            )
             return (
                 jsonify(
                     _format_workflow_preparation_stale_response(
@@ -2141,25 +2147,19 @@ def api_survey_convert_validate():
         project_path=current_project_path,
         template_version_overrides=template_version_overrides,
     )
-    id_column = (request.form.get("id_column") or "").strip() or None
-    session_column = (request.form.get("session_column") or "").strip() or None
-    session_override = (request.form.get("session") or "").strip() or None
-    run_column = (request.form.get("run_column") or "").strip() or None
-    sheet = (request.form.get("sheet") or "0").strip() or 0
-    unknown = (request.form.get("unknown") or "warn").strip() or "warn"
-    dataset_name = (request.form.get("dataset_name") or "").strip() or None
-    language = (request.form.get("language") or "").strip() or None
-    strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
-    strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
-    allow_near_item_match_raw = (
-        request.form.get("allow_near_item_match") or ""
-    ).strip().lower()
-    allow_near_item_match = allow_near_item_match_raw in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
+    parsed_stage_fields = _survey_workflow_stage_service.parse_stage_form_fields(
+        form=request.form
+    )
+    id_column = parsed_stage_fields.id_column
+    session_column = parsed_stage_fields.session_column
+    session_override = parsed_stage_fields.session_override
+    run_column = parsed_stage_fields.run_column
+    sheet = parsed_stage_fields.sheet
+    unknown = parsed_stage_fields.unknown
+    dataset_name = parsed_stage_fields.dataset_name
+    language = parsed_stage_fields.language
+    strict_levels = parsed_stage_fields.strict_levels
+    allow_near_item_match = parsed_stage_fields.allow_near_item_match
     try:
         near_match_tasks = parse_near_item_match_task_allowlist(
             request.form.get("near_match_tasks")
@@ -2182,9 +2182,7 @@ def api_survey_convert_validate():
         )
     save_to_project = request.form.get("save_to_project", "true") == "true"
     archive_sourcedata = request.form.get("archive_sourcedata") == "true"
-    duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
-    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
-        duplicate_handling = "error"
+    duplicate_handling = parsed_stage_fields.duplicate_handling
 
     if not save_to_project:
         return (
@@ -2338,16 +2336,9 @@ def api_survey_convert_validate():
         )
         if preflight_near_match_candidates and not allow_near_item_match:
             add_log("Near item matches detected and awaiting confirmation", "warning")
-            near_match_payload = {
-                "error": "near_item_match_confirmation_required",
-                "message": (
-                    "Exact matching left item-like columns unmapped. "
-                    "Safe near matches are available (minimal separator/zero-padding differences). "
-                    "Confirm to apply them."
-                ),
-                "near_match_candidates": preflight_near_match_candidates,
-                "near_match_count": len(preflight_near_match_candidates),
-            }
+            near_match_payload = _survey_workflow_stage_service.build_near_match_confirmation_payload(
+                near_match_candidates=preflight_near_match_candidates
+            )
             return (
                 jsonify(
                     _format_workflow_preparation_stale_response(
@@ -2378,12 +2369,10 @@ def api_survey_convert_validate():
                     f"  ... and {len(project_template_issues) - 20} more template issue(s)",
                     "error",
                 )
-            template_gate_payload = {
-                "error": "project_template_completion_required",
-                "message": workflow_gate["message"],
-                "workflow_gate": workflow_gate,
-                "template_issues": project_template_issues,
-            }
+            template_gate_payload = _survey_workflow_stage_service.build_template_completion_required_payload(
+                workflow_gate=workflow_gate,
+                template_issues=project_template_issues,
+            )
             return (
                 jsonify(
                     _format_workflow_preparation_stale_response(

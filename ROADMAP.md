@@ -181,6 +181,55 @@ into backend contracts.
     `tests/test_backend_monitoring.py` for the new convert-results controller,
     stale survey UI cleanup, unified workflow-command route dispatch, and
     backend monitoring command rendering.
+  - Extended workflow-command adapter regression coverage in
+    `tests/test_web_blueprints_conversion.py` for alias value/field dispatch
+    (`setup`, `dry_run`, `validate`, plus `command`/`mode` payload aliases)
+    so frontend/backend command consolidation stays stable.
+  - Added template-version override shape-preservation regression coverage in
+    `tests/test_survey_template_version_persistence.py` to pin request payload
+    passthrough behavior when project-level selections are absent.
+  - Hardened unified workflow-command parsing in
+    `app/src/web/blueprints/conversion_survey_handlers.py` so
+    `/api/survey-workflow-command` now also accepts JSON payload aliases
+    (`workflow_command` / `command` / `mode`) while preserving existing form
+    precedence.
+  - Extended regression coverage in `tests/test_web_blueprints_conversion.py`
+    for JSON workflow-command dispatch and form-over-JSON precedence, and in
+    `tests/test_survey_preview_regressions.py` to pin non-redundant preview
+    validation execution (single dry-run preview + single full validation pass)
+    when no manual-review exception contract is configured.
+  - Lessons learned: workflow command adapters should parse both multipart and
+    JSON request shapes to avoid transport-coupled regressions; preview
+    validation coverage should explicitly assert run-count semantics for
+    multi-task results to catch accidental per-task reruns early.
+  - Extracted shared survey stage-form parsing into backend service
+    `src/survey_workflow_service.py` (`parse_stage_form_fields`) and switched
+    both `api_survey_convert` and `api_survey_convert_validate` in
+    `app/src/web/blueprints/conversion_survey_handlers.py` to delegate
+    id/session/run/sheet/unknown/name/language/strict-levels/near-match/duplicate
+    parsing through that canonical backend helper.
+  - Added focused backend parser coverage in
+    `tests/test_survey_workflow_service.py` for normalization/default/fallback
+    behavior, and revalidated endpoint compatibility in
+    `tests/test_web_blueprints_conversion.py`.
+  - Coverage checkpoint: `./rtk coverage` now passes at 81.03%
+    (1986 passed, 3 skipped), clearing the interim 80% gate with margin.
+  - Lessons learned: request-shape extraction is low-risk when endpoint-specific
+    save/archive semantics stay in adapters while common stage parsing is
+    centralized in backend service helpers.
+  - Extended `parse_stage_form_fields` backend reuse to
+    `api_survey_check_project_templates` and
+    `api_survey_detect_version_context` in
+    `app/src/web/blueprints/conversion_survey_handlers.py`, removing remaining
+    duplicate id/session/run/sheet/duplicate normalization blocks from these
+    adapter routes.
+  - Revalidated detect/check-project-template workflow contracts with focused
+    endpoint tests in `tests/test_web_blueprints_conversion.py` and
+    `tests/test_converter_project_context_helpers.py`; full gate remains
+    stable at 81.03% coverage.
+  - Lessons learned: small parser reuse increments across adjacent routes keep
+    behavior stable while making backend-owned normalization easier to expand
+    into preview/prepare paths next.
     import/instantiation/delegation and to keep summary-specific strings/DOM
     bindings (`Out-of-range share`, `data-survey-open-advanced`) owned by the
     extracted module.
@@ -363,6 +412,33 @@ into backend contracts.
   - Extended wiring regression checks in
     `tests/test_converter_workflow_wiring.py` for shared-selection mode hooks
     and updated wizard template class wiring.
+  - Added RTK-first coverage workflow tooling:
+    - `rtk coverage` now runs `pytest` with `--cov=src`,
+      `--cov-report=term-missing`, `--cov-report=xml`, and default
+      `--cov-fail-under=80` (interim target).
+    - `rtk codecov` now forwards to `codecovcli` for optional coverage uploads.
+    - Added `codecov-cli` to development dependencies and documented new RTK
+      coverage/codecov commands in `README.md` and `docs/CLI_REFERENCE.md`.
+  - Added coverage-scope excludes in `pyproject.toml` for non-core ops scripts
+    (`maintenance/*`, `bids_file_deleter.py`, `runtime_dependencies.py`) to
+    keep the interim gate focused on actively maintained runtime surfaces.
+  - Verified interim coverage target: `./rtk coverage` reports **80.96%** total
+    coverage for `src/` after scope alignment (above interim 80% target).
+  - Cleared packaged-web regression failures in
+    `tests/test_packaged_web_optional_blueprints.py` by guarding
+    `prism_static_asset_token` defaults in `app/templates/base.html`.
+  - Cleared the remaining full-suite `rtk coverage` blockers by fixing:
+    - multiversion context-map edge cases in
+      `src/converters/survey.py` (single-session override context retention
+      and run-count derivation from detected run values),
+    - direct-call signature compatibility and manual-review validation guarding
+      in
+      `app/src/web/blueprints/conversion_survey_preview_handlers.py`,
+    - survey schema acceptance of empty `Technical.SoftwarePlatform` placeholders
+      in `app/schemas/v0.2/survey.schema.json` and
+      `app/schemas/stable/survey.schema.json`.
+  - Revalidated end-to-end: `./rtk coverage` now exits cleanly with
+    **1978 passed, 3 skipped** at **80.96%** coverage.
 
   **Assessment update (2026-05-10):**
   - Confirmed stale DOM-guarded branches still exist in `survey-convert.js`
@@ -385,6 +461,8 @@ into backend contracts.
   (prepare, preview, convert, participant-metadata).
 - Introduce one backend workflow command endpoint for preview/convert state
   transitions so the frontend becomes a thin state renderer.
+- Raise and hold repository coverage above 90% (`src/`) using `rtk coverage`,
+  then upload `coverage.xml` via `rtk codecov upload-process` in CI.
 
 **Lessons learned:**
 - Backend-first merge contracts reduce frontend state drift and avoid duplicate
@@ -483,6 +561,13 @@ into backend contracts.
 - Multi-context version selection should default to a single shared choice for
   ease of use, then allow explicit per-session/run overrides only when users
   need longitudinal scale differences.
+- Coverage goals are easiest to enforce when wired into one canonical command
+  (`rtk coverage`) with a fail-under gate and CI upload path, instead of ad hoc
+  local pytest flags.
+- Per-task preview validation probes should run only when an explicit
+  out-of-bounds exception contract is configured; otherwise preview workflows
+  can duplicate conversion passes and drift call-count behavior in regression
+  tests.
 
 ## Priority 1.34 — RTK command wrapper for repo workflows ✅ DONE
 

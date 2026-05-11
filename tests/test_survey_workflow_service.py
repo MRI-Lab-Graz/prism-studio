@@ -69,3 +69,100 @@ def test_run_stage_copies_dict_template_version_overrides() -> None:
 
     assert result["template_version_overrides"] == {"tsdz": "v1"}
     assert result["template_version_overrides"] is not overrides
+
+
+def test_parse_stage_form_fields_normalizes_values() -> None:
+    service = SurveyWorkflowStageService(tabular_suffixes={".csv"})
+
+    parsed = service.parse_stage_form_fields(
+        form={
+            "id_column": " participant_id ",
+            "session_column": " session ",
+            "run_column": " run ",
+            "session": " all ",
+            "sheet": " 2 ",
+            "unknown": " keep ",
+            "dataset_name": " study dataset ",
+            "language": " de ",
+            "strict_levels": "YES",
+            "allow_near_item_match": "on",
+            "duplicate_handling": "sessions",
+        }
+    )
+
+    assert parsed.id_column == "participant_id"
+    assert parsed.session_column == "session"
+    assert parsed.run_column == "run"
+    assert parsed.session_override == "all"
+    assert parsed.sheet == "2"
+    assert parsed.unknown == "keep"
+    assert parsed.dataset_name == "study dataset"
+    assert parsed.language == "de"
+    assert parsed.strict_levels is True
+    assert parsed.allow_near_item_match is True
+    assert parsed.duplicate_handling == "sessions"
+
+
+def test_parse_stage_form_fields_applies_defaults_and_duplicate_fallback() -> None:
+    service = SurveyWorkflowStageService(tabular_suffixes={".csv"})
+
+    parsed = service.parse_stage_form_fields(
+        form={
+            "id_column": " ",
+            "session_column": "",
+            "run_column": None,
+            "session": " ",
+            "sheet": " ",
+            "unknown": " ",
+            "dataset_name": " ",
+            "language": " ",
+            "strict_levels": "0",
+            "allow_near_item_match": "false",
+            "duplicate_handling": "invalid",
+        }
+    )
+
+    assert parsed.id_column is None
+    assert parsed.session_column is None
+    assert parsed.run_column is None
+    assert parsed.session_override is None
+    assert parsed.sheet == 0
+    assert parsed.unknown == "warn"
+    assert parsed.dataset_name is None
+    assert parsed.language is None
+    assert parsed.strict_levels is False
+    assert parsed.allow_near_item_match is False
+    assert parsed.duplicate_handling == "error"
+
+
+def test_build_near_match_confirmation_payload() -> None:
+    payload = SurveyWorkflowStageService.build_near_match_confirmation_payload(
+        near_match_candidates=[{"task": "pss"}, {"task": "ads"}],
+    )
+
+    assert payload["error"] == "near_item_match_confirmation_required"
+    assert "Exact matching left item-like columns unmapped." in payload["message"]
+    assert payload["near_match_candidates"] == [{"task": "pss"}, {"task": "ads"}]
+    assert payload["near_match_count"] == 2
+
+
+def test_build_template_completion_required_payload() -> None:
+    payload = SurveyWorkflowStageService.build_template_completion_required_payload(
+        workflow_gate={
+            "blocked": True,
+            "message": "Complete project templates first.",
+            "tasks": ["pss"],
+        },
+        template_issues=[{"file": "survey-pss.json", "message": "missing"}],
+    )
+
+    assert payload["error"] == "project_template_completion_required"
+    assert payload["message"] == "Complete project templates first."
+    assert payload["workflow_gate"] == {
+        "blocked": True,
+        "message": "Complete project templates first.",
+        "tasks": ["pss"],
+    }
+    assert payload["template_issues"] == [
+        {"file": "survey-pss.json", "message": "missing"}
+    ]

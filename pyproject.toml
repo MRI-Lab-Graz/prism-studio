@@ -13,6 +13,9 @@ omit = [
     "vendor/*",
     ".venv/*",
     ".venv_intel/*",
+    "maintenance/*",
+    "bids_file_deleter.py",
+    "runtime_dependencies.py",
 ]
 
 [tool.coverage.report]
