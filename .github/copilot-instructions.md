@@ -24,3 +24,15 @@ PRISM is a hybrid dataset validation tool for psychological experiments. It enfo
 - **Cross-Platform**: Always use `src.cross_platform` utilities for path handling.
 - **System Files**: Always filter `.DS_Store`, `Thumbs.db` using `system_files.filter_system_files`.
 
+## Autonomous Execution Mode (Default)
+- Continue end-to-end without asking for confirmation between safe incremental steps.
+- After each implementation slice: run focused tests, update roadmap checkpoints, and continue.
+- Treat "continue", "proceed", and "keep going" as standing approval.
+- Ask only when genuinely blocked:
+  - destructive action risk
+  - missing credentials or secrets
+  - ambiguous product choice with multiple valid outcomes
+  - repeated failed repair attempts (for example 3 loops)
+- Prefer smallest safe changes with immediate validation.
+- If tests fail, attempt automatic self-repair before asking.
+

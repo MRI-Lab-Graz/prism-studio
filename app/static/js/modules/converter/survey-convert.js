@@ -12,6 +12,9 @@ import { createSurveyWorkflowConvertController } from './survey-workflow-convert
 import { createSurveyWorkflowProgressController } from './survey-workflow-progress.js';
 import { createSurveySourcedataQuickSelectController } from './survey-sourcedata-quick-select.js';
 import { createSurveyTemplateResultsController } from './survey-template-results.js';
+import { createSurveyConversionSummaryController } from './survey-conversion-summary.js';
+import { createSurveyConversionLogController } from './survey-conversion-log.js';
+import { createSurveyValidationResultsController } from './survey-validation-results.js';
 import { createSurveyValueOffsetEditorController } from './survey-value-offset-editor.js';
 import {
     collectSuggestedValueOffsets,
@@ -151,6 +154,7 @@ export function initSurveyConvert(elements) {
 
     const surveyWorkflowTemplateCheckController = createSurveyWorkflowTemplateCheckController({
         checkProjectTemplatesBtn,
+        surveyVersionWizardApplyBtn,
         convertError,
         conversionLogContainer,
         conversionLogBody,
@@ -170,6 +174,17 @@ export function initSurveyConvert(elements) {
         buildVersionWizard,
         hideVersionWizard,
         updateConvertBtn,
+        hasMultiVersionWizardTasks,
+        hasCompleteVersionWizardSelections,
+        getCurrentTemplateVersionSelectionSignature,
+        setAppliedTemplateVersionSelectionSignature: (value) => {
+            appliedTemplateVersionSelectionSignature = String(value || '');
+        },
+        setVersionWizardRetryGateMode: (value) => {
+            versionWizardRetryGateMode = value;
+        },
+        getTemplateWorkflowGate: () => templateWorkflowGate,
+        updateVersionWizardActionState,
     });
 
     function getSelectedSurveyFile() {
@@ -309,6 +324,13 @@ export function initSurveyConvert(elements) {
             selectedTasks: selectedTasks.length > 0 ? selectedTasks : [...availableTasks]
         };
         renderTaskValueOffsetEditor();
+    }
+
+    function setSurveyPreviewSelectedTasks(selectedTasks) {
+        surveyPreviewSelectionState = {
+            ...surveyPreviewSelectionState,
+            selectedTasks: Array.isArray(selectedTasks) ? selectedTasks : []
+        };
     }
 
     function hasFreshSurveyPreviewSelectionState() {
@@ -849,6 +871,10 @@ export function initSurveyConvert(elements) {
 
     function clearManualValueOffsetAdvice() {
         surveyValueOffsetEditorController.clearManualValueOffsetAdvice();
+    }
+
+    function handleApplyTaskValueOffsetsClick() {
+        surveyValueOffsetEditorController.handleApplyTaskValueOffsetsClick();
     }
 
     function ensureSurveyAdvancedOptionsVisible() {
@@ -1849,7 +1875,9 @@ export function initSurveyConvert(elements) {
         convertValueOffsetsStatus,
         convertValueOffsetAdvice,
         convertError,
+        convertInfo,
         isAdvancedOptionsEnabled,
+        getTemplateWorkflowGate: () => templateWorkflowGate,
         getIsConvertRunning: () => isConvertRunning,
         getIsPreviewRunning: () => isPreviewRunning,
         getAppliedTaskValueOffsetSelectionSignature: () => appliedTaskValueOffsetSelectionSignature,
@@ -2808,378 +2836,23 @@ export function initSurveyConvert(elements) {
 
     surveyWorkflowTemplateCheckController.initialize();
 
-    surveyVersionWizardApplyBtn?.addEventListener('click', function() {
-        if (!hasMultiVersionWizardTasks() || !hasCompleteVersionWizardSelections()) {
-            updateVersionWizardActionState();
-            return;
-        }
-
-        appliedTemplateVersionSelectionSignature = getCurrentTemplateVersionSelectionSignature();
-        versionWizardRetryGateMode = null;
-
-        const hasBlockedTemplateGate = Boolean(templateWorkflowGate && templateWorkflowGate.blocked);
-        const infoText = String(convertInfo?.textContent || '').trim().toLowerCase();
-        if (!hasBlockedTemplateGate && (infoText.includes('multi-version') || infoText.includes('questionnaire version'))) {
-            convertInfo.classList.add('d-none');
-            convertInfo.textContent = '';
-        }
-
-        updateVersionWizardActionState();
-        updateConvertBtn();
-    });
-
     convertApplyValueOffsetsBtn?.addEventListener('click', function() {
-        if (!isAdvancedOptionsEnabled()) {
-            updateTaskValueOffsetApplyState();
-            return;
-        }
-
-        if (hasIncompleteTaskValueOffsetRows()) {
-            convertInfo.textContent = 'Complete each offset row with a task and numeric value, then click Apply offsets.';
-            convertInfo.classList.remove('d-none');
-            focusTaskValueOffsetEditor();
-            updateTaskValueOffsetApplyState();
-            updateConvertBtn();
-            return;
-        }
-
-        const currentSignature = getCurrentTaskValueOffsetSelectionSignature();
-        if (!currentSignature) {
-            appliedTaskValueOffsetSelectionSignature = '';
-            updateTaskValueOffsetApplyState();
-            updateConvertBtn();
-            return;
-        }
-
-        appliedTaskValueOffsetSelectionSignature = currentSignature;
-
-        const hasBlockedTemplateGate = Boolean(templateWorkflowGate && templateWorkflowGate.blocked);
-        const infoText = String(convertInfo?.textContent || '').trim().toLowerCase();
-        if (!hasBlockedTemplateGate && infoText.includes('offset')) {
-            convertInfo.classList.add('d-none');
-            convertInfo.textContent = '';
-        }
-
-        updateTaskValueOffsetApplyState();
-        updateConvertBtn();
+        handleApplyTaskValueOffsetsClick();
     });
 
     surveySourcedataQuickSelectController.initialize();
-
-    if (toggleLogBtn) {
-        toggleLogBtn.addEventListener('click', function() {
-            conversionLogBody.classList.toggle('d-none');
-            const icon = toggleLogBtn.querySelector('i');
-            if (conversionLogBody.classList.contains('d-none')) {
-                icon.classList.remove('fa-chevron-down');
-                icon.classList.add('fa-chevron-right');
-            } else {
-                icon.classList.remove('fa-chevron-right');
-                icon.classList.add('fa-chevron-down');
-            }
-        });
-    }
+    surveyConversionLogController.initialize();
 
     function appendLog(message, type = 'info', logElement = null) {
-        const colors = {
-            'info': '#17a2b8',
-            'success': '#28a745',
-            'warning': '#ffc107',
-            'error': '#dc3545',
-            'step': '#6c757d'
-        };
-        const targetLog = logElement || conversionLog;
-        if (!targetLog) return;
-
-        const timestamp = new Date().toLocaleTimeString();
-        const color = colors[type] || colors.info;
-        const line = document.createElement('span');
-        line.style.color = color;
-        line.textContent = `[${timestamp}] ${String(message)}`;
-        targetLog.appendChild(line);
-        targetLog.appendChild(document.createTextNode('\n'));
-        targetLog.scrollTop = targetLog.scrollHeight;
+        surveyConversionLogController.appendLog(message, type, logElement);
     }
 
     function resetConversionUI() {
-        hideSurveyRunProgress();
-        conversionLogContainer.classList.add('d-none');
-        validationResultsContainer.classList.add('d-none');
-        if (conversionSummaryContainer) conversionSummaryContainer.classList.add('d-none');
-        if (conversionSummaryBody) conversionSummaryBody.innerHTML = '';
-        conversionLog.innerHTML = '';
-        validationSummary.innerHTML = '';
-        validationDetails.innerHTML = '';
-    }
-
-    function renderSurveyTaskReviewSummary(taskSummaries) {
-        if (!Array.isArray(taskSummaries) || taskSummaries.length === 0) {
-            return '';
-        }
-
-        const selectedCount = taskSummaries.filter((entry) => entry && entry.selected !== false).length;
-        const reviewCount = taskSummaries.filter((entry) => entry && entry.manual_review_required).length;
-
-        return `
-            <div class="mb-3 border rounded p-3">
-                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-2">
-                    <div>
-                        <h6 class="mb-1"><i class="fas fa-list-check me-1"></i>Preview Review</h6>
-                        <div class="text-muted small">Deselect surveys you do not want to convert. Preview review is now the handoff between setup and conversion.</div>
-                    </div>
-                    <div class="d-flex flex-wrap align-items-center gap-2">
-                        <span class="badge bg-secondary" data-survey-task-selection-count>${selectedCount} of ${taskSummaries.length} selected</span>
-                        ${reviewCount > 0 ? `<span class="badge bg-warning text-dark">${reviewCount} need manual review</span>` : '<span class="badge bg-success">All previewed surveys look in range</span>'}
-                        ${reviewCount > 0 ? '<button type="button" class="btn btn-sm btn-outline-warning" data-survey-open-advanced><i class="fas fa-sliders-h me-1"></i>Advanced options</button>' : ''}
-                        <button type="button" class="btn btn-sm btn-outline-dark" data-survey-task-select-all>Select all</button>
-                        <button type="button" class="btn btn-sm btn-outline-dark" data-survey-task-clear-all>Clear all</button>
-                    </div>
-                </div>
-                <div class="list-group list-group-flush border rounded">
-                    ${taskSummaries.map((entry, index) => {
-                        const task = normalizeSurveyTaskName(entry && entry.task);
-                        if (!task) return '';
-
-                        const checkboxId = `survey-task-review-${index}`;
-                        const checked = entry && entry.selected !== false ? 'checked' : '';
-                        const runCount = Number(entry && entry.run_count);
-                        const runBadge = Number.isFinite(runCount) && runCount > 1
-                            ? `<span class="badge bg-info text-dark">${runCount} runs</span>`
-                            : '';
-                        const review = entry && entry.manual_review_required && entry.out_of_range
-                            ? entry.out_of_range
-                            : null;
-                        const suggestedOffsets = Array.isArray(review && review.suggested_offsets)
-                            ? review.suggested_offsets
-                                .map((value) => formatSignedOffset(value))
-                                .filter(Boolean)
-                            : [];
-                        const expectedLevels = Array.isArray(review && review.expected_levels)
-                            ? review.expected_levels.filter((value) => String(value || '').trim())
-                            : [];
-                        const offsetEvidence = review && typeof review.offset_evidence === 'object'
-                            ? review.offset_evidence
-                            : null;
-                        const offsetClassification = String(offsetEvidence && offsetEvidence.classification || '').trim().toLowerCase();
-                        const structuralOffsetLikely = offsetClassification === 'structural_offset_likely';
-                        const sampledValues = Number(offsetEvidence && offsetEvidence.sampled_numeric_values);
-                        const invalidWithoutOffset = Number(offsetEvidence && offsetEvidence.invalid_without_offset);
-                        const invalidWithoutOffsetPercent = Number(offsetEvidence && offsetEvidence.invalid_without_offset_percent);
-                        const hasOutOfRangeRate = Number.isFinite(sampledValues)
-                            && sampledValues > 0
-                            && Number.isFinite(invalidWithoutOffset)
-                            && invalidWithoutOffset >= 0
-                            && Number.isFinite(invalidWithoutOffsetPercent);
-                        const outOfRangeRateText = hasOutOfRangeRate
-                            ? `${invalidWithoutOffsetPercent.toFixed(1)}% (${invalidWithoutOffset}/${sampledValues} sampled values)`
-                            : '';
-
-                        return `
-                            <div class="list-group-item">
-                                <div class="form-check">
-                                    <input
-                                        class="form-check-input"
-                                        type="checkbox"
-                                        value="${escapeHtml(task)}"
-                                        id="${checkboxId}"
-                                        data-survey-task-checkbox
-                                        data-survey-task="${escapeHtml(task)}"
-                                        ${checked}
-                                    >
-                                    <label class="form-check-label w-100" for="${checkboxId}">
-                                        <div class="d-flex flex-column flex-md-row align-items-md-start justify-content-between gap-2">
-                                            <div>
-                                                <strong>${escapeHtml(task)}</strong>
-                                                ${review ? '<span class="badge bg-warning text-dark ms-2">Out of range</span>' : '<span class="badge bg-success ms-2">Ready</span>'}
-                                            </div>
-                                            <div class="d-flex flex-wrap gap-2">
-                                                ${runBadge}
-                                            </div>
-                                        </div>
-                                        ${review ? `
-                                            <div class="small mt-2">
-                                                <div class="fw-semibold">Recommended: fix out-of-range values, then run Preview again.</div>
-                                                <div class="text-muted">${escapeHtml(String(review.message || 'Value review required before converting this survey.'))}</div>
-                                                ${review.item_id ? `<div class="mt-1">Item: <code>${escapeHtml(String(review.item_id))}</code></div>` : ''}
-                                                ${review.raw_value !== undefined && review.raw_value !== null ? `<div>Observed value: <code>${escapeHtml(String(review.raw_value))}</code></div>` : ''}
-                                                ${expectedLevels.length > 0 ? `<div>Expected levels: <code>${expectedLevels.map((value) => escapeHtml(String(value))).join('</code>, <code>')}</code></div>` : ''}
-                                                ${outOfRangeRateText ? `<div>Out-of-range share: <code>${escapeHtml(outOfRangeRateText)}</code></div>` : ''}
-                                                <div class="text-muted mt-1">If this survey should not be converted yet, deselect it before converting.</div>
-                                                ${suggestedOffsets.length > 0 && structuralOffsetLikely ? `<div class="text-muted mt-1">Advanced fallback (rare): if you have confirmed a task-wide shifted scale, use manual task value offset in Advanced options (possible offset: <code>${suggestedOffsets.join('</code>, <code>')}</code>).</div>` : '<div class="text-muted mt-1">Advanced fallback (rare): use manual task value offset only if you can confirm the survey scale was shifted.</div>'}
-                                            </div>
-                                        ` : ''}
-                                    </label>
-                                </div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            </div>
-        `;
-    }
-
-    function updateSurveyTaskSelectionSummaryText() {
-        if (!conversionSummaryBody) return;
-        const summaryNode = conversionSummaryBody.querySelector('[data-survey-task-selection-count]');
-        if (!summaryNode) return;
-        const selectedCount = Array.isArray(surveyPreviewSelectionState.selectedTasks)
-            ? surveyPreviewSelectionState.selectedTasks.length
-            : 0;
-        const totalCount = Array.isArray(surveyPreviewSelectionState.availableTasks)
-            ? surveyPreviewSelectionState.availableTasks.length
-            : 0;
-        summaryNode.textContent = `${selectedCount} of ${totalCount} selected`;
-    }
-
-    function bindSurveyTaskSelectionControls() {
-        if (!conversionSummaryBody) return;
-
-        const syncSelectionFromDom = () => {
-            const selectedTasks = Array.from(
-                conversionSummaryBody.querySelectorAll('[data-survey-task-checkbox]')
-            )
-                .filter((checkbox) => checkbox.checked)
-                .map((checkbox) => normalizeSurveyTaskName(checkbox.getAttribute('data-survey-task')))
-                .filter(Boolean);
-            surveyPreviewSelectionState.selectedTasks = selectedTasks;
-            updateSurveyTaskSelectionSummaryText();
-            updateConvertBtn();
-        };
-
-        conversionSummaryBody.querySelectorAll('[data-survey-task-checkbox]').forEach((checkbox) => {
-            checkbox.addEventListener('change', syncSelectionFromDom);
-        });
-
-        const selectAllBtn = conversionSummaryBody.querySelector('[data-survey-task-select-all]');
-        if (selectAllBtn) {
-            selectAllBtn.addEventListener('click', () => {
-                conversionSummaryBody.querySelectorAll('[data-survey-task-checkbox]').forEach((checkbox) => {
-                    checkbox.checked = true;
-                });
-                syncSelectionFromDom();
-            });
-        }
-
-        const clearAllBtn = conversionSummaryBody.querySelector('[data-survey-task-clear-all]');
-        if (clearAllBtn) {
-            clearAllBtn.addEventListener('click', () => {
-                conversionSummaryBody.querySelectorAll('[data-survey-task-checkbox]').forEach((checkbox) => {
-                    checkbox.checked = false;
-                });
-                syncSelectionFromDom();
-            });
-        }
-
-        conversionSummaryBody.querySelectorAll('[data-survey-open-advanced]').forEach((button) => {
-            button.addEventListener('click', () => {
-                openAdvancedOptionsValueOffsetEditor();
-            });
-        });
+        surveyConversionLogController.resetConversionUI();
     }
 
     function displayConversionSummary(summary) {
-        if (!conversionSummaryContainer || !conversionSummaryBody || !summary) return;
-
-        let html = '';
-
-        const surveyTasks = Array.isArray(summary.survey_tasks) ? summary.survey_tasks : [];
-        if (surveyTasks.length > 0) {
-            html += renderSurveyTaskReviewSummary(surveyTasks);
-        }
-
-        const matches = summary.template_matches;
-        if (matches && Object.keys(matches).length > 0) {
-            html += `<h6 class="mb-2"><i class="fas fa-puzzle-piece me-1"></i>Matched Templates</h6>`;
-            html += `<table class="table table-sm table-bordered mb-3"><thead><tr><th>Survey Group</th><th>Template</th><th>Confidence</th></tr></thead><tbody>`;
-            for (const [group, info] of Object.entries(matches)) {
-                if (!info) continue;
-                const tmpl = info.template_key || info.template || info.matched_template || 'None';
-                const conf = info.confidence || info.match_confidence || 'unknown';
-                let badgeClass = 'bg-secondary';
-                if (conf === 'exact' || conf === 'high') badgeClass = 'bg-success';
-                else if (conf === 'medium') badgeClass = 'bg-warning text-dark';
-                else if (conf === 'low') badgeClass = 'bg-danger';
-                html += `<tr><td>${group}</td><td><code>${tmpl}</code></td><td><span class="badge ${badgeClass}">${conf}</span></td></tr>`;
-            }
-            html += `</tbody></table>`;
-        }
-
-        const toolCols = summary.tool_columns;
-        if (toolCols && toolCols.length > 0) {
-            html += `<h6 class="mb-2"><i class="fas fa-wrench me-1"></i>Tool-Specific Columns <span class="badge bg-secondary">${toolCols.length}</span></h6>`;
-            html += `<div class="mb-3"><details><summary class="text-muted small" style="cursor:pointer;">LimeSurvey system columns (click to expand)</summary>`;
-            html += `<div class="mt-1"><code>${toolCols.join('</code>, <code>')}</code></div></details></div>`;
-        }
-
-        const nearMatchCandidates = summary.near_match_candidates;
-        if (nearMatchCandidates && nearMatchCandidates.length > 0) {
-            const applied = Boolean(summary.near_match_applied);
-            const stateBadgeClass = applied ? 'bg-success' : 'bg-info text-dark';
-            const stateLabel = applied ? 'Applied' : 'Available';
-            const previewLimit = 12;
-            const previewCandidates = nearMatchCandidates.slice(0, previewLimit);
-            const hiddenCount = nearMatchCandidates.length - previewCandidates.length;
-            html += `<h6 class="mb-2"><i class="fas fa-arrows-left-right me-1"></i>Near Item Matches <span class="badge ${stateBadgeClass}">${stateLabel}</span> <span class="badge bg-secondary">${nearMatchCandidates.length}</span></h6>`;
-            html += `<div class="mb-3"><details><summary class="text-muted small" style="cursor:pointer;">Show near-match mappings</summary><div class="mt-2">`;
-            html += previewCandidates
-                .map((candidate) => {
-                    const source = escapeHtml(String(candidate && candidate.source_column || '').trim());
-                    const target = escapeHtml(String(candidate && candidate.target_item || '').trim());
-                    const task = escapeHtml(String(candidate && candidate.task || '').trim());
-                    const run = (candidate && candidate.run !== undefined && candidate.run !== null)
-                        ? `, run ${escapeHtml(String(candidate.run))}`
-                        : '';
-                    return `<div><code>${source}</code> &rarr; <code>${target}</code> <span class="text-muted small">(task ${task}${run})</span></div>`;
-                })
-                .join('');
-            if (hiddenCount > 0) {
-                html += `<div class="text-muted small mt-1">...and ${hiddenCount} more</div>`;
-            }
-            html += `</div></details><small class="text-muted">Near matches only allow minimal formatting differences and require count-safe mapping.</small></div>`;
-        }
-
-        const unknownCols = summary.unknown_columns;
-        if (unknownCols && unknownCols.length > 0) {
-            const selectedSurveyFilter = (convertDatasetName && convertDatasetName.value)
-                ? String(convertDatasetName.value).trim()
-                : '';
-            html += `<h6 class="mb-2"><i class="fas fa-question-circle me-1 text-warning"></i>Unmatched Columns <span class="badge bg-warning text-dark">${unknownCols.length}</span></h6>`;
-            if (selectedSurveyFilter) {
-                const previewLimit = 20;
-                const previewCols = unknownCols.slice(0, previewLimit);
-                const hiddenCount = unknownCols.length - previewCols.length;
-                html += `<small class="text-muted d-block mb-1">Task filter active: <code>${escapeHtml(selectedSurveyFilter)}</code>. Most unmatched columns are likely from other tasks and are hidden by default.</small>`;
-                html += `<details class="mb-1"><summary class="text-muted small" style="cursor:pointer;">Show unmatched column names</summary>`;
-                html += `<div class="mt-2"><code>${previewCols.join('</code>, <code>')}</code></div>`;
-                if (hiddenCount > 0) {
-                    html += `<div class="text-muted small mt-1">...and ${hiddenCount} more</div>`;
-                }
-                html += `</details>`;
-            } else {
-                html += `<div class="mb-1"><code>${unknownCols.join('</code>, <code>')}</code></div>`;
-            }
-            html += `<small class="text-muted">These columns were not assigned to any template.</small>`;
-        }
-
-        if (html) {
-            conversionSummaryBody.innerHTML = html;
-            conversionSummaryContainer.classList.remove('d-none');
-            bindSurveyTaskSelectionControls();
-
-            if (toggleSummaryBtn) {
-                toggleSummaryBtn.onclick = function() {
-                    const body = conversionSummaryBody;
-                    const icon = toggleSummaryBtn.querySelector('i');
-                    if (body.style.display === 'none') {
-                        body.style.display = '';
-                        icon.className = 'fas fa-chevron-down';
-                    } else {
-                        body.style.display = 'none';
-                        icon.className = 'fas fa-chevron-right';
-                    }
-                };
-            }
-        }
+        surveyConversionSummaryController.displayConversionSummary(summary);
     }
 
     function displayUnmatchedGroupsError(data) {
@@ -3277,204 +2950,8 @@ export function initSurveyConvert(elements) {
         }
     }
 
-    function normalizeValidationIssueText(value) {
-        return String(value || '').trim().replace(/\s+/g, ' ');
-    }
-
-    function extractValidationIssueMessage(file, normalizedGroupMessage) {
-        const fileMessage = normalizeValidationIssueText(file && file.message);
-        if (fileMessage && fileMessage !== normalizedGroupMessage) {
-            return fileMessage;
-        }
-        return normalizedGroupMessage || fileMessage || 'Validation issue';
-    }
-
-    function renderValidationGroupFiles(group) {
-        const files = Array.isArray(group && group.files) ? group.files : [];
-        if (files.length === 0) {
-            return '';
-        }
-
-        const normalizedGroupMessage = normalizeValidationIssueText(group && group.message);
-        const issueMessages = files.map((file) => extractValidationIssueMessage(file, normalizedGroupMessage));
-        const uniqueMessages = [...new Set(issueMessages.filter(Boolean))];
-
-        // Collapse repeated copies of the same issue across many files.
-        if (files.length > 1 && uniqueMessages.length <= 1) {
-            const uniqueFiles = [...new Set(
-                files.map((file) => {
-                    const filePath = String((file && file.file) || '').trim();
-                    return filePath || 'unknown';
-                })
-            )];
-            const previewLimit = 8;
-            const previewFiles = uniqueFiles.slice(0, previewLimit);
-            const hiddenCount = uniqueFiles.length - previewFiles.length;
-
-            return `
-                <details class="ms-2 mb-0 smaller">
-                    <summary class="text-muted">${uniqueFiles.length} files share this same issue</summary>
-                    <div class="mt-2">
-                        ${previewFiles.map((filePath) => `<div><code class="text-dark">${escapeHtml(filePath)}</code></div>`).join('')}
-                        ${hiddenCount > 0 ? `<div class="text-muted mt-1">...and ${hiddenCount} more</div>` : ''}
-                    </div>
-                </details>
-            `;
-        }
-
-        return `
-            <ul class="list-unstyled ms-2 mb-0 smaller">
-                ${files.map((file) => `
-                    <li class="mb-1 border-bottom pb-1 last-child-no-border">
-                        <div class="d-flex justify-content-between">
-                            <code class="text-dark fw-bold">${escapeHtml(file.file || 'unknown')}</code>
-                            ${file.line ? `<span class="badge bg-secondary">Line ${file.line}</span>` : ''}
-                        </div>
-                        ${file.message && normalizeValidationIssueText(file.message) !== normalizedGroupMessage ? `<div class="text-muted mt-1">${escapeHtml(file.message)}</div>` : ''}
-                        ${file.evidence ? `<div class="text-muted italic ms-2 mt-1 p-1 bg-white border rounded" style="font-size: 0.85em; font-family: monospace;">${escapeHtml(file.evidence)}</div>` : ''}
-                    </li>
-                `).join('')}
-            </ul>
-        `;
-    }
-
     function displayValidationResults(validation, prefix = '') {
-        const getEl = (id) => document.getElementById(prefix ? prefix + id.charAt(0).toUpperCase() + id.slice(1) : id);
-        
-        const container = getEl('validationResultsContainer');
-        const card = getEl('validationResultsCard');
-        const header = getEl('validationResultsHeader');
-        const badge = getEl('validationBadge');
-        const summaryEl = getEl('validationSummary');
-        const detailsEl = getEl('validationDetails');
-
-        if (!container) return;
-        container.classList.remove('d-none');
-        
-        const errors = validation.errors || [];
-        const warnings = validation.warnings || [];
-        const isValid = errors.length === 0;
-        
-        card.classList.remove('border-success', 'border-warning', 'border-danger');
-        header.classList.remove('bg-success', 'bg-warning', 'bg-danger', 'text-white', 'text-dark');
-        
-        if (isValid && warnings.length === 0) {
-            card.classList.add('border-success');
-            header.classList.add('bg-success', 'text-white');
-            badge.className = 'badge bg-light text-success';
-            badge.textContent = '✓ Valid';
-        } else if (isValid) {
-            card.classList.add('border-warning');
-            header.classList.add('bg-warning', 'text-dark');
-            badge.className = 'badge bg-light text-warning';
-            badge.textContent = `⚠ ${warnings.length} Warning(s)`;
-        } else {
-            card.classList.add('border-danger');
-            header.classList.add('bg-danger', 'text-white');
-            badge.className = 'badge bg-light text-danger';
-            badge.textContent = `✗ ${errors.length} Error(s)`;
-        }
-        
-        const summary = validation.summary || {};
-        summaryEl.innerHTML = `
-            <div class="row text-center">
-                <div class="col-4">
-                    <div class="h4 mb-0 ${errors.length > 0 ? 'text-danger' : 'text-success'}">${errors.length}</div>
-                    <small class="text-muted">Errors</small>
-                </div>
-                <div class="col-4">
-                    <div class="h4 mb-0 ${warnings.length > 0 ? 'text-warning' : 'text-success'}">${warnings.length}</div>
-                    <small class="text-muted">Warnings</small>
-                </div>
-                <div class="col-4">
-                    <div class="h4 mb-0 text-info">${summary.total_files || summary.files_created || 'n/a'}</div>
-                    <small class="text-muted">Files</small>
-                </div>
-            </div>
-        `;
-        
-        let detailsHtml = '';
-        
-        if (validation.formatted) {
-            const f = validation.formatted;
-            
-            if (f.errors && f.errors.length > 0) {
-                detailsHtml += '<h6 class="text-danger mt-3"><i class="fas fa-times-circle me-1"></i>Errors</h6>';
-                f.errors.forEach(group => {
-                    detailsHtml += `
-                        <div class="validation-group mb-3 p-3 border rounded bg-light shadow-sm">
-<div class="d-flex justify-content-between align-items-start mb-2">
-                                <div class="fw-bold text-danger">
-                                    <span class="badge bg-danger me-2">${group.code}</span>
-                                    ${escapeHtml(group.message)}
-                                </div>
-                                ${group.documentation_url ? `
-                                    <a href="${group.documentation_url}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">
-                                        <i class="fas fa-book me-1"></i>Docs
-                                    </a>
-                                ` : ''}
-                            </div>
-                            
-                            ${group.fix_hint ? `
-                                <div class="alert alert-info py-2 px-3 mb-2 smaller">
-                                    <i class="fas fa-lightbulb me-2 text-warning"></i>
-                                    <strong>Fix Hint:</strong> ${escapeHtml(group.fix_hint)}
-                                </div>
-                            ` : ''}
-
-                            ${renderValidationGroupFiles(group)}
-                        </div>
-                    `;
-                });
-            }
-            
-            if (f.warnings && f.warnings.length > 0) {
-                detailsHtml += '<h6 class="text-warning mt-3"><i class="fas fa-exclamation-triangle me-1"></i>Warnings</h6>';
-                f.warnings.forEach(group => {
-                    detailsHtml += `
-                        <div class="validation-group mb-3 p-3 border rounded bg-light shadow-sm">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div class="fw-bold text-warning">
-                                    <span class="badge bg-warning text-dark me-2">${group.code}</span>
-                                    ${escapeHtml(group.message)}
-                                </div>
-                                ${group.documentation_url ? `
-                                    <a href="${group.documentation_url}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">
-                                        <i class="fas fa-book me-1"></i>Docs
-                                    </a>
-                                ` : ''}
-                            </div>
-
-                            ${group.fix_hint ? `
-                                <div class="alert alert-info py-2 px-3 mb-2 smaller">
-                                    <i class="fas fa-lightbulb me-2 text-warning"></i>
-                                    <strong>Fix Hint:</strong> ${escapeHtml(group.fix_hint)}
-                                </div>
-                            ` : ''}
-
-                            ${renderValidationGroupFiles(group)}
-                        </div>
-                    `;
-                });
-            }
-        } else {
-            if (errors.length > 0) {
-                detailsHtml += '<h6 class="text-danger mt-3"><i class="fas fa-times-circle me-1"></i>Errors</h6><ul class="list-unstyled">';
-                errors.forEach(e => {
-                    detailsHtml += `<li class="text-danger small"><i class="fas fa-times me-1"></i>${escapeHtml(e)}</li>`;
-                });
-                detailsHtml += '</ul>';
-            }
-            if (warnings.length > 0) {
-                detailsHtml += '<h6 class="text-warning mt-3"><i class="fas fa-exclamation-triangle me-1"></i>Warnings</h6><ul class="list-unstyled">';
-                warnings.forEach(w => {
-                    detailsHtml += `<li class="text-warning small"><i class="fas fa-exclamation me-1"></i>${escapeHtml(w)}</li>`;
-                });
-                detailsHtml += '</ul>';
-            }
-        }
-        
-        detailsEl.innerHTML = detailsHtml;
+        surveyValidationResultsController.displayValidationResults(validation, prefix);
     }
 
     function escapeHtml(text) {
@@ -3686,6 +3163,37 @@ export function initSurveyConvert(elements) {
     });
 
     const surveyTemplateResultsController = createSurveyTemplateResultsController({
+        escapeHtml,
+    });
+
+    const surveyConversionSummaryController = createSurveyConversionSummaryController({
+        conversionSummaryContainer,
+        conversionSummaryBody,
+        toggleSummaryBtn,
+        convertDatasetName,
+        getSurveyPreviewSelectionState: () => surveyPreviewSelectionState,
+        setSurveyPreviewSelectedTasks,
+        normalizeSurveyTaskName,
+        formatSignedOffset,
+        escapeHtml,
+        openAdvancedOptionsValueOffsetEditor,
+        updateConvertBtn,
+    });
+
+    const surveyConversionLogController = createSurveyConversionLogController({
+        toggleLogBtn,
+        conversionLogBody,
+        conversionLogContainer,
+        validationResultsContainer,
+        conversionSummaryContainer,
+        conversionSummaryBody,
+        conversionLog,
+        validationSummary,
+        validationDetails,
+        hideSurveyRunProgress,
+    });
+
+    const surveyValidationResultsController = createSurveyValidationResultsController({
         escapeHtml,
     });
 
