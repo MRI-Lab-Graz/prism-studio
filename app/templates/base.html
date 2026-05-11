@@ -927,13 +927,14 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    {% set static_token = prism_static_asset_token|default('', true) %}
     <script>
-        window.PRISM_STATIC_ASSET_VERSION = {{ prism_static_asset_token | tojson }};
+        window.PRISM_STATIC_ASSET_VERSION = {{ static_token | tojson }};
     </script>
-    <script src="{{ url_for('static', filename='js/beginner-help-registry.js', v=prism_static_asset_token) }}"></script>
-    <script src="{{ url_for('static', filename='js/global-help-mode.js', v=prism_static_asset_token) }}"></script>
-    <script src="{{ url_for('static', filename='js/filesystem-mode.js', v=prism_static_asset_token) }}"></script>
-    <script src="{{ url_for('static', filename='js/path-browser-modal.js', v=prism_static_asset_token) }}"></script>
+    <script src="{{ url_for('static', filename='js/beginner-help-registry.js', v=static_token) }}"></script>
+    <script src="{{ url_for('static', filename='js/global-help-mode.js', v=static_token) }}"></script>
+    <script src="{{ url_for('static', filename='js/filesystem-mode.js', v=static_token) }}"></script>
+    <script src="{{ url_for('static', filename='js/path-browser-modal.js', v=static_token) }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

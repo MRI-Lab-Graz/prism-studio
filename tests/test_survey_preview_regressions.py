@@ -220,6 +220,88 @@ def test_survey_preview_validation_rerun_keeps_run_column(monkeypatch, tmp_path)
     assert payload["multivariant_tasks"] == {}
 
 
+def test_survey_preview_validation_skips_per_task_probe_without_manual_review_contract(
+    monkeypatch, tmp_path
+):
+    app = Flask(__name__)
+    app.secret_key = os.urandom(32)
+
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    library_root = tmp_path / "library"
+    library_root.mkdir()
+    (library_root / "survey-ads.json").write_text("{}", encoding="utf-8")
+
+    calls = []
+
+    def fake_run_survey_with_official_fallback(_converter, **kwargs):
+        calls.append(kwargs.copy())
+        if kwargs.get("dry_run"):
+            return SimpleNamespace(
+                dry_run_preview={"summary": {"total_files": 1}, "participants": []},
+                tasks_included=["ads", "pss"],
+                unknown_columns=[],
+                missing_items_by_task={},
+                id_column="ID",
+                session_column="session",
+                run_column=None,
+                detected_sessions=["1"],
+                conversion_warnings=[],
+                task_runs={},
+                template_matches=[],
+                tool_columns=[],
+            )
+        return SimpleNamespace(tasks_included=["ads", "pss"])
+
+    def fake_run_validation(*_args, **_kwargs):
+        return (
+            [],
+            SimpleNamespace(
+                total_files=1,
+                subjects=set(),
+                sessions=set(),
+                tasks=set(),
+                modalities={},
+                surveys=set(),
+                biometrics=set(),
+            ),
+        )
+
+    monkeypatch.setattr(
+        "src.web.blueprints.conversion_survey_preview_handlers.run_validation",
+        fake_run_validation,
+    )
+
+    with app.test_request_context(
+        "/api/survey-convert-preview",
+        method="POST",
+        data={
+            "file": (io.BytesIO(b"ID,session,ADS01\n1,1,3\n"), "demo.csv"),
+            "id_column": "ID",
+            "session_column": "session",
+        },
+        content_type="multipart/form-data",
+    ):
+        session["current_project_path"] = str(project_root)
+
+        response = handle_api_survey_convert_preview(
+            convert_survey_xlsx_to_prism_dataset=object(),
+            convert_survey_lsa_to_prism_dataset=object(),
+            resolve_effective_library_path=lambda: library_root,
+            run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
+            validate_project_templates_for_tasks=lambda **_kwargs: [],
+            format_unmatched_groups_response=lambda _error: {},
+            id_column_not_detected_error_cls=ValueError,
+            unmatched_groups_error_cls=RuntimeError,
+        )
+
+    assert response.status_code == 200
+    # Exactly two runs: one dry-run preview + one full validation pass.
+    assert len(calls) == 2
+    assert calls[0]["dry_run"] is True
+    assert calls[1]["dry_run"] is False
+
+
 def test_survey_preview_uses_project_template_version_overrides_when_request_missing(
     monkeypatch, tmp_path
 ):

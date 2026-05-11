@@ -22,6 +22,8 @@ Commands:
     tools         Run prism_tools.py commands
     prism-tools   Alias for tools
     test          Run pytest in the current repository
+    coverage      Run pytest coverage for src/ (default fail-under: 80)
+    codecov       Pass through to codecovcli
     git           Pass through to git
     gh            Pass through to GitHub CLI
 
@@ -30,6 +32,9 @@ Examples:
     rtk validator /path/to/dataset --bids
     rtk tools survey convert --help
     rtk test -q
+    rtk coverage
+    rtk coverage -- -q
+    rtk codecov upload-process
     rtk git status
 """
 
@@ -125,6 +130,27 @@ def main(argv: list[str] | None = None) -> int:
 
     if command == "test":
         return _run([sys.executable, "-m", "pytest", *forwarded_args], project_root)
+
+    if command == "coverage":
+        coverage_command = [
+            sys.executable,
+            "-m",
+            "pytest",
+            "--cov=src",
+            "--cov-report=term-missing",
+            "--cov-report=xml",
+            "--cov-fail-under=80",
+        ]
+        passthrough_args = list(forwarded_args)
+        if passthrough_args and passthrough_args[0] == "--":
+            passthrough_args = passthrough_args[1:]
+        return _run([*coverage_command, *passthrough_args], project_root)
+
+    if command == "codecov":
+        if not _require_program("codecovcli"):
+            print("Hint: install with `pip install codecov-cli` (for example via `bash setup.sh --dev`).")
+            return 1
+        return _run(["codecovcli", *forwarded_args], project_root)
 
     if command == "git":
         if not _require_program("git"):

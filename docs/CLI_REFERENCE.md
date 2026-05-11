@@ -66,6 +66,12 @@ rtk tools survey convert --help
 # Run tests
 rtk test -q
 
+# Run coverage with enforced threshold (default: 80%)
+rtk coverage
+
+# Upload with Codecov CLI (requires CODECOV_TOKEN)
+rtk codecov upload-process
+
 # RTK-first git and GitHub CLI usage
 rtk git status
 rtk gh pr list
@@ -77,6 +83,8 @@ Available subcommands:
 - `validator` (aliases: `validate`, `prism`)
 - `tools` (alias: `prism-tools`)
 - `test`
+- `coverage`
+- `codecov`
 - `git`
 - `gh`
 
