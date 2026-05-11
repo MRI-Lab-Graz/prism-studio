@@ -32,7 +32,9 @@ class SurveyWorkflowStageOptions:
     project_path: str | None = None
     fallback_project_path: str | None = None
     log_fn: Callable[[str, str], Any] | None = None
-    template_version_overrides: dict[str, Any] = field(default_factory=dict)
+    template_version_overrides: dict[str, Any] | list[dict[str, Any]] = field(
+        default_factory=dict
+    )
     allow_near_item_match: bool = False
     near_match_tasks: list[str] | None = None
     task_value_offsets: dict[str, Any] = field(default_factory=dict)
@@ -69,6 +71,23 @@ class SurveyWorkflowStageService:
         lsa_converter: Any,
         options: SurveyWorkflowStageOptions,
     ) -> Any:
+        template_version_overrides_payload: Any
+        if isinstance(options.template_version_overrides, dict):
+            template_version_overrides_payload = dict(options.template_version_overrides)
+        elif isinstance(options.template_version_overrides, list):
+            template_version_overrides_payload = [
+                dict(entry) if isinstance(entry, dict) else entry
+                for entry in options.template_version_overrides
+            ]
+        else:
+            template_version_overrides_payload = options.template_version_overrides
+
+        task_value_offsets_payload: Any
+        if isinstance(options.task_value_offsets, dict):
+            task_value_offsets_payload = dict(options.task_value_offsets)
+        else:
+            task_value_offsets_payload = options.task_value_offsets
+
         common_kwargs: dict[str, Any] = {
             "input_path": options.input_path,
             "library_dir": str(options.library_dir),
@@ -89,10 +108,10 @@ class SurveyWorkflowStageService:
             "duplicate_handling": options.duplicate_handling,
             "skip_participants": options.skip_participants,
             "fallback_project_path": options.fallback_project_path,
-            "template_version_overrides": dict(options.template_version_overrides),
+            "template_version_overrides": template_version_overrides_payload,
             "allow_near_item_match": options.allow_near_item_match,
             "near_match_tasks": list(options.near_match_tasks) if options.near_match_tasks is not None else None,
-            "task_value_offsets": dict(options.task_value_offsets),
+            "task_value_offsets": task_value_offsets_payload,
         }
         if options.log_fn is not None:
             common_kwargs["log_fn"] = options.log_fn
