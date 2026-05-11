@@ -85,7 +85,7 @@ export function createSurveyWorkflowPrepareController({
                 );
             } else {
                 appendLog(
-                    `Backend setup reported a task-level scale mismatch after ${modeTitle.toLowerCase()} started. ${rerunInstruction}`,
+                    `Backend setup detected out-of-range survey values after ${modeTitle.toLowerCase()} started. ${rerunInstruction}`,
                     'warning'
                 );
             }
@@ -151,6 +151,7 @@ export function createSurveyWorkflowPrepareController({
         mode,
         nearMatchTasks = [],
         valueOffsets = {},
+        selectedTasks = null,
         signal = null,
     }) {
         const modeLabel = mode === 'convert' ? 'conversion' : 'preview';
@@ -162,6 +163,7 @@ export function createSurveyWorkflowPrepareController({
                 allowNearItemMatch: selectedNearMatchTasks.length > 0,
                 nearMatchTasks: selectedNearMatchTasks,
                 taskValueOffsets: selectedValueOffsets,
+                selectedTasks,
                 includeValidation: false,
             });
             if (!workflowRequest.filename) {

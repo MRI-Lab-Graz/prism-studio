@@ -1855,20 +1855,25 @@ def _convert_survey_dataframe_to_prism_dataset(
     )
 
     # --- Extract LimeSurvey System Columns ---
-    # These platform metadata columns are excluded from PRISM survey output
-    # but preserved in a separate tool-limesurvey sidecar file.
-    detected_ls_system_cols, _ = _extract_limesurvey_columns(list(df.columns))
-    if detected_ls_system_cols:
-        shown = ", ".join(detected_ls_system_cols[:8])
-        more = (
-            ""
-            if len(detected_ls_system_cols) <= 8
-            else f" (+{len(detected_ls_system_cols) - 8} more)"
-        )
-        conversion_warnings.append(
-            f"LimeSurvey system columns detected ({len(detected_ls_system_cols)}): {shown}{more}"
-        )
-    ls_system_cols: list[str] = detected_ls_system_cols
+    # Only native LimeSurvey sources should emit tool-limesurvey sidecars.
+    # Generic CSV/XLSX/TSV imports may contain similarly named columns, but
+    # those must remain in the primary survey flow and not produce
+    # tool-limesurvey artifacts.
+    source_format_normalized = str(source_format or "").strip().lower()
+    ls_system_cols: list[str] = []
+    if source_format_normalized in {"lsa", "lss"}:
+        detected_ls_system_cols, _ = _extract_limesurvey_columns(list(df.columns))
+        if detected_ls_system_cols:
+            shown = ", ".join(detected_ls_system_cols[:8])
+            more = (
+                ""
+                if len(detected_ls_system_cols) <= 8
+                else f" (+{len(detected_ls_system_cols) - 8} more)"
+            )
+            conversion_warnings.append(
+                f"LimeSurvey system columns detected ({len(detected_ls_system_cols)}): {shown}{more}"
+            )
+        ls_system_cols = detected_ls_system_cols
 
     # Handle duplicate IDs based on duplicate_handling parameter
     df, _res_ses_override, duplicate_warnings = _survey_core._handle_duplicate_ids(
