@@ -900,6 +900,44 @@ def api_survey_prepare_workflow():
         return jsonify({"error": message}), 500
 
 
+def api_survey_workflow_command():
+    """Dispatch survey workflow commands through one adapter endpoint."""
+    raw_command = (
+        request.form.get("workflow_command")
+        or request.form.get("command")
+        or request.form.get("mode")
+        or ""
+    )
+    normalized_command = str(raw_command).strip().lower()
+    command_aliases = {
+        "prepare": "prepare",
+        "setup": "prepare",
+        "preview": "preview",
+        "dry-run": "preview",
+        "dry_run": "preview",
+        "convert": "convert",
+        "validate": "convert",
+    }
+    resolved_command = command_aliases.get(normalized_command)
+
+    if resolved_command == "prepare":
+        return api_survey_prepare_workflow()
+    if resolved_command == "preview":
+        return api_survey_convert_preview()
+    if resolved_command == "convert":
+        return api_survey_convert_validate()
+
+    return (
+        jsonify(
+            {
+                "error": "Unsupported survey workflow command. Use prepare, preview, or convert.",
+                "workflow_command": normalized_command,
+            }
+        ),
+        400,
+    )
+
+
 def _validate_project_templates_for_tasks(
     *,
     tasks: list[str],

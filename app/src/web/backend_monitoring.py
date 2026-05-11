@@ -25,6 +25,7 @@ _SUPPRESSED_ENDPOINTS = {
 }
 _PATH_ENDPOINT_FALLBACKS = {
     "/api/survey-prepare-workflow": "conversion_survey.api_survey_prepare_workflow",
+    "/api/survey-workflow-command": "conversion_survey.api_survey_workflow_command",
     "/api/survey-detect-version-contexts": "conversion_survey.api_survey_detect_version_context",
     "/api/survey-convert-preview": "conversion_survey.api_survey_convert_preview",
     "/api/survey-convert": "conversion_survey.api_survey_convert",
@@ -46,6 +47,7 @@ _ENDPOINT_LABELS = {
     "conversion_survey.api_survey_convert_preview": "survey convert preview",
     "conversion_survey.api_survey_convert_validate": "survey convert validate",
     "conversion_survey.api_survey_prepare_workflow": "survey prepare workflow",
+    "conversion_survey.api_survey_workflow_command": "survey workflow command",
     "conversion_survey.api_survey_detect_version_context": "survey detect version contexts",
     "conversion_survey.api_survey_check_project_templates": "survey check project templates",
     "tools.detect_columns": "detect columns",
@@ -1194,6 +1196,17 @@ def _build_terminal_command(req) -> str:
         return _build_physio_rename_terminal_command(req)
     if endpoint == "conversion_survey.api_survey_convert":
         return _build_survey_convert_terminal_command(req, dry_run=False)
+    if endpoint == "conversion_survey.api_survey_workflow_command":
+        workflow_command = str(
+            req.form.get("workflow_command")
+            or req.form.get("command")
+            or req.form.get("mode")
+            or ""
+        ).strip().lower()
+        return _build_survey_convert_terminal_command(
+            req,
+            dry_run=workflow_command != "convert",
+        )
     if endpoint in {
         "conversion_survey.api_survey_convert_preview",
         "conversion_survey.api_survey_convert_validate",
