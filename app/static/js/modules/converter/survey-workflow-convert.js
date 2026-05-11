@@ -43,17 +43,12 @@ export function createSurveyWorkflowConvertController({
     appendSurveyInputToFormData,
     getConvertServerFilePath,
     appendLog,
+    handleConvertSuccess,
     getSelectedSeparator,
     appendTemplateVersionSelections,
     formatSignedOffset,
     advanceSurveyRunProgress,
     displayUnmatchedGroupsError,
-    displayConversionSummary,
-    registerSessionInProject,
-    getProjectSaveSummary,
-    getParticipantRegistryWarning,
-    showParticipantRegistryWarning,
-    displayValidationResults,
     isAbortError,
     enrichSurveyRunErrorMessage,
     clearActiveSurveyRun,
@@ -251,6 +246,7 @@ export function createSurveyWorkflowConvertController({
         formData.append('separator', getSelectedSeparator(filename));
         formData.append('validate', 'true');
         formData.append('prepared_workflow', 'true');
+        formData.append('workflow_command', 'convert');
 
         const templateSelections = appendTemplateVersionSelections(formData);
         if (templateSelections.length > 0) {
@@ -279,7 +275,7 @@ export function createSurveyWorkflowConvertController({
         advanceSurveyRunProgress('convert', 20, 'Uploading file and starting conversion...');
         appendLog('Uploading file and starting conversion...', 'info');
 
-        fetch('/api/survey-convert-validate', {
+        fetch('/api/survey-workflow-command', {
             method: 'POST',
             body: formData,
             signal: convertRunAbortController.signal,
@@ -335,81 +331,9 @@ export function createSurveyWorkflowConvertController({
                 if (!data) return;
 
                 advanceSurveyRunProgress('convert', 84, 'Finalizing conversion results...');
-
-                const participantRegistryWarning = getParticipantRegistryWarning(data);
-
-                if (data.conversion_summary) {
-                    displayConversionSummary(data.conversion_summary);
-                }
-
-                const regSessionVal = getSurveySessionValue();
-                const regTasks = (data.conversion_summary && data.conversion_summary.tasks_included) || [];
-                if (data.project_saved && regSessionVal && regTasks.length) {
-                    const srcFile = file ? file.name : '';
-                    const srcExt = srcFile.toLowerCase().split('.').pop();
-                    const convType = (srcExt === 'lsa') ? 'survey-lsa' : 'survey-xlsx';
-                    registerSessionInProject(regSessionVal, regTasks, 'survey', srcFile, convType);
-                }
-
-                if (data.validation) {
-                    const v = data.validation;
-                    const errorCount = (v.errors || []).length;
-                    const warningCount = (v.warnings || []).length;
-                    setTemplateEditorErrorCtaVisible(errorCount > 0);
-
-                    if (errorCount === 0 && warningCount === 0) {
-                        appendLog('✓ Validation passed - dataset is valid!', 'success');
-                    } else if (errorCount === 0) {
-                        appendLog(`⚠ Validation passed with ${warningCount} warning(s)`, 'warning');
-                    } else {
-                        appendLog(`Validation found ${errorCount} error(s)`, 'error');
-                    }
-
-                    displayValidationResults(data.validation);
-                }
-
-                if (data.project_saved) {
-                    const saveSummary = getProjectSaveSummary(data);
-                    appendLog(`✓ Data saved to project: ${saveSummary.target}${saveSummary.countNote}`, 'success');
-                    if (participantRegistryWarning) {
-                        appendLog(`⚠ ${participantRegistryWarning.message}`, 'warning');
-                        if (participantRegistryWarning.details) {
-                            appendLog(`   ${participantRegistryWarning.details}`, 'warning');
-                        }
-                        if (participantRegistryWarning.next_step) {
-                            appendLog(`   ${participantRegistryWarning.next_step}`, 'warning');
-                        }
-                        showParticipantRegistryWarning(
-                            `Conversion complete. First saved path: ${saveSummary.target}${saveSummary.countNote}`,
-                            participantRegistryWarning,
-                        );
-                    } else {
-                        convertInfo.textContent = `Conversion complete. First saved path: ${saveSummary.target}${saveSummary.countNote}`;
-                    }
-                } else {
-                    appendLog('⚠ Conversion finished, but nothing was copied into the project.', 'warning');
-                    if (participantRegistryWarning) {
-                        appendLog(`⚠ ${participantRegistryWarning.message}`, 'warning');
-                        if (participantRegistryWarning.details) {
-                            appendLog(`   ${participantRegistryWarning.details}`, 'warning');
-                        }
-                        if (participantRegistryWarning.next_step) {
-                            appendLog(`   ${participantRegistryWarning.next_step}`, 'warning');
-                        }
-                        showParticipantRegistryWarning(
-                            'Conversion finished, but nothing was copied into the project. Review the conversion log.',
-                            participantRegistryWarning,
-                        );
-                    } else {
-                        convertInfo.textContent = 'Conversion finished, but nothing was copied into the project. Review the conversion log.';
-                    }
-                }
-
-                appendLog('═══════════════════════════════════════════════', 'info');
-                appendLog('✓ Conversion completed successfully', 'success');
-                appendLog('═══════════════════════════════════════════════', 'info');
-
-                convertInfo.classList.remove('d-none');
+                handleConvertSuccess(data, {
+                    sourceFilename: file ? file.name : '',
+                });
                 convertRunOutcome = 'success';
                 advanceSurveyRunProgress('convert', 100, 'Conversion completed.');
             })

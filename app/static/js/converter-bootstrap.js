@@ -267,15 +267,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (convertExcelFile && convertBtn) {
         initSurveyConvert({
-            convertLibraryPathInput: document.getElementById('convertLibraryPath'),
-            convertBrowseLibraryBtn: document.getElementById('convertBrowseLibraryBtn'),
             convertExcelFile,
             convertSeparator: document.getElementById('convertSeparator'),
             surveySeparatorGroup: document.getElementById('surveySeparatorGroup'),
             clearConvertExcelFileBtn: document.getElementById('clearConvertExcelFileBtn'),
             convertIdMapFile: document.getElementById('convertIdMapFile'),
             clearIdMapFileBtn: document.getElementById('clearIdMapFileBtn'),
-            checkProjectTemplatesBtn: document.getElementById('checkProjectTemplatesBtn'),
             convertBtn,
             previewBtn,
             convertDatasetName: document.getElementById('convertDatasetName'),

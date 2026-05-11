@@ -4,6 +4,7 @@ from .conversion_survey_handlers import (
     api_survey_languages,
     api_survey_check_project_templates,
     api_survey_prepare_workflow,
+    api_survey_workflow_command,
     api_survey_detect_version_context,
     api_survey_convert_preview,
     api_survey_convert,
@@ -26,6 +27,11 @@ conversion_survey_bp.add_url_rule(
 conversion_survey_bp.add_url_rule(
     "/api/survey-prepare-workflow",
     view_func=api_survey_prepare_workflow,
+    methods=["POST"],
+)
+conversion_survey_bp.add_url_rule(
+    "/api/survey-workflow-command",
+    view_func=api_survey_workflow_command,
     methods=["POST"],
 )
 conversion_survey_bp.add_url_rule(

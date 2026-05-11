@@ -812,6 +812,89 @@ class TestSurveyConvertPreviewEndpoint(unittest.TestCase):
         self.assertEqual(payload.get("near_match_count"), 1)
 
 
+class TestSurveyWorkflowCommandEndpoint(unittest.TestCase):
+    def test_workflow_command_dispatches_prepare_preview_and_convert(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-workflow-command",
+            view_func=handlers.api_survey_workflow_command,
+            methods=["POST"],
+        )
+
+        with app.test_client() as client:
+            with patch.object(
+                handlers,
+                "api_survey_prepare_workflow",
+                return_value=("prepared", 200),
+            ) as prepare_mock, patch.object(
+                handlers,
+                "api_survey_convert_preview",
+                return_value=("previewed", 200),
+            ) as preview_mock, patch.object(
+                handlers,
+                "api_survey_convert_validate",
+                return_value=("converted", 200),
+            ) as convert_mock:
+                prepare_response = client.post(
+                    "/api/survey-workflow-command",
+                    data={"workflow_command": "prepare"},
+                )
+                preview_response = client.post(
+                    "/api/survey-workflow-command",
+                    data={"workflow_command": "preview"},
+                )
+                convert_response = client.post(
+                    "/api/survey-workflow-command",
+                    data={"workflow_command": "convert"},
+                )
+
+        self.assertEqual(prepare_response.status_code, 200)
+        self.assertEqual(prepare_response.get_data(as_text=True), "prepared")
+        self.assertEqual(preview_response.status_code, 200)
+        self.assertEqual(preview_response.get_data(as_text=True), "previewed")
+        self.assertEqual(convert_response.status_code, 200)
+        self.assertEqual(convert_response.get_data(as_text=True), "converted")
+        prepare_mock.assert_called_once_with()
+        preview_mock.assert_called_once_with()
+        convert_mock.assert_called_once_with()
+
+    def test_workflow_command_rejects_unknown_command(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-workflow-command",
+            view_func=handlers.api_survey_workflow_command,
+            methods=["POST"],
+        )
+
+        with app.test_client() as client:
+            response = client.post(
+                "/api/survey-workflow-command",
+                data={"workflow_command": "mystery"},
+            )
+
+        self.assertEqual(response.status_code, 400)
+        payload = response.get_json()
+        self.assertEqual(
+            payload.get("error"),
+            "Unsupported survey workflow command. Use prepare, preview, or convert.",
+        )
+        self.assertEqual(payload.get("workflow_command"), "mystery")
+
+
 class TestSurveyConvertValidateEndpoint(unittest.TestCase):
     def test_validate_wraps_setup_blocker_after_prepare(self):
         import importlib
