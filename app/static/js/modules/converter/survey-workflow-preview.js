@@ -202,6 +202,7 @@ export function createSurveyWorkflowPreviewController({
         // Default: run validation in preview
         formData.append('validate', 'true');
         formData.append('prepared_workflow', 'true');
+        formData.append('workflow_command', 'preview');
         if (allowNearItemMatch) {
             formData.append('allow_near_item_match', 'true');
             if (selectedNearMatchTasks.length > 0) {
@@ -241,7 +242,7 @@ export function createSurveyWorkflowPreviewController({
         appendLog('Preview only — no files will be written to disk.', 'info');
         appendLog('', 'info');
 
-        console.log('[CLIENT DEBUG] FormData ready, sending to /api/survey-convert-preview');
+        console.log('[CLIENT DEBUG] FormData ready, sending to /api/survey-workflow-command (preview)');
         console.log('[CLIENT DEBUG] FormData contains:', {
             excel: file ? file.name : null,
             excel_size: file ? file.size : null,
@@ -251,7 +252,7 @@ export function createSurveyWorkflowPreviewController({
         });
         advanceSurveyRunProgress('preview', 20, 'Uploading file and starting preview...');
 
-        fetch('/api/survey-convert-preview', {
+        fetch('/api/survey-workflow-command', {
             method: 'POST',
             body: formData,
             signal: previewRunAbortController.signal,
