@@ -14,6 +14,10 @@ from jsonschema import Draft7Validator
 from flask import current_app, has_app_context, jsonify, request, send_file, session
 from werkzeug.utils import secure_filename
 from src.participants_paths import participants_mapping_candidates
+from src.survey_workflow_service import (
+    SurveyWorkflowStageOptions,
+    SurveyWorkflowStageService,
+)
 
 try:
     import defusedxml.ElementTree as ET
@@ -63,6 +67,9 @@ _resolve_effective_template_version_overrides: Any = None
 sync_project_survey_recipe_offsets: Any = None
 _NON_ITEM_TOPLEVEL_KEYS: set[str] = set()
 normalize_paper_software_platform: Any = None
+_survey_workflow_stage_service = SurveyWorkflowStageService(
+    tabular_suffixes=_SUPPORTED_SURVEY_TABULAR_SUFFIXES,
+)
 
 try:
     from src.converters.survey import (
@@ -1569,29 +1576,14 @@ def api_survey_convert():
     except FileNotFoundError as e:
         return jsonify({"error": str(e)}), 400
 
-    if (library_path / "survey").is_dir():
-        survey_dir = library_path / "survey"
-    else:
-        survey_dir = library_path
-
-    effective_survey_dir = survey_dir
-
-    survey_templates = list(effective_survey_dir.glob("survey-*.json"))
-    if not survey_templates:
-        # Project library may be empty; allow through if official library exists as fallback.
-        official_fallback = _resolve_official_survey_dir(
-            session.get("current_project_path")
+    try:
+        effective_survey_dir = _survey_workflow_stage_service.resolve_effective_survey_dir(
+            library_path=library_path,
+            fallback_project_path=session.get("current_project_path"),
+            resolve_official_survey_dir=_resolve_official_survey_dir,
         )
-        if not official_fallback:
-            return (
-                jsonify(
-                    {"error": f"No survey templates found in: {effective_survey_dir}"}
-                ),
-                400,
-            )
-        # Use official dir so the converter has templates to work with; the fallback
-        # mechanism will copy matched templates to the project library afterwards.
-        effective_survey_dir = official_fallback
+    except FileNotFoundError as error:
+        return jsonify({"error": str(error)}), 400
 
     raw_survey_filter = (request.form.get("survey") or "").strip() or None
     try:
@@ -1689,11 +1681,14 @@ def api_survey_convert():
         preflight_output_root = tmp_dir_path / "preflight_rawdata"
         preflight_result = None
         try:
-            if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
-                preflight_result = _run_survey_with_official_fallback(
-                    convert_survey_xlsx_to_prism_dataset,
+            preflight_result = _survey_workflow_stage_service.run_stage(
+                workflow_runner=_run_survey_with_official_fallback,
+                tabular_converter=convert_survey_xlsx_to_prism_dataset,
+                lsa_converter=convert_survey_lsa_to_prism_dataset,
+                options=SurveyWorkflowStageOptions(
+                    suffix=suffix,
                     input_path=input_path,
-                    library_dir=str(effective_survey_dir),
+                    library_dir=Path(effective_survey_dir),
                     output_root=preflight_output_root,
                     survey=survey_filter,
                     id_column=id_column,
@@ -1705,39 +1700,11 @@ def api_survey_convert():
                     dry_run=True,
                     force=True,
                     name="preflight",
-                    authors=[],
                     language=language,
                     alias_file=alias_path,
                     id_map_file=id_map_path,
+                    strict_levels=strict_levels,
                     separator=separator,
-                    duplicate_handling=duplicate_handling,
-                    skip_participants=True,
-                    fallback_project_path=fallback_project_path,
-                    template_version_overrides=effective_template_version_overrides,
-                    allow_near_item_match=allow_near_item_match,
-                    near_match_tasks=near_match_tasks,
-                    task_value_offsets=task_value_offsets,
-                )
-            elif suffix == ".lsa":
-                preflight_result = _run_survey_with_official_fallback(
-                    convert_survey_lsa_to_prism_dataset,
-                    input_path=input_path,
-                    library_dir=str(effective_survey_dir),
-                    output_root=preflight_output_root,
-                    survey=survey_filter,
-                    id_column=id_column,
-                    session_column=session_column,
-                    run_column=run_column,
-                    session=session_override,
-                    unknown=unknown,
-                    dry_run=True,
-                    force=True,
-                    name="preflight",
-                    authors=[],
-                    language=language,
-                    alias_file=alias_path,
-                    id_map_file=id_map_path,
-                    strict_levels=True if strict_levels else None,
                     duplicate_handling=duplicate_handling,
                     skip_participants=True,
                     project_path=current_project_path,
@@ -1746,7 +1713,8 @@ def api_survey_convert():
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
                     task_value_offsets=task_value_offsets,
-                )
+                ),
+            )
         except IdColumnNotDetectedError as e:
             return (
                 jsonify(
@@ -1848,11 +1816,14 @@ def api_survey_convert():
                 pass
 
         try:
-            if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
-                convert_result = _run_survey_with_official_fallback(
-                    convert_survey_xlsx_to_prism_dataset,
+            convert_result = _survey_workflow_stage_service.run_stage(
+                workflow_runner=_run_survey_with_official_fallback,
+                tabular_converter=convert_survey_xlsx_to_prism_dataset,
+                lsa_converter=convert_survey_lsa_to_prism_dataset,
+                options=SurveyWorkflowStageOptions(
+                    suffix=suffix,
                     input_path=input_path,
-                    library_dir=str(effective_survey_dir),
+                    library_dir=Path(effective_survey_dir),
                     output_root=output_root,
                     survey=survey_filter,
                     id_column=id_column,
@@ -1864,39 +1835,11 @@ def api_survey_convert():
                     dry_run=False,
                     force=True,
                     name=dataset_name,
-                    authors=[],
                     language=language,
                     alias_file=alias_path,
                     id_map_file=id_map_path,
+                    strict_levels=strict_levels,
                     separator=separator,
-                    duplicate_handling=duplicate_handling,
-                    skip_participants=True,
-                    fallback_project_path=fallback_project_path,
-                    template_version_overrides=effective_template_version_overrides,
-                    allow_near_item_match=allow_near_item_match,
-                    near_match_tasks=near_match_tasks,
-                    task_value_offsets=task_value_offsets,
-                )
-            elif suffix == ".lsa":
-                convert_result = _run_survey_with_official_fallback(
-                    convert_survey_lsa_to_prism_dataset,
-                    input_path=input_path,
-                    library_dir=str(effective_survey_dir),
-                    output_root=output_root,
-                    survey=survey_filter,
-                    id_column=id_column,
-                    session_column=session_column,
-                    run_column=run_column,
-                    session=session_override,
-                    unknown=unknown,
-                    dry_run=False,
-                    force=True,
-                    name=dataset_name,
-                    authors=[],
-                    language=language,
-                    alias_file=alias_path,
-                    id_map_file=id_map_path,
-                    strict_levels=True if strict_levels else None,
                     duplicate_handling=duplicate_handling,
                     skip_participants=True,
                     project_path=current_project_path,
@@ -1905,7 +1848,8 @@ def api_survey_convert():
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
                     task_value_offsets=task_value_offsets,
-                )
+                ),
+            )
         except IdColumnNotDetectedError as e:
             return (
                 jsonify(
@@ -2117,31 +2061,14 @@ def api_survey_convert_validate():
     except FileNotFoundError as e:
         return jsonify({"error": str(e), "log": log_messages}), 400
 
-    if (library_path / "survey").is_dir():
-        survey_dir = library_path / "survey"
-    else:
-        survey_dir = library_path
-
-    effective_survey_dir = survey_dir
-
-    survey_templates = list(effective_survey_dir.glob("survey-*.json"))
-    if not survey_templates:
-        # Keep validate behavior aligned with convert: an empty project library
-        # should fall back to official templates and seed project-local copies.
-        official_fallback = _resolve_official_survey_dir(
-            session.get("current_project_path")
+    try:
+        effective_survey_dir = _survey_workflow_stage_service.resolve_effective_survey_dir(
+            library_path=library_path,
+            fallback_project_path=session.get("current_project_path"),
+            resolve_official_survey_dir=_resolve_official_survey_dir,
         )
-        if not official_fallback:
-            return (
-                jsonify(
-                    {
-                        "error": f"No survey templates found in: {effective_survey_dir}",
-                        "log": log_messages,
-                    }
-                ),
-                400,
-            )
-        effective_survey_dir = official_fallback
+    except FileNotFoundError as error:
+        return jsonify({"error": str(error), "log": log_messages}), 400
 
     survey_filter = (request.form.get("survey") or "").strip() or None
     try:
@@ -2259,11 +2186,14 @@ def api_survey_convert_validate():
         preflight_output_root = tmp_dir_path / "preflight_rawdata"
         preflight_result = None
         try:
-            if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
-                preflight_result = _run_survey_with_official_fallback(
-                    convert_survey_xlsx_to_prism_dataset,
+            preflight_result = _survey_workflow_stage_service.run_stage(
+                workflow_runner=_run_survey_with_official_fallback,
+                tabular_converter=convert_survey_xlsx_to_prism_dataset,
+                lsa_converter=convert_survey_lsa_to_prism_dataset,
+                options=SurveyWorkflowStageOptions(
+                    suffix=suffix,
                     input_path=input_path,
-                    library_dir=str(effective_survey_dir),
+                    library_dir=Path(effective_survey_dir),
                     output_root=preflight_output_root,
                     survey=survey_filter,
                     id_column=id_column,
@@ -2275,40 +2205,11 @@ def api_survey_convert_validate():
                     dry_run=True,
                     force=True,
                     name="preflight",
-                    authors=[],
                     language=language,
                     alias_file=alias_path,
                     id_map_file=id_map_path,
+                    strict_levels=strict_levels,
                     separator=separator,
-                    duplicate_handling=duplicate_handling,
-                    skip_participants=True,
-                    fallback_project_path=fallback_project_path,
-                    log_fn=add_log,
-                    template_version_overrides=effective_template_version_overrides,
-                    allow_near_item_match=allow_near_item_match,
-                    near_match_tasks=near_match_tasks,
-                    task_value_offsets=task_value_offsets,
-                )
-            elif suffix == ".lsa":
-                preflight_result = _run_survey_with_official_fallback(
-                    convert_survey_lsa_to_prism_dataset,
-                    input_path=input_path,
-                    library_dir=str(effective_survey_dir),
-                    output_root=preflight_output_root,
-                    survey=survey_filter,
-                    id_column=id_column,
-                    session_column=session_column,
-                    run_column=run_column,
-                    session=session_override,
-                    unknown=unknown,
-                    dry_run=True,
-                    force=True,
-                    name="preflight",
-                    authors=[],
-                    language=language,
-                    alias_file=alias_path,
-                    id_map_file=id_map_path,
-                    strict_levels=True if strict_levels else None,
                     duplicate_handling=duplicate_handling,
                     skip_participants=True,
                     project_path=current_project_path,
@@ -2318,7 +2219,8 @@ def api_survey_convert_validate():
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
                     task_value_offsets=task_value_offsets,
-                )
+                ),
+            )
         except IdColumnNotDetectedError as e:
             add_log(f"ID column not detected: {str(e)}", "error")
             return (
@@ -2463,11 +2365,16 @@ def api_survey_convert_validate():
 
         convert_result = None
         try:
-            if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
-                convert_result = _run_survey_with_official_fallback(
-                    convert_survey_xlsx_to_prism_dataset,
+            if suffix == ".lsa":
+                add_log(f"Processing LimeSurvey archive: {filename}", "info")
+            convert_result = _survey_workflow_stage_service.run_stage(
+                workflow_runner=_run_survey_with_official_fallback,
+                tabular_converter=convert_survey_xlsx_to_prism_dataset,
+                lsa_converter=convert_survey_lsa_to_prism_dataset,
+                options=SurveyWorkflowStageOptions(
+                    suffix=suffix,
                     input_path=input_path,
-                    library_dir=str(effective_survey_dir),
+                    library_dir=Path(effective_survey_dir),
                     output_root=output_root,
                     survey=survey_filter,
                     id_column=id_column,
@@ -2479,40 +2386,11 @@ def api_survey_convert_validate():
                     dry_run=False,
                     force=True,
                     name=dataset_name,
-                    authors=[],
                     language=language,
                     alias_file=alias_path,
-                    duplicate_handling=duplicate_handling,
                     id_map_file=id_map_path,
+                    strict_levels=strict_levels,
                     separator=separator,
-                    skip_participants=True,
-                    fallback_project_path=current_project_path,
-                    log_fn=add_log,
-                    template_version_overrides=effective_template_version_overrides,
-                    allow_near_item_match=allow_near_item_match,
-                    near_match_tasks=near_match_tasks,
-                    task_value_offsets=task_value_offsets,
-                )
-            elif suffix == ".lsa":
-                add_log(f"Processing LimeSurvey archive: {filename}", "info")
-                convert_result = _run_survey_with_official_fallback(
-                    convert_survey_lsa_to_prism_dataset,
-                    input_path=input_path,
-                    library_dir=str(effective_survey_dir),
-                    output_root=output_root,
-                    survey=survey_filter,
-                    id_column=id_column,
-                    session_column=session_column,
-                    run_column=run_column,
-                    session=session_override,
-                    unknown=unknown,
-                    dry_run=False,
-                    force=True,
-                    name=dataset_name,
-                    authors=[],
-                    language=language,
-                    alias_file=alias_path,
-                    strict_levels=True if strict_levels else None,
                     duplicate_handling=duplicate_handling,
                     skip_participants=True,
                     project_path=current_project_path,
@@ -2522,7 +2400,8 @@ def api_survey_convert_validate():
                     allow_near_item_match=allow_near_item_match,
                     near_match_tasks=near_match_tasks,
                     task_value_offsets=task_value_offsets,
-                )
+                ),
+            )
             add_log("Conversion completed successfully", "success")
         except IdColumnNotDetectedError as e:
             add_log(f"ID column not detected: {str(e)}", "error")
