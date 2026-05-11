@@ -267,12 +267,78 @@ into backend contracts.
     controller dependencies remained stable.
   - Extended `tests/test_converter_workflow_wiring.py` to assert
     version-context util module ownership and orchestrator import wiring.
+  - Extracted project-save/participant-registry feedback helpers from
+    `survey-convert.js` into
+    `app/static/js/modules/converter/survey-convert-feedback.js` via
+    `createSurveyConvertFeedbackController`.
+  - Reduced `survey-convert.js` ownership for `getProjectSaveSummary`,
+    `openConverterTab`, `showConvertInfoMessage`,
+    `getParticipantRegistryWarning`, and `showParticipantRegistryWarning` to
+    thin delegation wrappers.
+  - Updated `tests/test_converter_workflow_wiring.py` to assert feedback module
+    import/ownership and adjusted save-path surface assertions to track the
+    extracted module rather than the orchestrator.
+  - Extracted survey file-separator helpers from `survey-convert.js` into
+    `app/static/js/modules/converter/survey-file-separator-utils.js`
+    (`isDelimitedSurveyFilename`, `getSelectedSeparator`,
+    `updateSeparatorVisibility`).
+  - Reduced `survey-convert.js` separator helpers to thin delegation wrappers,
+    preserving existing callsites and UI behavior.
+  - Extended `tests/test_converter_workflow_wiring.py` to assert
+    separator-utils module ownership and orchestrator import wiring.
+  - Fixed convert setup task-scoping regression: convert workflow now forwards
+    selected survey tasks into the setup (`prepare`) request payload so
+    preflight/manual-offset blockers only evaluate the user-selected surveys.
+  - Updated survey workflow modules and wiring tests to enforce selected-task
+    propagation through setup (`selectedTasks: selectedSurveyTasks` in convert
+    flow and `selected_tasks` form payload support in workflow request builder).
+  - Moved Step 4-5 action controls (Preview/Convert + run progress + cancel)
+    to the bottom workflow section in `converter_survey.html`, directly below
+    conversion summary, so users no longer need to scroll back up to run
+    Convert after preview review.
   - Fixed survey workflow runtime crash (`dictionary update sequence element #0
     has length 4; 2 is required`) by preserving list-based
     `template_version_overrides` in `src/survey_workflow_service.py` instead of
     coercing all overrides through `dict(...)`.
   - Added regression coverage in `tests/test_survey_workflow_service.py` for
     list- and dict-shaped `template_version_overrides` forwarding.
+  - Fixed backend selected-task scoping gap in
+    `api_survey_convert_validate`: the endpoint now parses `selected_tasks`
+    and merges it with `survey` filter input so convert preflight and final
+    run only evaluate user-selected surveys.
+  - Added regression coverage in
+    `tests/test_web_blueprints_conversion.py` to assert
+    `api_survey_convert_validate` merges `survey` + `selected_tasks` and
+    forwards the narrowed filter (`pss` in a `pss,gad` + selected `pss`
+    scenario) through both preflight and convert runs.
+  - Reframed out-of-range workflow messaging (backend + frontend) to manual-
+    fix-first guidance: correct source values first, keep task value offsets as
+    an optional advanced fallback rather than the default implied action.
+  - Restored LimeSurvey sidecar source gating in survey conversion backend
+    (`app/src/converters/survey.py` and `src/converters/survey.py`):
+    `tool-limesurvey` column extraction and sidecar writes now run only for
+    native LimeSurvey imports (`source_format` in `lsa`/`lss`), preventing
+    non-LimeSurvey CSV/XLSX/TSV imports from emitting
+    `*_tool-limesurvey_survey.json` sidecars that fail PRISM schema checks
+    (`'Technical' is a required property`).
+  - Improved validation error UX in
+    `app/static/js/modules/converter/survey-validation-results.js`:
+    repeated file-level errors now collapse by issue kind (path-insensitive,
+    e.g. shared `schema error: 'Technical' is a required property`) so large
+    PRISM301 batches render as one expandable section instead of long duplicate
+    lists.
+  - Added static wiring regression assertions for the new validation collapse
+    helper (`extractValidationIssueKind`) in
+    `tests/test_converter_workflow_wiring.py`.
+  - Added backend stale-artifact cleanup in
+    `api_survey_convert_validate` save flow: for non-LimeSurvey imports,
+    touched survey folders now remove leftover
+    `*_tool-limesurvey_survey.{tsv,json}` files from earlier buggy runs so
+    obsolete sidecars do not keep failing project validation.
+  - Added endpoint regression coverage in
+    `tests/test_web_blueprints_conversion.py` to assert stale
+    `tool-limesurvey` sidecars are removed during non-LSA convert-validate
+    saves.
   - Extracted unmatched-template error rendering/save orchestration from
     `survey-convert.js` into new module
     `app/static/js/modules/converter/survey-unmatched-templates.js` via
@@ -284,6 +350,19 @@ into backend contracts.
   - Updated `tests/test_converter_workflow_wiring.py` to assert unmatched-
     template module import/instantiation/delegation and to prevent legacy
     window-handler/save-loop logic from drifting back into `survey-convert.js`.
+  - Improved questionnaire version wizard UX in
+    `app/static/js/modules/converter/survey-convert.js` by adding a default
+    shared-selection mode (`Use one version for all sessions/runs`) with
+    explicit per-context override, while preserving session/run-level
+    selections in `selectedTemplateVersions`.
+  - Improved questionnaire version wizard readability in
+    `app/templates/converter_survey.html` and
+    `app/static/css/converter.css` using dedicated contrast classes
+    (`survey-version-card`, custom meta/count/variant badges) instead of
+    low-contrast generic alert/muted combinations.
+  - Extended wiring regression checks in
+    `tests/test_converter_workflow_wiring.py` for shared-selection mode hooks
+    and updated wizard template class wiring.
 
   **Assessment update (2026-05-10):**
   - Confirmed stale DOM-guarded branches still exist in `survey-convert.js`
@@ -368,6 +447,32 @@ into backend contracts.
   ordering, and detected-context derivation) is another stable extraction
   target because it is side-effect free and can be wrapped without behavior
   changes in workflow orchestration.
+- Converter post-run user feedback (project output summary and participants TSV
+  warning CTA routing) can be extracted into a dedicated controller without
+  workflow behavior changes when the orchestrator keeps only delegation
+  wrappers.
+- Small deterministic helper clusters (like file-separator gating) are good
+  extraction slices: move to utility modules first, then keep wrappers in
+  orchestrator to avoid broad callsite churn.
+- If conversion supports per-task deselection, setup/preflight requests must be
+  scoped with the same selected task set as final convert requests; otherwise
+  out-of-range blockers can fire for tasks the user explicitly deselected.
+- Workflow convert-validate handlers must apply the same selected-task merge as
+  preview/convert handlers; missing it in one adapter endpoint is enough to
+  reintroduce deselected-task blockers even when frontend payloads are correct.
+- Out-of-range handling copy should default to source-data correction guidance;
+  manual value offsets are an optional recovery path, not the primary expected
+  resolution for typical single-item coding mistakes.
+- Tool-specific sidecar emission must stay source-aware: if `tool-limesurvey`
+  extraction is not gated to native LimeSurvey inputs (`lsa`/`lss`), regular
+  tabular imports can emit false `*_tool-limesurvey_*` artifacts and trigger
+  cascading PRISM301 schema errors.
+- Validation duplication often differs only in file-path prefixes; collapsing by
+  issue kind (for example normalized `schema error: ...`) keeps large PRISM301
+  batches readable without hiding actionable file lists.
+- Source-format gating alone is not enough after prior buggy saves: non-LSA
+  save flows should also clean stale `tool-limesurvey` artifacts in touched
+  survey folders to prevent legacy false errors from persisting across runs.
 - Project-change handlers for sourcedata-backed inputs must clear both the
   visible quick-select and the underlying file input; clearing only one leaves
   the next project coupled to stale source state.
@@ -375,6 +480,9 @@ into backend contracts.
   consolidation: switch the frontend to one endpoint first, keep legacy routes
   as aliases, then collapse duplicated backend handler logic behind that
   adapter instead of rewriting both layers at once.
+- Multi-context version selection should default to a single shared choice for
+  ease of use, then allow explicit per-session/run overrides only when users
+  need longitudinal scale differences.
 
 ## Priority 1.34 — RTK command wrapper for repo workflows ✅ DONE
 

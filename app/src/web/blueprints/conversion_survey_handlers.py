@@ -181,6 +181,57 @@ def _iter_session_registration_values(
     return values
 
 
+def _cleanup_stale_tool_limesurvey_sidecars(
+    *,
+    copied_output_paths: list[Path],
+    source_suffix: str,
+    log_fn=None,
+) -> list[Path]:
+    """Remove stale tool-limesurvey sidecars for non-LimeSurvey imports.
+
+    When converting non-LSA/LSS sources, older buggy runs may have left
+    `*_tool-limesurvey_survey.{tsv,json}` files in project survey folders.
+    If the current run does not emit such files, clean stale leftovers in the
+    survey directories touched by this save operation.
+    """
+
+    normalized_suffix = str(source_suffix or "").strip().lower()
+    if normalized_suffix in {".lsa", ".lss"}:
+        return []
+
+    if any("_tool-limesurvey_survey" in path.name for path in copied_output_paths):
+        return []
+
+    touched_survey_dirs = {
+        path.parent for path in copied_output_paths if path.parent.name == "survey"
+    }
+    removed_paths: list[Path] = []
+
+    for survey_dir in sorted(touched_survey_dirs):
+        for pattern in (
+            "*_tool-limesurvey_survey.tsv",
+            "*_tool-limesurvey_survey.json",
+        ):
+            for stale_path in survey_dir.glob(pattern):
+                if not stale_path.is_file():
+                    continue
+                try:
+                    stale_path.unlink()
+                    removed_paths.append(stale_path)
+                except OSError:
+                    continue
+
+    if removed_paths and callable(log_fn):
+        log_fn(
+            "Removed "
+            f"{len(removed_paths)} stale tool-limesurvey sidecar file(s) "
+            "for non-LimeSurvey import.",
+            "info",
+        )
+
+    return removed_paths
+
+
 def _format_value_offset_confirmation_response(
     error: Exception,
     log_messages: list[dict[str, str]] | None = None,
@@ -212,7 +263,7 @@ def _format_value_offset_confirmation_response(
         ).strip().lower()
 
     fallback_message = (
-        "Survey values are outside template levels. Review task value offsets in Advanced options before continuing."
+        "Survey values are outside template levels. Review and fix out-of-range source values before continuing."
     )
     review_message = str(error).strip() or fallback_message
     if configured_offset is None and evidence_classification in {
@@ -233,7 +284,8 @@ def _format_value_offset_confirmation_response(
         )
     else:
         review_message += (
-            " If you are certain this survey task uses a shifted numeric scale, add a manual task value offset in Advanced options and run Preview again."
+            " Recommended first: correct the out-of-range source values and run Preview again."
+            " Optional fallback: if you are certain this survey task uses a shifted numeric scale, add a manual task value offset in Advanced options and run Preview again."
         )
     payload: dict[str, Any] = {
         "error": "value_offset_manual_review_required",
@@ -2070,7 +2122,14 @@ def api_survey_convert_validate():
     except FileNotFoundError as error:
         return jsonify({"error": str(error), "log": log_messages}), 400
 
-    survey_filter = (request.form.get("survey") or "").strip() or None
+    raw_survey_filter = (request.form.get("survey") or "").strip() or None
+    try:
+        selected_tasks = parse_selected_survey_tasks(
+            request.form.get("selected_tasks")
+        )
+        survey_filter = merge_selected_survey_filter(raw_survey_filter, selected_tasks)
+    except ValueError as error:
+        return jsonify({"error": str(error), "log": log_messages}), 400
     try:
         template_version_overrides = parse_template_version_overrides(
             request.form.get("template_versions")
@@ -2256,7 +2315,10 @@ def api_survey_convert_validate():
             )
         except Exception as error:
             if _is_value_offset_confirmation_error(error):
-                add_log("Value offset confirmation is required before conversion can continue.", "warning")
+                add_log(
+                    "Out-of-range survey values need review before conversion can continue.",
+                    "warning",
+                )
                 return (
                     jsonify(
                         _format_workflow_preparation_stale_response(
@@ -2439,7 +2501,7 @@ def api_survey_convert_validate():
         except Exception as conv_err:
             if _is_value_offset_confirmation_error(conv_err):
                 add_log(
-                    "Value offset confirmation is required before conversion can continue.",
+                    "Out-of-range survey values need review before conversion can continue.",
                     "warning",
                 )
                 return (
@@ -2639,6 +2701,12 @@ def api_survey_convert_validate():
                     dest.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(item, dest)
                     copied_output_paths.append(dest)
+
+            _cleanup_stale_tool_limesurvey_sidecars(
+                copied_output_paths=copied_output_paths,
+                source_suffix=suffix,
+                log_fn=add_log,
+            )
             add_log("Project updated successfully!", "success")
 
             if archive_sourcedata:
