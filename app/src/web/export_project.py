@@ -202,21 +202,23 @@ def export_project(
     _check_cancelled()
 
     participant_mapping = {}
+    _saved_mapping_file: Optional[Path] = None
     if anonymize:
         participant_ids = collect_participant_ids(project_path)
         if participant_ids:
-            # Save mapping to project's code/ directory (protected — not in ZIP)
-            mapping_file = project_path / "code" / "anonymization_map.json"
+            # Save mapping to project's code/ directory (protected — not in ZIP).
+            # create_participant_mapping() creates the parent directory automatically.
+            _saved_mapping_file = project_path / "code" / "anonymization_map.json"
             participant_mapping = create_participant_mapping(
                 list(participant_ids),
-                mapping_file,
+                _saved_mapping_file,
                 id_length=id_length,
                 deterministic=deterministic,
             )
             print(
                 f"✓ Created anonymization mapping for {len(participant_mapping)} participants"
             )
-            print(f"  Mapping saved to: {mapping_file}")
+            print(f"  Mapping saved to: {_saved_mapping_file}")
             print("  ⚠️  KEEP THIS FILE SECURE! It allows re-identification.")
 
     _report(10, "Scanning files...")
@@ -248,9 +250,7 @@ def export_project(
         "files_processed": 0,
         "files_anonymized": 0,
         "participant_count": len(participant_mapping),
-        "mapping_file": str(project_path / "code" / "anonymization_map.json")
-        if (anonymize and participant_mapping)
-        else None,
+        "mapping_file": str(_saved_mapping_file) if _saved_mapping_file else None,
     }
 
     def _anon_arc_path(rel_parts: list) -> str:
