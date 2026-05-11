@@ -1,1628 +1,187 @@
-# PRISM Studio — Roadmap
-
-## Priority 1.35 — Survey converter workflow audit and backend command consolidation 🚧 IN PROGRESS
-
-Reduce survey converter complexity by auditing active workflow paths, flagging
-outdated/revisited parts, and moving workflow commands from frontend orchestration
-into backend contracts.
-
-**Workflow analysis completed (survey scope):**
-- Documented current survey flow and flagged stale/revisited paths in
-  `docs/SURVEY_CONVERTER_WORKFLOW_AUDIT_2026-05-09.md`.
-- Confirmed active converter entrypoint is `app/static/js/converter-bootstrap.js`
-  while legacy converter module paths still exist.
-- Identified backend endpoint split (`/api/survey-convert` zip-style legacy path
-  vs `/api/survey-convert-validate` JSON workflow path) as a consolidation target.
-
-**Started implementation (backend-first):**
-- Moved survey participants schema merge orchestration from frontend JS into
-  backend save contract:
-  - Added canonical backend helper in `src/participants_backend.py`.
-  - Added merge mode handling in
-    `app/src/web/blueprints/projects_participants_handlers.py`.
-  - Updated survey frontend save flow in
-    `app/static/js/modules/converter/survey-convert.js` to send
-    `survey_schema_merge_mode` + `survey_selected_schema`.
-  - Added regression coverage in
-    `tests/test_projects_participants_handlers.py`.
-
-  **Phase 2 progress (entrypoint consolidation):**
-  - Updated converter aggregator wiring in
-    `app/static/js/modules/converter/index.js` to stop invoking legacy
-    `survey.js` quick-import initialization.
-  - Added idempotent bootstrap guards in
-    `app/static/js/converter-bootstrap.js` and converter aggregator wiring to
-    prevent duplicate handler binding if imported through multiple paths.
-  - Added wiring assertions in `tests/test_converter_workflow_wiring.py` to
-    enforce single bootstrap entrypoint expectations.
-
-  **Phase 3 progress (module extraction, no behavior change):**
-  - Extracted survey participant-metadata workflow from
-    `app/static/js/modules/converter/survey-convert.js` into new module
-    `app/static/js/modules/converter/survey-participants-metadata.js`.
-  - Kept `survey-convert.js` as orchestrator and wired it to the extracted
-    controller (`createSurveyParticipantsMetadataController`).
-  - Extracted survey setup preparation orchestration into
-    `app/static/js/modules/converter/survey-workflow-prepare.js` and wired
-    `survey-convert.js` to delegate setup/late-blocker/finalization flows through
-    `createSurveyWorkflowPrepareController`.
-  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` to assert
-    extracted module wiring and backend merge payload contract.
-  - Extracted preview orchestration into
-    `app/static/js/modules/converter/survey-workflow-preview.js` and delegated
-    preview button handling from `survey-convert.js`.
-  - Extracted run-progress orchestration into
-    `app/static/js/modules/converter/survey-workflow-progress.js` and delegated
-    progress state/timer handling from `survey-convert.js`.
-  - Extracted survey sourcedata quick-select orchestration into
-    `app/static/js/modules/converter/survey-sourcedata-quick-select.js` and
-    delegated dropdown refresh/file-load/project-change reset wiring from
-    `survey-convert.js`.
-  - Extracted template-check orchestration into
-    `app/static/js/modules/converter/survey-workflow-template-check.js` and
-    delegated check button request/logging/gating/version-wizard branching from
-    `survey-convert.js`.
-  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` for
-    preview module import/instantiation/delegation and preview endpoint
-    ownership assertions.
-  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` for
-    progress module import/instantiation/delegation and run-progress API
-    ownership assertions.
-  - Updated wiring tests in `tests/test_converter_workflow_wiring.py` so
-    survey sourcedata endpoint and project-change ownership are asserted in the
-    extracted sourcedata module instead of `survey-convert.js`.
-  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` so
-    template-check endpoint and project-path append ownership are asserted in
-    `survey-workflow-template-check.js`.
-  - Extracted template result rendering/save orchestration into
-    `app/static/js/modules/converter/survey-template-results.js` and delegated
-    template result mode dispatch from `survey-convert.js` to
-    `createSurveyTemplateResultsController`.
-  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` to
-    assert template-results import/instantiation/delegation and endpoint
-    ownership (`/api/limesurvey-save-to-project` and `/api/library-template/`).
-  - Extracted shared survey value-offset parsing/normalization helpers into
-    `app/static/js/modules/converter/survey-value-offset-utils.js` and reduced
-    duplicate helper ownership in `survey-convert.js` to thin wrappers.
-  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` for the
-    new value-offset utility module and `survey-convert.js` delegation wrappers.
-  - Extracted value-offset editor apply-state and DOM event wiring into
-    `app/static/js/modules/converter/survey-value-offset-editor.js` and
-    delegated from `survey-convert.js` via
-    `createSurveyValueOffsetEditorController` while keeping existing offset
-    state/review logic in the orchestrator.
-  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` to
-    assert value-offset editor controller import/instantiation/initialization
-    and ownership of add-row/change/input/remove bindings.
-  - Shifted value-offset status/signature helper ownership
-    (`hasManualTaskValueOffsets`, `hasAppliedTaskValueOffsetSelections`,
-    `updateTaskValueOffsetApplyState`, and related map/signature helpers) into
-    `survey-value-offset-editor.js`, with `survey-convert.js` now delegating
-    through thin wrappers.
-  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` to
-    assert helper delegation in `survey-convert.js` and helper ownership in the
-    extracted value-offset editor controller.
-  - Moved value-offset editor state mutation/render internals
-    (`createTaskValueOffsetRow`, row rendering, text/state sync, ensure/focus,
-    and editor-change handlers) into
-    `app/static/js/modules/converter/survey-value-offset-editor.js`.
-  - Reduced `survey-convert.js` value-offset UI functions to thin delegation
-    wrappers and injected dependencies (task list provider, row-id allocator,
-    parser/normalizer utilities, and escape helper) into the controller.
-  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` to
-    assert delegation wrappers in `survey-convert.js` and row-markup ownership
-    (`data-role="operator"`, `data-role="magnitude"`) in the extracted
-    value-offset editor controller.
-  - Moved available-task derivation and manual-offset retrieval helper ownership
-    (`getAvailableSurveyTasksForValueOffsets`, `getManualTaskValueOffsets`)
-    into `survey-value-offset-editor.js`, with `survey-convert.js` keeping
-    thin delegation wrappers.
-  - Updated controller wiring to inject preview-selection/template-version/
-    preview-task providers instead of calculating those lists directly inside
-    `survey-convert.js`.
-  - Moved manual offset apply-click behavior (`convertApplyValueOffsetsBtn`)
-    into `survey-value-offset-editor.js` via
-    `handleApplyTaskValueOffsetsClick`, keeping `survey-convert.js` as a thin
-    event-binding delegator.
-  - Extended controller wiring with `getTemplateWorkflowGate` + `convertInfo`
-    so offset-apply gate-clearing/message behavior remains centralized in the
-    editor controller without changing workflow semantics.
-  - Updated `tests/test_converter_workflow_wiring.py` to assert apply-click
-    delegation ownership moved out of `survey-convert.js`.
-  - Moved version-wizard apply-click behavior (`surveyVersionWizardApplyBtn`)
-    into `survey-workflow-template-check.js`
-    (`handleVersionWizardApplyClick`) while keeping `survey-convert.js` as a
-    thin event-binding delegator.
-  - Extended template-check controller wiring with narrow selection-state
-    callbacks (`hasMultiVersionWizardTasks`,
-    `hasCompleteVersionWizardSelections`,
-    `getCurrentTemplateVersionSelectionSignature`,
-    `setAppliedTemplateVersionSelectionSignature`,
-    `setVersionWizardRetryGateMode`, and template-gate/action-state accessors)
-    to preserve behavior without duplicating orchestration logic.
-  - Updated `tests/test_converter_workflow_wiring.py` to assert version-wizard
-    apply ownership in the template-check controller and prevent reintroducing
-    inline apply branching in `survey-convert.js`.
-  - Moved `surveyVersionWizardApplyBtn` click-event binding into
-    `survey-workflow-template-check.js` `initialize()`, so both template-check
-    and version-apply interactions are owned by one workflow controller.
-  - Removed redundant version-apply listener wiring from
-    `survey-convert.js`, leaving the orchestrator free of this UI event
-    registration.
-  - Extracted preview/conversion summary rendering and selection-binding
-    behavior from `survey-convert.js` into new module
-    `app/static/js/modules/converter/survey-conversion-summary.js` via
-    `createSurveyConversionSummaryController`.
-  - Reduced `survey-convert.js` summary ownership to thin delegation
-    (`displayConversionSummary`) and injected narrow state callbacks
-    (`getSurveyPreviewSelectionState`, `setSurveyPreviewSelectedTasks`) plus
-    formatter/UI helpers into the summary controller.
-  - Updated `tests/test_converter_workflow_wiring.py` to assert summary module
-  - Extracted conversion-result application from
-    `app/static/js/modules/converter/survey-workflow-convert.js` into new
-    module `app/static/js/modules/converter/survey-workflow-convert-results.js`
-    so the convert workflow controller now delegates validation/save-summary/
-    participant-registry result handling through
-    `createSurveyWorkflowConvertResultsController`.
-  - Removed unreachable survey-library/template-check DOM branches from
-    `app/static/js/modules/converter/survey-convert.js` and matching stale
-    bootstrap wiring in `app/static/js/converter-bootstrap.js`
-    (`convertLibraryPath`, `convertBrowseLibraryBtn`,
-    `checkProjectTemplatesBtn`, `surveyI18nWarning`,
-    `surveyStructureWarning`).
-  - Added unified backend adapter endpoint
-    `POST /api/survey-workflow-command` in
-    `app/src/web/blueprints/conversion_survey_handlers.py` and switched the
-    survey workflow prepare/preview/convert frontend modules to use that one
-    command endpoint with explicit `workflow_command` values while keeping the
-    legacy routes mounted as compatibility aliases.
-  - Extended focused coverage in `tests/test_converter_workflow_wiring.py`,
-    `tests/test_web_blueprints_conversion.py`, and
-    `tests/test_backend_monitoring.py` for the new convert-results controller,
-    stale survey UI cleanup, unified workflow-command route dispatch, and
-    backend monitoring command rendering.
-  - Extended workflow-command adapter regression coverage in
-    `tests/test_web_blueprints_conversion.py` for alias value/field dispatch
-    (`setup`, `dry_run`, `validate`, plus `command`/`mode` payload aliases)
-    so frontend/backend command consolidation stays stable.
-  - Added template-version override shape-preservation regression coverage in
-    `tests/test_survey_template_version_persistence.py` to pin request payload
-    passthrough behavior when project-level selections are absent.
-  - Hardened unified workflow-command parsing in
-    `app/src/web/blueprints/conversion_survey_handlers.py` so
-    `/api/survey-workflow-command` now also accepts JSON payload aliases
-    (`workflow_command` / `command` / `mode`) while preserving existing form
-    precedence.
-  - Extended regression coverage in `tests/test_web_blueprints_conversion.py`
-    for JSON workflow-command dispatch and form-over-JSON precedence, and in
-    `tests/test_survey_preview_regressions.py` to pin non-redundant preview
-    validation execution (single dry-run preview + single full validation pass)
-    when no manual-review exception contract is configured.
-  - Lessons learned: workflow command adapters should parse both multipart and
-    JSON request shapes to avoid transport-coupled regressions; preview
-    validation coverage should explicitly assert run-count semantics for
-    multi-task results to catch accidental per-task reruns early.
-  - Extracted shared survey stage-form parsing into backend service
-    `src/survey_workflow_service.py` (`parse_stage_form_fields`) and switched
-    both `api_survey_convert` and `api_survey_convert_validate` in
-    `app/src/web/blueprints/conversion_survey_handlers.py` to delegate
-    id/session/run/sheet/unknown/name/language/strict-levels/near-match/duplicate
-    parsing through that canonical backend helper.
-  - Added focused backend parser coverage in
-    `tests/test_survey_workflow_service.py` for normalization/default/fallback
-    behavior, and revalidated endpoint compatibility in
-    `tests/test_web_blueprints_conversion.py`.
-  - Coverage checkpoint: `./rtk coverage` now passes at 81.03%
-    (1986 passed, 3 skipped), clearing the interim 80% gate with margin.
-  - Lessons learned: request-shape extraction is low-risk when endpoint-specific
-    save/archive semantics stay in adapters while common stage parsing is
-    centralized in backend service helpers.
-  - Extended `parse_stage_form_fields` backend reuse to
-    `api_survey_check_project_templates` and
-    `api_survey_detect_version_context` in
-    `app/src/web/blueprints/conversion_survey_handlers.py`, removing remaining
-    duplicate id/session/run/sheet/duplicate normalization blocks from these
-    adapter routes.
-  - Revalidated detect/check-project-template workflow contracts with focused
-    endpoint tests in `tests/test_web_blueprints_conversion.py` and
-    `tests/test_converter_project_context_helpers.py`; full gate remains
-    stable at 81.03% coverage.
-  - Lessons learned: small parser reuse increments across adjacent routes keep
-    behavior stable while making backend-owned normalization easier to expand
-    into preview/prepare paths next.
-  - Extracted stale-workflow blocker payload assembly into canonical backend
-    helpers in `src/survey_workflow_service.py`
-    (`build_near_match_confirmation_payload`,
-    `build_template_completion_required_payload`) and switched
-    `api_survey_convert` / `api_survey_convert_validate` to delegate near-match
-    and template-completion preflight payload creation through those helpers.
-  - Reused the backend near-match payload helper in
-    `app/src/web/blueprints/conversion_survey_preview_handlers.py` so
-    prepare/preview/convert now share one canonical near-match blocker message
-    contract.
-  - Added focused helper regression tests in
-    `tests/test_survey_workflow_service.py` and revalidated stale-preparation
-    blocker endpoint behavior in `tests/test_web_blueprints_conversion.py` and
-    `tests/test_survey_preview_regressions.py`.
-  - Coverage checkpoint: `./rtk coverage` now passes at 81.05%
-    (1988 passed, 3 skipped, 2 warnings).
-  - Lessons learned: keep stale-workflow wrapping (prepared-workflow
-    translation/log attachment) in web adapters, but centralize reusable
-    blocker payload construction in backend service helpers.
-  - Centralized stale-preparation response transformation in backend helper
-    `SurveyWorkflowStageService.format_workflow_preparation_stale_response`
-    (`src/survey_workflow_service.py`) and reduced
-    `app/src/web/blueprints/conversion_survey_preview_handlers.py`
-    `_format_workflow_preparation_stale_response(...)` to a thin adapter that
-    only resolves request context (`prepared_workflow`) and delegates.
-  - Added service-level regression coverage in
-    `tests/test_survey_workflow_service.py` for wrapped vs non-wrapped stale
-    payload behavior (including log passthrough), and revalidated stale-blocker
-    contracts in `tests/test_web_blueprints_conversion.py` and
-    `tests/test_survey_preview_regressions.py`.
-  - Coverage checkpoint: `./rtk coverage` now passes at 81.08%
-    (1990 passed, 3 skipped, 2 warnings).
-  - Lessons learned: pure stale-response transformation belongs in backend
-    helpers; web adapters should only supply request-derived flags and keep
-    transport concerns local.
-  - Decoupled `app/src/web/blueprints/conversion_survey_handlers.py` from
-    preview-layer private stale wrapper import by adding local adapter helpers
-    (`_is_prepared_workflow_request`,
-    `_format_workflow_preparation_stale_response`) that delegate directly to
-    `SurveyWorkflowStageService.format_workflow_preparation_stale_response`.
-  - Added handler-level regression coverage in
-    `tests/test_web_blueprints_conversion.py` for prepared vs unprepared stale
-    wrapper behavior (including log passthrough), while keeping existing stale
-    blocker endpoint tests green.
-  - Coverage checkpoint: `./rtk coverage` now passes at 81.08%
-    (1992 passed, 3 skipped, 2 warnings).
-  - Lessons learned: avoid cross-module imports of private web helpers;
-    each adapter can keep tiny request-context wrappers that call canonical
-    backend service logic.
-  - Centralized prepared-workflow boolean parsing in backend helper
-    `SurveyWorkflowStageService.parse_prepared_workflow_flag` and switched both
-    `app/src/web/blueprints/conversion_survey_handlers.py` and
-    `app/src/web/blueprints/conversion_survey_preview_handlers.py` wrappers to
-    delegate this truthy/falsey normalization instead of duplicating inline
-    string checks.
-  - Added focused parser regression coverage in
-    `tests/test_survey_workflow_service.py` for canonical truthy and falsey
-    prepared-workflow values; stale-wrapper endpoint tests remain green.
-  - Coverage checkpoint: `./rtk coverage` remains at 81.08%
-    (1994 passed, 3 skipped, 2 warnings).
-  - Lessons learned: keep all request-flag normalization in backend helpers so
-    adapter wrappers only read request fields and forward normalized booleans.
-  - Promoted survey input-format constants to canonical backend ownership in
-    `src/survey_workflow_service.py`
-    (`SUPPORTED_SURVEY_TABULAR_SUFFIXES`,
-    `SUPPORTED_SURVEY_INPUT_SUFFIXES`,
-    `SUPPORTED_SURVEY_INPUT_MESSAGE`) and rewired both
-    `app/src/web/blueprints/conversion_survey_preview_handlers.py` and
-    `app/src/web/blueprints/conversion_survey_handlers.py` to consume those
-    shared constants instead of cross-importing preview-private constants.
-  - Kept preview-module compatibility aliases (`_SUPPORTED_*`) intact so
-    existing route behavior and imports remain stable while ownership moved to
-    backend service.
-  - Added service-level constant coverage in
-    `tests/test_survey_workflow_service.py` and revalidated survey preview /
-    validate / version-context / project-template-check endpoint groups.
-  - Coverage checkpoint: `./rtk coverage` now passes at 81.09%
-    (1995 passed, 3 skipped, 2 warnings).
-  - Lessons learned: shared format-policy constants should live in backend
-    service modules; web adapters can expose local aliases for compatibility
-    but should not own canonical values.
-    import/instantiation/delegation and to keep summary-specific strings/DOM
-    bindings (`Out-of-range share`, `data-survey-open-advanced`) owned by the
-    extracted module.
-  - Extracted validation-results rendering/grouping behavior from
-    `survey-convert.js` into new module
-    `app/static/js/modules/converter/survey-validation-results.js` via
-  - Confirmed legacy `POST /api/survey-convert` route is still mounted for
-    compatibility; current survey workflow now uses
-    `POST /api/survey-workflow-command` for prepare/preview/convert dispatch.
-  - Added canonical backend survey workflow stage service in
-    `src/survey_workflow_service.py` and switched
-    `api_survey_convert` / `api_survey_convert_validate` to delegate effective
-    survey-library fallback plus preflight/convert engine dispatch through that
-    one backend service while preserving existing Flask response shaping.
-  - Reduced the largest remaining backend duplication from engine dispatch to
-    request/form parsing and response assembly inside
-    `app/src/web/blueprints/conversion_survey_handlers.py`.
-    module import/instantiation/delegation and to keep validation-specific
-    grouping behavior (`files share this same issue`) owned by the extracted
-    module.
-  - Extracted conversion-log toggling/log-line formatting/reset-UI behavior from
-    `survey-convert.js` into new module
-- Move shared survey request/form parsing, stale-workflow gate handling, and
-  response assembly out of
-  `app/src/web/blueprints/conversion_survey_handlers.py` into the canonical
-  backend workflow service under `src/`.
-- Reuse the canonical backend workflow stage service in the preview path so
-  survey engine dispatch/fallback rules live in one place across prepare /
-  preview / convert.
-- Reduce the legacy compatibility surface by routing old survey preview /
-  validate endpoints through the same backend command adapter or documenting
-  them as explicit aliases.
-    ownership in the extracted module.
-  - Hardened survey project-switch reset handling in
-    `app/static/js/modules/converter/survey-convert.js` so
-    `prism-project-changed` clears project-bound survey selection state
-    (hidden file input plus sourcedata quick-select), resets version-wizard
-    retry/apply state, clears stale manual-offset guidance, and drops stale
-    preview/conversion UI before the next project workflow.
-  - Extended `tests/test_converter_workflow_wiring.py` to assert the
-    project-change reset contract and prevent stale survey selection/version
-    state from surviving project switches.
-  - Extracted unmatched-template error rendering/save orchestration from
-    `survey-convert.js` into
-    `app/static/js/modules/converter/survey-unmatched-templates.js` via
-    `createSurveyUnmatchedTemplatesController`.
-  - Reduced `survey-convert.js` unmatched-template ownership to thin
-    delegation (`displayUnmatchedGroupsError`) and controller initialization
-    for save handlers (`window.saveUnmatchedTemplate`,
-    `window.saveAllUnmatchedTemplates`).
-  - Extracted import/reset form-state behavior from `survey-convert.js` into
-    `app/static/js/modules/converter/survey-import-form-state.js` via
-    `createSurveyImportFormStateController` while keeping
-    `resetSurveyImportFormState(...)` as a thin wrapper in the orchestrator.
-  - Extracted near-item-match candidate parsing and selection modal UI from
-    `survey-convert.js` into
-    `app/static/js/modules/converter/survey-near-item-match-review.js` via
-    `createSurveyNearItemMatchReviewController`.
-  - Reduced `survey-convert.js` near-item-match ownership to thin delegation
-    wrappers (`collectNearMatchCandidates`,
-    `buildNearMatchConfirmationMessage`, `promptNearMatchSelection`) and wired
-    controller initialization after shared helper setup.
-  - Updated `tests/test_converter_workflow_wiring.py` to assert near-item-match
-    review module import/instantiation/delegation and prevent the modal markup
-    from drifting back into `survey-convert.js`.
-  - Extracted shared survey workflow response helpers from
-    `survey-convert.js` into
-    `app/static/js/modules/converter/survey-workflow-response-utils.js`
-    (`summarizeServerResponseText`, `parseJsonResponse`).
-  - Kept `survey-convert.js` response helpers as thin wrappers delegating to the
-    extracted workflow-response utils module so downstream controller contracts
-    stayed stable.
-  - Extended `tests/test_converter_workflow_wiring.py` to assert
-    workflow-response util module ownership and guard against JSON response
-    parsing logic drifting back into `survey-convert.js`.
-  - Extracted version-context normalization/sorting helpers from
-    `survey-convert.js` into
-    `app/static/js/modules/converter/survey-version-context-utils.js`
-    (`normalizeVersionSelectionSession`, `normalizeVersionSelectionRun`,
-    `buildVersionSelectionKey`, timeline comparators, and
-    `deriveDetectedContexts`).
-  - Kept `survey-convert.js` helper signatures as thin delegates to
-    version-context utils so version-wizard orchestration callsites and injected
-    controller dependencies remained stable.
-  - Extended `tests/test_converter_workflow_wiring.py` to assert
-    version-context util module ownership and orchestrator import wiring.
-  - Extracted project-save/participant-registry feedback helpers from
-    `survey-convert.js` into
-    `app/static/js/modules/converter/survey-convert-feedback.js` via
-    `createSurveyConvertFeedbackController`.
-  - Reduced `survey-convert.js` ownership for `getProjectSaveSummary`,
-    `openConverterTab`, `showConvertInfoMessage`,
-    `getParticipantRegistryWarning`, and `showParticipantRegistryWarning` to
-    thin delegation wrappers.
-  - Updated `tests/test_converter_workflow_wiring.py` to assert feedback module
-    import/ownership and adjusted save-path surface assertions to track the
-    extracted module rather than the orchestrator.
-  - Extracted survey file-separator helpers from `survey-convert.js` into
-    `app/static/js/modules/converter/survey-file-separator-utils.js`
-    (`isDelimitedSurveyFilename`, `getSelectedSeparator`,
-    `updateSeparatorVisibility`).
-  - Reduced `survey-convert.js` separator helpers to thin delegation wrappers,
-    preserving existing callsites and UI behavior.
-  - Extended `tests/test_converter_workflow_wiring.py` to assert
-    separator-utils module ownership and orchestrator import wiring.
-  - Fixed convert setup task-scoping regression: convert workflow now forwards
-    selected survey tasks into the setup (`prepare`) request payload so
-    preflight/manual-offset blockers only evaluate the user-selected surveys.
-  - Updated survey workflow modules and wiring tests to enforce selected-task
-    propagation through setup (`selectedTasks: selectedSurveyTasks` in convert
-    flow and `selected_tasks` form payload support in workflow request builder).
-  - Moved Step 4-5 action controls (Preview/Convert + run progress + cancel)
-    to the bottom workflow section in `converter_survey.html`, directly below
-    conversion summary, so users no longer need to scroll back up to run
-    Convert after preview review.
-  - Fixed survey workflow runtime crash (`dictionary update sequence element #0
-    has length 4; 2 is required`) by preserving list-based
-    `template_version_overrides` in `src/survey_workflow_service.py` instead of
-    coercing all overrides through `dict(...)`.
-  - Added regression coverage in `tests/test_survey_workflow_service.py` for
-    list- and dict-shaped `template_version_overrides` forwarding.
-  - Fixed backend selected-task scoping gap in
-    `api_survey_convert_validate`: the endpoint now parses `selected_tasks`
-    and merges it with `survey` filter input so convert preflight and final
-    run only evaluate user-selected surveys.
-  - Added regression coverage in
-    `tests/test_web_blueprints_conversion.py` to assert
-    `api_survey_convert_validate` merges `survey` + `selected_tasks` and
-    forwards the narrowed filter (`pss` in a `pss,gad` + selected `pss`
-    scenario) through both preflight and convert runs.
-  - Reframed out-of-range workflow messaging (backend + frontend) to manual-
-    fix-first guidance: correct source values first, keep task value offsets as
-    an optional advanced fallback rather than the default implied action.
-  - Restored LimeSurvey sidecar source gating in survey conversion backend
-    (`app/src/converters/survey.py` and `src/converters/survey.py`):
-    `tool-limesurvey` column extraction and sidecar writes now run only for
-    native LimeSurvey imports (`source_format` in `lsa`/`lss`), preventing
-    non-LimeSurvey CSV/XLSX/TSV imports from emitting
-    `*_tool-limesurvey_survey.json` sidecars that fail PRISM schema checks
-    (`'Technical' is a required property`).
-  - Improved validation error UX in
-    `app/static/js/modules/converter/survey-validation-results.js`:
-    repeated file-level errors now collapse by issue kind (path-insensitive,
-    e.g. shared `schema error: 'Technical' is a required property`) so large
-    PRISM301 batches render as one expandable section instead of long duplicate
-    lists.
-  - Added static wiring regression assertions for the new validation collapse
-    helper (`extractValidationIssueKind`) in
-    `tests/test_converter_workflow_wiring.py`.
-  - Added backend stale-artifact cleanup in
-    `api_survey_convert_validate` save flow: for non-LimeSurvey imports,
-    touched survey folders now remove leftover
-    `*_tool-limesurvey_survey.{tsv,json}` files from earlier buggy runs so
-    obsolete sidecars do not keep failing project validation.
-  - Added endpoint regression coverage in
-    `tests/test_web_blueprints_conversion.py` to assert stale
-    `tool-limesurvey` sidecars are removed during non-LSA convert-validate
-    saves.
-  - Extracted unmatched-template error rendering/save orchestration from
-    `survey-convert.js` into new module
-    `app/static/js/modules/converter/survey-unmatched-templates.js` via
-    `createSurveyUnmatchedTemplatesController`.
-  - Reduced `survey-convert.js` unmatched-template ownership to thin
-    delegation (`displayUnmatchedGroupsError`) and controller initialization
-    for save handlers (`window.saveUnmatchedTemplate`,
-    `window.saveAllUnmatchedTemplates`).
-  - Updated `tests/test_converter_workflow_wiring.py` to assert unmatched-
-    template module import/instantiation/delegation and to prevent legacy
-    window-handler/save-loop logic from drifting back into `survey-convert.js`.
-  - Improved questionnaire version wizard UX in
-    `app/static/js/modules/converter/survey-convert.js` by adding a default
-    shared-selection mode (`Use one version for all sessions/runs`) with
-    explicit per-context override, while preserving session/run-level
-    selections in `selectedTemplateVersions`.
-  - Improved questionnaire version wizard readability in
-    `app/templates/converter_survey.html` and
-    `app/static/css/converter.css` using dedicated contrast classes
-    (`survey-version-card`, custom meta/count/variant badges) instead of
-    low-contrast generic alert/muted combinations.
-  - Extended wiring regression checks in
-    `tests/test_converter_workflow_wiring.py` for shared-selection mode hooks
-    and updated wizard template class wiring.
-  - Added RTK-first coverage workflow tooling:
-    - `rtk coverage` now runs `pytest` with `--cov=src`,
-      `--cov-report=term-missing`, `--cov-report=xml`, and default
-      `--cov-fail-under=80` (interim target).
-    - `rtk codecov` now forwards to `codecovcli` for optional coverage uploads.
-    - Added `codecov-cli` to development dependencies and documented new RTK
-      coverage/codecov commands in `README.md` and `docs/CLI_REFERENCE.md`.
-  - Added coverage-scope excludes in `pyproject.toml` for non-core ops scripts
-    (`maintenance/*`, `bids_file_deleter.py`, `runtime_dependencies.py`) to
-    keep the interim gate focused on actively maintained runtime surfaces.
-  - Verified interim coverage target: `./rtk coverage` reports **80.96%** total
-    coverage for `src/` after scope alignment (above interim 80% target).
-  - Cleared packaged-web regression failures in
-    `tests/test_packaged_web_optional_blueprints.py` by guarding
-    `prism_static_asset_token` defaults in `app/templates/base.html`.
-  - Cleared the remaining full-suite `rtk coverage` blockers by fixing:
-    - multiversion context-map edge cases in
-      `src/converters/survey.py` (single-session override context retention
-      and run-count derivation from detected run values),
-    - direct-call signature compatibility and manual-review validation guarding
-      in
-      `app/src/web/blueprints/conversion_survey_preview_handlers.py`,
-    - survey schema acceptance of empty `Technical.SoftwarePlatform` placeholders
-      in `app/schemas/v0.2/survey.schema.json` and
-      `app/schemas/stable/survey.schema.json`.
-  - Revalidated end-to-end: `./rtk coverage` now exits cleanly with
-    **1978 passed, 3 skipped** at **80.96%** coverage.
-
-  **Assessment update (2026-05-10):**
-  - Confirmed stale DOM-guarded branches still exist in `survey-convert.js`
-    for controls no longer present in `converter_survey.html`
-    (template-check button, i18n/structure warning containers, library path
-    picker controls).
-  - Confirmed legacy `POST /api/survey-convert` route is still mounted for
-    compatibility while current frontend workflow uses
-    `POST /api/survey-convert-validate`.
-  - Identified convert-run handler as the primary remaining monolith and next
-    extraction target.
-  - Resolved project-switch stale-state risk: survey tab now clears
-    project-bound survey selection and version-gate state on
-    `prism-project-changed` before the next preview/convert cycle.
-
-**Next steps:**
-- Consolidate converter survey entrypoints and remove unreachable legacy survey
-  quick-import module paths.
-- Split monolithic survey converter frontend into workflow-step modules
-  (prepare, preview, convert, participant-metadata).
-- Introduce one backend workflow command endpoint for preview/convert state
-  transitions so the frontend becomes a thin state renderer.
-- Raise and hold repository coverage above 90% (`src/`) using `rtk coverage`,
-  then upload `coverage.xml` via `rtk codecov upload-process` in CI.
-
-**Lessons learned:**
-- Backend-first merge contracts reduce frontend state drift and avoid duplicate
-  merge logic in browser code.
-- Survey workflow complexity now comes more from feature accretion than missing
-  capability; incremental extraction with strict backend ownership is safer than
-  a rewrite.
-- A backend service extraction is safest when it preserves the existing wrapper
-  contract first; calling raw converters directly dropped fallback behavior and
-  endpoint tests caught that immediately.
-- Extraction patches in `survey-convert.js` should be applied in small hunks:
-  large monolith deletions can leave orphan fragments that focused wiring tests
-  catch quickly.
-- Shared offset parsing/formatting helpers are low-risk extraction targets that
-  reduce drift across preview/convert/manual-offset code paths before moving
-  larger stateful editor orchestration.
-- Extracting stateful editor wiring as a controller is a safe intermediate step:
-  keep one orchestrator-owned state model first, then move state and business
-  rules only after wiring tests pin behavior.
-- Status/signature helper extraction is a good next micro-step after event
-  wiring extraction: it trims orchestrator logic while preserving one shared
-  editor state model and minimizes behavior risk.
-- After wiring + status delegation, moving render/state helpers is still safe
-  if one shared state store remains in the orchestrator and the controller is
-  injected with narrow callbacks for state access and id allocation.
-- The same injection pattern also works for cross-context task availability:
-  pass preview/template providers into the controller to avoid duplicating list
-  derivation while keeping workflow state ownership centralized.
-- The same approach also works for late-stage button-click extraction: keep one
-  orchestrator event binding, move branching behavior into the controller, and
-  inject narrow gate/message accessors instead of shifting workflow state
-  ownership.
-- Version-selector apply behavior is a good fit for the template-check module:
-  move click branching there first, keep shared state in the orchestrator, and
-  wire explicit getter/setter callbacks for apply signatures and retry gates.
-- Once branching is extracted, moving the corresponding click binding into the
-  same controller further reduces orchestration surface area with minimal risk.
-- The conversion summary block is a safe extraction unit when done as one
-  controller: keep preview selection state in the orchestrator and expose only
-  narrow getter/setter callbacks to avoid workflow-state drift.
-- Validation rendering is another safe extraction unit: keep DOM/state entry
-  points in the orchestrator and move formatting/grouping details behind a
-  single controller interface.
-- Conversion-log behavior is also safe to extract as one controller when the
-  orchestrator still owns workflow sequencing and only delegates append/reset
-  operations plus UI toggle initialization.
-- Unmatched-template save flows with inline `onclick` hooks can still be
-  extracted safely: keep global handler registration in one controller
-  `initialize()` method and delegate the rendering/POST/save-state logic there.
-- If workflow options can arrive as multiple shapes (dict vs list-of-dicts),
-  backend stage services must preserve shape instead of blindly coercing with
-  `dict(...)`; converter-facing payload tests catch these regressions early.
-- Near-item-match review UX can be extracted safely when the orchestrator keeps
-  only delegation wrappers and the dedicated controller owns both modal and
-  non-modal fallback confirmation behavior.
-- Generic workflow response parsing/sanitization logic is a stable extraction
-  target: move it to a shared converter util module while keeping orchestrator
-  wrapper signatures intact so controller dependencies remain unchanged.
-- Version-selection context math (session/run normalization, timeline sort
-  ordering, and detected-context derivation) is another stable extraction
-  target because it is side-effect free and can be wrapped without behavior
-  changes in workflow orchestration.
-- Converter post-run user feedback (project output summary and participants TSV
-  warning CTA routing) can be extracted into a dedicated controller without
-  workflow behavior changes when the orchestrator keeps only delegation
-  wrappers.
-- Small deterministic helper clusters (like file-separator gating) are good
-  extraction slices: move to utility modules first, then keep wrappers in
-  orchestrator to avoid broad callsite churn.
-- If conversion supports per-task deselection, setup/preflight requests must be
-  scoped with the same selected task set as final convert requests; otherwise
-  out-of-range blockers can fire for tasks the user explicitly deselected.
-- Workflow convert-validate handlers must apply the same selected-task merge as
-  preview/convert handlers; missing it in one adapter endpoint is enough to
-  reintroduce deselected-task blockers even when frontend payloads are correct.
-- Out-of-range handling copy should default to source-data correction guidance;
-  manual value offsets are an optional recovery path, not the primary expected
-  resolution for typical single-item coding mistakes.
-- Tool-specific sidecar emission must stay source-aware: if `tool-limesurvey`
-  extraction is not gated to native LimeSurvey inputs (`lsa`/`lss`), regular
-  tabular imports can emit false `*_tool-limesurvey_*` artifacts and trigger
-  cascading PRISM301 schema errors.
-- Validation duplication often differs only in file-path prefixes; collapsing by
-  issue kind (for example normalized `schema error: ...`) keeps large PRISM301
-  batches readable without hiding actionable file lists.
-- Source-format gating alone is not enough after prior buggy saves: non-LSA
-  save flows should also clean stale `tool-limesurvey` artifacts in touched
-  survey folders to prevent legacy false errors from persisting across runs.
-- Project-change handlers for sourcedata-backed inputs must clear both the
-  visible quick-select and the underlying file input; clearing only one leaves
-  the next project coupled to stale source state.
-- A thin adapter route is a low-risk first step for backend command
-  consolidation: switch the frontend to one endpoint first, keep legacy routes
-  as aliases, then collapse duplicated backend handler logic behind that
-  adapter instead of rewriting both layers at once.
-- Multi-context version selection should default to a single shared choice for
-  ease of use, then allow explicit per-session/run overrides only when users
-  need longitudinal scale differences.
-- Coverage goals are easiest to enforce when wired into one canonical command
-  (`rtk coverage`) with a fail-under gate and CI upload path, instead of ad hoc
-  local pytest flags.
-- Per-task preview validation probes should run only when an explicit
-  out-of-bounds exception contract is configured; otherwise preview workflows
-  can duplicate conversion passes and drift call-count behavior in regression
-  tests.
-
-## Priority 1.34 — RTK command wrapper for repo workflows ✅ DONE
-
-Add a first-class `rtk` command so contributors can run PRISM, git, and gh
-workflows with one consistent entrypoint.
-
-**What was done:**
-- Added a new root launcher script `rtk` with cross-platform dispatch for
-  setup, Studio, validator, tools, tests, git, and GitHub CLI passthrough.
-- Registered `rtk` in `setup.py` script installation so editable installs expose
-  the command in `.venv/bin`.
-- Documented RTK usage in `README.md` and `docs/CLI_REFERENCE.md`.
-- Added CLI coverage in `tests/test_rtk_cli.py` for help output, validator/tools
-  forwarding, and git passthrough.
-
-**Lessons learned:**
-- A small repo-level wrapper is a low-risk way to standardize developer command
-  habits without changing backend business logic.
-- Installing wrapper scripts through `setup.py` keeps onboarding friction low:
-  setup creates one place to discover commands.
-
-## Priority 1.33 — Survey review signal and compact version selector ✅ DONE
-
-Improve survey conversion ergonomics by making out-of-range diagnostics more
-informative and reducing visual footprint of multi-version controls.
-
-**What was done:**
-- Updated `app/static/js/modules/converter/survey-convert.js` to display
-  out-of-range share in Preview Review cards using backend evidence
-  (`invalid_without_offset_percent` and sampled counts).
-- Added a direct `Advanced options` jump action in Preview Review that opens
-  and scrolls to manual task value offset controls.
-- Refactored questionnaire version selector rendering to a compact list-style
-  row layout per context instead of large card blocks.
-- Added compact layout styles in `app/static/css/converter.css`.
-- Extended wiring coverage in
-  `tests/test_converter_workflow_wiring.py` for percentage rendering and
-  advanced-options jump controls.
-
-**Lessons learned:**
-- Percent context (`x%` and count basis) is crucial for deciding whether a
-  task-level issue is structural or isolated.
-- High-density workflows need compact controls by default; card-heavy layouts
-  hide primary actions and increase scroll friction.
-
-## Priority 1.32 — Sourcedata quick-select across converter tabs ✅ DONE
-
-Restore and standardize sourcedata quick-select so users can load files from
-the active project's sourcedata folder across all converter tabs, not only
-Survey.
-
-**What was done:**
-- Extended sourcedata backend listing in
-  `app/src/web/blueprints/projects_sourcedata_handlers.py` with
-  `kind`-specific extension filtering for `survey`, `biometrics`,
-  `environment`, `participants`, `physio`, and `eyetracking`, including
-  `.tsv.gz` support for eyetracking.
-- Updated route docs in `app/src/web/blueprints/projects.py` to describe the
-  new `kind` query parameter.
-- Added per-tab quick-select wiring in converter modules:
-  `app/static/js/modules/converter/biometrics.js`,
-  `app/static/js/modules/converter/environment.js`,
-  `app/static/js/modules/converter/physio.js`,
-  `app/static/js/modules/converter/eyetracking.js`, and
-  `app/static/js/modules/converter/participants.js`.
-- Ensured quick-select controls refresh on `prism-project-changed`, degrade
-  cleanly when sourcedata is missing, and hydrate file inputs via
-  `/api/projects/sourcedata-file`.
-- Added focused regressions in
-  `tests/test_converter_project_context_helpers.py` and
-  `tests/test_converter_workflow_wiring.py` for kind filtering and tab wiring.
-
-**Lessons learned:**
-- Quick-select UI must not depend on server-rendered project state only;
-  project changes happen after page load, so controls must refresh from the
-  active project context event.
-- Backend kind filters are required to keep frontend UX simple and avoid
-  cross-modality file confusion.
-
-## Priority 1.31 — Survey preview review checkpoint and task deselection ✅ DONE
-
-Move the survey import workflow to a stricter backend-owned sequence:
-near-match confirmation, multi-version selection, preview review, then
-conversion. Preview should list the detected surveys, flag per-survey
-out-of-range issues, and let users deselect surveys before the real write step.
-
-**What was done:**
-- Updated survey preview handlers in
-  `app/src/web/blueprints/conversion_survey_preview_handlers.py` to return a
-  backend-built `survey_tasks` summary, including per-task manual-review /
-  out-of-range diagnostics instead of blocking preview with a 409.
-- Added a shared selected-task request contract in
-  `app/src/web/blueprints/conversion_utils.py` and wired it through survey
-  preview / convert handlers so conversion can target only the tasks approved
-  during preview review.
-- Updated survey convert handlers in
-  `app/src/web/blueprints/conversion_survey_handlers.py` so prepare-workflow no
-  longer forces offset review before preview, and convert requests now accept
-  explicit `selected_tasks` filtering.
-- Updated the survey converter UI in
-  `app/static/js/modules/converter/survey-convert.js` to render a Preview
-  Review checklist, show per-survey out-of-range guidance, and require a fresh
-  preview before enabling Convert.
-- Added focused regression coverage in `tests/test_survey_value_offsets.py` and
-  `tests/test_web_blueprints_conversion.py` for preview advisory payloads,
-  selected-task filtering, and the shifted prepare-workflow contract.
-
-**Lessons learned:**
-- Survey deselection must be a backend contract (`selected_tasks`), not a
-  frontend-only filter, or preview and convert drift apart.
-- Preview is the right review boundary for risky survey-specific data issues;
-  setup should not trap users in another pre-preview blocker loop.
-- Per-task diagnostics need a backend summary object. Reconstructing survey
-  review state from log lines or generic `data_issues` is too brittle.
-
-## Priority 1.30 — Mirror dataset metadata into project.json and warn on drift ✅ DONE
-
-Keep `project.json` aligned with dataset-level metadata saved through Studio and
-surface cross-file drift in the metadata UI.
-
-**What was done:**
-- Added dataset-metadata mirroring in `app/src/project_manager.py` so saving
-  dataset metadata also updates `project.json` top-level `name` plus
-  `Basics` mirror fields such as DOI, license, keywords, references, and
-  acknowledgements.
-- Added metadata consistency status checks in `app/src/project_manager.py`
-  comparing `project.json`, `dataset_description.json`, and existing citation
-  consistency signals.
-- Exposed a new API route `GET /api/projects/metadata/status` in
-  `app/src/web/blueprints/projects.py`.
-- Updated Projects metadata UI in
-  `app/static/js/modules/projects/metadata.js` to show a new `Metadata Sync`
-  row and refresh it after load/save/regenerate actions.
-- Updated save-hint copy to reflect that metadata saves now update
-  `project.json`, `dataset_description.json`, `CITATION.cff`, and `README.md`.
-- Added focused regression coverage in `tests/test_project_manager.py`,
-  `tests/test_projects_description_handlers.py`, and
-  `tests/test_projects_workflow_wiring.py`.
-
-**Lessons learned:**
-- If `project.json` is intended to become the internal metadata hub, Studio must
-  mirror dataset-level saves into it immediately; drift detection alone is not
-  enough.
-- Citation-owned fields can still be omitted from `dataset_description.json`
-  for BIDS/CFF compatibility while remaining mirrored in `project.json` for the
-  app's internal snapshot.
-- Consistency warnings need to live in the same UI where users edit metadata,
-  not only in project-load summaries.
-
-## Priority 1.29 — Detect manual CITATION drift in Studio ✅ DONE
-
-Warn when `CITATION.cff` remains CFF-valid but has been manually edited away from
-the metadata currently managed in PRISM Studio.
-
-**What was done:**
-- Extended citation status checks in `app/src/project_manager.py` to distinguish
-  CFF validity from metadata consistency.
-- Added a consistency comparison against the Studio-managed metadata snapshot,
-  while ignoring generator-only `date-released` drift.
-- Updated Projects metadata UI in
-  `app/static/js/modules/projects/metadata.js` so the Citation Health badge now
-  reports when `CITATION.cff` is out of sync with project metadata.
-- Added focused regression coverage in `tests/test_project_manager.py` for
-  missing citation files, valid generated files, and manual drift detection.
-
-**Lessons learned:**
-- `CITATION.cff` being syntactically valid is not the same as being consistent
-  with PRISM-managed metadata.
-- Drift should be surfaced as a frontend warning, not a validation failure,
-  because manual edits can still produce a valid CFF file.
-- If Studio owns generated metadata files, status APIs need separate signals for
-  `valid` and `consistent`.
-
-## Priority 1.28 — Server file picker parity in File Management ✅ DONE
-
-When global Connected to server mode is enabled, File Management cards should
-offer server-side file selection consistently, not only in Wide to Long.
-
-**What was done:**
-- Added server-side file picker controls to Rename Filenames and Organize
-  Folders cards in `app/templates/file_management.html`.
-- Extended File Management frontend wiring in
-  `app/static/js/file_management.js` to support server-picked file lists,
-  clear actions, and mode-aware UI toggling.
-- Extended backend handlers in
-  `app/src/web/blueprints/conversion_physio_handlers.py` so both
-  `/api/physio-rename` and `/api/batch-convert` accept explicit
-  `server_file_paths` inputs.
-- Added focused coverage in
-  `tests/test_file_management_save_paths.py` and
-  `tests/test_file_management_workflow_wiring.py`.
-
-**Lessons learned:**
-- Connected-to-server UX must stay consistent across cards to avoid
-  capability mismatches.
-- Frontend server-picker controls should only ship when backend request
-  contracts already support explicit server file paths.
-
-## Priority 1.27 — Explicit server-connected picker mode ✅ DONE
-
-Add a deterministic global setting that controls whether PRISM uses server-side
-path browsing or browser/native file pickers.
-
-**What was done:**
-- Added persisted app setting `connected_to_server` in `app/src/config.py`
-  (stored as `connectedToServer` in settings JSON).
-- Extended global settings API in
-  `app/src/web/blueprints/projects_library_blueprint.py` to expose and save
-  `connected_to_server`.
-- Added a new "Connected to server" toggle in
-  `app/templates/includes/projects/settings_section.html`.
-- Wired Projects settings UI in `app/static/js/modules/projects/core.js` to
-  load/save the toggle and notify dependent pages.
-- Updated `app/static/js/filesystem-mode.js` so `connected_to_server` is
-  authoritative for picker mode, with auto-detection only as fallback.
-- Updated survey converter and file management picker UX to respect the setting
-  (show/hide server browse actions and disable host inputs when server mode is
-  enabled).
-- Ran focused regression tests across settings/projects/converter/file-management
-  paths; all selected tests passed.
-
-**Lessons learned:**
-- Remote-vs-local picker behavior should be explicit user preference, not a
-  hidden heuristic.
-- One shared frontend mode service (`PrismFileSystemMode`) prevents drift
-  between pages and tools.
-- Backend setting persistence must be the single source of truth for
-  cross-page picker behavior.
-
-## Priority 1.15 — Survey Excel import multi-version support ✅ DONE
-
-Allow the survey import workbook flow to define multi-version templates directly,
-including survey-level version lists, item-level applicability, and explicit
-variant metadata.
-
-**What was done:**
-- Extended `app/src/converters/excel_to_survey.py` to parse `General.Versions`
-  and `Items.ApplicableVersions`.
-- Added optional `Variants` sheet parsing (`Group`, `VariantID`, `ItemCount`,
-  `ScaleType`, `Description_<lang>`), and wired generated
-  `Study.VariantDefinitions` output.
-- Preserved backward compatibility: single-version imports continue to emit
-  localized `Study.Version` maps when multi-version fields are not declared.
-- Added focused regression coverage in `tests/test_excel_to_survey_multisheet.py`
-  for declared versions/applicability and explicit variants sheet behavior.
-- Updated distributed workbook templates and example files:
-  `official/create_new_survey/survey_import_template.xlsx`
-  (canonical) and `examples/excel_import/survey_import_example.xlsx`
-  (backward-compatible example copy).
-
-**Lessons learned:**
-- Multi-version metadata should be explicit (`Versions`, `ApplicableVersions`)
-  instead of inferred from collisions only.
-- Variant metadata needs a dedicated sheet to avoid row-alignment ambiguities
-  with item tables in mixed workbooks.
-- Backward compatibility requires keeping the legacy localized `Study.Version`
-  shape unless users explicitly opt into multi-version fields.
-
-## Priority 1.5 — Safe participants merge ✅ DONE
-
-Allow users to merge a new sociodemographic source table into an existing
-`participants.tsv` without silently overwriting conflicting participant values.
-
-**What was done:**
-- Added canonical backend merge services in `src/participants_backend.py`.
-- Added CLI preview/apply flow: `prism_tools.py participants merge`.
-- Added full conflict export: `prism_tools.py participants merge --conflicts-csv` and matching Studio download action.
-- Merge now matches on canonical `participant_id` values only.
-- Merge fills missing existing values, appends new participants, and adds new columns.
-- Conflicting non-empty values now block apply and are reported in preview output.
-- Applying a merge creates backups of existing `participants.tsv` and `participants.json`.
-- Added focused CLI tests and verified the broader participants test set.
-
-**Lessons learned:**
-- Merging participant data is a separate workflow from creating a fresh `participants.tsv`.
-- `participants.json` enrichment must stay separate from rewriting `participants.tsv` values.
-- Preview-first conflict reporting is required for participant-safe merges.
-- Conflict previews need a non-truncated export path; the on-screen list is only a summary, not a resolution workflow.
-
-## Priority 1 — Init PRISM on BIDS-valid data ✅ DONE
-
-Allow users to adopt an existing BIDS-valid dataset into PRISM without touching any
-existing files.
-
-**What was done:**
-- `ProjectManager.init_on_existing_bids()` — validates `dataset_description.json`
-  exists, then creates only the missing PRISM artefacts (`.prismrc.json`, `project.json`,
-  `contributors.json`, `CITATION.cff`, `.bidsignore`, `CHANGES`, `sourcedata/`,
-  `derivatives/`, `code/`). Fully **idempotent** — running it twice creates no files
-  the second time.
-- Route `POST /api/projects/init-on-bids`
-- Third card "Init PRISM on BIDS Dataset" on the Projects page (amber icon)
-- All 11 tests pass; smoke-tested idempotency and rejection of non-BIDS folders.
-
-**Lessons learned:**
-- Check for `dataset_description.json` (not an empty directory) as the BIDS gate.
-- Never overwrite existing files; only create what is missing.
-
-## Priority 1.6 — Overlap-safe export anonymization ✅ DONE
-
-Harden anonymized export workflows so overlapping participant IDs do not corrupt
-ZIP paths or embedded JSON references.
-
-**What was done:**
-- Added canonical backend replacement logic in `src/anonymizer.py` that treats
-  participant IDs as bounded tokens instead of raw substrings.
-- Updated Projects export filename/path anonymization to use the shared backend
-  helper.
-- Updated CLI anonymization path rewriting to use the same overlap-safe helper.
-- Added a regression test covering `sub-01` and `sub-010` in the same export,
-  including a BIDS URI `IntendedFor` reference.
-
-**Lessons learned:**
-- Raw substring replacement is unsafe for BIDS entity labels because common IDs
-  can be prefixes of other valid IDs.
-- Exported filenames, archive paths, and JSON references must share one
-  replacement primitive or the anonymized dataset becomes internally
-  inconsistent.
-
-## Priority 1.7 — Async export cancellation and cleanup hardening DONE
-
-Harden the Projects export workflow so GUI cancellation matches backend state and
-export ZIP lifecycle does not leak or delete the wrong file.
-
-**What was done:**
-- Fixed the Projects page export flow so cancelling before the async start call
-  returns still sends a deferred cancel request once the job ID becomes known.
-- Added TTL pruning for completed/cancelled/errored export jobs so status-store
-  entries do not accumulate forever.
-- Fixed synchronous `/api/projects/export` to delete its temporary ZIP after the
-  download response closes.
-- Fixed async `/api/projects/export/<job_id>/download` to clean up only job
-  metadata after download instead of deleting the user-saved export ZIP.
-- Added focused backend tests plus frontend wiring coverage for the deferred
-  cancel path.
-
-**Lessons learned:**
-- A cancel button is not a real cancellation path until it survives the gap
-  between optimistic UI state and the backend returning a job identifier.
-- Export jobs differ from converter temp artifacts because the async export ZIP
-  is a user-requested output, not a disposable server-side intermediate.
-
-## Priority 1.8 — Export preferences must stay bound to the active project ✅ DONE
-
-Prevent export filter and output-folder preferences from leaking across project
-switches, slow responses, or multi-tab session drift.
-
-**What was done:**
-- Added explicit `project_path` targeting to the project preferences GET/POST
-  handlers so the export page can read and write preferences for the intended
-  project instead of relying only on session state.
-- Added a dedicated export-preferences load token in the Projects export module
-  so late responses from an older project cannot repaint the current project's
-  filters or output folder.
-- Updated export preference saves to send the active project path explicitly.
-- Added handler tests covering explicit-project preference reads/writes and
-  frontend wiring coverage for stale-response guards.
-
-**Lessons learned:**
-- Session-backed `current_project_path` is not a sufficient source of truth for
-  page-scoped preferences once multiple tabs or fast project switches are in
-  play.
-- Structure-loading race protection and preference-loading race protection must
-  be separate; guarding one does not protect the other.
-
-## Priority 1.9 — Metadata and methods actions must target the visible project ✅ DONE
-
-Harden the remaining Projects page actions so metadata, citation, schema, README,
-and methods generation follow the visible project instead of stale session state
-or stale frontend responses.
-
-**What was done:**
-- Added a shared backend helper to resolve either an explicit `project_path` or
-  the current session project, then wired schema-config, dataset-description,
-  study-metadata, citation, methods generation, and README generation handlers
-  through it.
-- Updated the Projects metadata module to use desktop/file-mode API fallback for
-  all project actions that were still using raw `fetch('/api/...')` calls.
-- Updated metadata/methods frontend requests to send the active `project_path`
-  explicitly for project-bound operations.
-- Added stale-load guards for metadata/schema/description reloads so late
-  responses from a previous project cannot repaint the current form.
-- Reset methods preview state on project switch and guarded generated-methods
-  responses so project A output cannot remain visible on project B.
-- Added focused handler tests plus frontend wiring coverage for explicit project
-  targeting and fallback usage.
-
-**Lessons learned:**
-- On the Projects page, session state is only a fallback; once the frontend
-  already knows the active project, requests should carry that path explicitly.
-- Export was not the only async stale-state surface; metadata reloads and cached
-  methods previews can leak across project switches unless they are explicitly
-  invalidated.
-
-## Priority 1.10 — Template Editor import and delete must leave a coherent editor state ✅ DONE
-
-Harden Template Editor state transitions so failed imports, invalid imported
-templates, and project-template deletion do not strand the user in a stale or
-misleading UI state.
-
-**What was done:**
-- Updated Template Editor validation so invalid templates keep JSON download
-  enabled instead of trapping imported work behind a disabled export button.
-- Added editor-state capture/restore around template import so transport or
-  parsing failures restore the previous editor state instead of leaving the page
-  half-disabled.
-- Split post-import validation from the import transaction so a validation API
-  failure no longer shows up as a false "import failed" error after the template
-  was already loaded.
-- Cleared and re-rendered editor state after deleting a project template so the
-  item list, preview, and selected-item panel no longer show deleted content.
-- Added workflow wiring coverage for import-state restoration and delete-state
-  cleanup, then re-ran the existing Template Editor save-path/variant suite.
-
-**Lessons learned:**
-- Import, validate, and save are separate states in the Template Editor; treating
-  validation as part of import produces misleading failures and stale controls.
-- After destructive actions like delete, clearing internal state is not enough;
-  the editor must re-render immediately or the UI continues to display content
-  that no longer exists on disk.
-
-## Priority 1.11 — Template Editor save/delete must follow the visible project ✅ DONE
-
-Prevent the Template Editor from showing project A while save/delete/list actions
-quietly operate on project B after a global project switch.
-
-**What was done:**
-- Added explicit `project_path` support to Template Editor project-bound backend
-  routes for merged-list loading, save, and delete operations.
-- Updated the Template Editor frontend to send the active project path explicitly
-  for save/delete and project-library list refreshes.
-- Added project-context invalidation in the frontend so stale list/load/validate
-  responses from an older project context are ignored.
-- Added `prism-project-changed` handling to refresh project-library state when the
-  active project changes while the Template Editor stays open.
-- Detached loaded project templates into drafts when the active project changes,
-  preventing in-place overwrite/delete actions from silently retargeting a new
-  project.
-- Added focused backend tests for explicit project targeting and workflow wiring
-  coverage for the project-switch invalidation path.
-
-**Lessons learned:**
-- In the Template Editor, project library state is page-scoped, not session-safe;
-  once the visible project can change independently, backend writes must carry an
-  explicit project path.
-- Project switches are not just a list-refresh event: any currently loaded
-  project template must either stay bound to its original project or be detached
-  into a neutral draft state before the user can save again.
-
-## Priority 1.12 — Template Editor schema switch must refresh validation badges ✅ DONE
-
-Keep Template Editor file-status badges aligned with the currently selected
-schema version.
-
-**What was done:**
-- Updated the schema-version change handler in the Template Editor to refresh the
-  merged template list before loading the blank template for the new schema.
-- Added workflow wiring coverage so future schema switches keep the
-  schema-version-aware `[FILE OK]` and `[FILE !]` badges in sync with the active
-  validator.
-
-**Lessons learned:**
-- In the Template Editor, schema version affects more than the blank template
-  factory; it also drives the validation status shown in the project/global
-  template dropdowns, so schema changes must refresh that list too.
-
-## Priority 1.13 — Template Editor control state must revert on cancelled or failed source changes ✅ DONE
-
-Keep the Template Editor controls aligned with the template that is actually
-loaded when users cancel or hit backend failures during source changes.
-
-**What was done:**
-- Added tracked previous values for the modality and schema selectors so the
-  first cancelled switch restores the visible control instead of leaving it on a
-  value the editor never applied.
-- Restored the active schema after failed modality/schema switches so the still-
-  visible template is not validated or rendered against the wrong schema.
-- Added rollback for failed project/global template loads so the previous
-  selection, buttons, and editor state are restored if the new load fails.
-- Added an unsaved-changes confirmation plus rollback protection for `Create
-  Blank Template`, which previously discarded the current template without the
-  same safeguards used by import and other switches.
-- Extended workflow wiring coverage and re-ran the Template Editor regression
-  slice after each state-path hardening pass.
-
-**Lessons learned:**
-- In the Template Editor, a changed `<select>` value is not proof that the
-  editor state changed; cancelled or failed source switches must restore both
-  control state and backing editor state together.
-- Any action that replaces the current template, including "create blank", is a
-  destructive source change and should follow the same unsaved-change and
-  rollback rules as import or template switching.
-
-## Priority 1.14 — File Management project copy must follow the visible project ✅ DONE
-
-Keep File Management organizer and renamer copy-to-project actions bound to the
-project the page is actually targeting, including during long multi-file copy
-batches.
-
-**What was done:**
-- Added explicit `project_path` support in the File Management backend handlers
-  for batch convert and physio rename so copy-to-project requests no longer rely
-  on session state alone.
-- Updated the File Management frontend to resolve the active project path,
-  disable organizer/renamer copy buttons when no project is active, and send
-  `project_path` with project-bound requests.
-- Added a `prism-project-changed` listener so the copy controls immediately
-  refresh when the active project changes while the page stays open.
-- Locked renamer sequential copy batches to the project path that was active at
-  batch start so one run cannot silently split files across two projects after a
-  mid-run project switch.
-- Added focused save-path and workflow-wiring regressions for explicit project
-  targeting, no-project guards, and sequential-copy batch locking; the slice now
-  passes green.
-
-**Lessons learned:**
-- On long-lived pages, disabling a project-bound action when no project is open
-  is necessary but not sufficient; the request still needs to carry an explicit
-  `project_path` so backend work cannot drift to whatever the session points to
-  later.
-- Multi-request operations like sequential renamer copy must lock the project
-  target for the whole batch, otherwise a project switch mid-run can scatter one
-  user action across multiple project roots.
-
-## Priority 1.15 — File Management wide-to-long save must target the active project ✅ DONE
-
-Keep the File Management wide-to-long save flow aligned with the visible
-project instead of falling back to session drift or mismatched route behavior.
-
-**What was done:**
-- Updated the wide-to-long frontend to resolve the active project path, disable
-  `Convert & Save to Project` when no project is active, and send `project_path`
-  with the conversion request.
-- Added a no-project frontend guard so a project switch away from the page no
-  longer falls through to a backend download response that the UI cannot parse
-  as JSON.
-- Updated the wide-to-long backend route to accept explicit `project_path` and
-  validate it with the same stale-project checks used by the other File
-  Management save flows.
-- Preserved backward-compatible download behavior for callers that do not target
-  a project at all, while making stale project saves fail clearly instead of
-  surfacing a generic file-write error.
-- Added focused workflow-wiring and web-backend tests for explicit project
-  targeting and stale-project rejection; the File Management plus wide-to-long
-  slice now passes green.
-
-**Lessons learned:**
-- If a page-level action is labeled as saving to the current project, its
-  frontend state and backend response contract must agree; leaving a download
-  fallback active behind a JSON-only UI path creates a hidden failure mode after
-  project changes.
-- Route compatibility can be preserved without trusting session state: explicit
-  `project_path` should be preferred for page-bound saves, while projectless
-  callers can keep their legacy download behavior.
-
-## Priority 1.16 — JSON Editor autoload must follow the real project root ✅ DONE
-
-Keep the JSON Editor’s project-backed autoload and schema requests working when
-the active project is tracked via `project.json` paths or the desktop app is
-running in packaged file mode.
-
-**What was done:**
-- Updated the JSON Editor blueprint adapter to resolve the session project path
-  to the real project root before handing it to the embedded file manager, so
-  `current_project_path=/path/to/project.json` works the same as a directory
-  path.
-- Cleared the embedded file manager’s active dataset when the session project
-  path becomes stale or disappears, preventing one request from reusing the
-  previous project’s folder on the next request.
-- Added a local `fetchWithApiFallback(...)` helper to the plain JSON Editor page
-  and moved project file/schema loads onto it so packaged desktop/file-mode can
-  still reach `/editor/api/...` routes.
-- Added focused backend and wiring regressions for `project.json` session paths,
-  stale-project clearing, and `/editor/api/...` fallback usage; the JSON Editor
-  slice now passes green.
-
-**Lessons learned:**
-- Embedded helper apps with long-lived manager objects need the same project-root
-  normalization as the main web blueprints; otherwise `project.json` session
-  paths fail even though the rest of the UI treats them as valid project
-  selections.
-- A stale session project is not a harmless error for stateful adapters: if the
-  adapter keeps its previous folder in memory, the next request can silently act
-  on the wrong project.
-
-## Priority 1.17 — Specifications quick links must react to project changes ✅ DONE
-
-Keep the Specifications page’s project-bound derivative shortcuts aligned with
-the active project while the page stays open.
-
-**What was done:**
-- Added stable DOM hooks and enabled-URL metadata for the Specifications page’s
-  Survey Export and Recipes quick links.
-- Added a small page script that tracks the initial project path from the
-  rendered page state and listens for `prism-project-changed` events.
-- Updated the derivative quick links in place when the active project changes so
-  they no longer stay disabled after a project is opened or remain clickable
-  after a project is cleared.
-- Added workflow-wiring coverage for the page-level project-change listener and
-  the derivative-link enable/disable logic; the slice passes green.
-
-**Lessons learned:**
-- Informational pages can still hold workflow bugs when they expose project-bound
-  shortcuts; server-rendered disabled states are not enough once the global
-  navbar can change the active project without forcing a reload.
-- Small page scripts are often the least disruptive fix for static templates that
-  need to follow global project state events.
-
-## Priority 1.18 — Survey Export library state must follow the visible project ✅ DONE
-
-Keep the Survey Export page’s merged library and export selections aligned with
-the active project while the page stays open.
-
-**What was done:**
-- Updated the merged library handler to normalize `project.json` session paths,
-  accept explicit `project_path`, and skip session fallback when the frontend
-  explicitly requests a projectless library refresh.
-- Updated the Survey Export frontend to resolve the active project path, reload
-  the merged library on `prism-project-changed`, and ignore late library
-  responses that belong to an older project state.
-- Added a page-local `fetchWithApiFallback(...)` helper and moved the library,
-  boilerplate, and quick-export requests onto it so the plain-script page also
-  works in packaged/file-mode.
-- Added focused handler and workflow-wiring regressions for explicit project
-  targeting, `project.json` normalization, empty-project refreshes, stale-load
-  guards, and API fallback usage; the Survey Export slice now passes green.
-
-**Lessons learned:**
-- On long-lived export pages, stale library data is more dangerous than a stale
-  label: if selections are stored as absolute template paths, a project switch
-  can silently keep exporting project A while the rest of the app shows project
-  B.
-- Library reload endpoints need the same explicit-project-path contract as other
-  page-scoped actions, otherwise a cleared or changed project can fall back to
-  whatever the server session last pointed at.
-
-## Priority 1.19 — Survey Customizer save-to-project must stay tied to the loaded project ✅ DONE
-
-Keep Survey Customizer’s save-to-project flow from copying templates into the
-wrong project after project changes or stale session paths.
-
-**What was done:**
-- Updated Survey Export to store the active project path in the
-  `surveyCustomizerData` session payload so Survey Customizer can tell which
-  project the loaded template state came from.
-- Updated Survey Customizer to resolve the current project path, react to
-  `prism-project-changed`, disable and clear the save-to-project checkbox when
-  the active project no longer matches the loaded customization state, and send
-  explicit `project_path` with project-bound exports.
-- Added page-local API fallback for Survey Customizer load/export requests so
-  the plain-script page remains compatible with packaged/file-mode.
-- Updated the Survey Customizer export route and backend handler to prefer an
-  explicit `project_path`, normalize `project.json` paths to the real project
-  root, and reject stale project paths instead of creating `code/library` under
-  a missing or invalid location.
-- Added focused save-path and workflow-wiring regressions for explicit project
-  targeting, `project.json` normalization, stale-path rejection, and the
-  source-project guard; the Survey Export plus Customizer slice now passes green.
-
-**Lessons learned:**
-- Wizard-style pages that load state from `sessionStorage` still need to carry
-  the originating project context forward; otherwise a later project switch can
-  make a valid save action target the wrong project even when the visible form
-  still looks coherent.
-- Project-bound copy flows should never create directories from unchecked raw
-  session paths; they must resolve to an existing project root first or fail
-  clearly.
-
-## Priority 1.20 — Recipe Builder must reset on project changes and reject orphan saves ✅ DONE
-
-Keep Recipe Builder from carrying a stale selected task across project switches
-and saving recipes into a dataset that does not actually contain that survey
-template.
-
-**What was done:**
-- Updated Recipe Builder to resolve the current project path explicitly, reset
-  its loaded template/builder state on `prism-project-changed`, clear the stale
-  selected task and metadata, and reload the survey template list for the new
-  project instead of leaving the previous picker state in place.
-- Added clearer survey-picker placeholders for loading and no-project states so
-  a cleared or switched project does not leave an apparently valid template
-  selection behind.
-- Updated the Recipe Builder save handler to verify that `Survey.TaskName`
-  exists in the target project or official library before writing
-  `code/recipes/survey/recipe-*.json`, preventing orphan recipe saves after a
-  cross-project switch.
-- Added focused handler and workflow-wiring regressions for the project-change
-  reset behavior and the missing-template save rejection; the Recipe Builder
-  test slice now passes green.
-
-**Lessons learned:**
-- Hiding a stale builder panel is not enough when the selected entity is still
-  stored in page state; project switches must clear the underlying selection so
-  later save actions cannot reuse it silently.
-- Recipe save endpoints need contextual validation against available templates,
-  not just JSON schema validation, because a structurally valid recipe can still
-  be semantically orphaned in the wrong dataset.
-
-## Priority 1.21 — Analysis Outputs must follow the active project and clear stale run state ✅ DONE
-
-Keep the Analysis Outputs page from reapplying the previous project's
-preferences, session list, modalities, and run summary after a project switch or
-late async response.
-
-**What was done:**
-- Added page-local API fallback for the Analysis Outputs page so its plain-script
-  `/api/...` requests continue to work in packaged/file-mode.
-- Updated recipes preference GET/POST calls to use explicit `project_path`
-  instead of relying on session `current_project_path`, so the page reads and
-  writes the right `.prismrc.json` during fast project switches or multi-tab
-  use.
-- Added request tokens and current-project checks for modality loads, session
-  loads, preference loads, and the recipe-run request so late responses from an
-  old project cannot repaint the active page.
-- Reset run summaries, progress state, boilerplate links, terminal log, and run
-  availability on `prism-project-changed`, and refresh modalities as well as
-  sessions/preferences so the page no longer shows previous-project output on a
-  newly selected project.
-- Added focused workflow-wiring coverage and verified the Analysis Outputs page
-  together with the adjacent Survey Export, Survey Customizer, and Recipe
-  Builder slices; the combined derivatives workflow now passes green.
-
-**Lessons learned:**
-- Late async responses are not just a list-refresh problem on long-lived export
-  pages; they can also repaint result summaries and output paths from the wrong
-  project unless run-level requests are invalidated too.
-- Per-project preference pages must reset controls to defaults before applying
-  loaded preferences, otherwise a project with no saved settings quietly keeps
-  the previous project's choices on screen.
-
-## Priority 1.22 — PRISM App Runner must render a disabled page instead of raw JSON ✅ DONE
-
-Keep the feature-flagged PRISM App Runner route from dumping users onto a raw
-JSON 503 response when they navigate to it from the GUI.
-
-**What was done:**
-- Updated the PRISM App Runner page handler to always render the HTML template,
-  even while the feature flag is disabled, instead of returning a JSON error
-  from the page route.
-- Passed explicit disabled-state context into the template so the page can show
-  an explanatory banner with the existing under-construction message.
-- Wrapped the page's API-backed interactive controls in disabled fieldsets while
-  the feature is off, so the route now degrades as a normal GUI page and avoids
-  exposing buttons that only lead to disabled API calls.
-- Added focused handler and workflow-wiring regressions and verified them
-  together with the existing App Runner compatibility test suite.
-
-**Lessons learned:**
-- Feature flags on web tools need separate contracts for page routes and API
-  routes: returning JSON 503 is appropriate for APIs, but page routes should
-  still render an HTML state the user can understand and recover from.
-- Navigation availability based only on route existence is not sufficient for
-  feature-flagged tools; disabled HTML states are the safer fallback when the
-  route remains registered.
-
-## Priority 1.23 — Validator must not post stale default library paths as overrides ✅ DONE
-
-Keep the Validator from forcing the page-load project's library root onto a
-different dataset target after project switches or when validating another
-folder.
-
-**What was done:**
-- Added a small validation API endpoint that resolves the current default
-  library path for an explicit project context, so the page refreshes its
-  displayed default from backend logic instead of duplicating path heuristics in
-  JavaScript.
-- Updated the Validator frontend to treat `library_path` as an explicit override
-  only: the page now posts it only when the user changes it away from the
-  backend-provided default, instead of always submitting the page-load default.
-- Refreshed the advanced-options library default on `prism-project-changed` so a
-  long-lived Validator page no longer keeps showing the previous project's
-  library root after the active project changes.
-- Added focused workflow-wiring and backend regressions covering the new API and
-  the explicit-override-only submit contract; the Validator test slice now
-  passes green.
-
-**Lessons learned:**
-- A visible default is not the same thing as a user override. Posting a
-  page-initialized default value as if it were explicit input can silently
-  bypass backend target detection and lock validation onto the wrong project
-  context.
-- Project-change-safe pages need server-owned refresh paths for derived defaults
-  like library roots; otherwise long-lived tabs drift even when the visible
-  project badge updates correctly.
-
-## Priority 1.24 — Converter project-bound helper state must follow the visible project ✅ DONE
-
-Keep the Converter from mixing project A helper data with project B writes after
-the active project changes while the page stays open.
-
-**What was done:**
-- Added explicit `project_path` support to converter-adjacent helper endpoints
-  for declared sessions, sourcedata file listing/serving, session registration,
-  survey template checks, and participants schema load/save so the Converter can
-  target the visible project instead of relying on implicit session state.
-- Updated `converter-bootstrap.js` to reload survey/biometrics session pickers
-  on `prism-project-changed`, include explicit `project_path` in the helper
-  request, and ignore late responses with a request token.
-- Updated the Survey converter to refresh the sourcedata quick-select list for
-  the active project, load sourcedata files from an explicit project path, and
-  send the visible project path when checking local project templates.
-- Updated the Participants converter to load/save `participants.json` against an
-  explicit project path and reset project-bound preview/widget state on
-  `prism-project-changed`, preventing old preview annotations from being saved
-  into a newly selected project.
-- Added focused backend and workflow-wiring regressions; the combined converter
-  regression slice now passes green.
-
-**Lessons learned:**
-- Converter pages have both read-only helper state and write paths tied to the
-  current dataset. Fixing only the save endpoint is not enough when session
-  pickers, sourcedata loaders, or schema widgets still cache the previous
-  project's data.
-- Project switches on long-lived multi-tab tools need both explicit
-  `project_path` contracts and frontend invalidation. If only one side is fixed,
-  the UI either shows stale project data or silently writes the wrong state to
-  disk.
-
-## Priority 1.25 — Converter modality tabs must not reuse stale source or project state ✅ DONE
-
-Keep the remaining Biometrics, Physio, and Eyetracking converter tabs from
-reusing the wrong detected source or project target after file changes, auto-
-detect flows, or project switches.
-
-**What was done:**
-- Updated the Biometrics converter to send explicit `project_path` through
-  detect/preview/convert requests, validate and save against the visible
-  project, and clear stale detection/validation state when the selected file or
-  active project changes.
-- Extended the shared library resolution helper so converter routes can prefer
-  an explicit project context instead of always reading the current session
-  project.
-- Fixed the Physio tab's auto-detected `sourcedata/physio` workflow so cached
-  folder paths are cleared when the user selects manual files/folders or changes
-  projects, and so the auto-detect route and batch-convert start request both
-  target the visible project explicitly.
-- Added the same minimal project-context hygiene to Eyetracking: clear stale
-  batch state on input/project changes and send explicit `project_path` for real
-  project-saving runs.
-- Added focused workflow-wiring and backend regressions and verified the full
-  converter audit slice together with the earlier converter project-context
-  fixes; the combined converter regression set now passes green.
-
-**Lessons learned:**
-- Auto-detected source paths are state, not just convenience metadata. If they
-  are cached in hidden fields, they must be invalidated whenever the user picks
-  a different source or switches to another project.
-- Even tabs that may be removed later still need project-context hygiene while
-  they remain exposed in the GUI. The good news is Eyetracking is relatively
-  isolated here: it is mainly a tab/template/module wrapper over the shared
-  batch-convert backend path, so future removal should be low-coupling.
-
-## Priority 1.26 — UI harmonization must preserve branding and add smarter beginner help 🚧 IN PROGRESS
-
-Unify page-shell styling and repeated file input/check blocks with a compact,
-professional look while keeping PRISM identity elements visible and keeping all
-execution/business logic in backend code untouched.
-
-**Scope and constraints:**
-- Frontend-only changes in `app/templates/`, `app/static/css/`, and `app/static/js/`.
-- No backend execution logic changes in `src/` or backend route behavior.
-- Keep these visible across the app as in current PRISM:
-  - MRI-Lab logo and MRI-Lab Graz label
-  - University of Graz affiliation
-  - PRISM Studio identity and home PRISM logo
-  - Karl Koschutnig contact identity
-- Harmonize shared UI primitives first:
-  - Page header blocks
-  - Collapsible help panels
-  - File picker and file-check helper presentation
-- Integrate smarter beginner-help behavior for file fields using existing
-  `global-help-mode.js` and `beginner-help-registry.js` patterns.
-
-**Progress so far:**
-- Added reusable UI macros for page headers, help panels, and file-picker
-  controls.
-- Applied compact Litera-inspired spacing/shadow/radius tuning in shared theme
-  CSS and projects card styling.
-- Added beginner-help support for file inputs (empty-state detection + tailored
-  hint text + additional registry keys for file-heavy controls).
-- Added explicit footer contact-name rendering for visibility of
-  "Karl Koschutnig" while preserving existing email/contact links.
-- Migrated additional top-level pages to the shared `page_header` macro
-  (validation, file management, recipe builder, analysis outputs,
-  specifications, library, survey customizer) to reduce repeated header markup.
-- Standardized remaining file-management/environment upload controls with
-  `studio-file-picker` wrappers and dedicated beginner-help keys for
-  renamer/organizer/wide-to-long file inputs.
-
-**Lessons learned (in progress):**
-- A harmonized visual layer is safest when implemented as shared template/CSS
-  primitives, not per-page rewrites.
-- Beginner-help quality improves substantially when file-input states are
-  first-class citizens rather than treated like plain text inputs.
-- Branding visibility needs to be treated as a product invariant, not a style
-  detail.
-- Structural harmonization can proceed safely in pages that are otherwise
-  feature-complete by first converging repeated shell components
-  (headers/help/file-pickers) before touching feature-specific form layouts.
-
----
-
-## Priority 2 — Export anonymization: participant ID renaming ✅ DONE
-
-Fully anonymize participant identities when exporting a PRISM/BIDS dataset for sharing.
-
-**What was done:**
-- `src/anonymizer.py` — added `update_intendedfor_paths(json_data, participant_mapping)`
-  that recursively replaces participant IDs in all JSON string values (covers both
-  legacy path style and BIDS v1.6+ `bids::` URI style).
-- `app/src/web/export_project.py` — extended `export_project()` so all four steps
-  are complete:
-  1. Folder and filename renaming via `anonymize_filename()` (already existed).
-  2. TSV column replacement via `_tsv_bytes()` (already existed).
-  3. JSON value replacement via `_json_bytes()` calling `update_intendedfor_paths()`
-     (added as part of this priority).
-  4. Reversible mapping saved to `project_path/code/anonymization_map.json`
-     (protected — excluded from the shareable export ZIP alongside
-     `participants_mapping.json`).
-- Stats dict now includes `mapping_file` key so callers know where the mapping was
-  written (or `None` when anonymization is off or no participants exist).
-- Added focused regression tests in
-  `tests/test_projects_export_mapping_exclusion.py` covering mapping persistence,
-  ZIP exclusion, and stats key correctness; all tests pass green.
-
-**Lessons learned:**
-- The mapping file must be written to the live project directory, not a temp file,
-  so researchers can later re-identify participants if needed.
-- `anonymization_map.json` should be excluded from the shareable ZIP the same way
-  `participants_mapping.json` already was; the exclusion lives in `_add_tree` and
-  applies to any depth inside `code/`.
-- `update_intendedfor_paths` is safe to apply to all JSON sidecars, not just
-  fieldmaps, because it only touches string values that actually contain a known
-  participant ID token.
-- Deterministic ID generation is the right default for re-export consistency;
-  non-deterministic should remain opt-in via the `deterministic=False` parameter.
-
----
-
-## Priority 3 — JSON tag stripping and NIfTI GZIP header cleaning ⏳ DEFERRED
-
-Lower priority — useful for hardened clinical sharing but not needed for typical
-research data exchange.
-
-### JSON tag stripping
-Remove known identifying fields from NIfTI sidecar `.json` files:
-`AcquisitionTime`, `PatientName`, `PatientBirthDate`, `InstitutionName`,
-`DeviceSerialNumber`, `StationName`, and similar.
-
-Add `DEFAULT_IDENTIFYING_BIDS_TAGS` + `strip_bids_json_tags()` to `src/anonymizer.py`.  
-Add "Remove Identifying BIDS Tags" accordion to export UI.
-
-### NIfTI GZIP header cleaning
-`.nii.gz` files can embed an **original filename** (`FNAME`) and a **compression
-timestamp** (`MTIME`) in the GZIP header itself — invisible to the researcher but
-readable with any hex editor or GZIP tool.
-
-Port `gz_header_cleaner.py` logic (see `MRI-Lab-Graz/datalad` repo, same author,
-MIT) into `src/anonymizer.py` as `clean_nifti_gz_headers(dataset_path)`.  
-Invoke during export when the "Deface / Clean NIfTI headers" option is enabled.
-
-### Defacing (structural MRI)
-Integrate an optional external defacing step (`pydeface`, `mri_deface`, or
-`deepdefacer`) for `*_T1w.nii.gz`, `*_T2w.nii.gz`, `*_FLAIR.nii.gz` files.  
-Check tool availability via `shutil.which()` before showing the option in the UI.
-
----
-
-## Lessons Learned
-
-- `app/src/` is a thin adapter — all new anonymization logic goes into `src/`.
-- Never modify source files during export — always write to a temp directory first,
-  then ZIP.
-- The `create_participant_mapping()` function in `src/anonymizer.py` already handles
-  deterministic seeding; reuse it rather than adding a new ID generator.
-- The mapping file must survive the export and live in the project's `code/` directory;
-  a temp-file approach silently loses the ability to re-identify participants.
+# PRISM Studio - Roadmap
+
+Last updated: 2026-05-11
+
+## Current Mission
+
+Sequentially merge survey-workflow-hardening into main using a stacked PR flow.
+This is the top delivery goal for the current cycle.
+
+## Status Board
+
+| Priority | Title | Status | Next Action |
+|---|---|---|---|
+| 1.35 | Survey converter workflow hardening and backend command consolidation | IN PROGRESS | Execute stacked PR merge sequence to main |
+| 1.26 | UI harmonization and beginner-help improvements | IN PROGRESS | Finish remaining page migrations to shared UI primitives |
+| 2 | Export anonymization: participant ID renaming | TODO | Implement JSON/TSV/path replacement pass in export flow |
+| 3 | JSON tag stripping and NIfTI GZIP header cleaning | DEFERRED | Revisit after Priority 2 is complete |
+
+## Active Work
+
+### Priority 1.35 - Survey converter workflow hardening and backend command consolidation
+
+Goal: reduce survey converter complexity and finish safe merge to main via ordered stacked PRs.
+
+Current state:
+- Working branch: survey-workflow-hardening.
+- Branch state at last check: ahead of origin/main by 21 commits, behind by 0, clean worktree.
+- Latest full quality gate: ./rtk coverage passing at 81.09%.
+- Frontend survey workflow is already moved to unified backend command routing (/api/survey-workflow-command) with legacy endpoints kept as compatibility aliases.
+
+What is already completed:
+- Backend canonical service extraction in src/survey_workflow_service.py for shared parsing, stale-response shaping, and stage execution helpers.
+- Frontend survey converter extraction into dedicated modules under app/static/js/modules/converter/ with orchestrator slimming.
+- Unified command adapter route added and wired across prepare/preview/convert paths.
+- Focused regression coverage expanded for workflow wiring, preview contracts, stale wrappers, and command dispatch aliases.
+- Full-suite coverage remains above fail-under threshold (80%).
+
+#### Stacked PR Playbook (execution target)
+
+Split strategy uses contiguous commit ranges from origin/main..survey-workflow-hardening.
+
+- Stack PR 1 (stack/pr1-survey-modularization-foundation)
+  - Range: d11360f0^..d8a9e209 (15 commits)
+  - Focus: frontend modularization foundation plus early workflow hardening/tests.
+
+- Stack PR 2 (stack/pr2-backend-workflow-service)
+  - Range: 2a5875dd^..871f98b4 (2 commits)
+  - Focus: backend workflow endpoint consolidation and canonical stage service.
+
+- Stack PR 3 (stack/pr3-contract-hardening-and-polish)
+  - Range: 675c9848^..b43516ed (4 commits)
+  - Focus: contract hardening, stale-response normalization, constants cleanup.
+
+Branch creation commands:
+
+```bash
+git fetch origin --prune
+
+# Stack PR 1
+git switch -c stack/pr1-survey-modularization-foundation origin/main
+git cherry-pick d11360f0^..d8a9e209
+source .venv/bin/activate && ./rtk coverage
+git push -u origin stack/pr1-survey-modularization-foundation
+
+# Stack PR 2
+git switch -c stack/pr2-backend-workflow-service stack/pr1-survey-modularization-foundation
+git cherry-pick 2a5875dd^..871f98b4
+source .venv/bin/activate && ./rtk coverage
+git push -u origin stack/pr2-backend-workflow-service
+
+# Stack PR 3
+git switch -c stack/pr3-contract-hardening-and-polish stack/pr2-backend-workflow-service
+git cherry-pick 675c9848^..b43516ed
+source .venv/bin/activate && ./rtk coverage
+git push -u origin stack/pr3-contract-hardening-and-polish
+```
+
+PR targeting and merge order:
+1. Open PR 1: stack/pr1-survey-modularization-foundation -> main.
+2. Open PR 2: stack/pr2-backend-workflow-service -> stack/pr1-survey-modularization-foundation.
+3. Open PR 3: stack/pr3-contract-hardening-and-polish -> stack/pr2-backend-workflow-service.
+4. Merge in strict order: PR1 -> PR2 -> PR3.
+
+Completion criteria:
+- Stacked PR sequence merged in order (PR1 -> PR2 -> PR3).
+- Legacy survey endpoint compatibility is explicitly finalized:
+  - either route old preview/validate endpoints through unified command adapter, or
+  - keep them as intentional tested aliases with clear contract ownership.
+- Post-merge full gate on main remains green (./rtk coverage >= 80%).
+
+Immediate next actions:
+1. Create stack/pr1-survey-modularization-foundation from origin/main and cherry-pick PR1 range.
+2. Run focused tests and ./rtk coverage on PR1, then open PR1.
+3. Repeat for PR2 and PR3 with strict retargeted stacked bases.
+4. Merge sequentially and re-run post-merge gate on main.
+
+Detailed implementation log moved to:
+- docs/SURVEY_WORKFLOW_HARDENING_2026.md
+
+### Priority 1.26 - UI harmonization and beginner-help improvements
+
+Goal: unify page-shell and file-input UX while preserving PRISM branding and keeping backend behavior unchanged.
+
+Progress snapshot:
+- Shared UI macros introduced for page headers, help panels, and standardized file-picker controls.
+- Shared theme spacing and card styling tightened for compact, consistent visual density.
+- Beginner-help support expanded for file-input empty states and tailored hints.
+- Additional top-level pages migrated to shared header macros.
+- Standardized file-management and environment upload control wrappers.
+
+Next action:
+- Complete remaining page migrations to shared components and run focused wiring checks for UI-state regressions.
+
+## Up Next
+
+### Priority 2 - Export anonymization: participant ID renaming
+
+Goal: fully anonymize participant identities in exported datasets while keeping source datasets untouched.
+
+Scope:
+
+| Step | What | Files affected |
+|---|---|---|
+| 1 | Rename sub-XXX -> sub-RNDXXX in folder/file names | sub-* directories and files |
+| 2 | Replace participant IDs in TSV columns (participant_id, subject_id) | participants.tsv and sidecar TSV files |
+| 3 | Replace participant IDs in JSON string values (IntendedFor, path references) | JSON sidecars across dataset |
+| 4 | Save reversible mapping file outside shared export zip | code/anonymization_map.json |
+
+Planned implementation targets:
+- src/anonymizer.py
+  - update_intendedfor_paths(json_data: dict, participant_mapping: dict) -> dict
+- app/src/web/export_project.py
+  - apply JSON path replacement when anonymize=true
+- Keep UI and blueprint request flags unchanged (existing anonymize checkbox is sufficient).
+
+Definition of done:
+- Name/path/TSV/JSON replacements are all consistent in exported copy.
+- IntendedFor supports both legacy and bids:: URI styles.
+- Mapping file is generated and not shipped in public zip.
+- Existing BIDS app compatibility remains intact.
+
+## Deferred
+
+### Priority 3 - JSON tag stripping and NIfTI GZIP header cleaning
+
+Deferred until Priority 2 is merged.
+
+Deferred scope summary:
+- Strip identifying BIDS JSON tags from sidecars during export.
+- Clean nii.gz GZIP header metadata fields (FNAME, MTIME) in exported copies.
+- Add optional structural defacing integration gated by tool availability.
+
+## Done (One-Line Summary)
+
+Historical implementation detail now belongs in CHANGELOG.md and focused docs.
+
+- 1.34: Added RTK wrapper command for setup, app runs, test and repo workflows.
+- 1.33: Improved survey preview diagnostics and compact version selection UI.
+- 1.32: Restored sourcedata quick-select across converter tabs with modality-aware filtering.
+- 1.31: Added backend-owned survey preview review and selected-task conversion contract.
+- 1.30: Mirrored dataset metadata into project.json and surfaced sync drift warnings.
+- 1.29: Added detection for manual CITATION.cff drift against PRISM-managed metadata.
+- 1.28: Added server file picker parity in File Management cards.
+- 1.27: Added explicit server-connected picker mode setting.
+- 1.25: Hardened converter modality tabs against stale source and project state reuse.
+- 1.24: Bound converter helper state to visible project context.
+- 1.23: Prevented Validator from posting stale default library overrides.
+- 1.22: Updated PRISM App Runner route to render disabled HTML state instead of raw JSON.
+- 1.21: Hardened Analysis Outputs against stale project and stale async run state.
+- 1.20: Reset Recipe Builder correctly on project changes and blocked orphan saves.
+- 1.19: Bound Survey Customizer save-to-project to loaded and active project context.
+- 1.18: Bound Survey Export library state to visible project context.
+- 1.17: Made Specifications quick links react to project changes.
+- 1.16: Fixed JSON Editor project-root normalization and API fallback behavior.
+- 1.15a: Hardened File Management wide-to-long save to target active project.
+- 1.14: Bound File Management project copy actions to visible project.
+- 1.13: Added Template Editor rollback for cancelled/failed source changes.
+- 1.12: Refreshed Template Editor schema-aware validation badges on schema switch.
+- 1.11: Bound Template Editor save/delete/list actions to visible project.
+- 1.10: Stabilized Template Editor import/delete state transitions.
+- 1.9: Bound metadata and methods actions to visible project.
+- 1.8: Bound export preferences to explicit active project context.
+- 1.7: Hardened async export cancellation and zip cleanup semantics.
+- 1.6: Added overlap-safe participant ID anonymization for export paths and JSON refs.
+- 1.5: Added safe participants merge workflow with preview and conflict blocking.
+- 1.15b: Added survey Excel import multi-version support.
+- 1.0: Added init-on-existing-BIDS workflow without overwriting existing files.
