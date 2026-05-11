@@ -6,7 +6,7 @@ Nibabel
 pydicom>=3.0.2
 
 # OAuth / authentication integrations
-authlib>=1.6.7
+authlib>=1.7.0
 
 # NLP and scraping helpers used by scripts/workflows
 nltk>=3.9.4
