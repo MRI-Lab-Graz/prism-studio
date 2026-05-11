@@ -15,6 +15,9 @@ from flask import current_app, has_app_context, jsonify, request, send_file, ses
 from werkzeug.utils import secure_filename
 from src.participants_paths import participants_mapping_candidates
 from src.survey_workflow_service import (
+    SUPPORTED_SURVEY_INPUT_MESSAGE,
+    SUPPORTED_SURVEY_INPUT_SUFFIXES,
+    SUPPORTED_SURVEY_TABULAR_SUFFIXES,
     SurveyWorkflowStageOptions,
     SurveyWorkflowStageService,
 )
@@ -28,10 +31,6 @@ from src.web.reporting_utils import sanitize_jsonable
 from src.web.validation import run_validation
 from src.web.services.project_registration import register_session_in_project
 from .conversion_survey_preview_handlers import (
-    _SUPPORTED_SURVEY_INPUT_MESSAGE,
-    _SUPPORTED_SURVEY_INPUT_SUFFIXES,
-    _SUPPORTED_SURVEY_TABULAR_SUFFIXES,
-    _format_workflow_preparation_stale_response,
     handle_api_survey_convert_preview,
     handle_api_survey_languages,
 )
@@ -68,6 +67,9 @@ _normalize_template_version_overrides_for_requests: Any = None
 sync_project_survey_recipe_offsets: Any = None
 _NON_ITEM_TOPLEVEL_KEYS: set[str] = set()
 normalize_paper_software_platform: Any = None
+_SUPPORTED_SURVEY_INPUT_MESSAGE = SUPPORTED_SURVEY_INPUT_MESSAGE
+_SUPPORTED_SURVEY_INPUT_SUFFIXES = SUPPORTED_SURVEY_INPUT_SUFFIXES
+_SUPPORTED_SURVEY_TABULAR_SUFFIXES = SUPPORTED_SURVEY_TABULAR_SUFFIXES
 _survey_workflow_stage_service = SurveyWorkflowStageService(
     tabular_suffixes=_SUPPORTED_SURVEY_TABULAR_SUFFIXES,
 )
@@ -171,6 +173,24 @@ def _get_effective_template_version_overrides(
         if normalized_overrides:
             return normalized_overrides
     return effective_overrides
+
+
+def _is_prepared_workflow_request() -> bool:
+    return _survey_workflow_stage_service.parse_prepared_workflow_flag(
+        request.form.get("prepared_workflow")
+    )
+
+
+def _format_workflow_preparation_stale_response(
+    payload: dict[str, object],
+    *,
+    log_messages: list[dict[str, str]] | None = None,
+) -> dict[str, object]:
+    return _survey_workflow_stage_service.format_workflow_preparation_stale_response(
+        payload=payload,
+        prepared_workflow=_is_prepared_workflow_request(),
+        log_messages=log_messages,
+    )
 
 
 def _iter_session_registration_values(

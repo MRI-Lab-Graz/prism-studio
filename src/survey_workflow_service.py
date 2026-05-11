@@ -12,6 +12,24 @@ _NEAR_MATCH_CONFIRMATION_MESSAGE = (
     "Safe near matches are available (minimal separator/zero-padding differences). "
     "Confirm to apply them."
 )
+_WORKFLOW_STALE_FOLLOWUP_ERRORS = {
+    "near_item_match_confirmation_required",
+    "value_offset_manual_review_required",
+}
+
+SUPPORTED_SURVEY_TABULAR_SUFFIXES = {
+    ".xlsx",
+    ".csv",
+    ".tsv",
+    ".sav",
+    ".rds",
+    ".rdata",
+    ".rda",
+}
+SUPPORTED_SURVEY_INPUT_SUFFIXES = SUPPORTED_SURVEY_TABULAR_SUFFIXES | {".lsa"}
+SUPPORTED_SURVEY_INPUT_MESSAGE = (
+    "Supported formats: .xlsx, .lsa, .csv, .tsv, .sav, .rds, .rdata, .rda"
+)
 
 
 @dataclass(frozen=True)
@@ -105,6 +123,10 @@ class SurveyWorkflowStageService:
         )
 
     @staticmethod
+    def parse_prepared_workflow_flag(raw_value: Any) -> bool:
+        return str(raw_value or "").strip().lower() in _BOOLEAN_TRUTHY_VALUES
+
+    @staticmethod
     def build_near_match_confirmation_payload(
         *,
         near_match_candidates: list[dict[str, Any]] | None,
@@ -129,6 +151,37 @@ class SurveyWorkflowStageService:
             "workflow_gate": dict(workflow_gate),
             "template_issues": list(template_issues or []),
         }
+
+    @staticmethod
+    def format_workflow_preparation_stale_response(
+        *,
+        payload: Mapping[str, Any] | None,
+        prepared_workflow: bool,
+        log_messages: list[dict[str, str]] | None = None,
+    ) -> dict[str, Any]:
+        normalized_payload: dict[str, Any] = dict(payload or {})
+        blocking_error = str(normalized_payload.get("error") or "").strip()
+
+        if log_messages is not None:
+            normalized_payload["log"] = log_messages
+
+        if not prepared_workflow or not blocking_error:
+            return normalized_payload
+
+        message = str(normalized_payload.get("message") or "").strip()
+        if not message:
+            message = "Survey setup changed after preparation."
+
+        if (
+            blocking_error in _WORKFLOW_STALE_FOLLOWUP_ERRORS
+            and "Run Preview again" not in message
+        ):
+            message = f"{message} Run Preview again to refresh setup before continuing."
+
+        normalized_payload["blocking_error"] = blocking_error
+        normalized_payload["error"] = "workflow_preparation_stale"
+        normalized_payload["message"] = message
+        return normalized_payload
 
     def resolve_effective_survey_dir(
         self,
