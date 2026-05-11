@@ -78,10 +78,10 @@ if %errorlevel% neq 0 (
 
 :: Install optional BIDS tooling
 call :echo_info "Installing optional BIDS tooling (bidsschematools)..."
-pip install bidsschematools
+pip install "bidsschematools>=1.2.2"
 if %errorlevel% neq 0 (
     call :echo_error "Failed to install bidsschematools (optional)."
-    call :echo_info "You can install it later with: pip install bidsschematools"
+    call :echo_info "You can install it later with: pip install bidsschematools (version 1.2.2 or newer)"
 ) else (
     call :echo_success "bidsschematools installed."
 )
