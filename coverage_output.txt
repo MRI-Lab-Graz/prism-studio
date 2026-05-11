@@ -1,0 +1,1096 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.4, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/karl/work/github/prism-studio
+configfile: pytest.ini
+testpaths: tests
+plugins: cov-7.1.0, anyio-4.13.0
+collected 1981 items
+
+tests/test_anc_export.py ............................................... [  2%]
+....                                                                     [  2%]
+tests/test_anonymizer.py ............................................... [  4%]
+.                                                                        [  4%]
+tests/test_api.py .......................                                [  6%]
+tests/test_app_settings_paths.py .                                       [  6%]
+tests/test_apps_runner_compat.py ....................................... [  8%]
+.......................                                                  [  9%]
+tests/test_backend_monitoring.py ....................................    [ 11%]
+tests/test_backfill_survey_numeric_metadata.py .........                 [ 11%]
+tests/test_batch_convert_utils.py ...................................... [ 13%]
+..................................................                       [ 16%]
+tests/test_bids_entity_rewriter.py ......                                [ 16%]
+tests/test_bids_integration.py ...                                       [ 16%]
+tests/test_bids_validator.py ....                                        [ 16%]
+tests/test_biometrics_cli.py ...                                         [ 16%]
+tests/test_biometrics_utils.py ......................................... [ 18%]
+                                                                         [ 18%]
+tests/test_build_workflow_packaged_web_smoke.py ......                   [ 19%]
+tests/test_bundle_packaging_guards.py .......                            [ 19%]
+tests/test_cli_command_import_boundaries.py ..                           [ 19%]
+tests/test_compat_loader.py ..........                                   [ 20%]
+tests/test_conversion_job_store.py ......                                [ 20%]
+tests/test_conversion_utils_tabular_reader.py ...                        [ 20%]
+tests/test_convert_physio_cli.py ..                                      [ 20%]
+tests/test_converter_participants_workflow_wiring.py ........            [ 21%]
+tests/test_converter_project_context_helpers.py ...........              [ 21%]
+tests/test_converter_project_save_contracts.py .......                   [ 22%]
+tests/test_converter_workflow_wiring.py ................                 [ 22%]
+tests/test_core_boundary.py ...                                          [ 23%]
+tests/test_dedicated_terminal.py ....                                    [ 23%]
+tests/test_environment_cli.py .                                          [ 23%]
+tests/test_excel_to_survey_multisheet.py .........                       [ 23%]
+tests/test_eyetracking_bids_passthrough.py ...                           [ 23%]
+tests/test_file_management_save_paths.py ............                    [ 24%]
+tests/test_file_management_workflow_wiring.py .........                  [ 24%]
+tests/test_file_reader.py .................................              [ 26%]
+tests/test_formatters.py ...................................             [ 28%]
+tests/test_handle_duplicate_ids.py ........                              [ 28%]
+tests/test_item_registry.py .........                                    [ 29%]
+tests/test_item_registry_extra.py .......................                [ 30%]
+tests/test_json_editor_project_sync.py ..                                [ 30%]
+tests/test_json_editor_workflow_wiring.py .                              [ 30%]
+tests/test_library_autotranslate.py ....                                 [ 30%]
+tests/test_limesurvey_e2e.py ....                                        [ 30%]
+tests/test_limesurvey_exporter.py .                                      [ 30%]
+tests/test_limesurvey_structure.py ..................................... [ 32%]
+...........                                                              [ 33%]
+tests/test_limesurvey_utils.py ............................              [ 34%]
+tests/test_lsa_import_integration.py ......................              [ 35%]
+tests/test_maintenance_scripts.py ..................                     [ 36%]
+tests/test_mri_json_scrubber.py ......................................   [ 38%]
+tests/test_multiversion_survey.py .............                          [ 39%]
+tests/test_navbar_project_event_wiring.py .                              [ 39%]
+tests/test_packaged_web_optional_blueprints.py FFF                       [ 39%]
+tests/test_participants_backend_extra.py ............................... [ 41%]
+.........                                                                [ 41%]
+tests/test_participants_cli.py ........                                  [ 42%]
+tests/test_participants_converter_edge_cases.py ......                   [ 42%]
+tests/test_participants_converter_extra.py ............................. [ 43%]
+.......                                                                  [ 44%]
+tests/test_participants_mapping.py .                                     [ 44%]
+tests/test_participants_neurobagel_widget_wiring.py ....                 [ 44%]
+tests/test_physio_sidecar_emission.py .                                  [ 44%]
+tests/test_prism_app_runner_compatibility.py ..................          [ 45%]
+tests/test_prism_app_runner_page_handlers.py .                           [ 45%]
+tests/test_prism_app_runner_workflow_wiring.py ..                        [ 45%]
+tests/test_prism_studio_port_conflicts.py ...                            [ 45%]
+tests/test_prism_studio_wrapper.py .                                     [ 45%]
+tests/test_prism_tools_cli_contract.py ...............                   [ 46%]
+tests/test_project_manager.py ....................................       [ 48%]
+tests/test_project_registration_template_versions.py ....                [ 48%]
+tests/test_project_structure.py ................                         [ 49%]
+tests/test_project_template_write_paths.py ........                      [ 49%]
+tests/test_projects_compact_view_wiring.py .........                     [ 50%]
+tests/test_projects_description_handlers.py .....................        [ 51%]
+tests/test_projects_export_blueprint.py ........                         [ 51%]
+tests/test_projects_export_mapping_exclusion.py ....                     [ 51%]
+tests/test_projects_export_paths.py ...                                  [ 51%]
+tests/test_projects_library_settings_api.py .                            [ 52%]
+tests/test_projects_lifecycle_handlers.py .......                        [ 52%]
+tests/test_projects_metadata_helpers.py .......                          [ 52%]
+tests/test_projects_methods_handlers.py ...                              [ 52%]
+tests/test_projects_participants_handlers.py ...................         [ 53%]
+tests/test_projects_schema_config_handlers.py .........                  [ 54%]
+tests/test_projects_study_metadata_handlers.py .......                   [ 54%]
+tests/test_projects_workflow_wiring.py ..............................    [ 56%]
+tests/test_questionnaire_renderer.py ......                              [ 56%]
+tests/test_readme_generator.py ..                                        [ 56%]
+tests/test_recipe_builder_handlers.py .............                      [ 57%]
+tests/test_recipe_builder_workflow_wiring.py .....                       [ 57%]
+tests/test_recipes_copy_only_used.py ..                                  [ 57%]
+tests/test_recipes_filename_pattern.py ..                                [ 57%]
+tests/test_recipes_output_subfolder.py ............................      [ 59%]
+tests/test_recipes_participant_id_normalization.py ..........            [ 59%]
+tests/test_recipes_surveys_utils.py .................................... [ 61%]
+........................................................................ [ 65%]
+....................................................                     [ 67%]
+tests/test_recipes_wide_run_postfix.py .......                           [ 68%]
+tests/test_recipes_workflow_wiring.py ..                                 [ 68%]
+tests/test_rename_legacy_physio_filenames.py ...                         [ 68%]
+tests/test_reorganization.py ...                                         [ 68%]
+tests/test_reporting_methods_generation.py .....                         [ 68%]
+tests/test_rtk_cli.py .....                                              [ 68%]
+tests/test_runner.py sss...................                              [ 70%]
+tests/test_runner_recipe_coverage.py ....                                [ 70%]
+tests/test_runtime_dependencies.py .....                                 [ 70%]
+tests/test_specifications_workflow_wiring.py .                           [ 70%]
+tests/test_src_file_reader.py ..................                         [ 71%]
+tests/test_subject_code_rewriter.py ........                             [ 71%]
+tests/test_survey_base.py ............                                   [ 72%]
+tests/test_survey_converter_version_plan_acq.py ........F..F             [ 73%]
+tests/test_survey_customizer_workflow_wiring.py .                        [ 73%]
+tests/test_survey_generator_library_paths.py ...                         [ 73%]
+tests/test_survey_generator_workflow_wiring.py .                         [ 73%]
+tests/test_survey_preview_regressions.py .FFFFF.........                 [ 74%]
+tests/test_survey_template_version_persistence.py ....                   [ 74%]
+tests/test_survey_value_offsets.py ............                          [ 74%]
+tests/test_survey_workflow_service.py ..                                 [ 75%]
+tests/test_template_editor_save_paths.py .........                       [ 75%]
+tests/test_template_editor_single_version_variantid.py ........          [ 75%]
+tests/test_template_editor_software_validation.py ...                    [ 76%]
+tests/test_template_editor_workflow_wiring.py ...................        [ 76%]
+tests/test_template_validator.py .................                       [ 77%]
+tests/test_text_sanitizer.py .....................................       [ 79%]
+tests/test_tool_limesurvey_output.py ....                                [ 79%]
+tests/test_tools_file_browser_handlers.py ....                           [ 80%]
+tests/test_tools_fs_browse_route.py ..                                   [ 80%]
+tests/test_tools_generation_handlers.py ..                               [ 80%]
+tests/test_tools_pages_handlers.py .                                     [ 80%]
+tests/test_tools_recipes_surveys_handlers.py ........                    [ 80%]
+tests/test_tools_runtime_capabilities_route.py ..                        [ 80%]
+tests/test_unit.py ....................................F................ [ 83%]
+..                                                                       [ 83%]
+tests/test_validator.py .                                                [ 83%]
+tests/test_validator_workflow_wiring.py .......                          [ 84%]
+tests/test_varioport_base_frequency.py ..                                [ 84%]
+tests/test_varioport_definition_file.py ....                             [ 84%]
+tests/test_varioport_hr_estimation.py ...                                [ 84%]
+tests/test_varioport_type7_demux.py .......                              [ 84%]
+tests/test_verify_repo_import_boundaries.py ...                          [ 85%]
+tests/test_verify_repo_unsafe_patterns.py ..                             [ 85%]
+tests/test_version_merge_integration.py ....                             [ 85%]
+tests/test_version_merger.py ..........                                  [ 85%]
+tests/test_version_update_modal.py .                                     [ 85%]
+tests/test_version_utils.py .....                                        [ 86%]
+tests/test_web_anonymization.py .....                                    [ 86%]
+tests/test_web_blueprints_conversion.py ................................ [ 87%]
+........................................................................ [ 91%]
+..............................                                           [ 93%]
+tests/test_web_file_picker_service.py ....                               [ 93%]
+tests/test_web_formatting.py ..............                              [ 94%]
+tests/test_web_neurobagel_augmentation.py ...                            [ 94%]
+tests/test_web_path_utils.py ...                                         [ 94%]
+tests/test_web_validation_progress.py .............                      [ 95%]
+tests/test_wide_to_long.py .............                                 [ 95%]
+tests/test_wide_to_long_cli.py .....                                     [ 95%]
+tests/test_wide_to_long_extra.py .............................           [ 97%]
+tests/test_wide_to_long_web_backend_command.py .......                   [ 97%]
+tests/test_windows_compatibility.py .......                              [ 98%]
+tests/test_windows_datasets.py ..........                                [ 98%]
+tests/test_windows_paths.py .................                            [ 99%]
+tests/test_windows_web_uploads.py ...........                            [100%]
+
+=================================== FAILURES ===================================
+________________ test_home_page_renders_without_tools_blueprint ________________
+
+    def test_home_page_renders_without_tools_blueprint() -> None:
+        app = _build_template_app()
+    
+        with app.test_client() as client:
+            response = client.get("/")
+    
+>       assert response.status_code == 200
+E       assert 500 == 200
+E        +  where 500 = <WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]>.status_code
+
+tests/test_packaged_web_optional_blueprints.py:86: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    test_packaged_web_optional_blueprints:app.py:875 Exception on / [GET]
+Traceback (most recent call last):
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/karl/work/github/prism-studio/tests/test_packaged_web_optional_blueprints.py", line 41, in index
+    return render_template("home.html")
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/templating.py", line 151, in render_template
+    return _render(app, template, context)
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/templating.py", line 132, in _render
+    rv = template.render(context)
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/jinja2/environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/jinja2/environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/karl/work/github/prism-studio/app/templates/home.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "/Users/karl/work/github/prism-studio/app/templates/base.html", line 931, in top-level template code
+    window.PRISM_STATIC_ASSET_VERSION = {{ prism_static_asset_token | tojson }};
+    ^^^^^^^^^^^^^^^^^
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/jinja2/filters.py", line 1721, in do_tojson
+    return htmlsafe_json_dumps(value, dumps=dumps, **kwargs)
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/jinja2/utils.py", line 669, in htmlsafe_json_dumps
+    dumps(obj, **kwargs)
+    ~~~~~^^^^^^^^^^^^^^^
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/json/provider.py", line 179, in dumps
+    return json.dumps(obj, **kwargs)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 242, in dumps
+    **kw).encode(obj)
+          ~~~~~~^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/encoder.py", line 202, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/encoder.py", line 263, in iterencode
+    return _iterencode(o, 0)
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/json/provider.py", line 121, in _default
+    raise TypeError(f"Object of type {type(o).__name__} is not JSON serializable")
+TypeError: Object of type Undefined is not JSON serializable
+______________ test_projects_page_renders_without_tools_blueprint ______________
+
+    def test_projects_page_renders_without_tools_blueprint() -> None:
+        app = _build_template_app()
+    
+        with app.test_client() as client:
+            response = client.get("/projects")
+    
+>       assert response.status_code == 200
+E       assert 500 == 200
+E        +  where 500 = <WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]>.status_code
+
+tests/test_packaged_web_optional_blueprints.py:96: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    test_packaged_web_optional_blueprints:app.py:875 Exception on /projects [GET]
+Traceback (most recent call last):
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/karl/work/github/prism-studio/tests/test_packaged_web_optional_blueprints.py", line 53, in projects_page
+    return render_template(
+        "projects.html",
+    ...<3 lines>...
+        default_schema_version="stable",
+    )
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/templating.py", line 151, in render_template
+    return _render(app, template, context)
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/templating.py", line 132, in _render
+    rv = template.render(context)
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/jinja2/environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/jinja2/environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/karl/work/github/prism-studio/app/templates/projects.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "/Users/karl/work/github/prism-studio/app/templates/base.html", line 931, in top-level template code
+    window.PRISM_STATIC_ASSET_VERSION = {{ prism_static_asset_token | tojson }};
+    ^^^^^^^^^^^^^^^^^
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/jinja2/filters.py", line 1721, in do_tojson
+    return htmlsafe_json_dumps(value, dumps=dumps, **kwargs)
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/jinja2/utils.py", line 669, in htmlsafe_json_dumps
+    dumps(obj, **kwargs)
+    ~~~~~^^^^^^^^^^^^^^^
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/json/provider.py", line 179, in dumps
+    return json.dumps(obj, **kwargs)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 242, in dumps
+    **kw).encode(obj)
+          ~~~~~~^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/encoder.py", line 202, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/encoder.py", line 263, in iterencode
+    return _iterencode(o, 0)
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/json/provider.py", line 121, in _default
+    raise TypeError(f"Object of type {type(o).__name__} is not JSON serializable")
+TypeError: Object of type Undefined is not JSON serializable
+___________ test_specifications_page_renders_without_tools_blueprint ___________
+
+    def test_specifications_page_renders_without_tools_blueprint() -> None:
+        app = _build_template_app()
+    
+        with app.test_client() as client:
+            response = client.get("/specifications")
+    
+>       assert response.status_code == 200
+E       assert 500 == 200
+E        +  where 500 = <WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]>.status_code
+
+tests/test_packaged_web_optional_blueprints.py:106: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    test_packaged_web_optional_blueprints:app.py:875 Exception on /specifications [GET]
+Traceback (most recent call last):
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/karl/work/github/prism-studio/tests/test_packaged_web_optional_blueprints.py", line 45, in specifications
+    return render_template("specifications.html")
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/templating.py", line 151, in render_template
+    return _render(app, template, context)
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/templating.py", line 132, in _render
+    rv = template.render(context)
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/jinja2/environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/jinja2/environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/karl/work/github/prism-studio/app/templates/specifications.html", line 2, in top-level template code
+    {% from "includes/ui/macros.html" import page_header %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/karl/work/github/prism-studio/app/templates/base.html", line 931, in top-level template code
+    window.PRISM_STATIC_ASSET_VERSION = {{ prism_static_asset_token | tojson }};
+    ^^^^^^^^^^^^^^^^^
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/jinja2/filters.py", line 1721, in do_tojson
+    return htmlsafe_json_dumps(value, dumps=dumps, **kwargs)
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/jinja2/utils.py", line 669, in htmlsafe_json_dumps
+    dumps(obj, **kwargs)
+    ~~~~~^^^^^^^^^^^^^^^
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/json/provider.py", line 179, in dumps
+    return json.dumps(obj, **kwargs)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 242, in dumps
+    **kw).encode(obj)
+          ~~~~~~^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/encoder.py", line 202, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/encoder.py", line 263, in iterencode
+    return _iterencode(o, 0)
+  File "/Users/karl/work/github/prism-studio/.venv/lib/python3.14/site-packages/flask/json/provider.py", line 121, in _default
+    raise TypeError(f"Object of type {type(o).__name__} is not JSON serializable")
+TypeError: Object of type Undefined is not JSON serializable
+________ test_single_filtered_session_keeps_contextual_version_override ________
+
+    def test_single_filtered_session_keeps_contextual_version_override():
+        templates = {
+            "wellbeing-multi": {
+                "json": {
+                    "Study": {
+                        "TaskName": "wellbeing-multi",
+                        "Version": "10-likert",
+                        "Versions": ["10-likert", "10-vas"],
+                    },
+                    "WB01": {"Description": "Shared item"},
+                    "WB02": {
+                        "Description": "Likert-only",
+                        "ApplicableVersions": ["10-likert"],
+                    },
+                    "WB03": {
+                        "Description": "VAS-only",
+                        "ApplicableVersions": ["10-vas"],
+                    },
+                }
+            }
+        }
+    
+        task_context_templates, task_context_acq_map = _build_task_context_maps(
+            tasks_with_data={"wellbeing-multi"},
+            df=pd.DataFrame({"session": ["1", "1"]}),
+            res_ses_col="session",
+            session="1",
+            res_run_col=None,
+            task_run_columns={("wellbeing-multi", None): ["WB01", "WB02", "WB03"]},
+            templates=templates,
+            template_version_overrides=[
+                {
+                    "task": "wellbeing-multi",
+                    "session": "ses-1",
+                    "version": "10-vas",
+                }
+            ],
+            normalize_ses_fn=lambda value: (
+                f"ses-{value}" if not str(value).startswith("ses-") else str(value)
+            ),
+        )
+    
+>       assert task_context_acq_map[("wellbeing-multi", "ses-1", None)] == "10-vas"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: ('wellbeing-multi', 'ses-1', None)
+
+tests/test_survey_converter_version_plan_acq.py:389: KeyError
+____ test_long_format_run_column_reports_max_run_for_multiversion_contexts _____
+
+tmp_path = PosixPath('/private/var/folders/k1/mbczfhb95zg9zxwz5sxr639c0000gn/T/pytest-of-karl/pytest-42/test_long_format_run_column_re0')
+
+    def test_long_format_run_column_reports_max_run_for_multiversion_contexts(tmp_path):
+        library_dir = tmp_path / "survey"
+        library_dir.mkdir()
+    
+        template = {
+            "Study": {
+                "TaskName": "wellbeing-multi",
+                "Version": "10-likert",
+                "Versions": ["10-likert", "10-vas"],
+            }
+        }
+        for index in range(1, 11):
+            item_id = f"WBM{index:02d}"
+            template[item_id] = {
+                "Description": f"Item {index}",
+                "ApplicableVersions": ["10-likert", "10-vas"],
+                "DataType": "integer",
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {str(level): str(level) for level in range(1, 6)},
+            }
+    
+        (library_dir / "survey-wellbeing-multi.json").write_text(
+            json.dumps(template),
+            encoding="utf-8",
+        )
+    
+        input_path = tmp_path / "scenario.csv"
+        input_path.write_text(
+            """session,Code,Geschlecht,Alter,Händigkeit,WBM01,WBM02,WBM03,WBM04,WBM05,WBM06,WBM07,WBM08,WBM09,WBM10,run
+    pre,1,2,20,0,3,4,2,5,3,4,2,4,3,5,1
+    pre,2,2,22,1,2,3,3,4,2,3,2,3,2,4,1
+    pre,3,2,72,1,1,2,2,3,1,2,1,2,1,2,1
+    pre,4,1,25,1,2,4,3,4,2,3,3,4,3,4,1
+    pre,5,2,24,1,3,3,4,5,3,4,4,5,4,5,1
+    pre,6,1,23,1,2,2,3,3,2,2,3,3,2,3,1
+    pre,7,1,23,1,1,2,1,2,1,1,2,2,1,2,1
+    post,1,2,20,0,4,4,3,5,4,4,3,,,,1
+    post,2,2,22,1,3,3,3,4,3,3,3,,,,1
+    post,3,2,72,1,2,2,2,3,2,2,2,,,,1
+    post,4,1,25,1,3,4,3,4,3,4,3,,,,1
+    post,5,2,24,1,2,3,2,4,2,3,2,,,,1
+    post,6,1,23,1,4,3,4,4,4,3,4,,,,1
+    post,7,1,23,1,3,2,3,3,3,2,3,,,,1
+    pre,1,2,20,0,70,75,60,80,65,70,55,72,68,83,2
+    pre,2,2,22,1,45,50,40,60,48,52,41,55,49,63,2
+    pre,3,2,72,1,20,30,25,35,22,28,20,30,24,36,2
+    pre,4,1,25,1,55,65,58,70,60,62,57,68,61,72,2
+    pre,5,2,24,1,80,82,78,90,81,84,76,88,83,91,2
+    pre,6,1,23,1,35,40,32,45,38,41,34,44,39,47,2
+    pre,7,1,23,1,25,27,23,30,24,26,22,29,25,31,2
+    post,1,2,20,0,4,5,4,5,4,5,4,5,4,5,2
+    post,2,2,22,1,2,3,2,4,2,3,2,4,2,3,2
+    post,3,2,72,1,2,2,1,3,2,2,1,3,2,2,2
+    post,4,1,25,1,3,4,3,4,3,4,3,4,3,4,2
+    post,5,2,24,1,2,3,3,4,2,3,3,4,2,3,2
+    post,6,1,23,1,1,2,2,3,1,2,2,3,1,2,2
+    post,7,1,23,1,2,2,2,2,2,2,2,2,2,2,2
+    """,
+            encoding="utf-8",
+        )
+    
+        result = convert_survey_xlsx_to_prism_dataset(
+            input_path=input_path,
+            library_dir=library_dir,
+            output_root=tmp_path / "out",
+            survey="wellbeing-multi",
+            id_column="Code",
+            session_column="session",
+            run_column="run",
+            dry_run=True,
+            force=True,
+            separator=",",
+            unknown="ignore",
+        )
+    
+>       assert result.task_runs == {"wellbeing-multi": 2}
+E       AssertionError: assert {'wellbeing-multi': 1} == {'wellbeing-multi': 2}
+E         
+E         Differing items:
+E         {'wellbeing-multi': 1} != {'wellbeing-multi': 2}
+E         Use -v to get more diff
+
+tests/test_survey_converter_version_plan_acq.py:521: AssertionError
+----------------------------- Captured stdout call -----------------------------
+
+[DEBUG] --- First 4 lines of scenario.csv ---
+L1: session,Code,Geschlecht,Alter,Händigkeit,WBM01,WBM02,WBM03,WBM04,WBM05,WBM06,WBM07,WBM08,WBM09,WBM10,run
+L2: pre,1,2,20,0,3,4,2,5,3,4,2,4,3,5,1
+L3: pre,2,2,22,1,2,3,3,4,2,3,2,3,2,4,1
+L4: pre,3,2,72,1,1,2,2,3,1,2,1,2,1,2,1
+--------------------------------------
+
+[PRISM INFO] Run column detected: 'run'
+[PRISM INFO] Sessions detected in session: ['post', 'pre']
+[PRISM INFO] Auto-filtering to first session 'post' for preview (28 rows → 14 rows)
+____________ test_survey_preview_validation_rerun_keeps_run_column _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113cb7000>
+tmp_path = PosixPath('/private/var/folders/k1/mbczfhb95zg9zxwz5sxr639c0000gn/T/pytest-of-karl/pytest-42/test_survey_preview_validation0')
+
+    def test_survey_preview_validation_rerun_keeps_run_column(monkeypatch, tmp_path):
+        app = Flask(__name__)
+        app.secret_key = os.urandom(32)
+    
+        project_root = tmp_path / "project"
+        project_root.mkdir()
+        library_root = tmp_path / "library"
+        library_root.mkdir()
+        (library_root / "survey-ads.json").write_text("{}", encoding="utf-8")
+    
+        calls = []
+    
+        def fake_run_survey_with_official_fallback(_converter, **kwargs):
+            calls.append(kwargs.copy())
+            if kwargs.get("dry_run"):
+                return SimpleNamespace(
+                    dry_run_preview={
+                        "summary": {
+                            "total_participants": 1,
+                            "unique_participants": 1,
+                            "tasks": ["ads"],
+                            "session_column": "session",
+                            "run_column": "run",
+                            "total_files": 1,
+                            "total_files_to_create": 1,
+                        },
+                        "participants": [
+                            {
+                                "participant_id": "sub-001",
+                                "session_id": "ses-pre",
+                                "run_id": "run-1",
+                                "raw_id": "1",
+                                "missing_values": 0,
+                                "total_items": 1,
+                                "completeness_percent": 100.0,
+                            }
+                        ],
+                        "files_to_create": [
+                            {
+                                "type": "data",
+                                "path": str(
+                                    tmp_path
+                                    / "rawdata"
+                                    / "sub-001"
+                                    / "ses-pre"
+                                    / "survey"
+                                    / "sub-001_ses-pre_task-ads_run-1_survey.tsv"
+                                ),
+                                "description": "Survey data for task ads, run 1",
+                            }
+                        ],
+                        "data_issues": [],
+                        "column_mapping": {
+                            "ADS01": {
+                                "task": "ads",
+                                "run": None,
+                                "base_item": "ADS01",
+                                "missing_count": 0,
+                                "missing_percent": 0.0,
+                                "has_unexpected_values": False,
+                                "expected_levels": [],
+                            }
+                        },
+                    },
+                    tasks_included=["ads"],
+                    unknown_columns=[],
+                    missing_items_by_task={},
+                    id_column="ID",
+                    session_column="session",
+                    run_column="run",
+                    detected_sessions=["pre"],
+                    conversion_warnings=[],
+                    task_runs={"ads": 1},
+                    template_matches=[],
+                    tool_columns=[],
+                )
+            return SimpleNamespace(tasks_included=["ads"])
+    
+        def fake_run_validation(*_args, **_kwargs):
+            return (
+                [],
+                SimpleNamespace(
+                    total_files=1,
+                    subjects=set(),
+                    sessions=set(),
+                    tasks=set(),
+                    modalities={},
+                    surveys=set(),
+                    biometrics=set(),
+                ),
+            )
+    
+        monkeypatch.setattr(
+            "src.web.blueprints.conversion_survey_preview_handlers.run_validation",
+            fake_run_validation,
+        )
+    
+        with app.test_request_context(
+            "/api/survey-convert-preview",
+            method="POST",
+            data={
+                "file": (io.BytesIO(b"ID,session,run,ADS01\n1,pre,1,3\n"), "demo.csv"),
+                "id_column": "ID",
+                "session_column": "session",
+                "run_column": "run",
+                "template_versions": '{"ads":"short"}',
+            },
+            content_type="multipart/form-data",
+        ):
+            session["current_project_path"] = str(project_root)
+    
+>           response = handle_api_survey_convert_preview(
+                convert_survey_xlsx_to_prism_dataset=object(),
+                convert_survey_lsa_to_prism_dataset=object(),
+                resolve_effective_library_path=lambda: library_root,
+                run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
+                validate_project_templates_for_tasks=lambda **_kwargs: [],
+                format_unmatched_groups_response=lambda _error: {},
+                id_column_not_detected_error_cls=ValueError,
+                unmatched_groups_error_cls=RuntimeError,
+            )
+E           TypeError: handle_api_survey_convert_preview() missing 1 required keyword-only argument: 'build_template_completion_gate'
+
+tests/test_survey_preview_regressions.py:200: TypeError
+_ test_survey_preview_uses_project_template_version_overrides_when_request_missing _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11408eac0>
+tmp_path = PosixPath('/private/var/folders/k1/mbczfhb95zg9zxwz5sxr639c0000gn/T/pytest-of-karl/pytest-42/test_survey_preview_uses_proje0')
+
+    def test_survey_preview_uses_project_template_version_overrides_when_request_missing(
+        monkeypatch, tmp_path
+    ):
+        app = Flask(__name__)
+        app.secret_key = os.urandom(32)
+    
+        project_root = tmp_path / "project"
+        project_root.mkdir()
+        (project_root / "project.json").write_text(
+            json.dumps(
+                {
+                    "TemplateVersionSelections": [
+                        {
+                            "task": "ads",
+                            "session": "ses-01",
+                            "version": "short",
+                        }
+                    ]
+                }
+            ),
+            encoding="utf-8",
+        )
+        library_root = tmp_path / "library"
+        library_root.mkdir()
+        (library_root / "survey-ads.json").write_text("{}", encoding="utf-8")
+    
+        calls = []
+    
+        def fake_run_survey_with_official_fallback(_converter, **kwargs):
+            calls.append(kwargs.copy())
+            if kwargs.get("dry_run"):
+                return SimpleNamespace(
+                    dry_run_preview={"summary": {"total_files": 1}, "participants": []},
+                    tasks_included=["ads"],
+                    unknown_columns=[],
+                    missing_items_by_task={},
+                    id_column="ID",
+                    session_column="session",
+                    run_column=None,
+                    detected_sessions=["1"],
+                    conversion_warnings=[],
+                    task_runs={},
+                    template_matches=[],
+                    tool_columns=[],
+                )
+            return SimpleNamespace(tasks_included=["ads"])
+    
+        def fake_run_validation(*_args, **_kwargs):
+            return (
+                [],
+                SimpleNamespace(
+                    total_files=1,
+                    subjects=set(),
+                    sessions=set(),
+                    tasks=set(),
+                    modalities={},
+                    surveys=set(),
+                    biometrics=set(),
+                ),
+            )
+    
+        monkeypatch.setattr(
+            "src.web.blueprints.conversion_survey_preview_handlers.collect_multivariant_tasks_from_library",
+            lambda **_kwargs: {},
+        )
+        monkeypatch.setattr(
+            "src.web.blueprints.conversion_survey_preview_handlers.run_validation",
+            fake_run_validation,
+        )
+    
+        with app.test_request_context(
+            "/api/survey-convert-preview",
+            method="POST",
+            data={
+                "file": (io.BytesIO(b"ID,session,ADS01\n1,1,3\n"), "demo.csv"),
+                "id_column": "ID",
+                "session_column": "session",
+            },
+            content_type="multipart/form-data",
+        ):
+            session["current_project_path"] = str(project_root)
+    
+>           response = handle_api_survey_convert_preview(
+                convert_survey_xlsx_to_prism_dataset=object(),
+                convert_survey_lsa_to_prism_dataset=object(),
+                resolve_effective_library_path=lambda: library_root,
+                run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
+                validate_project_templates_for_tasks=lambda **_kwargs: [],
+                format_unmatched_groups_response=lambda _error: {},
+                id_column_not_detected_error_cls=ValueError,
+                unmatched_groups_error_cls=RuntimeError,
+            )
+E           TypeError: handle_api_survey_convert_preview() missing 1 required keyword-only argument: 'build_template_completion_gate'
+
+tests/test_survey_preview_regressions.py:305: TypeError
+__________ test_survey_preview_requires_confirmation_for_near_matches __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11408eb30>
+tmp_path = PosixPath('/private/var/folders/k1/mbczfhb95zg9zxwz5sxr639c0000gn/T/pytest-of-karl/pytest-42/test_survey_preview_requires_c0')
+
+    def test_survey_preview_requires_confirmation_for_near_matches(monkeypatch, tmp_path):
+        app = Flask(__name__)
+        app.secret_key = os.urandom(32)
+    
+        project_root = tmp_path / "project"
+        project_root.mkdir()
+        library_root = tmp_path / "library"
+        library_root.mkdir()
+        (library_root / "survey-ads.json").write_text("{}", encoding="utf-8")
+    
+        calls = []
+    
+        def fake_run_survey_with_official_fallback(_converter, **kwargs):
+            calls.append(kwargs.copy())
+            return SimpleNamespace(
+                near_match_candidates=[
+                    {
+                        "source_column": "ADS_02",
+                        "source_base_item": "ADS_02",
+                        "target_item": "ADS02",
+                        "task": "ads",
+                        "run": None,
+                    }
+                ],
+                near_match_applied=False,
+            )
+    
+        with app.test_request_context(
+            "/api/survey-convert-preview",
+            method="POST",
+            data={
+                "file": (io.BytesIO(b"ID,session,ADS01,ADS_02\n1,1,3,2\n"), "demo.csv"),
+                "id_column": "ID",
+                "session_column": "session",
+            },
+            content_type="multipart/form-data",
+        ):
+            session["current_project_path"] = str(project_root)
+    
+>           response = handle_api_survey_convert_preview(
+                convert_survey_xlsx_to_prism_dataset=object(),
+                convert_survey_lsa_to_prism_dataset=object(),
+                resolve_effective_library_path=lambda: library_root,
+                run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
+                validate_project_templates_for_tasks=lambda **_kwargs: [],
+                format_unmatched_groups_response=lambda _error: {},
+                id_column_not_detected_error_cls=ValueError,
+                unmatched_groups_error_cls=RuntimeError,
+            )
+E           TypeError: handle_api_survey_convert_preview() missing 1 required keyword-only argument: 'build_template_completion_gate'
+
+tests/test_survey_preview_regressions.py:365: TypeError
+_____________ test_survey_preview_passes_selected_near_match_tasks _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113d1acf0>
+tmp_path = PosixPath('/private/var/folders/k1/mbczfhb95zg9zxwz5sxr639c0000gn/T/pytest-of-karl/pytest-42/test_survey_preview_passes_sel0')
+
+    def test_survey_preview_passes_selected_near_match_tasks(monkeypatch, tmp_path):
+        app = Flask(__name__)
+        app.secret_key = os.urandom(32)
+    
+        project_root = tmp_path / "project"
+        project_root.mkdir()
+        library_root = tmp_path / "library"
+        library_root.mkdir()
+        (library_root / "survey-ads.json").write_text("{}", encoding="utf-8")
+    
+        calls = []
+    
+        def fake_run_survey_with_official_fallback(_converter, **kwargs):
+            calls.append(kwargs.copy())
+            return SimpleNamespace(
+                dry_run_preview={
+                    "summary": {
+                        "total_participants": 1,
+                        "unique_participants": 1,
+                        "tasks": ["ads"],
+                        "session_column": "session",
+                        "run_column": None,
+                        "total_files": 1,
+                        "total_files_to_create": 1,
+                    },
+                    "participants": [],
+                    "column_mapping": {},
+                    "files_to_create": [],
+                    "data_issues": [],
+                },
+                tasks_included=["ads"],
+                unknown_columns=[],
+                missing_items_by_task={},
+                id_column="ID",
+                session_column="session",
+                run_column=None,
+                detected_sessions=["ses-1"],
+                conversion_warnings=[],
+                task_runs={},
+                template_matches=None,
+                tool_columns=[],
+                near_match_candidates=[],
+                near_match_applied=False,
+            )
+    
+        with app.test_request_context(
+            "/api/survey-convert-preview",
+            method="POST",
+            data={
+                "file": (io.BytesIO(b"ID,session,ADS01\n1,1,3\n"), "demo.csv"),
+                "id_column": "ID",
+                "session_column": "session",
+                "allow_near_item_match": "true",
+                "near_match_tasks": '["ads"]',
+                "validate": "false",
+            },
+            content_type="multipart/form-data",
+        ):
+            session["current_project_path"] = str(project_root)
+    
+>           response = handle_api_survey_convert_preview(
+                convert_survey_xlsx_to_prism_dataset=object(),
+                convert_survey_lsa_to_prism_dataset=object(),
+                resolve_effective_library_path=lambda: library_root,
+                run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
+                validate_project_templates_for_tasks=lambda **_kwargs: [],
+                format_unmatched_groups_response=lambda _error: {},
+                id_column_not_detected_error_cls=ValueError,
+                unmatched_groups_error_cls=RuntimeError,
+            )
+E           TypeError: handle_api_survey_convert_preview() missing 1 required keyword-only argument: 'build_template_completion_gate'
+
+tests/test_survey_preview_regressions.py:451: TypeError
+____________________ test_survey_preview_accepts_sav_input _____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x113d1b7e0>
+tmp_path = PosixPath('/private/var/folders/k1/mbczfhb95zg9zxwz5sxr639c0000gn/T/pytest-of-karl/pytest-42/test_survey_preview_accepts_sa0')
+
+    def test_survey_preview_accepts_sav_input(monkeypatch, tmp_path):
+        app = Flask(__name__)
+        app.secret_key = os.urandom(32)
+    
+        project_root = tmp_path / "project"
+        project_root.mkdir()
+        library_root = tmp_path / "library"
+        library_root.mkdir()
+        (library_root / "survey-ads.json").write_text("{}", encoding="utf-8")
+    
+        calls = []
+    
+        def fake_run_survey_with_official_fallback(_converter, **kwargs):
+            calls.append(kwargs.copy())
+            return SimpleNamespace(
+                dry_run_preview={
+                    "summary": {
+                        "total_participants": 1,
+                        "unique_participants": 1,
+                        "tasks": ["ads"],
+                        "session_column": None,
+                        "run_column": None,
+                        "total_files": 1,
+                        "total_files_to_create": 1,
+                    },
+                    "participants": [],
+                    "column_mapping": {},
+                    "files_to_create": [],
+                    "data_issues": [],
+                },
+                tasks_included=["ads"],
+                unknown_columns=[],
+                missing_items_by_task={},
+                id_column="ID",
+                session_column=None,
+                run_column=None,
+                detected_sessions=[],
+                conversion_warnings=[],
+                task_runs={},
+                template_matches=None,
+                tool_columns=[],
+                near_match_candidates=[],
+                near_match_applied=False,
+            )
+    
+        with app.test_request_context(
+            "/api/survey-convert-preview",
+            method="POST",
+            data={
+                "file": (io.BytesIO(b"stub"), "demo.sav"),
+                "id_column": "ID",
+                "validate": "false",
+            },
+            content_type="multipart/form-data",
+        ):
+            session["current_project_path"] = str(project_root)
+    
+>           response = handle_api_survey_convert_preview(
+                convert_survey_xlsx_to_prism_dataset=object(),
+                convert_survey_lsa_to_prism_dataset=object(),
+                resolve_effective_library_path=lambda: library_root,
+                run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
+                validate_project_templates_for_tasks=lambda **_kwargs: [],
+                format_unmatched_groups_response=lambda _error: {},
+                id_column_not_detected_error_cls=ValueError,
+                unmatched_groups_error_cls=RuntimeError,
+            )
+E           TypeError: handle_api_survey_convert_preview() missing 1 required keyword-only argument: 'build_template_completion_gate'
+
+tests/test_survey_preview_regressions.py:527: TypeError
+_ TestInheritedSidecarResolution.test_survey_v0_2_schema_accepts_variant_definitions_and_variant_scales _
+
+self = <test_unit.TestInheritedSidecarResolution object at 0x11027a850>
+schema_dir = '/Users/karl/work/github/prism-studio/app/schemas'
+
+    def test_survey_v0_2_schema_accepts_variant_definitions_and_variant_scales(
+        self, schema_dir
+    ):
+        from jsonschema import Draft7Validator
+    
+        schema = load_schema("survey", schema_dir, version="v0.2")
+        assert schema is not None
+    
+        payload = {
+            "Technical": {
+                "StimulusType": "Questionnaire",
+                "FileFormat": "tsv",
+                "SoftwarePlatform": "",
+                "Language": "en",
+                "Respondent": "self",
+                "AdministrationMethod": "",
+            },
+            "Study": {
+                "TaskName": "wellbeing-multi",
+                "OriginalName": "Wellbeing Survey",
+                "Version": "10-likert",
+                "Versions": ["10-likert", "7-likert", "10-vas"],
+                "VariantDefinitions": [
+                    {
+                        "VariantID": "10-likert",
+                        "ItemCount": 10,
+                        "ScaleType": "likert",
+                    },
+                    {
+                        "VariantID": "10-vas",
+                        "ItemCount": 10,
+                        "ScaleType": "vas",
+                    },
+                ],
+                "Citation": "Demo citation",
+                "License": "Other",
+                "LicenseID": "Other",
+            },
+            "Metadata": {
+                "SchemaVersion": "1.2.0",
+                "CreationDate": "2026-03-25",
+            },
+            "WB01": {
+                "Description": "I have felt cheerful and in good spirits",
+                "ApplicableVersions": ["10-likert", "7-likert", "10-vas"],
+                "Levels": {
+                    "1": {"en": "Strongly disagree"},
+                    "5": {"en": "Strongly agree"},
+                },
+                "VariantScales": [
+                    {
+                        "VariantID": "10-likert",
+                        "ScaleType": "likert",
+                        "DataType": "integer",
+                        "MinValue": 1,
+                        "MaxValue": 5,
+                        "Levels": {
+                            "1": {"en": "Strongly disagree"},
+                            "5": {"en": "Strongly agree"},
+                        },
+                    },
+                    {
+                        "VariantID": "10-vas",
+                        "ScaleType": "vas",
+                        "DataType": "integer",
+                        "MinValue": 0,
+                        "MaxValue": 100,
+                        "Unit": "points",
+                        "Levels": {
+                            "0": {"en": "Not at all"},
+                            "100": {"en": "Completely"},
+                        },
+                    },
+                ],
+            },
+        }
+    
+        errors = list(Draft7Validator(schema).iter_errors(payload))
+>       assert errors == []
+E       assert [<ValidationE...', 'Other']">] == []
+E         
+E         Left contains one more item: <ValidationError: "'' is not one of ['LimeSurvey', 'PsychoPy', 'Pavlovia', 'Paper and Pencil', 'Other']">
+E         Use -v to get more diff
+
+tests/test_unit.py:756: AssertionError
+=============================== warnings summary ===============================
+tests/test_compat_loader.py::test_load_canonical_module_falls_back_to_mirrored_module_when_missing
+  /private/var/folders/k1/mbczfhb95zg9zxwz5sxr639c0000gn/T/pytest-of-karl/pytest-42/test_load_canonical_module_fal0/repo/app/src/mirror_module.py:3: RuntimeWarning: Canonical module not found for 'participants_converter.py'. Using mirrored module implementation.
+    _loaded = compat.load_canonical_module(
+
+tests/test_compat_loader.py::test_load_canonical_module_does_not_self_load_from_sys_path
+  /Users/karl/work/github/prism-studio/tests/test_compat_loader.py:115: RuntimeWarning: Canonical module not found for 'recipes_surveys.py'. Using mirrored module implementation.
+    loaded = compat.load_canonical_module(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform darwin, python 3.14.4-final-0 _______________
+
+Name                                                Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------------
+src/__init__.py                                        15      2    87%   23-24
+src/anonymizer.py                                     177     12    93%   83-84, 87, 125, 207-208, 236, 376, 390, 437-439
+src/api.py                                            117     13    89%   30-33, 53, 368-382
+src/batch_convert.py                                  664    177    73%   136, 155-156, 212-213, 315-333, 351-354, 383, 434-435, 470, 472, 498-502, 548, 604-868, 928, 941, 945-947, 965, 1097-1111, 1172, 1297, 1301, 1322, 1368, 1387-1393, 1413, 1429-1445, 1464, 1468, 1483-1488, 1496-1497
+src/bids_entity_rewriter.py                           392     49    88%   81, 91, 97, 113, 119, 125, 147, 194, 217, 222, 225, 232, 235, 248, 257, 302, 304, 308, 319, 328, 335, 337, 351, 364, 368, 373, 379, 384, 388, 395, 408, 419-420, 441, 445, 490, 499, 537, 540, 546, 549, 556, 562, 573, 579, 595, 603-604, 614
+src/bids_file_deleter.py                              364    312    14%   52, 60-68, 81-82, 90-137, 149-174, 190-238, 242-271, 274-284, 300-306, 309-316, 319-344, 347-370, 378-381, 385-401, 405-415, 419-435, 439-446, 451-457, 461-490, 501-521, 530-555, 558-568
+src/converters/anc_export.py                          512     92    82%   33-39, 100-103, 108, 114, 189, 201, 219-220, 330-333, 357-362, 369, 372, 415-416, 440, 443, 464, 483, 505-506, 553-555, 603-605, 702, 716, 726-729, 745, 748, 762, 770, 792-797, 804, 808-813, 826, 841-896, 1024-1073
+src/converters/biometrics.py                          167      5    97%   93-95, 234, 318, 324
+src/converters/csv.py                                  37      7    81%   20, 23-26, 39, 50
+src/converters/file_reader.py                         163     27    83%   80-81, 92, 137, 147-148, 162, 166-167, 244-245, 248, 262-263, 267, 286-289, 330, 359-360, 366, 371-377
+src/converters/item_registry.py                       128      6    95%   224-225, 266, 321, 350, 392
+src/converters/limesurvey.py                          811    330    59%   19-25, 51-70, 75-78, 82-84, 145-188, 193-227, 415, 419-420, 424-425, 471, 502-503, 529-533, 593-595, 663, 702-710, 721-801, 835, 837, 839, 841, 910, 953, 1025, 1027, 1073, 1078, 1093, 1134, 1190, 1192, 1226-1234, 1250-1252, 1269-1521, 1581-1583, 1596-1631
+src/converters/survey_base.py                          37      0   100%
+src/converters/version_merger.py                      149     10    93%   176, 226, 258, 261, 312-313, 325-326, 328-329
+src/converters/wide_to_long.py                        225     14    94%   131-132, 277, 279, 285, 288, 335, 429, 435, 471, 474, 491, 499, 504
+src/derivatives/__init__.py                             0      0   100%
+src/derivatives/apps_runner_compat.py                 607    124    80%   51-52, 184, 287, 312, 314, 332-333, 342, 356, 358-359, 377-412, 440, 453, 462, 478, 480, 517, 521, 530, 533, 539-550, 566-567, 585, 670, 672, 674, 724, 771, 781-785, 814, 816, 820, 859, 861, 863, 865, 867, 938-942, 1047-1062, 1067, 1084-1085, 1087-1088, 1096, 1098, 1100, 1109, 1115, 1120-1133, 1138, 1167-1169, 1179, 1182-1185, 1190, 1195, 1199, 1205, 1211-1214, 1217
+src/formatters.py                                     161      4    98%   326-327, 346, 348
+src/maintenance/__init__.py                             0      0   100%
+src/maintenance/catalog_survey_library.py              44      2    95%   63-64
+src/maintenance/rename_legacy_physio_filenames.py     126     39    69%   51, 71, 74, 89, 91, 104, 106, 110, 114, 138, 142, 167-168, 175, 181-193, 197-228
+src/maintenance/sync_biometrics_keys.py                47      3    94%   8, 71-72
+src/maintenance/sync_survey_keys.py                    51      4    92%   9, 58-62
+src/mri_json_scrubber.py                              106      4    96%   232, 235-236, 335
+src/participants_backend.py                           948    222    77%   29-30, 66, 68, 97-98, 187, 232, 243, 261, 264, 275, 281, 323-325, 379, 392-399, 410-414, 436-590, 608-609, 621, 625, 654, 674, 679, 687, 696, 702, 706-710, 715, 720, 736-741, 749, 755-765, 781-782, 793, 801, 875, 878, 880, 883, 909, 929, 945-946, 959, 964, 969, 989-990, 993, 1009, 1022-1023, 1028, 1032, 1035, 1039, 1048, 1051, 1057, 1063-1068, 1095, 1120-1121, 1128, 1136, 1141, 1148, 1167, 1188, 1214-1216, 1224, 1228, 1238, 1254-1256, 1272-1274, 1289-1314, 1348, 1380-1381, 1403, 1504, 1506, 1508, 1518, 1639, 1645-1646, 1685, 1690, 1705, 1710, 1722, 1727, 1776, 1781-1783, 1792, 1797, 1939
+src/participants_converter.py                         270     33    88%   45-46, 52-53, 97, 188, 192, 327, 337, 353-356, 369-376, 410-413, 519-522, 545-548, 598, 612-615
+src/project_structure.py                               49      2    96%   38, 76
+src/recipes_surveys.py                               1660    310    81%   95, 107, 113-117, 121, 126, 134-138, 147, 150, 154, 167, 182, 191, 195-196, 199, 499, 505, 510-513, 529-541, 552, 625-643, 650, 675, 677, 679, 681, 748, 806, 975, 983, 994, 998, 1003, 1008, 1103, 1107, 1128-1129, 1135-1136, 1234-1235, 1318, 1401, 1410-1411, 1438, 1564, 1572, 1615-1616, 1680, 1682-1687, 1699-1701, 1707, 1709, 1711, 1722-1728, 1734, 1736, 1738, 1749, 1763-1764, 1767, 1772-1776, 1787, 1854-1855, 1914, 1923-1924, 1942, 1956, 1962, 2010, 2013, 2015, 2020, 2041, 2053, 2078-2079, 2084-2110, 2150-2201, 2222-2231, 2246-2252, 2285, 2288, 2290, 2295, 2320, 2327, 2335, 2346, 2351-2357, 2370-2433, 2446, 2455, 2503, 2513, 2517, 2530-2534, 2615, 2618, 2620, 2625, 2650, 2700, 2702, 2704-2723, 2762, 2852, 2878-2880, 2909-2954, 2960, 2970-2978, 2987-2991, 3038-3054
+src/runtime_dependencies.py                            47     19    60%   80-128
+src/subject_code_rewriter.py                          310     42    86%   70, 75, 120, 129, 158, 220, 281, 285, 293, 300, 309, 322, 325-328, 348, 360, 362-373, 376, 382, 399, 421, 432, 446-449, 480-481, 511-513
+src/survey_workflow_service.py                         47      1    98%   64
+src/text_sanitizer.py                                  48      2    96%   116, 187
+---------------------------------------------------------------------------------
+TOTAL                                                8479   1867    78%
+Coverage XML written to file coverage.xml
+=========================== short test summary info ============================
+FAILED tests/test_packaged_web_optional_blueprints.py::test_home_page_renders_without_tools_blueprint
+FAILED tests/test_packaged_web_optional_blueprints.py::test_projects_page_renders_without_tools_blueprint
+FAILED tests/test_packaged_web_optional_blueprints.py::test_specifications_page_renders_without_tools_blueprint
+FAILED tests/test_survey_converter_version_plan_acq.py::test_single_filtered_session_keeps_contextual_version_override
+FAILED tests/test_survey_converter_version_plan_acq.py::test_long_format_run_column_reports_max_run_for_multiversion_contexts
+FAILED tests/test_survey_preview_regressions.py::test_survey_preview_validation_rerun_keeps_run_column
+FAILED tests/test_survey_preview_regressions.py::test_survey_preview_uses_project_template_version_overrides_when_request_missing
+FAILED tests/test_survey_preview_regressions.py::test_survey_preview_requires_confirmation_for_near_matches
+FAILED tests/test_survey_preview_regressions.py::test_survey_preview_passes_selected_near_match_tasks
+FAILED tests/test_survey_preview_regressions.py::test_survey_preview_accepts_sav_input
+FAILED tests/test_unit.py::TestInheritedSidecarResolution::test_survey_v0_2_schema_accepts_variant_definitions_and_variant_scales
+=========== 11 failed, 1967 passed, 3 skipped, 2 warnings in 18.67s ============

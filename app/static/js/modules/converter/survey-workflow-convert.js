@@ -181,6 +181,7 @@ export function createSurveyWorkflowConvertController({
             mode: 'convert',
             nearMatchTasks: selectedNearMatchTasks,
             valueOffsets: selectedValueOffsets,
+            selectedTasks: selectedSurveyTasks,
             signal: convertRunAbortController.signal,
         });
         if (!preparation.ready) {

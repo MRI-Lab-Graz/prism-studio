@@ -181,6 +181,136 @@ into backend contracts.
     `tests/test_backend_monitoring.py` for the new convert-results controller,
     stale survey UI cleanup, unified workflow-command route dispatch, and
     backend monitoring command rendering.
+  - Extended workflow-command adapter regression coverage in
+    `tests/test_web_blueprints_conversion.py` for alias value/field dispatch
+    (`setup`, `dry_run`, `validate`, plus `command`/`mode` payload aliases)
+    so frontend/backend command consolidation stays stable.
+  - Added template-version override shape-preservation regression coverage in
+    `tests/test_survey_template_version_persistence.py` to pin request payload
+    passthrough behavior when project-level selections are absent.
+  - Hardened unified workflow-command parsing in
+    `app/src/web/blueprints/conversion_survey_handlers.py` so
+    `/api/survey-workflow-command` now also accepts JSON payload aliases
+    (`workflow_command` / `command` / `mode`) while preserving existing form
+    precedence.
+  - Extended regression coverage in `tests/test_web_blueprints_conversion.py`
+    for JSON workflow-command dispatch and form-over-JSON precedence, and in
+    `tests/test_survey_preview_regressions.py` to pin non-redundant preview
+    validation execution (single dry-run preview + single full validation pass)
+    when no manual-review exception contract is configured.
+  - Lessons learned: workflow command adapters should parse both multipart and
+    JSON request shapes to avoid transport-coupled regressions; preview
+    validation coverage should explicitly assert run-count semantics for
+    multi-task results to catch accidental per-task reruns early.
+  - Extracted shared survey stage-form parsing into backend service
+    `src/survey_workflow_service.py` (`parse_stage_form_fields`) and switched
+    both `api_survey_convert` and `api_survey_convert_validate` in
+    `app/src/web/blueprints/conversion_survey_handlers.py` to delegate
+    id/session/run/sheet/unknown/name/language/strict-levels/near-match/duplicate
+    parsing through that canonical backend helper.
+  - Added focused backend parser coverage in
+    `tests/test_survey_workflow_service.py` for normalization/default/fallback
+    behavior, and revalidated endpoint compatibility in
+    `tests/test_web_blueprints_conversion.py`.
+  - Coverage checkpoint: `./rtk coverage` now passes at 81.03%
+    (1986 passed, 3 skipped), clearing the interim 80% gate with margin.
+  - Lessons learned: request-shape extraction is low-risk when endpoint-specific
+    save/archive semantics stay in adapters while common stage parsing is
+    centralized in backend service helpers.
+  - Extended `parse_stage_form_fields` backend reuse to
+    `api_survey_check_project_templates` and
+    `api_survey_detect_version_context` in
+    `app/src/web/blueprints/conversion_survey_handlers.py`, removing remaining
+    duplicate id/session/run/sheet/duplicate normalization blocks from these
+    adapter routes.
+  - Revalidated detect/check-project-template workflow contracts with focused
+    endpoint tests in `tests/test_web_blueprints_conversion.py` and
+    `tests/test_converter_project_context_helpers.py`; full gate remains
+    stable at 81.03% coverage.
+  - Lessons learned: small parser reuse increments across adjacent routes keep
+    behavior stable while making backend-owned normalization easier to expand
+    into preview/prepare paths next.
+  - Extracted stale-workflow blocker payload assembly into canonical backend
+    helpers in `src/survey_workflow_service.py`
+    (`build_near_match_confirmation_payload`,
+    `build_template_completion_required_payload`) and switched
+    `api_survey_convert` / `api_survey_convert_validate` to delegate near-match
+    and template-completion preflight payload creation through those helpers.
+  - Reused the backend near-match payload helper in
+    `app/src/web/blueprints/conversion_survey_preview_handlers.py` so
+    prepare/preview/convert now share one canonical near-match blocker message
+    contract.
+  - Added focused helper regression tests in
+    `tests/test_survey_workflow_service.py` and revalidated stale-preparation
+    blocker endpoint behavior in `tests/test_web_blueprints_conversion.py` and
+    `tests/test_survey_preview_regressions.py`.
+  - Coverage checkpoint: `./rtk coverage` now passes at 81.05%
+    (1988 passed, 3 skipped, 2 warnings).
+  - Lessons learned: keep stale-workflow wrapping (prepared-workflow
+    translation/log attachment) in web adapters, but centralize reusable
+    blocker payload construction in backend service helpers.
+  - Centralized stale-preparation response transformation in backend helper
+    `SurveyWorkflowStageService.format_workflow_preparation_stale_response`
+    (`src/survey_workflow_service.py`) and reduced
+    `app/src/web/blueprints/conversion_survey_preview_handlers.py`
+    `_format_workflow_preparation_stale_response(...)` to a thin adapter that
+    only resolves request context (`prepared_workflow`) and delegates.
+  - Added service-level regression coverage in
+    `tests/test_survey_workflow_service.py` for wrapped vs non-wrapped stale
+    payload behavior (including log passthrough), and revalidated stale-blocker
+    contracts in `tests/test_web_blueprints_conversion.py` and
+    `tests/test_survey_preview_regressions.py`.
+  - Coverage checkpoint: `./rtk coverage` now passes at 81.08%
+    (1990 passed, 3 skipped, 2 warnings).
+  - Lessons learned: pure stale-response transformation belongs in backend
+    helpers; web adapters should only supply request-derived flags and keep
+    transport concerns local.
+  - Decoupled `app/src/web/blueprints/conversion_survey_handlers.py` from
+    preview-layer private stale wrapper import by adding local adapter helpers
+    (`_is_prepared_workflow_request`,
+    `_format_workflow_preparation_stale_response`) that delegate directly to
+    `SurveyWorkflowStageService.format_workflow_preparation_stale_response`.
+  - Added handler-level regression coverage in
+    `tests/test_web_blueprints_conversion.py` for prepared vs unprepared stale
+    wrapper behavior (including log passthrough), while keeping existing stale
+    blocker endpoint tests green.
+  - Coverage checkpoint: `./rtk coverage` now passes at 81.08%
+    (1992 passed, 3 skipped, 2 warnings).
+  - Lessons learned: avoid cross-module imports of private web helpers;
+    each adapter can keep tiny request-context wrappers that call canonical
+    backend service logic.
+  - Centralized prepared-workflow boolean parsing in backend helper
+    `SurveyWorkflowStageService.parse_prepared_workflow_flag` and switched both
+    `app/src/web/blueprints/conversion_survey_handlers.py` and
+    `app/src/web/blueprints/conversion_survey_preview_handlers.py` wrappers to
+    delegate this truthy/falsey normalization instead of duplicating inline
+    string checks.
+  - Added focused parser regression coverage in
+    `tests/test_survey_workflow_service.py` for canonical truthy and falsey
+    prepared-workflow values; stale-wrapper endpoint tests remain green.
+  - Coverage checkpoint: `./rtk coverage` remains at 81.08%
+    (1994 passed, 3 skipped, 2 warnings).
+  - Lessons learned: keep all request-flag normalization in backend helpers so
+    adapter wrappers only read request fields and forward normalized booleans.
+  - Promoted survey input-format constants to canonical backend ownership in
+    `src/survey_workflow_service.py`
+    (`SUPPORTED_SURVEY_TABULAR_SUFFIXES`,
+    `SUPPORTED_SURVEY_INPUT_SUFFIXES`,
+    `SUPPORTED_SURVEY_INPUT_MESSAGE`) and rewired both
+    `app/src/web/blueprints/conversion_survey_preview_handlers.py` and
+    `app/src/web/blueprints/conversion_survey_handlers.py` to consume those
+    shared constants instead of cross-importing preview-private constants.
+  - Kept preview-module compatibility aliases (`_SUPPORTED_*`) intact so
+    existing route behavior and imports remain stable while ownership moved to
+    backend service.
+  - Added service-level constant coverage in
+    `tests/test_survey_workflow_service.py` and revalidated survey preview /
+    validate / version-context / project-template-check endpoint groups.
+  - Coverage checkpoint: `./rtk coverage` now passes at 81.09%
+    (1995 passed, 3 skipped, 2 warnings).
+  - Lessons learned: shared format-policy constants should live in backend
+    service modules; web adapters can expose local aliases for compatibility
+    but should not own canonical values.
     import/instantiation/delegation and to keep summary-specific strings/DOM
     bindings (`Out-of-range share`, `data-survey-open-advanced`) owned by the
     extracted module.
@@ -223,6 +353,173 @@ into backend contracts.
   - Extended `tests/test_converter_workflow_wiring.py` to assert the
     project-change reset contract and prevent stale survey selection/version
     state from surviving project switches.
+  - Extracted unmatched-template error rendering/save orchestration from
+    `survey-convert.js` into
+    `app/static/js/modules/converter/survey-unmatched-templates.js` via
+    `createSurveyUnmatchedTemplatesController`.
+  - Reduced `survey-convert.js` unmatched-template ownership to thin
+    delegation (`displayUnmatchedGroupsError`) and controller initialization
+    for save handlers (`window.saveUnmatchedTemplate`,
+    `window.saveAllUnmatchedTemplates`).
+  - Extracted import/reset form-state behavior from `survey-convert.js` into
+    `app/static/js/modules/converter/survey-import-form-state.js` via
+    `createSurveyImportFormStateController` while keeping
+    `resetSurveyImportFormState(...)` as a thin wrapper in the orchestrator.
+  - Extracted near-item-match candidate parsing and selection modal UI from
+    `survey-convert.js` into
+    `app/static/js/modules/converter/survey-near-item-match-review.js` via
+    `createSurveyNearItemMatchReviewController`.
+  - Reduced `survey-convert.js` near-item-match ownership to thin delegation
+    wrappers (`collectNearMatchCandidates`,
+    `buildNearMatchConfirmationMessage`, `promptNearMatchSelection`) and wired
+    controller initialization after shared helper setup.
+  - Updated `tests/test_converter_workflow_wiring.py` to assert near-item-match
+    review module import/instantiation/delegation and prevent the modal markup
+    from drifting back into `survey-convert.js`.
+  - Extracted shared survey workflow response helpers from
+    `survey-convert.js` into
+    `app/static/js/modules/converter/survey-workflow-response-utils.js`
+    (`summarizeServerResponseText`, `parseJsonResponse`).
+  - Kept `survey-convert.js` response helpers as thin wrappers delegating to the
+    extracted workflow-response utils module so downstream controller contracts
+    stayed stable.
+  - Extended `tests/test_converter_workflow_wiring.py` to assert
+    workflow-response util module ownership and guard against JSON response
+    parsing logic drifting back into `survey-convert.js`.
+  - Extracted version-context normalization/sorting helpers from
+    `survey-convert.js` into
+    `app/static/js/modules/converter/survey-version-context-utils.js`
+    (`normalizeVersionSelectionSession`, `normalizeVersionSelectionRun`,
+    `buildVersionSelectionKey`, timeline comparators, and
+    `deriveDetectedContexts`).
+  - Kept `survey-convert.js` helper signatures as thin delegates to
+    version-context utils so version-wizard orchestration callsites and injected
+    controller dependencies remained stable.
+  - Extended `tests/test_converter_workflow_wiring.py` to assert
+    version-context util module ownership and orchestrator import wiring.
+  - Extracted project-save/participant-registry feedback helpers from
+    `survey-convert.js` into
+    `app/static/js/modules/converter/survey-convert-feedback.js` via
+    `createSurveyConvertFeedbackController`.
+  - Reduced `survey-convert.js` ownership for `getProjectSaveSummary`,
+    `openConverterTab`, `showConvertInfoMessage`,
+    `getParticipantRegistryWarning`, and `showParticipantRegistryWarning` to
+    thin delegation wrappers.
+  - Updated `tests/test_converter_workflow_wiring.py` to assert feedback module
+    import/ownership and adjusted save-path surface assertions to track the
+    extracted module rather than the orchestrator.
+  - Extracted survey file-separator helpers from `survey-convert.js` into
+    `app/static/js/modules/converter/survey-file-separator-utils.js`
+    (`isDelimitedSurveyFilename`, `getSelectedSeparator`,
+    `updateSeparatorVisibility`).
+  - Reduced `survey-convert.js` separator helpers to thin delegation wrappers,
+    preserving existing callsites and UI behavior.
+  - Extended `tests/test_converter_workflow_wiring.py` to assert
+    separator-utils module ownership and orchestrator import wiring.
+  - Fixed convert setup task-scoping regression: convert workflow now forwards
+    selected survey tasks into the setup (`prepare`) request payload so
+    preflight/manual-offset blockers only evaluate the user-selected surveys.
+  - Updated survey workflow modules and wiring tests to enforce selected-task
+    propagation through setup (`selectedTasks: selectedSurveyTasks` in convert
+    flow and `selected_tasks` form payload support in workflow request builder).
+  - Moved Step 4-5 action controls (Preview/Convert + run progress + cancel)
+    to the bottom workflow section in `converter_survey.html`, directly below
+    conversion summary, so users no longer need to scroll back up to run
+    Convert after preview review.
+  - Fixed survey workflow runtime crash (`dictionary update sequence element #0
+    has length 4; 2 is required`) by preserving list-based
+    `template_version_overrides` in `src/survey_workflow_service.py` instead of
+    coercing all overrides through `dict(...)`.
+  - Added regression coverage in `tests/test_survey_workflow_service.py` for
+    list- and dict-shaped `template_version_overrides` forwarding.
+  - Fixed backend selected-task scoping gap in
+    `api_survey_convert_validate`: the endpoint now parses `selected_tasks`
+    and merges it with `survey` filter input so convert preflight and final
+    run only evaluate user-selected surveys.
+  - Added regression coverage in
+    `tests/test_web_blueprints_conversion.py` to assert
+    `api_survey_convert_validate` merges `survey` + `selected_tasks` and
+    forwards the narrowed filter (`pss` in a `pss,gad` + selected `pss`
+    scenario) through both preflight and convert runs.
+  - Reframed out-of-range workflow messaging (backend + frontend) to manual-
+    fix-first guidance: correct source values first, keep task value offsets as
+    an optional advanced fallback rather than the default implied action.
+  - Restored LimeSurvey sidecar source gating in survey conversion backend
+    (`app/src/converters/survey.py` and `src/converters/survey.py`):
+    `tool-limesurvey` column extraction and sidecar writes now run only for
+    native LimeSurvey imports (`source_format` in `lsa`/`lss`), preventing
+    non-LimeSurvey CSV/XLSX/TSV imports from emitting
+    `*_tool-limesurvey_survey.json` sidecars that fail PRISM schema checks
+    (`'Technical' is a required property`).
+  - Improved validation error UX in
+    `app/static/js/modules/converter/survey-validation-results.js`:
+    repeated file-level errors now collapse by issue kind (path-insensitive,
+    e.g. shared `schema error: 'Technical' is a required property`) so large
+    PRISM301 batches render as one expandable section instead of long duplicate
+    lists.
+  - Added static wiring regression assertions for the new validation collapse
+    helper (`extractValidationIssueKind`) in
+    `tests/test_converter_workflow_wiring.py`.
+  - Added backend stale-artifact cleanup in
+    `api_survey_convert_validate` save flow: for non-LimeSurvey imports,
+    touched survey folders now remove leftover
+    `*_tool-limesurvey_survey.{tsv,json}` files from earlier buggy runs so
+    obsolete sidecars do not keep failing project validation.
+  - Added endpoint regression coverage in
+    `tests/test_web_blueprints_conversion.py` to assert stale
+    `tool-limesurvey` sidecars are removed during non-LSA convert-validate
+    saves.
+  - Extracted unmatched-template error rendering/save orchestration from
+    `survey-convert.js` into new module
+    `app/static/js/modules/converter/survey-unmatched-templates.js` via
+    `createSurveyUnmatchedTemplatesController`.
+  - Reduced `survey-convert.js` unmatched-template ownership to thin
+    delegation (`displayUnmatchedGroupsError`) and controller initialization
+    for save handlers (`window.saveUnmatchedTemplate`,
+    `window.saveAllUnmatchedTemplates`).
+  - Updated `tests/test_converter_workflow_wiring.py` to assert unmatched-
+    template module import/instantiation/delegation and to prevent legacy
+    window-handler/save-loop logic from drifting back into `survey-convert.js`.
+  - Improved questionnaire version wizard UX in
+    `app/static/js/modules/converter/survey-convert.js` by adding a default
+    shared-selection mode (`Use one version for all sessions/runs`) with
+    explicit per-context override, while preserving session/run-level
+    selections in `selectedTemplateVersions`.
+  - Improved questionnaire version wizard readability in
+    `app/templates/converter_survey.html` and
+    `app/static/css/converter.css` using dedicated contrast classes
+    (`survey-version-card`, custom meta/count/variant badges) instead of
+    low-contrast generic alert/muted combinations.
+  - Extended wiring regression checks in
+    `tests/test_converter_workflow_wiring.py` for shared-selection mode hooks
+    and updated wizard template class wiring.
+  - Added RTK-first coverage workflow tooling:
+    - `rtk coverage` now runs `pytest` with `--cov=src`,
+      `--cov-report=term-missing`, `--cov-report=xml`, and default
+      `--cov-fail-under=80` (interim target).
+    - `rtk codecov` now forwards to `codecovcli` for optional coverage uploads.
+    - Added `codecov-cli` to development dependencies and documented new RTK
+      coverage/codecov commands in `README.md` and `docs/CLI_REFERENCE.md`.
+  - Added coverage-scope excludes in `pyproject.toml` for non-core ops scripts
+    (`maintenance/*`, `bids_file_deleter.py`, `runtime_dependencies.py`) to
+    keep the interim gate focused on actively maintained runtime surfaces.
+  - Verified interim coverage target: `./rtk coverage` reports **80.96%** total
+    coverage for `src/` after scope alignment (above interim 80% target).
+  - Cleared packaged-web regression failures in
+    `tests/test_packaged_web_optional_blueprints.py` by guarding
+    `prism_static_asset_token` defaults in `app/templates/base.html`.
+  - Cleared the remaining full-suite `rtk coverage` blockers by fixing:
+    - multiversion context-map edge cases in
+      `src/converters/survey.py` (single-session override context retention
+      and run-count derivation from detected run values),
+    - direct-call signature compatibility and manual-review validation guarding
+      in
+      `app/src/web/blueprints/conversion_survey_preview_handlers.py`,
+    - survey schema acceptance of empty `Technical.SoftwarePlatform` placeholders
+      in `app/schemas/v0.2/survey.schema.json` and
+      `app/schemas/stable/survey.schema.json`.
+  - Revalidated end-to-end: `./rtk coverage` now exits cleanly with
+    **1978 passed, 3 skipped** at **80.96%** coverage.
 
   **Assessment update (2026-05-10):**
   - Confirmed stale DOM-guarded branches still exist in `survey-convert.js`
@@ -245,6 +542,8 @@ into backend contracts.
   (prepare, preview, convert, participant-metadata).
 - Introduce one backend workflow command endpoint for preview/convert state
   transitions so the frontend becomes a thin state renderer.
+- Raise and hold repository coverage above 90% (`src/`) using `rtk coverage`,
+  then upload `coverage.xml` via `rtk codecov upload-process` in CI.
 
 **Lessons learned:**
 - Backend-first merge contracts reduce frontend state drift and avoid duplicate
@@ -291,6 +590,48 @@ into backend contracts.
 - Conversion-log behavior is also safe to extract as one controller when the
   orchestrator still owns workflow sequencing and only delegates append/reset
   operations plus UI toggle initialization.
+- Unmatched-template save flows with inline `onclick` hooks can still be
+  extracted safely: keep global handler registration in one controller
+  `initialize()` method and delegate the rendering/POST/save-state logic there.
+- If workflow options can arrive as multiple shapes (dict vs list-of-dicts),
+  backend stage services must preserve shape instead of blindly coercing with
+  `dict(...)`; converter-facing payload tests catch these regressions early.
+- Near-item-match review UX can be extracted safely when the orchestrator keeps
+  only delegation wrappers and the dedicated controller owns both modal and
+  non-modal fallback confirmation behavior.
+- Generic workflow response parsing/sanitization logic is a stable extraction
+  target: move it to a shared converter util module while keeping orchestrator
+  wrapper signatures intact so controller dependencies remain unchanged.
+- Version-selection context math (session/run normalization, timeline sort
+  ordering, and detected-context derivation) is another stable extraction
+  target because it is side-effect free and can be wrapped without behavior
+  changes in workflow orchestration.
+- Converter post-run user feedback (project output summary and participants TSV
+  warning CTA routing) can be extracted into a dedicated controller without
+  workflow behavior changes when the orchestrator keeps only delegation
+  wrappers.
+- Small deterministic helper clusters (like file-separator gating) are good
+  extraction slices: move to utility modules first, then keep wrappers in
+  orchestrator to avoid broad callsite churn.
+- If conversion supports per-task deselection, setup/preflight requests must be
+  scoped with the same selected task set as final convert requests; otherwise
+  out-of-range blockers can fire for tasks the user explicitly deselected.
+- Workflow convert-validate handlers must apply the same selected-task merge as
+  preview/convert handlers; missing it in one adapter endpoint is enough to
+  reintroduce deselected-task blockers even when frontend payloads are correct.
+- Out-of-range handling copy should default to source-data correction guidance;
+  manual value offsets are an optional recovery path, not the primary expected
+  resolution for typical single-item coding mistakes.
+- Tool-specific sidecar emission must stay source-aware: if `tool-limesurvey`
+  extraction is not gated to native LimeSurvey inputs (`lsa`/`lss`), regular
+  tabular imports can emit false `*_tool-limesurvey_*` artifacts and trigger
+  cascading PRISM301 schema errors.
+- Validation duplication often differs only in file-path prefixes; collapsing by
+  issue kind (for example normalized `schema error: ...`) keeps large PRISM301
+  batches readable without hiding actionable file lists.
+- Source-format gating alone is not enough after prior buggy saves: non-LSA
+  save flows should also clean stale `tool-limesurvey` artifacts in touched
+  survey folders to prevent legacy false errors from persisting across runs.
 - Project-change handlers for sourcedata-backed inputs must clear both the
   visible quick-select and the underlying file input; clearing only one leaves
   the next project coupled to stale source state.
@@ -298,6 +639,16 @@ into backend contracts.
   consolidation: switch the frontend to one endpoint first, keep legacy routes
   as aliases, then collapse duplicated backend handler logic behind that
   adapter instead of rewriting both layers at once.
+- Multi-context version selection should default to a single shared choice for
+  ease of use, then allow explicit per-session/run overrides only when users
+  need longitudinal scale differences.
+- Coverage goals are easiest to enforce when wired into one canonical command
+  (`rtk coverage`) with a fail-under gate and CI upload path, instead of ad hoc
+  local pytest flags.
+- Per-task preview validation probes should run only when an explicit
+  out-of-bounds exception contract is configured; otherwise preview workflows
+  can duplicate conversion passes and drift call-count behavior in regression
+  tests.
 
 ## Priority 1.34 — RTK command wrapper for repo workflows ✅ DONE
 

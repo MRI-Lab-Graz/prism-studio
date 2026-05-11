@@ -76,6 +76,8 @@ rtk studio
 rtk validator /path/to/dataset --bids
 rtk tools --help
 rtk test -q
+rtk coverage
+rtk codecov upload-process
 rtk git status
 ```
 

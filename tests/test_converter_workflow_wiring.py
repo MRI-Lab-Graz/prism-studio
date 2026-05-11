@@ -86,6 +86,69 @@ SURVEY_CONVERSION_LOG_MODULE = (
     / "converter"
     / "survey-conversion-log.js"
 )
+SURVEY_CONVERT_FEEDBACK_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "survey-convert-feedback.js"
+)
+SURVEY_FILE_SEPARATOR_UTILS_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "survey-file-separator-utils.js"
+)
+SURVEY_UNMATCHED_TEMPLATES_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "survey-unmatched-templates.js"
+)
+SURVEY_IMPORT_FORM_STATE_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "survey-import-form-state.js"
+)
+SURVEY_NEAR_ITEM_MATCH_REVIEW_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "survey-near-item-match-review.js"
+)
+SURVEY_WORKFLOW_RESPONSE_UTILS_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "survey-workflow-response-utils.js"
+)
+SURVEY_VERSION_CONTEXT_UTILS_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "survey-version-context-utils.js"
+)
 SURVEY_VALIDATION_RESULTS_MODULE = (
     REPO_ROOT
     / "app"
@@ -390,6 +453,9 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         conversion_summary_content = SURVEY_CONVERSION_SUMMARY_MODULE.read_text(
             encoding="utf-8"
         )
+        import_form_state_content = SURVEY_IMPORT_FORM_STATE_MODULE.read_text(
+            encoding="utf-8"
+        )
 
         self.assertIn(
             "import { createSurveySourcedataQuickSelectController } from './survey-sourcedata-quick-select.js';",
@@ -400,7 +466,6 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn("surveySourcedataQuickSelectController.initialize();", content)
-        self.assertIn("surveySourcedataQuickSelectController.clearSelectedFile();", content)
         self.assertIn("onProjectChanged: () => {", content)
         self.assertIn("resetSurveyImportFormState();", content)
         self.assertIn(
@@ -429,6 +494,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "resetSurveyImportFormState({ clearSelectedInput: true });",
             content,
         )
+        self.assertIn(
+            "surveySourcedataQuickSelectController.clearSelectedFile();",
+            import_form_state_content,
+        )
         self.assertIn("function buildVersionWizard(", content)
         self.assertIn("function formatVersionWizardRunLabel(run)", content)
         self.assertIn("Out-of-range share:", conversion_summary_content)
@@ -453,18 +522,37 @@ class TestConverterWorkflowWiring(unittest.TestCase):
 
     def test_survey_converter_project_change_clears_project_bound_selection_state(self):
         content = SURVEY_CONVERT_MODULE.read_text(encoding="utf-8")
+        import_form_state_content = SURVEY_IMPORT_FORM_STATE_MODULE.read_text(
+            encoding="utf-8"
+        )
 
         self.assertIn(
             "function resetSurveyImportFormState({ clearSelectedInput = false } = {}) {",
             content,
         )
         self.assertIn(
-            "versionWizardRetryGateMode = null;\n        appliedTaskValueOffsetSelectionSignature = '';\n        hideVersionWizard();\n        clearManualValueOffsetAdvice();",
+            "surveyImportFormStateController.resetSurveyImportFormState({ clearSelectedInput });",
             content,
         )
         self.assertIn(
-            "if (clearSelectedInput) {\n            convertServerFilePath = '';\n            if (convertExcelFile) {\n                convertExcelFile.value = '';\n            }\n        }\n        surveySourcedataQuickSelectController.clearSelectedFile();",
+            "const surveyImportFormStateController = createSurveyImportFormStateController({",
             content,
+        )
+        self.assertIn(
+            "import { createSurveyImportFormStateController } from './survey-import-form-state.js';",
+            content,
+        )
+        self.assertIn(
+            "export function createSurveyImportFormStateController({",
+            import_form_state_content,
+        )
+        self.assertIn(
+            "setVersionWizardRetryGateMode(null);\n        setAppliedTaskValueOffsetSelectionSignature('');\n        hideVersionWizard();\n        clearManualValueOffsetAdvice();",
+            import_form_state_content,
+        )
+        self.assertIn(
+            "if (clearSelectedInput) {\n            setConvertServerFilePath('');\n            if (convertExcelFile) {\n                convertExcelFile.value = '';\n            }\n        }\n        surveySourcedataQuickSelectController.clearSelectedFile();",
+            import_form_state_content,
         )
 
     def test_survey_converter_prunes_stale_library_and_template_check_ui_branches(self):
@@ -516,6 +604,8 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn('id="convertApplyValueOffsetsBtn"', template_content)
         self.assertIn('id="convertValueOffsetsStatus"', template_content)
         self.assertIn('class="form-control d-none" id="convertValueOffsets"', template_content)
+        self.assertIn('class="alert d-none mb-3 survey-version-card"', template_content)
+        self.assertIn('class="badge survey-version-count-badge" id="surveyVersionWizardCount"', template_content)
 
         self.assertIn("let taskValueOffsetEditorState = [];", module_content)
         self.assertIn("let appliedTaskValueOffsetSelectionSignature = '';", module_content)
@@ -572,6 +662,9 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertNotIn("convertAddValueOffsetRowBtn.addEventListener('click'", module_content)
         self.assertIn("convertApplyValueOffsetsBtn?.addEventListener('click'", module_content)
+        self.assertIn('survey-version-bulk-mode', module_content)
+        self.assertIn('Use one version for all sessions/runs (recommended)', module_content)
+        self.assertIn('setContextSelectorsLocked(Boolean(bulkModeToggle && bulkModeToggle.checked));', module_content)
         self.assertNotIn(
             "Complete each offset row with a task and numeric value, then click Apply offsets.",
             module_content,
@@ -683,6 +776,27 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         conversion_log_content = SURVEY_CONVERSION_LOG_MODULE.read_text(
             encoding="utf-8"
         )
+        convert_feedback_content = SURVEY_CONVERT_FEEDBACK_MODULE.read_text(
+            encoding="utf-8"
+        )
+        file_separator_utils_content = SURVEY_FILE_SEPARATOR_UTILS_MODULE.read_text(
+            encoding="utf-8"
+        )
+        unmatched_templates_content = SURVEY_UNMATCHED_TEMPLATES_MODULE.read_text(
+            encoding="utf-8"
+        )
+        import_form_state_content = SURVEY_IMPORT_FORM_STATE_MODULE.read_text(
+            encoding="utf-8"
+        )
+        near_item_match_review_content = (
+            SURVEY_NEAR_ITEM_MATCH_REVIEW_MODULE.read_text(encoding="utf-8")
+        )
+        workflow_response_utils_content = (
+            SURVEY_WORKFLOW_RESPONSE_UTILS_MODULE.read_text(encoding="utf-8")
+        )
+        version_context_utils_content = (
+            SURVEY_VERSION_CONTEXT_UTILS_MODULE.read_text(encoding="utf-8")
+        )
         validation_results_content = SURVEY_VALIDATION_RESULTS_MODULE.read_text(
             encoding="utf-8"
         )
@@ -735,6 +849,34 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "import { createSurveyConversionLogController } from './survey-conversion-log.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "import { createSurveyConvertFeedbackController } from './survey-convert-feedback.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "from './survey-file-separator-utils.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "import { createSurveyUnmatchedTemplatesController } from './survey-unmatched-templates.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "import { createSurveyImportFormStateController } from './survey-import-form-state.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "import { createSurveyNearItemMatchReviewController } from './survey-near-item-match-review.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "from './survey-workflow-response-utils.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "from './survey-version-context-utils.js';",
             survey_content,
         )
         self.assertIn(
@@ -794,6 +936,22 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             survey_content,
         )
         self.assertIn(
+            "surveyConvertFeedbackController = createSurveyConvertFeedbackController({",
+            survey_content,
+        )
+        self.assertIn(
+            "const surveyUnmatchedTemplatesController = createSurveyUnmatchedTemplatesController({",
+            survey_content,
+        )
+        self.assertIn(
+            "const surveyImportFormStateController = createSurveyImportFormStateController({",
+            survey_content,
+        )
+        self.assertIn(
+            "surveyNearItemMatchReviewController = createSurveyNearItemMatchReviewController({",
+            survey_content,
+        )
+        self.assertIn(
             "const surveyValidationResultsController = createSurveyValidationResultsController({",
             survey_content,
         )
@@ -831,6 +989,22 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             survey_content,
         )
         self.assertIn(
+            "surveyUnmatchedTemplatesController.initialize();",
+            survey_content,
+        )
+        self.assertIn(
+            "surveyUnmatchedTemplatesController.displayUnmatchedGroupsError(data);",
+            survey_content,
+        )
+        self.assertIn(
+            "surveyImportFormStateController.resetSurveyImportFormState({ clearSelectedInput });",
+            survey_content,
+        )
+        self.assertIn(
+            "return surveyNearItemMatchReviewController.promptNearMatchSelection(payload, actionLabel);",
+            survey_content,
+        )
+        self.assertIn(
             "surveyValidationResultsController.displayValidationResults(validation, prefix);",
             survey_content,
         )
@@ -843,6 +1017,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "return parseTaskValueOffsetsTextWithNormalizer(rawText, normalizeNearMatchTaskName);",
             survey_content,
         )
+        self.assertIn(
+            "formData.append('selected_tasks', JSON.stringify(selectedSurveyTasks));",
+            survey_content,
+        )
         self.assertNotIn("function displayTemplateSingle(data)", survey_content)
         self.assertNotIn("function displayTemplateGroups(data)", survey_content)
         self.assertNotIn("function displayTemplateQuestions(data)", survey_content)
@@ -853,6 +1031,15 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertNotIn("function normalizeValidationIssueText(value)", survey_content)
         self.assertNotIn("function renderValidationGroupFiles(group)", survey_content)
         self.assertNotIn("const colors = {", survey_content)
+        self.assertNotIn("Review Safe Near Item Matches", survey_content)
+        self.assertNotIn("Could not open the requested converter tab.", survey_content)
+        self.assertNotIn(
+            "return JSON.parse(trimmed);",
+            survey_content,
+        )
+        self.assertNotIn("window.saveUnmatchedTemplate = async function(index)", survey_content)
+        self.assertNotIn("window.saveAllUnmatchedTemplates = async function()", survey_content)
+        self.assertNotIn("function checkAllGroupsSaved()", survey_content)
         self.assertNotIn(
             "function renderSurveyTaskReviewSummary(taskSummaries)",
             survey_content,
@@ -956,6 +1143,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "surveyWorkflowPrepareController.finishPreparationPhase('convert', preparation.outcome);",
+            workflow_convert_content,
+        )
+        self.assertIn(
+            "selectedTasks: selectedSurveyTasks,",
             workflow_convert_content,
         )
 
@@ -1088,6 +1279,121 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
 
         self.assertIn(
+            "export function createSurveyConvertFeedbackController({",
+            convert_feedback_content,
+        )
+        self.assertIn(
+            "function getProjectSaveSummary(data)",
+            convert_feedback_content,
+        )
+        self.assertIn(
+            "function getParticipantRegistryWarning(payload)",
+            convert_feedback_content,
+        )
+        self.assertIn(
+            "function showParticipantRegistryWarning(messagePrefix, warning)",
+            convert_feedback_content,
+        )
+        self.assertIn(
+            "Could not open the requested converter tab.",
+            convert_feedback_content,
+        )
+
+        self.assertIn(
+            "export function isDelimitedSurveyFilename(filename)",
+            file_separator_utils_content,
+        )
+        self.assertIn(
+            "export function getSelectedSeparator(filename = '', convertSeparator = null)",
+            file_separator_utils_content,
+        )
+        self.assertIn(
+            "export function updateSeparatorVisibility(filename = '', surveySeparatorGroup = null)",
+            file_separator_utils_content,
+        )
+
+        self.assertIn(
+            "export function createSurveyUnmatchedTemplatesController({",
+            unmatched_templates_content,
+        )
+        self.assertIn(
+            "function displayUnmatchedGroupsError(data)",
+            unmatched_templates_content,
+        )
+        self.assertIn(
+            "window.saveUnmatchedTemplate = saveUnmatchedTemplate;",
+            unmatched_templates_content,
+        )
+        self.assertIn(
+            "window.saveAllUnmatchedTemplates = saveAllUnmatchedTemplates;",
+            unmatched_templates_content,
+        )
+
+        self.assertIn(
+            "export function createSurveyImportFormStateController({",
+            import_form_state_content,
+        )
+        self.assertIn(
+            "function resetSurveyImportFormState({ clearSelectedInput = false } = {})",
+            import_form_state_content,
+        )
+        self.assertIn(
+            "setConvertServerFilePath('');",
+            import_form_state_content,
+        )
+
+        self.assertIn(
+            "export function createSurveyNearItemMatchReviewController({",
+            near_item_match_review_content,
+        )
+        self.assertIn(
+            "function collectNearMatchCandidates(payload)",
+            near_item_match_review_content,
+        )
+        self.assertIn(
+            "function buildNearMatchConfirmationMessage(payload, actionLabel)",
+            near_item_match_review_content,
+        )
+        self.assertIn(
+            "function promptNearMatchSelection(payload, actionLabel)",
+            near_item_match_review_content,
+        )
+        self.assertIn(
+            "Review Safe Near Item Matches",
+            near_item_match_review_content,
+        )
+
+        self.assertIn(
+            "export function summarizeServerResponseText(rawText)",
+            workflow_response_utils_content,
+        )
+        self.assertIn(
+            "export async function parseJsonResponse(response, requestLabel = 'Request')",
+            workflow_response_utils_content,
+        )
+        self.assertIn(
+            "return JSON.parse(trimmed);",
+            workflow_response_utils_content,
+        )
+
+        self.assertIn(
+            "export function normalizeVersionSelectionSession(session)",
+            version_context_utils_content,
+        )
+        self.assertIn(
+            "export function normalizeVersionSelectionRun(run)",
+            version_context_utils_content,
+        )
+        self.assertIn(
+            "export function buildVersionSelectionKey({ task, session = null, run = null })",
+            version_context_utils_content,
+        )
+        self.assertIn(
+            "export function deriveDetectedContexts(taskRuns, previewParticipants, detectedSessions = [])",
+            version_context_utils_content,
+        )
+
+        self.assertIn(
             "export function createSurveyValidationResultsController({",
             validation_results_content,
         )
@@ -1097,6 +1403,14 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "function renderValidationGroupFiles(group)",
+            validation_results_content,
+        )
+        self.assertIn(
+            "function extractValidationIssueKind(message)",
+            validation_results_content,
+        )
+        self.assertIn(
+            "schema error:",
             validation_results_content,
         )
         self.assertIn(
@@ -1173,6 +1487,9 @@ class TestConverterWorkflowWiring(unittest.TestCase):
     def test_converter_modules_surface_backend_save_paths(self):
         biometrics_content = BIOMETRICS_MODULE.read_text(encoding="utf-8")
         survey_content = SURVEY_CONVERT_MODULE.read_text(encoding="utf-8")
+        convert_feedback_content = SURVEY_CONVERT_FEEDBACK_MODULE.read_text(
+            encoding="utf-8"
+        )
         physio_content = PHYSIO_MODULE.read_text(encoding="utf-8")
         eyetracking_content = EYETRACKING_MODULE.read_text(encoding="utf-8")
 
@@ -1180,8 +1497,8 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("project_output_paths", biometrics_content)
         self.assertNotIn("Data saved to project folder", biometrics_content)
 
-        self.assertIn("project_output_path", survey_content)
-        self.assertIn("project_output_paths", survey_content)
+        self.assertIn("project_output_path", convert_feedback_content)
+        self.assertIn("project_output_paths", convert_feedback_content)
         self.assertNotIn("Data saved to project folder", survey_content)
 
         self.assertIn("result.project_output_path", physio_content)

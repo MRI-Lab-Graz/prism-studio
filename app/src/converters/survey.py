@@ -16,6 +16,7 @@ GUI can call the same logic without invoking subprocesses or relying on `sys.exi
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 import csv
 import zipfile
@@ -1855,20 +1856,25 @@ def _convert_survey_dataframe_to_prism_dataset(
     )
 
     # --- Extract LimeSurvey System Columns ---
-    # These platform metadata columns are excluded from PRISM survey output
-    # but preserved in a separate tool-limesurvey sidecar file.
-    detected_ls_system_cols, _ = _extract_limesurvey_columns(list(df.columns))
-    if detected_ls_system_cols:
-        shown = ", ".join(detected_ls_system_cols[:8])
-        more = (
-            ""
-            if len(detected_ls_system_cols) <= 8
-            else f" (+{len(detected_ls_system_cols) - 8} more)"
-        )
-        conversion_warnings.append(
-            f"LimeSurvey system columns detected ({len(detected_ls_system_cols)}): {shown}{more}"
-        )
-    ls_system_cols: list[str] = detected_ls_system_cols
+    # Only native LimeSurvey sources should emit tool-limesurvey sidecars.
+    # Generic CSV/XLSX/TSV imports may contain similarly named columns, but
+    # those must remain in the primary survey flow and not produce
+    # tool-limesurvey artifacts.
+    source_format_normalized = str(source_format or "").strip().lower()
+    ls_system_cols: list[str] = []
+    if source_format_normalized in {"lsa", "lss"}:
+        detected_ls_system_cols, _ = _extract_limesurvey_columns(list(df.columns))
+        if detected_ls_system_cols:
+            shown = ", ".join(detected_ls_system_cols[:8])
+            more = (
+                ""
+                if len(detected_ls_system_cols) <= 8
+                else f" (+{len(detected_ls_system_cols) - 8} more)"
+            )
+            conversion_warnings.append(
+                f"LimeSurvey system columns detected ({len(detected_ls_system_cols)}): {shown}{more}"
+            )
+        ls_system_cols = detected_ls_system_cols
 
     # Handle duplicate IDs based on duplicate_handling parameter
     df, _res_ses_override, duplicate_warnings = _survey_core._handle_duplicate_ids(
@@ -1931,14 +1937,21 @@ def _convert_survey_dataframe_to_prism_dataset(
         col_to_mapping=col_to_mapping,
     )
     if res_run_col and res_run_col in df.columns:
-        detected_run_values = sorted(
-            run_label
+        detected_run_numbers = sorted(
+            int(run_label[4:])
             for value in df[res_run_col].dropna().tolist()
             if (run_label := _normalize_run_id(value)) is not None
+            and run_label.startswith("run-")
+            and run_label[4:].isdigit()
         )
-        if len(detected_run_values) > 1:
+        if detected_run_numbers:
+            max_detected_run = max(detected_run_numbers)
             for task in tasks_with_data:
-                task_runs[task] = 1
+                existing_run_count = task_runs.get(task)
+                if isinstance(existing_run_count, int):
+                    task_runs[task] = max(existing_run_count, max_detected_run)
+                else:
+                    task_runs[task] = max_detected_run if max_detected_run > 1 else None
 
     task_context_templates, task_context_acq_map = _build_task_context_maps(
         tasks_with_data=tasks_with_data,
@@ -3247,6 +3260,18 @@ def _build_task_context_maps(
 ]:
     """Build per task/run template variants and their acq labels."""
     task_contexts: set[tuple[str, str | None, str | int | None]] = set()
+    normalized_template_overrides = _normalize_template_version_overrides(
+        template_version_overrides
+    )
+    template_override_contexts_by_task: dict[str, list[dict[str, object]]] = {}
+    for override_entry in normalized_template_overrides:
+        override_task = str(override_entry.get("task") or "").strip().lower()
+        if not override_task:
+            continue
+        template_override_contexts_by_task.setdefault(override_task, []).append(
+            override_entry
+        )
+
     detected_session_values: list[str] = []
     if res_ses_col and res_ses_col in df.columns:
         detected_session_values = sorted(
@@ -3299,6 +3324,27 @@ def _build_task_context_maps(
             task_contexts.add((task, None, None))
             continue
 
+        task_override_entries = template_override_contexts_by_task.get(task, [])
+        task_override_sessions = sorted(
+            {
+                normalize_ses_fn(raw_session)
+                for raw_session in (
+                    entry.get("session") for entry in task_override_entries
+                )
+                if raw_session not in {None, ""}
+            }
+        )
+        task_override_runs = sorted(
+            {
+                normalized_run
+                for normalized_run in (
+                    _normalize_run_id(entry.get("run"))
+                    for entry in task_override_entries
+                )
+                if normalized_run is not None
+            }
+        )
+
         task_specific_runs = sorted(
             {
                 run
@@ -3306,14 +3352,29 @@ def _build_task_context_maps(
                 if task_name == task and run is not None
             }
         )
-        contextual_sessions = (
-            detected_session_values if len(detected_session_values) > 1 else []
-        )
+        contextual_sessions: list[str] = []
+        if len(detected_session_values) > 1:
+            contextual_sessions = detected_session_values
+        elif len(detected_session_values) == 1:
+            single_detected_session = detected_session_values[0]
+            has_explicit_session_filter = bool(
+                str(session or "").strip() and str(session).strip().lower() != "all"
+            )
+            if has_explicit_session_filter or single_detected_session in {
+                str(session_name or "").strip()
+                for session_name in task_override_sessions
+            }:
+                contextual_sessions = [single_detected_session]
+        if not contextual_sessions and task_override_sessions:
+            contextual_sessions = task_override_sessions
+
         contextual_runs = (
             task_specific_runs
             if len(task_specific_runs) > 1
             else (detected_run_values if len(detected_run_values) > 1 else [])
         )
+        if not contextual_runs and task_override_runs:
+            contextual_runs = task_override_runs
 
         if not contextual_sessions and not contextual_runs:
             task_contexts.add((task, None, None))
@@ -3368,7 +3429,7 @@ def _build_task_context_maps(
             task=task,
             session=context_session,
             run=run,
-            template_version_overrides=template_version_overrides,
+            template_version_overrides=normalized_template_overrides,
             normalize_ses_fn=normalize_ses_fn,
         )
         variant_template = _apply_template_version_selection(
@@ -3594,3 +3655,119 @@ def _read_lsa_as_dataframe(input_path: str | Path):
 def infer_lsa_metadata(input_path: str | Path) -> dict:
     """Compatibility wrapper delegating to extracted LSA metadata module."""
     return _survey_lsa.infer_lsa_metadata(input_path)
+
+
+def _resolve_effective_template_version_overrides(
+    *,
+    project_path: str | Path | None,
+    template_version_overrides: object,
+) -> object:
+    """Resolve request + project template-version selections.
+
+    Request-level selections take precedence over `project.json`
+    `TemplateVersionSelections` entries for the same task/session/run context.
+    """
+
+    if project_path in {None, ""}:
+        return template_version_overrides
+
+    try:
+        project_overrides = _load_project_template_version_overrides(Path(project_path))
+    except Exception:
+        project_overrides = []
+
+    if not project_overrides:
+        return template_version_overrides
+
+    primary_overrides = _normalize_template_version_overrides(
+        template_version_overrides
+    )
+
+    return _merge_template_version_overrides(
+        primary_overrides=primary_overrides,
+        fallback_overrides=project_overrides,
+    )
+
+
+def sync_project_survey_recipe_offsets(
+    *,
+    project_root: str | Path,
+    task_value_offsets: dict[str, float] | None,
+    offset_application_counts: dict[str, int] | None = None,
+) -> dict[str, list[str]]:
+    """Persist applied survey import offsets into project survey recipes.
+
+    Updates `project_root/code/recipes/survey/recipe-<task>.json` in-place by
+    writing:
+    - `Survey.ImportValueOffset`
+    - `Survey.ImportValueOffsetSource`
+    - appending to `Survey.ImportValueOffsetHistory`
+    """
+
+    summary: dict[str, list[str]] = {
+        "updated_tasks": [],
+        "missing_tasks": [],
+        "errors": [],
+    }
+
+    normalized_offsets: dict[str, float] = {}
+    for raw_task, raw_offset in (task_value_offsets or {}).items():
+        task_name = str(raw_task or "").strip().lower()
+        if not task_name:
+            continue
+        try:
+            normalized_offsets[task_name] = float(raw_offset)
+        except (TypeError, ValueError):
+            summary["errors"].append(
+                f"{task_name}: invalid offset value {raw_offset!r}"
+            )
+
+    if not normalized_offsets:
+        return summary
+
+    project_root_path = Path(project_root)
+    recipes_root = project_root_path / "code" / "recipes" / "survey"
+
+    for task_name in sorted(normalized_offsets):
+        recipe_path = recipes_root / f"recipe-{task_name}.json"
+        if not recipe_path.exists():
+            summary["missing_tasks"].append(task_name)
+            continue
+
+        try:
+            recipe_payload = _read_json(recipe_path)
+            if not isinstance(recipe_payload, dict):
+                recipe_payload = {}
+
+            survey_section = recipe_payload.get("Survey")
+            if not isinstance(survey_section, dict):
+                survey_section = {}
+
+            offset_value = normalized_offsets[task_name]
+            survey_section["ImportValueOffset"] = offset_value
+            survey_section["ImportValueOffsetSource"] = "survey-import"
+
+            history = survey_section.get("ImportValueOffsetHistory")
+            if not isinstance(history, list):
+                history = []
+
+            history_entry: dict[str, object] = {
+                "offset": offset_value,
+                "source": "survey-import",
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+
+            application_count = (offset_application_counts or {}).get(task_name)
+            if isinstance(application_count, int):
+                history_entry["applications"] = application_count
+
+            history.append(history_entry)
+            survey_section["ImportValueOffsetHistory"] = history
+
+            recipe_payload["Survey"] = survey_section
+            _write_json(recipe_path, recipe_payload)
+            summary["updated_tasks"].append(task_name)
+        except Exception as exc:
+            summary["errors"].append(f"{task_name}: {exc}")
+
+    return summary
