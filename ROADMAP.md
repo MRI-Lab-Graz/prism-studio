@@ -787,56 +787,40 @@ execution/business logic in backend code untouched.
 
 ---
 
-## Priority 2 — Export anonymization: participant ID renaming 🚧 TODO
+## Priority 2 — Export anonymization: participant ID renaming ✅ DONE
 
 Fully anonymize participant identities when exporting a PRISM/BIDS dataset for sharing.
 
-### Scope
+**What was done:**
+- `src/anonymizer.py` — added `update_intendedfor_paths(json_data, participant_mapping)`
+  that recursively replaces participant IDs in all JSON string values (covers both
+  legacy path style and BIDS v1.6+ `bids::` URI style).
+- `app/src/web/export_project.py` — extended `export_project()` so all four steps
+  are complete:
+  1. Folder and filename renaming via `anonymize_filename()` (already existed).
+  2. TSV column replacement via `_tsv_bytes()` (already existed).
+  3. JSON value replacement via `_json_bytes()` calling `update_intendedfor_paths()`
+     (added as part of this priority).
+  4. Reversible mapping saved to `project_path/code/anonymization_map.json`
+     (protected — excluded from the shareable export ZIP alongside
+     `participants_mapping.json`).
+- Stats dict now includes `mapping_file` key so callers know where the mapping was
+  written (or `None` when anonymization is off or no participants exist).
+- Added focused regression tests in
+  `tests/test_projects_export_mapping_exclusion.py` covering mapping persistence,
+  ZIP exclusion, and stats key correctness; all tests pass green.
 
-| Step | What | Files affected |
-|------|------|----------------|
-| 1 | Rename `sub-XXX` → `sub-RNDXXX` in folder/file **names** | all `sub-*/` directories and their files |
-| 2 | Replace participant IDs in **TSV columns** (`participant_id`, `subject_id`) | `participants.tsv`, any sidecar `.tsv` |
-| 3 | Replace participant IDs inside **JSON values** (`IntendedFor`, fMRI event links, etc.) | fieldmap sidecars (`fmap/`), any BIDS JSON that embeds subject paths |
-| 4 | Save a reversible mapping file (`code/anonymization_map.json`) | protected, not included in the shareable export ZIP |
-
-### What "IntendedFor" means and why it matters
-
-BIDS fieldmap JSON sidecars contain a field like:
-```json
-"IntendedFor": "ses-1/func/sub-001_task-rest_bold.nii.gz"
-```
-or, in newer BIDS (v1.6+), URI style:
-```json
-"IntendedFor": "bids::sub-001/ses-1/func/sub-001_task-rest_bold.nii.gz"
-```
-When `sub-001` is remapped to `sub-R7X2K9`, all these path strings must also be rewritten
-or the fieldmap becomes dangling (BIDS-invalid).
-
-### What needs to be built
-
-**`src/anonymizer.py`** — add:
-- `update_intendedfor_paths(json_data: dict, participant_mapping: dict) -> dict`
-  Scans the `IntendedFor` value (string or list of strings) and replaces any
-  occurrence of each original participant ID with its remapped equivalent.
-  Handles both legacy path style and `bids::` URI style.
-
-**`app/src/web/export_project.py`** — extend `export_project()`:
-- When copying a `.json` file and `anonymize=True`, load the JSON, call
-  `update_intendedfor_paths(data, participant_mapping)`, then write.
-  (Current code copies JSON without any participant-ID substitution.)
-
-**`app/src/web/blueprints/projects_export_blueprint.py`** — no parameter changes
-needed; `anonymize` flag already exists.
-
-**UI** — no changes needed for this step; existing "Randomize Participant IDs"
-checkbox already gates the feature.
-
-### Open questions / risks
-- `IntendedFor` can appear in _any_ JSON sidecar, not just fieldmaps — scan all JSONs.
-- BIDS v1.6+ `"IntendedFor": "bids::sub-001/..."` — regex must match both formats.
-- Verify that folder renaming (`sub-001/` → `sub-R7X2K9/`) already works end-to-end
-  in `export_project.py` (check `anonymize_filename()` covers directory entries).
+**Lessons learned:**
+- The mapping file must be written to the live project directory, not a temp file,
+  so researchers can later re-identify participants if needed.
+- `anonymization_map.json` should be excluded from the shareable ZIP the same way
+  `participants_mapping.json` already was; the exclusion lives in `_add_tree` and
+  applies to any depth inside `code/`.
+- `update_intendedfor_paths` is safe to apply to all JSON sidecars, not just
+  fieldmaps, because it only touches string values that actually contain a known
+  participant ID token.
+- Deterministic ID generation is the right default for re-export consistency;
+  non-deterministic should remain opt-in via the `deterministic=False` parameter.
 
 ---
 
@@ -876,5 +860,5 @@ Check tool availability via `shutil.which()` before showing the option in the UI
   then ZIP.
 - The `create_participant_mapping()` function in `src/anonymizer.py` already handles
   deterministic seeding; reuse it rather than adding a new ID generator.
-- `export_project.py` walks `sub-*/` dirs but currently only renames filenames,
-  not folder-embedded IDs inside JSON values — that is the core gap for Priority 2.
+- The mapping file must survive the export and live in the project's `code/` directory;
+  a temp-file approach silently loses the ability to re-identify participants.

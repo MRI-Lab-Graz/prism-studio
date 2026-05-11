@@ -197,3 +197,91 @@ def test_export_anonymize_keeps_overlapping_subject_ids_distinct(tmp_path):
         == f"bids::{sub010_anon}/func/{sub010_anon}_task-rest_bold.nii.gz"
     )
     assert malformed_sub010 not in fmap_json["IntendedFor"]
+
+
+def test_export_saves_anonymization_map_to_project_code_directory(tmp_path):
+    """Mapping file must be written to project/code/ and not deleted after export."""
+    project_dir = tmp_path / "study"
+    (project_dir / "sub-001").mkdir(parents=True)
+
+    (project_dir / "participants.tsv").write_text(
+        "participant_id\tage\nsub-001\t30\n",
+        encoding="utf-8",
+    )
+
+    output_zip = tmp_path / "export.zip"
+    stats = export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=True,
+        deterministic=True,
+        include_derivatives=False,
+        include_code=False,
+        include_analysis=False,
+    )
+
+    mapping_path = project_dir / "code" / "anonymization_map.json"
+    assert mapping_path.exists(), "anonymization_map.json must exist in project/code/"
+    data = json.loads(mapping_path.read_text(encoding="utf-8"))
+    assert "mapping" in data
+    assert "sub-001" in data["mapping"]
+    assert stats["mapping_file"] == str(mapping_path)
+
+
+def test_export_anonymization_map_excluded_from_zip(tmp_path):
+    """anonymization_map.json must never appear in the exported ZIP."""
+    project_dir = tmp_path / "study"
+    code_dir = project_dir / "code"
+    code_dir.mkdir(parents=True)
+    (project_dir / "sub-001").mkdir(parents=True)
+
+    (project_dir / "participants.tsv").write_text(
+        "participant_id\tage\nsub-001\t30\n",
+        encoding="utf-8",
+    )
+    # Pre-create the mapping file to ensure _add_tree sees it
+    (code_dir / "anonymization_map.json").write_text(
+        '{"mapping": {}}', encoding="utf-8"
+    )
+    (code_dir / "some_script.py").write_text("# code\n", encoding="utf-8")
+
+    output_zip = tmp_path / "export.zip"
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=True,
+        deterministic=True,
+        include_derivatives=False,
+        include_code=True,
+        include_analysis=False,
+    )
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        names = archive.namelist()
+
+    assert all("anonymization_map.json" not in name for name in names)
+    assert any("some_script.py" in name for name in names)
+
+
+def test_export_no_anonymization_mapping_file_key_is_none(tmp_path):
+    """When anonymize=False the stats mapping_file key must be None."""
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True)
+
+    (project_dir / "participants.tsv").write_text(
+        "participant_id\tage\nsub-001\t30\n",
+        encoding="utf-8",
+    )
+
+    output_zip = tmp_path / "export_nonanon.zip"
+    stats = export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=False,
+        include_derivatives=False,
+        include_code=False,
+        include_analysis=False,
+    )
+
+    assert stats["mapping_file"] is None
+    assert not (project_dir / "code" / "anonymization_map.json").exists()
