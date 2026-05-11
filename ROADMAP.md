@@ -190,23 +190,29 @@ into backend contracts.
   - Confirmed legacy `POST /api/survey-convert` route is still mounted for
     compatibility; current survey workflow now uses
     `POST /api/survey-workflow-command` for prepare/preview/convert dispatch.
-  - Reduced the frontend convert-run monolith by moving conversion result
-    application out of `survey-workflow-convert.js`; the larger remaining
-    duplication is now in backend request parsing/preflight/conversion handling
-    across `api_survey_convert` and `api_survey_convert_validate`.
+  - Added canonical backend survey workflow stage service in
+    `src/survey_workflow_service.py` and switched
+    `api_survey_convert` / `api_survey_convert_validate` to delegate effective
+    survey-library fallback plus preflight/convert engine dispatch through that
+    one backend service while preserving existing Flask response shaping.
+  - Reduced the largest remaining backend duplication from engine dispatch to
+    request/form parsing and response assembly inside
+    `app/src/web/blueprints/conversion_survey_handlers.py`.
     module import/instantiation/delegation and to keep validation-specific
     grouping behavior (`files share this same issue`) owned by the extracted
     module.
   - Extracted conversion-log toggling/log-line formatting/reset-UI behavior from
     `survey-convert.js` into new module
-- Move shared survey request parsing/preflight/convert orchestration out of
-  `app/src/web/blueprints/conversion_survey_handlers.py` into one canonical
+- Move shared survey request/form parsing, stale-workflow gate handling, and
+  response assembly out of
+  `app/src/web/blueprints/conversion_survey_handlers.py` into the canonical
   backend workflow service under `src/`.
-- Reduce the legacy compatibility surface by routing old survey preview/
+- Reuse the canonical backend workflow stage service in the preview path so
+  survey engine dispatch/fallback rules live in one place across prepare /
+  preview / convert.
+- Reduce the legacy compatibility surface by routing old survey preview /
   validate endpoints through the same backend command adapter or documenting
   them as explicit aliases.
-- Continue trimming remaining survey-specific global/window handlers in
-  `survey-convert.js` that are still coupled to legacy template-save flows.
     ownership in the extracted module.
   - Hardened survey project-switch reset handling in
     `app/static/js/modules/converter/survey-convert.js` so
@@ -246,6 +252,9 @@ into backend contracts.
 - Survey workflow complexity now comes more from feature accretion than missing
   capability; incremental extraction with strict backend ownership is safer than
   a rewrite.
+- A backend service extraction is safest when it preserves the existing wrapper
+  contract first; calling raw converters directly dropped fallback behavior and
+  endpoint tests caught that immediately.
 - Extraction patches in `survey-convert.js` should be applied in small hunks:
   large monolith deletions can leave orphan fragments that focused wiring tests
   catch quickly.
