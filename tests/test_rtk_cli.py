@@ -34,6 +34,8 @@ def test_rtk_help_lists_primary_subcommands() -> None:
     assert "validator" in output
     assert "tools" in output
     assert "test" in output
+    assert "coverage" in output
+    assert "codecov" in output
     assert "git" in output
     assert "gh" in output
 
@@ -63,3 +65,12 @@ def test_rtk_git_passthrough_executes_git() -> None:
 
     assert result.returncode == 0, output
     assert "git version" in output.lower()
+
+
+def test_rtk_codecov_reports_missing_binary_with_hint() -> None:
+    result = _run_rtk("codecov", "--version", env={"PATH": ""})
+    output = (result.stdout or "") + "\n" + (result.stderr or "")
+
+    assert result.returncode == 1, output
+    assert "codecovcli" in output
+    assert "pip install codecov-cli" in output

@@ -7,6 +7,7 @@ from pathlib import Path
 from flask import current_app, jsonify, request, session
 from werkzeug.utils import secure_filename
 from src.participants_paths import participants_mapping_candidates
+from src.survey_workflow_service import SurveyWorkflowStageService
 
 try:
     import defusedxml.ElementTree as ET
@@ -145,6 +146,15 @@ def _collect_task_manual_review_payloads(
     format_value_offset_confirmation_response,
 ) -> dict[str, dict[str, object]]:
     payloads: dict[str, dict[str, object]] = {}
+
+    # Per-task validation is only needed when a specific out-of-bounds
+    # exception contract is configured. Otherwise this would duplicate full
+    # validation runs with no actionable manual-review payloads.
+    if not (
+        isinstance(survey_value_out_of_bounds_error_cls, type)
+        and issubclass(survey_value_out_of_bounds_error_cls, BaseException)
+    ):
+        return payloads
 
     for task in sorted({str(task).strip().lower() for task in tasks if str(task).strip()}):
         try:
@@ -395,10 +405,10 @@ def handle_api_survey_convert_preview(
     resolve_effective_library_path,
     run_survey_with_official_fallback,
     validate_project_templates_for_tasks,
-    build_template_completion_gate,
     format_unmatched_groups_response,
     id_column_not_detected_error_cls,
     unmatched_groups_error_cls,
+    build_template_completion_gate=None,
     survey_value_out_of_bounds_error_cls=None,
     format_value_offset_confirmation_response=None,
     force_validate_preview: bool = False,
@@ -652,16 +662,11 @@ def handle_api_survey_convert_preview(
         )
         near_match_applied = bool(getattr(result, "near_match_applied", False))
         if near_match_candidates and not allow_near_item_match:
-            near_match_payload = {
-                "error": "near_item_match_confirmation_required",
-                "message": (
-                    "Exact matching left item-like columns unmapped. "
-                    "Safe near matches are available (minimal separator/zero-padding differences). "
-                    "Confirm to apply them."
-                ),
-                "near_match_candidates": near_match_candidates,
-                "near_match_count": len(near_match_candidates),
-            }
+            near_match_payload = (
+                SurveyWorkflowStageService.build_near_match_confirmation_payload(
+                    near_match_candidates=near_match_candidates
+                )
+            )
             return (
                 jsonify(
                     _format_workflow_preparation_stale_response(
@@ -682,10 +687,25 @@ def handle_api_survey_convert_preview(
         workflow_gate = None
         task_manual_review_payloads: dict[str, dict[str, object]] = {}
         if project_template_issues:
-            workflow_gate = build_template_completion_gate(
-                tasks=list(getattr(result, "tasks_included", []) or []),
-                issues=project_template_issues,
-            )
+            if callable(build_template_completion_gate):
+                workflow_gate = build_template_completion_gate(
+                    tasks=list(getattr(result, "tasks_included", []) or []),
+                    issues=project_template_issues,
+                )
+            else:
+                task_list = sorted(
+                    {
+                        str(task).strip().lower()
+                        for task in (getattr(result, "tasks_included", []) or [])
+                        if str(task).strip()
+                    }
+                )
+                workflow_gate = {
+                    "blocked": True,
+                    "reason": "project_template_completion_required",
+                    "tasks": task_list,
+                    "issue_count": len(project_template_issues),
+                }
 
         if validate_preview:
             validate_root = tmp_dir_path / "rawdata_validate"

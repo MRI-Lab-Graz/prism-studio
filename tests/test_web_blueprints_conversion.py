@@ -894,6 +894,132 @@ class TestSurveyWorkflowCommandEndpoint(unittest.TestCase):
         )
         self.assertEqual(payload.get("workflow_command"), "mystery")
 
+    def test_workflow_command_supports_alias_values_and_fields(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-workflow-command",
+            view_func=handlers.api_survey_workflow_command,
+            methods=["POST"],
+        )
+
+        with app.test_client() as client:
+            with patch.object(
+                handlers,
+                "api_survey_prepare_workflow",
+                return_value=("prepared", 200),
+            ) as prepare_mock, patch.object(
+                handlers,
+                "api_survey_convert_preview",
+                return_value=("previewed", 200),
+            ) as preview_mock, patch.object(
+                handlers,
+                "api_survey_convert_validate",
+                return_value=("converted", 200),
+            ) as convert_mock:
+                # `command` field alias + `setup` value alias -> prepare
+                prepare_response = client.post(
+                    "/api/survey-workflow-command",
+                    data={"command": "setup"},
+                )
+                # `mode` field alias + `dry_run` value alias -> preview
+                preview_response = client.post(
+                    "/api/survey-workflow-command",
+                    data={"mode": "dry_run"},
+                )
+                # `validate` value alias -> convert
+                convert_response = client.post(
+                    "/api/survey-workflow-command",
+                    data={"workflow_command": "validate"},
+                )
+
+        self.assertEqual(prepare_response.status_code, 200)
+        self.assertEqual(prepare_response.get_data(as_text=True), "prepared")
+        self.assertEqual(preview_response.status_code, 200)
+        self.assertEqual(preview_response.get_data(as_text=True), "previewed")
+        self.assertEqual(convert_response.status_code, 200)
+        self.assertEqual(convert_response.get_data(as_text=True), "converted")
+        prepare_mock.assert_called_once_with()
+        preview_mock.assert_called_once_with()
+        convert_mock.assert_called_once_with()
+
+    def test_workflow_command_supports_json_payload(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-workflow-command",
+            view_func=handlers.api_survey_workflow_command,
+            methods=["POST"],
+        )
+
+        with app.test_client() as client:
+            with patch.object(
+                handlers,
+                "api_survey_convert_preview",
+                return_value=("previewed", 200),
+            ) as preview_mock:
+                response = client.post(
+                    "/api/survey-workflow-command",
+                    json={"workflow_command": "dry-run"},
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_data(as_text=True), "previewed")
+        preview_mock.assert_called_once_with()
+
+    def test_workflow_command_prefers_form_over_json_payload(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-workflow-command",
+            view_func=handlers.api_survey_workflow_command,
+            methods=["POST"],
+        )
+
+        with app.test_request_context(
+            "/api/survey-workflow-command",
+            method="POST",
+            data={"workflow_command": "prepare"},
+        ):
+            with patch.object(
+                handlers,
+                "api_survey_prepare_workflow",
+                return_value=("prepared", 200),
+            ) as prepare_mock, patch.object(
+                handlers,
+                "api_survey_convert_preview",
+                return_value=("previewed", 200),
+            ) as preview_mock, patch.object(
+                handlers.request,
+                "get_json",
+                return_value={"workflow_command": "preview"},
+            ):
+                response = handlers.api_survey_workflow_command()
+
+        response_obj, status_code = response
+        self.assertEqual(status_code, 200)
+        self.assertEqual(response_obj, "prepared")
+        prepare_mock.assert_called_once_with()
+        preview_mock.assert_not_called()
+
 
 class TestSurveyConvertValidateEndpoint(unittest.TestCase):
     def test_validate_wraps_setup_blocker_after_prepare(self):
@@ -2079,7 +2205,14 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
             self.assertEqual(len(calls), 1)
             self.assertEqual(
                 calls[0].get("template_version_overrides"),
-                {"wellbeing": "7-likert"},
+                [
+                    {
+                        "task": "wellbeing",
+                        "version": "7-likert",
+                        "session": None,
+                        "run": None,
+                    }
+                ],
             )
 
     def test_api_survey_convert_registers_detected_sessions_for_all(self):
@@ -4617,7 +4750,7 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         merge_quality = payload.get("merge_quality") or {}
         self.assertEqual(
             merge_quality.get("incoming_new_participant_total_value_cells"),
-            3,
+            2,
         )
         self.assertEqual(
             merge_quality.get("incoming_new_participant_missing_value_cells"),

@@ -1,5 +1,6 @@
 pytest
 pytest-cov
+codecov-cli
 matplotlib
 black>=26.3.1
 flake8
