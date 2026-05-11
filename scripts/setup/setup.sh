@@ -120,9 +120,9 @@ fi
 
 # Ensure bidsschematools is available for --bids-schema support
 echo_info "Installing optional BIDS tooling (bidsschematools)..."
-uv pip install bidsschematools
+uv pip install "bidsschematools>=1.2.2"
 if [ $? -ne 0 ]; then
-    echo_error "Failed to install bidsschematools (optional). You can install it later with: pip install bidsschematools"
+    echo_error "Failed to install bidsschematools (optional). You can install it later with: pip install 'bidsschematools>=1.2.2'"
 else
     echo_success "bidsschematools installed."
 fi
