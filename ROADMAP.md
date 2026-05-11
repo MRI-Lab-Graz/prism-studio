@@ -230,6 +230,87 @@ into backend contracts.
   - Lessons learned: small parser reuse increments across adjacent routes keep
     behavior stable while making backend-owned normalization easier to expand
     into preview/prepare paths next.
+  - Extracted stale-workflow blocker payload assembly into canonical backend
+    helpers in `src/survey_workflow_service.py`
+    (`build_near_match_confirmation_payload`,
+    `build_template_completion_required_payload`) and switched
+    `api_survey_convert` / `api_survey_convert_validate` to delegate near-match
+    and template-completion preflight payload creation through those helpers.
+  - Reused the backend near-match payload helper in
+    `app/src/web/blueprints/conversion_survey_preview_handlers.py` so
+    prepare/preview/convert now share one canonical near-match blocker message
+    contract.
+  - Added focused helper regression tests in
+    `tests/test_survey_workflow_service.py` and revalidated stale-preparation
+    blocker endpoint behavior in `tests/test_web_blueprints_conversion.py` and
+    `tests/test_survey_preview_regressions.py`.
+  - Coverage checkpoint: `./rtk coverage` now passes at 81.05%
+    (1988 passed, 3 skipped, 2 warnings).
+  - Lessons learned: keep stale-workflow wrapping (prepared-workflow
+    translation/log attachment) in web adapters, but centralize reusable
+    blocker payload construction in backend service helpers.
+  - Centralized stale-preparation response transformation in backend helper
+    `SurveyWorkflowStageService.format_workflow_preparation_stale_response`
+    (`src/survey_workflow_service.py`) and reduced
+    `app/src/web/blueprints/conversion_survey_preview_handlers.py`
+    `_format_workflow_preparation_stale_response(...)` to a thin adapter that
+    only resolves request context (`prepared_workflow`) and delegates.
+  - Added service-level regression coverage in
+    `tests/test_survey_workflow_service.py` for wrapped vs non-wrapped stale
+    payload behavior (including log passthrough), and revalidated stale-blocker
+    contracts in `tests/test_web_blueprints_conversion.py` and
+    `tests/test_survey_preview_regressions.py`.
+  - Coverage checkpoint: `./rtk coverage` now passes at 81.08%
+    (1990 passed, 3 skipped, 2 warnings).
+  - Lessons learned: pure stale-response transformation belongs in backend
+    helpers; web adapters should only supply request-derived flags and keep
+    transport concerns local.
+  - Decoupled `app/src/web/blueprints/conversion_survey_handlers.py` from
+    preview-layer private stale wrapper import by adding local adapter helpers
+    (`_is_prepared_workflow_request`,
+    `_format_workflow_preparation_stale_response`) that delegate directly to
+    `SurveyWorkflowStageService.format_workflow_preparation_stale_response`.
+  - Added handler-level regression coverage in
+    `tests/test_web_blueprints_conversion.py` for prepared vs unprepared stale
+    wrapper behavior (including log passthrough), while keeping existing stale
+    blocker endpoint tests green.
+  - Coverage checkpoint: `./rtk coverage` now passes at 81.08%
+    (1992 passed, 3 skipped, 2 warnings).
+  - Lessons learned: avoid cross-module imports of private web helpers;
+    each adapter can keep tiny request-context wrappers that call canonical
+    backend service logic.
+  - Centralized prepared-workflow boolean parsing in backend helper
+    `SurveyWorkflowStageService.parse_prepared_workflow_flag` and switched both
+    `app/src/web/blueprints/conversion_survey_handlers.py` and
+    `app/src/web/blueprints/conversion_survey_preview_handlers.py` wrappers to
+    delegate this truthy/falsey normalization instead of duplicating inline
+    string checks.
+  - Added focused parser regression coverage in
+    `tests/test_survey_workflow_service.py` for canonical truthy and falsey
+    prepared-workflow values; stale-wrapper endpoint tests remain green.
+  - Coverage checkpoint: `./rtk coverage` remains at 81.08%
+    (1994 passed, 3 skipped, 2 warnings).
+  - Lessons learned: keep all request-flag normalization in backend helpers so
+    adapter wrappers only read request fields and forward normalized booleans.
+  - Promoted survey input-format constants to canonical backend ownership in
+    `src/survey_workflow_service.py`
+    (`SUPPORTED_SURVEY_TABULAR_SUFFIXES`,
+    `SUPPORTED_SURVEY_INPUT_SUFFIXES`,
+    `SUPPORTED_SURVEY_INPUT_MESSAGE`) and rewired both
+    `app/src/web/blueprints/conversion_survey_preview_handlers.py` and
+    `app/src/web/blueprints/conversion_survey_handlers.py` to consume those
+    shared constants instead of cross-importing preview-private constants.
+  - Kept preview-module compatibility aliases (`_SUPPORTED_*`) intact so
+    existing route behavior and imports remain stable while ownership moved to
+    backend service.
+  - Added service-level constant coverage in
+    `tests/test_survey_workflow_service.py` and revalidated survey preview /
+    validate / version-context / project-template-check endpoint groups.
+  - Coverage checkpoint: `./rtk coverage` now passes at 81.09%
+    (1995 passed, 3 skipped, 2 warnings).
+  - Lessons learned: shared format-policy constants should live in backend
+    service modules; web adapters can expose local aliases for compatibility
+    but should not own canonical values.
     import/instantiation/delegation and to keep summary-specific strings/DOM
     bindings (`Out-of-range share`, `data-survey-open-advanced`) owned by the
     extracted module.

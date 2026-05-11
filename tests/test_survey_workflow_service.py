@@ -2,6 +2,9 @@ from pathlib import Path
 from typing import Any
 
 from src.survey_workflow_service import (
+    SUPPORTED_SURVEY_INPUT_MESSAGE,
+    SUPPORTED_SURVEY_INPUT_SUFFIXES,
+    SUPPORTED_SURVEY_TABULAR_SUFFIXES,
     SurveyWorkflowStageOptions,
     SurveyWorkflowStageService,
 )
@@ -166,3 +169,46 @@ def test_build_template_completion_required_payload() -> None:
     assert payload["template_issues"] == [
         {"file": "survey-pss.json", "message": "missing"}
     ]
+
+
+def test_format_workflow_preparation_stale_response_wraps_blockers() -> None:
+    payload = SurveyWorkflowStageService.format_workflow_preparation_stale_response(
+        payload={
+            "error": "near_item_match_confirmation_required",
+            "message": "Confirm near matches.",
+        },
+        prepared_workflow=True,
+    )
+
+    assert payload["error"] == "workflow_preparation_stale"
+    assert payload["blocking_error"] == "near_item_match_confirmation_required"
+    assert "Run Preview again" in payload["message"]
+
+
+def test_format_workflow_preparation_stale_response_keeps_non_prepared_payload() -> None:
+    payload = SurveyWorkflowStageService.format_workflow_preparation_stale_response(
+        payload={"error": "project_template_completion_required", "message": "Fill templates."},
+        prepared_workflow=False,
+        log_messages=[{"message": "blocked", "level": "error"}],
+    )
+
+    assert payload["error"] == "project_template_completion_required"
+    assert "blocking_error" not in payload
+    assert payload["log"] == [{"message": "blocked", "level": "error"}]
+
+
+def test_parse_prepared_workflow_flag_truthy_values() -> None:
+    for value in ["1", "true", "yes", "on", " TRUE ", "Yes"]:
+        assert SurveyWorkflowStageService.parse_prepared_workflow_flag(value) is True
+
+
+def test_parse_prepared_workflow_flag_falsey_values() -> None:
+    for value in [None, "", "0", "false", "off", "no", " preview "]:
+        assert SurveyWorkflowStageService.parse_prepared_workflow_flag(value) is False
+
+
+def test_supported_survey_input_constants_are_canonical() -> None:
+    assert ".xlsx" in SUPPORTED_SURVEY_TABULAR_SUFFIXES
+    assert ".lsa" not in SUPPORTED_SURVEY_TABULAR_SUFFIXES
+    assert ".lsa" in SUPPORTED_SURVEY_INPUT_SUFFIXES
+    assert "Supported formats:" in SUPPORTED_SURVEY_INPUT_MESSAGE
