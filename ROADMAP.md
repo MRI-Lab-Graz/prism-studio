@@ -1,5 +1,366 @@
 # PRISM Studio — Roadmap
 
+## Priority 1.35 — Survey converter workflow audit and backend command consolidation 🚧 IN PROGRESS
+
+Reduce survey converter complexity by auditing active workflow paths, flagging
+outdated/revisited parts, and moving workflow commands from frontend orchestration
+into backend contracts.
+
+**Workflow analysis completed (survey scope):**
+- Documented current survey flow and flagged stale/revisited paths in
+  `docs/SURVEY_CONVERTER_WORKFLOW_AUDIT_2026-05-09.md`.
+- Confirmed active converter entrypoint is `app/static/js/converter-bootstrap.js`
+  while legacy converter module paths still exist.
+- Identified backend endpoint split (`/api/survey-convert` zip-style legacy path
+  vs `/api/survey-convert-validate` JSON workflow path) as a consolidation target.
+
+**Started implementation (backend-first):**
+- Moved survey participants schema merge orchestration from frontend JS into
+  backend save contract:
+  - Added canonical backend helper in `src/participants_backend.py`.
+  - Added merge mode handling in
+    `app/src/web/blueprints/projects_participants_handlers.py`.
+  - Updated survey frontend save flow in
+    `app/static/js/modules/converter/survey-convert.js` to send
+    `survey_schema_merge_mode` + `survey_selected_schema`.
+  - Added regression coverage in
+    `tests/test_projects_participants_handlers.py`.
+
+  **Phase 2 progress (entrypoint consolidation):**
+  - Updated converter aggregator wiring in
+    `app/static/js/modules/converter/index.js` to stop invoking legacy
+    `survey.js` quick-import initialization.
+  - Added idempotent bootstrap guards in
+    `app/static/js/converter-bootstrap.js` and converter aggregator wiring to
+    prevent duplicate handler binding if imported through multiple paths.
+  - Added wiring assertions in `tests/test_converter_workflow_wiring.py` to
+    enforce single bootstrap entrypoint expectations.
+
+  **Phase 3 progress (module extraction, no behavior change):**
+  - Extracted survey participant-metadata workflow from
+    `app/static/js/modules/converter/survey-convert.js` into new module
+    `app/static/js/modules/converter/survey-participants-metadata.js`.
+  - Kept `survey-convert.js` as orchestrator and wired it to the extracted
+    controller (`createSurveyParticipantsMetadataController`).
+  - Extracted survey setup preparation orchestration into
+    `app/static/js/modules/converter/survey-workflow-prepare.js` and wired
+    `survey-convert.js` to delegate setup/late-blocker/finalization flows through
+    `createSurveyWorkflowPrepareController`.
+  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` to assert
+    extracted module wiring and backend merge payload contract.
+  - Extracted preview orchestration into
+    `app/static/js/modules/converter/survey-workflow-preview.js` and delegated
+    preview button handling from `survey-convert.js`.
+  - Extracted run-progress orchestration into
+    `app/static/js/modules/converter/survey-workflow-progress.js` and delegated
+    progress state/timer handling from `survey-convert.js`.
+  - Extracted survey sourcedata quick-select orchestration into
+    `app/static/js/modules/converter/survey-sourcedata-quick-select.js` and
+    delegated dropdown refresh/file-load/project-change reset wiring from
+    `survey-convert.js`.
+  - Extracted template-check orchestration into
+    `app/static/js/modules/converter/survey-workflow-template-check.js` and
+    delegated check button request/logging/gating/version-wizard branching from
+    `survey-convert.js`.
+  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` for
+    preview module import/instantiation/delegation and preview endpoint
+    ownership assertions.
+  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` for
+    progress module import/instantiation/delegation and run-progress API
+    ownership assertions.
+  - Updated wiring tests in `tests/test_converter_workflow_wiring.py` so
+    survey sourcedata endpoint and project-change ownership are asserted in the
+    extracted sourcedata module instead of `survey-convert.js`.
+  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` so
+    template-check endpoint and project-path append ownership are asserted in
+    `survey-workflow-template-check.js`.
+  - Extracted template result rendering/save orchestration into
+    `app/static/js/modules/converter/survey-template-results.js` and delegated
+    template result mode dispatch from `survey-convert.js` to
+    `createSurveyTemplateResultsController`.
+  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` to
+    assert template-results import/instantiation/delegation and endpoint
+    ownership (`/api/limesurvey-save-to-project` and `/api/library-template/`).
+  - Extracted shared survey value-offset parsing/normalization helpers into
+    `app/static/js/modules/converter/survey-value-offset-utils.js` and reduced
+    duplicate helper ownership in `survey-convert.js` to thin wrappers.
+  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` for the
+    new value-offset utility module and `survey-convert.js` delegation wrappers.
+  - Extracted value-offset editor apply-state and DOM event wiring into
+    `app/static/js/modules/converter/survey-value-offset-editor.js` and
+    delegated from `survey-convert.js` via
+    `createSurveyValueOffsetEditorController` while keeping existing offset
+    state/review logic in the orchestrator.
+  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` to
+    assert value-offset editor controller import/instantiation/initialization
+    and ownership of add-row/change/input/remove bindings.
+  - Shifted value-offset status/signature helper ownership
+    (`hasManualTaskValueOffsets`, `hasAppliedTaskValueOffsetSelections`,
+    `updateTaskValueOffsetApplyState`, and related map/signature helpers) into
+    `survey-value-offset-editor.js`, with `survey-convert.js` now delegating
+    through thin wrappers.
+  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` to
+    assert helper delegation in `survey-convert.js` and helper ownership in the
+    extracted value-offset editor controller.
+  - Moved value-offset editor state mutation/render internals
+    (`createTaskValueOffsetRow`, row rendering, text/state sync, ensure/focus,
+    and editor-change handlers) into
+    `app/static/js/modules/converter/survey-value-offset-editor.js`.
+  - Reduced `survey-convert.js` value-offset UI functions to thin delegation
+    wrappers and injected dependencies (task list provider, row-id allocator,
+    parser/normalizer utilities, and escape helper) into the controller.
+  - Extended wiring tests in `tests/test_converter_workflow_wiring.py` to
+    assert delegation wrappers in `survey-convert.js` and row-markup ownership
+    (`data-role="operator"`, `data-role="magnitude"`) in the extracted
+    value-offset editor controller.
+  - Moved available-task derivation and manual-offset retrieval helper ownership
+    (`getAvailableSurveyTasksForValueOffsets`, `getManualTaskValueOffsets`)
+    into `survey-value-offset-editor.js`, with `survey-convert.js` keeping
+    thin delegation wrappers.
+  - Updated controller wiring to inject preview-selection/template-version/
+    preview-task providers instead of calculating those lists directly inside
+    `survey-convert.js`.
+  - Moved manual offset apply-click behavior (`convertApplyValueOffsetsBtn`)
+    into `survey-value-offset-editor.js` via
+    `handleApplyTaskValueOffsetsClick`, keeping `survey-convert.js` as a thin
+    event-binding delegator.
+  - Extended controller wiring with `getTemplateWorkflowGate` + `convertInfo`
+    so offset-apply gate-clearing/message behavior remains centralized in the
+    editor controller without changing workflow semantics.
+  - Updated `tests/test_converter_workflow_wiring.py` to assert apply-click
+    delegation ownership moved out of `survey-convert.js`.
+  - Moved version-wizard apply-click behavior (`surveyVersionWizardApplyBtn`)
+    into `survey-workflow-template-check.js`
+    (`handleVersionWizardApplyClick`) while keeping `survey-convert.js` as a
+    thin event-binding delegator.
+  - Extended template-check controller wiring with narrow selection-state
+    callbacks (`hasMultiVersionWizardTasks`,
+    `hasCompleteVersionWizardSelections`,
+    `getCurrentTemplateVersionSelectionSignature`,
+    `setAppliedTemplateVersionSelectionSignature`,
+    `setVersionWizardRetryGateMode`, and template-gate/action-state accessors)
+    to preserve behavior without duplicating orchestration logic.
+  - Updated `tests/test_converter_workflow_wiring.py` to assert version-wizard
+    apply ownership in the template-check controller and prevent reintroducing
+    inline apply branching in `survey-convert.js`.
+  - Moved `surveyVersionWizardApplyBtn` click-event binding into
+    `survey-workflow-template-check.js` `initialize()`, so both template-check
+    and version-apply interactions are owned by one workflow controller.
+  - Removed redundant version-apply listener wiring from
+    `survey-convert.js`, leaving the orchestrator free of this UI event
+    registration.
+  - Extracted preview/conversion summary rendering and selection-binding
+    behavior from `survey-convert.js` into new module
+    `app/static/js/modules/converter/survey-conversion-summary.js` via
+    `createSurveyConversionSummaryController`.
+  - Reduced `survey-convert.js` summary ownership to thin delegation
+    (`displayConversionSummary`) and injected narrow state callbacks
+    (`getSurveyPreviewSelectionState`, `setSurveyPreviewSelectedTasks`) plus
+    formatter/UI helpers into the summary controller.
+  - Updated `tests/test_converter_workflow_wiring.py` to assert summary module
+    import/instantiation/delegation and to keep summary-specific strings/DOM
+    bindings (`Out-of-range share`, `data-survey-open-advanced`) owned by the
+    extracted module.
+  - Extracted validation-results rendering/grouping behavior from
+    `survey-convert.js` into new module
+    `app/static/js/modules/converter/survey-validation-results.js` via
+    `createSurveyValidationResultsController`.
+  - Reduced `survey-convert.js` validation ownership to thin delegation
+    (`displayValidationResults`) and injected `escapeHtml` into the extracted
+    validation controller.
+  - Updated `tests/test_converter_workflow_wiring.py` to assert validation
+    module import/instantiation/delegation and to keep validation-specific
+    grouping behavior (`files share this same issue`) owned by the extracted
+    module.
+  - Extracted conversion-log toggling/log-line formatting/reset-UI behavior from
+    `survey-convert.js` into new module
+    `app/static/js/modules/converter/survey-conversion-log.js` via
+    `createSurveyConversionLogController`.
+  - Reduced `survey-convert.js` log/reset ownership to thin delegation
+    (`appendLog`, `resetConversionUI`) and controller initialization.
+  - Updated `tests/test_converter_workflow_wiring.py` to assert conversion-log
+    module import/instantiation/delegation and to keep log-toggle/log-format
+    ownership in the extracted module.
+
+  **Assessment update (2026-05-10):**
+  - Confirmed stale DOM-guarded branches still exist in `survey-convert.js`
+    for controls no longer present in `converter_survey.html`
+    (template-check button, i18n/structure warning containers, library path
+    picker controls).
+  - Confirmed legacy `POST /api/survey-convert` route is still mounted for
+    compatibility while current frontend workflow uses
+    `POST /api/survey-convert-validate`.
+  - Identified convert-run handler as the primary remaining monolith and next
+    extraction target.
+  - Identified project-switch stale-state risk: survey tab refreshes sourcedata
+    quick-select on `prism-project-changed` but does not fully reset
+    preview/conversion state.
+
+**Next steps:**
+- Consolidate converter survey entrypoints and remove unreachable legacy survey
+  quick-import module paths.
+- Split monolithic survey converter frontend into workflow-step modules
+  (prepare, preview, convert, participant-metadata).
+- Introduce one backend workflow command endpoint for preview/convert state
+  transitions so the frontend becomes a thin state renderer.
+
+**Lessons learned:**
+- Backend-first merge contracts reduce frontend state drift and avoid duplicate
+  merge logic in browser code.
+- Survey workflow complexity now comes more from feature accretion than missing
+  capability; incremental extraction with strict backend ownership is safer than
+  a rewrite.
+- Extraction patches in `survey-convert.js` should be applied in small hunks:
+  large monolith deletions can leave orphan fragments that focused wiring tests
+  catch quickly.
+- Shared offset parsing/formatting helpers are low-risk extraction targets that
+  reduce drift across preview/convert/manual-offset code paths before moving
+  larger stateful editor orchestration.
+- Extracting stateful editor wiring as a controller is a safe intermediate step:
+  keep one orchestrator-owned state model first, then move state and business
+  rules only after wiring tests pin behavior.
+- Status/signature helper extraction is a good next micro-step after event
+  wiring extraction: it trims orchestrator logic while preserving one shared
+  editor state model and minimizes behavior risk.
+- After wiring + status delegation, moving render/state helpers is still safe
+  if one shared state store remains in the orchestrator and the controller is
+  injected with narrow callbacks for state access and id allocation.
+- The same injection pattern also works for cross-context task availability:
+  pass preview/template providers into the controller to avoid duplicating list
+  derivation while keeping workflow state ownership centralized.
+- The same approach also works for late-stage button-click extraction: keep one
+  orchestrator event binding, move branching behavior into the controller, and
+  inject narrow gate/message accessors instead of shifting workflow state
+  ownership.
+- Version-selector apply behavior is a good fit for the template-check module:
+  move click branching there first, keep shared state in the orchestrator, and
+  wire explicit getter/setter callbacks for apply signatures and retry gates.
+- Once branching is extracted, moving the corresponding click binding into the
+  same controller further reduces orchestration surface area with minimal risk.
+- The conversion summary block is a safe extraction unit when done as one
+  controller: keep preview selection state in the orchestrator and expose only
+  narrow getter/setter callbacks to avoid workflow-state drift.
+- Validation rendering is another safe extraction unit: keep DOM/state entry
+  points in the orchestrator and move formatting/grouping details behind a
+  single controller interface.
+- Conversion-log behavior is also safe to extract as one controller when the
+  orchestrator still owns workflow sequencing and only delegates append/reset
+  operations plus UI toggle initialization.
+
+## Priority 1.34 — RTK command wrapper for repo workflows ✅ DONE
+
+Add a first-class `rtk` command so contributors can run PRISM, git, and gh
+workflows with one consistent entrypoint.
+
+**What was done:**
+- Added a new root launcher script `rtk` with cross-platform dispatch for
+  setup, Studio, validator, tools, tests, git, and GitHub CLI passthrough.
+- Registered `rtk` in `setup.py` script installation so editable installs expose
+  the command in `.venv/bin`.
+- Documented RTK usage in `README.md` and `docs/CLI_REFERENCE.md`.
+- Added CLI coverage in `tests/test_rtk_cli.py` for help output, validator/tools
+  forwarding, and git passthrough.
+
+**Lessons learned:**
+- A small repo-level wrapper is a low-risk way to standardize developer command
+  habits without changing backend business logic.
+- Installing wrapper scripts through `setup.py` keeps onboarding friction low:
+  setup creates one place to discover commands.
+
+## Priority 1.33 — Survey review signal and compact version selector ✅ DONE
+
+Improve survey conversion ergonomics by making out-of-range diagnostics more
+informative and reducing visual footprint of multi-version controls.
+
+**What was done:**
+- Updated `app/static/js/modules/converter/survey-convert.js` to display
+  out-of-range share in Preview Review cards using backend evidence
+  (`invalid_without_offset_percent` and sampled counts).
+- Added a direct `Advanced options` jump action in Preview Review that opens
+  and scrolls to manual task value offset controls.
+- Refactored questionnaire version selector rendering to a compact list-style
+  row layout per context instead of large card blocks.
+- Added compact layout styles in `app/static/css/converter.css`.
+- Extended wiring coverage in
+  `tests/test_converter_workflow_wiring.py` for percentage rendering and
+  advanced-options jump controls.
+
+**Lessons learned:**
+- Percent context (`x%` and count basis) is crucial for deciding whether a
+  task-level issue is structural or isolated.
+- High-density workflows need compact controls by default; card-heavy layouts
+  hide primary actions and increase scroll friction.
+
+## Priority 1.32 — Sourcedata quick-select across converter tabs ✅ DONE
+
+Restore and standardize sourcedata quick-select so users can load files from
+the active project's sourcedata folder across all converter tabs, not only
+Survey.
+
+**What was done:**
+- Extended sourcedata backend listing in
+  `app/src/web/blueprints/projects_sourcedata_handlers.py` with
+  `kind`-specific extension filtering for `survey`, `biometrics`,
+  `environment`, `participants`, `physio`, and `eyetracking`, including
+  `.tsv.gz` support for eyetracking.
+- Updated route docs in `app/src/web/blueprints/projects.py` to describe the
+  new `kind` query parameter.
+- Added per-tab quick-select wiring in converter modules:
+  `app/static/js/modules/converter/biometrics.js`,
+  `app/static/js/modules/converter/environment.js`,
+  `app/static/js/modules/converter/physio.js`,
+  `app/static/js/modules/converter/eyetracking.js`, and
+  `app/static/js/modules/converter/participants.js`.
+- Ensured quick-select controls refresh on `prism-project-changed`, degrade
+  cleanly when sourcedata is missing, and hydrate file inputs via
+  `/api/projects/sourcedata-file`.
+- Added focused regressions in
+  `tests/test_converter_project_context_helpers.py` and
+  `tests/test_converter_workflow_wiring.py` for kind filtering and tab wiring.
+
+**Lessons learned:**
+- Quick-select UI must not depend on server-rendered project state only;
+  project changes happen after page load, so controls must refresh from the
+  active project context event.
+- Backend kind filters are required to keep frontend UX simple and avoid
+  cross-modality file confusion.
+
+## Priority 1.31 — Survey preview review checkpoint and task deselection ✅ DONE
+
+Move the survey import workflow to a stricter backend-owned sequence:
+near-match confirmation, multi-version selection, preview review, then
+conversion. Preview should list the detected surveys, flag per-survey
+out-of-range issues, and let users deselect surveys before the real write step.
+
+**What was done:**
+- Updated survey preview handlers in
+  `app/src/web/blueprints/conversion_survey_preview_handlers.py` to return a
+  backend-built `survey_tasks` summary, including per-task manual-review /
+  out-of-range diagnostics instead of blocking preview with a 409.
+- Added a shared selected-task request contract in
+  `app/src/web/blueprints/conversion_utils.py` and wired it through survey
+  preview / convert handlers so conversion can target only the tasks approved
+  during preview review.
+- Updated survey convert handlers in
+  `app/src/web/blueprints/conversion_survey_handlers.py` so prepare-workflow no
+  longer forces offset review before preview, and convert requests now accept
+  explicit `selected_tasks` filtering.
+- Updated the survey converter UI in
+  `app/static/js/modules/converter/survey-convert.js` to render a Preview
+  Review checklist, show per-survey out-of-range guidance, and require a fresh
+  preview before enabling Convert.
+- Added focused regression coverage in `tests/test_survey_value_offsets.py` and
+  `tests/test_web_blueprints_conversion.py` for preview advisory payloads,
+  selected-task filtering, and the shifted prepare-workflow contract.
+
+**Lessons learned:**
+- Survey deselection must be a backend contract (`selected_tasks`), not a
+  frontend-only filter, or preview and convert drift apart.
+- Preview is the right review boundary for risky survey-specific data issues;
+  setup should not trap users in another pre-preview blocker loop.
+- Per-task diagnostics need a backend summary object. Reconstructing survey
+  review state from log lines or generic `data_issues` is too brittle.
+
 ## Priority 1.30 — Mirror dataset metadata into project.json and warn on drift ✅ DONE
 
 Keep `project.json` aligned with dataset-level metadata saved through Studio and

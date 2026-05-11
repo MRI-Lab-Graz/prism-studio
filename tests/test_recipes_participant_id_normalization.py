@@ -137,6 +137,28 @@ def _write_minimal_recipe(path: Path, task_name: str) -> None:
     )
 
 
+def _write_formula_recipe(path: Path, task_name: str, score_name: str, formula: str, items: list[str]) -> None:
+    items_text = ", ".join(f'"{item}"' for item in items)
+    path.write_text(
+        (
+            "{\n"
+            '  "Kind": "survey",\n'
+            '  "RecipeVersion": "1.0",\n'
+            f'  "Survey": {{"TaskName": "{task_name}"}},\n'
+            '  "Scores": [\n'
+            "    {"
+            f'"Name": "{score_name}", '
+            '"Method": "formula", '
+            f'"Items": [{items_text}], '
+            f'"Formula": "{formula}"'
+            "}\n"
+            "  ]\n"
+            "}\n"
+        ),
+        encoding="utf-8",
+    )
+
+
 def test_merge_all_keeps_participant_columns_for_all_subjects(tmp_path: Path) -> None:
     project_root = tmp_path / "project"
     recipe_dir = tmp_path / "recipes"
@@ -180,3 +202,45 @@ def test_merge_all_keeps_participant_columns_for_all_subjects(tmp_path: Path) ->
     out_df = pd.read_csv(combined_csv, dtype=str).set_index("participant_id")
     assert out_df.loc["sub-001", "age"] == "20"
     assert out_df.loc["sub-002", "age"] == "30"
+
+
+def test_merge_all_formula_uses_participant_values_from_participants_tsv(tmp_path: Path) -> None:
+    project_root = tmp_path / "project"
+    recipe_dir = tmp_path / "recipes"
+    project_root.mkdir(parents=True)
+    recipe_dir.mkdir(parents=True)
+
+    (project_root / "participants.tsv").write_text(
+        "participant_id\tage\nsub-001\t40\n",
+        encoding="utf-8",
+    )
+
+    survey_dir = project_root / "sub-001" / "ses-1" / "survey"
+    survey_dir.mkdir(parents=True)
+    (survey_dir / "sub-001_ses-1_task-aaa_survey.tsv").write_text(
+        "Q1\n1\n",
+        encoding="utf-8",
+    )
+
+    _write_formula_recipe(
+        recipe_dir / "recipe-aaa.json",
+        task_name="aaa",
+        score_name="AgeEcho",
+        formula="{age}",
+        items=["age"],
+    )
+
+    result = compute_survey_recipes(
+        prism_root=project_root,
+        repo_root=tmp_path,
+        recipe_dir=recipe_dir,
+        modality="survey",
+        out_format="csv",
+        merge_all=True,
+    )
+
+    combined_csv = result.out_root / "combined_survey.csv"
+    assert combined_csv.exists()
+
+    out_df = pd.read_csv(combined_csv, dtype=str)
+    assert out_df.loc[0, "aaa_AgeEcho"] == "40"

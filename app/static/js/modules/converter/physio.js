@@ -41,6 +41,9 @@ export function initPhysio(elements) {
     } = elements;
 
     let physioServerFolderPath = '';
+    let physioSourcedataRequestToken = 0;
+    let physioSourcedataQuickSelectEl = null;
+    let physioSourcedataFileSelectEl = null;
 
     function prefersServerPicker() {
         return Boolean(
@@ -67,6 +70,146 @@ export function initPhysio(elements) {
             confirmLabel: 'Use This Folder',
             startPath: physioServerFolderPath || '',
         });
+    }
+
+    function ensurePhysioSourcedataQuickSelectElements() {
+        if (physioSourcedataQuickSelectEl && physioSourcedataFileSelectEl) {
+            return;
+        }
+        if (!physioBatchFiles) {
+            return;
+        }
+
+        const pickerContainer = physioBatchFiles.closest('.studio-file-picker');
+        if (!pickerContainer) {
+            return;
+        }
+
+        physioSourcedataQuickSelectEl = pickerContainer.querySelector('#physioSourcedataQuickSelect');
+        physioSourcedataFileSelectEl = pickerContainer.querySelector('#physioSourcedataFileSelect');
+
+        if (physioSourcedataQuickSelectEl && physioSourcedataFileSelectEl) {
+            return;
+        }
+
+        const inputGroup = physioBatchFiles.closest('.input-group');
+        if (!inputGroup || !inputGroup.parentElement) {
+            return;
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.id = 'physioSourcedataQuickSelect';
+        wrapper.className = 'd-none mb-2';
+        wrapper.innerHTML = `
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light"><i class="fas fa-folder-open text-muted"></i></span>
+                <select class="form-select form-select-sm" id="physioSourcedataFileSelect">
+                    <option value="">Loading sourcedata files...</option>
+                </select>
+            </div>
+        `;
+
+        inputGroup.parentElement.insertBefore(wrapper, inputGroup);
+        physioSourcedataQuickSelectEl = wrapper;
+        physioSourcedataFileSelectEl = wrapper.querySelector('#physioSourcedataFileSelect');
+    }
+
+    function resetPhysioSourcedataQuickSelect() {
+        ensurePhysioSourcedataQuickSelectElements();
+        if (!physioSourcedataFileSelectEl) {
+            return;
+        }
+
+        physioSourcedataFileSelectEl.value = '';
+        while (physioSourcedataFileSelectEl.options.length > 1) {
+            physioSourcedataFileSelectEl.remove(1);
+        }
+    }
+
+    function setPhysioSourcedataPlaceholder(label, { disabled = true } = {}) {
+        ensurePhysioSourcedataQuickSelectElements();
+        if (!physioSourcedataQuickSelectEl || !physioSourcedataFileSelectEl) {
+            return;
+        }
+
+        physioSourcedataQuickSelectEl.classList.remove('d-none');
+        resetPhysioSourcedataQuickSelect();
+
+        let placeholderOption = physioSourcedataFileSelectEl.options[0];
+        if (!placeholderOption) {
+            placeholderOption = document.createElement('option');
+            physioSourcedataFileSelectEl.appendChild(placeholderOption);
+        }
+
+        placeholderOption.value = '';
+        placeholderOption.textContent = label;
+        placeholderOption.disabled = disabled;
+        physioSourcedataFileSelectEl.selectedIndex = 0;
+        physioSourcedataFileSelectEl.disabled = disabled;
+    }
+
+    function refreshPhysioSourcedataQuickSelect(projectPath = resolveCurrentProjectPath()) {
+        ensurePhysioSourcedataQuickSelectElements();
+        if (!physioSourcedataQuickSelectEl || !physioSourcedataFileSelectEl) {
+            return;
+        }
+
+        const previousValue = physioSourcedataFileSelectEl.value;
+        const requestToken = ++physioSourcedataRequestToken;
+        setPhysioSourcedataPlaceholder('Loading sourcedata files...', { disabled: true });
+
+        const effectiveProjectPath = String(projectPath || '').trim();
+        const endpoint = effectiveProjectPath
+            ? `/api/projects/sourcedata-files?kind=physio&project_path=${encodeURIComponent(effectiveProjectPath)}`
+            : '/api/projects/sourcedata-files?kind=physio';
+
+        fetch(endpoint)
+            .then((response) => response.json())
+            .then((data) => {
+                if (requestToken !== physioSourcedataRequestToken) {
+                    return;
+                }
+
+                if (data.sourcedata_exists && Array.isArray(data.files) && data.files.length > 0) {
+                    physioSourcedataQuickSelectEl.classList.remove('d-none');
+                    resetPhysioSourcedataQuickSelect();
+                    physioSourcedataFileSelectEl.disabled = false;
+
+                    const placeholderOption = physioSourcedataFileSelectEl.options[0];
+                    if (placeholderOption) {
+                        placeholderOption.textContent = 'Load from sourcedata/...';
+                        placeholderOption.disabled = false;
+                    }
+
+                    data.files.forEach((entry) => {
+                        const option = document.createElement('option');
+                        option.value = entry.name;
+                        const sizeKB = (entry.size / 1024).toFixed(1);
+                        option.textContent = `${entry.name} (${sizeKB} KB)`;
+                        physioSourcedataFileSelectEl.appendChild(option);
+                    });
+
+                    if (previousValue && Array.from(physioSourcedataFileSelectEl.options).some((option) => option.value === previousValue)) {
+                        physioSourcedataFileSelectEl.value = previousValue;
+                    }
+                } else if (data.sourcedata_exists) {
+                    setPhysioSourcedataPlaceholder('No physio files found in sourcedata/', {
+                        disabled: true,
+                    });
+                } else {
+                    setPhysioSourcedataPlaceholder('No sourcedata folder found for the current project', {
+                        disabled: true,
+                    });
+                }
+            })
+            .catch(() => {
+                if (requestToken !== physioSourcedataRequestToken) {
+                    return;
+                }
+                setPhysioSourcedataPlaceholder('Could not load sourcedata files', {
+                    disabled: true,
+                });
+            });
     }
 
     // ===== BATCH FILE CONVERSION =====
@@ -254,6 +397,7 @@ export function initPhysio(elements) {
         clearPhysioSourceHint();
         resetPhysioWorkflowState();
         updatePhysioBatchBtn();
+        refreshPhysioSourcedataQuickSelect();
     });
 
     window.addEventListener('prism-library-settings-changed', function() {
@@ -269,6 +413,53 @@ export function initPhysio(elements) {
     }
 
     applyPhysioPickerUiState();
+
+    ensurePhysioSourcedataQuickSelectElements();
+    if (physioSourcedataQuickSelectEl && physioSourcedataFileSelectEl) {
+        refreshPhysioSourcedataQuickSelect();
+
+        physioSourcedataFileSelectEl.addEventListener('change', async function() {
+            const filename = this.value;
+            if (!filename) {
+                return;
+            }
+
+            try {
+                const currentProjectPath = resolveCurrentProjectPath();
+                const endpoint = currentProjectPath
+                    ? `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}`
+                    : `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}`;
+
+                const response = await fetch(endpoint);
+                if (!response.ok) {
+                    throw new Error('Failed to load sourcedata file');
+                }
+
+                const blob = await response.blob();
+                const file = new File([blob], filename, { type: blob.type });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+
+                if (physioBatchFiles) {
+                    physioBatchFiles.files = dataTransfer.files;
+                    physioBatchFiles.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                if (physioBatchFolder) {
+                    physioBatchFolder.value = '';
+                }
+                clearAutoDetectedPhysioSource();
+                clearPhysioSourceHint();
+                physioServerFolderPath = '';
+            } catch (_error) {
+                if (physioBatchError) {
+                    physioBatchError.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>Failed to load ${filename} from sourcedata.`;
+                    physioBatchError.classList.remove('d-none');
+                }
+            } finally {
+                refreshPhysioSourcedataQuickSelect();
+            }
+        });
+    }
     
     if (physioBatchLogClearBtn) {
         physioBatchLogClearBtn.addEventListener('click', () => {

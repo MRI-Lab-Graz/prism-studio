@@ -22,8 +22,14 @@ _SUPPRESSED_ENDPOINTS = {
     "projects.set_recent_projects",
     # Draft validation can fire repeatedly while editing forms.
     "projects.validate_dataset_description_draft",
-    # Auto-refreshes while users adjust survey import selectors.
-    "conversion_survey.api_survey_detect_version_context",
+}
+_PATH_ENDPOINT_FALLBACKS = {
+    "/api/survey-prepare-workflow": "conversion_survey.api_survey_prepare_workflow",
+    "/api/survey-detect-version-contexts": "conversion_survey.api_survey_detect_version_context",
+    "/api/survey-convert-preview": "conversion_survey.api_survey_convert_preview",
+    "/api/survey-convert": "conversion_survey.api_survey_convert",
+    "/api/survey-convert-validate": "conversion_survey.api_survey_convert_validate",
+    "/api/survey-check-project-templates": "conversion_survey.api_survey_check_project_templates",
 }
 _ENDPOINT_LABELS = {
     "conversion.api_biometrics_detect": "biometrics detect",
@@ -39,6 +45,8 @@ _ENDPOINT_LABELS = {
     "conversion_survey.api_survey_convert": "survey convert",
     "conversion_survey.api_survey_convert_preview": "survey convert preview",
     "conversion_survey.api_survey_convert_validate": "survey convert validate",
+    "conversion_survey.api_survey_prepare_workflow": "survey prepare workflow",
+    "conversion_survey.api_survey_detect_version_context": "survey detect version contexts",
     "conversion_survey.api_survey_check_project_templates": "survey check project templates",
     "tools.detect_columns": "detect columns",
     "tools.api_file_management_wide_to_long_preview": "wide-to-long preview",
@@ -231,6 +239,19 @@ def _resolve_survey_output_dir(req) -> str:
     return "<output-dir>"
 
 
+def _resolve_request_endpoint(req) -> str:
+    """Resolve Flask endpoint and fall back to known path-based mappings."""
+    endpoint = str(getattr(req, "endpoint", "") or "").strip()
+    if endpoint:
+        return endpoint
+
+    path = str(getattr(req, "path", "") or "").strip()
+    if not path:
+        return "unknown"
+
+    return _PATH_ENDPOINT_FALLBACKS.get(path, "unknown")
+
+
 def _build_validate_folder_terminal_command(req) -> str:
     """Build the exact validator CLI equivalent for /validate_folder requests."""
     form = req.form
@@ -272,6 +293,8 @@ def _build_survey_convert_terminal_command(req, *, dry_run: bool = False) -> str
     filename = ""
     if uploaded is not None:
         filename = str(getattr(uploaded, "filename", "") or "").strip()
+    if not filename:
+        filename = str(form.get("source_file_path", "") or "").strip()
     if not filename:
         filename = "<input-file>"
 
@@ -389,6 +412,8 @@ def _build_detect_columns_terminal_command(req) -> str:
     if uploaded is not None:
         filename = str(getattr(uploaded, "filename", "") or "").strip()
     if not filename:
+        filename = str(req.form.get("source_file_path", "") or "").strip()
+    if not filename:
         filename = "<input-file>"
 
     output_dir = _resolve_survey_output_dir(req)
@@ -458,6 +483,8 @@ def _build_survey_check_templates_terminal_command(req) -> str:
     filename = ""
     if uploaded is not None:
         filename = str(getattr(uploaded, "filename", "") or "").strip()
+    if not filename:
+        filename = str(form.get("source_file_path", "") or "").strip()
     if not filename:
         filename = "<input-file>"
 
@@ -1150,7 +1177,7 @@ def _build_environment_convert_terminal_command(req) -> str:
 
 def _build_terminal_command(req) -> str:
     """Return an exact terminal command preview for supported actions."""
-    endpoint = req.endpoint or ""
+    endpoint = _resolve_request_endpoint(req)
     if endpoint == "validation.validate_folder":
         return _build_validate_folder_terminal_command(req)
     if endpoint == "conversion.api_biometrics_detect":
@@ -1170,6 +1197,11 @@ def _build_terminal_command(req) -> str:
     if endpoint in {
         "conversion_survey.api_survey_convert_preview",
         "conversion_survey.api_survey_convert_validate",
+    }:
+        return _build_survey_convert_terminal_command(req, dry_run=True)
+    if endpoint in {
+        "conversion_survey.api_survey_prepare_workflow",
+        "conversion_survey.api_survey_detect_version_context",
     }:
         return _build_survey_convert_terminal_command(req, dry_run=True)
     if endpoint == "conversion_survey.api_survey_check_project_templates":
@@ -1232,7 +1264,7 @@ def emit_backend_request_action(req, app_root: str) -> None:
         return
 
     path = req.path or "/"
-    endpoint = req.endpoint or "unknown"
+    endpoint = _resolve_request_endpoint(req)
     if endpoint in _SUPPRESSED_ENDPOINTS:
         return
 

@@ -42,6 +42,7 @@ _SESSION_RESOLUTION_ACTIONS = {
     "pick_latest_session",
     "split_sessions",
 }
+_SURVEY_SCHEMA_MERGE_MODES = {"survey_selected"}
 
 
 def normalize_participant_mapping(mapping: object) -> dict:
@@ -209,6 +210,87 @@ def merge_neurobagel_schema_for_columns(
         merged_count += 1
 
     return base_schema, merged_count
+
+
+def merge_survey_selected_participants_schema(
+    existing_schema: dict,
+    selected_schema: dict,
+) -> dict:
+    """Merge survey-selected participant fields into an existing participants schema.
+
+    Behavior mirrors the converter survey workflow contract:
+    - Remove stale survey-derived fields that are no longer selected.
+    - Preserve manually curated metadata on still-selected fields.
+    - Ensure participant_id is always present.
+    """
+    safe_existing = dict(existing_schema) if isinstance(existing_schema, dict) else {}
+    safe_selected = dict(selected_schema) if isinstance(selected_schema, dict) else {}
+
+    selected_source_fields: set[str] = set()
+    for value in safe_selected.values():
+        if not isinstance(value, dict):
+            continue
+        source_field = str(value.get("_sourceField") or "").strip()
+        if source_field:
+            selected_source_fields.add(source_field)
+
+    selected_target_fields = {str(name) for name in safe_selected.keys()}
+
+    merged = dict(safe_existing)
+
+    for field_name, field_spec in list(merged.items()):
+        if not isinstance(field_spec, dict):
+            continue
+        source_field = str(field_spec.get("_sourceField") or "").strip()
+        if not source_field:
+            continue
+
+        still_selected_by_source = source_field in selected_source_fields
+        still_selected_by_target = field_name in selected_target_fields
+        if not still_selected_by_source and not still_selected_by_target:
+            del merged[field_name]
+
+    for field_name, selected_spec in safe_selected.items():
+        existing_spec = merged.get(field_name)
+        if isinstance(existing_spec, dict) and isinstance(selected_spec, dict):
+            merged[field_name] = {
+                **existing_spec,
+                **selected_spec,
+            }
+        else:
+            merged[field_name] = selected_spec
+
+    if "participant_id" not in merged:
+        merged["participant_id"] = {"Description": "Unique participant identifier"}
+
+    return merged
+
+
+def resolve_survey_schema_merge_mode(payload: object) -> str | None:
+    """Resolve participants schema merge mode from request payload.
+
+    Supports a typed mode field and a legacy boolean fallback.
+    """
+    if not isinstance(payload, dict):
+        return None
+
+    raw_mode = payload.get("survey_schema_merge_mode")
+    if raw_mode is not None:
+        normalized_mode = str(raw_mode).strip().lower()
+        if not normalized_mode:
+            return None
+        if normalized_mode not in _SURVEY_SCHEMA_MERGE_MODES:
+            allowed = ", ".join(sorted(_SURVEY_SCHEMA_MERGE_MODES))
+            raise ValueError(
+                f"Unsupported survey_schema_merge_mode '{raw_mode}'. "
+                f"Allowed values: {allowed}."
+            )
+        return normalized_mode
+
+    if bool(payload.get("merge_survey_selected")):
+        return "survey_selected"
+
+    return None
 
 
 def collect_dataset_participants(
@@ -1456,14 +1538,16 @@ def _plan_participants_merge(
 
         mapping_pairs: list[dict[str, str]] = []
         for incoming_code, existing_code in sorted(incoming_to_existing_map.items()):
+            incoming_label = str(incoming_display.get(incoming_code, incoming_code))
+            existing_label = str(existing_display.get(existing_code, existing_code))
             mapping_pairs.append(
                 {
                     "incoming_value": _canonical_display_text(
-                        incoming_display.get(incoming_code, incoming_code),
+                        incoming_label,
                         incoming_display,
                     ),
                     "existing_value": _canonical_display_text(
-                        existing_display.get(existing_code, existing_code),
+                        existing_label,
                         existing_display,
                     ),
                 }
@@ -1662,6 +1746,57 @@ def _plan_participants_merge(
     merged_df = pd.DataFrame(merged_rows, columns=full_columns)
     merged_df = merged_df.where(pd.notna(merged_df), None)
 
+    non_id_columns = [column for column in full_columns if column != "participant_id"]
+    incoming_non_id_columns = [
+        column for column in incoming_columns if column != "participant_id"
+    ]
+
+    def _missing_count_for_columns(
+        row_data: dict[str, Any],
+        columns: list[str],
+    ) -> int:
+        return sum(
+            1
+            for column_name in columns
+            if _is_missing_participant_value(row_data.get(column_name))
+        )
+
+    new_participants_with_missing_values = 0
+    new_participants_all_missing_values = 0
+    new_participant_missing_value_cells = 0
+    incoming_new_participants_with_missing_values = 0
+    incoming_new_participants_all_missing_values = 0
+    incoming_new_participant_missing_value_cells = 0
+    sample_all_missing_new_participants: list[str] = []
+
+    for participant_id in new_participant_ids:
+        merged_row = merged_by_id.get(participant_id) or {}
+        merged_missing_count = _missing_count_for_columns(merged_row, non_id_columns)
+        if merged_missing_count > 0:
+            new_participants_with_missing_values += 1
+        if (
+            non_id_columns
+            and merged_missing_count == len(non_id_columns)
+        ):
+            new_participants_all_missing_values += 1
+            if len(sample_all_missing_new_participants) < preview_limit:
+                sample_all_missing_new_participants.append(participant_id)
+        new_participant_missing_value_cells += merged_missing_count
+
+        incoming_row = incoming_rows_by_id.get(participant_id) or {}
+        incoming_missing_count = _missing_count_for_columns(
+            incoming_row,
+            incoming_non_id_columns,
+        )
+        if incoming_missing_count > 0:
+            incoming_new_participants_with_missing_values += 1
+        if (
+            incoming_non_id_columns
+            and incoming_missing_count == len(incoming_non_id_columns)
+        ):
+            incoming_new_participants_all_missing_values += 1
+        incoming_new_participant_missing_value_cells += incoming_missing_count
+
     merged_schema, schema_fields_added, neurobagel_merged = (
         _build_merged_participants_schema(
             existing_schema,
@@ -1717,6 +1852,27 @@ def _plan_participants_merge(
         "neurobagel_fields_merged": neurobagel_merged,
         "harmonization_candidates": harmonization_candidates,
         "harmonization_decisions": applied_harmonization_decisions,
+        "merge_quality": {
+            "new_participants_with_missing_values": new_participants_with_missing_values,
+            "new_participants_all_missing_values": new_participants_all_missing_values,
+            "new_participant_missing_value_cells": new_participant_missing_value_cells,
+            "new_participant_total_value_cells": (
+                len(new_participant_ids) * len(non_id_columns)
+            ),
+            "incoming_new_participants_with_missing_values": (
+                incoming_new_participants_with_missing_values
+            ),
+            "incoming_new_participants_all_missing_values": (
+                incoming_new_participants_all_missing_values
+            ),
+            "incoming_new_participant_missing_value_cells": (
+                incoming_new_participant_missing_value_cells
+            ),
+            "incoming_new_participant_total_value_cells": (
+                len(new_participant_ids) * len(incoming_non_id_columns)
+            ),
+            "sample_all_missing_new_participants": sample_all_missing_new_participants,
+        },
     }
     return payload, merged_df, merged_schema
 

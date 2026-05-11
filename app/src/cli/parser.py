@@ -525,6 +525,18 @@ def build_prism_tools_parsers(
             "or --template-version wellbeing;session=ses-02;run=2=10-vas"
         ),
     )
+    parser_survey_convert.add_argument(
+        "--value-offset",
+        dest="value_offsets",
+        action="append",
+        default=None,
+        metavar="TASK=OFFSET",
+        help=(
+            "Apply a numeric value offset before level/range validation for the given task. "
+            "Repeat for multiple tasks, e.g. --value-offset pss=-1. "
+            "Use --value-offset *=-1 as a global fallback."
+        ),
+    )
 
     parser_biometrics = subparsers.add_parser(
         "biometrics", help="Biometrics library operations"
@@ -700,6 +712,13 @@ def build_prism_tools_parsers(
         help="Combine all matched recipes into one output file",
     )
     parser_deriv_surveys.add_argument(
+        "--no-recipe-prefix",
+        dest="include_recipe_prefix",
+        action="store_false",
+        default=True,
+        help="In combined exports, keep bare variable names where possible instead of always prefixing with the recipe name",
+    )
+    parser_deriv_surveys.add_argument(
         "--boilerplate",
         action="store_true",
         help="Generate a scientific methods boilerplate describing the scoring logic",
@@ -769,6 +788,13 @@ def build_prism_tools_parsers(
         "--merge-all",
         action="store_true",
         help="Combine all matched recipes into one output file",
+    )
+    parser_deriv_biometrics.add_argument(
+        "--no-recipe-prefix",
+        dest="include_recipe_prefix",
+        action="store_false",
+        default=True,
+        help="In combined exports, keep bare variable names where possible instead of always prefixing with the recipe name",
     )
     parser_deriv_biometrics.add_argument(
         "--anonymized",

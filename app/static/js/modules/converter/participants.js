@@ -11,6 +11,8 @@ export function initParticipants() {
     let participantsExcelSheetCount = null;
     let participantsShowSheetSelector = null;
     let participantsSheetMetadataPending = false;
+    let participantsIdSelectionRequired = false;
+    let participantsRememberedIdColumn = '';
     let participantsExistingFilesInfo = {
         exists: false,
         files: {},
@@ -33,6 +35,9 @@ export function initParticipants() {
     let participantsSelectedCaseId = '1';
     let participantsServerFilePath = '';
     let participantsMergeHarmonizationRefreshTimer = null;
+    let participantsSourcedataRequestToken = 0;
+    let participantsSourcedataQuickSelectEl = null;
+    let participantsSourcedataFileSelectEl = null;
 
     const PARTICIPANTS_CASE_CONFIG = {
         '1': { mode: 'file', fileAction: 'replace' },
@@ -78,6 +83,169 @@ export function initParticipants() {
 
     function hasParticipantsFileSelection() {
         return Boolean(getParticipantsSelectedLocalFile() || getParticipantsSelectedServerFilePath());
+    }
+
+    function clearParticipantsSelectedFile({ resetSourcedataSelection = false } = {}) {
+        participantsServerFilePath = '';
+
+        const fileInput = document.getElementById('participantsDataFile');
+        if (fileInput) {
+            fileInput.value = '';
+            if (typeof DataTransfer === 'function') {
+                try {
+                    const emptySelection = new DataTransfer();
+                    fileInput.files = emptySelection.files;
+                } catch (_error) {
+                    // Keep the value reset fallback when file lists are read-only.
+                }
+            }
+        }
+
+        if (resetSourcedataSelection && participantsSourcedataFileSelectEl) {
+            participantsSourcedataFileSelectEl.value = '';
+        }
+    }
+
+    function ensureParticipantsSourcedataQuickSelectElements() {
+        if (participantsSourcedataQuickSelectEl && participantsSourcedataFileSelectEl) {
+            return;
+        }
+
+        const fileInput = document.getElementById('participantsDataFile');
+        if (!fileInput) {
+            return;
+        }
+
+        const pickerContainer = fileInput.closest('.studio-file-picker');
+        if (!pickerContainer) {
+            return;
+        }
+
+        participantsSourcedataQuickSelectEl = pickerContainer.querySelector('#participantsSourcedataQuickSelect');
+        participantsSourcedataFileSelectEl = pickerContainer.querySelector('#participantsSourcedataFileSelect');
+
+        if (participantsSourcedataQuickSelectEl && participantsSourcedataFileSelectEl) {
+            return;
+        }
+
+        const inputGroup = pickerContainer.querySelector('.input-group');
+        if (!inputGroup || !inputGroup.parentElement) {
+            return;
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.id = 'participantsSourcedataQuickSelect';
+        wrapper.className = 'd-none mb-2';
+        wrapper.innerHTML = `
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light"><i class="fas fa-folder-open text-muted"></i></span>
+                <select class="form-select form-select-sm" id="participantsSourcedataFileSelect">
+                    <option value="">Loading sourcedata files...</option>
+                </select>
+            </div>
+        `;
+
+        inputGroup.parentElement.insertBefore(wrapper, inputGroup);
+        participantsSourcedataQuickSelectEl = wrapper;
+        participantsSourcedataFileSelectEl = wrapper.querySelector('#participantsSourcedataFileSelect');
+    }
+
+    function resetParticipantsSourcedataQuickSelect() {
+        ensureParticipantsSourcedataQuickSelectElements();
+        if (!participantsSourcedataFileSelectEl) {
+            return;
+        }
+
+        participantsSourcedataFileSelectEl.value = '';
+        while (participantsSourcedataFileSelectEl.options.length > 1) {
+            participantsSourcedataFileSelectEl.remove(1);
+        }
+    }
+
+    function setParticipantsSourcedataPlaceholder(label, { disabled = true } = {}) {
+        ensureParticipantsSourcedataQuickSelectElements();
+        if (!participantsSourcedataQuickSelectEl || !participantsSourcedataFileSelectEl) {
+            return;
+        }
+
+        participantsSourcedataQuickSelectEl.classList.remove('d-none');
+        resetParticipantsSourcedataQuickSelect();
+
+        let placeholderOption = participantsSourcedataFileSelectEl.options[0];
+        if (!placeholderOption) {
+            placeholderOption = document.createElement('option');
+            participantsSourcedataFileSelectEl.appendChild(placeholderOption);
+        }
+
+        placeholderOption.value = '';
+        placeholderOption.textContent = label;
+        placeholderOption.disabled = disabled;
+        participantsSourcedataFileSelectEl.selectedIndex = 0;
+        participantsSourcedataFileSelectEl.disabled = disabled;
+    }
+
+    function refreshParticipantsSourcedataQuickSelect(projectPath = resolveCurrentProjectPath()) {
+        ensureParticipantsSourcedataQuickSelectElements();
+        if (!participantsSourcedataQuickSelectEl || !participantsSourcedataFileSelectEl) {
+            return;
+        }
+
+        const previousValue = participantsSourcedataFileSelectEl.value;
+        const requestToken = ++participantsSourcedataRequestToken;
+        setParticipantsSourcedataPlaceholder('Loading sourcedata files...', { disabled: true });
+
+        const effectiveProjectPath = String(projectPath || '').trim();
+        const endpoint = effectiveProjectPath
+            ? `/api/projects/sourcedata-files?kind=participants&project_path=${encodeURIComponent(effectiveProjectPath)}`
+            : '/api/projects/sourcedata-files?kind=participants';
+
+        fetch(endpoint)
+            .then((response) => response.json())
+            .then((data) => {
+                if (requestToken !== participantsSourcedataRequestToken) {
+                    return;
+                }
+
+                if (data.sourcedata_exists && Array.isArray(data.files) && data.files.length > 0) {
+                    participantsSourcedataQuickSelectEl.classList.remove('d-none');
+                    resetParticipantsSourcedataQuickSelect();
+                    participantsSourcedataFileSelectEl.disabled = false;
+
+                    const placeholderOption = participantsSourcedataFileSelectEl.options[0];
+                    if (placeholderOption) {
+                        placeholderOption.textContent = 'Load from sourcedata/...';
+                        placeholderOption.disabled = false;
+                    }
+
+                    data.files.forEach((entry) => {
+                        const option = document.createElement('option');
+                        option.value = entry.name;
+                        const sizeKB = (entry.size / 1024).toFixed(1);
+                        option.textContent = `${entry.name} (${sizeKB} KB)`;
+                        participantsSourcedataFileSelectEl.appendChild(option);
+                    });
+
+                    if (previousValue && Array.from(participantsSourcedataFileSelectEl.options).some((option) => option.value === previousValue)) {
+                        participantsSourcedataFileSelectEl.value = previousValue;
+                    }
+                } else if (data.sourcedata_exists) {
+                    setParticipantsSourcedataPlaceholder('No participants-compatible files found in sourcedata/', {
+                        disabled: true,
+                    });
+                } else {
+                    setParticipantsSourcedataPlaceholder('No sourcedata folder found for the current project', {
+                        disabled: true,
+                    });
+                }
+            })
+            .catch(() => {
+                if (requestToken !== participantsSourcedataRequestToken) {
+                    return;
+                }
+                setParticipantsSourcedataPlaceholder('Could not load sourcedata files', {
+                    disabled: true,
+                });
+            });
     }
 
     async function pickServerParticipantsFile() {
@@ -322,6 +490,10 @@ export function initParticipants() {
             return false;
         }
 
+        if (!hasParticipantsResolvedIdSelection()) {
+            return false;
+        }
+
         const previewData = window.lastParticipantsPreviewData;
         if (previewData && previewData.merge_mode) {
             const harmonizationState = assessParticipantsMergeHarmonizationState(previewData);
@@ -350,6 +522,12 @@ export function initParticipants() {
         const sessionResolutionRequired = Boolean(previewData.session_resolution_required);
 
         badge.classList.remove('d-none', 'bg-success', 'bg-warning', 'bg-danger', 'bg-secondary', 'text-dark');
+
+        if (!hasParticipantsResolvedIdSelection()) {
+            badge.classList.add('bg-warning', 'text-dark');
+            badge.textContent = 'Apply blocked: choose ID column';
+            return;
+        }
 
         if (harmonizationState.hasInvalidKeepBoth) {
             badge.classList.add('bg-danger');
@@ -780,11 +958,13 @@ export function initParticipants() {
         fileNameField.value = selected || 'No file selected';
     }
     
-    function resetParticipantsPanelState() {
+    function resetParticipantsPanelState({ preserveImportConfig = false } = {}) {
         participantsPreviewCompleted = false;
-        participantsExcelSheetCount = null;
-        participantsShowSheetSelector = null;
-        participantsSheetMetadataPending = false;
+        if (!preserveImportConfig) {
+            participantsExcelSheetCount = null;
+            participantsShowSheetSelector = null;
+            participantsSheetMetadataPending = false;
+        }
     
         const previewResults = document.getElementById('participantsPreviewResults');
         const schemaPreview = document.getElementById('neurobagelSchemaPreview');
@@ -849,11 +1029,14 @@ export function initParticipants() {
         if (previewCount) previewCount.textContent = '0 participants';
         if (schemaJsonCode) schemaJsonCode.textContent = '';
     
-        if (sheetInput) sheetInput.value = '';
-        if (separator) separator.value = 'auto';
-        setParticipantsIdColumnOptions([], 'auto', true);
-        setParticipantsIdSelectionRequired(false);
-        if (idGroup) idGroup.classList.add('d-none');
+        if (!preserveImportConfig) {
+            if (sheetInput) sheetInput.value = '';
+            if (separator) separator.value = 'auto';
+            clearRememberedParticipantsIdColumn();
+            setParticipantsIdColumnOptions([], 'auto', true);
+            setParticipantsIdSelectionRequired(false);
+            if (idGroup) idGroup.classList.add('d-none');
+        }
     
         window.lastParticipantsPreviewData = null;
         window.neurobagelSchema = null;
@@ -987,6 +1170,7 @@ export function initParticipants() {
     }
     
     function setParticipantsIdSelectionRequired(isRequired) {
+        participantsIdSelectionRequired = Boolean(isRequired);
         const idLabel = document.getElementById('participantsIdColumnLabel');
         const idHint = document.getElementById('participantsIdColumnHint');
 
@@ -1001,6 +1185,60 @@ export function initParticipants() {
                 ? 'Select the source ID column. It will be renamed to participant_id.'
                 : 'Detected source ID column. It will be renamed to participant_id in output.';
         }
+    }
+
+    function clearRememberedParticipantsIdColumn() {
+        participantsRememberedIdColumn = '';
+    }
+
+    function rememberParticipantsIdColumn(value) {
+        const cleanedValue = String(value || '').trim();
+        participantsRememberedIdColumn = cleanedValue && cleanedValue !== 'auto'
+            ? cleanedValue
+            : '';
+        return participantsRememberedIdColumn;
+    }
+
+    function getRememberedParticipantsIdColumn(columns = null) {
+        const cleanedValue = String(participantsRememberedIdColumn || '').trim();
+        if (!cleanedValue) {
+            return '';
+        }
+
+        if (!Array.isArray(columns) || columns.length === 0) {
+            return cleanedValue;
+        }
+
+        return columns.some((columnName) => String(columnName || '').trim() === cleanedValue)
+            ? cleanedValue
+            : '';
+    }
+
+    function getCurrentParticipantsIdColumnValue(columns = null) {
+        const currentValue = String(document.getElementById('participantsIdColumn')?.value || '').trim();
+        if (currentValue && currentValue !== 'auto') {
+            rememberParticipantsIdColumn(currentValue);
+            return currentValue;
+        }
+
+        return getRememberedParticipantsIdColumn(columns);
+    }
+
+    function hasParticipantsResolvedIdSelection() {
+        if (getParticipantsWorkflowMode() !== 'file') {
+            return true;
+        }
+
+        if (!hasParticipantsFileSelection()) {
+            return false;
+        }
+
+        if (!participantsIdSelectionRequired) {
+            return true;
+        }
+
+        const idColumn = getCurrentParticipantsIdColumnValue();
+        return Boolean(idColumn && idColumn !== 'auto');
     }
 
     function setParticipantsIdColumnOptions(columns, selectedValue = 'auto', allowAutoOption = true) {
@@ -1046,6 +1284,11 @@ export function initParticipants() {
         } else {
             idSelect.value = '';
         }
+
+        const resolvedValue = String(idSelect.value || '').trim();
+        if (resolvedValue && resolvedValue !== 'auto') {
+            rememberParticipantsIdColumn(resolvedValue);
+        }
     }
     
     async function autoDetectParticipantsIdColumn() {
@@ -1061,6 +1304,7 @@ export function initParticipants() {
             participantsExcelSheetCount = null;
             participantsShowSheetSelector = null;
             participantsSheetMetadataPending = false;
+            clearRememberedParticipantsIdColumn();
             setParticipantsIdColumnOptions([], 'auto', true);
             setParticipantsIdSelectionRequired(false);
             updateParticipantsInputVisibility();
@@ -1072,6 +1316,7 @@ export function initParticipants() {
             participantsExcelSheetCount = null;
             participantsShowSheetSelector = null;
             participantsSheetMetadataPending = false;
+            clearRememberedParticipantsIdColumn();
             updateParticipantsInputVisibility();
             setParticipantsIdColumnOptions([], '', false);
             setParticipantsIdSelectionRequired(true);
@@ -1108,12 +1353,15 @@ export function initParticipants() {
     
             updateParticipantsSheetMetadata(data);
 
-            const idSelectionRequired = Boolean(data.id_selection_required);
-            const selectedId = String(data.source_id_column || data.id_column || data.suggested_id_column || '').trim();
+                const availableSourceColumns = Array.isArray(data.columns) ? data.columns : [];
+                const preservedId = getCurrentParticipantsIdColumnValue(availableSourceColumns);
+                const idSelectionRequired = Boolean(data.id_selection_required);
+                const detectedId = String(data.source_id_column || data.suggested_id_column || data.id_column || '').trim();
+                const selectedId = preservedId || detectedId;
 
             setParticipantsIdSelectionRequired(idSelectionRequired);
             setParticipantsIdColumnOptions(
-                data.columns || [],
+                    availableSourceColumns,
                 selectedId,
                 false
             );
@@ -1124,6 +1372,11 @@ export function initParticipants() {
                 if (idSelect && selectedId) idSelect.value = selectedId;
                 if (idHint) idHint.textContent = 'Confirm or change the detected source ID column. It will be renamed to participant_id in output.';
             }
+            if (selectedId) {
+                rememberParticipantsIdColumn(selectedId);
+            } else if (idSelectionRequired) {
+                clearRememberedParticipantsIdColumn();
+            }
             if (idGroup) idGroup.classList.remove('d-none');
         } catch (error) {
             participantsExcelSheetCount = null;
@@ -1131,6 +1384,7 @@ export function initParticipants() {
             participantsSheetMetadataPending = false;
             updateParticipantsInputVisibility();
             console.warn('Participants ID auto-detection failed:', error);
+            clearRememberedParticipantsIdColumn();
             setParticipantsIdColumnOptions([], '', false);
             setParticipantsIdSelectionRequired(true);
             if (idHint) idHint.textContent = 'Automatic detection unavailable. Select the source ID column manually.';
@@ -1139,7 +1393,7 @@ export function initParticipants() {
     }
     
     // Enable/disable buttons based on file selection and preview state
-    function updateParticipantsButtonState() {
+    function updateParticipantsButtonState({ skipIdAutoDetect = false } = {}) {
         const mode = getParticipantsWorkflowMode();
         const hasSelectedCase = hasParticipantsSelectedCase();
         const selectedSource = getParticipantsSelectedLocalFile() || getParticipantsSelectedServerFilePath();
@@ -1181,16 +1435,20 @@ export function initParticipants() {
         }
         
         if (hasFile) {
-            participantsExcelSheetCount = null;
-            participantsShowSheetSelector = null;
-            participantsSheetMetadataPending = isExcelParticipantsFile(selectedSource);
+            if (!skipIdAutoDetect) {
+                participantsExcelSheetCount = null;
+                participantsShowSheetSelector = null;
+                participantsSheetMetadataPending = isExcelParticipantsFile(selectedSource);
+            }
             if (previewBtn) previewBtn.disabled = false;
             // Convert is only enabled if preview has been completed
             if (convertBtn) convertBtn.disabled = !canApplyParticipantsConversion();
             if (saveAnnotBtn) saveAnnotBtn.disabled = !participantsPreviewCompleted;
             if (warningDiv) warningDiv.classList.add('d-none');
             updateParticipantsInputVisibility();
-            autoDetectParticipantsIdColumn();
+            if (!skipIdAutoDetect) {
+                autoDetectParticipantsIdColumn();
+            }
         } else {
             participantsExcelSheetCount = null;
             participantsShowSheetSelector = null;
@@ -1213,6 +1471,50 @@ export function initParticipants() {
             participantsServerFilePath = '';
             resetParticipantsPanelState();
             updateParticipantsButtonState();
+        });
+    }
+
+    ensureParticipantsSourcedataQuickSelectElements();
+    if (participantsSourcedataQuickSelectEl && participantsSourcedataFileSelectEl && fileInput) {
+        refreshParticipantsSourcedataQuickSelect();
+
+        participantsSourcedataFileSelectEl.addEventListener('change', async function() {
+            const filename = this.value;
+            if (!filename) {
+                clearParticipantsSelectedFile();
+                resetParticipantsPanelState();
+                updateParticipantsButtonState();
+                return;
+            }
+
+            try {
+                const currentProjectPath = resolveCurrentProjectPath();
+                const endpoint = currentProjectPath
+                    ? `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}`
+                    : `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}`;
+
+                const response = await fetch(endpoint);
+                if (!response.ok) {
+                    throw new Error('Failed to load sourcedata file');
+                }
+
+                const blob = await response.blob();
+                const file = new File([blob], filename, { type: blob.type });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+
+                participantsServerFilePath = '';
+                fileInput.files = dataTransfer.files;
+                fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+            } catch (_error) {
+                const participantsError = document.getElementById('participantsError');
+                if (participantsError) {
+                    participantsError.textContent = `Failed to load ${filename} from sourcedata.`;
+                    participantsError.classList.remove('d-none');
+                }
+            } finally {
+                refreshParticipantsSourcedataQuickSelect();
+            }
         });
     }
     
@@ -1244,10 +1546,18 @@ export function initParticipants() {
     const participantsClearFileBtn = document.getElementById('participantsClearFileBtn');
     if (participantsClearFileBtn && fileInput) {
         participantsClearFileBtn.addEventListener('click', function() {
-            participantsServerFilePath = '';
-            fileInput.value = '';
+            clearParticipantsSelectedFile({ resetSourcedataSelection: true });
             resetParticipantsPanelState();
             updateParticipantsButtonState();
+        });
+    }
+
+    const participantsIdColumn = document.getElementById('participantsIdColumn');
+    if (participantsIdColumn) {
+        participantsIdColumn.addEventListener('change', function() {
+            rememberParticipantsIdColumn(this.value);
+            resetParticipantsPanelState({ preserveImportConfig: true });
+            updateParticipantsButtonState({ skipIdAutoDetect: true });
         });
     }
     
@@ -1279,6 +1589,7 @@ export function initParticipants() {
         window.addEventListener('prism-project-changed', function() {
             resetParticipantsPanelState();
             updateParticipantsButtonState();
+            refreshParticipantsSourcedataQuickSelect();
         });
         window.__participantsProjectChangeListenerBound = true;
     }
@@ -1462,14 +1773,30 @@ export function initParticipants() {
 
     window.setParticipantsAdditionalVariablesEnabled = setParticipantsAdditionalVariablesEnabled;
 
+    function getProtectedParticipantVariableColumns(previewData = window.lastParticipantsPreviewData) {
+        const protectedColumns = new Set(['participantid']);
+        const selectedSourceId = String(
+            getCurrentParticipantsIdColumnValue(
+                Array.isArray(previewData?.source_columns) ? previewData.source_columns : null
+            )
+            || previewData?.source_id_column
+            || ''
+        ).trim();
+        const normalizedSourceId = normalizeParticipantAdditionalColumn(selectedSourceId);
+        if (normalizedSourceId) {
+            protectedColumns.add(normalizedSourceId);
+        }
+        return protectedColumns;
+    }
+
     window.canRemoveParticipantVariable = function(variableName) {
         const normalizedTarget = normalizeParticipantAdditionalColumn(variableName);
         if (!normalizedTarget) {
             return false;
         }
 
-        // Never allow deleting the required participant ID column.
-        const protectedColumns = new Set(['participantid']);
+        // Never allow deleting the required participant ID column or its active source alias.
+        const protectedColumns = getProtectedParticipantVariableColumns();
         if (protectedColumns.has(normalizedTarget)) {
             return false;
         }
@@ -1495,6 +1822,74 @@ export function initParticipants() {
             normalizeParticipantAdditionalColumn(columnName) === normalizedTarget
         ));
     };
+
+    function applyExcludedColumnsToParticipantsPreviewData(previewData) {
+        if (!previewData || typeof previewData !== 'object') {
+            return previewData;
+        }
+
+        const excludedColumns = getUniqueExcludedParticipantColumns()
+            .map(normalizeParticipantAdditionalColumn)
+            .filter(Boolean);
+        if (excludedColumns.length === 0) {
+            return previewData;
+        }
+
+        const protectedColumns = getProtectedParticipantVariableColumns(previewData);
+        const excludedColumnSet = new Set(
+            excludedColumns.filter((columnName) => !protectedColumns.has(columnName))
+        );
+        if (excludedColumnSet.size === 0) {
+            return previewData;
+        }
+
+        const previewColumns = Array.isArray(previewData.columns)
+            ? previewData.columns.filter((columnName) => {
+                const normalized = normalizeParticipantAdditionalColumn(columnName);
+                return !normalized || !excludedColumnSet.has(normalized);
+            })
+            : [];
+        const allowedColumns = new Set(
+            previewColumns.map(normalizeParticipantAdditionalColumn).filter(Boolean)
+        );
+
+        previewData.columns = previewColumns;
+        previewData.extracted_columns = previewColumns.length;
+
+        if (previewData.column_values && typeof previewData.column_values === 'object') {
+            previewData.column_values = Object.fromEntries(
+                Object.entries(previewData.column_values).filter(([columnName]) => {
+                    const normalized = normalizeParticipantAdditionalColumn(columnName);
+                    return !normalized || allowedColumns.has(normalized);
+                })
+            );
+        }
+
+        if (Array.isArray(previewData.preview_rows)) {
+            previewData.preview_rows = previewData.preview_rows.map((row) => {
+                if (!row || typeof row !== 'object') {
+                    return row;
+                }
+
+                const filteredRow = {};
+                previewColumns.forEach((columnName) => {
+                    filteredRow[columnName] = row[columnName];
+                });
+                return filteredRow;
+            });
+        }
+
+        if (previewData.neurobagel_schema && typeof previewData.neurobagel_schema === 'object') {
+            previewData.neurobagel_schema = Object.fromEntries(
+                Object.entries(previewData.neurobagel_schema).filter(([columnName]) => {
+                    const normalized = normalizeParticipantAdditionalColumn(columnName);
+                    return !normalized || allowedColumns.has(normalized);
+                })
+            );
+        }
+
+        return previewData;
+    }
 
     function refreshParticipantsPreviewAfterAdditionalVariableChange() {
         const previewBtn = document.getElementById('participantsPreviewBtn');
@@ -1822,6 +2217,12 @@ export function initParticipants() {
     window.removeAdditionalParticipantVariable = async function(variableName) {
         const cleanedName = String(variableName || '').trim();
         if (!cleanedName) return;
+
+        const normalizedTarget = normalizeParticipantAdditionalColumn(cleanedName);
+        const protectedColumns = getProtectedParticipantVariableColumns();
+        if (normalizedTarget && protectedColumns.has(normalizedTarget)) {
+            return;
+        }
 
         if (Array.isArray(window.pendingAdditionalParticipantColumns)) {
             window.pendingAdditionalParticipantColumns = window.pendingAdditionalParticipantColumns
@@ -2218,6 +2619,9 @@ export function initParticipants() {
         const sessionResolutionDecisions = (previewData.session_resolution_decisions && typeof previewData.session_resolution_decisions === 'object')
             ? previewData.session_resolution_decisions
             : {};
+        const mergeQuality = (previewData.merge_quality && typeof previewData.merge_quality === 'object')
+            ? previewData.merge_quality
+            : {};
         const sessionResolutionRequired = Boolean(previewData.session_resolution_required);
         const canApply = Boolean(previewData.can_apply);
 
@@ -2234,6 +2638,17 @@ export function initParticipants() {
             summaryText.textContent = existingOnlyCount > 0
                 ? `This merge can be applied safely. ${existingOnlyCount} existing participant${existingOnlyCount === 1 ? '' : 's'} will stay unchanged.`
                 : 'This merge can be applied safely. All overlapping non-empty values agree.';
+
+            const incomingTotalCells = Number(mergeQuality.incoming_new_participant_total_value_cells || 0);
+            const incomingMissingCells = Number(mergeQuality.incoming_new_participant_missing_value_cells || 0);
+            const incomingAllMissingRows = Number(mergeQuality.incoming_new_participants_all_missing_values || 0);
+            if (newParticipantCount > 0 && incomingTotalCells > 0 && incomingMissingCells > 0) {
+                const missingPercent = Math.round((incomingMissingCells / incomingTotalCells) * 100);
+                const allMissingNote = incomingAllMissingRows > 0
+                    ? ` ${incomingAllMissingRows} new participant row${incomingAllMissingRows === 1 ? ' is' : 's are'} fully empty in the imported file.`
+                    : '';
+                summaryText.textContent += ` Imported values for new participants are sparse (${incomingMissingCells}/${incomingTotalCells} missing cells, ${missingPercent}%).${allMissingNote}`;
+            }
         } else if (sessionResolutionRequired && conflictCount === 0) {
             summaryText.textContent = 'This merge is blocked until session resolution is chosen for columns that vary across repeated participant rows.';
         } else {
@@ -2707,10 +3122,13 @@ export function initParticipants() {
         const selectedSource = localFile || sourceFilePath;
 
         const sheet = document.getElementById('participantsSheet')?.value || '';
-        const idGroup = document.getElementById('participantsIdColumnGroup');
-        const idColumn = document.getElementById('participantsIdColumn')?.value || '';
+        const idColumn = getCurrentParticipantsIdColumnValue(
+            Array.isArray(window.lastParticipantsPreviewData?.source_columns)
+                ? window.lastParticipantsPreviewData.source_columns
+                : null
+        );
         const separator = document.getElementById('participantsSeparator')?.value || 'auto';
-        const idSelectionRequired = Boolean(idGroup && !idGroup.classList.contains('d-none'));
+        const idSelectionRequired = participantsIdSelectionRequired;
 
         if (sheet && isExcelParticipantsFile(selectedSource)) {
             formData.append('sheet', sheet);
@@ -2961,9 +3379,14 @@ export function initParticipants() {
                 if (response.status === 409 && data.error === 'id_column_required') {
                     const idGroup = document.getElementById('participantsIdColumnGroup');
                     const idHint = document.getElementById('participantsIdColumnHint');
+                    const currentIdValue = getCurrentParticipantsIdColumnValue(data.columns || []);
                     const suggestedId = String(data.suggested_id_column || '').trim();
                     setParticipantsIdSelectionRequired(true);
-                    setParticipantsIdColumnOptions(data.columns || [], suggestedId, false);
+                    setParticipantsIdColumnOptions(
+                        data.columns || [],
+                        currentIdValue || suggestedId,
+                        false
+                    );
                     if (idHint) idHint.textContent = 'Select the source ID column manually. It will be renamed to participant_id.';
                     if (idGroup) idGroup.classList.remove('d-none');
                 }
@@ -2980,23 +3403,32 @@ export function initParticipants() {
                 }
                 throw new Error(errorMessage);
             }
+
+            applyExcludedColumnsToParticipantsPreviewData(data);
     
             if (data.id_column) {
                 const idSelect = document.getElementById('participantsIdColumn');
                 const idGroup = document.getElementById('participantsIdColumnGroup');
                 const idHint = document.getElementById('participantsIdColumnHint');
-                const selectedSourceId = data.source_id_column || data.id_column || data.suggested_id_column;
-                const idSelectionRequired = Boolean(data.id_selection_required);
+                const availableSourceColumns = Array.isArray(data.source_columns)
+                    ? data.source_columns
+                    : (Array.isArray(data.columns) ? data.columns : []);
+                const currentIdValue = getCurrentParticipantsIdColumnValue(availableSourceColumns);
+                const selectedSourceId = currentIdValue || data.source_id_column || data.suggested_id_column || data.id_column;
+                const idSelectionRequired = participantsIdSelectionRequired || Boolean(data.id_selection_required);
                 setParticipantsIdSelectionRequired(idSelectionRequired);
                 setParticipantsIdColumnOptions(
-                    data.source_columns || data.columns || [],
+                    availableSourceColumns,
                     selectedSourceId || (idSelectionRequired ? '' : 'auto'),
                     !idSelectionRequired
                 );
                 if (idSelect && selectedSourceId) idSelect.value = selectedSourceId;
+                if (selectedSourceId && selectedSourceId !== 'participant_id') {
+                    rememberParticipantsIdColumn(selectedSourceId);
+                }
                 if (idHint) {
                     idHint.textContent = idSelectionRequired
-                        ? 'Select the source ID column manually. It will be renamed to participant_id.'
+                        ? 'Confirm the source ID column. It will be renamed to participant_id in output.'
                         : 'ID column is already participant_id in source file.';
                 }
                 if (idGroup) idGroup.classList.toggle('d-none', !idSelectionRequired);
@@ -3607,6 +4039,9 @@ export function initParticipants() {
             const writtenFiles = Array.isArray(data.files_created) ? data.files_created : [];
             const outputDirectory = typeof data.output_directory === 'string' ? data.output_directory.trim() : '';
             const backupFiles = Array.isArray(data.backup_files) ? data.backup_files : [];
+            const mergeQuality = (data.merge_quality && typeof data.merge_quality === 'object')
+                ? data.merge_quality
+                : {};
             const replacedExisting = mode === 'file' && !useMergeRoute && Boolean(data.overwrote_existing);
             const updatedExisting = mode === 'existing';
             const successTitle = data.merge_mode
@@ -3630,6 +4065,15 @@ export function initParticipants() {
             const locationNote = outputDirectory
                 ? `<div class="mt-1 small text-muted">Written to: <code>${escapeHtml(outputDirectory)}</code></div>`
                 : '';
+            const mergeConfirmationNote = data.merge_mode
+                ? `<div class="mt-2"><strong>Merge completed successfully.</strong> participants.tsv and participants.json were updated in the current project.</div>`
+                : '';
+            const incomingTotalCells = Number(mergeQuality.incoming_new_participant_total_value_cells || 0);
+            const incomingMissingCells = Number(mergeQuality.incoming_new_participant_missing_value_cells || 0);
+            const incomingAllMissingRows = Number(mergeQuality.incoming_new_participants_all_missing_values || 0);
+            const sparseMergeNote = data.merge_mode && incomingTotalCells > 0 && incomingMissingCells > 0
+                ? `<div class="mt-2 small text-muted"><i class="fas fa-circle-info me-1"></i>Imported rows already contained many empty values (${incomingMissingCells}/${incomingTotalCells} missing cells${incomingAllMissingRows > 0 ? `; ${incomingAllMissingRows} row(s) fully empty` : ''}). Merge preserves these missing values and only fills where source data exists.</div>`
+                : '';
 
             // Show success
             successDiv.innerHTML = `
@@ -3638,8 +4082,10 @@ export function initParticipants() {
                 <ul class="mb-0 mt-2">
                     ${writtenFiles.map(f => `<li><code>${escapeHtml(f.split('/').pop())}</code></li>`).join('')}
                 </ul>
+                ${mergeConfirmationNote}
                 ${operationNote}
                 ${backupNote}
+                ${sparseMergeNote}
                 ${locationNote}
                 <div class="mt-2 small text-muted">Refreshing preview…</div>
             `;

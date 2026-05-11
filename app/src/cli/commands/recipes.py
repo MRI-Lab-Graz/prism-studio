@@ -29,6 +29,7 @@ def run_recipes_job(
     include_raw: bool = False,
     boilerplate: bool = False,
     merge_all: bool = False,
+    include_recipe_prefix: bool = True,
     anonymized: bool = False,
 ):
     """Run recipe computation using the same adapter path as prism_tools CLI."""
@@ -45,6 +46,7 @@ def run_recipes_job(
         include_raw=include_raw,
         boilerplate=boilerplate,
         merge_all=merge_all,
+        include_recipe_prefix=include_recipe_prefix,
         anonymized=anonymized,
     )
 
@@ -84,6 +86,7 @@ def cmd_recipes_surveys(args):
     layout = str(getattr(args, "layout", "long") or "long").strip().lower()
     include_raw = bool(getattr(args, "include_raw", False))
     merge_all = bool(getattr(args, "merge_all", False))
+    include_recipe_prefix = bool(getattr(args, "include_recipe_prefix", True))
     anonymized = bool(getattr(args, "anonymized", False))
 
     try:
@@ -99,6 +102,7 @@ def cmd_recipes_surveys(args):
             layout=layout,
             include_raw=include_raw,
             merge_all=merge_all,
+            include_recipe_prefix=include_recipe_prefix,
             anonymized=anonymized,
         )
         print(
@@ -171,6 +175,7 @@ def cmd_recipes_biometrics(args):
     lang = str(getattr(args, "lang", "en") or "en").strip().lower()
     layout = str(getattr(args, "layout", "long") or "long").strip().lower()
     merge_all = bool(getattr(args, "merge_all", False))
+    include_recipe_prefix = bool(getattr(args, "include_recipe_prefix", True))
     anonymized = bool(getattr(args, "anonymized", False))
 
     try:
@@ -185,6 +190,7 @@ def cmd_recipes_biometrics(args):
             lang=lang,
             layout=layout,
             merge_all=merge_all,
+            include_recipe_prefix=include_recipe_prefix,
             anonymized=anonymized,
         )
         print(

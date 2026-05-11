@@ -11,6 +11,407 @@ from __future__ import annotations
 import re
 from typing import Any
 
+
+_LS_ANSWER_CODE_MAX_LENGTH = 5
+
+
+class SurveyValueOutOfBoundsError(ValueError):
+    """Structured error for survey values that do not fit template levels/range."""
+
+    def __init__(
+        self,
+        *,
+        task: str,
+        item_id: str,
+        sub_id: str,
+        raw_value: Any,
+        expected_levels: list[str],
+        suggested_offsets: list[float | int] | None = None,
+        configured_offset: float | None = None,
+        offset_evidence: dict[str, Any] | None = None,
+        message: str,
+    ) -> None:
+        super().__init__(message)
+        self.task = task
+        self.item_id = item_id
+        self.sub_id = sub_id
+        self.raw_value = raw_value
+        self.expected_levels = expected_levels
+        self.suggested_offsets = suggested_offsets or []
+        self.configured_offset = configured_offset
+        self.offset_evidence = offset_evidence
+
+
+def _to_float(value: Any) -> float | None:
+    try:
+        return float(str(value).strip())
+    except (ValueError, TypeError, AttributeError):
+        return None
+
+
+def _resolve_task_value_offset(
+    task: str,
+    task_value_offsets: dict[str, float] | None,
+) -> float | None:
+    if not isinstance(task_value_offsets, dict) or not task_value_offsets:
+        return None
+
+    task_key = str(task or "").strip().lower()
+    if task_key in task_value_offsets:
+        return float(task_value_offsets[task_key])
+    if "*" in task_value_offsets:
+        return float(task_value_offsets["*"])
+    return None
+
+
+def _coerce_numeric_offset_value(value: float) -> float | int:
+    rounded = round(value)
+    if abs(float(value) - float(rounded)) < 1e-9:
+        return int(rounded)
+    return float(value)
+
+
+def _coerce_offset_suggestion(value: float) -> float | int:
+    rounded = round(value)
+    if abs(float(value) - float(rounded)) < 1e-9:
+        return int(rounded)
+    return float(round(value, 6))
+
+
+def _sanitize_answer_code_for_ls(code: str) -> str:
+    if code.lower() in ("n/a", "na"):
+        return "na"
+
+    sanitized = re.sub(r"[^a-zA-Z0-9]", "", code)
+    if len(sanitized) <= _LS_ANSWER_CODE_MAX_LENGTH:
+        return sanitized.lower()
+
+    prefix_len = _LS_ANSWER_CODE_MAX_LENGTH - 2
+    suffix_len = 2
+    abbreviated = sanitized[:prefix_len] + sanitized[-suffix_len:]
+    return abbreviated.lower()
+
+
+def _find_matching_level_key(value: str, levels: dict) -> str | None:
+    v_lower = value.lower().strip()
+
+    for key in levels:
+        if key.lower() == v_lower:
+            return key
+
+    if v_lower == "na":
+        if "n/a" in levels:
+            return "n/a"
+        if "N/A" in levels:
+            return "N/A"
+
+    for key in levels:
+        if _sanitize_answer_code_for_ls(key) == v_lower:
+            return key
+
+    return None
+
+
+def _suggest_offsets_for_invalid_value(
+    *,
+    value_num: float | None,
+    levels: dict,
+    item_schema: dict,
+) -> list[float | int]:
+    if value_num is None:
+        return []
+
+    suggestions: list[float | int] = []
+
+    raw_allowed_values = item_schema.get("AllowedValues")
+    if isinstance(raw_allowed_values, list) and raw_allowed_values:
+        numeric_allowed_values = sorted(
+            n for n in (_to_float(entry) for entry in raw_allowed_values) if n is not None
+        )
+        if numeric_allowed_values:
+            min_distance = min(
+                abs(allowed_value - value_num)
+                for allowed_value in numeric_allowed_values
+            )
+            for allowed_value in numeric_allowed_values:
+                if abs(abs(allowed_value - value_num) - min_distance) > 1e-9:
+                    continue
+                suggestions.append(
+                    _coerce_offset_suggestion(allowed_value - value_num)
+                )
+
+    if not suggestions:
+        numeric_levels = sorted(
+            n for n in (_to_float(key) for key in levels.keys()) if n is not None
+        )
+        if len(numeric_levels) >= 2:
+            min_level = numeric_levels[0]
+            max_level = numeric_levels[-1]
+            if value_num < min_level:
+                suggestions.append(_coerce_offset_suggestion(min_level - value_num))
+            elif value_num > max_level:
+                suggestions.append(_coerce_offset_suggestion(max_level - value_num))
+
+    if not suggestions:
+        min_v = _to_float(item_schema.get("MinValue"))
+        max_v = _to_float(item_schema.get("MaxValue"))
+        if min_v is not None and max_v is not None:
+            if value_num < min_v:
+                suggestions.append(_coerce_offset_suggestion(min_v - value_num))
+            elif value_num > max_v:
+                suggestions.append(_coerce_offset_suggestion(max_v - value_num))
+
+    deduped: list[float | int] = []
+    seen = set()
+    for suggestion in suggestions:
+        key = f"{float(suggestion):.6f}"
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(suggestion)
+    return deduped
+
+
+def _normalize_allowed_values(
+    *,
+    item_schema: dict | None,
+    normalize_fn,
+    missing_token: str,
+) -> list[str]:
+    if not isinstance(item_schema, dict):
+        return []
+
+    raw_allowed_values = item_schema.get("AllowedValues")
+    if not isinstance(raw_allowed_values, list) or not raw_allowed_values:
+        return []
+
+    normalized_allowed_values: list[str] = []
+    seen_allowed_values: set[str] = set()
+    for raw_allowed in raw_allowed_values:
+        normalized_allowed = normalize_fn(raw_allowed)
+        if normalized_allowed == missing_token or normalized_allowed in seen_allowed_values:
+            continue
+        seen_allowed_values.add(normalized_allowed)
+        normalized_allowed_values.append(normalized_allowed)
+    return normalized_allowed_values
+
+
+def _apply_numeric_offset(value: Any, offset: float | None) -> Any:
+    value_num = _to_float(value)
+    if value_num is None or offset is None:
+        return value
+    return _coerce_numeric_offset_value(float(value_num) + float(offset))
+
+
+def _is_valid_survey_item_value(
+    *,
+    val: Any,
+    item_schema: dict | None,
+    strict_levels: bool,
+    normalize_fn,
+    find_matching_level_key_fn=None,
+    missing_token: str,
+) -> tuple[bool, bool]:
+    """Return (is_valid, accepted_via_tolerance) for a survey item value."""
+    if not isinstance(item_schema, dict):
+        return True, False
+
+    levels = item_schema.get("Levels")
+    if not isinstance(levels, dict) or not levels:
+        return True, False
+
+    v_str = normalize_fn(val)
+    if v_str == missing_token:
+        return True, False
+
+    normalized_allowed_values = _normalize_allowed_values(
+        item_schema=item_schema,
+        normalize_fn=normalize_fn,
+        missing_token=missing_token,
+    )
+    if normalized_allowed_values:
+        if v_str in normalized_allowed_values:
+            return True, False
+        v_num = _to_float(v_str)
+        if (
+            v_num is not None
+            and float(v_num).is_integer()
+            and str(int(v_num)) in normalized_allowed_values
+        ):
+            return True, False
+        return False, False
+
+    if v_str in levels:
+        return True, False
+
+    level_key_matcher = find_matching_level_key_fn or _find_matching_level_key
+    matched_key = level_key_matcher(v_str, levels)
+    if matched_key is not None:
+        return True, False
+
+    try:
+        v_num = _to_float(v_str)
+        min_v = _to_float(item_schema.get("MinValue"))
+        max_v = _to_float(item_schema.get("MaxValue"))
+
+        if v_num is not None and min_v is not None and max_v is not None:
+            if min_v <= v_num <= max_v:
+                return True, False
+
+        if not strict_levels:
+            l_nums = [n for n in (_to_float(key) for key in levels.keys()) if n is not None]
+            if len(l_nums) >= 2 and v_num is not None:
+                if min(l_nums) <= v_num <= max(l_nums):
+                    return True, True
+    except (ValueError, TypeError, AttributeError):
+        pass
+
+    return False, False
+
+
+def _build_task_offset_evidence(
+    *,
+    df,
+    column_items: list[tuple[str, str]],
+    schema: dict,
+    strict_levels: bool,
+    normalize_fn,
+    is_missing_fn,
+    missing_token: str,
+    suggested_offsets: list[float | int] | None,
+) -> tuple[dict[str, Any], list[float | int]]:
+    """Summarize how a candidate task-wide offset behaves across numeric values."""
+    evidence: dict[str, Any] = {
+        "scope": "task",
+        "classification": "item_issues_likely",
+        "sampled_numeric_values": 0,
+        "invalid_without_offset": 0,
+        "invalid_without_offset_percent": 0.0,
+        "best_offset": None,
+        "corrected_by_best_offset": 0,
+        "corrected_by_best_offset_percent": 0.0,
+        "invalid_with_best_offset": 0,
+        "invalid_with_best_offset_percent": 0.0,
+        "newly_invalid_with_best_offset": 0,
+        "newly_invalid_with_best_offset_percent": 0.0,
+    }
+
+    candidate_offsets = list(suggested_offsets or [])
+    if not column_items or not candidate_offsets:
+        return evidence, []
+
+    sampled_values: list[tuple[str, Any, dict]] = []
+    for column, item_id in column_items:
+        item_schema = schema.get(item_id)
+        if not isinstance(item_schema, dict):
+            continue
+        for value in df[column].tolist():
+            if is_missing_fn(value):
+                continue
+            if _to_float(value) is None:
+                continue
+            sampled_values.append((column, value, item_schema))
+
+    sampled_numeric_values = len(sampled_values)
+    evidence["sampled_numeric_values"] = sampled_numeric_values
+    if sampled_numeric_values == 0:
+        return evidence, []
+
+    invalid_without_offset = 0
+    candidate_stats: list[dict[str, Any]] = []
+    for offset in candidate_offsets:
+        corrected_by_offset = 0
+        invalid_with_offset = 0
+        newly_invalid_with_offset = 0
+
+        for _item_id, value, item_schema in sampled_values:
+            is_valid_without_offset, _ = _is_valid_survey_item_value(
+                val=value,
+                item_schema=item_schema,
+                strict_levels=strict_levels,
+                normalize_fn=normalize_fn,
+                missing_token=missing_token,
+            )
+            adjusted_value = _apply_numeric_offset(value, float(offset))
+            is_valid_with_offset, _ = _is_valid_survey_item_value(
+                val=adjusted_value,
+                item_schema=item_schema,
+                strict_levels=strict_levels,
+                normalize_fn=normalize_fn,
+                missing_token=missing_token,
+            )
+
+            if not is_valid_without_offset:
+                invalid_without_offset += 1 if offset == candidate_offsets[0] else 0
+                if is_valid_with_offset:
+                    corrected_by_offset += 1
+                else:
+                    invalid_with_offset += 1
+            elif not is_valid_with_offset:
+                newly_invalid_with_offset += 1
+                invalid_with_offset += 1
+
+        candidate_stats.append(
+            {
+                "offset": _coerce_offset_suggestion(float(offset)),
+                "corrected": corrected_by_offset,
+                "invalid_after": invalid_with_offset,
+                "newly_invalid": newly_invalid_with_offset,
+            }
+        )
+
+    evidence["invalid_without_offset"] = invalid_without_offset
+    evidence["invalid_without_offset_percent"] = round(
+        (invalid_without_offset / sampled_numeric_values) * 100,
+        1,
+    )
+
+    if not candidate_stats:
+        return evidence, []
+
+    best_candidate = max(
+        candidate_stats,
+        key=lambda entry: (
+            entry["corrected"] - entry["newly_invalid"],
+            entry["corrected"],
+            -entry["invalid_after"],
+            -abs(float(entry["offset"])),
+        ),
+    )
+
+    evidence["best_offset"] = best_candidate["offset"]
+    evidence["corrected_by_best_offset"] = best_candidate["corrected"]
+    evidence["corrected_by_best_offset_percent"] = round(
+        (best_candidate["corrected"] / sampled_numeric_values) * 100,
+        1,
+    )
+    evidence["invalid_with_best_offset"] = best_candidate["invalid_after"]
+    evidence["invalid_with_best_offset_percent"] = round(
+        (best_candidate["invalid_after"] / sampled_numeric_values) * 100,
+        1,
+    )
+    evidence["newly_invalid_with_best_offset"] = best_candidate["newly_invalid"]
+    evidence["newly_invalid_with_best_offset_percent"] = round(
+        (best_candidate["newly_invalid"] / sampled_numeric_values) * 100,
+        1,
+    )
+
+    safe_offsets = [
+        entry["offset"]
+        for entry in candidate_stats
+        if entry["corrected"] > 0 and entry["newly_invalid"] == 0
+    ]
+
+    if (
+        best_candidate["corrected"] >= 2
+        and best_candidate["newly_invalid"] == 0
+        and invalid_without_offset >= 2
+        and best_candidate["corrected"] == invalid_without_offset
+    ):
+        evidence["classification"] = "structural_offset_likely"
+
+    return evidence, safe_offsets
+
 # -----------------------------------------------------------------------------
 # Value Normalization
 # -----------------------------------------------------------------------------
@@ -175,54 +576,142 @@ def _validate_survey_item_value(
     is_missing_fn,
     find_matching_level_key_fn,
     missing_token: str,
-) -> None:
+    task_value_offsets: dict[str, float] | None = None,
+    offset_application_counts: dict[str, int] | None = None,
+) -> Any:
     """Internal validation for a single survey item value."""
     if is_missing_fn(val) or not isinstance(item_schema, dict):
-        return
+        return val
 
     levels = item_schema.get("Levels")
     if not isinstance(levels, dict) or not levels:
-        return
+        return val
 
-    v_str = normalize_fn(val)
+    task_offset = _resolve_task_value_offset(task, task_value_offsets)
+    validated_value = val
+    value_num = _to_float(val)
+    if task_offset is not None and value_num is not None:
+        validated_value = _coerce_numeric_offset_value(float(value_num) + float(task_offset))
+        if offset_application_counts is not None:
+            offset_application_counts[task] = offset_application_counts.get(task, 0) + 1
+
+    v_str = normalize_fn(validated_value)
     if v_str == missing_token:
-        return
+        return validated_value
+
+    # Keep converter-time checks aligned with validator behavior: when
+    # AllowedValues is present, it is the authoritative allowlist.
+    normalized_allowed_values = _normalize_allowed_values(
+        item_schema=item_schema,
+        normalize_fn=normalize_fn,
+        missing_token=missing_token,
+    )
+
+    if normalized_allowed_values:
+        if v_str in normalized_allowed_values:
+            return validated_value
+        v_num_for_allowed = _to_float(v_str)
+        if (
+            v_num_for_allowed is not None
+            and float(v_num_for_allowed).is_integer()
+            and str(int(v_num_for_allowed)) in normalized_allowed_values
+        ):
+            return validated_value
+
+        expected_levels = sorted(str(x) for x in normalized_allowed_values)
+        suggested_offsets = (
+            []
+            if task_offset is not None
+            else _suggest_offsets_for_invalid_value(
+                value_num=_to_float(val),
+                levels=levels,
+                item_schema=item_schema,
+            )
+        )
+
+        msg = (
+            f"Invalid value '{val}' for '{item_id}' (Sub: {sub_id}, Task: {task}). "
+            f"Expected: {', '.join(expected_levels)}"
+        )
+        if task_offset is not None:
+            msg += (
+                f". The configured offset {float(task_offset):+g} did not resolve this value."
+            )
+        elif suggested_offsets:
+            msg += ". Suggested task offset(s): " + ", ".join(
+                f"{float(offset):+g}" for offset in suggested_offsets
+            )
+
+        raise SurveyValueOutOfBoundsError(
+            task=task,
+            item_id=item_id,
+            sub_id=sub_id,
+            raw_value=val,
+            expected_levels=expected_levels,
+            suggested_offsets=suggested_offsets,
+            configured_offset=task_offset,
+            message=msg,
+        )
 
     if v_str in levels:
-        return
+        return validated_value
 
     matched_key = find_matching_level_key_fn(v_str, levels)
     if matched_key is not None:
-        return
+        return validated_value
 
     try:
-
-        def _to_float(x):
-            try:
-                return float(str(x).strip())
-            except (ValueError, TypeError, AttributeError):
-                return None
-
         v_num = _to_float(v_str)
         min_v = _to_float(item_schema.get("MinValue"))
         max_v = _to_float(item_schema.get("MaxValue"))
 
         if v_num is not None and min_v is not None and max_v is not None:
             if min_v <= v_num <= max_v:
-                return
+                return validated_value
 
         if not strict_levels:
             l_nums = [n for n in [_to_float(k) for k in levels.keys()] if n is not None]
             if len(l_nums) >= 2 and v_num is not None:
                 if min(l_nums) <= v_num <= max(l_nums):
                     items_using_tolerance.setdefault(task, set()).add(item_id)
-                    return
+                    return validated_value
     except (ValueError, TypeError, AttributeError):
         pass
 
-    allowed = ", ".join(sorted(levels.keys()))
-    raise ValueError(
-        f"Invalid value '{val}' for '{item_id}' (Sub: {sub_id}, Task: {task}). Expected: {allowed}"
+    expected_levels = sorted(str(k) for k in levels.keys())
+    allowed = ", ".join(expected_levels)
+    suggested_offsets = (
+        []
+        if task_offset is not None
+        else _suggest_offsets_for_invalid_value(
+            value_num=_to_float(val),
+            levels=levels,
+            item_schema=item_schema,
+        )
+    )
+
+    msg = (
+        f"Invalid value '{val}' for '{item_id}' (Sub: {sub_id}, Task: {task}). "
+        f"Expected: {allowed}"
+    )
+    if task_offset is not None:
+        msg += (
+            f". The configured offset {float(task_offset):+g} did not resolve this value."
+        )
+    elif suggested_offsets:
+        msg += ". Suggested task offset(s): " + ", ".join(
+            f"{float(offset):+g}" for offset in suggested_offsets
+        )
+
+    raise SurveyValueOutOfBoundsError(
+        task=task,
+        item_id=item_id,
+        sub_id=sub_id,
+        raw_value=val,
+        expected_levels=expected_levels,
+        suggested_offsets=suggested_offsets,
+        configured_offset=task_offset,
+        message=msg,
     )
 
 
@@ -240,6 +729,8 @@ def _process_survey_row(
     non_item_keys,
     missing_token: str,
     validate_item_fn,
+    task_value_offsets: dict[str, float] | None = None,
+    offset_application_counts: dict[str, int] | None = None,
 ) -> tuple[dict[str, str], int]:
     """Process a single task's data for one subject/session."""
     all_items = [k for k in schema.keys() if k not in non_item_keys]
@@ -260,7 +751,7 @@ def _process_survey_row(
                 break
 
         if found_col:
-            validate_item_fn(
+            validated_value = validate_item_fn(
                 item_id=item_id,
                 val=found_val,
                 item_schema=schema.get(item_id),
@@ -270,8 +761,10 @@ def _process_survey_row(
                 items_using_tolerance=items_using_tolerance,
                 normalize_fn=normalize_val_fn,
                 is_missing_fn=is_missing_fn,
+                task_value_offsets=task_value_offsets,
+                offset_application_counts=offset_application_counts,
             )
-            norm = normalize_val_fn(found_val)
+            norm = normalize_val_fn(validated_value)
             if norm == missing_token:
                 missing_count += 1
             out[item_id] = norm
@@ -298,6 +791,8 @@ def _process_survey_row_with_run(
     non_item_keys,
     missing_token: str,
     validate_item_fn,
+    task_value_offsets: dict[str, float] | None = None,
+    offset_application_counts: dict[str, int] | None = None,
 ) -> tuple[dict[str, str], int]:
     """Process a single task/run's data for one subject/session."""
     all_items = [k for k in schema.keys() if k not in non_item_keys]
@@ -324,7 +819,7 @@ def _process_survey_row_with_run(
                 break
 
         if found_col:
-            validate_item_fn(
+            validated_value = validate_item_fn(
                 item_id=item_id,
                 val=found_val,
                 item_schema=schema.get(item_id),
@@ -334,8 +829,10 @@ def _process_survey_row_with_run(
                 items_using_tolerance=items_using_tolerance,
                 normalize_fn=normalize_val_fn,
                 is_missing_fn=is_missing_fn,
+                task_value_offsets=task_value_offsets,
+                offset_application_counts=offset_application_counts,
             )
-            norm = normalize_val_fn(found_val)
+            norm = normalize_val_fn(validated_value)
             if norm == missing_token:
                 missing_count += 1
             out[item_id] = norm

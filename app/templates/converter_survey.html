@@ -16,36 +16,36 @@
                                 <div class="d-flex">
                                     <i class="fas fa-info-circle me-3 text-info fa-2x"></i>
                                     <div>
-                                        <strong>Typical beginner workflow: upload responses, confirm participant ID and session, preview, then convert.</strong>
+                                        <strong>Top-down workflow: move from Step 1 to Step 5 without jumping around.</strong>
                                         <br><small class="text-muted">This tab writes per-participant survey files inside the project. If repeated visits are still encoded in column names such as <code>T1_Q1</code> and <code>T2_Q1</code>, first use File Management -&gt; Wide to Long.</small>
                                     </div>
                                 </div>
                                 <div class="mt-3 pt-3 border-top">
-                                    <div class="small fw-semibold text-uppercase text-muted mb-2">Quick checklist</div>
+                                    <div class="small fw-semibold text-uppercase text-muted mb-2">Top-down strategy</div>
                                     <div class="small d-flex align-items-start mb-2">
                                         <i class="fas fa-check-circle text-success me-2 mt-1"></i>
-                                        <span>Upload the survey response file.</span>
+                                        <span><strong>Step 1:</strong> Upload the survey source file.</span>
                                     </div>
                                     <div class="small d-flex align-items-start mb-2">
                                         <i class="fas fa-check-circle text-success me-2 mt-1"></i>
-                                        <span>Set the <strong>Participant ID Column</strong> and choose the <strong>Session ID</strong>.</span>
+                                        <span><strong>Step 2:</strong> Confirm <strong>Participant ID Column</strong> and <strong>Session ID</strong>.</span>
                                     </div>
                                     <div class="small d-flex align-items-start mb-2">
                                         <i class="fas fa-check-circle text-success me-2 mt-1"></i>
-                                        <span>Use <strong>Preview (Dry-Run)</strong> to check filenames and values before writing files.</span>
+                                        <span><strong>Step 3:</strong> Use optional advanced settings only when needed (offsets, language, overrides).</span>
                                     </div>
                                     <div class="small d-flex align-items-start">
                                         <i class="fas fa-check-circle text-success me-2 mt-1"></i>
-                                        <span>Click <strong>Convert</strong> to create the per-participant survey output.</span>
+                                        <span><strong>Step 4-5:</strong> Run <strong>Preview (Dry-Run)</strong>, review/deselect tasks, then <strong>Convert</strong>.</span>
                                     </div>
                                 </div>
                             </div>
 
+                            <div class="small fw-semibold text-uppercase text-muted mb-2">Step 1 - Choose Source File</div>
                             <!-- Row 1: File upload -->
                             <div class="row g-3 mb-3">
                                 <div class="col-12 studio-file-picker">
                                     <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .sav, .rds, .rdata, .lsa)</label>
-                                    {% if current_project.path %}
                                     <div id="sourcedataQuickSelect" class="d-none mb-2">
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text bg-light"><i class="fas fa-folder-open text-muted"></i></span>
@@ -54,7 +54,6 @@
                                             </select>
                                         </div>
                                     </div>
-                                    {% endif %}
                                     <div class="input-group">
                                         <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv,.sav,.rds,.rdata,.rda" data-help-key="convertExcelFile">
                                         <button class="btn btn-outline-secondary d-none" type="button" id="browseServerSurveyFileBtn" aria-label="Browse server survey file" title="Browse server survey file">
@@ -80,68 +79,7 @@
                                     <div class="form-text">Use when CSV/TSV uses a non-standard delimiter.</div>
                                 </div>
                             </div>
-
-                            <!-- Advanced options (disabled by default) -->
-                            <div class="mb-3">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#surveyAdvancedOptions" aria-expanded="false" aria-controls="surveyAdvancedOptions">
-                                        <i class="fas fa-sliders-h me-1"></i>Advanced options
-                                    </button>
-                                    <div class="form-check form-switch mb-0">
-                                        <input class="form-check-input" type="checkbox" id="convertAdvancedToggle">
-                                        <label class="form-check-label small text-muted" for="convertAdvancedToggle">Enable advanced</label>
-                                    </div>
-                                </div>
-                                <div class="form-text">Optional settings for specific survey, language, and ID mapping.</div>
-
-                                <div class="collapse mt-2" id="surveyAdvancedOptions">
-                                    <div class="row g-3 mb-3">
-                                        <div class="col-md-6" id="convertDatasetNameGroup">
-                                            <label for="convertDatasetName" class="form-label">Select specific survey</label>
-                                            <input type="text" class="form-control" id="convertDatasetName" placeholder="e.g. phq9">
-                                        </div>
-                                        <div class="col-md-6" id="convertLanguageGroup">
-                                            <label for="convertLanguage" class="form-label">Language</label>
-                                            <select class="form-select" id="convertLanguage">
-                                                <option value="auto" selected>Auto (template default)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div class="row g-3 mb-3">
-                                        <div class="col-md-6 studio-file-picker" id="convertAliasGroup">
-                                            <label for="convertIdMapFile" class="form-label">ID Mapping File (optional)</label>
-                                            <div class="input-group">
-                                                <input class="form-control" type="file" id="convertIdMapFile" accept=".tsv,.txt,.csv" data-help-key="convertIdMapFile">
-                                                <button class="btn btn-outline-secondary d-none" type="button" id="clearIdMapFileBtn" aria-label="Clear selected ID mapping file" title="Clear selection">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </div>
-                                            <div class="form-text">Map source IDs to participant_id (two-column TSV/CSV).</div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row g-3 mb-3">
-                                        <div class="col-md-6">
-                                            <label for="convertSessionColumnOverride" class="form-label">Session Column (optional)</label>
-                                            <select class="form-select" id="convertSessionColumnOverride">
-                                                <option value="">Auto-detect</option>
-                                            </select>
-                                            <div class="form-text">Leave on Auto-detect to use the auto-detected session column.</div>
-                                            <small id="convertSessionColumnHint" class="text-muted d-none"></small>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="convertRunColumnOverride" class="form-label">Run Column (optional)</label>
-                                            <select class="form-select" id="convertRunColumnOverride">
-                                                <option value="">Auto-detect</option>
-                                            </select>
-                                            <div class="form-text">Leave on Auto-detect to use the auto-detected run column.</div>
-                                            <small id="convertRunColumnHint" class="text-muted d-none"></small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
+                            <div class="small fw-semibold text-uppercase text-muted mb-2">Step 2 - Confirm Required Mapping</div>
                             <!-- Row 3: Participant ID (data conversion) or Template export (template generation) -->
                             <div class="row g-3 mb-3">
                                 <!-- Participant ID selector (for data conversion) -->
@@ -184,6 +122,93 @@
                                 </div>
                             </div>
 
+                            <div class="small fw-semibold text-uppercase text-muted mb-2">Step 3 (Optional) - Advanced Adjustments</div>
+                            <!-- Advanced options (disabled by default) -->
+                            <div class="mb-3">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#surveyAdvancedOptions" aria-expanded="false" aria-controls="surveyAdvancedOptions">
+                                        <i class="fas fa-sliders-h me-1"></i>Advanced options
+                                    </button>
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" id="convertAdvancedToggle">
+                                        <label class="form-check-label small text-muted" for="convertAdvancedToggle">Enable advanced</label>
+                                    </div>
+                                </div>
+                                <div class="form-text">Use this only when needed: specific survey/language selection, ID map, manual offsets, or column overrides.</div>
+
+                                <div class="collapse mt-2" id="surveyAdvancedOptions">
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-6" id="convertDatasetNameGroup">
+                                            <label for="convertDatasetName" class="form-label">Select specific survey</label>
+                                            <input type="text" class="form-control" id="convertDatasetName" placeholder="e.g. phq9">
+                                        </div>
+                                        <div class="col-md-6" id="convertLanguageGroup">
+                                            <label for="convertLanguage" class="form-label">Language</label>
+                                            <select class="form-select" id="convertLanguage">
+                                                <option value="auto" selected>Auto (template default)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-6 studio-file-picker" id="convertAliasGroup">
+                                            <label for="convertIdMapFile" class="form-label">ID Mapping File (optional)</label>
+                                            <div class="input-group">
+                                                <input class="form-control" type="file" id="convertIdMapFile" accept=".tsv,.txt,.csv" data-help-key="convertIdMapFile">
+                                                <button class="btn btn-outline-secondary d-none" type="button" id="clearIdMapFileBtn" aria-label="Clear selected ID mapping file" title="Clear selection">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                            <div class="form-text">Map source IDs to participant_id (two-column TSV/CSV).</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-12">
+                                            <label for="convertValueOffsets" class="form-label">Task Value Offsets (manual override only)</label>
+                                            <textarea class="form-control d-none" id="convertValueOffsets" rows="3" placeholder="pss10 = -1" aria-hidden="true" tabindex="-1"></textarea>
+                                            <div class="border rounded p-3 bg-light-subtle" id="convertValueOffsetsEditor">
+                                                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-3">
+                                                    <small class="text-muted" id="convertValueOffsetsKnownTasks">Run Preview to populate available survey tasks.</small>
+                                                    <div class="d-flex flex-wrap gap-2 align-self-start align-self-lg-auto">
+                                                        <button class="btn btn-outline-secondary btn-sm" type="button" id="convertAddValueOffsetRowBtn">
+                                                            <i class="fas fa-plus me-1"></i>Add offset
+                                                        </button>
+                                                        <button class="btn btn-outline-primary btn-sm" type="button" id="convertApplyValueOffsetsBtn">
+                                                            <i class="fas fa-list-check me-1"></i>Apply offsets
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div id="convertValueOffsetRows" class="d-flex flex-column gap-2"></div>
+                                                <div class="small text-muted" id="convertValueOffsetsEmptyState">No offset rows configured yet.</div>
+                                                <small class="text-muted d-none mt-2" id="convertValueOffsetsStatus"></small>
+                                            </div>
+                                            <div class="form-text">Choose a survey task, then apply a <code>+</code> or <code>-</code> numeric offset. After editing offsets, rerun Preview.</div>
+                                            <div class="alert alert-warning d-none mt-2 mb-0 small" id="convertValueOffsetAdvice" style="white-space: pre-line;"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-6">
+                                            <label for="convertSessionColumnOverride" class="form-label">Session Column (optional)</label>
+                                            <select class="form-select" id="convertSessionColumnOverride">
+                                                <option value="">Auto-detect</option>
+                                            </select>
+                                            <div class="form-text">Leave on Auto-detect to use the auto-detected session column.</div>
+                                            <small id="convertSessionColumnHint" class="text-muted d-none"></small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="convertRunColumnOverride" class="form-label">Run Column (optional)</label>
+                                            <select class="form-select" id="convertRunColumnOverride">
+                                                <option value="">Auto-detect</option>
+                                            </select>
+                                            <div class="form-text">Leave on Auto-detect to use the auto-detected run column.</div>
+                                            <small id="convertRunColumnHint" class="text-muted d-none"></small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div id="surveyVersionWizard" class="alert alert-secondary d-none mb-3">
                                 <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
                                     <div>
@@ -193,20 +218,51 @@
                                     <span class="badge text-bg-light" id="surveyVersionWizardCount"></span>
                                 </div>
                                 <div id="surveyVersionWizardBody" class="row g-3 mt-1"></div>
+                                <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mt-3">
+                                    <small class="text-muted d-none" id="surveyVersionWizardStatus"></small>
+                                    <button class="btn btn-sm btn-outline-primary d-none" type="button" id="surveyVersionWizardApplyBtn">
+                                        <i class="fas fa-list-check me-2"></i>Use These Versions
+                                    </button>
+                                </div>
                             </div>
 
+                            <div class="small fw-semibold text-uppercase text-muted mb-2">Step 4-5 - Preview Review Then Convert</div>
                             <!-- Row 6: Convert button -->
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <button class="btn btn-info text-white w-100 converter-action-btn" type="button" id="previewBtn" disabled>
-                                        <i class="fas fa-eye me-2"></i>Preview (Dry-Run)
+                                        <i class="fas fa-eye me-2"></i>Step 4: Preview (Dry-Run)
                                     </button>
                                 </div>
                                 <div class="col-md-6">
                                     <button class="btn btn-warning text-white w-100 converter-action-btn" type="button" id="convertBtn" disabled>
-                                        <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
+                                        <i class="fas fa-wand-magic-sparkles me-2"></i>Step 5: Convert
                                     </button>
                                 </div>
+                            </div>
+                            <div id="surveyWorkflowHint" class="form-text text-muted mb-2"></div>
+
+                            <div id="surveyRunProgressContainer" class="alert alert-info d-none mt-2" role="status" aria-live="polite">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <strong id="surveyRunProgressLabel">Preparing preview...</strong>
+                                    <span id="surveyRunProgressPercent" class="fw-semibold">0%</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div
+                                        id="surveyRunProgressBar"
+                                        class="progress-bar bg-info progress-bar-striped progress-bar-animated"
+                                        role="progressbar"
+                                        style="width: 0%;"
+                                        aria-valuemin="0"
+                                        aria-valuemax="100"
+                                        aria-valuenow="0"
+                                    ></div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end mt-2">
+                                <button class="btn btn-outline-danger btn-sm d-none" type="button" id="surveyRunCancelBtn">
+                                    <i class="fas fa-stop-circle me-2"></i>Cancel Run
+                                </button>
                             </div>
 
                             <div id="convertError" class="alert alert-danger d-none mt-3"></div>
