@@ -209,13 +209,13 @@
                                 </div>
                             </div>
 
-                            <div id="surveyVersionWizard" class="alert alert-secondary d-none mb-3">
+                            <div id="surveyVersionWizard" class="alert d-none mb-3 survey-version-card">
                                 <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
                                     <div>
                                         <h6 class="mb-1">Questionnaire Version Selection</h6>
-                                        <p class="mb-0 text-muted small">Choose the instrument version to use for multi-version templates. This controls the emitted <code>acq</code> label and which <code>ApplicableVersions</code> items are included.</p>
+                                        <p class="mb-0 small survey-version-help-text">Choose the instrument version to use for multi-version templates. This controls the emitted <code>acq</code> label and which <code>ApplicableVersions</code> items are included.</p>
                                     </div>
-                                    <span class="badge text-bg-light" id="surveyVersionWizardCount"></span>
+                                    <span class="badge survey-version-count-badge" id="surveyVersionWizardCount"></span>
                                 </div>
                                 <div id="surveyVersionWizardBody" class="row g-3 mt-1"></div>
                                 <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mt-3">
@@ -224,45 +224,6 @@
                                         <i class="fas fa-list-check me-2"></i>Use These Versions
                                     </button>
                                 </div>
-                            </div>
-
-                            <div class="small fw-semibold text-uppercase text-muted mb-2">Step 4-5 - Preview Review Then Convert</div>
-                            <!-- Row 6: Convert button -->
-                            <div class="row g-3 mb-3">
-                                <div class="col-md-6">
-                                    <button class="btn btn-info text-white w-100 converter-action-btn" type="button" id="previewBtn" disabled>
-                                        <i class="fas fa-eye me-2"></i>Step 4: Preview (Dry-Run)
-                                    </button>
-                                </div>
-                                <div class="col-md-6">
-                                    <button class="btn btn-warning text-white w-100 converter-action-btn" type="button" id="convertBtn" disabled>
-                                        <i class="fas fa-wand-magic-sparkles me-2"></i>Step 5: Convert
-                                    </button>
-                                </div>
-                            </div>
-                            <div id="surveyWorkflowHint" class="form-text text-muted mb-2"></div>
-
-                            <div id="surveyRunProgressContainer" class="alert alert-info d-none mt-2" role="status" aria-live="polite">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <strong id="surveyRunProgressLabel">Preparing preview...</strong>
-                                    <span id="surveyRunProgressPercent" class="fw-semibold">0%</span>
-                                </div>
-                                <div class="progress" style="height: 10px;">
-                                    <div
-                                        id="surveyRunProgressBar"
-                                        class="progress-bar bg-info progress-bar-striped progress-bar-animated"
-                                        role="progressbar"
-                                        style="width: 0%;"
-                                        aria-valuemin="0"
-                                        aria-valuemax="100"
-                                        aria-valuenow="0"
-                                    ></div>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-end mt-2">
-                                <button class="btn btn-outline-danger btn-sm d-none" type="button" id="surveyRunCancelBtn">
-                                    <i class="fas fa-stop-circle me-2"></i>Cancel Run
-                                </button>
                             </div>
 
                             <div id="convertError" class="alert alert-danger d-none mt-3"></div>
@@ -306,6 +267,44 @@
                                     </div>
                                     <div class="card-body" id="conversionSummaryBody"></div>
                                 </div>
+                            </div>
+
+                            <div class="small fw-semibold text-uppercase text-muted mt-3 mb-2">Step 4-5 - Preview Review Then Convert</div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <button class="btn btn-info text-white w-100 converter-action-btn" type="button" id="previewBtn" disabled>
+                                        <i class="fas fa-eye me-2"></i>Step 4: Preview (Dry-Run)
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <button class="btn btn-warning text-white w-100 converter-action-btn" type="button" id="convertBtn" disabled>
+                                        <i class="fas fa-wand-magic-sparkles me-2"></i>Step 5: Convert
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="surveyWorkflowHint" class="form-text text-muted mb-2"></div>
+
+                            <div id="surveyRunProgressContainer" class="alert alert-info d-none mt-2" role="status" aria-live="polite">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <strong id="surveyRunProgressLabel">Preparing preview...</strong>
+                                    <span id="surveyRunProgressPercent" class="fw-semibold">0%</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div
+                                        id="surveyRunProgressBar"
+                                        class="progress-bar bg-info progress-bar-striped progress-bar-animated"
+                                        role="progressbar"
+                                        style="width: 0%;"
+                                        aria-valuemin="0"
+                                        aria-valuemax="100"
+                                        aria-valuenow="0"
+                                    ></div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end mt-2">
+                                <button class="btn btn-outline-danger btn-sm d-none" type="button" id="surveyRunCancelBtn">
+                                    <i class="fas fa-stop-circle me-2"></i>Cancel Run
+                                </button>
                             </div>
 
                             <!-- Validation Results -->
