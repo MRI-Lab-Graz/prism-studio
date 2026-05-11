@@ -172,7 +172,8 @@ export function createSurveyWorkflowPrepareController({
             let data;
             try {
                 advanceSurveyRunProgress(mode, 16, `Running ${modeLabel} setup...`);
-                response = await fetch('/api/survey-prepare-workflow', {
+                workflowRequest.formData.append('workflow_command', 'prepare');
+                response = await fetch('/api/survey-workflow-command', {
                     method: 'POST',
                     body: workflowRequest.formData,
                     signal,

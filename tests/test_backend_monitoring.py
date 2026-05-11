@@ -1216,3 +1216,28 @@ def test_emit_backend_request_action_resolves_survey_preview_by_path_when_endpoi
     assert "--input sourcedata/surveys/demo.csv" in captured
     assert "--id-column participant_id" in captured
     assert "--dry-run --force" in captured
+
+
+def test_emit_backend_request_action_resolves_survey_workflow_command_by_path(capsys):
+    app = Flask(__name__)
+
+    with app.test_request_context(
+        "/api/survey-workflow-command",
+        method="POST",
+        data={
+            "workflow_command": "convert",
+            "source_file_path": "sourcedata/surveys/demo.csv",
+            "id_column": "participant_id",
+            "validate": "true",
+        },
+        content_type="multipart/form-data",
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "POST /api/survey-workflow-command -> survey workflow command" in captured
+    assert "endpoint=conversion_survey.api_survey_workflow_command" in captured
+    assert "cmd=python prism_tools.py survey convert" in captured
+    assert "--input sourcedata/surveys/demo.csv" in captured
+    assert "--id-column participant_id" in captured
+    assert "--dry-run --force" not in captured

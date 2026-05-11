@@ -9,6 +9,7 @@ import { createSessionRegistrar } from '../../shared/session-register.js';
 import { createSurveyParticipantsMetadataController } from './survey-participants-metadata.js';
 import { createSurveyWorkflowPrepareController } from './survey-workflow-prepare.js';
 import { createSurveyWorkflowConvertController } from './survey-workflow-convert.js';
+import { createSurveyWorkflowConvertResultsController } from './survey-workflow-convert-results.js';
 import { createSurveyWorkflowProgressController } from './survey-workflow-progress.js';
 import { createSurveySourcedataQuickSelectController } from './survey-sourcedata-quick-select.js';
 import { createSurveyTemplateResultsController } from './survey-template-results.js';
@@ -30,15 +31,12 @@ import { createSurveyWorkflowPreviewController } from './survey-workflow-preview
 export function initSurveyConvert(elements) {
     const {
         // Survey Convert DOM elements
-        convertLibraryPathInput,
-        convertBrowseLibraryBtn,
         convertExcelFile,
         convertSeparator,
         surveySeparatorGroup,
         clearConvertExcelFileBtn,
         convertIdMapFile,
         clearIdMapFileBtn,
-        checkProjectTemplatesBtn,
         convertBtn,
         previewBtn,
         convertDatasetName,
@@ -148,12 +146,11 @@ export function initSurveyConvert(elements) {
         resolveCurrentProjectPath,
         onProjectChanged: () => {
             cancelActiveSurveyRun();
-            resetSurveyImportFormState();
+            resetSurveyImportFormState({ clearSelectedInput: true });
         },
     });
 
     const surveyWorkflowTemplateCheckController = createSurveyWorkflowTemplateCheckController({
-        checkProjectTemplatesBtn,
         surveyVersionWizardApplyBtn,
         convertError,
         conversionLogContainer,
@@ -1950,129 +1947,6 @@ export function initSurveyConvert(elements) {
         updateIdMapClearButtonState();
     }
 
-    // Library path browser
-    if (convertBrowseLibraryBtn && convertLibraryPathInput) {
-        convertBrowseLibraryBtn.addEventListener('click', function() {
-            if (prefersServerPicker() && window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFolder === 'function') {
-                window.PrismFileSystemMode.pickFolder({
-                    title: 'Select Template Library Root',
-                    confirmLabel: 'Use This Folder',
-                    startPath: convertLibraryPathInput.value || ''
-                }).then((pickedPath) => {
-                    if (!pickedPath) return;
-                    convertLibraryPathInput.value = pickedPath;
-                    refreshConvertLanguages();
-                });
-                return;
-            }
-
-            fetch('/api/browse-folder')
-                .then(r => r.json())
-                .then(data => {
-                    if (data.path) {
-                        convertLibraryPathInput.value = data.path;
-                        refreshConvertLanguages();
-                    } else if (data.error) {
-                        alert('Folder picker unavailable: ' + data.error);
-                    }
-                })
-                .catch(err => {
-                    console.error('Browse error:', err);
-                    alert('Failed to open folder picker. Please enter path manually.');
-                });
-        });
-    }
-
-    function refreshConvertLanguages() {
-        const libraryPath = convertLibraryPathInput ? convertLibraryPathInput.value.trim() : '';
-        const surveyI18nWarning = document.getElementById('surveyI18nWarning');
-        const surveyI18nMessage = document.getElementById('surveyI18nMessage');
-        const surveyStructureWarning = document.getElementById('surveyStructureWarning');
-        const surveyStructureMessage = document.getElementById('surveyStructureMessage');
-        
-        if (!libraryPath) {
-            if (surveyI18nWarning) surveyI18nWarning.classList.add('d-none');
-            if (surveyStructureWarning) surveyStructureWarning.classList.add('d-none');
-            return;
-        }
-        
-        const url = `/api/survey-languages?library_path=${encodeURIComponent(libraryPath)}`;
-        fetch(url)
-            .then(r => r.json())
-            .then(data => {
-                if (!convertLanguage) return;
-                const current = convertLanguage.value || 'auto';
-
-                convertLanguage.innerHTML = '';
-                const autoOpt = document.createElement('option');
-                autoOpt.value = 'auto';
-                autoOpt.textContent = 'Auto (template default)';
-                convertLanguage.appendChild(autoOpt);
-
-                const langs = (data && data.languages) ? data.languages : [];
-                langs.forEach(lang => {
-                    const opt = document.createElement('option');
-                    opt.value = lang;
-                    opt.textContent = lang;
-                    convertLanguage.appendChild(opt);
-                });
-
-                const preferred = (data && data.default) ? data.default : null;
-                if (preferred && langs.includes(preferred)) {
-                    convertLanguage.value = preferred;
-                } else if (langs.includes(current)) {
-                    convertLanguage.value = current;
-                } else {
-                    convertLanguage.value = 'auto';
-                }
-
-                if (surveyStructureWarning && surveyStructureMessage && data.structure) {
-                    const missing = data.structure.missing_items || [];
-                    if (missing.length > 0) {
-                        surveyStructureMessage.textContent = `The selected folder is missing: ${missing.join(', ')}. Expected library structure: survey/, biometrics/, participants.json`;
-                        surveyStructureWarning.classList.remove('d-none');
-                    } else {
-                        surveyStructureWarning.classList.add('d-none');
-                    }
-                } else if (surveyStructureWarning) {
-                    surveyStructureWarning.classList.add('d-none');
-                }
-
-                if (surveyI18nWarning && surveyI18nMessage) {
-                    const hasI18n = langs.length > 0;
-                    const templateCount = data.template_count || 0;
-                    const i18nCount = data.i18n_count || 0;
-                    
-                    if (!hasI18n || (templateCount > 0 && i18nCount < templateCount)) {
-                        const missing = templateCount - i18nCount;
-                        if (!hasI18n) {
-                            surveyI18nMessage.textContent = 'No templates with multilanguage (I18n) configuration found. Consider adding I18n block with Languages array to your templates.';
-                        } else if (missing > 0) {
-                            surveyI18nMessage.textContent = `${missing} of ${templateCount} templates lack multilanguage (I18n) configuration. Available languages: ${langs.join(', ')}`;
-                        }
-                        surveyI18nWarning.classList.remove('d-none');
-                    } else {
-                        surveyI18nWarning.classList.add('d-none');
-                    }
-                }
-            })
-            .catch(() => {
-                if (surveyI18nWarning) surveyI18nWarning.classList.add('d-none');
-                if (surveyStructureWarning) surveyStructureWarning.classList.add('d-none');
-            });
-    }
-
-    if (convertLibraryPathInput) {
-        convertLibraryPathInput.addEventListener('change', function() {
-            refreshConvertLanguages();
-            updateConvertBtn();
-        });
-        convertLibraryPathInput.addEventListener('blur', function() {
-            refreshConvertLanguages();
-            updateConvertBtn();
-        });
-    }
-
     // Session picker functions
     function populateSurveySessionPickerFromDetected(detectedSessions) {
         if (!convertSessionSelect || !Array.isArray(detectedSessions) || detectedSessions.length === 0) {
@@ -2307,11 +2181,6 @@ export function initSurveyConvert(elements) {
         convertAliasGroup?.classList.remove('d-none');
         convertSessionGroup?.classList.remove('d-none');
 
-        const libPathLabel = convertLibraryPathInput?.closest('.col-12')?.querySelector('.form-label');
-        if (libPathLabel) {
-            libPathLabel.innerHTML = 'Template Library Root <span class="text-danger">*</span>';
-        }
-
         updateConvertBtn();
     }
 
@@ -2518,7 +2387,6 @@ export function initSurveyConvert(elements) {
     function updateConvertBtn() {
         const hasFile = hasSelectedSurveyInput();
         const blockedByTemplateGate = Boolean(templateWorkflowGate && templateWorkflowGate.blocked);
-        const hasProjectLoaded = resolveCurrentProjectPath() !== '';
         const hasRunningRequest = isConvertRunning || isPreviewRunning;
         const isAwaitingConfirmation = hasRunningRequest && surveyWorkflowProgressController.getIsSurveyRunAwaitingConfirmation();
         const versionSelectionsPending = hasMultiVersionWizardTasks() && !hasAppliedVersionWizardSelections();
@@ -2533,14 +2401,6 @@ export function initSurveyConvert(elements) {
             || valueOffsetSelectionsPending
             || !hasFreshPreviewReview
             || !hasSelectedPreviewTasks;
-        if (checkProjectTemplatesBtn) {
-            checkProjectTemplatesBtn.disabled = !hasProjectLoaded;
-            if (!hasProjectLoaded) {
-                checkProjectTemplatesBtn.title = 'Load a project first to check local templates.';
-            } else {
-                checkProjectTemplatesBtn.removeAttribute('title');
-            }
-        }
         
         if (previewBtn) {
             previewBtn.disabled = !hasFile || versionSelectionsPending || valueOffsetSelectionsPending;
@@ -2682,9 +2542,13 @@ export function initSurveyConvert(elements) {
         updateConvertBtn();
     });
 
-    function resetSurveyImportFormState() {
+    function resetSurveyImportFormState({ clearSelectedInput = false } = {}) {
         templateWorkflowGate = null;
         cancelVersionWizardSync();
+        versionWizardRetryGateMode = null;
+        appliedTaskValueOffsetSelectionSignature = '';
+        hideVersionWizard();
+        clearManualValueOffsetAdvice();
         setTemplateEditorErrorCtaVisible(false);
         resetConversionUI();
         resetSurveyRefreshFingerprint();
@@ -2724,6 +2588,12 @@ export function initSurveyConvert(elements) {
         }
         applyAdvancedOptionsState();
 
+        if (clearSelectedInput) {
+            convertServerFilePath = '';
+            if (convertExcelFile) {
+                convertExcelFile.value = '';
+            }
+        }
         surveySourcedataQuickSelectController.clearSelectedFile();
 
         // Hide stale results from previous preview/convert runs.
@@ -3135,17 +3005,14 @@ export function initSurveyConvert(elements) {
         appendSurveyInputToFormData,
         getConvertServerFilePath: () => convertServerFilePath,
         appendLog,
+        handleConvertSuccess: (data, options) => {
+            surveyWorkflowConvertResultsController.handleConvertSuccess(data, options);
+        },
         getSelectedSeparator,
         appendTemplateVersionSelections,
         formatSignedOffset,
         advanceSurveyRunProgress,
         displayUnmatchedGroupsError,
-        displayConversionSummary,
-        registerSessionInProject,
-        getProjectSaveSummary,
-        getParticipantRegistryWarning,
-        showParticipantRegistryWarning,
-        displayValidationResults,
         isAbortError,
         enrichSurveyRunErrorMessage,
         clearActiveSurveyRun,
@@ -3195,6 +3062,19 @@ export function initSurveyConvert(elements) {
 
     const surveyValidationResultsController = createSurveyValidationResultsController({
         escapeHtml,
+    });
+
+    const surveyWorkflowConvertResultsController = createSurveyWorkflowConvertResultsController({
+        convertInfo,
+        setTemplateEditorErrorCtaVisible,
+        appendLog,
+        displayConversionSummary,
+        getSurveySessionValue,
+        registerSessionInProject,
+        getProjectSaveSummary,
+        getParticipantRegistryWarning,
+        showParticipantRegistryWarning,
+        displayValidationResults,
     });
 
     // ===== TEMPLATE GENERATION =====
