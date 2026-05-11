@@ -131,3 +131,31 @@ def test_resolve_effective_template_version_overrides_falls_back_to_project(
     }
     assert merged_map[("wb", "ses-01", None)] == "short"
     assert merged_map[("mood", None, None)] == "v1"
+
+
+def test_resolve_effective_template_version_overrides_preserves_request_shape_without_project(
+    tmp_path,
+) -> None:
+    request_overrides = {"ads": "short"}
+
+    resolved = _resolve_effective_template_version_overrides(
+        project_path=tmp_path,
+        template_version_overrides=request_overrides,
+    )
+
+    assert resolved == request_overrides
+
+
+def test_resolve_effective_template_version_overrides_preserves_request_shape_when_project_has_no_selections(
+    tmp_path,
+) -> None:
+    project_json = tmp_path / "project.json"
+    project_json.write_text(json.dumps({"Name": "Demo"}), encoding="utf-8")
+    request_overrides = {"ads": "short"}
+
+    resolved = _resolve_effective_template_version_overrides(
+        project_path=tmp_path,
+        template_version_overrides=request_overrides,
+    )
+
+    assert resolved == request_overrides

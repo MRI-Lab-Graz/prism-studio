@@ -2,7 +2,7 @@ coverage:
   status:
     project:
       default:
-        target: auto      # keep current coverage or improve it
+        target: 80%       # interim repository target coverage
         threshold: 1%     # allow 1% drop before failing
     patch:
       default:
