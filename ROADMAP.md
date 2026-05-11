@@ -223,6 +223,67 @@ into backend contracts.
   - Extended `tests/test_converter_workflow_wiring.py` to assert the
     project-change reset contract and prevent stale survey selection/version
     state from surviving project switches.
+  - Extracted unmatched-template error rendering/save orchestration from
+    `survey-convert.js` into
+    `app/static/js/modules/converter/survey-unmatched-templates.js` via
+    `createSurveyUnmatchedTemplatesController`.
+  - Reduced `survey-convert.js` unmatched-template ownership to thin
+    delegation (`displayUnmatchedGroupsError`) and controller initialization
+    for save handlers (`window.saveUnmatchedTemplate`,
+    `window.saveAllUnmatchedTemplates`).
+  - Extracted import/reset form-state behavior from `survey-convert.js` into
+    `app/static/js/modules/converter/survey-import-form-state.js` via
+    `createSurveyImportFormStateController` while keeping
+    `resetSurveyImportFormState(...)` as a thin wrapper in the orchestrator.
+  - Extracted near-item-match candidate parsing and selection modal UI from
+    `survey-convert.js` into
+    `app/static/js/modules/converter/survey-near-item-match-review.js` via
+    `createSurveyNearItemMatchReviewController`.
+  - Reduced `survey-convert.js` near-item-match ownership to thin delegation
+    wrappers (`collectNearMatchCandidates`,
+    `buildNearMatchConfirmationMessage`, `promptNearMatchSelection`) and wired
+    controller initialization after shared helper setup.
+  - Updated `tests/test_converter_workflow_wiring.py` to assert near-item-match
+    review module import/instantiation/delegation and prevent the modal markup
+    from drifting back into `survey-convert.js`.
+  - Extracted shared survey workflow response helpers from
+    `survey-convert.js` into
+    `app/static/js/modules/converter/survey-workflow-response-utils.js`
+    (`summarizeServerResponseText`, `parseJsonResponse`).
+  - Kept `survey-convert.js` response helpers as thin wrappers delegating to the
+    extracted workflow-response utils module so downstream controller contracts
+    stayed stable.
+  - Extended `tests/test_converter_workflow_wiring.py` to assert
+    workflow-response util module ownership and guard against JSON response
+    parsing logic drifting back into `survey-convert.js`.
+  - Extracted version-context normalization/sorting helpers from
+    `survey-convert.js` into
+    `app/static/js/modules/converter/survey-version-context-utils.js`
+    (`normalizeVersionSelectionSession`, `normalizeVersionSelectionRun`,
+    `buildVersionSelectionKey`, timeline comparators, and
+    `deriveDetectedContexts`).
+  - Kept `survey-convert.js` helper signatures as thin delegates to
+    version-context utils so version-wizard orchestration callsites and injected
+    controller dependencies remained stable.
+  - Extended `tests/test_converter_workflow_wiring.py` to assert
+    version-context util module ownership and orchestrator import wiring.
+  - Fixed survey workflow runtime crash (`dictionary update sequence element #0
+    has length 4; 2 is required`) by preserving list-based
+    `template_version_overrides` in `src/survey_workflow_service.py` instead of
+    coercing all overrides through `dict(...)`.
+  - Added regression coverage in `tests/test_survey_workflow_service.py` for
+    list- and dict-shaped `template_version_overrides` forwarding.
+  - Extracted unmatched-template error rendering/save orchestration from
+    `survey-convert.js` into new module
+    `app/static/js/modules/converter/survey-unmatched-templates.js` via
+    `createSurveyUnmatchedTemplatesController`.
+  - Reduced `survey-convert.js` unmatched-template ownership to thin
+    delegation (`displayUnmatchedGroupsError`) and controller initialization
+    for save handlers (`window.saveUnmatchedTemplate`,
+    `window.saveAllUnmatchedTemplates`).
+  - Updated `tests/test_converter_workflow_wiring.py` to assert unmatched-
+    template module import/instantiation/delegation and to prevent legacy
+    window-handler/save-loop logic from drifting back into `survey-convert.js`.
 
   **Assessment update (2026-05-10):**
   - Confirmed stale DOM-guarded branches still exist in `survey-convert.js`
@@ -291,6 +352,22 @@ into backend contracts.
 - Conversion-log behavior is also safe to extract as one controller when the
   orchestrator still owns workflow sequencing and only delegates append/reset
   operations plus UI toggle initialization.
+- Unmatched-template save flows with inline `onclick` hooks can still be
+  extracted safely: keep global handler registration in one controller
+  `initialize()` method and delegate the rendering/POST/save-state logic there.
+- If workflow options can arrive as multiple shapes (dict vs list-of-dicts),
+  backend stage services must preserve shape instead of blindly coercing with
+  `dict(...)`; converter-facing payload tests catch these regressions early.
+- Near-item-match review UX can be extracted safely when the orchestrator keeps
+  only delegation wrappers and the dedicated controller owns both modal and
+  non-modal fallback confirmation behavior.
+- Generic workflow response parsing/sanitization logic is a stable extraction
+  target: move it to a shared converter util module while keeping orchestrator
+  wrapper signatures intact so controller dependencies remain unchanged.
+- Version-selection context math (session/run normalization, timeline sort
+  ordering, and detected-context derivation) is another stable extraction
+  target because it is side-effect free and can be wrapped without behavior
+  changes in workflow orchestration.
 - Project-change handlers for sourcedata-backed inputs must clear both the
   visible quick-select and the underlying file input; clearing only one leaves
   the next project coupled to stale source state.
