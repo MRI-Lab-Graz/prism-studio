@@ -7,7 +7,6 @@ with optional anonymization of participant IDs and copyright-protected content.
 
 import os
 import json
-import tempfile
 import zipfile
 from pathlib import Path
 from typing import Any, Dict, Optional, Set
@@ -203,24 +202,24 @@ def export_project(
     _check_cancelled()
 
     participant_mapping = {}
+    _saved_mapping_file: Optional[Path] = None
     if anonymize:
         participant_ids = collect_participant_ids(project_path)
         if participant_ids:
-            # Mapping is for internal use only; write to a throwaway temp file
-            with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as mf:
-                mapping_tmp = Path(mf.name)
-            try:
-                participant_mapping = create_participant_mapping(
-                    list(participant_ids),
-                    mapping_tmp,
-                    id_length=id_length,
-                    deterministic=deterministic,
-                )
-            finally:
-                mapping_tmp.unlink(missing_ok=True)
+            # Save mapping to project's code/ directory (protected — not in ZIP).
+            # create_participant_mapping() creates the parent directory automatically.
+            _saved_mapping_file = project_path / "code" / "anonymization_map.json"
+            participant_mapping = create_participant_mapping(
+                list(participant_ids),
+                _saved_mapping_file,
+                id_length=id_length,
+                deterministic=deterministic,
+            )
             print(
                 f"✓ Created anonymization mapping for {len(participant_mapping)} participants"
             )
+            print(f"  Mapping saved to: {_saved_mapping_file}")
+            print("  ⚠️  KEEP THIS FILE SECURE! It allows re-identification.")
 
     _report(10, "Scanning files...")
     _check_cancelled()
@@ -251,6 +250,7 @@ def export_project(
         "files_processed": 0,
         "files_anonymized": 0,
         "participant_count": len(participant_mapping),
+        "mapping_file": str(_saved_mapping_file) if _saved_mapping_file else None,
     }
 
     def _anon_arc_path(rel_parts: list) -> str:
@@ -370,8 +370,8 @@ def export_project(
                     else rel_parts[0]
                 )
             for filename in files:
-                # Keep participants mapping out of share ZIPs.
-                if filename == "participants_mapping.json":
+                # Keep participants mapping and anonymization map out of share ZIPs.
+                if filename in ("participants_mapping.json", "anonymization_map.json"):
                     continue
                 # Filter by acq- label if requested
                 if skip_acq and _cur_modality and _cur_modality in skip_acq:
@@ -484,6 +484,9 @@ def export_project(
     print(f"  Processed {stats['files_processed']} files")
     if anonymize:
         print(f"  Anonymized {stats['files_anonymized']} files/folders")
-        print("  🔒 Mapping file is not included in ZIP export")
+        if stats["mapping_file"]:
+            print(f"  🔒 Mapping saved to: {stats['mapping_file']} (not in ZIP)")
+        else:
+            print("  🔒 No participants found; no mapping file written")
 
     return stats
