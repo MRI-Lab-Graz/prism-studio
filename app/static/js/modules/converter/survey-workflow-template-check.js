@@ -1,5 +1,6 @@
 export function createSurveyWorkflowTemplateCheckController({
     checkProjectTemplatesBtn,
+    surveyVersionWizardApplyBtn,
     convertError,
     conversionLogContainer,
     conversionLogBody,
@@ -17,6 +18,13 @@ export function createSurveyWorkflowTemplateCheckController({
     buildVersionWizard,
     hideVersionWizard,
     updateConvertBtn,
+    hasMultiVersionWizardTasks,
+    hasCompleteVersionWizardSelections,
+    getCurrentTemplateVersionSelectionSignature,
+    setAppliedTemplateVersionSelectionSignature,
+    setVersionWizardRetryGateMode,
+    getTemplateWorkflowGate,
+    updateVersionWizardActionState,
 }) {
     async function handleCheckProjectTemplatesClick() {
         convertError.classList.add('d-none');
@@ -184,14 +192,57 @@ export function createSurveyWorkflowTemplateCheckController({
     }
 
     function initialize() {
-        if (!checkProjectTemplatesBtn) {
+        if (checkProjectTemplatesBtn) {
+            checkProjectTemplatesBtn.addEventListener('click', handleCheckProjectTemplatesClick);
+        }
+        surveyVersionWizardApplyBtn?.addEventListener('click', handleVersionWizardApplyClick);
+    }
+
+    function handleVersionWizardApplyClick() {
+        const hasMultiVersionTasks = typeof hasMultiVersionWizardTasks === 'function'
+            ? hasMultiVersionWizardTasks()
+            : false;
+        const hasCompleteSelections = typeof hasCompleteVersionWizardSelections === 'function'
+            ? hasCompleteVersionWizardSelections()
+            : false;
+
+        if (!hasMultiVersionTasks || !hasCompleteSelections) {
+            if (typeof updateVersionWizardActionState === 'function') {
+                updateVersionWizardActionState();
+            }
             return;
         }
-        checkProjectTemplatesBtn.addEventListener('click', handleCheckProjectTemplatesClick);
+
+        const currentSignature = typeof getCurrentTemplateVersionSelectionSignature === 'function'
+            ? getCurrentTemplateVersionSelectionSignature()
+            : '';
+
+        if (typeof setAppliedTemplateVersionSelectionSignature === 'function') {
+            setAppliedTemplateVersionSelectionSignature(currentSignature);
+        }
+        if (typeof setVersionWizardRetryGateMode === 'function') {
+            setVersionWizardRetryGateMode(null);
+        }
+
+        const templateWorkflowGate = typeof getTemplateWorkflowGate === 'function'
+            ? getTemplateWorkflowGate()
+            : null;
+        const hasBlockedTemplateGate = Boolean(templateWorkflowGate && templateWorkflowGate.blocked);
+        const infoText = String(convertInfo?.textContent || '').trim().toLowerCase();
+        if (!hasBlockedTemplateGate && (infoText.includes('multi-version') || infoText.includes('questionnaire version'))) {
+            convertInfo.classList.add('d-none');
+            convertInfo.textContent = '';
+        }
+
+        if (typeof updateVersionWizardActionState === 'function') {
+            updateVersionWizardActionState();
+        }
+        updateConvertBtn();
     }
 
     return {
         initialize,
         handleCheckProjectTemplatesClick,
+        handleVersionWizardApplyClick,
     };
 }

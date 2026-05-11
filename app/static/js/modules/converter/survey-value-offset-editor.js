@@ -14,7 +14,9 @@ export function createSurveyValueOffsetEditorController({
     convertValueOffsetsStatus,
     convertValueOffsetAdvice,
     convertError,
+    convertInfo,
     isAdvancedOptionsEnabled,
+    getTemplateWorkflowGate,
     getIsConvertRunning,
     getIsPreviewRunning,
     getAppliedTaskValueOffsetSelectionSignature,
@@ -452,6 +454,51 @@ export function createSurveyValueOffsetEditorController({
         }
     }
 
+    function handleApplyTaskValueOffsetsClick() {
+        if (!isAdvancedOptionsEnabled()) {
+            updateTaskValueOffsetApplyState();
+            return;
+        }
+
+        if (hasIncompleteTaskValueOffsetRows()) {
+            if (convertInfo) {
+                convertInfo.textContent = 'Complete each offset row with a task and numeric value, then click Apply offsets.';
+                convertInfo.classList.remove('d-none');
+            }
+            focusTaskValueOffsetEditor();
+            updateTaskValueOffsetApplyState();
+            updateConvertBtn();
+            return;
+        }
+
+        const currentSignature = getCurrentTaskValueOffsetSelectionSignature();
+        if (!currentSignature) {
+            if (typeof setAppliedTaskValueOffsetSelectionSignature === 'function') {
+                setAppliedTaskValueOffsetSelectionSignature('');
+            }
+            updateTaskValueOffsetApplyState();
+            updateConvertBtn();
+            return;
+        }
+
+        if (typeof setAppliedTaskValueOffsetSelectionSignature === 'function') {
+            setAppliedTaskValueOffsetSelectionSignature(currentSignature);
+        }
+
+        const templateWorkflowGate = typeof getTemplateWorkflowGate === 'function'
+            ? getTemplateWorkflowGate()
+            : null;
+        const hasBlockedTemplateGate = Boolean(templateWorkflowGate && templateWorkflowGate.blocked);
+        const infoText = String(convertInfo?.textContent || '').trim().toLowerCase();
+        if (!hasBlockedTemplateGate && infoText.includes('offset')) {
+            convertInfo.classList.add('d-none');
+            convertInfo.textContent = '';
+        }
+
+        updateTaskValueOffsetApplyState();
+        updateConvertBtn();
+    }
+
     function applyAdvancedOptionsState() {
         const enabled = isAdvancedOptionsEnabled();
 
@@ -617,5 +664,6 @@ export function createSurveyValueOffsetEditorController({
         hasIncompleteTaskValueOffsetRows,
         hasAppliedTaskValueOffsetSelections,
         updateTaskValueOffsetApplyState,
+        handleApplyTaskValueOffsetsClick,
     };
 }
