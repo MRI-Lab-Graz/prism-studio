@@ -26,6 +26,7 @@ EXPORT_SECTION_TEMPLATE = (
     REPO_ROOT / "app" / "templates" / "includes" / "projects" / "export_section.html"
 )
 BASE_TEMPLATE = REPO_ROOT / "app" / "templates" / "base.html"
+LIBRARY_EDITOR_TEMPLATE = REPO_ROOT / "app" / "templates" / "library_editor.html"
 
 
 class TestProjectsWorkflowWiring(unittest.TestCase):
@@ -531,6 +532,17 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn('value="prism"', content)
         self.assertIn('value="bids"', content)
         self.assertIn('value="ignore"', content)
+
+    def test_library_editor_uses_shared_header_and_help_macros(self):
+        content = LIBRARY_EDITOR_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            '{% from "includes/ui/macros.html" import page_header, help_panel %}',
+            content,
+        )
+        self.assertIn("{{ page_header(", content)
+        self.assertIn("{% call help_panel(", content)
+        self.assertIn('id="saveSurveyBtn"', content)
 
 
 if __name__ == "__main__":

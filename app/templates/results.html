@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "includes/ui/macros.html" import page_header %}
 
 {% block title %}PRISM Studio - Validation Results{% endblock %}
 
@@ -10,18 +11,14 @@
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
             <div>
-                <h2>
-                    <i class="fas fa-chart-line text-primary me-2"></i>
-                    Validation Results
-                </h2>
-                <p class="text-muted mb-0">
-                    <i class="fas fa-folder me-1"></i>{{ results.dataset_name if results and results.dataset_name else filename }}
-                </p>
-                {% if results and results.get('schema_version') %}
-                <p class="text-muted mb-0">
-                    <i class="fas fa-code-branch me-1"></i>Schema Version: <strong>{{ results.schema_version }}</strong>
-                </p>
-                {% endif %}
+                {% set results_dataset_label = results.dataset_name if results and results.dataset_name else filename %}
+                {% set results_header_note = 'Schema Version: ' ~ results.schema_version if results and results.get('schema_version') else '' %}
+                {{ page_header(
+                    'fas fa-chart-line',
+                    'Validation Results',
+                    'Dataset: ' ~ results_dataset_label,
+                    results_header_note
+                ) }}
             </div>
             <div class="d-flex flex-wrap align-items-center justify-content-end gap-2">
                 {% set default_revalidate_mode = results.get('validation_mode') if results and results.get('validation_mode') else ('both' if results.get('run_bids') and results.get('run_prism') else ('bids' if results.get('run_bids') else 'prism')) %}
