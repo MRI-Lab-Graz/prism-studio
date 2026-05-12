@@ -28,6 +28,8 @@ class SurveyValueOutOfBoundsError(ValueError):
         expected_levels: list[str],
         suggested_offsets: list[float | int] | None = None,
         configured_offset: float | None = None,
+        adjusted_value: Any | None = None,
+        raw_value_valid_without_offset: bool | None = None,
         offset_evidence: dict[str, Any] | None = None,
         message: str,
     ) -> None:
@@ -39,6 +41,8 @@ class SurveyValueOutOfBoundsError(ValueError):
         self.expected_levels = expected_levels
         self.suggested_offsets = suggested_offsets or []
         self.configured_offset = configured_offset
+        self.adjusted_value = adjusted_value
+        self.raw_value_valid_without_offset = raw_value_valid_without_offset
         self.offset_evidence = offset_evidence
 
 
@@ -287,6 +291,7 @@ def _build_task_offset_evidence(
         "sampled_numeric_values": 0,
         "invalid_without_offset": 0,
         "invalid_without_offset_percent": 0.0,
+        "candidate_offsets": [],
         "best_offset": None,
         "corrected_by_best_offset": 0,
         "corrected_by_best_offset_percent": 0.0,
@@ -355,8 +360,20 @@ def _build_task_offset_evidence(
             {
                 "offset": _coerce_offset_suggestion(float(offset)),
                 "corrected": corrected_by_offset,
+                "corrected_percent": round(
+                    (corrected_by_offset / sampled_numeric_values) * 100,
+                    1,
+                ),
                 "invalid_after": invalid_with_offset,
+                "invalid_after_percent": round(
+                    (invalid_with_offset / sampled_numeric_values) * 100,
+                    1,
+                ),
                 "newly_invalid": newly_invalid_with_offset,
+                "newly_invalid_percent": round(
+                    (newly_invalid_with_offset / sampled_numeric_values) * 100,
+                    1,
+                ),
             }
         )
 
@@ -368,6 +385,8 @@ def _build_task_offset_evidence(
 
     if not candidate_stats:
         return evidence, []
+
+    evidence["candidate_offsets"] = candidate_stats
 
     best_candidate = max(
         candidate_stats,
@@ -590,8 +609,10 @@ def _validate_survey_item_value(
     task_offset = _resolve_task_value_offset(task, task_value_offsets)
     validated_value = val
     value_num = _to_float(val)
+    adjusted_value: Any | None = None
     if task_offset is not None and value_num is not None:
         validated_value = _coerce_numeric_offset_value(float(value_num) + float(task_offset))
+        adjusted_value = validated_value
         if offset_application_counts is not None:
             offset_application_counts[task] = offset_application_counts.get(task, 0) + 1
 
@@ -633,10 +654,30 @@ def _validate_survey_item_value(
             f"Invalid value '{val}' for '{item_id}' (Sub: {sub_id}, Task: {task}). "
             f"Expected: {', '.join(expected_levels)}"
         )
+        raw_value_valid_without_offset: bool | None = None
         if task_offset is not None:
-            msg += (
-                f". The configured offset {float(task_offset):+g} did not resolve this value."
-            )
+            if value_num is None:
+                msg += (
+                    f". The configured offset {float(task_offset):+g} applies only to numeric values."
+                )
+            else:
+                msg += (
+                    f". The configured offset {float(task_offset):+g} transformed this value "
+                    f"to '{validated_value}', which is still out of range."
+                )
+                raw_value_valid_without_offset, _ = _is_valid_survey_item_value(
+                    val=val,
+                    item_schema=item_schema,
+                    strict_levels=strict_levels,
+                    normalize_fn=normalize_fn,
+                    find_matching_level_key_fn=find_matching_level_key_fn,
+                    missing_token=missing_token,
+                )
+                if raw_value_valid_without_offset:
+                    msg += (
+                        " Without offset, this sampled value itself is within expected levels. "
+                        "Verify offset direction and selected template version."
+                    )
         elif suggested_offsets:
             msg += ". Suggested task offset(s): " + ", ".join(
                 f"{float(offset):+g}" for offset in suggested_offsets
@@ -650,6 +691,8 @@ def _validate_survey_item_value(
             expected_levels=expected_levels,
             suggested_offsets=suggested_offsets,
             configured_offset=task_offset,
+            adjusted_value=adjusted_value,
+            raw_value_valid_without_offset=raw_value_valid_without_offset,
             message=msg,
         )
 
@@ -694,10 +737,30 @@ def _validate_survey_item_value(
         f"Invalid value '{val}' for '{item_id}' (Sub: {sub_id}, Task: {task}). "
         f"Expected: {allowed}"
     )
+    raw_value_valid_without_offset: bool | None = None
     if task_offset is not None:
-        msg += (
-            f". The configured offset {float(task_offset):+g} did not resolve this value."
-        )
+        if value_num is None:
+            msg += (
+                f". The configured offset {float(task_offset):+g} applies only to numeric values."
+            )
+        else:
+            msg += (
+                f". The configured offset {float(task_offset):+g} transformed this value "
+                f"to '{validated_value}', which is still out of range."
+            )
+            raw_value_valid_without_offset, _ = _is_valid_survey_item_value(
+                val=val,
+                item_schema=item_schema,
+                strict_levels=strict_levels,
+                normalize_fn=normalize_fn,
+                find_matching_level_key_fn=find_matching_level_key_fn,
+                missing_token=missing_token,
+            )
+            if raw_value_valid_without_offset:
+                msg += (
+                    " Without offset, this sampled value itself is within expected levels. "
+                    "Verify offset direction and selected template version."
+                )
     elif suggested_offsets:
         msg += ". Suggested task offset(s): " + ", ".join(
             f"{float(offset):+g}" for offset in suggested_offsets
@@ -711,6 +774,8 @@ def _validate_survey_item_value(
         expected_levels=expected_levels,
         suggested_offsets=suggested_offsets,
         configured_offset=task_offset,
+        adjusted_value=adjusted_value,
+        raw_value_valid_without_offset=raw_value_valid_without_offset,
         message=msg,
     )
 
