@@ -5,6 +5,7 @@ from typing import Any
 
 from flask import current_app, jsonify
 
+from src.cross_platform import normalize_path
 from src.runtime_dependencies import has_pyreadstat_write_support
 from src.web.backend_monitoring import emit_backend_action
 
@@ -178,11 +179,16 @@ def handle_api_recipes_surveys(data: dict):
         if isinstance(data.get("missing_policy"), str)
         else str(data.get("missing_policy") or "system-missing").strip().lower()
     )
-    if missing_policy not in {"system-missing", "text-na", "numeric-sentinel"}:
+    if missing_policy not in {
+        "system-missing",
+        "text-na",
+        "text-nan",
+        "numeric-sentinel",
+    }:
         return (
             jsonify(
                 {
-                    "error": "Invalid missing_policy. Use one of: system-missing, text-na, numeric-sentinel."
+                    "error": "Invalid missing_policy. Use one of: system-missing, text-na, text-nan, numeric-sentinel."
                 }
             ),
             400,
@@ -300,12 +306,12 @@ def handle_api_recipes_surveys(data: dict):
             "prism_tools.py",
             "recipes",
             modality,
-            f'--prism "{dataset_path}"',
+            f'--prism "{normalize_path(dataset_path)}"',
         ]
         if repo_root_str != current_app.root_path:
-            cmd_parts.append(f'--repo "{repo_root_str}"')
+            cmd_parts.append(f'--repo "{normalize_path(repo_root_str)}"')
         if effective_recipe_dir:
-            cmd_parts.append(f'--recipes "{effective_recipe_dir}"')
+            cmd_parts.append(f'--recipes "{normalize_path(effective_recipe_dir)}"')
         if survey_filter:
             cmd_parts.append(f'--survey "{survey_filter}"')
         if sessions:
