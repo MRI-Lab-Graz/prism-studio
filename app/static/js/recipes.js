@@ -66,7 +66,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const derivLayout = document.getElementById('derivLayout');
   const derivLang = document.getElementById('derivLang');
   const derivIncludeRaw = document.getElementById('derivIncludeRaw');
-  const derivIncludeRecipePrefix = document.getElementById('derivIncludeRecipePrefix');
   const derivMergeSeparate = document.getElementById('derivMergeSeparate');
   const derivMergeCombined = document.getElementById('derivMergeCombined');
   const derivAnonymize = document.getElementById('derivAnonymize');
@@ -88,8 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   if (!derivFormat || !derivSurvey || !derivSessionsAll || !derivSessions || !derivRunBtn
     || !derivError || !derivInfo || !derivTerminalContainer || !derivTerminal || !derivClearLog
-    || !derivLayout || !derivLang || !derivIncludeRaw || !derivIncludeRecipePrefix
-    || !derivMergeSeparate || !derivMergeCombined
+    || !derivLayout || !derivLang || !derivIncludeRaw || !derivMergeSeparate || !derivMergeCombined
     || !derivAnonymize || !derivMaskQuestions || !derivIdLength || !derivRandomIds
     || !derivSummaryContainer || !derivSummaryBody || !derivToggleSummary || !derivProcessedCount
     || !derivWrittenCount || !derivOutputFormat || !derivOutputPath || !derivRecipesUsed
@@ -103,7 +101,6 @@ document.addEventListener('DOMContentLoaded', function() {
     layout: derivLayout.value,
     lang: derivLang.value,
     include_raw: derivIncludeRaw.checked,
-    include_recipe_prefix: derivIncludeRecipePrefix.checked,
     merge_all: derivMergeCombined.checked,
     anonymize: derivAnonymize.checked,
     mask_questions: derivMaskQuestions.checked,
@@ -189,7 +186,6 @@ document.addEventListener('DOMContentLoaded', function() {
     derivLayout.value = defaultRecipesPreferences.layout;
     derivLang.value = defaultRecipesPreferences.lang;
     derivIncludeRaw.checked = defaultRecipesPreferences.include_raw;
-    derivIncludeRecipePrefix.checked = defaultRecipesPreferences.include_recipe_prefix;
     derivMergeSeparate.checked = !defaultRecipesPreferences.merge_all;
     derivMergeCombined.checked = defaultRecipesPreferences.merge_all;
     derivAnonymize.checked = defaultRecipesPreferences.anonymize;
@@ -281,7 +277,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (prefs.layout) derivLayout.value = prefs.layout;
         if (prefs.lang) derivLang.value = prefs.lang;
         if (typeof prefs.include_raw === 'boolean') derivIncludeRaw.checked = prefs.include_raw;
-        if (typeof prefs.include_recipe_prefix === 'boolean') derivIncludeRecipePrefix.checked = prefs.include_recipe_prefix;
         if (typeof prefs.merge_all === 'boolean') {
           derivMergeSeparate.checked = !prefs.merge_all;
           derivMergeCombined.checked = prefs.merge_all;
@@ -321,9 +316,6 @@ document.addEventListener('DOMContentLoaded', function() {
     derivIncludeRaw?.addEventListener('change', function() {
       saveRecipesPreference('include_raw', derivIncludeRaw.checked);
     });
-    derivIncludeRecipePrefix?.addEventListener('change', function() {
-      saveRecipesPreference('include_recipe_prefix', derivIncludeRecipePrefix.checked);
-    });
     derivMergeSeparate?.addEventListener('change', function() {
       if (this.checked) saveRecipesPreference('merge_all', false);
     });
@@ -353,9 +345,24 @@ document.addEventListener('DOMContentLoaded', function() {
     else if (type === 'success') { prefix = '✅ '; color = 'text-success'; }
     else if (type === 'warning') { prefix = '⚠️ '; color = 'text-warning'; }
     else { prefix = '→ '; }
+
+    const rawMessage = String(msg ?? '');
+    const commandMatch = rawMessage.match(/(\bcmd=)(.+)$/);
     const line = document.createElement('span');
     line.className = color;
-    line.textContent = `[${timestamp}] ${prefix}${msg}\n`;
+    if (!commandMatch || typeof commandMatch.index !== 'number') {
+      line.textContent = `[${timestamp}] ${prefix}${rawMessage}\n`;
+    } else {
+      const commandPrefix = commandMatch[1];
+      const commandText = commandMatch[2];
+      const messagePrefix = rawMessage.slice(0, commandMatch.index) + commandPrefix;
+      line.appendChild(document.createTextNode(`[${timestamp}] ${prefix}${messagePrefix}`));
+      const commandSpan = document.createElement('span');
+      commandSpan.className = 'backend-command-text';
+      commandSpan.textContent = commandText;
+      line.appendChild(commandSpan);
+      line.appendChild(document.createTextNode('\n'));
+    }
     derivTerminal.appendChild(line);
     derivTerminal.scrollTop = derivTerminal.scrollHeight;
     derivTerminalContainer.classList.remove('d-none');
@@ -479,7 +486,6 @@ document.addEventListener('DOMContentLoaded', function() {
       lang: derivLang.value,
       layout: derivLayout.value,
       include_raw: derivIncludeRaw.checked,
-      include_recipe_prefix: derivIncludeRecipePrefix.checked,
       merge_all: derivMergeCombined.checked,
       anonymize: derivAnonymize.checked,
       mask_questions: derivMaskQuestions.checked,
@@ -494,7 +500,6 @@ document.addEventListener('DOMContentLoaded', function() {
       logToTerminal(`Creating outputs for: ${requestProjectPath}`);
       logToTerminal(`Modality: ${payload.modality}, Format: ${payload.format}, Language: ${payload.lang}, Layout: ${payload.layout}`);
       if (payload.include_raw) logToTerminal(`Including raw data columns`);
-      if (!payload.include_recipe_prefix) logToTerminal('Combined exports will keep bare variable names where possible');
       if (payload.anonymize) {
         logToTerminal(`🔒 Anonymizing participant IDs (length: ${payload.id_length}, ${payload.random_ids ? 'random' : 'deterministic'})`, 'warning');
         if (payload.mask_questions) logToTerminal(`🔒 Masking copyrighted question text`, 'warning');

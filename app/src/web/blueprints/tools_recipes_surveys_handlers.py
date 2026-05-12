@@ -53,6 +53,7 @@ def _parse_missing_numeric_value(raw_value: object) -> tuple[float | None, str |
     if raw_value is None:
         return None, None
 
+    candidate: object
     if isinstance(raw_value, str):
         candidate = raw_value.strip()
         if not candidate:

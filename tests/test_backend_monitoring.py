@@ -64,7 +64,7 @@ def test_emit_backend_request_action_includes_validator_command(capsys):
         emit_backend_request_action(request, app_root=str(APP_PATH))
 
     captured = capsys.readouterr().out
-    assert "[BACKEND-ACTION]" in captured
+    assert "[ANALYSIS_OUTPUT]" in captured
     assert "POST /validate_folder -> validate folder" in captured
     assert "cmd=python prism.py /tmp/ds --bids" in captured
 
@@ -265,7 +265,7 @@ def test_emit_backend_request_action_includes_survey_convert_command(capsys):
         emit_backend_request_action(request, app_root=str(APP_PATH))
 
     captured = capsys.readouterr().out
-    assert "[BACKEND-ACTION]" in captured
+    assert "[ANALYSIS_OUTPUT]" in captured
     assert "POST /api/survey-convert" in captured
     assert "cmd=python prism_tools.py survey convert --input T1.xlsx" in captured
 

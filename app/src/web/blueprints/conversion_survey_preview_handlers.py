@@ -36,7 +36,7 @@ from .conversion_utils import (
 )
 
 _resolve_effective_template_version_overrides: (
-    Callable[..., list[dict[str, object]]] | None
+    Callable[..., object] | None
 ) = None
 try:
     from src.converters.survey import (
