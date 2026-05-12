@@ -34,6 +34,7 @@ export function createSurveyWorkflowConvertController({
     focusTaskValueOffsetEditor,
     getSelectedSurveyFilename,
     getSelectedSurveyFile,
+    resolveCurrentProjectPath,
     getSurveySessionValue,
     isAdvancedOptionsEnabled,
     refreshSurveyColumnsBeforeRun,
@@ -194,6 +195,10 @@ export function createSurveyWorkflowConvertController({
         allowNearItemMatch = selectedNearMatchTasks.length > 0;
 
         const formData = new FormData();
+        const currentProjectPath = resolveCurrentProjectPath();
+        if (currentProjectPath) {
+            formData.append('project_path', currentProjectPath);
+        }
         appendSurveyInputToFormData(formData);
         if (file) {
             console.log(`[CLIENT DEBUG] Excel file: ${file.name}, size: ${file.size}`);
