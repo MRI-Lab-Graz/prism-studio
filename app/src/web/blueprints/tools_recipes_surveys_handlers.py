@@ -307,17 +307,19 @@ def handle_api_recipes_surveys(data: dict):
             "recipes",
             modality,
             f'--prism "{normalize_path(dataset_path)}"',
-            f'--repo "{normalize_path(repo_root_str)}"',
-            f"--format {out_format}",
-            f"--layout {layout}",
-            f"--lang {lang}",
         ]
+        if repo_root_str != current_app.root_path:
+            cmd_parts.append(f'--repo "{normalize_path(repo_root_str)}"')
         if effective_recipe_dir:
             cmd_parts.append(f'--recipes "{normalize_path(effective_recipe_dir)}"')
         if survey_filter:
             cmd_parts.append(f'--survey "{survey_filter}"')
         if sessions:
             cmd_parts.append(f'--sessions "{sessions}"')
+        if out_format != "flat":
+            cmd_parts.append(f"--format {out_format}")
+        if layout != "long":
+            cmd_parts.append(f"--layout {layout}")
         if include_raw:
             cmd_parts.append("--include-raw")
         if merge_all:
@@ -330,6 +332,8 @@ def handle_api_recipes_surveys(data: dict):
             cmd_parts.append(f"--missing-policy {missing_policy}")
         if missing_numeric_value is not None:
             cmd_parts.append(f"--missing-numeric-value {missing_numeric_value}")
+        if lang != "en":
+            cmd_parts.append(f"--lang {lang}")
 
         cli_cmd = " ".join(cmd_parts)
         emit_backend_action(
