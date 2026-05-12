@@ -226,6 +226,7 @@ Implementation checkpoint (2026-05-12):
 - Started: wired Participants preview/convert actions to shared run lock with guaranteed release across preflight early-return branches.
 - Started: added participants preview/convert click-storm regression assertions in [tests/test_converter_workflow_wiring.py](tests/test_converter_workflow_wiring.py).
 - Started: added biometrics preview/detect/confirm click-storm regression assertions in [tests/test_converter_workflow_wiring.py](tests/test_converter_workflow_wiring.py).
+- Started: added environment/physio/eyetracking handler-block replay assertions (run lock + single active job lifecycle + release-path checks) in [tests/test_converter_workflow_wiring.py](tests/test_converter_workflow_wiring.py).
 - Started: added negative replay checks for unknown async job IDs (status/cancel -> 404) in [tests/test_web_blueprints_conversion.py](tests/test_web_blueprints_conversion.py).
 - Started: extracted survey template-generation logic from [app/static/js/modules/converter/survey-convert.js](app/static/js/modules/converter/survey-convert.js) into [app/static/js/modules/converter/survey-template-generation.js](app/static/js/modules/converter/survey-template-generation.js).
 
@@ -249,6 +250,38 @@ Implementation checkpoint (2026-05-12):
 - Completed: replaced risky `innerHTML +=` log appends in [app/static/js/modules/converter/eyetracking.js](app/static/js/modules/converter/eyetracking.js) with safe DOM appends (`createElement`, `textContent`).
 - Completed: replaced risky `innerHTML +=` log appends in [app/static/js/modules/converter/physio.js](app/static/js/modules/converter/physio.js) with safe DOM appends (`createElement`, `textContent`).
 - Completed: added regression assertions in [tests/test_converter_workflow_wiring.py](tests/test_converter_workflow_wiring.py) to prevent reintroduction of raw log concatenation on `eyetrackingBatchLog`/`physioBatchLog`.
+
+### Slice D: converter log throughput/perf smoke + rendering-path audit
+
+Files:
+
+- [app/static/js/shared/job-polling.js](app/static/js/shared/job-polling.js)
+- [app/static/js/modules/converter/environment.js](app/static/js/modules/converter/environment.js)
+- [app/static/js/modules/converter/physio.js](app/static/js/modules/converter/physio.js)
+- [app/static/js/modules/converter/eyetracking.js](app/static/js/modules/converter/eyetracking.js)
+- [app/static/js/modules/converter/biometrics.js](app/static/js/modules/converter/biometrics.js)
+- [app/static/js/modules/converter/survey-conversion-log.js](app/static/js/modules/converter/survey-conversion-log.js)
+- [tests/test_converter_workflow_wiring.py](tests/test_converter_workflow_wiring.py)
+
+Acceptance:
+
+- polling loops use bounded cadence/timeouts/retry caps
+- streaming converter logs stay on DOM append/text paths (no `innerHTML +=` concatenation)
+
+Validation:
+
+- ./rtk test tests/test_converter_workflow_wiring.py -k "bounded_retry_timeout_contract or polling_cadence_perf_smoke or safe_append_paths" -q
+- ./rtk test tests/test_converter_workflow_wiring.py -q
+
+Implementation checkpoint (2026-05-12):
+
+- Started: added polling-helper throughput/perf smoke assertions for bounded interval/timeout/retry behavior in [tests/test_converter_workflow_wiring.py](tests/test_converter_workflow_wiring.py).
+- Started: added tab-level polling cadence assertions for Environment/Physio/Eyetracking status polling contracts in [tests/test_converter_workflow_wiring.py](tests/test_converter_workflow_wiring.py).
+- Started: added rendering-path audit assertions for Environment/Biometrics/Survey log controller append behavior in [tests/test_converter_workflow_wiring.py](tests/test_converter_workflow_wiring.py).
+- Completed: added shared `appendLogBatch` helper in [app/static/js/converter-bootstrap.js](app/static/js/converter-bootstrap.js) using `DocumentFragment` to reduce per-line DOM churn during burst log updates.
+- Completed: wired Environment on-status log bursts to `appendLogBatch` (with safe fallback) in [app/static/js/modules/converter/environment.js](app/static/js/modules/converter/environment.js).
+- Completed: wired Biometrics API log-array handling to batched append via `appendBiometricsLogEntries` in [app/static/js/modules/converter/biometrics.js](app/static/js/modules/converter/biometrics.js).
+- Completed: extended wiring assertions for `appendLogBatch` integration in [tests/test_converter_workflow_wiring.py](tests/test_converter_workflow_wiring.py).
 
 ## Exit Criteria for Converter Assessment
 
