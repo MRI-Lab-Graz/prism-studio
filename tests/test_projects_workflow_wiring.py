@@ -184,6 +184,18 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             content,
         )
 
+    def test_export_async_completion_renders_saved_zip_path_from_status(self):
+        content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("const MAX_POLLS = 2250;", content)
+        self.assertIn(
+            "`/api/projects/export/${encodeURIComponent(jobId)}/status`",
+            content,
+        )
+        self.assertIn("const savedPath = status.zip_path || 'unknown location';", content)
+        self.assertIn("ZIP saved to:", content)
+        self.assertIn("escapeHtml(savedPath)", content)
+
     def test_create_and_init_flows_use_fallback_and_refresh_project_sections(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 

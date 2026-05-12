@@ -391,9 +391,9 @@ def export_project():
         # Get export options
         anonymize = bool(data.get("anonymize", True))
         mask_questions = bool(data.get("mask_questions", True))
-        # Keep anonymization settings simple in UI: fixed random IDs when enabled.
+        # Keep anonymization settings simple in UI: fixed deterministic IDs when enabled.
         id_length = 8
-        deterministic = False
+        deterministic = True
         include_derivatives = bool(data.get("include_derivatives", True))
         include_code = bool(data.get("include_code", True))
         include_analysis = bool(data.get("include_analysis", False))
@@ -535,7 +535,7 @@ def export_project_start():
             "anonymize": anonymize,
             "mask_questions": mask_questions,
             "id_length": 8,
-            "deterministic": False,
+            "deterministic": True,
             "include_derivatives": include_derivatives,
             "include_code": include_code,
             "include_analysis": include_analysis,
