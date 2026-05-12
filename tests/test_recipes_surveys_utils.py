@@ -308,6 +308,16 @@ class TestApplyMissingExportPolicy:
         assert out.loc[1, "a"] == "n/a"
         assert out.loc[2, "a"] == "n/a"
 
+    def test_text_nan_fills_missing_with_nan_string(self):
+        df = pd.DataFrame({"a": ["1", "n/a", None]})
+        out = _apply_missing_export_policy(
+            df,
+            missing_policy="text-nan",
+            missing_numeric_value=None,
+        )
+        assert out.loc[1, "a"] == "NaN"
+        assert out.loc[2, "a"] == "NaN"
+
     def test_numeric_sentinel_applies_to_numeric_columns_only(self):
         df = pd.DataFrame(
             {
