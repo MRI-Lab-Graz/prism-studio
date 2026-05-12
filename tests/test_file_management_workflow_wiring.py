@@ -7,6 +7,16 @@ FILE_MANAGEMENT_SCRIPT = REPO_ROOT / "app" / "static" / "js" / "file_management.
 
 
 class TestFileManagementWorkflowWiring(unittest.TestCase):
+    def test_file_management_template_uses_shared_header_and_help_panel_macros(self):
+        content = FILE_MANAGEMENT_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            '{% from "includes/ui/macros.html" import page_header, help_panel %}',
+            content,
+        )
+        self.assertIn("{{ page_header(", content)
+        self.assertIn("{% call help_panel(", content)
+
     def test_file_management_script_uses_api_fallback_for_all_tool_requests(self):
         content = FILE_MANAGEMENT_SCRIPT.read_text(encoding="utf-8")
 

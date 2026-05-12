@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "includes/ui/macros.html" import page_header %}
+{% from "includes/ui/macros.html" import page_header, help_panel %}
 {% block title %}PRISM Studio – Recipe Builder{% endblock %}
 
 {% block styles %}
@@ -15,6 +15,11 @@
     'Recipe Builder',
     'Create and edit scoring recipes for survey or biometrics instruments. Select a template from your library to begin.'
   ) }}
+
+  {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
+  <p class="mb-1 small">Select modality and template first so item pools and scale metadata load with the correct context.</p>
+  <p class="mb-0 small">Save after checking preview JSON to keep recipe structure and scoring formulas aligned.</p>
+  {% endcall %}
 
   {% if not current_project.path %}
   <div class="alert alert-warning">

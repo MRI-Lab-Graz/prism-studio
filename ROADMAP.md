@@ -35,6 +35,9 @@ Progress snapshot:
 - Home page shell now uses shared page-header and help-panel primitives while preserving hero/content structure.
 - JSON Editor now uses shared page-header and help-panel primitives, with dedicated workflow wiring assertions.
 - Template Editor now uses shared page-header and help-panel primitives, with dedicated workflow wiring assertions.
+- Survey Customizer now uses shared page-header and help-panel primitives, with dedicated workflow wiring assertions.
+- File Management page now uses shared page-header and help-panel primitives, with dedicated workflow wiring assertions.
+- Recipe Builder page now uses shared page-header and help-panel primitives, with dedicated workflow wiring assertions.
 
 Next action:
 - Complete remaining page migrations to shared components and run focused wiring checks for UI-state regressions.
