@@ -845,6 +845,68 @@ class TestSavColumnSanitization:
         assert result.fallback_note is not None
         assert "SPSS export failed" in result.fallback_note
 
+    def test_combined_sav_roundtrip_preserves_column_and_value_labels(
+        self, tmp_path: Path
+    ) -> None:
+        """Combined SAV export should carry variable labels and value labels metadata."""
+        pyreadstat = pytest.importorskip("pyreadstat")
+
+        project_root = tmp_path / "project"
+        recipe_dir = tmp_path / "recipes"
+        recipe_dir.mkdir(parents=True)
+
+        survey_dir = project_root / "sub-001" / "ses-1" / "survey"
+        survey_dir.mkdir(parents=True)
+        (survey_dir / "sub-001_ses-1_task-aaa_survey.tsv").write_text(
+            "Q1\n5\n",
+            encoding="utf-8",
+        )
+
+        (recipe_dir / "recipe-aaa.json").write_text(
+            (
+                "{\n"
+                '  "Kind": "survey",\n'
+                '  "RecipeVersion": "1.0",\n'
+                '  "Survey": {"TaskName": "aaa"},\n'
+                '  "Scores": [\n'
+                "    {"
+                '"Name": "Total", '
+                '"Description": "Total score label", '
+                '"Method": "sum", '
+                '"Items": ["Q1"], '
+                '"Interpretation": {"0": "low", "5": "high"}'
+                "}\n"
+                "  ]\n"
+                "}\n"
+            ),
+            encoding="utf-8",
+        )
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="sav",
+            layout="long",
+            lang="en",
+            merge_all=True,
+        )
+
+        sav_file = result.out_root / "combined_survey.sav"
+        if not sav_file.exists():
+            pytest.skip("SAV export fell back to CSV in this environment")
+
+        _df, meta = pyreadstat.read_sav(sav_file)
+
+        col_labels = dict(getattr(meta, "column_names_to_labels", {}) or {})
+        assert col_labels.get("aaa_Total") == "Total score label"
+
+        val_labels = dict(getattr(meta, "variable_value_labels", {}) or {})
+        assert "aaa_Total" in val_labels
+        assert val_labels["aaa_Total"].get(0.0) == "low"
+        assert val_labels["aaa_Total"].get(5.0) == "high"
+
 
 class TestProjectNamePrefix:
     """Test that output files are prefixed with a slug of the project name."""
@@ -938,3 +1000,44 @@ class TestProjectNamePrefix:
         assert any(
             f.name.startswith("study_") for f in csvs
         ), f"Expected a file starting with 'study_', got: {[f.name for f in csvs]}"
+
+
+class TestMissingExportPolicy:
+    def test_numeric_sentinel_requires_value(self, tmp_path: Path) -> None:
+        project_root, recipe_dir = _setup_minimal_project(tmp_path)
+
+        with pytest.raises(ValueError, match="missing_numeric_value"):
+            compute_survey_recipes(
+                prism_root=project_root,
+                repo_root=tmp_path,
+                recipe_dir=recipe_dir,
+                modality="survey",
+                out_format="csv",
+                missing_policy="numeric-sentinel",
+            )
+
+    def test_numeric_sentinel_written_to_csv_scores(self, tmp_path: Path) -> None:
+        project_root = tmp_path / "project"
+        recipe_dir = tmp_path / "recipes"
+        survey_dir = project_root / "sub-001" / "ses-1" / "survey"
+        survey_dir.mkdir(parents=True)
+        survey_tsv = survey_dir / "sub-001_ses-1_task-test_survey.tsv"
+        survey_tsv.write_text("Q1\nn/a\n", encoding="utf-8")
+        recipe_dir.mkdir(parents=True)
+        _write_minimal_recipe(recipe_dir / "recipe-test.json", "test")
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+            layout="wide",
+            missing_policy="numeric-sentinel",
+            missing_numeric_value=-99,
+        )
+
+        csv_file = result.out_root / "test.csv"
+        rows = list(csv.DictReader(csv_file.open(encoding="utf-8")))
+        assert len(rows) == 1
+        assert rows[0]["Total"] == "-99.0"
