@@ -5356,6 +5356,13 @@ class TestEnvironmentConversionAsyncApi(unittest.TestCase):
         self.assertEqual(follow_payload.get("result", {}).get("row_count"), 1)
         self.assertEqual(len(follow_payload.get("logs", [])), 0)
 
+    def test_environment_convert_status_unknown_job_returns_not_found(self):
+        response = self.client.get("/api/environment-convert-status/missing-job-404?cursor=0")
+
+        self.assertEqual(response.status_code, 404)
+        payload = response.get_json()
+        self.assertEqual(payload.get("error"), "Job not found")
+
     def test_environment_convert_cancel_marks_in_memory_job_cancelled(self):
         job_id = "job-cancel"
         with environment_module._environment_jobs_lock:
@@ -5378,6 +5385,13 @@ class TestEnvironmentConversionAsyncApi(unittest.TestCase):
                 environment_module._environment_jobs[job_id].get("status"),
                 "cancelled",
             )
+
+    def test_environment_convert_cancel_unknown_job_returns_not_found(self):
+        response = self.client.post("/api/environment-convert-cancel/missing-job-404")
+
+        self.assertEqual(response.status_code, 404)
+        payload = response.get_json()
+        self.assertEqual(payload.get("error"), "Job not found or already finished")
 
     def test_environment_convert_status_exposes_progress_pct(self):
         job_id = "job-progress"
@@ -5431,6 +5445,13 @@ class TestPhysioConversionAsyncApi(unittest.TestCase):
                 physio_module._batch_jobs[job_id].get("status"), "cancelled"
             )
 
+    def test_batch_convert_cancel_unknown_job_returns_not_found(self):
+        response = self.client.post("/api/batch-convert-cancel/missing-job-404")
+
+        self.assertEqual(response.status_code, 404)
+        payload = response.get_json()
+        self.assertEqual(payload.get("error"), "Job not found or already finished")
+
     def test_batch_convert_status_returns_status_field(self):
         job_id = "batch-job-2"
         with physio_module._batch_jobs_lock:
@@ -5449,6 +5470,13 @@ class TestPhysioConversionAsyncApi(unittest.TestCase):
         payload = response.get_json()
         self.assertEqual(payload.get("status"), "completed")
         self.assertTrue(payload.get("done"))
+
+    def test_batch_convert_status_unknown_job_returns_not_found(self):
+        response = self.client.get("/api/batch-convert-status/missing-job-404?cursor=0")
+
+        self.assertEqual(response.status_code, 404)
+        payload = response.get_json()
+        self.assertEqual(payload.get("error"), "Job not found")
 
 
 class TestEnvironmentConversionApiResilience(unittest.TestCase):
