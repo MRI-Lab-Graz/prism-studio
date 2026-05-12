@@ -13,6 +13,7 @@ import { createSurveyWorkflowConvertResultsController } from './survey-workflow-
 import { createSurveyWorkflowProgressController } from './survey-workflow-progress.js';
 import { createSurveySourcedataQuickSelectController } from './survey-sourcedata-quick-select.js';
 import { createSurveyTemplateResultsController } from './survey-template-results.js';
+import { createSurveyTemplateGenerationController } from './survey-template-generation.js';
 import { createSurveyConversionSummaryController } from './survey-conversion-summary.js';
 import { createSurveyConversionLogController } from './survey-conversion-log.js';
 import { createSurveyConvertFeedbackController } from './survey-convert-feedback.js';
@@ -2530,6 +2531,37 @@ export function initSurveyConvert(elements) {
         escapeHtml,
     });
 
+    const surveyTemplateGenerationController = createSurveyTemplateGenerationController({
+        convertBtn,
+        convertDatasetName,
+        convertError,
+        convertInfo,
+        conversionLog,
+        conversionLogContainer,
+        appendLog,
+        setCurrentTemplateData: (value) => {
+            currentTemplateData = value;
+        },
+        showTemplateResultsContainer: () => {
+            if (templateResultsContainer) {
+                templateResultsContainer.classList.remove('d-none');
+            }
+        },
+        displayTemplateSingle: (data) => {
+            surveyTemplateResultsController.displayTemplateSingle(data);
+        },
+        displayTemplateGroups: (data) => {
+            surveyTemplateResultsController.displayTemplateGroups(data);
+        },
+        displayTemplateQuestions: (data) => {
+            surveyTemplateResultsController.displayTemplateQuestions(data);
+        },
+        displayParticipantMetadataSection: (data) => {
+            participantsMetadataController.displayParticipantMetadataSection(data);
+        },
+        updateConvertBtn,
+    });
+
     const surveyConversionSummaryController = createSurveyConversionSummaryController({
         conversionSummaryContainer,
         conversionSummaryBody,
@@ -2631,76 +2663,7 @@ export function initSurveyConvert(elements) {
     // ===== TEMPLATE GENERATION =====
 
     async function handleTemplateGeneration(file) {
-        const exportMode = document.getElementById('convertTemplateExport')?.value || 'groups';
-        const taskName = document.getElementById('convertDatasetName')?.value.trim() || '';
-
-        convertBtn.disabled = true;
-        convertError.classList.add('d-none');
-        convertInfo.classList.add('d-none');
-
-        // Show and clear logs
-        if (conversionLogContainer) {
-            conversionLogContainer.classList.remove('d-none');
-        }
-        if (conversionLog) {
-            conversionLog.innerHTML = '';
-        }
-
-        try {
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('mode', exportMode);
-            if (taskName) {
-                formData.append('task_name', taskName);
-            }
-
-            const response = await fetch('/api/limesurvey-to-prism', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
-
-            // Process logs if returned
-            if (data.log && Array.isArray(data.log)) {
-                data.log.forEach(entry => {
-                    appendLog(entry.message, entry.type, conversionLog);
-                });
-            }
-
-            if (!response.ok || data.error) {
-                throw new Error(data.error || 'Template generation failed');
-            }
-
-            currentTemplateData = data;
-
-            // Show results container
-            if (templateResultsContainer) {
-                templateResultsContainer.classList.remove('d-none');
-            }
-
-            // Display results based on mode
-            if (data.mode === 'combined') {
-                surveyTemplateResultsController.displayTemplateSingle(data);
-            } else if (data.mode === 'groups') {
-                surveyTemplateResultsController.displayTemplateGroups(data);
-            } else if (data.mode === 'questions') {
-                surveyTemplateResultsController.displayTemplateQuestions(data);
-            }
-
-            // Show participant metadata section for marking fields
-            participantsMetadataController.displayParticipantMetadataSection(data);
-
-            convertInfo.textContent = 'Template generation complete!';
-            convertInfo.classList.remove('d-none');
-
-        } catch (err) {
-            convertError.textContent = err.message;
-            convertError.classList.remove('d-none');
-            appendLog(`Error: ${err.message}`, 'error', conversionLog);
-        } finally {
-            updateConvertBtn();
-        }
+        await surveyTemplateGenerationController.handleTemplateGeneration(file);
     }
 
     // ===== PARTICIPANT METADATA MARKING =====

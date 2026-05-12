@@ -39,6 +39,7 @@ Current step:
 - Slice A complete for Environment/Physio/Eyetracking (abort-aware polling + project-change backend cancel dispatch).
 - Slice B expanded to Environment/Physio/Eyetracking/Biometrics/Participants (duplicate-submit guard via shared run controller).
 - Slice B now includes explicit participants preview/convert click-storm regression assertions.
+- Monolith split checkpoint: extracted survey template-generation controller from survey-convert.js into a dedicated module.
 
 Immediate execution slices:
 - Slice A: polling cancellation + project-change stability
