@@ -91,6 +91,11 @@ class TestValidatorWorkflowWiring(unittest.TestCase):
     def test_results_template_exposes_revalidate_mode_controls_and_progress_panel(self):
         content = RESULTS_TEMPLATE.read_text(encoding="utf-8")
 
+        self.assertIn(
+            '{% from "includes/ui/macros.html" import page_header %}', content
+        )
+        self.assertIn("{{ page_header(", content)
+        self.assertIn("'Validation Results'", content)
         self.assertIn('id="revalidateForm"', content)
         self.assertIn('id="revalidateMode"', content)
         self.assertIn('value="standard"', content)

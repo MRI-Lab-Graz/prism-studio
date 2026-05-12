@@ -29,6 +29,8 @@ Progress snapshot:
 - Beginner-help support expanded for file-input empty states and tailored hints.
 - Additional top-level pages migrated to shared header macros.
 - Standardized file-management and environment upload control wrappers.
+- Library editor page shell migrated to shared page header + help panel primitives, with focused wiring regression coverage.
+- Validation results page header migrated to shared page-header primitive, with validator workflow wiring coverage.
 
 Next action:
 - Complete remaining page migrations to shared components and run focused wiring checks for UI-state regressions.
