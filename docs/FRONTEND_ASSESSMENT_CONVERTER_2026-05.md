@@ -219,6 +219,7 @@ Implementation checkpoint (2026-05-12):
 - Started: wired Biometrics preview/detect/convert actions to shared run lock to prevent cross-button click storms.
 - Started: wired Participants preview/convert actions to shared run lock with guaranteed release across preflight early-return branches.
 - Started: added participants preview/convert click-storm regression assertions in [tests/test_converter_workflow_wiring.py](tests/test_converter_workflow_wiring.py).
+- Started: extracted survey template-generation logic from [app/static/js/modules/converter/survey-convert.js](app/static/js/modules/converter/survey-convert.js) into [app/static/js/modules/converter/survey-template-generation.js](app/static/js/modules/converter/survey-template-generation.js).
 
 ### Slice C: performance and rendering safety polish
 
