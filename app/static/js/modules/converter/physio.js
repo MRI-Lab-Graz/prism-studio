@@ -7,6 +7,8 @@
 
 import { pollJobStatus } from '../../shared/job-polling.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
+import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
+import { createJobRunController } from './job-run-controller.js';
 
 export function initPhysio(elements) {
     const STATUS_POLL_INTERVAL_MS = 500;
@@ -44,6 +46,8 @@ export function initPhysio(elements) {
     let physioSourcedataRequestToken = 0;
     let physioSourcedataQuickSelectEl = null;
     let physioSourcedataFileSelectEl = null;
+    const pollingRunState = createPollingRunState();
+    const runController = createJobRunController();
 
     function prefersServerPicker() {
         return Boolean(
@@ -392,6 +396,10 @@ export function initPhysio(elements) {
     });
 
     window.addEventListener('prism-project-changed', function() {
+        void runController.cancelActiveJob({
+            buildCancelUrl: (jobId) => `/api/batch-convert-cancel/${encodeURIComponent(jobId)}`,
+        }).catch(() => {});
+        pollingRunState.abortActive('Physio polling aborted due to project change.');
         physioServerFolderPath = '';
         clearAutoDetectedPhysioSource();
         clearPhysioSourceHint();
@@ -468,6 +476,10 @@ export function initPhysio(elements) {
     }
 
     async function runPhysioBatchConversion(dryRunMode) {
+            if (!runController.tryStartRun()) {
+                return;
+            }
+
             console.log('[Physio] Convert button clicked');
             physioBatchError.classList.add('d-none');
             physioBatchInfo.classList.add('d-none');
@@ -532,6 +544,7 @@ export function initPhysio(elements) {
                 physioBatchError.classList.remove('d-none');
                 physioBatchProgress.classList.add('d-none');
                 updatePhysioBatchBtn();
+                runController.finishRun();
                 return;
             }
 
@@ -557,6 +570,7 @@ export function initPhysio(elements) {
                     physioBatchError.classList.remove('d-none');
                     physioBatchProgress.classList.add('d-none');
                     updatePhysioBatchBtn();
+                    runController.finishRun();
                     return;
                 }
                 
@@ -577,6 +591,7 @@ export function initPhysio(elements) {
             }
             formData.append('dry_run', isDryRun ? 'true' : 'false');
 
+            let activePollController = null;
             try {
                 const response = await fetch('/api/batch-convert-start', {
                     method: 'POST',
@@ -593,23 +608,17 @@ export function initPhysio(elements) {
                 if (!jobId) {
                     throw new Error('Batch conversion did not return a job id');
                 }
+                runController.setActiveJobId(jobId);
 
-                let cancelRequested = false;
                 const cancelHandler = async () => {
-                    if (cancelRequested) return;
-                    cancelRequested = true;
                     if (physioBatchCancelBtn) {
                         physioBatchCancelBtn.disabled = true;
                         physioBatchCancelBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cancelling...';
                     }
                     try {
-                        const cancelResponse = await fetch(`/api/batch-convert-cancel/${encodeURIComponent(jobId)}`, {
-                            method: 'POST'
+                        await runController.cancelActiveJob({
+                            buildCancelUrl: (activeJobId) => `/api/batch-convert-cancel/${encodeURIComponent(activeJobId)}`,
                         });
-                        const cancelData = await cancelResponse.json().catch(() => ({}));
-                        if (!cancelResponse.ok) {
-                            throw new Error(cancelData.error || 'Failed to cancel conversion');
-                        }
                         writeLocalLog('⏹️ Cancellation requested. Waiting for cleanup...', 'ansi-yellow');
                     } catch (cancelError) {
                         physioBatchError.textContent = cancelError.message;
@@ -618,7 +627,6 @@ export function initPhysio(elements) {
                             physioBatchCancelBtn.disabled = false;
                             physioBatchCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Running Conversion';
                         }
-                        cancelRequested = false;
                     }
                 };
 
@@ -626,6 +634,8 @@ export function initPhysio(elements) {
                     physioBatchCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Running Conversion';
                     physioBatchCancelBtn.onclick = cancelHandler;
                 }
+
+                activePollController = pollingRunState.start();
 
                 const statusData = await pollJobStatus({
                     fetchStatus: async (cursor) => {
@@ -667,6 +677,8 @@ export function initPhysio(elements) {
                     intervalMs: STATUS_POLL_INTERVAL_MS,
                     timeoutMs: STATUS_POLL_TIMEOUT_MS,
                     maxConsecutiveErrors: MAX_STATUS_POLL_ERRORS,
+                    signal: activePollController.signal,
+                    abortErrorMessage: 'Physio polling aborted due to project change.',
                     timeoutErrorMessage: 'Physio conversion status timed out after 5 minutes. Please review logs and retry.',
                     statusFailureMessage: 'Failed to retrieve conversion status after multiple attempts.',
                     getFailureError: (nextStatusData) => nextStatusData.error || 'Batch conversion failed',
@@ -718,7 +730,9 @@ export function initPhysio(elements) {
                     }
                 }
             } catch (err) {
-                if (err.message === 'Cancelled by user' || err.message === 'Conversion cancelled by user') {
+                if (isPollingAbortError(err)) {
+                    // Project-change listeners already reset converter state.
+                } else if (err.message === 'Cancelled by user' || err.message === 'Conversion cancelled by user') {
                     physioBatchInfo.textContent = 'Conversion cancelled. Temporary staged output was cleaned up and nothing was copied into the project.';
                     physioBatchInfo.classList.remove('d-none');
                 } else {
@@ -726,6 +740,8 @@ export function initPhysio(elements) {
                     physioBatchError.classList.remove('d-none');
                 }
             } finally {
+                pollingRunState.clear(activePollController);
+                runController.finishRun();
                 if (progressTimer) {
                     window.clearInterval(progressTimer);
                 }

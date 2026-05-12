@@ -5,6 +5,8 @@
 
 import { pollJobStatus } from '../../shared/job-polling.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
+import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
+import { createJobRunController } from './job-run-controller.js';
 
 export function initEyetracking(elements) {
     const STATUS_POLL_INTERVAL_MS = 500;
@@ -36,6 +38,8 @@ export function initEyetracking(elements) {
     let eyetrackingSourcedataRequestToken = 0;
     let eyetrackingSourcedataQuickSelectEl = null;
     let eyetrackingSourcedataFileSelectEl = null;
+    const pollingRunState = createPollingRunState();
+    const runController = createJobRunController();
 
     function prefersServerPicker() {
         return Boolean(
@@ -277,6 +281,10 @@ export function initEyetracking(elements) {
     });
 
     window.addEventListener('prism-project-changed', function() {
+        void runController.cancelActiveJob({
+            buildCancelUrl: (jobId) => `/api/batch-convert-cancel/${encodeURIComponent(jobId)}`,
+        }).catch(() => {});
+        pollingRunState.abortActive('Eyetracking polling aborted due to project change.');
         resetEyetrackingWorkflowState();
         updateEyetrackingBatchBtn();
         refreshEyetrackingSourcedataQuickSelect();
@@ -350,6 +358,10 @@ export function initEyetracking(elements) {
     }
 
     async function runEyetrackingBatchConversion(dryRunMode) {
+            if (!runController.tryStartRun()) {
+                return;
+            }
+
             eyetrackingBatchError.classList.add('d-none');
             eyetrackingBatchInfo.classList.add('d-none');
             eyetrackingBatchProgress.classList.remove('d-none');
@@ -380,12 +392,14 @@ export function initEyetracking(elements) {
                 eyetrackingBatchError.classList.remove('d-none');
                 eyetrackingBatchProgress.classList.add('d-none');
                 updateEyetrackingBatchBtn();
+                runController.finishRun();
                 return;
             }
             if (currentProjectPath) {
                 formData.append('project_path', currentProjectPath);
             }
 
+            let activePollController = null;
             try {
                 const response = await fetch('/api/batch-convert-start', {
                     method: 'POST',
@@ -402,17 +416,17 @@ export function initEyetracking(elements) {
                 if (!jobId) {
                     throw new Error('Batch conversion did not return a job id');
                 }
+                runController.setActiveJobId(jobId);
 
-                let cancelRequested = false;
                 const cancelHandler = async () => {
-                    if (cancelRequested) return;
-                    cancelRequested = true;
                     if (eyetrackingBatchCancelBtn) {
                         eyetrackingBatchCancelBtn.disabled = true;
                         eyetrackingBatchCancelBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cancelling...';
                     }
                     try {
-                        await fetch(`/api/batch-convert-cancel/${encodeURIComponent(jobId)}`, { method: 'POST' });
+                        await runController.cancelActiveJob({
+                            buildCancelUrl: (activeJobId) => `/api/batch-convert-cancel/${encodeURIComponent(activeJobId)}`,
+                        });
                     } catch (_) { /* ignore */ }
                 };
 
@@ -422,6 +436,8 @@ export function initEyetracking(elements) {
                     eyetrackingBatchCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Running Conversion';
                     eyetrackingBatchCancelBtn.onclick = cancelHandler;
                 }
+
+                activePollController = pollingRunState.start();
 
                 const statusData = await pollJobStatus({
                     fetchStatus: async (cursor) => {
@@ -458,6 +474,8 @@ export function initEyetracking(elements) {
                     intervalMs: STATUS_POLL_INTERVAL_MS,
                     timeoutMs: STATUS_POLL_TIMEOUT_MS,
                     maxConsecutiveErrors: MAX_STATUS_POLL_ERRORS,
+                    signal: activePollController.signal,
+                    abortErrorMessage: 'Eyetracking polling aborted due to project change.',
                     timeoutErrorMessage: 'Eyetracking conversion status timed out after 5 minutes. Please review logs and retry.',
                     statusFailureMessage: 'Failed to retrieve conversion status after multiple attempts.',
                     getFailureError: (nextStatusData) => nextStatusData.error || 'Batch conversion failed',
@@ -493,7 +511,9 @@ export function initEyetracking(elements) {
                 }
                 eyetrackingBatchInfo.classList.remove('d-none');
             } catch (err) {
-                if (err.message === 'Cancelled by user' || err.message === 'Conversion cancelled by user') {
+                if (isPollingAbortError(err)) {
+                    // Project-change listeners already reset UI state.
+                } else if (err.message === 'Cancelled by user' || err.message === 'Conversion cancelled by user') {
                     eyetrackingBatchInfo.textContent = 'Conversion cancelled.';
                     eyetrackingBatchInfo.classList.remove('d-none');
                 } else {
@@ -501,6 +521,8 @@ export function initEyetracking(elements) {
                     eyetrackingBatchError.classList.remove('d-none');
                 }
             } finally {
+                pollingRunState.clear(activePollController);
+                runController.finishRun();
                 eyetrackingBatchProgress.classList.add('d-none');
                 if (eyetrackingBatchCancelBtn) {
                     eyetrackingBatchCancelBtn.classList.add('d-none');
