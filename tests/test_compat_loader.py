@@ -231,6 +231,21 @@ def test_biometrics_converter_shim_loads_in_app_runtime(monkeypatch) -> None:
     assert callable(getattr(loaded, "convert_biometrics_table_to_prism_dataset", None))
 
 
+def test_biometrics_converter_shim_loads_in_repo_runtime(monkeypatch) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    biometrics_file = repo_root / "app" / "src" / "converters" / "biometrics.py"
+
+    monkeypatch.syspath_prepend(str(repo_root))
+
+    loaded = _load_module_from_path(
+        "biometrics_shim_repo_runtime_test",
+        biometrics_file,
+    )
+
+    assert callable(getattr(loaded, "detect_biometrics_in_table", None))
+    assert callable(getattr(loaded, "convert_biometrics_table_to_prism_dataset", None))
+
+
 def test_file_reader_shim_loads_in_app_runtime(monkeypatch) -> None:
     app_root = Path(__file__).resolve().parents[1] / "app"
     file_reader_file = app_root / "src" / "converters" / "file_reader.py"
@@ -244,6 +259,38 @@ def test_file_reader_shim_loads_in_app_runtime(monkeypatch) -> None:
 
     assert callable(getattr(loaded, "read_tabular_file", None))
     assert getattr(loaded, "ReadResult", None) is not None
+
+
+def test_file_reader_shim_loads_in_repo_runtime(monkeypatch) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    file_reader_file = repo_root / "app" / "src" / "converters" / "file_reader.py"
+
+    monkeypatch.syspath_prepend(str(repo_root))
+
+    loaded = _load_module_from_path(
+        "file_reader_shim_repo_runtime_test",
+        file_reader_file,
+    )
+
+    assert callable(getattr(loaded, "read_tabular_file", None))
+    assert getattr(loaded, "ReadResult", None) is not None
+
+
+def test_wide_to_long_shim_loads_in_repo_runtime(monkeypatch) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    wide_to_long_file = (
+        repo_root / "app" / "src" / "converters" / "wide_to_long.py"
+    )
+
+    monkeypatch.syspath_prepend(str(repo_root))
+
+    loaded = _load_module_from_path(
+        "wide_to_long_shim_repo_runtime_test",
+        wide_to_long_file,
+    )
+
+    assert callable(getattr(loaded, "detect_wide_session_prefixes", None))
+    assert callable(getattr(loaded, "inspect_wide_to_long_columns", None))
 
 
 def test_participants_converter_imports_in_app_runtime(monkeypatch) -> None:
