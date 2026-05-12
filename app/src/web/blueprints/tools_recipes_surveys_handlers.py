@@ -178,11 +178,16 @@ def handle_api_recipes_surveys(data: dict):
         if isinstance(data.get("missing_policy"), str)
         else str(data.get("missing_policy") or "system-missing").strip().lower()
     )
-    if missing_policy not in {"system-missing", "text-na", "numeric-sentinel"}:
+    if missing_policy not in {
+        "system-missing",
+        "text-na",
+        "text-nan",
+        "numeric-sentinel",
+    }:
         return (
             jsonify(
                 {
-                    "error": "Invalid missing_policy. Use one of: system-missing, text-na, numeric-sentinel."
+                    "error": "Invalid missing_policy. Use one of: system-missing, text-na, text-nan, numeric-sentinel."
                 }
             ),
             400,
@@ -216,13 +221,15 @@ def handle_api_recipes_surveys(data: dict):
     ):
         return jsonify({"error": "Invalid dataset path"}), 400
 
+    dataset_root = Path(dataset_path).resolve()
+
     # Build config-based subfolder: {layout}_{lang} or {layout}_{lang}_anon
     subfolder_name = f"{layout}_{lang}"
     if anonymize:
         subfolder_name += "_anon"
 
     derivatives_dir = (
-        Path(dataset_path)
+        dataset_root
         / "derivatives"
         / ("survey" if modality == "survey" else "biometrics")
         / subfolder_name
@@ -260,7 +267,7 @@ def handle_api_recipes_surveys(data: dict):
     from src.web.validation import run_validation
 
     issues, _stats = run_validation(
-        dataset_path, verbose=False, schema_version=None, run_bids=False
+        str(dataset_root), verbose=False, schema_version=None, run_bids=False
     )
     error_issues = [
         i for i in (issues or []) if (len(i) >= 1 and str(i[0]).upper() == "ERROR")
@@ -294,26 +301,27 @@ def handle_api_recipes_surveys(data: dict):
             repo_root_str = str(global_recipes.parent.parent)
         else:
             repo_root_str = str(_default_repo_root)
+        repo_root_str = str(Path(repo_root_str).resolve())
+        if effective_recipe_dir:
+            effective_recipe_dir = str(Path(effective_recipe_dir).resolve())
 
         cmd_parts = [
             "python",
             "prism_tools.py",
             "recipes",
             modality,
-            f'--prism "{dataset_path}"',
+            f'--prism "{dataset_root}"',
+            f'--repo "{repo_root_str}"',
+            f"--format {out_format}",
+            f"--layout {layout}",
+            f"--lang {lang}",
         ]
-        if repo_root_str != current_app.root_path:
-            cmd_parts.append(f'--repo "{repo_root_str}"')
         if effective_recipe_dir:
             cmd_parts.append(f'--recipes "{effective_recipe_dir}"')
         if survey_filter:
             cmd_parts.append(f'--survey "{survey_filter}"')
         if sessions:
             cmd_parts.append(f'--sessions "{sessions}"')
-        if out_format != "flat":
-            cmd_parts.append(f"--format {out_format}")
-        if layout != "long":
-            cmd_parts.append(f"--layout {layout}")
         if include_raw:
             cmd_parts.append("--include-raw")
         if merge_all:
@@ -326,8 +334,6 @@ def handle_api_recipes_surveys(data: dict):
             cmd_parts.append(f"--missing-policy {missing_policy}")
         if missing_numeric_value is not None:
             cmd_parts.append(f"--missing-numeric-value {missing_numeric_value}")
-        if lang != "en":
-            cmd_parts.append(f"--lang {lang}")
 
         cli_cmd = " ".join(cmd_parts)
         emit_backend_action(
@@ -337,7 +343,7 @@ def handle_api_recipes_surveys(data: dict):
 
         try:
             result = run_recipes_job(
-                prism_root=Path(dataset_path),
+                prism_root=dataset_root,
                 repo_root=Path(repo_root_str),
                 recipe_dir=effective_recipe_dir,
                 recipe_filter=survey_filter,
@@ -669,7 +675,7 @@ def handle_api_recipes_surveys(data: dict):
     _recipes_dir = result.recipes_dir
     try:
         _recipes_from_project = _recipes_dir is not None and Path(
-            dataset_path
+            dataset_root
         ).resolve() in [_recipes_dir, *_recipes_dir.parents]
     except Exception:
         _recipes_from_project = False
