@@ -39,9 +39,12 @@ Current step:
 - Slice A complete for Environment/Physio/Eyetracking (abort-aware polling + project-change backend cancel dispatch).
 - Slice B expanded to Environment/Physio/Eyetracking/Biometrics/Participants (duplicate-submit guard via shared run controller).
 - Slice B now includes explicit participants preview/convert click-storm regression assertions.
+- Slice B now includes explicit biometrics preview/detect/confirm click-storm regression assertions.
+- Slice B replay hardening now includes negative unknown-job checks for async status/cancel endpoints (Environment + Batch conversion).
 - Monolith split checkpoint: extracted survey template-generation controller from survey-convert.js into a dedicated module.
 - Slice C complete for Physio/Eyetracking log rendering paths (safe DOM appends via textContent, no innerHTML concatenation).
-- Coverage checkpoint: improved from 81.10% to 82.13% via backend test expansion in `src/converters/limesurvey.py` and `src/maintenance/rename_legacy_physio_filenames.py`.
+- Coverage checkpoint: improved from 81.10% to 85.70% via backend test expansion in `src/converters/limesurvey.py`, `src/maintenance/rename_legacy_physio_filenames.py`, and `src/batch_convert.py`.
+- Coverage target checkpoint: soft 85% objective reached (maintain or improve in subsequent slices).
 
 Immediate execution slices:
 - Slice B: duplicate-submit and backend command ownership hardening (remaining tab-by-tab replay/ownership checks)
