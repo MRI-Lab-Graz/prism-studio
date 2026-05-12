@@ -34,6 +34,7 @@ export function initBiometrics(elements) {
         biometricsSessionSelect,
         biometricsSessionCustom,
         appendLog,
+        appendLogBatch,
         displayValidationResults,
         registerSessionInProject,
         getBiometricsSessionValue
@@ -322,6 +323,19 @@ export function initBiometrics(elements) {
         return { target, countNote };
     }
 
+    function appendBiometricsLogEntries(entries) {
+        if (!Array.isArray(entries) || entries.length === 0) {
+            return;
+        }
+        if (typeof appendLogBatch === 'function') {
+            appendLogBatch(entries, 'info', biometricsLog);
+            return;
+        }
+        entries.forEach((entry) => {
+            appendLog(entry.message, entry.type || entry.level || 'info', biometricsLog);
+        });
+    }
+
     // ===== FILE UPLOAD HANDLERS =====
 
     if (biometricsDataFile) {
@@ -468,9 +482,7 @@ export function initBiometrics(elements) {
                 const data = await response.json();
 
                 if (data.log && Array.isArray(data.log)) {
-                    data.log.forEach(entry => {
-                        appendLog(entry.message, entry.type || entry.level || 'info', biometricsLog);
-                    });
+                    appendBiometricsLogEntries(data.log);
                 }
 
                 if (!response.ok) {
@@ -660,9 +672,7 @@ export function initBiometrics(elements) {
                 
                 // Process logs even if response is not ok
                 if (data.log && Array.isArray(data.log)) {
-                    data.log.forEach(entry => {
-                        appendLog(entry.message, entry.type || entry.level || 'info', biometricsLog);
-                    });
+                    appendBiometricsLogEntries(data.log);
                 }
 
                 if (!response.ok) {

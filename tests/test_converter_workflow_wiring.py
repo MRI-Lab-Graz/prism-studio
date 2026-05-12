@@ -7,6 +7,9 @@ CONVERTER_INDEX = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "index.js"
 )
 SHARED_API = REPO_ROOT / "app" / "static" / "js" / "shared" / "api.js"
+JOB_POLLING_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "shared" / "job-polling.js"
+)
 SESSION_REGISTER = (
     REPO_ROOT / "app" / "static" / "js" / "shared" / "session-register.js"
 )
@@ -270,6 +273,12 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn("installApiFetchFallback();", content)
         self.assertIn("window.__prismConverterBootstrapInitialized", content)
+        self.assertIn(
+            "function appendLogBatch(entries, defaultType = 'info', logElement = null) {",
+            content,
+        )
+        self.assertIn("const fragment = document.createDocumentFragment();", content)
+        self.assertIn("targetLog.appendChild(fragment);", content)
         self.assertIn("let sessionPickerRequestToken = 0;", content)
         self.assertIn("function hasManualCustomValue(selectEl) {", content)
         self.assertIn("if (sessions.length === 1 && !hasManualCustomValue(sel)) {", content)
@@ -280,6 +289,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn(
             "window.addEventListener('prism-project-changed', function() {", content
         )
+        self.assertIn("appendLogBatch,", content)
 
     def test_converter_bootstrap_supports_tab_query_parameter(self):
         content = CONVERTER_BOOTSTRAP.read_text(encoding="utf-8")
@@ -329,6 +339,49 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("setActiveJobId(jobId)", content)
         self.assertIn("cancelActiveJob({ buildCancelUrl })", content)
 
+    def test_shared_job_polling_helper_has_bounded_retry_timeout_contract(self):
+        content = JOB_POLLING_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("let consecutiveErrors = 0;", content)
+        self.assertIn("const startedAt = Date.now();", content)
+        self.assertIn("if (Date.now() - startedAt > timeoutMs) {", content)
+        self.assertIn("await sleepWithAbort(intervalMs, signal, abortErrorMessage);", content)
+        self.assertIn("if (consecutiveErrors >= maxConsecutiveErrors) {", content)
+
+    def test_environment_physio_eyetracking_polling_cadence_perf_smoke(self):
+        environment_content = ENVIRONMENT_MODULE.read_text(encoding="utf-8")
+        physio_content = PHYSIO_MODULE.read_text(encoding="utf-8")
+        eyetracking_content = EYETRACKING_MODULE.read_text(encoding="utf-8")
+
+        for content in (environment_content, physio_content, eyetracking_content):
+            self.assertIn("const STATUS_POLL_INTERVAL_MS = 500;", content)
+            self.assertIn("const STATUS_POLL_TIMEOUT_MS = 5 * 60 * 1000;", content)
+            self.assertIn("const MAX_STATUS_POLL_ERRORS = 4;", content)
+            self.assertIn("intervalMs: STATUS_POLL_INTERVAL_MS,", content)
+            self.assertIn("timeoutMs: STATUS_POLL_TIMEOUT_MS,", content)
+            self.assertIn("maxConsecutiveErrors: MAX_STATUS_POLL_ERRORS,", content)
+
+    def test_environment_biometrics_and_survey_logs_use_safe_append_paths(self):
+        environment_content = ENVIRONMENT_MODULE.read_text(encoding="utf-8")
+        biometrics_content = BIOMETRICS_MODULE.read_text(encoding="utf-8")
+        conversion_log_content = SURVEY_CONVERSION_LOG_MODULE.read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            "appendLogBatch(newLogs, 'info', envLog);",
+            environment_content,
+        )
+        self.assertIn(
+            "appendBiometricsLogEntries(data.log);",
+            biometrics_content,
+        )
+        self.assertIn("line.textContent = `[${timestamp}] ${String(message)}`;", conversion_log_content)
+        self.assertIn("targetLog.appendChild(line);", conversion_log_content)
+        self.assertNotIn("envLog.innerHTML +=", environment_content)
+        self.assertNotIn("biometricsLog.innerHTML +=", biometrics_content)
+        self.assertNotIn("targetLog.innerHTML +=", conversion_log_content)
+
     def test_biometrics_module_resets_stale_state_and_uses_explicit_project_path(self):
         content = BIOMETRICS_MODULE.read_text(encoding="utf-8")
 
@@ -344,6 +397,8 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("if (!runController.tryStartRun()) {", content)
         self.assertIn("runController.finishRun();", content)
         self.assertIn("function setBiometricsActionButtonsDisabled(disabled) {", content)
+        self.assertIn("function appendBiometricsLogEntries(entries) {", content)
+        self.assertIn("appendLogBatch(entries, 'info', biometricsLog);", content)
         self.assertIn("function clearBiometricsMessages() {", content)
         self.assertIn("function resetBiometricsWorkflowState() {", content)
         self.assertIn(
@@ -525,6 +580,93 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("line.textContent = String(message);", eyetracking_content)
         self.assertNotIn("eyetrackingBatchLog.innerHTML +=", eyetracking_content)
 
+    def test_environment_handler_block_uses_run_lock_and_single_job_lifecycle(self):
+        environment_content = ENVIRONMENT_MODULE.read_text(encoding="utf-8")
+
+        start_marker = "const startConversion = (pilotMode) => {"
+        end_marker = "envConvertBtn?.addEventListener('click', () => startConversion(false));"
+
+        self.assertIn(start_marker, environment_content)
+        self.assertIn(end_marker, environment_content)
+        self.assertIn(
+            "envPilotRunBtn?.addEventListener('click', () => startConversion(true));",
+            environment_content,
+        )
+
+        handler_block = (
+            environment_content.split(start_marker, 1)[1].split(end_marker, 1)[0]
+        )
+
+        self.assertIn("if (!runController.tryStartRun()) {", handler_block)
+        self.assertIn("runController.setActiveJobId(jobId);", handler_block)
+        self.assertIn("await runController.cancelActiveJob({", handler_block)
+        self.assertIn(".finally(() => {", handler_block)
+        self.assertIn("runController.finishRun();", handler_block)
+        self.assertIn(
+            "buildCancelUrl: (activeJobId) => `/api/environment-convert-cancel/${encodeURIComponent(activeJobId)}`",
+            handler_block,
+        )
+        self.assertIn(
+            "const statusResponse = await fetch(`/api/environment-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);",
+            handler_block,
+        )
+
+    def test_physio_handler_block_uses_run_lock_and_releases_on_replay_paths(self):
+        physio_content = PHYSIO_MODULE.read_text(encoding="utf-8")
+
+        start_marker = "async function runPhysioBatchConversion(dryRunMode) {"
+        end_marker = "if (physioBatchPreviewBtn) {"
+
+        self.assertIn(start_marker, physio_content)
+        self.assertIn(end_marker, physio_content)
+
+        handler_block = physio_content.split(start_marker, 1)[1].split(end_marker, 1)[0]
+
+        self.assertIn("if (!runController.tryStartRun()) {", handler_block)
+        self.assertIn("if (!isDryRun && !currentProjectPath) {", handler_block)
+        self.assertIn("runController.finishRun();", handler_block)
+        self.assertIn("runController.setActiveJobId(jobId);", handler_block)
+        self.assertIn("await runController.cancelActiveJob({", handler_block)
+        self.assertIn("finally {", handler_block)
+        self.assertIn(
+            "buildCancelUrl: (activeJobId) => `/api/batch-convert-cancel/${encodeURIComponent(activeJobId)}`",
+            handler_block,
+        )
+        self.assertIn(
+            "const statusResponse = await fetch(`/api/batch-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);",
+            handler_block,
+        )
+
+    def test_eyetracking_handler_block_uses_run_lock_and_releases_on_replay_paths(
+        self,
+    ):
+        eyetracking_content = EYETRACKING_MODULE.read_text(encoding="utf-8")
+
+        start_marker = "async function runEyetrackingBatchConversion(dryRunMode) {"
+        end_marker = "if (eyetrackingBatchPreviewBtn) {"
+
+        self.assertIn(start_marker, eyetracking_content)
+        self.assertIn(end_marker, eyetracking_content)
+
+        handler_block = (
+            eyetracking_content.split(start_marker, 1)[1].split(end_marker, 1)[0]
+        )
+
+        self.assertIn("if (!runController.tryStartRun()) {", handler_block)
+        self.assertIn("if (!isDryRun && !currentProjectPath) {", handler_block)
+        self.assertIn("runController.finishRun();", handler_block)
+        self.assertIn("runController.setActiveJobId(jobId);", handler_block)
+        self.assertIn("await runController.cancelActiveJob({", handler_block)
+        self.assertIn("finally {", handler_block)
+        self.assertIn(
+            "buildCancelUrl: (activeJobId) => `/api/batch-convert-cancel/${encodeURIComponent(activeJobId)}`",
+            handler_block,
+        )
+        self.assertIn(
+            "const statusResponse = await fetch(`/api/batch-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);",
+            handler_block,
+        )
+
     def test_environment_and_participants_modules_include_sourcedata_quick_select(self):
         environment_content = ENVIRONMENT_MODULE.read_text(encoding="utf-8")
         participants_content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
@@ -551,6 +693,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "pollingRunState.abortActive('Environment polling aborted due to project change.');",
             environment_content,
         )
+        self.assertIn(
+            "if (typeof appendLogBatch === 'function') {",
+            environment_content,
+        )
+        self.assertIn("appendLogBatch(newLogs, 'info', envLog);", environment_content)
         self.assertIn("signal: activePollController.signal,", environment_content)
         self.assertIn(
             "sourcedata-files?kind=environment&project_path=${encodeURIComponent(effectiveProjectPath)}",
