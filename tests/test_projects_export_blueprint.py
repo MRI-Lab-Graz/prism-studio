@@ -62,7 +62,142 @@ def test_projects_export_uses_fixed_internal_anonymization_settings(tmp_path):
     assert called["anonymize"] is True
     assert called["mask_questions"] is False
     assert called["id_length"] == 8
-    assert called["deterministic"] is False
+    assert called["deterministic"] is True
+
+
+def test_projects_export_start_uses_fixed_internal_anonymization_settings(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    captured: dict[str, object] = {}
+
+    class _FakeThread:
+        def __init__(self, target=None, args=(), daemon=None):
+            captured["target"] = target
+            captured["args"] = args
+            captured["daemon"] = daemon
+
+        def start(self):
+            captured["started"] = True
+
+    with patch(
+        "src.web.blueprints.projects_export_blueprint.threading.Thread",
+        side_effect=lambda *args, **kwargs: _FakeThread(*args, **kwargs),
+    ):
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/start",
+                json={
+                    "project_path": str(project_dir),
+                    "anonymize": True,
+                    "mask_questions": False,
+                    "include_derivatives": True,
+                    "include_code": False,
+                    "include_analysis": False,
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("job_id")
+    assert captured.get("started") is True
+    assert captured.get("target") is projects_export_module._run_export_job
+
+    args = captured.get("args")
+    assert isinstance(args, tuple)
+    assert len(args) == 4
+    export_kwargs = args[1]
+    assert isinstance(export_kwargs, dict)
+    assert export_kwargs["anonymize"] is True
+    assert export_kwargs["mask_questions"] is False
+    assert export_kwargs["id_length"] == 8
+    assert export_kwargs["deterministic"] is True
+    assert args[2] == "study_anonymized_export.zip"
+
+
+def test_projects_export_start_uses_non_anonymized_filename_when_disabled(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    captured: dict[str, object] = {}
+
+    class _FakeThread:
+        def __init__(self, target=None, args=(), daemon=None):
+            captured["target"] = target
+            captured["args"] = args
+            captured["daemon"] = daemon
+
+        def start(self):
+            captured["started"] = True
+
+    with patch(
+        "src.web.blueprints.projects_export_blueprint.threading.Thread",
+        side_effect=lambda *args, **kwargs: _FakeThread(*args, **kwargs),
+    ):
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/start",
+                json={
+                    "project_path": str(project_dir),
+                    "anonymize": False,
+                    "mask_questions": False,
+                    "include_derivatives": True,
+                    "include_code": False,
+                    "include_analysis": False,
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("job_id")
+
+    args = captured.get("args")
+    assert isinstance(args, tuple)
+    assert len(args) == 4
+    export_kwargs = args[1]
+    assert isinstance(export_kwargs, dict)
+    assert export_kwargs["anonymize"] is False
+    assert args[2] == "study_export.zip"
+
+
+def test_export_status_payload_does_not_expose_mapping_metadata(tmp_path):
+    app = _build_app()
+
+    zip_path = tmp_path / "saved-export.zip"
+    zip_path.write_bytes(b"PK\x03\x04")
+    job_id = "job-status"
+
+    with projects_export_module._export_lock:
+        projects_export_module._export_jobs.clear()
+        now = time.monotonic()
+        projects_export_module._export_jobs[job_id] = {
+            "status": "complete",
+            "percent": 100,
+            "message": "Export complete",
+            "zip_path": str(zip_path),
+            "filename": "saved-export.zip",
+            "mapping_file": str(tmp_path / "code" / "anonymization_map.json"),
+            "error": None,
+            "cancel_event": threading.Event(),
+            "created_at": now,
+            "updated_at": now,
+            "done_at": now,
+        }
+
+    with app.test_client() as client:
+        response = client.get(f"/api/projects/export/{job_id}/status")
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("status") == "complete"
+    assert payload.get("zip_path") == str(zip_path)
+    assert "mapping_file" not in payload
 
 
 def test_projects_export_sync_response_cleans_temp_zip_after_close(tmp_path):
