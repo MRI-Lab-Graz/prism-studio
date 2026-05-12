@@ -732,7 +732,7 @@ def build_prism_tools_parsers(
     parser_deriv_surveys.add_argument(
         "--missing-policy",
         default="system-missing",
-        choices=["system-missing", "text-na", "numeric-sentinel"],
+        choices=["system-missing", "text-na", "text-nan", "numeric-sentinel"],
         help="Missing-value export policy for csv/xlsx/sav outputs",
     )
     parser_deriv_surveys.add_argument(
@@ -810,7 +810,7 @@ def build_prism_tools_parsers(
     parser_deriv_biometrics.add_argument(
         "--missing-policy",
         default="system-missing",
-        choices=["system-missing", "text-na", "numeric-sentinel"],
+        choices=["system-missing", "text-na", "text-nan", "numeric-sentinel"],
         help="Missing-value export policy for csv/xlsx/sav outputs",
     )
     parser_deriv_biometrics.add_argument(

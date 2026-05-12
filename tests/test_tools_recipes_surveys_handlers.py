@@ -277,3 +277,82 @@ def test_handle_api_recipes_surveys_forwards_missing_policy_fields(
     assert response.status_code == 200
     assert run_job.call_args.kwargs["missing_policy"] == "numeric-sentinel"
     assert run_job.call_args.kwargs["missing_numeric_value"] == -99.0
+
+
+def test_handle_api_recipes_surveys_accepts_text_nan_missing_policy(
+    tmp_path: Path,
+) -> None:
+    handlers = _import_handlers_module()
+    app = _build_app()
+
+    dataset_path = tmp_path / "dataset"
+    dataset_path.mkdir()
+    out_root = dataset_path / "derivatives" / "survey" / "long_en"
+
+    result = SurveyRecipesResult(
+        processed_files=1,
+        written_files=1,
+        out_format="csv",
+        out_root=out_root,
+        flat_out_path=out_root / "combined_survey.csv",
+    )
+
+    with app.app_context(), patch(
+        "src.web.validation.run_validation", return_value=([], {})
+    ), patch(
+        "src.cli.commands.recipes.run_recipes_job", return_value=result
+    ) as run_job:
+        response = handlers.handle_api_recipes_surveys(
+            {
+                "dataset_path": str(dataset_path),
+                "modality": "survey",
+                "format": "csv",
+                "missing_policy": "text-nan",
+            }
+        )
+
+    assert response.status_code == 200
+    assert run_job.call_args.kwargs["missing_policy"] == "text-nan"
+    assert run_job.call_args.kwargs["missing_numeric_value"] is None
+
+
+def test_handle_api_recipes_surveys_logs_absolute_formatted_backend_command(
+    tmp_path: Path,
+) -> None:
+    handlers = _import_handlers_module()
+    app = _build_app()
+
+    dataset_path = tmp_path / "dataset"
+    dataset_path.mkdir()
+    out_root = dataset_path / "derivatives" / "survey" / "long_en"
+
+    result = SurveyRecipesResult(
+        processed_files=1,
+        written_files=1,
+        out_format="sav",
+        out_root=out_root,
+        flat_out_path=out_root / "combined_survey.sav",
+    )
+
+    with app.app_context(), patch(
+        "src.web.validation.run_validation", return_value=([], {})
+    ), patch(
+        "src.web.blueprints.tools_recipes_surveys_handlers.emit_backend_action"
+    ) as emit_action, patch(
+        "src.cli.commands.recipes.run_recipes_job", return_value=result
+    ):
+        response = handlers.handle_api_recipes_surveys(
+            {
+                "dataset_path": str(dataset_path),
+                "modality": "survey",
+                "format": "sav",
+            }
+        )
+
+    assert response.status_code == 200
+    logged_message = emit_action.call_args.args[0]
+    assert f'--prism "{dataset_path.resolve()}"' in logged_message
+    assert '--repo "' in logged_message
+    assert "--format sav" in logged_message
+    assert "--layout" not in logged_message
+    assert "--lang" not in logged_message

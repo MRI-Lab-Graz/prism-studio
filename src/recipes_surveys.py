@@ -796,9 +796,9 @@ def _apply_missing_export_policy(
         return df
 
     policy = str(missing_policy or "system-missing").strip().lower()
-    if policy not in {"system-missing", "text-na", "numeric-sentinel"}:
+    if policy not in {"system-missing", "text-na", "text-nan", "numeric-sentinel"}:
         raise ValueError(
-            "missing_policy must be one of: system-missing, text-na, numeric-sentinel"
+            "missing_policy must be one of: system-missing, text-na, text-nan, numeric-sentinel"
         )
 
     out = df.copy()
@@ -812,6 +812,9 @@ def _apply_missing_export_policy(
 
     if policy == "text-na":
         return out.fillna("n/a")
+
+    if policy == "text-nan":
+        return out.fillna("NaN")
 
     if missing_numeric_value is None:
         raise ValueError(
@@ -2665,7 +2668,8 @@ def compute_survey_recipes(
             include_recipe_prefix: If True, prefix combined-export columns with the
                 recipe name when possible.
             anonymized: If True, append '_anon' to output subfolder name.
-            missing_policy: Missing-value export policy for csv/xlsx/sav.
+            missing_policy: Missing-value export policy for csv/xlsx/sav
+                (system-missing, text-na, text-nan, numeric-sentinel).
             missing_numeric_value: Numeric sentinel used when policy is
                 ``numeric-sentinel``.
 
@@ -2695,9 +2699,9 @@ def compute_survey_recipes(
         raise ValueError("--layout must be one of: long, wide")
 
     missing_policy = str(missing_policy or "system-missing").strip().lower()
-    if missing_policy not in {"system-missing", "text-na", "numeric-sentinel"}:
+    if missing_policy not in {"system-missing", "text-na", "text-nan", "numeric-sentinel"}:
         raise ValueError(
-            "missing_policy must be one of: system-missing, text-na, numeric-sentinel"
+            "missing_policy must be one of: system-missing, text-na, text-nan, numeric-sentinel"
         )
     if missing_policy == "numeric-sentinel" and missing_numeric_value is None:
         raise ValueError(
