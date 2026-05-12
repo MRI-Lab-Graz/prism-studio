@@ -222,6 +222,26 @@ def _process_and_write_responses(
                 cache_key = (task, ses_id, effective_run, tuple(sorted(columns)))
                 evidence_payload = task_offset_evidence_cache.get(cache_key)
                 if evidence_payload is None:
+                    candidate_offsets: list[float | int] = list(
+                        getattr(error, "suggested_offsets", []) or []
+                    )
+                    configured_offset = getattr(error, "configured_offset", None)
+                    try:
+                        configured_offset_num = (
+                            None
+                            if configured_offset is None
+                            else float(configured_offset)
+                        )
+                    except (TypeError, ValueError):
+                        configured_offset_num = None
+                    if configured_offset_num is not None:
+                        has_configured_offset = any(
+                            abs(float(offset) - configured_offset_num) <= 1e-9
+                            for offset in candidate_offsets
+                        )
+                        if not has_configured_offset:
+                            candidate_offsets.append(configured_offset_num)
+
                     context_df = df
                     if res_ses_col and res_ses_col in df.columns:
                         session_mask = df[res_ses_col].map(normalize_ses_fn) == ses_id
@@ -242,7 +262,7 @@ def _process_and_write_responses(
                         normalize_fn=normalize_item_fn,
                         is_missing_fn=is_missing_fn,
                         missing_token="n/a",
-                        suggested_offsets=list(getattr(error, "suggested_offsets", []) or []),
+                        suggested_offsets=candidate_offsets,
                     )
                     task_offset_evidence_cache[cache_key] = evidence_payload
 

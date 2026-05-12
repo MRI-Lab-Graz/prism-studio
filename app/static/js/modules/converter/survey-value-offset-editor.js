@@ -386,6 +386,114 @@ export function createSurveyValueOffsetEditorController({
         convertValueOffsetAdvice.textContent = '';
     }
 
+    function offsetsMatch(left, right, tolerance = 1e-9) {
+        const leftValue = Number(left);
+        const rightValue = Number(right);
+        if (!Number.isFinite(leftValue) || !Number.isFinite(rightValue)) {
+            return false;
+        }
+        return Math.abs(leftValue - rightValue) <= tolerance;
+    }
+
+    function formatPercent(numerator, denominator) {
+        if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) {
+            return 'n/a';
+        }
+        return `${((numerator / denominator) * 100).toFixed(1)}%`;
+    }
+
+    function buildManualOffsetImpactPreviewLines() {
+        const currentOffsets = Object.entries(getTaskValueOffsetMapFromEditorState())
+            .map(([task, offset]) => [normalizeSurveyTaskName(task), Number(offset)])
+            .filter(([task, offset]) => task && Number.isFinite(offset));
+        if (currentOffsets.length === 0) {
+            return [];
+        }
+
+        const previewTasks = (typeof getLastPreviewSurveyTasks === 'function')
+            ? getLastPreviewSurveyTasks()
+            : [];
+        if (!Array.isArray(previewTasks) || previewTasks.length === 0) {
+            return [];
+        }
+
+        const lines = [];
+        currentOffsets.forEach(([task, offset]) => {
+            const taskSummary = previewTasks.find(
+                (entry) => normalizeSurveyTaskName(entry && entry.task) === task
+            );
+            const review = taskSummary && taskSummary.manual_review_required && taskSummary.out_of_range
+                ? taskSummary.out_of_range
+                : null;
+            const evidence = review && typeof review.offset_evidence === 'object'
+                ? review.offset_evidence
+                : null;
+            if (!evidence) {
+                return;
+            }
+
+            const sampledValues = Number(evidence.sampled_numeric_values);
+            const invalidWithoutOffset = Number(evidence.invalid_without_offset);
+            if (!Number.isFinite(sampledValues) || sampledValues <= 0 || !Number.isFinite(invalidWithoutOffset)) {
+                return;
+            }
+
+            const candidateOffsets = Array.isArray(evidence.candidate_offsets)
+                ? evidence.candidate_offsets
+                : [];
+            let candidate = candidateOffsets.find((entry) => {
+                const entryOffset = parseNumericOffsetValue(entry && entry.offset);
+                return entryOffset !== null && offsetsMatch(entryOffset, offset);
+            }) || null;
+
+            // Fallback for older payloads that might not include candidate_offsets.
+            if (!candidate) {
+                const bestOffset = parseNumericOffsetValue(evidence.best_offset);
+                if (bestOffset !== null && offsetsMatch(bestOffset, offset)) {
+                    candidate = {
+                        invalid_after: evidence.invalid_with_best_offset,
+                    };
+                }
+            }
+
+            if (!candidate) {
+                return;
+            }
+
+            const invalidAfter = Number(candidate.invalid_after);
+            if (!Number.isFinite(invalidAfter)) {
+                return;
+            }
+
+            lines.push(
+                `${task}: out-of-range before ${invalidWithoutOffset}/${sampledValues} (${formatPercent(invalidWithoutOffset, sampledValues)}), after ${formatSignedOffset(offset)} => ${invalidAfter}/${sampledValues} (${formatPercent(invalidAfter, sampledValues)}).`
+            );
+        });
+
+        return lines;
+    }
+
+    function showManualOffsetImpactPreviewAdvice() {
+        if (!convertValueOffsetAdvice) {
+            return;
+        }
+
+        const impactLines = buildManualOffsetImpactPreviewLines();
+        if (impactLines.length === 0) {
+            convertValueOffsetAdvice.textContent =
+                'Offset impact preview is not available yet for the current task/offset combination. Run Preview once to compute before/after out-of-range counts.';
+            convertValueOffsetAdvice.classList.remove('d-none');
+            return;
+        }
+
+        convertValueOffsetAdvice.textContent = [
+            'Offset impact preview (from last Preview sample):',
+            ...impactLines,
+            'Confirm these estimates by running Preview again before converting.'
+        ].join('\n');
+        convertValueOffsetAdvice.classList.remove('d-none');
+    }
+
     function handleTaskValueOffsetEditorChanged() {
         clearManualValueOffsetAdvice();
         convertError?.classList.add('d-none');
@@ -476,6 +584,7 @@ export function createSurveyValueOffsetEditorController({
             if (typeof setAppliedTaskValueOffsetSelectionSignature === 'function') {
                 setAppliedTaskValueOffsetSelectionSignature('');
             }
+            clearManualValueOffsetAdvice();
             updateTaskValueOffsetApplyState();
             updateConvertBtn();
             return;
@@ -494,6 +603,8 @@ export function createSurveyValueOffsetEditorController({
             convertInfo.classList.add('d-none');
             convertInfo.textContent = '';
         }
+
+        showManualOffsetImpactPreviewAdvice();
 
         updateTaskValueOffsetApplyState();
         updateConvertBtn();

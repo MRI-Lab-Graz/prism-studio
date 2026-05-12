@@ -205,6 +205,10 @@ def _build_survey_task_summaries(
                 "message": review_payload.get("message"),
                 "item_id": review_payload.get("item_id"),
                 "raw_value": review_payload.get("raw_value"),
+                "adjusted_value": review_payload.get("adjusted_value"),
+                "raw_value_valid_without_offset": review_payload.get(
+                    "raw_value_valid_without_offset"
+                ),
                 "expected_levels": review_payload.get("expected_levels") or [],
                 "suggested_offsets": review_payload.get("suggested_offsets") or [],
                 "configured_offset": review_payload.get("configured_offset"),
