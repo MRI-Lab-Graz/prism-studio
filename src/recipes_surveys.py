@@ -219,6 +219,8 @@ class SurveyRecipesResult:
     """Recipe IDs that produced output in this run."""
     missing_input_tasks: tuple[str, ...] = ()
     """Input tasks detected in data files without a matching loaded recipe."""
+    raw_only_tasks: tuple[str, ...] = ()
+    """Input tasks exported as raw-only because no matching recipe was available."""
 
 
 def _ensure_dir(path: Path) -> Path:
@@ -728,6 +730,52 @@ def _coerce_value_labeled_columns_for_sav(
     return out
 
 
+def _prepare_dataframe_for_sav(df: Any) -> Any:
+    """Normalize missing markers and numeric formatting for SPSS export.
+
+    SPSS stores numeric values locale-independently in SAV files. This helper
+    converts decimal-comma strings (e.g. "3,14") to numeric values, maps common
+    textual NA markers to missing values, and leaves non-numeric columns as text.
+    """
+    import pandas as pd
+
+    if df is None:
+        return df
+
+    out = df.copy()
+    missing_tokens = {"", "n/a", "na", "nan", "none", "null"}
+
+    for col in out.columns:
+        series = out[col]
+        text = series.astype("string").str.strip()
+        lower = text.str.lower()
+        non_missing_mask = text.notna() & (~lower.isin(missing_tokens))
+
+        # Normalize textual missing markers for every column.
+        missing_mask = text.notna() & lower.isin(missing_tokens)
+        if bool(missing_mask.any()):
+            out.loc[missing_mask, col] = pd.NA
+
+        if int(non_missing_mask.sum()) == 0:
+            continue
+
+        # Accept both decimal separators in input while writing canonical numerics.
+        numeric = pd.to_numeric(
+            text.str.replace(",", ".", regex=False),
+            errors="coerce",
+        )
+        if int(numeric[non_missing_mask].notna().sum()) != int(non_missing_mask.sum()):
+            continue
+
+        non_na_numeric = numeric.dropna()
+        if not non_na_numeric.empty and bool(((non_na_numeric % 1) == 0).all()):
+            out[col] = numeric.round().astype("Int64")
+        else:
+            out[col] = numeric.astype(float)
+
+    return out
+
+
 _SPSS_VARIABLE_MAX_LENGTH = 64
 
 
@@ -774,6 +822,54 @@ def _build_spss_rename_map(columns: Any) -> dict[str, str]:
             rename_map[original] = candidate
 
     return rename_map
+
+
+def _build_sav_value_labels(
+    *,
+    df: Any,
+    value_labels: dict[str, dict],
+    rename_map: dict[str, str],
+) -> dict[str, dict[Any, str]]:
+    """Build SPSS value-label maps with dtype-aware key coercion.
+
+    - Numeric columns: label keys are parsed as numbers (supports comma decimals).
+    - Non-numeric columns: label keys are preserved as strings.
+    """
+    import pandas as pd
+
+    out: dict[str, dict[Any, str]] = {}
+    if df is None:
+        return out
+
+    for col, vals in value_labels.items():
+        if not isinstance(vals, dict) or not vals:
+            continue
+
+        new_col = rename_map.get(col, col)
+        if new_col not in df.columns:
+            continue
+
+        is_numeric_col = pd.api.types.is_numeric_dtype(df[new_col])
+        col_labels: dict[Any, str] = {}
+        for key, label in vals.items():
+            if label is None:
+                continue
+            if is_numeric_col:
+                try:
+                    key_num = float(str(key).strip().replace(",", "."))
+                except (TypeError, ValueError):
+                    continue
+                col_labels[key_num] = str(label)
+            else:
+                key_text = str(key).strip()
+                if not key_text:
+                    continue
+                col_labels[key_text] = str(label)
+
+        if col_labels:
+            out[new_col] = col_labels
+
+    return out
 
 
 def _write_codebook_json(
@@ -1010,6 +1106,17 @@ def _build_participant_value_lookup(participants_df: Any) -> dict[str, dict[str,
         lookup[key] = values
 
     return lookup
+
+
+def _participant_raw_exclude_columns(participants_df: Any) -> set[str]:
+    """Columns to hide from raw survey export rows.
+
+    Participant-level sociodemographic fields may be injected for scoring formulas,
+    but they must never leak into survey output columns.
+    """
+    if participants_df is None:
+        return set()
+    return {str(col) for col in participants_df.columns if str(col) != "participant_id"}
 
 
 def _inject_participant_values_into_rows(
@@ -1334,6 +1441,7 @@ def _apply_survey_derivative_recipe_to_rows(
     rows: list[dict[str, str]],
     include_raw: bool = False,
     resolved_version: str | None = None,
+    raw_exclude_columns: set[str] | None = None,
 ) -> tuple[list[str], list[dict[str, str]]]:
     transforms = recipe.get("Transforms", {}) or {}
     invert_cfg = transforms.get("Invert") or {}
@@ -1360,8 +1468,9 @@ def _apply_survey_derivative_recipe_to_rows(
 
     out_header = []
     if include_raw and rows:
-        # Include all original columns from the first row
-        out_header.extend(list(rows[0].keys()))
+        excluded = {str(c) for c in (raw_exclude_columns or set())}
+        # Include source columns except participant-level sociodemographics.
+        out_header.extend([str(col) for col in rows[0].keys() if str(col) not in excluded])
 
     out_header.extend(score_names)
     out_rows: list[dict[str, str]] = []
@@ -1658,6 +1767,7 @@ def _load_and_validate_recipes(
     survey_ids: str | None = None,
     recipe_dir: str | Path | None = None,
     prism_root: Path | None = None,
+    allow_empty_recipes: bool = False,
 ) -> tuple[dict[str, dict], Path | None]:
     """Locate, load and validate recipe JSON files.
 
@@ -1750,6 +1860,8 @@ def _load_and_validate_recipes(
 
     recipe_paths = sorted(recipes_dir.glob(RECIPE_FILENAME_GLOB))
     if not recipe_paths:
+        if allow_empty_recipes:
+            return {}, recipes_dir
         raise ValueError(
             f"No derivative recipes found in: {recipes_dir}. Expected {RECIPE_FILENAME_GLOB}"
         )
@@ -2002,6 +2114,7 @@ def _export_recipe_aggregated(
     processed_count = 0
     final_header = []
     participant_lookup = _build_participant_value_lookup(participants_df)
+    raw_exclude_columns = _participant_raw_exclude_columns(participants_df)
 
     for in_path in matching:
         processed_count += 1
@@ -2036,6 +2149,7 @@ def _export_recipe_aggregated(
             scoring_rows,
             include_raw=include_raw,
             resolved_version=resolved_ver,
+            raw_exclude_columns=raw_exclude_columns,
         )
         if not out_header:
             continue
@@ -2077,37 +2191,6 @@ def _export_recipe_aggregated(
         ]
     except Exception:
         pass
-
-    participant_cols: list[str] = []
-    # Merge participant variables (age, sex, etc.) if available
-    if participants_df is not None:
-        participant_cols = [
-            c for c in participants_df.columns if c != "participant_id" and c not in df.columns
-        ]
-        if participant_cols:
-            left = df.copy()
-            left["__pid_key"] = left["participant_id"].map(_participant_join_key)
-            right = participants_df[["participant_id"] + participant_cols].copy()
-            right["__pid_key"] = right["participant_id"].map(_participant_join_key)
-            right = right[right["__pid_key"].notna()].drop_duplicates(
-                subset="__pid_key", keep="first"
-            )
-            df = left.merge(
-                right.drop(columns=["participant_id"]),
-                on="__pid_key",
-                how="left",
-            )
-            df = df.drop(columns=["__pid_key"])
-            # Reorder: participant_id, participant vars, session, [run], scores
-            _post_run_col = ["run"] if "run" in df.columns else []
-            ordered_cols = (
-                ["participant_id"]
-                + participant_cols
-                + ["session"]
-                + _post_run_col
-                + [c for c in final_header if c in df.columns]
-            )
-            df = df.loc[:, [c for c in ordered_cols if c in df.columns]]
 
     # Metadata building
     sidecar_meta = _get_sidecar_for_task(output_prism_root, modality, survey_task)
@@ -2201,10 +2284,15 @@ def _export_recipe_aggregated(
             df.to_excel(out_fname, index=False)
     elif out_format == "sav":
         out_fname = out_root / f"{prefix}{recipe_id}.sav"
+        codebook_json_path = out_root / f"{prefix}{recipe_id}_codebook.json"
+        codebook_tsv_path = out_root / f"{prefix}{recipe_id}_codebook.tsv"
         try:
             import pyreadstat
 
-            df_for_sav = _coerce_value_labeled_columns_for_sav(df, val_labels)
+            df_for_sav = _prepare_dataframe_for_sav(df)
+            df_for_sav = _coerce_value_labeled_columns_for_sav(
+                df_for_sav, val_labels
+            )
 
             # Sanitize SPSS variable names (illegal chars + leading digit names).
             spss_rename_map = _build_spss_rename_map(df_for_sav.columns)
@@ -2217,18 +2305,11 @@ def _export_recipe_aggregated(
                 new_col = spss_rename_map.get(col, col)
                 sav_var_labels[new_col] = label
 
-            sav_val_labels: dict[str, dict[float, str]] = {}
-            for col, vals in val_labels.items():
-                new_col = spss_rename_map.get(col, col)
-                if new_col in df_for_sav.columns:
-                    col_labels: dict[float, str] = {}
-                    for k, v in vals.items():
-                        try:
-                            col_labels[float(k)] = v
-                        except (ValueError, TypeError):
-                            pass  # Skip non-numeric keys like "n/a"
-                    if col_labels:
-                        sav_val_labels[new_col] = col_labels
+            sav_val_labels = _build_sav_value_labels(
+                df=df_for_sav,
+                value_labels=val_labels,
+                rename_map=spss_rename_map,
+            )
 
             pyreadstat.write_sav(
                 df_for_sav,
@@ -2237,11 +2318,17 @@ def _export_recipe_aggregated(
                 variable_value_labels=sav_val_labels if sav_val_labels else None,
             )
             _write_codebook_json(
-                out_root / f"{prefix}{recipe_id}_codebook.json",
+                codebook_json_path,
                 var_labels,
                 val_labels,
                 score_details,
                 survey_meta,
+            )
+            _write_codebook_tsv(
+                codebook_tsv_path,
+                var_labels,
+                val_labels,
+                score_details,
             )
         except Exception as e:
             # Clean up potential 0-byte .sav file left by failed write
@@ -2249,6 +2336,19 @@ def _export_recipe_aggregated(
                 out_fname.unlink()
             out_fname = out_root / f"{prefix}{recipe_id}.csv"
             df.to_csv(out_fname, index=False)
+            _write_codebook_json(
+                codebook_json_path,
+                var_labels,
+                val_labels,
+                score_details,
+                survey_meta,
+            )
+            _write_codebook_tsv(
+                codebook_tsv_path,
+                var_labels,
+                val_labels,
+                score_details,
+            )
             fallback_note = f"SPSS export failed ({e}); wrote CSV instead"
     return processed_count, 1, out_fname, fallback_note, nan_cols
 
@@ -2270,6 +2370,7 @@ def _export_recipe_legacy(
     processed_count = 0
     written_count = 0
     participant_lookup = _build_participant_value_lookup(participants_df)
+    raw_exclude_columns = _participant_raw_exclude_columns(participants_df)
 
     # Extract task name for version resolution
     task_key = "BiometricName" if modality == "biometrics" else "TaskName"
@@ -2315,6 +2416,7 @@ def _export_recipe_legacy(
             scoring_rows,
             include_raw=include_raw,
             resolved_version=resolved_ver,
+            raw_exclude_columns=raw_exclude_columns,
         )
         if not out_header:
             break
@@ -2516,12 +2618,7 @@ def compute_survey_recipes(
     if layout not in {"long", "wide"}:
         raise ValueError("--layout must be one of: long, wide")
 
-    # 1. Load and validate recipes — project first, official fallback
-    recipes, _loaded_recipes_dir = _load_and_validate_recipes(
-        repo_root, modality, survey, recipe_dir=recipe_dir, prism_root=prism_root
-    )
-
-    # 2. Scan dataset for TSV files based on modality
+    # 1. Scan dataset for TSV files based on modality
     tsv_files = _find_tsv_files(prism_root, modality)
     selected_sessions = _normalize_sessions(sessions)
     if selected_sessions:
@@ -2536,6 +2633,17 @@ def compute_survey_recipes(
     observed_task_ids = {
         task for task in (_extract_task_from_survey_filename(p) for p in tsv_files) if task
     }
+
+    # 2. Load and validate recipes — project first, official fallback
+    allow_empty_recipes = bool(include_raw and modality == "survey" and not survey)
+    recipes, _loaded_recipes_dir = _load_and_validate_recipes(
+        repo_root,
+        modality,
+        survey,
+        recipe_dir=recipe_dir,
+        prism_root=prism_root,
+        allow_empty_recipes=allow_empty_recipes,
+    )
 
     # 3. Load participants data (for merging demographic data)
     participants_df, participants_meta = _load_participants_data(output_prism_root)
@@ -2563,6 +2671,7 @@ def compute_survey_recipes(
     written_files = 0
     applied_recipe_ids: set[str] = set()
     written_recipe_ids: set[str] = set()
+    raw_only_tasks: set[str] = set()
     matched_task_ids: set[str] = set()
 
     flat_out_path: Path | None = None
@@ -2607,6 +2716,7 @@ def compute_survey_recipes(
 
                 rows_accum: list[dict[str, Any]] = []
                 participant_lookup = _build_participant_value_lookup(participants_df)
+                raw_exclude_columns = _participant_raw_exclude_columns(participants_df)
 
                 for in_path in matching:
                     processed_files += 1
@@ -2645,6 +2755,7 @@ def compute_survey_recipes(
                         scoring_rows,
                         include_raw=include_raw,
                         resolved_version=resolved_ver,
+                        raw_exclude_columns=raw_exclude_columns,
                     )
                     if not out_header:
                         continue
@@ -2726,6 +2837,129 @@ def compute_survey_recipes(
     if modality == "survey" and not survey and observed_task_ids:
         missing_input_tasks = tuple(sorted(observed_task_ids - matched_task_ids))
 
+    # If raw output is requested, export unmatched input tasks as raw-only outputs
+    # rather than skipping them.
+    if include_raw and modality == "survey" and missing_input_tasks:
+        for missing_task in missing_input_tasks:
+            matching = [
+                path
+                for path in tsv_files
+                if _extract_task_from_survey_filename(path) == missing_task
+            ]
+            if not matching:
+                continue
+
+            raw_only_recipe = {
+                "Kind": "survey",
+                "Survey": {"TaskName": missing_task},
+                "Scores": [],
+            }
+
+            if out_format in ("csv", "xlsx", "sav"):
+                if merge_all:
+                    import pandas as pd
+
+                    rows_accum: list[dict[str, Any]] = []
+                    raw_exclude_columns = _participant_raw_exclude_columns(participants_df)
+
+                    for in_path in matching:
+                        processed_files += 1
+                        sub_id, ses_id = _infer_sub_ses_from_path(in_path)
+                        if not sub_id:
+                            continue
+                        sub_id = _normalize_participant_id_for_join(sub_id)
+                        if not sub_id:
+                            continue
+                        if not ses_id:
+                            ses_id = "ses-1"
+                        run_id = _infer_run_from_path(in_path)
+
+                        in_header, in_rows = _read_tsv_rows(in_path)
+                        if not in_header or not in_rows:
+                            continue
+
+                        out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
+                            raw_only_recipe,
+                            in_rows,
+                            include_raw=True,
+                            resolved_version=None,
+                            raw_exclude_columns=raw_exclude_columns,
+                        )
+                        if not out_header:
+                            continue
+
+                        for raw_row in out_rows:
+                            merged = {"participant_id": sub_id, "session": ses_id}
+                            if run_id is not None:
+                                merged["run"] = run_id
+                            for col in out_header:
+                                prefixed_col = (
+                                    _prefixed_recipe_column_name(missing_task, col)
+                                    if include_recipe_prefix
+                                    else col
+                                )
+                                merged[prefixed_col] = raw_row.get(col, "n/a")
+                            rows_accum.append(merged)
+
+                    if rows_accum:
+                        df = pd.DataFrame(rows_accum)
+                        merge_all_frames.append((missing_task, df))
+                        merge_all_recipe_by_id[missing_task] = raw_only_recipe
+                        raw_only_tasks.add(missing_task)
+                else:
+                    (
+                        p_count,
+                        w_count,
+                        o_path,
+                        f_note,
+                        n_cols,
+                    ) = _export_recipe_aggregated(
+                        recipe_id=missing_task,
+                        recipe=raw_only_recipe,
+                        matching=matching,
+                        out_root=out_root,
+                        out_format=out_format,
+                        modality=modality,
+                        lang=lang,
+                        layout=layout,
+                        include_raw=True,
+                        participants_df=participants_df,
+                        participants_meta=participants_meta,
+                        output_prism_root=output_prism_root,
+                        survey_task=missing_task,
+                        selected_sessions=selected_sessions,
+                    )
+                    processed_files += p_count
+                    written_files += w_count
+                    if w_count > 0:
+                        raw_only_tasks.add(missing_task)
+                        if written_files == 1:
+                            flat_out_path = o_path
+                        else:
+                            flat_out_path = out_root
+                    if f_note:
+                        fallback_note = f_note
+                    if n_cols:
+                        nan_report[f"{missing_task}_raw"] = n_cols
+            else:
+                p_count, w_count = _export_recipe_legacy(
+                    recipe_id=missing_task,
+                    recipe=raw_only_recipe,
+                    matching=matching,
+                    out_root=out_root,
+                    out_format=out_format,
+                    modality=modality,
+                    include_raw=True,
+                    flat_rows=flat_rows,
+                    flat_key_to_idx=flat_key_to_idx,
+                    participants_df=participants_df,
+                    output_prism_root=output_prism_root,
+                )
+                processed_files += p_count
+                written_files += w_count
+                if w_count > 0:
+                    raw_only_tasks.add(missing_task)
+
     # In merge_all mode, combine per-recipe frames into a single output file.
     if merge_all and merge_all_frames:
         import pandas as pd
@@ -2773,32 +3007,6 @@ def compute_survey_recipes(
                 df, on=merge_keys, how="outer", suffixes=("", "_dup")
             )
 
-        combined_participant_cols: list[str] = []
-        if participants_df is not None:
-            combined_participant_cols = [
-                c
-                for c in participants_df.columns
-                if c != "participant_id" and c not in combined_df.columns
-            ]
-            if combined_participant_cols:
-                left = combined_df.copy()
-                left["__pid_key"] = left["participant_id"].map(_participant_join_key)
-                right = participants_df[
-                    ["participant_id"] + combined_participant_cols
-                ].copy()
-                right["__pid_key"] = right["participant_id"].map(
-                    _participant_join_key
-                )
-                right = right[right["__pid_key"].notna()].drop_duplicates(
-                    subset="__pid_key", keep="first"
-                )
-                combined_df = left.merge(
-                    right.drop(columns=["participant_id"]),
-                    on="__pid_key",
-                    how="left",
-                )
-                combined_df = combined_df.drop(columns=["__pid_key"])
-
         _ensure_dir(out_root)
         out_stem = f"combined_{modality}"
         ext_map = {"csv": ".csv", "xlsx": ".xlsx", "sav": ".sav"}
@@ -2808,10 +3016,7 @@ def compute_survey_recipes(
             try:
                 import pandas as pd
 
-                participant_cols_in_df = [
-                    c for c in combined_participant_cols if c in combined_df.columns
-                ]
-                id_cols = ["participant_id", "session"] + participant_cols_in_df
+                id_cols = ["participant_id", "session"]
                 include_run_in_wide = False
                 if "run" in combined_df.columns:
                     run_values = _distinct_export_context_values(combined_df["run"])
@@ -2821,7 +3026,7 @@ def compute_survey_recipes(
                 include_session_in_wide = len(session_values) > 1
 
                 if include_run_in_wide:
-                    id_cols = ["participant_id", "session", "run"] + participant_cols_in_df
+                    id_cols = ["participant_id", "session", "run"]
 
                 score_cols = [
                     c for c in combined_df.columns if c not in set(id_cols) | {"run"}
@@ -2857,7 +3062,7 @@ def compute_survey_recipes(
                     else:
                         df_melt["col_name"] = df_melt["variable"].astype(str)
 
-                    pivot_index = ["participant_id"] + participant_cols_in_df
+                    pivot_index = ["participant_id"]
                     df_wide = df_melt.pivot(
                         index=pivot_index,
                         columns="col_name",
@@ -2865,11 +3070,11 @@ def compute_survey_recipes(
                     )
                     combined_df = df_wide.reset_index().fillna("n/a")
 
-                    ordered_cols = ["participant_id"] + participant_cols_in_df + sorted(
+                    ordered_cols = ["participant_id"] + sorted(
                         [
                             c
                             for c in combined_df.columns
-                            if c not in {"participant_id", *participant_cols_in_df}
+                            if c != "participant_id"
                         ]
                     )
                     combined_df = combined_df.loc[
@@ -2912,8 +3117,9 @@ def compute_survey_recipes(
             try:
                 import pyreadstat
 
+                combined_for_sav = _prepare_dataframe_for_sav(combined_df)
                 combined_for_sav = _coerce_value_labeled_columns_for_sav(
-                    combined_df, combined_value_labels
+                    combined_for_sav, combined_value_labels
                 )
 
                 # Sanitize SPSS variable names (illegal chars + leading digit names).
@@ -2927,18 +3133,11 @@ def compute_survey_recipes(
                     new_col = rename_map_sav.get(col, col)
                     sav_var_labels[new_col] = label
 
-                sav_val_labels: dict[str, dict[float, str]] = {}
-                for col, vals in combined_value_labels.items():
-                    new_col = rename_map_sav.get(col, col)
-                    if new_col in combined_for_sav.columns:
-                        col_labels: dict[float, str] = {}
-                        for k, v in vals.items():
-                            try:
-                                col_labels[float(k)] = v
-                            except (ValueError, TypeError):
-                                pass  # Skip non-numeric keys like "n/a"
-                        if col_labels:
-                            sav_val_labels[new_col] = col_labels
+                sav_val_labels = _build_sav_value_labels(
+                    df=combined_for_sav,
+                    value_labels=combined_value_labels,
+                    rename_map=rename_map_sav,
+                )
 
                 pyreadstat.write_sav(
                     combined_for_sav,
@@ -2950,7 +3149,8 @@ def compute_survey_recipes(
                 # Clean up potential 0-byte .sav file left by failed write
                 if out_path.exists() and out_path.stat().st_size == 0:
                     out_path.unlink()
-                combined_df.to_csv(out_path.with_suffix(".csv"), index=False)
+                out_path = out_path.with_suffix(".csv")
+                combined_df.to_csv(out_path, index=False)
                 fallback_note = f"SPSS export failed ({e}); wrote CSV instead"
         written_files = 1
         flat_out_path = out_path
@@ -3004,6 +3204,7 @@ def compute_survey_recipes(
         recipes_seeded=recipes_seeded,
         written_recipe_ids=tuple(sorted(written_recipe_ids)),
         missing_input_tasks=missing_input_tasks,
+        raw_only_tasks=tuple(sorted(raw_only_tasks)),
     )
 
 
