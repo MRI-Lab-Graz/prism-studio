@@ -67,6 +67,41 @@ document.addEventListener('DOMContentLoaded', function() {
         targetLog.scrollTop = targetLog.scrollHeight;
     }
 
+    function appendLogBatch(entries, defaultType = 'info', logElement = null) {
+        if (!Array.isArray(entries) || entries.length === 0) {
+            return;
+        }
+
+        const colors = {
+            info: '#17a2b8',
+            success: '#28a745',
+            warning: '#ffc107',
+            error: '#dc3545',
+            step: '#6c757d'
+        };
+
+        const fallbackLog = document.getElementById('conversionLog');
+        const targetLog = logElement || fallbackLog;
+        if (!targetLog) return;
+
+        const fragment = document.createDocumentFragment();
+        entries.forEach((entry) => {
+            const message = entry && typeof entry === 'object' ? entry.message : entry;
+            const level = entry && typeof entry === 'object'
+                ? (entry.type || entry.level || defaultType)
+                : defaultType;
+            const timestamp = new Date().toLocaleTimeString();
+            const line = document.createElement('span');
+            line.style.color = colors[level] || colors.info;
+            line.textContent = `[${timestamp}] ${String(message ?? '')}`;
+            fragment.appendChild(line);
+            fragment.appendChild(document.createTextNode('\n'));
+        });
+
+        targetLog.appendChild(fragment);
+        targetLog.scrollTop = targetLog.scrollHeight;
+    }
+
     function displayValidationResults(validation, prefix = '') {
         const toId = (id) => (prefix ? `${prefix}${id.charAt(0).toUpperCase()}${id.slice(1)}` : id);
         const container = document.getElementById(toId('validationResultsContainer'));
@@ -345,6 +380,7 @@ document.addEventListener('DOMContentLoaded', function() {
             biometricsSessionSelect: document.getElementById('biometricsSessionSelect'),
             biometricsSessionCustom: document.getElementById('biometricsSessionCustom'),
             appendLog,
+            appendLogBatch,
             displayValidationResults,
             registerSessionInProject,
             getBiometricsSessionValue
@@ -444,6 +480,7 @@ document.addEventListener('DOMContentLoaded', function() {
             envOutputPreviewBody: document.getElementById('envOutputPreviewBody'),
             toggleEnvLogBtn: document.getElementById('toggleEnvLogBtn'),
             appendLog,
+            appendLogBatch,
         });
     }
 });

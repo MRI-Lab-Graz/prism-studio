@@ -40,7 +40,9 @@ Current step:
 - Slice B expanded to Environment/Physio/Eyetracking/Biometrics/Participants (duplicate-submit guard via shared run controller).
 - Slice B now includes explicit participants preview/convert click-storm regression assertions.
 - Slice B now includes explicit biometrics preview/detect/confirm click-storm regression assertions.
+- Slice B now includes explicit environment/physio/eyetracking handler-block replay assertions for run-lock, single-job lifecycle, and release paths.
 - Slice B replay hardening now includes negative unknown-job checks for async status/cancel endpoints (Environment + Batch conversion).
+- Slice D expanded: implemented shared batch log appends (DocumentFragment) for burst log arrays in Environment/Biometrics and added wiring assertions for the new path.
 - Monolith split checkpoint: extracted survey template-generation controller from survey-convert.js into a dedicated module.
 - Slice C complete for Physio/Eyetracking log rendering paths (safe DOM appends via textContent, no innerHTML concatenation).
 - Coverage checkpoint: improved from 81.10% to 85.70% via backend test expansion in `src/converters/limesurvey.py`, `src/maintenance/rename_legacy_physio_filenames.py`, and `src/batch_convert.py`.

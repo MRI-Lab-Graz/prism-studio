@@ -57,6 +57,7 @@ export function initEnvironment(elements) {
         envOutputPreviewBody,
         toggleEnvLogBtn,
         appendLog,
+        appendLogBatch,
     } = elements;
 
     let envServerFilePath = '';
@@ -886,6 +887,10 @@ export function initEnvironment(elements) {
                         return statusPayload;
                     },
                     onLogs: (newLogs) => {
+                        if (typeof appendLogBatch === 'function') {
+                            appendLogBatch(newLogs, 'info', envLog);
+                            return;
+                        }
                         newLogs.forEach((entry) => appendLog(entry.message, entry.type || 'info', envLog));
                     },
                     onPollData: (nextStatusData) => {
