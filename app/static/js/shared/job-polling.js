@@ -14,6 +14,8 @@
  * @param {number} [options.intervalMs=500]
  * @param {number} [options.timeoutMs=300000]
  * @param {number} [options.maxConsecutiveErrors=4]
+ * @param {AbortSignal} [options.signal]
+ * @param {string} [options.abortErrorMessage='Polling aborted.']
  * @param {string} [options.timeoutErrorMessage='Job status timed out.']
  * @param {string} [options.statusFailureMessage='Failed to retrieve job status after multiple attempts.']
  * @param {(status:Object)=>Array} [options.getLogs]
@@ -24,6 +26,47 @@
  * @returns {Promise<Object>} Final successful status payload.
  */
 export async function pollJobStatus(options) {
+    function createAbortError(message) {
+        if (typeof DOMException === 'function') {
+            return new DOMException(message, 'AbortError');
+        }
+        const error = new Error(message);
+        error.name = 'AbortError';
+        return error;
+    }
+
+    function throwIfAborted(signal, message) {
+        if (signal && signal.aborted) {
+            throw createAbortError(message);
+        }
+    }
+
+    function sleepWithAbort(ms, signal, message) {
+        if (!(signal && typeof signal.addEventListener === 'function')) {
+            return new Promise((resolve) => setTimeout(resolve, ms));
+        }
+
+        return new Promise((resolve, reject) => {
+            if (signal.aborted) {
+                reject(createAbortError(message));
+                return;
+            }
+
+            const timer = setTimeout(() => {
+                signal.removeEventListener('abort', onAbort);
+                resolve();
+            }, ms);
+
+            const onAbort = () => {
+                clearTimeout(timer);
+                signal.removeEventListener('abort', onAbort);
+                reject(createAbortError(message));
+            };
+
+            signal.addEventListener('abort', onAbort, { once: true });
+        });
+    }
+
     const {
         fetchStatus,
         onLogs,
@@ -33,6 +76,8 @@ export async function pollJobStatus(options) {
         intervalMs = 500,
         timeoutMs = 300000,
         maxConsecutiveErrors = 4,
+        signal = null,
+        abortErrorMessage = 'Polling aborted.',
         timeoutErrorMessage = 'Job status timed out.',
         statusFailureMessage = 'Failed to retrieve job status after multiple attempts.',
         getLogs = (status) => (Array.isArray(status && status.logs) ? status.logs : []),
@@ -55,17 +100,24 @@ export async function pollJobStatus(options) {
     const startedAt = Date.now();
 
     while (true) {
+        throwIfAborted(signal, abortErrorMessage);
+
         if (Date.now() - startedAt > timeoutMs) {
             throw new Error(timeoutErrorMessage);
         }
 
-        await new Promise((resolve) => setTimeout(resolve, intervalMs));
+        await sleepWithAbort(intervalMs, signal, abortErrorMessage);
+        throwIfAborted(signal, abortErrorMessage);
 
         let statusData = null;
         try {
             statusData = await fetchStatus(cursor);
+            throwIfAborted(signal, abortErrorMessage);
             consecutiveErrors = 0;
         } catch (error) {
+            if (error && error.name === 'AbortError') {
+                throw error;
+            }
             consecutiveErrors += 1;
             if (typeof onRetryWarning === 'function') {
                 onRetryWarning({
