@@ -354,5 +354,5 @@ def test_handle_api_recipes_surveys_logs_absolute_formatted_backend_command(
     assert f'--prism "{dataset_path.resolve()}"' in logged_message
     assert '--repo "' in logged_message
     assert "--format sav" in logged_message
-    assert "--layout long" in logged_message
-    assert "--lang en" in logged_message
+    assert "--layout" not in logged_message
+    assert "--lang" not in logged_message
