@@ -30,6 +30,7 @@ export function createSurveyWorkflowPreviewController({
     getSurveyPreviewContextKey,
     getSelectedSurveyFilename,
     getSelectedSurveyFile,
+    resolveCurrentProjectPath,
     isAdvancedOptionsEnabled,
     refreshSurveyColumnsBeforeRun,
     setActiveSurveyRun,
@@ -164,6 +165,10 @@ export function createSurveyWorkflowPreviewController({
         allowNearItemMatch = selectedNearMatchTasks.length > 0;
 
         const formData = new FormData();
+        const currentProjectPath = resolveCurrentProjectPath();
+        if (currentProjectPath) {
+            formData.append('project_path', currentProjectPath);
+        }
         appendSurveyInputToFormData(formData);
 
         if (idMap) {
