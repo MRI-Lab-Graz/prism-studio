@@ -1267,7 +1267,10 @@ def emit_backend_action(message: str, app_root: str) -> None:
         command_segment = text[cmd_idx:]
         text = f"{head}{_ANSI_GREEN}{command_segment}{_ANSI_RESET}"
 
-    print(f"\n[BACKEND-ACTION] {text}\n")
+    if not text.startswith("["):
+        text = f"[ANALYSIS_OUTPUT] {text}"
+
+    print(f"\n{text}\n")
 
 
 def emit_backend_request_action(req, app_root: str) -> None:

@@ -2454,7 +2454,9 @@ def _map_survey_columns(
 
         approved_candidates: list[dict[str, object]] = []
         for task, candidates in task_candidates.items():
-            primary_items = task_primary_items.get(task)
+            if task not in task_primary_items:
+                continue
+            primary_items = task_primary_items[task]
             if not primary_items:
                 continue
 
@@ -3668,11 +3670,14 @@ def _resolve_effective_template_version_overrides(
     `TemplateVersionSelections` entries for the same task/session/run context.
     """
 
-    if project_path in {None, ""}:
+    project_path_value = "" if project_path is None else str(project_path).strip()
+    if not project_path_value:
         return template_version_overrides
 
     try:
-        project_overrides = _load_project_template_version_overrides(Path(project_path))
+        project_overrides = _load_project_template_version_overrides(
+            Path(project_path_value)
+        )
     except Exception:
         project_overrides = []
 

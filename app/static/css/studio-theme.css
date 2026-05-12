@@ -254,6 +254,12 @@
     color: var(--studio-semantic-danger) !important;
 }
 
+.studio-theme .backend-command-text {
+    color: var(--studio-semantic-success) !important;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-weight: 600;
+}
+
 .studio-theme .bg-primary {
     background-color: var(--studio-semantic-primary) !important;
     color: #ffffff !important;
