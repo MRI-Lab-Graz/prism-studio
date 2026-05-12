@@ -5,6 +5,8 @@
 
 import { pollJobStatus } from '../../shared/job-polling.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
+import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
+import { createJobRunController } from './job-run-controller.js';
 
 export function initEnvironment(elements) {
     const STATUS_POLL_INTERVAL_MS = 500;
@@ -65,6 +67,8 @@ export function initEnvironment(elements) {
     let progressDisplayPct = 0;
     let progressTargetPct = 0;
     let progressAnimationTimer = null;
+    const pollingRunState = createPollingRunState();
+    const runController = createJobRunController();
 
     function prefersServerPicker() {
         return Boolean(
@@ -509,6 +513,10 @@ export function initEnvironment(elements) {
     });
 
     window.addEventListener('prism-project-changed', () => {
+        void runController.cancelActiveJob({
+            buildCancelUrl: (jobId) => `/api/environment-convert-cancel/${encodeURIComponent(jobId)}`,
+        }).catch(() => {});
+        pollingRunState.abortActive('Environment polling aborted due to project change.');
         resetUI();
         updateFileBtn();
         refreshEnvironmentSourcedataQuickSelect();
@@ -758,6 +766,10 @@ export function initEnvironment(elements) {
             return;
         }
 
+        if (!runController.tryStartRun()) {
+            return;
+        }
+
         if (envError) envError.classList.add('d-none');
         if (envInfo) envInfo.classList.add('d-none');
         if (envProgressContainer) {
@@ -806,6 +818,8 @@ export function initEnvironment(elements) {
             envCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Running Conversion';
         }
 
+        let activePollController = null;
+
         fetch('/api/environment-convert-start', { method: 'POST', body: fd })
             .then(async (r) => {
                 const data = await r.json().catch(() => ({}));
@@ -819,26 +833,19 @@ export function initEnvironment(elements) {
                 if (!jobId) {
                     throw new Error('Environment conversion did not return a job id');
                 }
+                runController.setActiveJobId(jobId);
 
-                let cancelRequested = false;
                 const cancelHandler = async () => {
-                    if (cancelRequested) return;
-                    cancelRequested = true;
                     if (envCancelBtn) {
                         envCancelBtn.disabled = true;
                         envCancelBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cancelling...';
                     }
                     try {
-                        const cancelResponse = await fetch(`/api/environment-convert-cancel/${encodeURIComponent(jobId)}`, {
-                            method: 'POST',
+                        await runController.cancelActiveJob({
+                            buildCancelUrl: (activeJobId) => `/api/environment-convert-cancel/${encodeURIComponent(activeJobId)}`,
                         });
-                        const cancelData = await cancelResponse.json().catch(() => ({}));
-                        if (!cancelResponse.ok) {
-                            throw new Error(cancelData.error || 'Failed to cancel environment conversion');
-                        }
                         appendLog('⏹️ Cancellation requested. Waiting for cleanup…', 'warning', envLog);
                     } catch (cancelError) {
-                        cancelRequested = false;
                         if (envCancelBtn) {
                             envCancelBtn.disabled = false;
                             envCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Running Conversion';
@@ -867,6 +874,8 @@ export function initEnvironment(elements) {
                     );
                 }
 
+                activePollController = pollingRunState.start();
+
                 const statusData = await pollJobStatus({
                     fetchStatus: async (cursor) => {
                         const statusResponse = await fetch(`/api/environment-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);
@@ -894,6 +903,8 @@ export function initEnvironment(elements) {
                     intervalMs: STATUS_POLL_INTERVAL_MS,
                     timeoutMs: STATUS_POLL_TIMEOUT_MS,
                     maxConsecutiveErrors: MAX_STATUS_POLL_ERRORS,
+                    signal: activePollController.signal,
+                    abortErrorMessage: 'Environment polling aborted due to project change.',
                     timeoutErrorMessage: 'Environment conversion status timed out after 5 minutes. Please check conversion logs and retry.',
                     statusFailureMessage: 'Failed to retrieve environment conversion status after multiple attempts.',
                     getFailureError: (nextStatusData) => nextStatusData.error || 'Environment conversion failed',
@@ -933,7 +944,9 @@ export function initEnvironment(elements) {
                 );
             })
             .catch(err => {
-                if (err.message === 'Cancelled by user' || err.message === 'Conversion cancelled by user') {
+                if (isPollingAbortError(err)) {
+                    // Project-change listeners already reset the converter UI.
+                } else if (err.message === 'Cancelled by user' || err.message === 'Conversion cancelled by user') {
                     appendLog('⏹️ Conversion cancelled. Partial project outputs were removed.', 'warning', envLog);
                     if (envInfo) {
                         envInfo.textContent = 'Environment conversion cancelled. Partial project outputs were removed.';
@@ -954,6 +967,8 @@ export function initEnvironment(elements) {
                 }
             })
             .finally(() => {
+                pollingRunState.clear(activePollController);
+                runController.finishRun();
                 envConvertBtn.disabled = false;
                 if (envPilotRunBtn) envPilotRunBtn.disabled = false;
                 if (envCancelBtn) {

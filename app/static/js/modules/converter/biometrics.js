@@ -5,6 +5,7 @@
  */
 
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
+import { createJobRunController } from './job-run-controller.js';
 
 export function initBiometrics(elements) {
     // Destructure elements passed from converter-bootstrap.js
@@ -42,6 +43,19 @@ export function initBiometrics(elements) {
     let biometricsSourcedataRequestToken = 0;
     let biometricsSourcedataQuickSelectEl = null;
     let biometricsSourcedataFileSelectEl = null;
+    const runController = createJobRunController();
+
+    function setBiometricsActionButtonsDisabled(disabled) {
+        if (biometricsPreviewBtn) {
+            biometricsPreviewBtn.disabled = disabled || !hasSelectedBiometricsInput();
+        }
+        if (biometricsConvertBtn) {
+            biometricsConvertBtn.disabled = disabled || !hasSelectedBiometricsInput();
+        }
+        if (biometricsConfirmBtn) {
+            biometricsConfirmBtn.disabled = disabled;
+        }
+    }
 
     function prefersServerPicker() {
         return Boolean(
@@ -416,6 +430,10 @@ export function initBiometrics(elements) {
             if (!hasSelectedBiometricsInput()) return;
             const selectedFilename = getSelectedBiometricsFilename();
 
+            if (!runController.tryStartRun()) {
+                return;
+            }
+
             // Show log container
             biometricsLogContainer.classList.remove('d-none');
             biometricsLogBody.classList.remove('d-none');
@@ -440,8 +458,7 @@ export function initBiometrics(elements) {
                 formData.append('project_path', currentProjectPath);
             }
 
-            biometricsPreviewBtn.disabled = true;
-            biometricsConvertBtn.disabled = true;
+            setBiometricsActionButtonsDisabled(true);
 
             fetch('/api/biometrics-convert', {
                 method: 'POST',
@@ -486,8 +503,8 @@ export function initBiometrics(elements) {
                 biometricsError.classList.remove('d-none');
             })
             .finally(() => {
-                biometricsPreviewBtn.disabled = false;
-                biometricsConvertBtn.disabled = false;
+                runController.finishRun();
+                setBiometricsActionButtonsDisabled(false);
             });
         });
     }
@@ -508,6 +525,10 @@ export function initBiometrics(elements) {
 
             if (!hasSelectedBiometricsInput()) return;
 
+            if (!runController.tryStartRun()) {
+                return;
+            }
+
             const formData = new FormData();
             appendBiometricsInputToFormData(formData);
             // Library path is now resolved automatically (project first, then global)
@@ -517,7 +538,7 @@ export function initBiometrics(elements) {
                 formData.append('project_path', currentProjectPath);
             }
 
-            biometricsConvertBtn.disabled = true;
+            setBiometricsActionButtonsDisabled(true);
             biometricsInfo.textContent = 'Analyzing file...';
             biometricsInfo.classList.remove('d-none');
 
@@ -562,7 +583,8 @@ export function initBiometrics(elements) {
                 biometricsError.classList.remove('d-none');
             })
             .finally(() => {
-                biometricsConvertBtn.disabled = false;
+                runController.finishRun();
+                setBiometricsActionButtonsDisabled(false);
             });
         });
     }
@@ -598,6 +620,10 @@ export function initBiometrics(elements) {
             const selectedFilename = getSelectedBiometricsFilename();
             if (!selectedFilename) return;
 
+            if (!runController.tryStartRun()) {
+                return;
+            }
+
             appendLog(`Starting conversion of: ${selectedFilename}`, 'info', biometricsLog);
             appendLog(`Using library: auto-resolved (project or global)`, 'step', biometricsLog);
             const formData = new FormData();
@@ -612,6 +638,7 @@ export function initBiometrics(elements) {
             if (!currentProjectPath) {
                 biometricsError.textContent = 'Please select a project first from the top of the page';
                 biometricsError.classList.remove('d-none');
+                runController.finishRun();
                 return;
             }
             formData.append('project_path', currentProjectPath);
@@ -621,7 +648,7 @@ export function initBiometrics(elements) {
             formData.append('validate', 'true');
             selectedTasks.forEach(t => formData.append('tasks[]', t));
 
-            biometricsConfirmBtn.disabled = true;
+            setBiometricsActionButtonsDisabled(true);
             appendLog('Uploading file and starting conversion...', 'info', biometricsLog);
 
             fetch('/api/biometrics-convert', {
@@ -684,7 +711,8 @@ export function initBiometrics(elements) {
                 biometricsError.classList.remove('d-none');
             })
             .finally(() => {
-                biometricsConfirmBtn.disabled = false;
+                runController.finishRun();
+                setBiometricsActionButtonsDisabled(false);
             });
         });
     }
