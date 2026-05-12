@@ -112,6 +112,14 @@ def test_survey_converter_infers_structural_task_offset_evidence(tmp_path):
     assert evidence.get("corrected_by_best_offset_percent") == pytest.approx(100.0)
     assert evidence.get("invalid_with_best_offset") == 0
     assert evidence.get("invalid_with_best_offset_percent") == pytest.approx(0.0)
+    candidate_offsets = evidence.get("candidate_offsets")
+    assert isinstance(candidate_offsets, list)
+    minus_one_candidate = next(
+        (entry for entry in candidate_offsets if entry.get("offset") == -1),
+        None,
+    )
+    assert isinstance(minus_one_candidate, dict)
+    assert minus_one_candidate.get("invalid_after") == 0
 
 
 def test_survey_converter_applies_explicit_value_offset_and_tracks_usage(tmp_path):
@@ -183,8 +191,22 @@ def test_survey_converter_rejects_offset_when_allowed_values_conflict(tmp_path):
     assert error.task == "pss"
     assert error.item_id == "PSS01"
     assert error.configured_offset == -1.0
-    assert "did not resolve this value" in str(error)
+    assert "transformed this value to '0'" in str(error)
+    assert "Without offset, this sampled value itself is within expected levels" in str(error)
+    assert error.adjusted_value == 0
+    assert error.raw_value_valid_without_offset is True
     assert error.expected_levels == ["1", "2", "3", "4", "5"]
+    evidence = getattr(error, "offset_evidence", None)
+    assert isinstance(evidence, dict)
+    assert evidence.get("invalid_without_offset") == 0
+    candidate_offsets = evidence.get("candidate_offsets")
+    assert isinstance(candidate_offsets, list)
+    minus_one_candidate = next(
+        (entry for entry in candidate_offsets if entry.get("offset") == -1),
+        None,
+    )
+    assert isinstance(minus_one_candidate, dict)
+    assert minus_one_candidate.get("invalid_after") == 1
 
 
 def test_survey_converter_suggests_offset_from_allowed_values_when_levels_conflict(tmp_path):
@@ -311,8 +333,34 @@ def test_value_offset_confirmation_message_avoids_structural_claim_for_item_issu
 
     payload = _format_value_offset_confirmation_response(error)
 
-    assert "do not yet support a task-wide structural offset" in payload["message"]
+    assert "do not support treating this as a task-wide scale shift" in payload["message"]
     assert "Suggested task offset" not in payload["message"]
+
+
+def test_value_offset_confirmation_payload_includes_adjusted_value_context():
+    error = SurveyValueOutOfBoundsError(
+        task="pss10",
+        item_id="pss_01",
+        sub_id="sub-001",
+        raw_value="1",
+        expected_levels=["1", "2", "3", "4", "5"],
+        suggested_offsets=[],
+        configured_offset=-1,
+        adjusted_value=0,
+        raw_value_valid_without_offset=True,
+        message=(
+            "Invalid value '1' for 'pss_01' (Sub: sub-001, Task: pss10). "
+            "Expected: 1, 2, 3, 4, 5. "
+            "The configured offset -1 transformed this value to '0', which is still out of range."
+        ),
+    )
+
+    payload = _format_value_offset_confirmation_response(error)
+
+    assert payload["configured_offset"] == -1
+    assert payload["adjusted_value"] == 0
+    assert payload["raw_value_valid_without_offset"] is True
+    assert "already valid without offset" in payload["message"]
 
 
 def test_sync_project_survey_recipe_offsets_updates_metadata(tmp_path):

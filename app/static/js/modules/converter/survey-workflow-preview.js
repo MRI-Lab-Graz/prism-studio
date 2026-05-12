@@ -370,6 +370,10 @@ export function createSurveyWorkflowPreviewController({
                 let validationRuntimeError = '';
                 const previewSurveyTasks = Array.isArray(data.survey_tasks) ? data.survey_tasks : [];
                 const previewManualReviewTasks = previewSurveyTasks.filter((entry) => entry && entry.manual_review_required);
+                window.lastPreviewData = {
+                    ...(preview && typeof preview === 'object' ? preview : {}),
+                    survey_tasks: previewSurveyTasks,
+                };
 
                 // Display conversion summary (template matches, tool columns, unmatched) before validation
                 if (data.conversion_summary) {
@@ -527,7 +531,6 @@ export function createSurveyWorkflowPreviewController({
                 // Display participants.tsv preview
                 if (preview.participants_tsv && Object.keys(preview.participants_tsv).length > 0) {
                     const tsv = preview.participants_tsv;
-                    window.lastPreviewData = preview;
                     const hasAdditionalVariableCandidates = Boolean(tsv.unused_columns && tsv.unused_columns.length > 0);
                     if (typeof window.setParticipantsAdditionalVariablesEnabled === 'function') {
                         window.setParticipantsAdditionalVariablesEnabled(hasAdditionalVariableCandidates);

@@ -324,6 +324,10 @@ def _format_value_offset_confirmation_response(
             suggested_offsets.append(round(numeric, 6))
 
     configured_offset = getattr(error, "configured_offset", None)
+    adjusted_value = getattr(error, "adjusted_value", None)
+    raw_value_valid_without_offset = getattr(
+        error, "raw_value_valid_without_offset", None
+    )
     offset_evidence = getattr(error, "offset_evidence", None)
     evidence_classification = ""
     if isinstance(offset_evidence, dict):
@@ -341,20 +345,25 @@ def _format_value_offset_confirmation_response(
     }:
         if evidence_classification == "structural_offset_likely":
             review_message = (
-                "Sampled out-of-range values are consistent with a task-wide structural offset."
+                "Sampled out-of-range values may reflect a task-wide shifted scale, but this is not proof."
             )
         else:
             review_message = (
-                "Sampled out-of-range values do not yet support a task-wide structural offset."
+                "Sampled out-of-range values do not support treating this as a task-wide scale shift."
             )
     if configured_offset is not None:
         review_message += (
-            " Review the manual task value offset in Advanced options and run Preview again."
+            " Review the manual task value offset in Advanced options only if you are certain the entire task uses a shifted scale, then run Preview again."
         )
+        if raw_value_valid_without_offset is True:
+            review_message += (
+                " This sampled value is already valid without offset; verify offset direction and template version selection."
+            )
     else:
         review_message += (
-            " Recommended first: correct the out-of-range source values and run Preview again."
-            " Optional fallback: if you are certain this survey task uses a shifted numeric scale, add a manual task value offset in Advanced options and run Preview again."
+            " Required first: validate and correct out-of-range source values, then run Preview again."
+            " Advanced-only fallback: use a manual task value offset only with independent evidence of a full-task scale shift (for example, every item is 1-4 while the template is 0-3)."
+            " Do not use offsets to bypass item-level data errors."
         )
     payload: dict[str, Any] = {
         "error": "value_offset_manual_review_required",
@@ -369,6 +378,10 @@ def _format_value_offset_confirmation_response(
         payload["subject_id"] = subject_id
     if configured_offset is not None:
         payload["configured_offset"] = configured_offset
+    if adjusted_value is not None:
+        payload["adjusted_value"] = adjusted_value
+    if isinstance(raw_value_valid_without_offset, bool):
+        payload["raw_value_valid_without_offset"] = raw_value_valid_without_offset
     if isinstance(offset_evidence, dict):
         payload["offset_evidence"] = offset_evidence
     payload["manual_action"] = "advanced_value_offsets"
