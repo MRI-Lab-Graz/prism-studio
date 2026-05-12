@@ -1395,6 +1395,10 @@ export function initSurveyConvert(elements) {
         includeIdMap = true,
     } = {}) {
         const formData = new FormData();
+        const currentProjectPath = resolveCurrentProjectPath();
+        if (currentProjectPath) {
+            formData.append('project_path', currentProjectPath);
+        }
         const inputSelection = appendSurveyInputToFormData(formData);
         const filename = inputSelection.filename || getSelectedSurveyFilename();
         if (!inputSelection.filename) {
@@ -2406,6 +2410,7 @@ export function initSurveyConvert(elements) {
         getSurveyPreviewContextKey,
         getSelectedSurveyFilename,
         getSelectedSurveyFile,
+        resolveCurrentProjectPath,
         isAdvancedOptionsEnabled,
         refreshSurveyColumnsBeforeRun,
         setActiveSurveyRun,
@@ -2486,6 +2491,7 @@ export function initSurveyConvert(elements) {
         getSelectedSurveyFilename,
         getSelectedSurveyFile,
         getSurveySessionValue,
+        resolveCurrentProjectPath,
         isAdvancedOptionsEnabled,
         refreshSurveyColumnsBeforeRun,
         setActiveSurveyRun,
