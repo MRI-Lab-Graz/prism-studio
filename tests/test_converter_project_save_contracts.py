@@ -38,6 +38,11 @@ def _build_app_and_handlers():
         methods=["POST"],
     )
     app.add_url_rule(
+        "/api/survey-workflow-command",
+        view_func=survey.api_survey_workflow_command,
+        methods=["POST"],
+    )
+    app.add_url_rule(
         "/api/batch-convert-start",
         view_func=physio.api_batch_convert_start,
         methods=["POST"],
@@ -320,6 +325,166 @@ def test_survey_convert_validate_returns_participant_registry_warning(
     assert payload["conversion_summary"]["participant_registry_warning"][
         "action"
     ]["target"] == "participants"
+
+
+def test_survey_workflow_preview_rejects_stale_explicit_project_path(
+    tmp_path, monkeypatch
+):
+    app, _biometrics, survey, _physio, _environment = _build_app_and_handlers()
+    current_project = tmp_path / "project-current"
+    current_project.mkdir(parents=True, exist_ok=True)
+
+    stale_project = tmp_path / "missing-project"
+
+    library_root = tmp_path / "library"
+    survey_dir = library_root / "survey"
+    survey_dir.mkdir(parents=True, exist_ok=True)
+    (survey_dir / "survey-demo.json").write_text("{}", encoding="utf-8")
+
+    monkeypatch.setattr(survey, "_resolve_effective_library_path", lambda: library_root)
+
+    def fake_run_survey_with_official_fallback(_converter, **_kwargs):
+        return SimpleNamespace(
+            dry_run_preview={},
+            tasks_included=["demo"],
+            unknown_columns=[],
+            missing_items_by_task={},
+            id_column="participant_id",
+            session_column=None,
+            run_column=None,
+            detected_sessions=[],
+            conversion_warnings=[],
+            task_runs={},
+            template_matches=None,
+            near_match_candidates=[],
+            near_match_applied=False,
+            applied_value_offsets={},
+            value_offset_application_counts={},
+            participant_registry_warning=None,
+            tool_columns=[],
+        )
+
+    monkeypatch.setattr(
+        survey,
+        "_run_survey_with_official_fallback",
+        fake_run_survey_with_official_fallback,
+    )
+
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess["current_project_path"] = str(current_project)
+
+        response = client.post(
+            "/api/survey-workflow-command",
+            data={
+                "workflow_command": "preview",
+                "project_path": str(stale_project),
+                "validate": "false",
+                "id_column": "participant_id",
+                "excel": (
+                    io.BytesIO(b"participant_id,score\nsub-01,1\n"),
+                    "survey.csv",
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+
+    assert response.status_code == 400
+    payload = response.get_json()
+    assert "no longer exists" in payload["error"].lower()
+
+
+def test_survey_workflow_convert_prefers_explicit_project_path(
+    tmp_path, monkeypatch
+):
+    app, _biometrics, survey, _physio, _environment = _build_app_and_handlers()
+    stale_session_project = tmp_path / "missing-project"
+    explicit_project = tmp_path / "project-explicit"
+    explicit_project.mkdir(parents=True, exist_ok=True)
+
+    library_root = tmp_path / "library"
+    survey_dir = library_root / "survey"
+    survey_dir.mkdir(parents=True, exist_ok=True)
+    (survey_dir / "survey-demo.json").write_text("{}", encoding="utf-8")
+
+    monkeypatch.setattr(survey, "_resolve_effective_library_path", lambda: library_root)
+    monkeypatch.setattr(
+        survey,
+        "_validate_project_templates_for_tasks",
+        lambda **_kwargs: [],
+    )
+
+    def fake_run_survey_with_official_fallback(_converter, **kwargs):
+        output_root = Path(kwargs["output_root"])
+        if not kwargs.get("dry_run"):
+            output_file = (
+                output_root
+                / "sub-01"
+                / "ses-01"
+                / "survey"
+                / "sub-01_ses-01_task-demo_survey.tsv"
+            )
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+            output_file.write_text(
+                "participant_id\tscore\nsub-01\t1\n", encoding="utf-8"
+            )
+
+        return SimpleNamespace(
+            tasks_included=["demo"],
+            unknown_columns=[],
+            task_runs={},
+            tool_columns=[],
+            template_matches=None,
+            near_match_candidates=[],
+            near_match_applied=False,
+            conversion_warnings=[],
+            participant_registry_warning=None,
+            dry_run_preview={},
+            missing_items_by_task={},
+            id_column="participant_id",
+            session_column=None,
+            run_column=None,
+            detected_sessions=["01"],
+            applied_value_offsets={},
+            value_offset_application_counts={},
+        )
+
+    monkeypatch.setattr(
+        survey,
+        "_run_survey_with_official_fallback",
+        fake_run_survey_with_official_fallback,
+    )
+
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess["current_project_path"] = str(stale_session_project)
+
+        response = client.post(
+            "/api/survey-workflow-command",
+            data={
+                "workflow_command": "convert",
+                "project_path": str(explicit_project),
+                "id_column": "participant_id",
+                "session": "01",
+                "validate": "false",
+                "excel": (
+                    io.BytesIO(b"participant_id,score\nsub-01,1\n"),
+                    "survey.csv",
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["project_saved"] is True
+    assert (
+        explicit_project
+        / "sub-01"
+        / "ses-01"
+        / "survey"
+        / "sub-01_ses-01_task-demo_survey.tsv"
+    ).exists()
 
 
 def test_batch_convert_start_rejects_stale_project_path(tmp_path):

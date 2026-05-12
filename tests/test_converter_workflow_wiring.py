@@ -444,6 +444,12 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         workflow_prepare_content = SURVEY_WORKFLOW_PREPARE_MODULE.read_text(
             encoding="utf-8"
         )
+        workflow_preview_content = SURVEY_WORKFLOW_PREVIEW_MODULE.read_text(
+            encoding="utf-8"
+        )
+        workflow_convert_content = SURVEY_WORKFLOW_CONVERT_MODULE.read_text(
+            encoding="utf-8"
+        )
         survey_sourcedata_content = (
             SURVEY_SOURCEDATA_QUICK_SELECT_MODULE.read_text(encoding="utf-8")
         )
@@ -518,6 +524,24 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn(
             "data = await parseJsonResponse(response, 'Survey preparation');",
             workflow_prepare_content,
+        )
+        self.assertIn("const currentProjectPath = resolveCurrentProjectPath();", content)
+        self.assertIn("formData.append('project_path', currentProjectPath);", content)
+        self.assertIn(
+            "const currentProjectPath = resolveCurrentProjectPath();",
+            workflow_preview_content,
+        )
+        self.assertIn(
+            "formData.append('project_path', currentProjectPath);",
+            workflow_preview_content,
+        )
+        self.assertIn(
+            "const currentProjectPath = resolveCurrentProjectPath();",
+            workflow_convert_content,
+        )
+        self.assertIn(
+            "formData.append('project_path', currentProjectPath);",
+            workflow_convert_content,
         )
 
     def test_survey_converter_project_change_clears_project_bound_selection_state(self):
