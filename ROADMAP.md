@@ -31,6 +31,10 @@ Progress snapshot:
 - Standardized file-management and environment upload control wrappers.
 - Library editor page shell migrated to shared page header + help panel primitives, with focused wiring regression coverage.
 - Validation results page header migrated to shared page-header primitive, with validator workflow wiring coverage.
+- Projects page header migrated to shared page-header primitive while preserving preliminary badge behavior and compact-view wiring checks.
+- Home page shell now uses shared page-header and help-panel primitives while preserving hero/content structure.
+- JSON Editor now uses shared page-header and help-panel primitives, with dedicated workflow wiring assertions.
+- Template Editor now uses shared page-header and help-panel primitives, with dedicated workflow wiring assertions.
 
 Next action:
 - Complete remaining page migrations to shared components and run focused wiring checks for UI-state regressions.

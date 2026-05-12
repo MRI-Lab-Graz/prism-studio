@@ -15,6 +15,16 @@ TEMPLATE_EDITOR_BLUEPRINT = (
 
 
 class TestTemplateEditorWorkflowWiring(unittest.TestCase):
+    def test_template_editor_uses_shared_header_and_help_panel_macros(self):
+        content = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            '{% from "includes/ui/macros.html" import page_header, help_panel %}',
+            content,
+        )
+        self.assertIn("{{ page_header(", content)
+        self.assertIn("{% call help_panel(", content)
+
     def test_template_editor_exposes_modality_selector_with_survey_default(self):
         content = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
 

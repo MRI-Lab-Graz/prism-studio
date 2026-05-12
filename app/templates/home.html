@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "includes/ui/macros.html" import page_header, help_panel %}
 
 {% block title %}PRISM Studio - Home{% endblock %}
 
@@ -247,6 +248,17 @@
 
 {% block content %}
 <div class="studio-page-shell">
+        {{ page_header(
+            'fas fa-house',
+            'Welcome to PRISM Studio',
+            'Build BIDS-compatible, analysis-ready datasets without leaving your local machine.'
+        ) }}
+
+        {% call help_panel('Quick Start', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
+        <p class="mb-1 small">Start with Project Manager to create or open a dataset workspace.</p>
+        <p class="mb-0 small">Run validation early, then convert and export from the same project context.</p>
+        {% endcall %}
+
         <div class="home-hero-shell text-center mb-4">
             <div class="home-hero-logo-frame">
                 <picture>

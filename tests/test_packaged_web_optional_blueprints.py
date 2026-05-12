@@ -85,6 +85,7 @@ def test_home_page_renders_without_tools_blueprint() -> None:
 
     assert response.status_code == 200
     assert b"Unavailable in this build" in response.data
+    assert b"Welcome to PRISM Studio" in response.data
 
 
 def test_projects_page_renders_without_tools_blueprint() -> None:

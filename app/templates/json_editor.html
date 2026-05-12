@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "includes/ui/macros.html" import page_header %}
+{% from "includes/ui/macros.html" import page_header, help_panel %}
 
 {% block title %}PRISM Studio - JSON Editor{% endblock %}
 
@@ -10,6 +10,11 @@
         'JSON Editor',
         'Open any BIDS/PRISM JSON metadata file to edit and download it.'
     ) }}
+
+    {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
+    <p class="mb-1 small">Open a JSON sidecar or metadata file to view fields in editable form controls.</p>
+    <p class="mb-0 small">Use Save / Download to export your updated JSON without changing source files automatically.</p>
+    {% endcall %}
 
     <!-- File Open Card -->
     <div class="card feature-card mb-4" id="fileOpenCard">
