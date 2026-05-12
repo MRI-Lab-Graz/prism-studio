@@ -421,6 +421,13 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn(
             "formData.append('project_path', currentProjectPath);", physio_content
         )
+        self.assertIn(
+            "const writeLocalLog = (message, cssClass = 'ansi-blue') => {",
+            physio_content,
+        )
+        self.assertIn("const line = document.createElement('span');", physio_content)
+        self.assertIn("line.textContent = String(message);", physio_content)
+        self.assertNotIn("physioBatchLog.innerHTML +=", physio_content)
 
         self.assertIn(
             "import { resolveCurrentProjectPath } from '../../shared/project-state.js';",
@@ -472,6 +479,13 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "Please select a project first from the top of the page",
             eyetracking_content,
         )
+        self.assertIn(
+            "function appendEyetrackingBatchLogLine(message, colorClass = 'ansi-reset') {",
+            eyetracking_content,
+        )
+        self.assertIn("const line = document.createElement('span');", eyetracking_content)
+        self.assertIn("line.textContent = String(message);", eyetracking_content)
+        self.assertNotIn("eyetrackingBatchLog.innerHTML +=", eyetracking_content)
 
     def test_environment_and_participants_modules_include_sourcedata_quick_select(self):
         environment_content = ENVIRONMENT_MODULE.read_text(encoding="utf-8")
