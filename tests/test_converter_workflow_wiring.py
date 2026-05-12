@@ -68,6 +68,15 @@ SURVEY_TEMPLATE_RESULTS_MODULE = (
     / "converter"
     / "survey-template-results.js"
 )
+SURVEY_TEMPLATE_GENERATION_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "survey-template-generation.js"
+)
 SURVEY_CONVERSION_SUMMARY_MODULE = (
     REPO_ROOT
     / "app"
@@ -603,6 +612,9 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         workflow_template_check_content = (
             SURVEY_WORKFLOW_TEMPLATE_CHECK_MODULE.read_text(encoding="utf-8")
         )
+        template_generation_content = SURVEY_TEMPLATE_GENERATION_MODULE.read_text(
+            encoding="utf-8"
+        )
         conversion_summary_content = SURVEY_CONVERSION_SUMMARY_MODULE.read_text(
             encoding="utf-8"
         )
@@ -614,6 +626,25 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "import { createSurveySourcedataQuickSelectController } from './survey-sourcedata-quick-select.js';",
             content,
         )
+        self.assertIn(
+            "import { createSurveyTemplateGenerationController } from './survey-template-generation.js';",
+            content,
+        )
+        self.assertIn(
+            "const surveyTemplateGenerationController = createSurveyTemplateGenerationController({",
+            content,
+        )
+        self.assertIn(
+            "await surveyTemplateGenerationController.handleTemplateGeneration(file);",
+            content,
+        )
+        self.assertIn(
+            "export function createSurveyTemplateGenerationController({",
+            template_generation_content,
+        )
+        self.assertIn("fetch('/api/limesurvey-to-prism', {", template_generation_content)
+        self.assertIn("showTemplateResultsContainer();", template_generation_content)
+        self.assertIn("displayParticipantMetadataSection(data);", template_generation_content)
         self.assertIn(
             "const surveySourcedataQuickSelectController = createSurveySourcedataQuickSelectController({",
             content,
