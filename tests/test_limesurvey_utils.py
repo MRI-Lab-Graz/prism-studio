@@ -2,6 +2,7 @@
 
 import sys
 import os
+import zipfile
 import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -11,6 +12,8 @@ from src.converters.limesurvey import (
     _map_field_to_code,
     _extract_media_urls,
     _clean_html_preserve_info,
+    parse_lsa_responses,
+    parse_lsa_timings,
     LIMESURVEY_QUESTION_TYPES,
 )
 
@@ -192,3 +195,104 @@ class TestLoadIdMapping:
         f.write_text("only_one\n1\n2\n")
         result = load_id_mapping(str(f))
         assert result is None
+
+
+# ---------------------------------------------------------------------------
+# parse_lsa_responses / parse_lsa_timings
+# ---------------------------------------------------------------------------
+
+def _build_lsa_archive(tmp_path, *, lss_xml: str, responses_xml: str, timings_xml: str | None = None):
+    archive_path = tmp_path / "survey_test.lsa"
+    with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("survey_100001.lss", lss_xml)
+        zf.writestr("survey_100001_responses.lsr", responses_xml)
+        if timings_xml is not None:
+            zf.writestr("survey_100001_timings.lsi", timings_xml)
+    return archive_path
+
+
+def test_parse_lsa_responses_maps_question_titles_and_suffixes(tmp_path):
+    from tests.test_limesurvey_structure import _MINIMAL_LSS
+
+    responses_xml = """<document>
+    <fields>
+        <fieldname>id</fieldname>
+        <fieldname>1X1X10</fieldname>
+        <fieldname>1X1X10SQ001</fieldname>
+    </fields>
+    <responses>
+        <rows>
+            <row>
+                <id>1</id>
+                <_1X1X10>2</_1X1X10>
+                <_1X1X10SQ001>alpha</_1X1X10SQ001>
+            </row>
+        </rows>
+    </responses>
+</document>"""
+
+    archive = _build_lsa_archive(
+        tmp_path,
+        lss_xml=_MINIMAL_LSS,
+        responses_xml=responses_xml,
+    )
+
+    df, questions_map, groups_map = parse_lsa_responses(str(archive))
+    assert "AGE" in df.columns
+    assert "SQ001" in df.columns
+    assert df.loc[0, "AGE"] == "2"
+    assert df.loc[0, "SQ001"] == "alpha"
+    assert isinstance(questions_map, dict)
+    assert isinstance(groups_map, dict)
+
+
+def test_parse_lsa_timings_returns_dataframe_and_handles_missing_paths(tmp_path):
+    from tests.test_limesurvey_structure import _MINIMAL_LSS
+
+    timings_xml = """<document><timings><rows>
+    <row><_1X1X10time>12.3</_1X1X10time></row>
+    <row><_1X1X10time>10.1</_1X1X10time></row>
+</rows></timings></document>"""
+
+    responses_xml = """<document><fields></fields><responses><rows></rows></responses></document>"""
+    archive = _build_lsa_archive(
+        tmp_path,
+        lss_xml=_MINIMAL_LSS,
+        responses_xml=responses_xml,
+        timings_xml=timings_xml,
+    )
+
+    parsed = parse_lsa_timings(str(archive))
+    assert parsed is not None
+    assert parsed.shape[0] == 2
+    assert parse_lsa_timings(str(tmp_path / "missing.lsa")) is None
+
+
+def test_parse_lsa_timings_handles_invalid_zip_and_dataframe_failures(tmp_path, monkeypatch):
+    bad_archive = tmp_path / "bad.lsa"
+    bad_archive.write_bytes(b"not a zip")
+    assert parse_lsa_timings(str(bad_archive)) is None
+
+    from tests.test_limesurvey_structure import _MINIMAL_LSS
+
+    timings_xml = """<document><timings><rows><row><_1X1X10time>12.3</_1X1X10time></row></rows></timings></document>"""
+    responses_xml = """<document><fields></fields><responses><rows></rows></responses></document>"""
+    archive = _build_lsa_archive(
+        tmp_path,
+        lss_xml=_MINIMAL_LSS,
+        responses_xml=responses_xml,
+        timings_xml=timings_xml,
+    )
+
+    import src.converters.limesurvey as limesurvey_module
+
+    original_dataframe = limesurvey_module.pd.DataFrame
+
+    def _raise_dataframe(*_args, **_kwargs):
+        raise RuntimeError("forced dataframe failure")
+
+    monkeypatch.setattr(limesurvey_module.pd, "DataFrame", _raise_dataframe)
+    try:
+        assert parse_lsa_timings(str(archive)) is None
+    finally:
+        monkeypatch.setattr(limesurvey_module.pd, "DataFrame", original_dataframe)
