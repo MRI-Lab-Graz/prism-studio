@@ -30,6 +30,8 @@ from .conversion_utils import (
     parse_selected_survey_tasks,
     parse_task_value_offsets,
     parse_template_version_overrides,
+    require_existing_project_root,
+    resolve_existing_project_root,
     resolve_validation_library_path,
 )
 
@@ -237,6 +239,37 @@ def _format_workflow_preparation_stale_response(
     )
 
 
+def _resolve_requested_project_root(*, require_project: bool) -> Path | None:
+    requested_project_path = (
+        (request.form.get("project_path") or request.args.get("project_path") or "")
+        .strip()
+        or None
+    )
+    missing_message = (
+        "No project selected. Load a project before previewing survey data."
+    )
+    missing_path_message = (
+        "The selected project path no longer exists. Reopen the project and retry survey preview."
+    )
+
+    if requested_project_path:
+        return require_existing_project_root(
+            requested_project_path,
+            missing_message=missing_message,
+            missing_path_message=missing_path_message,
+        )
+
+    session_project_path = session.get("current_project_path")
+    if require_project:
+        return require_existing_project_root(
+            session_project_path,
+            missing_message=missing_message,
+            missing_path_message=missing_path_message,
+        )
+
+    return resolve_existing_project_root(session_project_path)
+
+
 def handle_api_survey_languages(participant_json_candidates):
     """List available languages for the selected survey template library folder."""
     library_path = (request.args.get("library_path") or "").strip()
@@ -427,6 +460,13 @@ def handle_api_survey_convert_preview(
             )
 
     try:
+        project_path = _resolve_requested_project_root(require_project=False)
+    except (ValueError, FileNotFoundError) as error:
+        return jsonify({"error": str(error)}), 400
+
+    project_path_text = str(project_path) if project_path else None
+
+    try:
         library_path = resolve_effective_library_path()
     except FileNotFoundError as error:
         return jsonify({"error": str(error)}), 400
@@ -439,7 +479,7 @@ def handle_api_survey_convert_preview(
     effective_survey_dir = survey_dir
 
     print(f"[PRISM DEBUG] DRY-RUN Preview using library: {effective_survey_dir}")
-    print(f"[PRISM DEBUG] Session project path: {session.get('current_project_path')}")
+    print(f"[PRISM DEBUG] Session project path: {project_path_text}")
     print(
         f"[PRISM DEBUG] Available templates: {list(effective_survey_dir.glob('survey-*.json'))}"
     )
@@ -451,7 +491,7 @@ def handle_api_survey_convert_preview(
         from .conversion_survey_handlers import _resolve_official_survey_dir
 
         official_fallback = _resolve_official_survey_dir(
-            session.get("current_project_path")
+            project_path_text
         )
         if official_fallback:
             effective_survey_dir = official_fallback
@@ -477,9 +517,8 @@ def handle_api_survey_convert_preview(
         )
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
-    current_project_path = session.get("current_project_path")
     effective_template_version_overrides = _get_effective_template_version_overrides(
-        project_path=current_project_path,
+        project_path=project_path_text,
         template_version_overrides=template_version_overrides,
     )
     id_column = (request.form.get("id_column") or "").strip() or None
@@ -548,12 +587,7 @@ def handle_api_survey_convert_preview(
             id_map_path = tmp_dir_path / id_map_filename
             id_map_upload.save(str(id_map_path))
 
-        project_path = session.get("current_project_path")
         if project_path:
-            project_path = Path(project_path)
-            if project_path.is_file():
-                project_path = project_path.parent
-
             mapping_candidates = participants_mapping_candidates(project_path)
 
             for mapping_file in mapping_candidates:

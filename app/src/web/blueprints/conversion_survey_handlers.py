@@ -193,6 +193,41 @@ def _format_workflow_preparation_stale_response(
     )
 
 
+def _requested_project_path() -> str | None:
+    raw_value = (
+        request.form.get("project_path")
+        or request.args.get("project_path")
+        or ""
+    )
+    normalized = str(raw_value).strip()
+    return normalized or None
+
+
+def _resolve_requested_project_root(*, require_project: bool) -> Path | None:
+    missing_message = "No project selected. Load a project before converting survey data."
+    missing_path_message = (
+        "The selected project path no longer exists. Reopen the project and retry survey conversion."
+    )
+
+    requested_project_path = _requested_project_path()
+    if requested_project_path:
+        return require_existing_project_root(
+            requested_project_path,
+            missing_message=missing_message,
+            missing_path_message=missing_path_message,
+        )
+
+    session_project_path = session.get("current_project_path")
+    if require_project:
+        return require_existing_project_root(
+            session_project_path,
+            missing_message=missing_message,
+            missing_path_message=missing_path_message,
+        )
+
+    return resolve_existing_project_root(session_project_path)
+
+
 def _iter_session_registration_values(
     *,
     session_override: str | None,
@@ -1495,6 +1530,15 @@ def api_survey_detect_version_context():
     if suffix not in _SUPPORTED_SURVEY_INPUT_SUFFIXES:
         return jsonify({"error": _SUPPORTED_SURVEY_INPUT_MESSAGE}), 400
 
+    try:
+        requested_project_root = _resolve_requested_project_root(require_project=False)
+    except (ValueError, FileNotFoundError) as error:
+        return jsonify({"error": str(error)}), 400
+
+    requested_project_path = (
+        str(requested_project_root) if requested_project_root else None
+    )
+
     raw_survey_filter = (request.form.get("survey") or "").strip() or None
     try:
         selected_tasks = parse_selected_survey_tasks(
@@ -1541,7 +1585,7 @@ def api_survey_detect_version_context():
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
 
-    project_path = session.get("current_project_path")
+    project_path = requested_project_path
     effective_template_version_overrides = _get_effective_template_version_overrides(
         project_path=project_path,
         template_version_overrides=template_version_overrides,
@@ -1563,7 +1607,7 @@ def api_survey_detect_version_context():
             uploaded_file=uploaded_file,
             filename=filename,
             library_dir=library_path,
-            project_path=str(project_path) if project_path else None,
+            project_path=project_path,
             survey=survey_filter,
             id_column=id_column,
             session_column=session_column,
@@ -1646,6 +1690,15 @@ def api_survey_convert():
     if suffix not in _SUPPORTED_SURVEY_INPUT_SUFFIXES:
         return jsonify({"error": _SUPPORTED_SURVEY_INPUT_MESSAGE}), 400
 
+    try:
+        requested_project_root = _resolve_requested_project_root(require_project=False)
+    except (ValueError, FileNotFoundError) as error:
+        return jsonify({"error": str(error)}), 400
+
+    requested_project_path = (
+        str(requested_project_root) if requested_project_root else None
+    )
+
     alias_filename = None
     if alias_upload and getattr(alias_upload, "filename", ""):
         alias_filename = secure_filename(alias_upload.filename)
@@ -1674,7 +1727,9 @@ def api_survey_convert():
     try:
         effective_survey_dir = _survey_workflow_stage_service.resolve_effective_survey_dir(
             library_path=library_path,
-            fallback_project_path=session.get("current_project_path"),
+            fallback_project_path=(
+                requested_project_path or session.get("current_project_path")
+            ),
             resolve_official_survey_dir=_resolve_official_survey_dir,
         )
     except FileNotFoundError as error:
@@ -1694,7 +1749,7 @@ def api_survey_convert():
         )
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
-    current_project_path = session.get("current_project_path")
+    current_project_path = requested_project_path or session.get("current_project_path")
     effective_template_version_overrides = _get_effective_template_version_overrides(
         project_path=current_project_path,
         template_version_overrides=template_version_overrides,
@@ -1729,14 +1784,13 @@ def api_survey_convert():
     project_root = None
     current_project_path = None
     if save_to_project:
-        try:
-            project_root = require_existing_project_root(
-                session.get("current_project_path"),
-                missing_message="No project selected. Load a project before converting survey data.",
-                missing_path_message="The selected project path no longer exists. Reopen the project and retry survey conversion.",
-            )
-        except (ValueError, FileNotFoundError) as error:
-            return jsonify({"error": str(error)}), 400
+        if requested_project_root is not None:
+            project_root = requested_project_root
+        else:
+            try:
+                project_root = _resolve_requested_project_root(require_project=True)
+            except (ValueError, FileNotFoundError) as error:
+                return jsonify({"error": str(error)}), 400
         current_project_path = str(project_root)
     duplicate_handling = parsed_stage_fields.duplicate_handling
     try:
@@ -2135,6 +2189,21 @@ def api_survey_convert_validate():
         )
 
     try:
+        project_root = _resolve_requested_project_root(require_project=True)
+    except (ValueError, FileNotFoundError) as error:
+        return (
+            jsonify(
+                {
+                    "error": str(error),
+                    "log": log_messages,
+                }
+            ),
+            400,
+        )
+
+    current_project_path = str(project_root) if project_root else None
+
+    try:
         library_path = _resolve_effective_library_path()
     except FileNotFoundError as e:
         return jsonify({"error": str(e), "log": log_messages}), 400
@@ -2142,7 +2211,7 @@ def api_survey_convert_validate():
     try:
         effective_survey_dir = _survey_workflow_stage_service.resolve_effective_survey_dir(
             library_path=library_path,
-            fallback_project_path=session.get("current_project_path"),
+            fallback_project_path=current_project_path,
             resolve_official_survey_dir=_resolve_official_survey_dir,
         )
     except FileNotFoundError as error:
@@ -2162,7 +2231,6 @@ def api_survey_convert_validate():
         )
     except ValueError as error:
         return jsonify({"error": str(error), "log": log_messages}), 400
-    current_project_path = session.get("current_project_path")
     effective_template_version_overrides = _get_effective_template_version_overrides(
         project_path=current_project_path,
         template_version_overrides=template_version_overrides,
@@ -2215,23 +2283,16 @@ def api_survey_convert_validate():
             400,
         )
 
-    try:
-        project_root = require_existing_project_root(
-            session.get("current_project_path"),
-            missing_message="No project selected. Load a project before converting survey data.",
-            missing_path_message="The selected project path no longer exists. Reopen the project and retry survey conversion.",
-        )
-    except (ValueError, FileNotFoundError) as error:
+    if current_project_path is None:
         return (
             jsonify(
                 {
-                    "error": str(error),
+                    "error": "No project selected. Load a project before converting survey data.",
                     "log": log_messages,
                 }
             ),
             400,
         )
-    current_project_path = str(project_root)
     try:
         separator_option = normalize_separator_option(request.form.get("separator"))
     except ValueError as error:
