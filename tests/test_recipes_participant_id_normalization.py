@@ -3,9 +3,11 @@ from pathlib import Path
 import pandas as pd
 
 from src.recipes_surveys import (
+    _build_sav_value_labels,
     _build_spss_rename_map,
     _build_combined_output_metadata,
     _coerce_value_labeled_columns_for_sav,
+    _prepare_dataframe_for_sav,
     compute_survey_recipes,
     _load_participants_data,
     _participant_join_key,
@@ -102,6 +104,31 @@ def test_coerce_value_labeled_columns_for_sav_numeric_cast() -> None:
     assert pd.isna(out.loc[2, "sex"])
 
 
+def test_prepare_dataframe_for_sav_handles_missing_and_decimal_comma() -> None:
+    df = pd.DataFrame(
+        {
+            "participant_id": ["sub-001", "sub-002", "sub-003"],
+            "score": ["3,14", "n/a", "2.5"],
+            "age": ["20", "NA", "30"],
+            "note": ["ok", "n/a", "hello"],
+        }
+    )
+
+    out = _prepare_dataframe_for_sav(df)
+
+    assert str(out["score"].dtype) == "float64"
+    assert out.loc[0, "score"] == 3.14
+    assert pd.isna(out.loc[1, "score"])
+    assert out.loc[2, "score"] == 2.5
+
+    assert str(out["age"].dtype) == "Int64"
+    assert out.loc[0, "age"] == 20
+    assert pd.isna(out.loc[1, "age"])
+    assert out.loc[2, "age"] == 30
+
+    assert pd.isna(out.loc[1, "note"])
+
+
 def test_sanitize_spss_variable_name_prefixes_leading_digits() -> None:
     assert _sanitize_spss_variable_name("20D_item1") == "v_20D_item1"
     assert _sanitize_spss_variable_name("item-1.2 3") == "item_1_2_3"
@@ -119,6 +146,29 @@ def test_build_spss_rename_map_handles_collisions() -> None:
     assert rename_map["a.b"] == "a_b_2"
     assert rename_map["20D_item1"] == "v_20D_item1"
     assert "ok_name" not in rename_map
+
+
+def test_build_sav_value_labels_handles_numeric_and_text_columns() -> None:
+    df = pd.DataFrame(
+        {
+            "score": [1.5, 2.0],
+            "group": ["low", "high"],
+        }
+    )
+
+    value_labels = {
+        "score": {"1,5": "Low", "2": "High", "n/a": "Missing"},
+        "group": {"low": "Lower", "high": "Higher"},
+    }
+
+    labels = _build_sav_value_labels(
+        df=df,
+        value_labels=value_labels,
+        rename_map={},
+    )
+
+    assert labels["score"] == {1.5: "Low", 2.0: "High"}
+    assert labels["group"] == {"low": "Lower", "high": "Higher"}
 
 
 def _write_minimal_recipe(path: Path, task_name: str) -> None:
@@ -159,7 +209,7 @@ def _write_formula_recipe(path: Path, task_name: str, score_name: str, formula: 
     )
 
 
-def test_merge_all_keeps_participant_columns_for_all_subjects(tmp_path: Path) -> None:
+def test_merge_all_does_not_export_participant_columns(tmp_path: Path) -> None:
     project_root = tmp_path / "project"
     recipe_dir = tmp_path / "recipes"
     project_root.mkdir(parents=True)
@@ -199,9 +249,10 @@ def test_merge_all_keeps_participant_columns_for_all_subjects(tmp_path: Path) ->
     combined_csv = result.out_root / "combined_survey.csv"
     assert combined_csv.exists()
 
-    out_df = pd.read_csv(combined_csv, dtype=str).set_index("participant_id")
-    assert out_df.loc["sub-001", "age"] == "20"
-    assert out_df.loc["sub-002", "age"] == "30"
+    out_df = pd.read_csv(combined_csv, dtype=str)
+    assert "age" not in out_df.columns
+    assert "aaa_Total" in out_df.columns
+    assert "bbb_Total" in out_df.columns
 
 
 def test_merge_all_formula_uses_participant_values_from_participants_tsv(tmp_path: Path) -> None:
@@ -244,3 +295,76 @@ def test_merge_all_formula_uses_participant_values_from_participants_tsv(tmp_pat
 
     out_df = pd.read_csv(combined_csv, dtype=str)
     assert out_df.loc[0, "aaa_AgeEcho"] == "40"
+
+
+def test_merge_all_include_raw_exports_missing_recipe_task_as_raw_only(tmp_path: Path) -> None:
+    project_root = tmp_path / "project"
+    recipe_dir = tmp_path / "recipes"
+    project_root.mkdir(parents=True)
+    recipe_dir.mkdir(parents=True)
+
+    survey_dir = project_root / "sub-001" / "ses-1" / "survey"
+    survey_dir.mkdir(parents=True)
+    (survey_dir / "sub-001_ses-1_task-aaa_survey.tsv").write_text(
+        "Q1\n1\n",
+        encoding="utf-8",
+    )
+    (survey_dir / "sub-001_ses-1_task-ccc_survey.tsv").write_text(
+        "Q1\n7\n",
+        encoding="utf-8",
+    )
+
+    _write_minimal_recipe(recipe_dir / "recipe-aaa.json", "aaa")
+
+    result = compute_survey_recipes(
+        prism_root=project_root,
+        repo_root=tmp_path,
+        recipe_dir=recipe_dir,
+        modality="survey",
+        out_format="csv",
+        include_raw=True,
+        merge_all=True,
+    )
+
+    combined_csv = result.out_root / "combined_survey.csv"
+    out_df = pd.read_csv(combined_csv, dtype=str)
+
+    assert result.written_recipe_ids == ("aaa",)
+    assert result.missing_input_tasks == ("ccc",)
+    assert result.raw_only_tasks == ("ccc",)
+    assert "ccc_Q1" in out_df.columns
+    assert out_df.loc[0, "ccc_Q1"] == "7"
+
+
+def test_include_raw_allows_export_when_recipe_directory_is_empty(tmp_path: Path) -> None:
+    project_root = tmp_path / "project"
+    recipe_dir = tmp_path / "recipes"
+    project_root.mkdir(parents=True)
+    recipe_dir.mkdir(parents=True)
+
+    survey_dir = project_root / "sub-001" / "ses-1" / "survey"
+    survey_dir.mkdir(parents=True)
+    (survey_dir / "sub-001_ses-1_task-aaa_survey.tsv").write_text(
+        "Q1\n5\n",
+        encoding="utf-8",
+    )
+
+    result = compute_survey_recipes(
+        prism_root=project_root,
+        repo_root=tmp_path,
+        recipe_dir=recipe_dir,
+        modality="survey",
+        out_format="csv",
+        include_raw=True,
+        merge_all=True,
+    )
+
+    combined_csv = result.out_root / "combined_survey.csv"
+    out_df = pd.read_csv(combined_csv, dtype=str)
+
+    assert combined_csv.exists()
+    assert result.written_recipe_ids == ()
+    assert result.missing_input_tasks == ("aaa",)
+    assert result.raw_only_tasks == ("aaa",)
+    assert "aaa_Q1" in out_df.columns
+    assert out_df.loc[0, "aaa_Q1"] == "5"
