@@ -59,9 +59,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const timestamp = new Date().toLocaleTimeString();
         const color = colors[type] || colors.info;
+        const rawMessage = String(message ?? '');
+        const commandMatch = rawMessage.match(/(\bcmd=)(.+)$/);
         const line = document.createElement('span');
         line.style.color = color;
-        line.textContent = `[${timestamp}] ${String(message)}`;
+        if (!commandMatch || typeof commandMatch.index !== 'number') {
+            line.textContent = `[${timestamp}] ${rawMessage}`;
+        } else {
+            const prefix = rawMessage.slice(0, commandMatch.index) + commandMatch[1];
+            line.appendChild(document.createTextNode(`[${timestamp}] ${prefix}`));
+            const commandSpan = document.createElement('span');
+            commandSpan.className = 'backend-command-text';
+            commandSpan.textContent = commandMatch[2];
+            line.appendChild(commandSpan);
+        }
         targetLog.appendChild(line);
         targetLog.appendChild(document.createTextNode('\n'));
         targetLog.scrollTop = targetLog.scrollHeight;
@@ -93,7 +104,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const timestamp = new Date().toLocaleTimeString();
             const line = document.createElement('span');
             line.style.color = colors[level] || colors.info;
-            line.textContent = `[${timestamp}] ${String(message ?? '')}`;
+            const rawMessage = String(message ?? '');
+            const commandMatch = rawMessage.match(/(\bcmd=)(.+)$/);
+            if (!commandMatch || typeof commandMatch.index !== 'number') {
+                line.textContent = `[${timestamp}] ${rawMessage}`;
+            } else {
+                const prefix = rawMessage.slice(0, commandMatch.index) + commandMatch[1];
+                line.appendChild(document.createTextNode(`[${timestamp}] ${prefix}`));
+                const commandSpan = document.createElement('span');
+                commandSpan.className = 'backend-command-text';
+                commandSpan.textContent = commandMatch[2];
+                line.appendChild(commandSpan);
+            }
             fragment.appendChild(line);
             fragment.appendChild(document.createTextNode('\n'));
         });

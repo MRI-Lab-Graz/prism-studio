@@ -610,6 +610,7 @@ def _validate_survey_item_value(
     validated_value = val
     value_num = _to_float(val)
     adjusted_value: Any | None = None
+    raw_value_valid_without_offset: bool | None = None
     if task_offset is not None and value_num is not None:
         validated_value = _coerce_numeric_offset_value(float(value_num) + float(task_offset))
         adjusted_value = validated_value
@@ -654,7 +655,6 @@ def _validate_survey_item_value(
             f"Invalid value '{val}' for '{item_id}' (Sub: {sub_id}, Task: {task}). "
             f"Expected: {', '.join(expected_levels)}"
         )
-        raw_value_valid_without_offset: bool | None = None
         if task_offset is not None:
             if value_num is None:
                 msg += (
@@ -737,7 +737,7 @@ def _validate_survey_item_value(
         f"Invalid value '{val}' for '{item_id}' (Sub: {sub_id}, Task: {task}). "
         f"Expected: {allowed}"
     )
-    raw_value_valid_without_offset: bool | None = None
+    raw_value_valid_without_offset = None
     if task_offset is not None:
         if value_num is None:
             msg += (

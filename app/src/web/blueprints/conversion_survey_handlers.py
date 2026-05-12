@@ -88,17 +88,17 @@ except ImportError:
 
 try:
     from src.converters.survey import (
-        SurveyValueOutOfBoundsError as _SurveyValueOutOfBoundsError,
+        SurveyValueOutOfBoundsError as _SurveyValueOutOfBoundsErrorFromSurvey,
     )
 
-    SurveyValueOutOfBoundsError = _SurveyValueOutOfBoundsError
+    SurveyValueOutOfBoundsError = _SurveyValueOutOfBoundsErrorFromSurvey
 except ImportError:
     try:
         from src.converters.survey_processing import (
-            SurveyValueOutOfBoundsError as _SurveyValueOutOfBoundsError,
+            SurveyValueOutOfBoundsError as _SurveyValueOutOfBoundsErrorFromProcessing,
         )
 
-        SurveyValueOutOfBoundsError = _SurveyValueOutOfBoundsError
+        SurveyValueOutOfBoundsError = _SurveyValueOutOfBoundsErrorFromProcessing
     except ImportError:
         pass
 
