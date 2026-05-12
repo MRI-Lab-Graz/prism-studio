@@ -5,6 +5,7 @@ from typing import Any
 
 from flask import current_app, jsonify
 
+from src.cross_platform import normalize_path
 from src.runtime_dependencies import has_pyreadstat_write_support
 from src.web.backend_monitoring import emit_backend_action
 
@@ -221,15 +222,13 @@ def handle_api_recipes_surveys(data: dict):
     ):
         return jsonify({"error": "Invalid dataset path"}), 400
 
-    dataset_root = Path(dataset_path).resolve()
-
     # Build config-based subfolder: {layout}_{lang} or {layout}_{lang}_anon
     subfolder_name = f"{layout}_{lang}"
     if anonymize:
         subfolder_name += "_anon"
 
     derivatives_dir = (
-        dataset_root
+        Path(dataset_path)
         / "derivatives"
         / ("survey" if modality == "survey" else "biometrics")
         / subfolder_name
@@ -267,7 +266,7 @@ def handle_api_recipes_surveys(data: dict):
     from src.web.validation import run_validation
 
     issues, _stats = run_validation(
-        str(dataset_root), verbose=False, schema_version=None, run_bids=False
+        dataset_path, verbose=False, schema_version=None, run_bids=False
     )
     error_issues = [
         i for i in (issues or []) if (len(i) >= 1 and str(i[0]).upper() == "ERROR")
@@ -301,23 +300,20 @@ def handle_api_recipes_surveys(data: dict):
             repo_root_str = str(global_recipes.parent.parent)
         else:
             repo_root_str = str(_default_repo_root)
-        repo_root_str = str(Path(repo_root_str).resolve())
-        if effective_recipe_dir:
-            effective_recipe_dir = str(Path(effective_recipe_dir).resolve())
 
         cmd_parts = [
             "python",
             "prism_tools.py",
             "recipes",
             modality,
-            f'--prism "{dataset_root}"',
-            f'--repo "{repo_root_str}"',
+            f'--prism "{normalize_path(dataset_path)}"',
+            f'--repo "{normalize_path(repo_root_str)}"',
             f"--format {out_format}",
             f"--layout {layout}",
             f"--lang {lang}",
         ]
         if effective_recipe_dir:
-            cmd_parts.append(f'--recipes "{effective_recipe_dir}"')
+            cmd_parts.append(f'--recipes "{normalize_path(effective_recipe_dir)}"')
         if survey_filter:
             cmd_parts.append(f'--survey "{survey_filter}"')
         if sessions:
@@ -343,7 +339,7 @@ def handle_api_recipes_surveys(data: dict):
 
         try:
             result = run_recipes_job(
-                prism_root=dataset_root,
+                prism_root=Path(dataset_path),
                 repo_root=Path(repo_root_str),
                 recipe_dir=effective_recipe_dir,
                 recipe_filter=survey_filter,
@@ -675,7 +671,7 @@ def handle_api_recipes_surveys(data: dict):
     _recipes_dir = result.recipes_dir
     try:
         _recipes_from_project = _recipes_dir is not None and Path(
-            dataset_root
+            dataset_path
         ).resolve() in [_recipes_dir, *_recipes_dir.parents]
     except Exception:
         _recipes_from_project = False
