@@ -48,6 +48,23 @@ def _parse_id_length(raw_value: object, *, default: int = 8) -> tuple[int, str |
     return parsed, None
 
 
+def _parse_missing_numeric_value(raw_value: object) -> tuple[float | None, str | None]:
+    if raw_value is None:
+        return None, None
+
+    if isinstance(raw_value, str):
+        candidate = raw_value.strip()
+        if not candidate:
+            return None, None
+    else:
+        candidate = raw_value
+
+    try:
+        return float(str(candidate).strip()), None
+    except (TypeError, ValueError):
+        return None, "Invalid missing_numeric_value. Use a valid number."
+
+
 def _find_existing_recipe_output_files(
     *,
     derivatives_dir: Path,
@@ -156,6 +173,34 @@ def handle_api_recipes_surveys(data: dict):
     boilerplate = bool(data.get("boilerplate", False))
     merge_all = bool(data.get("merge_all", False))
     include_recipe_prefix = bool(data.get("include_recipe_prefix", True))
+    missing_policy = (
+        (data.get("missing_policy") or "system-missing").strip().lower()
+        if isinstance(data.get("missing_policy"), str)
+        else str(data.get("missing_policy") or "system-missing").strip().lower()
+    )
+    if missing_policy not in {"system-missing", "text-na", "numeric-sentinel"}:
+        return (
+            jsonify(
+                {
+                    "error": "Invalid missing_policy. Use one of: system-missing, text-na, numeric-sentinel."
+                }
+            ),
+            400,
+        )
+    missing_numeric_value, missing_numeric_error = _parse_missing_numeric_value(
+        data.get("missing_numeric_value")
+    )
+    if missing_numeric_error:
+        return jsonify({"error": missing_numeric_error}), 400
+    if missing_policy == "numeric-sentinel" and missing_numeric_value is None:
+        return (
+            jsonify(
+                {
+                    "error": "missing_numeric_value is required when missing_policy is numeric-sentinel."
+                }
+            ),
+            400,
+        )
     anonymize = bool(data.get("anonymize", False))
     mask_questions = bool(data.get("mask_questions", False))
     id_length, id_length_error = _parse_id_length(data.get("id_length", 8))
@@ -277,6 +322,10 @@ def handle_api_recipes_surveys(data: dict):
             cmd_parts.append("--no-recipe-prefix")
         if boilerplate:
             cmd_parts.append("--boilerplate")
+        if missing_policy != "system-missing":
+            cmd_parts.append(f"--missing-policy {missing_policy}")
+        if missing_numeric_value is not None:
+            cmd_parts.append(f"--missing-numeric-value {missing_numeric_value}")
         if lang != "en":
             cmd_parts.append(f"--lang {lang}")
 
@@ -302,6 +351,8 @@ def handle_api_recipes_surveys(data: dict):
                 merge_all=merge_all,
                 include_recipe_prefix=include_recipe_prefix,
                 anonymized=anonymize,
+                missing_policy=missing_policy,
+                missing_numeric_value=missing_numeric_value,
             )
         except ValueError as e:
             return jsonify({"error": str(e)}), 400

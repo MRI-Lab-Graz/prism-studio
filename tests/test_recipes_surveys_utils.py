@@ -45,6 +45,7 @@ from src.recipes_surveys import (
     _load_participants_data,
     _load_and_validate_recipes,
     _export_recipe_legacy,
+    _apply_missing_export_policy,
 )
 
 
@@ -279,6 +280,57 @@ class TestFormatNumericCell:
     def test_float_preserved(self):
         result = _format_numeric_cell(3.14)
         assert "3" in result and "14" in result
+
+
+# ---------------------------------------------------------------------------
+# _apply_missing_export_policy
+# ---------------------------------------------------------------------------
+
+class TestApplyMissingExportPolicy:
+    def test_system_missing_converts_text_tokens_to_na(self):
+        df = pd.DataFrame({"a": ["1", "n/a", ""], "b": ["x", "y", "z"]})
+        out = _apply_missing_export_policy(
+            df,
+            missing_policy="system-missing",
+            missing_numeric_value=None,
+        )
+        assert pd.isna(out.loc[1, "a"])
+        assert pd.isna(out.loc[2, "a"])
+        assert out.loc[0, "a"] == "1"
+
+    def test_text_na_fills_missing_with_na_string(self):
+        df = pd.DataFrame({"a": ["1", "n/a", None]})
+        out = _apply_missing_export_policy(
+            df,
+            missing_policy="text-na",
+            missing_numeric_value=None,
+        )
+        assert out.loc[1, "a"] == "n/a"
+        assert out.loc[2, "a"] == "n/a"
+
+    def test_numeric_sentinel_applies_to_numeric_columns_only(self):
+        df = pd.DataFrame(
+            {
+                "score": ["1", "n/a", "2.5"],
+                "label": ["ok", "n/a", "warn"],
+            }
+        )
+        out = _apply_missing_export_policy(
+            df,
+            missing_policy="numeric-sentinel",
+            missing_numeric_value=-99,
+        )
+        assert float(out.loc[1, "score"]) == -99.0
+        assert pd.isna(out.loc[1, "label"])
+
+    def test_invalid_policy_raises(self):
+        df = pd.DataFrame({"a": ["1"]})
+        with pytest.raises(ValueError):
+            _apply_missing_export_policy(
+                df,
+                missing_policy="invalid",
+                missing_numeric_value=None,
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -1412,6 +1464,17 @@ class TestLoadAndValidateRecipes:
         recipe_dir.mkdir(parents=True)
         with pytest.raises(ValueError, match="No derivative recipes"):
             _load_and_validate_recipes(tmp_path, "survey")
+
+    def test_returns_empty_when_no_recipes_and_allow_empty_enabled(self, tmp_path):
+        recipe_dir = tmp_path / "code" / "recipes" / "survey"
+        recipe_dir.mkdir(parents=True)
+        result, loaded_dir = _load_and_validate_recipes(
+            tmp_path,
+            "survey",
+            allow_empty_recipes=True,
+        )
+        assert result == {}
+        assert loaded_dir == recipe_dir
 
     def test_raises_for_unknown_modality(self, tmp_path):
         import pytest, json as _json

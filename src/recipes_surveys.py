@@ -79,6 +79,8 @@ _SAFE_FORMULA_MATH_FUNCTIONS: dict[str, Any] = {
     "log": math.log,
 }
 
+_MISSING_TEXT_TOKENS = {"", "n/a", "na", "nan", "none", "null"}
+
 
 def _evaluate_formula_ast(node: ast.AST) -> Any:
     """Evaluate a restricted formula AST.
@@ -743,7 +745,7 @@ def _prepare_dataframe_for_sav(df: Any) -> Any:
         return df
 
     out = df.copy()
-    missing_tokens = {"", "n/a", "na", "nan", "none", "null"}
+    missing_tokens = _MISSING_TEXT_TOKENS
 
     for col in out.columns:
         series = out[col]
@@ -767,11 +769,73 @@ def _prepare_dataframe_for_sav(df: Any) -> Any:
         if int(numeric[non_missing_mask].notna().sum()) != int(non_missing_mask.sum()):
             continue
 
+        # Preserve identifier-like text codes (e.g., "001", "010") as strings.
+        non_missing_text = text[non_missing_mask]
+        if bool(non_missing_text.astype("string").str.match(r"^0\d+$").any()):
+            continue
+
         non_na_numeric = numeric.dropna()
         if not non_na_numeric.empty and bool(((non_na_numeric % 1) == 0).all()):
             out[col] = numeric.round().astype("Int64")
         else:
             out[col] = numeric.astype(float)
+
+    return out
+
+
+def _apply_missing_export_policy(
+    df: Any,
+    *,
+    missing_policy: str,
+    missing_numeric_value: float | None,
+) -> Any:
+    """Apply export-time missing value policy without mutating source data."""
+    import pandas as pd
+
+    if df is None:
+        return df
+
+    policy = str(missing_policy or "system-missing").strip().lower()
+    if policy not in {"system-missing", "text-na", "numeric-sentinel"}:
+        raise ValueError(
+            "missing_policy must be one of: system-missing, text-na, numeric-sentinel"
+        )
+
+    out = df.copy()
+    text = out.astype("string")
+    missing_mask = text.apply(lambda col: col.str.strip().str.lower().isin(_MISSING_TEXT_TOKENS))
+    if bool(missing_mask.any().any()):
+        out = out.mask(missing_mask, pd.NA)
+
+    if policy == "system-missing":
+        return out
+
+    if policy == "text-na":
+        return out.fillna("n/a")
+
+    if missing_numeric_value is None:
+        raise ValueError(
+            "missing_numeric_value is required when missing_policy is numeric-sentinel"
+        )
+
+    sentinel = float(missing_numeric_value)
+    for col in out.columns:
+        col_series = out[col]
+        if not bool(col_series.isna().any()):
+            continue
+
+        non_missing = col_series.dropna().astype("string").str.strip()
+        if non_missing.empty:
+            out[col] = col_series.fillna(sentinel)
+            continue
+
+        numeric = pd.to_numeric(non_missing.str.replace(",", ".", regex=False), errors="coerce")
+        if int(numeric.notna().sum()) == int(non_missing.size):
+            out[col] = pd.to_numeric(
+                col_series.astype("string").str.replace(",", ".", regex=False),
+                errors="coerce",
+            )
+            out[col] = out[col].fillna(sentinel)
 
     return out
 
@@ -2106,6 +2170,8 @@ def _export_recipe_aggregated(
     output_prism_root: Path,
     survey_task: str,
     selected_sessions: list[str] | None,
+    missing_policy: str,
+    missing_numeric_value: float | None,
 ) -> tuple[int, int, Path | None, str | None, list[str]]:
     """Process all files for one recipe and write a single aggregated output file."""
     import pandas as pd
@@ -2206,10 +2272,15 @@ def _export_recipe_aggregated(
     prefix = _make_project_prefix(output_prism_root)
     out_fname: Path | None = None
     _ensure_dir(out_root)
+    df_for_write = _apply_missing_export_policy(
+        df,
+        missing_policy=missing_policy,
+        missing_numeric_value=missing_numeric_value,
+    )
 
     if out_format == "csv":
         out_fname = out_root / f"{prefix}{recipe_id}.csv"
-        df.to_csv(out_fname, index=False)
+        df_for_write.to_csv(out_fname, index=False)
         _write_codebook_json(
             out_root / f"{prefix}{recipe_id}_codebook.json",
             var_labels,
@@ -2233,10 +2304,10 @@ def _export_recipe_aggregated(
         out_fname = out_root / f"{prefix}{recipe_id}.xlsx"
         try:
             with pd.ExcelWriter(out_fname, engine="openpyxl") as writer:
-                df.to_excel(writer, sheet_name="Data", index=False)
+                df_for_write.to_excel(writer, sheet_name="Data", index=False)
                 # Codebook sheet
                 cb_rows = []
-                for var in df.columns:
+                for var in df_for_write.columns:
                     v_labels = val_labels.get(var, {})
                     v_str = (
                         "; ".join(
@@ -2281,7 +2352,7 @@ def _export_recipe_aggregated(
                         writer, sheet_name="Survey Info", index=False
                     )
         except Exception:
-            df.to_excel(out_fname, index=False)
+            df_for_write.to_excel(out_fname, index=False)
     elif out_format == "sav":
         out_fname = out_root / f"{prefix}{recipe_id}.sav"
         codebook_json_path = out_root / f"{prefix}{recipe_id}_codebook.json"
@@ -2289,7 +2360,7 @@ def _export_recipe_aggregated(
         try:
             import pyreadstat
 
-            df_for_sav = _prepare_dataframe_for_sav(df)
+            df_for_sav = _prepare_dataframe_for_sav(df_for_write)
             df_for_sav = _coerce_value_labeled_columns_for_sav(
                 df_for_sav, val_labels
             )
@@ -2335,7 +2406,7 @@ def _export_recipe_aggregated(
             if out_fname.exists() and out_fname.stat().st_size == 0:
                 out_fname.unlink()
             out_fname = out_root / f"{prefix}{recipe_id}.csv"
-            df.to_csv(out_fname, index=False)
+            df_for_write.to_csv(out_fname, index=False)
             _write_codebook_json(
                 codebook_json_path,
                 var_labels,
@@ -2574,6 +2645,8 @@ def compute_survey_recipes(
     merge_all: bool = False,
     include_recipe_prefix: bool = True,
     anonymized: bool = False,
+    missing_policy: str = "system-missing",
+    missing_numeric_value: float | None = None,
 ) -> SurveyRecipesResult:
     """Compute survey scores in a PRISM dataset using recipes.
 
@@ -2592,6 +2665,9 @@ def compute_survey_recipes(
             include_recipe_prefix: If True, prefix combined-export columns with the
                 recipe name when possible.
             anonymized: If True, append '_anon' to output subfolder name.
+            missing_policy: Missing-value export policy for csv/xlsx/sav.
+            missing_numeric_value: Numeric sentinel used when policy is
+                ``numeric-sentinel``.
 
     Raises:
             ValueError: For user errors (missing paths, unknown recipes, etc.).
@@ -2617,6 +2693,16 @@ def compute_survey_recipes(
     layout = str(layout or "long").strip().lower()
     if layout not in {"long", "wide"}:
         raise ValueError("--layout must be one of: long, wide")
+
+    missing_policy = str(missing_policy or "system-missing").strip().lower()
+    if missing_policy not in {"system-missing", "text-na", "numeric-sentinel"}:
+        raise ValueError(
+            "missing_policy must be one of: system-missing, text-na, numeric-sentinel"
+        )
+    if missing_policy == "numeric-sentinel" and missing_numeric_value is None:
+        raise ValueError(
+            "missing_numeric_value is required when missing_policy is numeric-sentinel"
+        )
 
     # 1. Scan dataset for TSV files based on modality
     tsv_files = _find_tsv_files(prism_root, modality)
@@ -2800,6 +2886,8 @@ def compute_survey_recipes(
                     output_prism_root=output_prism_root,
                     survey_task=survey_task,
                     selected_sessions=selected_sessions,
+                    missing_policy=missing_policy,
+                    missing_numeric_value=missing_numeric_value,
                 )
                 processed_files += p_count
                 written_files += w_count
@@ -2928,6 +3016,8 @@ def compute_survey_recipes(
                         output_prism_root=output_prism_root,
                         survey_task=missing_task,
                         selected_sessions=selected_sessions,
+                        missing_policy=missing_policy,
+                        missing_numeric_value=missing_numeric_value,
                     )
                     processed_files += p_count
                     written_files += w_count
@@ -3110,14 +3200,29 @@ def compute_survey_recipes(
             )
 
         if out_format == "csv":
-            combined_df.to_csv(out_path, index=False)
+            combined_for_write = _apply_missing_export_policy(
+                combined_df,
+                missing_policy=missing_policy,
+                missing_numeric_value=missing_numeric_value,
+            )
+            combined_for_write.to_csv(out_path, index=False)
         elif out_format == "xlsx":
-            combined_df.to_excel(out_path, index=False)
+            combined_for_write = _apply_missing_export_policy(
+                combined_df,
+                missing_policy=missing_policy,
+                missing_numeric_value=missing_numeric_value,
+            )
+            combined_for_write.to_excel(out_path, index=False)
         elif out_format == "sav":
             try:
                 import pyreadstat
 
-                combined_for_sav = _prepare_dataframe_for_sav(combined_df)
+                combined_for_write = _apply_missing_export_policy(
+                    combined_df,
+                    missing_policy=missing_policy,
+                    missing_numeric_value=missing_numeric_value,
+                )
+                combined_for_sav = _prepare_dataframe_for_sav(combined_for_write)
                 combined_for_sav = _coerce_value_labeled_columns_for_sav(
                     combined_for_sav, combined_value_labels
                 )
@@ -3150,7 +3255,12 @@ def compute_survey_recipes(
                 if out_path.exists() and out_path.stat().st_size == 0:
                     out_path.unlink()
                 out_path = out_path.with_suffix(".csv")
-                combined_df.to_csv(out_path, index=False)
+                combined_for_write = _apply_missing_export_policy(
+                    combined_df,
+                    missing_policy=missing_policy,
+                    missing_numeric_value=missing_numeric_value,
+                )
+                combined_for_write.to_csv(out_path, index=False)
                 fallback_note = f"SPSS export failed ({e}); wrote CSV instead"
         written_files = 1
         flat_out_path = out_path
