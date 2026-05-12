@@ -597,14 +597,22 @@ def handle_api_recipes_surveys(data: dict):
 
     written_surveys = list(result.written_recipe_ids or ())
     missing_surveys = list(result.missing_input_tasks or ())
+    raw_only_surveys = list(result.raw_only_tasks or ())
     missing_recipe_warning = None
     if missing_surveys:
         noun = "survey" if len(missing_surveys) == 1 else "surveys"
-        missing_recipe_warning = (
-            f"No recipe found for {len(missing_surveys)} {noun}: "
-            + ", ".join(missing_surveys)
-            + ". Skipped these input files."
-        )
+        if raw_only_surveys:
+            missing_recipe_warning = (
+                f"No recipe found for {len(missing_surveys)} {noun}: "
+                + ", ".join(missing_surveys)
+                + ". Exported raw data only for these inputs."
+            )
+        else:
+            missing_recipe_warning = (
+                f"No recipe found for {len(missing_surveys)} {noun}: "
+                + ", ".join(missing_surveys)
+                + ". Skipped these input files."
+            )
 
     # Determine recipe source: "project" if loaded from inside dataset_path, else "official"
     _recipes_dir = result.recipes_dir
@@ -640,6 +648,7 @@ def handle_api_recipes_surveys(data: dict):
             ),
             "written_surveys": written_surveys,
             "missing_surveys": missing_surveys,
+            "raw_only_surveys": raw_only_surveys,
             "anonymized": anonymize,
             "anonymized_files": anonymized_count,
             "mapping_file": os.path.basename(mapping_file) if mapping_file else None,
@@ -652,6 +661,7 @@ def handle_api_recipes_surveys(data: dict):
                 "out_root": str(result.out_root),
                 "written_surveys": written_surveys,
                 "missing_surveys": missing_surveys,
+                "raw_only_surveys": raw_only_surveys,
                 "boilerplate_html_path": (
                     str(result.boilerplate_html_path)
                     if result.boilerplate_html_path

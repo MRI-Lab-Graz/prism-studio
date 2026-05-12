@@ -729,6 +729,122 @@ class TestSavColumnSanitization:
         for sav_file in result.out_root.glob("*.sav"):
             assert sav_file.stat().st_size > 0, f"{sav_file} is empty (0 bytes)"
 
+    def test_sav_roundtrip_normalizes_missing_and_decimal_comma(
+        self, tmp_path: Path
+    ) -> None:
+        """SAV roundtrip keeps numeric decimals and maps textual NA markers to missing."""
+        pyreadstat = pytest.importorskip("pyreadstat")
+        import pandas as pd
+
+        project_root = tmp_path / "project"
+        recipe_dir = tmp_path / "recipes"
+        recipe_dir.mkdir(parents=True)
+        _write_minimal_recipe(recipe_dir / "recipe-test.json", "test")
+
+        rows_by_subject = {
+            "sub-001": "3,14",
+            "sub-002": "n/a",
+            "sub-003": "2.5",
+        }
+        for sub_id, value in rows_by_subject.items():
+            survey_dir = project_root / sub_id / "ses-1" / "survey"
+            survey_dir.mkdir(parents=True)
+            survey_tsv = survey_dir / f"{sub_id}_ses-1_task-test_survey.tsv"
+            survey_tsv.write_text(f"Q1\n{value}\n", encoding="utf-8")
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="sav",
+            include_raw=True,
+            layout="long",
+            lang="en",
+        )
+
+        sav_file = result.out_root / "test.sav"
+        if not sav_file.exists():
+            pytest.skip("SAV export fell back to CSV in this environment")
+
+        df, _meta = pyreadstat.read_sav(sav_file)
+
+        row_sub1 = df.loc[df["participant_id"] == "sub-001"].iloc[0]
+        row_sub2 = df.loc[df["participant_id"] == "sub-002"].iloc[0]
+        row_sub3 = df.loc[df["participant_id"] == "sub-003"].iloc[0]
+
+        assert str(df["Q1"].dtype).startswith("float")
+        assert row_sub1["Q1"] == pytest.approx(3.14)
+        assert pd.isna(row_sub2["Q1"])
+        assert row_sub3["Q1"] == pytest.approx(2.5)
+
+        assert str(df["Total"].dtype).startswith("float")
+        assert row_sub1["Total"] == pytest.approx(3.14)
+        assert pd.isna(row_sub2["Total"])
+        assert row_sub3["Total"] == pytest.approx(2.5)
+
+    def test_sav_fallback_writes_csv_and_codebooks(self, tmp_path: Path, monkeypatch) -> None:
+        """Per-recipe SAV failure should fall back to CSV and keep codebook sidecars."""
+        pyreadstat = pytest.importorskip("pyreadstat")
+
+        def _raise_write_error(*_args, **_kwargs):
+            raise RuntimeError("forced write failure")
+
+        monkeypatch.setattr(pyreadstat, "write_sav", _raise_write_error)
+
+        project_root, recipe_dir = _setup_minimal_project(tmp_path, task_name="mytest")
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="sav",
+            layout="long",
+            lang="en",
+        )
+
+        assert result.flat_out_path is not None
+        assert result.flat_out_path.suffix == ".csv"
+        assert result.flat_out_path.exists()
+        assert result.fallback_note is not None
+        assert "SPSS export failed" in result.fallback_note
+
+        codebook_json = result.out_root / "mytest_codebook.json"
+        codebook_tsv = result.out_root / "mytest_codebook.tsv"
+        assert codebook_json.exists()
+        assert codebook_tsv.exists()
+
+    def test_combined_sav_fallback_updates_reported_output_path(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """Combined SAV failure should report CSV fallback path instead of .sav."""
+        pyreadstat = pytest.importorskip("pyreadstat")
+
+        def _raise_write_error(*_args, **_kwargs):
+            raise RuntimeError("forced combined write failure")
+
+        monkeypatch.setattr(pyreadstat, "write_sav", _raise_write_error)
+
+        project_root, recipe_dir = _setup_minimal_project(tmp_path, task_name="mytest")
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="sav",
+            layout="long",
+            lang="en",
+            merge_all=True,
+        )
+
+        assert result.flat_out_path is not None
+        assert result.flat_out_path.name == "combined_survey.csv"
+        assert result.flat_out_path.exists()
+        assert result.fallback_note is not None
+        assert "SPSS export failed" in result.fallback_note
+
 
 class TestProjectNamePrefix:
     """Test that output files are prefixed with a slug of the project name."""
