@@ -4,75 +4,20 @@ Last updated: 2026-05-12
 
 ## Current Mission
 
-Sequentially merge survey-workflow-hardening into main using a stacked PR flow.
-This is the top delivery goal for the current cycle.
+Start Priority 1.26 execution as the primary workstream.
+Focus on remaining shared UI migrations and regression-safe wiring checks.
 
 ## Status Board
 
 | Priority | Title | Status | Next Action |
 |---|---|---|---|
-| 1.36 | Frontend structural assessment (page-by-page) | IN PROGRESS | Complete Phase 1 converter assessment and create remediation slices |
-| 1.35 | Survey converter workflow hardening and backend command consolidation | IN PROGRESS | Execute stacked PR merge sequence to main |
-| 1.26 | UI harmonization and beginner-help improvements | IN PROGRESS | Finish remaining page migrations to shared UI primitives |
-| 2 | Export anonymization: participant ID renaming | TODO | Implement JSON/TSV/path replacement pass in export flow |
+| 1.26 | UI harmonization and beginner-help improvements | IN PROGRESS | Execute page migration tranche + focused UI-state wiring checks |
+| 1.36 | Frontend structural assessment (page-by-page) | IN PROGRESS | Continue page-by-page assessment after converter checkpoint |
+| 1.35 | Survey converter workflow hardening and backend command consolidation | COMPLETED | Keep post-merge stability checks in standard gates |
+| 2 | Export anonymization: participant ID renaming | COMPLETED | Keep export anonymization checks in standard gates |
 | 3 | JSON tag stripping and NIfTI GZIP header cleaning | DEFERRED | Revisit after Priority 2 is complete |
 
 ## Active Work
-
-### Priority 1.36 - Frontend structural assessment (page-by-page)
-
-Goal: assess each frontend page sequentially for workflow logic, hostile-usage resilience, stability, and execution speed.
-
-Non-negotiable rule:
-- Frontend actions must execute as backend commands.
-- Frontend should only prepare command payloads, guide user input, trigger backend execution, and render progress/results.
-- Exception: Project page may keep limited frontend-heavy orchestration where backend-only usage is impractical.
-
-Assessment framework:
-- Template: [docs/FRONTEND_PAGE_ASSESSMENT_TEMPLATE.md](docs/FRONTEND_PAGE_ASSESSMENT_TEMPLATE.md)
-- Program roadmap: [docs/FRONTEND_STRUCTURAL_ASSESSMENT_2026-05.md](docs/FRONTEND_STRUCTURAL_ASSESSMENT_2026-05.md)
-
-Current step:
-- Phase 1.1 Converter assessment in progress.
-- Output includes severity-ranked findings and remediation slices with RTK-first validation.
-- First artifact: [docs/FRONTEND_ASSESSMENT_CONVERTER_2026-05.md](docs/FRONTEND_ASSESSMENT_CONVERTER_2026-05.md)
-- Slice A complete for Environment/Physio/Eyetracking (abort-aware polling + project-change backend cancel dispatch).
-- Slice B expanded to Environment/Physio/Eyetracking/Biometrics/Participants (duplicate-submit guard via shared run controller).
-- Slice B now includes explicit participants preview/convert click-storm regression assertions.
-- Slice B now includes explicit biometrics preview/detect/confirm click-storm regression assertions.
-- Slice B now includes explicit environment/physio/eyetracking handler-block replay assertions for run-lock, single-job lifecycle, and release paths.
-- Slice B replay hardening now includes negative unknown-job checks for async status/cancel endpoints (Environment + Batch conversion).
-- Slice D expanded: implemented shared batch log appends (DocumentFragment) for burst log arrays in Environment/Biometrics and added wiring assertions for the new path.
-- Monolith split checkpoint: extracted survey template-generation controller from survey-convert.js into a dedicated module.
-- Slice C complete for Physio/Eyetracking log rendering paths (safe DOM appends via textContent, no innerHTML concatenation).
-- Coverage checkpoint: improved from 81.10% to 85.70% via backend test expansion in `src/converters/limesurvey.py`, `src/maintenance/rename_legacy_physio_filenames.py`, and `src/batch_convert.py`.
-- Coverage target checkpoint: soft 85% objective reached (maintain or improve in subsequent slices).
-
-Immediate execution slices:
-- Slice B: duplicate-submit and backend command ownership hardening (remaining tab-by-tab replay/ownership checks)
-- Slice D: converter log throughput/perf smoke and remaining rendering-path audit
-
-Exit criteria for this priority:
-- Every frontend page has an assessment report with command-ownership map.
-- Critical and High findings are either fixed or explicitly deferred with rationale.
-- Pre-release gate includes hostile-usage + stability checklist and RTK validation commands.
-
-### Priority 1.35 - Survey converter workflow hardening and backend command consolidation
-
-Goal: reduce survey converter complexity and finish safe merge to main via ordered stacked PRs.
-
-Current checkpoint:
-- Workflow path hardening + explicit project-path contracts are implemented and covered.
-- Converter runtime compatibility bridge (`src._compat`) is implemented and covered.
-- Focused RTK suites are green for converter workflow wiring and endpoint contracts.
-
-Detailed tracking moved to:
-- [docs/SURVEY_WORKFLOW_HARDENING_2026.md](docs/SURVEY_WORKFLOW_HARDENING_2026.md)
-
-Immediate next actions:
-1. Continue stacked merge sequence from the detailed playbook doc.
-2. Keep RTK-first gates on each stacked branch (`./rtk test ...`, `./rtk coverage`).
-3. Run post-merge verification on main before release tagging.
 
 ### Priority 1.26 - UI harmonization and beginner-help improvements
 
@@ -88,33 +33,46 @@ Progress snapshot:
 Next action:
 - Complete remaining page migrations to shared components and run focused wiring checks for UI-state regressions.
 
+Immediate execution steps:
+1. Select next unmigrated page group and migrate to shared UI primitives.
+2. Run focused UI wiring regressions for the touched pages.
+3. Record migration checkpoint in roadmap and changelog.
+
+### Priority 1.36 - Frontend structural assessment (page-by-page)
+
+Goal: assess each frontend page sequentially for workflow logic, hostile-usage resilience, stability, and execution speed.
+
+Current checkpoint:
+- Converter phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_CONVERTER_2026-05.md](docs/FRONTEND_ASSESSMENT_CONVERTER_2026-05.md).
+- Detailed assessment plan remains in [docs/FRONTEND_STRUCTURAL_ASSESSMENT_2026-05.md](docs/FRONTEND_STRUCTURAL_ASSESSMENT_2026-05.md).
+
+Next action:
+- Continue page-by-page assessment after current Priority 1.26 tranche is complete.
+
+### Priority 1.35 - Survey converter workflow hardening and backend command consolidation
+
+Status: completed and merged.
+
+Reference:
+- [docs/SURVEY_WORKFLOW_HARDENING_2026.md](docs/SURVEY_WORKFLOW_HARDENING_2026.md)
+
 ## Up Next
 
 ### Priority 2 - Export anonymization: participant ID renaming
 
 Goal: fully anonymize participant identities in exported datasets while keeping source datasets untouched.
 
-Scope:
+Execution note:
+- [docs/PRIORITY_2_EXPORT_ANONYMIZATION_2026-05.md](docs/PRIORITY_2_EXPORT_ANONYMIZATION_2026-05.md)
 
-| Step | What | Files affected |
-|---|---|---|
-| 1 | Rename sub-XXX -> sub-RNDXXX in folder/file names | sub-* directories and files |
-| 2 | Replace participant IDs in TSV columns (participant_id, subject_id) | participants.tsv and sidecar TSV files |
-| 3 | Replace participant IDs in JSON string values (IntendedFor, path references) | JSON sidecars across dataset |
-| 4 | Save reversible mapping file outside shared export zip | code/anonymization_map.json |
+Immediate next actions:
+1. Completed: deterministic participant mapping wiring in project export adapters (sync + async routes).
+2. Completed: TSV subject_id replacement and recursive JSON string-path rewrite integration checks (legacy + bids:: URI variants).
+3. Completed: UI/API export smoke checks for async status rendering, anonymized filename generation, and status-payload hygiene.
 
-Planned implementation targets:
-- src/anonymizer.py
-  - update_intendedfor_paths(json_data: dict, participant_mapping: dict) -> dict
-- app/src/web/export_project.py
-  - apply JSON path replacement when anonymize=true
-- Keep UI and blueprint request flags unchanged (existing anonymize checkbox is sufficient).
-
-Definition of done:
-- Name/path/TSV/JSON replacements are all consistent in exported copy.
-- IntendedFor supports both legacy and bids:: URI styles.
-- Mapping file is generated and not shipped in public zip.
-- Existing BIDS app compatibility remains intact.
+Closeout:
+- Priority 2 is complete and validated.
+- Continue execution on Priority 1.26 and Priority 1.36 active workstreams.
 
 ## Deferred
 

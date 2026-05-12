@@ -285,3 +285,122 @@ def test_export_no_anonymization_mapping_file_key_is_none(tmp_path):
 
     assert stats["mapping_file"] is None
     assert not (project_dir / "code" / "anonymization_map.json").exists()
+
+
+def test_export_anonymize_rewrites_subject_id_columns_in_tsv(tmp_path):
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True)
+
+    (project_dir / "participants.tsv").write_text(
+        "participant_id\tage\nsub-001\t30\nsub-002\t31\n",
+        encoding="utf-8",
+    )
+
+    sub_dir = project_dir / "sub-001" / "beh"
+    sub_dir.mkdir(parents=True)
+    source_name = "sub-001_task-demo_records.tsv"
+    (sub_dir / source_name).write_text(
+        "subject_id\tvalue\nsub-001\t1\nsub-002\t2\n",
+        encoding="utf-8",
+    )
+
+    expected_mapping = create_participant_mapping(
+        ["sub-001", "sub-002"],
+        tmp_path / "mapping.json",
+        id_length=6,
+        deterministic=True,
+    )
+
+    output_zip = tmp_path / "export_subject_id.zip"
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=True,
+        deterministic=True,
+        id_length=6,
+        include_derivatives=False,
+        include_code=False,
+        include_analysis=False,
+    )
+
+    sub001_anon = expected_mapping["sub-001"]
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        names = set(archive.namelist())
+        tsv_data = archive.read(
+            f"{sub001_anon}/beh/{sub001_anon}_task-demo_records.tsv"
+        ).decode("utf-8")
+
+    assert f"{sub001_anon}/beh/{sub001_anon}_task-demo_records.tsv" in names
+    assert "sub-001" not in tsv_data
+    assert "sub-002" not in tsv_data
+    assert expected_mapping["sub-001"] in tsv_data
+    assert expected_mapping["sub-002"] in tsv_data
+
+
+def test_export_anonymize_rewrites_recursive_json_string_paths(tmp_path):
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True)
+
+    (project_dir / "participants.tsv").write_text(
+        "participant_id\tage\nsub-01\t30\nsub-010\t31\n",
+        encoding="utf-8",
+    )
+
+    func_dir = project_dir / "sub-010" / "func"
+    fmap_dir = project_dir / "sub-010" / "fmap"
+    func_dir.mkdir(parents=True)
+    fmap_dir.mkdir(parents=True)
+
+    (func_dir / "sub-010_task-rest_bold.nii.gz").write_bytes(b"dummy")
+    (fmap_dir / "sub-010_dir-AP_epi.json").write_text(
+        json.dumps(
+            {
+                "IntendedFor": "sub-010/func/sub-010_task-rest_bold.nii.gz",
+                "Sources": [
+                    "bids::sub-010/func/sub-010_task-rest_bold.nii.gz",
+                    "legacy/sub-010/func/sub-010_task-rest_bold.nii.gz",
+                ],
+                "Nested": {
+                    "Path": "derivatives/sub-010/fmap/sub-010_dir-AP_epi.nii.gz",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    expected_mapping = create_participant_mapping(
+        ["sub-01", "sub-010"],
+        tmp_path / "mapping.json",
+        id_length=6,
+        deterministic=True,
+    )
+
+    output_zip = tmp_path / "export_recursive_json.zip"
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=True,
+        deterministic=True,
+        id_length=6,
+        include_derivatives=False,
+        include_code=False,
+        include_analysis=False,
+    )
+
+    sub01_anon = expected_mapping["sub-01"]
+    sub010_anon = expected_mapping["sub-010"]
+    malformed_sub010 = f"{sub01_anon}0"
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        data = json.loads(
+            archive.read(f"{sub010_anon}/fmap/{sub010_anon}_dir-AP_epi.json").decode(
+                "utf-8"
+            )
+        )
+
+    assert data["IntendedFor"] == f"{sub010_anon}/func/{sub010_anon}_task-rest_bold.nii.gz"
+    assert data["Sources"][0] == f"bids::{sub010_anon}/func/{sub010_anon}_task-rest_bold.nii.gz"
+    assert data["Sources"][1] == f"legacy/{sub010_anon}/func/{sub010_anon}_task-rest_bold.nii.gz"
+    assert data["Nested"]["Path"] == f"derivatives/{sub010_anon}/fmap/{sub010_anon}_dir-AP_epi.nii.gz"
+    assert malformed_sub010 not in json.dumps(data)
