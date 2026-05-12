@@ -76,11 +76,12 @@ Coverage:
 
 - Add or extend wiring tests to assert standardized reset hooks for every modality tab.
 
-### Medium - Log rendering uses innerHTML in modality modules
+### Medium - Log rendering used innerHTML in modality modules
 
 Affected:
 
 - [app/static/js/modules/converter/eyetracking.js](app/static/js/modules/converter/eyetracking.js)
+- [app/static/js/modules/converter/physio.js](app/static/js/modules/converter/physio.js)
 
 Risk:
 
@@ -89,6 +90,11 @@ Risk:
 Recommendation:
 
 - Use createElement/textContent append strategy for logs.
+
+Status (2026-05-12):
+
+- Resolved for Eyetracking and Physio in Slice C via safe DOM append helpers.
+- Locked with wiring assertions in [tests/test_converter_workflow_wiring.py](tests/test_converter_workflow_wiring.py).
 
 Coverage:
 
@@ -235,6 +241,12 @@ Acceptance:
 Validation:
 
 - ./rtk test targeted module tests + perf smoke
+
+Implementation checkpoint (2026-05-12):
+
+- Completed: replaced risky `innerHTML +=` log appends in [app/static/js/modules/converter/eyetracking.js](app/static/js/modules/converter/eyetracking.js) with safe DOM appends (`createElement`, `textContent`).
+- Completed: replaced risky `innerHTML +=` log appends in [app/static/js/modules/converter/physio.js](app/static/js/modules/converter/physio.js) with safe DOM appends (`createElement`, `textContent`).
+- Completed: added regression assertions in [tests/test_converter_workflow_wiring.py](tests/test_converter_workflow_wiring.py) to prevent reintroduction of raw log concatenation on `eyetrackingBatchLog`/`physioBatchLog`.
 
 ## Exit Criteria for Converter Assessment
 

@@ -502,14 +502,16 @@ export function initPhysio(elements) {
                     : 'selected files');
 
             const writeLocalLog = (message, cssClass = 'ansi-blue') => {
-                const escaped = String(message)
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;');
-                if (physioBatchLog.innerHTML) {
-                    physioBatchLog.innerHTML += '<br>';
+                if (!physioBatchLog) {
+                    return;
                 }
-                physioBatchLog.innerHTML += `<span class="${cssClass}">${escaped}</span>`;
+                if (physioBatchLog.childNodes.length > 0) {
+                    physioBatchLog.appendChild(document.createElement('br'));
+                }
+                const line = document.createElement('span');
+                line.className = cssClass;
+                line.textContent = String(message);
+                physioBatchLog.appendChild(line);
                 physioBatchLog.scrollTop = physioBatchLog.scrollHeight;
             };
 
@@ -655,17 +657,7 @@ export function initPhysio(elements) {
                             else if (log.level === 'info') colorClass = 'ansi-blue';
                             else if (log.level === 'preview') colorClass = 'ansi-cyan';
 
-                            const escaped = String(log.message)
-                                .replace(/&/g, '&amp;')
-                                .replace(/</g, '&lt;')
-                                .replace(/>/g, '&gt;');
-                            if (physioBatchLog.innerHTML) {
-                                physioBatchLog.innerHTML += '<br>';
-                            }
-                            physioBatchLog.innerHTML += `<span class="${colorClass}">${escaped}</span>`;
-                        }
-                        if (newLogs.length > 0) {
-                            physioBatchLog.scrollTop = physioBatchLog.scrollHeight;
+                            writeLocalLog(log.message, colorClass);
                         }
                     },
                     onRetryWarning: ({ attempt, maxAttempts, error }) => {
