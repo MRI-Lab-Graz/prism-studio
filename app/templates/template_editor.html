@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "includes/ui/macros.html" import page_header %}
+{% from "includes/ui/macros.html" import page_header, help_panel %}
 
 {% block title %}PRISM Studio - Template Editor{% endblock %}
 
@@ -13,6 +13,11 @@
       'Template Editor',
       'Load and edit PRISM JSON templates for Survey or Biometrics, or create/import new ones when needed.'
     ) }}
+
+    {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
+    <p class="mb-1 small">Start with modality and schema version, then load a project or global template.</p>
+    <p class="mb-0 small">Validate before saving to project so status badges and on-disk template state stay aligned.</p>
+    {% endcall %}
 
     <div class="card feature-card mb-4">
       <div class="card-body p-4">

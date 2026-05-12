@@ -44,6 +44,10 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
     def test_projects_header_has_preliminary_badge_placeholder(self):
         content = PROJECTS_TEMPLATE.read_text(encoding="utf-8")
 
+        self.assertIn(
+            '{% from "includes/ui/macros.html" import page_header %}', content
+        )
+        self.assertIn("{{ page_header(", content)
         self.assertIn('id="projectsPreliminaryBadge"', content)
         self.assertIn("Preliminary", content)
 
