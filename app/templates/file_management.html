@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "includes/ui/macros.html" import page_header %}
+{% from "includes/ui/macros.html" import page_header, help_panel %}
 
 {% block title %}PRISM Studio - File Management{% endblock %}
 
@@ -106,6 +106,11 @@
                 'Prepare and organize your files before conversion.',
                 'Choose your tool first, then complete the steps below.'
             ) }}
+
+            {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
+            <p class="mb-1 small">Pick one tool tab first, then complete only the numbered steps in that section.</p>
+            <p class="mb-0 small">Use preview actions before apply/copy so filename and folder changes stay predictable.</p>
+            {% endcall %}
 
             <div id="fileManagementToolTabs" class="mb-4">
                 <ul class="nav nav-pills nav-fill fm-tool-tabs" role="tablist">

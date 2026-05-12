@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "includes/ui/macros.html" import page_header %}
+{% from "includes/ui/macros.html" import page_header, help_panel %}
 
 {% block title %}PRISM Studio - Survey Customizer{% endblock %}
 
@@ -22,6 +22,11 @@
             </a>
         </div>
     </div>
+
+    {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
+    <p class="mb-1 small">Review group order and mandatory settings before export so survey flow remains predictable.</p>
+    <p class="mb-0 small">Set LimeSurvey version and language options first, then export with project save enabled when needed.</p>
+    {% endcall %}
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay d-none">

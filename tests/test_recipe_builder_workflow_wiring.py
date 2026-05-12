@@ -7,6 +7,16 @@ RECIPE_BUILDER_SCRIPT = REPO_ROOT / "app" / "static" / "js" / "recipe_builder.js
 
 
 class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
+    def test_recipe_builder_template_uses_shared_header_and_help_panel_macros(self):
+        content = RECIPE_BUILDER_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            '{% from "includes/ui/macros.html" import page_header, help_panel %}',
+            content,
+        )
+        self.assertIn("{{ page_header(", content)
+        self.assertIn("{% call help_panel(", content)
+
     def test_recipe_builder_template_has_modality_picker_with_survey_default(self):
         content = RECIPE_BUILDER_TEMPLATE.read_text(encoding="utf-8")
 
