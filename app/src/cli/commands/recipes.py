@@ -31,6 +31,8 @@ def run_recipes_job(
     merge_all: bool = False,
     include_recipe_prefix: bool = True,
     anonymized: bool = False,
+    missing_policy: str = "system-missing",
+    missing_numeric_value: float | None = None,
 ):
     """Run recipe computation using the same adapter path as prism_tools CLI."""
     return compute_survey_recipes(
@@ -48,6 +50,8 @@ def run_recipes_job(
         merge_all=merge_all,
         include_recipe_prefix=include_recipe_prefix,
         anonymized=anonymized,
+        missing_policy=missing_policy,
+        missing_numeric_value=missing_numeric_value,
     )
 
 
@@ -88,6 +92,15 @@ def cmd_recipes_surveys(args):
     merge_all = bool(getattr(args, "merge_all", False))
     include_recipe_prefix = bool(getattr(args, "include_recipe_prefix", True))
     anonymized = bool(getattr(args, "anonymized", False))
+    missing_policy = str(
+        getattr(args, "missing_policy", "system-missing") or "system-missing"
+    ).strip().lower()
+    missing_numeric_value_raw = getattr(args, "missing_numeric_value", None)
+    missing_numeric_value = (
+        float(missing_numeric_value_raw)
+        if missing_numeric_value_raw is not None
+        else None
+    )
 
     try:
         result = run_recipes_job(
@@ -104,6 +117,8 @@ def cmd_recipes_surveys(args):
             merge_all=merge_all,
             include_recipe_prefix=include_recipe_prefix,
             anonymized=anonymized,
+            missing_policy=missing_policy,
+            missing_numeric_value=missing_numeric_value,
         )
         print(
             f"✅ Survey recipe scoring complete: {result.written_files} file(s) written"
@@ -177,6 +192,15 @@ def cmd_recipes_biometrics(args):
     merge_all = bool(getattr(args, "merge_all", False))
     include_recipe_prefix = bool(getattr(args, "include_recipe_prefix", True))
     anonymized = bool(getattr(args, "anonymized", False))
+    missing_policy = str(
+        getattr(args, "missing_policy", "system-missing") or "system-missing"
+    ).strip().lower()
+    missing_numeric_value_raw = getattr(args, "missing_numeric_value", None)
+    missing_numeric_value = (
+        float(missing_numeric_value_raw)
+        if missing_numeric_value_raw is not None
+        else None
+    )
 
     try:
         result = run_recipes_job(
@@ -192,6 +216,8 @@ def cmd_recipes_biometrics(args):
             merge_all=merge_all,
             include_recipe_prefix=include_recipe_prefix,
             anonymized=anonymized,
+            missing_policy=missing_policy,
+            missing_numeric_value=missing_numeric_value,
         )
         print(
             f"✅ Biometric recipe scoring complete: {result.written_files} file(s) written"

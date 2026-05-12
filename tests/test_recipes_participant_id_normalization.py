@@ -129,6 +129,24 @@ def test_prepare_dataframe_for_sav_handles_missing_and_decimal_comma() -> None:
     assert pd.isna(out.loc[1, "note"])
 
 
+def test_prepare_dataframe_for_sav_preserves_leading_zero_codes() -> None:
+    df = pd.DataFrame({"code": ["001", "010", "200"]})
+
+    out = _prepare_dataframe_for_sav(df)
+
+    assert str(out["code"].dtype) in {"object", "string", "str"}
+    assert out["code"].tolist() == ["001", "010", "200"]
+
+
+def test_prepare_dataframe_for_sav_keeps_mixed_text_numeric_columns_as_text() -> None:
+    df = pd.DataFrame({"mixed": ["3,14", "alpha", "2.5"]})
+
+    out = _prepare_dataframe_for_sav(df)
+
+    assert str(out["mixed"].dtype) in {"object", "string", "str"}
+    assert out["mixed"].tolist() == ["3,14", "alpha", "2.5"]
+
+
 def test_sanitize_spss_variable_name_prefixes_leading_digits() -> None:
     assert _sanitize_spss_variable_name("20D_item1") == "v_20D_item1"
     assert _sanitize_spss_variable_name("item-1.2 3") == "item_1_2_3"

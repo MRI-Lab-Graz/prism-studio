@@ -729,6 +729,17 @@ def build_prism_tools_parsers(
         action="store_true",
         help="Append '_anon' to output subfolder (indicating anonymized export)",
     )
+    parser_deriv_surveys.add_argument(
+        "--missing-policy",
+        default="system-missing",
+        choices=["system-missing", "text-na", "numeric-sentinel"],
+        help="Missing-value export policy for csv/xlsx/sav outputs",
+    )
+    parser_deriv_surveys.add_argument(
+        "--missing-numeric-value",
+        type=float,
+        help="Numeric sentinel used when --missing-policy is numeric-sentinel (e.g., -99)",
+    )
 
     parser_deriv_biometrics = recipes_subparsers.add_parser(
         "biometrics",
@@ -795,6 +806,17 @@ def build_prism_tools_parsers(
         action="store_false",
         default=True,
         help="In combined exports, keep bare variable names where possible instead of always prefixing with the recipe name",
+    )
+    parser_deriv_biometrics.add_argument(
+        "--missing-policy",
+        default="system-missing",
+        choices=["system-missing", "text-na", "numeric-sentinel"],
+        help="Missing-value export policy for csv/xlsx/sav outputs",
+    )
+    parser_deriv_biometrics.add_argument(
+        "--missing-numeric-value",
+        type=float,
+        help="Numeric sentinel used when --missing-policy is numeric-sentinel (e.g., -99)",
     )
     parser_deriv_biometrics.add_argument(
         "--anonymized",

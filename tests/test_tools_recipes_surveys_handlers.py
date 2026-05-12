@@ -187,3 +187,93 @@ def test_handle_api_recipes_surveys_forwards_recipe_prefix_flag(
 
     assert response.status_code == 200
     assert run_job.call_args.kwargs["include_recipe_prefix"] is False
+
+
+def test_handle_api_recipes_surveys_rejects_invalid_missing_policy(
+    tmp_path: Path,
+) -> None:
+    handlers = _import_handlers_module()
+    app = _build_app()
+
+    dataset_path = tmp_path / "dataset"
+    dataset_path.mkdir()
+
+    with app.app_context(), patch(
+        "src.web.validation.run_validation", return_value=([], {})
+    ):
+        response, status_code = handlers.handle_api_recipes_surveys(
+            {
+                "dataset_path": str(dataset_path),
+                "modality": "survey",
+                "format": "csv",
+                "missing_policy": "bad-policy",
+            }
+        )
+
+    assert status_code == 400
+    payload = response.get_json()
+    assert "missing_policy" in payload["error"]
+
+
+def test_handle_api_recipes_surveys_rejects_missing_numeric_without_sentinel_policy(
+    tmp_path: Path,
+) -> None:
+    handlers = _import_handlers_module()
+    app = _build_app()
+
+    dataset_path = tmp_path / "dataset"
+    dataset_path.mkdir()
+
+    with app.app_context(), patch(
+        "src.web.validation.run_validation", return_value=([], {})
+    ):
+        response, status_code = handlers.handle_api_recipes_surveys(
+            {
+                "dataset_path": str(dataset_path),
+                "modality": "survey",
+                "format": "csv",
+                "missing_policy": "numeric-sentinel",
+            }
+        )
+
+    assert status_code == 400
+    payload = response.get_json()
+    assert "missing_numeric_value is required" in payload["error"]
+
+
+def test_handle_api_recipes_surveys_forwards_missing_policy_fields(
+    tmp_path: Path,
+) -> None:
+    handlers = _import_handlers_module()
+    app = _build_app()
+
+    dataset_path = tmp_path / "dataset"
+    dataset_path.mkdir()
+    out_root = dataset_path / "derivatives" / "survey" / "wide_en"
+
+    result = SurveyRecipesResult(
+        processed_files=1,
+        written_files=1,
+        out_format="csv",
+        out_root=out_root,
+        flat_out_path=out_root / "combined_survey.csv",
+    )
+
+    with app.app_context(), patch(
+        "src.web.validation.run_validation", return_value=([], {})
+    ), patch(
+        "src.cli.commands.recipes.run_recipes_job", return_value=result
+    ) as run_job:
+        response = handlers.handle_api_recipes_surveys(
+            {
+                "dataset_path": str(dataset_path),
+                "modality": "survey",
+                "format": "csv",
+                "missing_policy": "numeric-sentinel",
+                "missing_numeric_value": -99,
+            }
+        )
+
+    assert response.status_code == 200
+    assert run_job.call_args.kwargs["missing_policy"] == "numeric-sentinel"
+    assert run_job.call_args.kwargs["missing_numeric_value"] == -99.0
