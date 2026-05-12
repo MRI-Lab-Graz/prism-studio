@@ -1,5 +1,6 @@
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
+import { createJobRunController } from './job-run-controller.js';
 
 export function initParticipants() {
     const participantsPanel = document.getElementById('participants-panel');
@@ -38,6 +39,7 @@ export function initParticipants() {
     let participantsSourcedataRequestToken = 0;
     let participantsSourcedataQuickSelectEl = null;
     let participantsSourcedataFileSelectEl = null;
+    const runController = createJobRunController();
 
     const PARTICIPANTS_CASE_CONFIG = {
         '1': { mode: 'file', fileAction: 'replace' },
@@ -1462,6 +1464,13 @@ export function initParticipants() {
     
         updateParticipantsSelectedFileName();
         updateParticipantsMergeApplyStatusBadge();
+    }
+
+    function setParticipantsPrimaryActionButtonsDisabled(disabled) {
+        const previewBtn = document.getElementById('participantsPreviewBtn');
+        const convertBtn = document.getElementById('participantsConvertBtn');
+        if (previewBtn) previewBtn.disabled = disabled;
+        if (convertBtn) convertBtn.disabled = disabled;
     }
     
     // Attach event listener
@@ -3333,6 +3342,11 @@ export function initParticipants() {
         
         errorDiv.classList.add('d-none');
         previewResults.classList.add('d-none');
+
+        if (!runController.tryStartRun()) {
+            return;
+        }
+        setParticipantsPrimaryActionButtonsDisabled(true);
         
         try {
             previewStage = 'syncing annotation editor';
@@ -3609,6 +3623,9 @@ export function initParticipants() {
             const workflowSummary = document.getElementById('participantsWorkflowSummary');
             if (workflowSummary) workflowSummary.classList.add('d-none');
             renderParticipantsMergeSummary(null);
+        } finally {
+            runController.finishRun();
+            updateParticipantsButtonState({ skipIdAutoDetect: true });
         }
     });
 
@@ -3944,39 +3961,44 @@ export function initParticipants() {
             errorDiv.classList.remove('d-none');
             return;
         }
-        
-        // Check existing files only when starting real conversion.
-        const existingCheck = await checkExistingParticipantFiles({
-            showOverwriteWarning: mode === 'file' && fileAction === 'replace'
-        });
-        if (mode === 'file' && !useMergeRoute && existingCheck && existingCheck.exists) {
-            const checkbox = document.getElementById('participantsForceOverwrite');
-            if (!checkbox.checked) {
-                errorDiv.textContent = 'Existing participants files detected. Confirm overwrite to continue conversion.';
+
+        if (!runController.tryStartRun()) {
+            return;
+        }
+        setParticipantsPrimaryActionButtonsDisabled(true);
+
+        try {
+            // Check existing files only when starting real conversion.
+            const existingCheck = await checkExistingParticipantFiles({
+                showOverwriteWarning: mode === 'file' && fileAction === 'replace'
+            });
+            if (mode === 'file' && !useMergeRoute && existingCheck && existingCheck.exists) {
+                const checkbox = document.getElementById('participantsForceOverwrite');
+                if (!checkbox.checked) {
+                    errorDiv.textContent = 'Existing participants files detected. Confirm overwrite to continue conversion.';
+                    errorDiv.classList.remove('d-none');
+                    return;
+                }
+            }
+            if (useMergeRoute && (!existingCheck || !existingCheck.has_participants_tsv)) {
+                errorDiv.textContent = 'Merge requires an existing participants.tsv in the current project.';
                 errorDiv.classList.remove('d-none');
                 return;
             }
-        }
-        if (useMergeRoute && (!existingCheck || !existingCheck.has_participants_tsv)) {
-            errorDiv.textContent = 'Merge requires an existing participants.tsv in the current project.';
-            errorDiv.classList.remove('d-none');
-            return;
-        }
-        if (useMergeRoute && window.lastParticipantsPreviewData && !window.lastParticipantsPreviewData.can_apply) {
-            errorDiv.textContent = 'Resolve merge blockers first (conflicts or missing session resolution). An apply-ready merge preview is required before apply.';
-            errorDiv.classList.remove('d-none');
-            return;
-        }
-        if (mode === 'existing' && !canModifyExistingParticipants()) {
-            errorDiv.textContent = 'Modify existing mode requires an existing participants.tsv in the current project.';
-            errorDiv.classList.remove('d-none');
-            return;
-        }
-        
-        progressDiv.classList.remove('d-none');
-        logDiv.innerHTML = '';
-        
-        try {
+            if (useMergeRoute && window.lastParticipantsPreviewData && !window.lastParticipantsPreviewData.can_apply) {
+                errorDiv.textContent = 'Resolve merge blockers first (conflicts or missing session resolution). An apply-ready merge preview is required before apply.';
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+            if (mode === 'existing' && !canModifyExistingParticipants()) {
+                errorDiv.textContent = 'Modify existing mode requires an existing participants.tsv in the current project.';
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+
+            progressDiv.classList.remove('d-none');
+            logDiv.innerHTML = '';
+
             if (mode === 'file' && !hasParticipantsFileSelection()) {
                 throw new Error('Please select a file');
             }
@@ -4130,6 +4152,8 @@ export function initParticipants() {
             errorDiv.textContent = error.message;
             errorDiv.classList.remove('d-none');
         } finally {
+            runController.finishRun();
+            updateParticipantsButtonState({ skipIdAutoDetect: true });
             progressDiv.classList.add('d-none');
         }
     });
