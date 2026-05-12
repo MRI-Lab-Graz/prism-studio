@@ -1,6 +1,6 @@
 # PRISM Studio - Roadmap
 
-Last updated: 2026-05-11
+Last updated: 2026-05-12
 
 ## Current Mission
 
@@ -34,6 +34,25 @@ What is already completed:
 - Unified command adapter route added and wired across prepare/preview/convert paths.
 - Focused regression coverage expanded for workflow wiring, preview contracts, stale wrappers, and command dispatch aliases.
 - Full-suite coverage remains above fail-under threshold (80%).
+- Survey workflow request payloads now propagate explicit project_path across prepare/preview/convert paths.
+- Backend survey preview and convert-validate paths now prefer explicit project_path and reject stale explicit paths before conversion stages.
+- New workflow-endpoint contract coverage added for stale explicit project rejection and explicit project precedence under /api/survey-workflow-command.
+- Added backend src compatibility bridge for `src._compat` so mirrored app converter shims load reliably in repo-root runtime as well as app runtime.
+- Added repo-runtime shim regression coverage in tests/test_compat_loader.py to prevent future adapter import drift.
+
+Latest checkpoint (2026-05-12):
+- Completed implementation slice: explicit project-path hardening for survey workflow frontend and backend.
+- Completed implementation slice: repo/runtime compatibility hardening for converter shims via backend `src._compat` bridge.
+- Focused suites green:
+  - ./rtk test tests/test_converter_workflow_wiring.py tests/test_converter_project_save_contracts.py tests/test_compat_loader.py
+  - ./rtk test tests/test_web_blueprints_conversion.py -k "test_api_survey_convert_blocks_until_templates_completed or test_api_survey_convert_forwards_template_version_overrides or test_api_survey_convert_registers_detected_sessions_for_all"
+
+Lessons learned:
+- For workflow refactors, project context must be treated as request-scoped data; relying on session-only context is fragile for multi-tab and delayed-switch flows.
+- Contract tests should exercise the unified adapter endpoint (/api/survey-workflow-command), not only legacy alias endpoints, to catch integration drift early.
+- Run at least one broader targeted blueprint subset after endpoint refactors; this quickly surfaces NameError/scope regressions that focused wiring tests can miss.
+- Mirrored shims should be tested in both app-root and repo-root import contexts; one-sided runtime tests can miss `src._compat` resolution failures.
+- Keep RTK-first discipline for repo validation (`./rtk test ...`), so CI/local command surfaces stay aligned before PR creation.
 
 #### Stacked PR Playbook (execution target)
 
