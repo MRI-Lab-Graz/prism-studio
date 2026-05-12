@@ -227,6 +227,22 @@ export function initEyetracking(elements) {
         }
     }
 
+    function appendEyetrackingBatchLogLine(message, colorClass = 'ansi-reset') {
+        if (!eyetrackingBatchLog) {
+            return;
+        }
+
+        if (eyetrackingBatchLog.childNodes.length > 0) {
+            eyetrackingBatchLog.appendChild(document.createElement('br'));
+        }
+
+        const line = document.createElement('span');
+        line.className = colorClass;
+        line.textContent = String(message);
+        eyetrackingBatchLog.appendChild(line);
+        eyetrackingBatchLog.scrollTop = eyetrackingBatchLog.scrollHeight;
+    }
+
     function updateEyetrackingBatchBtn() {
         const hasFiles = eyetrackingBatchFiles && eyetrackingBatchFiles.files && eyetrackingBatchFiles.files.length > 0;
         const hasServerFolder = Boolean(eyetrackingServerFolderPath);
@@ -456,20 +472,14 @@ export function initEyetracking(elements) {
                             else if (log.level === 'success') colorClass = 'ansi-green';
                             else if (log.level === 'info') colorClass = 'ansi-blue';
                             else if (log.level === 'preview') colorClass = 'ansi-cyan';
-                            const escaped = String(log.message).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                            if (eyetrackingBatchLog.innerHTML) eyetrackingBatchLog.innerHTML += '<br>';
-                            eyetrackingBatchLog.innerHTML += `<span class="${colorClass}">${escaped}</span>`;
+                            appendEyetrackingBatchLogLine(log.message, colorClass);
                         }
-                        if (newLogs.length > 0) eyetrackingBatchLog.scrollTop = eyetrackingBatchLog.scrollHeight;
                     },
                     onRetryWarning: ({ attempt, maxAttempts, error }) => {
-                        const escaped = String(`⚠️ Status check failed (${attempt}/${maxAttempts}): ${error.message || error}`)
-                            .replace(/&/g, '&amp;')
-                            .replace(/</g, '&lt;')
-                            .replace(/>/g, '&gt;');
-                        if (eyetrackingBatchLog.innerHTML) eyetrackingBatchLog.innerHTML += '<br>';
-                        eyetrackingBatchLog.innerHTML += `<span class="ansi-yellow">${escaped}</span>`;
-                        eyetrackingBatchLog.scrollTop = eyetrackingBatchLog.scrollHeight;
+                        appendEyetrackingBatchLogLine(
+                            `⚠️ Status check failed (${attempt}/${maxAttempts}): ${error.message || error}`,
+                            'ansi-yellow',
+                        );
                     },
                     intervalMs: STATUS_POLL_INTERVAL_MS,
                     timeoutMs: STATUS_POLL_TIMEOUT_MS,
