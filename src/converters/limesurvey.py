@@ -1356,10 +1356,10 @@ def convert_lsa_to_dataset(
             print(f"Warning: Could not calculate duration/time: {e}")
 
     # --- Merge Group Timings ---
+    group_duration_fields = {}
     try:
         timings_df = parse_lsa_timings(lsa_path)
 
-        group_duration_fields = {}
         if timings_df is not None and not timings_df.empty:
             # Rename columns using groups_map
             # Pattern: _[SurveyID]X[GroupID]time

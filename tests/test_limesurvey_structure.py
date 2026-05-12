@@ -676,3 +676,190 @@ class TestParseLssXmlArrays:
         result = parse_lss_xml_by_groups(_LSS_WITH_ARRAYS.encode("utf-8"))
         assert result is not None
 
+
+def test_parse_lss_xml_handles_version_candidate_merge(monkeypatch, tmp_path):
+    import src.converters.limesurvey as limesurvey_module
+
+    local_library = tmp_path / "library"
+    local_library.mkdir(parents=True, exist_ok=True)
+    existing_template = local_library / "survey-testsurvey.json"
+    existing_template.write_text('{"Study": {"TaskName": "testsurvey"}}', encoding="utf-8")
+
+    class FakeCollisionError(Exception):
+        def __init__(self, collision_type, existing_meta):
+            super().__init__("collision")
+            self.collision_type = collision_type
+            self.existing_meta = existing_meta
+
+    class FakeRegistry:
+        @staticmethod
+        def from_libraries(local_library=None, official_library=None):
+            return FakeRegistry()
+
+        def get_item_count(self):
+            return 1
+
+        def register_item(self, item_id, template_name, description, item_data):
+            raise FakeCollisionError(
+                "version_candidate",
+                {"source_template": "survey-testsurvey"},
+            )
+
+    merge_called = {}
+
+    def _fake_merge(existing_template_path, new_items, new_version_name):
+        merge_called["existing_template_path"] = existing_template_path
+        merge_called["new_items"] = new_items
+        merge_called["new_version_name"] = new_version_name
+        return {"Study": {"TaskName": "testsurvey"}, **new_items}
+
+    def _fake_save(template, output_path):
+        merge_called["saved_output_path"] = output_path
+
+    monkeypatch.setattr(limesurvey_module, "ItemRegistry", FakeRegistry)
+    monkeypatch.setattr(limesurvey_module, "ItemCollisionError", FakeCollisionError)
+    monkeypatch.setattr(limesurvey_module, "merge_survey_versions", _fake_merge)
+    monkeypatch.setattr(limesurvey_module, "save_merged_template", _fake_save)
+    monkeypatch.setattr(
+        limesurvey_module,
+        "detect_version_name_from_import",
+        lambda new_items, existing_template_path: ("v2", "v1"),
+    )
+    monkeypatch.setattr("builtins.input", lambda _prompt: "")
+
+    result = parse_lss_xml(
+        _MINIMAL_LSS.encode("utf-8"),
+        check_collisions=True,
+        local_library=str(local_library),
+    )
+
+    assert result is not None
+    assert "AGE" in result
+    assert merge_called["new_version_name"] == "v2"
+    assert merge_called["saved_output_path"] == existing_template
+
+
+def test_parse_lss_xml_raises_runtime_on_non_version_collision(monkeypatch):
+    import src.converters.limesurvey as limesurvey_module
+
+    class FakeCollisionError(Exception):
+        def __init__(self, collision_type, existing_meta):
+            super().__init__("collision")
+            self.collision_type = collision_type
+            self.existing_meta = existing_meta
+
+    class FakeRegistry:
+        @staticmethod
+        def from_libraries(local_library=None, official_library=None):
+            return FakeRegistry()
+
+        def get_item_count(self):
+            return 1
+
+        def register_item(self, item_id, template_name, description, item_data):
+            raise FakeCollisionError(
+                "duplicate", {"source_template": "survey-testsurvey"}
+            )
+
+    monkeypatch.setattr(limesurvey_module, "ItemRegistry", FakeRegistry)
+    monkeypatch.setattr(limesurvey_module, "ItemCollisionError", FakeCollisionError)
+
+    with pytest.raises(RuntimeError, match="Item collision detected"):
+        parse_lss_xml(_MINIMAL_LSS.encode("utf-8"), check_collisions=True)
+
+
+def test_parse_lss_xml_version_candidate_without_template_keeps_items(monkeypatch):
+    import src.converters.limesurvey as limesurvey_module
+
+    class FakeCollisionError(Exception):
+        def __init__(self, collision_type, existing_meta):
+            super().__init__("collision")
+            self.collision_type = collision_type
+            self.existing_meta = existing_meta
+
+    class FakeRegistry:
+        @staticmethod
+        def from_libraries(local_library=None, official_library=None):
+            return FakeRegistry()
+
+        def get_item_count(self):
+            return 1
+
+        def register_item(self, item_id, template_name, description, item_data):
+            raise FakeCollisionError(
+                "version_candidate",
+                {"source_template": "survey-missing-template"},
+            )
+
+    monkeypatch.setattr(limesurvey_module, "ItemRegistry", FakeRegistry)
+    monkeypatch.setattr(limesurvey_module, "ItemCollisionError", FakeCollisionError)
+    monkeypatch.setattr(
+      limesurvey_module, "merge_survey_versions", lambda *args, **kwargs: None
+    )
+
+    result = parse_lss_xml(_MINIMAL_LSS.encode("utf-8"), check_collisions=True)
+    assert result is not None
+    assert "AGE" in result
+
+
+def test_parse_lss_xml_resolves_existing_template_from_official_library(
+    monkeypatch, tmp_path
+):
+    import src.converters.limesurvey as limesurvey_module
+
+    official_library = tmp_path / "official"
+    official_library.mkdir(parents=True, exist_ok=True)
+    template_path = official_library / "survey-testsurvey.json"
+    template_path.write_text('{"Study": {"TaskName": "testsurvey"}}', encoding="utf-8")
+
+    class FakeCollisionError(Exception):
+        def __init__(self, collision_type, existing_meta):
+            super().__init__("collision")
+            self.collision_type = collision_type
+            self.existing_meta = existing_meta
+
+    class FakeRegistry:
+        @staticmethod
+        def from_libraries(local_library=None, official_library=None):
+            return FakeRegistry()
+
+        def get_item_count(self):
+            return 1
+
+        def register_item(self, item_id, template_name, description, item_data):
+            raise FakeCollisionError(
+                "version_candidate",
+                {"source_template": "survey-testsurvey"},
+            )
+
+    merge_called = {}
+
+    def _fake_merge(existing_template_path, new_items, new_version_name):
+        merge_called["existing_template_path"] = existing_template_path
+        merge_called["new_version_name"] = new_version_name
+        return {"Study": {"TaskName": "testsurvey"}, **new_items}
+
+    monkeypatch.setattr(limesurvey_module, "ItemRegistry", FakeRegistry)
+    monkeypatch.setattr(limesurvey_module, "ItemCollisionError", FakeCollisionError)
+    monkeypatch.setattr(limesurvey_module, "merge_survey_versions", _fake_merge)
+    monkeypatch.setattr(
+        limesurvey_module, "save_merged_template", lambda *_args, **_kwargs: None
+    )
+    monkeypatch.setattr(
+        limesurvey_module,
+        "detect_version_name_from_import",
+        lambda new_items, existing_template_path: ("v3", "v1"),
+    )
+    monkeypatch.setattr("builtins.input", lambda _prompt: "custom-version")
+
+    result = parse_lss_xml(
+        _MINIMAL_LSS.encode("utf-8"),
+        check_collisions=True,
+        official_library=str(official_library),
+    )
+
+    assert result is not None
+    assert "AGE" in result
+    assert merge_called["existing_template_path"] == template_path
+    assert merge_called["new_version_name"] == "custom-version"
+

@@ -366,6 +366,44 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("formData.append('project_path', currentProjectPath);", content)
         self.assertIn("Please select a project first from the top of the page", content)
 
+    def test_biometrics_handlers_use_run_lock_and_release_on_all_paths(self):
+        content = BIOMETRICS_MODULE.read_text(encoding="utf-8")
+
+        preview_start = "biometricsPreviewBtn.addEventListener('click', function() {"
+        preview_end = "// ===== DETECTION & TASK SELECTION HANDLER ====="
+        detect_start = "biometricsConvertBtn.addEventListener('click', function() {"
+        detect_end = "// ===== SELECT ALL TASKS HANDLER ====="
+        confirm_start = "biometricsConfirmBtn.addEventListener('click', function() {"
+
+        self.assertIn(preview_start, content)
+        self.assertIn(preview_end, content)
+        self.assertIn(detect_start, content)
+        self.assertIn(detect_end, content)
+        self.assertIn(confirm_start, content)
+
+        preview_block = content.split(preview_start, 1)[1].split(preview_end, 1)[0]
+        detect_block = content.split(detect_start, 1)[1].split(detect_end, 1)[0]
+        confirm_block = content.split(confirm_start, 1)[1]
+
+        self.assertIn("if (!runController.tryStartRun()) {", preview_block)
+        self.assertIn("setBiometricsActionButtonsDisabled(true);", preview_block)
+        self.assertIn(".finally(() => {", preview_block)
+        self.assertIn("runController.finishRun();", preview_block)
+        self.assertIn("setBiometricsActionButtonsDisabled(false);", preview_block)
+
+        self.assertIn("if (!runController.tryStartRun()) {", detect_block)
+        self.assertIn("setBiometricsActionButtonsDisabled(true);", detect_block)
+        self.assertIn(".finally(() => {", detect_block)
+        self.assertIn("runController.finishRun();", detect_block)
+        self.assertIn("setBiometricsActionButtonsDisabled(false);", detect_block)
+
+        self.assertIn("if (!runController.tryStartRun()) {", confirm_block)
+        self.assertIn("setBiometricsActionButtonsDisabled(true);", confirm_block)
+        self.assertIn("if (!currentProjectPath) {", confirm_block)
+        self.assertIn("runController.finishRun();", confirm_block)
+        self.assertIn(".finally(() => {", confirm_block)
+        self.assertIn("setBiometricsActionButtonsDisabled(false);", confirm_block)
+
     def test_physio_and_eyetracking_modules_reset_stale_state_and_send_project_path(
         self,
     ):
