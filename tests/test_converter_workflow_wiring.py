@@ -185,6 +185,24 @@ EYETRACKING_MODULE = (
 ENVIRONMENT_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "environment.js"
 )
+POLLING_RUN_STATE_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "polling-run-state.js"
+)
+JOB_RUN_CONTROLLER_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "job-run-controller.js"
+)
 PARTICIPANTS_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "participants.js"
 )
@@ -287,6 +305,21 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn("return fetchWithApiFallbackUsing(", content)
 
+    def test_converter_polling_run_state_module_exports_abort_helpers(self):
+        content = POLLING_RUN_STATE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("export function isPollingAbortError(error) {", content)
+        self.assertIn("export function createPollingRunState() {", content)
+        self.assertIn("activeController = new AbortController();", content)
+
+    def test_converter_job_run_controller_exports_single_run_guard(self):
+        content = JOB_RUN_CONTROLLER_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("export function createJobRunController() {", content)
+        self.assertIn("tryStartRun()", content)
+        self.assertIn("setActiveJobId(jobId)", content)
+        self.assertIn("cancelActiveJob({ buildCancelUrl })", content)
+
     def test_biometrics_module_resets_stale_state_and_uses_explicit_project_path(self):
         content = BIOMETRICS_MODULE.read_text(encoding="utf-8")
 
@@ -294,6 +327,14 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "import { resolveCurrentProjectPath } from '../../shared/project-state.js';",
             content,
         )
+        self.assertIn(
+            "import { createJobRunController } from './job-run-controller.js';",
+            content,
+        )
+        self.assertIn("const runController = createJobRunController();", content)
+        self.assertIn("if (!runController.tryStartRun()) {", content)
+        self.assertIn("runController.finishRun();", content)
+        self.assertIn("function setBiometricsActionButtonsDisabled(disabled) {", content)
         self.assertIn("function clearBiometricsMessages() {", content)
         self.assertIn("function resetBiometricsWorkflowState() {", content)
         self.assertIn(
@@ -326,6 +367,25 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "import { resolveCurrentProjectPath } from '../../shared/project-state.js';",
             physio_content,
         )
+        self.assertIn(
+            "import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';",
+            physio_content,
+        )
+        self.assertIn(
+            "import { createJobRunController } from './job-run-controller.js';",
+            physio_content,
+        )
+        self.assertIn("const pollingRunState = createPollingRunState();", physio_content)
+        self.assertIn("const runController = createJobRunController();", physio_content)
+        self.assertIn("if (!runController.tryStartRun()) {", physio_content)
+        self.assertIn("runController.setActiveJobId(jobId);", physio_content)
+        self.assertIn("runController.cancelActiveJob({", physio_content)
+        self.assertIn("runController.finishRun();", physio_content)
+        self.assertIn(
+            "pollingRunState.abortActive('Physio polling aborted due to project change.');",
+            physio_content,
+        )
+        self.assertIn("signal: activePollController.signal,", physio_content)
         self.assertIn("function clearAutoDetectedPhysioSource() {", physio_content)
         self.assertIn(
             "physioBatchFiles.addEventListener('change', function() {", physio_content
@@ -357,6 +417,25 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "import { resolveCurrentProjectPath } from '../../shared/project-state.js';",
             eyetracking_content,
         )
+        self.assertIn(
+            "import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';",
+            eyetracking_content,
+        )
+        self.assertIn(
+            "import { createJobRunController } from './job-run-controller.js';",
+            eyetracking_content,
+        )
+        self.assertIn("const pollingRunState = createPollingRunState();", eyetracking_content)
+        self.assertIn("const runController = createJobRunController();", eyetracking_content)
+        self.assertIn("if (!runController.tryStartRun()) {", eyetracking_content)
+        self.assertIn("runController.setActiveJobId(jobId);", eyetracking_content)
+        self.assertIn("runController.cancelActiveJob({", eyetracking_content)
+        self.assertIn("runController.finishRun();", eyetracking_content)
+        self.assertIn(
+            "pollingRunState.abortActive('Eyetracking polling aborted due to project change.');",
+            eyetracking_content,
+        )
+        self.assertIn("signal: activePollController.signal,", eyetracking_content)
         self.assertIn(
             "function resetEyetrackingWorkflowState({ clearLog = true } = {}) {",
             eyetracking_content,
@@ -394,6 +473,25 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             environment_content,
         )
         self.assertIn(
+            "import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';",
+            environment_content,
+        )
+        self.assertIn(
+            "import { createJobRunController } from './job-run-controller.js';",
+            environment_content,
+        )
+        self.assertIn("const pollingRunState = createPollingRunState();", environment_content)
+        self.assertIn("const runController = createJobRunController();", environment_content)
+        self.assertIn("if (!runController.tryStartRun()) {", environment_content)
+        self.assertIn("runController.setActiveJobId(jobId);", environment_content)
+        self.assertIn("runController.cancelActiveJob({", environment_content)
+        self.assertIn("runController.finishRun();", environment_content)
+        self.assertIn(
+            "pollingRunState.abortActive('Environment polling aborted due to project change.');",
+            environment_content,
+        )
+        self.assertIn("signal: activePollController.signal,", environment_content)
+        self.assertIn(
             "sourcedata-files?kind=environment&project_path=${encodeURIComponent(effectiveProjectPath)}",
             environment_content,
         )
@@ -408,6 +506,17 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             participants_content,
         )
         self.assertIn(
+            "import { createJobRunController } from './job-run-controller.js';",
+            participants_content,
+        )
+        self.assertIn("const runController = createJobRunController();", participants_content)
+        self.assertIn(
+            "function setParticipantsPrimaryActionButtonsDisabled(disabled) {",
+            participants_content,
+        )
+        self.assertIn("if (!runController.tryStartRun()) {", participants_content)
+        self.assertIn("runController.finishRun();", participants_content)
+        self.assertIn(
             "sourcedata-files?kind=participants&project_path=${encodeURIComponent(effectiveProjectPath)}",
             participants_content,
         )
@@ -416,6 +525,44 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             participants_content,
         )
         self.assertIn("refreshParticipantsSourcedataQuickSelect();", participants_content)
+
+    def test_participants_preview_and_convert_handlers_use_run_lock(self):
+        participants_content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        preview_start = "document.getElementById('participantsPreviewBtn')?.addEventListener('click', async function() {"
+        preview_end = "document.getElementById('participantsDownloadMergeConflictsBtn')?.addEventListener('click', async function()"
+        convert_start = "document.getElementById('participantsConvertBtn')?.addEventListener('click', async function() {"
+        convert_end = "// ===== NEUROBAGEL ANNOTATION HANDLERS ====="
+
+        self.assertIn(preview_start, participants_content)
+        self.assertIn(preview_end, participants_content)
+        self.assertIn(convert_start, participants_content)
+        self.assertIn(convert_end, participants_content)
+
+        preview_block = participants_content.split(preview_start, 1)[1].split(preview_end, 1)[0]
+        convert_block = participants_content.split(convert_start, 1)[1].split(convert_end, 1)[0]
+
+        self.assertIn("if (!runController.tryStartRun()) {", preview_block)
+        self.assertIn("setParticipantsPrimaryActionButtonsDisabled(true);", preview_block)
+        self.assertIn("finally {", preview_block)
+        self.assertIn("runController.finishRun();", preview_block)
+        self.assertIn(
+            "updateParticipantsButtonState({ skipIdAutoDetect: true });",
+            preview_block,
+        )
+
+        self.assertIn("if (!runController.tryStartRun()) {", convert_block)
+        self.assertIn("setParticipantsPrimaryActionButtonsDisabled(true);", convert_block)
+        self.assertIn(
+            "// Check existing files only when starting real conversion.",
+            convert_block,
+        )
+        self.assertIn("finally {", convert_block)
+        self.assertIn("runController.finishRun();", convert_block)
+        self.assertIn(
+            "updateParticipantsButtonState({ skipIdAutoDetect: true });",
+            convert_block,
+        )
 
     def test_eyetracking_template_references_bids_modality(self):
         content = EYETRACKING_TEMPLATE.read_text(encoding="utf-8")
