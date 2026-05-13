@@ -140,8 +140,8 @@ def register_session_in_project(
     converter: str,
     template_version_overrides: Any = None,
 ) -> None:
-    """Register conversion output in project.json Sessions/TaskDefinitions."""
-    if not session_id or not tasks:
+    """Persist template version selections without writing session provenance."""
+    if not session_id:
         return
 
     pj_path = project_path / "project.json"
@@ -154,49 +154,10 @@ def register_session_in_project(
     except (json.JSONDecodeError, OSError):
         return
 
-    if "Sessions" not in data:
-        data["Sessions"] = []
-    if "TaskDefinitions" not in data:
-        data["TaskDefinitions"] = {}
-
     normalized_session_id = _normalize_session_id(session_id)
     if not normalized_session_id:
         return
     session_id = normalized_session_id
-
-    target = None
-    for session in data["Sessions"]:
-        if session.get("id") == session_id:
-            target = session
-            break
-
-    if target is None:
-        target = {"id": session_id, "label": session_id, "tasks": []}
-        data["Sessions"].append(target)
-
-    if "tasks" not in target:
-        target["tasks"] = []
-
-    from datetime import date
-
-    today = date.today().isoformat()
-    source_obj = {
-        "file": source_file,
-        "converter": converter,
-        "convertedAt": today,
-    }
-
-    for task_name in tasks:
-        existing = next(
-            (task for task in target["tasks"] if task.get("task") == task_name), None
-        )
-        if existing:
-            existing["source"] = source_obj
-        else:
-            target["tasks"].append({"task": task_name, "source": source_obj})
-
-        if task_name not in data["TaskDefinitions"]:
-            data["TaskDefinitions"][task_name] = {"modality": modality}
 
     selection_updates = _normalize_template_version_selections(
         template_version_overrides,
@@ -222,6 +183,8 @@ def register_session_in_project(
                 key=lambda item: (item[0], item[1] or "", item[2] or ""),
             )
         ]
+    else:
+        return
 
     try:
         from src.cross_platform import CrossPlatformFile
