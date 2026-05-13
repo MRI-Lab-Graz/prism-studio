@@ -360,6 +360,248 @@ def get_i18n_text(obj: Any, lang: str = "en") -> str:
     return str(obj or "")
 
 
+def _normalize_export_value_labels(levels: Any, lang: str = "en") -> dict[str, str]:
+    """Normalize Levels mappings for export and drop sparse endpoint-only scales.
+
+    Rules:
+    - all included labels must be non-empty after i18n resolution
+    - for exactly two numeric levels, keep only adjacent pairs (e.g., 1/2),
+      but drop sparse endpoint pairs like 0/100 or 1/5
+    """
+    if not isinstance(levels, dict) or not levels:
+        return {}
+
+    normalized: dict[str, str] = {}
+    numeric_int_keys: list[int] = []
+    all_keys_are_numeric_int = True
+
+    for key, value in levels.items():
+        key_text = str(key).strip()
+        if not key_text:
+            return {}
+
+        label_text = get_i18n_text(value, lang).strip()
+        if not label_text:
+            return {}
+        normalized[key_text] = label_text
+
+        try:
+            number = float(key_text)
+            if not number.is_integer():
+                all_keys_are_numeric_int = False
+            else:
+                numeric_int_keys.append(int(number))
+        except (TypeError, ValueError):
+            all_keys_are_numeric_int = False
+
+    if all_keys_are_numeric_int and len(numeric_int_keys) == 2:
+        unique_keys = sorted(set(numeric_int_keys))
+        if len(unique_keys) == 2 and abs(unique_keys[1] - unique_keys[0]) > 1:
+            return {}
+
+    return normalized
+
+
+def _normalize_declared_data_type(raw_type: Any) -> str | None:
+    """Normalize template/recipe datatype labels to a small canonical set."""
+    text = str(raw_type or "").strip().lower()
+    if not text:
+        return None
+
+    mapping = {
+        "int": "integer",
+        "integer": "integer",
+        "float": "float",
+        "double": "float",
+        "decimal": "float",
+        "number": "float",
+        "numeric": "float",
+        "string": "string",
+        "text": "string",
+        "categorical": "string",
+        "bool": "boolean",
+        "boolean": "boolean",
+    }
+    return mapping.get(text)
+
+
+def _collect_recipe_declared_datatypes(
+    *,
+    columns: list[str],
+    participants_meta: dict,
+    recipe: dict,
+    sidecar_meta: Optional[dict] = None,
+) -> dict[str, str]:
+    """Collect declared datatypes for one recipe export table."""
+    declared: dict[str, str] = {}
+
+    for col in columns:
+        if col in {"participant_id", "session", "run"}:
+            continue
+
+        # participants.json fields can optionally declare DataType.
+        participant_meta = participants_meta.get(col)
+        if isinstance(participant_meta, dict):
+            dtype = _normalize_declared_data_type(participant_meta.get("DataType"))
+            if dtype:
+                declared[col] = dtype
+                continue
+
+        # survey sidecar item declarations.
+        if sidecar_meta and isinstance(sidecar_meta, dict):
+            sidecar_key = (
+                col if col in sidecar_meta else re.sub(r"_ses[_-]\w+$", "", col)
+            )
+            col_meta = sidecar_meta.get(sidecar_key)
+            if isinstance(col_meta, dict):
+                dtype = _normalize_declared_data_type(col_meta.get("DataType"))
+                if dtype:
+                    declared[col] = dtype
+                    continue
+
+        # Optional recipe score datatype declaration.
+        bare_col = _strip_export_context_suffix(col)
+        for score in recipe.get("Scores") or []:
+            score_name = str(score.get("Name") or "").strip()
+            if not score_name:
+                continue
+            if bare_col == score_name or col == score_name:
+                dtype = _normalize_declared_data_type(score.get("DataType"))
+                if dtype:
+                    declared[col] = dtype
+                break
+
+    return declared
+
+
+def _collect_combined_declared_datatypes(
+    *,
+    columns: list[str],
+    participants_meta: dict,
+    recipe_by_id: dict[str, dict],
+    dataset_path: Optional[Path],
+    modality: str,
+) -> dict[str, str]:
+    """Collect declared datatypes for combined (merge_all) exports."""
+    declared: dict[str, str] = {}
+
+    # Participant-level fields.
+    for col in columns:
+        if col in {"participant_id", "session", "run"}:
+            continue
+        participant_meta = participants_meta.get(col)
+        if isinstance(participant_meta, dict):
+            dtype = _normalize_declared_data_type(participant_meta.get("DataType"))
+            if dtype:
+                declared[col] = dtype
+
+    if not dataset_path:
+        return declared
+
+    col_set = set(columns)
+    for recipe_id, recipe in recipe_by_id.items():
+        sidecar = _get_sidecar_for_task(dataset_path, modality, recipe_id)
+
+        for sidecar_key, col_meta in sidecar.items():
+            if not isinstance(col_meta, dict):
+                continue
+            dtype = _normalize_declared_data_type(col_meta.get("DataType"))
+            if not dtype:
+                continue
+
+            candidate_names = {
+                sidecar_key,
+                _prefixed_recipe_column_name(recipe_id, sidecar_key),
+            }
+            for col in col_set:
+                if col in declared:
+                    continue
+                bare = _strip_export_context_suffix(col)
+                if bare in candidate_names:
+                    declared[col] = dtype
+
+        for score in recipe.get("Scores") or []:
+            score_name = str(score.get("Name") or "").strip()
+            if not score_name:
+                continue
+            dtype = _normalize_declared_data_type(score.get("DataType"))
+            if not dtype:
+                continue
+
+            candidate_names = {
+                score_name,
+                _prefixed_recipe_column_name(recipe_id, score_name),
+            }
+            for col in col_set:
+                if col in declared:
+                    continue
+                bare = _strip_export_context_suffix(col)
+                if bare in candidate_names:
+                    declared[col] = dtype
+
+    return declared
+
+
+def _apply_declared_datatypes(df: Any, declared_datatypes: dict[str, str]) -> Any:
+    """Coerce dataframe columns according to declared template/recipe datatypes."""
+    import pandas as pd
+
+    if df is None or not declared_datatypes:
+        return df
+
+    out = df.copy()
+    for col, dtype in declared_datatypes.items():
+        if col not in out.columns:
+            continue
+
+        series = out[col]
+        text = series.astype("string").str.strip()
+        lower = text.str.lower()
+        non_missing_mask = text.notna() & (~lower.isin(_MISSING_TEXT_TOKENS))
+
+        if dtype in {"integer", "float"}:
+            numeric = pd.to_numeric(
+                text.str.replace(",", ".", regex=False),
+                errors="coerce",
+            )
+            if int(numeric[non_missing_mask].notna().sum()) != int(non_missing_mask.sum()):
+                continue
+
+            if dtype == "integer":
+                non_na = numeric.dropna()
+                if not non_na.empty and bool(((non_na % 1) == 0).all()):
+                    out[col] = numeric.round().astype("Int64")
+                else:
+                    out[col] = numeric.astype(float)
+            else:
+                out[col] = numeric.astype(float)
+            continue
+
+        if dtype == "boolean":
+            truth_map = {
+                "1": True,
+                "true": True,
+                "yes": True,
+                "y": True,
+                "on": True,
+                "0": False,
+                "false": False,
+                "no": False,
+                "n": False,
+                "off": False,
+            }
+            mapped = lower.map(truth_map)
+            if int(mapped[non_missing_mask].notna().sum()) != int(non_missing_mask.sum()):
+                continue
+            out[col] = mapped.astype("boolean")
+            continue
+
+        if dtype == "string":
+            out[col] = series.astype("string")
+
+    return out
+
+
 def _build_variable_metadata(
     columns: list[str],
     participants_meta: dict,
@@ -396,9 +638,9 @@ def _build_variable_metadata(
                     variable_labels[col] = get_i18n_text(desc, lang)
                 levels = col_meta.get("Levels") or col_meta.get("levels") or {}
                 if levels and isinstance(levels, dict):
-                    value_labels[col] = {
-                        str(k): get_i18n_text(v, lang) for k, v in levels.items()
-                    }
+                    normalized_levels = _normalize_export_value_labels(levels, lang)
+                    if normalized_levels:
+                        value_labels[col] = normalized_levels
 
     # From participants.json
     for col in columns:
@@ -412,10 +654,9 @@ def _build_variable_metadata(
                 # Levels/value labels
                 levels = col_meta.get("Levels") or col_meta.get("levels") or {}
                 if levels and isinstance(levels, dict):
-                    # Convert to {code: label} format
-                    value_labels[col] = {
-                        str(k): get_i18n_text(v, lang) for k, v in levels.items()
-                    }
+                    normalized_levels = _normalize_export_value_labels(levels, lang)
+                    if normalized_levels:
+                        value_labels[col] = normalized_levels
 
     # From recipe Scores - extract full details
     scores = recipe.get("Scores") or []
@@ -434,6 +675,9 @@ def _build_variable_metadata(
 
             # Build detailed score info
             details = {}
+            score_dtype = _normalize_declared_data_type(score.get("DataType"))
+            if score_dtype:
+                details["data_type"] = score_dtype
             if score.get("Method"):
                 details["method"] = score["Method"]
             if score.get("Items"):
@@ -552,6 +796,27 @@ def _prefixed_recipe_column_name(recipe_id: str, column: str) -> str:
     return f"{recipe_id}_{column_text}"
 
 
+def _resolve_merge_all_output_column_name(
+    *,
+    recipe_id: str,
+    column: str,
+    score_names: set[str],
+    include_recipe_prefix: bool,
+) -> str:
+    """Resolve combined-export column names.
+
+    Rules:
+    - score columns are always prefixed with the recipe id
+    - raw item columns are prefixed only when include_recipe_prefix is enabled
+    """
+    column_text = str(column)
+    if column_text in score_names:
+        return _prefixed_recipe_column_name(recipe_id, column_text)
+    if include_recipe_prefix:
+        return _prefixed_recipe_column_name(recipe_id, column_text)
+    return column_text
+
+
 def _strip_export_context_suffix(column: str) -> str:
     return re.sub(r"_(?:ses[_-][^_]+(?:_run-[^_]+)?|run-[^_]+)$", "", str(column))
 
@@ -616,9 +881,9 @@ def _build_combined_output_metadata(
                 variable_labels[col] = get_i18n_text(desc, lang)
             levels = col_meta.get("Levels") or col_meta.get("levels") or {}
             if levels and isinstance(levels, dict):
-                value_labels[col] = {
-                    str(k): get_i18n_text(v, lang) for k, v in levels.items()
-                }
+                normalized_levels = _normalize_export_value_labels(levels, lang)
+                if normalized_levels:
+                    value_labels[col] = normalized_levels
 
     # Per-recipe sidecar item labels (e.g. ADS01 -> selten/manchmal/...)
     col_set = set(columns)
@@ -644,9 +909,9 @@ def _build_combined_output_metadata(
                         variable_labels[col] = get_i18n_text(desc, lang)
                     levels = col_meta.get("Levels") or col_meta.get("levels") or {}
                     if levels and isinstance(levels, dict) and col not in value_labels:
-                        value_labels[col] = {
-                            str(k): get_i18n_text(v, lang) for k, v in levels.items()
-                        }
+                        normalized_levels = _normalize_export_value_labels(levels, lang)
+                        if normalized_levels:
+                            value_labels[col] = normalized_levels
     for recipe_id, recipe in recipe_by_id.items():
         for score in recipe.get("Scores") or []:
             score_name = str(score.get("Name", "")).strip()
@@ -1178,12 +1443,19 @@ def _build_participant_value_lookup(participants_df: Any) -> dict[str, dict[str,
 def _participant_raw_exclude_columns(participants_df: Any) -> set[str]:
     """Columns to hide from raw survey export rows.
 
-    Participant-level sociodemographic fields may be injected for scoring formulas,
-    but they must never leak into survey output columns.
+    Participant-level sociodemographic fields may be injected for scoring formulas.
+    Raw item export keeps them separate to avoid duplicate columns.
     """
     if participants_df is None:
         return set()
     return {str(col) for col in participants_df.columns if str(col) != "participant_id"}
+
+
+def _participant_export_columns(participants_df: Any) -> list[str]:
+    """Return participant columns that should be present in exported outputs."""
+    if participants_df is None:
+        return []
+    return [str(col) for col in participants_df.columns if str(col) != "participant_id"]
 
 
 def _inject_participant_values_into_rows(
@@ -2183,6 +2455,7 @@ def _export_recipe_aggregated(
     processed_count = 0
     final_header = []
     participant_lookup = _build_participant_value_lookup(participants_df)
+    participant_export_columns = _participant_export_columns(participants_df)
     raw_exclude_columns = _participant_raw_exclude_columns(participants_df)
 
     for in_path in matching:
@@ -2228,6 +2501,8 @@ def _export_recipe_aggregated(
             merged: dict[str, Any] = {"participant_id": sub_id, "session": ses_id}
             if run_id is not None:
                 merged["run"] = run_id
+            for participant_col in participant_export_columns:
+                merged[participant_col] = participant_values.get(participant_col, "n/a")
             for col in out_header:
                 merged[col] = score_row.get(col, "n/a")
             rows_accum.append(merged)
@@ -2238,16 +2513,29 @@ def _export_recipe_aggregated(
     df = pd.DataFrame(rows_accum)
     # Ensure column order: participant_id, session, [run], then score columns
     _run_col = ["run"] if "run" in df.columns else []
-    cols = [
-        c
-        for c in (["participant_id", "session"] + _run_col + [c for c in final_header])
-        if c in df.columns
-    ]
+    cols: list[str] = []
+    for c in (["participant_id", "session"] + _run_col + participant_export_columns + [c for c in final_header]):
+        if c in df.columns and c not in cols:
+            cols.append(c)
     df = df.loc[:, cols]
 
     fallback_note = None
     if layout == "wide":
         df, final_header, fallback_note = _handle_wide_pivot(df, final_header)
+        if participant_export_columns and participants_df is not None:
+            available_participant_columns = [
+                c for c in participant_export_columns if c in participants_df.columns
+            ]
+            if available_participant_columns:
+                participant_export_df = participants_df[
+                    ["participant_id", *available_participant_columns]
+                ].drop_duplicates(subset=["participant_id"])
+                df = df.merge(participant_export_df, on="participant_id", how="left")
+                ordered_columns = ["participant_id", *available_participant_columns]
+                trailing_columns = [
+                    c for c in df.columns if c not in set(ordered_columns)
+                ]
+                df = df.loc[:, ordered_columns + trailing_columns]
 
     # Detect columns with all missing values (excluding ids)
     nan_cols = []
@@ -2270,6 +2558,12 @@ def _export_recipe_aggregated(
         sidecar_meta=sidecar_meta,
         lang=lang,
     )
+    declared_datatypes = _collect_recipe_declared_datatypes(
+        columns=list(df.columns),
+        participants_meta=participants_meta,
+        recipe=recipe,
+        sidecar_meta=sidecar_meta,
+    )
     survey_meta = _build_survey_metadata(recipe, lang=lang)
 
     prefix = _make_project_prefix(output_prism_root)
@@ -2280,6 +2574,7 @@ def _export_recipe_aggregated(
         missing_policy=missing_policy,
         missing_numeric_value=missing_numeric_value,
     )
+    df_for_write = _apply_declared_datatypes(df_for_write, declared_datatypes)
 
     if out_format == "csv":
         out_fname = out_root / f"{prefix}{recipe_id}.csv"
@@ -2665,8 +2960,9 @@ def compute_survey_recipes(
             include_raw: If True, include original columns in the output.
             boilerplate: If True, generate a methods boilerplate.
             merge_all: If True, combine all surveys into one output file.
-            include_recipe_prefix: If True, prefix combined-export columns with the
-                recipe name when possible.
+            include_recipe_prefix: If True, prefix raw-item columns in combined
+                exports with the recipe/survey name when possible. Score columns
+                remain recipe-prefixed regardless of this flag.
             anonymized: If True, append '_anon' to output subfolder name.
             missing_policy: Missing-value export policy for csv/xlsx/sav
                 (system-missing, text-na, text-nan, numeric-sentinel).
@@ -2737,6 +3033,7 @@ def compute_survey_recipes(
 
     # 3. Load participants data (for merging demographic data)
     participants_df, participants_meta = _load_participants_data(output_prism_root)
+    participant_export_columns = _participant_export_columns(participants_df)
 
     # Build config-based subfolder: {layout}_{lang} or {layout}_{lang}_anon
     subfolder_name = f"{layout}_{lang}"
@@ -2807,6 +3104,11 @@ def compute_survey_recipes(
                 rows_accum: list[dict[str, Any]] = []
                 participant_lookup = _build_participant_value_lookup(participants_df)
                 raw_exclude_columns = _participant_raw_exclude_columns(participants_df)
+                score_names = {
+                    str(s.get("Name", "")).strip()
+                    for s in (recipe.get("Scores") or [])
+                    if str(s.get("Name", "")).strip()
+                }
 
                 for in_path in matching:
                     processed_files += 1
@@ -2855,10 +3157,11 @@ def compute_survey_recipes(
                         if run_id is not None:
                             merged["run"] = run_id
                         for col in out_header:
-                            prefixed_col = (
-                                _prefixed_recipe_column_name(recipe_id, col)
-                                if include_recipe_prefix
-                                else col
+                            prefixed_col = _resolve_merge_all_output_column_name(
+                                recipe_id=recipe_id,
+                                column=col,
+                                score_names=score_names,
+                                include_recipe_prefix=include_recipe_prefix,
                             )
                             merged[prefixed_col] = score_row.get(col, "n/a")
                         rows_accum.append(merged)
@@ -2953,6 +3256,7 @@ def compute_survey_recipes(
 
                     rows_accum: list[dict[str, Any]] = []
                     raw_exclude_columns = _participant_raw_exclude_columns(participants_df)
+                    score_names: set[str] = set()
 
                     for in_path in matching:
                         processed_files += 1
@@ -2985,10 +3289,11 @@ def compute_survey_recipes(
                             if run_id is not None:
                                 merged["run"] = run_id
                             for col in out_header:
-                                prefixed_col = (
-                                    _prefixed_recipe_column_name(missing_task, col)
-                                    if include_recipe_prefix
-                                    else col
+                                prefixed_col = _resolve_merge_all_output_column_name(
+                                    recipe_id=missing_task,
+                                    column=col,
+                                    score_names=score_names,
+                                    include_recipe_prefix=include_recipe_prefix,
                                 )
                                 merged[prefixed_col] = raw_row.get(col, "n/a")
                             rows_accum.append(merged)
@@ -3122,9 +3427,8 @@ def compute_survey_recipes(
                 if include_run_in_wide:
                     id_cols = ["participant_id", "session", "run"]
 
-                score_cols = [
-                    c for c in combined_df.columns if c not in set(id_cols) | {"run"}
-                ]
+                non_pivot_cols = set(id_cols) | {"run"} | set(participant_export_columns)
+                score_cols = [c for c in combined_df.columns if c not in non_pivot_cols]
 
                 if score_cols:
                     df_melt = combined_df.melt(
@@ -3178,6 +3482,41 @@ def compute_survey_recipes(
                 if fallback_note is None:
                     fallback_note = f"Could not create wide combined layout: {e}"
 
+        if participant_export_columns and participants_df is not None:
+            available_participant_columns = [
+                c for c in participant_export_columns if c in participants_df.columns
+            ]
+            if available_participant_columns:
+                participant_export_df = participants_df[
+                    ["participant_id", *available_participant_columns]
+                ].drop_duplicates(subset=["participant_id"])
+                combined_df = combined_df.merge(
+                    participant_export_df,
+                    on="participant_id",
+                    how="left",
+                )
+
+                leading_columns = ["participant_id"]
+                if layout == "long":
+                    if "session" in combined_df.columns:
+                        leading_columns.append("session")
+                    if include_run_in_merge and "run" in combined_df.columns:
+                        leading_columns.append("run")
+                leading_columns.extend(
+                    [
+                        c
+                        for c in available_participant_columns
+                        if c in combined_df.columns and c not in leading_columns
+                    ]
+                )
+
+                trailing_columns = [
+                    c for c in combined_df.columns if c not in set(leading_columns)
+                ]
+                if layout == "wide":
+                    trailing_columns = sorted(trailing_columns)
+                combined_df = combined_df.loc[:, leading_columns + trailing_columns]
+
         combined_var_labels, combined_value_labels, combined_score_details = (
             _build_combined_output_metadata(
                 columns=list(combined_df.columns),
@@ -3187,6 +3526,13 @@ def compute_survey_recipes(
                 dataset_path=output_prism_root,
                 modality=modality,
             )
+        )
+        combined_declared_datatypes = _collect_combined_declared_datatypes(
+            columns=list(combined_df.columns),
+            participants_meta=participants_meta,
+            recipe_by_id=merge_all_recipe_by_id,
+            dataset_path=output_prism_root,
+            modality=modality,
         )
 
         if out_format in {"csv", "sav"}:
@@ -3209,12 +3555,20 @@ def compute_survey_recipes(
                 missing_policy=missing_policy,
                 missing_numeric_value=missing_numeric_value,
             )
+            combined_for_write = _apply_declared_datatypes(
+                combined_for_write,
+                combined_declared_datatypes,
+            )
             combined_for_write.to_csv(out_path, index=False)
         elif out_format == "xlsx":
             combined_for_write = _apply_missing_export_policy(
                 combined_df,
                 missing_policy=missing_policy,
                 missing_numeric_value=missing_numeric_value,
+            )
+            combined_for_write = _apply_declared_datatypes(
+                combined_for_write,
+                combined_declared_datatypes,
             )
             combined_for_write.to_excel(out_path, index=False)
         elif out_format == "sav":
@@ -3225,6 +3579,10 @@ def compute_survey_recipes(
                     combined_df,
                     missing_policy=missing_policy,
                     missing_numeric_value=missing_numeric_value,
+                )
+                combined_for_write = _apply_declared_datatypes(
+                    combined_for_write,
+                    combined_declared_datatypes,
                 )
                 combined_for_sav = _prepare_dataframe_for_sav(combined_for_write)
                 combined_for_sav = _coerce_value_labeled_columns_for_sav(

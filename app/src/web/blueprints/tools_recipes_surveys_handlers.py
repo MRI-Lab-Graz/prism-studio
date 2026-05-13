@@ -338,7 +338,7 @@ def handle_api_recipes_surveys(data: dict):
 
         cli_cmd = " ".join(cmd_parts)
         emit_backend_action(
-            f"run prism tools recipes command: {cli_cmd}",
+            f"run prism tools recipes command | cmd={cli_cmd}",
             app_root=str(current_app.root_path),
         )
 

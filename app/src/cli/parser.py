@@ -716,7 +716,7 @@ def build_prism_tools_parsers(
         dest="include_recipe_prefix",
         action="store_false",
         default=True,
-        help="In combined exports, keep bare variable names where possible instead of always prefixing with the recipe name",
+        help="In combined exports, keep raw item variables bare where possible; score columns remain recipe-prefixed",
     )
     parser_deriv_surveys.add_argument(
         "--boilerplate",
@@ -805,7 +805,7 @@ def build_prism_tools_parsers(
         dest="include_recipe_prefix",
         action="store_false",
         default=True,
-        help="In combined exports, keep bare variable names where possible instead of always prefixing with the recipe name",
+        help="In combined exports, keep raw item variables bare where possible; score columns remain recipe-prefixed",
     )
     parser_deriv_biometrics.add_argument(
         "--missing-policy",
