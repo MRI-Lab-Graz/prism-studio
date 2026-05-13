@@ -1,7 +1,7 @@
 """Project icon utilities.
 
-Defines a curated set of non-provocative, science-oriented icon classes and
-helpers to normalize, assign, and persist icons in project.json metadata.
+Defines a curated set of non-provocative, science-oriented emojis and helpers
+to normalize, assign, and persist icons in project.json metadata.
 """
 
 from __future__ import annotations
@@ -13,39 +13,39 @@ from typing import Any
 
 from src.cross_platform import CrossPlatformFile
 
-# Curated Font Awesome icon classes for project/study identity.
-_PROJECT_ICON_CLASSES: tuple[str, ...] = (
-    "fas fa-brain",
-    "fas fa-microscope",
-    "fas fa-dna",
-    "fas fa-atom",
-    "fas fa-flask",
-    "fas fa-vial",
-    "fas fa-wave-square",
-    "fas fa-stethoscope",
-    "fas fa-chart-line",
-    "fas fa-notes-medical",
+# Curated scientific emojis for project/study identity.
+_PROJECT_ICON_EMOJIS: tuple[str, ...] = (
+    "🧪",
+    "🔬",
+    "🧬",
+    "🧠",
+    "⚗️",
+    "🩺",
+    "📊",
+    "🧫",
+    "🔭",
+    "🧲",
 )
 
 _random = SystemRandom()
 
 
 def get_project_icon_classes() -> tuple[str, ...]:
-    """Return the curated set of allowed project icon classes."""
-    return _PROJECT_ICON_CLASSES
+    """Return the curated set of allowed project icon emojis."""
+    return _PROJECT_ICON_EMOJIS
 
 
 def normalize_project_icon(icon_value: Any) -> str | None:
-    """Return a valid icon class or None when the value is unknown/invalid."""
+    """Return a valid icon emoji or None when the value is unknown/invalid."""
     icon = str(icon_value or "").strip()
     if not icon:
         return None
-    return icon if icon in _PROJECT_ICON_CLASSES else None
+    return icon if icon in _PROJECT_ICON_EMOJIS else None
 
 
 def choose_random_project_icon() -> str:
-    """Choose a random icon class from the curated icon set."""
-    return _random.choice(_PROJECT_ICON_CLASSES)
+    """Choose a random emoji from the curated icon set."""
+    return _random.choice(_PROJECT_ICON_EMOJIS)
 
 
 def _project_json_path(project_root: Path | str) -> Path:

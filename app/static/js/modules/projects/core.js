@@ -40,14 +40,27 @@ const recentProjectStatusCache = new Map();
 let createTargetStatusRequestToken = 0;
 let createTargetStatusDebounceTimer = null;
 
+const allowedProjectIcons = [
+    '🧪',
+    '🔬',
+    '🧬',
+    '🧠',
+    '⚗️',
+    '🩺',
+    '📊',
+    '🧫',
+    '🔭',
+    '🧲',
+];
+
 function normalizeProjectIconClass(iconClass) {
     const icon = String(iconClass || '').trim();
     if (!icon) return '';
-    return /^fa[a-z]+\s+fa-[a-z0-9-]+(\s+fa-[a-z0-9-]+)*$/i.test(icon) ? icon : '';
+    return allowedProjectIcons.includes(icon) ? icon : '';
 }
 
 function resolveProjectIconClass(iconClass) {
-    return normalizeProjectIconClass(iconClass) || 'fas fa-flask';
+    return normalizeProjectIconClass(iconClass) || '🧪';
 }
 
 function setCreateResultHtml(html, scope = 'server') {
@@ -879,7 +892,7 @@ export function renderRecentProjects() {
         const safeIconClass = escapeHtml(iconClass);
         return `
             <button type="button" class="btn btn-outline-secondary btn-sm recent-project-btn" data-path="${safePath}" data-name="${safeLabel}" data-icon="${safeIconClass}" data-recent-id="${idx}" title="${safePath}">
-                <i class="${safeIconClass} me-1 text-primary"></i>${safeLabel}
+                <span class="me-1" aria-hidden="true">${safeIconClass}</span>${safeLabel}
             </button>`;
         }).join('');
     }).catch(() => {
@@ -2305,7 +2318,7 @@ function renderLoadedProjectState(loadedName, loadedPath, summary) {
     setProjectValidationResult(`
         <div class="validation-result pending project-loaded-state">
             <h5><i class="fas fa-folder-open me-2"></i>Project Loaded</h5>
-            <p class="mb-1"><strong><i class="${projectIconClass} me-1 text-primary"></i>${escapeHtml(loadedName || 'Current project')}:</strong> <code>${escapeHtml(loadedPath)}</code></p>
+            <p class="mb-1"><strong><span class="me-1" aria-hidden="true">${projectIconClass}</span>${escapeHtml(loadedName || 'Current project')}:</strong> <code>${escapeHtml(loadedPath)}</code></p>
             ${quickSummaryHtml}
             <div class="alert alert-info mt-2 mb-0" role="status">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
