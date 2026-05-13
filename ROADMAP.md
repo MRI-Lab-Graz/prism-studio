@@ -1,6 +1,6 @@
 # PRISM Studio - Roadmap
 
-Last updated: 2026-05-12
+Last updated: 2026-05-13
 
 ## Current Mission
 
@@ -38,6 +38,7 @@ Progress snapshot:
 - Survey Customizer now uses shared page-header and help-panel primitives, with dedicated workflow wiring assertions.
 - File Management page now uses shared page-header and help-panel primitives, with dedicated workflow wiring assertions.
 - Recipe Builder page now uses shared page-header and help-panel primitives, with dedicated workflow wiring assertions.
+- Project identity icons are now assigned per study via backend metadata, and rendered in navbar/current-project + recent-project surfaces with regression coverage.
 
 Next action:
 - Complete remaining page migrations to shared components and run focused wiring checks for UI-state regressions.
@@ -101,3 +102,7 @@ Historical completion entries were moved to:
 
 Changelog remains canonical for release-facing history:
 - [CHANGELOG.md](CHANGELOG.md)
+
+## Lessons Learned
+
+- Keep icon assignment in backend metadata (project.json) and only render in frontend adapters to avoid drift between session, recent-project cache, and persisted project state.

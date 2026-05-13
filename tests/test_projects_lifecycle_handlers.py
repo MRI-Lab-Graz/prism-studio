@@ -1,4 +1,5 @@
 import importlib
+import json
 import os
 import sys
 import tempfile
@@ -13,6 +14,8 @@ project_root = os.path.dirname(current_dir)
 app_path = os.path.join(project_root, "app")
 if app_path not in sys.path:
     sys.path.insert(0, app_path)
+
+from src.project_icons import get_project_icon_classes
 
 
 class _ProjectManagerStub:
@@ -49,6 +52,7 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.handle_recruitment_location_search = (
             self.module.handle_recruitment_location_search
         )
+        self.allowed_icons = set(get_project_icon_classes())
 
     def tearDown(self):
         self.tmp_dir.cleanup()
@@ -88,12 +92,18 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertEqual(manager.validated_path, str(self.project_root))
         self.assertEqual(body["current_project"]["path"], str(self.project_root))
         self.assertEqual(body["current_project"]["name"], "Dataset From JSON")
+        self.assertIn(body["current_project"]["icon"], self.allowed_icons)
         self.assertEqual(
             body["current_project"]["project_json_path"],
             str(self.project_root / "project.json"),
         )
         self.assertEqual(captured["path"], str(self.project_root))
         self.assertEqual(captured["name"], "Dataset From JSON")
+
+        project_payload = json.loads(
+            (self.project_root / "project.json").read_text(encoding="utf-8")
+        )
+        self.assertIn(project_payload.get("icon"), self.allowed_icons)
 
     def test_set_current_prefers_project_json_name(self):
         (self.project_root / "project.json").write_text(
@@ -147,6 +157,7 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertFalse(body["project_summary"]["has_participants_tsv"])
         self.assertEqual(captured["name"], "Resolved Name")
         self.assertEqual(captured["last_name"], "Resolved Name")
+        self.assertIn(body["current"]["icon"], self.allowed_icons)
 
     def test_project_path_status_accepts_project_directory(self):
         with self.app.test_request_context(
@@ -285,6 +296,53 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertTrue(response.get_json()["success"])
         self.assertEqual(response.get_json()["projects"], recent_payload)
         mock_load.assert_called_once()
+
+    def test_set_current_respects_valid_icon_override(self):
+        requested_icon = "fas fa-atom"
+        captured = {}
+
+        def get_current_project():
+            return {
+                "path": captured.get("path", ""),
+                "name": captured.get("name", ""),
+                "icon": captured.get("icon", ""),
+            }
+
+        def set_current_project(path: str, name: str | None = None):
+            captured["path"] = path
+            captured["name"] = name
+
+        def save_last_project(path: str | None, name: str | None):
+            captured["last_path"] = path
+            captured["last_name"] = name
+
+        with self.app.test_request_context(
+            "/api/projects/current",
+            method="POST",
+            json={
+                "path": str(self.project_root),
+                "name": "Icon Override",
+                "icon": requested_icon,
+            },
+        ):
+            response = self.handle_set_current(
+                get_current_project=get_current_project,
+                set_current_project=set_current_project,
+                save_last_project=save_last_project,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        body = resp_obj.get_json()
+
+        self.assertEqual(status_code, 200)
+        self.assertTrue(body["success"])
+        self.assertEqual(body["current"]["icon"], requested_icon)
+
+        project_payload = json.loads(
+            (self.project_root / "project.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(project_payload.get("icon"), requested_icon)
 
     def test_recruitment_location_search_returns_normalized_results(self):
         mocked_payload = {

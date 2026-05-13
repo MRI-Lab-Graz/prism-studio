@@ -24,12 +24,14 @@ export function getProjectStateSnapshot() {
         return {
             path: normalizeStateValue(fromGlobalHelper && fromGlobalHelper.path),
             name: normalizeStateValue(fromGlobalHelper && fromGlobalHelper.name),
+            icon: normalizeStateValue(fromGlobalHelper && fromGlobalHelper.icon),
         };
     }
 
     return {
         path: normalizeStateValue(window.currentProjectPath),
         name: normalizeStateValue(window.currentProjectName),
+        icon: normalizeStateValue(window.currentProjectIcon),
     };
 }
 
@@ -41,10 +43,15 @@ export function resolveCurrentProjectName() {
     return normalizeStateValue(getProjectStateSnapshot().name);
 }
 
-export function setProjectStateSnapshot(path, name) {
+export function resolveCurrentProjectIcon() {
+    return normalizeStateValue(getProjectStateSnapshot().icon);
+}
+
+export function setProjectStateSnapshot(path, name, icon = '') {
     const nextState = {
         path: normalizeStateValue(path),
         name: normalizeStateValue(name),
+        icon: normalizeStateValue(icon),
     };
 
     const stateStore = getProjectStateStore();
@@ -54,5 +61,6 @@ export function setProjectStateSnapshot(path, name) {
 
     window.currentProjectPath = nextState.path;
     window.currentProjectName = nextState.name;
+    window.currentProjectIcon = nextState.icon;
     return { ...nextState };
 }

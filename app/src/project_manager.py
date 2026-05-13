@@ -37,6 +37,7 @@ from src.cross_platform import CrossPlatformFile
 from src.issues import get_fix_hint, infer_code_from_message
 from src.schema_manager import load_schema
 from src.readme_generator import ReadmeGenerator
+from src.project_icons import choose_random_project_icon, normalize_project_icon
 from src.system_files import filter_system_files
 from jsonschema import Draft7Validator
 
@@ -944,8 +945,10 @@ Subfolders:
         self, name: str, config: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Create project-level metadata template."""
+        project_icon = normalize_project_icon(config.get("icon")) or choose_random_project_icon()
         return {
             "name": name,
+            "icon": project_icon,
             "paths": {"sourcedata": "sourcedata"},
             "app": {"schema": "1", "last_opened": date.today().isoformat()},
             "governance": {
