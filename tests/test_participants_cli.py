@@ -212,6 +212,46 @@ def test_participants_merge_cli_json_apply_updates_tsv_and_json(tmp_path: Path) 
     assert set(participants_json) >= {"participant_id", "sex", "age", "group"}
 
 
+def test_participants_merge_cli_json_apply_normalizes_existing_empty_cells_to_na(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "participants.tsv").write_text(
+        "participant_id\tsex\tage\n" "sub-001\tF\t\n",
+        encoding="utf-8",
+    )
+
+    source_path = tmp_path / "participants_source.csv"
+    source_path.write_text(
+        "participant_id,sex,age\n" "sub-002,M,22\n",
+        encoding="utf-8",
+    )
+
+    result = _run_prism_tools(
+        "participants",
+        "merge",
+        "--input",
+        str(source_path),
+        "--project",
+        str(tmp_path),
+        "--apply",
+        "--json",
+    )
+
+    output = (result.stdout or "") + (result.stderr or "")
+    assert result.returncode == 0, output
+
+    payload = json.loads(result.stdout)
+    assert payload["status"] == "success"
+    assert payload["action"] == "apply"
+
+    merged_lines = (
+        (tmp_path / "participants.tsv").read_text(encoding="utf-8").splitlines()
+    )
+    assert merged_lines[0].split("\t") == ["participant_id", "sex", "age"]
+    assert merged_lines[1].split("\t") == ["sub-001", "F", "n/a"]
+    assert merged_lines[2].split("\t") == ["sub-002", "M", "22"]
+
+
 def test_participants_merge_cli_json_preview_auto_resolves_equivalent_values(
     tmp_path: Path,
 ) -> None:
