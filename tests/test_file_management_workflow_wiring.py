@@ -20,7 +20,20 @@ class TestFileManagementWorkflowWiring(unittest.TestCase):
     def test_file_management_script_uses_api_fallback_for_all_tool_requests(self):
         content = FILE_MANAGEMENT_SCRIPT.read_text(encoding="utf-8")
 
+        self.assertIn(
+            "const fileManagementScriptUrl = document.currentScript?.src || window.location.href;",
+            content,
+        )
+        self.assertIn("function loadSharedFetchWithApiFallback() {", content)
+        self.assertIn(
+            "sharedFetchWithApiFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithApiFallback }) => {",
+            content,
+        )
         self.assertIn("async function fetchWithApiFallback(", content)
+        self.assertIn(
+            "return sharedFetchWithApiFallback(url, options, fallbackMessage);",
+            content,
+        )
         self.assertIn(
             "await fetchWithApiFallback('/api/file-management/raw-peek', { method: 'POST', body: formData });",
             content,
