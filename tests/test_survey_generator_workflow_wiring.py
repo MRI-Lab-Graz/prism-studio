@@ -11,7 +11,20 @@ class TestSurveyGeneratorWorkflowWiring(unittest.TestCase):
     ):
         content = SURVEY_GENERATOR_SCRIPT.read_text(encoding="utf-8")
 
+        self.assertIn(
+            "const surveyGeneratorScriptUrl = document.currentScript?.src || window.location.href;",
+            content,
+        )
+        self.assertIn("function loadSharedFetchWithApiFallback() {", content)
+        self.assertIn(
+            "sharedFetchWithApiFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithApiFallback }) => {",
+            content,
+        )
         self.assertIn("async function fetchWithApiFallback(", content)
+        self.assertIn(
+            "return sharedFetchWithApiFallback(url, options, fallbackMessage);",
+            content,
+        )
         self.assertIn("function getCurrentProjectPath() {", content)
         self.assertIn("let libraryLoadToken = 0;", content)
         self.assertIn(

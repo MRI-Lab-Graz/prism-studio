@@ -4,6 +4,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 JSON_EDITOR_SCRIPT = REPO_ROOT / "app" / "static" / "js" / "json-editor.js"
 JSON_EDITOR_TEMPLATE = REPO_ROOT / "app" / "templates" / "json_editor.html"
+SHARED_API_SCRIPT = REPO_ROOT / "app" / "static" / "js" / "shared" / "api.js"
 
 
 class TestJsonEditorWorkflowWiring(unittest.TestCase):
@@ -19,10 +20,21 @@ class TestJsonEditorWorkflowWiring(unittest.TestCase):
 
     def test_json_editor_uses_api_fallback_for_project_requests(self):
         content = JSON_EDITOR_SCRIPT.read_text(encoding="utf-8")
+        shared_api_content = SHARED_API_SCRIPT.read_text(encoding="utf-8")
 
+        self.assertIn(
+            "const jsonEditorScriptUrl = document.currentScript?.src || window.location.href;",
+            content,
+        )
+        self.assertIn("function loadSharedFetchWithApiFallback() {", content)
         self.assertIn("async function fetchWithApiFallback(", content)
         self.assertIn(
-            "url.startsWith('/api/') || url.startsWith('/editor/api/')", content
+            "return sharedFetchWithApiFallback(url, options, fallbackMessage);",
+            content,
+        )
+        self.assertIn(
+            "url.startsWith('/api/') || url.startsWith('/editor/api/')",
+            shared_api_content,
         )
         self.assertIn(
             "await fetchWithApiFallback(`/editor/api/file/${fileType}`);", content

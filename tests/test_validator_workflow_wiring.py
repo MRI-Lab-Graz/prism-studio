@@ -4,6 +4,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 VALIDATOR_TEMPLATE = REPO_ROOT / "app" / "templates" / "index.html"
 VALIDATOR_SCRIPT = REPO_ROOT / "app" / "static" / "js" / "index.js"
+SHARED_API_SCRIPT = REPO_ROOT / "app" / "static" / "js" / "shared" / "api.js"
 RESULTS_TEMPLATE = REPO_ROOT / "app" / "templates" / "results.html"
 RESULTS_SCRIPT = REPO_ROOT / "app" / "static" / "js" / "results.js"
 VALIDATION_BLUEPRINT = (
@@ -23,14 +24,33 @@ class TestValidatorWorkflowWiring(unittest.TestCase):
 
     def test_validator_script_uses_fallback_and_resumable_progress(self):
         content = VALIDATOR_SCRIPT.read_text(encoding="utf-8")
+        shared_api_content = SHARED_API_SCRIPT.read_text(encoding="utf-8")
 
         self.assertIn(
             "const validationResumeStorageKey = 'prism_active_validation_job';", content
         )
         self.assertIn(
+            "const validatorScriptUrl = document.currentScript?.src || window.location.href;",
+            content,
+        )
+        self.assertIn(
+            "function loadSharedFetchWithRelativePathFallback() {",
+            content,
+        )
+        self.assertIn(
+            "sharedFetchWithRelativePathFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithRelativePathFallback }) => {",
+            content,
+        )
+        self.assertIn(
             "async function fetchWithApiFallback(url, options = {}, fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.')",
             content,
         )
+        self.assertIn(
+            "return sharedFetchWithRelativePathFallback(url, options, fallbackMessage);",
+            content,
+        )
+        self.assertIn("export async function fetchWithRelativePathFallback(", shared_api_content)
+        self.assertIn("function canRetryRelativePathWithFallback(url) {", shared_api_content)
         self.assertIn(
             "const response = await fetchWithApiFallback(progressUrl, {", content
         )
@@ -109,7 +129,23 @@ class TestValidatorWorkflowWiring(unittest.TestCase):
         content = RESULTS_SCRIPT.read_text(encoding="utf-8")
 
         self.assertIn("const revalidateForm = document.getElementById('revalidateForm');", content)
+        self.assertIn(
+            "const resultsScriptUrl = document.currentScript?.src || window.location.href;",
+            content,
+        )
+        self.assertIn(
+            "function loadSharedFetchWithRelativePathFallback() {",
+            content,
+        )
+        self.assertIn(
+            "sharedFetchWithRelativePathFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithRelativePathFallback }) => {",
+            content,
+        )
         self.assertIn("async function fetchWithApiFallback(", content)
+        self.assertIn(
+            "return sharedFetchWithRelativePathFallback(url, options, fallbackMessage);",
+            content,
+        )
         self.assertIn("async function pollRevalidationProgress(progressUrl, progressFloor = 0)", content)
         self.assertIn("headers: { 'X-Requested-With': 'XMLHttpRequest' },", content)
         self.assertIn("method: 'POST'", content)

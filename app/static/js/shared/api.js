@@ -17,11 +17,19 @@ function getFallbackApiOrigin() {
 
 function canRetryApiWithFallback(url) {
     const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
-    const isRelativeApiRequest = typeof url === 'string' && url.startsWith('/api/');
+    const isRelativeApiRequest = typeof url === 'string' && (
+        url.startsWith('/api/') || url.startsWith('/editor/api/')
+    );
     return isRelativeApiRequest && protocol !== 'http:' && protocol !== 'https:';
 }
 
-async function fetchWithApiFallbackUsing(fetchImpl, url, options = {}, fallbackMessage) {
+function canRetryRelativePathWithFallback(url) {
+    const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
+    const isRelativePathRequest = typeof url === 'string' && url.startsWith('/');
+    return isRelativePathRequest && protocol !== 'http:' && protocol !== 'https:';
+}
+
+async function fetchWithFallbackUsing(fetchImpl, url, options = {}, fallbackMessage, canRetryWithFallback) {
     if (typeof fetchImpl !== 'function') {
         throw new Error('Fetch is not available in this runtime.');
     }
@@ -29,7 +37,7 @@ async function fetchWithApiFallbackUsing(fetchImpl, url, options = {}, fallbackM
     try {
         return await fetchImpl(url, options);
     } catch (primaryError) {
-        if (!canRetryApiWithFallback(url)) {
+        if (typeof canRetryWithFallback !== 'function' || !canRetryWithFallback(url)) {
             throw primaryError;
         }
 
@@ -40,6 +48,16 @@ async function fetchWithApiFallbackUsing(fetchImpl, url, options = {}, fallbackM
             throw new Error(fallbackMessage);
         }
     }
+}
+
+async function fetchWithApiFallbackUsing(fetchImpl, url, options = {}, fallbackMessage) {
+    return fetchWithFallbackUsing(
+        fetchImpl,
+        url,
+        options,
+        fallbackMessage,
+        canRetryApiWithFallback
+    );
 }
 
 /**
@@ -55,6 +73,28 @@ export async function fetchWithApiFallback(
     fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.'
 ) {
     return fetchWithApiFallbackUsing(nativeFetch, url, options, fallbackMessage);
+}
+
+/**
+ * Make a request and retry any relative path against the desktop loopback backend when running off file://.
+ * This is used by classic pages that post to non-API routes like /upload or /validate_folder.
+ * @param {string} url - The endpoint URL
+ * @param {object} options - Optional fetch options
+ * @param {string} fallbackMessage - Error to surface when both attempts fail
+ * @returns {Promise<Response>} Fetch response
+ */
+export async function fetchWithRelativePathFallback(
+    url,
+    options = {},
+    fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.'
+) {
+    return fetchWithFallbackUsing(
+        nativeFetch,
+        url,
+        options,
+        fallbackMessage,
+        canRetryRelativePathWithFallback
+    );
 }
 
 /**
