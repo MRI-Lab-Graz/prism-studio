@@ -35,6 +35,7 @@ from .projects_description_handlers import (
     handle_get_metadata_status,
     handle_get_citation_status,
     handle_get_dataset_description,
+    handle_search_orcid_by_name,
     handle_regenerate_citation,
     handle_save_dataset_description,
     handle_validate_dataset_description_draft,
@@ -327,6 +328,12 @@ def get_dataset_description():
         merge_citation_fields=_merge_citation_fields,
         project_manager=_project_manager,
     )
+
+
+@projects_bp.route("/api/projects/orcid/search", methods=["GET"])
+def search_orcid_by_name():
+    """Search ORCID candidates by name for project author metadata."""
+    return handle_search_orcid_by_name()
 
 
 @projects_bp.route("/api/projects/schema-config", methods=["GET"])

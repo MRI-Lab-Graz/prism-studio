@@ -40,6 +40,7 @@ def get_global_library_settings():
             "default_library_path": default_library_path,
             "default_modalities": settings.default_modalities,
             "backend_monitoring": bool(settings.backend_monitoring),
+            "backend_monitoring_verbose": bool(settings.backend_monitoring_verbose),
             "show_dedicated_terminal": bool(settings.show_dedicated_terminal),
             "connected_to_server": bool(settings.connected_to_server),
         }
@@ -59,6 +60,7 @@ def get_backend_monitoring_setting():
         {
             "success": True,
             "backend_monitoring": bool(settings.backend_monitoring),
+            "backend_monitoring_verbose": bool(settings.backend_monitoring_verbose),
         }
     )
 
@@ -70,12 +72,25 @@ def set_backend_monitoring_setting():
     from flask import current_app
 
     data = request.get_json() or {}
-    if "backend_monitoring" not in data:
-        return jsonify({"success": False, "error": "Missing backend_monitoring"}), 400
+    has_base_toggle = "backend_monitoring" in data
+    has_verbose_toggle = "backend_monitoring_verbose" in data
+    if not has_base_toggle and not has_verbose_toggle:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "Missing backend_monitoring or backend_monitoring_verbose",
+                }
+            ),
+            400,
+        )
 
     app_root = Path(current_app.root_path)
     settings = load_app_settings(app_root=str(app_root))
-    settings.backend_monitoring = bool(data.get("backend_monitoring"))
+    if has_base_toggle:
+        settings.backend_monitoring = bool(data.get("backend_monitoring"))
+    if has_verbose_toggle:
+        settings.backend_monitoring_verbose = bool(data.get("backend_monitoring_verbose"))
 
     try:
         save_app_settings(settings, str(app_root))
@@ -86,6 +101,7 @@ def set_backend_monitoring_setting():
         {
             "success": True,
             "backend_monitoring": bool(settings.backend_monitoring),
+            "backend_monitoring_verbose": bool(settings.backend_monitoring_verbose),
         }
     )
 

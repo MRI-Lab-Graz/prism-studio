@@ -218,3 +218,56 @@
 .project-box-actions__buttons .btn {
     min-width: 220px;
 }
+
+/* Keep the Open Project panel tighter to reduce vertical whitespace. */
+#section-open .card-body {
+    padding: 0.95rem 1rem;
+}
+
+#section-open .project-flow-strip {
+    gap: 8px;
+    padding: 10px;
+    border-radius: 12px;
+    margin-bottom: 0.75rem !important;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+#section-open .project-flow-strip__item {
+    padding: 9px 11px;
+    border-radius: 10px;
+}
+
+#section-open .project-flow-strip__label {
+    margin-bottom: 4px;
+}
+
+#section-open .project-flow-strip__item strong {
+    line-height: 1.35;
+    font-size: 0.9rem;
+}
+
+#section-open .form-label.fw-bold {
+    margin-bottom: 0.3rem;
+}
+
+#section-open #recentProjectsBlock {
+    margin-top: 0.75rem !important;
+}
+
+#section-open #validationResult .validation-result {
+    margin-top: 12px;
+    padding: 14px;
+}
+
+#section-open #validationResult .stats-grid {
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#section-open #validationResult .stat-item {
+    padding: 10px;
+}
+
+#section-open #validationResult .alert {
+    padding: 0.5rem 0.75rem;
+}
