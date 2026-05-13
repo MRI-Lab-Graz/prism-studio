@@ -98,6 +98,15 @@ SURVEY_CONVERSION_LOG_MODULE = (
     / "converter"
     / "survey-conversion-log.js"
 )
+CONVERTER_LOG_RENDERER_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "log-renderer.js"
+)
 SURVEY_CONVERT_FEEDBACK_MODULE = (
     REPO_ROOT
     / "app"
@@ -169,6 +178,15 @@ SURVEY_VALIDATION_RESULTS_MODULE = (
     / "modules"
     / "converter"
     / "survey-validation-results.js"
+)
+CONVERTER_VALIDATION_RESULTS_RENDERER_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "validation-results-renderer.js"
 )
 SURVEY_VALUE_OFFSET_UTILS_MODULE = (
     REPO_ROOT
@@ -301,14 +319,23 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "import { resolveCurrentProjectPath } from './shared/project-state.js';",
             content,
         )
+        self.assertIn(
+            "import { appendConverterLogBatch, appendConverterLogLine } from './modules/converter/log-renderer.js';",
+            content,
+        )
+        self.assertIn(
+            "import { displayConverterValidationResults } from './modules/converter/validation-results-renderer.js';",
+            content,
+        )
         self.assertIn("installApiFetchFallback();", content)
         self.assertIn("window.__prismConverterBootstrapInitialized", content)
         self.assertIn(
             "function appendLogBatch(entries, defaultType = 'info', logElement = null) {",
             content,
         )
-        self.assertIn("const fragment = document.createDocumentFragment();", content)
-        self.assertIn("targetLog.appendChild(fragment);", content)
+        self.assertIn("appendConverterLogBatch(", content)
+        self.assertIn("appendConverterLogLine(", content)
+        self.assertIn("displayConverterValidationResults(validation, prefix, escapeHtml);", content)
         self.assertIn("let sessionPickerRequestToken = 0;", content)
         self.assertIn("function hasManualCustomValue(selectEl) {", content)
         self.assertIn("if (sessions.length === 1 && !hasManualCustomValue(sel)) {", content)
@@ -397,6 +424,9 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         conversion_log_content = SURVEY_CONVERSION_LOG_MODULE.read_text(
             encoding="utf-8"
         )
+        log_renderer_content = CONVERTER_LOG_RENDERER_MODULE.read_text(
+            encoding="utf-8"
+        )
 
         self.assertIn(
             "appendLogBatch(newLogs, 'info', envLog);",
@@ -406,11 +436,19 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "appendBiometricsLogEntries(data.log);",
             biometrics_content,
         )
-        self.assertIn("line.textContent = `[${timestamp}] ${String(message)}`;", conversion_log_content)
-        self.assertIn("targetLog.appendChild(line);", conversion_log_content)
+        self.assertIn(
+            "import { appendConverterLogLine } from './log-renderer.js';",
+            conversion_log_content,
+        )
+        self.assertIn(
+            "appendConverterLogLine(message, type, logElement, conversionLog);",
+            conversion_log_content,
+        )
+        self.assertIn("const fragment = document.createDocumentFragment();", log_renderer_content)
+        self.assertIn("commandSpan.className = 'backend-command-text';", log_renderer_content)
         self.assertNotIn("envLog.innerHTML +=", environment_content)
         self.assertNotIn("biometricsLog.innerHTML +=", biometrics_content)
-        self.assertNotIn("targetLog.innerHTML +=", conversion_log_content)
+        self.assertNotIn("targetLog.innerHTML +=", log_renderer_content)
 
     def test_biometrics_module_resets_stale_state_and_uses_explicit_project_path(self):
         content = BIOMETRICS_MODULE.read_text(encoding="utf-8")
@@ -843,12 +881,14 @@ class TestConverterWorkflowWiring(unittest.TestCase):
     def test_session_registration_uses_visible_project_path(self):
         content = SESSION_REGISTER.read_text(encoding="utf-8")
 
+        self.assertIn("import { fetchWithApiFallback } from './api.js';", content)
         self.assertIn(
             "import { resolveCurrentProjectPath } from './project-state.js';", content
         )
         self.assertIn(
             "const currentProjectPath = resolveCurrentProjectPath();", content
         )
+        self.assertIn("fetchWithApiFallback('/api/projects/sessions/register', {", content)
         self.assertIn("project_path: currentProjectPath,", content)
         self.assertIn("populateSessionPickers(currentProjectPath);", content)
 
@@ -1283,6 +1323,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         validation_results_content = SURVEY_VALIDATION_RESULTS_MODULE.read_text(
             encoding="utf-8"
+        )
+        validation_results_renderer_content = (
+            CONVERTER_VALIDATION_RESULTS_RENDERER_MODULE.read_text(
+                encoding="utf-8"
+            )
         )
         value_offset_utils_content = SURVEY_VALUE_OFFSET_UTILS_MODULE.read_text(
             encoding="utf-8"
@@ -1760,8 +1805,16 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             template_results_content,
         )
         self.assertIn(
-            "fetch(`/api/library-template/${encodeURIComponent(templateKey)}`);",
+            "fetchWithApiFallback(`/api/library-template/${encodeURIComponent(templateKey)}`);",
             template_results_content,
+        )
+        self.assertIn(
+            "import { fetchWithApiFallback } from '../../shared/api.js';",
+            participants_content,
+        )
+        self.assertIn(
+            "await fetchWithApiFallback('/api/projects/participants', {",
+            participants_content,
         )
 
         self.assertIn(
@@ -1922,24 +1975,32 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             validation_results_content,
         )
         self.assertIn(
-            "function displayValidationResults(validation, prefix = '')",
+            "import { displayConverterValidationResults } from './validation-results-renderer.js';",
             validation_results_content,
         )
         self.assertIn(
-            "function renderValidationGroupFiles(group)",
+            "displayConverterValidationResults(validation, prefix, escapeHtml);",
             validation_results_content,
         )
         self.assertIn(
-            "function extractValidationIssueKind(message)",
-            validation_results_content,
+            "export function displayConverterValidationResults(validation, prefix = '', escapeHtml)",
+            validation_results_renderer_content,
         )
         self.assertIn(
             "schema error:",
-            validation_results_content,
+            validation_results_renderer_content,
         )
         self.assertIn(
             "files share this same issue",
-            validation_results_content,
+            validation_results_renderer_content,
+        )
+        self.assertIn(
+            "function renderValidationGroupFiles(group, escapeHtml)",
+            validation_results_renderer_content,
+        )
+        self.assertIn(
+            "function extractValidationIssueKind(message)",
+            validation_results_renderer_content,
         )
 
         self.assertIn(

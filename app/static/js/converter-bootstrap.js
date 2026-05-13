@@ -4,6 +4,8 @@ import { initBiometrics } from './modules/converter/biometrics.js';
 import { initPhysio } from './modules/converter/physio.js';
 import { initEyetracking } from './modules/converter/eyetracking.js';
 import { initEnvironment } from './modules/converter/environment.js';
+import { appendConverterLogBatch, appendConverterLogLine } from './modules/converter/log-renderer.js';
+import { displayConverterValidationResults } from './modules/converter/validation-results-renderer.js';
 import { downloadBase64Zip } from './shared/download.js';
 import { escapeHtml } from './shared/dom.js';
 import { createSessionRegistrar } from './shared/session-register.js';
@@ -45,169 +47,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function appendLog(message, type = 'info', logElement = null) {
-        const colors = {
-            info: '#17a2b8',
-            success: '#28a745',
-            warning: '#ffc107',
-            error: '#dc3545',
-            step: '#6c757d'
-        };
-
-        const fallbackLog = document.getElementById('conversionLog');
-        const targetLog = logElement || fallbackLog;
-        if (!targetLog) return;
-
-        const timestamp = new Date().toLocaleTimeString();
-        const color = colors[type] || colors.info;
-        const rawMessage = String(message ?? '');
-        const commandMatch = rawMessage.match(/(\bcmd=)(.+)$/);
-        const line = document.createElement('span');
-        line.style.color = color;
-        if (!commandMatch || typeof commandMatch.index !== 'number') {
-            line.textContent = `[${timestamp}] ${rawMessage}`;
-        } else {
-            const prefix = rawMessage.slice(0, commandMatch.index) + commandMatch[1];
-            line.appendChild(document.createTextNode(`[${timestamp}] ${prefix}`));
-            const commandSpan = document.createElement('span');
-            commandSpan.className = 'backend-command-text';
-            commandSpan.textContent = commandMatch[2];
-            line.appendChild(commandSpan);
-        }
-        targetLog.appendChild(line);
-        targetLog.appendChild(document.createTextNode('\n'));
-        targetLog.scrollTop = targetLog.scrollHeight;
+        appendConverterLogLine(
+            message,
+            type,
+            logElement,
+            document.getElementById('conversionLog')
+        );
     }
 
     function appendLogBatch(entries, defaultType = 'info', logElement = null) {
-        if (!Array.isArray(entries) || entries.length === 0) {
-            return;
-        }
-
-        const colors = {
-            info: '#17a2b8',
-            success: '#28a745',
-            warning: '#ffc107',
-            error: '#dc3545',
-            step: '#6c757d'
-        };
-
-        const fallbackLog = document.getElementById('conversionLog');
-        const targetLog = logElement || fallbackLog;
-        if (!targetLog) return;
-
-        const fragment = document.createDocumentFragment();
-        entries.forEach((entry) => {
-            const message = entry && typeof entry === 'object' ? entry.message : entry;
-            const level = entry && typeof entry === 'object'
-                ? (entry.type || entry.level || defaultType)
-                : defaultType;
-            const timestamp = new Date().toLocaleTimeString();
-            const line = document.createElement('span');
-            line.style.color = colors[level] || colors.info;
-            const rawMessage = String(message ?? '');
-            const commandMatch = rawMessage.match(/(\bcmd=)(.+)$/);
-            if (!commandMatch || typeof commandMatch.index !== 'number') {
-                line.textContent = `[${timestamp}] ${rawMessage}`;
-            } else {
-                const prefix = rawMessage.slice(0, commandMatch.index) + commandMatch[1];
-                line.appendChild(document.createTextNode(`[${timestamp}] ${prefix}`));
-                const commandSpan = document.createElement('span');
-                commandSpan.className = 'backend-command-text';
-                commandSpan.textContent = commandMatch[2];
-                line.appendChild(commandSpan);
-            }
-            fragment.appendChild(line);
-            fragment.appendChild(document.createTextNode('\n'));
-        });
-
-        targetLog.appendChild(fragment);
-        targetLog.scrollTop = targetLog.scrollHeight;
+        appendConverterLogBatch(
+            entries,
+            defaultType,
+            logElement,
+            document.getElementById('conversionLog')
+        );
     }
 
     function displayValidationResults(validation, prefix = '') {
-        const toId = (id) => (prefix ? `${prefix}${id.charAt(0).toUpperCase()}${id.slice(1)}` : id);
-        const container = document.getElementById(toId('validationResultsContainer'));
-        const card = document.getElementById(toId('validationResultsCard'));
-        const header = document.getElementById(toId('validationResultsHeader'));
-        const badge = document.getElementById(toId('validationBadge'));
-        const summaryEl = document.getElementById(toId('validationSummary'));
-        const detailsEl = document.getElementById(toId('validationDetails'));
-
-        if (!container || !card || !header || !badge || !summaryEl || !detailsEl) {
-            return;
-        }
-
-        const errors = validation.errors || [];
-        const warnings = validation.warnings || [];
-        const isValid = errors.length === 0;
-
-        container.classList.remove('d-none');
-
-        card.classList.remove('border-success', 'border-warning', 'border-danger');
-        header.classList.remove('bg-success', 'bg-warning', 'bg-danger', 'text-white', 'text-dark');
-
-        if (isValid && warnings.length === 0) {
-            card.classList.add('border-success');
-            header.classList.add('bg-success', 'text-white');
-            badge.className = 'badge bg-light text-success';
-            badge.textContent = '✓ Valid';
-        } else if (isValid) {
-            card.classList.add('border-warning');
-            header.classList.add('bg-warning', 'text-dark');
-            badge.className = 'badge bg-light text-warning';
-            badge.textContent = `⚠ ${warnings.length} Warning(s)`;
-        } else {
-            card.classList.add('border-danger');
-            header.classList.add('bg-danger', 'text-white');
-            badge.className = 'badge bg-light text-danger';
-            badge.textContent = `✗ ${errors.length} Error(s)`;
-        }
-
-        const summary = validation.summary || {};
-        summaryEl.innerHTML = `
-            <div class="row text-center">
-                <div class="col-4">
-                    <div class="h4 mb-0 ${errors.length > 0 ? 'text-danger' : 'text-success'}">${errors.length}</div>
-                    <small class="text-muted">Errors</small>
-                </div>
-                <div class="col-4">
-                    <div class="h4 mb-0 ${warnings.length > 0 ? 'text-warning' : 'text-success'}">${warnings.length}</div>
-                    <small class="text-muted">Warnings</small>
-                </div>
-                <div class="col-4">
-                    <div class="h4 mb-0 text-info">${summary.total_files || summary.files_created || 'n/a'}</div>
-                    <small class="text-muted">Files</small>
-                </div>
-            </div>
-        `;
-
-        const formatted = validation.formatted;
-        if (formatted && (formatted.errors || formatted.warnings)) {
-            let detailsHtml = '';
-            if (Array.isArray(formatted.errors) && formatted.errors.length > 0) {
-                detailsHtml += '<h6 class="text-danger mt-3"><i class="fas fa-times-circle me-1"></i>Errors</h6>';
-                formatted.errors.forEach(group => {
-                    detailsHtml += `<div class="small mb-2"><strong>${escapeHtml(group.code || 'ERROR')}</strong>: ${escapeHtml(group.message || '')}</div>`;
-                });
-            }
-            if (Array.isArray(formatted.warnings) && formatted.warnings.length > 0) {
-                detailsHtml += '<h6 class="text-warning mt-3"><i class="fas fa-exclamation-triangle me-1"></i>Warnings</h6>';
-                formatted.warnings.forEach(group => {
-                    detailsHtml += `<div class="small mb-2"><strong>${escapeHtml(group.code || 'WARN')}</strong>: ${escapeHtml(group.message || '')}</div>`;
-                });
-            }
-            detailsEl.innerHTML = detailsHtml;
-        } else {
-            detailsEl.innerHTML = [
-                errors.length > 0
-                    ? `<h6 class="text-danger mt-3"><i class="fas fa-times-circle me-1"></i>Errors</h6><ul class="list-unstyled">${errors.map(e => `<li class="text-danger small"><i class="fas fa-times me-1"></i>${escapeHtml(e)}</li>`).join('')}</ul>`
-                    : '',
-                warnings.length > 0
-                    ? `<h6 class="text-warning mt-3"><i class="fas fa-exclamation-triangle me-1"></i>Warnings</h6><ul class="list-unstyled">${warnings.map(w => `<li class="text-warning small"><i class="fas fa-exclamation me-1"></i>${escapeHtml(w)}</li>`).join('')}</ul>`
-                    : ''
-            ].join('');
-        }
-
+        displayConverterValidationResults(validation, prefix, escapeHtml);
     }
 
     function getSessionValue(selectEl, customEl) {

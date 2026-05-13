@@ -279,7 +279,7 @@ export function createSurveyTemplateResultsController({
                     btn.disabled = true;
                     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
                     try {
-                        const resp = await fetch(`/api/library-template/${encodeURIComponent(templateKey)}`);
+                        const resp = await fetchWithApiFallback(`/api/library-template/${encodeURIComponent(templateKey)}`);
                         const result = await resp.json();
                         if (result.success && result.prism_json) {
                             // Swap the template in the data object
