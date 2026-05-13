@@ -1853,6 +1853,14 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn("getTemplateVersionSelections,", survey_content)
         self.assertIn(
+            "const fallbackSelections = [];",
+            survey_content,
+        )
+        self.assertIn(
+            "if (!(versionSet instanceof Set) || versionSet.size !== 1)",
+            survey_content,
+        )
+        self.assertIn(
             "getLastPreviewSurveyTasks: () => {",
             survey_content,
         )

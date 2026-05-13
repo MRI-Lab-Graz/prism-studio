@@ -965,7 +965,7 @@ export function initSurveyConvert(elements) {
     }
 
     function getTemplateVersionSelections() {
-        return Object.entries(selectedTemplateVersions)
+        const contextualSelections = Object.entries(selectedTemplateVersions)
             .map(([key, version]) => {
                 const [task, sessionToken, runToken] = String(key).split('::');
                 const cleanTask = String(task || '').trim().toLowerCase();
@@ -980,6 +980,52 @@ export function initSurveyConvert(elements) {
                 };
             })
             .filter(Boolean);
+
+        const selectionsByTask = new Map();
+        contextualSelections.forEach((entry) => {
+            const task = String(entry?.task || '').trim().toLowerCase();
+            const version = String(entry?.version || '').trim();
+            if (!task || !version) return;
+            if (!selectionsByTask.has(task)) {
+                selectionsByTask.set(task, new Set());
+            }
+            selectionsByTask.get(task).add(version);
+        });
+
+        const fallbackSelections = [];
+        selectionsByTask.forEach((versionSet, task) => {
+            if (!(versionSet instanceof Set) || versionSet.size !== 1) {
+                return;
+            }
+            const onlyVersion = Array.from(versionSet)[0];
+            if (!onlyVersion) {
+                return;
+            }
+            fallbackSelections.push({
+                task,
+                session: null,
+                run: null,
+                version: onlyVersion,
+            });
+        });
+
+        const merged = [...contextualSelections, ...fallbackSelections];
+        const deduped = [];
+        const seen = new Set();
+        merged.forEach((entry) => {
+            if (!entry) return;
+            const key = [
+                String(entry.task || '').trim().toLowerCase(),
+                entry.session ? String(entry.session).trim() : '',
+                entry.run ? String(entry.run).trim() : '',
+                String(entry.version || '').trim(),
+            ].join('::');
+            if (!key || seen.has(key)) return;
+            seen.add(key);
+            deduped.push(entry);
+        });
+
+        return deduped;
     }
 
     function hasMultiVersionWizardTasks() {
