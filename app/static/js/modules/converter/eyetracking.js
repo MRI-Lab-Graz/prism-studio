@@ -418,7 +418,7 @@ export function initEyetracking(elements) {
 
             let activePollController = null;
             try {
-                const response = await fetch('/api/batch-convert-start', {
+                const response = await fetchWithApiFallback('/api/batch-convert-start', {
                     method: 'POST',
                     body: formData
                 });
@@ -458,7 +458,7 @@ export function initEyetracking(elements) {
 
                 const statusData = await pollJobStatus({
                     fetchStatus: async (cursor) => {
-                        const statusResponse = await fetch(`/api/batch-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);
+                        const statusResponse = await fetchWithApiFallback(`/api/batch-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);
                         if (!statusResponse.ok) {
                             const statusErr = await statusResponse.json().catch(() => null);
                             throw new Error(statusErr && statusErr.error ? statusErr.error : 'Failed to retrieve conversion status');
