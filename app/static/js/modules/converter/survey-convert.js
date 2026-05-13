@@ -26,6 +26,7 @@ import {
 import { createSurveyUnmatchedTemplatesController } from './survey-unmatched-templates.js';
 import { createSurveyImportFormStateController } from './survey-import-form-state.js';
 import { createSurveyNearItemMatchReviewController } from './survey-near-item-match-review.js';
+import { getSessionInputValue } from './session-picker.js';
 import { createSurveyValidationResultsController } from './survey-validation-results.js';
 import { createSurveyValueOffsetEditorController } from './survey-value-offset-editor.js';
 import {
@@ -1780,9 +1781,7 @@ export function initSurveyConvert(elements) {
     }
 
     function getSessionValue(selectEl, customEl) {
-        const selVal = selectEl ? selectEl.value.trim() : '';
-        const custVal = customEl ? customEl.value.trim() : '';
-        return selVal || custVal;
+        return getSessionInputValue(selectEl, customEl);
     }
 
     function getSurveySessionValue() {

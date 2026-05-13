@@ -20,6 +20,12 @@ BIOMETRICS_MODULE = (
 SURVEY_CONVERT_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "survey-convert.js"
 )
+SESSION_PICKER_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "session-picker.js"
+)
+CONVERTER_TAB_ACTIVATION_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "tab-activation.js"
+)
 SURVEY_PARTICIPANTS_METADATA_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "survey-participants-metadata.js"
 )
@@ -324,11 +330,16 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
+            "import { createConverterSessionPickerController, getSessionInputValue } from './modules/converter/session-picker.js';",
+            content,
+        )
+        self.assertIn(
             "import { displayConverterValidationResults } from './modules/converter/validation-results-renderer.js';",
             content,
         )
         self.assertIn("installApiFetchFallback();", content)
         self.assertIn("window.__prismConverterBootstrapInitialized", content)
+        self.assertIn("const sessionPickerController = createConverterSessionPickerController({", content)
         self.assertIn(
             "function appendLogBatch(entries, defaultType = 'info', logElement = null) {",
             content,
@@ -336,13 +347,8 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("appendConverterLogBatch(", content)
         self.assertIn("appendConverterLogLine(", content)
         self.assertIn("displayConverterValidationResults(validation, prefix, escapeHtml);", content)
-        self.assertIn("let sessionPickerRequestToken = 0;", content)
-        self.assertIn("function hasManualCustomValue(selectEl) {", content)
-        self.assertIn("if (sessions.length === 1 && !hasManualCustomValue(sel)) {", content)
-        self.assertIn(
-            "const requestUrl = `/api/projects/sessions/declared?project_path=${encodeURIComponent(projectPath)}`;",
-            content,
-        )
+        self.assertIn("return getSessionInputValue(selectEl, customEl);", content)
+        self.assertIn("sessionPickerController.populateSessionPickers(projectPath);", content)
         self.assertIn(
             "window.addEventListener('prism-project-changed', function() {", content
         )
@@ -350,16 +356,20 @@ class TestConverterWorkflowWiring(unittest.TestCase):
 
     def test_converter_bootstrap_supports_tab_query_parameter(self):
         content = CONVERTER_BOOTSTRAP.read_text(encoding="utf-8")
+        tab_activation_content = CONVERTER_TAB_ACTIVATION_MODULE.read_text(
+            encoding="utf-8"
+        )
 
-        self.assertIn("function activateConverterTabFromQuery() {", content)
         self.assertIn(
-            "const requestedTab = new URLSearchParams(window.location.search).get('tab');",
+            "import { activateConverterTabFromQuery } from './modules/converter/tab-activation.js';",
             content,
         )
         self.assertIn(
-            "window.bootstrap.Tab.getOrCreateInstance(tabButton).show();",
-            content,
+            "export function activateConverterTabFromQuery(search = window.location.search)",
+            tab_activation_content,
         )
+        self.assertIn("return activateConverterTab(requestedTab);", tab_activation_content)
+        self.assertIn("window.bootstrap.Tab.getOrCreateInstance(tabButton).show();", tab_activation_content)
         self.assertIn("activateConverterTabFromQuery();", content)
 
     def test_shared_api_exports_fetch_installer_using_native_fetch(self):
@@ -894,6 +904,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
 
     def test_survey_converter_refreshes_project_bound_helpers(self):
         content = SURVEY_CONVERT_MODULE.read_text(encoding="utf-8")
+        session_picker_content = SESSION_PICKER_MODULE.read_text(encoding="utf-8")
         workflow_prepare_content = SURVEY_WORKFLOW_PREPARE_MODULE.read_text(
             encoding="utf-8"
         )
@@ -928,6 +939,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
+            "import { getSessionInputValue } from './session-picker.js';",
+            content,
+        )
+        self.assertIn("return getSessionInputValue(selectEl, customEl);", content)
+        self.assertIn(
             "import { createSurveyTemplateGenerationController } from './survey-template-generation.js';",
             content,
         )
@@ -946,6 +962,26 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn(
             "import { fetchWithApiFallback } from '../../shared/api.js';",
             template_generation_content,
+        )
+        self.assertIn(
+            "export function createConverterSessionPickerController({",
+            session_picker_content,
+        )
+        self.assertIn(
+            "export function getSessionInputValue(selectEl, customEl)",
+            session_picker_content,
+        )
+        self.assertIn(
+            "const requestUrl = `/api/projects/sessions/declared?project_path=${encodeURIComponent(projectPath)}`;",
+            session_picker_content,
+        )
+        self.assertIn(
+            "if (sessions.length === 1 && !hasManualCustomValue(selectEl)) {",
+            session_picker_content,
+        )
+        self.assertIn(
+            "fetchWithApiFallback(requestUrl)",
+            session_picker_content,
         )
         self.assertIn("fetchWithApiFallback('/api/survey-generate-templates', {", template_generation_content)
         self.assertIn("showTemplateResultsContainer();", template_generation_content)
@@ -1860,6 +1896,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             convert_feedback_content,
         )
         self.assertIn(
+            "import { activateConverterTab } from './tab-activation.js';",
+            convert_feedback_content,
+        )
+        self.assertIn(
             "function getProjectSaveSummary(data)",
             convert_feedback_content,
         )
@@ -1869,6 +1909,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "function showParticipantRegistryWarning(messagePrefix, warning)",
+            convert_feedback_content,
+        )
+        self.assertIn(
+            "return activateConverterTab(target, { focus: true });",
             convert_feedback_content,
         )
         self.assertIn(
