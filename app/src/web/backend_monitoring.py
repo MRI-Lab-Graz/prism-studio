@@ -6,15 +6,24 @@ import json
 import os
 import shlex
 import sys
+import time
 from pathlib import Path
+from pathlib import PureWindowsPath
 
 from flask import session
 
 from src.config import load_app_settings
+from src.cross_platform import normalize_path
 
 _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 _ANSI_GREEN = "\033[32m"
 _ANSI_RESET = "\033[0m"
+_DUPLICATE_SUPPRESS_SECONDS = 1.5
+_DUPLICATE_SUPPRESS_ENDPOINTS = {
+    "projects.set_current",
+    "projects_export.export_project_structure",
+}
+_RECENT_ACTIONS: dict[str, float] = {}
 _SUPPRESSED_ENDPOINTS = {
     # Frequent UI probe used for recent-project availability checks.
     "projects.project_path_status",
@@ -54,11 +63,13 @@ _ENDPOINT_LABELS = {
     "tools.api_file_management_wide_to_long_preview": "wide-to-long preview",
     "tools.api_file_management_wide_to_long": "wide-to-long convert",
     "projects.project_path_status": "check project path availability",
+    "projects.set_current": "set current project",
     "projects.create_project": "create project",
     "projects.init_on_bids": "init PRISM on existing BIDS dataset",
     "projects.open_project": "open project",
     "projects.validate_project": "validate project",
     "projects.fix_project": "apply project fixes",
+    "projects_export.export_project_structure": "export project structure",
     "projects_library.set_backend_monitoring_setting": "update backend monitoring setting",
     "projects_library.set_global_library_settings": "save global library settings",
     "conversion_participants.save_participant_mapping": "save participant mapping",
@@ -114,11 +125,34 @@ def _compact_path(path_value: str | None) -> str:
         return ""
 
     backslash = chr(92)
-    normalized = path_text.replace(backslash, "/")
+    normalized_text = normalize_path(path_text)
+    normalized = str(normalized_text or path_text).replace(backslash, "/")
     parts = [part for part in normalized.split("/") if part]
     if len(parts) <= 3:
         return normalized
     return f".../{'/'.join(parts[-3:])}"
+
+
+def _absolute_path_value(path_value: str | None) -> str:
+    """Return an absolute path string for log previews when possible."""
+    path_text = str(path_value or "").strip()
+    if not path_text:
+        return ""
+
+    if path_text.startswith("<") and path_text.endswith(">"):
+        return path_text
+
+    if "://" in path_text:
+        return path_text
+
+    # Preserve Windows absolute path semantics even when running on POSIX.
+    if len(path_text) >= 3 and path_text[1] == ":" and path_text[2] in {"/", "\\"}:
+        return str(PureWindowsPath(path_text))
+
+    try:
+        return str(Path(path_text).expanduser().resolve(strict=False))
+    except Exception:
+        return path_text
 
 
 def _summarize_payload(req) -> str:
@@ -136,7 +170,7 @@ def _summarize_payload(req) -> str:
     for key in ("path", "project_path", "dataset_path", "existing_path"):
         value = payload.get(key)
         if isinstance(value, str) and value.strip():
-            details.append(f"{key}={_compact_path(value)}")
+            details.append(f"{key}={_absolute_path_value(value)}")
 
     for key in ("name", "project_name", "modality", "survey", "format", "layout"):
         value = payload.get(key)
@@ -145,6 +179,11 @@ def _summarize_payload(req) -> str:
 
     if "backend_monitoring" in payload:
         details.append(f"backend_monitoring={bool(payload.get('backend_monitoring'))}")
+    if "backend_monitoring_verbose" in payload:
+        details.append(
+            "backend_monitoring_verbose="
+            f"{bool(payload.get('backend_monitoring_verbose'))}"
+        )
 
     # Add a concise key count if no common fields are present.
     if not details and payload:
@@ -284,6 +323,70 @@ def _build_validate_folder_terminal_command(req) -> str:
         cmd_parts.extend(["--library", library_path])
 
     return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
+def _build_projects_set_current_terminal_command(req) -> str:
+    """Build command preview for setting current project endpoint."""
+    payload = req.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+
+    project_path = _absolute_path_value(payload.get("path"))
+    endpoint_url = _get_request_url(req, "/api/projects/current")
+
+    if not project_path:
+        return " ".join(
+            shlex.quote(part)
+            for part in [
+                "curl",
+                "-X",
+                "POST",
+                endpoint_url,
+                "-H",
+                "Content-Type: application/json",
+                "-d",
+                json.dumps({"path": ""}),
+            ]
+        )
+
+    return " ".join(
+        shlex.quote(part)
+        for part in [
+            "curl",
+            "-X",
+            "POST",
+            endpoint_url,
+            "-H",
+            "Content-Type: application/json",
+            "-d",
+            json.dumps({"path": project_path}),
+        ]
+    )
+
+
+def _build_projects_export_structure_terminal_command(req) -> str:
+    """Build command preview for project export structure endpoint."""
+    payload = req.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+
+    project_path = _absolute_path_value(payload.get("project_path"))
+    endpoint_url = _get_request_url(req, "/api/projects/export/structure")
+    body = {"project_path": project_path or "<project-path>"}
+
+    return " ".join(
+        shlex.quote(part)
+        for part in [
+            "curl",
+            "-X",
+            "POST",
+            endpoint_url,
+            "-H",
+            "Content-Type: application/json",
+            "-d",
+            json.dumps(body),
+        ]
+    )
 
 
 def _build_survey_convert_terminal_command(req, *, dry_run: bool = False) -> str:
@@ -1243,18 +1346,107 @@ def _build_terminal_command(req) -> str:
         return _build_participants_merge_terminal_command(req, conflicts_csv=True)
     if endpoint == "conversion_participants.save_participant_mapping":
         return _build_save_participant_mapping_terminal_command(req)
+    if endpoint == "projects.set_current":
+        return _build_projects_set_current_terminal_command(req)
+    if endpoint == "projects_export.export_project_structure":
+        return _build_projects_export_structure_terminal_command(req)
     return ""
+
+
+def _build_generic_request_terminal_command(req) -> str:
+    """Build a generic curl command preview for endpoints without explicit mapping."""
+    method = str(getattr(req, "method", "GET") or "GET").upper()
+    endpoint_url = _get_request_url(req, req.path or "/")
+    cmd_parts: list[str] = ["curl", "-X", method, endpoint_url]
+
+    payload = req.get_json(silent=True)
+    if isinstance(payload, dict) and payload:
+        cmd_parts.extend(["-H", "Content-Type: application/json", "-d", json.dumps(payload)])
+        return " ".join(shlex.quote(part) for part in cmd_parts)
+
+    if getattr(req, "form", None):
+        for key in sorted(req.form.keys()):
+            values = req.form.getlist(key) or [req.form.get(key)]
+            for value in values:
+                _append_curl_form_field(cmd_parts, key, value)
+
+    if getattr(req, "files", None):
+        for key in sorted(req.files.keys()):
+            uploads = req.files.getlist(key)
+            for upload in uploads:
+                filename = str(getattr(upload, "filename", "") or "").strip()
+                _append_curl_form_file(cmd_parts, key, filename)
+
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
+def _get_backend_monitoring_state(app_root: str) -> tuple[bool, bool]:
+    """Return (enabled, verbose_enabled) backend monitoring state."""
+    settings = load_app_settings(app_root=app_root)
+    enabled = bool(settings.backend_monitoring)
+    verbose_enabled = bool(getattr(settings, "backend_monitoring_verbose", False))
+    return enabled, verbose_enabled
+
+
+def _should_suppress_duplicate_action(
+    *, dedupe_key: str, endpoint: str, verbose_enabled: bool
+) -> bool:
+    """Suppress immediate duplicate startup logs in non-verbose mode."""
+    if verbose_enabled or endpoint not in _DUPLICATE_SUPPRESS_ENDPOINTS:
+        return False
+
+    now = time.monotonic()
+    previous = _RECENT_ACTIONS.get(dedupe_key)
+    _RECENT_ACTIONS[dedupe_key] = now
+
+    if len(_RECENT_ACTIONS) > 128:
+        stale_keys = [
+            cached_key
+            for cached_key, timestamp in _RECENT_ACTIONS.items()
+            if now - timestamp > (_DUPLICATE_SUPPRESS_SECONDS * 4)
+        ]
+        for stale_key in stale_keys:
+            _RECENT_ACTIONS.pop(stale_key, None)
+
+    return previous is not None and (now - previous) <= _DUPLICATE_SUPPRESS_SECONDS
+
+
+def _build_duplicate_suppression_key(req, endpoint: str, action: str) -> str:
+    """Build endpoint-aware duplicate key to suppress startup spam safely."""
+    payload = req.get_json(silent=True)
+    if not isinstance(payload, dict):
+        payload = {}
+
+    if endpoint == "projects.set_current":
+        return f"{endpoint}:{_absolute_path_value(payload.get('path'))}"
+
+    if endpoint == "projects_export.export_project_structure":
+        return f"{endpoint}:{_absolute_path_value(payload.get('project_path'))}"
+
+    return f"{endpoint}:{action}"
 
 
 def is_backend_monitoring_enabled(app_root: str) -> bool:
     """Return whether backend monitoring is enabled in app settings."""
-    settings = load_app_settings(app_root=app_root)
-    return bool(settings.backend_monitoring)
+    enabled, _verbose_enabled = _get_backend_monitoring_state(app_root)
+    return enabled
 
 
-def emit_backend_action(message: str, app_root: str) -> None:
+def is_backend_monitoring_verbose_enabled(app_root: str) -> bool:
+    """Return whether verbose backend monitoring is enabled."""
+    _enabled, verbose_enabled = _get_backend_monitoring_state(app_root)
+    return verbose_enabled
+
+
+def emit_backend_action(
+    message: str,
+    app_root: str,
+    *,
+    prefix: str = "ANALYSIS_OUTPUT",
+    force_emit: bool = False,
+) -> None:
     """Print a backend action line to terminal when monitoring is enabled."""
-    if not is_backend_monitoring_enabled(app_root):
+    if not force_emit and not is_backend_monitoring_enabled(app_root):
         return
 
     text = str(message or "").strip()
@@ -1268,34 +1460,51 @@ def emit_backend_action(message: str, app_root: str) -> None:
         text = f"{head}{_ANSI_GREEN}{command_segment}{_ANSI_RESET}"
 
     if not text.startswith("["):
-        text = f"[ANALYSIS_OUTPUT] {text}"
+        text = f"[{prefix}] {text}"
 
     print(f"\n{text}\n")
 
 
 def emit_backend_request_action(req, app_root: str) -> None:
     """Print backend action line for mutating HTTP requests when enabled."""
+    monitoring_enabled, verbose_enabled = _get_backend_monitoring_state(app_root)
+    if not monitoring_enabled:
+        return
+
     method = (req.method or "").upper()
-    if method not in _MUTATING_METHODS:
+    if method not in _MUTATING_METHODS and not verbose_enabled:
         return
 
     path = req.path or "/"
     endpoint = _resolve_request_endpoint(req)
-    if endpoint in _SUPPRESSED_ENDPOINTS:
+    if endpoint in _SUPPRESSED_ENDPOINTS and not verbose_enabled:
         return
 
     label = _ENDPOINT_LABELS.get(endpoint, endpoint.replace("_", " "))
     payload_summary = _summarize_payload(req)
+    prefix = "ANALYSIS_OUTPUT"
+    if endpoint.startswith(("projects.", "projects_export.", "projects_library.")):
+        prefix = "PROJECT"
 
     action = f"{method} {path} -> {label} (endpoint={endpoint})"
     if payload_summary:
         action = f"{action} | {payload_summary}"
 
     terminal_command = _build_terminal_command(req)
+    if not terminal_command and verbose_enabled:
+        terminal_command = _build_generic_request_terminal_command(req)
     if terminal_command:
         action = f"{action} | cmd={terminal_command}"
 
-    emit_backend_action(action, app_root=app_root)
+    dedupe_key = _build_duplicate_suppression_key(req, endpoint, action)
+    if _should_suppress_duplicate_action(
+        dedupe_key=dedupe_key,
+        endpoint=endpoint,
+        verbose_enabled=verbose_enabled,
+    ):
+        return
+
+    emit_backend_action(action, app_root=app_root, prefix=prefix, force_emit=True)
 
 
 def get_app_root_from_current_app(current_app_obj) -> str:

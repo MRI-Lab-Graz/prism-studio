@@ -42,6 +42,24 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
         self.assertIn("fetchWithApiFallback('/api/projects/current', {", content)
 
+    def test_backend_monitoring_verbose_toggle_is_wired(self):
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        settings_template = (
+            REPO_ROOT
+            / "app"
+            / "templates"
+            / "includes"
+            / "projects"
+            / "settings_section.html"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("backendMonitoringVerboseToggle", settings_template)
+        self.assertIn(
+            "const verboseToggle = document.getElementById('backendMonitoringVerboseToggle');",
+            core_content,
+        )
+        self.assertIn("backend_monitoring_verbose", core_content)
+
     def test_unsaved_new_project_detector_ignores_default_form_values(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
@@ -270,7 +288,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("<strong>Not validated yet.</strong>", content)
-        self.assertIn('<div class="validation-result pending">', content)
+        self.assertIn('class="validation-result pending', content)
         self.assertIn('data-action="validate-project"', content)
         self.assertIn(
             "const validateProjectBtn = event.target.closest('[data-action=\"validate-project\"]');",
@@ -364,6 +382,23 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "_withProjectPathQuery('/api/projects/description', requestProjectPath)",
             content,
         )
+
+    def test_metadata_orcid_lookup_uses_backend_search_and_multi_hit_selection(self):
+        content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("/api/projects/orcid/search?", content)
+        self.assertIn("Multiple ORCID matches found", content)
+        self.assertIn("window.bootstrap.Modal", content)
+        self.assertIn("Use selected ORCID", content)
+        self.assertIn("candidate.affiliation", content)
+        self.assertIn(">Affiliation</th>", content)
+        self.assertIn(">Public data</th>", content)
+        self.assertIn("candidate.public_data_status", content)
+        self.assertIn("Current ORCID in field", content)
+        self.assertIn("No public affiliation data", content)
+        self.assertIn("params.set('limit', '10')", content)
+        self.assertIn("params.set('current_orcid', currentOrcid)", content)
+        self.assertIn("_lookupOrcidForAuthorRow", content)
 
     def test_metadata_sync_warning_exposes_repair_actions(self):
         content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")

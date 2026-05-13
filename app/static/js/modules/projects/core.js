@@ -876,24 +876,35 @@ export async function loadGlobalSettings() {
 
 async function loadBackendMonitoringSetting() {
     const toggle = document.getElementById('backendMonitoringToggle');
+    const verboseToggle = document.getElementById('backendMonitoringVerboseToggle');
     if (!toggle) return;
 
     try {
         const response = await fetch('/api/settings/backend-monitoring');
         const data = await response.json();
         if (data && data.success) {
-            toggle.checked = Boolean(data.backend_monitoring);
+            const enabled = Boolean(data.backend_monitoring);
+            const verboseEnabled = Boolean(data.backend_monitoring_verbose);
+
+            toggle.checked = enabled;
+            if (verboseToggle) {
+                verboseToggle.checked = verboseEnabled;
+                verboseToggle.disabled = !enabled;
+                if (!enabled) {
+                    verboseToggle.checked = false;
+                }
+            }
         }
     } catch (error) {
         console.error('Error loading backend monitoring setting:', error);
     }
 }
 
-async function saveBackendMonitoringSetting(enabled) {
+async function saveBackendMonitoringSetting(payload) {
     const response = await fetch('/api/settings/backend-monitoring', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ backend_monitoring: Boolean(enabled) })
+        body: JSON.stringify(payload)
     });
 
     const data = await response.json();
@@ -901,7 +912,10 @@ async function saveBackendMonitoringSetting(enabled) {
         throw new Error(data?.error || 'Failed to save backend monitoring setting');
     }
 
-    return Boolean(data.backend_monitoring);
+    return {
+        backendMonitoring: Boolean(data.backend_monitoring),
+        backendMonitoringVerbose: Boolean(data.backend_monitoring_verbose),
+    };
 }
 
 async function loadDedicatedTerminalSetting() {
@@ -978,6 +992,7 @@ async function saveDedicatedTerminalSetting(enabled) {
 
 function initBackendMonitoringToggle() {
     const toggle = document.getElementById('backendMonitoringToggle');
+    const verboseToggle = document.getElementById('backendMonitoringVerboseToggle');
     if (!toggle) return;
 
     loadBackendMonitoringSetting();
@@ -985,18 +1000,70 @@ function initBackendMonitoringToggle() {
     toggle.addEventListener('change', async () => {
         const desired = Boolean(toggle.checked);
         toggle.disabled = true;
+        if (verboseToggle) {
+            verboseToggle.disabled = true;
+        }
 
         try {
-            const persisted = await saveBackendMonitoringSetting(desired);
-            toggle.checked = persisted;
+            const persisted = await saveBackendMonitoringSetting({
+                backend_monitoring: desired,
+                backend_monitoring_verbose: desired
+                    ? Boolean(verboseToggle?.checked)
+                    : false,
+            });
+            toggle.checked = persisted.backendMonitoring;
+            if (verboseToggle) {
+                verboseToggle.checked = persisted.backendMonitoringVerbose;
+                verboseToggle.disabled = !persisted.backendMonitoring;
+                if (!persisted.backendMonitoring) {
+                    verboseToggle.checked = false;
+                }
+            }
         } catch (error) {
             console.error('Error saving backend monitoring setting:', error);
             toggle.checked = !desired;
             alert('Could not update backend monitoring setting.');
+            if (verboseToggle) {
+                verboseToggle.disabled = !toggle.checked;
+            }
         } finally {
             toggle.disabled = false;
+            if (verboseToggle) {
+                verboseToggle.disabled = !toggle.checked;
+            }
         }
     });
+
+    if (verboseToggle) {
+        verboseToggle.addEventListener('change', async () => {
+            const desiredVerbose = Boolean(verboseToggle.checked);
+            const baseEnabled = Boolean(toggle.checked);
+
+            if (!baseEnabled) {
+                verboseToggle.checked = false;
+                return;
+            }
+
+            toggle.disabled = true;
+            verboseToggle.disabled = true;
+            try {
+                const persisted = await saveBackendMonitoringSetting({
+                    backend_monitoring_verbose: desiredVerbose,
+                });
+                toggle.checked = persisted.backendMonitoring;
+                verboseToggle.checked = persisted.backendMonitoringVerbose;
+                verboseToggle.disabled = !persisted.backendMonitoring;
+            } catch (error) {
+                console.error('Error saving backend monitoring verbose setting:', error);
+                verboseToggle.checked = !desiredVerbose;
+                alert('Could not update backend monitoring verbose setting.');
+                verboseToggle.disabled = !toggle.checked;
+            } finally {
+                toggle.disabled = false;
+                verboseToggle.disabled = !toggle.checked;
+            }
+        });
+    }
 }
 
 function initDedicatedTerminalToggle() {
@@ -2155,7 +2222,7 @@ function renderProjectQuickSummary(summary) {
     const modalityText = shownModalityLabels.map(label => escapeHtml(label)).join(', ');
 
     return `
-        <div class="stats-grid mt-3">
+        <div class="stats-grid mt-2">
             <div class="stat-item">
                 <div class="stat-value">${subjects}</div>
                 <div class="stat-label">Subjects</div>
@@ -2178,7 +2245,7 @@ function renderProjectQuickSummary(summary) {
             </div>
         </div>
         ${modalityText ? `
-            <div class="small text-muted mt-3"><strong>Modalities:</strong> ${modalityText}${hiddenModalityCount > 0 ? ` (+${hiddenModalityCount} more)` : ''}</div>
+            <div class="small text-muted mt-2"><strong>Modalities:</strong> ${modalityText}${hiddenModalityCount > 0 ? ` (+${hiddenModalityCount} more)` : ''}</div>
         ` : ''}
         ${sessionText ? `
             <div class="small text-muted mt-1"><strong>Sessions:</strong> ${sessionText}${hiddenSessionCount > 0 ? ` (+${hiddenSessionCount} more)` : ''}</div>
@@ -2189,11 +2256,11 @@ function renderProjectQuickSummary(summary) {
 function renderLoadedProjectState(loadedName, loadedPath, summary) {
     const quickSummaryHtml = renderProjectQuickSummary(summary);
     setProjectValidationResult(`
-        <div class="validation-result pending">
+        <div class="validation-result pending project-loaded-state">
             <h5><i class="fas fa-folder-open me-2"></i>Project Loaded</h5>
             <p class="mb-1"><strong>${escapeHtml(loadedName || 'Current project')}:</strong> <code>${escapeHtml(loadedPath)}</code></p>
             ${quickSummaryHtml}
-            <div class="alert alert-info mt-3 mb-0" role="status">
+            <div class="alert alert-info mt-2 mb-0" role="status">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
                     <div>
                         <strong>Not validated yet.</strong>
@@ -2204,7 +2271,7 @@ function renderLoadedProjectState(loadedName, loadedPath, summary) {
                     </button>
                 </div>
             </div>
-            <div class="d-flex flex-column align-items-end mt-3">
+            <div class="d-flex flex-column align-items-end mt-2">
                 <div class="d-flex gap-2 flex-wrap justify-content-end">
                     <button type="button" class="btn btn-outline-warning" id="projectBoxPreliminarySaveBtn">
                         <i class="fas fa-save me-2"></i>Save Preliminary Project State
