@@ -34,6 +34,11 @@ from .conversion_utils import (
     resolve_existing_project_root,
     resolve_validation_library_path,
 )
+from .conversion_request_helpers import (
+    format_workflow_preparation_stale_response as _format_workflow_preparation_stale_response,
+    resolve_requested_project_root as _shared_resolve_requested_project_root,
+    resolve_uploaded_or_source_file as _resolve_uploaded_or_source_file,
+)
 
 _resolve_effective_template_version_overrides: (
     Callable[..., object] | None
@@ -65,37 +70,6 @@ def _get_effective_template_version_overrides(
 _SUPPORTED_SURVEY_TABULAR_SUFFIXES = SUPPORTED_SURVEY_TABULAR_SUFFIXES
 _SUPPORTED_SURVEY_INPUT_SUFFIXES = SUPPORTED_SURVEY_INPUT_SUFFIXES
 _SUPPORTED_SURVEY_INPUT_MESSAGE = SUPPORTED_SURVEY_INPUT_MESSAGE
-
-
-class _LocalPathUpload:
-    """Minimal upload-like wrapper backed by a local filesystem path."""
-
-    def __init__(self, source_path: Path):
-        self._source_path = source_path
-        self.filename = source_path.name
-
-    def save(self, destination: str):
-        shutil.copy2(self._source_path, destination)
-
-
-def _resolve_uploaded_or_source_file(*, field_names: tuple[str, ...]):
-    for field_name in field_names:
-        upload = request.files.get(field_name)
-        if upload is not None and upload.filename:
-            return upload, None
-
-    source_file_path = (
-        (request.form.get("source_file_path") or "").strip()
-        or (request.args.get("source_file_path") or "").strip()
-    )
-    if not source_file_path:
-        return None, "Missing input file"
-
-    source_path = Path(source_file_path).expanduser().resolve()
-    if not source_path.exists() or not source_path.is_file():
-        return None, f"File not found: {source_file_path}"
-
-    return _LocalPathUpload(source_path), None
 
 
 def _collect_project_template_issues(
@@ -225,53 +199,14 @@ def _build_survey_task_summaries(
     return summaries
 
 
-def _is_prepared_workflow_request() -> bool:
-    return SurveyWorkflowStageService.parse_prepared_workflow_flag(
-        request.form.get("prepared_workflow")
-    )
-
-
-def _format_workflow_preparation_stale_response(
-    payload: dict[str, object],
-    *,
-    log_messages: list[dict[str, str]] | None = None,
-) -> dict[str, object]:
-    return SurveyWorkflowStageService.format_workflow_preparation_stale_response(
-        payload=payload,
-        prepared_workflow=_is_prepared_workflow_request(),
-        log_messages=log_messages,
-    )
-
-
 def _resolve_requested_project_root(*, require_project: bool) -> Path | None:
-    requested_project_path = (
-        (request.form.get("project_path") or request.args.get("project_path") or "")
-        .strip()
-        or None
+    return _shared_resolve_requested_project_root(
+        require_project=require_project,
+        missing_message="No project selected. Load a project before previewing survey data.",
+        missing_path_message=(
+            "The selected project path no longer exists. Reopen the project and retry survey preview."
+        ),
     )
-    missing_message = (
-        "No project selected. Load a project before previewing survey data."
-    )
-    missing_path_message = (
-        "The selected project path no longer exists. Reopen the project and retry survey preview."
-    )
-
-    if requested_project_path:
-        return require_existing_project_root(
-            requested_project_path,
-            missing_message=missing_message,
-            missing_path_message=missing_path_message,
-        )
-
-    session_project_path = session.get("current_project_path")
-    if require_project:
-        return require_existing_project_root(
-            session_project_path,
-            missing_message=missing_message,
-            missing_path_message=missing_path_message,
-        )
-
-    return resolve_existing_project_root(session_project_path)
 
 
 def handle_api_survey_languages(participant_json_candidates):

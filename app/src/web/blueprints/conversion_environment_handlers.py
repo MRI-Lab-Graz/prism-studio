@@ -43,6 +43,9 @@ from werkzeug.utils import secure_filename
 from src.system_files import filter_system_files  # noqa: F401 – available if needed
 from src.bids_integration import check_and_update_bidsignore
 from .conversion_job_store import ConversionJobStore
+from .conversion_request_helpers import (
+    resolve_uploaded_or_source_file as _shared_resolve_uploaded_or_source_file,
+)
 from .conversion_utils import (
     read_tabular_dataframe_robust,
     expected_delimiter_for_suffix,
@@ -63,35 +66,11 @@ class EnvironmentConversionCancelledError(Exception):
     """Raised when an environment conversion is cancelled by the user."""
 
 
-class _LocalPathUpload:
-    """Minimal upload-like wrapper backed by a local filesystem path."""
-
-    def __init__(self, source_path: Path):
-        self._source_path = source_path
-        self.filename = source_path.name
-
-    def save(self, destination: str):
-        shutil.copy2(self._source_path, destination)
-
-
 def _resolve_uploaded_or_source_file(*, field_names: tuple[str, ...]):
-    for field_name in field_names:
-        upload = request.files.get(field_name)
-        if upload is not None and upload.filename:
-            return upload, None
-
-    source_file_path = (
-        (request.form.get("source_file_path") or "").strip()
-        or (request.args.get("source_file_path") or "").strip()
+    return _shared_resolve_uploaded_or_source_file(
+        field_names=field_names,
+        missing_input_message="No file provided",
     )
-    if not source_file_path:
-        return None, "No file provided"
-
-    source_path = Path(source_file_path).expanduser().resolve()
-    if not source_path.exists() or not source_path.is_file():
-        return None, f"File not found: {source_file_path}"
-
-    return _LocalPathUpload(source_path), None
 
 
 ALLOWED_SUFFIXES = {".xlsx", ".csv", ".tsv", ".sav", ".rds", ".rdata", ".rda"}
