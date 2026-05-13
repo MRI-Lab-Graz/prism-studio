@@ -408,6 +408,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
+            "import { fetchWithApiFallback } from '../../shared/api.js';",
+            content,
+        )
+        self.assertIn(
             "import { createJobRunController } from './job-run-controller.js';",
             content,
         )
@@ -460,12 +464,14 @@ class TestConverterWorkflowWiring(unittest.TestCase):
 
         self.assertIn("if (!runController.tryStartRun()) {", preview_block)
         self.assertIn("setBiometricsActionButtonsDisabled(true);", preview_block)
+        self.assertIn("fetchWithApiFallback('/api/biometrics-convert', {", preview_block)
         self.assertIn(".finally(() => {", preview_block)
         self.assertIn("runController.finishRun();", preview_block)
         self.assertIn("setBiometricsActionButtonsDisabled(false);", preview_block)
 
         self.assertIn("if (!runController.tryStartRun()) {", detect_block)
         self.assertIn("setBiometricsActionButtonsDisabled(true);", detect_block)
+        self.assertIn("fetchWithApiFallback('/api/biometrics-detect', {", detect_block)
         self.assertIn(".finally(() => {", detect_block)
         self.assertIn("runController.finishRun();", detect_block)
         self.assertIn("setBiometricsActionButtonsDisabled(false);", detect_block)
@@ -474,6 +480,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("setBiometricsActionButtonsDisabled(true);", confirm_block)
         self.assertIn("if (!currentProjectPath) {", confirm_block)
         self.assertIn("runController.finishRun();", confirm_block)
+        self.assertIn("fetchWithApiFallback('/api/biometrics-convert', {", confirm_block)
         self.assertIn(".finally(() => {", confirm_block)
         self.assertIn("setBiometricsActionButtonsDisabled(false);", confirm_block)
 
@@ -526,7 +533,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             physio_content,
         )
         self.assertIn(
-            "fetch(`/api/check-sourcedata-physio?project_path=${encodeURIComponent(currentProjectPath)}`)",
+            "fetchWithApiFallback(`/api/check-sourcedata-physio?project_path=${encodeURIComponent(currentProjectPath)}`)",
             physio_content,
         )
         self.assertIn(
@@ -625,7 +632,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             handler_block,
         )
         self.assertIn(
-            "const statusResponse = await fetch(`/api/environment-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);",
+            "const statusResponse = await fetchWithApiFallback(`/api/environment-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);",
             handler_block,
         )
 
@@ -651,7 +658,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             handler_block,
         )
         self.assertIn(
-            "const statusResponse = await fetch(`/api/batch-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);",
+            "const statusResponse = await fetchWithApiFallback(`/api/batch-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);",
             handler_block,
         )
 
@@ -681,7 +688,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             handler_block,
         )
         self.assertIn(
-            "const statusResponse = await fetch(`/api/batch-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);",
+            "const statusResponse = await fetchWithApiFallback(`/api/batch-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);",
             handler_block,
         )
 
@@ -691,6 +698,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
 
         self.assertIn(
             "import { resolveCurrentProjectPath } from '../../shared/project-state.js';",
+            environment_content,
+        )
+        self.assertIn(
+            "import { fetchWithApiFallback } from '../../shared/api.js';",
             environment_content,
         )
         self.assertIn(
@@ -726,6 +737,18 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             environment_content,
         )
         self.assertIn("refreshEnvironmentSourcedataQuickSelect();", environment_content)
+        self.assertIn(
+            "fetchWithApiFallback(`/api/environment-location-search?q=${encodeURIComponent(query)}`)",
+            environment_content,
+        )
+        self.assertIn(
+            "fetchWithApiFallback('/api/environment-preview', { method: 'POST', body: fd })",
+            environment_content,
+        )
+        self.assertIn(
+            "fetchWithApiFallback('/api/environment-convert-start', { method: 'POST', body: fd })",
+            environment_content,
+        )
 
         self.assertIn(
             "import { resolveCurrentProjectPath } from '../../shared/project-state.js';",

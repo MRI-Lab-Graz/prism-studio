@@ -475,7 +475,7 @@ export function initBiometrics(elements) {
 
             setBiometricsActionButtonsDisabled(true);
 
-            fetch('/api/biometrics-convert', {
+            fetchWithApiFallback('/api/biometrics-convert', {
                 method: 'POST',
                 body: formData,
             })
@@ -555,7 +555,7 @@ export function initBiometrics(elements) {
             biometricsInfo.textContent = 'Analyzing file...';
             biometricsInfo.classList.remove('d-none');
 
-            fetch('/api/biometrics-detect', {
+            fetchWithApiFallback('/api/biometrics-detect', {
                 method: 'POST',
                 body: formData,
             })
@@ -664,7 +664,7 @@ export function initBiometrics(elements) {
             setBiometricsActionButtonsDisabled(true);
             appendLog('Uploading file and starting conversion...', 'info', biometricsLog);
 
-            fetch('/api/biometrics-convert', {
+            fetchWithApiFallback('/api/biometrics-convert', {
                 method: 'POST',
                 body: formData,
             })

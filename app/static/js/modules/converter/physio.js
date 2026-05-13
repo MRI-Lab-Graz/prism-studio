@@ -265,7 +265,7 @@ export function initPhysio(elements) {
                 physioServerFolderPath = '';
                 clearPhysioSourceHint();
                 
-                const response = await fetch(`/api/check-sourcedata-physio?project_path=${encodeURIComponent(currentProjectPath)}`);
+                const response = await fetchWithApiFallback(`/api/check-sourcedata-physio?project_path=${encodeURIComponent(currentProjectPath)}`);
                 const result = await response.json();
                 
                 if (result.exists) {
@@ -596,7 +596,7 @@ export function initPhysio(elements) {
 
             let activePollController = null;
             try {
-                const response = await fetch('/api/batch-convert-start', {
+                const response = await fetchWithApiFallback('/api/batch-convert-start', {
                     method: 'POST',
                     body: formData
                 });
@@ -642,7 +642,7 @@ export function initPhysio(elements) {
 
                 const statusData = await pollJobStatus({
                     fetchStatus: async (cursor) => {
-                        const statusResponse = await fetch(`/api/batch-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);
+                        const statusResponse = await fetchWithApiFallback(`/api/batch-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);
                         if (!statusResponse.ok) {
                             const statusErr = await statusResponse.json().catch(() => null);
                             throw new Error(statusErr && statusErr.error ? statusErr.error : 'Failed to retrieve conversion status');
