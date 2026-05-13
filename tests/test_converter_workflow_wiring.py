@@ -884,8 +884,16 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("function buildVersionWizard(", content)
         self.assertIn("function formatVersionWizardRunLabel(run)", content)
         self.assertIn("Out-of-range share:", conversion_summary_content)
+        self.assertIn(
+            "Offsets are applied to observed data values (value + offset), not to template scales.",
+            conversion_summary_content,
+        )
         self.assertIn("data-survey-open-advanced", conversion_summary_content)
         self.assertIn("openAdvancedOptionsValueOffsetEditor", content)
+        self.assertIn(
+            "Manual task offsets are applied to observed data values (value + offset), not to template scales.",
+            content,
+        )
         self.assertIn(
             "convertSessionSelect.value = normalizedSessions.length === 1 ? normalizedSessions[0] : 'all';",
             content,

@@ -101,6 +101,17 @@ export function createSurveyConversionSummaryController({
                         const outOfRangeRateText = hasOutOfRangeRate
                             ? `${invalidWithoutOffsetPercent.toFixed(1)}% (${invalidWithoutOffset}/${sampledValues} sampled values)`
                             : '';
+                        const hasSuggestedOffsets = suggestedOffsets.length > 0;
+                        const suggestedOffsetsHtml = hasSuggestedOffsets
+                            ? suggestedOffsets.map((value) => escapeHtml(String(value))).join('</code>, <code>')
+                            : '';
+                        const configuredOffsetDirectionHint = (
+                            hasConfiguredOffset
+                            && rawValueValidWithoutOffset
+                            && hasSuggestedOffsets
+                        )
+                            ? `Configured offset direction looks incorrect for sampled values. Candidate offset: ${suggestedOffsets.join(', ')}`
+                            : '';
 
                         return `
                             <div class="list-group-item">
@@ -126,16 +137,17 @@ export function createSurveyConversionSummaryController({
                                         </div>
                                         ${review ? `
                                             <div class="small mt-2">
-                                                <div class="fw-semibold">Required first: validate and fix source values, then run Preview again.</div>
+                                                ${outOfRangeRateText ? `<div class="fw-semibold">Out-of-range share: <code>${escapeHtml(outOfRangeRateText)}</code></div>` : ''}
+                                                <div class="fw-semibold">Fix the data in the input data or (if you are really confident) rescale.</div>
                                                 <div class="text-muted">${escapeHtml(String(review.message || 'Value review required before converting this survey.'))}</div>
                                                 ${review.item_id ? `<div class="mt-1">Item: <code>${escapeHtml(String(review.item_id))}</code></div>` : ''}
                                                 ${review.raw_value !== undefined && review.raw_value !== null ? `<div>Observed value: <code>${escapeHtml(String(review.raw_value))}</code></div>` : ''}
                                                 ${hasConfiguredOffset && hasAdjustedValue ? `<div>Configured offset: <code>${escapeHtml(configuredOffset > 0 ? `+${configuredOffset}` : String(configuredOffset))}</code> -> adjusted value: <code>${escapeHtml(String(adjustedValue))}</code></div>` : ''}
                                                 ${rawValueValidWithoutOffset ? '<div class="text-warning">This sampled value is valid before offset. Check offset direction and selected template version.</div>' : ''}
+                                                ${configuredOffsetDirectionHint ? `<div class="text-warning">${escapeHtml(configuredOffsetDirectionHint)}</div>` : ''}
                                                 ${expectedLevels.length > 0 ? `<div>Expected levels: <code>${expectedLevels.map((value) => escapeHtml(String(value))).join('</code>, <code>')}</code></div>` : ''}
-                                                ${outOfRangeRateText ? `<div>Out-of-range share: <code>${escapeHtml(outOfRangeRateText)}</code></div>` : ''}
                                                 <div class="text-muted mt-1">If this survey should not be converted yet, deselect it before converting.</div>
-                                                ${suggestedOffsets.length > 0 && structuralOffsetLikely ? `<div class="text-muted mt-1">Advanced-only fallback (expert use): manual task value offset is allowed only when you can independently confirm a full-task scale shift (for example 1-4 in source vs 0-3 in template). Possible offset: <code>${suggestedOffsets.join('</code>, <code>')}</code>. Never use this to ignore incorrect source values.</div>` : '<div class="text-muted mt-1">Advanced-only fallback (expert use): use manual task value offset only when you can independently confirm a full-task shifted scale. Never use this to bypass incorrect source values.</div>'}
+                                                ${hasSuggestedOffsets && structuralOffsetLikely ? `<div class="text-muted mt-1">Advanced-only fallback (expert use): manual task value offset is allowed only when you can independently confirm a full-task scale shift (for example 1-4 in source vs 0-3 in template). Possible offset: <code>${suggestedOffsetsHtml}</code>. Offsets are applied to observed data values (value + offset), not to template scales. Never use this to ignore incorrect source values.</div>` : '<div class="text-muted mt-1">Advanced-only fallback (expert use): use manual task value offset only when you can independently confirm a full-task shifted scale. Offsets are applied to observed data values (value + offset), not to template scales. Never use this to bypass incorrect source values.</div>'}
                                             </div>
                                         ` : ''}
                                     </label>
