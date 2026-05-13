@@ -47,6 +47,9 @@
   const tabEditorEl = document.getElementById('tabEditor');
   const tabPreviewEl = document.getElementById('tabPreview');
   const editorHintEl = document.getElementById('editorHint');
+  const btnPrintPreview = document.getElementById('btnPrintPreview');
+  const btnExportWord = document.getElementById('btnExportWord');
+  const btnDoExportWord = document.getElementById('btnDoExportWord');
   const btnToggleItemsPanel = document.getElementById('btnToggleItemsPanel');
   const itemsPanelColEl = document.getElementById('itemsPanelCol');
   const editorMainColEl = document.getElementById('editorMainCol');
@@ -315,6 +318,32 @@
   async function fetchWithApiFallback(url, options = {}, fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.') {
     const sharedFetchWithApiFallback = await loadSharedFetchWithApiFallback();
     return sharedFetchWithApiFallback(url, options, fallbackMessage);
+  }
+
+  const templateEditorSourceWorkflowModuleUrl = new URL('./template-editor/source-workflow.js', document.currentScript?.src || window.location.href).href;
+  let templateEditorSourceWorkflowPromise = null;
+
+  function loadTemplateEditorSourceWorkflow() {
+    if (!templateEditorSourceWorkflowPromise) {
+      templateEditorSourceWorkflowPromise = import(templateEditorSourceWorkflowModuleUrl).then((module) => {
+        if (
+          typeof module.refreshTemplateList !== 'function'
+          || typeof module.bindTemplateEditorSourceWorkflowEvents !== 'function'
+          || typeof module.loadSelectedTemplate !== 'function'
+          || typeof module.loadNewTemplate !== 'function'
+          || typeof module.validateCurrent !== 'function'
+          || typeof module.saveCurrent !== 'function'
+          || typeof module.downloadCurrent !== 'function'
+          || typeof module.importTemplateSource !== 'function'
+          || typeof module.deleteCurrentTemplate !== 'function'
+          || typeof module.initializeTemplateEditorSourceWorkflow !== 'function'
+        ) {
+          throw new Error('Template editor source workflow helper is unavailable.');
+        }
+        return module;
+      });
+    }
+    return templateEditorSourceWorkflowPromise;
   }
 
   function stripInternalTemplateKeys(template) {
@@ -4655,485 +4684,215 @@
     }
   }
 
-  async function refreshTemplateList({ silent = false } = {}) {
-    const modality = modalityEl.value;
-    const requestProjectPath = getCurrentProjectPath();
-    const requestToken = projectContextRequestToken;
-    if (!silent) {
-      clearAlert();
-      btnDownload.disabled = true;
-      btnSave.disabled = true;
-    }
-    templateMetadata = {};
-
-    const schemaVersion = schemaEl.value || 'stable';
-    const data = await apiGet(
-      withProjectPathQuery(
-        `/api/template-editor/list-merged?modality=${encodeURIComponent(modality)}&schema_version=${encodeURIComponent(schemaVersion)}`,
-        requestProjectPath
-      )
-    );
-    if (!isProjectContextCurrent(requestProjectPath, requestToken)) {
-      return;
-    }
-
-    const projectTemplates = (data.templates || []).filter(t => t.source === 'project');
-    const globalTemplates = (data.templates || []).filter(t => t.source !== 'project');
-
-    projectTemplateSelectEl.innerHTML = '<option value="">(none in project)</option>';
-    for (const t of projectTemplates) {
-      const expectedPrefix = `${modality}-`;
-      if (!t.filename.startsWith(expectedPrefix) && t.filename !== 'participants_mapping.json') {
-        continue;
-      }
-      if (modality === 'survey' && t.filename === 'participants_mapping.json') {
-        continue;
-      }
-      const opt = document.createElement('option');
-      opt.value = t.filename;
-      opt.textContent = `${templateStatusPrefix(t)} ${t.filename}`;
-      opt.dataset.source = t.source;
-      opt.dataset.path = t.path;
-      opt.dataset.readonly = t.readonly;
-      opt.dataset.templateValid = String(t.template_valid);
-      opt.title = templateStatusTitle(t);
-      projectTemplateSelectEl.appendChild(opt);
-      templateMetadata[t.filename] = t;
-    }
-
-    globalTemplateSelectEl.innerHTML = '<option value="">(select one)</option>';
-    for (const t of globalTemplates) {
-      const expectedPrefix = `${modality}-`;
-      if (!t.filename.startsWith(expectedPrefix)) {
-        continue;
-      }
-      const opt = document.createElement('option');
-      opt.value = t.filename;
-      opt.textContent = `${templateStatusPrefix(t)} ${t.filename}`;
-      opt.dataset.source = t.source;
-      opt.dataset.path = t.path;
-      opt.dataset.readonly = t.readonly;
-      opt.dataset.templateValid = String(t.template_valid);
-      opt.title = templateStatusTitle(t);
-      globalTemplateSelectEl.appendChild(opt);
-      templateMetadata[t.filename] = t;
-    }
-
-    projectLibraryRoot = data.sources?.project_library_path || null;
-    projectLibraryExists = Boolean(data.sources?.project_library_exists);
-    editorProjectContextPath = requestProjectPath;
-
-    updateProjectLibraryStatus();
-    updateLoadButtonState();
-  }
-
-  async function loadSelectedTemplate() {
-    const modality = modalityEl.value;
-    const schema_version = schemaEl.value;
-    const requestProjectPath = getCurrentProjectPath();
-    const requestToken = projectContextRequestToken;
-    // Determine which dropdown is active so we use its path, not the shared templateMetadata
-    // dict which may have the same filename from both project and global (global overwrites project).
-    const isProjectSelection = !!projectTemplateSelectEl.value;
-    const activeSelectEl = isProjectSelection ? projectTemplateSelectEl : globalTemplateSelectEl;
-    const filename = activeSelectEl.value;
-
-    if (!filename) {
-      showAlert('warning', 'Select a template to load.');
-      return;
-    }
-
-    if (hasUnsavedChanges() && !confirm('You have unsaved changes. Load a new template and discard them?')) {
-      return;
-    }
-
-    clearAlert();
-    btnDownload.disabled = true;
-    btnSave.disabled = true;
-
-    await refreshSchema();
-
-    // Read path from the selected option's dataset to avoid filename-collision bug where
-    // templateMetadata[filename] may point to the global entry even when loading a project template.
-    const selectedOpt = activeSelectEl.options[activeSelectEl.selectedIndex];
-    const absolutePath = selectedOpt?.dataset?.path || null;
-    const isReadonly = selectedOpt ? selectedOpt.dataset.readonly === 'true' : true;
-    const qp = new URLSearchParams({ modality, schema_version, filename });
-
-    // Pass the full resolved path returned by list-merged so the backend loads exactly the right file.
-    if (absolutePath) {
-      qp.set('absolute_path', absolutePath);
-    } else {
-      // Fallback: derive library_path from templateMetadata (less reliable when filenames collide)
-      const meta = templateMetadata[filename];
-      if (meta && meta.path) {
-        const normalizedPath = meta.path.replace(/\\/g, '/');
-        const pathParts = normalizedPath.split('/');
-        const modalityIdx = pathParts.lastIndexOf(modality);
-        if (modalityIdx > 0) {
-          const libraryPath = pathParts.slice(0, modalityIdx).join('/');
-          if (libraryPath) qp.set('library_path', libraryPath);
-        }
-      }
-    }
-
-    const data = await apiGet(`/api/template-editor/load?${qp.toString()}`);
-    if (!isProjectContextCurrent(requestProjectPath, requestToken)) {
-      return;
-    }
-    currentTemplate = stripInternalTemplateKeys(data.template);
-    stripScoreAnnotationsInTemplate(currentTemplate);
-    originalTemplate = cloneDeep(currentTemplate);
-    currentTemplateFilename = data.filename || filename;
-    loadedFromReadonly = isReadonly;
-    loadedFromProjectLibrary = !isReadonly;
-    loadedTemplateProjectPath = isReadonly ? '' : requestProjectPath;
-    if (btnDelete) btnDelete.classList.toggle('d-none', isReadonly);
-    checkedItemIds.clear();
-    selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
-    hasUserInteracted = true;
-    hasExplicitTemplate = true;
-    // Reset variant selector to the template's default version on fresh load
-    previewVariantOverride = null;
-    if (activeVariantSelectEl) activeVariantSelectEl.value = '';
-    renderAll();
-    renderJsonDiff();
-    await validateCurrent();
-  }
-
-  async function loadNewTemplate() {
-    const modality = modalityEl.value;
-    const schema_version = schemaEl.value;
-    clearAlert();
-    btnDownload.disabled = true;
-    btnSave.disabled = true;
-
-    await refreshSchema();
-
-    const data = await apiGet(`/api/template-editor/new?modality=${encodeURIComponent(modality)}&schema_version=${encodeURIComponent(schema_version)}`);
-    currentTemplate = stripInternalTemplateKeys(data.template);
-    stripScoreAnnotationsInTemplate(currentTemplate);
-    originalTemplate = null; // no baseline for new templates
-    currentTemplateFilename = null;
-    clearTemplateSelections();
-    checkedItemIds.clear();
-    selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
-    hasUserInteracted = true; // new-template counts as interaction for completion bar
-    // hasExplicitTemplate is set by the caller only when user explicitly clicks + Create
-    loadedFromReadonly = false;
-    loadedFromProjectLibrary = false;
-    loadedTemplateProjectPath = '';
-    if (btnDelete) btnDelete.classList.add('d-none');
-    previewVariantOverride = null;
-    if (activeVariantSelectEl) activeVariantSelectEl.value = '';
-    renderAll();
-    renderJsonDiff();
-    // Don't validate empty template on initial load - only validate after user edits
-  }
-
-  async function validateCurrent() {
-    const modality = modalityEl.value;
-    const schema_version = schemaEl.value;
-    const requestProjectPath = getCurrentProjectPath();
-    const requestToken = projectContextRequestToken;
-
-    const obj = currentTemplate;
-    if (!obj || typeof obj !== 'object') {
-      btnDownload.disabled = true;
-      showAlert('danger', 'No template loaded');
-      return false;
+    function buildTemplateEditorSourceWorkflowContext() {
+      return {
+        modalityEl,
+        schemaEl,
+        projectTemplateSelectEl,
+        globalTemplateSelectEl,
+        loadTemplateHintEl,
+        templateSourceSectionEl,
+        templateSourceCardEl,
+        projectLibraryStatusEl,
+        btnImportTemplateSource,
+        btnCreateOpen,
+        btnNew,
+        btnValidate,
+        templateImportInput,
+        btnDownload,
+        btnSave,
+        btnDelete,
+        alertAreaEl,
+        activeVariantSelectEl,
+        get currentTemplate() {
+          return currentTemplate;
+        },
+        set currentTemplate(value) {
+          currentTemplate = value;
+        },
+        get originalTemplate() {
+          return originalTemplate;
+        },
+        set originalTemplate(value) {
+          originalTemplate = value;
+        },
+        get currentTemplateFilename() {
+          return currentTemplateFilename;
+        },
+        set currentTemplateFilename(value) {
+          currentTemplateFilename = value;
+        },
+        get selectedItemId() {
+          return selectedItemId;
+        },
+        set selectedItemId(value) {
+          selectedItemId = value;
+        },
+        get checkedItemIds() {
+          return checkedItemIds;
+        },
+        set checkedItemIds(value) {
+          checkedItemIds = value;
+        },
+        get projectLibraryRoot() {
+          return projectLibraryRoot;
+        },
+        set projectLibraryRoot(value) {
+          projectLibraryRoot = value;
+        },
+        get projectLibraryExists() {
+          return projectLibraryExists;
+        },
+        set projectLibraryExists(value) {
+          projectLibraryExists = value;
+        },
+        get previewVariantOverride() {
+          return previewVariantOverride;
+        },
+        set previewVariantOverride(value) {
+          previewVariantOverride = value;
+        },
+        get loadedFromReadonly() {
+          return loadedFromReadonly;
+        },
+        set loadedFromReadonly(value) {
+          loadedFromReadonly = value;
+        },
+        get loadedFromProjectLibrary() {
+          return loadedFromProjectLibrary;
+        },
+        set loadedFromProjectLibrary(value) {
+          loadedFromProjectLibrary = value;
+        },
+        get editorProjectContextPath() {
+          return editorProjectContextPath;
+        },
+        set editorProjectContextPath(value) {
+          editorProjectContextPath = value;
+        },
+        get loadedTemplateProjectPath() {
+          return loadedTemplateProjectPath;
+        },
+        set loadedTemplateProjectPath(value) {
+          loadedTemplateProjectPath = value;
+        },
+        get projectContextRequestToken() {
+          return projectContextRequestToken;
+        },
+        get templateMetadata() {
+          return templateMetadata;
+        },
+        set templateMetadata(value) {
+          templateMetadata = value;
+        },
+        get hasUserInteracted() {
+          return hasUserInteracted;
+        },
+        set hasUserInteracted(value) {
+          hasUserInteracted = value;
+        },
+        get hasExplicitTemplate() {
+          return hasExplicitTemplate;
+        },
+        set hasExplicitTemplate(value) {
+          hasExplicitTemplate = value;
+        },
+        getCurrentProjectPath,
+        getTrackedSelectValue,
+        commitTrackedSelectValue,
+        revertTrackedSelectValue,
+        withProjectPathQuery,
+        invalidateProjectContextRequests,
+        isProjectContextCurrent,
+        handleProjectContextChange,
+        clearAlert,
+        escapeHtml,
+        showAlert,
+        addTrailingDisplaySeparator,
+        joinDisplayPath,
+        getProjectLibraryPattern,
+        cloneDeep,
+        fetchWithApiFallback,
+        apiGet,
+        apiPost,
+        sanitizeTaskNameForFilename,
+        stripInternalTemplateKeys,
+        stripScoreAnnotationsInTemplate,
+        normalizeTemplateFilename,
+        resolveTemplateFilenameForSave,
+        clearTemplateSelections,
+        getSaveDecision,
+        ensureTemplateNormalized,
+        deriveFocusPath,
+        focusField,
+        renderMissingSummary,
+        renderAll,
+        renderJsonDiff,
+        itemKeysFromTemplate,
+        captureEditorState,
+        restoreEditorState,
+        templateStatusPrefix,
+        templateStatusTitle,
+        updateLoadButtonState,
+        focusCreateSourcePanel,
+        updateProjectLibraryStatus,
+        refreshSchema,
+        hasUnsavedChanges,
+        getExportWordButton() {
+          return btnExportWord;
+        },
+      };
     }
 
-    if (!hasExplicitTemplate) {
-      showAlert('warning', '⚠️ No template loaded yet. Select a template from the dropdown, or click <strong>Create</strong> to start a new one.');
-      return false;
+    async function refreshTemplateList(options = {}) {
+      const workflow = await loadTemplateEditorSourceWorkflow();
+      return workflow.refreshTemplateList(buildTemplateEditorSourceWorkflowContext(), options);
     }
 
-    hasUserInteracted = true; // User is now validating
-    const data = await apiPost('/api/template-editor/validate', {
-      modality,
-      schema_version,
-      template: obj,
-      is_global: loadedFromReadonly
-    });
-    if (!isProjectContextCurrent(requestProjectPath, requestToken)) {
-      btnSave.disabled = true;
-      return false;
+    async function bindTemplateEditorSourceWorkflowEvents() {
+      const workflow = await loadTemplateEditorSourceWorkflow();
+      return workflow.bindTemplateEditorSourceWorkflowEvents(buildTemplateEditorSourceWorkflowContext());
     }
 
-    // Build language warnings HTML (always shown, regardless of schema validity)
-    const langWarnings = data.language_warnings || [];
-    let langWarnHtml = '';
-    if (langWarnings.length > 0) {
-      const items = langWarnings.map(w =>
-        `<li><i class="fas fa-globe text-warning me-1"></i>${w.message}${w.details ? ` <small class="text-muted">(${w.details})</small>` : ''}</li>`
-      ).join('');
-      langWarnHtml = `<div class="alert alert-warning mt-2 mb-0"><strong>Language warnings:</strong><ul class="mb-0">${items}</ul></div>`;
+    async function loadSelectedTemplate() {
+      const workflow = await loadTemplateEditorSourceWorkflow();
+      return workflow.loadSelectedTemplate(buildTemplateEditorSourceWorkflowContext());
     }
 
-    if (data.ok) {
-      btnDownload.disabled = false;
-      if (btnExportWord) btnExportWord.disabled = false;
-      const targetDirectory = projectLibraryRoot
-        ? addTrailingDisplaySeparator(joinDisplayPath(projectLibraryRoot, modalityEl.value))
-        : null;
-      const successMessage = projectLibraryRoot
-        ? (loadedFromReadonly
-          ? `✅ Valid template! Ready to save an editable project copy to <code>${targetDirectory}</code>`
-          : `✅ Valid template! Ready to save to <code>${targetDirectory}</code>`)
-        : '⚠️ Valid template, but <strong>no project selected</strong>. Select a project to enable saving, or download the JSON.';
-      btnSave.disabled = !projectLibraryRoot;
-      showAlert(projectLibraryRoot ? 'success' : 'warning', successMessage + langWarnHtml);
-      return true;
-    } else {
-      // Leave btnDownload/btnExportWord enabled so users can export invalid work-in-progress templates
-      btnDownload.disabled = false;
-      if (btnExportWord) btnExportWord.disabled = false;
-      btnSave.disabled = true;
-      const errs = (data.errors || []).slice(0, 50);
-      const list = errs.map(e => {
-        const p = e.path || '(root)';
-        const focusPath = deriveFocusPath(e.path, e.message);
-        // escapeHtml() on all user/server-originated values to prevent XSS
-        const link = `<a href="#" class="error-link" data-path="${escapeHtml(focusPath)}"><code>${escapeHtml(p)}</code></a>`;
-        return `<li>${link}: ${escapeHtml(e.message)}</li>`;
-      }).join('');
-      const extra = (data.errors || []).length > errs.length ? `<div class=\"mt-2 text-muted small\">(showing first ${errs.length} errors)</div>` : '';
-      showAlert('danger', `❌ Validation failed.<ul class=\"mb-0\">${list}</ul>${extra}` + langWarnHtml);
-      // Wire clicks to focus fields
-      alertAreaEl.querySelectorAll('.error-link').forEach(a => {
-        a.addEventListener('click', (ev) => { ev.preventDefault(); focusField(a.dataset.path); });
-      });
-      renderMissingSummary();
-      return false;
-    }
-  }
-
-  async function saveCurrent() {
-    const obj = currentTemplate;
-    if (!obj || typeof obj !== 'object') {
-      showAlert('danger', 'No template loaded');
-      return;
+    async function loadNewTemplate() {
+      const workflow = await loadTemplateEditorSourceWorkflow();
+      return workflow.loadNewTemplate(buildTemplateEditorSourceWorkflowContext());
     }
 
-    const modality = modalityEl.value;
-    const currentProjectPath = getCurrentProjectPath();
-    if (!projectLibraryRoot || !currentProjectPath) {
-      showAlert('danger', `<strong>No project selected!</strong><br>All template saves go to <code>${getProjectLibraryPattern('{modality}')}</code><br>Please select or create a project first.`);
-      return;
+    async function validateCurrent() {
+      const workflow = await loadTemplateEditorSourceWorkflow();
+      return workflow.validateCurrent(buildTemplateEditorSourceWorkflowContext());
     }
 
-    const filename = resolveTemplateFilenameForSave(obj, modality);
-
-    const validationPassed = await validateCurrent();
-    if (!validationPassed) {
-      showAlert('danger', 'Cannot save: template is currently invalid. Fix validation errors and validate again.');
-      return;
+    async function saveCurrent() {
+      const workflow = await loadTemplateEditorSourceWorkflow();
+      return workflow.saveCurrent(buildTemplateEditorSourceWorkflowContext());
     }
 
-    const wasFork = loadedFromReadonly;
-    const saveDecision = getSaveDecision(filename);
-    if (!saveDecision.proceed) {
-      return;
-    }
-    ensureTemplateNormalized();
-    try {
-      const data = await apiPost('/api/template-editor/save', {
-        modality,
-        schema_version: schemaEl.value || 'stable',
-        filename,
-        project_path: currentProjectPath,
-        allow_overwrite: saveDecision.allowOverwrite,
-        is_global: wasFork,
-        template: obj,
-      });
-      if (currentProjectPath !== getCurrentProjectPath()) {
-        loadedFromReadonly = false;
-        loadedFromProjectLibrary = false;
-        loadedTemplateProjectPath = '';
-        if (btnDelete) btnDelete.classList.add('d-none');
-        btnSave.disabled = true;
-        clearTemplateSelections();
-        showAlert('warning', `Saved to the previous project library before the active project changed. The current editor state is kept as a detached draft.<br><small>${escapeHtml(data.message || '')}</small>`);
-        await refreshTemplateList({ silent: true });
-        return;
-      }
-      currentTemplateFilename = filename;
-      originalTemplate = cloneDeep(currentTemplate);
-      loadedFromReadonly = false;
-      loadedFromProjectLibrary = true;
-      loadedTemplateProjectPath = currentProjectPath;
-      renderJsonDiff();
-      const savedPath = joinDisplayPath(projectLibraryRoot, modality, filename);
-      const forkNote = wasFork
-        ? '<br><small class="text-info">↗ Saved as a project copy — the global template was not changed.</small>'
-        : '';
-      showAlert('success', `✅ Saved to project library: <code>${savedPath}</code>${forkNote}`);
-      await refreshTemplateList({ silent: true });
-    } catch (e) {
-      showAlert('danger', `Save failed: ${escapeHtml(e.message)}`);
-    }
-  }
-
-  async function downloadCurrent() {
-    const obj = currentTemplate;
-    if (!obj || typeof obj !== 'object') {
-      showAlert('danger', 'No template loaded');
-      return;
+    async function downloadCurrent() {
+      const workflow = await loadTemplateEditorSourceWorkflow();
+      return workflow.downloadCurrent(buildTemplateEditorSourceWorkflowContext());
     }
 
-    ensureTemplateNormalized();
-    
-    const filename = resolveTemplateFilenameForSave(obj, modalityEl.value);
-
-    const res = await fetchWithApiFallback('/api/template-editor/download', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filename, modality: modalityEl.value, template: obj })
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || `Download failed (${res.status})`);
+    async function importTemplateSource() {
+      const workflow = await loadTemplateEditorSourceWorkflow();
+      return workflow.importTemplateSource(buildTemplateEditorSourceWorkflowContext());
     }
 
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename.toLowerCase().endsWith('.json') ? filename : (filename + '.json');
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
-  }
-
-  btnImportTemplateSource.addEventListener('click', () => {
-    templateImportInput.click();
-  });
-
-  templateImportInput.addEventListener('change', async () => {
-    const file = templateImportInput.files[0];
-    if (!file) return;
-    templateImportInput.value = '';
-
-    if (hasUnsavedChanges() && !confirm('You have unsaved changes. Importing a template source will discard them. Continue?')) {
-      return;
+    async function deleteCurrentTemplate() {
+      const workflow = await loadTemplateEditorSourceWorkflow();
+      return workflow.deleteCurrentTemplate(buildTemplateEditorSourceWorkflowContext());
     }
 
-    const previousEditorState = captureEditorState();
-    clearAlert();
-    btnDownload.disabled = true;
-    btnSave.disabled = true;
-
-    let importSummaryMessage = '';
-
-    try {
-      await refreshSchema();
-
-      const lowerName = (file.name || '').toLowerCase();
-      const isLsqOrLsg = lowerName.endsWith('.lsq') || lowerName.endsWith('.lsg');
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      let data;
-      if (isLsqOrLsg) {
-        const res = await fetchWithApiFallback('/api/template-editor/import-lsq-lsg', {
-          method: 'POST',
-          body: formData,
-        });
-        data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || `Import failed (${res.status})`);
-        }
-        currentTemplate = stripInternalTemplateKeys(data.template);
-        stripScoreAnnotationsInTemplate(currentTemplate);
-      } else {
-        const nameWithoutExt = (file.name || 'imported')
-          .replace(/\.[^.]+$/, '')
-          .trim();
-        formData.append('mode', 'combined');
-        if (nameWithoutExt) {
-          formData.append('task_name', sanitizeTaskNameForFilename(nameWithoutExt));
-        }
-
-        const res = await fetchWithApiFallback('/api/survey-generate-templates', {
-          method: 'POST',
-          body: formData,
-        });
-        data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || `Template import failed (${res.status})`);
-        }
-
-        if (!data.prism_json || typeof data.prism_json !== 'object') {
-          throw new Error('No PRISM template returned by generator.');
-        }
-        currentTemplate = stripInternalTemplateKeys(data.prism_json);
-        stripScoreAnnotationsInTemplate(currentTemplate);
-      }
-
-      originalTemplate = null;
-      currentTemplateFilename = normalizeTemplateFilename(data.suggested_filename, modalityEl.value, currentTemplate);
-      loadedFromReadonly = false;
-      loadedFromProjectLibrary = false;
-      loadedTemplateProjectPath = '';
-      hasUserInteracted = true;
-      hasExplicitTemplate = true;
-      clearTemplateSelections();
-      checkedItemIds.clear();
-      selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
-      if (btnDelete) btnDelete.classList.add('d-none');
-      renderAll();
-
-      const source = (file.name.split('.').pop() || '').toLowerCase().toUpperCase();
-      const itemCount = data.item_count || data.question_count || itemKeysFromTemplate(currentTemplate).length;
-      importSummaryMessage = `<strong>Imported ${escapeHtml(file.name)}</strong> (${escapeHtml(source)})<br>${escapeHtml(String(itemCount))} item(s) extracted.`;
-      showAlert('success', importSummaryMessage);
-    } catch (e) {
-      restoreEditorState(previousEditorState);
-      showAlert('danger', `Template import failed: ${escapeHtml(e.message)}`);
-      return;
+    async function initializeTemplateEditorSourceWorkflow() {
+      const workflow = await loadTemplateEditorSourceWorkflow();
+      return workflow.initializeTemplateEditorSourceWorkflow(buildTemplateEditorSourceWorkflowContext());
     }
-
-    try {
-      await validateCurrent();
-    } catch (e) {
-      btnDownload.disabled = false;
-      btnSave.disabled = true;
-      showAlert('warning', `${importSummaryMessage}<br><small>Validation could not be completed: ${escapeHtml(e.message)}</small>`);
-    }
-  });
-
-  window.addEventListener('beforeunload', (e) => {
-    if (hasUnsavedChanges()) {
-      e.preventDefault();
-      e.returnValue = '';
-    }
-  });
-
-  // Wire events
-  modalityEl.addEventListener('change', async () => {
-    const previousModality = getTrackedSelectValue(modalityEl);
-    if (hasUnsavedChanges() && !confirm('You have unsaved changes. Switch modality and discard them?')) {
-      revertTrackedSelectValue(modalityEl, previousModality);
-      return;
-    }
-    try {
-      await refreshTemplateList();
-      await loadNewTemplate();
-      hasExplicitTemplate = false; // modality switch resets to blank — require explicit load
-      commitTrackedSelectValue(modalityEl);
-    } catch (e) {
-      revertTrackedSelectValue(modalityEl, previousModality);
-      try {
-        await refreshSchema();
-        await refreshTemplateList({ silent: true });
-      } catch {}
-      showAlert('danger', escapeHtml(e.message));
-    }
-  });
 
   selectAllItemsEl.addEventListener('change', () => {
     // Only operate on visible (variant-filtered) keys, not all keys
@@ -5151,112 +4910,7 @@
     renderItemList();
   });
 
-  schemaEl.addEventListener('change', async () => {
-    const previousSchemaVersion = getTrackedSelectValue(schemaEl);
-    if (hasUnsavedChanges() && !confirm('You have unsaved changes. Switch schema version and discard them?')) {
-      revertTrackedSelectValue(schemaEl, previousSchemaVersion);
-      return;
-    }
-    try {
-      btnDownload.disabled = true;
-      btnSave.disabled = true;
-      await refreshTemplateList();
-      await loadNewTemplate();
-      hasExplicitTemplate = false; // schema switch resets to blank — require explicit load
-      commitTrackedSelectValue(schemaEl);
-    } catch (e) {
-      revertTrackedSelectValue(schemaEl, previousSchemaVersion);
-      try {
-        await refreshSchema();
-        await refreshTemplateList({ silent: true });
-      } catch {}
-      showAlert('danger', escapeHtml(e.message));
-    }
-  });
-
-  btnCreateOpen.addEventListener('click', () => {
-    focusCreateSourcePanel();
-  });
-
-  if (templateSourceSectionEl) {
-    templateSourceSectionEl.addEventListener('shown.bs.collapse', () => {
-      btnCreateOpen?.setAttribute('aria-expanded', 'true');
-    });
-    templateSourceSectionEl.addEventListener('hidden.bs.collapse', () => {
-      btnCreateOpen?.setAttribute('aria-expanded', 'false');
-    });
-  }
-
-  btnNew.addEventListener('click', async () => {
-    if (hasUnsavedChanges() && !confirm('You have unsaved changes. Create a new blank template and discard them?')) {
-      return;
-    }
-
-    const previousEditorState = captureEditorState();
-    try {
-      await loadNewTemplate();
-      hasExplicitTemplate = true;
-      focusCreateSourcePanel();
-    } catch (e) {
-      restoreEditorState(previousEditorState);
-      showAlert('danger', escapeHtml(e.message));
-    }
-  });
-
-  projectTemplateSelectEl.addEventListener('change', async () => {
-    const previousEditorState = captureEditorState();
-    if (projectTemplateSelectEl.value) {
-      globalTemplateSelectEl.value = '';
-      try {
-        await loadSelectedTemplate();
-      } catch (e) {
-        restoreEditorState(previousEditorState);
-        showAlert('danger', escapeHtml(e.message));
-      }
-    }
-    updateLoadButtonState();
-  });
-
-  globalTemplateSelectEl.addEventListener('change', async () => {
-    const previousEditorState = captureEditorState();
-    if (globalTemplateSelectEl.value) {
-      projectTemplateSelectEl.value = '';
-      try {
-        await loadSelectedTemplate();
-      } catch (e) {
-        restoreEditorState(previousEditorState);
-        showAlert('danger', escapeHtml(e.message));
-      }
-    }
-    updateLoadButtonState();
-  });
-
-  btnValidate.addEventListener('click', async () => {
-    try {
-      await validateCurrent();
-    } catch (e) {
-      showAlert('danger', escapeHtml(e.message));
-    }
-  });
-
-  btnSave.addEventListener('click', async () => {
-    try {
-      await saveCurrent();
-    } catch (e) {
-      showAlert('danger', escapeHtml(e.message));
-    }
-  });
-
-  btnDownload.addEventListener('click', async () => {
-    try {
-      await downloadCurrent();
-    } catch (e) {
-      showAlert('danger', escapeHtml(e.message));
-    }
-  });
-
   // ── Print / Export handlers ────────────────────────────────────────
-  const btnPrintPreview = document.getElementById('btnPrintPreview');
   if (btnPrintPreview) {
     btnPrintPreview.addEventListener('click', () => {
       if (currentView !== 'preview') switchView('preview');
@@ -5264,8 +4918,6 @@
     });
   }
 
-  const btnExportWord = document.getElementById('btnExportWord');
-  const btnDoExportWord = document.getElementById('btnDoExportWord');
   if (btnDoExportWord) {
     btnDoExportWord.addEventListener('click', async () => {
       if (!currentTemplate) return;
@@ -5311,50 +4963,6 @@
       } finally {
         btnDoExportWord.disabled = false;
         btnDoExportWord.innerHTML = '<i class="bi bi-download me-1"></i>Download .docx';
-      }
-    });
-  }
-
-  if (btnDelete) {
-    btnDelete.addEventListener('click', async () => {
-      const filename = currentTemplateFilename;
-      if (!filename || loadedFromReadonly) return;
-      const currentProjectPath = getCurrentProjectPath();
-      if (!currentProjectPath) {
-        showAlert('warning', 'No project selected. Reload the template from the current project before deleting it.');
-        return;
-      }
-      if (!confirm(`Permanently delete "${filename}" from the project library? This cannot be undone.`)) return;
-      const modality = modalityEl.value;
-      try {
-        const res = await fetchWithApiFallback('/api/template-editor/delete', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ modality, filename, project_path: currentProjectPath }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error || `Delete failed (${res.status})`);
-        currentTemplate = null;
-        originalTemplate = null;
-        currentTemplateFilename = null;
-        selectedItemId = null;
-        checkedItemIds.clear();
-        previewVariantOverride = null;
-        if (activeVariantSelectEl) activeVariantSelectEl.value = '';
-        loadedFromReadonly = false;
-        loadedFromProjectLibrary = false;
-        loadedTemplateProjectPath = '';
-        hasUserInteracted = false;
-        hasExplicitTemplate = false;
-        clearTemplateSelections();
-        btnDelete.classList.add('d-none');
-        btnSave.disabled = true;
-        btnDownload.disabled = true;
-        renderAll();
-        showAlert('success', `🗑️ Deleted <code>${escapeHtml(filename)}</code> from the project library.`);
-        await refreshTemplateList({ silent: true });
-      } catch (e) {
-        showAlert('danger', escapeHtml(e.message));
       }
     });
   }
@@ -5430,18 +5038,6 @@
     });
   }
 
-  window.addEventListener('prism-project-changed', async () => {
-    const previousProjectPath = editorProjectContextPath;
-    invalidateProjectContextRequests();
-    const nextProjectPath = getCurrentProjectPath();
-    try {
-      await refreshTemplateList({ silent: true });
-      handleProjectContextChange(previousProjectPath, nextProjectPath);
-    } catch (e) {
-      showAlert('danger', escapeHtml(e.message));
-    }
-  });
-
   // Initial load
   (async () => {
     try {
@@ -5449,14 +5045,8 @@
       updateNewItemModeUI();
       commitTrackedSelectValue(modalityEl);
       commitTrackedSelectValue(schemaEl);
-      await refreshSchema();
-      await refreshTemplateList();
-      // Reset dropdowns to placeholder — browser may restore last-selected values from cache,
-      // making it look like a template is loaded when it isn't.
-      projectTemplateSelectEl.value = '';
-      globalTemplateSelectEl.value = '';
-      updateLoadButtonState();
-      await loadNewTemplate();
+      await bindTemplateEditorSourceWorkflowEvents();
+      await initializeTemplateEditorSourceWorkflow();
     } catch (e) {
       showAlert('danger', escapeHtml(e.message));
     }
