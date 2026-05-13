@@ -128,6 +128,24 @@ class ParticipantsConverter:
         return None
 
     @staticmethod
+    def _normalize_participant_cell_value(value: Any, *, default: str = "n/a") -> str:
+        """Normalize missing-like participant values to a stable TSV token."""
+        if value is None:
+            return default
+        try:
+            if pd.isna(value):
+                return default
+        except Exception:
+            pass
+
+        text = str(value).strip()
+        if not text:
+            return default
+        if text.lower() in {"n/a", "na", "nan", "none"}:
+            return default
+        return text
+
+    @staticmethod
     def _collapse_to_bids_participants_table(
         output_df: pd.DataFrame,
     ) -> Tuple[pd.DataFrame, List[str], List[str]]:
@@ -503,6 +521,13 @@ class ParticipantsConverter:
             messages.append(
                 "⚠ Multiple rows per participant had differing values; kept first non-empty value for: "
                 f"{conflict_display}"
+            )
+
+        for column in output_df.columns:
+            if str(column) == "participant_id":
+                continue
+            output_df[column] = output_df[column].map(
+                self._normalize_participant_cell_value
             )
 
         # Write output

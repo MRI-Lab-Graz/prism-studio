@@ -616,6 +616,27 @@ def _participant_value_text(value: Any, *, default: str = "n/a") -> str:
     return str(value).strip()
 
 
+def _normalize_participants_table_values(df: pd.DataFrame) -> pd.DataFrame:
+    """Return a copy with stable participant table text values.
+
+    - participant_id: stripped text
+    - all other columns: missing-like values normalized to ``n/a``
+    """
+    if df is None or df.empty:
+        return df
+
+    normalized_df = df.copy()
+    for column in normalized_df.columns:
+        if str(column) == "participant_id":
+            normalized_df[column] = normalized_df[column].map(
+                lambda value: str(value or "").strip()
+            )
+            continue
+        normalized_df[column] = normalized_df[column].map(_participant_value_text)
+
+    return normalized_df
+
+
 def _parse_participant_numeric_value(value: Any) -> float | None:
     if _is_missing_participant_value(value):
         return None
@@ -1744,7 +1765,7 @@ def _plan_participants_merge(
         merged_rows.append({column: row.get(column) for column in full_columns})
 
     merged_df = pd.DataFrame(merged_rows, columns=full_columns)
-    merged_df = merged_df.where(pd.notna(merged_df), None)
+    merged_df = _normalize_participants_table_values(merged_df)
 
     non_id_columns = [column for column in full_columns if column != "participant_id"]
     incoming_non_id_columns = [
@@ -1807,7 +1828,6 @@ def _plan_participants_merge(
     )
 
     preview_df = merged_df.head(max(int(preview_limit or 20), 1)).astype(object)
-    preview_df = preview_df.where(preview_df.notna(), None)
 
     session_resolution_required = bool(
         (session_resolution_payload.get("unresolved_columns") or [])

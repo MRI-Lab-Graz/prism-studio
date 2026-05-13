@@ -286,3 +286,57 @@ def test_convert_drops_session_and_run_and_collapses_to_unique_participants():
             "Collapsed repeated rows to one row per participant_id" in m
             for m in messages
         )
+
+
+def test_convert_normalizes_empty_cells_to_na_token():
+    with tempfile.TemporaryDirectory() as tmp:
+        dataset_root = Path(tmp)
+        source = dataset_root / "participants_source.csv"
+        _write_csv(
+            source,
+            [
+                {"participant_id": "001", "age": "", "sex": "F"},
+                {"participant_id": "002", "age": "21", "sex": "M"},
+            ],
+        )
+
+        converter = ParticipantsConverter(dataset_root)
+        mapping = {
+            "version": "1.0",
+            "mappings": {
+                "participant_id": {
+                    "source_column": "participant_id",
+                    "standard_variable": "participant_id",
+                    "type": "string",
+                },
+                "age": {
+                    "source_column": "age",
+                    "standard_variable": "age",
+                    "type": "string",
+                },
+                "sex": {
+                    "source_column": "sex",
+                    "standard_variable": "sex",
+                    "type": "string",
+                },
+            },
+        }
+
+        success, output_df, _messages = converter.convert_participant_data(
+            source,
+            mapping,
+            output_file=dataset_root / "participants.tsv",
+        )
+
+        assert success is True
+        assert output_df is not None
+        assert list(output_df["participant_id"]) == ["sub-001", "sub-002"]
+        assert list(output_df["age"]) == ["n/a", "21"]
+
+        written_df = pd.read_csv(
+            dataset_root / "participants.tsv",
+            sep="\t",
+            dtype=str,
+            keep_default_na=False,
+        )
+        assert list(written_df["age"]) == ["n/a", "21"]
