@@ -9,7 +9,6 @@ import tempfile
 import zipfile
 from pathlib import Path
 from typing import Any
-from jsonschema import Draft7Validator
 
 from flask import current_app, has_app_context, jsonify, request, send_file, session
 from werkzeug.utils import secure_filename
@@ -58,10 +57,39 @@ from .conversion_utils import (
     should_retry_with_official_library,
     summarize_project_output_paths,
 )
+from .conversion_request_helpers import (
+    format_workflow_preparation_stale_response as _format_workflow_preparation_stale_response,
+    resolve_requested_project_root as _shared_resolve_requested_project_root,
+    resolve_uploaded_or_source_file as _resolve_uploaded_or_source_file,
+)
+from .conversion_survey_official_template_helpers import (
+    copy_official_templates_to_project,
+    infer_project_template_technical_defaults,
+    infer_tasks_against_official_templates,
+    prepare_project_survey_template_from_official,
+    resolve_official_survey_dir,
+)
+from .conversion_survey_template_check_handlers import (
+    handle_api_survey_check_project_templates,
+)
+from .conversion_survey_response_helpers import (
+    build_prepare_workflow_payload,
+    coerce_flask_response,
+    format_unmatched_groups_response,
+    format_value_offset_confirmation_response,
+)
+from .conversion_survey_template_helpers import (
+    build_template_completion_gate,
+    collect_project_template_warnings_for_tasks,
+    validate_project_templates_for_tasks,
+)
 
 convert_survey_xlsx_to_prism_dataset: Any = None
 convert_survey_lsa_to_prism_dataset: Any = None
 infer_lsa_metadata: Any = None
+from .conversion_survey_version_context_handlers import (
+    handle_api_survey_detect_version_context,
+)
 MissingIdMappingError: Any = None
 UnmatchedGroupsError: Any = None
 SurveyValueOutOfBoundsError: Any = None
@@ -178,24 +206,6 @@ def _get_effective_template_version_overrides(
     return effective_overrides
 
 
-def _is_prepared_workflow_request() -> bool:
-    return _survey_workflow_stage_service.parse_prepared_workflow_flag(
-        request.form.get("prepared_workflow")
-    )
-
-
-def _format_workflow_preparation_stale_response(
-    payload: dict[str, object],
-    *,
-    log_messages: list[dict[str, str]] | None = None,
-) -> dict[str, object]:
-    return _survey_workflow_stage_service.format_workflow_preparation_stale_response(
-        payload=payload,
-        prepared_workflow=_is_prepared_workflow_request(),
-        log_messages=log_messages,
-    )
-
-
 def _requested_project_path() -> str | None:
     raw_value = (
         request.form.get("project_path")
@@ -207,28 +217,13 @@ def _requested_project_path() -> str | None:
 
 
 def _resolve_requested_project_root(*, require_project: bool) -> Path | None:
-    missing_message = "No project selected. Load a project before converting survey data."
-    missing_path_message = (
-        "The selected project path no longer exists. Reopen the project and retry survey conversion."
+    return _shared_resolve_requested_project_root(
+        require_project=require_project,
+        missing_message="No project selected. Load a project before converting survey data.",
+        missing_path_message=(
+            "The selected project path no longer exists. Reopen the project and retry survey conversion."
+        ),
     )
-
-    requested_project_path = _requested_project_path()
-    if requested_project_path:
-        return require_existing_project_root(
-            requested_project_path,
-            missing_message=missing_message,
-            missing_path_message=missing_path_message,
-        )
-
-    session_project_path = session.get("current_project_path")
-    if require_project:
-        return require_existing_project_root(
-            session_project_path,
-            missing_message=missing_message,
-            missing_path_message=missing_path_message,
-        )
-
-    return resolve_existing_project_root(session_project_path)
 
 
 def _iter_session_registration_values(
@@ -308,101 +303,10 @@ def _format_value_offset_confirmation_response(
     error: Exception,
     log_messages: list[dict[str, str]] | None = None,
 ) -> dict[str, Any]:
-    task = str(getattr(error, "task", "") or "").strip().lower()
-    item_id = str(getattr(error, "item_id", "") or "").strip()
-    raw_value = getattr(error, "raw_value", None)
-    subject_id = str(getattr(error, "sub_id", "") or "").strip()
-    expected_levels = list(getattr(error, "expected_levels", []) or [])
-
-    suggested_offsets: list[float | int] = []
-    for raw_offset in list(getattr(error, "suggested_offsets", []) or []):
-        try:
-            numeric = float(raw_offset)
-        except (TypeError, ValueError):
-            continue
-        rounded = round(numeric)
-        if abs(numeric - rounded) < 1e-9:
-            suggested_offsets.append(int(rounded))
-        else:
-            suggested_offsets.append(round(numeric, 6))
-    suggested_offset_labels = [f"{float(offset):+g}" for offset in suggested_offsets]
-
-    configured_offset = getattr(error, "configured_offset", None)
-    adjusted_value = getattr(error, "adjusted_value", None)
-    raw_value_valid_without_offset = getattr(
-        error, "raw_value_valid_without_offset", None
+    return format_value_offset_confirmation_response(
+        error,
+        log_messages=log_messages,
     )
-    offset_evidence = getattr(error, "offset_evidence", None)
-    evidence_classification = ""
-    if isinstance(offset_evidence, dict):
-        evidence_classification = str(
-            offset_evidence.get("classification") or ""
-        ).strip().lower()
-
-    fallback_message = (
-        "Survey values are outside template levels. Review and fix out-of-range source values before continuing."
-    )
-    review_message = str(error).strip() or fallback_message
-    if configured_offset is None and evidence_classification in {
-        "item_issues_likely",
-        "structural_offset_likely",
-    }:
-        if evidence_classification == "structural_offset_likely":
-            review_message = (
-                "Sampled out-of-range values may reflect a task-wide shifted scale, but this is not proof."
-            )
-        else:
-            review_message = (
-                "Sampled out-of-range values do not support treating this as a task-wide scale shift."
-            )
-    if configured_offset is not None:
-        review_message += (
-            " Fix the data in the input data or (if you are really confident) rescale, then run Preview again."
-            " Use Advanced options only when you can independently confirm a full-task shifted scale."
-            " Manual task value offsets are applied to observed numeric input values (value + offset), not to template scale definitions."
-        )
-        if suggested_offset_labels:
-            review_message += (
-                " Sample-based offset hint(s): "
-                + ", ".join(suggested_offset_labels)
-                + "."
-            )
-        if raw_value_valid_without_offset is True:
-            review_message += (
-                " This sampled value is already valid without offset;"
-                " the configured offset direction is likely wrong for this template/data pairing."
-                " Verify offset direction and template version selection."
-            )
-    else:
-        review_message += (
-            " Required first: fix out-of-range values in the input data, then run Preview again."
-            " Advanced-only fallback: use a manual task value offset only with independent evidence of a full-task scale shift (for example, every item is 1-4 while the template is 0-3)."
-            " Manual task value offsets are applied to observed numeric input values (value + offset), not to template scale definitions."
-            " Do not use offsets to bypass item-level data errors."
-        )
-    payload: dict[str, Any] = {
-        "error": "value_offset_manual_review_required",
-        "message": review_message,
-        "task": task,
-        "item_id": item_id,
-        "raw_value": raw_value,
-        "expected_levels": expected_levels,
-        "suggested_offsets": suggested_offsets,
-    }
-    if subject_id:
-        payload["subject_id"] = subject_id
-    if configured_offset is not None:
-        payload["configured_offset"] = configured_offset
-    if adjusted_value is not None:
-        payload["adjusted_value"] = adjusted_value
-    if isinstance(raw_value_valid_without_offset, bool):
-        payload["raw_value_valid_without_offset"] = raw_value_valid_without_offset
-    if isinstance(offset_evidence, dict):
-        payload["offset_evidence"] = offset_evidence
-    payload["manual_action"] = "advanced_value_offsets"
-    if log_messages is not None:
-        payload["log"] = log_messages
-    return payload
 
 
 def _is_value_offset_confirmation_error(error: Exception) -> bool:
@@ -413,78 +317,14 @@ def _is_value_offset_confirmation_error(error: Exception) -> bool:
     )
 
 
-class _LocalPathUpload:
-    """Minimal upload-like wrapper backed by a local filesystem path."""
-
-    def __init__(self, source_path: Path):
-        self._source_path = source_path
-        self.filename = source_path.name
-
-    def save(self, destination: str):
-        shutil.copy2(self._source_path, destination)
-
-
-def _resolve_uploaded_or_source_file(*, field_names: tuple[str, ...]):
-    for field_name in field_names:
-        upload = request.files.get(field_name)
-        if upload is not None and upload.filename:
-            return upload, None
-
-    source_file_path = (
-        (request.form.get("source_file_path") or "").strip()
-        or (request.args.get("source_file_path") or "").strip()
-    )
-    if not source_file_path:
-        return None, "Missing input file"
-
-    source_path = Path(source_file_path).expanduser().resolve()
-    if not source_path.exists() or not source_path.is_file():
-        return None, f"File not found: {source_file_path}"
-
-    return _LocalPathUpload(source_path), None
-
-
 def _resolve_official_survey_dir(project_path: str | None) -> Path | None:
-    candidates: list[Path] = []
-
-    if project_path:
-        project_root = Path(project_path).expanduser().resolve()
-        if project_root.is_file():
-            project_root = project_root.parent
-
-        project_official = project_root / "official" / "library"
-        candidates.extend([project_official / "survey", project_official])
-
-    if has_app_context():
-        base_dir = Path(current_app.root_path).parent.resolve()
-    else:
-        # Test/runtime fallback when no Flask app context is active.
-        base_dir = Path(__file__).resolve().parents[4]
-    candidates.append(base_dir / "official" / "library" / "survey")
-    candidates.append(base_dir / "official" / "library")
-
-    for candidate in candidates:
-        if candidate.exists() and candidate.is_dir():
-            if list(candidate.glob("survey-*.json")):
-                return candidate
-    return None
+    return resolve_official_survey_dir(project_path)
 
 
 def _infer_project_template_technical_defaults(
     *, input_path: str | Path | None = None
 ) -> dict[str, str]:
-    """Infer project-local administration defaults when the source format makes them unambiguous."""
-    if not input_path:
-        return {}
-
-    suffix = Path(input_path).suffix.lower()
-    if suffix in {".lsa", ".lss"}:
-        return {
-            "SoftwarePlatform": "LimeSurvey",
-            "AdministrationMethod": "online",
-        }
-
-    return {}
+    return infer_project_template_technical_defaults(input_path=input_path)
 
 
 def _prepare_project_survey_template_from_official(
@@ -494,50 +334,12 @@ def _prepare_project_survey_template_from_official(
     technical_defaults: dict[str, str] | None = None,
     selected_version: str | None = None,
 ) -> Any:
-    """Convert an official instrument template into a project-local administration template.
-
-    Official templates keep canonical instrument metadata. Project copies must also carry
-    administration-specific metadata describing how that instrument was actually run in the
-    project. When the import source is unambiguous (for example LimeSurvey archives), seed the
-    corresponding Technical fields automatically; otherwise leave placeholders for review.
-    """
-    if not isinstance(payload, dict):
-        return payload
-
-    out = deepcopy(payload)
-
-    technical = out.get("Technical")
-    if not isinstance(technical, dict):
-        technical = {}
-        out["Technical"] = technical
-
-    technical.setdefault("StimulusType", "Questionnaire")
-    technical.setdefault("FileFormat", "tsv")
-    technical.setdefault("Language", "")
-    technical.setdefault("Respondent", "")
-    technical.setdefault("AdministrationMethod", "")
-    technical.setdefault("SoftwarePlatform", "")
-    technical.setdefault("SoftwareVersion", "")
-
-    for key, value in (technical_defaults or {}).items():
-        if not value:
-            continue
-        existing = technical.get(key)
-        if isinstance(existing, str) and existing.strip():
-            continue
-        technical[key] = value
-
-    study = out.get("Study")
-    if not isinstance(study, dict):
-        study = {}
-        out["Study"] = study
-
-    study.setdefault("TaskName", task)
-    study.setdefault("LicenseID", "unknown")
-    if isinstance(selected_version, str) and selected_version.strip():
-        study["Version"] = selected_version.strip()
-
-    return out
+    return prepare_project_survey_template_from_official(
+        payload,
+        task=task,
+        technical_defaults=technical_defaults,
+        selected_version=selected_version,
+    )
 
 
 def _copy_official_templates_to_project(
@@ -548,66 +350,14 @@ def _copy_official_templates_to_project(
     selected_versions: dict[str, str] | None = None,
     log_fn=None,
 ) -> dict[str, list[str]]:
-    summary: dict[str, Any] = {
-        "copied_tasks": [],
-        "existing_tasks": [],
-        "missing_official_tasks": [],
-    }
-    if not project_path or not tasks:
-        return summary
-    project_root = resolve_existing_project_root(project_path)
-    if project_root is None:
-        return summary
-
-    if (official_dir / "survey").is_dir() and not list(
-        official_dir.glob("survey-*.json")
-    ):
-        official_dir = official_dir / "survey"
-
-    dest_dir = project_root / "code" / "library" / "survey"
-    dest_dir.mkdir(parents=True, exist_ok=True)
-
-    for task in tasks:
-        src = official_dir / f"survey-{task}.json"
-        dest = dest_dir / f"survey-{task}.json"
-        if not src.exists():
-            summary["missing_official_tasks"].append(task)
-            continue
-
-        if dest.exists():
-            summary["existing_tasks"].append(task)
-            continue
-
-        try:
-            with open(src, "r", encoding="utf-8") as f:
-                payload = json.load(f)
-
-            if isinstance(payload, dict):
-                payload = _prepare_project_survey_template_from_official(
-                    payload,
-                    task=task,
-                    technical_defaults=technical_defaults,
-                    selected_version=(selected_versions or {}).get(task),
-                )
-
-                with open(dest, "w", encoding="utf-8") as f:
-                    json.dump(payload, f, indent=2, ensure_ascii=False)
-            else:
-                shutil.copy2(src, dest)
-        except Exception:
-            shutil.copy2(src, dest)
-
-        summary["copied_tasks"].append(task)
-
-    copied = len(summary["copied_tasks"])
-    if copied:
-        msg = f"Copied {copied} official survey template(s) into project library."
-        if log_fn:
-            log_fn(msg, "info")
-        else:
-            print(f"[PRISM DEBUG] {msg}")
-
-    return summary
+    return copy_official_templates_to_project(
+        official_dir,
+        tasks,
+        project_path,
+        technical_defaults=technical_defaults,
+        selected_versions=selected_versions,
+        log_fn=log_fn,
+    )
 
 
 def _infer_tasks_against_official_templates(
@@ -621,117 +371,21 @@ def _infer_tasks_against_official_templates(
     duplicate_handling: str,
     separator_option: str,
 ) -> dict[str, Any]:
-    suffix = Path(filename).suffix.lower()
-    official_dir = _resolve_official_survey_dir(project_path)
-    if not official_dir:
-        return {
-            "tasks": [],
-            "copied_tasks": [],
-            "existing_tasks": [],
-            "missing_official_tasks": [],
-            "official_template_count": 0,
-            "match_error": "Official survey library could not be resolved.",
-        }
-
-    survey_official_dir = official_dir
-    if (official_dir / "survey").is_dir() and not list(
-        official_dir.glob("survey-*.json")
-    ):
-        survey_official_dir = official_dir / "survey"
-
-    official_templates = sorted(survey_official_dir.glob("survey-*.json"))
-    if not official_templates:
-        return {
-            "tasks": [],
-            "copied_tasks": [],
-            "existing_tasks": [],
-            "missing_official_tasks": [],
-            "official_template_count": 0,
-            "match_error": f"No official survey templates found in: {survey_official_dir}",
-        }
-
-    tmp_dir = tempfile.mkdtemp(prefix="prism_survey_template_check_")
-    try:
-        tmp_dir_path = Path(tmp_dir)
-        input_path = tmp_dir_path / filename
-        uploaded_file.save(str(input_path))
-
-        preflight_output_root = tmp_dir_path / "preflight_rawdata"
-        if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
-            result = _run_survey_with_official_fallback(
-                convert_survey_xlsx_to_prism_dataset,
-                input_path=input_path,
-                library_dir=str(survey_official_dir),
-                output_root=preflight_output_root,
-                survey=None,
-                id_column=id_column,
-                session_column=session_column,
-                session=None,
-                sheet=sheet,
-                unknown="ignore",
-                dry_run=True,
-                force=True,
-                name="template_check",
-                authors=[],
-                language=None,
-                alias_file=None,
-                id_map_file=None,
-                separator=expected_delimiter_for_suffix(suffix, separator_option),
-                duplicate_handling=duplicate_handling,
-                skip_participants=True,
-                fallback_project_path=project_path,
-            )
-        elif suffix == ".lsa":
-            result = _run_survey_with_official_fallback(
-                convert_survey_lsa_to_prism_dataset,
-                input_path=input_path,
-                library_dir=str(survey_official_dir),
-                output_root=preflight_output_root,
-                survey=None,
-                id_column=id_column,
-                session_column=session_column,
-                session=None,
-                unknown="ignore",
-                dry_run=True,
-                force=True,
-                name="template_check",
-                authors=[],
-                language=None,
-                alias_file=None,
-                id_map_file=None,
-                strict_levels=None,
-                duplicate_handling=duplicate_handling,
-                skip_participants=True,
-                project_path=project_path,
-                fallback_project_path=project_path,
-            )
-        else:
-            raise ValueError(_SUPPORTED_SURVEY_INPUT_MESSAGE)
-
-        tasks = sorted(set(getattr(result, "tasks_included", []) or []))
-        copy_summary = _copy_official_templates_to_project(
-            official_dir=survey_official_dir,
-            tasks=tasks,
-            project_path=project_path,
-            technical_defaults=_infer_project_template_technical_defaults(
-                input_path=filename,
-            ),
-            log_fn=None,
-        )
-        return {
-            "tasks": tasks,
-            "copied_tasks": copy_summary.get("copied_tasks", []),
-            "existing_tasks": copy_summary.get("existing_tasks", []),
-            "missing_official_tasks": copy_summary.get("missing_official_tasks", []),
-            "official_template_count": len(official_templates),
-            "detected_sessions": list(getattr(result, "detected_sessions", []) or []),
-            "task_runs": getattr(result, "task_runs", {}) or {},
-            "session_column": getattr(result, "session_column", None),
-            "run_column": getattr(result, "run_column", None),
-            "match_error": None,
-        }
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+    return infer_tasks_against_official_templates(
+        uploaded_file=uploaded_file,
+        filename=filename,
+        project_path=project_path,
+        id_column=id_column,
+        session_column=session_column,
+        sheet=sheet,
+        duplicate_handling=duplicate_handling,
+        separator_option=separator_option,
+        supported_survey_tabular_suffixes=_SUPPORTED_SURVEY_TABULAR_SUFFIXES,
+        supported_survey_input_message=_SUPPORTED_SURVEY_INPUT_MESSAGE,
+        convert_survey_xlsx_to_prism_dataset=convert_survey_xlsx_to_prism_dataset,
+        convert_survey_lsa_to_prism_dataset=convert_survey_lsa_to_prism_dataset,
+        run_survey_with_official_fallback=_run_survey_with_official_fallback,
+    )
 
 
 def _detect_survey_version_contexts(
@@ -868,17 +522,7 @@ def _detect_survey_version_contexts(
 
 
 def _coerce_flask_response(response_value):
-    """Normalize a Flask view return value to a response object and status code."""
-
-    response = response_value
-    status_code = None
-    if isinstance(response_value, tuple):
-        response = response_value[0]
-        if len(response_value) > 1:
-            status_code = response_value[1]
-    if status_code is None:
-        status_code = getattr(response, "status_code", 200)
-    return response, status_code
+    return coerce_flask_response(response_value)
 
 
 def _run_survey_with_official_fallback(
@@ -1022,33 +666,7 @@ def api_survey_prepare_workflow():
             return preview_response
 
         payload = response.get_json(silent=True) or {}
-        preview_payload = (
-            payload.get("preview") if isinstance(payload.get("preview"), dict) else {}
-        )
-        prepared_payload: dict[str, Any] = {
-            "ok": True,
-            "tasks_included": list(payload.get("tasks_included") or []),
-            "detected_sessions": list(payload.get("detected_sessions") or []),
-            "task_runs": payload.get("task_runs") or {},
-            "session_column": payload.get("session_column"),
-            "run_column": payload.get("run_column"),
-            "multivariant_tasks": payload.get("multivariant_tasks") or {},
-            "preview_participants": list(preview_payload.get("participants") or []),
-            "applied_value_offsets": payload.get("applied_value_offsets") or {},
-            "value_offset_application_counts": payload.get(
-                "value_offset_application_counts"
-            )
-            or {},
-            "requires_template_completion": bool(
-                payload.get("requires_template_completion")
-            ),
-        }
-        if payload.get("workflow_gate") is not None:
-            prepared_payload["workflow_gate"] = payload.get("workflow_gate")
-        if payload.get("near_match_applied"):
-            prepared_payload["near_match_applied"] = True
-
-        return jsonify(prepared_payload)
+        return jsonify(build_prepare_workflow_payload(payload))
     except Exception as error:
         if has_app_context():
             current_app.logger.exception("Survey workflow preparation failed")
@@ -1107,101 +725,12 @@ def _validate_project_templates_for_tasks(
     project_path: str | None,
     schema_version: str = "stable",
 ) -> list[dict[str, str]]:
-    """Validate project survey templates for used tasks and return issues.
-
-    Validation is project-local only. Official templates may be copied into the
-    project beforehand, but checks must evaluate only project template content.
-    """
-    if not project_path or not tasks:
-        return []
-
-    project_root = Path(project_path).expanduser().resolve()
-    if project_root.is_file():
-        project_root = project_root.parent
-
-    template_dir = project_root / "code" / "library" / "survey"
-    if not template_dir.exists():
-        return []
-
-    try:
-        from src.schema_manager import load_schema
-
-        app_root = Path(__file__).resolve().parents[3]
-        schema_dir = app_root / "schemas"
-        schema = load_schema("survey", str(schema_dir), version=schema_version)
-        if not schema:
-            return []
-        validator = Draft7Validator(schema)
-    except Exception:
-        return []
-
-    def _has_multiple_versions(template_payload: dict[str, Any] | None) -> bool:
-        if not isinstance(template_payload, dict):
-            return False
-        study = template_payload.get("Study")
-        if not isinstance(study, dict):
-            return False
-        versions = study.get("Versions")
-        return isinstance(versions, list) and len([v for v in versions if v]) > 1
-
-    def _is_missing_version(template_payload: dict[str, Any]) -> bool:
-        study = template_payload.get("Study")
-        if not isinstance(study, dict):
-            return True
-        value = study.get("Version")
-        if value is None:
-            return True
-        if isinstance(value, str):
-            return value.strip() == ""
-        if isinstance(value, dict):
-            return not value
-        return False
-
-    issues: list[dict[str, str]] = []
-    for task in sorted(set(tasks)):
-        template_path = template_dir / f"survey-{task}.json"
-        if not template_path.exists():
-            continue
-
-        try:
-            with open(template_path, "r", encoding="utf-8") as f:
-                payload = json.load(f)
-        except Exception as exc:
-            issues.append(
-                {
-                    "file": str(template_path),
-                    "message": f"Template is not valid JSON: {exc}",
-                }
-            )
-            continue
-
-        normalized_payload = payload
-        if callable(normalize_paper_software_platform):
-            maybe_normalized_payload = normalize_paper_software_platform(payload)
-            if isinstance(maybe_normalized_payload, dict):
-                normalized_payload = maybe_normalized_payload
-
-        for err in validator.iter_errors(normalized_payload):
-            field_path = " -> ".join([str(p) for p in err.path])
-            prefix = f"{field_path}: " if field_path else ""
-            issues.append(
-                {
-                    "file": str(template_path),
-                    "message": f"{prefix}{err.message}",
-                }
-            )
-
-        if _has_multiple_versions(normalized_payload) and _is_missing_version(
-            normalized_payload
-        ):
-            issues.append(
-                {
-                    "file": str(template_path),
-                    "message": "Study -> Version: required when multiple instrument versions exist (Study.Versions).",
-                }
-            )
-
-    return issues
+    return validate_project_templates_for_tasks(
+        tasks=tasks,
+        project_path=project_path,
+        schema_version=schema_version,
+        normalize_paper_software_platform=normalize_paper_software_platform,
+    )
 
 
 def _collect_project_template_warnings_for_tasks(
@@ -1209,68 +738,10 @@ def _collect_project_template_warnings_for_tasks(
     tasks: list[str],
     project_path: str | None,
 ) -> list[dict[str, str]]:
-    """Collect non-blocking template quality warnings for selected tasks."""
-    if not project_path or not tasks:
-        return []
-
-    project_root = Path(project_path).expanduser().resolve()
-    if project_root.is_file():
-        project_root = project_root.parent
-
-    template_dir = project_root / "code" / "library" / "survey"
-    if not template_dir.exists():
-        return []
-
-    warnings: list[dict[str, str]] = []
-    non_item_keys = {
-        "Technical",
-        "Task",
-        "Study",
-        "Metadata",
-        "Scoring",
-        "Normative",
-        "I18n",
-        "_aliases",
-        "_reverse_aliases",
-    }
-
-    for task in sorted(set(tasks)):
-        template_path = template_dir / f"survey-{task}.json"
-        if not template_path.exists():
-            continue
-
-        try:
-            with open(template_path, "r", encoding="utf-8") as f:
-                payload = json.load(f)
-        except Exception:
-            # JSON parse problems are handled as blocking issues elsewhere.
-            continue
-
-        if not isinstance(payload, dict):
-            continue
-
-        task_name = str(payload.get("Study", {}).get("TaskName") or task).strip()
-        task_norm = task_name.lower() or task.lower()
-
-        for item_key, item_def in payload.items():
-            if item_key in non_item_keys or not isinstance(item_def, dict):
-                continue
-
-            has_levels = isinstance(item_def.get("Levels"), dict)
-            has_range = "MinValue" in item_def or "MaxValue" in item_def
-            if has_levels and has_range:
-                warnings.append(
-                    {
-                        "file": str(template_path),
-                        "message": (
-                            f"Template '{task_norm}' item '{item_key}' defines both "
-                            "Levels and Min/Max; numeric range takes precedence and "
-                            "Levels will be treated as labels only."
-                        ),
-                    }
-                )
-
-    return warnings
+    return collect_project_template_warnings_for_tasks(
+        tasks=tasks,
+        project_path=project_path,
+    )
 
 
 def _build_template_completion_gate(
@@ -1278,59 +749,15 @@ def _build_template_completion_gate(
     tasks: list[str],
     issues: list[dict[str, str]],
 ) -> dict[str, Any]:
-    task_list = sorted({task for task in tasks if task})
-    return {
-        "blocked": True,
-        "reason": "project_template_completion_required",
-        "title": "Template Completion Required",
-        "message": (
-            "Official templates were copied to your project library. "
-            "Some required project-level fields still need to be completed in these templates before importing survey data."
-        ),
-        "tasks": task_list,
-        "issue_count": len(issues),
-        "next_steps": [
-            "Open Template Editor for the copied survey templates in code/library/survey.",
-            "Fill project-specific administration fields in Technical (for example AdministrationMethod, SoftwarePlatform, SoftwareVersion) and any remaining required metadata.",
-            "Run Preview again. Import is unlocked automatically after template validation passes.",
-        ],
-    }
+    return build_template_completion_gate(tasks=tasks, issues=issues)
 
 
 def _format_unmatched_groups_response(uge, log_messages=None):
-    """Build the JSON response dict for an UnmatchedGroupsError."""
-
-    def _safe_prism_json(value):
-        if isinstance(value, dict):
-            return value
-        return {}
-
-    payload = {
-        "error": "unmatched_groups",
-        "message": str(uge),
-        "unmatched": [
-            {
-                "group_name": g["group_name"],
-                "task_key": g["task_key"],
-                "item_count": len(
-                    [
-                        k
-                        for k in _safe_prism_json(g.get("prism_json"))
-                        if k not in _NON_ITEM_TOPLEVEL_KEYS
-                        and isinstance(
-                            _safe_prism_json(g.get("prism_json")).get(k), dict
-                        )
-                    ]
-                ),
-                "item_codes": sorted(g.get("item_codes", []))[:10],
-                "prism_json": _safe_prism_json(g.get("prism_json")),
-            }
-            for g in uge.unmatched
-        ],
-    }
-    if log_messages is not None:
-        payload["log"] = log_messages
-    return payload
+    return format_unmatched_groups_response(
+        uge,
+        non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
+        log_messages=log_messages,
+    )
 
 
 def api_survey_languages():
@@ -1355,344 +782,47 @@ def api_survey_save_to_project():
 
 
 def api_survey_check_project_templates():
-    """Validate local project survey templates and optionally seed from official templates."""
-    requested_project_path = (request.form.get("project_path") or "").strip() or None
-    try:
-        project_root = require_existing_project_root(
-            requested_project_path or session.get("current_project_path"),
-            missing_message="No project selected",
-            missing_path_message="The selected project path no longer exists. Reopen the project and retry template check.",
-        )
-    except (ValueError, FileNotFoundError) as error:
-        return jsonify({"error": str(error)}), 400
-
-    uploaded_file, upload_error = _resolve_uploaded_or_source_file(
-        field_names=("excel", "file")
-    )
-    parsed_stage_fields = _survey_workflow_stage_service.parse_stage_form_fields(
-        form=request.form
-    )
-    id_column = parsed_stage_fields.id_column
-    session_column = parsed_stage_fields.session_column
-    sheet = parsed_stage_fields.sheet
-    duplicate_handling = parsed_stage_fields.duplicate_handling
-    try:
-        separator_option = normalize_separator_option(request.form.get("separator"))
-    except ValueError as error:
-        return jsonify({"error": str(error)}), 400
-
-    matching_summary = {
-        "input_file": None,
-        "official_template_count": 0,
-        "matched_tasks": [],
-        "copied_tasks": [],
-        "existing_tasks": [],
-        "missing_official_tasks": [],
-        "detected_sessions": [],
-        "task_runs": {},
-        "session_column": None,
-        "run_column": None,
-        "match_error": None,
-    }
-
-    if uploaded_file and getattr(uploaded_file, "filename", ""):
-        filename = secure_filename(uploaded_file.filename)
-        suffix = Path(filename).suffix.lower()
-        if suffix not in _SUPPORTED_SURVEY_INPUT_SUFFIXES:
-            return jsonify({"error": _SUPPORTED_SURVEY_INPUT_MESSAGE}), 400
-
-        matching_summary["input_file"] = filename
-        try:
-            inferred = _infer_tasks_against_official_templates(
-                uploaded_file=uploaded_file,
-                filename=filename,
-                project_path=str(project_root),
-                id_column=id_column,
-                session_column=session_column,
-                sheet=sheet,
-                duplicate_handling=duplicate_handling,
-                separator_option=separator_option,
-            )
-            matching_summary["official_template_count"] = inferred.get(
-                "official_template_count", 0
-            )
-            matching_summary["matched_tasks"] = inferred.get("tasks", [])
-            matching_summary["copied_tasks"] = inferred.get("copied_tasks", [])
-            matching_summary["existing_tasks"] = inferred.get("existing_tasks", [])
-            matching_summary["missing_official_tasks"] = inferred.get(
-                "missing_official_tasks", []
-            )
-            matching_summary["detected_sessions"] = inferred.get(
-                "detected_sessions", []
-            )
-            matching_summary["task_runs"] = inferred.get("task_runs", {})
-            matching_summary["session_column"] = inferred.get("session_column")
-            matching_summary["run_column"] = inferred.get("run_column")
-            matching_summary["match_error"] = inferred.get("match_error")
-        except IdColumnNotDetectedError as e:
-            return (
-                jsonify(
-                    {
-                        "error": "id_column_required",
-                        "message": str(e),
-                        "columns": e.available_columns,
-                    }
-                ),
-                409,
-            )
-        except MissingIdMappingError as mie:
-            return (
-                jsonify(
-                    {
-                        "error": "id_mapping_incomplete",
-                        "message": str(mie),
-                        "missing_ids": mie.missing_ids,
-                        "suggestions": mie.suggestions,
-                    }
-                ),
-                409,
-            )
-        except UnmatchedGroupsError as uge:
-            return jsonify(_format_unmatched_groups_response(uge)), 409
-        except Exception as exc:
-            matching_summary["match_error"] = str(exc)
-    elif upload_error and upload_error != "Missing input file":
-        return jsonify({"error": upload_error}), 400
-
-    template_dir = project_root / "code" / "library" / "survey"
-    template_files = (
-        sorted(template_dir.glob("survey-*.json")) if template_dir.is_dir() else []
-    )
-    tasks = sorted(
-        {
-            file_path.stem[len("survey-") :]
-            for file_path in template_files
-            if file_path.stem.startswith("survey-")
-            and len(file_path.stem) > len("survey-")
-        }
-    )
-    local_templates = list(tasks)
-
-    if matching_summary["matched_tasks"]:
-        tasks = matching_summary["matched_tasks"]
-
-    if not template_files:
-        return jsonify(
-            {
-                "ok": True,
-                "message": "No local survey templates found in project code/library/survey.",
-                "template_dir": str(template_dir),
-                "template_count": 0,
-                "local_templates": [],
-                "tasks": [],
-                "issues": [],
-                "warnings": [],
-                "matching": matching_summary,
-                "multivariant_tasks": {},
-                "detected_sessions": matching_summary["detected_sessions"],
-                "task_runs": matching_summary["task_runs"],
-                "session_column": matching_summary["session_column"],
-                "run_column": matching_summary["run_column"],
-            }
-        )
-
-    issues = _validate_project_templates_for_tasks(
-        tasks=tasks,
-        project_path=str(project_root),
-        schema_version="stable",
-    )
-    warnings = _collect_project_template_warnings_for_tasks(
-        tasks=local_templates,
-        project_path=str(project_root),
-    )
-    multivariant_tasks = collect_multivariant_tasks_from_library(
-        library_dir=project_root / "code" / "library" / "survey",
-        tasks=tasks,
-        selected_versions=_get_effective_template_version_overrides(
-            project_path=project_root,
-            template_version_overrides=None,
-        ),
-    )
-
-    if issues:
-        gate = _build_template_completion_gate(tasks=tasks, issues=issues)
-        return jsonify(
-            {
-                "ok": False,
-                "message": gate["message"],
-                "template_dir": str(template_dir),
-                "template_count": len(template_files),
-                "local_templates": local_templates,
-                "tasks": tasks,
-                "issues": issues,
-                "warnings": warnings,
-                "workflow_gate": gate,
-                "matching": matching_summary,
-                "multivariant_tasks": multivariant_tasks,
-                "detected_sessions": matching_summary["detected_sessions"],
-                "task_runs": matching_summary["task_runs"],
-                "session_column": matching_summary["session_column"],
-                "run_column": matching_summary["run_column"],
-            }
-        )
-
-    return jsonify(
-        {
-            "ok": True,
-            "message": "Project survey templates passed required-field validation.",
-            "template_dir": str(template_dir),
-            "template_count": len(template_files),
-            "local_templates": local_templates,
-            "tasks": tasks,
-            "issues": [],
-            "warnings": warnings,
-            "matching": matching_summary,
-            "multivariant_tasks": multivariant_tasks,
-            "detected_sessions": matching_summary["detected_sessions"],
-            "task_runs": matching_summary["task_runs"],
-            "session_column": matching_summary["session_column"],
-            "run_column": matching_summary["run_column"],
-        }
+    return handle_api_survey_check_project_templates(
+        require_existing_project_root=require_existing_project_root,
+        resolve_uploaded_or_source_file=_resolve_uploaded_or_source_file,
+        survey_workflow_stage_service=_survey_workflow_stage_service,
+        normalize_separator_option=normalize_separator_option,
+        supported_survey_input_suffixes=_SUPPORTED_SURVEY_INPUT_SUFFIXES,
+        supported_survey_input_message=_SUPPORTED_SURVEY_INPUT_MESSAGE,
+        infer_tasks_against_official_templates=_infer_tasks_against_official_templates,
+        id_column_not_detected_error_cls=IdColumnNotDetectedError,
+        missing_id_mapping_error_cls=MissingIdMappingError,
+        unmatched_groups_error_cls=UnmatchedGroupsError,
+        format_unmatched_groups_response=_format_unmatched_groups_response,
+        validate_project_templates_for_tasks=_validate_project_templates_for_tasks,
+        collect_project_template_warnings_for_tasks=_collect_project_template_warnings_for_tasks,
+        collect_multivariant_tasks_from_library=collect_multivariant_tasks_from_library,
+        get_effective_template_version_overrides=_get_effective_template_version_overrides,
     )
 
 
 def api_survey_detect_version_context():
-    uploaded_file, upload_error = _resolve_uploaded_or_source_file(
-        field_names=("excel", "file")
+    return handle_api_survey_detect_version_context(
+        resolve_uploaded_or_source_file=_resolve_uploaded_or_source_file,
+        supported_survey_input_suffixes=_SUPPORTED_SURVEY_INPUT_SUFFIXES,
+        supported_survey_input_message=_SUPPORTED_SURVEY_INPUT_MESSAGE,
+        resolve_requested_project_root=_resolve_requested_project_root,
+        parse_selected_survey_tasks=parse_selected_survey_tasks,
+        merge_selected_survey_filter=merge_selected_survey_filter,
+        parse_template_version_overrides=parse_template_version_overrides,
+        parse_near_item_match_task_allowlist=parse_near_item_match_task_allowlist,
+        parse_task_value_offsets=parse_task_value_offsets,
+        survey_workflow_stage_service=_survey_workflow_stage_service,
+        normalize_separator_option=normalize_separator_option,
+        get_effective_template_version_overrides=_get_effective_template_version_overrides,
+        resolve_effective_library_path=_resolve_effective_library_path,
+        resolve_official_survey_dir=_resolve_official_survey_dir,
+        detect_survey_version_contexts=_detect_survey_version_contexts,
+        id_column_not_detected_error_cls=IdColumnNotDetectedError,
+        missing_id_mapping_error_cls=MissingIdMappingError,
+        unmatched_groups_error_cls=UnmatchedGroupsError,
+        format_unmatched_groups_response=_format_unmatched_groups_response,
     )
-    if uploaded_file is None:
-        if upload_error == "Missing input file":
-            return jsonify({"ok": True, "multivariant_tasks": {}, "task_runs": {}})
-        return jsonify({"error": upload_error}), 400
-
-    if not getattr(uploaded_file, "filename", ""):
-        return jsonify({"ok": True, "multivariant_tasks": {}, "task_runs": {}})
-
-    filename = secure_filename(uploaded_file.filename)
-    suffix = Path(filename).suffix.lower()
-    if suffix not in _SUPPORTED_SURVEY_INPUT_SUFFIXES:
-        return jsonify({"error": _SUPPORTED_SURVEY_INPUT_MESSAGE}), 400
-
-    try:
-        requested_project_root = _resolve_requested_project_root(require_project=False)
-    except (ValueError, FileNotFoundError) as error:
-        return jsonify({"error": str(error)}), 400
-
-    requested_project_path = (
-        str(requested_project_root) if requested_project_root else None
-    )
-
-    raw_survey_filter = (request.form.get("survey") or "").strip() or None
-    try:
-        selected_tasks = parse_selected_survey_tasks(
-            request.form.get("selected_tasks")
-        )
-        survey_filter = merge_selected_survey_filter(raw_survey_filter, selected_tasks)
-    except ValueError as error:
-        return jsonify({"error": str(error)}), 400
-    try:
-        template_version_overrides = parse_template_version_overrides(
-            request.form.get("template_versions")
-        )
-    except ValueError as error:
-        return jsonify({"error": str(error)}), 400
-
-    allow_near_item_match = request.form.get("allow_near_item_match") == "true"
-    near_match_tasks: set[str] | None = None
-    if allow_near_item_match:
-        try:
-            near_match_tasks = parse_near_item_match_task_allowlist(
-                request.form.get("near_match_tasks")
-            )
-        except ValueError as error:
-            return jsonify({"error": str(error)}), 400
-        if near_match_tasks is not None and not near_match_tasks:
-            return jsonify({"error": "No survey tasks selected for near matching."}), 400
-
-    try:
-        task_value_offsets = parse_task_value_offsets(request.form.get("value_offsets"))
-    except ValueError as error:
-        return jsonify({"error": str(error)}), 400
-
-    parsed_stage_fields = _survey_workflow_stage_service.parse_stage_form_fields(
-        form=request.form
-    )
-    id_column = parsed_stage_fields.id_column
-    session_column = parsed_stage_fields.session_column
-    run_column = parsed_stage_fields.run_column
-    session_override = parsed_stage_fields.session_override
-    sheet = parsed_stage_fields.sheet
-    duplicate_handling = parsed_stage_fields.duplicate_handling
-    try:
-        separator_option = normalize_separator_option(request.form.get("separator"))
-    except ValueError as error:
-        return jsonify({"error": str(error)}), 400
-
-    project_path = requested_project_path
-    effective_template_version_overrides = _get_effective_template_version_overrides(
-        project_path=project_path,
-        template_version_overrides=template_version_overrides,
-    )
-
-    library_path = None
-    try:
-        library_path = _resolve_effective_library_path()
-    except FileNotFoundError:
-        library_path = _resolve_official_survey_dir(project_path)
-        if not library_path:
-            return (
-                jsonify({"error": "No survey template library could be resolved."}),
-                400,
-            )
-
-    try:
-        context = _detect_survey_version_contexts(
-            uploaded_file=uploaded_file,
-            filename=filename,
-            library_dir=library_path,
-            project_path=project_path,
-            survey=survey_filter,
-            id_column=id_column,
-            session_column=session_column,
-            run_column=run_column,
-            session_override=session_override,
-            sheet=sheet,
-            duplicate_handling=duplicate_handling,
-            separator_option=separator_option,
-            template_version_overrides=effective_template_version_overrides,
-            allow_near_item_match=allow_near_item_match,
-            near_match_tasks=near_match_tasks,
-            task_value_offsets=task_value_offsets,
-        )
-    except IdColumnNotDetectedError as error:
-        return (
-            jsonify(
-                {
-                    "error": "id_column_required",
-                    "message": str(error),
-                    "columns": error.available_columns,
-                }
-            ),
-            409,
-        )
-    except MissingIdMappingError as error:
-        return (
-            jsonify(
-                {
-                    "error": "id_mapping_incomplete",
-                    "message": str(error),
-                    "missing_ids": error.missing_ids,
-                    "suggestions": error.suggestions,
-                }
-            ),
-            409,
-        )
-    except UnmatchedGroupsError as error:
-        return jsonify(_format_unmatched_groups_response(error)), 409
-    except Exception as error:
-        return jsonify({"error": str(error)}), 400
-
-    return jsonify({"ok": True, **context})
 
 
 def api_survey_convert_preview():

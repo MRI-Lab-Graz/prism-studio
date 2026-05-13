@@ -24,6 +24,9 @@ from .conversion_utils import (
     resolve_validation_library_path,
     summarize_project_output_paths,
 )
+from .conversion_request_helpers import (
+    resolve_uploaded_or_source_file as _resolve_uploaded_or_source_file,
+)
 from src.web.services.project_registration import register_session_in_project
 
 # Safe imports for optional dependencies
@@ -56,37 +59,6 @@ _SUPPORTED_BIOMETRICS_SUFFIXES = {
 _SUPPORTED_BIOMETRICS_MESSAGE = (
     "Supported formats: .csv, .xlsx, .tsv, .sav, .rds, .rdata, .rda"
 )
-
-
-class _LocalPathUpload:
-    """Minimal upload-like wrapper backed by a local filesystem path."""
-
-    def __init__(self, source_path: Path):
-        self._source_path = source_path
-        self.filename = source_path.name
-
-    def save(self, destination: str):
-        shutil.copy2(self._source_path, destination)
-
-
-def _resolve_uploaded_or_source_file(*, field_names: tuple[str, ...]):
-    for field_name in field_names:
-        upload = request.files.get(field_name)
-        if upload is not None and upload.filename:
-            return upload, None
-
-    source_file_path = (
-        (request.form.get("source_file_path") or "").strip()
-        or (request.args.get("source_file_path") or "").strip()
-    )
-    if not source_file_path:
-        return None, "Missing input file"
-
-    source_path = Path(source_file_path).expanduser().resolve()
-    if not source_path.exists() or not source_path.is_file():
-        return None, f"File not found: {source_file_path}"
-
-    return _LocalPathUpload(source_path), None
 
 
 def _get_requested_project_path() -> str | None:
