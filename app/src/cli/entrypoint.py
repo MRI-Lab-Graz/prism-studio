@@ -20,7 +20,10 @@ from src.cli.commands.convert import (
     cmd_convert_wide_to_long,
     cmd_physio_batch_convert,
 )
-from src.cli.commands.dataset import cmd_dataset_build_biometrics_smoketest
+from src.cli.commands.dataset import (
+    cmd_dataset_build_biometrics_smoketest,
+    cmd_dataset_cleanup_project_metadata,
+)
 from src.cli.commands.environment import (
     cmd_environment_convert,
     cmd_environment_preview,
@@ -110,6 +113,7 @@ def main() -> None:
             "library_catalog": cmd_library_catalog,
             "library_fill": cmd_library_fill,
             "dataset_build_biometrics_smoketest": cmd_dataset_build_biometrics_smoketest,
+            "dataset_cleanup_project_metadata": cmd_dataset_cleanup_project_metadata,
             "recipes_surveys": cmd_recipes_surveys,
             "recipes_biometrics": cmd_recipes_biometrics,
         },

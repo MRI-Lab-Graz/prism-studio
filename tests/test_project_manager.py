@@ -38,6 +38,19 @@ class TestProjectManager(unittest.TestCase):
             self.assertIn('family-names: "prism-studio"', citation_content)
             self.assertIn('given-names: "dataset"', citation_content)
 
+    def test_create_project_does_not_seed_sessions_metadata(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            result = manager.create_project(str(project_path), {"name": "demo_project"})
+
+            self.assertTrue(result.get("success"), result)
+
+            payload = json.loads((project_path / "project.json").read_text(encoding="utf-8"))
+
+        self.assertNotIn("Sessions", payload)
+
     def test_create_project_normalizes_invalid_dataset_type(self):
         manager = ProjectManager()
 
