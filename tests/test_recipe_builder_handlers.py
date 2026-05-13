@@ -264,6 +264,63 @@ def test_recipe_builder_save_rejects_task_missing_from_target_dataset(tmp_path):
     ).exists()
 
 
+def test_recipe_builder_surveys_extracts_underscored_task_from_bids_filename(
+    tmp_path,
+):
+    app, handlers = _build_app_and_handlers()
+
+    library_dir = tmp_path / "code" / "library" / "survey"
+    library_dir.mkdir(parents=True, exist_ok=True)
+    (library_dir / "task-ads_form_survey.json").write_text(
+        json.dumps({"Study": {"TaskName": "ads_form"}}),
+        encoding="utf-8",
+    )
+
+    with app.test_request_context("/api/recipe-builder/surveys"):
+        response, status_code = handlers.handle_api_recipe_builder_surveys(
+            str(tmp_path),
+            include_global=False,
+            modality="survey",
+        )
+
+    assert status_code == 200
+    data = response.get_json()
+    assert data["modality"] == "survey"
+    assert len(data["surveys"]) == 1
+    assert data["surveys"][0]["task"] == "ads_form"
+
+
+def test_recipe_builder_save_allows_underscored_task_name(tmp_path):
+    app, handlers = _build_app_and_handlers()
+    _write_recipe_builder_template(tmp_path, "ads_form")
+
+    recipe = {
+        "RecipeVersion": "1.0",
+        "Kind": "survey",
+        "Survey": {"TaskName": "ads_form"},
+        "Scores": [
+            {
+                "Name": "ads_form_total",
+                "Method": "mean",
+                "Items": ["ADS01", "ADS02"],
+            }
+        ],
+    }
+
+    with app.test_request_context("/api/recipe-builder/save"):
+        response, status_code = handlers.handle_api_recipe_builder_save(
+            {"dataset_path": str(tmp_path), "recipe": recipe}
+        )
+
+    assert status_code == 200
+    data = response.get_json()
+    assert data["saved"] is True
+
+    saved_path = tmp_path / "code" / "recipes" / "survey" / "recipe-ads_form.json"
+    assert saved_path.exists()
+    assert json.loads(saved_path.read_text(encoding="utf-8")) == recipe
+
+
 def test_recipe_builder_surveys_supports_biometrics_modality(tmp_path):
     app, handlers = _build_app_and_handlers()
     _write_recipe_builder_template(tmp_path, "ukk", modality="biometrics")
