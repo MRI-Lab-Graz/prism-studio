@@ -117,6 +117,8 @@ def dispatch_prism_tools(
     elif args.command == "dataset":
         if args.action == "build-biometrics-smoketest":
             handlers["dataset_build_biometrics_smoketest"](args)
+        elif args.action == "cleanup-project-metadata":
+            handlers["dataset_cleanup_project_metadata"](args)
         else:
             parsers["dataset"].print_help()
     elif args.command == "recipes":

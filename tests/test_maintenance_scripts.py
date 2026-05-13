@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from src.maintenance.sync_survey_keys import sync_survey_keys
 from src.maintenance.sync_biometrics_keys import sync_biometrics_keys
 from src.maintenance.catalog_survey_library import generate_index
+from src.maintenance.project_metadata_cleanup import cleanup_project_metadata
 
 
 # ---------------------------------------------------------------------------
@@ -258,3 +259,66 @@ class TestSyncBiometricsKeysSpecialKeys:
         sync_biometrics_keys(library_dir=lib)
         result = json.loads((tmp_path / "library" / "biometrics" / "biometrics-sj.json").read_text())
         assert "Scoring" in result
+
+
+class TestProjectMetadataCleanup:
+    def test_removes_sessions_and_preserves_other_metadata(self, tmp_path) -> None:
+        project_root = tmp_path / "study"
+        project_root.mkdir()
+        project_json_path = project_root / "project.json"
+        project_json_path.write_text(
+            json.dumps(
+                {
+                    "name": "demo",
+                    "Sessions": [
+                        {
+                            "id": "ses-1",
+                            "tasks": [
+                                {
+                                    "task": "ads",
+                                    "source": {
+                                        "file": "input.csv",
+                                        "converter": "survey-xlsx",
+                                        "convertedAt": "2026-05-13",
+                                    },
+                                }
+                            ],
+                        },
+                        {"id": "ses-2", "tasks": [{"task": "stai"}]},
+                    ],
+                    "TaskDefinitions": {"ads": {"modality": "survey"}},
+                    "TemplateVersionSelections": [{"task": "ads", "session": "ses-1", "version": "v1"}],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        report = cleanup_project_metadata(project_root)
+
+        payload = json.loads(project_json_path.read_text(encoding="utf-8"))
+        assert report.changed is True
+        assert report.removed_sessions == 2
+        assert report.removed_task_entries == 2
+        assert report.removed_source_entries == 1
+        assert "Sessions" not in payload
+        assert payload["TaskDefinitions"] == {"ads": {"modality": "survey"}}
+        assert payload["TemplateVersionSelections"] == [
+            {"task": "ads", "session": "ses-1", "version": "v1"}
+        ]
+
+    def test_dry_run_leaves_project_json_unchanged(self, tmp_path) -> None:
+        project_root = tmp_path / "study"
+        project_root.mkdir()
+        project_json_path = project_root / "project.json"
+        original_payload = {
+            "name": "demo",
+            "Sessions": [{"id": "ses-1", "tasks": [{"task": "ads"}]}],
+            "TaskDefinitions": {"ads": {"modality": "survey"}},
+        }
+        project_json_path.write_text(json.dumps(original_payload), encoding="utf-8")
+
+        report = cleanup_project_metadata(project_json_path, dry_run=True)
+
+        payload = json.loads(project_json_path.read_text(encoding="utf-8"))
+        assert report.changed is True
+        assert payload == original_payload
