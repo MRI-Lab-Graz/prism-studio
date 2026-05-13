@@ -5,6 +5,8 @@ import { initPhysio } from './modules/converter/physio.js';
 import { initEyetracking } from './modules/converter/eyetracking.js';
 import { initEnvironment } from './modules/converter/environment.js';
 import { appendConverterLogBatch, appendConverterLogLine } from './modules/converter/log-renderer.js';
+import { createConverterSessionPickerController, getSessionInputValue } from './modules/converter/session-picker.js';
+import { activateConverterTabFromQuery } from './modules/converter/tab-activation.js';
 import { displayConverterValidationResults } from './modules/converter/validation-results-renderer.js';
 import { downloadBase64Zip } from './shared/download.js';
 import { escapeHtml } from './shared/dom.js';
@@ -20,31 +22,9 @@ if (window.__prismConverterBootstrapInitialized) {
     window.__prismConverterBootstrapInitialized = true;
 
 document.addEventListener('DOMContentLoaded', function() {
-    let sessionPickerRequestToken = 0;
-
-    function activateConverterTabFromQuery() {
-        const requestedTab = new URLSearchParams(window.location.search).get('tab');
-        const normalizedTab = String(requestedTab || '').trim().toLowerCase();
-        if (!normalizedTab) {
-            return;
-        }
-
-        const tabButton = document.getElementById(`${normalizedTab}-tab`);
-        if (!tabButton) {
-            return;
-        }
-
-        if (
-            window.bootstrap
-            && window.bootstrap.Tab
-            && typeof window.bootstrap.Tab.getOrCreateInstance === 'function'
-        ) {
-            window.bootstrap.Tab.getOrCreateInstance(tabButton).show();
-            return;
-        }
-
-        tabButton.click();
-    }
+    const sessionPickerController = createConverterSessionPickerController({
+        resolveCurrentProjectPath,
+    });
 
     function appendLog(message, type = 'info', logElement = null) {
         appendConverterLogLine(
@@ -69,9 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function getSessionValue(selectEl, customEl) {
-        const selVal = selectEl ? selectEl.value.trim() : '';
-        const custVal = customEl ? customEl.value.trim() : '';
-        return selVal || custVal;
+        return getSessionInputValue(selectEl, customEl);
     }
 
     function getBiometricsSessionValue() {
@@ -82,79 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function populateSessionPickers(projectPath = resolveCurrentProjectPath()) {
-        const convertSessionSelect = document.getElementById('convertSessionSelect');
-        const biometricsSessionSelect = document.getElementById('biometricsSessionSelect');
-        const selects = [convertSessionSelect, biometricsSessionSelect];
-        const previousSelections = new Map(
-            selects.filter(Boolean).map((selectEl) => [selectEl, selectEl.value])
-        );
-
-        function hasManualCustomValue(selectEl) {
-            if (!selectEl) {
-                return false;
-            }
-            let customInputId = '';
-            if (selectEl.id === 'convertSessionSelect') {
-                customInputId = 'convertSessionCustom';
-            } else if (selectEl.id === 'biometricsSessionSelect') {
-                customInputId = 'biometricsSessionCustom';
-            }
-
-            if (!customInputId) {
-                return false;
-            }
-
-            const customInput = document.getElementById(customInputId);
-            return Boolean(customInput && String(customInput.value || '').trim());
-        }
-
-        selects.forEach((sel) => {
-            if (!sel) return;
-            while (sel.options.length > 1) sel.remove(1);
-            sel.selectedIndex = 0;
-        });
-
-        if (!projectPath) {
-            return;
-        }
-
-        const requestToken = ++sessionPickerRequestToken;
-        const requestUrl = `/api/projects/sessions/declared?project_path=${encodeURIComponent(projectPath)}`;
-
-        fetch(requestUrl)
-            .then(r => r.json())
-            .then(data => {
-                if (requestToken !== sessionPickerRequestToken) {
-                    return;
-                }
-
-                const sessions = data.sessions || [];
-                selects.forEach(sel => {
-                    if (!sel) return;
-                    sessions.forEach(s => {
-                        const opt = document.createElement('option');
-                        opt.value = s.id.replace(/^ses-/, '');
-                        opt.textContent = s.label !== s.id ? `${s.id} — ${s.label}` : s.id;
-                        sel.appendChild(opt);
-                    });
-
-                    const previousValue = previousSelections.get(sel) || '';
-                    const restoredPrevious = previousValue
-                        && Array.from(sel.options).some((option) => option.value === previousValue);
-                    if (restoredPrevious) {
-                        sel.value = previousValue;
-                        return;
-                    }
-
-                    if (sessions.length === 1 && !hasManualCustomValue(sel)) {
-                        const onlySessionValue = String((sessions[0] && sessions[0].id) || '').replace(/^ses-/, '');
-                        if (onlySessionValue && Array.from(sel.options).some((option) => option.value === onlySessionValue)) {
-                            sel.value = onlySessionValue;
-                        }
-                    }
-                });
-            })
-            .catch(() => {});
+        sessionPickerController.populateSessionPickers(projectPath);
     }
 
     const convertExcelFile = document.getElementById('convertExcelFile');

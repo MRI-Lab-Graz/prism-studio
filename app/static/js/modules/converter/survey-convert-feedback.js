@@ -1,28 +1,11 @@
+import { activateConverterTab } from './tab-activation.js';
+
 export function createSurveyConvertFeedbackController({
     convertInfo,
     appendLog,
 }) {
     function openConverterTab(target) {
-        const normalizedTarget = String(target || '').trim().toLowerCase();
-        if (!normalizedTarget) {
-            return false;
-        }
-
-        const tabButton = document.getElementById(`${normalizedTarget}-tab`);
-        if (!tabButton) {
-            return false;
-        }
-
-        if (window.bootstrap && window.bootstrap.Tab && typeof window.bootstrap.Tab.getOrCreateInstance === 'function') {
-            window.bootstrap.Tab.getOrCreateInstance(tabButton).show();
-        } else {
-            tabButton.click();
-        }
-
-        if (typeof tabButton.focus === 'function') {
-            tabButton.focus();
-        }
-        return true;
+        return activateConverterTab(target, { focus: true });
     }
 
     function showConvertInfoMessage(message, options = {}) {
