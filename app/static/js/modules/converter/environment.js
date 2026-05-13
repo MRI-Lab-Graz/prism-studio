@@ -597,7 +597,7 @@ export function initEnvironment(elements) {
         }
         if (envError) envError.classList.add('d-none');
 
-        fetch(`/api/environment-location-search?q=${encodeURIComponent(query)}`)
+        fetchWithApiFallback(`/api/environment-location-search?q=${encodeURIComponent(query)}`)
             .then(r => r.json())
             .then(data => {
                 if (data.error) throw new Error(data.error);
@@ -665,7 +665,7 @@ export function initEnvironment(elements) {
         appendEnvInputToFormData(fd);
         fd.append('separator', envSeparator ? envSeparator.value : 'auto');
 
-        fetch('/api/environment-preview', { method: 'POST', body: fd })
+        fetchWithApiFallback('/api/environment-preview', { method: 'POST', body: fd })
             .then(r => r.json())
             .then(data => {
                 if (data.error) throw new Error(data.error);
@@ -822,7 +822,7 @@ export function initEnvironment(elements) {
 
         let activePollController = null;
 
-        fetch('/api/environment-convert-start', { method: 'POST', body: fd })
+        fetchWithApiFallback('/api/environment-convert-start', { method: 'POST', body: fd })
             .then(async (r) => {
                 const data = await r.json().catch(() => ({}));
                 if (!r.ok || data.error) {
@@ -880,7 +880,7 @@ export function initEnvironment(elements) {
 
                 const statusData = await pollJobStatus({
                     fetchStatus: async (cursor) => {
-                        const statusResponse = await fetch(`/api/environment-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);
+                        const statusResponse = await fetchWithApiFallback(`/api/environment-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);
                         const statusPayload = await statusResponse.json().catch(() => ({}));
                         if (!statusResponse.ok) {
                             throw new Error(statusPayload.error || 'Failed to retrieve environment conversion status');
