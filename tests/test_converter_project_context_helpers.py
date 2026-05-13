@@ -145,8 +145,8 @@ def test_register_session_prefers_explicit_project_path(tmp_path):
     current_payload = _read_project_json(current_project)
     other_payload = _read_project_json(other_project)
     assert current_payload["Sessions"] == []
-    assert other_payload["Sessions"][0]["id"] == "ses-1"
-    assert other_payload["TaskDefinitions"]["demo"]["modality"] == "survey"
+    assert other_payload["Sessions"] == []
+    assert other_payload["TaskDefinitions"] == {}
 
 
 def test_register_session_keeps_numeric_like_session_strings_distinct(tmp_path):
@@ -181,7 +181,28 @@ def test_register_session_keeps_numeric_like_session_strings_distinct(tmp_path):
     assert response_zero_one.status_code == 200
 
     payload = _read_project_json(project_root)
-    assert [entry["id"] for entry in payload["Sessions"]] == ["ses-1", "ses-01"]
+    assert payload["Sessions"] == []
+    assert payload["TaskDefinitions"] == {}
+
+
+def test_sessions_declared_falls_back_to_on_disk_structure_when_metadata_missing(tmp_path):
+    project_root = tmp_path / "project"
+    _write_project_json(project_root, {})
+    ((project_root / "sub-01" / "ses-02" / "func")).mkdir(parents=True)
+    ((project_root / "sub-02" / "ses-01" / "anat")).mkdir(parents=True)
+
+    app = _build_app(str(project_root))
+
+    with app.test_client() as client:
+        response = client.get("/api/projects/sessions/declared")
+
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "sessions": [
+            {"id": "ses-01", "label": "ses-01"},
+            {"id": "ses-02", "label": "ses-02"},
+        ]
+    }
 
 
 def test_sourcedata_helpers_prefer_explicit_project_path(tmp_path):
