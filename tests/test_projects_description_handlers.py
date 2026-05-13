@@ -641,8 +641,10 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
                             {
                                 "name": "Koschutnig, Karl",
                                 "roles": ["Data curation"],
+                                "website": "https://example.org/karl",
                                 "orcid": "https://orcid.org/0000-0001-6234-0498",
                                 "email": "karl.koschutnig@uni-graz.at",
+                                "affiliation": "University of Graz (Graz, AT)",
                                 "corresponding": True,
                             }
                         ]
@@ -682,8 +684,16 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
             "https://orcid.org/0000-0001-6234-0498",
         )
         self.assertEqual(
+            returned_authors[0].get("website"),
+            "https://example.org/karl",
+        )
+        self.assertEqual(
             returned_authors[0].get("email"),
             "karl.koschutnig@uni-graz.at",
+        )
+        self.assertEqual(
+            returned_authors[0].get("affiliation"),
+            "University of Graz (Graz, AT)",
         )
         self.assertEqual(returned_authors[0].get("roles"), ["Data curation"])
         self.assertTrue(returned_authors[0].get("corresponding"))
@@ -797,6 +807,8 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
                     {
                         "family-names": "Fink",
                         "given-names": "Andreas",
+                        "website": "https://example.org/andreas",
+                        "affiliation": "University of Graz",
                         "orcid": "https://orcid.org/0000-0001-7316-3140",
                         "email": "andreas@example.org",
                         "roles": ["Methodology", "Software"],
@@ -838,6 +850,10 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         contacts = (project_payload.get("governance") or {}).get("contacts") or []
 
         self.assertEqual(contacts[0].get("name"), "Fink, Andreas")
+        self.assertEqual(contacts[0].get("given-names"), "Andreas")
+        self.assertEqual(contacts[0].get("family-names"), "Fink")
+        self.assertEqual(contacts[0].get("website"), "https://example.org/andreas")
+        self.assertEqual(contacts[0].get("affiliation"), "University of Graz")
         self.assertEqual(
             contacts[0].get("orcid"),
             "https://orcid.org/0000-0001-7316-3140",
@@ -1110,6 +1126,8 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
                     {
                         "family-names": "Lovelace",
                         "given-names": "Ada",
+                        "website": "https://example.org/ada",
+                        "affiliation": "Analytical Engine Institute",
                         "email": "ada@example.org",
                     },
                 ]
@@ -1141,6 +1159,8 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         citation_text = (self.project_path / "CITATION.cff").read_text(encoding="utf-8")
         self.assertEqual(citation_text.count('family-names: "Lovelace"'), 1)
         self.assertEqual(citation_text.count('given-names: "Ada"'), 1)
+        self.assertIn('website: "https://example.org/ada"', citation_text)
+        self.assertIn('affiliation: "Analytical Engine Institute"', citation_text)
         self.assertIn('email: "ada@example.org"', citation_text)
 
     def test_regenerate_citation_uses_canonical_project_metadata(self):
@@ -1639,22 +1659,50 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
             {
                 "family-names": "Fink",
                 "given-names": "Andreas",
+                "website": "https://example.org/~andreas",
+                "affiliation": "University of Graz",
                 "orcid": "https://orcid.org/0000-0001-7316-3140",
                 "email": "andreas@example.org",
             }
         )
         self.assertEqual(contributor["name"], "Fink, Andreas")
+        self.assertEqual(contributor["given-names"], "Andreas")
+        self.assertEqual(contributor["family-names"], "Fink")
+        self.assertEqual(contributor["website"], "https://example.org/~andreas")
+        self.assertEqual(contributor["affiliation"], "University of Graz")
         self.assertEqual(contributor["email"], "andreas@example.org")
+
+        rich_author = {
+            "family-names": "Fink",
+            "given-names": "Andreas",
+            "website": "https://example.org/~andreas",
+            "affiliation": "University of Graz",
+            "orcid": "https://orcid.org/0000-0001-7316-3140",
+            "email": "andreas@example.org",
+            "corresponding": True,
+            "roles": ["Methodology", "Software"],
+        }
 
         self.sync_authors_to_project_json(
             self.project_path,
-            [{"family-names": "Fink", "given-names": "Andreas"}],
+            [rich_author],
         )
         payload = json.loads(project_json.read_text(encoding="utf-8"))
         contacts = payload.get("governance", {}).get("contacts", [])
+        self.assertEqual(contacts[0]["name"], "Fink, Andreas")
+        self.assertEqual(contacts[0]["given-names"], "Andreas")
+        self.assertEqual(contacts[0]["family-names"], "Fink")
+        self.assertEqual(contacts[0]["website"], "https://example.org/~andreas")
+        self.assertEqual(contacts[0]["affiliation"], "University of Graz")
+        self.assertEqual(
+            contacts[0]["orcid"],
+            "https://orcid.org/0000-0001-7316-3140",
+        )
+        self.assertEqual(contacts[0]["email"], "andreas@example.org")
+        self.assertTrue(contacts[0]["corresponding"])
         self.assertEqual(
             contacts[0]["roles"],
-            ["Methodology", "methodology", "Software"],
+            ["Methodology", "Software"],
         )
 
     def test_validate_draft_handler_covers_error_and_success_paths(self):

@@ -2,6 +2,9 @@ from flask import Blueprint
 
 from .conversion_survey_handlers import (
     api_survey_languages,
+    api_survey_detect_columns,
+    api_survey_generate_templates,
+    api_survey_save_to_project,
     api_survey_check_project_templates,
     api_survey_prepare_workflow,
     api_survey_workflow_command,
@@ -18,6 +21,21 @@ conversion_survey_bp.add_url_rule(
     "/api/survey-languages",
     view_func=api_survey_languages,
     methods=["GET"],
+)
+conversion_survey_bp.add_url_rule(
+    "/api/survey-detect-columns",
+    view_func=api_survey_detect_columns,
+    methods=["POST"],
+)
+conversion_survey_bp.add_url_rule(
+    "/api/survey-generate-templates",
+    view_func=api_survey_generate_templates,
+    methods=["POST"],
+)
+conversion_survey_bp.add_url_rule(
+    "/api/survey-save-to-project",
+    view_func=api_survey_save_to_project,
+    methods=["POST"],
 )
 conversion_survey_bp.add_url_rule(
     "/api/survey-check-project-templates",

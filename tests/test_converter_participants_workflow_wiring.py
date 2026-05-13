@@ -92,6 +92,10 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
 
         self.assertIn(
+            "import { fetchWithApiFallback } from '../../shared/api.js';",
+            content,
+        )
+        self.assertIn(
             "function getParticipantsProjectSchemaUrl(projectPath = resolveCurrentProjectPath()) {",
             content,
         )
@@ -100,6 +104,30 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn("project_path: currentProjectPath,", content)
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/participants-detect-id', {",
+            content,
+        )
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/participants-check');",
+            content,
+        )
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/save-participant-mapping', {",
+            content,
+        )
+        self.assertIn(
+            "const response = await fetchWithApiFallback(getParticipantsProjectSchemaUrl(projectPath));",
+            content,
+        )
+        self.assertIn(
+            "const response = await fetchWithApiFallback(getParticipantsProjectSchemaUrl(currentProjectPath), {",
+            content,
+        )
+        self.assertIn(
+            "const tsvResponse = await fetchWithApiFallback(`/api/neurobagel/local-participants?project_path=${encodeURIComponent(projectPath)}`);",
+            content,
+        )
         self.assertIn("Please select a project first from the top of the page", content)
         self.assertIn(
             "window.addEventListener('prism-project-changed', function() {", content

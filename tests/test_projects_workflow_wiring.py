@@ -15,6 +15,10 @@ PROJECTS_METADATA_MODULE = (
 PROJECTS_VALIDATION_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "validation.js"
 )
+PROJECTS_INDEX_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "index.js"
+)
+MAIN_MODULE = REPO_ROOT / "app" / "static" / "js" / "main.js"
 OPEN_FORM_TEMPLATE = (
     REPO_ROOT / "app" / "templates" / "includes" / "projects" / "open_form.html"
 )
@@ -41,6 +45,40 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("fetchWithApiFallback('/api/projects/current', {", content)
+
+    def test_settings_and_fix_actions_use_api_fallback(self):
+        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/settings/global-library');",
+            content,
+        )
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/projects/library-path');",
+            content,
+        )
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/projects/fix', {",
+            content,
+        )
+
+    def test_projects_page_uses_single_bootstrap_entrypoint(self):
+        index_content = PROJECTS_INDEX_MODULE.read_text(encoding="utf-8")
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        export_content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
+        main_content = MAIN_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("export function initializeProjectsPage() {", index_content)
+        self.assertIn("initProjectsPage();", index_content)
+        self.assertIn("initProjectValidation();", index_content)
+        self.assertIn("initializeProjectsExport();", index_content)
+        self.assertIn("let projectsPageInitialized = false;", core_content)
+        self.assertIn("export function initProjectsPage() {", core_content)
+        self.assertNotIn("document.addEventListener('DOMContentLoaded', initProjectsPage);", core_content)
+        self.assertIn("let exportModuleInitialized = false;", export_content)
+        self.assertIn("export function initializeProjectsExport() {", export_content)
+        self.assertNotIn("document.addEventListener('DOMContentLoaded', function() {", export_content)
+        self.assertIn("ProjectsModule.initializeProjectsPage()", main_content)
 
     def test_backend_monitoring_verbose_toggle_is_wired(self):
         core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")

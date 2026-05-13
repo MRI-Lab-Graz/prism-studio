@@ -1,3 +1,5 @@
+import { fetchWithApiFallback } from '../../shared/api.js';
+
 export function createSurveyWorkflowConvertController({
     convertError,
     convertInfo,
@@ -281,7 +283,7 @@ export function createSurveyWorkflowConvertController({
         advanceSurveyRunProgress('convert', 20, 'Uploading file and starting conversion...');
         appendLog('Uploading file and starting conversion...', 'info');
 
-        fetch('/api/survey-workflow-command', {
+        fetchWithApiFallback('/api/survey-workflow-command', {
             method: 'POST',
             body: formData,
             signal: convertRunAbortController.signal,

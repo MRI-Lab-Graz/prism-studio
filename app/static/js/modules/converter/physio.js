@@ -5,6 +5,7 @@
  * Follows the initialization-from-hub pattern
  */
 
+import { fetchWithApiFallback } from '../../shared/api.js';
 import { pollJobStatus } from '../../shared/job-polling.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
@@ -167,7 +168,7 @@ export function initPhysio(elements) {
             ? `/api/projects/sourcedata-files?kind=physio&project_path=${encodeURIComponent(effectiveProjectPath)}`
             : '/api/projects/sourcedata-files?kind=physio';
 
-        fetch(endpoint)
+        fetchWithApiFallback(endpoint)
             .then((response) => response.json())
             .then((data) => {
                 if (requestToken !== physioSourcedataRequestToken) {
@@ -438,7 +439,7 @@ export function initPhysio(elements) {
                     ? `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}`
                     : `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}`;
 
-                const response = await fetch(endpoint);
+                const response = await fetchWithApiFallback(endpoint);
                 if (!response.ok) {
                     throw new Error('Failed to load sourcedata file');
                 }

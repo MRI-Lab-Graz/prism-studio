@@ -1725,6 +1725,10 @@ Subfolders:
             if affiliation_value:
                 author_entry["affiliation"] = affiliation_value
 
+            website_value = str(contact.get("website") or "").strip()
+            if website_value:
+                author_entry["website"] = website_value
+
             roles_value = contact.get("roles")
             normalized_roles: List[str] = []
             if isinstance(roles_value, list):

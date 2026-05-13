@@ -507,12 +507,14 @@ def _enrich_authors_with_roles(project_path: Path, authors_value):
 
 
 def _author_to_contributor(author):
-    """Normalize an author entry to a contributors.json contributor object."""
+    """Normalize an author entry to a project.json governance contact object."""
     given = ""
     family = ""
     name = ""
+    website = ""
     orcid = ""
     email = ""
+    affiliation = ""
     roles = []
     corresponding = False
 
@@ -520,8 +522,10 @@ def _author_to_contributor(author):
         given = str(author.get("given-names") or author.get("given") or "").strip()
         family = str(author.get("family-names") or author.get("family") or "").strip()
         name = str(author.get("name") or "").strip()
+        website = str(author.get("website") or "").strip()
         orcid = str(author.get("orcid") or author.get("ORCID") or "").strip()
         email = str(author.get("email") or "").strip()
+        affiliation = str(author.get("affiliation") or "").strip()
         roles = _normalize_roles(author.get("roles"))
         corresponding = bool(author.get("corresponding"))
     else:
@@ -546,13 +550,24 @@ def _author_to_contributor(author):
     else:
         return None
 
-    return {
+    contributor = {
         "name": display_name,
         "roles": roles,
         "orcid": orcid,
         "email": email,
         "corresponding": corresponding,
     }
+
+    if given:
+        contributor["given-names"] = given
+    if family:
+        contributor["family-names"] = family
+    if website:
+        contributor["website"] = website
+    if affiliation:
+        contributor["affiliation"] = affiliation
+
+    return contributor
 
 
 def handle_get_dataset_description(

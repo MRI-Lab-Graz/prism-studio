@@ -761,6 +761,61 @@ class TestProjectManager(unittest.TestCase):
         self.assertTrue(status.get("consistent"))
         self.assertEqual(status.get("issues"), [])
 
+    def test_citation_status_uses_rich_project_contact_metadata(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+
+            (project_path / "dataset_description.json").write_text(
+                json.dumps(
+                    {
+                        "Name": "Demo",
+                        "BIDSVersion": "1.10.1",
+                        "DatasetType": "raw",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (project_path / "project.json").write_text(
+                json.dumps(
+                    {
+                        "name": "demo_project",
+                        "Basics": {
+                            "DatasetName": "Demo",
+                            "License": "CC-BY-4.0",
+                        },
+                        "governance": {
+                            "contacts": [
+                                {
+                                    "name": "Fink, Andreas",
+                                    "given-names": "Andreas",
+                                    "family-names": "Fink",
+                                    "website": "https://example.org/andreas",
+                                    "affiliation": "University of Graz",
+                                    "orcid": "https://orcid.org/0000-0001-7316-3140",
+                                    "email": "andreas@example.org",
+                                    "roles": ["Methodology"],
+                                    "corresponding": True,
+                                }
+                            ]
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            manager.regenerate_citation_cff(project_path)
+            citation_text = (project_path / "CITATION.cff").read_text(encoding="utf-8")
+            status = manager.get_citation_cff_status(project_path)
+
+        self.assertIn('website: "https://example.org/andreas"', citation_text)
+        self.assertIn('affiliation: "University of Graz"', citation_text)
+        self.assertIn('email: "andreas@example.org"', citation_text)
+        self.assertTrue(status.get("consistent"))
+        self.assertEqual(status.get("consistency_issues"), [])
+
     def test_validate_structure_does_not_require_participants_for_empty_project(self):
         manager = ProjectManager()
 

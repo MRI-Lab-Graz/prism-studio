@@ -1,3 +1,5 @@
+import { fetchWithApiFallback } from '../../shared/api.js';
+
 export function createSurveyTemplateResultsController({
     escapeHtml,
 }) {
@@ -148,7 +150,7 @@ export function createSurveyTemplateResultsController({
             }
 
             try {
-                const response = await fetch('/api/limesurvey-save-to-project', {
+                const response = await fetchWithApiFallback('/api/survey-save-to-project', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ templates })

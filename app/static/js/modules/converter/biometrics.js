@@ -4,6 +4,7 @@
  * Follows the initialization-from-hub pattern
  */
 
+import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createJobRunController } from './job-run-controller.js';
 
@@ -227,7 +228,7 @@ export function initBiometrics(elements) {
             ? `/api/projects/sourcedata-files?kind=biometrics&project_path=${encodeURIComponent(effectiveProjectPath)}`
             : '/api/projects/sourcedata-files?kind=biometrics';
 
-        fetch(endpoint)
+        fetchWithApiFallback(endpoint)
             .then((response) => response.json())
             .then((data) => {
                 if (requestToken !== biometricsSourcedataRequestToken) {
@@ -407,7 +408,7 @@ export function initBiometrics(elements) {
                     ? `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}`
                     : `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}`;
 
-                const response = await fetch(endpoint);
+                const response = await fetchWithApiFallback(endpoint);
                 if (!response.ok) {
                     throw new Error('Failed to load sourcedata file');
                 }

@@ -1,3 +1,5 @@
+import { fetchWithApiFallback } from '../../shared/api.js';
+
 export function createSurveyWorkflowPreviewController({
     convertError,
     convertInfo,
@@ -257,7 +259,7 @@ export function createSurveyWorkflowPreviewController({
         });
         advanceSurveyRunProgress('preview', 20, 'Uploading file and starting preview...');
 
-        fetch('/api/survey-workflow-command', {
+        fetchWithApiFallback('/api/survey-workflow-command', {
             method: 'POST',
             body: formData,
             signal: previewRunAbortController.signal,
