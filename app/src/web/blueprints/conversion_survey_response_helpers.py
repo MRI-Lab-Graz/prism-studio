@@ -15,9 +15,8 @@ def coerce_flask_response(response_value):
 
 
 def build_prepare_workflow_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    preview_payload = (
-        payload.get("preview") if isinstance(payload.get("preview"), dict) else {}
-    )
+    raw_preview_payload = payload.get("preview")
+    preview_payload = raw_preview_payload if isinstance(raw_preview_payload, dict) else {}
     prepared_payload: dict[str, Any] = {
         "ok": True,
         "tasks_included": list(payload.get("tasks_included") or []),

@@ -25,7 +25,6 @@ import tempfile
 import logging
 import threading
 from contextlib import redirect_stderr, redirect_stdout
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import uuid
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -43,6 +42,38 @@ from werkzeug.utils import secure_filename
 from src.system_files import filter_system_files  # noqa: F401 – available if needed
 from src.bids_integration import check_and_update_bidsignore
 from .conversion_job_store import ConversionJobStore
+from .conversion_environment_route_handlers import (
+    handle_api_environment_convert_cancel,
+    handle_api_environment_convert_metrics,
+    handle_api_environment_convert_start,
+    handle_api_environment_convert_status,
+    handle_api_environment_preview,
+)
+from .conversion_environment_job_handlers import (
+    handle_run_environment_detached_job,
+    handle_run_environment_job,
+    handle_start_environment_detached_job,
+)
+from .conversion_environment_config_helpers import (
+    handle_build_environment_conversion_config_from_request,
+)
+from .conversion_environment_provider_helpers import (
+    handle_cache_key_for_day,
+    handle_extract_environment_hour,
+    handle_fetch_environment_day,
+    handle_fetch_environment_hour,
+    handle_hourly_value,
+    handle_load_environment_provider_cache,
+    handle_payload_has_hourly_data,
+    handle_pollen_risk_bin,
+    handle_save_environment_provider_cache,
+)
+from .conversion_environment_result_helpers import (
+    handle_persist_environment_outputs,
+)
+from .conversion_environment_engine_helpers import (
+    handle_validate_environment_conversion_inputs,
+)
 from .conversion_request_helpers import (
     resolve_uploaded_or_source_file as _shared_resolve_uploaded_or_source_file,
 )
@@ -300,36 +331,11 @@ def _compute_row(
 
 
 def _hourly_value(payload: dict, key: str, timestamp_iso: str) -> float | None:
-    hourly = payload.get("hourly") or {}
-    times = hourly.get("time") or []
-    values = hourly.get(key) or []
-    if not times or not values:
-        return None
-    try:
-        idx = times.index(timestamp_iso)
-    except ValueError:
-        return None
-    if idx >= len(values):
-        return None
-    value = values[idx]
-    if value is None:
-        return None
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return None
+    return handle_hourly_value(payload, key, timestamp_iso)
 
 
 def _pollen_risk_bin(total: float | None) -> str:
-    if total is None:
-        return "unknown"
-    if total < 50:
-        return "low"
-    if total < 150:
-        return "medium"
-    if total < 300:
-        return "high"
-    return "very_high"
+    return handle_pollen_risk_bin(total)
 
 
 def _provider_warning(provider: str, exc: Exception) -> str:
@@ -360,53 +366,24 @@ def _fetch_provider_json(url: str, params: dict[str, Any], timeout: int) -> dict
 
 
 def _payload_has_hourly_data(payload: dict[str, Any] | None) -> bool:
-    if not isinstance(payload, dict):
-        return False
-    hourly = payload.get("hourly")
-    return isinstance(hourly, dict) and bool(hourly)
+    return handle_payload_has_hourly_data(payload)
 
 
 def _cache_key_for_day(date_str: str, lat: float, lon: float) -> str:
-    return f"{date_str}|{round(lat, 4):.4f}|{round(lon, 4):.4f}"
+    return handle_cache_key_for_day(date_str, lat, lon)
 
 
 def _load_environment_provider_cache(
     cache_path: Path,
 ) -> dict[str, dict[str, dict[str, Any]]]:
-    if not cache_path.exists():
-        return {}
-    try:
-        payload = json.loads(cache_path.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
-    entries = payload.get("entries") if isinstance(payload, dict) else None
-    if not isinstance(entries, dict):
-        return {}
-    cleaned: dict[str, dict[str, dict[str, Any]]] = {}
-    for key, value in entries.items():
-        if not isinstance(key, str) or not isinstance(value, dict):
-            continue
-        weather_raw = value.get("weather")
-        air_raw = value.get("air")
-        pollen_raw = value.get("pollen")
-        cleaned[key] = {
-            "weather": weather_raw if isinstance(weather_raw, dict) else {},
-            "air": air_raw if isinstance(air_raw, dict) else {},
-            "pollen": pollen_raw if isinstance(pollen_raw, dict) else {},
-        }
-    return cleaned
+    return handle_load_environment_provider_cache(cache_path)
 
 
 def _save_environment_provider_cache(
     cache_path: Path,
     entries: dict[str, dict[str, dict[str, Any]]],
 ) -> None:
-    cache_path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {
-        "version": 1,
-        "entries": entries,
-    }
-    cache_path.write_text(json.dumps(payload), encoding="utf-8")
+    handle_save_environment_provider_cache(cache_path, entries)
 
 
 def _fetch_environment_day(
@@ -416,216 +393,41 @@ def _fetch_environment_day(
     *,
     cached_payloads: dict[str, dict[str, Any]] | None = None,
 ) -> tuple[dict[str, dict], list[str]]:
-    date_str = dt.strftime("%Y-%m-%d")
-    weather_start_date = (dt - timedelta(days=2)).strftime("%Y-%m-%d")
-    warnings: list[str] = []
-
-    weather_params = {
-        "latitude": lat,
-        "longitude": lon,
-        "start_date": weather_start_date,
-        "end_date": date_str,
-        "hourly": ",".join(
-            [
-                "temperature_2m",
-                "apparent_temperature",
-                "dew_point_2m",
-                "relative_humidity_2m",
-                "surface_pressure",
-                "precipitation",
-                "wind_speed_10m",
-                "cloud_cover",
-                "uv_index",
-                "shortwave_radiation",
-            ]
-        ),
-        "timezone": "auto",
-    }
-    air_params = {
-        "latitude": lat,
-        "longitude": lon,
-        "start_date": date_str,
-        "end_date": date_str,
-        "hourly": ",".join(
-            ["european_aqi", "pm2_5", "pm10", "nitrogen_dioxide", "ozone"]
-        ),
-        "timezone": "auto",
-    }
-    pollen_params = {
-        "latitude": lat,
-        "longitude": lon,
-        "start_date": date_str,
-        "end_date": date_str,
-        "hourly": ",".join(
-            ["birch_pollen", "grass_pollen", "mugwort_pollen", "ragweed_pollen"]
-        ),
-        "timezone": "auto",
-    }
-    provider_payloads: dict[str, dict] = {
-        "weather": dict((cached_payloads or {}).get("weather") or {}),
-        "air": dict((cached_payloads or {}).get("air") or {}),
-        "pollen": dict((cached_payloads or {}).get("pollen") or {}),
-    }
-
-    provider_requests = [
-        (
-            "Weather archive",
-            "weather",
-            WEATHER_ARCHIVE_URL,
-            weather_params,
-            WEATHER_TIMEOUT_SECONDS,
-        ),
-        (
-            "Air quality",
-            "air",
-            AIR_QUALITY_URL,
-            air_params,
-            AIR_QUALITY_TIMEOUT_SECONDS,
-        ),
-        ("Pollen", "pollen", AIR_QUALITY_URL, pollen_params, POLLEN_TIMEOUT_SECONDS),
-    ]
-
-    missing_requests = [
-        (provider_name, payload_key, url, params, timeout)
-        for provider_name, payload_key, url, params, timeout in provider_requests
-        if not _payload_has_hourly_data(provider_payloads.get(payload_key))
-    ]
-
-    if not missing_requests:
-        return {
-            "weather": provider_payloads["weather"],
-            "air": provider_payloads["air"],
-            "pollen": provider_payloads["pollen"],
-        }, warnings
-
-    with ThreadPoolExecutor(max_workers=len(missing_requests)) as pool:
-        futures = {
-            pool.submit(_fetch_provider_json, url, params, timeout): (
-                provider_name,
-                payload_key,
-            )
-            for provider_name, payload_key, url, params, timeout in missing_requests
-        }
-        for future in as_completed(futures):
-            provider_name, payload_key = futures[future]
-            try:
-                provider_payloads[payload_key] = future.result()
-            except requests.RequestException as exc:
-                warnings.append(_provider_warning(provider_name, exc))
-
-    return {
-        "weather": provider_payloads["weather"],
-        "air": provider_payloads["air"],
-        "pollen": provider_payloads["pollen"],
-    }, warnings
+    return handle_fetch_environment_day(
+        dt,
+        lat,
+        lon,
+        cached_payloads=cached_payloads,
+        payload_has_hourly_data=_payload_has_hourly_data,
+        fetch_provider_json=_fetch_provider_json,
+        provider_warning=_provider_warning,
+        weather_archive_url=WEATHER_ARCHIVE_URL,
+        air_quality_url=AIR_QUALITY_URL,
+        weather_timeout_seconds=WEATHER_TIMEOUT_SECONDS,
+        air_quality_timeout_seconds=AIR_QUALITY_TIMEOUT_SECONDS,
+        pollen_timeout_seconds=POLLEN_TIMEOUT_SECONDS,
+    )
 
 
 def _extract_environment_hour(dt: datetime, provider_payloads: dict[str, dict]) -> dict:
-    hour_iso = dt.strftime("%Y-%m-%dT%H:00")
-    weather = provider_payloads.get("weather") or {}
-    air = provider_payloads.get("air") or {}
-    pollen = provider_payloads.get("pollen") or {}
-
-    def _daily_max_temp(date_key: str) -> float | None:
-        hourly = weather.get("hourly") or {}
-        times = hourly.get("time") or []
-        temps = hourly.get("temperature_2m") or []
-        if not times or not temps:
-            return None
-        values: list[float] = []
-        for idx, ts in enumerate(times):
-            if idx >= len(temps):
-                break
-            if not str(ts).startswith(date_key):
-                continue
-            try:
-                values.append(float(temps[idx]))
-            except (TypeError, ValueError):
-                continue
-        return max(values) if values else None
-
-    date_0 = dt.strftime("%Y-%m-%d")
-    date_m1 = (dt - timedelta(days=1)).strftime("%Y-%m-%d")
-    date_m2 = (dt - timedelta(days=2)).strftime("%Y-%m-%d")
-    max_0 = _daily_max_temp(date_0)
-    max_m1 = _daily_max_temp(date_m1)
-    max_m2 = _daily_max_temp(date_m2)
-
-    heatwave_status = "unknown"
-    if max_0 is not None:
-        heatwave_status = "normal"
-        if max_0 >= 25.0:
-            heatwave_status = "warm_day"
-        if max_0 >= 30.0:
-            heatwave_status = "hot_day"
-        if (
-            max_0 >= 30.0
-            and max_m1 is not None
-            and max_m2 is not None
-            and max_m1 >= 30.0
-            and max_m2 >= 30.0
-        ):
-            heatwave_status = "heatwave"
-
-    elevation_m = None
-    elevation_raw = weather.get("elevation")
-    if elevation_raw is not None:
-        try:
-            elevation_m = float(elevation_raw)
-        except (TypeError, ValueError):
-            elevation_m = None
-
-    pressure = _hourly_value(weather, "surface_pressure", hour_iso)
-    weather_regime = "frontal"
-    if pressure is not None:
-        if pressure >= 1020.0:
-            weather_regime = "hochdruck"
-        elif pressure <= 1000.0:
-            weather_regime = "tiefdruck"
-
-    birch = _hourly_value(pollen, "birch_pollen", hour_iso)
-    grass = _hourly_value(pollen, "grass_pollen", hour_iso)
-    mugwort = _hourly_value(pollen, "mugwort_pollen", hour_iso)
-    ragweed = _hourly_value(pollen, "ragweed_pollen", hour_iso)
-
-    pollen_vals = [v for v in (birch, grass, mugwort, ragweed) if v is not None]
-    pollen_total = float(sum(pollen_vals)) if pollen_vals else None
-
-    return {
-        "temp_c": _hourly_value(weather, "temperature_2m", hour_iso),
-        "apparent_temp_c": _hourly_value(weather, "apparent_temperature", hour_iso),
-        "dew_point_c": _hourly_value(weather, "dew_point_2m", hour_iso),
-        "humidity_pct": _hourly_value(weather, "relative_humidity_2m", hour_iso),
-        "pressure_hpa": pressure,
-        "precip_mm": _hourly_value(weather, "precipitation", hour_iso),
-        "wind_speed_ms": _hourly_value(weather, "wind_speed_10m", hour_iso),
-        "cloud_cover_pct": _hourly_value(weather, "cloud_cover", hour_iso),
-        "uv_index": _hourly_value(weather, "uv_index", hour_iso),
-        "shortwave_radiation_wm2": _hourly_value(
-            weather, "shortwave_radiation", hour_iso
-        ),
-        "weather_regime": weather_regime,
-        "elevation_m": elevation_m,
-        "heatwave_status": heatwave_status,
-        "aqi": _hourly_value(air, "european_aqi", hour_iso),
-        "pm25_ug_m3": _hourly_value(air, "pm2_5", hour_iso),
-        "pm10_ug_m3": _hourly_value(air, "pm10", hour_iso),
-        "no2_ug_m3": _hourly_value(air, "nitrogen_dioxide", hour_iso),
-        "o3_ug_m3": _hourly_value(air, "ozone", hour_iso),
-        "pollen_birch": birch,
-        "pollen_grass": grass,
-        "pollen_mugwort": mugwort,
-        "pollen_ragweed": ragweed,
-        "pollen_total": pollen_total,
-        "pollen_risk_bin": _pollen_risk_bin(pollen_total),
-    }
+    return handle_extract_environment_hour(
+        dt,
+        provider_payloads,
+        hourly_value=_hourly_value,
+        pollen_risk_bin=_pollen_risk_bin,
+    )
 
 
 def _fetch_environment_hour(
     dt: datetime, lat: float, lon: float
 ) -> tuple[dict, list[str]]:
-    provider_payloads, warnings = _fetch_environment_day(dt, lat, lon)
-    return _extract_environment_hour(dt, provider_payloads), warnings
+    return handle_fetch_environment_hour(
+        dt,
+        lat,
+        lon,
+        fetch_environment_day=_fetch_environment_day,
+        extract_environment_hour=_extract_environment_hour,
+    )
 
 
 # ── Column auto-detection helpers ─────────────────────────────────────────────
@@ -1088,165 +890,22 @@ def _write_environment_sidecar(path: Path) -> None:
 
 
 def _run_environment_detached_job(config_path: str) -> None:
-    config_file = Path(config_path)
-    payload = json.loads(config_file.read_text(encoding="utf-8"))
-
-    log_path = Path(payload["log_path"])
-    result_path = Path(payload["result_path"])
-    cancel_path = Path(payload["cancel_path"])
-    config = payload["config"]
-
-    def log_callback(message: str, level: str = "info") -> None:
-        log_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(log_path, "a", encoding="utf-8") as fh:
-            fh.write(f"{level}\t{message}\n")
-
-    config["input_path"] = Path(config["input_path"])
-    log_callback("🌍 Environment conversion job started", "info")
-
-    result_payload: dict[str, Any]
-    try:
-        result = _perform_environment_conversion(
-            input_path=config["input_path"],
-            filename=config["filename"],
-            suffix=config["suffix"],
-            separator_option=config["separator_option"],
-            timestamp_col=config["timestamp_col"],
-            participant_col=config["participant_col"],
-            participant_override=config["participant_override"],
-            session_col=config["session_col"],
-            session_override=config["session_override"],
-            location_col=config["location_col"],
-            lat_col=config["lat_col"],
-            lon_col=config["lon_col"],
-            location_label_override=config["location_label_override"],
-            lat_manual=config["lat_manual"],
-            lon_manual=config["lon_manual"],
-            project_path=config["project_path"],
-            pilot_random_subject=bool(config.get("pilot_random_subject", False)),
-            log_callback=log_callback,
-            cancel_check=lambda: cancel_path.exists(),
-        )
-        result_payload = {
-            "done": True,
-            "success": True,
-            "result": result,
-            "error": None,
-        }
-    except EnvironmentConversionCancelledError as exc:
-        result_payload = {
-            "done": True,
-            "success": False,
-            "result": None,
-            "error": str(exc),
-        }
-    except ValueError as exc:
-        result_payload = {
-            "done": True,
-            "success": False,
-            "result": None,
-            "error": str(exc),
-        }
-    except Exception as exc:
-        logger.exception("Detached environment conversion failed")
-        result_payload = {
-            "done": True,
-            "success": False,
-            "result": None,
-            "error": str(exc),
-        }
-    finally:
-        tmp_dir = config.get("tmp_dir")
-        if tmp_dir:
-            shutil.rmtree(tmp_dir, ignore_errors=True)
-
-    result_path.parent.mkdir(parents=True, exist_ok=True)
-    result_path.write_text(json.dumps(result_payload), encoding="utf-8")
+    handle_run_environment_detached_job(
+        config_path=config_path,
+        perform_environment_conversion=_perform_environment_conversion,
+        environment_conversion_cancelled_error_cls=EnvironmentConversionCancelledError,
+        logger=logger,
+    )
 
 
 def _start_environment_detached_job(
     config: dict[str, Any],
 ) -> tuple[str, int, Path, Path]:
-    project_root_path = Path(config["project_path"])
-    if project_root_path.is_file():
-        project_root_path = project_root_path.parent
-
-    jobs_dir = project_root_path / ".prism" / "environment_jobs"
-    jobs_dir.mkdir(parents=True, exist_ok=True)
-
-    job_id = uuid.uuid4().hex
-    log_path = jobs_dir / f"{job_id}.log"
-    result_path = jobs_dir / f"{job_id}.result.json"
-    cancel_path = jobs_dir / f"{job_id}.cancel"
-
-    app_root = Path(__file__).resolve().parents[3]
-    prism_tools_script = app_root / "prism_tools.py"
-    python_exec = sys.executable or "python"
-    command = [
-        python_exec,
-        str(prism_tools_script),
-        "environment",
-        "convert",
-        "--input",
-        str(config["input_path"]),
-        "--project",
-        str(config["project_path"]),
-        "--separator",
-        str(config["separator_option"]),
-        "--timestamp-col",
-        str(config["timestamp_col"]),
-        "--participant-col",
-        str(config["participant_col"]),
-        "--json",
-        "--log-file",
-        str(log_path),
-        "--result-file",
-        str(result_path),
-        "--cancel-file",
-        str(cancel_path),
-    ]
-
-    if config.get("participant_override"):
-        command.extend(["--participant-override", str(config["participant_override"])])
-    if config.get("session_col"):
-        command.extend(["--session-col", str(config["session_col"])])
-    if config.get("session_override"):
-        command.extend(["--session-override", str(config["session_override"])])
-    if config.get("location_col"):
-        command.extend(["--location-col", str(config["location_col"])])
-    if config.get("lat_col"):
-        command.extend(["--lat-col", str(config["lat_col"])])
-    if config.get("lon_col"):
-        command.extend(["--lon-col", str(config["lon_col"])])
-    if config.get("location_label_override"):
-        command.extend(["--location-label", str(config["location_label_override"])])
-    if config.get("lat_manual") is not None:
-        command.extend(["--lat", str(config["lat_manual"])])
-    if config.get("lon_manual") is not None:
-        command.extend(["--lon", str(config["lon_manual"])])
-    if bool(config.get("pilot_random_subject", False)):
-        command.append("--pilot-random-subject")
-
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(log_path, "a", encoding="utf-8") as log_file:
-        log_file.write(f"info\tDetached command: {' '.join(command)}\n")
-        process = subprocess.Popen(  # noqa: S603,S607
-            command,
-            stdout=log_file,
-            stderr=subprocess.STDOUT,
-            start_new_session=True,
-            close_fds=True,
-        )
-
-    with _environment_detached_jobs_lock:
-        _environment_detached_jobs[job_id] = {
-            "pid": int(process.pid),
-            "log_path": str(log_path),
-            "result_path": str(result_path),
-            "cancel_path": str(cancel_path),
-        }
-
-    return job_id, int(process.pid), log_path, result_path
+    return handle_start_environment_detached_job(
+        config=config,
+        environment_detached_jobs_lock=_environment_detached_jobs_lock,
+        environment_detached_jobs=_environment_detached_jobs,
+    )
 
 
 def _perform_environment_conversion(
@@ -1299,56 +958,22 @@ def _perform_environment_conversion(
 
     df = df.fillna("")
     log_callback(f"Loaded {len(df)} rows, {len(df.columns)} columns from '{filename}'")
-
-    if not timestamp_col:
-        raise ValueError("Timestamp column is required")
-    if not participant_col:
-        raise ValueError("Participant ID column is required")
-    if not session_col and not session_override:
-        raise ValueError("Session is required: choose a column or set manual session")
-    if lat_col and lat_col not in df.columns:
-        raise ValueError(f"Latitude column '{lat_col}' not found in file")
-    if lon_col and lon_col not in df.columns:
-        raise ValueError(f"Longitude column '{lon_col}' not found in file")
-    if bool(lat_col) != bool(lon_col):
-        raise ValueError("Select both latitude and longitude columns, or neither.")
-
-    has_geo_source = bool(
-        (lat_col and lon_col)
-        or (lat_manual is not None and lon_manual is not None)
-        or location_col
-        or location_label_override
+    handle_validate_environment_conversion_inputs(
+        df=df,
+        timestamp_col=timestamp_col,
+        participant_col=participant_col,
+        participant_override=participant_override,
+        session_col=session_col,
+        session_override=session_override,
+        location_col=location_col,
+        lat_col=lat_col,
+        lon_col=lon_col,
+        location_label_override=location_label_override,
+        lat_manual=lat_manual,
+        lon_manual=lon_manual,
+        bids_label=_bids_label,
+        log_callback=log_callback,
     )
-    if not has_geo_source:
-        raise ValueError(
-            "No geolocation source found. Provide lat/lon columns, location column, or global coordinates."
-        )
-    if timestamp_col not in df.columns:
-        raise ValueError(f"Timestamp column '{timestamp_col}' not found in file")
-    if participant_col and participant_col not in df.columns:
-        raise ValueError(f"Participant ID column '{participant_col}' not found in file")
-    if session_col and session_col not in df.columns:
-        raise ValueError(f"Session column '{session_col}' not found in file")
-
-    log_callback(f"Timestamp column: '{timestamp_col}'")
-    if participant_col:
-        log_callback(f"Participant ID column: '{participant_col}'")
-    elif participant_override:
-        log_callback(
-            f"Manual participant ID: '{_bids_label(participant_override, 'sub')}'"
-        )
-    if session_col:
-        log_callback(f"Session column: '{session_col}'")
-    elif session_override:
-        log_callback(f"Manual session: '{session_override}'")
-    if location_col:
-        log_callback(f"Location column: '{location_col}'")
-    if lat_col and lon_col:
-        log_callback(f"Per-row coordinates: '{lat_col}' + '{lon_col}'")
-    if lat_manual is not None and lon_manual is not None:
-        log_callback(
-            f"Global fallback coordinates: ({lat_manual:.4f}, {lon_manual:.4f})"
-        )
 
     rows_out: list[dict] = []
     skipped = 0
@@ -1556,61 +1181,16 @@ def _perform_environment_conversion(
 
     raise_if_cancelled()
     project_root_path = resolve_active_project_root()
-
-    output_root = input_path.parent / "environment"
-    output_root.mkdir()
-    output_path = output_root / "recording-weather_environment.tsv"
-    _write_environment_tsv(rows_out, output_path)
-
-    log_callback(
-        f"Wrote {len(rows_out)} rows → recording-weather_environment.tsv", "success"
-    )
-
-    grouped_rows: dict[tuple[str, str], list[dict]] = {}
-    for row in rows_out:
-        subject_id = str(row.get("subject_id") or "").strip() or "sub-unknown"
-        session_id = str(row.get("session_id") or "").strip() or "ses-01"
-        grouped_rows.setdefault((subject_id, session_id), []).append(row)
-
-    written_project_paths: list[str] = []
-    try:
-        for (subject_id, session_id), grouped in grouped_rows.items():
-            raise_if_cancelled()
-            env_dir = project_root_path / subject_id / session_id / "environment"
-            filename = f"{subject_id}_{session_id}_recording-weather_environment.tsv"
-            target_path = env_dir / filename
-            _write_environment_tsv(grouped, target_path)
-            written_project_paths.append(str(target_path))
-            written_project_paths_for_cleanup.append(target_path)
-
-        raise_if_cancelled()
-        inherited_sidecar_path = (
-            project_root_path / "recording-weather_environment.json"
-        )
-        _write_environment_sidecar(inherited_sidecar_path)
-    except EnvironmentConversionCancelledError:
-        for path in written_project_paths_for_cleanup:
-            path.unlink(missing_ok=True)
-        if inherited_sidecar_path is not None:
-            inherited_sidecar_path.unlink(missing_ok=True)
-        raise
-
-    log_callback(
-        "Saved inherited root sidecar: recording-weather_environment.json", "success"
-    )
-
-    added_bidsignore_rules = check_and_update_bidsignore(
-        str(project_root_path), ["environment"]
-    )
-    if added_bidsignore_rules:
-        log_callback(
-            f"Updated .bidsignore for environment outputs ({len(added_bidsignore_rules)} rule(s) added)",
-            "info",
-        )
-
-    log_callback(
-        f"Saved to project: {len(written_project_paths)} environment file(s) under sub-*/ses-*/environment/",
-        "success",
+    written_project_paths, inherited_sidecar_path = handle_persist_environment_outputs(
+        input_path=input_path,
+        rows_out=rows_out,
+        project_root_path=project_root_path,
+        write_environment_tsv=_write_environment_tsv,
+        write_environment_sidecar=_write_environment_sidecar,
+        environment_conversion_cancelled_error_cls=EnvironmentConversionCancelledError,
+        check_and_update_bidsignore=check_and_update_bidsignore,
+        log_callback=log_callback,
+        raise_if_cancelled=raise_if_cancelled,
     )
 
     elapsed_seconds = max(0.0, perf_counter() - conversion_started_at)
@@ -1641,147 +1221,29 @@ def _perform_environment_conversion(
 
 
 def _run_environment_job(job_id: str, config: dict[str, Any]) -> None:
-    if _is_environment_job_cancelled(job_id):
-        _append_environment_job_log(
-            job_id, "⏹️ Environment conversion cancelled (before start)", "warning"
-        )
-        _environment_job_store.failure(
-            job_id,
-            "Cancelled by user",
-            status="cancelled",
-        )
-        return
-
-    try:
-        progress_callback = None
-        if not bool(config.get("pilot_random_subject", False)):
-            progress_callback = lambda pct: _environment_job_store.update(
-                job_id,
-                progress_pct=max(0, min(100, int(pct))),
-            )
-
-        result = _perform_environment_conversion(
-            input_path=config["input_path"],
-            filename=config["filename"],
-            suffix=config["suffix"],
-            separator_option=config["separator_option"],
-            timestamp_col=config["timestamp_col"],
-            participant_col=config["participant_col"],
-            participant_override=config["participant_override"],
-            session_col=config["session_col"],
-            session_override=config["session_override"],
-            location_col=config["location_col"],
-            lat_col=config["lat_col"],
-            lon_col=config["lon_col"],
-            location_label_override=config["location_label_override"],
-            lat_manual=config["lat_manual"],
-            lon_manual=config["lon_manual"],
-            project_path=config["project_path"],
-            pilot_random_subject=bool(config.get("pilot_random_subject", False)),
-            log_callback=lambda message, level="info": _append_environment_job_log(
-                job_id, message, level
-            ),
-            progress_callback=progress_callback,
-            job_id=job_id,
-            cancel_check=lambda: _is_environment_job_cancelled(job_id),
-        )
-        _environment_job_store.success(job_id, result)
-    except EnvironmentConversionCancelledError as exc:
-        _environment_job_store.failure(job_id, str(exc), status="cancelled")
-    except ValueError as exc:
-        _environment_job_store.failure(job_id, str(exc))
-    except Exception as exc:
-        logger.exception("Environment conversion failed")
-        _environment_job_store.failure(job_id, str(exc))
-    finally:
-        shutil.rmtree(config["tmp_dir"], ignore_errors=True)
+    handle_run_environment_job(
+        job_id=job_id,
+        config=config,
+        is_environment_job_cancelled=_is_environment_job_cancelled,
+        append_environment_job_log=_append_environment_job_log,
+        environment_job_store=_environment_job_store,
+        perform_environment_conversion=_perform_environment_conversion,
+        environment_conversion_cancelled_error_cls=EnvironmentConversionCancelledError,
+        logger=logger,
+    )
 
 
 def _build_environment_conversion_config_from_request() -> (
     tuple[dict[str, Any], tempfile.TemporaryDirectory | None]
 ):
-    uploaded, upload_error = _resolve_uploaded_or_source_file(field_names=("file",))
-    if uploaded is None or not getattr(uploaded, "filename", ""):
-        raise ValueError(upload_error or "No file provided")
-
-    filename = secure_filename(uploaded.filename or "")
-    suffix = Path(filename).suffix.lower()
-    if suffix not in ALLOWED_SUFFIXES:
-        raise ValueError(f"Unsupported file type '{suffix}'")
-
-    separator_option = normalize_separator_option(request.form.get("separator"))
-
-    timestamp_col = (request.form.get("timestamp_col") or "").strip() or None
-    participant_col = (request.form.get("participant_col") or "").strip() or None
-    participant_override = (
-        request.form.get("participant_override") or ""
-    ).strip() or None
-    session_col = (request.form.get("session_col") or "").strip() or None
-    location_col = (request.form.get("location_col") or "").strip() or None
-    lat_col = (request.form.get("lat_col") or "").strip() or None
-    lon_col = (request.form.get("lon_col") or "").strip() or None
-    session_override = (request.form.get("session_override") or "").strip() or None
-    location_label_override = (request.form.get("location_label") or "").strip()
-    pilot_random_subject = _form_bool(
-        request.form.get("pilot_random_subject"), default=False
+    return handle_build_environment_conversion_config_from_request(
+        resolve_uploaded_or_source_file=_resolve_uploaded_or_source_file,
+        allowed_suffixes=ALLOWED_SUFFIXES,
+        normalize_separator_option=normalize_separator_option,
+        form_bool=_form_bool,
+        coerce_coord=_coerce_coord,
+        require_existing_project_root=require_existing_project_root,
     )
-    convert_in_background = _form_bool(
-        request.form.get("convert_in_background"), default=False
-    )
-
-    if not timestamp_col:
-        raise ValueError("Timestamp column is required")
-    if not participant_col:
-        raise ValueError("Participant ID column is required")
-    if not session_col and not session_override:
-        raise ValueError("Session is required: choose a column or set manual session")
-
-    lat_manual_text = (request.form.get("lat") or "").strip()
-    lon_manual_text = (request.form.get("lon") or "").strip()
-    has_global_lat = bool(lat_manual_text)
-    has_global_lon = bool(lon_manual_text)
-    if has_global_lat != has_global_lon:
-        raise ValueError(
-            "Provide both global latitude and longitude, or leave both empty."
-        )
-
-    lat_manual = _coerce_coord(lat_manual_text, lat=True) if has_global_lat else None
-    lon_manual = _coerce_coord(lon_manual_text, lat=False) if has_global_lon else None
-    if has_global_lat and (lat_manual is None or lon_manual is None):
-        raise ValueError("Global latitude/longitude values are invalid.")
-
-    project_root = require_existing_project_root(
-        session.get("current_project_path"),
-        missing_message="No active project selected. Open a project before converting.",
-        missing_path_message="The selected project path no longer exists. Reopen the project and retry environment conversion.",
-    )
-
-    tmp_dir = tempfile.mkdtemp(prefix="prism_env_convert_")
-    input_path = Path(tmp_dir) / filename
-    uploaded.save(str(input_path))
-
-    config = {
-        "tmp_dir": tmp_dir,
-        "input_path": input_path,
-        "filename": filename,
-        "suffix": suffix,
-        "separator_option": separator_option,
-        "timestamp_col": timestamp_col,
-        "participant_col": participant_col,
-        "participant_override": participant_override,
-        "session_col": session_col,
-        "session_override": session_override,
-        "location_col": location_col,
-        "lat_col": lat_col,
-        "lon_col": lon_col,
-        "location_label_override": location_label_override,
-        "lat_manual": lat_manual,
-        "lon_manual": lon_manual,
-        "project_path": str(project_root),
-        "pilot_random_subject": pilot_random_subject,
-        "convert_in_background": convert_in_background,
-    }
-    return config, None
 
 
 # ── API endpoints ──────────────────────────────────────────────────────────────
@@ -1834,258 +1296,48 @@ def api_environment_location_search():
         return jsonify({"error": str(exc)}), 502
 
 
-def _run_environment_backend_command(command_fn, **kwargs):
-    stdout_buffer = io.StringIO()
-    stderr_buffer = io.StringIO()
-    exit_code = 0
-    with redirect_stdout(stdout_buffer), redirect_stderr(stderr_buffer):
-        try:
-            command_fn(SimpleNamespace(**kwargs))
-        except SystemExit as exc:
-            try:
-                exit_code = int(exc.code)
-            except Exception:
-                exit_code = 1
-    raw_output = stdout_buffer.getvalue().strip()
-    stderr_output = stderr_buffer.getvalue().strip()
-
-    payload: dict[str, Any]
-    if raw_output:
-        try:
-            payload = json.loads(raw_output)
-        except Exception:
-            payload = {"error": raw_output}
-    elif stderr_output:
-        payload = {"error": stderr_output}
-    elif exit_code == 0:
-        payload = {}
-    else:
-        payload = {"error": "Environment backend command failed"}
-
-    return payload, exit_code
-
-
-def _environment_command_http_status(exit_code: int) -> int:
-    return 400 if exit_code == 2 else 500
-
-
 def api_environment_preview():
-    """Read an uploaded tabular file and return column names + sample rows."""
-    uploaded, upload_error = _resolve_uploaded_or_source_file(field_names=("file",))
-    if uploaded is None or not getattr(uploaded, "filename", ""):
-        return jsonify({"error": upload_error or "No file provided"}), 400
-
-    filename = secure_filename(uploaded.filename or "")
-    suffix = Path(filename).suffix.lower()
-    if suffix not in ALLOWED_SUFFIXES:
-        return (
-            jsonify(
-                {
-                    "error": (
-                        f"Unsupported file type '{suffix}'. Use .xlsx, .csv, .tsv, .sav, "
-                        ".rds, .rdata, or .rda"
-                    )
-                }
-            ),
-            400,
-        )
-
-    try:
-        separator_option = normalize_separator_option(request.form.get("separator"))
-    except ValueError as exc:
-        return jsonify({"error": str(exc)}), 400
-
-    from src.cli.commands.environment import cmd_environment_preview
-
-    tmp_dir = tempfile.mkdtemp(prefix="prism_env_preview_")
-    try:
-        input_path = Path(tmp_dir) / filename
-        uploaded.save(str(input_path))
-        payload, exit_code = _run_environment_backend_command(
-            cmd_environment_preview,
-            input=str(input_path),
-            separator=separator_option,
-            json=True,
-        )
-        if exit_code != 0:
-            return jsonify(payload), _environment_command_http_status(exit_code)
-        return jsonify(payload)
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+    return handle_api_environment_preview(
+        resolve_uploaded_or_source_file=_resolve_uploaded_or_source_file,
+        allowed_suffixes=ALLOWED_SUFFIXES,
+        normalize_separator_option=normalize_separator_option,
+    )
 
 
 def api_environment_convert_start():
-    """Start an async environment conversion job."""
-    try:
-        config, _ = _build_environment_conversion_config_from_request()
-    except (ValueError, FileNotFoundError) as exc:
-        return jsonify({"error": str(exc)}), 400
-    except Exception as exc:
-        return jsonify({"error": str(exc)}), 500
-
-    if bool(config.get("convert_in_background", False)):
-        try:
-            job_id, pid, log_path, result_path = _start_environment_detached_job(config)
-        except Exception as exc:
-            shutil.rmtree(config["tmp_dir"], ignore_errors=True)
-            logger.exception("Failed to start detached environment conversion")
-            return jsonify({"error": str(exc)}), 500
-
-        return (
-            jsonify(
-                {
-                    "job_id": job_id,
-                    "background": True,
-                    "pid": pid,
-                    "log_path": str(log_path),
-                    "result_path": str(result_path),
-                }
-            ),
-            200,
-        )
-
-    job_id = ""
-    for _ in range(5):
-        candidate = uuid.uuid4().hex
-        try:
-            _environment_job_store.create(candidate)
-            job_id = candidate
-            break
-        except ValueError:
-            continue
-    if not job_id:
-        shutil.rmtree(config["tmp_dir"], ignore_errors=True)
-        return jsonify({"error": "Could not allocate conversion job id"}), 500
-
-    _append_environment_job_log(job_id, "🌍 Environment conversion job started", "info")
-
-    thread = threading.Thread(
-        target=_run_environment_job, args=(job_id, config), daemon=True
+    return handle_api_environment_convert_start(
+        build_environment_conversion_config_from_request=_build_environment_conversion_config_from_request,
+        start_environment_detached_job=_start_environment_detached_job,
+        logger=logger,
+        environment_job_store=_environment_job_store,
+        append_environment_job_log=_append_environment_job_log,
+        run_environment_job=_run_environment_job,
     )
-    thread.start()
-
-    return jsonify({"job_id": job_id}), 200
 
 
 def api_environment_convert_cancel(job_id: str):
-    """Cancel an async environment conversion job."""
-    if _mark_environment_job_cancelled(job_id):
-        _append_environment_job_log(job_id, "⏹️ User requested cancellation", "warning")
-        return (
-            jsonify(
-                {
-                    "message": "Cancellation requested for job",
-                    "job_id": job_id,
-                    "status": "cancelling",
-                }
-            ),
-            200,
-        )
-
-    with _environment_detached_jobs_lock:
-        detached_job = _environment_detached_jobs.get(job_id)
-
-    if detached_job:
-        cancel_path = Path(detached_job["cancel_path"])
-        cancel_path.parent.mkdir(parents=True, exist_ok=True)
-        cancel_path.write_text("cancelled", encoding="utf-8")
-        log_path = Path(detached_job["log_path"])
-        with open(log_path, "a", encoding="utf-8") as fh:
-            fh.write("warning\t⏹️ User requested cancellation\n")
-        return (
-            jsonify(
-                {
-                    "message": "Cancellation requested for detached job",
-                    "job_id": job_id,
-                    "status": "cancelling",
-                    "background": True,
-                    "pid": detached_job.get("pid"),
-                }
-            ),
-            200,
-        )
-
-    return jsonify({"error": "Job not found or already finished"}), 404
+    return handle_api_environment_convert_cancel(
+        job_id=job_id,
+        mark_environment_job_cancelled=_mark_environment_job_cancelled,
+        append_environment_job_log=_append_environment_job_log,
+        environment_detached_jobs_lock=_environment_detached_jobs_lock,
+        environment_detached_jobs=_environment_detached_jobs,
+    )
 
 
 def api_environment_convert_metrics():
-    """Return in-memory environment conversion metrics for debugging/monitoring."""
-    payload = _environment_job_store.metrics()
-    with _environment_detached_jobs_lock:
-        payload["detached_jobs"] = len(_environment_detached_jobs)
-    return jsonify(payload), 200
+    return handle_api_environment_convert_metrics(
+        environment_job_store=_environment_job_store,
+        environment_detached_jobs_lock=_environment_detached_jobs_lock,
+        environment_detached_jobs=_environment_detached_jobs,
+    )
 
 
 def api_environment_convert_status(job_id: str):
-    """Get incremental status and logs for an async environment conversion job."""
-    try:
-        cursor = int(request.args.get("cursor", "0"))
-    except ValueError:
-        cursor = 0
-
-    payload = _environment_job_store.snapshot(job_id, cursor)
-    if payload is not None:
-        return jsonify(payload), 200
-
-    with _environment_detached_jobs_lock:
-        detached_job = _environment_detached_jobs.get(job_id)
-        if not detached_job:
-            return jsonify({"error": "Job not found"}), 404
-
-    log_path = Path(detached_job["log_path"])
-    result_path = Path(detached_job["result_path"])
-    logs, next_cursor = _parse_detached_log_lines(log_path, cursor)
-
-    if not result_path.exists():
-        return (
-            jsonify(
-                {
-                    "logs": logs,
-                    "next_cursor": next_cursor,
-                    "done": False,
-                    "status": "running",
-                    "progress_pct": None,
-                    "success": None,
-                    "result": None,
-                    "error": None,
-                    "background": True,
-                    "pid": detached_job.get("pid"),
-                }
-            ),
-            200,
-        )
-
-    try:
-        final_state = json.loads(result_path.read_text(encoding="utf-8"))
-    except Exception as exc:
-        final_state = {
-            "done": True,
-            "success": False,
-            "result": None,
-            "error": f"Could not read detached result: {exc}",
-        }
-
-    with _environment_detached_jobs_lock:
-        _environment_detached_jobs.pop(job_id, None)
-
-    return (
-        jsonify(
-            {
-                "logs": logs,
-                "next_cursor": next_cursor,
-                "done": bool(final_state.get("done", True)),
-                "status": (
-                    "cancelled"
-                    if final_state.get("error") == "Conversion cancelled by user"
-                    else ("completed" if final_state.get("success") else "failed")
-                ),
-                "progress_pct": 100 if final_state.get("success") else None,
-                "success": final_state.get("success"),
-                "result": final_state.get("result"),
-                "error": final_state.get("error"),
-                "background": True,
-                "pid": detached_job.get("pid"),
-            }
-        ),
-        200,
+    return handle_api_environment_convert_status(
+        job_id=job_id,
+        environment_job_store=_environment_job_store,
+        environment_detached_jobs_lock=_environment_detached_jobs_lock,
+        environment_detached_jobs=_environment_detached_jobs,
+        parse_detached_log_lines=_parse_detached_log_lines,
     )
