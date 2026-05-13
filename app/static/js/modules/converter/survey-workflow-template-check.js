@@ -1,3 +1,5 @@
+import { fetchWithApiFallback } from '../../shared/api.js';
+
 export function createSurveyWorkflowTemplateCheckController({
     checkProjectTemplatesBtn,
     surveyVersionWizardApplyBtn,
@@ -59,7 +61,7 @@ export function createSurveyWorkflowTemplateCheckController({
             }
             formData.append('separator', getSelectedSeparator(selectedFilename ? selectedFilename.toLowerCase() : ''));
 
-            const response = await fetch('/api/survey-check-project-templates', {
+            const response = await fetchWithApiFallback('/api/survey-check-project-templates', {
                 method: 'POST',
                 body: formData,
             });

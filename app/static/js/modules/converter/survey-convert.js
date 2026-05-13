@@ -4,6 +4,7 @@
  * Includes: column detection, ID mapping, preview, participants mapping, validation
  */
 
+import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createSessionRegistrar } from '../../shared/session-register.js';
 import { createSurveyParticipantsMetadataController } from './survey-participants-metadata.js';
@@ -1584,7 +1585,7 @@ export function initSurveyConvert(elements) {
         }
 
         try {
-            const response = await fetch('/api/survey-detect-version-contexts', {
+            const response = await fetchWithApiFallback('/api/survey-detect-version-contexts', {
                 method: 'POST',
                 body: workflowRequest.formData,
             });
@@ -1941,7 +1942,7 @@ export function initSurveyConvert(elements) {
                 }
                 formData.append('separator', getSelectedSeparator(filename));
 
-                const response = await fetch('/api/detect-columns', {
+                const response = await fetchWithApiFallback('/api/survey-detect-columns', {
                     method: 'POST',
                     body: formData
                 });

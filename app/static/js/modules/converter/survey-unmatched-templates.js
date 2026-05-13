@@ -1,3 +1,5 @@
+import { fetchWithApiFallback } from '../../shared/api.js';
+
 export function createSurveyUnmatchedTemplatesController({
     conversionSummaryBody,
     conversionSummaryContainer,
@@ -60,7 +62,7 @@ export function createSurveyUnmatchedTemplatesController({
         btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
 
         try {
-            const resp = await fetch('/api/save-unmatched-template', {
+            const resp = await fetchWithApiFallback('/api/save-unmatched-template', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({task_key: g.task_key, prism_json: g.prism_json}),

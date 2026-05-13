@@ -34,6 +34,7 @@ import { escapeHtml } from '../../shared/dom.js';
 let currentProjectPath = '';
 let currentProjectName = '';
 let currentProjectIcon = '';
+let projectsPageInitialized = false;
 const recentProjectsKey = 'prism_recent_projects';
 const beginnerHelpModeKey = 'prism_beginner_help_mode';
 const recentProjectStatusCache = new Map();
@@ -904,7 +905,7 @@ export function renderRecentProjects() {
 // Load global library settings
 export async function loadGlobalSettings() {
     try {
-        const response = await fetch('/api/settings/global-library');
+        const response = await fetchWithApiFallback('/api/settings/global-library');
         const data = await response.json();
         if (data.success) {
             const libraryInput = document.getElementById('globalLibraryPath');
@@ -938,7 +939,7 @@ async function loadBackendMonitoringSetting() {
     if (!toggle) return;
 
     try {
-        const response = await fetch('/api/settings/backend-monitoring');
+        const response = await fetchWithApiFallback('/api/settings/backend-monitoring');
         const data = await response.json();
         if (data && data.success) {
             const enabled = Boolean(data.backend_monitoring);
@@ -959,7 +960,7 @@ async function loadBackendMonitoringSetting() {
 }
 
 async function saveBackendMonitoringSetting(payload) {
-    const response = await fetch('/api/settings/backend-monitoring', {
+    const response = await fetchWithApiFallback('/api/settings/backend-monitoring', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -981,7 +982,7 @@ async function loadDedicatedTerminalSetting() {
     if (!toggle) return;
 
     try {
-        const response = await fetch('/api/settings/dedicated-terminal');
+        const response = await fetchWithApiFallback('/api/settings/dedicated-terminal');
         const data = await response.json();
         if (data && data.success) {
             toggle.checked = Boolean(data.show_dedicated_terminal);
@@ -1034,7 +1035,7 @@ function submitOpenProjectPath(path) {
 }
 
 async function saveDedicatedTerminalSetting(enabled) {
-    const response = await fetch('/api/settings/dedicated-terminal', {
+    const response = await fetchWithApiFallback('/api/settings/dedicated-terminal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ show_dedicated_terminal: Boolean(enabled) })
@@ -1150,7 +1151,7 @@ function initDedicatedTerminalToggle() {
 // Load library info (both global and project)
 export async function loadLibraryInfo() {
     try {
-        const response = await fetch('/api/projects/library-path');
+        const response = await fetchWithApiFallback('/api/projects/library-path');
         const data = await response.json();
 
         const infoPanel = document.getElementById('libraryInfoPanel');
@@ -1283,7 +1284,7 @@ if (globalSettingsForm) {
         const connectedToServer = Boolean(document.getElementById('connectedToServerToggle')?.checked);
 
         try {
-            const response = await fetch('/api/settings/global-library', {
+            const response = await fetchWithApiFallback('/api/settings/global-library', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1344,7 +1345,7 @@ if (globalSettingsForm) {
 export async function useDefaultLibrary() {
     document.getElementById('globalRecipesPath').value = '';
     try {
-        const response = await fetch('/api/settings/global-library');
+        const response = await fetchWithApiFallback('/api/settings/global-library');
         const data = await response.json();
         if (data.default_library_path) {
             document.getElementById('globalLibraryPath').value = data.default_library_path;
@@ -1366,7 +1367,7 @@ export async function clearGlobalLibrary() {
     document.getElementById('globalRecipesPath').value = '';
 
     try {
-        const response = await fetch('/api/settings/global-library', {
+        const response = await fetchWithApiFallback('/api/settings/global-library', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ global_template_library_path: '' })
@@ -2723,7 +2724,7 @@ updateQuickValidateButtonState();
 
 export async function fixIssue(path, code) {
     try {
-        const response = await fetch('/api/projects/fix', {
+        const response = await fetchWithApiFallback('/api/projects/fix', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ path: path, fix_codes: [code] })
@@ -2742,7 +2743,7 @@ export async function fixIssue(path, code) {
 
 export async function fixAllIssues(path) {
     try {
-        const response = await fetch('/api/projects/fix', {
+        const response = await fetchWithApiFallback('/api/projects/fix', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ path: path })
@@ -2774,7 +2775,13 @@ export async function clearCurrentProject() {
 
 // ===== INITIALIZATION =====
 
-function initProjectsPage() {
+export function initProjectsPage() {
+    if (projectsPageInitialized) {
+        updateQuickValidateButtonState();
+        return;
+    }
+    projectsPageInitialized = true;
+
     const isWindows = navigator.platform.toUpperCase().indexOf('WIN') > -1;
     const isMac = navigator.platform.toUpperCase().indexOf('MAC') > -1;
     const existingPathInput = document.getElementById('existingPath');
@@ -2972,12 +2979,6 @@ function initProjectsPage() {
             clearGlobalLibrary();
         });
     }
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initProjectsPage);
-} else {
-    initProjectsPage();
 }
 
 // Expose for inline handlers and legacy code

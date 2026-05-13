@@ -1,3 +1,5 @@
+import { fetchWithApiFallback } from '../../shared/api.js';
+
 export function createSurveyTemplateGenerationController({
     convertBtn,
     convertDatasetName,
@@ -37,7 +39,7 @@ export function createSurveyTemplateGenerationController({
                 formData.append('task_name', taskName);
             }
 
-            const response = await fetch('/api/limesurvey-to-prism', {
+            const response = await fetchWithApiFallback('/api/survey-generate-templates', {
                 method: 'POST',
                 body: formData,
             });

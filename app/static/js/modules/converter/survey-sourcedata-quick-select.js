@@ -1,3 +1,5 @@
+import { fetchWithApiFallback } from '../../shared/api.js';
+
 export function createSurveySourcedataQuickSelectController({
     sourcedataQuickSelect,
     sourcedataFileSelect,
@@ -100,7 +102,7 @@ export function createSurveySourcedataQuickSelectController({
             ? `/api/projects/sourcedata-files?project_path=${encodeURIComponent(effectiveProjectPath)}`
             : '/api/projects/sourcedata-files';
 
-        fetch(endpoint)
+        fetchWithApiFallback(endpoint)
             .then((response) => response.json())
             .then((data) => {
                 if (activeRequestToken !== requestToken) {
@@ -177,7 +179,7 @@ export function createSurveySourcedataQuickSelectController({
                     throw new Error('No project selected');
                 }
 
-                const response = await fetch(`/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}`);
+                const response = await fetchWithApiFallback(`/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}`);
                 if (!response.ok) {
                     throw new Error('Failed to load file');
                 }

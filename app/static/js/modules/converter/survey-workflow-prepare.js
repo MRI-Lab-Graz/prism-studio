@@ -1,3 +1,5 @@
+import { fetchWithApiFallback } from '../../shared/api.js';
+
 export function createSurveyWorkflowPrepareController({
     parseJsonResponse,
     buildSurveyWorkflowRequestFormData,
@@ -175,7 +177,7 @@ export function createSurveyWorkflowPrepareController({
             try {
                 advanceSurveyRunProgress(mode, 16, `Running ${modeLabel} setup...`);
                 workflowRequest.formData.append('workflow_command', 'prepare');
-                response = await fetch('/api/survey-workflow-command', {
+                response = await fetchWithApiFallback('/api/survey-workflow-command', {
                     method: 'POST',
                     body: workflowRequest.formData,
                     signal,

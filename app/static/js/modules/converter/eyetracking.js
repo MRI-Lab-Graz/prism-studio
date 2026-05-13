@@ -3,6 +3,7 @@
  * Handles batch eyetracking conversion
  */
 
+import { fetchWithApiFallback } from '../../shared/api.js';
 import { pollJobStatus } from '../../shared/job-polling.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
@@ -159,7 +160,7 @@ export function initEyetracking(elements) {
             ? `/api/projects/sourcedata-files?kind=eyetracking&project_path=${encodeURIComponent(effectiveProjectPath)}`
             : '/api/projects/sourcedata-files?kind=eyetracking';
 
-        fetch(endpoint)
+        fetchWithApiFallback(endpoint)
             .then((response) => response.json())
             .then((data) => {
                 if (requestToken !== eyetrackingSourcedataRequestToken) {
@@ -336,7 +337,7 @@ export function initEyetracking(elements) {
                     ? `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}`
                     : `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}`;
 
-                const response = await fetch(endpoint);
+                const response = await fetchWithApiFallback(endpoint);
                 if (!response.ok) {
                     throw new Error('Failed to load sourcedata file');
                 }

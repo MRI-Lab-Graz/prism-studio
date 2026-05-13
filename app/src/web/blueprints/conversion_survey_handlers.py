@@ -34,6 +34,9 @@ from .conversion_survey_preview_handlers import (
     handle_api_survey_convert_preview,
     handle_api_survey_languages,
 )
+from .tools_generation_handlers import handle_detect_columns
+from .tools_limesurvey_handlers import handle_limesurvey_to_prism
+from .tools_post_conversion_handlers import handle_limesurvey_save_to_project
 
 from .conversion_utils import (
     collect_multivariant_tasks_from_library,
@@ -1333,6 +1336,21 @@ def _format_unmatched_groups_response(uge, log_messages=None):
 def api_survey_languages():
     return handle_api_survey_languages(
         participant_json_candidates=_participant_json_candidates,
+    )
+
+
+def api_survey_detect_columns():
+    return handle_detect_columns()
+
+
+def api_survey_generate_templates():
+    return handle_limesurvey_to_prism()
+
+
+def api_survey_save_to_project():
+    return handle_limesurvey_save_to_project(
+        project_path=session.get("current_project_path"),
+        data=request.get_json(),
     )
 
 
