@@ -2,6 +2,7 @@
  * Shared session registration utility
  */
 
+import { fetchWithApiFallback } from './api.js';
 import { resolveCurrentProjectPath } from './project-state.js';
 
 /**
@@ -16,7 +17,7 @@ export function createSessionRegistrar(populateSessionPickers) {
     return function registerSessionInProject(sessionId, tasks, modality, sourceFile, converter) {
         if (!sessionId || !tasks || !tasks.length) return;
         const currentProjectPath = resolveCurrentProjectPath();
-        fetch('/api/projects/sessions/register', {
+        fetchWithApiFallback('/api/projects/sessions/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

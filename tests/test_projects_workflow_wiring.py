@@ -19,6 +19,10 @@ PROJECTS_INDEX_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "index.js"
 )
 MAIN_MODULE = REPO_ROOT / "app" / "static" / "js" / "main.js"
+LEGACY_PROJECTS_CORE = REPO_ROOT / "app" / "static" / "js" / "projects-core.js"
+LEGACY_PROJECTS_EXPORT = REPO_ROOT / "app" / "static" / "js" / "projects-export.js"
+LEGACY_PROJECTS_HELPERS = REPO_ROOT / "app" / "static" / "js" / "projects-helpers.js"
+LEGACY_PROJECTS_METADATA = REPO_ROOT / "app" / "static" / "js" / "projects-metadata.js"
 OPEN_FORM_TEMPLATE = (
     REPO_ROOT / "app" / "templates" / "includes" / "projects" / "open_form.html"
 )
@@ -67,6 +71,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
         export_content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
         main_content = MAIN_MODULE.read_text(encoding="utf-8")
+        template_content = PROJECTS_PAGE_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn("export function initializeProjectsPage() {", index_content)
         self.assertIn("initProjectsPage();", index_content)
@@ -79,6 +84,11 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("export function initializeProjectsExport() {", export_content)
         self.assertNotIn("document.addEventListener('DOMContentLoaded', function() {", export_content)
         self.assertIn("ProjectsModule.initializeProjectsPage()", main_content)
+        self.assertIn("<script type=\"module\" src=\"{{ url_for('static', filename='js/main.js', v=prism_static_asset_token) }}\"></script>", template_content)
+        self.assertFalse(LEGACY_PROJECTS_CORE.exists())
+        self.assertFalse(LEGACY_PROJECTS_EXPORT.exists())
+        self.assertFalse(LEGACY_PROJECTS_HELPERS.exists())
+        self.assertFalse(LEGACY_PROJECTS_METADATA.exists())
 
     def test_backend_monitoring_verbose_toggle_is_wired(self):
         core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")

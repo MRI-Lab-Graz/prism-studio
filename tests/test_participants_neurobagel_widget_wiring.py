@@ -3,12 +3,30 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 WIDGET_FILE = REPO_ROOT / "app" / "static" / "neurobagel_widget.html"
+NEUROBAGEL_SCRIPT = REPO_ROOT / "app" / "static" / "js" / "neurobagel.js"
 PARTICIPANTS_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "participants.js"
 )
 
 
 class TestParticipantsNeurobagelWidgetWiring(unittest.TestCase):
+    def test_neurobagel_script_uses_shared_api_fallback(self):
+        script_content = NEUROBAGEL_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "const neurobagelScriptUrl = document.currentScript?.src || window.location.href;",
+            script_content,
+        )
+        self.assertIn("function loadNeurobagelFetchWithApiFallback() {", script_content)
+        self.assertIn(
+            "neurobagelFetchWithApiFallbackPromise = import(neurobagelSharedApiModuleUrl).then(({ fetchWithApiFallback }) => {",
+            script_content,
+        )
+        self.assertIn(
+            "const resp = await fetchWithApiFallback('/api/neurobagel/participants');",
+            script_content,
+        )
+
     def test_widget_renders_real_unannotated_section(self):
         content = WIDGET_FILE.read_text(encoding="utf-8")
 
