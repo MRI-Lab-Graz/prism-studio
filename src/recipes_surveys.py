@@ -425,6 +425,247 @@ def _normalize_declared_data_type(raw_type: Any) -> str | None:
     return mapping.get(text)
 
 
+def _normalize_declared_measure(raw_measure: Any) -> str | None:
+    """Normalize measurement-level labels to SPSS-compatible values."""
+    text = str(raw_measure or "").strip().lower()
+    if not text:
+        return None
+
+    mapping = {
+        "nominal": "nominal",
+        "categorical": "nominal",
+        "category": "nominal",
+        "identifier": "nominal",
+        "id": "nominal",
+        "text": "nominal",
+        "ordinal": "ordinal",
+        "ordered": "ordinal",
+        "ranking": "ordinal",
+        "rank": "ordinal",
+        "scale": "scale",
+        "continuous": "scale",
+        "continous": "scale",
+        "interval": "scale",
+        "ratio": "scale",
+        "unknown": "unknown",
+    }
+    return mapping.get(text)
+
+
+def _infer_variable_measure_from_metadata(meta: Any) -> str | None:
+    """Infer SPSS variable_measure from participant/template/recipe metadata."""
+    if not isinstance(meta, dict):
+        return None
+
+    for key in (
+        "Measure",
+        "measure",
+        "MeasurementLevel",
+        "measurement_level",
+        "ScaleLevel",
+        "scale_level",
+    ):
+        explicit = _normalize_declared_measure(meta.get(key))
+        if explicit:
+            return explicit
+
+    variable_type = str(
+        meta.get("VariableType") or meta.get("variable_type") or ""
+    ).strip()
+    variable_type_measure = _normalize_declared_measure(variable_type)
+    if variable_type_measure:
+        return variable_type_measure
+
+    annotations = meta.get("Annotations") or meta.get("annotations") or {}
+    if isinstance(annotations, dict):
+        anno_variable_type = _normalize_declared_measure(
+            annotations.get("VariableType")
+            or annotations.get("variable_type")
+            or annotations.get("Type")
+            or annotations.get("type")
+        )
+        if anno_variable_type:
+            return anno_variable_type
+
+        is_about = annotations.get("IsAbout") or annotations.get("is_about")
+        term_url = ""
+        if isinstance(is_about, dict):
+            term_url = str(
+                is_about.get("TermURL")
+                or is_about.get("term_url")
+                or is_about.get("URI")
+                or is_about.get("uri")
+                or ""
+            ).strip()
+        elif is_about is not None:
+            term_url = str(is_about).strip()
+
+        if term_url.lower().endswith("age") or term_url.lower() == "nb:age":
+            return "scale"
+
+    scale_type = str(meta.get("ScaleType") or meta.get("scale_type") or "").strip().lower()
+    scale_type_map = {
+        "likert": "ordinal",
+        "frequency": "ordinal",
+        "ordinal": "ordinal",
+        "rank": "ordinal",
+        "ranking": "ordinal",
+        "binary": "nominal",
+        "nominal": "nominal",
+        "categorical": "nominal",
+        "category": "nominal",
+        "vas": "scale",
+        "continuous": "scale",
+        "interval": "scale",
+        "ratio": "scale",
+    }
+    if scale_type in scale_type_map:
+        return scale_type_map[scale_type]
+
+    levels = meta.get("Levels") or meta.get("levels")
+    if isinstance(levels, dict) and levels:
+        return "nominal"
+
+    dtype = _normalize_declared_data_type(meta.get("DataType"))
+    if dtype in {"integer", "float"}:
+        return "scale"
+    if dtype in {"string", "boolean"}:
+        return "nominal"
+
+    return None
+
+
+def _collect_recipe_variable_measures(
+    *,
+    columns: list[str],
+    participants_meta: dict,
+    recipe: dict,
+    sidecar_meta: Optional[dict] = None,
+) -> dict[str, str]:
+    """Collect SPSS variable_measure values for one recipe export table."""
+    measures: dict[str, str] = {}
+
+    for col in columns:
+        if col in {"participant_id", "session", "run"}:
+            measures[col] = "nominal"
+            continue
+
+        participant_meta = participants_meta.get(col)
+        if isinstance(participant_meta, dict):
+            participant_measure = _infer_variable_measure_from_metadata(participant_meta)
+            if participant_measure:
+                measures[col] = participant_measure
+                continue
+
+        if sidecar_meta and isinstance(sidecar_meta, dict):
+            sidecar_key = (
+                col if col in sidecar_meta else re.sub(r"_ses[_-]\w+$", "", col)
+            )
+            col_meta = sidecar_meta.get(sidecar_key)
+            if isinstance(col_meta, dict):
+                sidecar_measure = _infer_variable_measure_from_metadata(col_meta)
+                if sidecar_measure:
+                    measures[col] = sidecar_measure
+                    continue
+
+        bare_col = _strip_export_context_suffix(col)
+        for score in recipe.get("Scores") or []:
+            score_name = str(score.get("Name") or "").strip()
+            if not score_name:
+                continue
+            if bare_col == score_name or col == score_name:
+                score_measure = _infer_variable_measure_from_metadata(score) or "scale"
+                measures[col] = score_measure
+                break
+
+    return measures
+
+
+def _collect_combined_variable_measures(
+    *,
+    columns: list[str],
+    participants_meta: dict,
+    recipe_by_id: dict[str, dict],
+    dataset_path: Optional[Path],
+    modality: str,
+) -> dict[str, str]:
+    """Collect SPSS variable_measure values for combined (merge_all) exports."""
+    measures: dict[str, str] = {}
+
+    for key in ("participant_id", "session", "run"):
+        if key in columns:
+            measures[key] = "nominal"
+
+    for col in columns:
+        if col in measures:
+            continue
+        participant_meta = participants_meta.get(col)
+        if isinstance(participant_meta, dict):
+            participant_measure = _infer_variable_measure_from_metadata(participant_meta)
+            if participant_measure:
+                measures[col] = participant_measure
+
+    if not dataset_path:
+        return measures
+
+    col_set = set(columns)
+    for recipe_id, recipe in recipe_by_id.items():
+        sidecar = _get_sidecar_for_task(dataset_path, modality, recipe_id)
+
+        for sidecar_key, col_meta in sidecar.items():
+            if not isinstance(col_meta, dict):
+                continue
+            sidecar_measure = _infer_variable_measure_from_metadata(col_meta)
+            if not sidecar_measure:
+                continue
+
+            candidate_names = {
+                sidecar_key,
+                _prefixed_recipe_column_name(recipe_id, sidecar_key),
+            }
+            for col in col_set:
+                if col in measures:
+                    continue
+                bare = _strip_export_context_suffix(col)
+                if bare in candidate_names:
+                    measures[col] = sidecar_measure
+
+        for score in recipe.get("Scores") or []:
+            score_name = str(score.get("Name") or "").strip()
+            if not score_name:
+                continue
+            score_measure = _infer_variable_measure_from_metadata(score) or "scale"
+
+            candidate_names = {
+                score_name,
+                _prefixed_recipe_column_name(recipe_id, score_name),
+            }
+            for col in col_set:
+                if col in measures:
+                    continue
+                bare = _strip_export_context_suffix(col)
+                if bare in candidate_names:
+                    measures[col] = score_measure
+
+    return measures
+
+
+def _collect_participant_nominal_text_columns(
+    *,
+    columns: list[str],
+    participants_meta: dict,
+) -> set[str]:
+    """Return participant columns that should remain text-coded nominal in SAV."""
+    nominal_columns: set[str] = set()
+    for col in columns:
+        col_meta = participants_meta.get(col)
+        if not isinstance(col_meta, dict):
+            continue
+        if _infer_variable_measure_from_metadata(col_meta) == "nominal":
+            nominal_columns.add(col)
+    return nominal_columns
+
+
 def _collect_recipe_declared_datatypes(
     *,
     columns: list[str],
@@ -600,6 +841,21 @@ def _apply_declared_datatypes(df: Any, declared_datatypes: dict[str, str]) -> An
             out[col] = series.astype("string")
 
     return out
+
+
+def _drop_nominal_declared_datatypes(
+    declared_datatypes: dict[str, str],
+    variable_measures: dict[str, str],
+) -> dict[str, str]:
+    """Skip numeric datatype coercion for columns that are explicitly nominal."""
+    if not declared_datatypes or not variable_measures:
+        return declared_datatypes
+
+    return {
+        col: dtype
+        for col, dtype in declared_datatypes.items()
+        if variable_measures.get(col) != "nominal"
+    }
 
 
 def _build_variable_metadata(
@@ -957,7 +1213,10 @@ def _build_combined_output_metadata(
 
 
 def _coerce_value_labeled_columns_for_sav(
-    df: Any, value_labels: dict[str, dict]
+    df: Any,
+    value_labels: dict[str, dict],
+    *,
+    keep_text_columns: set[str] | None = None,
 ) -> Any:
     """Convert value-labeled columns to numeric where label keys are numeric."""
     import pandas as pd
@@ -965,9 +1224,12 @@ def _coerce_value_labeled_columns_for_sav(
     if df is None or not value_labels:
         return df
 
+    keep_text_columns = {str(c) for c in (keep_text_columns or set())}
     out = df.copy()
     for col, labels in value_labels.items():
         if col not in out.columns or not isinstance(labels, dict) or not labels:
+            continue
+        if col in keep_text_columns:
             continue
 
         numeric_keys: list[float] = []
@@ -997,7 +1259,11 @@ def _coerce_value_labeled_columns_for_sav(
     return out
 
 
-def _prepare_dataframe_for_sav(df: Any) -> Any:
+def _prepare_dataframe_for_sav(
+    df: Any,
+    *,
+    keep_text_columns: set[str] | None = None,
+) -> Any:
     """Normalize missing markers and numeric formatting for SPSS export.
 
     SPSS stores numeric values locale-independently in SAV files. This helper
@@ -1009,6 +1275,7 @@ def _prepare_dataframe_for_sav(df: Any) -> Any:
     if df is None:
         return df
 
+    keep_text_columns = {str(c) for c in (keep_text_columns or set())}
     out = df.copy()
     missing_tokens = _MISSING_TEXT_TOKENS
 
@@ -1024,6 +1291,10 @@ def _prepare_dataframe_for_sav(df: Any) -> Any:
             out.loc[missing_mask, col] = pd.NA
 
         if int(non_missing_mask.sum()) == 0:
+            continue
+
+        # Keep designated categorical/text-coded fields as text for downstream tools.
+        if col in keep_text_columns:
             continue
 
         # Accept both decimal separators in input while writing canonical numerics.
@@ -1200,6 +1471,29 @@ def _build_sav_value_labels(
 
         if col_labels:
             out[new_col] = col_labels
+
+    return out
+
+
+def _build_sav_variable_measures(
+    *,
+    df: Any,
+    variable_measures: dict[str, str],
+    rename_map: dict[str, str],
+) -> dict[str, str]:
+    """Build SPSS variable_measure map with renamed/sanitized column names."""
+    out: dict[str, str] = {}
+    if df is None or not variable_measures:
+        return out
+
+    valid_measures = {"nominal", "ordinal", "scale", "unknown"}
+    for col, raw_measure in variable_measures.items():
+        new_col = rename_map.get(col, col)
+        if new_col not in df.columns:
+            continue
+        measure = _normalize_declared_measure(raw_measure)
+        if measure in valid_measures:
+            out[new_col] = measure
 
     return out
 
@@ -2564,6 +2858,20 @@ def _export_recipe_aggregated(
         recipe=recipe,
         sidecar_meta=sidecar_meta,
     )
+    variable_measures = _collect_recipe_variable_measures(
+        columns=list(df.columns),
+        participants_meta=participants_meta,
+        recipe=recipe,
+        sidecar_meta=sidecar_meta,
+    )
+    participant_nominal_text_columns = _collect_participant_nominal_text_columns(
+        columns=list(df.columns),
+        participants_meta=participants_meta,
+    )
+    declared_datatypes = _drop_nominal_declared_datatypes(
+        declared_datatypes,
+        {col: "nominal" for col in participant_nominal_text_columns},
+    )
     survey_meta = _build_survey_metadata(recipe, lang=lang)
 
     prefix = _make_project_prefix(output_prism_root)
@@ -2658,9 +2966,15 @@ def _export_recipe_aggregated(
         try:
             import pyreadstat
 
-            df_for_sav = _prepare_dataframe_for_sav(df_for_write)
+            nominal_text_columns = set(participant_nominal_text_columns)
+            df_for_sav = _prepare_dataframe_for_sav(
+                df_for_write,
+                keep_text_columns=nominal_text_columns,
+            )
             df_for_sav = _coerce_value_labeled_columns_for_sav(
-                df_for_sav, val_labels
+                df_for_sav,
+                val_labels,
+                keep_text_columns=nominal_text_columns,
             )
 
             # Sanitize SPSS variable names (illegal chars + leading digit names).
@@ -2679,12 +2993,20 @@ def _export_recipe_aggregated(
                 value_labels=val_labels,
                 rename_map=spss_rename_map,
             )
+            sav_variable_measures = _build_sav_variable_measures(
+                df=df_for_sav,
+                variable_measures=variable_measures,
+                rename_map=spss_rename_map,
+            )
 
             pyreadstat.write_sav(
                 df_for_sav,
                 str(out_fname),
                 column_labels=sav_var_labels if sav_var_labels else None,
                 variable_value_labels=sav_val_labels if sav_val_labels else None,
+                variable_measure=(
+                    sav_variable_measures if sav_variable_measures else None
+                ),
             )
             _write_codebook_json(
                 codebook_json_path,
@@ -3534,6 +3856,23 @@ def compute_survey_recipes(
             dataset_path=output_prism_root,
             modality=modality,
         )
+        combined_variable_measures = _collect_combined_variable_measures(
+            columns=list(combined_df.columns),
+            participants_meta=participants_meta,
+            recipe_by_id=merge_all_recipe_by_id,
+            dataset_path=output_prism_root,
+            modality=modality,
+        )
+        combined_participant_nominal_text_columns = (
+            _collect_participant_nominal_text_columns(
+                columns=list(combined_df.columns),
+                participants_meta=participants_meta,
+            )
+        )
+        combined_declared_datatypes = _drop_nominal_declared_datatypes(
+            combined_declared_datatypes,
+            {col: "nominal" for col in combined_participant_nominal_text_columns},
+        )
 
         if out_format in {"csv", "sav"}:
             _write_codebook_json(
@@ -3575,6 +3914,7 @@ def compute_survey_recipes(
             try:
                 import pyreadstat
 
+                nominal_text_columns = set(combined_participant_nominal_text_columns)
                 combined_for_write = _apply_missing_export_policy(
                     combined_df,
                     missing_policy=missing_policy,
@@ -3584,9 +3924,14 @@ def compute_survey_recipes(
                     combined_for_write,
                     combined_declared_datatypes,
                 )
-                combined_for_sav = _prepare_dataframe_for_sav(combined_for_write)
+                combined_for_sav = _prepare_dataframe_for_sav(
+                    combined_for_write,
+                    keep_text_columns=nominal_text_columns,
+                )
                 combined_for_sav = _coerce_value_labeled_columns_for_sav(
-                    combined_for_sav, combined_value_labels
+                    combined_for_sav,
+                    combined_value_labels,
+                    keep_text_columns=nominal_text_columns,
                 )
 
                 # Sanitize SPSS variable names (illegal chars + leading digit names).
@@ -3605,12 +3950,20 @@ def compute_survey_recipes(
                     value_labels=combined_value_labels,
                     rename_map=rename_map_sav,
                 )
+                sav_variable_measures = _build_sav_variable_measures(
+                    df=combined_for_sav,
+                    variable_measures=combined_variable_measures,
+                    rename_map=rename_map_sav,
+                )
 
                 pyreadstat.write_sav(
                     combined_for_sav,
                     str(out_path),
                     column_labels=sav_var_labels if sav_var_labels else None,
                     variable_value_labels=sav_val_labels if sav_val_labels else None,
+                    variable_measure=(
+                        sav_variable_measures if sav_variable_measures else None
+                    ),
                 )
             except Exception as e:
                 # Clean up potential 0-byte .sav file left by failed write
