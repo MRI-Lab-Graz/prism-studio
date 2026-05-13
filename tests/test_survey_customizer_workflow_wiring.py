@@ -27,7 +27,20 @@ class TestSurveyCustomizerWorkflowWiring(unittest.TestCase):
 
         self.assertIn("projectPath: getCurrentProjectPath(),", generator_content)
         self.assertIn('id="saveToProjectHint"', template_content)
+        self.assertIn(
+            "const surveyCustomizerScriptUrl = document.currentScript?.src || window.location.href;",
+            script_content,
+        )
+        self.assertIn("function loadSharedFetchWithApiFallback() {", script_content)
+        self.assertIn(
+            "sharedFetchWithApiFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithApiFallback }) => {",
+            script_content,
+        )
         self.assertIn("async function fetchWithApiFallback(", script_content)
+        self.assertIn(
+            "return sharedFetchWithApiFallback(url, options, fallbackMessage);",
+            script_content,
+        )
         self.assertIn("function getCurrentProjectPath() {", script_content)
         self.assertIn("let sourceProjectPath = '';", script_content)
         self.assertIn(
@@ -47,6 +60,10 @@ class TestSurveyCustomizerWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "await fetchWithApiFallback('/api/survey-customizer/export', {",
+            script_content,
+        )
+        self.assertIn(
+            "await fetchWithApiFallback('/api/template-editor/export-questionnaire', {",
             script_content,
         )
         self.assertIn('if "project_path" in data', blueprint_content)

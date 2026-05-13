@@ -18,11 +18,28 @@
 
 'use strict';
 
+const recipeBuilderScriptUrl = document.currentScript?.src || window.location.href;
+
 function _escHtml(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+
+    const sharedApiModuleUrl = new URL('./shared/api.js', recipeBuilderScriptUrl).href;
+    let sharedFetchWithApiFallbackPromise = null;
+
+    function loadSharedFetchWithApiFallback() {
+        if (!sharedFetchWithApiFallbackPromise) {
+            sharedFetchWithApiFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithApiFallback }) => {
+                if (typeof fetchWithApiFallback !== 'function') {
+                    throw new Error('Shared API helper is unavailable.');
+                }
+                return fetchWithApiFallback;
+            });
+        }
+        return sharedFetchWithApiFallbackPromise;
+    }
 
     const root = document.getElementById('recipeBuilderRoot');
     if (!root) return;
@@ -101,39 +118,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const EDITABLE_METHODS = new Set(['sum', 'mean']);
     const SAFE_SCORE_KEYS = new Set(['Name', 'Method', 'Description', 'Items', 'Missing', 'Range', 'MinValid']);
 
-    function getFallbackApiOrigin() {
-        const configuredOrigin = (window.PRISM_API_ORIGIN || '').trim();
-        if (configuredOrigin) {
-            return configuredOrigin.replace(/\/$/, '');
-        }
-        return 'http://127.0.0.1:5001';
-    }
-
-    function canRetryApiWithFallback(url) {
-        const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
-        const isRelativeApiRequest = typeof url === 'string' && url.startsWith('/api/');
-        return isRelativeApiRequest && protocol !== 'http:' && protocol !== 'https:';
-    }
-
     async function fetchWithApiFallback(
         url,
         options = {},
         fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.'
     ) {
-        try {
-            return await fetch(url, options);
-        } catch (primaryError) {
-            if (!canRetryApiWithFallback(url)) {
-                throw primaryError;
-            }
-
-            const fallbackUrl = `${getFallbackApiOrigin()}${url}`;
-            try {
-                return await fetch(fallbackUrl, options);
-            } catch (_fallbackError) {
-                throw new Error(fallbackMessage);
-            }
-        }
+        const sharedFetchWithApiFallback = await loadSharedFetchWithApiFallback();
+        return sharedFetchWithApiFallback(url, options, fallbackMessage);
     }
 
     async function parseApiJsonResponse(response, defaultMessage) {

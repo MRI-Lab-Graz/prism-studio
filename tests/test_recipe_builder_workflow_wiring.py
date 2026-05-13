@@ -35,7 +35,20 @@ class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
     def test_recipe_builder_script_uses_api_fallback_for_load_and_save_requests(self):
         content = RECIPE_BUILDER_SCRIPT.read_text(encoding="utf-8")
 
+        self.assertIn(
+            "const recipeBuilderScriptUrl = document.currentScript?.src || window.location.href;",
+            content,
+        )
+        self.assertIn("function loadSharedFetchWithApiFallback() {", content)
+        self.assertIn(
+            "sharedFetchWithApiFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithApiFallback }) => {",
+            content,
+        )
         self.assertIn("async function fetchWithApiFallback(", content)
+        self.assertIn(
+            "return sharedFetchWithApiFallback(url, options, fallbackMessage);",
+            content,
+        )
         self.assertIn("const response = await fetchWithApiFallback(", content)
         self.assertIn(
             "'/api/recipe-builder/surveys?dataset_path=' + encodeURIComponent(path) + includeGlobal + modalityQuery",

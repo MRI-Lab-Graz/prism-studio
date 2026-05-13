@@ -48,7 +48,16 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
 
         self.assertIn(
-            "async function fetchWithApiFallback(url, options = {}, fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.')",
+            "const sharedApiModuleUrl = new URL('./shared/api.js', document.currentScript?.src || window.location.href).href;",
+            content,
+        )
+        self.assertIn("function loadSharedFetchWithApiFallback() {", content)
+        self.assertIn(
+            "sharedFetchWithApiFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithApiFallback }) => {",
+            content,
+        )
+        self.assertIn(
+            "return sharedFetchWithApiFallback(url, options, fallbackMessage);",
             content,
         )
         self.assertIn(
@@ -63,7 +72,7 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "await fetchWithApiFallback('/api/limesurvey-to-prism', {", content
+            "await fetchWithApiFallback('/api/survey-generate-templates', {", content
         )
         self.assertIn(
             "await fetchWithApiFallback('/api/template-editor/export-questionnaire', {",
