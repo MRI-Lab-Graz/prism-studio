@@ -397,6 +397,7 @@ def _check_survey_recipe_coverage(
         RECIPE_FILENAME_GLOB,
         _extract_task_from_survey_filename,
         _normalize_survey_key,
+        _strip_acq_from_task,
     )
 
     root = Path(root_dir)
@@ -411,11 +412,12 @@ def _check_survey_recipe_coverage(
         return []
 
     required_recipe_ids = {
-        task_id
+        base_task
         for task_id in (
             _extract_task_from_survey_filename(path) for path in survey_files
         )
-        if task_id
+        for base_task in [_strip_acq_from_task(task_id)]
+        if base_task
     }
 
     if not required_recipe_ids:
@@ -438,15 +440,18 @@ def _check_survey_recipe_coverage(
         return []
 
     recipe_dir = str(target_root / "code" / "recipes" / "survey")
-    found_display = (
-        ", ".join(sorted(project_recipe_ids)) if project_recipe_ids else "none"
-    )
+    used_display = ", ".join(sorted(required_recipe_ids))
     missing_display = ", ".join(missing_recipe_ids)
+    message = (
+        "Missing survey recipes for dataset-used surveys. "
+        f"Used surveys: {used_display}. "
+        f"Missing: {missing_display}."
+    )
+
     return [
         (
             "WARNING",
-            "Survey recipe coverage in code/recipes/survey is incomplete. "
-            f"Found: {found_display}. Missing: {missing_display}.",
+            message,
             recipe_dir,
         )
     ]

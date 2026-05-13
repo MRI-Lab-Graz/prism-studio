@@ -313,11 +313,15 @@ def format_validation_results(
                 s.split("/", 1)[1] if "/" in s else s for s in session_entries if s
             }
             acq_labels = getattr(dataset_stats, "acq_labels", {}) or {}
+            survey_variants = getattr(dataset_stats, "survey_variants", {}) or {}
             serializable_stats = {
                 "total_subjects": len(getattr(dataset_stats, "subjects", [])),
                 "total_sessions": len(unique_sessions),
                 "modalities": getattr(dataset_stats, "modalities", {}),
                 "acq_labels": {k: sorted(v) for k, v in acq_labels.items()},
+                "survey_variants": {
+                    k: sorted(v) for k, v in survey_variants.items()
+                },
                 "tasks": sorted(list(getattr(dataset_stats, "tasks", []))),
                 "beh_tasks": sorted(list(getattr(dataset_stats, "beh_tasks", []))),
                 "func_tasks": sorted(list(getattr(dataset_stats, "func_tasks", []))),

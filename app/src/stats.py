@@ -18,6 +18,7 @@ class DatasetStats:
         self.func_tasks = set()
         self.eeg_tasks = set()
         self.surveys = set()
+        self.survey_variants = {}  # survey task -> set of acq- values
         self.biometrics = set()
         self.eyetracking = set()
         self.physio = set()
@@ -77,6 +78,15 @@ class DatasetStats:
         if modality == "survey":
             if task:
                 self.surveys.add(task)
+                acq_match = (
+                    re.search(r"_acq-([A-Za-z0-9]+)(?:_|$)", filename)
+                    if filename
+                    else None
+                )
+                if acq_match:
+                    self.survey_variants.setdefault(task, set()).add(
+                        acq_match.group(1)
+                    )
             match = re.search(r"_survey-([a-zA-Z0-9]+)", filename)
             if match:
                 self.surveys.add(match.group(1))
