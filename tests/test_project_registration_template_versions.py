@@ -41,9 +41,8 @@ def test_register_session_persists_template_versions_with_task_session_run(
     )
 
     project_data = _read_project_json(tmp_path)
-
-    assert project_data["Sessions"][0]["id"] == "ses-1"
-    assert project_data["TaskDefinitions"]["wellbeing"]["modality"] == "survey"
+    assert project_data["Sessions"] == []
+    assert project_data["TaskDefinitions"] == {}
 
     selections = project_data.get("TemplateVersionSelections")
     assert isinstance(selections, list)
@@ -167,9 +166,7 @@ def test_register_session_keeps_numeric_like_session_strings_distinct(tmp_path: 
     )
 
     project_data = _read_project_json(tmp_path)
-
-    session_ids = {entry.get("id") for entry in project_data.get("Sessions") or []}
-    assert session_ids == {"ses-1", "ses-01"}
+    assert project_data.get("Sessions") == []
 
     selection_map = {
         (entry.get("task"), entry.get("session"), entry.get("run")): entry.get(

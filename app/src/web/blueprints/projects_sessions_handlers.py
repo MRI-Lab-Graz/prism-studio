@@ -4,6 +4,7 @@ from pathlib import Path
 
 from flask import jsonify, request
 
+from src.project_structure import get_project_modalities_and_sessions
 from src.web.services.project_registration import _normalize_session_id
 
 from .projects_helpers import (
@@ -95,20 +96,38 @@ def handle_get_sessions_declared(get_current_project, read_project_json):
             return jsonify({"sessions": []})
 
     data = read_project_json(project_path)
-    sessions = data.get("Sessions", []) if isinstance(data, dict) else []
+    declared_sessions = data.get("Sessions", []) if isinstance(data, dict) else []
+
+    session_map: dict[str, str] = {}
+    for session in declared_sessions:
+        session_id = str(session.get("id") or "").strip()
+        if not session_id:
+            continue
+        session_map[session_id] = str(session.get("label") or session_id).strip() or session_id
+
+    try:
+        structure = get_project_modalities_and_sessions(project_path)
+    except Exception:
+        structure = {"sessions": []}
+
+    for session_id in structure.get("sessions", []) or []:
+        normalized_session_id = str(session_id or "").strip()
+        if not normalized_session_id:
+            continue
+        session_map.setdefault(normalized_session_id, normalized_session_id)
 
     return jsonify(
         {
             "sessions": [
-                {"id": s.get("id", ""), "label": s.get("label", s.get("id", ""))}
-                for s in sessions
+                {"id": session_id, "label": label}
+                for session_id, label in sorted(session_map.items())
             ]
         }
     )
 
 
 def handle_register_session(get_current_project, read_project_json, write_project_json):
-    """Register a conversion result into a session in project.json."""
+    """Validate converter session metadata without persisting it to project.json."""
     req = request.get_json()
     if not req:
         return jsonify({"success": False, "error": "No data provided"}), 400
@@ -148,64 +167,16 @@ def handle_register_session(get_current_project, read_project_json, write_projec
     if not data:
         return jsonify({"success": False, "error": "project.json not found"}), 404
 
-    if "Sessions" not in data:
-        data["Sessions"] = []
-    if "TaskDefinitions" not in data:
-        data["TaskDefinitions"] = {}
-
-    target_session = None
-    for session_obj in data["Sessions"]:
-        if session_obj.get("id") == session_id:
-            target_session = session_obj
-            break
-
-    if target_session is None:
-        target_session = {
-            "id": session_id,
-            "label": session_id,
-            "tasks": [],
-        }
-        data["Sessions"].append(target_session)
-
-    if "tasks" not in target_session:
-        target_session["tasks"] = []
-
-    today_iso = date.today().isoformat()
-    source_obj = {
-        "file": source_file,
-        "converter": converter,
-        "convertedAt": today_iso,
-    }
-
     registered_tasks = []
     for task_name in tasks:
-        existing = None
-        for task_obj in target_session["tasks"]:
-            if task_obj.get("task") == task_name:
-                existing = task_obj
-                break
-
-        if existing:
-            existing["source"] = source_obj
-        else:
-            target_session["tasks"].append(
-                {
-                    "task": task_name,
-                    "source": source_obj,
-                }
-            )
-
-        registered_tasks.append(task_name)
-
-        if task_name not in data["TaskDefinitions"]:
-            data["TaskDefinitions"][task_name] = {"modality": modality}
-
-    write_project_json(project_path, data)
+        task_value = str(task_name or "").strip()
+        if task_value:
+            registered_tasks.append(task_value)
 
     return jsonify(
         {
             "success": True,
-            "message": f"Registered {len(registered_tasks)} task(s) in {session_id}",
+            "message": f"Accepted {len(registered_tasks)} task(s) for {session_id}",
             "session_id": session_id,
             "registered_tasks": registered_tasks,
         }

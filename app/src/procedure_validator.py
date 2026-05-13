@@ -37,11 +37,8 @@ def validate_procedure(project_path: Path, rawdata_path: Path) -> List[Tuple[str
     sessions = data.get("Sessions", [])
     task_defs = data.get("TaskDefinitions", {})
 
-    # PRISM706: Sessions array is empty
+    # Sessions metadata is optional. When absent, rely on on-disk structure only.
     if not sessions:
-        issues.append(
-            ("INFO", "PRISM706: Sessions array is empty — no procedure defined yet")
-        )
         return issues
 
     # Build declared set: {(ses_id, task_name)}
