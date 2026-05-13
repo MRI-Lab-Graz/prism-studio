@@ -547,7 +547,8 @@
                         <div class="ms-4 d-flex flex-wrap gap-1 mb-2">
                             {% if modality == 'survey' and dataset_stats.surveys %}
                                 {% for s in dataset_stats.surveys %}
-                                <span class="badge bg-secondary x-small">{{ s }}</span>
+                                {% set variants = dataset_stats.survey_variants.get(s, []) if dataset_stats.survey_variants else [] %}
+                                <span class="badge bg-secondary x-small">{{ s }}{% if variants %} (acq-{{ variants | join(', acq-') }}){% endif %}</span>
                                 {% endfor %}
                             {% elif modality in ['eyetracking', 'eyetrack'] and dataset_stats.eyetracking %}
                                 {% for e in dataset_stats.eyetracking %}
@@ -575,7 +576,7 @@
                                 {% endfor %}
                             {% endif %}
                             {# Show unique acq- labels for this modality #}
-                            {% if dataset_stats.acq_labels and modality in dataset_stats.acq_labels %}
+                            {% if dataset_stats.acq_labels and modality in dataset_stats.acq_labels and modality != 'survey' %}
                                 {% for acq in dataset_stats.acq_labels[modality] | sort %}
                                 <span class="badge bg-info text-dark x-small" title="acq-{{ acq }}">{{ acq }}</span>
                                 {% endfor %}

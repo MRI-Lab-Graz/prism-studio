@@ -742,11 +742,15 @@ def show_results(result_id):
 
             modalities = getattr(stats_obj, "modalities", {}) or {}
             raw_acq = getattr(stats_obj, "acq_labels", {}) or {}
+            raw_survey_variants = getattr(stats_obj, "survey_variants", {}) or {}
             dataset_stats = {
                 "total_subjects": len(getattr(stats_obj, "subjects", [])),
                 "total_sessions": len(unique_sessions),
                 "modalities": dict(sorted(modalities.items())),
                 "acq_labels": {k: sorted(v) for k, v in raw_acq.items()},
+                "survey_variants": {
+                    k: sorted(v) for k, v in raw_survey_variants.items()
+                },
                 "tasks": sorted(getattr(stats_obj, "tasks", set()) or set()),
                 "beh_tasks": sorted(getattr(stats_obj, "beh_tasks", set()) or set()),
                 "eyetracking": sorted(
@@ -770,6 +774,7 @@ def show_results(result_id):
             "tasks": [],
             "beh_tasks": [],
             "surveys": [],
+            "survey_variants": {},
             "biometrics": [],
             "total_files": 0,
             "sidecar_files": 0,
