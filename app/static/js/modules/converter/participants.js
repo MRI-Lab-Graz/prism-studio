@@ -2,6 +2,7 @@ import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
 import { createJobRunController } from './job-run-controller.js';
+import { pickServerFile, prefersServerPicker } from './server-picker.js';
 
 export function initParticipants() {
     const participantsPanel = document.getElementById('participants-panel');
@@ -47,14 +48,6 @@ export function initParticipants() {
         '2': { mode: 'existing', fileAction: 'replace' },
         '3': { mode: 'file', fileAction: 'merge' },
     };
-
-    function prefersServerPicker() {
-        return Boolean(
-            window.PrismFileSystemMode
-            && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
-            && window.PrismFileSystemMode.prefersServerPicker()
-        );
-    }
 
     function getParticipantsSelectedLocalFile() {
         const fileInput = document.getElementById('participantsDataFile');
@@ -252,11 +245,7 @@ export function initParticipants() {
     }
 
     async function pickServerParticipantsFile() {
-        if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFile === 'function')) {
-            return '';
-        }
-
-        return window.PrismFileSystemMode.pickFile({
+        return pickServerFile({
             title: 'Select Participants File on Server',
             confirmLabel: 'Use This File',
             extensions: '.xlsx,.csv,.tsv,.sav,.rds,.rdata,.rda,.lsa',

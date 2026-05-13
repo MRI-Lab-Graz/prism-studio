@@ -26,6 +26,7 @@ import {
 import { createSurveyUnmatchedTemplatesController } from './survey-unmatched-templates.js';
 import { createSurveyImportFormStateController } from './survey-import-form-state.js';
 import { createSurveyNearItemMatchReviewController } from './survey-near-item-match-review.js';
+import { pickServerFile, prefersServerPicker } from './server-picker.js';
 import { getSessionInputValue } from './session-picker.js';
 import { createSurveyValidationResultsController } from './survey-validation-results.js';
 import { createSurveyValueOffsetEditorController } from './survey-value-offset-editor.js';
@@ -917,14 +918,6 @@ export function initSurveyConvert(elements) {
         return multivariantTasks;
     }
 
-    function prefersServerPicker() {
-        return Boolean(
-            window.PrismFileSystemMode
-            && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
-            && window.PrismFileSystemMode.prefersServerPicker()
-        );
-    }
-
     function applySurveyPickerUiState() {
         const connectedToServer = prefersServerPicker();
 
@@ -939,10 +932,7 @@ export function initSurveyConvert(elements) {
     }
 
     async function pickServerSurveyFile() {
-        if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFile === 'function')) {
-            return '';
-        }
-        return window.PrismFileSystemMode.pickFile({
+        return pickServerFile({
             title: 'Select Survey File on Server',
             confirmLabel: 'Use This File',
             extensions: '.xlsx,.lsa,.csv,.tsv,.sav,.rds,.rdata,.rda',

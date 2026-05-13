@@ -10,6 +10,7 @@ import { pollJobStatus } from '../../shared/job-polling.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { createJobRunController } from './job-run-controller.js';
+import { pickServerFolder, prefersServerPicker } from './server-picker.js';
 
 export function initPhysio(elements) {
     const STATUS_POLL_INTERVAL_MS = 500;
@@ -50,14 +51,6 @@ export function initPhysio(elements) {
     const pollingRunState = createPollingRunState();
     const runController = createJobRunController();
 
-    function prefersServerPicker() {
-        return Boolean(
-            window.PrismFileSystemMode
-            && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
-            && window.PrismFileSystemMode.prefersServerPicker()
-        );
-    }
-
     function applyPhysioPickerUiState() {
         const connectedToServer = prefersServerPicker();
         if (browseServerPhysioFolderBtn) {
@@ -66,11 +59,7 @@ export function initPhysio(elements) {
     }
 
     async function pickServerPhysioFolder() {
-        if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFolder === 'function')) {
-            return '';
-        }
-
-        return window.PrismFileSystemMode.pickFolder({
+        return pickServerFolder({
             title: 'Select Physio Folder on Server',
             confirmLabel: 'Use This Folder',
             startPath: physioServerFolderPath || '',
