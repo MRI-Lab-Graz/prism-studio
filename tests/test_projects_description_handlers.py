@@ -36,15 +36,54 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         self.handle_get_dataset_description = (
             description_handlers.handle_get_dataset_description
         )
+        self.handle_search_orcid_by_name = (
+            description_handlers.handle_search_orcid_by_name
+        )
         self.handle_get_metadata_status = (
             description_handlers.handle_get_metadata_status
         )
         self.handle_regenerate_citation = (
             description_handlers.handle_regenerate_citation
         )
+        self.handle_validate_dataset_description_draft = (
+            description_handlers.handle_validate_dataset_description_draft
+        )
+        self.handle_get_citation_status = (
+            description_handlers.handle_get_citation_status
+        )
         self.handle_save_dataset_description = (
             description_handlers.handle_save_dataset_description
         )
+        self.normalize_dataset_type = description_handlers._normalize_dataset_type
+        self.normalize_author_names = description_handlers._normalize_author_names
+        self.canonical_author_name = description_handlers._canonical_author_name
+        self.canonical_author_name_set = description_handlers._canonical_author_name_set
+        self.clean_text_list = description_handlers._clean_text_list
+        self.looks_placeholder_author_set = (
+            description_handlers._looks_placeholder_author_set
+        )
+        self.looks_placeholder_dataset_name = (
+            description_handlers._looks_placeholder_dataset_name
+        )
+        self.looks_placeholder_keyword_set = (
+            description_handlers._looks_placeholder_keyword_set
+        )
+        self.looks_placeholder_ack = (
+            description_handlers._looks_placeholder_acknowledgements
+        )
+        self.looks_placeholder_description = (
+            description_handlers._looks_placeholder_description
+        )
+        self.apply_citation_precedence_for_display = (
+            description_handlers._apply_citation_precedence_for_display
+        )
+        self.normalize_roles = description_handlers._normalize_roles
+        self.author_display_names = description_handlers._author_display_names
+        self.load_contributor_roles = description_handlers._load_contributor_roles
+        self.load_corresponding_author = description_handlers._load_corresponding_author
+        self.sync_authors_to_project_json = description_handlers._sync_authors_to_project_json
+        self.enrich_authors_with_roles = description_handlers._enrich_authors_with_roles
+        self.author_to_contributor = description_handlers._author_to_contributor
         self.project_manager = project_manager_module.ProjectManager()
 
     def tearDown(self):
@@ -54,6 +93,120 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         project_path = Path(self.tmp_dir.name) / name
         project_path.mkdir(parents=True, exist_ok=True)
         return project_path
+
+    def test_search_orcid_by_name_requires_name_inputs(self):
+        with self.app.test_request_context(
+            "/api/projects/orcid/search",
+            method="GET",
+        ):
+            response = self.handle_search_orcid_by_name()
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        payload = resp_obj.get_json()
+
+        self.assertEqual(status_code, 400)
+        self.assertFalse(payload.get("success"))
+        self.assertIn("given_names", payload.get("error", ""))
+
+    def test_search_orcid_by_name_returns_candidates_from_backend(self):
+        def fake_search(
+            given_names: str,
+            family_name: str,
+            limit: int = 5,
+            preferred_orcid: str = "",
+        ):
+            self.assertEqual(given_names, "Karl")
+            self.assertEqual(family_name, "Koschutnig")
+            self.assertEqual(limit, 3)
+            self.assertEqual(preferred_orcid, "")
+            return [
+                {
+                    "orcid_id": "0000-0001-6234-0498",
+                    "orcid": "https://orcid.org/0000-0001-6234-0498",
+                    "given_names": "Karl",
+                    "family_name": "Koschutnig",
+                    "display_name": "Karl Koschutnig",
+                    "affiliation": "University of Graz",
+                }
+            ]
+
+        with self.app.test_request_context(
+            "/api/projects/orcid/search?given_names=Karl&family_name=Koschutnig&limit=3",
+            method="GET",
+        ):
+            response = self.handle_search_orcid_by_name(search_candidates=fake_search)
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        payload = resp_obj.get_json()
+
+        self.assertEqual(status_code, 200)
+        self.assertTrue(payload.get("success"))
+        self.assertEqual(len(payload.get("candidates") or []), 1)
+        self.assertEqual(
+            payload["candidates"][0]["orcid"],
+            "https://orcid.org/0000-0001-6234-0498",
+        )
+        self.assertEqual(
+            payload["candidates"][0]["affiliation"],
+            "University of Graz",
+        )
+
+    def test_search_orcid_by_name_forwards_current_orcid(self):
+        observed: dict[str, str] = {}
+
+        def fake_search(
+            given_names: str,
+            family_name: str,
+            limit: int = 5,
+            preferred_orcid: str = "",
+        ):
+            observed["given_names"] = given_names
+            observed["family_name"] = family_name
+            observed["limit"] = str(limit)
+            observed["preferred_orcid"] = preferred_orcid
+            return []
+
+        with self.app.test_request_context(
+            "/api/projects/orcid/search?given_names=Andreas&family_name=Fink&limit=5&current_orcid=0000-0001-7316-3140",
+            method="GET",
+        ):
+            response = self.handle_search_orcid_by_name(search_candidates=fake_search)
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        self.assertEqual(status_code, 200)
+        self.assertEqual(observed.get("given_names"), "Andreas")
+        self.assertEqual(observed.get("family_name"), "Fink")
+        self.assertEqual(observed.get("limit"), "5")
+        self.assertEqual(observed.get("preferred_orcid"), "0000-0001-7316-3140")
+
+    def test_search_orcid_by_name_returns_502_on_lookup_failure(self):
+        from src.orcid_lookup import OrcidLookupError
+
+        def failing_search(
+            given_names: str,
+            family_name: str,
+            limit: int = 5,
+            preferred_orcid: str = "",
+        ):
+            raise OrcidLookupError("upstream failed")
+
+        with self.app.test_request_context(
+            "/api/projects/orcid/search?family_name=Koschutnig",
+            method="GET",
+        ):
+            response = self.handle_search_orcid_by_name(
+                search_candidates=failing_search
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        payload = resp_obj.get_json()
+
+        self.assertEqual(status_code, 502)
+        self.assertFalse(payload.get("success"))
+        self.assertEqual(payload.get("candidates"), [])
 
     def test_read_citation_cff_fields_preserves_rich_author_metadata(self):
         citation_path = self.project_path / "CITATION.cff"
@@ -1368,6 +1521,249 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
             (other_project / "dataset_description.json").read_text(encoding="utf-8")
         )
         self.assertEqual(saved["Name"], "Other Updated")
+
+    def test_description_helper_normalization_and_placeholders(self):
+        self.assertEqual(self.normalize_dataset_type("DERIVATIVE"), "derivative")
+        self.assertEqual(self.normalize_dataset_type("invalid"), "raw")
+
+        normalized = self.normalize_author_names(
+            [
+                {"family-names": "Fink", "given-names": "Andreas"},
+                {"name": "Karl Koschutnig"},
+                "Anna Kannonier",
+                "",
+            ]
+        )
+        self.assertEqual(
+            normalized,
+            ["Andreas Fink", "Karl Koschutnig", "Anna Kannonier"],
+        )
+
+        self.assertEqual(
+            self.canonical_author_name("Koschutnig, Karl"),
+            "karl koschutnig",
+        )
+        self.assertEqual(
+            self.canonical_author_name_set(["Koschutnig, Karl", "Karl Koschutnig"]),
+            {"karl koschutnig"},
+        )
+        self.assertEqual(self.clean_text_list([" one ", "", None]), ["one"])
+        self.assertEqual(self.clean_text_list("single"), ["single"])
+
+        self.assertTrue(self.looks_placeholder_author_set({"prism dataset"}))
+        self.assertTrue(self.looks_placeholder_dataset_name("PRISM Survey Dataset"))
+        self.assertTrue(self.looks_placeholder_keyword_set(["psychology", "PRISM"]))
+        self.assertTrue(
+            self.looks_placeholder_ack("This dataset was created using the PRISM framework.")
+        )
+        self.assertTrue(
+            self.looks_placeholder_description(
+                "A PRISM-compatible dataset for psychological research."
+            )
+        )
+
+    def test_apply_citation_precedence_for_display_replaces_only_placeholder_fields(self):
+        description = {
+            "Name": "PRISM Survey Dataset",
+            "Keywords": ["psychology", "survey", "PRISM"],
+            "Description": "A PRISM-compatible dataset for psychological research.",
+            "Acknowledgements": "This dataset was created using the PRISM framework.",
+            "Authors": ["prism-studio"],
+        }
+        citation_fields = {
+            "Title": "BrainHearthlon",
+            "Keywords": ["memory", "attention"],
+            "Description": "Canonical abstract",
+            "HowToAcknowledge": "Please cite BrainHearthlon et al.",
+            "License": "CC-BY-4.0",
+            "ReferencesAndLinks": ["https://example.org/paper"],
+            "Authors": [{"family-names": "Fink", "given-names": "Andreas"}],
+        }
+
+        merged = self.apply_citation_precedence_for_display(description, citation_fields)
+        self.assertEqual(merged["Name"], "BrainHearthlon")
+        self.assertEqual(merged["Keywords"], ["memory", "attention"])
+        self.assertEqual(merged["Description"], "Canonical abstract")
+        self.assertEqual(merged["Acknowledgements"], "Please cite BrainHearthlon et al.")
+        self.assertEqual(merged["Authors"][0]["family-names"], "Fink")
+        self.assertEqual(merged["License"], "CC-BY-4.0")
+        self.assertEqual(merged["ReferencesAndLinks"], ["https://example.org/paper"])
+
+        non_placeholder = self.apply_citation_precedence_for_display(
+            {"Name": "Custom Name", "Keywords": ["custom"]},
+            {"Title": "Citation Name", "Keywords": ["citation"]},
+        )
+        self.assertEqual(non_placeholder["Name"], "Custom Name")
+        self.assertEqual(non_placeholder["Keywords"], ["custom"])
+
+    def test_contributor_helper_functions_roundtrip(self):
+        project_json = self.project_path / "project.json"
+        project_json.write_text(
+            json.dumps(
+                {
+                    "governance": {
+                        "contacts": [
+                            {
+                                "name": "Fink, Andreas",
+                                "roles": ["Methodology", "methodology", "Software"],
+                                "corresponding": True,
+                            }
+                        ]
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        roles_lookup = self.load_contributor_roles(self.project_path)
+        self.assertEqual(roles_lookup["fink, andreas"], ["Methodology", "Software"])
+        self.assertEqual(self.load_corresponding_author(self.project_path), "Fink, Andreas")
+
+        self.assertEqual(
+            self.author_display_names({"family-names": "Fink", "given-names": "Andreas"}),
+            ["Fink, Andreas", "Andreas Fink", "Fink", "Andreas"],
+        )
+        self.assertEqual(
+            self.normalize_roles("Methodology, software, Methodology"),
+            ["Methodology", "software"],
+        )
+
+        enriched = self.enrich_authors_with_roles(
+            self.project_path,
+            [{"family-names": "Fink", "given-names": "Andreas"}],
+        )
+        self.assertEqual(enriched[0]["roles"], ["Methodology", "Software"])
+        self.assertTrue(enriched[0]["corresponding"])
+
+        contributor = self.author_to_contributor(
+            {
+                "family-names": "Fink",
+                "given-names": "Andreas",
+                "orcid": "https://orcid.org/0000-0001-7316-3140",
+                "email": "andreas@example.org",
+            }
+        )
+        self.assertEqual(contributor["name"], "Fink, Andreas")
+        self.assertEqual(contributor["email"], "andreas@example.org")
+
+        self.sync_authors_to_project_json(
+            self.project_path,
+            [{"family-names": "Fink", "given-names": "Andreas"}],
+        )
+        payload = json.loads(project_json.read_text(encoding="utf-8"))
+        contacts = payload.get("governance", {}).get("contacts", [])
+        self.assertEqual(
+            contacts[0]["roles"],
+            ["Methodology", "methodology", "Software"],
+        )
+
+    def test_validate_draft_handler_covers_error_and_success_paths(self):
+        with self.app.test_request_context(
+            "/api/projects/description/validate-draft",
+            method="POST",
+            json={},
+        ):
+            response = self.handle_validate_dataset_description_draft(
+                merge_citation_fields=self.merge_citation_fields,
+                project_manager=self.project_manager,
+            )
+        self.assertEqual(response[1], 400)
+
+        with self.app.test_request_context(
+            "/api/projects/description/validate-draft",
+            method="POST",
+            json={"description": "invalid"},
+        ):
+            response = self.handle_validate_dataset_description_draft(
+                merge_citation_fields=self.merge_citation_fields,
+                project_manager=self.project_manager,
+            )
+        self.assertEqual(response[1], 400)
+
+        with self.app.test_request_context(
+            "/api/projects/description/validate-draft",
+            method="POST",
+            json={
+                "description": {
+                    "Name": "Demo",
+                    "BIDSVersion": "1.10.1",
+                    "DatasetType": "INVALID-TYPE",
+                },
+                "citation_fields": {
+                    "Authors": [{"family-names": "Fink", "given-names": "Andreas"}],
+                },
+            },
+        ):
+            response = self.handle_validate_dataset_description_draft(
+                merge_citation_fields=self.merge_citation_fields,
+                project_manager=self.project_manager,
+            )
+        status_code = response[1] if isinstance(response, tuple) else 200
+        payload = (response[0] if isinstance(response, tuple) else response).get_json()
+        self.assertEqual(status_code, 200)
+        self.assertTrue(payload.get("success"))
+
+        class _FailingProjectManager:
+            def validate_dataset_description(self, _description):
+                raise RuntimeError("boom")
+
+        with self.app.test_request_context(
+            "/api/projects/description/validate-draft",
+            method="POST",
+            json={"description": {"Name": "Demo"}},
+        ):
+            response = self.handle_validate_dataset_description_draft(
+                merge_citation_fields=self.merge_citation_fields,
+                project_manager=_FailingProjectManager(),
+            )
+        self.assertEqual(response[1], 500)
+
+    def test_citation_status_and_regenerate_error_paths(self):
+        def get_current_project():
+            return {"path": str(self.project_path), "name": "demo_project"}
+
+        with self.app.test_request_context(
+            "/api/projects/citation/status",
+            method="GET",
+        ):
+            response = self.handle_get_citation_status(
+                get_current_project=get_current_project,
+                project_manager=self.project_manager,
+            )
+        status_code = response[1] if isinstance(response, tuple) else 200
+        payload = (response[0] if isinstance(response, tuple) else response).get_json()
+        self.assertEqual(status_code, 200)
+        self.assertTrue(payload.get("success"))
+
+        class _FailingStatusManager:
+            def get_citation_cff_status(self, _project_path):
+                raise RuntimeError("status failed")
+
+        with self.app.test_request_context(
+            "/api/projects/citation/status",
+            method="GET",
+        ):
+            response = self.handle_get_citation_status(
+                get_current_project=get_current_project,
+                project_manager=_FailingStatusManager(),
+            )
+        self.assertEqual(response[1], 500)
+
+        class _FailingRegenManager:
+            def regenerate_citation_cff(self, _project_path):
+                raise RuntimeError("regen failed")
+
+        with self.app.test_request_context(
+            "/api/projects/citation/regenerate",
+            method="POST",
+            json={"project_path": str(self.project_path)},
+        ):
+            response = self.handle_regenerate_citation(
+                get_current_project=get_current_project,
+                get_bids_file_path=lambda project_path, filename: project_path / filename,
+                project_manager=_FailingRegenManager(),
+            )
+        self.assertEqual(response[1], 500)
 
 
 if __name__ == "__main__":

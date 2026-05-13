@@ -1,6 +1,7 @@
 import sys
 import io
 from pathlib import Path
+from unittest.mock import patch
 
 from flask import Flask, request, session
 
@@ -15,6 +16,7 @@ from src.web.backend_monitoring import (  # noqa: E402
     _build_validate_folder_terminal_command,
     emit_backend_request_action,
 )
+from src.config import AppSettings  # noqa: E402
 
 
 def test_build_validate_folder_terminal_command_full_flags():
@@ -1241,3 +1243,97 @@ def test_emit_backend_request_action_resolves_survey_workflow_command_by_path(ca
     assert "--input sourcedata/surveys/demo.csv" in captured
     assert "--id-column participant_id" in captured
     assert "--dry-run --force" not in captured
+
+
+def test_emit_backend_request_action_verbose_mode_includes_get_requests(capsys):
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/projects/current",
+        endpoint="projects.get_current",
+        view_func=_noop_view,
+        methods=["GET"],
+    )
+
+    with patch(
+        "src.web.backend_monitoring.load_app_settings",
+        return_value=AppSettings(
+            backend_monitoring=True,
+            backend_monitoring_verbose=True,
+        ),
+    ):
+        with app.test_request_context(
+            "/api/projects/current",
+            method="GET",
+        ):
+            emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "[PROJECT]" in captured
+    assert "GET /api/projects/current" in captured
+    assert "cmd=curl -X GET http://localhost/api/projects/current" in captured
+
+
+def test_emit_backend_request_action_uses_project_prefix_and_absolute_path_for_set_current(
+    capsys,
+):
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/projects/current",
+        endpoint="projects.set_current",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/projects/current",
+        method="POST",
+        json={"path": "../Thunder/129_PK01/rawdata"},
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    expected_path = str(Path("../Thunder/129_PK01/rawdata").resolve())
+    assert "[PROJECT]" in captured
+    assert "POST /api/projects/current -> set current project" in captured
+    assert f"path={expected_path}" in captured
+    assert "cmd=curl -X POST" in captured
+    assert expected_path in captured
+
+
+def test_emit_backend_request_action_uses_project_prefix_and_absolute_path_for_export_structure(
+    capsys,
+):
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/projects/export/structure",
+        endpoint="projects_export.export_project_structure",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/projects/export/structure",
+        method="POST",
+        json={"project_path": "../Thunder/129_PK01/rawdata"},
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    expected_path = str(Path("../Thunder/129_PK01/rawdata").resolve())
+    assert "[PROJECT]" in captured
+    assert "POST /api/projects/export/structure -> export project structure" in captured
+    assert f"project_path={expected_path}" in captured
+    assert "cmd=curl -X POST" in captured
+    assert expected_path in captured

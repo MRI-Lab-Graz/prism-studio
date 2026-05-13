@@ -329,6 +329,10 @@ class AppSettings:
     # Print backend action traces to terminal for web requests and key operations
     backend_monitoring: bool = True
 
+    # If enabled, log all frontend relay requests (including non-mutating ones)
+    # and emit generic curl previews for endpoints without dedicated command renderers.
+    backend_monitoring_verbose: bool = False
+
     # Launch compiled app in a dedicated terminal window for live logs and easy cancel.
     # Defaults to False for standard users and can be enabled in user settings.
     show_dedicated_terminal: bool = False
@@ -407,6 +411,9 @@ def load_app_settings(app_root: Optional[str] = None) -> AppSettings:
             last_project_path=data.get("lastProjectPath"),
             last_project_name=data.get("lastProjectName"),
             backend_monitoring=bool(data.get("backendMonitoring", True)),
+            backend_monitoring_verbose=bool(
+                data.get("backendMonitoringVerbose", False)
+            ),
             show_dedicated_terminal=bool(data.get("showDedicatedTerminal", False)),
             connected_to_server=bool(data.get("connectedToServer", False)),
         )
@@ -441,6 +448,7 @@ def save_app_settings(settings: AppSettings, app_root: Optional[str] = None) -> 
         "lastProjectPath": settings.last_project_path,
         "lastProjectName": settings.last_project_name,
         "backendMonitoring": settings.backend_monitoring,
+        "backendMonitoringVerbose": settings.backend_monitoring_verbose,
         "showDedicatedTerminal": settings.show_dedicated_terminal,
         "connectedToServer": settings.connected_to_server,
     }
