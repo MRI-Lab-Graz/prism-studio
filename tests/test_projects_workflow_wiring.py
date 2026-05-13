@@ -182,6 +182,11 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "const startResp = await fetchWithApiFallback('/api/projects/export/start', {",
             content,
         )
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/projects/template-export', {",
+            content,
+        )
+        self.assertIn("const templateExportButton = getById('templateExportButton');", content)
         self.assertIn("validation_mode: selectedValidationMode,", content)
         self.assertIn("async function requestCancelForActiveJob() {", content)
         self.assertIn("await requestCancelForActiveJob();", content)
@@ -202,6 +207,12 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "const response = await fetchWithApiFallback('/api/projects/openminds-export', {",
             content,
         )
+
+    def test_export_template_button_is_present_in_projects_export_section(self):
+        content = EXPORT_SECTION_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="templateExportButton"', content)
+        self.assertIn("Template Export", content)
 
     def test_export_async_completion_renders_saved_zip_path_from_status(self):
         content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")

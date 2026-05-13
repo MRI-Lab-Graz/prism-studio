@@ -477,3 +477,71 @@ def test_export_job_does_not_block_on_non_error_issue_levels(tmp_path):
 
     job = projects_export_module._get_export_job(job_id)
     assert job["status"] == "complete"
+
+
+def test_template_export_route_uses_backend_exporter_and_output_folder(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    out_dir = tmp_path / "exports"
+    captured: dict[str, object] = {}
+
+    def fake_template_export(project_path, output_zip):
+        captured["project_path"] = project_path
+        captured["output_zip"] = output_zip
+        Path(output_zip).write_bytes(b"PK\x03\x04")
+        return {"files_written": 1, "files_skipped": 2}
+
+    with patch(
+        "src.project_template_export.export_project_template_zip",
+        side_effect=fake_template_export,
+    ):
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/template-export",
+                json={
+                    "project_path": str(project_dir),
+                    "output_folder": str(out_dir),
+                    "validation_mode": "ignore",
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("success") is True
+    assert payload.get("output_path", "").endswith("study_template_export.zip")
+    assert captured["project_path"] == project_dir
+    assert captured["output_zip"] == out_dir / "study_template_export.zip"
+
+
+def test_template_export_route_blocks_when_validation_fails(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    with patch(
+        "src.web.blueprints.projects_export_blueprint._run_pre_export_validation",
+        return_value="Export blocked: validation found errors.",
+    ):
+        with patch(
+            "src.project_template_export.export_project_template_zip"
+        ) as mock_export:
+            with app.test_client() as client:
+                response = client.post(
+                    "/api/projects/template-export",
+                    json={
+                        "project_path": str(project_dir),
+                        "validation_mode": "both",
+                    },
+                )
+
+    assert response.status_code == 400
+    payload = response.get_json() or {}
+    assert payload.get("success") is False
+    assert "Export blocked" in str(payload.get("error", ""))
+    mock_export.assert_not_called()

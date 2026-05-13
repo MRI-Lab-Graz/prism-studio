@@ -953,6 +953,24 @@ def build_prism_tools_parsers(
         help="Mask copyrighted question text (e.g., 'ADS Question 1' instead of full text)",
     )
 
+    parser_template_export = subparsers.add_parser(
+        "template-export",
+        help="Export a reusable project template ZIP without subject folders",
+    )
+    parser_template_export.add_argument(
+        "--project",
+        required=True,
+        help="Project root folder to export as template",
+    )
+    parser_template_export.add_argument(
+        "--output",
+        required=True,
+        help="Output ZIP path for the template export",
+    )
+    parser_template_export.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
     parser_survey_validate = survey_subparsers.add_parser(
         "validate", help="Validate survey library"
     )

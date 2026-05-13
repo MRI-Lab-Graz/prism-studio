@@ -49,6 +49,7 @@ from src.cli.commands.survey import (
     cmd_survey_import_limesurvey_batch,
     cmd_survey_validate,
 )
+from src.cli.commands.template_export import cmd_template_export
 from src.cli.dispatch import dispatch_prism_tools
 from src.cli.parser import build_prism_tools_parsers
 
@@ -81,6 +82,7 @@ def main() -> None:
         parsers=parsers,
         handlers={
             "anonymize": cmd_anonymize,
+            "template_export": cmd_template_export,
             "convert_physio": cmd_convert_physio,
             "wide_to_long": cmd_convert_wide_to_long,
             "demo_create": cmd_demo_create,
