@@ -89,13 +89,26 @@ def get_current_project() -> dict:
     return {
         "path": session.get("current_project_path"),
         "name": session.get("current_project_name"),
+        "icon": session.get("current_project_icon"),
     }
 
 
-def set_current_project(path: str, name: str | None = None):
+def set_current_project(path: str, name: str | None = None, icon: str | None = None):
     """Set the current working project in session."""
+    previous_path = session.get("current_project_path")
+    previous_icon = session.get("current_project_icon")
+
     session["current_project_path"] = path
     session["current_project_name"] = name or Path(path).name
+
+    resolved_icon = icon
+    if resolved_icon is None and previous_path == path:
+        resolved_icon = previous_icon
+
+    if resolved_icon:
+        session["current_project_icon"] = resolved_icon
+    else:
+        session.pop("current_project_icon", None)
 
 
 def get_bids_file_path(project_path: Path, filename: str) -> Path:
@@ -126,6 +139,7 @@ def projects_page():
     if clear_current:
         session.pop("current_project_path", None)
         session.pop("current_project_name", None)
+        session.pop("current_project_icon", None)
 
     current = get_current_project()
     schema_versions = get_available_schema_versions(

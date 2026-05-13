@@ -670,6 +670,7 @@ def inject_utilities():
         "current_project": {
             "path": session.get("current_project_path"),
             "name": session.get("current_project_name"),
+            "icon": session.get("current_project_icon"),
         },
         "prism_studio_version": current_version,
         "latest_prism_studio_version": latest_version,
@@ -711,6 +712,7 @@ def ensure_project_selected_first():
         session["_prism_startup_id"] = app.config.get("PRISM_STARTUP_ID")
         session.pop("current_project_path", None)
         session.pop("current_project_name", None)
+        session.pop("current_project_icon", None)
 
     if session.get("current_project_path"):
         return None

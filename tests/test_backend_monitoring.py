@@ -1337,3 +1337,37 @@ def test_emit_backend_request_action_uses_project_prefix_and_absolute_path_for_e
     assert f"project_path={expected_path}" in captured
     assert "cmd=curl -X POST" in captured
     assert expected_path in captured
+
+
+def test_emit_backend_request_action_includes_template_export_command(capsys):
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/projects/template-export",
+        endpoint="projects_export.template_export_project",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/projects/template-export",
+        method="POST",
+        json={
+            "project_path": "../Thunder/129_PK01/rawdata",
+            "validation_mode": "both",
+            "output_folder": "../exports",
+        },
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    expected_project_path = str(Path("../Thunder/129_PK01/rawdata").resolve())
+    expected_output_folder = str(Path("../exports").resolve())
+    assert "[PROJECT]" in captured
+    assert "POST /api/projects/template-export -> template export project" in captured
+    assert f"project_path={expected_project_path}" in captured
+    assert f"cmd=curl -X POST http://localhost/api/projects/template-export" in captured
+    assert expected_output_folder in captured
