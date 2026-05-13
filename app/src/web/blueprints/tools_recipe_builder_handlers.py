@@ -112,16 +112,18 @@ def _task_from_template_filename(filename: str, *, modality: str) -> str | None:
     Survey handles::
 
         task-personality_survey.json  →  personality
+        task-stress_form_survey.json  →  stress_form
         survey-wellbeing.json         →  wellbeing
     Biometrics handles::
 
         task-ukk_biometrics.json  →  ukk
+        task-grip_strength_biometrics.json  →  grip_strength
         biometrics-ukk.json       →  ukk
     """
     stem = Path(filename).stem  # drop .json
     if modality == "survey":
         # BIDS style: task-<name>_survey
-        m = re.search(r"(?:^|_)task-([^_]+)", stem)
+        m = re.search(r"(?:^|_)task-(.+?)(?:_survey(?:_|$)|$)", stem)
         if m:
             return m.group(1)
         # Legacy style: survey-<name>
@@ -131,7 +133,7 @@ def _task_from_template_filename(filename: str, *, modality: str) -> str | None:
         return None
 
     # BIDS style: task-<name>_biometrics
-    m = re.search(r"(?:^|_)task-([^_]+)_biometrics(?:_|$)", stem)
+    m = re.search(r"(?:^|_)task-(.+?)(?:_biometrics(?:_|$)|$)", stem)
     if m:
         return m.group(1)
     # Legacy style: biometrics-<name>
@@ -739,8 +741,8 @@ def handle_api_recipe_builder_save(data: dict):
     if not task_name:
         return jsonify({"error": f"Recipe must have {info_key}.{task_key}"}), 400
 
-    if not re.fullmatch(r"[a-zA-Z0-9\-]+", task_name):
-        return jsonify({"error": "TaskName contains invalid characters"}), 400
+    if not re.fullmatch(r"[a-zA-Z0-9_-]+", task_name):
+        return jsonify({"error": f"{task_key} contains invalid characters"}), 400
 
     validation_errors = validate_recipe(recipe)
     if validation_errors:
