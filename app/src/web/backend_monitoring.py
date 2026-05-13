@@ -70,6 +70,7 @@ _ENDPOINT_LABELS = {
     "projects.validate_project": "validate project",
     "projects.fix_project": "apply project fixes",
     "projects_export.export_project_structure": "export project structure",
+    "projects_export.template_export_project": "template export project",
     "projects_library.set_backend_monitoring_setting": "update backend monitoring setting",
     "projects_library.set_global_library_settings": "save global library settings",
     "conversion_participants.save_participant_mapping": "save participant mapping",
@@ -374,6 +375,38 @@ def _build_projects_export_structure_terminal_command(req) -> str:
     endpoint_url = _get_request_url(req, "/api/projects/export/structure")
     body = {"project_path": project_path or "<project-path>"}
 
+    return " ".join(
+        shlex.quote(part)
+        for part in [
+            "curl",
+            "-X",
+            "POST",
+            endpoint_url,
+            "-H",
+            "Content-Type: application/json",
+            "-d",
+            json.dumps(body),
+        ]
+    )
+
+
+def _build_projects_template_export_terminal_command(req) -> str:
+    """Build command preview for project template export endpoint."""
+    payload = req.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+
+    project_path = _absolute_path_value(payload.get("project_path"))
+    output_folder = _absolute_path_value(payload.get("output_folder"))
+    validation_mode = str(payload.get("validation_mode") or "").strip()
+
+    body: dict[str, str] = {"project_path": project_path or "<project-path>"}
+    if validation_mode:
+        body["validation_mode"] = validation_mode
+    if output_folder:
+        body["output_folder"] = output_folder
+
+    endpoint_url = _get_request_url(req, "/api/projects/template-export")
     return " ".join(
         shlex.quote(part)
         for part in [
@@ -1350,6 +1383,8 @@ def _build_terminal_command(req) -> str:
         return _build_projects_set_current_terminal_command(req)
     if endpoint == "projects_export.export_project_structure":
         return _build_projects_export_structure_terminal_command(req)
+    if endpoint == "projects_export.template_export_project":
+        return _build_projects_template_export_terminal_command(req)
     return ""
 
 

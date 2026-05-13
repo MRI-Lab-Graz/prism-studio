@@ -222,10 +222,10 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <div class="navbar-text me-3 d-none d-lg-block" id="currentProjectBadge"
-                     data-path="{{ current_project.path or '' }}" data-name="{{ current_project.name or '' }}">
+                     data-path="{{ current_project.path or '' }}" data-name="{{ current_project.name or '' }}" data-icon="{{ current_project.icon or '' }}">
                     {% if current_project.path %}
                     <span class="badge bg-warning text-dark" title="{{ current_project.path }}" aria-label="{{ current_project.path }}">
-                        <i class="fas fa-folder-open me-1"></i>{{ current_project.name or 'Project' }}
+                        <i class="{{ current_project.icon or 'fas fa-flask' }} me-1"></i>{{ current_project.name or 'Project' }}
                     </span>
                     {% else %}
                     <span class="badge bg-light text-muted border" aria-label="No project loaded">
@@ -389,6 +389,16 @@
             }
         }
 
+        function normalizeProjectIconValue(value) {
+            const icon = String(value || '').trim();
+            if (!icon) return '';
+            return /^fa[a-z]+\s+fa-[a-z0-9-]+(\s+fa-[a-z0-9-]+)*$/i.test(icon) ? icon : '';
+        }
+
+        function sanitizeProjectIconClass(value) {
+            return normalizeProjectIconValue(value) || 'fas fa-flask';
+        }
+
         function normalizeRecentProjectEntry(project) {
             if (!project || typeof project !== 'object') return null;
             const path = String(project.path || '').trim();
@@ -396,9 +406,11 @@
 
             const rawName = String(project.name || '').trim();
             const fallbackName = path.split(/[\\/]/).pop();
+            const icon = sanitizeProjectIconClass(project.icon);
             return {
                 path,
-                name: rawName || fallbackName || path
+                name: rawName || fallbackName || path,
+                icon
             };
         }
 
@@ -438,7 +450,8 @@
             listEl.innerHTML = projects.map((project) => {
                 const isActive = currentPath && currentPath === project.path;
                 const activeClass = isActive ? ' active' : '';
-                const iconClass = isActive ? 'fa-folder-open text-primary' : 'fa-history text-muted';
+                const iconClass = sanitizeProjectIconClass(project.icon);
+                const iconToneClass = isActive ? 'text-primary' : 'text-muted';
                 const safeName = project.name
                     .replace(/&/g, '&amp;')
                     .replace(/</g, '&lt;')
@@ -451,7 +464,13 @@
                     .replace(/>/g, '&gt;')
                     .replace(/"/g, '&quot;')
                     .replace(/'/g, '&#39;');
-                return `<button type="button" class="dropdown-item navbar-recent-project${activeClass}" data-name="${safeName}" data-path="${safePath}" title="${safePath}"><i class="fas ${iconClass} me-2"></i>${safeName}</button>`;
+                const safeIconClass = iconClass
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+                return `<button type="button" class="dropdown-item navbar-recent-project${activeClass}" data-name="${safeName}" data-path="${safePath}" data-icon="${safeIconClass}" title="${safePath}"><i class="${safeIconClass} ${iconToneClass} me-2"></i>${safeName}</button>`;
             }).join('');
         }
 
@@ -472,10 +491,11 @@
             }
         }
 
-        async function setCurrentProjectFromNavbar(path, name) {
+        async function setCurrentProjectFromNavbar(path, name, icon) {
             const payload = {
                 path: String(path || '').trim(),
-                name: String(name || '').trim()
+                name: String(name || '').trim(),
+                icon: normalizeProjectIconValue(icon)
             };
 
             if (!payload.path) return;
@@ -492,9 +512,13 @@
             }
 
             if (data.current && data.current.path) {
-                updateNavbarProject(data.current.name || payload.name, data.current.path);
+                updateNavbarProject(
+                    data.current.name || payload.name,
+                    data.current.path,
+                    data.current.icon || payload.icon
+                );
             } else {
-                updateNavbarProject(payload.name, payload.path);
+                updateNavbarProject(payload.name, payload.path, payload.icon);
             }
         }
 
@@ -546,7 +570,8 @@
 
             let state = {
                 path: normalizeProjectStateValue(window.currentProjectPath),
-                name: normalizeProjectStateValue(window.currentProjectName)
+                name: normalizeProjectStateValue(window.currentProjectName),
+                icon: normalizeProjectIconValue(window.currentProjectIcon)
             };
 
             const listeners = new Set();
@@ -554,6 +579,7 @@
             function syncDomBindings(nextState) {
                 window.currentProjectPath = nextState.path;
                 window.currentProjectName = nextState.name;
+                window.currentProjectIcon = nextState.icon;
 
                 const currentProjectPathInput = document.getElementById('currentProjectPath');
                 if (currentProjectPathInput) {
@@ -573,10 +599,11 @@
                 setState(nextState, options = {}) {
                     const next = {
                         path: normalizeProjectStateValue(nextState && nextState.path),
-                        name: normalizeProjectStateValue(nextState && nextState.name)
+                        name: normalizeProjectStateValue(nextState && nextState.name),
+                        icon: normalizeProjectIconValue(nextState && nextState.icon)
                     };
 
-                    const changed = next.path !== state.path || next.name !== state.name;
+                    const changed = next.path !== state.path || next.name !== state.name || next.icon !== state.icon;
                     state = next;
                     syncDomBindings(state);
 
@@ -611,25 +638,32 @@
             return store;
         }
 
-        function updateNavbarProject(name, path) {
+        function updateNavbarProject(name, path, icon) {
             const badgeContainer = document.getElementById('currentProjectBadge');
             if (!badgeContainer) return;
+
+            const previousIcon = normalizeProjectIconValue(badgeContainer.dataset.icon);
+            const requestedIcon = normalizeProjectIconValue(icon);
+            const resolvedIcon = requestedIcon || previousIcon;
 
             badgeContainer.innerHTML = '';
             badgeContainer.dataset.path = path || '';
             badgeContainer.dataset.name = name || '';
+            badgeContainer.dataset.icon = '';
             badgeContainer.title = path || '';
 
             if (name && path) {
+                const iconClass = sanitizeProjectIconClass(resolvedIcon);
                 const badge = document.createElement('span');
                 badge.className = 'badge bg-warning text-dark';
                 badge.title = path;
                 badge.setAttribute('aria-label', path);
                 const icon = document.createElement('i');
-                icon.className = 'fas fa-folder-open me-1';
+                icon.className = `${iconClass} me-1`;
                 badge.appendChild(icon);
                 badge.appendChild(document.createTextNode(name));
                 badgeContainer.appendChild(badge);
+                badgeContainer.dataset.icon = iconClass;
             } else {
                 const badge = document.createElement('span');
                 badge.className = 'badge bg-light text-muted border';
@@ -642,7 +676,11 @@
             }
 
             const projectState = ensureProjectStateStore();
-            const nextState = projectState.setState({ name, path });
+            const nextState = projectState.setState({
+                name,
+                path,
+                icon: badgeContainer.dataset.icon || ''
+            });
 
             setFileManagementState(Boolean(path));
             setDerivativesState(Boolean(path));
@@ -654,24 +692,28 @@
         function applyNavbarStateFromProjectState(projectState) {
             const nextPath = normalizeProjectStateValue(projectState && projectState.path);
             const nextName = normalizeProjectStateValue(projectState && projectState.name);
+            const nextIcon = normalizeProjectIconValue(projectState && projectState.icon);
             const badgeContainer = document.getElementById('currentProjectBadge');
 
             if (badgeContainer) {
                 badgeContainer.innerHTML = '';
                 badgeContainer.dataset.path = nextPath;
                 badgeContainer.dataset.name = nextName;
+                badgeContainer.dataset.icon = '';
                 badgeContainer.title = nextPath || '';
 
                 if (nextName && nextPath) {
+                    const iconClass = sanitizeProjectIconClass(nextIcon);
                     const badge = document.createElement('span');
                     badge.className = 'badge bg-warning text-dark';
                     badge.title = nextPath;
                     badge.setAttribute('aria-label', nextPath);
                     const icon = document.createElement('i');
-                    icon.className = 'fas fa-folder-open me-1';
+                    icon.className = `${iconClass} me-1`;
                     badge.appendChild(icon);
                     badge.appendChild(document.createTextNode(nextName));
                     badgeContainer.appendChild(badge);
+                    badgeContainer.dataset.icon = iconClass;
                 } else {
                     const badge = document.createElement('span');
                     badge.className = 'badge bg-light text-muted border';
@@ -741,7 +783,11 @@
 
             const badgeContainer = document.getElementById('currentProjectBadge');
             if (badgeContainer) {
-                updateNavbarProject(badgeContainer.dataset.name, badgeContainer.dataset.path);
+                updateNavbarProject(
+                    badgeContainer.dataset.name,
+                    badgeContainer.dataset.path,
+                    badgeContainer.dataset.icon
+                );
             } else {
                 setFileManagementState(false);
                 setDerivativesState(false);
@@ -772,9 +818,10 @@
                 e.preventDefault();
                 const targetPath = button.dataset.path || '';
                 const targetName = button.dataset.name || '';
+                const targetIcon = button.dataset.icon || '';
 
                 try {
-                    await setCurrentProjectFromNavbar(targetPath, targetName);
+                    await setCurrentProjectFromNavbar(targetPath, targetName, targetIcon);
                     window.location.href = "{{ url_for('projects.projects_page') }}?preserve_current=1";
                 } catch (error) {
                     alert(error.message || 'Could not load project');

@@ -3,6 +3,12 @@ import os
 import sys
 from pathlib import Path
 
+from src.project_icons import (
+    choose_random_project_icon,
+    normalize_project_icon,
+    resolve_project_icon,
+)
+
 _RECENT_PROJECTS_FILENAME = "prism_recent_projects.json"
 _RECENT_PROJECTS_MAX = 5
 
@@ -131,6 +137,21 @@ def _recent_projects_file() -> Path:
     return cfg_dir / _RECENT_PROJECTS_FILENAME
 
 
+def _resolve_recent_project_icon(canonical_path: str, raw_icon: object) -> str:
+    normalized_icon = normalize_project_icon(raw_icon)
+    if normalized_icon:
+        return normalized_icon
+
+    project_root = _resolve_project_root_path(canonical_path)
+    if project_root is not None:
+        try:
+            return resolve_project_icon(project_root)
+        except Exception:
+            pass
+
+    return choose_random_project_icon()
+
+
 def _normalize_recent_projects(projects: list) -> list[dict]:
     normalized: list[dict] = []
     seen: set[str] = set()
@@ -154,7 +175,11 @@ def _normalize_recent_projects(projects: list) -> list[dict]:
         raw_name = str(item.get("name") or "").strip()
         safe_name = raw_name or Path(canonical_path).name or canonical_path
 
-        normalized.append({"name": safe_name, "path": canonical_path})
+        project_icon = _resolve_recent_project_icon(canonical_path, item.get("icon"))
+
+        normalized.append(
+            {"name": safe_name, "path": canonical_path, "icon": project_icon}
+        )
         seen.add(canonical_path)
 
         if len(normalized) >= _RECENT_PROJECTS_MAX:

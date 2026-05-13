@@ -33,11 +33,22 @@ import { escapeHtml } from '../../shared/dom.js';
 // Global state
 let currentProjectPath = '';
 let currentProjectName = '';
+let currentProjectIcon = '';
 const recentProjectsKey = 'prism_recent_projects';
 const beginnerHelpModeKey = 'prism_beginner_help_mode';
 const recentProjectStatusCache = new Map();
 let createTargetStatusRequestToken = 0;
 let createTargetStatusDebounceTimer = null;
+
+function normalizeProjectIconClass(iconClass) {
+    const icon = String(iconClass || '').trim();
+    if (!icon) return '';
+    return /^fa[a-z]+\s+fa-[a-z0-9-]+(\s+fa-[a-z0-9-]+)*$/i.test(icon) ? icon : '';
+}
+
+function resolveProjectIconClass(iconClass) {
+    return normalizeProjectIconClass(iconClass) || 'fas fa-flask';
+}
 
 function setCreateResultHtml(html, scope = 'server') {
     const resultDiv = document.getElementById('createResult');
@@ -79,8 +90,8 @@ function resetCreateTargetStatusChecks() {
     createTargetStatusRequestToken += 1;
 }
 
-function setGlobalProjectState(path, name) {
-    setProjectStateSnapshot(path, name);
+function setGlobalProjectState(path, name, icon = '') {
+    setProjectStateSnapshot(path, name, icon);
 }
 
 function shouldHideProjectTypeSelectionWhenLoaded() {
@@ -108,6 +119,10 @@ function updateProjectTypeSelectionVisibility() {
 function applyCurrentProject(project) {
     currentProjectPath = (project && project.path) ? String(project.path).trim() : '';
     currentProjectName = (project && project.name) ? String(project.name).trim() : '';
+    const incomingIcon = normalizeProjectIconClass(project && project.icon);
+    currentProjectIcon = currentProjectPath
+        ? resolveProjectIconClass(incomingIcon || currentProjectIcon)
+        : '';
 
     const existingPathInput = document.getElementById('existingPath');
     if (existingPathInput && currentProjectPath) {
@@ -118,11 +133,11 @@ function applyCurrentProject(project) {
     updateQuickValidateButtonState();
 
     if (window.updateNavbarProject) {
-        window.updateNavbarProject(currentProjectName, currentProjectPath);
+        window.updateNavbarProject(currentProjectName, currentProjectPath, currentProjectIcon);
         return;
     }
 
-    setGlobalProjectState(currentProjectPath, currentProjectName);
+    setGlobalProjectState(currentProjectPath, currentProjectName, currentProjectIcon);
 }
 
 function requestStudyMetadataSaveFromProjectBox(submitIntent = 'standard') {
@@ -216,16 +231,21 @@ const projectsRoot = document.getElementById('projectsRoot');
 const globalProjectState = getProjectStateSnapshot();
 const globalProjectPath = globalProjectState.path;
 const globalProjectName = globalProjectState.name;
+const globalProjectIcon = normalizeProjectIconClass(globalProjectState.icon);
 
 if (projectsRoot) {
     currentProjectPath = projectsRoot.dataset.currentProjectPath || globalProjectPath || '';
     currentProjectName = projectsRoot.dataset.currentProjectName || globalProjectName || '';
+    currentProjectIcon = currentProjectPath
+        ? resolveProjectIconClass(projectsRoot.dataset.currentProjectIcon || globalProjectIcon)
+        : '';
 } else {
     currentProjectPath = globalProjectPath;
     currentProjectName = globalProjectName;
+    currentProjectIcon = currentProjectPath ? resolveProjectIconClass(globalProjectIcon) : '';
 }
 
-setGlobalProjectState(currentProjectPath, currentProjectName);
+setGlobalProjectState(currentProjectPath, currentProjectName, currentProjectIcon);
 updateProjectTypeSelectionVisibility();
 
 window.addEventListener('prism-project-changed', function(event) {
@@ -233,19 +253,38 @@ window.addEventListener('prism-project-changed', function(event) {
     const fallbackState = getProjectStateSnapshot();
     const nextPath = eventState && typeof eventState.path === 'string' ? eventState.path.trim() : fallbackState.path;
     const nextName = eventState && typeof eventState.name === 'string' ? eventState.name.trim() : fallbackState.name;
+    const nextIcon = eventState && typeof eventState.icon === 'string'
+        ? eventState.icon.trim()
+        : String(fallbackState.icon || '').trim();
 
     currentProjectPath = nextPath;
     currentProjectName = nextName;
+    currentProjectIcon = nextPath ? resolveProjectIconClass(nextIcon || currentProjectIcon) : '';
     updateProjectTypeSelectionVisibility();
     updateQuickValidateButtonState();
 });
+
+function normalizeRecentProjectEntry(entry) {
+    if (!entry || typeof entry !== 'object') return null;
+
+    const path = String(entry.path || '').trim();
+    if (!path) return null;
+
+    const name = String(entry.name || '').trim() || path.split(/[\\/]/).pop() || path;
+    const icon = resolveProjectIconClass(entry.icon);
+
+    return { path, name, icon };
+}
 
 export function getRecentProjects() {
     try {
         const raw = localStorage.getItem(recentProjectsKey);
         if (!raw) return [];
         const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : [];
+        if (!Array.isArray(parsed)) return [];
+        return parsed
+            .map(normalizeRecentProjectEntry)
+            .filter(Boolean);
     } catch (err) {
         console.warn('Could not read recent projects', err);
         return [];
@@ -253,7 +292,10 @@ export function getRecentProjects() {
 }
 
 export function saveRecentProjects(list) {
-    const limited = list.slice(0, 5);
+    const limited = (Array.isArray(list) ? list : [])
+        .map(normalizeRecentProjectEntry)
+        .filter(Boolean)
+        .slice(0, 5);
     try {
         localStorage.setItem(recentProjectsKey, JSON.stringify(limited));
     } catch (err) {
@@ -262,11 +304,12 @@ export function saveRecentProjects(list) {
     syncRecentProjectsToServer(limited);
 }
 
-export function addRecentProject(name, path) {
+export function addRecentProject(name, path, icon = '') {
     if (!path) return;
     const safeName = name && name.trim() ? name.trim() : path.split(/[\\/]/).pop();
+    const safeIcon = resolveProjectIconClass(icon || currentProjectIcon);
     const list = getRecentProjects().filter(p => p.path !== path);
-    list.unshift({ name: safeName, path: path });
+    list.unshift({ name: safeName, path: path, icon: safeIcon });
     recentProjectStatusCache.delete(path);
     saveRecentProjects(list);
     renderRecentProjects();
@@ -830,11 +873,13 @@ export function renderRecentProjects() {
         block.style.display = 'block';
         listEl.innerHTML = availableProjects.map((p, idx) => {
         const label = p.name || p.path;
+        const iconClass = resolveProjectIconClass(p.icon);
         const safeLabel = escapeHtml(label);
         const safePath = escapeHtml(p.path || '');
+        const safeIconClass = escapeHtml(iconClass);
         return `
-            <button type="button" class="btn btn-outline-secondary btn-sm recent-project-btn" data-path="${safePath}" data-name="${safeLabel}" data-recent-id="${idx}" title="${safePath}">
-                <i class="fas fa-clock me-1"></i>${safeLabel}
+            <button type="button" class="btn btn-outline-secondary btn-sm recent-project-btn" data-path="${safePath}" data-name="${safeLabel}" data-icon="${safeIconClass}" data-recent-id="${idx}" title="${safePath}">
+                <i class="${safeIconClass} me-1 text-primary"></i>${safeLabel}
             </button>`;
         }).join('');
     }).catch(() => {
@@ -1634,7 +1679,8 @@ if (initBidsSubmitBtn) {
                 applyCurrentProject(result.current_project);
                 addRecentProject(
                     result.current_project?.name || displayName || bidsPath.split(/[\\/]/).pop(),
-                    result.path
+                    result.path,
+                    result.current_project?.icon
                 );
                 showStudyMetadataCard();
                 showExportCard();
@@ -2079,7 +2125,7 @@ if (createProjectFormEl) {
                 } catch (schemaError) {
                     console.error('Error saving project schema version after create:', schemaError);
                 }
-                addRecentProject(currentProjectName, currentProjectPath);
+                addRecentProject(currentProjectName, currentProjectPath, currentProjectIcon);
                 showStudyMetadataCard();
                 updateCreateProjectButton();
                 showExportCard();
@@ -2255,10 +2301,11 @@ function renderProjectQuickSummary(summary) {
 
 function renderLoadedProjectState(loadedName, loadedPath, summary) {
     const quickSummaryHtml = renderProjectQuickSummary(summary);
+    const projectIconClass = escapeHtml(resolveProjectIconClass(currentProjectIcon));
     setProjectValidationResult(`
         <div class="validation-result pending project-loaded-state">
             <h5><i class="fas fa-folder-open me-2"></i>Project Loaded</h5>
-            <p class="mb-1"><strong>${escapeHtml(loadedName || 'Current project')}:</strong> <code>${escapeHtml(loadedPath)}</code></p>
+            <p class="mb-1"><strong><i class="${projectIconClass} me-1 text-primary"></i>${escapeHtml(loadedName || 'Current project')}:</strong> <code>${escapeHtml(loadedPath)}</code></p>
             ${quickSummaryHtml}
             <div class="alert alert-info mt-2 mb-0" role="status">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
@@ -2340,7 +2387,7 @@ async function loadProjectWithoutValidation(path, triggerButton = null, options 
         const projectSummary = result.project_summary && typeof result.project_summary === 'object' && !Array.isArray(result.project_summary)
             ? result.project_summary
             : null;
-        addRecentProject(loadedName, loadedPath);
+        addRecentProject(loadedName, loadedPath, currentProjectIcon);
         showStudyMetadataCard();
         updateCreateProjectButton();
         showExportCard();
@@ -2609,7 +2656,7 @@ async function runProjectValidation(path, triggerButton = null) {
         setProjectValidationResult(html);
 
         applyCurrentProject(result.current_project);
-        addRecentProject(currentProjectName, validationPath);
+        addRecentProject(currentProjectName, validationPath, currentProjectIcon);
         showStudyMetadataCard();
         bindProjectBoxActionButtons();
         updateCreateProjectButton();
@@ -2770,7 +2817,7 @@ function initProjectsPage() {
     ensureOpenSectionVisibleForLoadedProject();
 
     if (currentProjectPath) {
-        addRecentProject(currentProjectName, currentProjectPath);
+        addRecentProject(currentProjectName, currentProjectPath, currentProjectIcon);
     }
 
     const sections = [

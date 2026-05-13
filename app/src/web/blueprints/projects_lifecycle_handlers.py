@@ -9,6 +9,7 @@ import requests
 from .projects_helpers import _load_recent_projects, _save_recent_projects
 from .projects_helpers import _resolve_project_json_path, _resolve_project_root_path
 from .projects_citation_helpers import _validate_recruitment_payload
+from src.project_icons import choose_random_project_icon, normalize_project_icon, resolve_project_icon
 from src.system_files import filter_system_files
 
 _RECRUITMENT_GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
@@ -41,6 +42,14 @@ def _derive_project_name(root_path: Path, fallback_name: str | None = None) -> s
     return root_path.name
 
 
+def _derive_project_icon(root_path: Path, fallback_icon: Any = None) -> str:
+    """Resolve and persist project icon with safe fallback behavior."""
+    try:
+        return resolve_project_icon(root_path, fallback_icon=fallback_icon)
+    except Exception:
+        return normalize_project_icon(fallback_icon) or choose_random_project_icon()
+
+
 def _build_project_quick_summary(root_path: Path) -> dict[str, Any]:
     """Build fast project summary metrics for UI cards.
 
@@ -65,6 +74,7 @@ def handle_set_current(get_current_project, set_current_project, save_last_proje
     if not path:
         session.pop("current_project_path", None)
         session.pop("current_project_name", None)
+        session.pop("current_project_icon", None)
         save_last_project(None, None)
         return jsonify({"success": True, "current": get_current_project()})
 
@@ -88,16 +98,20 @@ def handle_set_current(get_current_project, set_current_project, save_last_proje
     path = str(resolved_root)
 
     resolved_name = _derive_project_name(Path(path), fallback_name=name)
+    resolved_icon = _derive_project_icon(Path(path), fallback_icon=data.get("icon"))
 
     set_current_project(path, resolved_name)
+    session["current_project_icon"] = resolved_icon
     save_last_project(path, resolved_name)
 
     summary = _build_project_quick_summary(Path(path))
+    current = dict(get_current_project() or {})
+    current["icon"] = resolved_icon
 
     return jsonify(
         {
             "success": True,
-            "current": get_current_project(),
+            "current": current,
             "project_summary": summary,
         }
     )
@@ -149,11 +163,14 @@ def handle_create_project(project_manager, set_current_project, save_last_projec
 
         if result.get("success"):
             project_name = config.get("name") or Path(path).name
+            project_icon = _derive_project_icon(Path(path))
             set_current_project(path, project_name)
+            session["current_project_icon"] = project_icon
             save_last_project(path, project_name)
             result["current_project"] = {
                 "path": str(Path(path)),
                 "name": project_name,
+                "icon": project_icon,
                 "project_json_path": str(Path(path) / "project.json"),
             }
             return jsonify(result)
@@ -193,11 +210,14 @@ def handle_init_on_bids(project_manager, set_current_project, save_last_project)
 
         if result.get("success"):
             project_name = config.get("name") or Path(path).name
+            project_icon = _derive_project_icon(Path(path))
             set_current_project(path, project_name)
+            session["current_project_icon"] = project_icon
             save_last_project(path, project_name)
             result["current_project"] = {
                 "path": str(Path(path)),
                 "name": project_name,
+                "icon": project_icon,
                 "project_json_path": str(Path(path) / "project.json"),
             }
             return jsonify(result)
@@ -250,12 +270,18 @@ def handle_validate_project(project_manager, set_current_project, save_last_proj
             root_path_obj,
             fallback_name=session.get("current_project_name"),
         )
+        project_icon = _derive_project_icon(
+            root_path_obj,
+            fallback_icon=session.get("current_project_icon"),
+        )
         set_current_project(root_path, project_name)
+        session["current_project_icon"] = project_icon
         save_last_project(root_path, project_name)
 
         result["current_project"] = {
             "path": root_path,
             "name": project_name,
+            "icon": project_icon,
             "project_json_path": project_json_path,
         }
 

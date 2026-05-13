@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="studio-page-shell" id="projectsRoot" data-current-project-path="{{ current_project.path or '' }}" data-current-project-name="{{ current_project.name or '' }}" data-hide-project-options-on-loaded="{{ 'true' if hide_project_options_on_loaded else 'false' }}">
+<div class="studio-page-shell" id="projectsRoot" data-current-project-path="{{ current_project.path or '' }}" data-current-project-name="{{ current_project.name or '' }}" data-current-project-icon="{{ current_project.icon or '' }}" data-hide-project-options-on-loaded="{{ 'true' if hide_project_options_on_loaded else 'false' }}">
     <div class="row mb-4">
         <div class="col-lg-8">
             {{ page_header(
@@ -105,5 +105,6 @@
     // Template variables - must be rendered server-side
     window.currentProjectPath = "{{ current_project.path or '' }}";
     window.currentProjectName = "{{ current_project.name or '' }}";
+    window.currentProjectIcon = "{{ current_project.icon or '' }}";
 </script>
 {% endblock %}
