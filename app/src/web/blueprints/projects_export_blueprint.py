@@ -697,6 +697,55 @@ def anc_export_project():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@projects_export_bp.route("/api/projects/template-export", methods=["POST"])
+def template_export_project():
+    """Create a project template ZIP while excluding participant-specific content."""
+    try:
+        data = request.get_json() or {}
+        if not data:
+            return jsonify({"success": False, "error": "No data provided"}), 400
+
+        project_path_raw = data.get("project_path")
+        resolved_project_path = _resolve_project_root_path(project_path_raw)
+        if resolved_project_path is None:
+            return jsonify({"success": False, "error": "Invalid project path"}), 400
+
+        project_path = resolved_project_path
+        validation_mode = _normalize_export_validation_mode(
+            data.get("validation_mode", "both")
+        )
+        output_folder = str(data.get("output_folder") or "").strip()
+
+        run_bids, run_prism = _export_validation_flags(validation_mode)
+        if run_bids or run_prism:
+            validation_error = _run_pre_export_validation(project_path, validation_mode)
+            if validation_error:
+                return jsonify({"success": False, "error": validation_error}), 400
+
+        if output_folder:
+            dest_dir = Path(output_folder).expanduser().resolve()
+        else:
+            dest_dir = project_path.parent
+        dest_dir.mkdir(parents=True, exist_ok=True)
+
+        output_zip = dest_dir / f"{project_path.name}_template_export.zip"
+
+        from src.project_template_export import export_project_template_zip
+
+        stats = export_project_template_zip(project_path, output_zip)
+        return jsonify(
+            {
+                "success": True,
+                "output_path": str(output_zip),
+                "message": "Template export completed successfully",
+                "stats": stats,
+            }
+        )
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @projects_export_bp.route("/api/projects/openminds-tasks", methods=["GET"])
 def openminds_get_tasks():
     """Return task names from the current project for the openMINDS pre-flight form."""

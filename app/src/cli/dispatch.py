@@ -42,6 +42,8 @@ def dispatch_prism_tools(
 
     if args.command == "anonymize":
         handlers["anonymize"](args)
+    elif args.command == "template-export":
+        handlers["template_export"](args)
     elif args.command == "convert" and args.modality == "physio":
         handlers["convert_physio"](args)
     elif args.command == "wide-to-long":

@@ -566,6 +566,11 @@ export function initExportForm() {
         });
     }
 
+    const templateExportButton = getById('templateExportButton');
+    if (templateExportButton) {
+        templateExportButton.addEventListener('click', handleTemplateExport);
+    }
+
     // Defacing status check
     const checkDefacingBtn = getById('exportCheckDefacing');
     if (checkDefacingBtn) {
@@ -616,6 +621,74 @@ export function initExportForm() {
                 checkDefacingBtn.innerHTML = '<i class="fas fa-search me-1"></i>Check defacing status of anatomical scans';
             }
         });
+    }
+}
+
+/**
+ * Handle template export action.
+ */
+async function handleTemplateExport(e) {
+    e.preventDefault();
+
+    const currentProjectPath = resolveCurrentProjectPath();
+    if (!currentProjectPath) {
+        alert('No project is currently loaded');
+        return;
+    }
+
+    const btn = this;
+    const originalText = setButtonLoading(btn, true, 'Creating Template ZIP...');
+
+    const progressDiv = getById('exportProgress');
+    const resultDiv = getById('exportResult');
+    const statusText = getById('exportStatusText');
+
+    if (progressDiv) show(progressDiv);
+    if (resultDiv) hide(resultDiv);
+    if (statusText) statusText.textContent = getExportValidationStatusText(getSelectedExportValidationMode());
+
+    const data = {
+        project_path: currentProjectPath,
+        output_folder: (getById('exportOutputFolder')?.value || '').trim() || null,
+        validation_mode: getSelectedExportValidationMode(),
+    };
+
+    try {
+        const response = await fetchWithApiFallback('/api/projects/template-export', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        const result = await response.json();
+
+        if (progressDiv) hide(progressDiv);
+        if (resultDiv) show(resultDiv);
+
+        if (response.ok && result.success) {
+            const savedPath = result.output_path || 'unknown location';
+            setHtml(resultDiv, `
+                <div class="alert alert-success">
+                    <h5><i class="fas fa-check-circle me-2"></i>Template Export Successful!</h5>
+                    <p class="mb-0">ZIP saved to:<br>
+                    <code class="user-select-all">${escapeHtml(savedPath)}</code></p>
+                </div>
+            `);
+        } else {
+            throw new Error(result.error || 'Template export failed.');
+        }
+    } catch (error) {
+        if (progressDiv) hide(progressDiv);
+        if (resultDiv) {
+            show(resultDiv);
+            setHtml(resultDiv, `
+                <div class="alert alert-danger">
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>Template Export Failed</h5>
+                    <p class="mb-0">${escapeHtml(error.message || 'Template export failed.')}</p>
+                </div>
+            `);
+        }
+    } finally {
+        setButtonLoading(btn, false, null, originalText);
     }
 }
 
