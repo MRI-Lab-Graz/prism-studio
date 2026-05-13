@@ -322,6 +322,7 @@ def _format_value_offset_confirmation_response(
             suggested_offsets.append(int(rounded))
         else:
             suggested_offsets.append(round(numeric, 6))
+    suggested_offset_labels = [f"{float(offset):+g}" for offset in suggested_offsets]
 
     configured_offset = getattr(error, "configured_offset", None)
     adjusted_value = getattr(error, "adjusted_value", None)
@@ -353,16 +354,27 @@ def _format_value_offset_confirmation_response(
             )
     if configured_offset is not None:
         review_message += (
-            " Review the manual task value offset in Advanced options only if you are certain the entire task uses a shifted scale, then run Preview again."
+            " Fix the data in the input data or (if you are really confident) rescale, then run Preview again."
+            " Use Advanced options only when you can independently confirm a full-task shifted scale."
+            " Manual task value offsets are applied to observed numeric input values (value + offset), not to template scale definitions."
         )
+        if suggested_offset_labels:
+            review_message += (
+                " Sample-based offset hint(s): "
+                + ", ".join(suggested_offset_labels)
+                + "."
+            )
         if raw_value_valid_without_offset is True:
             review_message += (
-                " This sampled value is already valid without offset; verify offset direction and template version selection."
+                " This sampled value is already valid without offset;"
+                " the configured offset direction is likely wrong for this template/data pairing."
+                " Verify offset direction and template version selection."
             )
     else:
         review_message += (
-            " Required first: validate and correct out-of-range source values, then run Preview again."
+            " Required first: fix out-of-range values in the input data, then run Preview again."
             " Advanced-only fallback: use a manual task value offset only with independent evidence of a full-task scale shift (for example, every item is 1-4 while the template is 0-3)."
+            " Manual task value offsets are applied to observed numeric input values (value + offset), not to template scale definitions."
             " Do not use offsets to bypass item-level data errors."
         )
     payload: dict[str, Any] = {
