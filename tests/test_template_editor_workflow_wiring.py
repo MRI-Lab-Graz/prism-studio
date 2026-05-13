@@ -4,6 +4,9 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE_EDITOR_TEMPLATE = REPO_ROOT / "app" / "templates" / "template_editor.html"
 TEMPLATE_EDITOR_SCRIPT = REPO_ROOT / "app" / "static" / "js" / "template-editor.js"
+TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT = (
+    REPO_ROOT / "app" / "static" / "js" / "template-editor" / "source-workflow.js"
+)
 TEMPLATE_EDITOR_BLUEPRINT = (
     REPO_ROOT
     / "app"
@@ -45,58 +48,77 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         )
 
     def test_template_editor_uses_api_fallback_for_editor_requests(self):
-        content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+        script_content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+        workflow_content = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(
+            encoding="utf-8"
+        )
 
         self.assertIn(
             "const sharedApiModuleUrl = new URL('./shared/api.js', document.currentScript?.src || window.location.href).href;",
-            content,
+            script_content,
         )
-        self.assertIn("function loadSharedFetchWithApiFallback() {", content)
+        self.assertIn("function loadSharedFetchWithApiFallback() {", script_content)
         self.assertIn(
             "sharedFetchWithApiFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithApiFallback }) => {",
-            content,
+            script_content,
         )
         self.assertIn(
             "return sharedFetchWithApiFallback(url, options, fallbackMessage);",
-            content,
+            script_content,
         )
         self.assertIn(
-            "const res = await fetchWithApiFallback(url, { method: 'GET' });", content
-        )
-        self.assertIn("const res = await fetchWithApiFallback(url, {", content)
-        self.assertIn(
-            "await fetchWithApiFallback('/api/template-editor/download', {", content
+            "const templateEditorSourceWorkflowModuleUrl = new URL('./template-editor/source-workflow.js', document.currentScript?.src || window.location.href).href;",
+            script_content,
         )
         self.assertIn(
-            "await fetchWithApiFallback('/api/template-editor/import-lsq-lsg', {",
-            content,
+            "templateEditorSourceWorkflowPromise = import(templateEditorSourceWorkflowModuleUrl).then((module) => {",
+            script_content,
         )
         self.assertIn(
-            "await fetchWithApiFallback('/api/survey-generate-templates', {", content
+            "|| typeof module.bindTemplateEditorSourceWorkflowEvents !== 'function'",
+            script_content,
+        )
+        self.assertIn(
+            "const res = await fetchWithApiFallback(url, { method: 'GET' });",
+            script_content,
+        )
+        self.assertIn("const res = await fetchWithApiFallback(url, {", script_content)
+        self.assertIn(
+            "await context.fetchWithApiFallback('/api/template-editor/download', {",
+            workflow_content,
+        )
+        self.assertIn(
+            "await context.fetchWithApiFallback('/api/template-editor/import-lsq-lsg', {",
+            workflow_content,
+        )
+        self.assertIn(
+            "await context.fetchWithApiFallback('/api/survey-generate-templates', {",
+            workflow_content,
         )
         self.assertIn(
             "await fetchWithApiFallback('/api/template-editor/export-questionnaire', {",
-            content,
+            script_content,
         )
         self.assertIn(
-            "await fetchWithApiFallback('/api/template-editor/delete', {", content
+            "await context.fetchWithApiFallback('/api/template-editor/delete', {",
+            workflow_content,
         )
 
     def test_template_editor_import_sets_explicit_editable_state(self):
-        content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+        content = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(encoding="utf-8")
 
         self.assertIn(
-            "if (hasUnsavedChanges() && !confirm('You have unsaved changes. Importing a template source will discard them. Continue?')) {",
+            "if (context.hasUnsavedChanges() && !confirm('You have unsaved changes. Importing a template source will discard them. Continue?')) {",
             content,
         )
         self.assertIn(
-            "currentTemplateFilename = normalizeTemplateFilename(data.suggested_filename, modalityEl.value, currentTemplate);",
+            "context.currentTemplateFilename = context.normalizeTemplateFilename(data.suggested_filename, context.modalityEl.value, context.currentTemplate);",
             content,
         )
-        self.assertIn("loadedFromReadonly = false;", content)
-        self.assertIn("hasUserInteracted = true;", content)
-        self.assertIn("hasExplicitTemplate = true;", content)
-        self.assertIn("clearTemplateSelections();", content)
+        self.assertIn("context.loadedFromReadonly = false;", content)
+        self.assertIn("context.hasUserInteracted = true;", content)
+        self.assertIn("context.hasExplicitTemplate = true;", content)
+        self.assertIn("context.clearTemplateSelections();", content)
 
     def test_template_editor_filename_normalization_uses_biometrics_test_name(self):
         content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
@@ -114,50 +136,63 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         )
 
     def test_template_editor_save_replaces_generic_placeholder_filenames(self):
-        content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+        script_content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+        workflow_content = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(
+            encoding="utf-8"
+        )
 
-        self.assertIn("function isGenericTemplateFilename(filename, modality) {", content)
-        self.assertIn("function resolveTemplateFilenameForSave(templateObj, modality) {", content)
-        self.assertIn("return ['template', 'new', 'imported'].includes(stem);", content)
-        self.assertIn("if (isGenericTemplateFilename(currentTemplateFilename, modality)) {", content)
-        self.assertIn("const filename = resolveTemplateFilenameForSave(obj, modality);", content)
+        self.assertIn("function isGenericTemplateFilename(filename, modality) {", script_content)
+        self.assertIn("function resolveTemplateFilenameForSave(templateObj, modality) {", script_content)
+        self.assertIn("return ['template', 'new', 'imported'].includes(stem);", script_content)
+        self.assertIn("if (isGenericTemplateFilename(currentTemplateFilename, modality)) {", script_content)
+        self.assertIn("const filename = context.resolveTemplateFilenameForSave(obj, modality);", workflow_content)
         self.assertIn(
-            "const filename = resolveTemplateFilenameForSave(obj, modalityEl.value);",
-            content,
+            "const filename = context.resolveTemplateFilenameForSave(obj, context.modalityEl.value);",
+            workflow_content,
         )
 
     def test_template_editor_import_and_delete_restore_visible_state(self):
-        content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+        script_content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+        workflow_content = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(
+            encoding="utf-8"
+        )
 
-        self.assertIn("function captureEditorState() {", content)
-        self.assertIn("function restoreEditorState(state) {", content)
-        self.assertIn("restoreEditorState(previousEditorState);", content)
-        self.assertIn("Validation could not be completed:", content)
-        self.assertIn("btnDownload.disabled = false;", content)
-        self.assertIn("originalTemplate = null;", content)
-        self.assertIn("selectedItemId = null;", content)
-        self.assertIn("renderAll();", content)
+        self.assertIn("function captureEditorState() {", script_content)
+        self.assertIn("function restoreEditorState(state) {", script_content)
+        self.assertIn("context.restoreEditorState(previousEditorState);", workflow_content)
+        self.assertIn("Validation could not be completed:", workflow_content)
+        self.assertIn("context.btnDownload.disabled = false;", workflow_content)
+        self.assertIn("context.originalTemplate = null;", workflow_content)
+        self.assertIn("context.selectedItemId = null;", workflow_content)
+        self.assertIn("context.renderAll();", workflow_content)
 
     def test_template_editor_project_switch_invalidates_project_bound_actions(self):
         script_content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+        workflow_content = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(
+            encoding="utf-8"
+        )
         blueprint_content = TEMPLATE_EDITOR_BLUEPRINT.read_text(encoding="utf-8")
 
         self.assertIn("function getCurrentProjectPath() {", script_content)
+        self.assertIn(
+            "async function bindTemplateEditorSourceWorkflowEvents() {",
+            script_content,
+        )
         self.assertIn(
             "function handleProjectContextChange(previousProjectPath, nextProjectPath) {",
             script_content,
         )
         self.assertIn("let loadedTemplateProjectPath = '';", script_content)
         self.assertIn("let projectContextRequestToken = 0;", script_content)
-        self.assertIn("project_path: currentProjectPath,", script_content)
+        self.assertIn("project_path: currentProjectPath,", workflow_content)
         self.assertIn(
             "window.addEventListener('prism-project-changed', async () => {",
-            script_content,
+            workflow_content,
         )
         self.assertIn("The editor kept the content as a detached draft", script_content)
         self.assertIn(
             "Saved to the previous project library before the active project changed.",
-            script_content,
+            workflow_content,
         )
         self.assertIn('request.args.get("project_path")', blueprint_content)
         self.assertIn(
@@ -167,73 +202,124 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
     def test_template_editor_schema_switch_refreshes_schema_aware_template_statuses(
         self,
     ):
-        content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+        script_content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+        workflow_content = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(
+            encoding="utf-8"
+        )
 
-        self.assertIn("schemaEl.addEventListener('change', async () => {", content)
-        self.assertIn("await refreshTemplateList();", content)
-        self.assertIn("await loadNewTemplate();", content)
+        self.assertIn(
+            "return workflow.bindTemplateEditorSourceWorkflowEvents(buildTemplateEditorSourceWorkflowContext());",
+            script_content,
+        )
+        self.assertIn(
+            "context.schemaEl.addEventListener('change', async () => {",
+            workflow_content,
+        )
+        self.assertIn("await refreshTemplateList(context);", workflow_content)
+        self.assertIn("await loadNewTemplate(context);", workflow_content)
 
     def test_template_editor_switch_cancel_and_failure_revert_select_state(self):
-        content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+        script_content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+        workflow_content = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(
+            encoding="utf-8"
+        )
 
-        self.assertIn("function getTrackedSelectValue(selectEl) {", content)
-        self.assertIn("function commitTrackedSelectValue(selectEl) {", content)
+        self.assertIn("function getTrackedSelectValue(selectEl) {", script_content)
+        self.assertIn("function commitTrackedSelectValue(selectEl) {", script_content)
         self.assertIn(
-            "function revertTrackedSelectValue(selectEl, fallbackValue = '') {", content
+            "function revertTrackedSelectValue(selectEl, fallbackValue = '') {",
+            script_content,
         )
         self.assertIn(
-            "const previousModality = getTrackedSelectValue(modalityEl);", content
+            "const previousModality = context.getTrackedSelectValue(context.modalityEl);",
+            workflow_content,
         )
         self.assertIn(
-            "revertTrackedSelectValue(modalityEl, previousModality);", content
-        )
-        self.assertIn("commitTrackedSelectValue(modalityEl);", content)
-        self.assertIn(
-            "const previousSchemaVersion = getTrackedSelectValue(schemaEl);", content
+            "context.revertTrackedSelectValue(context.modalityEl, previousModality);",
+            workflow_content,
         )
         self.assertIn(
-            "revertTrackedSelectValue(schemaEl, previousSchemaVersion);", content
+            "context.commitTrackedSelectValue(context.modalityEl);",
+            workflow_content,
         )
-        self.assertIn("commitTrackedSelectValue(schemaEl);", content)
-        self.assertIn("await refreshSchema();", content)
-        self.assertIn("loadedTemplateProjectPath = '';", content)
+        self.assertIn(
+            "const previousSchemaVersion = context.getTrackedSelectValue(context.schemaEl);",
+            workflow_content,
+        )
+        self.assertIn(
+            "context.revertTrackedSelectValue(context.schemaEl, previousSchemaVersion);",
+            workflow_content,
+        )
+        self.assertIn(
+            "context.commitTrackedSelectValue(context.schemaEl);",
+            workflow_content,
+        )
+        self.assertIn("await context.refreshSchema();", workflow_content)
+        self.assertIn("loadedTemplateProjectPath = '';", script_content)
 
     def test_template_editor_failed_template_load_restores_previous_editor_state(self):
-        content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+        script_content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+        workflow_content = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(
+            encoding="utf-8"
+        )
 
         self.assertIn(
-            "projectTemplateSelectEl.addEventListener('change', async () => {", content
+            "function captureEditorState() {",
+            script_content,
         )
         self.assertIn(
-            "globalTemplateSelectEl.addEventListener('change', async () => {", content
+            "context.projectTemplateSelectEl.addEventListener('change', async () => {",
+            workflow_content,
         )
-        self.assertIn("const previousEditorState = captureEditorState();", content)
-        self.assertIn("restoreEditorState(previousEditorState);", content)
+        self.assertIn(
+            "context.globalTemplateSelectEl.addEventListener('change', async () => {",
+            workflow_content,
+        )
+        self.assertIn(
+            "const previousEditorState = context.captureEditorState();",
+            workflow_content,
+        )
+        self.assertIn("context.restoreEditorState(previousEditorState);", workflow_content)
+        self.assertIn(
+            "export async function loadSelectedTemplate(context) {",
+            workflow_content,
+        )
 
     def test_template_editor_blank_template_creation_is_guarded_and_rollback_safe(self):
-        content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
-
-        self.assertIn("btnNew.addEventListener('click', async () => {", content)
-        self.assertIn(
-            "if (hasUnsavedChanges() && !confirm('You have unsaved changes. Create a new blank template and discard them?')) {",
-            content,
+        workflow_content = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(
+            encoding="utf-8"
         )
-        self.assertIn("const previousEditorState = captureEditorState();", content)
-        self.assertIn("restoreEditorState(previousEditorState);", content)
+
+        self.assertIn(
+            "context.btnNew.addEventListener('click', async () => {",
+            workflow_content,
+        )
+        self.assertIn(
+            "if (context.hasUnsavedChanges() && !confirm('You have unsaved changes. Create a new blank template and discard them?')) {",
+            workflow_content,
+        )
+        self.assertIn(
+            "const previousEditorState = context.captureEditorState();",
+            workflow_content,
+        )
+        self.assertIn("context.restoreEditorState(previousEditorState);", workflow_content)
 
     def test_template_editor_save_requests_explicit_overwrite_permission(self):
-        content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+        script_content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+        workflow_content = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(
+            encoding="utf-8"
+        )
 
-        self.assertIn("function getSaveDecision(filename) {", content)
+        self.assertIn("function getSaveDecision(filename) {", script_content)
         self.assertIn(
             'A project template named "${filename}" already exists. Overwrite it?',
-            content,
+            script_content,
         )
         self.assertIn(
             'This template comes from a read-only library. Save an editable project copy as "${filename}"?',
-            content,
+            script_content,
         )
-        self.assertIn("allow_overwrite: saveDecision.allowOverwrite,", content)
+        self.assertIn("allow_overwrite: saveDecision.allowOverwrite,", workflow_content)
 
     def test_template_editor_save_api_rejects_unconfirmed_conflicts(self):
         content = TEMPLATE_EDITOR_BLUEPRINT.read_text(encoding="utf-8")
