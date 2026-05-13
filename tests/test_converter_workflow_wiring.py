@@ -26,6 +26,9 @@ SESSION_PICKER_MODULE = (
 CONVERTER_TAB_ACTIVATION_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "tab-activation.js"
 )
+CONVERTER_SERVER_PICKER_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "server-picker.js"
+)
 SURVEY_PARTICIPANTS_METADATA_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "survey-participants-metadata.js"
 )
@@ -475,6 +478,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "import { createJobRunController } from './job-run-controller.js';",
             content,
         )
+        self.assertIn(
+            "import { pickServerFile, prefersServerPicker } from './server-picker.js';",
+            content,
+        )
         self.assertIn("const runController = createJobRunController();", content)
         self.assertIn("if (!runController.tryStartRun()) {", content)
         self.assertIn("runController.finishRun();", content)
@@ -562,6 +569,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "import { createJobRunController } from './job-run-controller.js';",
             physio_content,
         )
+        self.assertIn(
+            "import { pickServerFolder, prefersServerPicker } from './server-picker.js';",
+            physio_content,
+        )
         self.assertIn("const pollingRunState = createPollingRunState();", physio_content)
         self.assertIn("const runController = createJobRunController();", physio_content)
         self.assertIn("if (!runController.tryStartRun()) {", physio_content)
@@ -613,6 +624,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';",
+            eyetracking_content,
+        )
+        self.assertIn(
+            "import { pickServerFolder, prefersServerPicker } from './server-picker.js';",
             eyetracking_content,
         )
         self.assertIn(
@@ -772,6 +787,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "import { createJobRunController } from './job-run-controller.js';",
             environment_content,
         )
+        self.assertIn(
+            "import { pickServerFile, prefersServerPicker } from './server-picker.js';",
+            environment_content,
+        )
         self.assertIn("const pollingRunState = createPollingRunState();", environment_content)
         self.assertIn("const runController = createJobRunController();", environment_content)
         self.assertIn("if (!runController.tryStartRun()) {", environment_content)
@@ -816,6 +835,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "import { createJobRunController } from './job-run-controller.js';",
+            participants_content,
+        )
+        self.assertIn(
+            "import { pickServerFile, prefersServerPicker } from './server-picker.js';",
             participants_content,
         )
         self.assertIn("const runController = createJobRunController();", participants_content)
@@ -905,6 +928,9 @@ class TestConverterWorkflowWiring(unittest.TestCase):
     def test_survey_converter_refreshes_project_bound_helpers(self):
         content = SURVEY_CONVERT_MODULE.read_text(encoding="utf-8")
         session_picker_content = SESSION_PICKER_MODULE.read_text(encoding="utf-8")
+        server_picker_content = CONVERTER_SERVER_PICKER_MODULE.read_text(
+            encoding="utf-8"
+        )
         workflow_prepare_content = SURVEY_WORKFLOW_PREPARE_MODULE.read_text(
             encoding="utf-8"
         )
@@ -936,6 +962,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
 
         self.assertIn(
             "import { createSurveySourcedataQuickSelectController } from './survey-sourcedata-quick-select.js';",
+            content,
+        )
+        self.assertIn(
+            "import { pickServerFile, prefersServerPicker } from './server-picker.js';",
             content,
         )
         self.assertIn(
@@ -983,6 +1013,19 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "fetchWithApiFallback(requestUrl)",
             session_picker_content,
         )
+        self.assertIn(
+            "export function prefersServerPicker()",
+            server_picker_content,
+        )
+        self.assertIn(
+            "export async function pickServerFile(options)",
+            server_picker_content,
+        )
+        self.assertIn(
+            "export async function pickServerFolder(options)",
+            server_picker_content,
+        )
+        self.assertIn("window.PrismFileSystemMode", server_picker_content)
         self.assertIn("fetchWithApiFallback('/api/survey-generate-templates', {", template_generation_content)
         self.assertIn("showTemplateResultsContainer();", template_generation_content)
         self.assertIn("displayParticipantMetadataSection(data);", template_generation_content)

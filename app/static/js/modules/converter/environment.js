@@ -8,6 +8,7 @@ import { pollJobStatus } from '../../shared/job-polling.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { createJobRunController } from './job-run-controller.js';
+import { pickServerFile, prefersServerPicker } from './server-picker.js';
 
 export function initEnvironment(elements) {
     const STATUS_POLL_INTERVAL_MS = 500;
@@ -72,14 +73,6 @@ export function initEnvironment(elements) {
     const pollingRunState = createPollingRunState();
     const runController = createJobRunController();
 
-    function prefersServerPicker() {
-        return Boolean(
-            window.PrismFileSystemMode
-            && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
-            && window.PrismFileSystemMode.prefersServerPicker()
-        );
-    }
-
     function getSelectedEnvFile() {
         return (envDataFile && envDataFile.files && envDataFile.files[0])
             ? envDataFile.files[0]
@@ -115,11 +108,7 @@ export function initEnvironment(elements) {
     }
 
     async function pickServerEnvironmentFile() {
-        if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFile === 'function')) {
-            return '';
-        }
-
-        return window.PrismFileSystemMode.pickFile({
+        return pickServerFile({
             title: 'Select Environment File on Server',
             confirmLabel: 'Use This File',
             extensions: '.xlsx,.csv,.tsv,.sav,.rds,.rdata,.rda',
