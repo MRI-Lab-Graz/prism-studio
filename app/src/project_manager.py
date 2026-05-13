@@ -969,7 +969,6 @@ Subfolders:
             "MissingData": config.get("MissingData", {}),
             "References": config.get("References", ""),
             "Conditions": config.get("Conditions", {}),
-            "Sessions": [],
             "TaskDefinitions": {},
         }
 

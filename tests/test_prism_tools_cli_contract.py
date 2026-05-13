@@ -213,6 +213,18 @@ def test_dataset_smoketest_help_exposes_key_options() -> None:
     )
 
 
+def test_dataset_cleanup_project_metadata_help_exposes_key_options() -> None:
+    _assert_help_contains(
+        ["dataset", "cleanup-project-metadata", "--help"],
+        [
+            "--project",
+            "--dry-run",
+            "--drop-task-definitions",
+            "--json",
+        ],
+    )
+
+
 def test_biometrics_detect_help_exposes_key_options() -> None:
     _assert_help_contains(
         ["biometrics", "detect", "--help"],

@@ -909,6 +909,29 @@ def build_prism_tools_parsers(
         default="Legacy/Imported",
         help="Default Technical.Equipment value for generated biometrics templates",
     )
+
+    parser_dataset_cleanup = dataset_subparsers.add_parser(
+        "cleanup-project-metadata",
+        help="Remove legacy converter-written session metadata from project.json",
+    )
+    parser_dataset_cleanup.add_argument(
+        "--project",
+        required=True,
+        help="Project root folder or direct path to project.json",
+    )
+    parser_dataset_cleanup.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Report what would be removed without writing changes",
+    )
+    parser_dataset_cleanup.add_argument(
+        "--drop-task-definitions",
+        action="store_true",
+        help="Also remove TaskDefinitions for a stricter project-page-only cleanup",
+    )
+    parser_dataset_cleanup.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
     parser_ds_bio.add_argument(
         "--supervisor",
         default="investigator",

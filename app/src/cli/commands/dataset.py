@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 import sys
 import re
@@ -9,9 +10,52 @@ from pathlib import Path
 
 from src.converters.file_reader import read_tabular_file
 from src.converters.excel_to_biometrics import process_excel_biometrics
+from src.maintenance.project_metadata_cleanup import cleanup_project_metadata
 from src.utils.io import ensure_dir as _ensure_dir
 from src.utils.io import read_json as _read_json
 from src.utils.io import write_json as _write_json
+
+
+def cmd_dataset_cleanup_project_metadata(args) -> None:
+    """Remove legacy converter-written session metadata from project.json."""
+    try:
+        report = cleanup_project_metadata(
+            args.project,
+            dry_run=bool(getattr(args, "dry_run", False)),
+            drop_task_definitions=bool(
+                getattr(args, "drop_task_definitions", False)
+            ),
+        )
+    except (FileNotFoundError, ValueError) as error:
+        if getattr(args, "json", False):
+            print(json.dumps({"success": False, "error": str(error)}, indent=2))
+        else:
+            print(f"Error: {error}")
+        sys.exit(1)
+
+    result = {
+        "success": True,
+        "dry_run": bool(getattr(args, "dry_run", False)),
+        **report.to_dict(),
+    }
+
+    if getattr(args, "json", False):
+        print(json.dumps(result, indent=2))
+        return
+
+    if not report.changed:
+        print(f"No legacy session metadata found in {report.project_json_path}")
+        return
+
+    action = "Would remove" if getattr(args, "dry_run", False) else "Removed"
+    print(f"{action} legacy session metadata in {report.project_json_path}")
+    print(f"Sessions removed: {report.removed_sessions}")
+    print(f"Task entries removed: {report.removed_task_entries}")
+    print(f"Source entries removed: {report.removed_source_entries}")
+    if getattr(args, "drop_task_definitions", False):
+        print(f"TaskDefinitions removed: {report.removed_task_definitions}")
+    else:
+        print(f"TaskDefinitions kept: {report.kept_task_definitions}")
 
 
 def cmd_dataset_build_biometrics_smoketest(args) -> None:
