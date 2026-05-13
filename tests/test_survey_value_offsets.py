@@ -209,6 +209,64 @@ def test_survey_converter_rejects_offset_when_allowed_values_conflict(tmp_path):
     assert minus_one_candidate.get("invalid_after") == 1
 
 
+def test_survey_converter_suggests_opposite_direction_when_configured_offset_fails(
+    tmp_path,
+):
+    input_path = tmp_path / "survey.csv"
+    input_path.write_text("ID,PSS01\nsub-001,1\nsub-002,0\n", encoding="utf-8")
+
+    library_root = tmp_path / "library"
+    library_root.mkdir(parents=True, exist_ok=True)
+    (library_root / "survey-pss.json").write_text(
+        json.dumps(
+            {
+                "Study": {"TaskName": "pss"},
+                "PSS01": {
+                    "AllowedValues": [1, 2, 3, 4, 5],
+                    "Levels": {
+                        "0": "never",
+                        "1": "almost never",
+                        "2": "sometimes",
+                        "3": "fairly often",
+                        "4": "very often",
+                    },
+                    "MinValue": 0,
+                    "MaxValue": 4,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SurveyValueOutOfBoundsError) as error_info:
+        SurveyResponsesConverter().convert_xlsx(
+            input_path=input_path,
+            library_dir=library_root,
+            output_root=tmp_path / "out",
+            id_column="ID",
+            session="all",
+            dry_run=False,
+            force=True,
+            skip_participants=True,
+            separator=",",
+            task_value_offsets={"pss": -1},
+        )
+
+    error = error_info.value
+    assert error.configured_offset == -1.0
+    assert error.suggested_offsets == [1]
+    evidence = getattr(error, "offset_evidence", None)
+    assert isinstance(evidence, dict)
+    candidate_offsets = evidence.get("candidate_offsets")
+    assert isinstance(candidate_offsets, list)
+    plus_one_candidate = next(
+        (entry for entry in candidate_offsets if entry.get("offset") == 1),
+        None,
+    )
+    assert isinstance(plus_one_candidate, dict)
+    assert plus_one_candidate.get("newly_invalid") == 0
+
+
 def test_survey_converter_suggests_offset_from_allowed_values_when_levels_conflict(tmp_path):
     input_path = tmp_path / "survey.csv"
     input_path.write_text("ID,PSS01\nsub-001,6\n", encoding="utf-8")
@@ -361,6 +419,7 @@ def test_value_offset_confirmation_payload_includes_adjusted_value_context():
     assert payload["adjusted_value"] == 0
     assert payload["raw_value_valid_without_offset"] is True
     assert "already valid without offset" in payload["message"]
+    assert "applied to observed numeric input values" in payload["message"]
 
 
 def test_sync_project_survey_recipe_offsets_updates_metadata(tmp_path):

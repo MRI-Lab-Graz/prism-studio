@@ -674,6 +674,7 @@ export function initSurveyConvert(elements) {
                 : null,
             reviewSummary || null,
             'Recommended first: fix out-of-range source values, then run Preview again.',
+            'Manual task offsets are applied to observed data values (value + offset), not to template scales.',
             'Optional fallback: if you are certain this task is coded on a shifted numeric scale, enter a manual task offset and run Preview again.',
         ].filter(Boolean);
 

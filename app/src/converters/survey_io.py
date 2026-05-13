@@ -242,6 +242,17 @@ def _process_and_write_responses(
                         if not has_configured_offset:
                             candidate_offsets.append(configured_offset_num)
 
+                        # When a configured offset fails, also sample the opposite
+                        # direction as a diagnostic candidate for UI guidance.
+                        opposite_offset_num = -configured_offset_num
+                        if abs(opposite_offset_num) > 1e-9:
+                            has_opposite_offset = any(
+                                abs(float(offset) - opposite_offset_num) <= 1e-9
+                                for offset in candidate_offsets
+                            )
+                            if not has_opposite_offset:
+                                candidate_offsets.append(opposite_offset_num)
+
                     context_df = df
                     if res_ses_col and res_ses_col in df.columns:
                         session_mask = df[res_ses_col].map(normalize_ses_fn) == ses_id
