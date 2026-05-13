@@ -1371,3 +1371,40 @@ def test_emit_backend_request_action_includes_template_export_command(capsys):
     assert f"project_path={expected_project_path}" in captured
     assert f"cmd=curl -X POST http://localhost/api/projects/template-export" in captured
     assert expected_output_folder in captured
+
+
+def test_emit_backend_request_action_includes_recipes_surveys_command(capsys):
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/recipes-surveys",
+        endpoint="tools.api_recipes_surveys",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/recipes-surveys",
+        method="POST",
+        json={
+            "dataset_path": "../dataset",
+            "modality": "survey",
+            "format": "sav",
+            "layout": "wide",
+            "lang": "de",
+            "merge_all": True,
+            "include_recipe_prefix": False,
+        },
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    expected_dataset_path = str(Path("../dataset").resolve())
+    assert "POST /api/recipes-surveys -> recipes survey output" in captured
+    assert "cmd=python prism_tools.py recipes survey --prism" in captured
+    assert expected_dataset_path in captured
+    assert "--merge-all" in captured
+    assert "--no-recipe-prefix" in captured
