@@ -225,7 +225,7 @@
                      data-path="{{ current_project.path or '' }}" data-name="{{ current_project.name or '' }}" data-icon="{{ current_project.icon or '' }}">
                     {% if current_project.path %}
                     <span class="badge bg-warning text-dark" title="{{ current_project.path }}" aria-label="{{ current_project.path }}">
-                        <i class="{{ current_project.icon or 'fas fa-flask' }} me-1"></i>{{ current_project.name or 'Project' }}
+                        <span class="me-1" aria-hidden="true">{{ current_project.icon or '🧪' }}</span>{{ current_project.name or 'Project' }}
                     </span>
                     {% else %}
                     <span class="badge bg-light text-muted border" aria-label="No project loaded">
@@ -389,14 +389,27 @@
             }
         }
 
+        const allowedProjectIcons = [
+            '🧪',
+            '🔬',
+            '🧬',
+            '🧠',
+            '⚗️',
+            '🩺',
+            '📊',
+            '🧫',
+            '🔭',
+            '🧲'
+        ];
+
         function normalizeProjectIconValue(value) {
             const icon = String(value || '').trim();
             if (!icon) return '';
-            return /^fa[a-z]+\s+fa-[a-z0-9-]+(\s+fa-[a-z0-9-]+)*$/i.test(icon) ? icon : '';
+            return allowedProjectIcons.includes(icon) ? icon : '';
         }
 
         function sanitizeProjectIconClass(value) {
-            return normalizeProjectIconValue(value) || 'fas fa-flask';
+            return normalizeProjectIconValue(value) || '🧪';
         }
 
         function normalizeRecentProjectEntry(project) {
@@ -451,7 +464,6 @@
                 const isActive = currentPath && currentPath === project.path;
                 const activeClass = isActive ? ' active' : '';
                 const iconClass = sanitizeProjectIconClass(project.icon);
-                const iconToneClass = isActive ? 'text-primary' : 'text-muted';
                 const safeName = project.name
                     .replace(/&/g, '&amp;')
                     .replace(/</g, '&lt;')
@@ -470,7 +482,7 @@
                     .replace(/>/g, '&gt;')
                     .replace(/"/g, '&quot;')
                     .replace(/'/g, '&#39;');
-                return `<button type="button" class="dropdown-item navbar-recent-project${activeClass}" data-name="${safeName}" data-path="${safePath}" data-icon="${safeIconClass}" title="${safePath}"><i class="${safeIconClass} ${iconToneClass} me-2"></i>${safeName}</button>`;
+                return `<button type="button" class="dropdown-item navbar-recent-project${activeClass}" data-name="${safeName}" data-path="${safePath}" data-icon="${safeIconClass}" title="${safePath}"><span class="me-2" aria-hidden="true">${safeIconClass}</span>${safeName}</button>`;
             }).join('');
         }
 
@@ -658,8 +670,10 @@
                 badge.className = 'badge bg-warning text-dark';
                 badge.title = path;
                 badge.setAttribute('aria-label', path);
-                const icon = document.createElement('i');
-                icon.className = `${iconClass} me-1`;
+                const icon = document.createElement('span');
+                icon.className = 'me-1';
+                icon.setAttribute('aria-hidden', 'true');
+                icon.textContent = iconClass;
                 badge.appendChild(icon);
                 badge.appendChild(document.createTextNode(name));
                 badgeContainer.appendChild(badge);
@@ -708,8 +722,10 @@
                     badge.className = 'badge bg-warning text-dark';
                     badge.title = nextPath;
                     badge.setAttribute('aria-label', nextPath);
-                    const icon = document.createElement('i');
-                    icon.className = `${iconClass} me-1`;
+                    const icon = document.createElement('span');
+                    icon.className = 'me-1';
+                    icon.setAttribute('aria-hidden', 'true');
+                    icon.textContent = iconClass;
                     badge.appendChild(icon);
                     badge.appendChild(document.createTextNode(nextName));
                     badgeContainer.appendChild(badge);

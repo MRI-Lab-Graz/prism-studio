@@ -298,7 +298,7 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         mock_load.assert_called_once()
 
     def test_set_current_respects_valid_icon_override(self):
-        requested_icon = "fas fa-atom"
+        requested_icon = "🧠"
         captured = {}
 
         def get_current_project():
