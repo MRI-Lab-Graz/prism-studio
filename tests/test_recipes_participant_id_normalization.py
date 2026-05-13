@@ -227,7 +227,7 @@ def _write_formula_recipe(path: Path, task_name: str, score_name: str, formula: 
     )
 
 
-def test_merge_all_does_not_export_participant_columns(tmp_path: Path) -> None:
+def test_merge_all_exports_participant_columns(tmp_path: Path) -> None:
     project_root = tmp_path / "project"
     recipe_dir = tmp_path / "recipes"
     project_root.mkdir(parents=True)
@@ -268,9 +268,46 @@ def test_merge_all_does_not_export_participant_columns(tmp_path: Path) -> None:
     assert combined_csv.exists()
 
     out_df = pd.read_csv(combined_csv, dtype=str)
-    assert "age" not in out_df.columns
+    assert "age" in out_df.columns
+    assert set(out_df["age"].dropna()) == {"20", "30"}
     assert "aaa_Total" in out_df.columns
     assert "bbb_Total" in out_df.columns
+
+
+def test_per_recipe_export_includes_participant_columns(tmp_path: Path) -> None:
+    project_root = tmp_path / "project"
+    recipe_dir = tmp_path / "recipes"
+    project_root.mkdir(parents=True)
+    recipe_dir.mkdir(parents=True)
+
+    (project_root / "participants.tsv").write_text(
+        "participant_id\tage\nsub-001\t21\n",
+        encoding="utf-8",
+    )
+
+    survey_dir = project_root / "sub-001" / "ses-1" / "survey"
+    survey_dir.mkdir(parents=True)
+    (survey_dir / "sub-001_ses-1_task-aaa_survey.tsv").write_text(
+        "Q1\n4\n",
+        encoding="utf-8",
+    )
+
+    _write_minimal_recipe(recipe_dir / "recipe-aaa.json", "aaa")
+
+    result = compute_survey_recipes(
+        prism_root=project_root,
+        repo_root=tmp_path,
+        recipe_dir=recipe_dir,
+        modality="survey",
+        out_format="csv",
+        merge_all=False,
+    )
+
+    out_csv = result.out_root / "aaa.csv"
+    out_df = pd.read_csv(out_csv, dtype=str)
+
+    assert "age" in out_df.columns
+    assert out_df.loc[0, "age"] == "21"
 
 
 def test_merge_all_formula_uses_participant_values_from_participants_tsv(tmp_path: Path) -> None:

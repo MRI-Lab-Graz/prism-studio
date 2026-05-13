@@ -60,6 +60,7 @@ _ENDPOINT_LABELS = {
     "conversion_survey.api_survey_detect_version_context": "survey detect version contexts",
     "conversion_survey.api_survey_check_project_templates": "survey check project templates",
     "tools.detect_columns": "detect columns",
+    "tools.api_recipes_surveys": "recipes survey output",
     "tools.api_file_management_wide_to_long_preview": "wide-to-long preview",
     "tools.api_file_management_wide_to_long": "wide-to-long convert",
     "projects.project_path_status": "check project path availability",
@@ -388,6 +389,55 @@ def _build_projects_export_structure_terminal_command(req) -> str:
             json.dumps(body),
         ]
     )
+
+
+def _build_tools_recipes_surveys_terminal_command(req) -> str:
+    """Build command preview for recipes survey export endpoint."""
+    payload = req.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+
+    dataset_path = _absolute_path_value(payload.get("dataset_path"))
+    modality = str(payload.get("modality") or "survey").strip().lower() or "survey"
+    out_format = str(payload.get("format") or "sav").strip().lower() or "sav"
+    layout = str(payload.get("layout") or "long").strip().lower() or "long"
+    lang = str(payload.get("lang") or "en").strip().lower() or "en"
+
+    cmd_parts: list[str] = [
+        "python",
+        "prism_tools.py",
+        "recipes",
+        modality,
+        "--prism",
+        dataset_path or "<dataset-path>",
+        "--format",
+        out_format,
+        "--layout",
+        layout,
+        "--lang",
+        lang,
+    ]
+
+    survey_filter = str(payload.get("survey") or "").strip()
+    if survey_filter:
+        cmd_parts.extend(["--survey", survey_filter])
+
+    sessions_filter = str(payload.get("sessions") or "").strip()
+    if sessions_filter:
+        cmd_parts.extend(["--sessions", sessions_filter])
+
+    recipe_dir = _absolute_path_value(payload.get("recipe_dir"))
+    if recipe_dir:
+        cmd_parts.extend(["--recipes", recipe_dir])
+
+    if bool(payload.get("include_raw", False)):
+        cmd_parts.append("--include-raw")
+    if bool(payload.get("merge_all", False)):
+        cmd_parts.append("--merge-all")
+    if not bool(payload.get("include_recipe_prefix", True)):
+        cmd_parts.append("--no-recipe-prefix")
+
+    return " ".join(shlex.quote(part) for part in cmd_parts)
 
 
 def _build_projects_template_export_terminal_command(req) -> str:
@@ -1357,6 +1407,8 @@ def _build_terminal_command(req) -> str:
         return _build_survey_check_templates_terminal_command(req)
     if endpoint == "tools.detect_columns":
         return _build_detect_columns_terminal_command(req)
+    if endpoint == "tools.api_recipes_surveys":
+        return _build_tools_recipes_surveys_terminal_command(req)
     if endpoint == "tools.api_file_management_wide_to_long_preview":
         return _build_wide_to_long_terminal_command(req, inspect_only=True)
     if endpoint == "tools.api_file_management_wide_to_long":

@@ -453,6 +453,56 @@ class TestMergeAllWideLayout:
         assert "pss_Total" in fieldnames
         assert not any("_ses-" in name for name in fieldnames)
 
+    def test_merge_all_single_recipe_no_prefix_keeps_raw_bare_and_score_prefixed(
+        self, tmp_path: Path
+    ) -> None:
+        """With one recipe and no raw-prefixing, scores still carry recipe prefix."""
+        project_root = tmp_path / "project"
+        recipe_dir = tmp_path / "recipes"
+
+        survey_dir = project_root / "sub-001" / "ses-1" / "survey"
+        survey_dir.mkdir(parents=True, exist_ok=True)
+        (survey_dir / "sub-001_ses-1_task-panas_survey.tsv").write_text(
+            "panas07\n5\n", encoding="utf-8"
+        )
+
+        recipe_dir.mkdir(parents=True, exist_ok=True)
+        (recipe_dir / "recipe-panas.json").write_text(
+            (
+                "{\n"
+                '  "Kind": "survey",\n'
+                '  "RecipeVersion": "1.0",\n'
+                '  "Survey": {"TaskName": "panas"},\n'
+                '  "Scores": [\n'
+                '    {"Name": "Total", "Method": "sum", "Items": ["panas07"]}\n'
+                "  ]\n"
+                "}\n"
+            ),
+            encoding="utf-8",
+        )
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+            layout="wide",
+            include_raw=True,
+            merge_all=True,
+            include_recipe_prefix=False,
+            lang="en",
+        )
+
+        out_csv = result.out_root / "combined_survey.csv"
+        with out_csv.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames or []
+
+        assert "panas07" in fieldnames
+        assert "Total" not in fieldnames
+        assert "panas_Total" in fieldnames
+
     def test_merge_all_long_single_run_keeps_run_column_without_name_suffixes(
         self, tmp_path: Path
     ) -> None:
@@ -906,6 +956,76 @@ class TestSavColumnSanitization:
         assert "aaa_Total" in val_labels
         assert val_labels["aaa_Total"].get(0.0) == "low"
         assert val_labels["aaa_Total"].get(5.0) == "high"
+
+    def test_sav_uses_declared_datatypes_from_template_and_recipe(
+        self, tmp_path: Path
+    ) -> None:
+        """Declared template/recipe DataType should drive SAV column typing."""
+        pyreadstat = pytest.importorskip("pyreadstat")
+
+        project_root = tmp_path / "project"
+        recipe_dir = tmp_path / "recipes"
+        recipe_dir.mkdir(parents=True)
+
+        survey_dir = project_root / "sub-001" / "ses-1" / "survey"
+        survey_dir.mkdir(parents=True)
+        (survey_dir / "sub-001_ses-1_task-aaa_survey.tsv").write_text(
+            "Q1\n01\n",
+            encoding="utf-8",
+        )
+
+        (project_root / "task-aaa_survey.json").write_text(
+            (
+                "{\n"
+                '  "Study": {"TaskName": "aaa"},\n'
+                '  "Q1": {\n'
+                '    "Description": "Raw item",\n'
+                '    "DataType": "integer",\n'
+                '    "Levels": {"0": "low", "1": "high"}\n'
+                "  }\n"
+                "}\n"
+            ),
+            encoding="utf-8",
+        )
+
+        (recipe_dir / "recipe-aaa.json").write_text(
+            (
+                "{\n"
+                '  "Kind": "survey",\n'
+                '  "RecipeVersion": "1.0",\n'
+                '  "Survey": {"TaskName": "aaa"},\n'
+                '  "Scores": [\n'
+                '    {"Name": "Total", "Method": "sum", "Items": ["Q1"], "DataType": "float"}\n'
+                "  ]\n"
+                "}\n"
+            ),
+            encoding="utf-8",
+        )
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="sav",
+            layout="long",
+            include_raw=True,
+            lang="en",
+        )
+
+        sav_file = result.out_root / "aaa.sav"
+        if not sav_file.exists():
+            pytest.skip("SAV export fell back to CSV in this environment")
+
+        df, meta = pyreadstat.read_sav(sav_file)
+
+        assert float(df.loc[0, "Q1"]) == 1.0
+        assert float(df.loc[0, "Total"]) == 1.0
+
+        val_labels = dict(getattr(meta, "variable_value_labels", {}) or {})
+        assert "Q1" in val_labels
+        assert val_labels["Q1"].get(0.0) == "low"
+        assert val_labels["Q1"].get(1.0) == "high"
 
 
 class TestProjectNamePrefix:

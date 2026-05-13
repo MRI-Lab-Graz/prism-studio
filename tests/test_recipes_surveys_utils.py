@@ -46,6 +46,8 @@ from src.recipes_surveys import (
     _load_and_validate_recipes,
     _export_recipe_legacy,
     _apply_missing_export_policy,
+    _normalize_declared_data_type,
+    _apply_declared_datatypes,
 )
 
 
@@ -506,6 +508,34 @@ class TestBuildVariableMetadata:
         assert "Q1" in val_labels
         assert val_labels["Q1"]["0"] == "Never"
 
+    def test_sidecar_sparse_endpoint_levels_are_dropped(self):
+        sidecar = {
+            "Q1": {
+                "Description": "VAS question",
+                "Levels": {"0": "gar nicht", "100": "aeusserst"},
+            }
+        }
+        _, val_labels, _ = _build_variable_metadata(
+            ["Q1"], {}, {}, sidecar_meta=sidecar
+        )
+        assert "Q1" not in val_labels
+
+    def test_sidecar_levels_with_empty_label_are_dropped(self):
+        sidecar = {
+            "Q1": {
+                "Description": "Incomplete Likert",
+                "Levels": {
+                    "1": "trifft zu",
+                    "2": "",
+                    "3": "neutral",
+                },
+            }
+        }
+        _, val_labels, _ = _build_variable_metadata(
+            ["Q1"], {}, {}, sidecar_meta=sidecar
+        )
+        assert "Q1" not in val_labels
+
     def test_participants_meta_description_and_levels(self):
         participants_meta = {
             "age": {
@@ -894,6 +924,45 @@ class TestCoerceValueLabeledColumnsForSav:
         # Should coerce to float
         non_na = result["q1"].dropna()
         assert len(non_na) == 3
+
+
+# ---------------------------------------------------------------------------
+# declared datatype helpers
+# ---------------------------------------------------------------------------
+
+class TestDeclaredDatatypeHelpers:
+    def test_normalize_declared_data_type_maps_known_values(self):
+        assert _normalize_declared_data_type("integer") == "integer"
+        assert _normalize_declared_data_type("numeric") == "float"
+        assert _normalize_declared_data_type("text") == "string"
+        assert _normalize_declared_data_type("bool") == "boolean"
+        assert _normalize_declared_data_type("unknown") is None
+
+    def test_apply_declared_datatypes_integer_overrides_leading_zero_strings(self):
+        try:
+            import pandas as pd
+        except ImportError:
+            pytest.skip("pandas not available")
+
+        df = pd.DataFrame({"Q1": ["01", "02", "n/a"]})
+        out = _apply_declared_datatypes(df, {"Q1": "integer"})
+
+        assert str(out["Q1"].dtype) == "Int64"
+        assert out.loc[0, "Q1"] == 1
+        assert out.loc[1, "Q1"] == 2
+        assert pd.isna(out.loc[2, "Q1"])
+
+    def test_apply_declared_datatypes_string_keeps_text_type(self):
+        try:
+            import pandas as pd
+        except ImportError:
+            pytest.skip("pandas not available")
+
+        df = pd.DataFrame({"code": ["001", "A02"]})
+        out = _apply_declared_datatypes(df, {"code": "string"})
+
+        assert str(out["code"].dtype) == "string"
+        assert out["code"].tolist() == ["001", "A02"]
 
 
 # ---------------------------------------------------------------------------

@@ -189,6 +189,46 @@ def test_handle_api_recipes_surveys_forwards_recipe_prefix_flag(
     assert run_job.call_args.kwargs["include_recipe_prefix"] is False
 
 
+def test_handle_api_recipes_surveys_emits_cmd_prefix_for_backend_styling(
+    tmp_path: Path,
+) -> None:
+    handlers = _import_handlers_module()
+    app = _build_app()
+
+    dataset_path = tmp_path / "dataset"
+    dataset_path.mkdir()
+    out_root = dataset_path / "derivatives" / "survey" / "wide_en"
+
+    result = SurveyRecipesResult(
+        processed_files=1,
+        written_files=1,
+        out_format="csv",
+        out_root=out_root,
+        flat_out_path=out_root / "combined_survey.csv",
+    )
+
+    with app.app_context(), patch(
+        "src.web.validation.run_validation", return_value=([], {})
+    ), patch(
+        "src.cli.commands.recipes.run_recipes_job", return_value=result
+    ), patch(
+        "src.web.blueprints.tools_recipes_surveys_handlers.emit_backend_action"
+    ) as emit_action:
+        response = handlers.handle_api_recipes_surveys(
+            {
+                "dataset_path": str(dataset_path),
+                "modality": "survey",
+                "format": "csv",
+                "merge_all": True,
+            }
+        )
+
+    assert response.status_code == 200
+    assert emit_action.call_count >= 1
+    first_message = str(emit_action.call_args_list[0].args[0])
+    assert "cmd=python prism_tools.py recipes survey" in first_message
+
+
 def test_handle_api_recipes_surveys_rejects_invalid_missing_policy(
     tmp_path: Path,
 ) -> None:
