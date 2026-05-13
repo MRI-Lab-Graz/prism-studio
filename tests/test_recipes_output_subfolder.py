@@ -957,6 +957,174 @@ class TestSavColumnSanitization:
         assert val_labels["aaa_Total"].get(0.0) == "low"
         assert val_labels["aaa_Total"].get(5.0) == "high"
 
+    def test_combined_sav_sets_sociodemographics_to_nominal_measure(
+        self, tmp_path: Path
+    ) -> None:
+        """Participants categorical variables should be nominal in SAV metadata."""
+        pyreadstat = pytest.importorskip("pyreadstat")
+
+        project_root = tmp_path / "project"
+        recipe_dir = tmp_path / "recipes"
+        recipe_dir.mkdir(parents=True)
+
+        survey_dir = project_root / "sub-001" / "ses-1" / "survey"
+        survey_dir.mkdir(parents=True)
+        (survey_dir / "sub-001_ses-1_task-aaa_survey.tsv").write_text(
+            "Q1\n5\n",
+            encoding="utf-8",
+        )
+
+        (project_root / "participants.tsv").write_text(
+            "participant_id\tgroup\thandedness\tage\n"
+            "sub-001\t1\tR\t23\n",
+            encoding="utf-8",
+        )
+        (project_root / "participants.json").write_text(
+            (
+                "{\n"
+                '  "group": {\n'
+                '    "Description": "Group",\n'
+                '    "VariableType": "Categorical",\n'
+                '    "DataType": "string",\n'
+                '    "Levels": {"1": "Intervention", "2": "Neutral"}\n'
+                "  },\n"
+                '  "handedness": {\n'
+                '    "Description": "Handedness",\n'
+                '    "VariableType": "Categorical",\n'
+                '    "DataType": "string",\n'
+                '    "Levels": {"R": "Right", "L": "Left"}\n'
+                "  },\n"
+                '  "age": {\n'
+                '    "Description": "Age",\n'
+                '    "VariableType": "Continuous",\n'
+                '    "DataType": "integer"\n'
+                "  }\n"
+                "}\n"
+            ),
+            encoding="utf-8",
+        )
+
+        (recipe_dir / "recipe-aaa.json").write_text(
+            (
+                "{\n"
+                '  "Kind": "survey",\n'
+                '  "RecipeVersion": "1.0",\n'
+                '  "Survey": {"TaskName": "aaa"},\n'
+                '  "Scores": [\n'
+                '    {"Name": "Total", "Method": "sum", "Items": ["Q1"]}\n'
+                "  ]\n"
+                "}\n"
+            ),
+            encoding="utf-8",
+        )
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="sav",
+            layout="long",
+            include_raw=True,
+            merge_all=True,
+            lang="en",
+        )
+
+        sav_file = result.out_root / "combined_survey.sav"
+        if not sav_file.exists():
+            pytest.skip("SAV export fell back to CSV in this environment")
+
+        _df, meta = pyreadstat.read_sav(sav_file)
+        measures = dict(getattr(meta, "variable_measure", {}) or {})
+        storage_types = dict(getattr(meta, "readstat_variable_types", {}) or {})
+
+        assert measures.get("group") == "nominal"
+        assert measures.get("handedness") == "nominal"
+        assert measures.get("age") == "scale"
+        assert storage_types.get("group") == "string"
+        assert storage_types.get("handedness") == "string"
+        assert storage_types.get("age") == "double"
+
+    def test_combined_sav_keeps_categorical_integer_declared_fields_nominal_text(
+        self, tmp_path: Path
+    ) -> None:
+        """Categorical fields with integer codes should remain nominal/text for SAV."""
+        pyreadstat = pytest.importorskip("pyreadstat")
+
+        project_root = tmp_path / "project"
+        recipe_dir = tmp_path / "recipes"
+        recipe_dir.mkdir(parents=True)
+
+        survey_dir = project_root / "sub-001" / "ses-1" / "survey"
+        survey_dir.mkdir(parents=True)
+        (survey_dir / "sub-001_ses-1_task-aaa_survey.tsv").write_text(
+            "Q1\n5\n",
+            encoding="utf-8",
+        )
+
+        (project_root / "participants.tsv").write_text(
+            "participant_id\tgroup\tage\n"
+            "sub-001\t1\t23\n",
+            encoding="utf-8",
+        )
+        (project_root / "participants.json").write_text(
+            (
+                "{\n"
+                '  "group": {\n'
+                '    "Description": "Group",\n'
+                '    "VariableType": "Categorical",\n'
+                '    "DataType": "integer",\n'
+                '    "Levels": {"1": "Intervention", "2": "Neutral"}\n'
+                "  },\n"
+                '  "age": {\n'
+                '    "Description": "Age",\n'
+                '    "VariableType": "Continuous",\n'
+                '    "DataType": "integer"\n'
+                "  }\n"
+                "}\n"
+            ),
+            encoding="utf-8",
+        )
+
+        (recipe_dir / "recipe-aaa.json").write_text(
+            (
+                "{\n"
+                '  "Kind": "survey",\n'
+                '  "RecipeVersion": "1.0",\n'
+                '  "Survey": {"TaskName": "aaa"},\n'
+                '  "Scores": [\n'
+                '    {"Name": "Total", "Method": "sum", "Items": ["Q1"]}\n'
+                "  ]\n"
+                "}\n"
+            ),
+            encoding="utf-8",
+        )
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="sav",
+            layout="long",
+            include_raw=True,
+            merge_all=True,
+            lang="en",
+        )
+
+        sav_file = result.out_root / "combined_survey.sav"
+        if not sav_file.exists():
+            pytest.skip("SAV export fell back to CSV in this environment")
+
+        _df, meta = pyreadstat.read_sav(sav_file)
+        measures = dict(getattr(meta, "variable_measure", {}) or {})
+        storage_types = dict(getattr(meta, "readstat_variable_types", {}) or {})
+
+        assert measures.get("group") == "nominal"
+        assert storage_types.get("group") == "string"
+        assert measures.get("age") == "scale"
+        assert storage_types.get("age") == "double"
+
     def test_sav_uses_declared_datatypes_from_template_and_recipe(
         self, tmp_path: Path
     ) -> None:
