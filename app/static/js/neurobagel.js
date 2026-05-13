@@ -1,7 +1,24 @@
+const neurobagelScriptUrl = document.currentScript?.src || window.location.href;
+const neurobagelSharedApiModuleUrl = new URL('./shared/api.js', neurobagelScriptUrl).href;
+let neurobagelFetchWithApiFallbackPromise = null;
+
+function loadNeurobagelFetchWithApiFallback() {
+  if (!neurobagelFetchWithApiFallbackPromise) {
+    neurobagelFetchWithApiFallbackPromise = import(neurobagelSharedApiModuleUrl).then(({ fetchWithApiFallback }) => {
+      if (typeof fetchWithApiFallback !== 'function') {
+        throw new Error('Shared API helper is unavailable.');
+      }
+      return fetchWithApiFallback;
+    });
+  }
+  return neurobagelFetchWithApiFallbackPromise;
+}
+
 // NeuroBagel helper for participants suggestions
 window.fetchNeurobagelParticipants = async function fetchNeurobagelParticipants() {
   try {
-    const resp = await fetch('/api/neurobagel/participants');
+    const fetchWithApiFallback = await loadNeurobagelFetchWithApiFallback();
+    const resp = await fetchWithApiFallback('/api/neurobagel/participants');
     if (!resp.ok) throw new Error('Network response not ok');
     const json = await resp.json();
     // Return augmented data with hierarchical structure

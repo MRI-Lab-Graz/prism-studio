@@ -5,6 +5,8 @@
  * while preserving existing behavior.
  */
 
+import { fetchWithApiFallback } from '../../shared/api.js';
+
 export function createSurveyParticipantsMetadataController({ escapeHtml }) {
     // Store selected participant fields
     let selectedParticipantFields = {};
@@ -241,7 +243,7 @@ export function createSurveyParticipantsMetadataController({ escapeHtml }) {
                 saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
 
                 try {
-                    const response = await fetch('/api/projects/participants', {
+                    const response = await fetchWithApiFallback('/api/projects/participants', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({

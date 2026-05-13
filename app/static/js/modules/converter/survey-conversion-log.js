@@ -1,3 +1,5 @@
+import { appendConverterLogLine } from './log-renderer.js';
+
 export function createSurveyConversionLogController({
     toggleLogBtn,
     conversionLogBody,
@@ -27,24 +29,7 @@ export function createSurveyConversionLogController({
     }
 
     function appendLog(message, type = 'info', logElement = null) {
-        const colors = {
-            'info': '#17a2b8',
-            'success': '#28a745',
-            'warning': '#ffc107',
-            'error': '#dc3545',
-            'step': '#6c757d'
-        };
-        const targetLog = logElement || conversionLog;
-        if (!targetLog) return;
-
-        const timestamp = new Date().toLocaleTimeString();
-        const color = colors[type] || colors.info;
-        const line = document.createElement('span');
-        line.style.color = color;
-        line.textContent = `[${timestamp}] ${String(message)}`;
-        targetLog.appendChild(line);
-        targetLog.appendChild(document.createTextNode('\n'));
-        targetLog.scrollTop = targetLog.scrollHeight;
+        appendConverterLogLine(message, type, logElement, conversionLog);
     }
 
     function resetConversionUI() {

@@ -1,5 +1,8 @@
 (function () {
     const MODE_STORAGE_KEY = 'prism.filePickerMode';
+    const filesystemModeScriptUrl = document.currentScript?.src || window.location.href;
+    const sharedApiModuleUrl = new URL('./shared/api.js', filesystemModeScriptUrl).href;
+    let sharedFetchWithApiFallbackPromise = null;
 
     const state = {
         initialized: false,
@@ -62,6 +65,23 @@
         return state.remoteDetected ? 'server' : 'host';
     }
 
+    function loadSharedFetchWithApiFallback() {
+        if (!sharedFetchWithApiFallbackPromise) {
+            sharedFetchWithApiFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithApiFallback }) => {
+                if (typeof fetchWithApiFallback !== 'function') {
+                    throw new Error('Shared API helper is unavailable.');
+                }
+                return fetchWithApiFallback;
+            });
+        }
+        return sharedFetchWithApiFallbackPromise;
+    }
+
+    async function fetchWithApiFallback(url, options = {}, fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.') {
+        const sharedFetchWithApiFallback = await loadSharedFetchWithApiFallback();
+        return sharedFetchWithApiFallback(url, options, fallbackMessage);
+    }
+
     async function init() {
         if (state.initialized) {
             return state;
@@ -76,7 +96,7 @@
             state.clientPlatform = getClientPlatform();
 
             try {
-                const settingsResponse = await fetch('/api/settings/global-library');
+                const settingsResponse = await fetchWithApiFallback('/api/settings/global-library');
                 const settingsPayload = await settingsResponse.json();
                 if (settingsResponse.ok && settingsPayload && settingsPayload.success) {
                     if (typeof settingsPayload.connected_to_server === 'boolean') {
@@ -88,7 +108,7 @@
             }
 
             try {
-                const response = await fetch('/api/filesystem-context');
+                const response = await fetchWithApiFallback('/api/filesystem-context');
                 const payload = await response.json();
                 if (response.ok) {
                     state.serverPlatform = normalizePlatform(payload.server_platform || payload.server_system);

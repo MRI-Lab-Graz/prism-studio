@@ -1,6 +1,28 @@
+const prismAppRunnerScriptUrl = document.currentScript?.src || window.location.href;
+
 document.addEventListener('DOMContentLoaded', function () {
   const root = document.getElementById('appRunnerRoot');
   if (!root) return;
+
+  const sharedApiModuleUrl = new URL('./shared/api.js', prismAppRunnerScriptUrl).href;
+  let sharedFetchWithApiFallbackPromise = null;
+
+  function loadSharedFetchWithApiFallback() {
+    if (!sharedFetchWithApiFallbackPromise) {
+      sharedFetchWithApiFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithApiFallback }) => {
+        if (typeof fetchWithApiFallback !== 'function') {
+          throw new Error('Shared API helper is unavailable.');
+        }
+        return fetchWithApiFallback;
+      });
+    }
+    return sharedFetchWithApiFallbackPromise;
+  }
+
+  async function fetchWithApiFallback(url, options = {}, fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.') {
+    const sharedFetchWithApiFallback = await loadSharedFetchWithApiFallback();
+    return sharedFetchWithApiFallback(url, options, fallbackMessage);
+  }
 
   function _escHtml(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -8,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   async function browseFolderWithFallback(startPath, title) {
     try {
-      const response = await fetch('/api/browse-folder');
+      const response = await fetchWithApiFallback('/api/browse-folder');
       const data = await response.json();
       if (!response.ok || data.error) {
         throw new Error(data.error || 'Folder picker unavailable.');
@@ -224,7 +246,7 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     try {
-      const response = await fetch('/api/prism-app-runner/compatibility', {
+      const response = await fetchWithApiFallback('/api/prism-app-runner/compatibility', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -335,7 +357,7 @@ document.addEventListener('DOMContentLoaded', function () {
       return browseFolderWithFallback(startPath, title);
     }
 
-    const response = await fetch('/api/browse-file?project_json_only=0');
+    const response = await fetchWithApiFallback('/api/browse-file?project_json_only=0');
     const data = await response.json();
     if (!response.ok || data.error) {
       throw new Error(data.error || 'Path picker failed.');
@@ -345,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('[data-browse-kind][data-browse-target]').forEach(button => {
     button.addEventListener('click', async function () {
-      const kind = (button.getAttribute('data-browse-kind') || 'folder').trim();
+      const response = await fetchWithApiFallback('/api/prism-app-runner/compatibility', {
       const targetId = (button.getAttribute('data-browse-target') || '').trim();
       const dialogTitle = (button.getAttribute('data-browse-title') || '').trim();
       const target = document.getElementById(targetId);
@@ -412,7 +434,7 @@ document.addEventListener('DOMContentLoaded', function () {
   async function refreshRemoteProfiles() {
     if (!remoteProfileSelect) return;
     try {
-      const response = await fetch('/api/prism-app-runner/remote-profiles');
+      const response = await fetchWithApiFallback('/api/prism-app-runner/remote-profiles');
       const data = await response.json();
       if (!response.ok || data.error) {
         return;
@@ -433,7 +455,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const profileName = (remoteProfileSelect.value || '').trim();
     if (!profileName) return;
     try {
-      const response = await fetch(`/api/prism-app-runner/remote-profiles/${encodeURIComponent(profileName)}`);
+      const response = await fetchWithApiFallback(`/api/prism-app-runner/remote-profiles/${encodeURIComponent(profileName)}`);
       const data = await response.json();
       if (!response.ok || data.error) {
         setRunStatus(data.error || 'Could not load remote profile.', 'alert-danger');
@@ -461,7 +483,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     saveRemoteProfileBtn.disabled = true;
     try {
-      const response = await fetch('/api/prism-app-runner/remote-profiles', {
+      const response = await fetchWithApiFallback('/api/prism-app-runner/remote-profiles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, remote: remoteConfig }),
@@ -493,7 +515,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     deleteRemoteProfileBtn.disabled = true;
     try {
-      const response = await fetch(`/api/prism-app-runner/remote-profiles/${encodeURIComponent(profileName)}`, {
+      const response = await fetchWithApiFallback(`/api/prism-app-runner/remote-profiles/${encodeURIComponent(profileName)}`, {
         method: 'DELETE',
       });
       const data = await response.json();
@@ -551,7 +573,7 @@ document.addEventListener('DOMContentLoaded', function () {
     fetchDockerTagsBtn.disabled = true;
     setDockerTagStatus('Fetching tags from Docker Hub...', true);
     try {
-      const response = await fetch('/api/prism-app-runner/docker-tags', {
+      const response = await fetchWithApiFallback('/api/prism-app-runner/docker-tags', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ repository }),
@@ -605,7 +627,7 @@ document.addEventListener('DOMContentLoaded', function () {
     pullDockerImageBtn.disabled = true;
     setRunStatus(`Pulling Docker image ${image}...`, 'alert-info');
     try {
-      const response = await fetch('/api/prism-app-runner/docker-pull', {
+      const response = await fetchWithApiFallback('/api/prism-app-runner/docker-pull', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image }),
@@ -687,7 +709,7 @@ document.addEventListener('DOMContentLoaded', function () {
     scanImagesBtn.disabled = true;
     setRunStatus('Scanning image folder...', 'alert-info');
     try {
-      const response = await fetch('/api/prism-app-runner/scan-images', {
+      const response = await fetchWithApiFallback('/api/prism-app-runner/scan-images', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ images_folder: imagesFolder }),
@@ -736,7 +758,7 @@ document.addEventListener('DOMContentLoaded', function () {
     loadOptionsBtn.disabled = true;
     setRunStatus('Loading app help/options from container...', 'alert-info');
     try {
-      let response = await fetch('/api/prism-app-runner/load-help', {
+      let response = await fetchWithApiFallback('/api/prism-app-runner/load-help', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -747,7 +769,7 @@ document.addEventListener('DOMContentLoaded', function () {
       });
       let data = await response.json();
       if ((!response.ok || data.error) && engine === 'docker') {
-        response = await fetch('/api/prism-app-runner/load-help', {
+        response = await fetchWithApiFallback('/api/prism-app-runner/load-help', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -833,7 +855,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setRunStatus('Preparing runner config and executing...', 'alert-info');
 
     try {
-      const response = await fetch('/api/prism-app-runner/run', {
+      const response = await fetchWithApiFallback('/api/prism-app-runner/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
