@@ -1,3 +1,4 @@
+import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
 import { createJobRunController } from './job-run-controller.js';
@@ -201,7 +202,7 @@ export function initParticipants() {
             ? `/api/projects/sourcedata-files?kind=participants&project_path=${encodeURIComponent(effectiveProjectPath)}`
             : '/api/projects/sourcedata-files?kind=participants';
 
-        fetch(endpoint)
+        fetchWithApiFallback(endpoint)
             .then((response) => response.json())
             .then((data) => {
                 if (requestToken !== participantsSourcedataRequestToken) {
@@ -1343,7 +1344,7 @@ export function initParticipants() {
             const separator = document.getElementById('participantsSeparator')?.value || 'auto';
             formData.append('separator', separator);
     
-            const response = await fetch('/api/participants-detect-id', {
+            const response = await fetchWithApiFallback('/api/participants-detect-id', {
                 method: 'POST',
                 body: formData
             });
@@ -1502,7 +1503,7 @@ export function initParticipants() {
                     ? `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}`
                     : `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}`;
 
-                const response = await fetch(endpoint);
+                const response = await fetchWithApiFallback(endpoint);
                 if (!response.ok) {
                     throw new Error('Failed to load sourcedata file');
                 }
@@ -1668,7 +1669,7 @@ export function initParticipants() {
     async function checkExistingParticipantFiles(options = {}) {
         const showOverwriteWarning = Boolean(options && options.showOverwriteWarning);
         try {
-            const response = await fetch('/api/participants-check');
+            const response = await fetchWithApiFallback('/api/participants-check');
             const data = await response.json();
             const canModify = Boolean(data && (data.can_modify_existing || data.has_participants_tsv));
 
@@ -2120,7 +2121,7 @@ export function initParticipants() {
             const libraryPath = document.getElementById('convertLibraryPath')?.value || '';
 
             try {
-                const response = await fetch('/api/save-participant-mapping', {
+                const response = await fetchWithApiFallback('/api/save-participant-mapping', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -2285,7 +2286,7 @@ export function initParticipants() {
         });
 
         const libraryPath = document.getElementById('convertLibraryPath')?.value || '';
-        const response = await fetch('/api/save-participant-mapping', {
+        const response = await fetchWithApiFallback('/api/save-participant-mapping', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -3313,7 +3314,7 @@ export function initParticipants() {
         }
     
         try {
-            const response = await fetch(getParticipantsProjectSchemaUrl(projectPath));
+            const response = await fetchWithApiFallback(getParticipantsProjectSchemaUrl(projectPath));
             const payload = await response.json();
             if (response.ok && payload.success && payload.exists && payload.schema && typeof payload.schema === 'object') {
                 const projectSchema = payload.schema;
@@ -3381,7 +3382,7 @@ export function initParticipants() {
             }
     
             previewStage = 'requesting participants preview';
-            const response = await fetch(previewEndpoint, {
+            const response = await fetchWithApiFallback(previewEndpoint, {
                 method: 'POST',
                 body: formData
             });
@@ -3655,7 +3656,7 @@ export function initParticipants() {
             }
 
             const formData = buildParticipantsMergeConflictFormData();
-            const response = await fetch('/api/participants-merge-conflicts', {
+            const response = await fetchWithApiFallback('/api/participants-merge-conflicts', {
                 method: 'POST',
                 body: formData,
             });
@@ -4037,7 +4038,7 @@ export function initParticipants() {
                 formData.append('neurobagel_schema', JSON.stringify(window.neurobagelSchema));
             }
     
-            const response = await fetch(useMergeRoute ? '/api/participants-merge' : '/api/participants-convert', {
+            const response = await fetchWithApiFallback(useMergeRoute ? '/api/participants-merge' : '/api/participants-convert', {
                 method: 'POST',
                 body: formData
             });
@@ -4121,7 +4122,7 @@ export function initParticipants() {
             const projectPath = resolveCurrentProjectPath();
             if (projectPath) {
                 try {
-                    const tsvResponse = await fetch(`/api/neurobagel/local-participants?project_path=${encodeURIComponent(projectPath)}`);
+                    const tsvResponse = await fetchWithApiFallback(`/api/neurobagel/local-participants?project_path=${encodeURIComponent(projectPath)}`);
                     const tsvData = await tsvResponse.json();
                     if (tsvData.columns) {
                         window.participantsTsvData = tsvData.columns;
@@ -4202,7 +4203,7 @@ export function initParticipants() {
             }
         
             // Save to the project
-            const response = await fetch(getParticipantsProjectSchemaUrl(currentProjectPath), {
+            const response = await fetchWithApiFallback(getParticipantsProjectSchemaUrl(currentProjectPath), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -4284,7 +4285,7 @@ export function initParticipants() {
         // Prefer currently saved project participants.json (important after conversion).
         let loadedProjectSchema = false;
         try {
-            const schemaResponse = await fetch(getParticipantsProjectSchemaUrl(projectPath));
+            const schemaResponse = await fetchWithApiFallback(getParticipantsProjectSchemaUrl(projectPath));
             const schemaData = await schemaResponse.json();
             if (schemaData.success && schemaData.exists && schemaData.schema) {
                 window.existingParticipantsData = schemaData.schema;
@@ -4306,7 +4307,7 @@ export function initParticipants() {
         if (!hasActivePreview) {
             console.log('🔄 No active preview — fetching participants TSV columns from project...');
             try {
-                const tsvResponse = await fetch(`/api/neurobagel/local-participants?project_path=${encodeURIComponent(projectPath)}`);
+                const tsvResponse = await fetchWithApiFallback(`/api/neurobagel/local-participants?project_path=${encodeURIComponent(projectPath)}`);
                 console.log('📡 TSV columns response status:', tsvResponse.status);
                 const tsvData = await tsvResponse.json();
                 console.log('📊 TSV columns data:', tsvData);

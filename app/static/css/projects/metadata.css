@@ -101,6 +101,112 @@
     padding: 2px;
 }
 
+.sm-section-group {
+    padding: 0.85rem 1rem;
+    border: 1px solid #d8e5eb;
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(248, 251, 252, 0.96), rgba(240, 246, 248, 0.92));
+}
+
+.sm-section-group__eyebrow {
+    margin-bottom: 0.2rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #4f6b78;
+}
+
+.sm-section-group__copy {
+    font-size: 0.92rem;
+    line-height: 1.45;
+    color: #51606d;
+}
+
+.sm-section-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.85rem 1rem;
+    border-radius: 14px;
+    border-color: #cfdbe2;
+    background: #f8fafb;
+}
+
+.sm-section-toggle:hover,
+.sm-section-toggle:focus {
+    background: #eef4f7;
+    border-color: #b8cad5;
+}
+
+.sm-section-toggle__titleline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.sm-section-toggle__title {
+    font-weight: 700;
+    color: #1f2d38;
+}
+
+.sm-section-toggle__badge {
+    flex-shrink: 0;
+}
+
+.sm-section-toggle__summary {
+    display: block;
+    font-size: 0.86rem;
+    line-height: 1.4;
+    color: #5d6d79;
+    white-space: normal;
+}
+
+.sm-basics-intro,
+.sm-basics-secondary-panel {
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+}
+
+.sm-basics-intro {
+    border: 1px solid #d9e7ec;
+    background: rgba(247, 250, 251, 0.96);
+}
+
+.sm-basics-intro__eyebrow,
+.sm-basics-secondary-panel__eyebrow {
+    margin-bottom: 0.2rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #55707d;
+}
+
+.sm-basics-intro__copy,
+.sm-basics-secondary-panel__copy {
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: #5c6a75;
+}
+
+.sm-basics-secondary-panel {
+    background: rgba(255, 255, 255, 0.58);
+}
+
+@media (max-width: 767.98px) {
+    .sm-section-toggle {
+        padding: 0.8rem 0.9rem;
+    }
+
+    .sm-section-toggle__titleline {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
 #metadataAuthorsList .input-group-text {
     min-width: 2.2rem;
     justify-content: center;

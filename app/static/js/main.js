@@ -16,11 +16,11 @@ window.ConverterModule = ConverterModule;
 window.SurveyModule = SurveyModule;
 window.ToolsModule = ToolsModule;
 
-// Initialize project field validation (red → green badge updates) on the projects page
-if (document.getElementById('studyMetadataForm')) {
+// Initialize the Projects page from a single modular entrypoint.
+if (document.getElementById('projectsRoot')) {
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => ProjectsModule.initProjectValidation());
+        document.addEventListener('DOMContentLoaded', () => ProjectsModule.initializeProjectsPage());
     } else {
-        ProjectsModule.initProjectValidation();
+        ProjectsModule.initializeProjectsPage();
     }
 }

@@ -219,6 +219,14 @@ PARTICIPANTS_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "participants.js"
 )
 SURVEY_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter_survey.html"
+CONVERSION_SURVEY_BLUEPRINT = (
+    REPO_ROOT
+    / "app"
+    / "src"
+    / "web"
+    / "blueprints"
+    / "conversion_survey_blueprint.py"
+)
 
 
 class TestConverterWorkflowWiring(unittest.TestCase):
@@ -241,6 +249,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
 
         for module_path, list_snippet in module_expectations.items():
             content = module_path.read_text(encoding="utf-8")
+            self.assertIn(
+                "import { fetchWithApiFallback } from '../../shared/api.js';",
+                content,
+            )
+            self.assertIn("fetchWithApiFallback(endpoint)", content)
             self.assertIn(list_snippet, content)
             self.assertIn(
                 "/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}",
@@ -251,6 +264,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         survey_sourcedata_content = SURVEY_SOURCEDATA_QUICK_SELECT_MODULE.read_text(
             encoding="utf-8"
         )
+        self.assertIn(
+            "import { fetchWithApiFallback } from '../../shared/api.js';",
+            survey_sourcedata_content,
+        )
+        self.assertIn("fetchWithApiFallback(endpoint)", survey_sourcedata_content)
         self.assertIn(
             "sourcedata-files?project_path=${encodeURIComponent(effectiveProjectPath)}",
             survey_sourcedata_content,
@@ -752,6 +770,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
 
         self.assertIn("if (!runController.tryStartRun()) {", preview_block)
         self.assertIn("setParticipantsPrimaryActionButtonsDisabled(true);", preview_block)
+        self.assertIn("const response = await fetchWithApiFallback(previewEndpoint, {", preview_block)
         self.assertIn("finally {", preview_block)
         self.assertIn("runController.finishRun();", preview_block)
         self.assertIn(
@@ -763,6 +782,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("setParticipantsPrimaryActionButtonsDisabled(true);", convert_block)
         self.assertIn(
             "// Check existing files only when starting real conversion.",
+            convert_block,
+        )
+        self.assertIn(
+            "const response = await fetchWithApiFallback(useMergeRoute ? '/api/participants-merge' : '/api/participants-convert', {",
             convert_block,
         )
         self.assertIn("finally {", convert_block)
@@ -814,6 +837,9 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         template_generation_content = SURVEY_TEMPLATE_GENERATION_MODULE.read_text(
             encoding="utf-8"
         )
+        conversion_survey_blueprint_content = CONVERSION_SURVEY_BLUEPRINT.read_text(
+            encoding="utf-8"
+        )
         conversion_summary_content = SURVEY_CONVERSION_SUMMARY_MODULE.read_text(
             encoding="utf-8"
         )
@@ -841,9 +867,16 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "export function createSurveyTemplateGenerationController({",
             template_generation_content,
         )
-        self.assertIn("fetch('/api/limesurvey-to-prism', {", template_generation_content)
+        self.assertIn(
+            "import { fetchWithApiFallback } from '../../shared/api.js';",
+            template_generation_content,
+        )
+        self.assertIn("fetchWithApiFallback('/api/survey-generate-templates', {", template_generation_content)
         self.assertIn("showTemplateResultsContainer();", template_generation_content)
         self.assertIn("displayParticipantMetadataSection(data);", template_generation_content)
+        self.assertIn('"/api/survey-detect-columns"', conversion_survey_blueprint_content)
+        self.assertIn('"/api/survey-generate-templates"', conversion_survey_blueprint_content)
+        self.assertIn('"/api/survey-save-to-project"', conversion_survey_blueprint_content)
         self.assertIn(
             "const surveySourcedataQuickSelectController = createSurveySourcedataQuickSelectController({",
             content,
@@ -863,7 +896,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "`/api/projects/sourcedata-files?project_path=${encodeURIComponent(effectiveProjectPath)}`",
             survey_sourcedata_content,
         )
-        self.assertIn("fetch(endpoint)", survey_sourcedata_content)
+        self.assertIn("fetchWithApiFallback(endpoint)", survey_sourcedata_content)
         self.assertIn(
             "/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}",
             survey_sourcedata_content,
@@ -1508,8 +1541,12 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "export function createSurveyWorkflowPrepareController({",
             workflow_prepare_content,
         )
+        self.assertIn(
+            "import { fetchWithApiFallback } from '../../shared/api.js';",
+            workflow_prepare_content,
+        )
         self.assertIn("formData.append('workflow_command', 'prepare');", workflow_prepare_content)
-        self.assertIn("fetch('/api/survey-workflow-command'", workflow_prepare_content)
+        self.assertIn("fetchWithApiFallback('/api/survey-workflow-command'", workflow_prepare_content)
         self.assertNotIn("fetch('/api/survey-prepare-workflow'", workflow_prepare_content)
         self.assertIn("function finishPreparationPhase(mode, outcome)", workflow_prepare_content)
         self.assertIn("function handleLateSetupBlocker(mode, payload, selectedValueOffsets = {})", workflow_prepare_content)
@@ -1523,7 +1560,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             workflow_preview_content,
         )
         self.assertIn("formData.append('workflow_command', 'preview');", workflow_preview_content)
-        self.assertIn("fetch('/api/survey-workflow-command'", workflow_preview_content)
+        self.assertIn(
+            "import { fetchWithApiFallback } from '../../shared/api.js';",
+            workflow_preview_content,
+        )
+        self.assertIn("fetchWithApiFallback('/api/survey-workflow-command'", workflow_preview_content)
         self.assertNotIn("fetch('/api/survey-convert-preview'", workflow_preview_content)
         self.assertIn(
             "surveyWorkflowPrepareController.finishPreparationPhase('preview', preparation.outcome);",
@@ -1539,7 +1580,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             workflow_convert_content,
         )
         self.assertIn("formData.append('workflow_command', 'convert');", workflow_convert_content)
-        self.assertIn("fetch('/api/survey-workflow-command'", workflow_convert_content)
+        self.assertIn(
+            "import { fetchWithApiFallback } from '../../shared/api.js';",
+            workflow_convert_content,
+        )
+        self.assertIn("fetchWithApiFallback('/api/survey-workflow-command'", workflow_convert_content)
         self.assertNotIn("fetch('/api/survey-convert-validate'", workflow_convert_content)
         self.assertIn("handleConvertSuccess(data, {", workflow_convert_content)
         self.assertNotIn(
@@ -1615,7 +1660,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             workflow_template_check_content,
         )
         self.assertIn(
-            "fetch('/api/survey-check-project-templates'",
+            "import { fetchWithApiFallback } from '../../shared/api.js';",
+            workflow_template_check_content,
+        )
+        self.assertIn(
+            "fetchWithApiFallback('/api/survey-check-project-templates'",
             workflow_template_check_content,
         )
         self.assertIn(
@@ -1634,6 +1683,26 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "setVersionWizardRetryGateMode(null);",
             workflow_template_check_content,
         )
+        self.assertIn(
+            "import { fetchWithApiFallback } from '../../shared/api.js';",
+            survey_content,
+        )
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/survey-detect-version-contexts', {",
+            survey_content,
+        )
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/survey-detect-columns', {",
+            survey_content,
+        )
+        self.assertIn(
+            "import { fetchWithApiFallback } from '../../shared/api.js';",
+            unmatched_templates_content,
+        )
+        self.assertIn(
+            "const resp = await fetchWithApiFallback('/api/save-unmatched-template', {",
+            unmatched_templates_content,
+        )
         self.assertIn("handleVersionWizardApplyClick,", workflow_template_check_content)
 
         self.assertIn(
@@ -1641,7 +1710,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             template_results_content,
         )
         self.assertIn(
-            "fetch('/api/limesurvey-save-to-project',",
+            "import { fetchWithApiFallback } from '../../shared/api.js';",
+            template_results_content,
+        )
+        self.assertIn(
+            "fetchWithApiFallback('/api/survey-save-to-project',",
             template_results_content,
         )
         self.assertIn(

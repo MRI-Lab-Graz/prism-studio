@@ -45,6 +45,7 @@ export { helpers, validation, core, exportModule, metadata };
 export const { setButtonLoading, showAlert, showToast, showTopFeedback, textToArray } = helpers;
 export const { validateProjectField, initProjectValidation } = validation;
 export const { 
+    initProjectsPage,
     getRecentProjects, 
     saveRecentProjects, 
     addRecentProject, 
@@ -55,7 +56,7 @@ export const {
     useDefaultLibrary,
     clearGlobalLibrary 
 } = core;
-export const { showExportCard, initExportForm, initAndExport, initOpenMindsExport, loadExportPreferences } = exportModule;
+export const { showExportCard, initExportForm, initAndExport, initOpenMindsExport, loadExportPreferences, initializeProjectsExport } = exportModule;
 export const {
     addAuthorRow,
     getAuthorsList,
@@ -76,6 +77,12 @@ export const {
     generateMethodsSection,
     downloadMethods
 } = metadata;
+
+export function initializeProjectsPage() {
+    initProjectsPage();
+    initProjectValidation();
+    initializeProjectsExport();
+}
 
 console.log('Projects module loaded with ES6 imports');
 

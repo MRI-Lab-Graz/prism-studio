@@ -13,6 +13,7 @@ const EXPORT_VALIDATION_MODES = new Set(['both', 'bids', 'prism', 'ignore']);
 let projectStructureLoadToken = 0;
 let exportPreferencesLoadToken = 0;
 let isApplyingExportPreferences = false;
+let exportModuleInitialized = false;
 let lastLoadedExportPreferences = getDefaultExportPreferences();
 let lastExportStructureStatus = {
     message: 'Load a project to view export filters.',
@@ -624,6 +625,20 @@ export function initExportForm() {
     }
 }
 
+export function initializeProjectsExport() {
+    if (exportModuleInitialized) {
+        updateExportSnapshotUi();
+        return;
+    }
+
+    exportModuleInitialized = true;
+    initExportForm();
+    initAndExport();
+    initOpenMindsExport();
+    loadExportPreferences();
+    updateExportSnapshotUi();
+}
+
 /**
  * Handle template export action.
  */
@@ -1043,15 +1058,6 @@ async function handleAndExport(e) {
         setButtonLoading(btn, false, null, originalText);
     }
 }
-
-// Initialize on DOM load
-document.addEventListener('DOMContentLoaded', function() {
-    initExportForm();
-    initAndExport();
-    initOpenMindsExport();
-    loadExportPreferences();
-    updateExportSnapshotUi();
-});
 
 /**
  * Initialize openMINDS export

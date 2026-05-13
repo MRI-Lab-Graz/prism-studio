@@ -41,6 +41,24 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
             content,
         )
 
+    def test_study_metadata_hierarchy_uses_group_labels_and_study_design_starts_collapsed(self):
+        content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="smCoreSetupGroup"', content)
+        self.assertIn('id="smRecruitmentExecutionGroup"', content)
+        self.assertIn('id="smReportingFollowupGroup"', content)
+        self.assertIn('class="btn btn-sm btn-outline-secondary w-100 text-start sm-section-toggle"', content)
+        self.assertIn('aria-expanded="false" aria-controls="smStudyDesign"', content)
+        self.assertIn('<div class="collapse" id="smStudyDesign">', content)
+        self.assertNotIn('<div class="collapse show" id="smStudyDesign">', content)
+
+    def test_study_metadata_basics_has_compact_intro_and_secondary_panel(self):
+        content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('class="sm-basics-intro mb-3"', content)
+        self.assertIn('class="sm-basics-secondary-panel mt-3 pt-3 border-top"', content)
+        self.assertIn('Citation and sharing details', content)
+
     def test_projects_header_has_preliminary_badge_placeholder(self):
         content = PROJECTS_TEMPLATE.read_text(encoding="utf-8")
 

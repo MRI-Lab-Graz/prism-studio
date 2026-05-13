@@ -3,6 +3,7 @@
  * Handles upload → column detection → environment TSV generation
  */
 
+import { fetchWithApiFallback } from '../../shared/api.js';
 import { pollJobStatus } from '../../shared/job-polling.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
@@ -240,7 +241,7 @@ export function initEnvironment(elements) {
             ? `/api/projects/sourcedata-files?kind=environment&project_path=${encodeURIComponent(effectiveProjectPath)}`
             : '/api/projects/sourcedata-files?kind=environment';
 
-        fetch(endpoint)
+        fetchWithApiFallback(endpoint)
             .then((response) => response.json())
             .then((data) => {
                 if (requestToken !== envSourcedataRequestToken) {
@@ -549,7 +550,7 @@ export function initEnvironment(elements) {
                     ? `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}`
                     : `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}`;
 
-                const response = await fetch(endpoint);
+                const response = await fetchWithApiFallback(endpoint);
                 if (!response.ok) {
                     throw new Error('Failed to load sourcedata file');
                 }
