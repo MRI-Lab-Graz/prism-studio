@@ -54,20 +54,22 @@ from .tools_file_browser_handlers import (
     handle_api_browse_folder,
 )
 from .conversion_utils import require_existing_project_root
+from .conversion_survey_handlers import (
+    api_survey_detect_columns,
+    api_survey_generate_templates,
+    api_survey_save_to_project,
+)
 from .tools_library_handlers import (
     handle_get_library_template,
     handle_list_library_files,
     handle_list_library_files_merged,
 )
 from .tools_generation_handlers import (
-    handle_detect_columns,
     handle_generate_boilerplate_endpoint,
     handle_generate_lss_endpoint,
 )
-from .tools_limesurvey_handlers import handle_limesurvey_to_prism
 from .tools_post_conversion_handlers import (
     handle_fix_participants_bids,
-    handle_limesurvey_save_to_project,
 )
 from .tools_recipes_surveys_handlers import handle_api_recipes_surveys
 from .tools_recipe_builder_handlers import (
@@ -1610,7 +1612,7 @@ def detect_columns():
     Supports .lsa, .xlsx, .csv, .tsv files.
     Returns list of columns and suggests likely ID column.
     """
-    return handle_detect_columns()
+    return api_survey_detect_columns()
 
 
 @tools_bp.route("/api/limesurvey-to-prism", methods=["POST"])
@@ -1622,7 +1624,7 @@ def limesurvey_to_prism():
     - mode=groups: Separate JSON per questionnaire group
     - mode=questions: Separate JSON per individual question (for template library)
     """
-    return handle_limesurvey_to_prism()
+    return api_survey_generate_templates()
 
 
 @tools_bp.route("/api/library-template/<template_key>", methods=["GET"])
@@ -1652,10 +1654,7 @@ def limesurvey_save_to_project():
 
     Templates are saved to: {project_path}/code/library/survey/
     """
-    return handle_limesurvey_save_to_project(
-        project_path=session.get("current_project_path"),
-        data=request.get_json(),
-    )
+    return api_survey_save_to_project()
 
 
 @tools_bp.route("/api/fix-participants-bids", methods=["POST"])

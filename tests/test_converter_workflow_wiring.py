@@ -227,8 +227,9 @@ CONVERSION_SURVEY_BLUEPRINT = (
     / "blueprints"
     / "conversion_survey_blueprint.py"
 )
-
-
+TOOLS_BLUEPRINT = (
+    REPO_ROOT / "app" / "src" / "web" / "blueprints" / "tools.py"
+)
 class TestConverterWorkflowWiring(unittest.TestCase):
     def test_converter_module_aggregator_uses_single_bootstrap_entrypoint(self):
         content = CONVERTER_INDEX.read_text(encoding="utf-8")
@@ -237,6 +238,17 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("import('../../converter-bootstrap.js');", content)
         self.assertNotIn("initLimeSurveyQuickImport", content)
         self.assertNotIn("from './survey.js'", content)
+
+    def test_legacy_quick_import_modules_are_retired(self):
+        legacy_survey_module = (
+            REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "survey.js"
+        )
+        legacy_limesurvey_module = (
+            REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "limesurvey.js"
+        )
+
+        self.assertFalse(legacy_survey_module.exists())
+        self.assertFalse(legacy_limesurvey_module.exists())
 
     def test_converter_tabs_sourcedata_quick_select_smoke(self):
         module_expectations = {
@@ -863,6 +875,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         conversion_survey_blueprint_content = CONVERSION_SURVEY_BLUEPRINT.read_text(
             encoding="utf-8"
         )
+        tools_blueprint_content = TOOLS_BLUEPRINT.read_text(encoding="utf-8")
         conversion_summary_content = SURVEY_CONVERSION_SUMMARY_MODULE.read_text(
             encoding="utf-8"
         )
@@ -900,6 +913,12 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn('"/api/survey-detect-columns"', conversion_survey_blueprint_content)
         self.assertIn('"/api/survey-generate-templates"', conversion_survey_blueprint_content)
         self.assertIn('"/api/survey-save-to-project"', conversion_survey_blueprint_content)
+        self.assertIn('def detect_columns():', tools_blueprint_content)
+        self.assertIn('return api_survey_detect_columns()', tools_blueprint_content)
+        self.assertIn('def limesurvey_to_prism():', tools_blueprint_content)
+        self.assertIn('return api_survey_generate_templates()', tools_blueprint_content)
+        self.assertIn('def limesurvey_save_to_project():', tools_blueprint_content)
+        self.assertIn('return api_survey_save_to_project()', tools_blueprint_content)
         self.assertIn(
             "const surveySourcedataQuickSelectController = createSurveySourcedataQuickSelectController({",
             content,
