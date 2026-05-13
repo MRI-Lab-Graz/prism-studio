@@ -19,7 +19,20 @@ class TestRecipesWorkflowWiring(unittest.TestCase):
             "window.currentProjectPath = {{ (current_project.path or '') | tojson }};",
             template_content,
         )
+        self.assertIn(
+            "const recipesScriptUrl = document.currentScript?.src || window.location.href;",
+            script_content,
+        )
+        self.assertIn("function loadSharedFetchWithApiFallback() {", script_content)
+        self.assertIn(
+            "sharedFetchWithApiFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithApiFallback }) => {",
+            script_content,
+        )
         self.assertIn("async function fetchWithApiFallback(", script_content)
+        self.assertIn(
+            "return sharedFetchWithApiFallback(url, options, fallbackMessage);",
+            script_content,
+        )
         self.assertIn(
             "fetchWithApiFallback(`/api/recipes-modalities?dataset_path=${encodeURIComponent(requestProjectPath)}`)",
             script_content,

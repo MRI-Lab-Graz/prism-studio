@@ -1,36 +1,27 @@
 // File upload handling
+const validatorScriptUrl = document.currentScript?.src || window.location.href;
+
 document.addEventListener('DOMContentLoaded', function() {
     const validationResumeStorageKey = 'prism_active_validation_job';
 
-    function getFallbackApiOrigin() {
-        const configuredOrigin = (window.PRISM_API_ORIGIN || '').trim();
-        if (configuredOrigin) {
-            return configuredOrigin.replace(/\/$/, '');
-        }
-        return 'http://127.0.0.1:5001';
-    }
+    const sharedApiModuleUrl = new URL('./shared/api.js', validatorScriptUrl).href;
+    let sharedFetchWithRelativePathFallbackPromise = null;
 
-    function canRetryApiWithFallback(url) {
-        const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
-        const isRelativeApiRequest = typeof url === 'string' && url.startsWith('/');
-        return isRelativeApiRequest && protocol !== 'http:' && protocol !== 'https:';
+    function loadSharedFetchWithRelativePathFallback() {
+        if (!sharedFetchWithRelativePathFallbackPromise) {
+            sharedFetchWithRelativePathFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithRelativePathFallback }) => {
+                if (typeof fetchWithRelativePathFallback !== 'function') {
+                    throw new Error('Shared API helper is unavailable.');
+                }
+                return fetchWithRelativePathFallback;
+            });
+        }
+        return sharedFetchWithRelativePathFallbackPromise;
     }
 
     async function fetchWithApiFallback(url, options = {}, fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.') {
-        try {
-            return await fetch(url, options);
-        } catch (primaryError) {
-            if (!canRetryApiWithFallback(url)) {
-                throw primaryError;
-            }
-
-            const fallbackUrl = `${getFallbackApiOrigin()}${url}`;
-            try {
-                return await fetch(fallbackUrl, options);
-            } catch (_fallbackError) {
-                throw new Error(fallbackMessage);
-            }
-        }
+        const sharedFetchWithRelativePathFallback = await loadSharedFetchWithRelativePathFallback();
+        return sharedFetchWithRelativePathFallback(url, options, fallbackMessage);
     }
 
     // Validation Mode Toggles

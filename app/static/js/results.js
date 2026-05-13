@@ -1,3 +1,5 @@
+const resultsScriptUrl = document.currentScript?.src || window.location.href;
+
 document.addEventListener('DOMContentLoaded', () => {
     const backToTopBtn = document.getElementById('backToTopBtn');
     if (backToTopBtn) {
@@ -22,6 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultActionNodes = Array.from(document.querySelectorAll('[data-result-action]'));
     const defaultSubmitHtml = revalidateSubmitBtn ? revalidateSubmitBtn.innerHTML : '';
 
+    const sharedApiModuleUrl = new URL('./shared/api.js', resultsScriptUrl).href;
+    let sharedFetchWithRelativePathFallbackPromise = null;
+
     let revalidationInProgress = false;
     let progressDisplayState = {
         phase: 'idle',
@@ -29,18 +34,16 @@ document.addEventListener('DOMContentLoaded', () => {
         phaseStartedAt: 0,
     };
 
-    function getFallbackApiOrigin() {
-        const configuredOrigin = (window.PRISM_API_ORIGIN || '').trim();
-        if (configuredOrigin) {
-            return configuredOrigin.replace(/\/$/, '');
+    function loadSharedFetchWithRelativePathFallback() {
+        if (!sharedFetchWithRelativePathFallbackPromise) {
+            sharedFetchWithRelativePathFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithRelativePathFallback }) => {
+                if (typeof fetchWithRelativePathFallback !== 'function') {
+                    throw new Error('Shared API helper is unavailable.');
+                }
+                return fetchWithRelativePathFallback;
+            });
         }
-        return 'http://127.0.0.1:5001';
-    }
-
-    function canRetryApiWithFallback(url) {
-        const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
-        const isRelativeApiRequest = typeof url === 'string' && url.startsWith('/');
-        return isRelativeApiRequest && protocol !== 'http:' && protocol !== 'https:';
+        return sharedFetchWithRelativePathFallbackPromise;
     }
 
     async function fetchWithApiFallback(
@@ -48,20 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
         options = {},
         fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.'
     ) {
-        try {
-            return await fetch(url, options);
-        } catch (primaryError) {
-            if (!canRetryApiWithFallback(url)) {
-                throw primaryError;
-            }
-
-            const fallbackUrl = `${getFallbackApiOrigin()}${url}`;
-            try {
-                return await fetch(fallbackUrl, options);
-            } catch (_fallbackError) {
-                throw new Error(fallbackMessage);
-            }
-        }
+        const sharedFetchWithRelativePathFallback = await loadSharedFetchWithRelativePathFallback();
+        return sharedFetchWithRelativePathFallback(url, options, fallbackMessage);
     }
 
     function hideRevalidationError() {
