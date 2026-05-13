@@ -7,6 +7,7 @@
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createJobRunController } from './job-run-controller.js';
+import { pickServerFile, prefersServerPicker } from './server-picker.js';
 
 export function initBiometrics(elements) {
     // Destructure elements passed from converter-bootstrap.js
@@ -59,14 +60,6 @@ export function initBiometrics(elements) {
         }
     }
 
-    function prefersServerPicker() {
-        return Boolean(
-            window.PrismFileSystemMode
-            && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
-            && window.PrismFileSystemMode.prefersServerPicker()
-        );
-    }
-
     function getSelectedBiometricsFile() {
         return (biometricsDataFile && biometricsDataFile.files && biometricsDataFile.files[0])
             ? biometricsDataFile.files[0]
@@ -102,11 +95,7 @@ export function initBiometrics(elements) {
     }
 
     async function pickServerBiometricsFile() {
-        if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFile === 'function')) {
-            return '';
-        }
-
-        return window.PrismFileSystemMode.pickFile({
+        return pickServerFile({
             title: 'Select Biometrics File on Server',
             confirmLabel: 'Use This File',
             extensions: '.xlsx,.csv,.tsv,.sav,.rds,.rdata,.rda',

@@ -8,6 +8,7 @@ import { pollJobStatus } from '../../shared/job-polling.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { createJobRunController } from './job-run-controller.js';
+import { pickServerFolder, prefersServerPicker } from './server-picker.js';
 
 export function initEyetracking(elements) {
     const STATUS_POLL_INTERVAL_MS = 500;
@@ -42,14 +43,6 @@ export function initEyetracking(elements) {
     const pollingRunState = createPollingRunState();
     const runController = createJobRunController();
 
-    function prefersServerPicker() {
-        return Boolean(
-            window.PrismFileSystemMode
-            && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
-            && window.PrismFileSystemMode.prefersServerPicker()
-        );
-    }
-
     function applyEyetrackingPickerUiState() {
         const connectedToServer = prefersServerPicker();
         if (browseServerEyetrackingFolderBtn) {
@@ -58,11 +51,7 @@ export function initEyetracking(elements) {
     }
 
     async function pickServerEyetrackingFolder() {
-        if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFolder === 'function')) {
-            return '';
-        }
-
-        return window.PrismFileSystemMode.pickFolder({
+        return pickServerFolder({
             title: 'Select Eyetracking Folder on Server',
             confirmLabel: 'Use This Folder',
             startPath: eyetrackingServerFolderPath || '',
