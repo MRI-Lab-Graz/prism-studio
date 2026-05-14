@@ -1581,7 +1581,7 @@ def emit_backend_request_action(req, app_root: str) -> None:
     if not terminal_command and verbose_enabled:
         terminal_command = _build_generic_request_terminal_command(req)
     if terminal_command:
-        action = f"{action} | cmd={terminal_command}"
+        action = f"{action}\ncmd={terminal_command}"
 
     dedupe_key = _build_duplicate_suppression_key(req, endpoint, action)
     if _should_suppress_duplicate_action(

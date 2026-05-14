@@ -24,14 +24,47 @@ PROJECTS_CREATE_MODULE = (
 PROJECTS_CREATE_PREFLIGHT_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "create-preflight.js"
 )
+PROJECTS_CURRENT_STATE_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "current-project-state.js"
+)
 PROJECTS_RECENT_PROJECTS_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "recent-projects.js"
 )
 PROJECTS_SELECTION_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "project-selection.js"
 )
+PROJECTS_MAINTENANCE_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "maintenance-actions.js"
+)
+PROJECTS_METADATA_SUBMIT_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "metadata-submit.js"
+)
+PROJECTS_METADATA_STATUS_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "metadata-status.js"
+)
+PROJECTS_METADATA_DESCRIPTION_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "metadata-description.js"
+)
+PROJECTS_METADATA_ORCID_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "metadata-orcid.js"
+)
+PROJECTS_METADATA_LOAD_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "metadata-load.js"
+)
+PROJECTS_METADATA_SAVE_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "metadata-save.js"
+)
+PROJECTS_METADATA_METHODS_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "metadata-methods.js"
+)
 PROJECTS_BOOTSTRAP_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "page-bootstrap.js"
+)
+PROJECTS_HINTS_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "project-hints.js"
+)
+PROJECTS_SETTINGS_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "settings.js"
 )
 PROJECTS_OPEN_PROJECT_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "open-project.js"
@@ -102,21 +135,59 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("const recentProjectsController = createRecentProjectsController({", core_content)
         self.assertIn("export { getRecentProjects, saveRecentProjects, addRecentProject, renderRecentProjects };", core_content)
 
+    def test_current_project_state_and_recent_projects_bootstrap_before_workflows(self):
+        current_state_content = PROJECTS_CURRENT_STATE_MODULE.read_text(encoding="utf-8")
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "import { createProjectsCurrentStateController } from './current-project-state.js';",
+            core_content,
+        )
+        self.assertIn(
+            "const currentProjectStateController = createProjectsCurrentStateController({",
+            core_content,
+        )
+        self.assertIn("const projectsRoot = document.getElementById('projectsRoot');", current_state_content)
+        self.assertIn("const globalProjectState = getProjectStateSnapshot();", current_state_content)
+        self.assertIn("window.addEventListener('prism-project-changed', function(event) {", current_state_content)
+        self.assertLess(
+            core_content.index("const currentProjectStateController = createProjectsCurrentStateController({"),
+            core_content.index("const recentProjectsController = createRecentProjectsController({"),
+        )
+        self.assertLess(
+            core_content.index("const recentProjectsController = createRecentProjectsController({"),
+            core_content.index("initProjectInitOnBidsController({"),
+        )
+
     def test_settings_and_fix_actions_use_api_fallback(self):
-        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        settings_content = PROJECTS_SETTINGS_MODULE.read_text(encoding="utf-8")
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        maintenance_content = PROJECTS_MAINTENANCE_MODULE.read_text(encoding="utf-8")
 
         self.assertIn(
             "const response = await fetchWithApiFallback('/api/settings/global-library');",
-            content,
+            settings_content,
         )
         self.assertIn(
             "const response = await fetchWithApiFallback('/api/projects/library-path');",
-            content,
+            settings_content,
         )
         self.assertIn(
             "const response = await fetchWithApiFallback('/api/projects/fix', {",
-            content,
+            maintenance_content,
         )
+        self.assertIn(
+            "await fetchWithApiFallback('/api/projects/current', {",
+            maintenance_content,
+        )
+        self.assertIn("import {", core_content)
+        self.assertIn("} from './settings.js';", core_content)
+        self.assertIn(
+            "import { createProjectMaintenanceActions } from './maintenance-actions.js';",
+            core_content,
+        )
+        self.assertIn("const projectMaintenanceActions = createProjectMaintenanceActions({", core_content)
+        self.assertIn("initProjectSettingsForm();", core_content)
 
     def test_projects_page_uses_single_bootstrap_entrypoint(self):
         index_content = PROJECTS_INDEX_MODULE.read_text(encoding="utf-8")
@@ -147,7 +218,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertFalse(LEGACY_PROJECTS_METADATA.exists())
 
     def test_backend_monitoring_verbose_toggle_is_wired(self):
-        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        settings_content = PROJECTS_SETTINGS_MODULE.read_text(encoding="utf-8")
         settings_template = (
             REPO_ROOT
             / "app"
@@ -160,9 +231,32 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("backendMonitoringVerboseToggle", settings_template)
         self.assertIn(
             "const verboseToggle = document.getElementById('backendMonitoringVerboseToggle');",
-            core_content,
+            settings_content,
         )
-        self.assertIn("backend_monitoring_verbose", core_content)
+        self.assertIn("backend_monitoring_verbose", settings_content)
+
+    def test_open_project_flow_reuses_metadata_button_binder(self):
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        metadata_content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+        metadata_submit_content = PROJECTS_METADATA_SUBMIT_MODULE.read_text(encoding="utf-8")
+        open_project_content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("bindProjectBoxActionButtons,", core_content)
+        self.assertIn(
+            "import { createStudyMetadataSubmitController } from './metadata-submit.js';",
+            metadata_content,
+        )
+        self.assertIn(
+            "const studyMetadataSubmitController = createStudyMetadataSubmitController({",
+            metadata_content,
+        )
+        self.assertIn(
+            "export function createStudyMetadataSubmitController({",
+            metadata_submit_content,
+        )
+        self.assertIn("function bindProjectBoxActionButtons() {", metadata_submit_content)
+        self.assertIn("initPrimaryStudyMetadataSubmitButton()", metadata_submit_content)
+        self.assertIn("bindProjectBoxActionButtons();", open_project_content)
 
     def test_unsaved_new_project_detector_ignores_default_form_values(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
@@ -436,13 +530,13 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("id=\"projectBoxSaveBtn\"", content)
         self.assertIn("Save Changes to Project", content)
 
-    def test_project_validation_surfaces_sociodemographics_action_for_participants_mismatch(self):
+    def test_projects_page_no_longer_owns_inline_validation_actions(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        bootstrap_content = PROJECTS_BOOTSTRAP_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("function getProjectValidationAction(code) {", content)
-        self.assertIn("normalizedCode === 'PRISM707'", content)
-        self.assertIn("/converter?tab=participants", content)
-        self.assertIn("Open Sociodemographics", content)
+        self.assertNotIn("function getProjectValidationAction(code) {", content)
+        self.assertNotIn("runProjectValidation(", bootstrap_content)
+        self.assertIn('href="/validate"', PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8"))
 
     def test_open_project_copy_describes_load_then_optional_validation(self):
         open_form_content = OPEN_FORM_TEMPLATE.read_text(encoding="utf-8")
@@ -491,27 +585,76 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
     def test_metadata_actions_use_fallback_project_targeting_and_stale_guards(self):
         content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+        methods_content = PROJECTS_METADATA_METHODS_MODULE.read_text(encoding="utf-8")
+        metadata_status_content = PROJECTS_METADATA_STATUS_MODULE.read_text(encoding="utf-8")
 
         self.assertIn(
             "import { fetchWithApiFallback } from '../../shared/api.js';", content
         )
         self.assertIn("const r = await fetchWithApiFallback('/api/config');", content)
         self.assertIn("let metadataLoadToken = 0;", content)
-        self.assertIn("let methodsRequestToken = 0;", content)
         self.assertIn(
-            "_withProjectPathQuery('/api/projects/citation/status', requestProjectPath)",
+            "import { createMetadataMethodsController } from './metadata-methods.js';",
             content,
         )
         self.assertIn(
-            "_withProjectPathQuery('/api/projects/metadata/status', requestProjectPath)",
+            "const metadataMethodsController = createMetadataMethodsController({",
             content,
+        )
+        self.assertIn("let methodsRequestToken = 0;", methods_content)
+        self.assertIn(
+            "withProjectPathQuery('/api/projects/citation/status', requestProjectPath)",
+            metadata_status_content,
+        )
+        self.assertIn(
+            "withProjectPathQuery('/api/projects/metadata/status', requestProjectPath)",
+            metadata_status_content,
         )
         self.assertIn(
             "body: JSON.stringify({ project_path: requestProjectPath })", content
         )
         self.assertIn(
-            "body: JSON.stringify({ project_path: requestProjectPath, schema_version: schemaVersion })",
+            "if (requestToken !== methodsRequestToken || requestProjectPath !== getCurrentProjectPath()) {",
+            methods_content,
+        )
+        self.assertIn("metadataMethodsController.handleProjectChanged();", content)
+        self.assertIn("metadataMethodsController.initMethodsControls();", content)
+
+    def test_metadata_description_controller_owns_schema_and_live_validation(self):
+        content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+        description_content = PROJECTS_METADATA_DESCRIPTION_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "import { createMetadataDescriptionController } from './metadata-description.js';",
             content,
+        )
+        self.assertIn(
+            "const metadataDescriptionController = createMetadataDescriptionController({",
+            content,
+        )
+        self.assertIn(
+            "return metadataDescriptionController.validateDatasetDescriptionDraftLive();",
+            content,
+        )
+        self.assertIn(
+            "metadataDescriptionController.scheduleLiveDescriptionValidation();",
+            content,
+        )
+        self.assertIn(
+            "return metadataDescriptionController.saveProjectSchemaConfig();",
+            content,
+        )
+        self.assertIn(
+            "return metadataDescriptionController.loadDatasetDescriptionFields();",
+            content,
+        )
+        self.assertIn("let descriptionValidationTimer = null;", description_content)
+        self.assertIn("withProjectPathQuery('/api/projects/schema-config', requestProjectPath)", description_content)
+        self.assertIn("withProjectPathQuery('/api/projects/description', requestProjectPath)", description_content)
+        self.assertIn("fetchWithApiFallback('/api/projects/description/validate'", description_content)
+        self.assertIn(
+            "body: JSON.stringify({ project_path: requestProjectPath, schema_version: schemaVersion })",
+            description_content,
         )
         self.assertIn(
             "_withProjectPathQuery('/api/projects/description', requestProjectPath)",
@@ -520,45 +663,67 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
     def test_metadata_orcid_lookup_uses_backend_search_and_multi_hit_selection(self):
         content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+        orcid_content = PROJECTS_METADATA_ORCID_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("/api/projects/orcid/search?", content)
-        self.assertIn("Multiple ORCID matches found", content)
-        self.assertIn("window.bootstrap.Modal", content)
-        self.assertIn("Use selected ORCID", content)
-        self.assertIn("candidate.affiliation", content)
-        self.assertIn(">Affiliation</th>", content)
-        self.assertIn(">Public data</th>", content)
-        self.assertIn("candidate.public_data_status", content)
-        self.assertIn("Current ORCID in field", content)
-        self.assertIn("No public affiliation data", content)
-        self.assertIn("params.set('limit', '10')", content)
-        self.assertIn("params.set('current_orcid', currentOrcid)", content)
-        self.assertIn("_lookupOrcidForAuthorRow", content)
+        self.assertIn("import { createMetadataOrcidController } from './metadata-orcid.js';", content)
+        self.assertIn("const metadataOrcidController = createMetadataOrcidController({", content)
+        self.assertIn("metadataOrcidController.lookupOrcidForAuthorRow(row)", content)
+        self.assertIn("/api/projects/orcid/search?", orcid_content)
+        self.assertIn("Multiple ORCID matches found", orcid_content)
+        self.assertIn("window.bootstrap.Modal", orcid_content)
+        self.assertIn("Use selected ORCID", orcid_content)
+        self.assertIn("candidate.affiliation", orcid_content)
+        self.assertIn(">Affiliation</th>", orcid_content)
+        self.assertIn(">Public data</th>", orcid_content)
+        self.assertIn("candidate.public_data_status", orcid_content)
+        self.assertIn("Current ORCID in field", orcid_content)
+        self.assertIn("No public affiliation data", orcid_content)
+        self.assertIn("params.set('limit', '10')", orcid_content)
+        self.assertIn("params.set('current_orcid', currentOrcid)", orcid_content)
+        self.assertIn("lookupOrcidForAuthorRow", orcid_content)
 
     def test_metadata_sync_warning_exposes_repair_actions(self):
-        content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+        metadata_content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+        metadata_status_content = PROJECTS_METADATA_STATUS_MODULE.read_text(encoding="utf-8")
+        metadata_submit_content = PROJECTS_METADATA_SUBMIT_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("function requestMetadataRepairSave() {", content)
-        self.assertIn("function _renderMetadataRepairHint() {", content)
         self.assertIn(
-            "const preferredSubmitter = document.getElementById('createProjectSubmitBtn');",
-            content,
+            "import { createMetadataStatusController } from './metadata-status.js';",
+            metadata_content,
         )
-        self.assertIn('data-action="repair-metadata-sync"', content)
-        self.assertIn('data-action="regenerate-citation-sync"', content)
-        self.assertIn("requestMetadataRepairSave();", content)
-        self.assertIn("regenerateCitationCff();", content)
+        self.assertIn(
+            "const metadataStatusController = createMetadataStatusController({",
+            metadata_content,
+        )
+        self.assertIn(
+            "export function createMetadataStatusController({",
+            metadata_status_content,
+        )
+        self.assertIn("function renderMetadataRepairHint() {", metadata_status_content)
+        self.assertIn(
+            "const studyMetadataSubmitController = createStudyMetadataSubmitController({",
+            metadata_content,
+        )
+        self.assertIn('data-action="repair-metadata-sync"', metadata_status_content)
+        self.assertIn('data-action="regenerate-citation-sync"', metadata_status_content)
+        self.assertIn("requestMetadataRepairSave();", metadata_content)
+        self.assertIn("regenerateCitationCff();", metadata_content)
+        self.assertIn("function requestMetadataRepairSave() {", metadata_submit_content)
 
     def test_project_box_save_buttons_set_distinct_submit_intents(self):
-        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        content = PROJECTS_METADATA_SUBMIT_MODULE.read_text(encoding="utf-8")
 
         self.assertIn(
-            "function requestStudyMetadataSaveFromProjectBox(submitIntent = 'standard') {",
+            "function requestStudyMetadataSubmit(submitIntent = 'standard') {",
             content,
         )
-        self.assertIn("studyMetadataForm.dataset.submitIntent = submitIntent;", content)
+        self.assertIn("form.dataset.submitIntent = submitIntent;", content)
         self.assertIn(
-            "button.id === 'projectBoxPreliminarySaveBtn' ? 'preliminary' : 'standard'",
+            "requestStudyMetadataSubmit('preliminary');",
+            content,
+        )
+        self.assertIn(
+            "requestStudyMetadataSubmit('standard');",
             content,
         )
         self.assertIn(
@@ -631,6 +796,17 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("const recentList = document.getElementById('recentProjectsList');", content)
         self.assertIn("const clearCurrentProjectBtn = document.getElementById('clearCurrentProjectBtn');", content)
 
+    def test_project_hints_controller_is_split_from_core(self):
+        content = PROJECTS_HINTS_MODULE.read_text(encoding="utf-8")
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        open_content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("export function getBeginnerHelpModeEnabled() {", content)
+        self.assertIn("export function initBeginnerHelpMode() {", content)
+        self.assertIn("export function initProjectFieldHints() {", content)
+        self.assertIn("} from './project-hints.js';", core_content)
+        self.assertIn("getBeginnerHelpModeEnabled,", open_content)
+
     def test_init_on_bids_controller_is_wired_after_selection_guard_exists(self):
         core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
@@ -641,10 +817,19 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
     def test_loaded_project_save_actions_wait_for_metadata_readiness(self):
         content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
-        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        load_content = PROJECTS_METADATA_LOAD_MODULE.read_text(encoding="utf-8")
+        open_project_content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("let studyMetadataLoadInFlight = false;", content)
-        self.assertIn("let studyMetadataReadyProjectPath = '';", content)
+        self.assertIn(
+            "import { createStudyMetadataLoadController } from './metadata-load.js';",
+            content,
+        )
+        self.assertIn(
+            "const studyMetadataLoadController = createStudyMetadataLoadController({",
+            content,
+        )
+        self.assertIn("let studyMetadataLoadInFlight = false;", load_content)
+        self.assertIn("let studyMetadataReadyProjectPath = '';", load_content)
         self.assertIn(
             "const metadataReadyForCurrentProject = Boolean(currentProjectPath)",
             content,
@@ -657,13 +842,27 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "setMetadataSaveStatus(loadingMessage, studyMetadataLoadInFlight ? 'muted' : 'warning');",
             content,
         )
+        self.assertIn("async function loadStudyMetadata() {", load_content)
+        self.assertIn("studyMetadataReadyProjectPath = requestProjectPath;", load_content)
         self.assertIn(
-            "renderLoadedProjectState(loadedName, loadedPath, projectSummary);\n        bindProjectBoxActionButtons();\n        updateCreateProjectButton();",
-            core_content,
+            "renderLoadedProjectState(loadedName, loadedPath, projectSummary);",
+            open_project_content,
         )
+        self.assertIn("bindProjectBoxActionButtons();", open_project_content)
+        self.assertIn("updateCreateProjectButton();", open_project_content)
 
     def test_metadata_save_transaction_reuses_request_project_path(self):
         content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+        save_content = PROJECTS_METADATA_SAVE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "import { createStudyMetadataSaveController } from './metadata-save.js';",
+            content,
+        )
+        self.assertIn(
+            "const studyMetadataSaveController = createStudyMetadataSaveController({",
+            content,
+        )
 
         self.assertIn(
             "export async function saveDatasetDescription(projectPath = null) {",
@@ -673,18 +872,18 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "const requestProjectPath = String(projectPath || _getCurrentProjectPath()).trim();",
             content,
         )
-        self.assertIn("await saveDatasetDescription(requestProjectPath);", content)
+        self.assertIn("await saveDatasetDescription(requestProjectPath);", save_content)
         self.assertIn(
             "const readmeResult = await generateReadmeSilent(requestProjectPath);",
-            content,
+            save_content,
         )
         self.assertIn(
             "async function generateReadmeSilent(projectPath = null) {",
             content,
         )
         self.assertIn(
-            "if (requestProjectPath === _getCurrentProjectPath()) {\n                await refreshMetadataSyncStatus();\n                _captureStudyMetadataBaseline();\n            }\n\n            saveSucceeded = true;",
-            content,
+            "if (requestProjectPath === getCurrentProjectPath()) {\n                    await refreshMetadataSyncStatus();\n                    captureBaseline();\n                }\n\n                saveSucceeded = true;",
+            save_content,
         )
 
     def test_file_browser_template_announces_dynamic_updates(self):
@@ -703,14 +902,15 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertNotIn('Quick Validate', content)
 
     def test_project_box_exposes_preliminary_save_button_with_shared_submit_path(self):
-        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        open_project_content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
+        submit_content = PROJECTS_METADATA_SUBMIT_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn('id="projectBoxPreliminarySaveBtn"', content)
-        self.assertIn("document.getElementById('projectBoxPreliminarySaveBtn')", content)
-        self.assertIn("requestStudyMetadataSaveFromProjectBox(", content)
+        self.assertIn('id="projectBoxPreliminarySaveBtn"', open_project_content)
+        self.assertIn("document.getElementById('projectBoxPreliminarySaveBtn')", submit_content)
+        self.assertIn("requestStudyMetadataSubmit('preliminary');", submit_content)
         self.assertIn(
-            "button.id === 'projectBoxPreliminarySaveBtn' ? 'preliminary' : 'standard'",
-            content,
+            "requestStudyMetadataSubmit('standard');",
+            submit_content,
         )
 
     def test_eligibility_requires_two_combined_criteria_instead_of_both_lists(self):
