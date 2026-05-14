@@ -1134,6 +1134,14 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             participants_merge_summary_content,
         )
         self.assertIn(
+            "buildParticipantsMergeSessionResolutionRowsHtml({",
+            participants_merge_summary_content,
+        )
+        self.assertIn(
+            "buildParticipantsMergeSessionResolutionHintText({",
+            participants_merge_summary_content,
+        )
+        self.assertIn(
             "import {",
             participants_merge_summary_content,
         )
@@ -1150,7 +1158,19 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             participants_merge_summary_renderers_content,
         )
         self.assertIn(
+            "export function buildParticipantsMergeSessionResolutionRowsHtml({",
+            participants_merge_summary_renderers_content,
+        )
+        self.assertIn(
+            "export function buildParticipantsMergeSessionResolutionHintText({",
+            participants_merge_summary_renderers_content,
+        )
+        self.assertIn(
             "participants-merge-harmonization-action",
+            participants_merge_summary_renderers_content,
+        )
+        self.assertIn(
+            "participants-session-resolution-action",
             participants_merge_summary_renderers_content,
         )
         self.assertIn(
