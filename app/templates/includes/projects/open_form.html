@@ -15,7 +15,7 @@
             <div class="card-body">
                 {{ project_flow_strip('project-flow-strip--open', 'openProjectFlowStrip', [
                     ('Use when', 'You already have a <code>project.json</code> on disk'),
-                    ('Validation', 'Load first, then run Quick Validate only when you need it'),
+                    ('Validation', 'Load here, then open the full Validator when you need a real dataset check'),
                     ('Result', 'This project becomes the current working study in PRISM Studio')
                 ]) }}
                 <form id="openProjectForm">
@@ -29,15 +29,12 @@
                         </div>
                         <div class="col-md-5">
                             <label class="form-label fw-bold d-none d-md-block">&nbsp;</label>
-                            <div class="d-grid gap-2">
+                            <div class="d-grid">
                                 <button type="submit" class="btn btn-primary w-100" id="loadProjectBtn">
                                     <i class="fas fa-folder-open me-2"></i>Load Project
                                 </button>
-                                <button type="button" class="btn btn-outline-primary w-100" id="quickValidateProjectBtn" title="Run project validation on demand" disabled>
-                                    <i class="fas fa-bolt me-2"></i>Quick Validate
-                                </button>
                             </div>
-                            <small class="text-muted d-block mt-2">Loading sets the current project. Validation is optional and can be run afterwards.</small>
+                            <small class="text-muted d-block mt-2">Loading sets the current project. Full dataset validation runs from the Validator page.</small>
                         </div>
                     </div>
 
