@@ -219,6 +219,7 @@ def test_dataset_cleanup_project_metadata_help_exposes_key_options() -> None:
         [
             "--project",
             "--dry-run",
+            "--recursive",
             "--drop-task-definitions",
             "--json",
         ],

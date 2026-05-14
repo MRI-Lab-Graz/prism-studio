@@ -17,4 +17,7 @@ _canonical = load_canonical_module(
 )
 
 ProjectMetadataCleanupReport = _canonical.ProjectMetadataCleanupReport
+ProjectMetadataCleanupBatchReport = _canonical.ProjectMetadataCleanupBatchReport
 cleanup_project_metadata = _canonical.cleanup_project_metadata
+cleanup_project_metadata_tree = _canonical.cleanup_project_metadata_tree
+discover_project_json_files = _canonical.discover_project_json_files

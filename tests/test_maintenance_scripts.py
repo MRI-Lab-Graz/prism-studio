@@ -10,7 +10,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from src.maintenance.sync_survey_keys import sync_survey_keys
 from src.maintenance.sync_biometrics_keys import sync_biometrics_keys
 from src.maintenance.catalog_survey_library import generate_index
-from src.maintenance.project_metadata_cleanup import cleanup_project_metadata
+from src.maintenance.project_metadata_cleanup import (
+    cleanup_project_metadata,
+    cleanup_project_metadata_tree,
+    discover_project_json_files,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -322,3 +326,53 @@ class TestProjectMetadataCleanup:
         payload = json.loads(project_json_path.read_text(encoding="utf-8"))
         assert report.changed is True
         assert payload == original_payload
+
+    def test_discover_project_json_files_finds_nested_projects(self, tmp_path) -> None:
+        first = tmp_path / "legacy-a" / "project.json"
+        second = tmp_path / "legacy-b" / "rawdata" / "project.json"
+        first.parent.mkdir(parents=True)
+        second.parent.mkdir(parents=True)
+        first.write_text("{}", encoding="utf-8")
+        second.write_text("{}", encoding="utf-8")
+
+        discovered = discover_project_json_files(tmp_path)
+
+        assert discovered == [first, second]
+
+    def test_cleanup_project_metadata_tree_aggregates_recursive_results(self, tmp_path) -> None:
+        first = tmp_path / "legacy-a" / "project.json"
+        second = tmp_path / "legacy-b" / "rawdata" / "project.json"
+        first.parent.mkdir(parents=True)
+        second.parent.mkdir(parents=True)
+        first.write_text(
+            json.dumps(
+                {
+                    "Sessions": [{"id": "ses-1", "tasks": [{"task": "ads"}]}],
+                    "TaskDefinitions": {"ads": {"modality": "survey"}},
+                }
+            ),
+            encoding="utf-8",
+        )
+        second.write_text(
+            json.dumps(
+                {
+                    "Sessions": [{"id": "ses-2", "tasks": [{"task": "stai"}]}],
+                    "TaskDefinitions": {"stai": {"modality": "survey"}},
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        report = cleanup_project_metadata_tree(tmp_path, drop_task_definitions=True)
+
+        first_payload = json.loads(first.read_text(encoding="utf-8"))
+        second_payload = json.loads(second.read_text(encoding="utf-8"))
+        assert report.processed_projects == 2
+        assert report.changed_projects == 2
+        assert report.removed_sessions == 2
+        assert report.removed_task_entries == 2
+        assert report.removed_task_definitions == 2
+        assert "Sessions" not in first_payload
+        assert "TaskDefinitions" not in first_payload
+        assert "Sessions" not in second_payload
+        assert "TaskDefinitions" not in second_payload
