@@ -1,13 +1,25 @@
 export function createMetadataDescriptionController({
     fetchWithApiFallback,
     getCurrentProjectPath,
+    getCurrentProjectName,
+    setCurrentProjectName,
     getMetadataLoadToken,
     isProjectRequestCurrent,
     withProjectPathQuery,
+    getAuthorsList,
+    getCitationAuthorsList,
+    getEthicsApprovals,
+    getFundingList,
+    getBidsVersion,
+    getAuthorOptionalFormatErrors,
+    normalizeDoi,
+    isValidDoiFormat,
     buildDraftDatasetDescriptionForValidation,
     buildDraftCitationFieldsForValidation,
     displayMetadataIssues,
     refreshMetadataValidationState,
+    refreshCitationHealthStatus,
+    refreshMetadataSyncStatus,
     cleanMetadataText,
     cleanMetadataList,
     setAuthorsList,
@@ -173,11 +185,102 @@ export function createMetadataDescriptionController({
         }
     }
 
+    async function saveDatasetDescription(projectPath = null) {
+        try {
+            const requestProjectPath = String(projectPath || getCurrentProjectPath()).trim();
+            if (!requestProjectPath) {
+                throw new Error('No project selected');
+            }
+
+            const nameField = document.getElementById('metadataName');
+            if (!nameField || !nameField.value.trim()) {
+                throw new Error('REQUIRED FIELD: Dataset Name is mandatory per BIDS specification');
+            }
+
+            const overviewMain = document.getElementById('smOverviewMain');
+            const overviewText = overviewMain ? overviewMain.value.trim() : '';
+            const doiValue = document.getElementById('metadataDOI').value.trim();
+            const normalizedDoi = normalizeDoi(doiValue);
+
+            const formatErrors = getAuthorOptionalFormatErrors();
+            if (doiValue && !isValidDoiFormat(doiValue)) {
+                formatErrors.push('Dataset DOI format is invalid (use 10.xxxx/... or https://doi.org/10.xxxx/...).');
+            }
+            if (formatErrors.length) {
+                throw new Error(formatErrors.join(' '));
+            }
+
+            const description = {
+                Name: nameField.value.trim(),
+                Authors: getAuthorsList(),
+                License: document.getElementById('metadataLicense').value,
+                Acknowledgements: document.getElementById('metadataAcknowledgements').value,
+                DatasetDOI: normalizedDoi,
+                EthicsApprovals: getEthicsApprovals(),
+                Keywords: document.getElementById('metadataKeywords').value.split(',').map(s => s.trim()).filter(s => s),
+                BIDSVersion: getBidsVersion(),
+                DatasetType: document.getElementById('metadataType').value || undefined,
+                HowToAcknowledge: document.getElementById('metadataHowToAcknowledge').value,
+                Funding: getFundingList(),
+                ReferencesAndLinks: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
+                HEDVersion: document.getElementById('metadataHED').value.trim(),
+                Description: overviewText || undefined
+            };
+
+            const citationFields = {
+                Authors: getCitationAuthorsList(),
+                License: document.getElementById('metadataLicense').value,
+                HowToAcknowledge: document.getElementById('metadataHowToAcknowledge').value,
+                ReferencesAndLinks: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
+            };
+
+            try {
+                const currentResp = await fetchWithApiFallback(
+                    withProjectPathQuery('/api/projects/description', requestProjectPath)
+                );
+                const currentData = await currentResp.json();
+                if (currentData.success && currentData.description) {
+                    description.GeneratedBy = currentData.description.GeneratedBy;
+                    description.SourceDatasets = currentData.description.SourceDatasets;
+                    description.DatasetLinks = currentData.description.DatasetLinks;
+                }
+            } catch (e) {
+                console.warn('Could not merge with existing description', e);
+            }
+
+            const response = await fetchWithApiFallback('/api/projects/description', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ project_path: requestProjectPath, description, citation_fields: citationFields })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                await saveProjectSchemaConfig();
+                displayMetadataIssues(result.issues || []);
+                if (requestProjectPath === getCurrentProjectPath()) {
+                    await refreshCitationHealthStatus();
+                    await refreshMetadataSyncStatus();
+                }
+
+                if (requestProjectPath === getCurrentProjectPath() && description.Name && description.Name !== getCurrentProjectName()) {
+                    setCurrentProjectName(description.Name);
+                }
+            } else {
+                throw new Error(result.error || 'Failed to save metadata');
+            }
+        } catch (error) {
+            console.error('Error saving dataset description:', error);
+            throw error;
+        }
+    }
+
     return {
         getDefaultProjectSchemaVersion,
         validateDatasetDescriptionDraftLive,
         scheduleLiveDescriptionValidation,
         saveProjectSchemaConfig,
         loadDatasetDescriptionFields,
+        saveDatasetDescription,
     };
 }

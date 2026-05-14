@@ -3,6 +3,16 @@ import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
 import { createJobRunController } from './job-run-controller.js';
 import { pickServerFile, prefersServerPicker } from './server-picker.js';
+import { createParticipantsSourcedataQuickSelectController } from './participants-sourcedata-quick-select.js';
+import { createParticipantsMergeConflictDownloadController } from './participants-merge-conflict-download.js';
+import { createParticipantsMergePreviewRefreshController } from './participants-merge-preview-refresh.js';
+import { createParticipantsMergeSummaryController } from './participants-merge-summary.js';
+import {
+    getParticipantsMergeHarmonizationDecisions as getParticipantsMergeHarmonizationDecisionsPayload,
+    appendParticipantsMergeHarmonizationDecisions as appendParticipantsMergeHarmonizationDecisionsPayload,
+    getParticipantsMergeSessionResolutionDecisions as getParticipantsMergeSessionResolutionDecisionsPayload,
+    appendParticipantsMergeSessionResolutionDecisions as appendParticipantsMergeSessionResolutionDecisionsPayload,
+} from './participants-merge-decision-payload.js';
 
 export function initParticipants() {
     const participantsPanel = document.getElementById('participants-panel');
@@ -37,11 +47,41 @@ export function initParticipants() {
     let participantsFileAction = 'replace';
     let participantsSelectedCaseId = '1';
     let participantsServerFilePath = '';
-    let participantsMergeHarmonizationRefreshTimer = null;
-    let participantsSourcedataRequestToken = 0;
-    let participantsSourcedataQuickSelectEl = null;
-    let participantsSourcedataFileSelectEl = null;
     const runController = createJobRunController();
+
+    const participantsSourcedataQuickSelectController = createParticipantsSourcedataQuickSelectController({
+        getFileInput: () => document.getElementById('participantsDataFile'),
+        clearServerFilePath: () => {
+            participantsServerFilePath = '';
+        },
+        onClearSelectedFile: () => clearParticipantsSelectedFile(),
+        onResetPanelState: () => resetParticipantsPanelState(),
+        onUpdateButtonState: () => updateParticipantsButtonState(),
+        setErrorMessage: (message) => {
+            const participantsError = document.getElementById('participantsError');
+            if (participantsError) {
+                participantsError.textContent = message;
+                participantsError.classList.remove('d-none');
+            }
+        },
+    });
+
+    const participantsMergeConflictDownloadController = createParticipantsMergeConflictDownloadController({
+        getPreviewData: () => window.lastParticipantsPreviewData,
+        getWorkflowMode: () => getParticipantsWorkflowMode(),
+        getFileAction: () => getParticipantsFileAction(),
+        buildConflictFormData: () => buildParticipantsMergeConflictFormData(),
+        parseJsonResponse: (response) => parseParticipantsJsonResponse(response),
+    });
+
+    const participantsMergePreviewRefreshController = createParticipantsMergePreviewRefreshController();
+    const participantsMergeSummaryController = createParticipantsMergeSummaryController({
+        assessMergeHarmonizationState: (previewData) => assessParticipantsMergeHarmonizationState(previewData),
+        canApplyParticipantsConversion: () => canApplyParticipantsConversion(),
+        scheduleMergePreviewRefresh: () => scheduleParticipantsMergePreviewRefresh(),
+        updateMergeApplyStatusBadge: (previewData) => updateParticipantsMergeApplyStatusBadge(previewData),
+        isMergePreviewRefreshPending: () => participantsMergePreviewRefreshController.isPending(),
+    });
 
     const PARTICIPANTS_CASE_CONFIG = {
         '1': { mode: 'file', fileAction: 'replace' },
@@ -97,151 +137,13 @@ export function initParticipants() {
             }
         }
 
-        if (resetSourcedataSelection && participantsSourcedataFileSelectEl) {
-            participantsSourcedataFileSelectEl.value = '';
+        if (resetSourcedataSelection) {
+            participantsSourcedataQuickSelectController.clearSelectedFile();
         }
-    }
-
-    function ensureParticipantsSourcedataQuickSelectElements() {
-        if (participantsSourcedataQuickSelectEl && participantsSourcedataFileSelectEl) {
-            return;
-        }
-
-        const fileInput = document.getElementById('participantsDataFile');
-        if (!fileInput) {
-            return;
-        }
-
-        const pickerContainer = fileInput.closest('.studio-file-picker');
-        if (!pickerContainer) {
-            return;
-        }
-
-        participantsSourcedataQuickSelectEl = pickerContainer.querySelector('#participantsSourcedataQuickSelect');
-        participantsSourcedataFileSelectEl = pickerContainer.querySelector('#participantsSourcedataFileSelect');
-
-        if (participantsSourcedataQuickSelectEl && participantsSourcedataFileSelectEl) {
-            return;
-        }
-
-        const inputGroup = pickerContainer.querySelector('.input-group');
-        if (!inputGroup || !inputGroup.parentElement) {
-            return;
-        }
-
-        const wrapper = document.createElement('div');
-        wrapper.id = 'participantsSourcedataQuickSelect';
-        wrapper.className = 'd-none mb-2';
-        wrapper.innerHTML = `
-            <div class="input-group input-group-sm">
-                <span class="input-group-text bg-light"><i class="fas fa-folder-open text-muted"></i></span>
-                <select class="form-select form-select-sm" id="participantsSourcedataFileSelect">
-                    <option value="">Loading sourcedata files...</option>
-                </select>
-            </div>
-        `;
-
-        inputGroup.parentElement.insertBefore(wrapper, inputGroup);
-        participantsSourcedataQuickSelectEl = wrapper;
-        participantsSourcedataFileSelectEl = wrapper.querySelector('#participantsSourcedataFileSelect');
-    }
-
-    function resetParticipantsSourcedataQuickSelect() {
-        ensureParticipantsSourcedataQuickSelectElements();
-        if (!participantsSourcedataFileSelectEl) {
-            return;
-        }
-
-        participantsSourcedataFileSelectEl.value = '';
-        while (participantsSourcedataFileSelectEl.options.length > 1) {
-            participantsSourcedataFileSelectEl.remove(1);
-        }
-    }
-
-    function setParticipantsSourcedataPlaceholder(label, { disabled = true } = {}) {
-        ensureParticipantsSourcedataQuickSelectElements();
-        if (!participantsSourcedataQuickSelectEl || !participantsSourcedataFileSelectEl) {
-            return;
-        }
-
-        participantsSourcedataQuickSelectEl.classList.remove('d-none');
-        resetParticipantsSourcedataQuickSelect();
-
-        let placeholderOption = participantsSourcedataFileSelectEl.options[0];
-        if (!placeholderOption) {
-            placeholderOption = document.createElement('option');
-            participantsSourcedataFileSelectEl.appendChild(placeholderOption);
-        }
-
-        placeholderOption.value = '';
-        placeholderOption.textContent = label;
-        placeholderOption.disabled = disabled;
-        participantsSourcedataFileSelectEl.selectedIndex = 0;
-        participantsSourcedataFileSelectEl.disabled = disabled;
     }
 
     function refreshParticipantsSourcedataQuickSelect(projectPath = resolveCurrentProjectPath()) {
-        ensureParticipantsSourcedataQuickSelectElements();
-        if (!participantsSourcedataQuickSelectEl || !participantsSourcedataFileSelectEl) {
-            return;
-        }
-
-        const previousValue = participantsSourcedataFileSelectEl.value;
-        const requestToken = ++participantsSourcedataRequestToken;
-        setParticipantsSourcedataPlaceholder('Loading sourcedata files...', { disabled: true });
-
-        const effectiveProjectPath = String(projectPath || '').trim();
-        const endpoint = effectiveProjectPath
-            ? `/api/projects/sourcedata-files?kind=participants&project_path=${encodeURIComponent(effectiveProjectPath)}`
-            : '/api/projects/sourcedata-files?kind=participants';
-
-        fetchWithApiFallback(endpoint)
-            .then((response) => response.json())
-            .then((data) => {
-                if (requestToken !== participantsSourcedataRequestToken) {
-                    return;
-                }
-
-                if (data.sourcedata_exists && Array.isArray(data.files) && data.files.length > 0) {
-                    participantsSourcedataQuickSelectEl.classList.remove('d-none');
-                    resetParticipantsSourcedataQuickSelect();
-                    participantsSourcedataFileSelectEl.disabled = false;
-
-                    const placeholderOption = participantsSourcedataFileSelectEl.options[0];
-                    if (placeholderOption) {
-                        placeholderOption.textContent = 'Load from sourcedata/...';
-                        placeholderOption.disabled = false;
-                    }
-
-                    data.files.forEach((entry) => {
-                        const option = document.createElement('option');
-                        option.value = entry.name;
-                        const sizeKB = (entry.size / 1024).toFixed(1);
-                        option.textContent = `${entry.name} (${sizeKB} KB)`;
-                        participantsSourcedataFileSelectEl.appendChild(option);
-                    });
-
-                    if (previousValue && Array.from(participantsSourcedataFileSelectEl.options).some((option) => option.value === previousValue)) {
-                        participantsSourcedataFileSelectEl.value = previousValue;
-                    }
-                } else if (data.sourcedata_exists) {
-                    setParticipantsSourcedataPlaceholder('No participants-compatible files found in sourcedata/', {
-                        disabled: true,
-                    });
-                } else {
-                    setParticipantsSourcedataPlaceholder('No sourcedata folder found for the current project', {
-                        disabled: true,
-                    });
-                }
-            })
-            .catch(() => {
-                if (requestToken !== participantsSourcedataRequestToken) {
-                    return;
-                }
-                setParticipantsSourcedataPlaceholder('Could not load sourcedata files', {
-                    disabled: true,
-                });
-            });
+        participantsSourcedataQuickSelectController.refresh(projectPath);
     }
 
     async function pickServerParticipantsFile() {
@@ -1473,48 +1375,8 @@ export function initParticipants() {
         });
     }
 
-    ensureParticipantsSourcedataQuickSelectElements();
-    if (participantsSourcedataQuickSelectEl && participantsSourcedataFileSelectEl && fileInput) {
-        refreshParticipantsSourcedataQuickSelect();
-
-        participantsSourcedataFileSelectEl.addEventListener('change', async function() {
-            const filename = this.value;
-            if (!filename) {
-                clearParticipantsSelectedFile();
-                resetParticipantsPanelState();
-                updateParticipantsButtonState();
-                return;
-            }
-
-            try {
-                const currentProjectPath = resolveCurrentProjectPath();
-                const endpoint = currentProjectPath
-                    ? `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}`
-                    : `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}`;
-
-                const response = await fetchWithApiFallback(endpoint);
-                if (!response.ok) {
-                    throw new Error('Failed to load sourcedata file');
-                }
-
-                const blob = await response.blob();
-                const file = new File([blob], filename, { type: blob.type });
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(file);
-
-                participantsServerFilePath = '';
-                fileInput.files = dataTransfer.files;
-                fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-            } catch (_error) {
-                const participantsError = document.getElementById('participantsError');
-                if (participantsError) {
-                    participantsError.textContent = `Failed to load ${filename} from sourcedata.`;
-                    participantsError.classList.remove('d-none');
-                }
-            } finally {
-                refreshParticipantsSourcedataQuickSelect();
-            }
-        });
+    if (fileInput) {
+        participantsSourcedataQuickSelectController.initialize();
     }
     
     const participantsChooseFileBtn = document.getElementById('participantsChooseFileBtn');
@@ -2561,549 +2423,7 @@ export function initParticipants() {
     }
 
     function renderParticipantsMergeSummary(previewData) {
-        const summary = document.getElementById('participantsMergeSummary');
-        const title = document.getElementById('participantsMergeSummaryTitle');
-        const matchedBadge = document.getElementById('participantsMergeMatchedCount');
-        const newParticipantsBadge = document.getElementById('participantsMergeNewParticipantsCount');
-        const fillBadge = document.getElementById('participantsMergeFillCount');
-        const conflictBadge = document.getElementById('participantsMergeConflictCount');
-        const summaryText = document.getElementById('participantsMergeSummaryText');
-        const columnsText = document.getElementById('participantsMergeColumnsText');
-        const conflictList = document.getElementById('participantsMergeConflictList');
-        const conflictActions = document.getElementById('participantsMergeConflictActions');
-        const downloadButton = document.getElementById('participantsDownloadMergeConflictsBtn');
-        const harmonizationSection = document.getElementById('participantsMergeHarmonizationSection');
-        const harmonizationHint = document.getElementById('participantsMergeHarmonizationHint');
-        const harmonizationStatus = document.getElementById('participantsMergeHarmonizationStatus');
-        const harmonizationList = document.getElementById('participantsMergeHarmonizationList');
-        const sessionResolutionSection = document.getElementById('participantsMergeSessionResolutionSection');
-        const sessionResolutionHint = document.getElementById('participantsMergeSessionResolutionHint');
-        const sessionResolutionList = document.getElementById('participantsMergeSessionResolutionList');
-
-        if (!summary || !title || !matchedBadge || !newParticipantsBadge || !fillBadge || !conflictBadge || !summaryText || !columnsText || !conflictList || !conflictActions || !downloadButton || !harmonizationSection || !harmonizationHint || !harmonizationStatus || !harmonizationList || !sessionResolutionSection || !sessionResolutionHint || !sessionResolutionList) {
-            return;
-        }
-
-        if (!previewData || !previewData.merge_mode) {
-            summary.classList.add('d-none');
-            conflictActions.classList.add('d-none');
-            harmonizationSection.classList.add('d-none');
-            harmonizationStatus.classList.add('d-none');
-            harmonizationStatus.textContent = '';
-            harmonizationList.innerHTML = '';
-            sessionResolutionSection.classList.add('d-none');
-            sessionResolutionList.innerHTML = '';
-            downloadButton.disabled = true;
-            return;
-        }
-
-        const matchedCount = Number(previewData.matched_participant_count || 0);
-        const newParticipantCount = Number(previewData.new_participant_count || 0);
-        const fillCount = Number(previewData.fillable_value_count || 0);
-        const conflictCount = Number(previewData.conflict_count || 0);
-        const existingOnlyCount = Number(previewData.existing_only_participant_count || 0);
-        const newColumns = Array.isArray(previewData.new_columns)
-            ? previewData.new_columns.map((col) => String(col || '').trim()).filter(Boolean)
-            : [];
-        const conflicts = Array.isArray(previewData.conflicts) ? previewData.conflicts : [];
-        const harmonizationCandidates = Array.isArray(previewData.harmonization_candidates)
-            ? previewData.harmonization_candidates
-            : [];
-        const serverDecisions = (previewData.harmonization_decisions && typeof previewData.harmonization_decisions === 'object')
-            ? previewData.harmonization_decisions
-            : {};
-        const sessionResolutionCandidates = Array.isArray(previewData.session_resolution_candidates)
-            ? previewData.session_resolution_candidates
-            : [];
-        const sessionResolutionDecisions = (previewData.session_resolution_decisions && typeof previewData.session_resolution_decisions === 'object')
-            ? previewData.session_resolution_decisions
-            : {};
-        const mergeQuality = (previewData.merge_quality && typeof previewData.merge_quality === 'object')
-            ? previewData.merge_quality
-            : {};
-        const sessionResolutionRequired = Boolean(previewData.session_resolution_required);
-        const canApply = Boolean(previewData.can_apply);
-
-        matchedBadge.textContent = `${matchedCount} matched`;
-        newParticipantsBadge.textContent = `${newParticipantCount} new participant${newParticipantCount === 1 ? '' : 's'}`;
-        fillBadge.textContent = `${fillCount} filled value${fillCount === 1 ? '' : 's'}`;
-        conflictBadge.textContent = `${conflictCount} conflict${conflictCount === 1 ? '' : 's'}`;
-
-        summary.classList.remove('d-none', 'alert-success', 'alert-warning', 'alert-info');
-        summary.classList.add(canApply ? 'alert-success' : 'alert-warning');
-        title.textContent = canApply ? 'Merge Preview Ready' : 'Merge Preview Blocked';
-
-        if (canApply) {
-            summaryText.textContent = existingOnlyCount > 0
-                ? `This merge can be applied safely. ${existingOnlyCount} existing participant${existingOnlyCount === 1 ? '' : 's'} will stay unchanged.`
-                : 'This merge can be applied safely. All overlapping non-empty values agree.';
-
-            const incomingTotalCells = Number(mergeQuality.incoming_new_participant_total_value_cells || 0);
-            const incomingMissingCells = Number(mergeQuality.incoming_new_participant_missing_value_cells || 0);
-            const incomingAllMissingRows = Number(mergeQuality.incoming_new_participants_all_missing_values || 0);
-            if (newParticipantCount > 0 && incomingTotalCells > 0 && incomingMissingCells > 0) {
-                const missingPercent = Math.round((incomingMissingCells / incomingTotalCells) * 100);
-                const allMissingNote = incomingAllMissingRows > 0
-                    ? ` ${incomingAllMissingRows} new participant row${incomingAllMissingRows === 1 ? ' is' : 's are'} fully empty in the imported file.`
-                    : '';
-                summaryText.textContent += ` Imported values for new participants are sparse (${incomingMissingCells}/${incomingTotalCells} missing cells, ${missingPercent}%).${allMissingNote}`;
-            }
-        } else if (sessionResolutionRequired && conflictCount === 0) {
-            summaryText.textContent = 'This merge is blocked until session resolution is chosen for columns that vary across repeated participant rows.';
-        } else {
-            summaryText.textContent = 'This merge is blocked because conflicting non-empty values were found. Existing participants.tsv remains authoritative until conflicts are resolved.';
-        }
-
-        if (newColumns.length > 0) {
-            columnsText.textContent = `New columns from the import: ${newColumns.join(', ')}`;
-            columnsText.classList.remove('d-none');
-        } else {
-            columnsText.textContent = '';
-            columnsText.classList.add('d-none');
-        }
-
-        if (conflicts.length > 0) {
-            const visibleConflicts = conflicts.slice(0, 6);
-            const rows = visibleConflicts.map((conflict) => {
-                const participantId = escapeHtml(String(conflict.participant_id || ''));
-                const columnName = escapeHtml(String(conflict.column || ''));
-                const existingValue = escapeHtml(String(conflict.existing_value ?? ''));
-                const incomingValue = escapeHtml(String(conflict.incoming_value ?? ''));
-                return `<li><code>${participantId}</code> · <code>${columnName}</code> already has <code>${existingValue}</code>, incoming file has <code>${incomingValue}</code>.</li>`;
-            });
-
-            if (conflicts.length > visibleConflicts.length) {
-                rows.push(`<li>...and ${conflicts.length - visibleConflicts.length} more conflict(s).</li>`);
-            }
-
-            conflictList.innerHTML = rows.join('');
-            conflictList.classList.remove('d-none');
-        } else {
-            conflictList.innerHTML = '';
-            conflictList.classList.add('d-none');
-        }
-
-        if (conflictCount > 0) {
-            conflictActions.classList.remove('d-none');
-            downloadButton.disabled = false;
-        } else {
-            conflictActions.classList.add('d-none');
-            downloadButton.disabled = true;
-        }
-
-        if (!(window.participantsMergeSessionResolutionDecisions && typeof window.participantsMergeSessionResolutionDecisions === 'object')) {
-            window.participantsMergeSessionResolutionDecisions = {};
-        }
-
-        if (sessionResolutionCandidates.length > 0) {
-            sessionResolutionCandidates.forEach((candidate) => {
-                const columnName = String(candidate && candidate.column ? candidate.column : '').trim();
-                if (!columnName) {
-                    return;
-                }
-
-                const serverEntry = sessionResolutionDecisions[columnName];
-                const selectedAction = String(serverEntry?.action || candidate.selected_action || '').trim();
-                const selectedSession = String(serverEntry?.session || candidate.selected_session || '').trim();
-                const sessionColumn = String(candidate.session_column || '').trim();
-                window.participantsMergeSessionResolutionDecisions[columnName] = {
-                    action: selectedAction,
-                    session: selectedSession,
-                    session_column: sessionColumn,
-                };
-            });
-
-            const sessionColumnName = String(previewData.session_resolution_column || sessionResolutionCandidates[0]?.session_column || 'session').trim();
-            sessionResolutionHint.textContent = `Columns vary across repeated participant rows. Choose how to resolve values by ${sessionColumnName || 'session'}.`;
-
-            sessionResolutionList.innerHTML = sessionResolutionCandidates.map((candidate, index) => {
-                const columnName = String(candidate && candidate.column ? candidate.column : '').trim();
-                if (!columnName) {
-                    return '';
-                }
-
-                const decision = window.participantsMergeSessionResolutionDecisions[columnName] || { action: '', session: '' };
-                const selectedAction = String(decision.action || '').trim();
-                const selectedSession = String(decision.session || '').trim();
-                const availableSessions = Array.isArray(candidate.available_sessions)
-                    ? candidate.available_sessions.map((value) => String(value || '').trim()).filter(Boolean)
-                    : [];
-                const generatedColumns = Array.isArray(candidate.generated_columns)
-                    ? candidate.generated_columns.map((value) => String(value || '').trim()).filter(Boolean)
-                    : [];
-                const generatedPreview = generatedColumns.length > 0
-                    ? generatedColumns.join(', ')
-                    : (availableSessions.length > 0
-                        ? availableSessions.map((sessionValue) => `${columnName}@ses-${sessionValue}`).join(', ')
-                        : 'session-specific columns');
-                const sessionSelectId = `participantsSessionResolution_${index}`;
-
-                return `
-                    <div class="border rounded p-2 mb-2" data-session-resolution-column="${escapeHtml(columnName)}">
-                        <div class="small mb-1"><strong>${escapeHtml(columnName)}</strong></div>
-                        <div class="row g-2 align-items-end">
-                            <div class="col-md-5">
-                                <label class="form-label form-label-sm mb-1">Resolution</label>
-                                <select class="form-select form-select-sm participants-session-resolution-action">
-                                    <option value="" ${selectedAction ? '' : 'selected'}>Choose...</option>
-                                    <option value="pick_session" ${selectedAction === 'pick_session' ? 'selected' : ''}>Take one session</option>
-                                    <option value="pick_latest_session" ${selectedAction === 'pick_latest_session' ? 'selected' : ''}>Take latest session</option>
-                                    <option value="split_sessions" ${selectedAction === 'split_sessions' ? 'selected' : ''}>Keep all sessions as columns</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label form-label-sm mb-1">Session (for Take one)</label>
-                                <select id="${escapeHtml(sessionSelectId)}" class="form-select form-select-sm participants-session-resolution-session" ${selectedAction === 'pick_session' ? '' : 'disabled'}>
-                                    <option value="">Choose session...</option>
-                                    ${availableSessions.map((sessionValue) => `<option value="${escapeHtml(sessionValue)}" ${selectedSession === sessionValue ? 'selected' : ''}>${escapeHtml(sessionValue)}</option>`).join('')}
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="small text-muted">${selectedAction === 'split_sessions' ? `Creates: ${escapeHtml(generatedPreview)}` : ''}</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            sessionResolutionSection.classList.remove('d-none');
-
-            sessionResolutionList.querySelectorAll('.participants-session-resolution-action').forEach((selectEl) => {
-                selectEl.addEventListener('change', () => {
-                    const row = selectEl.closest('[data-session-resolution-column]');
-                    if (!row) {
-                        return;
-                    }
-
-                    const columnName = String(row.getAttribute('data-session-resolution-column') || '').trim();
-                    if (!columnName) {
-                        return;
-                    }
-
-                    const sessionSelect = row.querySelector('.participants-session-resolution-session');
-                    const action = String(selectEl.value || '').trim();
-                    const sessionValue = sessionSelect ? String(sessionSelect.value || '').trim() : '';
-                    if (sessionSelect) {
-                        sessionSelect.disabled = action !== 'pick_session';
-                    }
-
-                    window.participantsMergeSessionResolutionDecisions[columnName] = {
-                        action,
-                        session: action === 'pick_session' ? sessionValue : '',
-                        session_column: String(previewData.session_resolution_column || '').trim(),
-                    };
-
-                    scheduleParticipantsMergePreviewRefresh();
-                });
-            });
-
-            sessionResolutionList.querySelectorAll('.participants-session-resolution-session').forEach((sessionEl) => {
-                sessionEl.addEventListener('change', () => {
-                    const row = sessionEl.closest('[data-session-resolution-column]');
-                    if (!row) {
-                        return;
-                    }
-
-                    const columnName = String(row.getAttribute('data-session-resolution-column') || '').trim();
-                    if (!columnName) {
-                        return;
-                    }
-
-                    const actionSelect = row.querySelector('.participants-session-resolution-action');
-                    const action = actionSelect ? String(actionSelect.value || '').trim() : '';
-                    if (action !== 'pick_session') {
-                        return;
-                    }
-
-                    window.participantsMergeSessionResolutionDecisions[columnName] = {
-                        action,
-                        session: String(sessionEl.value || '').trim(),
-                        session_column: String(previewData.session_resolution_column || '').trim(),
-                    };
-
-                    scheduleParticipantsMergePreviewRefresh();
-                });
-            });
-        } else {
-            sessionResolutionSection.classList.add('d-none');
-            sessionResolutionList.innerHTML = '';
-        }
-
-        if (!(window.participantsMergeHarmonizationDecisions && typeof window.participantsMergeHarmonizationDecisions === 'object')) {
-            window.participantsMergeHarmonizationDecisions = {};
-        }
-
-        if (harmonizationCandidates.length === 0) {
-            harmonizationSection.classList.add('d-none');
-            harmonizationStatus.classList.add('d-none');
-            harmonizationStatus.textContent = '';
-            harmonizationList.innerHTML = '';
-
-            const convertBtn = document.getElementById('participantsConvertBtn');
-            const convertHint = document.getElementById('convertBtnHint');
-            const canConvert = canApplyParticipantsConversion();
-            if (convertBtn) {
-                convertBtn.disabled = !canConvert;
-                convertBtn.classList.remove('btn-outline-secondary', 'btn-success');
-                convertBtn.classList.add(canConvert ? 'btn-success' : 'btn-outline-secondary');
-            }
-            if (convertHint) {
-                if (sessionResolutionRequired && conflictCount === 0) {
-                    convertHint.textContent = 'Choose session resolution before applying merge';
-                } else {
-                    convertHint.textContent = canConvert
-                        ? 'Ready to apply conflict-free merge'
-                        : 'Resolve merge conflicts first';
-                }
-            }
-            updateParticipantsMergeApplyStatusBadge(previewData);
-            return;
-        }
-
-        harmonizationCandidates.forEach((candidate) => {
-            const columnName = String(candidate && candidate.column ? candidate.column : '').trim();
-            if (!columnName) {
-                return;
-            }
-
-            const serverEntry = serverDecisions[columnName];
-            const fallbackAction = String(candidate.selected_action || 'keep_existing').trim().toLowerCase();
-            const fallbackNewColumn = String(candidate.selected_new_column || candidate.default_new_column || '').trim();
-
-            let selectedAction = fallbackAction;
-            let selectedNewColumn = fallbackNewColumn;
-
-            if (serverEntry && typeof serverEntry === 'object') {
-                selectedAction = String(serverEntry.action || fallbackAction).trim().toLowerCase();
-                selectedNewColumn = String(serverEntry.new_column || fallbackNewColumn).trim();
-            }
-
-            if (!['keep_existing', 'use_incoming', 'keep_both'].includes(selectedAction)) {
-                selectedAction = 'keep_existing';
-            }
-
-            window.participantsMergeHarmonizationDecisions[columnName] = {
-                action: selectedAction,
-                new_column: selectedAction === 'keep_both' ? selectedNewColumn : '',
-            };
-        });
-
-        harmonizationHint.textContent = `Equivalent coding detected in ${harmonizationCandidates.length} column(s). Choose how merge should harmonize these values.`;
-
-        harmonizationList.innerHTML = harmonizationCandidates.map((candidate, index) => {
-            const columnName = String(candidate && candidate.column ? candidate.column : '').trim();
-            if (!columnName) {
-                return '';
-            }
-
-            const decision = window.participantsMergeHarmonizationDecisions[columnName] || { action: 'keep_existing', new_column: '' };
-            const selectedAction = String(decision.action || 'keep_existing');
-            const selectedNewColumn = String(decision.new_column || candidate.selected_new_column || candidate.default_new_column || '').trim();
-            const mappingPairs = Array.isArray(candidate.mapping_pairs) ? candidate.mapping_pairs : [];
-            const mappingText = mappingPairs.length > 0
-                ? mappingPairs
-                    .map((pair) => `${escapeHtml(String(pair.incoming_value || ''))} -> ${escapeHtml(String(pair.existing_value || ''))}`)
-                    .join(', ')
-                : 'Equivalent coding detected.';
-            const matchedPairCount = Number(candidate.matched_pair_count || 0);
-            const inputId = `participantsHarmonizationColumn_${index}`;
-
-            return `
-                <div class="border rounded p-2 mb-2" data-harmonization-column="${escapeHtml(columnName)}">
-                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                        <div class="small"><strong>${escapeHtml(columnName)}</strong></div>
-                        <span class="badge bg-light text-dark">${matchedPairCount} matched pair${matchedPairCount === 1 ? '' : 's'}</span>
-                    </div>
-                    <div class="small text-muted mt-1">Detected mapping: ${mappingText}</div>
-                    <div class="row g-2 mt-1">
-                        <div class="col-md-5">
-                            <label class="form-label form-label-sm mb-1">Action</label>
-                            <select class="form-select form-select-sm participants-merge-harmonization-action">
-                                <option value="keep_existing" ${selectedAction === 'keep_existing' ? 'selected' : ''}>Keep existing coding</option>
-                                <option value="use_incoming" ${selectedAction === 'use_incoming' ? 'selected' : ''}>Use incoming coding</option>
-                                <option value="keep_both" ${selectedAction === 'keep_both' ? 'selected' : ''}>Keep both (add column)</option>
-                            </select>
-                        </div>
-                        <div class="col-md-7">
-                            <label class="form-label form-label-sm mb-1">New column (for Keep both)</label>
-                            <input
-                                id="${escapeHtml(inputId)}"
-                                class="form-control form-control-sm participants-merge-harmonization-column"
-                                type="text"
-                                value="${escapeHtml(selectedNewColumn)}"
-                                placeholder="${escapeHtml(String(candidate.default_new_column || `${columnName}_incoming`))}"
-                                ${selectedAction === 'keep_both' ? '' : 'disabled'}
-                            >
-                            <div class="invalid-feedback participants-merge-harmonization-feedback"></div>
-                            <div class="form-text participants-merge-harmonization-column-hint"></div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        harmonizationSection.classList.remove('d-none');
-
-        const refreshHarmonizationUiState = () => {
-            const harmonizationState = assessParticipantsMergeHarmonizationState(previewData);
-            const invalidByColumn = harmonizationState.invalidByColumn || {};
-
-            harmonizationList.querySelectorAll('[data-harmonization-column]').forEach((row) => {
-                const columnName = String(row.getAttribute('data-harmonization-column') || '').trim();
-                const inputEl = row.querySelector('.participants-merge-harmonization-column');
-                const actionEl = row.querySelector('.participants-merge-harmonization-action');
-                const feedbackEl = row.querySelector('.participants-merge-harmonization-feedback');
-                const hintEl = row.querySelector('.participants-merge-harmonization-column-hint');
-
-                if (!inputEl || !actionEl || !feedbackEl || !hintEl) {
-                    return;
-                }
-
-                const action = String(actionEl.value || 'keep_existing').trim();
-                if (action !== 'keep_both') {
-                    inputEl.classList.remove('is-invalid');
-                    feedbackEl.textContent = '';
-                    hintEl.textContent = 'No extra column will be created for this field.';
-                    return;
-                }
-
-                const errorText = String(invalidByColumn[columnName] || '').trim();
-                if (errorText) {
-                    inputEl.classList.add('is-invalid');
-                    feedbackEl.textContent = errorText;
-                    hintEl.textContent = '';
-                } else {
-                    inputEl.classList.remove('is-invalid');
-                    feedbackEl.textContent = '';
-                    const targetName = String(inputEl.value || '').trim();
-                    hintEl.textContent = targetName
-                        ? `Incoming coding will be written to ${targetName}.`
-                        : 'Enter the new incoming-coded column name.';
-                }
-            });
-
-            harmonizationStatus.classList.remove('d-none', 'text-danger', 'text-warning', 'text-muted', 'text-success');
-            if (harmonizationState.hasInvalidKeepBoth) {
-                harmonizationStatus.classList.add('text-danger');
-                harmonizationStatus.textContent = 'Fix Keep both column names before applying merge.';
-            } else if (participantsMergeHarmonizationRefreshTimer !== null) {
-                harmonizationStatus.classList.add('text-muted');
-                harmonizationStatus.textContent = 'Refreshing merge preview with updated harmonization settings...';
-            } else if (conflictCount > 0) {
-                harmonizationStatus.classList.add('text-warning');
-                harmonizationStatus.textContent = 'Harmonization can resolve equivalent coding only. Remaining conflicts must be fixed in source data.';
-            } else {
-                harmonizationStatus.classList.add('text-success');
-                harmonizationStatus.textContent = 'Merge is conflict-free. Confirm harmonization choices, then apply merge.';
-            }
-
-            const convertBtn = document.getElementById('participantsConvertBtn');
-            const convertHint = document.getElementById('convertBtnHint');
-            const canConvert = canApplyParticipantsConversion();
-            if (convertBtn) {
-                convertBtn.disabled = !canConvert;
-                convertBtn.classList.remove('btn-outline-secondary', 'btn-success');
-                convertBtn.classList.add(canConvert ? 'btn-success' : 'btn-outline-secondary');
-            }
-            if (convertHint) {
-                if (harmonizationState.hasInvalidKeepBoth) {
-                    convertHint.textContent = 'Fix Keep both column names before applying merge';
-                } else if (sessionResolutionRequired && conflictCount === 0) {
-                    convertHint.textContent = 'Choose session resolution before applying merge';
-                } else {
-                    convertHint.textContent = canConvert
-                        ? 'Ready to apply conflict-free merge'
-                        : 'Resolve merge conflicts first';
-                }
-            }
-
-            updateParticipantsMergeApplyStatusBadge(previewData);
-        };
-
-        harmonizationList.querySelectorAll('.participants-merge-harmonization-action').forEach((selectEl) => {
-            selectEl.addEventListener('change', () => {
-                const row = selectEl.closest('[data-harmonization-column]');
-                if (!row) {
-                    return;
-                }
-
-                const columnName = String(row.getAttribute('data-harmonization-column') || '').trim();
-                if (!columnName) {
-                    return;
-                }
-
-                const inputEl = row.querySelector('.participants-merge-harmonization-column');
-                const action = String(selectEl.value || 'keep_existing').trim();
-                const newColumn = inputEl ? String(inputEl.value || '').trim() : '';
-
-                if (inputEl) {
-                    inputEl.disabled = action !== 'keep_both';
-                }
-
-                window.participantsMergeHarmonizationDecisions[columnName] = {
-                    action,
-                    new_column: action === 'keep_both' ? newColumn : '',
-                };
-
-                refreshHarmonizationUiState();
-                scheduleParticipantsMergePreviewRefresh();
-            });
-        });
-
-        harmonizationList.querySelectorAll('.participants-merge-harmonization-column').forEach((inputEl) => {
-            inputEl.addEventListener('input', () => {
-                const row = inputEl.closest('[data-harmonization-column]');
-                if (!row) {
-                    return;
-                }
-
-                const columnName = String(row.getAttribute('data-harmonization-column') || '').trim();
-                if (!columnName) {
-                    return;
-                }
-
-                const actionEl = row.querySelector('.participants-merge-harmonization-action');
-                const action = actionEl ? String(actionEl.value || 'keep_existing').trim() : 'keep_existing';
-                if (action !== 'keep_both') {
-                    return;
-                }
-
-                window.participantsMergeHarmonizationDecisions[columnName] = {
-                    action,
-                    new_column: String(inputEl.value || '').trim(),
-                };
-
-                refreshHarmonizationUiState();
-            });
-
-            inputEl.addEventListener('change', () => {
-                const row = inputEl.closest('[data-harmonization-column]');
-                if (!row) {
-                    return;
-                }
-
-                const columnName = String(row.getAttribute('data-harmonization-column') || '').trim();
-                if (!columnName) {
-                    return;
-                }
-
-                const actionEl = row.querySelector('.participants-merge-harmonization-action');
-                const action = actionEl ? String(actionEl.value || 'keep_existing').trim() : 'keep_existing';
-                if (action !== 'keep_both') {
-                    return;
-                }
-
-                window.participantsMergeHarmonizationDecisions[columnName] = {
-                    action,
-                    new_column: String(inputEl.value || '').trim(),
-                };
-
-                refreshHarmonizationUiState();
-                scheduleParticipantsMergePreviewRefresh();
-            });
-        });
-
-        refreshHarmonizationUiState();
+        participantsMergeSummaryController.render(previewData);
     }
 
     function appendParticipantsFileImportFields(formData) {
@@ -3154,109 +2474,33 @@ export function initParticipants() {
     }
 
     function getParticipantsMergeHarmonizationDecisions() {
-        const rawDecisions = (window.participantsMergeHarmonizationDecisions && typeof window.participantsMergeHarmonizationDecisions === 'object')
-            ? window.participantsMergeHarmonizationDecisions
-            : {};
-
-        const normalizedDecisions = {};
-        Object.entries(rawDecisions).forEach(([columnName, rawEntry]) => {
-            const cleanedColumn = String(columnName || '').trim();
-            if (!cleanedColumn) {
-                return;
-            }
-
-            let action = 'keep_existing';
-            let newColumn = '';
-
-            if (typeof rawEntry === 'string') {
-                action = String(rawEntry || '').trim().toLowerCase();
-            } else if (rawEntry && typeof rawEntry === 'object') {
-                action = String(rawEntry.action || '').trim().toLowerCase();
-                newColumn = String(rawEntry.new_column || '').trim();
-            }
-
-            if (!['keep_existing', 'use_incoming', 'keep_both'].includes(action)) {
-                action = 'keep_existing';
-            }
-
-            normalizedDecisions[cleanedColumn] = {
-                action,
-                new_column: action === 'keep_both' ? newColumn : '',
-            };
-        });
-
-        return normalizedDecisions;
+        return getParticipantsMergeHarmonizationDecisionsPayload(
+            window.participantsMergeHarmonizationDecisions
+        );
     }
 
     function appendParticipantsMergeHarmonizationDecisions(formData) {
-        const decisions = getParticipantsMergeHarmonizationDecisions();
-        if (Object.keys(decisions).length > 0) {
-            formData.append('harmonization_decisions', JSON.stringify(decisions));
-        }
+        appendParticipantsMergeHarmonizationDecisionsPayload(
+            formData,
+            window.participantsMergeHarmonizationDecisions
+        );
     }
 
     function getParticipantsMergeSessionResolutionDecisions() {
-        const rawDecisions = (window.participantsMergeSessionResolutionDecisions && typeof window.participantsMergeSessionResolutionDecisions === 'object')
-            ? window.participantsMergeSessionResolutionDecisions
-            : {};
-
-        const normalizedDecisions = {};
-        Object.entries(rawDecisions).forEach(([columnName, rawEntry]) => {
-            const cleanedColumn = String(columnName || '').trim();
-            if (!cleanedColumn || !rawEntry || typeof rawEntry !== 'object') {
-                return;
-            }
-
-            const action = String(rawEntry.action || '').trim().toLowerCase();
-            if (!['pick_session', 'pick_latest_session', 'split_sessions'].includes(action)) {
-                return;
-            }
-
-            const decision = { action };
-            if (action === 'pick_session') {
-                const sessionValue = String(rawEntry.session || '').trim();
-                decision.session = sessionValue;
-            }
-
-            const sessionColumn = String(rawEntry.session_column || '').trim();
-            if (sessionColumn) {
-                decision.session_column = sessionColumn;
-            }
-
-            normalizedDecisions[cleanedColumn] = decision;
-        });
-
-        return normalizedDecisions;
+        return getParticipantsMergeSessionResolutionDecisionsPayload(
+            window.participantsMergeSessionResolutionDecisions
+        );
     }
 
     function appendParticipantsMergeSessionResolutionDecisions(formData) {
-        const decisions = getParticipantsMergeSessionResolutionDecisions();
-        if (Object.keys(decisions).length > 0) {
-            formData.append('session_resolution_decisions', JSON.stringify(decisions));
-        }
+        appendParticipantsMergeSessionResolutionDecisionsPayload(
+            formData,
+            window.participantsMergeSessionResolutionDecisions
+        );
     }
 
     function scheduleParticipantsMergePreviewRefresh() {
-        const previewBtn = document.getElementById('participantsPreviewBtn');
-        if (!previewBtn || previewBtn.disabled) {
-            return;
-        }
-
-        const harmonizationStatus = document.getElementById('participantsMergeHarmonizationStatus');
-        if (harmonizationStatus) {
-            harmonizationStatus.classList.remove('d-none', 'text-danger', 'text-warning', 'text-success');
-            harmonizationStatus.classList.add('text-muted');
-            harmonizationStatus.textContent = 'Refreshing merge preview with updated harmonization settings...';
-        }
-
-        if (participantsMergeHarmonizationRefreshTimer !== null) {
-            window.clearTimeout(participantsMergeHarmonizationRefreshTimer);
-        }
-
-        participantsMergeHarmonizationRefreshTimer = window.setTimeout(() => {
-            participantsMergeHarmonizationRefreshTimer = null;
-            previewBtn.click();
-        }, 200);
+        participantsMergePreviewRefreshController.schedule();
     }
 
     function buildParticipantsMergeConflictFormData() {
@@ -3265,25 +2509,6 @@ export function initParticipants() {
         appendParticipantsMergeHarmonizationDecisions(formData);
         appendParticipantsMergeSessionResolutionDecisions(formData);
         return formData;
-    }
-
-    function getResponseDownloadFilename(response, fallbackName) {
-        const disposition = String(response.headers.get('Content-Disposition') || '').trim();
-        const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
-        if (utf8Match && utf8Match[1]) {
-            try {
-                return decodeURIComponent(utf8Match[1]);
-            } catch (_error) {
-                return utf8Match[1];
-            }
-        }
-
-        const simpleMatch = disposition.match(/filename="?([^";]+)"?/i);
-        if (simpleMatch && simpleMatch[1]) {
-            return simpleMatch[1];
-        }
-
-        return fallbackName;
     }
 
     function getParticipantsProjectSchemaUrl(projectPath = resolveCurrentProjectPath()) {
@@ -3619,68 +2844,7 @@ export function initParticipants() {
         }
     });
 
-    document.getElementById('participantsDownloadMergeConflictsBtn')?.addEventListener('click', async function() {
-        const downloadBtn = this;
-        const errorDiv = document.getElementById('participantsError');
-        const originalLabel = downloadBtn.innerHTML;
-
-        if (errorDiv) {
-            errorDiv.classList.add('d-none');
-            errorDiv.textContent = '';
-        }
-
-        downloadBtn.disabled = true;
-        downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Preparing CSV...';
-
-        try {
-            const previewData = window.lastParticipantsPreviewData;
-            if (!previewData || !previewData.merge_mode) {
-                throw new Error('Run a merge preview first.');
-            }
-            if (Number(previewData.conflict_count || 0) === 0) {
-                throw new Error('This merge preview has no conflicts to export.');
-            }
-            if (getParticipantsWorkflowMode() !== 'file' || getParticipantsFileAction() !== 'merge') {
-                throw new Error('Conflict export is only available during file merge preview.');
-            }
-
-            const formData = buildParticipantsMergeConflictFormData();
-            const response = await fetchWithApiFallback('/api/participants-merge-conflicts', {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!response.ok) {
-                let errorMessage = 'Could not download merge conflict report.';
-                try {
-                    const payload = await parseParticipantsJsonResponse(response);
-                    errorMessage = payload.error || payload.message || errorMessage;
-                } catch (_error) {
-                    // Ignore secondary parsing errors and use the fallback message.
-                }
-                throw new Error(errorMessage);
-            }
-
-            const fileName = getResponseDownloadFilename(response, 'participants_merge_conflicts.csv');
-            const blob = await response.blob();
-            const objectUrl = window.URL.createObjectURL(blob);
-            const downloadLink = document.createElement('a');
-            downloadLink.href = objectUrl;
-            downloadLink.download = fileName;
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            downloadLink.remove();
-            window.URL.revokeObjectURL(objectUrl);
-        } catch (error) {
-            if (errorDiv) {
-                errorDiv.textContent = String(error && error.message ? error.message : error || 'Could not download merge conflict report.');
-                errorDiv.classList.remove('d-none');
-            }
-        } finally {
-            downloadBtn.disabled = false;
-            downloadBtn.innerHTML = originalLabel;
-        }
-    });
+    participantsMergeConflictDownloadController.bind();
     
     function displayNeurobagelSchema(schema, previewData = window.lastParticipantsPreviewData) {
         const schemaPreview = document.getElementById('neurobagelSchemaPreview');

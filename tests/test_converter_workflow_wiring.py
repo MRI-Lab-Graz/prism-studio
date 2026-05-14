@@ -245,6 +245,60 @@ JOB_RUN_CONTROLLER_MODULE = (
 PARTICIPANTS_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "participants.js"
 )
+PARTICIPANTS_SOURCEDATA_QUICK_SELECT_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "participants-sourcedata-quick-select.js"
+)
+PARTICIPANTS_MERGE_CONFLICT_DOWNLOAD_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "participants-merge-conflict-download.js"
+)
+PARTICIPANTS_MERGE_DECISION_PAYLOAD_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "participants-merge-decision-payload.js"
+)
+PARTICIPANTS_MERGE_PREVIEW_REFRESH_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "participants-merge-preview-refresh.js"
+)
+PARTICIPANTS_MERGE_SUMMARY_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "participants-merge-summary.js"
+)
+PARTICIPANTS_MERGE_SUMMARY_RENDERERS_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "participants-merge-summary-renderers.js"
+)
 SURVEY_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter_survey.html"
 CONVERSION_SURVEY_BLUEPRINT = (
     REPO_ROOT
@@ -283,7 +337,6 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             ENVIRONMENT_MODULE: "sourcedata-files?kind=environment&project_path=${encodeURIComponent(effectiveProjectPath)}",
             PHYSIO_MODULE: "sourcedata-files?kind=physio&project_path=${encodeURIComponent(effectiveProjectPath)}",
             EYETRACKING_MODULE: "sourcedata-files?kind=eyetracking&project_path=${encodeURIComponent(effectiveProjectPath)}",
-            PARTICIPANTS_MODULE: "sourcedata-files?kind=participants&project_path=${encodeURIComponent(effectiveProjectPath)}",
         }
 
         for module_path, list_snippet in module_expectations.items():
@@ -299,6 +352,41 @@ class TestConverterWorkflowWiring(unittest.TestCase):
                 content,
             )
             self.assertIn("prism-project-changed", content)
+
+        participants_content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+        participants_sourcedata_content = PARTICIPANTS_SOURCEDATA_QUICK_SELECT_MODULE.read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "import { createParticipantsSourcedataQuickSelectController } from './participants-sourcedata-quick-select.js';",
+            participants_content,
+        )
+        self.assertIn(
+            "const participantsSourcedataQuickSelectController = createParticipantsSourcedataQuickSelectController({",
+            participants_content,
+        )
+        self.assertIn("participantsSourcedataQuickSelectController.initialize();", participants_content)
+        self.assertIn(
+            "participantsSourcedataQuickSelectController.clearSelectedFile();",
+            participants_content,
+        )
+        self.assertIn(
+            "participantsSourcedataQuickSelectController.refresh(projectPath);",
+            participants_content,
+        )
+        self.assertIn(
+            "import { fetchWithApiFallback } from '../../shared/api.js';",
+            participants_sourcedata_content,
+        )
+        self.assertIn("fetchWithApiFallback(endpoint)", participants_sourcedata_content)
+        self.assertIn(
+            "sourcedata-files?kind=participants&project_path=${encodeURIComponent(effectiveProjectPath)}",
+            participants_sourcedata_content,
+        )
+        self.assertIn(
+            "/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}",
+            participants_sourcedata_content,
+        )
 
         survey_sourcedata_content = SURVEY_SOURCEDATA_QUICK_SELECT_MODULE.read_text(
             encoding="utf-8"
@@ -770,6 +858,24 @@ class TestConverterWorkflowWiring(unittest.TestCase):
     def test_environment_and_participants_modules_include_sourcedata_quick_select(self):
         environment_content = ENVIRONMENT_MODULE.read_text(encoding="utf-8")
         participants_content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+        participants_sourcedata_content = (
+            PARTICIPANTS_SOURCEDATA_QUICK_SELECT_MODULE.read_text(encoding="utf-8")
+        )
+        participants_merge_conflict_download_content = (
+            PARTICIPANTS_MERGE_CONFLICT_DOWNLOAD_MODULE.read_text(encoding="utf-8")
+        )
+        participants_merge_decision_payload_content = (
+            PARTICIPANTS_MERGE_DECISION_PAYLOAD_MODULE.read_text(encoding="utf-8")
+        )
+        participants_merge_preview_refresh_content = (
+            PARTICIPANTS_MERGE_PREVIEW_REFRESH_MODULE.read_text(encoding="utf-8")
+        )
+        participants_merge_summary_content = (
+            PARTICIPANTS_MERGE_SUMMARY_MODULE.read_text(encoding="utf-8")
+        )
+        participants_merge_summary_renderers_content = (
+            PARTICIPANTS_MERGE_SUMMARY_RENDERERS_MODULE.read_text(encoding="utf-8")
+        )
 
         self.assertIn(
             "import { resolveCurrentProjectPath } from '../../shared/project-state.js';",
@@ -838,19 +944,218 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             participants_content,
         )
         self.assertIn(
+            "import { createParticipantsSourcedataQuickSelectController } from './participants-sourcedata-quick-select.js';",
+            participants_content,
+        )
+        self.assertIn(
+            "import { createParticipantsMergeConflictDownloadController } from './participants-merge-conflict-download.js';",
+            participants_content,
+        )
+        self.assertIn(
+            "import { createParticipantsMergePreviewRefreshController } from './participants-merge-preview-refresh.js';",
+            participants_content,
+        )
+        self.assertIn(
+            "import { createParticipantsMergeSummaryController } from './participants-merge-summary.js';",
+            participants_content,
+        )
+        self.assertIn(
+            "appendParticipantsMergeHarmonizationDecisions as appendParticipantsMergeHarmonizationDecisionsPayload,",
+            participants_content,
+        )
+        self.assertIn(
+            "appendParticipantsMergeSessionResolutionDecisions as appendParticipantsMergeSessionResolutionDecisionsPayload,",
+            participants_content,
+        )
+        self.assertIn(
             "import { pickServerFile, prefersServerPicker } from './server-picker.js';",
             participants_content,
         )
         self.assertIn("const runController = createJobRunController();", participants_content)
+        self.assertIn(
+            "const participantsSourcedataQuickSelectController = createParticipantsSourcedataQuickSelectController({",
+            participants_content,
+        )
+        self.assertIn(
+            "participantsSourcedataQuickSelectController.initialize();",
+            participants_content,
+        )
+        self.assertIn(
+            "participantsSourcedataQuickSelectController.refresh(projectPath);",
+            participants_content,
+        )
+        self.assertIn(
+            "const participantsMergeConflictDownloadController = createParticipantsMergeConflictDownloadController({",
+            participants_content,
+        )
+        self.assertIn(
+            "const participantsMergePreviewRefreshController = createParticipantsMergePreviewRefreshController();",
+            participants_content,
+        )
+        self.assertIn(
+            "const participantsMergeSummaryController = createParticipantsMergeSummaryController({",
+            participants_content,
+        )
+        self.assertIn(
+            "participantsMergeConflictDownloadController.bind();",
+            participants_content,
+        )
+        self.assertIn(
+            "getParticipantsMergeHarmonizationDecisionsPayload(",
+            participants_content,
+        )
+        self.assertIn(
+            "appendParticipantsMergeHarmonizationDecisionsPayload(",
+            participants_content,
+        )
+        self.assertIn(
+            "appendParticipantsMergeSessionResolutionDecisionsPayload(",
+            participants_content,
+        )
+        self.assertIn(
+            "participantsMergePreviewRefreshController.isPending()",
+            participants_content,
+        )
+        self.assertIn(
+            "participantsMergePreviewRefreshController.schedule();",
+            participants_content,
+        )
+        self.assertIn(
+            "participantsMergeSummaryController.render(previewData);",
+            participants_content,
+        )
         self.assertIn(
             "function setParticipantsPrimaryActionButtonsDisabled(disabled) {",
             participants_content,
         )
         self.assertIn("if (!runController.tryStartRun()) {", participants_content)
         self.assertIn("runController.finishRun();", participants_content)
+        self.assertIn("let requestToken = 0;", participants_sourcedata_content)
         self.assertIn(
             "sourcedata-files?kind=participants&project_path=${encodeURIComponent(effectiveProjectPath)}",
-            participants_content,
+            participants_sourcedata_content,
+        )
+        self.assertIn(
+            "fetchWithApiFallback(endpoint)",
+            participants_sourcedata_content,
+        )
+        self.assertIn(
+            "import { fetchWithApiFallback } from '../../shared/api.js';",
+            participants_merge_conflict_download_content,
+        )
+        self.assertIn(
+            "function getResponseDownloadFilename(response, fallbackName) {",
+            participants_merge_conflict_download_content,
+        )
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/participants-merge-conflicts', {",
+            participants_merge_conflict_download_content,
+        )
+        self.assertIn(
+            "const downloadBtn = document.getElementById('participantsDownloadMergeConflictsBtn');",
+            participants_merge_conflict_download_content,
+        )
+        self.assertIn(
+            "export function getParticipantsMergeHarmonizationDecisions(rawDecisionsInput) {",
+            participants_merge_decision_payload_content,
+        )
+        self.assertIn(
+            "export function appendParticipantsMergeHarmonizationDecisions(formData, rawDecisionsInput) {",
+            participants_merge_decision_payload_content,
+        )
+        self.assertIn(
+            "export function getParticipantsMergeSessionResolutionDecisions(rawDecisionsInput) {",
+            participants_merge_decision_payload_content,
+        )
+        self.assertIn(
+            "export function appendParticipantsMergeSessionResolutionDecisions(formData, rawDecisionsInput) {",
+            participants_merge_decision_payload_content,
+        )
+        self.assertIn(
+            "formData.append('harmonization_decisions', JSON.stringify(decisions));",
+            participants_merge_decision_payload_content,
+        )
+        self.assertIn(
+            "formData.append('session_resolution_decisions', JSON.stringify(decisions));",
+            participants_merge_decision_payload_content,
+        )
+        self.assertIn(
+            "export function createParticipantsMergePreviewRefreshController({",
+            participants_merge_preview_refresh_content,
+        )
+        self.assertIn("let refreshTimerId = null;", participants_merge_preview_refresh_content)
+        self.assertIn(
+            "document.getElementById('participantsPreviewBtn')",
+            participants_merge_preview_refresh_content,
+        )
+        self.assertIn(
+            "document.getElementById('participantsMergeHarmonizationStatus')",
+            participants_merge_preview_refresh_content,
+        )
+        self.assertIn(
+            "harmonizationStatus.textContent = 'Refreshing merge preview with updated harmonization settings...';",
+            participants_merge_preview_refresh_content,
+        )
+        self.assertIn(
+            "window.setTimeout(() => {",
+            participants_merge_preview_refresh_content,
+        )
+        self.assertIn("previewBtn.click();", participants_merge_preview_refresh_content)
+        self.assertIn(
+            "export function createParticipantsMergeSummaryController({",
+            participants_merge_summary_content,
+        )
+        self.assertIn(
+            "const summary = document.getElementById('participantsMergeSummary');",
+            participants_merge_summary_content,
+        )
+        self.assertIn(
+            "schedulePreviewRefresh();",
+            participants_merge_summary_content,
+        )
+        self.assertIn(
+            "refreshApplyStatusBadge(previewData);",
+            participants_merge_summary_content,
+        )
+        self.assertIn(
+            "window.participantsMergeHarmonizationDecisions[columnName] = {",
+            participants_merge_summary_content,
+        )
+        self.assertIn(
+            "window.participantsMergeSessionResolutionDecisions[columnName] = {",
+            participants_merge_summary_content,
+        )
+        self.assertIn(
+            "buildParticipantsMergeConflictListHtml(conflicts)",
+            participants_merge_summary_content,
+        )
+        self.assertIn(
+            "buildParticipantsMergeHarmonizationRowsHtml({",
+            participants_merge_summary_content,
+        )
+        self.assertIn(
+            "import {",
+            participants_merge_summary_content,
+        )
+        self.assertIn(
+            "from './participants-merge-summary-renderers.js';",
+            participants_merge_summary_content,
+        )
+        self.assertIn(
+            "export function buildParticipantsMergeConflictListHtml(conflicts, { maxVisible = 6 } = {}) {",
+            participants_merge_summary_renderers_content,
+        )
+        self.assertIn(
+            "export function buildParticipantsMergeHarmonizationRowsHtml({",
+            participants_merge_summary_renderers_content,
+        )
+        self.assertIn(
+            "participants-merge-harmonization-action",
+            participants_merge_summary_renderers_content,
+        )
+        self.assertIn(
+            "Detected mapping:",
+            participants_merge_summary_renderers_content,
         )
         self.assertIn(
             "window.addEventListener('prism-project-changed', function() {",
@@ -862,16 +1167,14 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         participants_content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
 
         preview_start = "document.getElementById('participantsPreviewBtn')?.addEventListener('click', async function() {"
-        preview_end = "document.getElementById('participantsDownloadMergeConflictsBtn')?.addEventListener('click', async function()"
         convert_start = "document.getElementById('participantsConvertBtn')?.addEventListener('click', async function() {"
         convert_end = "// ===== NEUROBAGEL ANNOTATION HANDLERS ====="
 
         self.assertIn(preview_start, participants_content)
-        self.assertIn(preview_end, participants_content)
         self.assertIn(convert_start, participants_content)
         self.assertIn(convert_end, participants_content)
 
-        preview_block = participants_content.split(preview_start, 1)[1].split(preview_end, 1)[0]
+        preview_block = participants_content.split(preview_start, 1)[1].split(convert_start, 1)[0]
         convert_block = participants_content.split(convert_start, 1)[1].split(convert_end, 1)[0]
 
         self.assertIn("if (!runController.tryStartRun()) {", preview_block)
