@@ -353,9 +353,37 @@
             return 'http://127.0.0.1:5001';
         }
 
+        function normalizeNavbarFetchOptions(url, options = {}) {
+            if (!options || Object.prototype.hasOwnProperty.call(options, 'credentials')) {
+                return options;
+            }
+
+            const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
+            const isAbsoluteHttpUrl = typeof url === 'string' && /^https?:\/\//i.test(url);
+
+            if (!isAbsoluteHttpUrl) {
+                return options;
+            }
+
+            if (protocol !== 'http:' && protocol !== 'https:') {
+                return { ...options, credentials: 'include' };
+            }
+
+            try {
+                const requestOrigin = new URL(url, window.location.href).origin;
+                if (requestOrigin !== window.location.origin) {
+                    return { ...options, credentials: 'include' };
+                }
+            } catch (error) {
+                return { ...options, credentials: 'include' };
+            }
+
+            return options;
+        }
+
         async function navbarFetchWithApiFallback(url, options) {
             try {
-                return await fetch(url, options);
+                return await fetch(url, normalizeNavbarFetchOptions(url, options));
             } catch (primaryError) {
                 const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
                 const isRelativeApiRequest = typeof url === 'string' && url.startsWith('/api/');
@@ -366,7 +394,7 @@
                 }
 
                 const fallbackUrl = `${getNavbarFallbackApiOrigin()}${url}`;
-                return fetch(fallbackUrl, options);
+                return fetch(fallbackUrl, normalizeNavbarFetchOptions(fallbackUrl, options));
             }
         }
 

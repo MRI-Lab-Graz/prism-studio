@@ -29,13 +29,41 @@ function canRetryRelativePathWithFallback(url) {
     return isRelativePathRequest && protocol !== 'http:' && protocol !== 'https:';
 }
 
+function normalizeFetchOptionsForRuntime(url, options = {}) {
+    if (!options || Object.prototype.hasOwnProperty.call(options, 'credentials')) {
+        return options;
+    }
+
+    const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
+    const isAbsoluteHttpUrl = typeof url === 'string' && /^https?:\/\//i.test(url);
+
+    if (!isAbsoluteHttpUrl) {
+        return options;
+    }
+
+    if (protocol !== 'http:' && protocol !== 'https:') {
+        return { ...options, credentials: 'include' };
+    }
+
+    try {
+        const requestOrigin = new URL(url, window.location.href).origin;
+        if (requestOrigin !== window.location.origin) {
+            return { ...options, credentials: 'include' };
+        }
+    } catch (_error) {
+        return { ...options, credentials: 'include' };
+    }
+
+    return options;
+}
+
 async function fetchWithFallbackUsing(fetchImpl, url, options = {}, fallbackMessage, canRetryWithFallback) {
     if (typeof fetchImpl !== 'function') {
         throw new Error('Fetch is not available in this runtime.');
     }
 
     try {
-        return await fetchImpl(url, options);
+        return await fetchImpl(url, normalizeFetchOptionsForRuntime(url, options));
     } catch (primaryError) {
         if (typeof canRetryWithFallback !== 'function' || !canRetryWithFallback(url)) {
             throw primaryError;
@@ -43,7 +71,10 @@ async function fetchWithFallbackUsing(fetchImpl, url, options = {}, fallbackMess
 
         const fallbackUrl = `${getFallbackApiOrigin()}${url}`;
         try {
-            return await fetchImpl(fallbackUrl, options);
+            return await fetchImpl(
+                fallbackUrl,
+                normalizeFetchOptionsForRuntime(fallbackUrl, options)
+            );
         } catch (_fallbackError) {
             throw new Error(fallbackMessage);
         }

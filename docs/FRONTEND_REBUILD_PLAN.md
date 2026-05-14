@@ -49,6 +49,44 @@ React or a similar framework becomes worth reconsidering only if all of the foll
 
 For the current goal, a controller-and-components refactor inside the existing Flask/Jinja architecture has a much better cost-benefit ratio.
 
+## Operating Constraints
+
+- heavy lifting stays in the backend on all pages by default
+- the Projects page is the main exception where some frontend-heavy orchestration may remain temporarily practical
+- refactors should keep touched areas aligned with the repo expectation of about 85% code coverage
+- repeated UI behavior or markup should be promoted into shared repo-wide modules/macros when patterns recur, instead of being copied page by page
+
+Examples to favor during the refactor:
+
+- shared file picker behavior and markup
+- shared help-panel and section-card patterns
+- shared page-specific API helpers and transport wrappers
+
+Shared picker constraint:
+
+- a common file/path picker must honor the general-settings server-picker preference so remote runs and network-mounted folders do not regress
+- server-picker routing belongs in the shared picker contract, not in one-off page patches
+- cross-platform handling is Windows-first for this repo's main users, even when refactoring from macOS
+- avoid POSIX-only assumptions in frontend path handling; prefer backend-owned path resolution and only parse paths in the frontend when unavoidable
+
+## Global Refactor Checklist
+
+These rules should be treated as always-on constraints for frontend refactor work on this branch.
+
+- backend heavy lifting is the default on every page; frontend code should orchestrate state, transport, and rendering rather than duplicate business logic
+- the Projects page is the only area where some frontend-heavy orchestration may temporarily remain practical
+- power users should not be forced to see explanatory guidance all the time; help panels and similar guidance should respect beginner mode where appropriate
+- repeated UI or behavior should become shared repo-wide modules/macros instead of being recopied into page-specific implementations
+- common file/path pickers must honor the general-settings server-picker preference for remote runs and network-mounted folders
+- cross-platform behavior is Windows-first; avoid POSIX-only path assumptions and prefer backend-owned path resolution
+- touched slices should stay aligned with the repo expectation of about 85% code coverage through focused tests
+
+Additional global constraints worth keeping explicit while we continue:
+
+- current-project context should remain a first-class source of truth so pages do not drift into stale project state
+- shared components should preserve keyboard access and existing workflow semantics, not only visual output
+- PRISM extends BIDS and must remain compatible with downstream BIDS tools, so frontend wording and flow should not imply replacement of BIDS behavior
+
 ## Target Architecture
 
 Keep this split:
@@ -93,9 +131,11 @@ Rules:
 
 1. Preserve visuals first.
 2. Preserve route and API contracts unless backend cleanup is clearly needed.
-3. Reduce duplication by extracting shared shells/components, not by merging unrelated workflows into giant files.
-4. Refactor one page family at a time.
-5. After each slice, run focused tests and smoke checks.
+3. Keep heavy lifting in backend services and handlers; frontend controllers should orchestrate state, transport, and rendering.
+4. Reduce duplication by extracting shared shells/components, not by merging unrelated workflows into giant files.
+5. Promote repeated UI/helpers to shared repo-wide modules or macros as soon as a pattern is real.
+6. Refactor one page family at a time.
+7. After each slice, run focused tests and smoke checks toward the repo's coverage target.
 
 ## Workstreams
 
@@ -118,7 +158,33 @@ Expected outcome:
 - smaller top-level templates
 - more consistent markup hooks for JS controllers
 
-### 2. Projects Page Rebuild
+### 2. Landing Page Rebuild
+
+Primary targets:
+
+- `app/templates/home.html`
+- `app/templates/base.html`
+- any home-page-specific bootstrap code or shared shell hooks used by the landing page
+
+Why first:
+
+- it is the safest page to establish the new shell/component conventions
+- it has relatively low workflow risk compared with Projects or Converter
+- it lets us extract reusable page-shell, hero, card-grid, and help-panel patterns before touching heavy stateful flows
+
+Target split:
+
+- keep the landing page controller minimal or controller-free if behavior stays simple
+- extract shared shell macros/components used by the landing page and later pages
+- standardize DOM hooks and page bootstrapping conventions from this page outward
+
+Template goal:
+
+- keep one thin `home.html` shell
+- move repeated shell/card/help patterns into macros or includes where they can be reused by Projects and other pages
+- avoid introducing page-specific one-off structures that cannot be reused later
+
+### 3. Projects Page Rebuild
 
 Primary targets:
 
@@ -127,7 +193,7 @@ Primary targets:
 - `app/static/js/modules/projects/core.js`
 - `app/static/js/modules/projects/metadata.js`
 
-Why first:
+Why second:
 
 - it is central to the product
 - it already has some include structure to build on
@@ -152,7 +218,7 @@ Template goal:
 - extract repeated section framing and form-row structures into macros
 - avoid moving everything into one giant include tree
 
-### 3. Converter Page Rebuild
+### 4. Converter Page Rebuild
 
 Primary targets:
 
@@ -161,7 +227,7 @@ Primary targets:
 - `app/static/js/converter-bootstrap.js`
 - `app/static/js/modules/converter/*`
 
-Why second:
+Why third:
 
 - it is a major workflow surface
 - current behavior is already modular by modality, which is a good seam
@@ -191,7 +257,7 @@ Template goal:
 - keep modality subtemplates only if they map to real workflow slices
 - extract repeated panel, toolbar, and status markup into macros/includes
 
-### 4. Template Editor and Survey Tools
+### 5. Template Editor and Survey Tools
 
 Primary targets:
 
@@ -199,7 +265,7 @@ Primary targets:
 - `app/static/js/template-editor.js`
 - survey generator/customizer pages as a follow-on
 
-Why third:
+Why fourth:
 
 - the page is powerful but controller-heavy
 - it would benefit from explicit editor, preview, items-panel, import, and save controllers
@@ -244,7 +310,7 @@ not by reaching the lowest possible number of template files.
 ### Phase 0. Baseline and Safety Net
 
 - inventory top-level pages, includes, and JS entrypoints
-- add or improve focused smoke tests for Projects and Converter bootstrapping
+- add or improve focused smoke tests for Home and Projects bootstrapping
 - document current page init paths and API dependencies
 
 ### Phase 1. Shared UI Foundation
@@ -253,24 +319,38 @@ not by reaching the lowest possible number of template files.
 - standardize markup hooks and data attributes
 - standardize page bootstrapping convention
 
-### Phase 2. Projects Refactor
+### Phase 2. Landing Page Refactor
+
+- thin `home.html` into a clean page shell
+- extract reusable shell and section components from the landing page
+- keep behavior and visuals unchanged
+
+### Phase 3. Projects Refactor
 
 - split `core.js` and `metadata.js` into page controllers and renderers
 - simplify `projects.html` and section includes
 - preserve current routes and behavior
 
-### Phase 3. Converter Refactor
+Current branch progress on this phase:
+
+- shared Projects template primitives are in place for path pickers and flow strips
+- shared folder-picker behavior now lives in a repo-wide module that honors the server-picker preference and fallback browser flow
+- extracted Projects controllers now cover file browsing, path-picking, init-on-BIDS, open/load plus quick-validate, and create submission orchestration
+- focused wiring tests cover these extracted seams so `core.js` can keep shrinking without losing route or workflow semantics
+- the main remaining large frontend slice on this page is the create preflight plus the broader selection/recent-project orchestration that still lives in `core.js`
+
+### Phase 4. Converter Refactor
 
 - split the largest modality scripts
 - unify shared workflow plumbing
 - reduce duplicate modal and status markup across converter sections
 
-### Phase 4. Template Editor Refactor
+### Phase 5. Template Editor Refactor
 
 - split the large controller into focused subcontrollers
 - keep the same UI and save/load behavior
 
-### Phase 5. Cleanup
+### Phase 6. Cleanup
 
 - remove dead legacy scripts and one-off bootstraps
 - standardize naming and entrypoints
@@ -281,6 +361,7 @@ not by reaching the lowest possible number of template files.
 Approximate effort for one engineer working carefully alongside existing maintenance work:
 
 - Phase 0 to 1: 3 to 5 days
+- Landing page refactor: 2 to 4 days
 - Projects refactor: 1 to 2 weeks
 - Converter refactor: 2 to 3 weeks
 - Template editor and adjacent tools: 1 to 2 weeks
@@ -294,12 +375,13 @@ This is materially cheaper and lower-risk than a React migration.
 
 Use a dedicated branch for the structural refactor.
 
-Suggested branch name:
+Current working branch:
 
-- `frontend-shell-controller-refactor`
+- `frontend-page-by-page-refactor`
 
 Slice work into mergeable units:
 
+- landing page shell/components
 - shared shell/macros
 - projects page controllers
 - projects template cleanup

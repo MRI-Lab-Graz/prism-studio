@@ -1,3 +1,6 @@
+    {% from "includes/ui/macros.html" import path_picker %}
+    {% from "includes/projects/macros.html" import project_flow_strip %}
+
     <!-- Create New Project Form -->
     <div class="form-section" id="section-create">
         <div class="card shadow-sm">
@@ -5,20 +8,11 @@
                 <h5 class="mb-0"><i class="fas fa-plus-circle text-success me-2"></i>Create New Project</h5>
             </div>
             <div class="card-body">
-                <div class="project-flow-strip project-flow-strip--create mb-3" id="createProjectFlowStrip">
-                    <div class="project-flow-strip__item">
-                        <span class="project-flow-strip__label">Use when</span>
-                        <strong>Starting a brand-new study folder</strong>
-                    </div>
-                    <div class="project-flow-strip__item">
-                        <span class="project-flow-strip__label">PRISM adds</span>
-                        <strong><code>project.json</code>, <code>.prismrc.json</code>, and starter folders</strong>
-                    </div>
-                    <div class="project-flow-strip__item">
-                        <span class="project-flow-strip__label">Metadata</span>
-                        <strong>You can save preliminary state now and finish details later</strong>
-                    </div>
-                </div>
+                {{ project_flow_strip('project-flow-strip--create', 'createProjectFlowStrip', [
+                    ('Use when', 'Starting a brand-new study folder'),
+                    ('PRISM adds', '<code>project.json</code>, <code>.prismrc.json</code>, and starter folders'),
+                    ('Metadata', 'You can save preliminary state now and finish details later')
+                ]) }}
                 <form id="createProjectForm">
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -29,14 +23,9 @@
                             <div class="invalid-feedback" id="projectNameError"></div>
                         </div>
                         <div class="col-md-6">
-                            <label for="projectPath" class="form-label fw-bold">Project Location <span class="badge bg-danger">REQUIRED</span></label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="projectPath" placeholder="" required>
-                                <button class="btn btn-outline-secondary" type="button" id="browseProjectPath">
-                                    <i class="fas fa-folder-open"></i> Browse
-                                </button>
-                            </div>
-                            <small class="text-muted">Parent folder where the project will be created</small>
+                            {% call path_picker('Project Location', 'projectPath', 'browseProjectPath', '', 'Parent folder where the project will be created', 'Browse', '', '', true, '', '', 'form-label fw-bold') %}
+                            <span class="badge bg-danger">REQUIRED</span>
+                            {% endcall %}
                         </div>
                     </div>
                 </form>

@@ -4,7 +4,12 @@
  */
 
 import { setButtonLoading, textToArray as _textToArray } from './helpers.js';
+import { initCreateProjectController } from './create-project.js';
+import { initProjectInitOnBidsController } from './init-on-bids.js';
+import { initOpenProjectController } from './open-project.js';
+import { initProjectPathPickers } from './path-pickers.js';
 import { validateProjectField } from './validation.js';
+import { initProjectFileBrowser } from './file-browser.js';
 import {
     hasUnsavedStudyMetadataChanges,
     isStudyMetadataBusy,
@@ -29,6 +34,7 @@ import {
 } from '../../shared/project-state.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { escapeHtml } from '../../shared/dom.js';
+import { prefersServerPicker } from '../../shared/path-picker.js';
 
 // Global state
 let currentProjectPath = '';
@@ -1189,86 +1195,11 @@ export function updateLibraryInfoPanel(globalPath, projectPath) {
     }
 }
 
-async function browseFolderWithFallback(options = {}) {
-    if (window.PrismFileSystemMode
-        && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
-        && window.PrismFileSystemMode.prefersServerPicker()
-        && window.PrismFolderBrowser
-        && typeof window.PrismFolderBrowser.open === 'function') {
-        return window.PrismFolderBrowser.open({
-            title: options.title || 'Select Folder',
-            confirmLabel: options.confirmLabel || 'Select Folder',
-            startPath: options.startPath || ''
-        });
-    }
-
-    try {
-        const response = await fetchWithApiFallback('/api/browse-folder');
-        const data = await response.json();
-        if (!response.ok || data.error) {
-            throw new Error(data.error || 'Folder picker unavailable.');
-        }
-        return (data.path || '').trim();
-    } catch (error) {
-        console.warn('Native folder picker failed, falling back to in-app browser:', error);
-        if (window.PrismFolderBrowser && typeof window.PrismFolderBrowser.open === 'function') {
-            return window.PrismFolderBrowser.open({
-                title: options.title || 'Select Folder',
-                confirmLabel: options.confirmLabel || 'Select Folder',
-                startPath: options.startPath || ''
-            });
-        }
-        throw error;
-    }
-}
-
-function prefersServerPicker() {
-    return Boolean(
-        window.PrismFileSystemMode
-        && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
-        && window.PrismFileSystemMode.prefersServerPicker()
-    );
-}
-
-// Browse button for global library
-const browseGlobalLibrary = document.getElementById('browseGlobalLibrary');
-if (browseGlobalLibrary) {
-    browseGlobalLibrary.addEventListener('click', async function() {
-        try {
-            const selectedPath = await browseFolderWithFallback({
-                title: 'Select Global Survey Template Library',
-                confirmLabel: 'Use This Folder',
-                startPath: document.getElementById('globalLibraryPath')?.value || ''
-            });
-            if (selectedPath) {
-                document.getElementById('globalLibraryPath').value = selectedPath;
-            }
-        } catch (error) {
-            console.error('Browse error:', error);
-            alert('Failed to open folder picker. Please enter path manually.');
-        }
-    });
-}
-
-// Browse button for global recipes
-const browseGlobalRecipes = document.getElementById('browseGlobalRecipes');
-if (browseGlobalRecipes) {
-    browseGlobalRecipes.addEventListener('click', async function() {
-        try {
-            const selectedPath = await browseFolderWithFallback({
-                title: 'Select Global Recipe Library',
-                confirmLabel: 'Use This Folder',
-                startPath: document.getElementById('globalRecipesPath')?.value || ''
-            });
-            if (selectedPath) {
-                document.getElementById('globalRecipesPath').value = selectedPath;
-            }
-        } catch (error) {
-            console.error('Browse error:', error);
-            alert('Failed to open folder picker. Please enter path manually.');
-        }
-    });
-}
+initProjectPathPickers({
+    fetchWithApiFallback,
+    validateProjectField,
+    clearCreateResult,
+});
 
 // Save global settings
 const globalSettingsForm = document.getElementById('globalSettingsForm');
@@ -1587,284 +1518,21 @@ export function selectProjectType(type) {
     showStudyMetadataCard();
 }
 
-// Browse button for project location
-const browseProjectPath = document.getElementById('browseProjectPath');
-if (browseProjectPath) {
-    browseProjectPath.addEventListener('click', async function() {
-        try {
-            const selectedPath = await browseFolderWithFallback({
-                title: 'Select Project Location',
-                confirmLabel: 'Use This Folder',
-                startPath: document.getElementById('projectPath')?.value || ''
-            });
-            if (selectedPath) {
-                const pathField = document.getElementById('projectPath');
-                pathField.value = selectedPath;
-                // Trigger validation after setting the value
-                validateProjectField('projectPath');
-                clearCreateResult();
-                // Also dispatch change event in case other handlers are listening
-                pathField.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        } catch (error) {
-            console.error('Browse error:', error);
-            alert('Failed to open folder picker. Please enter path manually.');
-        }
-    });
-}
-
 // ── Init PRISM on existing BIDS dataset ─────────────────────────────────────
 
-const browseInitBidsPath = document.getElementById('browseInitBidsPath');
-if (browseInitBidsPath) {
-    browseInitBidsPath.addEventListener('click', async function() {
-        try {
-            const selectedPath = await browseFolderWithFallback({
-                title: 'Select BIDS Dataset Root',
-                confirmLabel: 'Use This Folder',
-                startPath: document.getElementById('initBidsPath')?.value || ''
-            });
-            if (selectedPath) {
-                document.getElementById('initBidsPath').value = selectedPath;
-            }
-        } catch (error) {
-            console.error('Browse error:', error);
-            alert('Failed to open folder picker. Please enter path manually.');
-        }
-    });
-}
+initProjectInitOnBidsController({
+    fetchWithApiFallback,
+    setButtonLoading,
+    escapeHtml,
+    confirmProjectContextChange,
+    applyCurrentProject,
+    addRecentProject,
+    showStudyMetadataCard,
+    showExportCard,
+    showMethodsCard,
+});
 
-const initBidsSubmitBtn = document.getElementById('initBidsSubmitBtn');
-if (initBidsSubmitBtn) {
-    initBidsSubmitBtn.addEventListener('click', async function() {
-        const bidsPath = (document.getElementById('initBidsPath')?.value || '').trim();
-        const displayName = (document.getElementById('initBidsName')?.value || '').trim();
-
-        if (!bidsPath) {
-            alert('Please select or enter the BIDS dataset root folder.');
-            document.getElementById('initBidsPath')?.focus();
-            return;
-        }
-
-        if (!confirmProjectContextChange('initialise a PRISM project on another dataset', bidsPath)) {
-            return;
-        }
-
-        const resultDiv = document.getElementById('initBidsResult');
-        resultDiv.style.display = 'block';
-        resultDiv.innerHTML = '<div class="alert alert-secondary"><i class="fas fa-spinner fa-spin me-2"></i>Initialising…</div>';
-
-        const originalText = setButtonLoading(initBidsSubmitBtn, true, 'Initialising…');
-        initBidsSubmitBtn.disabled = true;
-
-        try {
-            const response = await fetchWithApiFallback('/api/projects/init-on-bids', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: bidsPath, name: displayName || undefined })
-            });
-            const result = await response.json();
-
-            if (result.success) {
-                const fileList = (result.created_files || [])
-                    .map(f => `<li><code>${escapeHtml(f)}</code></li>`)
-                    .join('');
-                const noneAdded = !result.created_files || result.created_files.length === 0;
-                resultDiv.innerHTML = `
-                    <div class="alert alert-success">
-                        <h5><i class="fas fa-check-circle me-2"></i>PRISM Initialised Successfully!</h5>
-                        <p class="mb-2">${escapeHtml(result.message)}</p>
-                        <p class="mb-2"><strong>Location:</strong> <code>${escapeHtml(result.path)}</code></p>
-                        <p class="mb-0 text-success"><i class="fas fa-folder-open me-1"></i>This dataset is now your current working project.</p>
-                        ${noneAdded ? '' : `<hr><p class="mb-1"><strong>Added files:</strong></p><ul class="mb-0">${fileList}</ul>`}
-                        <div class="mt-3 pt-3 border-top">
-                            <h6 class="text-muted mb-2">Next Steps:</h6>
-                            <div class="btn-group" role="group">
-                                <a href="/validate" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-check-double me-1"></i>Validate Dataset
-                                </a>
-                                <a href="/converter" class="btn btn-sm btn-outline-success">
-                                    <i class="fas fa-magic me-1"></i>Open Converter
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                applyCurrentProject(result.current_project);
-                addRecentProject(
-                    result.current_project?.name || displayName || bidsPath.split(/[\\/]/).pop(),
-                    result.path,
-                    result.current_project?.icon
-                );
-                showStudyMetadataCard();
-                showExportCard();
-                showMethodsCard();
-            } else {
-                resultDiv.innerHTML = `
-                    <div class="alert alert-danger">
-                        <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
-                        <p class="mb-0">${escapeHtml(result.error)}</p>
-                    </div>
-                `;
-            }
-        } catch (error) {
-            resultDiv.innerHTML = `
-                <div class="alert alert-danger">
-                    <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
-                    <p class="mb-0">${escapeHtml(error.message)}</p>
-                </div>
-            `;
-        } finally {
-            setButtonLoading(initBidsSubmitBtn, false, null, originalText);
-            initBidsSubmitBtn.disabled = false;
-        }
-    });
-}
-
-// Browse button for existing project — uses the in-page file browser modal
-const browseExistingPath = document.getElementById('browseExistingPath');
-if (browseExistingPath) {
-    // --- File browser modal state ---
-    let _fbCurrentPath = null;
-    let _fbSelectedProjectJson = null;
-
-    const _fbModal = document.getElementById('projectFileBrowserModal');
-    const _fbList = document.getElementById('fsBrowserList');
-    const _fbCurrentPathEl = document.getElementById('fsBrowserCurrentPath');
-    const _fbUpBtn = document.getElementById('fsBrowserUp');
-    const _fbSelectBtn = document.getElementById('fsBrowserSelectBtn');
-    const _fbSelectedHint = document.getElementById('fsBrowserSelectedHint');
-    const _fbSelectedPathEl = document.getElementById('fsBrowserSelectedPath');
-
-    async function _fbLoad(path) {
-        _fbList.innerHTML = '<div class="d-flex justify-content-center align-items-center py-5 text-muted"><span><i class="fas fa-spinner fa-spin me-2"></i>Loading…</span></div>';
-        _fbSelectedProjectJson = null;
-        _fbSelectBtn.disabled = true;
-        _fbSelectedHint.style.display = 'none';
-
-        try {
-            const url = path ? '/api/fs/browse?path=' + encodeURIComponent(path) : '/api/fs/browse';
-            const res = await fetchWithApiFallback(url);
-            if (!res.ok) {
-                _fbList.innerHTML = '<div class="text-danger px-3 py-3"><i class="fas fa-exclamation-triangle me-1"></i>Could not load directory.</div>';
-                return;
-            }
-            const data = await res.json();
-            _fbCurrentPath = data.path;
-            _fbCurrentPathEl.textContent = data.path;
-            _fbUpBtn.disabled = !data.parent;
-
-            let html = '';
-
-            // project.json row (highlighted) — at the top if present
-            if (data.has_project_json) {
-                html += `<button type="button" class="d-flex align-items-center w-100 px-3 py-2 border-0 border-bottom fb-project-json text-start" style="cursor:pointer;background:#e8f5e9;" data-pjson="${_escHtml(data.project_json_path)}" aria-label="Select project.json at ${_escHtml(data.project_json_path)}">
-                    <i class="fas fa-file-code text-success me-2"></i>
-                    <span class="fw-semibold text-success">project.json</span>
-                    <span class="ms-auto badge bg-success">Select</span>
-                </button>`;
-                _fbSelectedProjectJson = data.project_json_path;
-                _fbSelectBtn.disabled = false;
-                _fbSelectedPathEl.textContent = data.project_json_path;
-                _fbSelectedHint.style.display = '';
-            }
-
-            // Subdirectory rows
-            if (data.dirs && data.dirs.length > 0) {
-                data.dirs.forEach(dir => {
-                    html += `<button type="button" class="d-flex align-items-center w-100 px-3 py-2 border-0 border-bottom fb-dir text-start bg-white" style="cursor:pointer;" data-path="${_escHtml(dir.path)}" aria-label="Open folder ${_escHtml(dir.name)}">
-                        <i class="fas fa-folder text-warning me-2"></i>
-                        <span>${_escHtml(dir.name)}</span>
-                        <i class="fas fa-chevron-right ms-auto text-muted small"></i>
-                    </button>`;
-                });
-            }
-
-            if (!html) {
-                html = '<div class="text-muted px-3 py-3"><i class="fas fa-folder-open me-1"></i>Empty folder</div>';
-            }
-
-            _fbList.innerHTML = html;
-
-            // Bind click on project.json row
-            _fbList.querySelectorAll('.fb-project-json').forEach(el => {
-                el.addEventListener('click', () => {
-                    _fbSelectedProjectJson = el.dataset.pjson;
-                    _fbSelectBtn.disabled = false;
-                    _fbSelectedPathEl.textContent = _fbSelectedProjectJson;
-                    _fbSelectedHint.style.display = '';
-                });
-            });
-
-            // Bind click on directory rows
-            _fbList.querySelectorAll('.fb-dir').forEach(el => {
-                el.addEventListener('click', () => _fbLoad(el.dataset.path));
-            });
-
-        } catch (err) {
-            console.error('File browser error:', err);
-            _fbList.innerHTML = '<div class="text-danger px-3 py-3"><i class="fas fa-exclamation-triangle me-1"></i>Error loading directory.</div>';
-        }
-    }
-
-    function _escHtml(str) {
-        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-
-    browseExistingPath.addEventListener('click', async function() {
-        if (prefersServerPicker()
-            && window.PrismFileSystemMode
-            && typeof window.PrismFileSystemMode.pickFile === 'function') {
-            const existingInput = document.getElementById('existingPath');
-            const pickedPath = await window.PrismFileSystemMode.pickFile({
-                title: 'Select project.json on Server',
-                confirmLabel: 'Use This File',
-                extensions: '.json',
-                startPath: existingInput && existingInput.value ? existingInput.value : ''
-            });
-
-            if (pickedPath) {
-                if (existingInput) {
-                    existingInput.value = pickedPath;
-                }
-            }
-            return;
-        }
-
-        // Start from value already in the input (its parent dir), or home
-        const existing = (document.getElementById('existingPath')?.value || '').trim();
-        let startPath = null;
-        if (existing) {
-            // Try to start from the directory containing the current value
-            const lastSep = Math.max(existing.lastIndexOf('/'), existing.lastIndexOf('\\'));
-            if (lastSep > 0) startPath = existing.substring(0, lastSep);
-        }
-        _fbLoad(startPath || null);
-        const modal = new bootstrap.Modal(_fbModal);
-        modal.show();
-    });
-
-    if (_fbUpBtn) {
-        _fbUpBtn.addEventListener('click', async function() {
-            if (!_fbCurrentPath) return;
-            const url = '/api/fs/browse?path=' + encodeURIComponent(_fbCurrentPath);
-            const res = await fetchWithApiFallback(url);
-            if (!res.ok) return;
-            const data = await res.json();
-            if (data.parent) _fbLoad(data.parent);
-        });
-    }
-
-    if (_fbSelectBtn) {
-        _fbSelectBtn.addEventListener('click', function() {
-            if (_fbSelectedProjectJson) {
-                const input = document.getElementById('existingPath');
-                if (input) input.value = _fbSelectedProjectJson;
-                bootstrap.Modal.getInstance(_fbModal)?.hide();
-            }
-        });
-    }
-}
+initProjectFileBrowser({ fetchWithApiFallback, prefersServerPicker });
 
 // Validate project name (no spaces, valid folder name)
 const projectNameInput = document.getElementById('projectName');
@@ -1901,527 +1569,37 @@ if (projectPathInput) {
     });
 }
 
-// Create Project Form
-/**
- * Show a Bootstrap modal warning the user about missing required fields.
- * Returns a Promise<boolean> — true if the user confirmed, false if cancelled.
- */
-function _showIncompleteMetadataModal(missingItems) {
-    return new Promise((resolve) => {
-        const existingModal = document.getElementById('_incompleteMetadataModal');
-        if (existingModal) existingModal.remove();
-
-        const listHtml = missingItems
-            .map(item => `<li class="mb-1">${escapeHtml(item)}</li>`)
-            .join('');
-
-        const modalEl = document.createElement('div');
-        modalEl.id = '_incompleteMetadataModal';
-        modalEl.className = 'modal fade';
-        modalEl.tabIndex = -1;
-        modalEl.setAttribute('aria-modal', 'true');
-        modalEl.setAttribute('role', 'dialog');
-        modalEl.innerHTML = `
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content border-warning">
-                    <div class="modal-header bg-warning bg-opacity-10 border-bottom border-warning">
-                        <h5 class="modal-title">
-                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
-                            Required Fields Missing
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>The following required fields are still empty or invalid. The project will be created, but the metadata will be <strong>incomplete</strong>. You can fill in missing fields later.</p>
-                        <ul class="text-danger mb-0 ps-3">${listHtml}</ul>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="_incompleteModalCancel">
-                            <i class="fas fa-arrow-left me-1"></i>Go back and fill fields
-                        </button>
-                        <button type="button" class="btn btn-warning" id="_incompleteModalConfirm">
-                            <i class="fas fa-folder-plus me-1"></i>Create anyway (incomplete)
-                        </button>
-                    </div>
-                </div>
-            </div>`;
-
-        document.body.appendChild(modalEl);
-
-        const bsModal = new bootstrap.Modal(modalEl, { backdrop: 'static' });
-
-        document.getElementById('_incompleteModalConfirm').addEventListener('click', () => {
-            bsModal.hide();
-            resolve(true);
-        });
-        document.getElementById('_incompleteModalCancel').addEventListener('click', () => {
-            bsModal.hide();
-            resolve(false);
-        });
-        modalEl.addEventListener('hidden.bs.modal', () => {
-            modalEl.remove();
-        }, { once: true });
-
-        bsModal.show();
-    });
-}
-
-const createProjectFormEl = document.getElementById('createProjectForm');
-if (createProjectFormEl) {
-    async function submitCreateProject(options = {}) {
-        const forcePreliminary = Boolean(options.forcePreliminary);
-        const triggerButton = options.triggerButton instanceof HTMLElement ? options.triggerButton : null;
-
-        const projectName = document.getElementById('projectName').value.trim();
-        const projectPath = document.getElementById('projectPath').value.trim();
-
-        if (!projectPath) {
-            alert('Please select a Project Location (output folder) before saving or creating the project.');
-            const pathField = document.getElementById('projectPath');
-            pathField?.focus();
-            return;
-        }
-
-        if (!/^[a-zA-Z0-9_-]+$/.test(projectName)) {
-            alert('Invalid project name. Only letters, numbers, underscores and hyphens allowed.');
-            return;
-        }
-
-        resetCreateTargetStatusChecks();
-        const targetStatus = await checkCreateTargetStatus();
-        if (targetStatus.conflict) {
-            return;
-        }
-
-        const validation = validateAllMandatoryFields();
-        const requiredIssueCount = (validation.emptyFields?.length || 0) + (validation.requiredInvalidFields?.length || 0);
-        const optionalIssueCount = validation.optionalInvalidFields?.length || 0;
-        if (requiredIssueCount > 0 && !forcePreliminary) {
-            const issues = [
-                ...validation.emptyFields.map(f => `• ${f}`),
-                ...(validation.requiredInvalidFields || []).map(f => `• ${f}`)
-            ];
-            const confirmed = await _showIncompleteMetadataModal(issues);
-            if (!confirmed) return;
-        }
-
-        if (optionalIssueCount > 0) {
-            alert(validation.optionalInvalidFields.join('\n'));
-            return;
-        }
-
-        await validateDatasetDescriptionDraftLive();
-
-        const createButtons = [
-            document.getElementById('createProjectSubmitBtn'),
-            document.getElementById('createProjectSubmitBtnTop')
-        ].filter(Boolean);
-        const preliminaryButtons = [
-            document.getElementById('preliminaryCreateBtn'),
-            document.getElementById('preliminaryCreateBtnTop')
-        ].filter(Boolean);
-
-        const fallbackCreateButton = createButtons[0] || null;
-        const fallbackPreliminaryButton = preliminaryButtons[0] || null;
-        const activeBtn = triggerButton || (forcePreliminary ? fallbackPreliminaryButton : fallbackCreateButton);
-        const originalText = activeBtn ? setButtonLoading(activeBtn, true, forcePreliminary ? 'Saving...' : 'Creating...') : null;
-
-        createButtons.forEach(btn => { btn.disabled = true; });
-        preliminaryButtons.forEach(btn => { btn.disabled = true; });
-
-        const fullPath = joinProjectTargetPath(projectPath, projectName);
-
-        const data = {
-            path: fullPath,
-            name: projectName,
-            authors: getCitationAuthorsList(),
-            license: document.getElementById('metadataLicense').value,
-            doi: document.getElementById('metadataDOI').value.trim(),
-            keywords: document.getElementById('metadataKeywords').value.split(',').map(s => s.trim()).filter(s => s),
-            acknowledgements: document.getElementById('metadataAcknowledgements').value.trim(),
-            ethics_approvals: getEthicsApprovals(),
-            how_to_acknowledge: document.getElementById('metadataHowToAcknowledge').value.trim(),
-            funding: getFundingList(),
-            references_and_links: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
-            hed_version: document.getElementById('metadataHED').value.trim(),
-            dataset_type: document.getElementById('metadataType').value,
-            Overview: {
-                Main: document.getElementById('smOverviewMain').value || undefined,
-                IndependentVariables: document.getElementById('smOverviewIV').value || undefined,
-                DependentVariables: document.getElementById('smOverviewDV').value || undefined,
-                ControlVariables: document.getElementById('smOverviewCV').value || undefined,
-                QualityAssessment: document.getElementById('smOverviewQA').value || undefined,
-            },
-            StudyDesign: {
-                Type: document.getElementById('smSDType').value || undefined,
-                TypeDescription: document.getElementById('smSDTypeDesc').value || undefined,
-                Blinding: document.getElementById('smSDBlinding').value || undefined,
-                Randomization: document.getElementById('smSDRandomization').value || undefined,
-                ControlCondition: document.getElementById('smSDControl').value || undefined,
-            },
-            Conditions: {
-                Type: document.getElementById('smSDConditionType').value || undefined,
-            },
-            Recruitment: {
-                Method: (function() {
-                    const list = getRecMethodList();
-                    return list.length ? list : undefined;
-                })(),
-                Location: (function() {
-                    const list = getRecLocationList();
-                    return list.length ? list : undefined;
-                })(),
-                Period: {
-                    Start: getYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth') || undefined,
-                    End: getYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth') || undefined,
-                },
-                Compensation: document.getElementById('smRecCompensation').value || undefined,
-            },
-            Eligibility: {
-                InclusionCriteria: _textToArray(document.getElementById('smEligInclusion').value) || undefined,
-                ExclusionCriteria: _textToArray(document.getElementById('smEligExclusion').value) || undefined,
-                TargetSampleSize: parseInt(document.getElementById('smEligSampleSize').value) || undefined,
-                PowerAnalysis: document.getElementById('smEligPower').value || undefined,
-            },
-            Procedure: {
-                Overview: document.getElementById('smProcOverview').value || undefined,
-                InformedConsent: document.getElementById('smProcConsent').value || undefined,
-                QualityControl: _textToArray(document.getElementById('smProcQC').value) || undefined,
-                MissingDataHandling: document.getElementById('smProcMissing').value || undefined,
-                Debriefing: document.getElementById('smProcDebriefing').value || undefined,
-                AdditionalData: document.getElementById('smProcAdditionalData').value || undefined,
-                Notes: document.getElementById('smProcNotes').value || undefined,
-            },
-            MissingData: {
-                Description: document.getElementById('smMissingDesc').value || undefined,
-                MissingFiles: document.getElementById('smMissingFiles').value || undefined,
-                KnownIssues: document.getElementById('smKnownIssues').value || undefined,
-            },
-            References: document.getElementById('smReferencesText').value || undefined
-        };
-
-        try {
-            const response = await fetchWithApiFallback('/api/projects/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            const result = await response.json();
-
-            if (result.success) {
-                setCreateResultHtml(`
-                    <div class="alert alert-success">
-                        <h5><i class="fas fa-check-circle me-2"></i>Project Created Successfully!</h5>
-                        <p class="mb-2">${escapeHtml(result.message)}</p>
-                        <p class="mb-2"><strong>Location:</strong> <code>${escapeHtml(result.path)}</code></p>
-                        <hr>
-                        <p class="mb-1"><strong>Created files:</strong></p>
-                        <ul class="mb-2">
-                            ${(result.created_files || []).map(f => `<li><code>${escapeHtml(f)}</code></li>`).join('')}
-                        </ul>
-                        <div class="mt-3 pt-3 border-top">
-                            <h6 class="text-muted mb-2">Next Steps:</h6>
-                            <div class="btn-group" role="group">
-                                <a href="/converter" class="btn btn-sm btn-outline-success">
-                                    <i class="fas fa-magic me-1"></i>Open Converter Tool
-                                </a>
-                            </div>
-                            <small class="text-muted d-block mt-2">
-                                Add subject folders and metadata before validating to avoid missing data errors.
-                            </small>
-                        </div>
-                    </div>
-                `);
-
-                applyCurrentProject(result.current_project);
-                try {
-                    await saveProjectSchemaConfig();
-                } catch (schemaError) {
-                    console.error('Error saving project schema version after create:', schemaError);
-                }
-                addRecentProject(currentProjectName, currentProjectPath, currentProjectIcon);
-                showStudyMetadataCard();
-                updateCreateProjectButton();
-                showExportCard();
-                showMethodsCard();
-            } else {
-                setCreateResultHtml(`
-                    <div class="alert alert-danger">
-                        <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
-                        <p class="mb-0">${escapeHtml(result.error)}</p>
-                    </div>
-                `);
-            }
-        } catch (error) {
-            setCreateResultHtml(`
-                <div class="alert alert-danger">
-                    <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
-                    <p class="mb-0">${escapeHtml(error.message)}</p>
-                </div>
-            `);
-        } finally {
-            if (activeBtn) {
-                setButtonLoading(activeBtn, false, null, originalText);
-            }
-            createButtons.forEach(btn => { btn.disabled = false; });
-            preliminaryButtons.forEach(btn => { btn.disabled = false; });
-        }
-    }
-
-    const createProjectSubmitBtn = document.getElementById('createProjectSubmitBtn');
-    if (createProjectSubmitBtn) {
-        createProjectSubmitBtn.addEventListener('click', (e) => {
-            const createSection = document.getElementById('section-create');
-            const createActive = createSection && createSection.classList.contains('active');
-            if (!createActive && getProjectStateSnapshot().path) {
-                e.preventDefault();
-                const studyMetadataForm = document.getElementById('studyMetadataForm');
-                if (studyMetadataForm && typeof studyMetadataForm.requestSubmit === 'function') {
-                    studyMetadataForm.requestSubmit();
-                } else if (studyMetadataForm) {
-                    studyMetadataForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-                }
-                return;
-            }
-            e.preventDefault();
-            submitCreateProject();
-        });
-    }
-
-    const createProjectSubmitBtnTop = document.getElementById('createProjectSubmitBtnTop');
-    if (createProjectSubmitBtnTop) {
-        createProjectSubmitBtnTop.addEventListener('click', (e) => {
-            e.preventDefault();
-            submitCreateProject({ triggerButton: createProjectSubmitBtnTop });
-        });
-    }
-
-    const preliminaryCreateBtn = document.getElementById('preliminaryCreateBtn');
-    if (preliminaryCreateBtn) {
-        preliminaryCreateBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            submitCreateProject({ forcePreliminary: true, triggerButton: preliminaryCreateBtn });
-        });
-    }
-
-    const preliminaryCreateBtnTop = document.getElementById('preliminaryCreateBtnTop');
-    if (preliminaryCreateBtnTop) {
-        preliminaryCreateBtnTop.addEventListener('click', (e) => {
-            e.preventDefault();
-            submitCreateProject({ forcePreliminary: true, triggerButton: preliminaryCreateBtnTop });
-        });
-    }
-
-    createProjectFormEl.addEventListener('submit', (e) => {
-        e.preventDefault();
-        submitCreateProject();
-    });
-}
-
-function setProjectValidationResult(html) {
-    const resultDiv = document.getElementById('validationResult');
-    if (!resultDiv) return;
-    resultDiv.style.display = 'block';
-    resultDiv.innerHTML = html;
-}
-
-function showOpenProjectError(message, title = 'Error') {
-    setProjectValidationResult(`
-        <div class="validation-result invalid">
-            <h5><i class="fas fa-exclamation-circle me-2"></i>${escapeHtml(title)}</h5>
-            <p class="mb-0">${escapeHtml(message)}</p>
-        </div>
-    `);
-}
-
-function normalizeProjectSummaryCount(value) {
-    const parsed = Number.parseInt(String(value ?? ''), 10);
-    if (!Number.isFinite(parsed) || parsed < 0) {
-        return 0;
-    }
-    return parsed;
-}
-
-function normalizeProjectSummaryLabels(values) {
-    if (!Array.isArray(values)) {
-        return [];
-    }
-
-    const seen = new Set();
-    const labels = [];
-    values.forEach((value) => {
-        const text = String(value || '').trim();
-        if (!text || seen.has(text)) {
-            return;
-        }
-        seen.add(text);
-        labels.push(text);
-    });
-    return labels;
-}
-
-function renderProjectQuickSummary(summary) {
-    if (!summary || typeof summary !== 'object' || Array.isArray(summary)) {
-        return '<p class="mb-0 text-muted"><i class="fas fa-info-circle me-1"></i>Quick summary unavailable for this project.</p>';
-    }
-
-    const subjects = normalizeProjectSummaryCount(summary.subjects);
-    const sessions = normalizeProjectSummaryCount(summary.sessions);
-    const modalities = normalizeProjectSummaryCount(summary.modalities);
-    const hasDatasetDescription = Boolean(summary.has_dataset_description);
-    const hasParticipantsTsv = Boolean(summary.has_participants_tsv);
-
-    const sessionLabels = normalizeProjectSummaryLabels(summary.session_labels);
-    const modalityLabels = normalizeProjectSummaryLabels(summary.modality_labels);
-    const shownSessionLabels = sessionLabels.slice(0, 6);
-    const shownModalityLabels = modalityLabels.slice(0, 6);
-    const hiddenSessionCount = Math.max(0, sessionLabels.length - shownSessionLabels.length);
-    const hiddenModalityCount = Math.max(0, modalityLabels.length - shownModalityLabels.length);
-
-    const sessionText = shownSessionLabels.map(label => escapeHtml(label)).join(', ');
-    const modalityText = shownModalityLabels.map(label => escapeHtml(label)).join(', ');
-
-    return `
-        <div class="stats-grid mt-2">
-            <div class="stat-item">
-                <div class="stat-value">${subjects}</div>
-                <div class="stat-label">Subjects</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value">${sessions}</div>
-                <div class="stat-label">Sessions</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value">${modalities}</div>
-                <div class="stat-label">Modalities</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value ${hasDatasetDescription ? 'text-success' : 'text-danger'}">${hasDatasetDescription ? '✓' : '✗'}</div>
-                <div class="stat-label">dataset_description</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value ${hasParticipantsTsv ? 'text-success' : 'text-danger'}">${hasParticipantsTsv ? '✓' : '✗'}</div>
-                <div class="stat-label">participants.tsv</div>
-            </div>
-        </div>
-        ${modalityText ? `
-            <div class="small text-muted mt-2"><strong>Modalities:</strong> ${modalityText}${hiddenModalityCount > 0 ? ` (+${hiddenModalityCount} more)` : ''}</div>
-        ` : ''}
-        ${sessionText ? `
-            <div class="small text-muted mt-1"><strong>Sessions:</strong> ${sessionText}${hiddenSessionCount > 0 ? ` (+${hiddenSessionCount} more)` : ''}</div>
-        ` : ''}
-    `;
-}
-
-function renderLoadedProjectState(loadedName, loadedPath, summary) {
-    const quickSummaryHtml = renderProjectQuickSummary(summary);
-    const projectIconClass = escapeHtml(resolveProjectIconClass(currentProjectIcon));
-    setProjectValidationResult(`
-        <div class="validation-result pending project-loaded-state">
-            <h5><i class="fas fa-folder-open me-2"></i>Project Loaded</h5>
-            <p class="mb-1"><strong><span class="me-1" aria-hidden="true">${projectIconClass}</span>${escapeHtml(loadedName || 'Current project')}:</strong> <code>${escapeHtml(loadedPath)}</code></p>
-            ${quickSummaryHtml}
-            <div class="alert alert-info mt-2 mb-0" role="status">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
-                    <div>
-                        <strong>Not validated yet.</strong>
-                        <span class="ms-1">Use Validate now or Quick Validate to run a manual project check.</span>
-                    </div>
-                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="validate-project" data-path="${escapeHtml(loadedPath)}">
-                        <i class="fas fa-bolt me-1"></i>Validate now
-                    </button>
-                </div>
-            </div>
-            <div class="d-flex flex-column align-items-end mt-2">
-                <div class="d-flex gap-2 flex-wrap justify-content-end">
-                    <button type="button" class="btn btn-outline-warning" id="projectBoxPreliminarySaveBtn">
-                        <i class="fas fa-save me-2"></i>Save Preliminary Project State
-                    </button>
-                    <button type="button" class="btn btn-info" id="projectBoxSaveBtn">
-                        <i class="fas fa-save me-2"></i>Save Changes to Project
-                    </button>
-                </div>
-                <small class="text-muted mt-1" id="projectBoxSaveStatus" aria-live="polite"></small>
-            </div>
-        </div>
-    `);
-}
-
-function getOpenProjectActionPath() {
-    const existingPathInput = document.getElementById('existingPath');
-    const enteredPath = existingPathInput ? String(existingPathInput.value || '').trim() : '';
-    if (enteredPath) {
-        return enteredPath;
-    }
-    return String(currentProjectPath || '').trim();
-}
-
-function updateQuickValidateButtonState() {
-    const quickValidateBtn = document.getElementById('quickValidateProjectBtn');
-    if (!quickValidateBtn) {
-        return;
-    }
-    quickValidateBtn.disabled = !Boolean(getOpenProjectActionPath());
-}
-
-async function loadProjectWithoutValidation(path, triggerButton = null, options = {}) {
-    const normalizedPath = String(path || '').trim();
-    const skipContextGuard = Boolean(options.skipContextGuard);
-    if (!normalizedPath) {
-        showOpenProjectError('Please provide a project folder or a project.json path.', 'Selection Error');
-        return false;
-    }
-
-    if (!skipContextGuard && !confirmProjectContextChange('load another project', normalizedPath)) {
-        return false;
-    }
-
-    const originalText = triggerButton ? setButtonLoading(triggerButton, true, 'Loading...') : null;
-
-    try {
-        const response = await fetchWithApiFallback('/api/projects/current', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: normalizedPath })
-        });
-        const result = await response.json().catch(() => ({
-            success: false,
-            error: 'Server returned an invalid response while loading the project.'
-        }));
-
-        if (!response.ok || !result.success || !result.current || !result.current.path) {
-            showOpenProjectError(result.error || `Project load failed (${response.status})`);
-            return false;
-        }
-
-        applyCurrentProject(result.current);
-
-        const loadedPath = String(result.current.path || '').trim();
-        const loadedName = String(result.current.name || currentProjectName || '').trim();
-        const projectSummary = result.project_summary && typeof result.project_summary === 'object' && !Array.isArray(result.project_summary)
-            ? result.project_summary
-            : null;
-        addRecentProject(loadedName, loadedPath, currentProjectIcon);
-        showStudyMetadataCard();
-        updateCreateProjectButton();
-        showExportCard();
-        showMethodsCard();
-
-        renderLoadedProjectState(loadedName, loadedPath, projectSummary);
-        bindProjectBoxActionButtons();
-        updateCreateProjectButton();
-
-        return true;
-    } catch (error) {
-        showOpenProjectError(error.message || 'Could not load the selected project.');
-        return false;
-    } finally {
-        if (triggerButton) {
-            setButtonLoading(triggerButton, false, null, originalText);
-        }
-        updateQuickValidateButtonState();
-    }
-}
+initCreateProjectController({
+    fetchWithApiFallback,
+    setButtonLoading,
+    escapeHtml,
+    textToArray: _textToArray,
+    getProjectStateSnapshot,
+    setCreateResultHtml,
+    joinProjectTargetPath,
+    resetCreateTargetStatusChecks,
+    checkCreateTargetStatus,
+    validateAllMandatoryFields,
+    validateDatasetDescriptionDraftLive,
+    getCitationAuthorsList,
+    getEthicsApprovals,
+    getFundingList,
+    getRecMethodList,
+    getRecLocationList,
+    getYearMonthValue,
+    saveProjectSchemaConfig,
+    applyCurrentProject,
+    getCurrentProjectState: () => ({
+        path: currentProjectPath,
+        name: currentProjectName,
+        icon: currentProjectIcon,
+    }),
+    addRecentProject,
+    showStudyMetadataCard,
+    updateCreateProjectButton,
+    showExportCard,
+    showMethodsCard,
+});
 
 async function runProjectValidation(path, triggerButton = null) {
     const normalizedPath = String(path || '').trim();
@@ -2689,38 +1867,31 @@ async function runProjectValidation(path, triggerButton = null) {
     }
 }
 
-// Open Project Form
-const openProjectForm = document.getElementById('openProjectForm');
-if (openProjectForm) {
-    openProjectForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const btn = this.querySelector('button[type="submit"]');
-        await loadProjectWithoutValidation(getOpenProjectActionPath(), btn);
-    });
-}
+const openProjectController = initOpenProjectController({
+    fetchWithApiFallback,
+    setButtonLoading,
+    escapeHtml,
+    confirmProjectContextChange,
+    getBeginnerHelpModeEnabled,
+    resolveProjectIconClass,
+    getCurrentProjectState: () => ({
+        path: currentProjectPath,
+        name: currentProjectName,
+        icon: currentProjectIcon,
+    }),
+    applyCurrentProject,
+    addRecentProject,
+    showStudyMetadataCard,
+    updateCreateProjectButton,
+    showExportCard,
+    showMethodsCard,
+    bindProjectBoxActionButtons,
+});
 
-const quickValidateProjectBtn = document.getElementById('quickValidateProjectBtn');
-if (quickValidateProjectBtn) {
-    quickValidateProjectBtn.addEventListener('click', async function(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        await runProjectValidation(getOpenProjectActionPath(), quickValidateProjectBtn);
-    });
-
-    quickValidateProjectBtn.addEventListener('keydown', function(event) {
-        if (event.key === 'Enter' || event.key === ' ') {
-            event.stopPropagation();
-        }
-    });
-}
-
-const openPathInput = document.getElementById('existingPath');
-if (openPathInput) {
-    openPathInput.addEventListener('input', updateQuickValidateButtonState);
-    openPathInput.addEventListener('change', updateQuickValidateButtonState);
-}
-
-updateQuickValidateButtonState();
+const getOpenProjectActionPath = openProjectController.getOpenProjectActionPath;
+const updateQuickValidateButtonState = openProjectController.updateQuickValidateButtonState;
+const loadProjectWithoutValidation = openProjectController.loadProjectWithoutValidation;
+const runProjectValidation = openProjectController.runProjectValidation;
 
 export async function fixIssue(path, code) {
     try {
