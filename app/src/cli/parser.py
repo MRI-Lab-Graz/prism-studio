@@ -925,6 +925,11 @@ def build_prism_tools_parsers(
         help="Report what would be removed without writing changes",
     )
     parser_dataset_cleanup.add_argument(
+        "--recursive",
+        action="store_true",
+        help="Treat --project as a folder and clean every project.json beneath it",
+    )
+    parser_dataset_cleanup.add_argument(
         "--drop-task-definitions",
         action="store_true",
         help="Also remove TaskDefinitions for a stricter project-page-only cleanup",
