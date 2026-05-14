@@ -12,8 +12,8 @@
 </div>
 {%- endmacro %}
 
-{% macro help_panel(title, variant='info', expanded=true, icon_class='fas fa-circle-info', body_padding='py-2', extra_classes='mb-3') -%}
-<div class="card border-{{ variant }} {{ extra_classes }} studio-help-panel" data-help-panel data-help-expanded="{{ 'true' if expanded else 'false' }}">
+{% macro help_panel(title, variant='info', expanded=true, icon_class='fas fa-circle-info', body_padding='py-2', extra_classes='mb-3', default_mode='') -%}
+<div class="card border-{{ variant }} {{ extra_classes }} studio-help-panel" data-help-panel data-help-expanded="{{ 'true' if expanded else 'false' }}" data-help-initial-expanded="{{ 'true' if expanded else 'false' }}"{% if default_mode %} data-help-default-mode="{{ default_mode }}"{% endif %}>
     <div class="card-header bg-{{ variant }} bg-opacity-10 py-2 d-flex align-items-center justify-content-between">
         <div class="fw-semibold text-{{ variant }}-emphasis">
             <i class="{{ icon_class }} me-2"></i>{{ title }}
@@ -49,5 +49,37 @@
     {% if help_text %}
     <small class="text-muted">{{ help_text }}</small>
     {% endif %}
+</div>
+{%- endmacro %}
+
+{% macro path_picker(label, input_id, button_id, placeholder='', help_text='', button_label='Browse', button_title='', value='', required=false, wrapper_classes='', input_extra_classes='', label_classes='form-label', help_key='', extra_input_attrs='') -%}
+<div class="{{ wrapper_classes }}">
+    <label for="{{ input_id }}" class="{{ label_classes }}">{{ label }}{% if caller is defined %} {{ caller() }}{% endif %}</label>
+    <div class="input-group">
+        <input type="text" class="form-control {{ input_extra_classes }}" id="{{ input_id }}"
+               {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+               {% if value %}value="{{ value }}"{% endif %}
+               {% if required %}required{% endif %}
+               {% if help_key %}data-help-key="{{ help_key }}"{% endif %}
+               {% if extra_input_attrs %}{{ extra_input_attrs|safe }}{% endif %}>
+        <button class="btn btn-outline-secondary" type="button" id="{{ button_id }}"{% if button_title %} title="{{ button_title }}"{% endif %}>
+            <i class="fas fa-folder-open"></i> {{ button_label }}
+        </button>
+    </div>
+    {% if help_text %}
+    <small class="text-muted">{{ help_text }}</small>
+    {% endif %}
+</div>
+{%- endmacro %}
+
+{% macro section_card(title, icon_class, icon_color_class='text-success', card_classes='feature-card mb-4', body_classes='p-5', title_classes='card-title mb-4 home-section-title') -%}
+<div class="card {{ card_classes }}">
+    <div class="card-body {{ body_classes }}">
+        <h4 class="{{ title_classes }}">
+            <i class="{{ icon_class }} {{ icon_color_class }} me-2"></i>
+            {{ title }}
+        </h4>
+        {{ caller() }}
+    </div>
 </div>
 {%- endmacro %}

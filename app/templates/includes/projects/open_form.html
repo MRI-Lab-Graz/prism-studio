@@ -1,3 +1,6 @@
+    {% from "includes/ui/macros.html" import path_picker %}
+    {% from "includes/projects/macros.html" import project_flow_strip %}
+
     <!-- Open Existing Project Form -->
     <div class="form-section" id="section-open">
         <div class="card shadow-sm">
@@ -10,36 +13,19 @@
             </div>
             <div class="collapse" id="openProjectSection">
             <div class="card-body">
-                <div class="project-flow-strip project-flow-strip--open mb-3" id="openProjectFlowStrip">
-                    <div class="project-flow-strip__item">
-                        <span class="project-flow-strip__label">Use when</span>
-                        <strong>You already have a <code>project.json</code> on disk</strong>
-                    </div>
-                    <div class="project-flow-strip__item">
-                        <span class="project-flow-strip__label">Validation</span>
-                        <strong>Load first, then run Quick Validate only when you need it</strong>
-                    </div>
-                    <div class="project-flow-strip__item">
-                        <span class="project-flow-strip__label">Result</span>
-                        <strong>This project becomes the current working study in PRISM Studio</strong>
-                    </div>
-                </div>
+                {{ project_flow_strip('project-flow-strip--open', 'openProjectFlowStrip', [
+                    ('Use when', 'You already have a <code>project.json</code> on disk'),
+                    ('Validation', 'Load first, then run Quick Validate only when you need it'),
+                    ('Result', 'This project becomes the current working study in PRISM Studio')
+                ]) }}
                 <form id="openProjectForm">
                     <div class="row g-3">
                         <div class="col-md-7">
-                            <label for="existingPath" class="form-label fw-bold">
-                                Select project folder or project.json
-                                <i class="fas fa-info-circle text-primary ms-1" id="pathHelpTooltip" 
-                                   data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
-                                   title="Type the full path to your project folder or project.json file, or click Browse to select it."></i>
-                            </label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="existingPath"
-                                       placeholder="/Users/YourName/MyProject/project.json" required>
-                                <button class="btn btn-outline-secondary" type="button" id="browseExistingPath" title="Browse for project.json">
-                                    <i class="fas fa-folder-open"></i> Browse
-                                </button>
-                            </div>
+                            {% call path_picker('Select project folder or project.json', 'existingPath', 'browseExistingPath', '/Users/YourName/MyProject/project.json', '', 'Browse', 'Browse for project.json', '', true, '', '', 'form-label fw-bold') %}
+                            <i class="fas fa-info-circle text-primary ms-1" id="pathHelpTooltip"
+                               data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
+                               title="Type the full path to your project folder or project.json file, or click Browse to select it."></i>
+                            {% endcall %}
                         </div>
                         <div class="col-md-5">
                             <label class="form-label fw-bold d-none d-md-block">&nbsp;</label>

@@ -3,8 +3,26 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SHARED_API_MODULE = REPO_ROOT / "app" / "static" / "js" / "shared" / "api.js"
+SHARED_PATH_PICKER_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "shared" / "path-picker.js"
+)
 PROJECTS_CORE_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "core.js"
+)
+PROJECTS_FILE_BROWSER_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "file-browser.js"
+)
+PROJECTS_PATH_PICKERS_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "path-pickers.js"
+)
+PROJECTS_INIT_ON_BIDS_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "init-on-bids.js"
+)
+PROJECTS_CREATE_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "create-project.js"
+)
+PROJECTS_OPEN_PROJECT_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "open-project.js"
 )
 PROJECTS_EXPORT_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "export.js"
@@ -44,6 +62,17 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("export async function fetchWithApiFallback(", content)
         self.assertIn("url.startsWith('/api/')", content)
         self.assertIn("return 'http://127.0.0.1:5001';", content)
+        self.assertIn("credentials: 'include'", content)
+
+    def test_shared_path_picker_honors_server_preference_and_in_app_fallback(self):
+        content = SHARED_PATH_PICKER_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("export function prefersServerPicker()", content)
+        self.assertIn("export async function browseFolderWithFallback(fetchWithApiFallback, options = {})", content)
+        self.assertIn("window.PrismFileSystemMode.prefersServerPicker()", content)
+        self.assertIn("const response = await fetchWithApiFallback('/api/browse-folder');", content)
+        self.assertIn("window.PrismFolderBrowser.open({", content)
+        self.assertIn("Native folder picker failed, falling back to in-app browser:", content)
 
     def test_new_project_draft_clear_uses_api_fallback(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
@@ -124,13 +153,10 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         )
 
     def test_file_browser_uses_fallback_and_button_rows(self):
-        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        content = PROJECTS_FILE_BROWSER_MODULE.read_text(encoding="utf-8")
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("const res = await fetchWithApiFallback(url);", content)
-        self.assertIn(
-            "const response = await fetchWithApiFallback('/api/browse-folder');",
-            content,
-        )
         self.assertIn(
             'class="d-flex align-items-center w-100 px-3 py-2 border-0 border-bottom fb-project-json text-start"',
             content,
@@ -140,9 +166,37 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            'aria-label="Select project.json at ${_escHtml(data.project_json_path)}"',
+            'aria-label="Select project.json at ${escHtml(data.project_json_path)}"',
             content,
         )
+        self.assertIn("export function initProjectFileBrowser(", content)
+        self.assertIn("initProjectFileBrowser({ fetchWithApiFallback, prefersServerPicker });", core_content)
+
+    def test_projects_core_uses_shared_path_picker(self):
+        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        picker_content = PROJECTS_PATH_PICKERS_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("import { prefersServerPicker } from '../../shared/path-picker.js';", content)
+        self.assertIn("import { initProjectPathPickers } from './path-pickers.js';", content)
+        self.assertIn("initProjectPathPickers({", content)
+        self.assertNotIn("await browseFolderWithFallback(fetchWithApiFallback, {", content)
+        self.assertIn("import { browseFolderWithFallback } from '../../shared/path-picker.js';", picker_content)
+        self.assertIn("export function initProjectPathPickers({ fetchWithApiFallback, validateProjectField, clearCreateResult })", picker_content)
+        self.assertIn("buttonId: 'browseProjectPath'", picker_content)
+        self.assertIn("buttonId: 'browseInitBidsPath'", picker_content)
+        self.assertIn("buttonId: 'browseGlobalLibrary'", picker_content)
+        self.assertIn("buttonId: 'browseGlobalRecipes'", picker_content)
+
+    def test_projects_init_on_bids_flow_is_extracted(self):
+        content = PROJECTS_INIT_ON_BIDS_MODULE.read_text(encoding="utf-8")
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("export function initProjectInitOnBidsController({", content)
+        self.assertIn("const response = await fetchWithApiFallback('/api/projects/init-on-bids', {", content)
+        self.assertIn("PRISM Initialised Successfully!", content)
+        self.assertIn("bidsPath.split(/[\\\\/]/).pop()", content)
+        self.assertIn("import { initProjectInitOnBidsController } from './init-on-bids.js';", core_content)
+        self.assertIn("initProjectInitOnBidsController({", core_content)
 
     def test_export_structure_shows_loading_and_failure_placeholders(self):
         content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
@@ -275,31 +329,36 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("escapeHtml(savedPath)", content)
 
     def test_create_and_init_flows_use_fallback_and_refresh_project_sections(self):
-        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        init_content = PROJECTS_INIT_ON_BIDS_MODULE.read_text(encoding="utf-8")
+        create_content = PROJECTS_CREATE_MODULE.read_text(encoding="utf-8")
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
         self.assertIn(
             "const response = await fetchWithApiFallback('/api/projects/init-on-bids', {",
-            content,
+            init_content,
         )
         self.assertIn(
             "const response = await fetchWithApiFallback('/api/projects/create', {",
-            content,
+            create_content,
         )
-        self.assertIn("showStudyMetadataCard();", content)
-        self.assertIn("showExportCard();", content)
-        self.assertIn("showMethodsCard();", content)
+        self.assertIn("showStudyMetadataCard();", create_content)
+        self.assertIn("showExportCard();", create_content)
+        self.assertIn("showMethodsCard();", create_content)
+        self.assertIn("import { initCreateProjectController } from './create-project.js';", core_content)
+        self.assertIn("initCreateProjectController({", core_content)
 
     def test_create_flow_checks_target_path_before_submitting(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        create_content = PROJECTS_CREATE_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("async function checkCreateTargetStatus() {", content)
         self.assertIn(
             "const response = await fetchWithApiFallback('/api/projects/path-status', {",
             content,
         )
-        self.assertIn("const targetStatus = await checkCreateTargetStatus();", content)
-        self.assertIn("if (targetStatus.conflict) {", content)
-        self.assertIn("const fullPath = joinProjectTargetPath(projectPath, projectName);", content)
+        self.assertIn("const targetStatus = await checkCreateTargetStatus();", create_content)
+        self.assertIn("if (targetStatus.conflict) {", create_content)
+        self.assertIn("const fullPath = joinProjectTargetPath(projectPath, projectName);", create_content)
 
     def test_create_conflict_warning_can_open_existing_project(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
@@ -313,7 +372,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("submitOpenProjectPath(path);", content)
 
     def test_open_project_flow_separates_load_and_validation(self):
-        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
         self.assertIn(
             "async function loadProjectWithoutValidation(path, triggerButton = null, options = {})",
@@ -336,27 +396,21 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "await loadProjectWithoutValidation(path, null, { skipContextGuard: true });",
+            "await loadProjectWithoutValidation(validationPath, null, { skipContextGuard: true });",
             content,
         )
         self.assertIn("function renderProjectQuickSummary(summary) {", content)
         self.assertIn("const projectSummary = result.project_summary", content)
         self.assertIn("renderLoadedProjectState(loadedName, loadedPath, projectSummary);", content)
+        self.assertIn("import { initOpenProjectController } from './open-project.js';", core_content)
+        self.assertIn("const openProjectController = initOpenProjectController({", core_content)
 
     def test_loaded_project_state_exposes_validate_now_action(self):
-        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("<strong>Not validated yet.</strong>", content)
         self.assertIn('class="validation-result pending', content)
         self.assertIn('data-action="validate-project"', content)
-        self.assertIn(
-            "const validateProjectBtn = event.target.closest('[data-action=\"validate-project\"]');",
-            content,
-        )
-        self.assertIn(
-            "runProjectValidation(validateProjectBtn.dataset.path || getOpenProjectActionPath());",
-            content,
-        )
         self.assertIn("id=\"projectBoxSaveBtn\"", content)
         self.assertIn("Save Changes to Project", content)
 
