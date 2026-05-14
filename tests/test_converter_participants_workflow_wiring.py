@@ -6,6 +6,15 @@ PARTICIPANTS_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter_participant
 PARTICIPANTS_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "participants.js"
 )
+PARTICIPANTS_SOURCEDATA_QUICK_SELECT_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "converter"
+    / "participants-sourcedata-quick-select.js"
+)
 CONVERTER_STYLES = REPO_ROOT / "app" / "static" / "css" / "converter.css"
 
 
@@ -137,6 +146,9 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
 
     def test_participants_module_clears_sourcedata_backed_file_selection(self):
         content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+        sourcedata_content = PARTICIPANTS_SOURCEDATA_QUICK_SELECT_MODULE.read_text(
+            encoding="utf-8"
+        )
 
         self.assertIn("function clearParticipantsSelectedFile(", content)
         self.assertIn(
@@ -144,8 +156,16 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "if (!filename) {\n                clearParticipantsSelectedFile();\n                resetParticipantsPanelState();\n                updateParticipantsButtonState();\n                return;\n            }",
+            "onClearSelectedFile: () => clearParticipantsSelectedFile(),",
             content,
+        )
+        self.assertIn("if (!filename) {", sourcedata_content)
+        self.assertIn("onClearSelectedFile();", sourcedata_content)
+        self.assertIn("resetPanelState();", sourcedata_content)
+        self.assertIn("updateButtonState();", sourcedata_content)
+        self.assertIn(
+            "reportLoadError(`Failed to load ${filename} from sourcedata.`);",
+            sourcedata_content,
         )
 
     def test_participants_module_keeps_manual_id_requirement_through_preview(self):
