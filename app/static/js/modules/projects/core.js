@@ -5,9 +5,13 @@
 
 import { setButtonLoading, textToArray as _textToArray } from './helpers.js';
 import { initCreateProjectController } from './create-project.js';
+import { initCreatePreflightController } from './create-preflight.js';
 import { initProjectInitOnBidsController } from './init-on-bids.js';
 import { initOpenProjectController } from './open-project.js';
+import { initProjectsPageBootstrap } from './page-bootstrap.js';
 import { initProjectPathPickers } from './path-pickers.js';
+import { initProjectSelectionController } from './project-selection.js';
+import { createRecentProjectsController } from './recent-projects.js';
 import { validateProjectField } from './validation.js';
 import { initProjectFileBrowser } from './file-browser.js';
 import {
@@ -43,9 +47,6 @@ let currentProjectIcon = '';
 let projectsPageInitialized = false;
 const recentProjectsKey = 'prism_recent_projects';
 const beginnerHelpModeKey = 'prism_beginner_help_mode';
-const recentProjectStatusCache = new Map();
-let createTargetStatusRequestToken = 0;
-let createTargetStatusDebounceTimer = null;
 
 const allowedProjectIcons = [
     '🧪',
@@ -102,14 +103,6 @@ function joinProjectTargetPath(projectPath, projectName) {
     return parentPath + separator + name;
 }
 
-function resetCreateTargetStatusChecks() {
-    if (createTargetStatusDebounceTimer) {
-        window.clearTimeout(createTargetStatusDebounceTimer);
-        createTargetStatusDebounceTimer = null;
-    }
-    createTargetStatusRequestToken += 1;
-}
-
 function setGlobalProjectState(path, name, icon = '') {
     setProjectStateSnapshot(path, name, icon);
 }
@@ -150,7 +143,6 @@ function applyCurrentProject(project) {
     }
 
     updateProjectTypeSelectionVisibility();
-    updateQuickValidateButtonState();
 
     if (window.updateNavbarProject) {
         window.updateNavbarProject(currentProjectName, currentProjectPath, currentProjectIcon);
@@ -224,29 +216,6 @@ function bindProjectBoxActionButtons() {
     });
 }
 
-function syncRecentProjectsToServer(list) {
-    fetchWithApiFallback('/api/projects/recent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projects: list })
-    }).catch(() => {
-        // localStorage remains fallback source
-    });
-}
-
-function loadRecentProjectsFromServer() {
-    fetchWithApiFallback('/api/projects/recent')
-        .then(response => response.json())
-        .then(data => {
-            if (!data || !data.success || !Array.isArray(data.projects)) return;
-            localStorage.setItem(recentProjectsKey, JSON.stringify(data.projects.slice(0, 5)));
-            renderRecentProjects();
-        })
-        .catch(() => {
-            // keep local fallback
-        });
-}
-
 const projectsRoot = document.getElementById('projectsRoot');
 const globalProjectState = getProjectStateSnapshot();
 const globalProjectPath = globalProjectState.path;
@@ -281,59 +250,23 @@ window.addEventListener('prism-project-changed', function(event) {
     currentProjectName = nextName;
     currentProjectIcon = nextPath ? resolveProjectIconClass(nextIcon || currentProjectIcon) : '';
     updateProjectTypeSelectionVisibility();
-    updateQuickValidateButtonState();
 });
 
-function normalizeRecentProjectEntry(entry) {
-    if (!entry || typeof entry !== 'object') return null;
+const recentProjectsController = createRecentProjectsController({
+    fetchWithApiFallback,
+    escapeHtml,
+    resolveProjectIconClass,
+    getCurrentProjectIcon: () => currentProjectIcon,
+});
 
-    const path = String(entry.path || '').trim();
-    if (!path) return null;
+const getRecentProjects = recentProjectsController.getRecentProjects;
+const saveRecentProjects = recentProjectsController.saveRecentProjects;
+const addRecentProject = recentProjectsController.addRecentProject;
+const clearRecentProjects = recentProjectsController.clearRecentProjects;
+const renderRecentProjects = recentProjectsController.renderRecentProjects;
+const loadRecentProjectsFromServer = recentProjectsController.loadRecentProjectsFromServer;
 
-    const name = String(entry.name || '').trim() || path.split(/[\\/]/).pop() || path;
-    const icon = resolveProjectIconClass(entry.icon);
-
-    return { path, name, icon };
-}
-
-export function getRecentProjects() {
-    try {
-        const raw = localStorage.getItem(recentProjectsKey);
-        if (!raw) return [];
-        const parsed = JSON.parse(raw);
-        if (!Array.isArray(parsed)) return [];
-        return parsed
-            .map(normalizeRecentProjectEntry)
-            .filter(Boolean);
-    } catch (err) {
-        console.warn('Could not read recent projects', err);
-        return [];
-    }
-}
-
-export function saveRecentProjects(list) {
-    const limited = (Array.isArray(list) ? list : [])
-        .map(normalizeRecentProjectEntry)
-        .filter(Boolean)
-        .slice(0, 5);
-    try {
-        localStorage.setItem(recentProjectsKey, JSON.stringify(limited));
-    } catch (err) {
-        console.warn('Could not save recent projects', err);
-    }
-    syncRecentProjectsToServer(limited);
-}
-
-export function addRecentProject(name, path, icon = '') {
-    if (!path) return;
-    const safeName = name && name.trim() ? name.trim() : path.split(/[\\/]/).pop();
-    const safeIcon = resolveProjectIconClass(icon || currentProjectIcon);
-    const list = getRecentProjects().filter(p => p.path !== path);
-    list.unshift({ name: safeName, path: path, icon: safeIcon });
-    recentProjectStatusCache.delete(path);
-    saveRecentProjects(list);
-    renderRecentProjects();
-}
+export { getRecentProjects, saveRecentProjects, addRecentProject, renderRecentProjects };
 
 function normalizeValidationRecord(record, fallbackCode, defaultMessage) {
     if (!record || typeof record !== 'object' || Array.isArray(record)) {
@@ -479,18 +412,6 @@ function renderGroupedValidationMessages(messageGroups) {
             </div>
         `;
     }).join('');
-}
-
-function setCurrentProjectBannerVisibility(type) {
-    const banner = document.getElementById('currentProjectBanner');
-    if (!banner) return;
-    banner.style.display = (type === 'create') ? 'none' : '';
-}
-
-function clearRecentProjects() {
-    recentProjectStatusCache.clear();
-    saveRecentProjects([]);
-    renderRecentProjects();
 }
 
 function normalizeHintText(text) {
@@ -744,170 +665,6 @@ function initProjectFieldHints() {
     });
 }
 
-async function isRecentProjectAvailable(path) {
-    if (!path) return false;
-    if (recentProjectStatusCache.has(path)) {
-        return recentProjectStatusCache.get(path);
-    }
-
-    const statusPromise = fetchWithApiFallback('/api/projects/path-status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path })
-    })
-        .then(response => response.json().catch(() => null))
-        .then(data => {
-            if (!data || data.success !== true) {
-                return null;
-            }
-            return Boolean(data.available);
-        })
-        .catch(() => null);
-
-    recentProjectStatusCache.set(path, statusPromise);
-    return statusPromise;
-}
-
-async function checkCreateTargetStatus() {
-    const projectName = document.getElementById('projectName')?.value.trim() || '';
-    const projectPath = document.getElementById('projectPath')?.value.trim() || '';
-    const validProjectName = /^[a-zA-Z0-9_-]+$/.test(projectName);
-
-    if (!projectName || !projectPath || !validProjectName) {
-        clearCreateResult('preflight');
-        return { conflict: false };
-    }
-
-    const targetPath = joinProjectTargetPath(projectPath, projectName);
-    const requestToken = ++createTargetStatusRequestToken;
-
-    try {
-        const response = await fetchWithApiFallback('/api/projects/path-status', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: targetPath })
-        });
-        const status = await response.json().catch(() => null);
-
-        if (requestToken !== createTargetStatusRequestToken) {
-            return { conflict: false, stale: true };
-        }
-
-        if (!status || status.success !== true || status.exists !== true) {
-            clearCreateResult('preflight');
-            return { conflict: false, targetPath };
-        }
-
-        if (status.is_dir && status.is_empty_dir) {
-            clearCreateResult('preflight');
-            return { conflict: false, targetPath, status };
-        }
-
-        let title = 'Target Folder Already Exists';
-        let message = `The target folder <code>${escapeHtml(targetPath)}</code> already exists and contains files. Project Location must be the parent folder where PRISM creates a new project folder.`;
-
-        if (status.is_file) {
-            title = 'Target Path Is A File';
-            message = `The target path <code>${escapeHtml(targetPath)}</code> already exists as a file. Project Location must be the parent folder, not the final project path.`;
-        } else if (status.available) {
-            title = 'Project Already Exists';
-            message = `The target folder <code>${escapeHtml(targetPath)}</code> already contains a <code>project.json</code>. Use Open Existing Project instead of Create New Project.`;
-        }
-
-        const actionHtml = status.available
-            ? `
-                <div class="mt-3">
-                    <button
-                        type="button"
-                        class="btn btn-sm btn-outline-primary"
-                        data-action="open-existing-project"
-                        data-path="${escapeHtml(status.project_json_path || targetPath)}"
-                    >
-                        <i class="fas fa-folder-open me-1"></i>Open Existing Project
-                    </button>
-                </div>
-            `
-            : '';
-
-        setCreateResultHtml(
-            `
-                <div class="alert alert-warning">
-                    <h5><i class="fas fa-exclamation-triangle me-2"></i>${title}</h5>
-                    <p class="mb-0">${message}</p>
-                    ${actionHtml}
-                </div>
-            `,
-            'preflight'
-        );
-
-        return { conflict: true, targetPath, status };
-    } catch (_error) {
-        if (requestToken === createTargetStatusRequestToken) {
-            clearCreateResult('preflight');
-        }
-        return { conflict: false, targetPath };
-    }
-}
-
-function scheduleCreateTargetStatusCheck() {
-    resetCreateTargetStatusChecks();
-    createTargetStatusDebounceTimer = window.setTimeout(() => {
-        checkCreateTargetStatus().catch(() => {});
-    }, 200);
-}
-
-export function renderRecentProjects() {
-    const block = document.getElementById('recentProjectsBlock');
-    const listEl = document.getElementById('recentProjectsList');
-    if (!block || !listEl) return;
-
-    const list = getRecentProjects();
-    if (!list.length) {
-        block.style.display = 'none';
-        listEl.innerHTML = '';
-        return;
-    }
-
-    Promise.all(list.map(async (project) => ({
-        project,
-        available: await isRecentProjectAvailable(project.path)
-    }))).then(results => {
-        const availableProjects = results
-            .filter(({ available }) => available !== false)
-            .map(({ project }) => project);
-
-        const unavailableProjects = results.filter(({ available }) => available === false);
-        if (unavailableProjects.length > 0) {
-            results
-                .filter(({ available }) => available === false)
-                .forEach(({ project }) => recentProjectStatusCache.delete(project.path));
-            saveRecentProjects(availableProjects);
-        }
-
-        if (!availableProjects.length) {
-            block.style.display = 'none';
-            listEl.innerHTML = '';
-            return;
-        }
-
-        block.style.display = 'block';
-        listEl.innerHTML = availableProjects.map((p, idx) => {
-        const label = p.name || p.path;
-        const iconClass = resolveProjectIconClass(p.icon);
-        const safeLabel = escapeHtml(label);
-        const safePath = escapeHtml(p.path || '');
-        const safeIconClass = escapeHtml(iconClass);
-        return `
-            <button type="button" class="btn btn-outline-secondary btn-sm recent-project-btn" data-path="${safePath}" data-name="${safeLabel}" data-icon="${safeIconClass}" data-recent-id="${idx}" title="${safePath}">
-                <span class="me-1" aria-hidden="true">${safeIconClass}</span>${safeLabel}
-            </button>`;
-        }).join('');
-    }).catch(() => {
-        block.style.display = 'none';
-        listEl.innerHTML = '';
-    });
-}
-
 // Load global library settings
 export async function loadGlobalSettings() {
     try {
@@ -1015,29 +772,6 @@ async function ensureOpenSectionVisibleForLoadedProject() {
     }
 
     await loadProjectWithoutValidation(path, null, { skipContextGuard: true });
-
-    updateQuickValidateButtonState();
-}
-
-function submitOpenProjectPath(path) {
-    const normalizedPath = String(path || '').trim();
-    const existingPathInput = document.getElementById('existingPath');
-    const openProjectForm = document.getElementById('openProjectForm');
-    if (!normalizedPath || !existingPathInput || !openProjectForm) {
-        return;
-    }
-
-    existingPathInput.value = normalizedPath;
-    selectProjectType('open');
-
-    if (typeof openProjectForm.requestSubmit === 'function') {
-        openProjectForm.requestSubmit();
-        return;
-    }
-
-    openProjectForm.dispatchEvent(
-        new Event('submit', { bubbles: true, cancelable: true })
-    );
 }
 
 async function saveDedicatedTerminalSetting(enabled) {
@@ -1327,196 +1061,39 @@ export async function clearGlobalLibrary() {
     }
 }
 
-function hasUnsavedNewProjectDraft() {
-    const createForm = document.getElementById('createProjectForm');
-    const metadataForm = document.getElementById('studyMetadataForm');
+const createPreflightController = initCreatePreflightController({
+    fetchWithApiFallback,
+    escapeHtml,
+    clearCreateResult,
+    setCreateResultHtml,
+    joinProjectTargetPath,
+    getSelectProjectType: () => selectProjectType,
+});
 
-    const forms = [createForm, metadataForm].filter(Boolean);
-    if (!forms.length) return false;
+const resetCreateTargetStatusChecks = createPreflightController.resetCreateTargetStatusChecks;
+const checkCreateTargetStatus = createPreflightController.checkCreateTargetStatus;
+const submitOpenProjectPath = createPreflightController.submitOpenProjectPath;
 
-    for (const form of forms) {
-        const fields = form.querySelectorAll('input, textarea, select');
-        for (const field of fields) {
-            if (field.type === 'hidden') {
-                continue;
-            }
+const projectSelectionController = initProjectSelectionController({
+    fetchWithApiFallback,
+    getCurrentProjectState: () => ({
+        path: currentProjectPath,
+        name: currentProjectName,
+        icon: currentProjectIcon,
+    }),
+    applyCurrentProject,
+    hasUnsavedStudyMetadataChanges,
+    isStudyMetadataBusy,
+    clearCreateResult,
+    resetCreateTargetStatusChecks,
+    resetStudyMetadataForm,
+    showStudyMetadataCard,
+});
 
-            if (field.tagName === 'SELECT') {
-                const options = Array.from(field.options || []);
-                if (options.some(option => option.selected !== option.defaultSelected)) {
-                    return true;
-                }
-                continue;
-            }
+const confirmProjectContextChange = projectSelectionController.confirmProjectContextChange;
+const selectProjectType = projectSelectionController.selectProjectType;
 
-            if (field.type === 'checkbox' || field.type === 'radio') {
-                if (field.checked !== field.defaultChecked) return true;
-                continue;
-            }
-
-            if ((field.value || '').trim() !== (field.defaultValue || '').trim()) {
-                return true;
-            }
-        }
-    }
-
-    const ethicsChoice = document.getElementById('metadataEthicsApproved')?.value || '';
-    const fundingChoice = document.getElementById('metadataFundingDeclared')?.value || '';
-    return Boolean(ethicsChoice || fundingChoice);
-}
-
-function confirmProjectContextChange(actionLabel = 'continue', targetPath = '') {
-    const normalizedTargetPath = String(targetPath || '').trim();
-    const normalizedCurrentPath = String(currentProjectPath || '').trim();
-
-    if (normalizedTargetPath && normalizedCurrentPath && normalizedTargetPath === normalizedCurrentPath) {
-        return true;
-    }
-
-    if (isStudyMetadataBusy()) {
-        alert('Please wait until project metadata finishes loading or saving before switching projects.');
-        return false;
-    }
-
-    if (normalizedCurrentPath && hasUnsavedStudyMetadataChanges()) {
-        return confirm(
-            '⚠️ Unsaved project metadata changes detected.\n\n' +
-            `If you ${actionLabel}, the current changes will be lost.\n\n` +
-            'Do you want to continue?'
-        );
-    }
-
-    const createSection = document.getElementById('section-create');
-    const createAlreadyActive = createSection && createSection.classList.contains('active');
-    if (!normalizedCurrentPath && createAlreadyActive && hasUnsavedNewProjectDraft()) {
-        return confirm(
-            '⚠️ Unsaved New Project data detected.\n\n' +
-            `If you ${actionLabel}, the current project and study metadata draft will be lost.\n\n` +
-            'Do you want to continue?'
-        );
-    }
-
-    return true;
-}
-
-function clearCurrentProjectForNewDraft() {
-    currentProjectPath = '';
-    currentProjectName = '';
-    updateProjectTypeSelectionVisibility();
-
-    if (window.updateNavbarProject) {
-        window.updateNavbarProject('', '');
-    } else {
-        setGlobalProjectState('', '');
-    }
-
-    // Keep backend session in sync to avoid accidental writes to a stale project.
-    fetchWithApiFallback('/api/projects/current', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: '' })
-    }).catch(() => {
-        // UI state remains source of truth for this interaction.
-    });
-}
-
-// Project type selection
-export function selectProjectType(type) {
-    // Warn if switching to "create" from an existing project without saving
-    if (type === 'create' && currentProjectPath) {
-        const confirmSwitch = confirm(
-            '⚠️ You are editing an existing project.\n\n' +
-            'If you switch to "New Project" without saving, any changes will be lost.\n\n' +
-            'Are you sure you want to continue?'
-        );
-        if (!confirmSwitch) {
-            return; // User cancelled, don't switch
-        }
-
-        clearCurrentProjectForNewDraft();
-    }
-
-    // Warn if user is already in New Project mode and has unsaved draft input
-    const createSection = document.getElementById('section-create');
-    const createAlreadyActive = createSection && createSection.classList.contains('active');
-    if (type === 'create' && !currentProjectPath && createAlreadyActive && hasUnsavedNewProjectDraft()) {
-        const confirmReset = confirm(
-            '⚠️ Unsaved New Project data detected.\n\n' +
-            'Clicking "New Project" again will clear all currently entered project and study metadata fields.\n\n' +
-            'Do you want to discard these unsaved changes?'
-        );
-        if (!confirmReset) {
-            return;
-        }
-    }
-    
-    document.querySelectorAll('.project-card').forEach(card => {
-        card.classList.remove('active');
-    });
-    document.getElementById('card-' + type).classList.add('active');
-
-    document.querySelectorAll('.form-section').forEach(section => {
-        section.classList.remove('active');
-    });
-    document.getElementById('section-' + type).classList.add('active');
-
-    const createBtnContainer = document.getElementById('saveStudyMetadataSection');
-    if (createBtnContainer) {
-        createBtnContainer.style.display = (type === 'create') ? '' : 'none';
-    }
-
-    if (type === 'create') {
-        clearCreateResult();
-        resetCreateTargetStatusChecks();
-        const projectNameInput = document.getElementById('projectName');
-        if (projectNameInput) {
-            projectNameInput.value = '';
-            projectNameInput.classList.remove('is-invalid');
-        }
-        const projectPathInput = document.getElementById('projectPath');
-        if (projectPathInput) {
-            projectPathInput.value = '';
-            projectPathInput.classList.remove('is-invalid');
-        }
-        const projectNameError = document.getElementById('projectNameError');
-        if (projectNameError) projectNameError.textContent = '';
-        resetStudyMetadataForm();
-        
-        // Reset all badges to their original colors (REQUIRED=red, etc.)
-        if (window.resetAllBadges) {
-            window.resetAllBadges();
-        }
-    }
-
-    setCurrentProjectBannerVisibility(type);
-
-    if (type === 'open') {
-        const openProjectSection = document.getElementById('openProjectSection');
-        if (openProjectSection) {
-            if (window.bootstrap && typeof window.bootstrap.Collapse === 'function') {
-                const collapse = window.bootstrap.Collapse.getOrCreateInstance(openProjectSection, { toggle: false });
-                collapse.show();
-            } else {
-                openProjectSection.classList.add('show');
-            }
-        }
-
-        const existingPathInput = document.getElementById('existingPath');
-        if (existingPathInput) {
-            existingPathInput.focus();
-            existingPathInput.select();
-        }
-    }
-
-    if (type === 'create') {
-        const projectNameField = document.getElementById('projectName');
-        if (projectNameField) {
-            projectNameField.focus();
-        }
-    }
-
-    showStudyMetadataCard();
-}
+export { selectProjectType };
 
 // ── Init PRISM on existing BIDS dataset ─────────────────────────────────────
 
@@ -1533,41 +1110,6 @@ initProjectInitOnBidsController({
 });
 
 initProjectFileBrowser({ fetchWithApiFallback, prefersServerPicker });
-
-// Validate project name (no spaces, valid folder name)
-const projectNameInput = document.getElementById('projectName');
-if (projectNameInput) {
-    projectNameInput.addEventListener('input', function(e) {
-        const value = e.target.value;
-        const isValid = /^[a-zA-Z0-9_-]*$/.test(value);
-        const errorDiv = document.getElementById('projectNameError');
-
-        if (!isValid) {
-            e.target.classList.add('is-invalid');
-            errorDiv.textContent = 'Only letters, numbers, underscores (_) and hyphens (-) allowed. No spaces!';
-        } else {
-            e.target.classList.remove('is-invalid');
-            errorDiv.textContent = '';
-        }
-
-        clearCreateResult();
-        scheduleCreateTargetStatusCheck();
-    });
-}
-
-const projectPathInput = document.getElementById('projectPath');
-if (projectPathInput) {
-    projectPathInput.addEventListener('input', function() {
-        this.classList.remove('is-invalid');
-        clearCreateResult();
-        scheduleCreateTargetStatusCheck();
-    });
-    projectPathInput.addEventListener('change', function() {
-        this.classList.remove('is-invalid');
-        clearCreateResult();
-        scheduleCreateTargetStatusCheck();
-    });
-}
 
 initCreateProjectController({
     fetchWithApiFallback,
@@ -1601,278 +1143,11 @@ initCreateProjectController({
     showMethodsCard,
 });
 
-async function runProjectValidation(path, triggerButton = null) {
-    const normalizedPath = String(path || '').trim();
-    if (!normalizedPath) {
-        showOpenProjectError('Please provide a project folder or a project.json path.', 'Selection Error');
-        return false;
-    }
-
-    const originalText = triggerButton ? setButtonLoading(triggerButton, true, 'Validating...') : null;
-
-    try {
-        const response = await fetchWithApiFallback('/api/projects/validate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: normalizedPath })
-        });
-        const result = await response.json().catch(() => ({
-            success: false,
-            error: 'Server returned an invalid response while validating the project.'
-        }));
-
-        if (!response.ok || !result.success) {
-            showOpenProjectError(result.error || `Validation request failed (${response.status})`);
-            return false;
-        }
-
-        const stats = result.stats;
-        const validationPath = String(result.current_project?.path || normalizedPath).trim() || normalizedPath;
-        const issues = Array.isArray(result.issues) ? result.issues : [];
-        const fixableIssues = Array.isArray(result.fixable_issues) ? result.fixable_issues : [];
-        const runnerWarnings = Array.isArray(result.runner_warnings) ? result.runner_warnings : [];
-        const issueGroups = groupValidationRecordsByCode(issues, {
-            fallbackCode: 'ISSUE',
-            defaultMessage: 'Validation issue',
-        });
-        const warningGroups = groupValidationRecordsByCode(runnerWarnings, {
-            fallbackCode: 'WARNING',
-            defaultMessage: 'Validation warning',
-        });
-
-        let statusClass = 'valid';
-        let statusIcon = 'check-circle';
-        let statusText = 'Valid PRISM Structure';
-
-        if (issues.length > 0) {
-            const hasNonFixable = issues.some(i => !i.fixable);
-            if (hasNonFixable) {
-                statusClass = 'invalid';
-                statusIcon = 'exclamation-circle';
-                statusText = `${issues.length} Issue(s) Found`;
-            } else {
-                statusClass = 'warning';
-                statusIcon = 'exclamation-triangle';
-                statusText = `${issues.length} Fixable Issue(s) Found`;
-            }
-        } else if (runnerWarnings.length > 0) {
-            statusClass = 'warning';
-            statusIcon = 'exclamation-triangle';
-            const warningGroupLabel = warningGroups.length === 1 ? 'code group' : 'code groups';
-            statusText = `${runnerWarnings.length} Non-blocking Warning(s) in ${warningGroups.length} ${warningGroupLabel}`;
-        }
-
-        let html = `
-            <div class="validation-result ${statusClass}">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h5 class="mb-0"><i class="fas fa-${statusIcon} me-2"></i>${statusText}</h5>
-                    ${stats.is_yoda ? '<span class="badge bg-info"><i class="fas fa-microchip me-1"></i>YODA Layout</span>' : ''}
-                </div>
-
-                <div class="alert alert-warning d-none py-2 mb-3" id="projectRequirementGapAlert" role="alert">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <span id="projectRequirementGapText"></span>
-                </div>
-
-                ${getBeginnerHelpModeEnabled() ? `
-                <div class="mb-3">
-                    <h6 class="mb-1">Project Metadata</h6>
-                    <small class="text-muted d-block" id="projectBoxSaveHint">
-                        <i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, CITATION.cff, and README.md.
-                    </small>
-                </div>` : ''}
-
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-value">${stats.subjects}</div>
-                        <div class="stat-label">Subjects</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">${stats.sessions.length || 0}</div>
-                        <div class="stat-label">Sessions</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">${stats.modalities.length}</div>
-                        <div class="stat-label">Modalities</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">${stats.has_dataset_description ? '✓' : '✗'}</div>
-                        <div class="stat-label">dataset_description</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value ${stats.has_participants_tsv ? 'text-success' : 'text-danger'}">${stats.has_participants_tsv ? '✓' : '✗'}</div>
-                        <div class="stat-label">participants.tsv</div>
-                    </div>
-                    <div class="stat-item" id="projectMetadataStatItem">
-                        <div class="stat-value" id="projectMetadataStatValue">✓</div>
-                        <div class="stat-label">metadata</div>
-                    </div>
-                </div>
-        `;
-
-        if (issueGroups.length > 0) {
-            html += `
-                <hr>
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="mb-0">Issues</h6>
-                    ${fixableIssues.length > 0 ? `
-                        <button class="btn btn-warning btn-sm" data-action="fix-all" data-path="${escapeHtml(validationPath)}">
-                            <i class="fas fa-wrench me-1"></i>Fix All (${fixableIssues.length})
-                        </button>
-                    ` : ''}
-                </div>
-                <div id="issuesList">
-            `;
-
-            issueGroups.forEach((issueGroup, index) => {
-                const collapseId = `project-issue-group-${index}`;
-                const previewMessage = issueGroup.messages[0] ? issueGroup.messages[0].message : 'Validation issue';
-                const groupAction = getProjectValidationAction(issueGroup.code);
-
-                html += `
-                    <div class="issue-item ${issueGroup.hasFixable ? 'fixable' : 'not-fixable'} project-validation-group">
-                        <div class="d-flex align-items-center gap-2">
-                            <button type="button"
-                                class="project-group-toggle flex-grow-1"
-                                data-bs-toggle="collapse"
-                                data-bs-target="#${collapseId}"
-                                aria-expanded="false"
-                                aria-controls="${collapseId}">
-                                <div class="project-group-summary d-flex flex-column">
-                                    <span class="fw-bold">${escapeHtml(issueGroup.code)} (${issueGroup.count})</span>
-                                    <span class="small text-muted project-group-preview">${escapeHtml(previewMessage)}</span>
-                                </div>
-                                <i class="fas fa-chevron-down small text-muted project-group-chevron"></i>
-                            </button>
-                            ${issueGroup.hasFixable ? `
-                                <button class="btn btn-sm btn-outline-warning flex-shrink-0" data-action="fix-issue" data-path="${escapeHtml(validationPath)}" data-code="${escapeHtml(issueGroup.code)}" aria-label="Apply fix for ${escapeHtml(issueGroup.code)}">
-                                    <i class="fas fa-wrench"></i>
-                                </button>
-                            ` : groupAction ? `
-                                <a href="${escapeHtml(groupAction.href)}" class="btn btn-sm btn-outline-success flex-shrink-0" aria-label="${escapeHtml(groupAction.label)} for ${escapeHtml(issueGroup.code)}">
-                                    <i class="${escapeHtml(groupAction.iconClass)} me-1"></i>${escapeHtml(groupAction.label)}
-                                </a>
-                            ` : `
-                                <span class="badge bg-secondary flex-shrink-0">Manual fix required</span>
-                            `}
-                        </div>
-                        <div class="collapse" id="${collapseId}">
-                            <div class="project-group-body">
-                                ${renderGroupedValidationHint(issueGroup.fixHints)}
-                                ${renderGroupedValidationMessages(issueGroup.messages)}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            html += '</div>';
-        }
-
-        if (warningGroups.length > 0) {
-            html += `
-                <hr>
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="mb-0">Validator Warnings (${warningGroups.length} code${warningGroups.length === 1 ? '' : 's'})</h6>
-                    <span class="badge bg-warning text-dark">Non-blocking</span>
-                </div>
-                <div id="projectWarningsList">
-            `;
-
-            warningGroups.forEach((warningGroup, index) => {
-                const collapseId = `project-warning-group-${index}`;
-                const previewMessage = warningGroup.messages[0] ? warningGroup.messages[0].message : 'Validation warning';
-
-                html += `
-                    <div class="issue-item not-fixable project-warning-group project-validation-group">
-                        <button type="button"
-                            class="project-group-toggle"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#${collapseId}"
-                            aria-expanded="false"
-                            aria-controls="${collapseId}">
-                            <div class="project-group-summary d-flex flex-column">
-                                <span class="fw-bold">${escapeHtml(warningGroup.code)} (${warningGroup.count})</span>
-                                <span class="small text-muted project-group-preview">${escapeHtml(previewMessage)}</span>
-                            </div>
-                            <div class="project-group-meta d-flex align-items-center gap-2">
-                                <span class="badge bg-warning text-dark">Non-blocking</span>
-                                <i class="fas fa-chevron-down small text-muted project-group-chevron"></i>
-                            </div>
-                        </button>
-                        <div class="collapse" id="${collapseId}">
-                            <div class="project-group-body">
-                                ${renderGroupedValidationHint(warningGroup.fixHints)}
-                                ${renderGroupedValidationMessages(warningGroup.messages)}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            html += '</div>';
-        }
-
-        html += `
-            <hr>
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <div>
-                    <h6 class="text-muted mb-2">Next Steps:</h6>
-                    <div class="btn-group" role="group">
-                        <a href="/template-editor" class="btn btn-sm btn-outline-success">
-                            <i class="fas fa-file-import me-1"></i>Import Templates
-                        </a>
-                        <a href="/survey-generator" class="btn btn-sm btn-outline-info">
-                            <i class="fas fa-poll-h me-1"></i>Survey Export
-                        </a>
-                        <a href="/validate" class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-check-circle me-1"></i>Validate Dataset
-                        </a>
-                    </div>
-                </div>
-                <div class="d-flex flex-column align-items-end">
-                    <div class="d-flex gap-2 flex-wrap justify-content-end">
-                        <button type="button" class="btn btn-outline-warning" id="projectBoxPreliminarySaveBtn">
-                            <i class="fas fa-save me-2"></i>Save Preliminary Project State
-                        </button>
-                        <button type="button" class="btn btn-info" id="projectBoxSaveBtn">
-                            <i class="fas fa-save me-2"></i>Save Changes to Project
-                        </button>
-                    </div>
-                    <small class="text-muted mt-1" id="projectBoxSaveStatus" aria-live="polite"></small>
-                </div>
-            </div>
-        `;
-
-        html += '</div>';
-        setProjectValidationResult(html);
-
-        applyCurrentProject(result.current_project);
-        addRecentProject(currentProjectName, validationPath, currentProjectIcon);
-        showStudyMetadataCard();
-        bindProjectBoxActionButtons();
-        updateCreateProjectButton();
-        showExportCard();
-        showMethodsCard();
-
-        return true;
-    } catch (error) {
-        showOpenProjectError(error.message || 'Validation failed unexpectedly.');
-        return false;
-    } finally {
-        if (triggerButton) {
-            setButtonLoading(triggerButton, false, null, originalText);
-        }
-        updateQuickValidateButtonState();
-    }
-}
-
 const openProjectController = initOpenProjectController({
     fetchWithApiFallback,
     setButtonLoading,
     escapeHtml,
     confirmProjectContextChange,
-    getBeginnerHelpModeEnabled,
     resolveProjectIconClass,
     getCurrentProjectState: () => ({
         path: currentProjectPath,
@@ -1889,9 +1164,7 @@ const openProjectController = initOpenProjectController({
 });
 
 const getOpenProjectActionPath = openProjectController.getOpenProjectActionPath;
-const updateQuickValidateButtonState = openProjectController.updateQuickValidateButtonState;
 const loadProjectWithoutValidation = openProjectController.loadProjectWithoutValidation;
-const runProjectValidation = openProjectController.runProjectValidation;
 
 export async function fixIssue(path, code) {
     try {
@@ -1903,7 +1176,7 @@ export async function fixIssue(path, code) {
         const result = await response.json();
 
         if (result.success) {
-            await runProjectValidation(path);
+            await loadProjectWithoutValidation(path, null, { skipContextGuard: true });
         } else {
             alert('Error applying fix: ' + result.error);
         }
@@ -1922,7 +1195,7 @@ export async function fixAllIssues(path) {
         const result = await response.json();
 
         if (result.success) {
-            await runProjectValidation(path);
+            await loadProjectWithoutValidation(path, null, { skipContextGuard: true });
         } else {
             alert('Error applying fixes: ' + result.error);
         }
@@ -1948,208 +1221,39 @@ export async function clearCurrentProject() {
 
 export function initProjectsPage() {
     if (projectsPageInitialized) {
-        updateQuickValidateButtonState();
         return;
     }
     projectsPageInitialized = true;
 
-    const isWindows = navigator.platform.toUpperCase().indexOf('WIN') > -1;
-    const isMac = navigator.platform.toUpperCase().indexOf('MAC') > -1;
-    const existingPathInput = document.getElementById('existingPath');
-    const projectPathInput = document.getElementById('projectPath');
-    const pathHelpTooltip = document.getElementById('pathHelpTooltip');
-
-    if (existingPathInput) {
-        if (isWindows) {
-            existingPathInput.placeholder = "C:\\Users\\YourName\\MyProject\\project.json";
-        } else if (isMac) {
-            existingPathInput.placeholder = "/Users/YourName/MyProject/project.json";
-        } else {
-            existingPathInput.placeholder = "/home/username/MyProject/project.json";
-        }
-    }
-
-    if (projectPathInput) {
-        if (isWindows) {
-            projectPathInput.placeholder = "C:\\Users\\YourName\\Documents";
-        } else if (isMac) {
-            projectPathInput.placeholder = "/Users/YourName/Documents";
-        } else {
-            projectPathInput.placeholder = "/home/username/Documents";
-        }
-    }
-
-    if (pathHelpTooltip) {
-        const osExample = isWindows ? "C:\\Users\\YourName\\Documents\\MyProject\\project.json" :
-            isMac ? "/Users/YourName/Documents/MyProject/project.json" :
-            "/home/username/Documents/MyProject/project.json";
-        const tooltipTitle = `Type the full path to your project folder or <code>project.json</code> file (e.g., <code>${osExample}</code>), or click Browse to select it.`;
-
-        pathHelpTooltip.setAttribute('title', tooltipTitle);
-        pathHelpTooltip.setAttribute('data-bs-original-title', tooltipTitle);
-
-        if (window.bootstrap && typeof window.bootstrap.Tooltip === 'function') {
-            window.bootstrap.Tooltip.getOrCreateInstance(pathHelpTooltip);
-        }
-    }
-
-    initProjectFieldHints();
-    initBeginnerHelpMode();
-    initBackendMonitoringToggle();
-    initDedicatedTerminalToggle();
-
-    loadGlobalSettings();
-    loadLibraryInfo();
-    showStudyMetadataCard();
-    showExportCard();
-    showMethodsCard();
-    renderRecentProjects();
-    loadRecentProjectsFromServer();
-    ensureOpenSectionVisibleForLoadedProject();
-
-    if (currentProjectPath) {
-        addRecentProject(currentProjectName, currentProjectPath, currentProjectIcon);
-    }
-
-    const sections = [
-        { element: 'openProjectSection', chevron: 'openProjectChevron' },
-        { element: 'studyMetadataSection', chevron: 'studyMetadataChevron' },
-        { element: 'methodsSectionBody', chevron: 'methodsSectionChevron' },
-        { element: 'exportSection', chevron: 'exportChevron' },
-        { element: 'settingsSection', chevron: 'settingsChevron' }
-    ];
-
-    sections.forEach(section => {
-        const el = document.getElementById(section.element);
-        const chevron = document.getElementById(section.chevron);
-        if (el && chevron) {
-            el.addEventListener('shown.bs.collapse', function() {
-                chevron.classList.replace('fa-chevron-down', 'fa-chevron-up');
-            });
-            el.addEventListener('hidden.bs.collapse', function() {
-                chevron.classList.replace('fa-chevron-up', 'fa-chevron-down');
-            });
-        }
+    initProjectsPageBootstrap({
+        initProjectFieldHints,
+        initBeginnerHelpMode,
+        initBackendMonitoringToggle,
+        initDedicatedTerminalToggle,
+        loadGlobalSettings,
+        loadLibraryInfo,
+        showStudyMetadataCard,
+        showExportCard,
+        showMethodsCard,
+        renderRecentProjects,
+        loadRecentProjectsFromServer,
+        ensureOpenSectionVisibleForLoadedProject,
+        getCurrentProjectState: () => ({
+            path: currentProjectPath,
+            name: currentProjectName,
+            icon: currentProjectIcon,
+        }),
+        addRecentProject,
+        fixAllIssues,
+        fixIssue,
+        getOpenProjectActionPath,
+        submitOpenProjectPath,
+        clearRecentProjects,
+        initProjectSelectionUi: () => projectSelectionController.initProjectSelectionUi(),
+        clearCurrentProject,
+        useDefaultLibrary,
+        clearGlobalLibrary,
     });
-
-    document.querySelectorAll('.card-header[data-bs-toggle="collapse"][role="button"]').forEach((header) => {
-        if (!header.hasAttribute('tabindex')) {
-            header.setAttribute('tabindex', '0');
-        }
-        header.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                header.click();
-            }
-        });
-    });
-
-    const validationResultDiv = document.getElementById('validationResult');
-    if (validationResultDiv) {
-        validationResultDiv.addEventListener('click', (event) => {
-            const fixAllBtn = event.target.closest('[data-action="fix-all"]');
-            if (fixAllBtn) { fixAllIssues(fixAllBtn.dataset.path); return; }
-            const fixOneBtn = event.target.closest('[data-action="fix-issue"]');
-            if (fixOneBtn) { fixIssue(fixOneBtn.dataset.path, fixOneBtn.dataset.code); return; }
-            const validateProjectBtn = event.target.closest('[data-action="validate-project"]');
-            if (validateProjectBtn) {
-                runProjectValidation(validateProjectBtn.dataset.path || getOpenProjectActionPath());
-            }
-        });
-    }
-
-    const recentList = document.getElementById('recentProjectsList');
-    if (recentList) {
-        recentList.addEventListener('click', (event) => {
-            const btn = event.target.closest('.recent-project-btn');
-            if (!btn) return;
-            const path = btn.getAttribute('data-path');
-            if (path) {
-                submitOpenProjectPath(path);
-            }
-        });
-    }
-
-    const createResultDiv = document.getElementById('createResult');
-    if (createResultDiv) {
-        createResultDiv.addEventListener('click', (event) => {
-            const openExistingBtn = event.target.closest('[data-action="open-existing-project"]');
-            if (!openExistingBtn) return;
-            const path = openExistingBtn.getAttribute('data-path');
-            if (!path) return;
-            submitOpenProjectPath(path);
-        });
-    }
-
-    const clearRecentBtn = document.getElementById('clearRecentProjectsBtn');
-    if (clearRecentBtn) {
-        clearRecentBtn.addEventListener('click', () => {
-            if (!confirm('Clear recent projects list?')) return;
-            clearRecentProjects();
-        });
-    }
-
-    const createSection = document.getElementById('section-create');
-    const openSection = document.getElementById('section-open');
-    if (createSection?.classList.contains('active')) {
-        setCurrentProjectBannerVisibility('create');
-    } else if (openSection?.classList.contains('active')) {
-        setCurrentProjectBannerVisibility('open');
-    }
-
-    const cardCreate = document.getElementById('card-create');
-    if (cardCreate) {
-        cardCreate.addEventListener('click', () => selectProjectType('create'));
-        cardCreate.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                selectProjectType('create');
-            }
-        });
-    }
-
-    const cardOpen = document.getElementById('card-open');
-    if (cardOpen) {
-        cardOpen.addEventListener('click', () => selectProjectType('open'));
-        cardOpen.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                selectProjectType('open');
-            }
-        });
-    }
-
-    const cardInitBids = document.getElementById('card-init-bids');
-    if (cardInitBids) {
-        cardInitBids.addEventListener('click', () => selectProjectType('init-bids'));
-        cardInitBids.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                selectProjectType('init-bids');
-            }
-        });
-    }
-
-    const clearCurrentProjectBtn = document.getElementById('clearCurrentProjectBtn');
-    if (clearCurrentProjectBtn) {
-        clearCurrentProjectBtn.addEventListener('click', () => {
-            clearCurrentProject();
-        });
-    }
-
-    const useDefaultLibraryBtn = document.getElementById('useDefaultLibraryBtn');
-    if (useDefaultLibraryBtn) {
-        useDefaultLibraryBtn.addEventListener('click', () => {
-            useDefaultLibrary();
-        });
-    }
-
-    const clearGlobalLibraryBtn = document.getElementById('clearGlobalLibraryBtn');
-    if (clearGlobalLibraryBtn) {
-        clearGlobalLibraryBtn.addEventListener('click', () => {
-            clearGlobalLibrary();
-        });
-    }
 }
 
 // Expose for inline handlers and legacy code

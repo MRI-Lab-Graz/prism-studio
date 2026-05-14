@@ -21,6 +21,18 @@ PROJECTS_INIT_ON_BIDS_MODULE = (
 PROJECTS_CREATE_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "create-project.js"
 )
+PROJECTS_CREATE_PREFLIGHT_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "create-preflight.js"
+)
+PROJECTS_RECENT_PROJECTS_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "recent-projects.js"
+)
+PROJECTS_SELECTION_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "project-selection.js"
+)
+PROJECTS_BOOTSTRAP_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "page-bootstrap.js"
+)
 PROJECTS_OPEN_PROJECT_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "open-project.js"
 )
@@ -79,6 +91,17 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
         self.assertIn("fetchWithApiFallback('/api/projects/current', {", content)
 
+    def test_recent_projects_controller_owns_storage_sync_and_rendering(self):
+        content = PROJECTS_RECENT_PROJECTS_MODULE.read_text(encoding="utf-8")
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("export function createRecentProjectsController({", content)
+        self.assertIn("fetchWithApiFallback('/api/projects/recent', {", content)
+        self.assertIn("fetchWithApiFallback('/api/projects/path-status', {", content)
+        self.assertIn("function renderRecentProjects() {", content)
+        self.assertIn("const recentProjectsController = createRecentProjectsController({", core_content)
+        self.assertIn("export { getRecentProjects, saveRecentProjects, addRecentProject, renderRecentProjects };", core_content)
+
     def test_settings_and_fix_actions_use_api_fallback(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
@@ -98,6 +121,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
     def test_projects_page_uses_single_bootstrap_entrypoint(self):
         index_content = PROJECTS_INDEX_MODULE.read_text(encoding="utf-8")
         core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        bootstrap_content = PROJECTS_BOOTSTRAP_MODULE.read_text(encoding="utf-8")
         export_content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
         main_content = MAIN_MODULE.read_text(encoding="utf-8")
         template_content = PROJECTS_PAGE_TEMPLATE.read_text(encoding="utf-8")
@@ -108,6 +132,9 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("initializeProjectsExport();", index_content)
         self.assertIn("let projectsPageInitialized = false;", core_content)
         self.assertIn("export function initProjectsPage() {", core_content)
+        self.assertIn("import { initProjectsPageBootstrap } from './page-bootstrap.js';", core_content)
+        self.assertIn("initProjectsPageBootstrap({", core_content)
+        self.assertIn("export function initProjectsPageBootstrap({", bootstrap_content)
         self.assertNotIn("document.addEventListener('DOMContentLoaded', initProjectsPage);", core_content)
         self.assertIn("let exportModuleInitialized = false;", export_content)
         self.assertIn("export function initializeProjectsExport() {", export_content)
@@ -348,8 +375,9 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("initCreateProjectController({", core_content)
 
     def test_create_flow_checks_target_path_before_submitting(self):
-        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        content = PROJECTS_CREATE_PREFLIGHT_MODULE.read_text(encoding="utf-8")
         create_content = PROJECTS_CREATE_MODULE.read_text(encoding="utf-8")
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("async function checkCreateTargetStatus() {", content)
         self.assertIn(
@@ -359,9 +387,11 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("const targetStatus = await checkCreateTargetStatus();", create_content)
         self.assertIn("if (targetStatus.conflict) {", create_content)
         self.assertIn("const fullPath = joinProjectTargetPath(projectPath, projectName);", create_content)
+        self.assertIn("import { initCreatePreflightController } from './create-preflight.js';", core_content)
+        self.assertIn("const createPreflightController = initCreatePreflightController({", core_content)
 
     def test_create_conflict_warning_can_open_existing_project(self):
-        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        content = PROJECTS_CREATE_PREFLIGHT_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("function submitOpenProjectPath(path) {", content)
         self.assertIn('data-action="open-existing-project"', content)
@@ -374,6 +404,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
     def test_open_project_flow_separates_load_and_validation(self):
         content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
         core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        bootstrap_content = PROJECTS_BOOTSTRAP_MODULE.read_text(encoding="utf-8")
 
         self.assertIn(
             "async function loadProjectWithoutValidation(path, triggerButton = null, options = {})",
@@ -387,30 +418,21 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "await loadProjectWithoutValidation(getOpenProjectActionPath(), btn);",
             content,
         )
-        self.assertIn(
-            "async function runProjectValidation(path, triggerButton = null)",
-            content,
-        )
-        self.assertIn(
-            "const response = await fetchWithApiFallback('/api/projects/validate', {",
-            content,
-        )
-        self.assertIn(
-            "await loadProjectWithoutValidation(validationPath, null, { skipContextGuard: true });",
-            content,
-        )
         self.assertIn("function renderProjectQuickSummary(summary) {", content)
         self.assertIn("const projectSummary = result.project_summary", content)
         self.assertIn("renderLoadedProjectState(loadedName, loadedPath, projectSummary);", content)
         self.assertIn("import { initOpenProjectController } from './open-project.js';", core_content)
         self.assertIn("const openProjectController = initOpenProjectController({", core_content)
+        self.assertNotIn("runProjectValidation(", bootstrap_content)
 
-    def test_loaded_project_state_exposes_validate_now_action(self):
+    def test_loaded_project_state_links_to_full_validator(self):
         content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("<strong>Not validated yet.</strong>", content)
+        self.assertIn("Need a full dataset check?", content)
         self.assertIn('class="validation-result pending', content)
-        self.assertIn('data-action="validate-project"', content)
+        self.assertIn('href="/validate"', content)
+        self.assertIn("Snapshot from folders currently found on disk.", content)
+        self.assertIn("Open Validator", content)
         self.assertIn("id=\"projectBoxSaveBtn\"", content)
         self.assertIn("Save Changes to Project", content)
 
@@ -427,15 +449,15 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         projects_page_content = PROJECTS_PAGE_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn(
-            "Load first, then run Quick Validate only when you need it",
+            "Load here, then open the full Validator when you need a real dataset check",
             open_form_content,
         )
         self.assertIn(
-            "Loading sets the current project. Validation is optional and can be run afterwards.",
+            "Loading sets the current project. Full dataset validation runs from the Validator page.",
             open_form_content,
         )
         self.assertIn(
-            "Load a project you already use in PRISM Studio and validate it only when needed.",
+            "Load a project you already use in PRISM Studio here, then run full checks in the Validator.",
             projects_page_content,
         )
         self.assertIn("Load only", projects_page_content)
@@ -556,7 +578,10 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("Please fix metadata validation errors before saving.", content)
 
     def test_project_switch_actions_guard_busy_and_unsaved_metadata(self):
-        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        content = PROJECTS_SELECTION_MODULE.read_text(encoding="utf-8")
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        open_content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
+        init_content = PROJECTS_INIT_ON_BIDS_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("hasUnsavedStudyMetadataChanges,", content)
         self.assertIn("isStudyMetadataBusy,", content)
@@ -569,17 +594,49 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "if (normalizedCurrentPath && hasUnsavedStudyMetadataChanges()) {",
             content,
         )
+        self.assertIn("import { initProjectSelectionController } from './project-selection.js';", core_content)
+        self.assertIn("const projectSelectionController = initProjectSelectionController({", core_content)
         self.assertIn(
-            "await loadProjectWithoutValidation(path, null, { skipContextGuard: true });",
-            content,
+            "await loadProjectWithoutValidation(validationPath, null, { skipContextGuard: true });",
+            open_content,
         )
         self.assertIn(
             "if (!skipContextGuard && !confirmProjectContextChange('load another project', normalizedPath)) {",
-            content,
+            open_content,
         )
         self.assertIn(
             "if (!confirmProjectContextChange('initialise a PRISM project on another dataset', bidsPath)) {",
-            content,
+            init_content,
+        )
+
+    def test_project_selection_controller_owns_card_switching(self):
+        content = PROJECTS_SELECTION_MODULE.read_text(encoding="utf-8")
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        bootstrap_content = PROJECTS_BOOTSTRAP_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("function selectProjectType(type) {", content)
+        self.assertIn("bindProjectTypeCard('card-create', 'create');", content)
+        self.assertIn("bindProjectTypeCard('card-open', 'open');", content)
+        self.assertIn("bindProjectTypeCard('card-init-bids', 'init-bids');", content)
+        self.assertIn("initProjectSelectionUi();", bootstrap_content)
+        self.assertIn("initProjectSelectionUi: () => projectSelectionController.initProjectSelectionUi(),", core_content)
+
+    def test_projects_bootstrap_controller_owns_page_init_wiring(self):
+        content = PROJECTS_BOOTSTRAP_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("existingPathInput.placeholder = 'C:\\\\Users\\\\YourName\\\\MyProject\\\\project.json';", content)
+        self.assertIn("projectPathInput.placeholder = 'C:\\\\Users\\\\YourName\\\\Documents';", content)
+        self.assertIn("el.addEventListener('shown.bs.collapse'", content)
+        self.assertIn("const validationResultDiv = document.getElementById('validationResult');", content)
+        self.assertIn("const recentList = document.getElementById('recentProjectsList');", content)
+        self.assertIn("const clearCurrentProjectBtn = document.getElementById('clearCurrentProjectBtn');", content)
+
+    def test_init_on_bids_controller_is_wired_after_selection_guard_exists(self):
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+
+        self.assertLess(
+            core_content.index("const confirmProjectContextChange = projectSelectionController.confirmProjectContextChange;"),
+            core_content.index("initProjectInitOnBidsController({"),
         )
 
     def test_loaded_project_save_actions_wait_for_metadata_readiness(self):
@@ -639,11 +696,11 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             content,
         )
 
-    def test_open_form_exposes_quick_validate_control(self):
+    def test_open_form_drops_quick_validate_control(self):
         content = OPEN_FORM_TEMPLATE.read_text(encoding="utf-8")
 
-        self.assertIn('id="quickValidateProjectBtn"', content)
-        self.assertIn('Quick Validate', content)
+        self.assertNotIn('id="quickValidateProjectBtn"', content)
+        self.assertNotIn('Quick Validate', content)
 
     def test_project_box_exposes_preliminary_save_button_with_shared_submit_path(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")

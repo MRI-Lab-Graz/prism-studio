@@ -335,9 +335,9 @@ Current branch progress on this phase:
 
 - shared Projects template primitives are in place for path pickers and flow strips
 - shared folder-picker behavior now lives in a repo-wide module that honors the server-picker preference and fallback browser flow
-- extracted Projects controllers now cover file browsing, path-picking, init-on-BIDS, open/load plus quick-validate, and create submission orchestration
+- extracted Projects controllers now cover file browsing, path-picking, init-on-BIDS, open/load plus quick-validate, page bootstrap/section wiring, project-selection guards/card switching, create preflight/conflict handoff, recent-project storage/rendering, and create submission orchestration
 - focused wiring tests cover these extracted seams so `core.js` can keep shrinking without losing route or workflow semantics
-- the main remaining large frontend slice on this page is the create preflight plus the broader selection/recent-project orchestration that still lives in `core.js`
+- the main remaining large frontend slice on this page is residual shared state and utility glue in `core.js`, rather than one dominant workflow/controller block
 
 ### Phase 4. Converter Refactor
 

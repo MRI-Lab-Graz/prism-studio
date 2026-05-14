@@ -78,6 +78,7 @@ export function initOpenProjectController({
         const modalityText = shownModalityLabels.map(label => escapeHtml(label)).join(', ');
 
         return `
+            <div class="small text-muted mb-2"><i class="fas fa-database me-1"></i>Snapshot from folders currently found on disk.</div>
             <div class="stats-grid mt-2">
                 <div class="stat-item">
                     <div class="stat-value">${subjects}</div>
@@ -120,12 +121,12 @@ export function initOpenProjectController({
                 <div class="alert alert-info mt-2 mb-0" role="status">
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
                         <div>
-                            <strong>Not validated yet.</strong>
-                            <span class="ms-1">Use Validate now or Quick Validate to run a manual project check.</span>
+                            <strong>Need a full dataset check?</strong>
+                            <span class="ms-1">Open the Validator to run the canonical PRISM/BIDS validation flow for the current project.</span>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-primary" data-action="validate-project" data-path="${escapeHtml(loadedPath)}">
-                            <i class="fas fa-bolt me-1"></i>Validate now
-                        </button>
+                        <a href="/validate" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-shield-check me-1"></i>Open Validator
+                        </a>
                     </div>
                 </div>
                 <div class="d-flex flex-column align-items-end mt-2">
@@ -150,14 +151,6 @@ export function initOpenProjectController({
             return enteredPath;
         }
         return String(getCurrentProjectState().path || '').trim();
-    }
-
-    function updateQuickValidateButtonState() {
-        const quickValidateBtn = document.getElementById('quickValidateProjectBtn');
-        if (!quickValidateBtn) {
-            return;
-        }
-        quickValidateBtn.disabled = !Boolean(getOpenProjectActionPath());
     }
 
     async function loadProjectWithoutValidation(path, triggerButton = null, options = {}) {
@@ -216,70 +209,6 @@ export function initOpenProjectController({
             if (triggerButton) {
                 setButtonLoading(triggerButton, false, null, originalText);
             }
-            updateQuickValidateButtonState();
-        }
-    }
-
-    async function runProjectValidation(path, triggerButton = null) {
-        const normalizedPath = String(path || '').trim();
-        if (!normalizedPath) {
-            showOpenProjectError('Please provide a project folder or a project.json path.', 'Selection Error');
-            return false;
-        }
-
-        const originalText = triggerButton ? setButtonLoading(triggerButton, true, 'Validating...') : null;
-
-        try {
-            const response = await fetchWithApiFallback('/api/projects/validate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: normalizedPath })
-            });
-            const result = await response.json().catch(() => ({
-                success: false,
-                error: 'Server returned an invalid response while validating the project.'
-            }));
-
-            if (!response.ok || !result.success) {
-                showOpenProjectError(result.error || `Validation request failed (${response.status})`);
-                return false;
-            }
-
-            const stats = result.stats;
-            const validationPath = String(result.current_project?.path || normalizedPath).trim() || normalizedPath;
-            const projectSummary = result.project_summary && typeof result.project_summary === 'object' && !Array.isArray(result.project_summary)
-                ? result.project_summary
-                : null;
-
-            let html = `
-                <div class="validation-result valid">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>Valid PRISM Structure</h5>
-                        ${stats.is_yoda ? '<span class="badge bg-info"><i class="fas fa-microchip me-1"></i>YODA Layout</span>' : ''}
-                    </div>
-                    ${getBeginnerHelpModeEnabled() ? `
-                    <div class="mb-3">
-                        <h6 class="mb-1">Project Metadata</h6>
-                        <small class="text-muted d-block" id="projectBoxSaveHint">
-                            <i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, CITATION.cff, and README.md.
-                        </small>
-                    </div>` : ''}
-                    ${renderProjectQuickSummary(projectSummary || stats)}
-                </div>
-            `;
-
-            setProjectValidationResult(html);
-
-            await loadProjectWithoutValidation(validationPath, null, { skipContextGuard: true });
-            return true;
-        } catch (error) {
-            showOpenProjectError(error.message || 'Validation failed unexpectedly.');
-            return false;
-        } finally {
-            if (triggerButton) {
-                setButtonLoading(triggerButton, false, null, originalText);
-            }
-            updateQuickValidateButtonState();
         }
     }
 
@@ -292,33 +221,8 @@ export function initOpenProjectController({
         });
     }
 
-    const quickValidateProjectBtn = document.getElementById('quickValidateProjectBtn');
-    if (quickValidateProjectBtn) {
-        quickValidateProjectBtn.addEventListener('click', async function(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            await runProjectValidation(getOpenProjectActionPath(), quickValidateProjectBtn);
-        });
-
-        quickValidateProjectBtn.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.stopPropagation();
-            }
-        });
-    }
-
-    const openPathInput = document.getElementById('existingPath');
-    if (openPathInput) {
-        openPathInput.addEventListener('input', updateQuickValidateButtonState);
-        openPathInput.addEventListener('change', updateQuickValidateButtonState);
-    }
-
-    updateQuickValidateButtonState();
-
     return {
         getOpenProjectActionPath,
-        updateQuickValidateButtonState,
         loadProjectWithoutValidation,
-        runProjectValidation,
     };
 }
