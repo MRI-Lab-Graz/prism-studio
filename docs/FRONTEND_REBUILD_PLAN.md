@@ -367,6 +367,10 @@ Current branch progress on this phase:
 - `participants.js` now delegates merge summary/conflict/session-resolution/harmonization UI rendering to that controller seam while keeping request orchestration local
 - extracted participants merge summary pure row render helpers into `participants-merge-summary-renderers.js`
 - `participants-merge-summary.js` now delegates conflict-list and harmonization-row HTML generation to pure renderer helpers while keeping orchestration/event binding local
+- extracted participants merge summary session-resolution row renderer into `participants-merge-summary-renderers.js`
+- `participants-merge-summary.js` now delegates session-resolution row HTML generation to pure renderer helpers while preserving existing decision-state and listener orchestration
+- extracted participants merge summary session hint/preview text formatting into pure renderer helpers
+- `participants-merge-summary.js` now delegates session-resolution hint text construction to `participants-merge-summary-renderers.js`, keeping controller flow/event wiring unchanged
 - focused converter wiring tests cover this seam and are green: `tests/test_converter_participants_workflow_wiring.py` and `tests/test_converter_workflow_wiring.py`
 
 ### Phase 5. Template Editor Refactor
