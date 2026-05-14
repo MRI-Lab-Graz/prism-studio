@@ -335,9 +335,9 @@ Current branch progress on this phase:
 
 - shared Projects template primitives are in place for path pickers and flow strips
 - shared folder-picker behavior now lives in a repo-wide module that honors the server-picker preference and fallback browser flow
-- extracted Projects controllers now cover file browsing, path-picking, init-on-BIDS, open/load plus quick-validate, page bootstrap/section wiring, project-selection guards/card switching, create preflight/conflict handoff, recent-project storage/rendering, and create submission orchestration
+- extracted Projects controllers now cover file browsing, path-picking, init-on-BIDS, open/load handoff to the full Validator, page bootstrap/section wiring, project-selection guards/card switching, create preflight/conflict handoff, recent-project storage/rendering, project hints/beginner-help, settings/library state, current-project bootstrap/state visibility, maintenance/fix actions, metadata submit/button orchestration, metadata/citation sync status state, metadata description/schema/live-validation orchestration, metadata ORCID lookup/search orchestration, metadata load/readiness orchestration, metadata save/README coordination, metadata methods preview/generation orchestration, and create submission orchestration
 - focused wiring tests cover these extracted seams so `core.js` can keep shrinking without losing route or workflow semantics
-- the main remaining large frontend slice on this page is residual shared state and utility glue in `core.js`, rather than one dominant workflow/controller block
+- the main remaining large frontend slice on this page is metadata payload assembly plus the remaining author/detail form wiring, rather than page-init, settings, current-project state, metadata-status state, metadata description/schema/live-validation orchestration, metadata ORCID lookup/search orchestration, metadata load/readiness orchestration, metadata save/README coordination, metadata methods preview/generation orchestration, submit-button orchestration, or hint controllers
 
 ### Phase 4. Converter Refactor
 

@@ -1304,6 +1304,7 @@ def test_emit_backend_request_action_uses_project_prefix_and_absolute_path_for_s
     assert "[PROJECT]" in captured
     assert "POST /api/projects/current -> set current project" in captured
     assert f"path={expected_path}" in captured
+    assert "\ncmd=curl -X POST" in captured
     assert "cmd=curl -X POST" in captured
     assert expected_path in captured
 
