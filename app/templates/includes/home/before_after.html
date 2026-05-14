@@ -1,0 +1,57 @@
+{% from "includes/ui/macros.html" import section_card %}
+
+{% call section_card('A Concrete Before And After', 'fas fa-wand-magic-sparkles', 'text-primary', 'feature-card home-proof-card mb-4', 'p-5', 'card-title mb-3 home-section-title') %}
+<p class="text-muted mb-4">
+    One common workflow: take a raw questionnaire spreadsheet, map participants, attach metadata,
+    run scoring recipes, and export a clean project for analysis.
+</p>
+<div class="home-proof-grid">
+    <div class="home-proof-panel">
+        <span class="home-proof-label home-proof-label--before">
+            <i class="fas fa-file-excel"></i> Before
+        </span>
+        <div class="home-proof-title">Raw study files</div>
+        <ul class="home-proof-list">
+            <li>
+                <span class="home-proof-icon home-proof-icon--before"><i class="fas fa-table"></i></span>
+                <span>One spreadsheet with mixed survey items, coded demographics, and ad hoc participant IDs</span>
+            </li>
+            <li>
+                <span class="home-proof-icon home-proof-icon--before"><i class="fas fa-question"></i></span>
+                <span>No reusable metadata, no scoring logic, and no clear BIDS-ready structure</span>
+            </li>
+            <li>
+                <span class="home-proof-icon home-proof-icon--before"><i class="fas fa-triangle-exclamation"></i></span>
+                <span>Manual cleanup repeated in spreadsheets before every export or analysis pass</span>
+            </li>
+        </ul>
+    </div>
+    <div class="home-proof-step" aria-hidden="true">
+        <span class="home-proof-step-badge"><i class="fas fa-arrow-right"></i></span>
+        <span class="home-proof-step-text">Convert, score, validate, export</span>
+    </div>
+    <div class="home-proof-panel">
+        <span class="home-proof-label home-proof-label--after">
+            <i class="fas fa-folder-tree"></i> After
+        </span>
+        <div class="home-proof-title">One analysis-ready PRISM project</div>
+        <ul class="home-proof-list">
+            <li>
+                <span class="home-proof-icon home-proof-icon--after"><i class="fas fa-users"></i></span>
+                <span>Participant mappings standardized once, with cleaner IDs and ontology-friendly metadata</span>
+            </li>
+            <li>
+                <span class="home-proof-icon home-proof-icon--after"><i class="fas fa-clipboard-check"></i></span>
+                <span>Survey sidecars, scoring recipes, and validation feedback stored inside the project</span>
+            </li>
+            <li>
+                <span class="home-proof-icon home-proof-icon--after"><i class="fas fa-file-export"></i></span>
+                <span>BIDS-compatible structure plus export targets such as SPSS, TSV, CSV, labels, and codebooks</span>
+            </li>
+        </ul>
+    </div>
+</div>
+<p class="home-proof-note mb-0">
+    This is the core promise of PRISM Studio: less spreadsheet surgery, more reproducible research data.
+</p>
+{% endcall %}
