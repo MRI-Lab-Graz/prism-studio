@@ -2,6 +2,8 @@ import { escapeHtml } from '../../shared/dom.js';
 import {
     buildParticipantsMergeConflictListHtml,
     buildParticipantsMergeHarmonizationRowsHtml,
+    buildParticipantsMergeSessionResolutionHintText,
+    buildParticipantsMergeSessionResolutionRowsHtml,
 } from './participants-merge-summary-renderers.js';
 
 export function createParticipantsMergeSummaryController({
@@ -167,58 +169,15 @@ export function createParticipantsMergeSummaryController({
                 };
             });
 
-            const sessionColumnName = String(previewData.session_resolution_column || sessionResolutionCandidates[0]?.session_column || 'session').trim();
-            sessionResolutionHint.textContent = `Columns vary across repeated participant rows. Choose how to resolve values by ${sessionColumnName || 'session'}.`;
+            sessionResolutionHint.textContent = buildParticipantsMergeSessionResolutionHintText({
+                previewData,
+                sessionResolutionCandidates,
+            });
 
-            sessionResolutionList.innerHTML = sessionResolutionCandidates.map((candidate, index) => {
-                const columnName = String(candidate && candidate.column ? candidate.column : '').trim();
-                if (!columnName) {
-                    return '';
-                }
-
-                const decision = window.participantsMergeSessionResolutionDecisions[columnName] || { action: '', session: '' };
-                const selectedAction = String(decision.action || '').trim();
-                const selectedSession = String(decision.session || '').trim();
-                const availableSessions = Array.isArray(candidate.available_sessions)
-                    ? candidate.available_sessions.map((value) => String(value || '').trim()).filter(Boolean)
-                    : [];
-                const generatedColumns = Array.isArray(candidate.generated_columns)
-                    ? candidate.generated_columns.map((value) => String(value || '').trim()).filter(Boolean)
-                    : [];
-                const generatedPreview = generatedColumns.length > 0
-                    ? generatedColumns.join(', ')
-                    : (availableSessions.length > 0
-                        ? availableSessions.map((sessionValue) => `${columnName}@ses-${sessionValue}`).join(', ')
-                        : 'session-specific columns');
-                const sessionSelectId = `participantsSessionResolution_${index}`;
-
-                return `
-                    <div class="border rounded p-2 mb-2" data-session-resolution-column="${escapeHtml(columnName)}">
-                        <div class="small mb-1"><strong>${escapeHtml(columnName)}</strong></div>
-                        <div class="row g-2 align-items-end">
-                            <div class="col-md-5">
-                                <label class="form-label form-label-sm mb-1">Resolution</label>
-                                <select class="form-select form-select-sm participants-session-resolution-action">
-                                    <option value="" ${selectedAction ? '' : 'selected'}>Choose...</option>
-                                    <option value="pick_session" ${selectedAction === 'pick_session' ? 'selected' : ''}>Take one session</option>
-                                    <option value="pick_latest_session" ${selectedAction === 'pick_latest_session' ? 'selected' : ''}>Take latest session</option>
-                                    <option value="split_sessions" ${selectedAction === 'split_sessions' ? 'selected' : ''}>Keep all sessions as columns</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label form-label-sm mb-1">Session (for Take one)</label>
-                                <select id="${escapeHtml(sessionSelectId)}" class="form-select form-select-sm participants-session-resolution-session" ${selectedAction === 'pick_session' ? '' : 'disabled'}>
-                                    <option value="">Choose session...</option>
-                                    ${availableSessions.map((sessionValue) => `<option value="${escapeHtml(sessionValue)}" ${selectedSession === sessionValue ? 'selected' : ''}>${escapeHtml(sessionValue)}</option>`).join('')}
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="small text-muted">${selectedAction === 'split_sessions' ? `Creates: ${escapeHtml(generatedPreview)}` : ''}</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            sessionResolutionList.innerHTML = buildParticipantsMergeSessionResolutionRowsHtml({
+                sessionResolutionCandidates,
+                sessionResolutionDecisionsByColumn: window.participantsMergeSessionResolutionDecisions,
+            });
 
             sessionResolutionSection.classList.remove('d-none');
 

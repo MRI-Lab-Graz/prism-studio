@@ -1,5 +1,23 @@
 import { escapeHtml } from '../../shared/dom.js';
 
+function normalizeNonEmptyStrings(values) {
+    return Array.isArray(values)
+        ? values.map((value) => String(value || '').trim()).filter(Boolean)
+        : [];
+}
+
+function buildSessionSplitGeneratedPreview(columnName, availableSessions, generatedColumns) {
+    if (generatedColumns.length > 0) {
+        return generatedColumns.join(', ');
+    }
+
+    if (availableSessions.length > 0) {
+        return availableSessions.map((sessionValue) => `${columnName}@ses-${sessionValue}`).join(', ');
+    }
+
+    return 'session-specific columns';
+}
+
 export function buildParticipantsMergeConflictListHtml(conflicts, { maxVisible = 6 } = {}) {
     const safeConflicts = Array.isArray(conflicts) ? conflicts : [];
     if (safeConflicts.length === 0) {
@@ -84,4 +102,73 @@ export function buildParticipantsMergeHarmonizationRowsHtml({
             </div>
         `;
     }).join('');
+}
+
+export function buildParticipantsMergeSessionResolutionRowsHtml({
+    sessionResolutionCandidates,
+    sessionResolutionDecisionsByColumn,
+}) {
+    const safeCandidates = Array.isArray(sessionResolutionCandidates)
+        ? sessionResolutionCandidates
+        : [];
+    const decisionsByColumn = (sessionResolutionDecisionsByColumn && typeof sessionResolutionDecisionsByColumn === 'object')
+        ? sessionResolutionDecisionsByColumn
+        : {};
+
+    return safeCandidates.map((candidate, index) => {
+        const columnName = String(candidate?.column || '').trim();
+        if (!columnName) {
+            return '';
+        }
+
+        const decision = decisionsByColumn[columnName] || { action: '', session: '' };
+        const selectedAction = String(decision.action || '').trim();
+        const selectedSession = String(decision.session || '').trim();
+        const availableSessions = normalizeNonEmptyStrings(candidate.available_sessions);
+        const generatedColumns = normalizeNonEmptyStrings(candidate.generated_columns);
+        const generatedPreview = buildSessionSplitGeneratedPreview(columnName, availableSessions, generatedColumns);
+        const sessionSelectId = `participantsSessionResolution_${index}`;
+
+        return `
+            <div class="border rounded p-2 mb-2" data-session-resolution-column="${escapeHtml(columnName)}">
+                <div class="small mb-1"><strong>${escapeHtml(columnName)}</strong></div>
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label form-label-sm mb-1">Resolution</label>
+                        <select class="form-select form-select-sm participants-session-resolution-action">
+                            <option value="" ${selectedAction ? '' : 'selected'}>Choose...</option>
+                            <option value="pick_session" ${selectedAction === 'pick_session' ? 'selected' : ''}>Take one session</option>
+                            <option value="pick_latest_session" ${selectedAction === 'pick_latest_session' ? 'selected' : ''}>Take latest session</option>
+                            <option value="split_sessions" ${selectedAction === 'split_sessions' ? 'selected' : ''}>Keep all sessions as columns</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label form-label-sm mb-1">Session (for Take one)</label>
+                        <select id="${escapeHtml(sessionSelectId)}" class="form-select form-select-sm participants-session-resolution-session" ${selectedAction === 'pick_session' ? '' : 'disabled'}>
+                            <option value="">Choose session...</option>
+                            ${availableSessions.map((sessionValue) => `<option value="${escapeHtml(sessionValue)}" ${selectedSession === sessionValue ? 'selected' : ''}>${escapeHtml(sessionValue)}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="small text-muted">${selectedAction === 'split_sessions' ? `Creates: ${escapeHtml(generatedPreview)}` : ''}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+export function buildParticipantsMergeSessionResolutionHintText({
+    previewData,
+    sessionResolutionCandidates,
+}) {
+    const safePreviewData = previewData && typeof previewData === 'object' ? previewData : {};
+    const safeCandidates = Array.isArray(sessionResolutionCandidates)
+        ? sessionResolutionCandidates
+        : [];
+    const sessionColumnName = String(
+        safePreviewData.session_resolution_column || safeCandidates[0]?.session_column || 'session'
+    ).trim();
+
+    return `Columns vary across repeated participant rows. Choose how to resolve values by ${sessionColumnName || 'session'}.`;
 }
