@@ -648,17 +648,27 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "return metadataDescriptionController.loadDatasetDescriptionFields();",
             content,
         )
+        self.assertIn(
+            "return metadataDescriptionController.saveDatasetDescription(requestProjectPath);",
+            content,
+        )
         self.assertIn("let descriptionValidationTimer = null;", description_content)
+        self.assertIn("async function saveDatasetDescription(projectPath = null) {", description_content)
         self.assertIn("withProjectPathQuery('/api/projects/schema-config', requestProjectPath)", description_content)
         self.assertIn("withProjectPathQuery('/api/projects/description', requestProjectPath)", description_content)
         self.assertIn("fetchWithApiFallback('/api/projects/description/validate'", description_content)
+        self.assertIn(
+            "body: JSON.stringify({ project_path: requestProjectPath, description, citation_fields: citationFields })",
+            description_content,
+        )
+        self.assertIn("await saveProjectSchemaConfig();", description_content)
         self.assertIn(
             "body: JSON.stringify({ project_path: requestProjectPath, schema_version: schemaVersion })",
             description_content,
         )
         self.assertIn(
-            "_withProjectPathQuery('/api/projects/description', requestProjectPath)",
-            content,
+            "withProjectPathQuery('/api/projects/description', requestProjectPath)",
+            description_content,
         )
 
     def test_metadata_orcid_lookup_uses_backend_search_and_multi_hit_selection(self):

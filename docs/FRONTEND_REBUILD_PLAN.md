@@ -335,15 +335,39 @@ Current branch progress on this phase:
 
 - shared Projects template primitives are in place for path pickers and flow strips
 - shared folder-picker behavior now lives in a repo-wide module that honors the server-picker preference and fallback browser flow
-- extracted Projects controllers now cover file browsing, path-picking, init-on-BIDS, open/load handoff to the full Validator, page bootstrap/section wiring, project-selection guards/card switching, create preflight/conflict handoff, recent-project storage/rendering, project hints/beginner-help, settings/library state, current-project bootstrap/state visibility, maintenance/fix actions, metadata submit/button orchestration, metadata/citation sync status state, metadata description/schema/live-validation orchestration, metadata ORCID lookup/search orchestration, metadata load/readiness orchestration, metadata save/README coordination, metadata methods preview/generation orchestration, and create submission orchestration
+- extracted Projects controllers now cover file browsing, path-picking, init-on-BIDS, open/load handoff to the full Validator, page bootstrap/section wiring, project-selection guards/card switching, create preflight/conflict handoff, recent-project storage/rendering, project hints/beginner-help, settings/library state, current-project bootstrap/state visibility, maintenance/fix actions, metadata submit/button orchestration, metadata/citation sync status state, metadata description/schema/live-validation/save orchestration, metadata ORCID lookup/search orchestration, metadata load/readiness orchestration, metadata save/README coordination, metadata methods preview/generation orchestration, and create submission orchestration
 - focused wiring tests cover these extracted seams so `core.js` can keep shrinking without losing route or workflow semantics
 - the main remaining large frontend slice on this page is metadata payload assembly plus the remaining author/detail form wiring, rather than page-init, settings, current-project state, metadata-status state, metadata description/schema/live-validation orchestration, metadata ORCID lookup/search orchestration, metadata load/readiness orchestration, metadata save/README coordination, metadata methods preview/generation orchestration, submit-button orchestration, or hint controllers
+
+Projects-phase stopping rule:
+
+- stop extracting once `core.js` and `metadata.js` no longer each own multiple unrelated async workflows
+- stop extracting once the remaining code in `metadata.js` is mostly local form wiring, payload assembly, and tightly coupled DOM helpers that are easier to read together than spread across more files
+- only approve another extraction if the slice has its own request lifecycle, stale-request guard, save/load flow, or page-level state boundary that can be tested independently
+- do not create a new controller only to move small helpers, one-off renderers, or a single form subsection without its own workflow semantics
+- for the current Projects page, one more extraction is justified only if it cleanly removes a distinct workflow from `metadata.js`; otherwise treat the page as structurally complete and move on
 
 ### Phase 4. Converter Refactor
 
 - split the largest modality scripts
 - unify shared workflow plumbing
 - reduce duplicate modal and status markup across converter sections
+
+Current branch progress on this phase:
+
+- extracted participants sourcedata quick-select workflow into `participants-sourcedata-quick-select.js`
+- `participants.js` now delegates sourcedata list refresh, empty-selection clear/reset behavior, and project-change refresh to that controller seam
+- extracted participants merge-conflict CSV download workflow into `participants-merge-conflict-download.js`
+- `participants.js` now delegates merge-conflict export eligibility checks, error handling, and download response filename handling to that controller seam
+- extracted participants merge decision payload serialization into `participants-merge-decision-payload.js`
+- `participants.js` now delegates harmonization/session decision normalization and request payload append helpers to that module seam
+- extracted participants merge preview refresh/status scheduling into `participants-merge-preview-refresh.js`
+- `participants.js` now delegates refresh pending-state checks and debounced preview re-run scheduling for merge harmonization updates to that controller seam
+- extracted participants merge summary render orchestration into `participants-merge-summary.js`
+- `participants.js` now delegates merge summary/conflict/session-resolution/harmonization UI rendering to that controller seam while keeping request orchestration local
+- extracted participants merge summary pure row render helpers into `participants-merge-summary-renderers.js`
+- `participants-merge-summary.js` now delegates conflict-list and harmonization-row HTML generation to pure renderer helpers while keeping orchestration/event binding local
+- focused converter wiring tests cover this seam and are green: `tests/test_converter_participants_workflow_wiring.py` and `tests/test_converter_workflow_wiring.py`
 
 ### Phase 5. Template Editor Refactor
 
