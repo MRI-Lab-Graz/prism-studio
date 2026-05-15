@@ -108,6 +108,12 @@ Validation:
 
 - Keep focused projects/converter wiring assertions tied to shared module contracts.
 
+## Remediation Progress (2026-05-15)
+
+- Slice A completed: shared API fallback contract assertions now explicitly cover fallback origin selection, retry gating, credentials normalization, and one-time fetch-wrapper install behavior.
+- Slice B completed: project-state fallback chain and job-polling abort/retry/timeout bounds are now protected by focused shared-module wiring assertions.
+- Validation completed: [tests/test_shared_modules_contract_wiring.py](tests/test_shared_modules_contract_wiring.py) is green.
+
 ## Exit Criteria for Shared Modules Assessment
 
 - Critical findings: none open.

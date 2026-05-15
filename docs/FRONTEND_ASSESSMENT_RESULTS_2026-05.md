@@ -105,6 +105,13 @@ Validation:
 - Focused results workflow wiring assertions in [tests/test_validator_workflow_wiring.py](tests/test_validator_workflow_wiring.py).
 - Optional browser-level smoke checks for keyboard and pointer interaction lock behavior.
 
+## Remediation Progress (2026-05-15)
+
+- Slice A completed: re-validation polling now uses an explicit abortable polling-session contract (single active loop with signal-aware wait/fetch and pagehide cancellation).
+- Slice A validation completed: [tests/test_validator_workflow_wiring.py](tests/test_validator_workflow_wiring.py) and [tests/test_web_validation_progress.py](tests/test_web_validation_progress.py) are green.
+- Slice B completed: result-action state is now guarded by explicit logic-level lock checks (click + keyboard) in addition to visual disabled styling.
+- Slice B validation completed: [tests/test_validator_workflow_wiring.py](tests/test_validator_workflow_wiring.py) is green.
+
 ## Exit Criteria for Results Assessment
 
 - Critical findings: none open.

@@ -36,7 +36,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Phase-Boundary Smoke Sweep Complete**: Executed consolidated post-checkpoint smoke validation across completed assessment suites (54 passed) and recorded baseline continuity in roadmap/tracker artifacts.
 - **Neurobagel Fetch Ownership Unification**: Updated Neurobagel widget participant loading to use shared API fallback wiring and prevented global helper overwrite collisions in mixed runtime loading paths.
 - **Library Editor Module Extraction**: Replaced inline Library Editor runtime script with `app/static/js/library_editor.js` and routed draft-save requests through shared relative-path API fallback wiring.
+- **Library Editor Advanced-Mode Graceful Degrade**: Added explicit fallback behavior when JSONEditor CDN assets are unavailable (visible warning + disabled Advanced JSON tab) while preserving simple-mode save flow.
 - **PRISM App Runner Stale-Control Cleanup**: Removed stale/non-rendered image-scan control branches from app-runner frontend wiring and tightened browse-kind handling with dedicated regression assertions.
+- **PRISM App Runner Disabled-State Frontend Guarding**: Added explicit frontend disabled-state guards (including startup profile-fetch suppression) so UI runtime behavior stays aligned with disabled HTML/API contracts.
+- **Shared Module Contract Coverage Hardening**: Added focused shared-module wiring coverage for API fallback policy, project-state precedence, and job-polling retry/timeout/abort bounds.
+- **Validator/Results Abortable Polling Hardening**: Added explicit abortable polling session contracts for validator and re-validation progress loops to prevent stale overlapping updates across reconnect/navigation edges.
+- **Validator Target/Request Assembly Consolidation**: Added canonical validator request-option resolvers and shared form-data assembly helpers across current-project, server-folder, and upload validation starts.
+- **Results Action-State Contract Hardening**: Added logic-level result-action lock guards (click/keyboard prevention) so interaction blocking is enforced independently of CSS pointer styling.
 
 ## [1.15.2] - 2026-04-28
 
