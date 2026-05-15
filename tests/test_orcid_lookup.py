@@ -23,6 +23,8 @@ from src.orcid_lookup import (
 
 
 class TestOrcidLookup(unittest.TestCase):
+    _ORCID_SEARCH_URL = "https://pub.orcid.org/v3.0/search?q=ada&rows=50"
+
     def test_normalizers_and_query_helpers(self):
         self.assertEqual(_normalize_name_token("  Ada   Lovelace "), "Ada Lovelace")
         self.assertEqual(_normalize_for_match("Ada-Lovelace!"), "ada lovelace")
@@ -66,32 +68,48 @@ class TestOrcidLookup(unittest.TestCase):
             "src.orcid_lookup.urlopen",
             return_value=_FakeResponse(b'{"ok": true}'),
         ):
-            self.assertEqual(_fetch_json("https://example.com"), {"ok": True})
+            self.assertEqual(_fetch_json(self._ORCID_SEARCH_URL), {"ok": True})
 
         with patch(
             "src.orcid_lookup.urlopen",
-            side_effect=HTTPError("https://example.com", 503, "down", None, None),
+            side_effect=HTTPError(self._ORCID_SEARCH_URL, 503, "down", None, None),
         ):
             with self.assertRaises(OrcidLookupError):
-                _fetch_json("https://example.com")
+                _fetch_json(self._ORCID_SEARCH_URL)
 
         with patch("src.orcid_lookup.urlopen", side_effect=URLError("offline")):
             with self.assertRaises(OrcidLookupError):
-                _fetch_json("https://example.com")
+                _fetch_json(self._ORCID_SEARCH_URL)
 
         with patch(
             "src.orcid_lookup.urlopen",
             return_value=_FakeResponse(b"not-json"),
         ):
             with self.assertRaises(OrcidLookupError):
-                _fetch_json("https://example.com")
+                _fetch_json(self._ORCID_SEARCH_URL)
 
         with patch(
             "src.orcid_lookup.urlopen",
             return_value=_FakeResponse(b"[]"),
         ):
             with self.assertRaises(OrcidLookupError):
-                _fetch_json("https://example.com")
+                _fetch_json(self._ORCID_SEARCH_URL)
+
+    def test_fetch_json_rejects_non_orcid_api_urls_before_open(self):
+        with patch("src.orcid_lookup.urlopen") as mocked_urlopen:
+            with self.assertRaises(OrcidLookupError):
+                _fetch_json("file:///tmp/orcid.json")
+            mocked_urlopen.assert_not_called()
+
+        with patch("src.orcid_lookup.urlopen") as mocked_urlopen:
+            with self.assertRaises(OrcidLookupError):
+                _fetch_json("https://example.com/v3.0/search?q=ada")
+            mocked_urlopen.assert_not_called()
+
+        with patch("src.orcid_lookup.urlopen") as mocked_urlopen:
+            with self.assertRaises(OrcidLookupError):
+                _fetch_json("https://pub.orcid.org/oauth/token")
+            mocked_urlopen.assert_not_called()
 
     def test_extract_orcid_path(self):
         self.assertEqual(_extract_orcid_path({"path": "0000-0001"}), "0000-0001")
