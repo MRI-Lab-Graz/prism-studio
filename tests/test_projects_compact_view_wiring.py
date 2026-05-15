@@ -80,8 +80,8 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
     def test_create_form_requires_project_location(self):
         content = CREATE_FORM_TEMPLATE.read_text(encoding="utf-8")
 
-        self.assertIn('id="projectPath"', content)
-        self.assertIn('id="projectPath" placeholder="" required', content)
+        self.assertIn("path_picker('Project Location', 'projectPath', 'browseProjectPath'", content)
+        self.assertIn("{% endcall %}", content)
 
     def test_create_form_has_top_action_buttons(self):
         content = CREATE_FORM_TEMPLATE.read_text(encoding="utf-8")
@@ -105,14 +105,14 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
         create_content = CREATE_FORM_TEMPLATE.read_text(encoding="utf-8")
         init_content = INIT_BIDS_TEMPLATE.read_text(encoding="utf-8")
         open_content = OPEN_FORM_TEMPLATE.read_text(encoding="utf-8")
-        core_content = (
-            REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "core.js"
+        current_state_content = (
+            REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "current-project-state.js"
         ).read_text(encoding="utf-8")
 
-        self.assertIn('id="createProjectFlowStrip"', create_content)
-        self.assertIn('id="initBidsFlowStrip"', init_content)
-        self.assertIn('id="openProjectFlowStrip"', open_content)
-        self.assertIn("openProjectFlowStrip?.classList.toggle('d-none', shouldHide);", core_content)
+        self.assertIn("'createProjectFlowStrip'", create_content)
+        self.assertIn("'initBidsFlowStrip'", init_content)
+        self.assertIn("'openProjectFlowStrip'", open_content)
+        self.assertIn("openProjectFlowStrip?.classList.toggle('d-none', shouldHide);", current_state_content)
 
     def test_export_section_has_snapshot_summary(self):
         content = EXPORT_SECTION_TEMPLATE.read_text(encoding="utf-8")

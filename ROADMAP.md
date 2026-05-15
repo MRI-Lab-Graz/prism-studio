@@ -1,18 +1,18 @@
 # PRISM Studio - Roadmap
 
-Last updated: 2026-05-13
+Last updated: 2026-05-15
 
 ## Current Mission
 
-Start Priority 1.26 execution as the primary workstream.
-Focus on remaining shared UI migrations and regression-safe wiring checks.
+Continue Priority 1.36 execution as the primary workstream.
+Focus on page-by-page structural assessment, runtime resilience checks, and focused smoke validation.
 
 ## Status Board
 
 | Priority | Title | Status | Next Action |
 |---|---|---|---|
-| 1.26 | UI harmonization and beginner-help improvements | IN PROGRESS | Execute page migration tranche + focused UI-state wiring checks |
-| 1.36 | Frontend structural assessment (page-by-page) | IN PROGRESS | Continue page-by-page assessment after converter checkpoint |
+| 1.26 | UI harmonization and beginner-help improvements | COMPLETED | Keep shared-help-panel coverage and wiring regressions in standard frontend gates |
+| 1.36 | Frontend structural assessment (page-by-page) | IN PROGRESS | Execute Phase 1.2 Projects assessment and runtime smoke checks |
 | 1.35 | Survey converter workflow hardening and backend command consolidation | COMPLETED | Keep post-merge stability checks in standard gates |
 | 2 | Export anonymization: participant ID renaming | COMPLETED | Keep export anonymization checks in standard gates |
 | 3 | JSON tag stripping and NIfTI GZIP header cleaning | DEFERRED | Revisit after Priority 2 is complete |
@@ -50,13 +50,13 @@ Progress snapshot:
 - Library page action handlers were extracted from inline template JS into a dedicated module using shared relative-path API fallback wiring.
 - Project identity icons are now assigned per study via backend metadata, and rendered in navbar/current-project + recent-project surfaces with regression coverage.
 
-Next action:
-- Complete remaining page migrations to shared components and run focused wiring checks for UI-state regressions.
+Closeout:
+- Top-level frontend shells now consistently use shared page-header/help-panel primitives.
+- Library actions are moved to a dedicated JS module with shared relative-path API fallback.
+- Broad frontend gate is green (workflow wiring + shared help-panel coverage + template rendering + web formatting checks).
 
-Immediate execution steps:
-1. Select next unmigrated page group and migrate to shared UI primitives.
-2. Run focused UI wiring regressions for the touched pages.
-3. Record migration checkpoint in roadmap and changelog.
+Maintenance action:
+1. Keep the shared help-panel template coverage guard and broad frontend regression gate in standard validation runs.
 
 ### Priority 1.36 - Frontend structural assessment (page-by-page)
 
@@ -64,10 +64,11 @@ Goal: assess each frontend page sequentially for workflow logic, hostile-usage r
 
 Current checkpoint:
 - Converter phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_CONVERTER_2026-05.md](docs/FRONTEND_ASSESSMENT_CONVERTER_2026-05.md).
+- Projects phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_PROJECTS_2026-05.md](docs/FRONTEND_ASSESSMENT_PROJECTS_2026-05.md).
 - Detailed assessment plan remains in [docs/FRONTEND_STRUCTURAL_ASSESSMENT_2026-05.md](docs/FRONTEND_STRUCTURAL_ASSESSMENT_2026-05.md).
 
 Next action:
-- Continue page-by-page assessment after current Priority 1.26 tranche is complete.
+- Continue phase sequence with Projects runtime resilience and state-transition verification, then Validator page assessment.
 
 ### Priority 1.35 - Survey converter workflow hardening and backend command consolidation
 
@@ -92,7 +93,7 @@ Immediate next actions:
 
 Closeout:
 - Priority 2 is complete and validated.
-- Continue execution on Priority 1.26 and Priority 1.36 active workstreams.
+- Continue execution on Priority 1.36 active workstream.
 
 ## Deferred
 
