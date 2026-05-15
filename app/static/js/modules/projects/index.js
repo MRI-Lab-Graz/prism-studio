@@ -36,7 +36,7 @@ import * as helpers from './helpers.js';
 import * as validation from './validation.js';
 import * as core from './core.js';
 import * as exportModule from './export.js';
-import * as metadata from './metadata.js';
+import * as metadata from './metadata.js?v=20260515-4';
 
 // Re-export project modules for direct access
 export { helpers, validation, core, exportModule, metadata };

@@ -31,24 +31,41 @@ export function createStudyMetadataSubmitController({
         requestStudyMetadataSubmit('standard');
     }
 
-    function bindProjectBoxActionButtons() {
-        const projectBoxSaveBtn = document.getElementById('projectBoxSaveBtn');
-        if (projectBoxSaveBtn && projectBoxSaveBtn.dataset.bound !== '1') {
-            projectBoxSaveBtn.dataset.bound = '1';
-            projectBoxSaveBtn.addEventListener('click', (event) => {
-                event.preventDefault();
-                requestStudyMetadataSubmit('standard');
-            });
+    function bindProjectBoxSubmitBridge(button, submitIntent) {
+        if (!button || button.dataset.bound === '1') {
+            return;
         }
 
+        button.dataset.bound = '1';
+        let pointerTriggeredSubmit = false;
+
+        const triggerSubmit = () => {
+            requestStudyMetadataSubmit(submitIntent);
+        };
+
+        button.addEventListener('pointerdown', (event) => {
+            if (event.button !== 0) return;
+            event.preventDefault();
+            pointerTriggeredSubmit = true;
+            triggerSubmit();
+        });
+
+        button.addEventListener('click', (event) => {
+            event.preventDefault();
+            if (pointerTriggeredSubmit) {
+                pointerTriggeredSubmit = false;
+                return;
+            }
+            triggerSubmit();
+        });
+    }
+
+    function bindProjectBoxActionButtons() {
+        const projectBoxSaveBtn = document.getElementById('projectBoxSaveBtn');
+        bindProjectBoxSubmitBridge(projectBoxSaveBtn, 'standard');
+
         const projectBoxPreliminarySaveBtn = document.getElementById('projectBoxPreliminarySaveBtn');
-        if (projectBoxPreliminarySaveBtn && projectBoxPreliminarySaveBtn.dataset.bound !== '1') {
-            projectBoxPreliminarySaveBtn.dataset.bound = '1';
-            projectBoxPreliminarySaveBtn.addEventListener('click', (event) => {
-                event.preventDefault();
-                requestStudyMetadataSubmit('preliminary');
-            });
-        }
+        bindProjectBoxSubmitBridge(projectBoxPreliminarySaveBtn, 'preliminary');
     }
 
     function shouldSubmitStudyMetadataFromPrimaryButton() {

@@ -196,11 +196,11 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
 const studyMetadataSaveController = createStudyMetadataSaveController({
     fetchWithApiFallback,
     getCurrentProjectPath: _getCurrentProjectPath,
-    buildCleanPayload: _buildStudyMetadataCleanPayload,
-    saveDatasetDescription,
-    generateReadmeSilent,
-    refreshMetadataSyncStatus,
-    captureBaseline: _captureStudyMetadataBaseline,
+    buildCleanPayload: () => _buildStudyMetadataCleanPayload(),
+    saveDatasetDescription: (projectPath) => saveDatasetDescription(projectPath),
+    generateReadmeSilent: (projectPath) => generateReadmeSilent(projectPath),
+    refreshMetadataSyncStatus: () => metadataStatusController.refreshMetadataSyncStatus(),
+    captureBaseline: () => studyMetadataLoadController.captureBaseline(),
     updateCompletenessUI,
     computeLocalCompleteness,
     setMetadataSaveStatus,
@@ -2204,15 +2204,27 @@ export function updateCreateProjectButton() {
         const loadingMessage = studyMetadataLoadInFlight
             ? 'Loading project metadata...'
             : 'Project metadata could not be loaded yet.';
-        setCreateButtonDisabled(true);
-        setPreliminaryDisabled(true);
-        setCreateTitle(loadingMessage);
-        setPreliminaryTitle(loadingMessage);
-        setMetadataSaveStatus(loadingMessage, studyMetadataLoadInFlight ? 'muted' : 'warning');
+
+        if (studyMetadataLoadInFlight) {
+            setCreateButtonDisabled(true);
+            setPreliminaryDisabled(true);
+            setCreateTitle(loadingMessage);
+            setPreliminaryTitle(loadingMessage);
+            setMetadataSaveStatus(loadingMessage, 'muted');
+            actionHints.forEach(actionHint => {
+                actionHint.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading project metadata before save actions become available.';
+            });
+            return;
+        }
+
+        // Keep actions clickable so users can trigger a metadata reload retry via save.
+        setCreateButtonDisabled(false);
+        setPreliminaryDisabled(false);
+        setCreateTitle('Project metadata is unavailable. Click save to retry loading metadata first.');
+        setPreliminaryTitle('Project metadata is unavailable. Click save to retry loading metadata first.');
+        setMetadataSaveStatus(loadingMessage, 'warning');
         actionHints.forEach(actionHint => {
-            actionHint.innerHTML = studyMetadataLoadInFlight
-                ? '<i class="fas fa-spinner fa-spin me-1"></i>Loading project metadata before save actions become available.'
-                : '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>Project metadata is unavailable right now, so save actions are temporarily disabled.';
+            actionHint.innerHTML = '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>Project metadata is unavailable. Click save to retry metadata loading, then save once it is ready.';
         });
         return;
     }
@@ -3350,6 +3362,23 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
     const releaseSubmitLock = () => {
         studyMetadataSubmitInFlight = false;
     };
+
+    const createSection = document.getElementById('section-create');
+    const isCreateMode = Boolean(createSection && createSection.classList.contains('active'));
+    const requestProjectPath = _getCurrentProjectPath();
+
+    if (!isCreateMode && requestProjectPath && !_isStudyMetadataReadyForCurrentProject()) {
+        setMetadataSaveStatus('Loading project metadata before saving...', 'muted');
+        await loadStudyMetadata();
+
+        if (!_isStudyMetadataReadyForCurrentProject()) {
+            showTopFeedback('Project metadata could not be loaded. Please try again.', 'warning');
+            setMetadataSaveStatus('Project metadata could not be loaded. Save aborted.', 'warning');
+            updateCreateProjectButton();
+            releaseSubmitLock();
+            return;
+        }
+    }
 
     setMetadataSaveStatus('Checking fields...', 'muted');
 
