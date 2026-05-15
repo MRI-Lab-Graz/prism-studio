@@ -1,4 +1,6 @@
 import json
+import gzip
+import io
 import sys
 import zipfile
 from pathlib import Path
@@ -404,3 +406,160 @@ def test_export_anonymize_rewrites_recursive_json_string_paths(tmp_path):
     assert data["Sources"][1] == f"legacy/{sub010_anon}/func/{sub010_anon}_task-rest_bold.nii.gz"
     assert data["Nested"]["Path"] == f"derivatives/{sub010_anon}/fmap/{sub010_anon}_dir-AP_epi.nii.gz"
     assert malformed_sub010 not in json.dumps(data)
+
+
+def test_export_scrub_mri_json_removes_sensitive_sidecar_fields(tmp_path):
+    project_dir = tmp_path / "study"
+    anat_dir = project_dir / "sub-001" / "anat"
+    anat_dir.mkdir(parents=True)
+
+    (anat_dir / "sub-001_T1w.json").write_text(
+        json.dumps(
+            {
+                "StationName": "Scanner-123",
+                "DeviceSerialNumber": "ABC-999",
+                "EchoTime": 0.003,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    output_zip = tmp_path / "export_scrub_json.zip"
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=False,
+        mask_questions=False,
+        include_derivatives=False,
+        include_code=False,
+        include_analysis=False,
+        scrub_mri_json=True,
+    )
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        sidecar = json.loads(
+            archive.read("sub-001/anat/sub-001_T1w.json").decode("utf-8")
+        )
+
+    assert "StationName" not in sidecar
+    assert "DeviceSerialNumber" not in sidecar
+    assert sidecar["EchoTime"] == 0.003
+
+
+def test_export_clean_nifti_gzip_headers_normalizes_mtime_and_fname(tmp_path):
+    project_dir = tmp_path / "study"
+    func_dir = project_dir / "sub-001" / "func"
+    func_dir.mkdir(parents=True)
+
+    original_payload = b"demo-nifti-payload"
+    source_nifti = func_dir / "sub-001_task-rest_bold.nii.gz"
+    with source_nifti.open("wb") as fh:
+        with gzip.GzipFile(
+            filename="original_name.nii",
+            mode="wb",
+            fileobj=fh,
+            mtime=1_700_000_000,
+        ) as gz_out:
+            gz_out.write(original_payload)
+
+    original_bytes = source_nifti.read_bytes()
+    assert int.from_bytes(original_bytes[4:8], "little") != 0
+    assert (original_bytes[3] & 0x08) != 0
+
+    output_zip = tmp_path / "export_clean_nifti.zip"
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=False,
+        mask_questions=False,
+        include_derivatives=False,
+        include_code=False,
+        include_analysis=False,
+        clean_nifti_gzip_headers=True,
+    )
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        exported_nifti = archive.read("sub-001/func/sub-001_task-rest_bold.nii.gz")
+
+    assert int.from_bytes(exported_nifti[4:8], "little") == 0
+    assert (exported_nifti[3] & 0x08) == 0
+
+    with gzip.GzipFile(fileobj=io.BytesIO(exported_nifti), mode="rb") as gz_in:
+        assert gz_in.read() == original_payload
+
+
+def test_export_root_nifti_gzip_header_cleaning_via_scrub_option(tmp_path):
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True)
+
+    original_payload = b"root-nifti-payload"
+    root_nifti = project_dir / "phantom.nii.gz"
+    with root_nifti.open("wb") as fh:
+        with gzip.GzipFile(
+            filename="phantom_orig.nii",
+            mode="wb",
+            fileobj=fh,
+            mtime=1_700_000_100,
+        ) as gz_out:
+            gz_out.write(original_payload)
+
+    output_zip = tmp_path / "export_root_nifti_clean.zip"
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=False,
+        mask_questions=False,
+        include_derivatives=False,
+        include_code=False,
+        include_analysis=False,
+        scrub_mri_json=True,
+        clean_nifti_gzip_headers=True,
+    )
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        exported_nifti = archive.read("phantom.nii.gz")
+
+    assert int.from_bytes(exported_nifti[4:8], "little") == 0
+    assert (exported_nifti[3] & 0x08) == 0
+    with gzip.GzipFile(fileobj=io.BytesIO(exported_nifti), mode="rb") as gz_in:
+        assert gz_in.read() == original_payload
+
+
+def test_export_nifti_gzip_headers_unchanged_when_cleaning_disabled(tmp_path):
+    project_dir = tmp_path / "study"
+    func_dir = project_dir / "sub-001" / "func"
+    func_dir.mkdir(parents=True)
+
+    source_nifti = func_dir / "sub-001_task-rest_bold.nii.gz"
+    with source_nifti.open("wb") as fh:
+        with gzip.GzipFile(
+            filename="keep_header_name.nii",
+            mode="wb",
+            fileobj=fh,
+            mtime=1_700_000_200,
+        ) as gz_out:
+            gz_out.write(b"unchanged-payload")
+
+    original_bytes = source_nifti.read_bytes()
+    original_mtime = int.from_bytes(original_bytes[4:8], "little")
+    original_has_fname = (original_bytes[3] & 0x08) != 0
+    assert original_mtime != 0
+    assert original_has_fname is True
+
+    output_zip = tmp_path / "export_nifti_no_clean.zip"
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=False,
+        mask_questions=False,
+        include_derivatives=False,
+        include_code=False,
+        include_analysis=False,
+        clean_nifti_gzip_headers=False,
+    )
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        exported_nifti = archive.read("sub-001/func/sub-001_task-rest_bold.nii.gz")
+
+    assert int.from_bytes(exported_nifti[4:8], "little") == original_mtime
+    assert ((exported_nifti[3] & 0x08) != 0) is original_has_fname
