@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "includes/ui/macros.html" import page_header %}
+{% from "includes/ui/macros.html" import page_header, help_panel %}
 
 {% block title %}PRISM Studio - Analysis Outputs{% endblock %}
 
@@ -82,6 +82,14 @@
     'Analysis Outputs',
     'Create scored exports for SPSS, Excel, or CSV.'
   ) }}
+
+  {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
+  <div class="small">
+    <p class="mb-2"><strong>Start with scope:</strong> choose modality, sessions, and optional recipe filter in step 1.</p>
+    <p class="mb-2"><strong>Choose structure:</strong> set merge and layout in step 2 before selecting output format in step 3.</p>
+    <p class="mb-0"><strong>Project required:</strong> analysis outputs run against the active project and keep backend recipe execution as the source of truth.</p>
+  </div>
+  {% endcall %}
 
   <div class="row mb-3">
     <div class="col-12">
