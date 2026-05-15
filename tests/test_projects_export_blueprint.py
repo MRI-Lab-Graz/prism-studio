@@ -52,6 +52,7 @@ def test_projects_export_uses_fixed_internal_anonymization_settings(tmp_path):
                     "project_path": str(project_dir),
                     "anonymize": True,
                     "mask_questions": False,
+                    "scrub_mri_json": True,
                     "include_derivatives": True,
                     "include_code": False,
                     "include_analysis": False,
@@ -61,6 +62,8 @@ def test_projects_export_uses_fixed_internal_anonymization_settings(tmp_path):
     assert response.status_code == 200
     assert called["anonymize"] is True
     assert called["mask_questions"] is False
+    assert called["scrub_mri_json"] is True
+    assert called["clean_nifti_gzip_headers"] is True
     assert called["id_length"] == 8
     assert called["deterministic"] is True
 
@@ -94,6 +97,7 @@ def test_projects_export_start_uses_fixed_internal_anonymization_settings(tmp_pa
                     "project_path": str(project_dir),
                     "anonymize": True,
                     "mask_questions": False,
+                    "scrub_mri_json": True,
                     "include_derivatives": True,
                     "include_code": False,
                     "include_analysis": False,
@@ -113,6 +117,8 @@ def test_projects_export_start_uses_fixed_internal_anonymization_settings(tmp_pa
     assert isinstance(export_kwargs, dict)
     assert export_kwargs["anonymize"] is True
     assert export_kwargs["mask_questions"] is False
+    assert export_kwargs["scrub_mri_json"] is True
+    assert export_kwargs["clean_nifti_gzip_headers"] is True
     assert export_kwargs["id_length"] == 8
     assert export_kwargs["deterministic"] is True
     assert args[2] == "study_anonymized_export.zip"

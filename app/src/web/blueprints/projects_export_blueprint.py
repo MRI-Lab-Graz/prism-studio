@@ -416,6 +416,7 @@ def export_project():
                 include_code=include_code,
                 include_analysis=include_analysis,
                 scrub_mri_json=scrub_mri_json,
+                clean_nifti_gzip_headers=scrub_mri_json,
             )
 
             # Generate filename
@@ -540,6 +541,7 @@ def export_project_start():
             "include_code": include_code,
             "include_analysis": include_analysis,
             "scrub_mri_json": scrub_mri_json,
+            "clean_nifti_gzip_headers": scrub_mri_json,
             "validation_mode": validation_mode,
             "exclude_sessions": (
                 set(exclude_sessions_list) if exclude_sessions_list else None

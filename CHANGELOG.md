@@ -45,6 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Results Action-State Contract Hardening**: Added logic-level result-action lock guards (click/keyboard prevention) so interaction blocking is enforced independently of CSS pointer styling.
 - **Recipe Export Regression Repair**: Fixed backend recipe export contracts for merge-all score prefixing, participant-column propagation in per-recipe/combined outputs, and SAV sociodemographic measure/type handling.
 - **Phase-Boundary Coverage Closeout**: Restored full-suite green state after Priority 1.36 remediation tranche closeout (`./rtk coverage`: 2206 passed, 3 skipped).
+- **Export Privacy Hardening (Priority 3 Slice A)**: Added export-time MRI sidecar sensitive-tag scrubbing plus `.nii.gz` GZIP header normalization (cleared `MTIME`/`FNAME`) and wired this behavior through the projects export scrub option.
+- **Export Privacy Regression Coverage Expansion**: Added focused export tests for root-level `.nii.gz` header cleaning and explicit no-clean behavior to protect header-preservation defaults.
 
 ## [1.15.2] - 2026-04-28
 

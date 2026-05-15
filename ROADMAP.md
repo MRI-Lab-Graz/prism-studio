@@ -15,7 +15,7 @@ Focus on keeping structural assessment remediations, runtime resilience checks, 
 | 1.36 | Frontend structural assessment (page-by-page) | COMPLETED | Keep remediated workflow wiring and phase-boundary coverage confirmation in standard gates |
 | 1.35 | Survey converter workflow hardening and backend command consolidation | COMPLETED | Keep post-merge stability checks in standard gates |
 | 2 | Export anonymization: participant ID renaming | COMPLETED | Keep export anonymization checks in standard gates |
-| 3 | JSON tag stripping and NIfTI GZIP header cleaning | DEFERRED | Revisit after Priority 2 is complete |
+| 3 | JSON tag stripping and NIfTI GZIP header cleaning | IN PROGRESS | Continue export privacy hardening after slice A (MRI sidecar scrub + .nii.gz header cleanup) |
 
 ## Active Work
 
@@ -106,6 +106,18 @@ Status: completed and merged.
 Reference:
 - [docs/SURVEY_WORKFLOW_HARDENING_2026.md](docs/SURVEY_WORKFLOW_HARDENING_2026.md)
 
+### Priority 3 - JSON tag stripping and NIfTI GZIP header cleaning
+
+Goal: remove export-time metadata leakage from MRI sidecars and compressed NIfTI headers while preserving dataset usability.
+
+Current checkpoint:
+- Slice A completed in backend export pipeline: optional MRI sidecar sensitive-field scrubbing plus .nii.gz GZIP header normalization (mtime/FNAME).
+- Route wiring updated so export privacy option (`scrub_mri_json`) enables both sidecar scrubbing and NIfTI header cleanup.
+- Focused validation expanded (26 passed across export backend and blueprint contract suites), including root-level `.nii.gz` and cleaning-disabled header-preservation cases.
+
+Next action:
+1. Extend coverage for broader MRI privacy cases (mixed modality trees and larger path variants), then evaluate optional defacing-gated export warnings.
+
 ## Up Next
 
 ### Priority 2 - Export anonymization: participant ID renaming
@@ -126,14 +138,7 @@ Closeout:
 
 ## Deferred
 
-### Priority 3 - JSON tag stripping and NIfTI GZIP header cleaning
-
-Deferred until Priority 2 is merged.
-
-Deferred scope summary:
-- Strip identifying BIDS JSON tags from sidecars during export.
-- Clean nii.gz GZIP header metadata fields (FNAME, MTIME) in exported copies.
-- Add optional structural defacing integration gated by tool availability.
+No active deferred priorities.
 
 ## Done (Summary)
 
