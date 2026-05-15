@@ -6,6 +6,7 @@ from pathlib import Path
 
 from flask import current_app, has_app_context, jsonify, request, send_file, session
 from werkzeug.utils import secure_filename
+from src.system_files import filter_system_files
 
 try:
     import defusedxml.ElementTree as ET
@@ -400,6 +401,8 @@ def handle_api_survey_convert(
 
             for item in output_root.rglob("*"):
                 if item.is_file():
+                    if not filter_system_files([item.name]):
+                        continue
                     rel_path = item.relative_to(output_root)
                     dest = dest_root / rel_path
                     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -454,6 +457,8 @@ def handle_api_survey_convert(
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
             for path in output_root.rglob("*"):
                 if path.is_file():
+                    if not filter_system_files([path.name]):
+                        continue
                     arcname = path.relative_to(output_root)
                     archive.write(path, arcname.as_posix())
         mem.seek(0)

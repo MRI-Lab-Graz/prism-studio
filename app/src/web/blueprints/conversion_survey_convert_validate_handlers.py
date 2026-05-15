@@ -4,6 +4,7 @@ from pathlib import Path
 
 from flask import jsonify, request
 from werkzeug.utils import secure_filename
+from src.system_files import filter_system_files
 
 
 def handle_api_survey_convert_validate(
@@ -624,6 +625,8 @@ def handle_api_survey_convert_validate(
             copied_output_paths: list[Path] = []
             for item in output_root.rglob("*"):
                 if item.is_file():
+                    if not filter_system_files([item.name]):
+                        continue
                     rel_path = item.relative_to(output_root)
                     dest = dest_root / rel_path
                     dest.parent.mkdir(parents=True, exist_ok=True)
