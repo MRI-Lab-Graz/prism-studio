@@ -12,7 +12,7 @@ Focus on page-by-page structural assessment, runtime resilience checks, and focu
 | Priority | Title | Status | Next Action |
 |---|---|---|---|
 | 1.26 | UI harmonization and beginner-help improvements | COMPLETED | Keep shared-help-panel coverage and wiring regressions in standard frontend gates |
-| 1.36 | Frontend structural assessment (page-by-page) | IN PROGRESS | Execute Phase 1.2 Projects assessment and runtime smoke checks |
+| 1.36 | Frontend structural assessment (page-by-page) | IN PROGRESS | Execute Phase 3.1 JSON Editor assessment and runtime smoke checks |
 | 1.35 | Survey converter workflow hardening and backend command consolidation | COMPLETED | Keep post-merge stability checks in standard gates |
 | 2 | Export anonymization: participant ID renaming | COMPLETED | Keep export anonymization checks in standard gates |
 | 3 | JSON tag stripping and NIfTI GZIP header cleaning | DEFERRED | Revisit after Priority 2 is complete |
@@ -65,10 +65,18 @@ Goal: assess each frontend page sequentially for workflow logic, hostile-usage r
 Current checkpoint:
 - Converter phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_CONVERTER_2026-05.md](docs/FRONTEND_ASSESSMENT_CONVERTER_2026-05.md).
 - Projects phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_PROJECTS_2026-05.md](docs/FRONTEND_ASSESSMENT_PROJECTS_2026-05.md).
+- Validator phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_VALIDATOR_2026-05.md](docs/FRONTEND_ASSESSMENT_VALIDATOR_2026-05.md).
+- Results phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_RESULTS_2026-05.md](docs/FRONTEND_ASSESSMENT_RESULTS_2026-05.md).
+- Template Editor phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_TEMPLATE_EDITOR_2026-05.md](docs/FRONTEND_ASSESSMENT_TEMPLATE_EDITOR_2026-05.md).
+- Recipe Builder phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_RECIPE_BUILDER_2026-05.md](docs/FRONTEND_ASSESSMENT_RECIPE_BUILDER_2026-05.md).
+- Survey Customizer phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_SURVEY_CUSTOMIZER_2026-05.md](docs/FRONTEND_ASSESSMENT_SURVEY_CUSTOMIZER_2026-05.md).
+- Survey Generator phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_SURVEY_GENERATOR_2026-05.md](docs/FRONTEND_ASSESSMENT_SURVEY_GENERATOR_2026-05.md).
+- File Management phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_FILE_MANAGEMENT_2026-05.md](docs/FRONTEND_ASSESSMENT_FILE_MANAGEMENT_2026-05.md).
+- JSON Editor phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_JSON_EDITOR_2026-05.md](docs/FRONTEND_ASSESSMENT_JSON_EDITOR_2026-05.md).
 - Detailed assessment plan remains in [docs/FRONTEND_STRUCTURAL_ASSESSMENT_2026-05.md](docs/FRONTEND_STRUCTURAL_ASSESSMENT_2026-05.md).
 
 Next action:
-- Continue phase sequence with Projects runtime resilience and state-transition verification, then Validator page assessment.
+- Continue phase sequence with JSON Editor project-sync safety verification, then Neurobagel workflow page assessment.
 
 ### Priority 1.35 - Survey converter workflow hardening and backend command consolidation
 
