@@ -12,7 +12,7 @@ Focus on page-by-page structural assessment, runtime resilience checks, and focu
 | Priority | Title | Status | Next Action |
 |---|---|---|---|
 | 1.26 | UI harmonization and beginner-help improvements | COMPLETED | Keep shared-help-panel coverage and wiring regressions in standard frontend gates |
-| 1.36 | Frontend structural assessment (page-by-page) | IN PROGRESS | Execute Phase 3.1 JSON Editor assessment and runtime smoke checks |
+| 1.36 | Frontend structural assessment (page-by-page) | IN PROGRESS | Continue remaining high-priority remediations after completing initial 3-slice stabilization set |
 | 1.35 | Survey converter workflow hardening and backend command consolidation | COMPLETED | Keep post-merge stability checks in standard gates |
 | 2 | Export anonymization: participant ID renaming | COMPLETED | Keep export anonymization checks in standard gates |
 | 3 | JSON tag stripping and NIfTI GZIP header cleaning | DEFERRED | Revisit after Priority 2 is complete |
@@ -73,10 +73,18 @@ Current checkpoint:
 - Survey Generator phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_SURVEY_GENERATOR_2026-05.md](docs/FRONTEND_ASSESSMENT_SURVEY_GENERATOR_2026-05.md).
 - File Management phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_FILE_MANAGEMENT_2026-05.md](docs/FRONTEND_ASSESSMENT_FILE_MANAGEMENT_2026-05.md).
 - JSON Editor phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_JSON_EDITOR_2026-05.md](docs/FRONTEND_ASSESSMENT_JSON_EDITOR_2026-05.md).
+- Neurobagel workflow phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_NEUROBAGEL_WORKFLOW_2026-05.md](docs/FRONTEND_ASSESSMENT_NEUROBAGEL_WORKFLOW_2026-05.md).
+- Library and Library Editor phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_LIBRARY_EDITOR_2026-05.md](docs/FRONTEND_ASSESSMENT_LIBRARY_EDITOR_2026-05.md).
+- Specifications phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_SPECIFICATIONS_2026-05.md](docs/FRONTEND_ASSESSMENT_SPECIFICATIONS_2026-05.md).
+- PRISM App Runner phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_PRISM_APP_RUNNER_2026-05.md](docs/FRONTEND_ASSESSMENT_PRISM_APP_RUNNER_2026-05.md).
+- Home page phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_HOME_2026-05.md](docs/FRONTEND_ASSESSMENT_HOME_2026-05.md).
+- Shared module phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_SHARED_MODULES_2026-05.md](docs/FRONTEND_ASSESSMENT_SHARED_MODULES_2026-05.md).
+- Phase-boundary smoke sweep is complete (54 passed across the completed checkpoint suites).
+- Initial remediation stabilization set is complete: Neurobagel fetch ownership unification, Library Editor module extraction with shared fallback save wiring, and PRISM App Runner stale-control cleanup.
 - Detailed assessment plan remains in [docs/FRONTEND_STRUCTURAL_ASSESSMENT_2026-05.md](docs/FRONTEND_STRUCTURAL_ASSESSMENT_2026-05.md).
 
 Next action:
-- Continue phase sequence with JSON Editor project-sync safety verification, then Neurobagel workflow page assessment.
+- Continue with the next remediation tranche, prioritizing Library Editor advanced-mode CDN resilience and additional runner workflow contract hardening.
 
 ### Priority 1.35 - Survey converter workflow hardening and backend command consolidation
 

@@ -100,4 +100,12 @@ Primary implementation surface:
 - Phase 2.4 Survey Generator checkpoint started in [docs/FRONTEND_ASSESSMENT_SURVEY_GENERATOR_2026-05.md](docs/FRONTEND_ASSESSMENT_SURVEY_GENERATOR_2026-05.md).
 - Phase 2.5 File Management checkpoint started in [docs/FRONTEND_ASSESSMENT_FILE_MANAGEMENT_2026-05.md](docs/FRONTEND_ASSESSMENT_FILE_MANAGEMENT_2026-05.md).
 - Phase 3.1 JSON Editor checkpoint started in [docs/FRONTEND_ASSESSMENT_JSON_EDITOR_2026-05.md](docs/FRONTEND_ASSESSMENT_JSON_EDITOR_2026-05.md).
+- Phase 3.2 Neurobagel workflow checkpoint started in [docs/FRONTEND_ASSESSMENT_NEUROBAGEL_WORKFLOW_2026-05.md](docs/FRONTEND_ASSESSMENT_NEUROBAGEL_WORKFLOW_2026-05.md).
+- Phase 3.3 Library and Library Editor checkpoint started in [docs/FRONTEND_ASSESSMENT_LIBRARY_EDITOR_2026-05.md](docs/FRONTEND_ASSESSMENT_LIBRARY_EDITOR_2026-05.md).
+- Phase 3.4 Specifications checkpoint started in [docs/FRONTEND_ASSESSMENT_SPECIFICATIONS_2026-05.md](docs/FRONTEND_ASSESSMENT_SPECIFICATIONS_2026-05.md).
+- Phase 3.5 PRISM App Runner checkpoint started in [docs/FRONTEND_ASSESSMENT_PRISM_APP_RUNNER_2026-05.md](docs/FRONTEND_ASSESSMENT_PRISM_APP_RUNNER_2026-05.md).
+- Phase 3.6 Home page checkpoint started in [docs/FRONTEND_ASSESSMENT_HOME_2026-05.md](docs/FRONTEND_ASSESSMENT_HOME_2026-05.md).
+- Phase 4.1 shared module checkpoint started in [docs/FRONTEND_ASSESSMENT_SHARED_MODULES_2026-05.md](docs/FRONTEND_ASSESSMENT_SHARED_MODULES_2026-05.md).
+- Phase 4.2 phase-boundary smoke sweep completed (54 passed across completed checkpoint suites).
+- Initial remediation stabilization set completed for top findings: Neurobagel fetch ownership unification, Library Editor module extraction with shared save fallback wiring, and PRISM App Runner stale-control cleanup.
 - UI harmonization gating remains green and now serves as baseline safety net while page-by-page structural assessment continues.

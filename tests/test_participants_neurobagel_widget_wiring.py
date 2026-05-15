@@ -30,6 +30,23 @@ class TestParticipantsNeurobagelWidgetWiring(unittest.TestCase):
     def test_widget_renders_real_unannotated_section(self):
         content = WIDGET_FILE.read_text(encoding="utf-8")
 
+        self.assertIn(
+            "if (typeof window.fetchNeurobagelParticipants !== 'function') {",
+            content,
+        )
+        self.assertIn(
+            "neurobagelWidgetFetchWithApiFallbackPromise = import('/static/js/shared/api.js').then(({ fetchWithApiFallback }) => {",
+            content,
+        )
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/neurobagel/participants');",
+            content,
+        )
+        self.assertNotIn(
+            "const response = await fetch('/api/neurobagel/participants');",
+            content,
+        )
+
         self.assertIn('id="neurobagelUnannotated"', content)
         self.assertIn(
             "const unannotatedContainer = document.getElementById('neurobagelUnannotated');",

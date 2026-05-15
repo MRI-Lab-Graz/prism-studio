@@ -40,6 +40,21 @@ class TestPrismAppRunnerWorkflowWiring(unittest.TestCase):
         self.assertIn("await fetchWithApiFallback('/api/prism-app-runner/load-help', {", script_content)
         self.assertIn("await fetchWithApiFallback('/api/prism-app-runner/run', {", script_content)
 
+    def test_prism_app_runner_script_removes_stale_image_scan_controls(self):
+        script_content = PRISM_APP_RUNNER_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertNotIn("const runImageFolder =", script_content)
+        self.assertNotIn("const runLocalImage =", script_content)
+        self.assertNotIn("const scanImagesBtn =", script_content)
+        self.assertNotIn("const runOutputSubdir =", script_content)
+        self.assertNotIn("syncContainerFromImageSelect", script_content)
+        self.assertNotIn("/api/prism-app-runner/scan-images", script_content)
+        self.assertIn(
+            "const kind = (button.getAttribute('data-browse-kind') || '').trim();",
+            script_content,
+        )
+        self.assertIn("const kindLabel = kind || 'path';", script_content)
+
     def test_prism_app_runner_template_renders_disabled_html_state(self):
         template_content = PRISM_APP_RUNNER_TEMPLATE.read_text(encoding="utf-8")
 
