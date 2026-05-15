@@ -87,3 +87,9 @@ Primary implementation surface:
 - [app/src/web/blueprints/conversion.py](app/src/web/blueprints/conversion.py)
 - [app/src/web/blueprints/conversion_survey_handlers.py](app/src/web/blueprints/conversion_survey_handlers.py)
 - [app/src/web/blueprints/conversion_participants_blueprint.py](app/src/web/blueprints/conversion_participants_blueprint.py)
+
+## Current Checkpoint (2026-05-15)
+
+- Phase 1.1 Converter checkpoint completed and captured in [docs/FRONTEND_ASSESSMENT_CONVERTER_2026-05.md](docs/FRONTEND_ASSESSMENT_CONVERTER_2026-05.md).
+- Phase 1.2 Projects checkpoint started in [docs/FRONTEND_ASSESSMENT_PROJECTS_2026-05.md](docs/FRONTEND_ASSESSMENT_PROJECTS_2026-05.md).
+- UI harmonization gating remains green and now serves as baseline safety net while page-by-page structural assessment continues.
