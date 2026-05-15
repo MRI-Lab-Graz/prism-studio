@@ -727,13 +727,15 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "function requestStudyMetadataSubmit(submitIntent = 'standard') {",
             content,
         )
+        self.assertIn("function bindProjectBoxSubmitBridge(button, submitIntent) {", content)
+        self.assertIn("button.addEventListener('pointerdown', (event) => {", content)
         self.assertIn("form.dataset.submitIntent = submitIntent;", content)
         self.assertIn(
-            "requestStudyMetadataSubmit('preliminary');",
+            "bindProjectBoxSubmitBridge(projectBoxPreliminarySaveBtn, 'preliminary');",
             content,
         )
         self.assertIn(
-            "requestStudyMetadataSubmit('standard');",
+            "bindProjectBoxSubmitBridge(projectBoxSaveBtn, 'standard');",
             content,
         )
         self.assertIn(
@@ -917,9 +919,9 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
         self.assertIn('id="projectBoxPreliminarySaveBtn"', open_project_content)
         self.assertIn("document.getElementById('projectBoxPreliminarySaveBtn')", submit_content)
-        self.assertIn("requestStudyMetadataSubmit('preliminary');", submit_content)
+        self.assertIn("bindProjectBoxSubmitBridge(projectBoxPreliminarySaveBtn, 'preliminary');", submit_content)
         self.assertIn(
-            "requestStudyMetadataSubmit('standard');",
+            "bindProjectBoxSubmitBridge(projectBoxSaveBtn, 'standard');",
             submit_content,
         )
 

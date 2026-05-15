@@ -28,6 +28,14 @@ class TestNavbarProjectEventWiring(unittest.TestCase):
             content,
         )
 
+    def test_navbar_recent_project_selection_uses_pointerdown_bridge(self):
+        content = BASE_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn("let pointerTriggeredButton = null;", content)
+        self.assertIn("projectsRecentList.addEventListener('pointerdown'", content)
+        self.assertIn("projectsRecentList.addEventListener('click'", content)
+        self.assertIn("if (pointerTriggeredButton === button)", content)
+
 
 if __name__ == "__main__":
     unittest.main()

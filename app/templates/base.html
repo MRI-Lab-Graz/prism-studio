@@ -540,11 +540,31 @@
 
             if (!payload.path) return;
 
-            const response = await navbarFetchWithApiFallback('/api/projects/current', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            const supportsAbortController = typeof AbortController === 'function';
+            const controller = supportsAbortController ? new AbortController() : null;
+            const timeoutMs = 12000;
+            const timeoutId = controller
+                ? window.setTimeout(() => controller.abort(), timeoutMs)
+                : null;
+
+            let response;
+            try {
+                response = await navbarFetchWithApiFallback('/api/projects/current', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    ...(controller ? { signal: controller.signal } : {})
+                });
+            } catch (error) {
+                if (error && error.name === 'AbortError') {
+                    throw new Error('Loading this project timed out. Please try again.');
+                }
+                throw error;
+            } finally {
+                if (timeoutId) {
+                    window.clearTimeout(timeoutId);
+                }
+            }
 
             const data = await response.json().catch(() => ({}));
             if (!response.ok || !data.success) {
@@ -855,22 +875,61 @@
 
             loadNavbarRecentProjects();
 
-            document.getElementById('projectsRecentList')?.addEventListener('click', async function(e) {
-                const button = e.target.closest('.navbar-recent-project');
-                if (!button) return;
+            const projectsRecentList = document.getElementById('projectsRecentList');
+            if (projectsRecentList) {
+                let pointerTriggeredButton = null;
+                let recentProjectSwitchInFlight = false;
 
-                e.preventDefault();
-                const targetPath = button.dataset.path || '';
-                const targetName = button.dataset.name || '';
-                const targetIcon = button.dataset.icon || '';
+                const handleRecentProjectSelection = async (button) => {
+                    if (!button || recentProjectSwitchInFlight) {
+                        return;
+                    }
 
-                try {
-                    await setCurrentProjectFromNavbar(targetPath, targetName, targetIcon);
-                    window.location.href = "{{ url_for('projects.projects_page') }}?preserve_current=1";
-                } catch (error) {
-                    alert(error.message || 'Could not load project');
-                }
-            });
+                    const targetPath = button.dataset.path || '';
+                    const targetName = button.dataset.name || '';
+                    const targetIcon = button.dataset.icon || '';
+
+                    if (!targetPath) {
+                        return;
+                    }
+
+                    recentProjectSwitchInFlight = true;
+                    button.disabled = true;
+
+                    try {
+                        await setCurrentProjectFromNavbar(targetPath, targetName, targetIcon);
+                        window.location.href = "{{ url_for('projects.projects_page') }}?preserve_current=1";
+                    } catch (error) {
+                        alert(error.message || 'Could not load project');
+                    } finally {
+                        recentProjectSwitchInFlight = false;
+                        button.disabled = false;
+                    }
+                };
+
+                projectsRecentList.addEventListener('pointerdown', function(e) {
+                    const button = e.target.closest('.navbar-recent-project');
+                    if (!button || e.button !== 0) return;
+
+                    e.preventDefault();
+                    pointerTriggeredButton = button;
+                    handleRecentProjectSelection(button);
+                });
+
+                projectsRecentList.addEventListener('click', function(e) {
+                    const button = e.target.closest('.navbar-recent-project');
+                    if (!button) return;
+
+                    e.preventDefault();
+                    if (pointerTriggeredButton === button) {
+                        pointerTriggeredButton = null;
+                        return;
+                    }
+
+                    pointerTriggeredButton = null;
+                    handleRecentProjectSelection(button);
+                });
+            }
         });
     </script>
 
