@@ -46,7 +46,7 @@ import {
     showStudyMetadataCard,
     showMethodsCard,
     updateCreateProjectButton
-} from './metadata.js';
+} from './metadata.js?v=20260515-4';
 import { showExportCard } from './export.js';
 import {
     getProjectStateSnapshot,
