@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Specifications UI Harmonization**: Migrated the Specifications page to shared page-header/help-panel primitives and retained project-bound derivative-link wiring behavior with focused regression assertions.
 - **Analysis Outputs UI Harmonization**: Migrated the Analysis Outputs (Recipes) page to shared page-header/help-panel primitives and added focused wiring assertions while keeping project-bound API fallback behavior unchanged.
+- **Validation Results UI Harmonization**: Migrated the Validation Results page to shared page-header/help-panel primitives and added focused validator wiring assertions.
+- **Projects UI Harmonization**: Migrated the Projects page to shared page-header/help-panel primitives while preserving preliminary-state and beginner-help workflows.
+- **Validator Landing UI Harmonization**: Migrated the Dataset Validation landing page to shared page-header/section-card/help-panel primitives while preserving validation target and progress wiring.
+- **Converter UI Harmonization**: Migrated the Converter page to shared page-header/help-panel primitives and added focused converter template wiring assertions.
 
 ## [1.15.2] - 2026-04-28
 
