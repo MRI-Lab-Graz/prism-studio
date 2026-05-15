@@ -6,10 +6,11 @@ import json
 import re
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 from urllib.request import Request, urlopen
 
 _ORCID_PUBLIC_API_BASE = "https://pub.orcid.org/v3.0"
+_ORCID_PUBLIC_API_HOST = "pub.orcid.org"
 _JSON_ACCEPT_HEADER = "application/json"
 _DEFAULT_TIMEOUT_SECONDS = 6.0
 _DEFAULT_LIMIT = 5
@@ -53,9 +54,27 @@ def _build_search_query(given_names: str, family_name: str) -> str:
     return " AND ".join(clauses)
 
 
+def _validate_orcid_api_url(url: str) -> str:
+    normalized_url = str(url or "").strip()
+    parsed = urlsplit(normalized_url)
+    if (
+        parsed.scheme != "https"
+        or parsed.hostname != _ORCID_PUBLIC_API_HOST
+        or parsed.port not in (None, 443)
+        or parsed.username is not None
+        or parsed.password is not None
+        or not parsed.path.startswith("/v3.0")
+    ):
+        raise OrcidLookupError(
+            "ORCID request URL must target the public HTTPS ORCID API"
+        )
+    return normalized_url
+
+
 def _fetch_json(url: str, timeout_seconds: float = _DEFAULT_TIMEOUT_SECONDS) -> dict[str, Any]:
+    validated_url = _validate_orcid_api_url(url)
     request = Request(
-        url,
+        validated_url,
         headers={
             "Accept": _JSON_ACCEPT_HEADER,
             "User-Agent": "prism-studio-orcid-lookup",
@@ -63,7 +82,10 @@ def _fetch_json(url: str, timeout_seconds: float = _DEFAULT_TIMEOUT_SECONDS) -> 
         method="GET",
     )
     try:
-        with urlopen(request, timeout=timeout_seconds) as response:
+        # URL is restricted to the validated public ORCID HTTPS API.
+        with urlopen(
+            request, timeout=timeout_seconds
+        ) as response:  # nosec B310
             payload = response.read().decode("utf-8")
     except HTTPError as exc:
         raise OrcidLookupError(f"ORCID request failed with HTTP {exc.code}") from exc
