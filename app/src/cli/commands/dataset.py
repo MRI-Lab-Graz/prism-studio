@@ -11,6 +11,8 @@ from pathlib import Path
 from src.converters.file_reader import read_tabular_file
 from src.converters.excel_to_biometrics import process_excel_biometrics
 from src.maintenance.project_metadata_cleanup import (
+    ProjectMetadataCleanupBatchReport,
+    ProjectMetadataCleanupReport,
     cleanup_project_metadata,
     cleanup_project_metadata_tree,
 )
@@ -21,22 +23,25 @@ from src.utils.io import write_json as _write_json
 
 def cmd_dataset_cleanup_project_metadata(args) -> None:
     """Remove legacy converter-written session metadata from project.json."""
+    recursive = bool(getattr(args, "recursive", False))
+    dry_run = bool(getattr(args, "dry_run", False))
+    drop_task_definitions = bool(getattr(args, "drop_task_definitions", False))
+
+    batch_report: ProjectMetadataCleanupBatchReport | None = None
+    single_report: ProjectMetadataCleanupReport | None = None
+
     try:
-        if bool(getattr(args, "recursive", False)):
-            report = cleanup_project_metadata_tree(
+        if recursive:
+            batch_report = cleanup_project_metadata_tree(
                 args.project,
-                dry_run=bool(getattr(args, "dry_run", False)),
-                drop_task_definitions=bool(
-                    getattr(args, "drop_task_definitions", False)
-                ),
+                dry_run=dry_run,
+                drop_task_definitions=drop_task_definitions,
             )
         else:
-            report = cleanup_project_metadata(
+            single_report = cleanup_project_metadata(
                 args.project,
-                dry_run=bool(getattr(args, "dry_run", False)),
-                drop_task_definitions=bool(
-                    getattr(args, "drop_task_definitions", False)
-                ),
+                dry_run=dry_run,
+                drop_task_definitions=drop_task_definitions,
             )
     except (FileNotFoundError, ValueError) as error:
         if getattr(args, "json", False):
@@ -45,48 +50,64 @@ def cmd_dataset_cleanup_project_metadata(args) -> None:
             print(f"Error: {error}")
         sys.exit(1)
 
+    report_dict = (
+        batch_report.to_dict()
+        if recursive and batch_report is not None
+        else (single_report.to_dict() if single_report is not None else {})
+    )
+
     result = {
         "success": True,
-        "dry_run": bool(getattr(args, "dry_run", False)),
-        "recursive": bool(getattr(args, "recursive", False)),
-        **report.to_dict(),
+        "dry_run": dry_run,
+        "recursive": recursive,
+        **report_dict,
     }
 
     if getattr(args, "json", False):
         print(json.dumps(result, indent=2))
         return
 
-    if bool(getattr(args, "recursive", False)):
-        if report.changed_projects == 0:
-            print(f"No legacy session metadata found under {report.root_path}")
+    if recursive:
+        if batch_report is None:
+            print("Error: Recursive cleanup report was not generated")
+            sys.exit(1)
+
+        if batch_report.changed_projects == 0:
+            print(f"No legacy session metadata found under {batch_report.root_path}")
             return
 
-        action = "Would remove" if getattr(args, "dry_run", False) else "Removed"
-        print(f"{action} legacy session metadata under {report.root_path}")
-        print(f"Projects processed: {report.processed_projects}")
-        print(f"Projects changed: {report.changed_projects}")
-        print(f"Sessions removed: {report.removed_sessions}")
-        print(f"Task entries removed: {report.removed_task_entries}")
-        print(f"Source entries removed: {report.removed_source_entries}")
-        if getattr(args, "drop_task_definitions", False):
-            print(f"TaskDefinitions removed: {report.removed_task_definitions}")
+        action = "Would remove" if dry_run else "Removed"
+        print(f"{action} legacy session metadata under {batch_report.root_path}")
+        print(f"Projects processed: {batch_report.processed_projects}")
+        print(f"Projects changed: {batch_report.changed_projects}")
+        print(f"Sessions removed: {batch_report.removed_sessions}")
+        print(f"Task entries removed: {batch_report.removed_task_entries}")
+        print(f"Source entries removed: {batch_report.removed_source_entries}")
+        if drop_task_definitions:
+            print(
+                f"TaskDefinitions removed: {batch_report.removed_task_definitions}"
+            )
         else:
-            print(f"TaskDefinitions kept: {report.kept_task_definitions}")
+            print(f"TaskDefinitions kept: {batch_report.kept_task_definitions}")
         return
 
-    if not report.changed:
-        print(f"No legacy session metadata found in {report.project_json_path}")
+    if single_report is None:
+        print("Error: Project cleanup report was not generated")
+        sys.exit(1)
+
+    if not single_report.changed:
+        print(f"No legacy session metadata found in {single_report.project_json_path}")
         return
 
-    action = "Would remove" if getattr(args, "dry_run", False) else "Removed"
-    print(f"{action} legacy session metadata in {report.project_json_path}")
-    print(f"Sessions removed: {report.removed_sessions}")
-    print(f"Task entries removed: {report.removed_task_entries}")
-    print(f"Source entries removed: {report.removed_source_entries}")
-    if getattr(args, "drop_task_definitions", False):
-        print(f"TaskDefinitions removed: {report.removed_task_definitions}")
+    action = "Would remove" if dry_run else "Removed"
+    print(f"{action} legacy session metadata in {single_report.project_json_path}")
+    print(f"Sessions removed: {single_report.removed_sessions}")
+    print(f"Task entries removed: {single_report.removed_task_entries}")
+    print(f"Source entries removed: {single_report.removed_source_entries}")
+    if drop_task_definitions:
+        print(f"TaskDefinitions removed: {single_report.removed_task_definitions}")
     else:
-        print(f"TaskDefinitions kept: {report.kept_task_definitions}")
+        print(f"TaskDefinitions kept: {single_report.kept_task_definitions}")
 
 
 def cmd_dataset_build_biometrics_smoketest(args) -> None:

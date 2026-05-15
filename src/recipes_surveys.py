@@ -360,6 +360,34 @@ def get_i18n_text(obj: Any, lang: str = "en") -> str:
     return str(obj or "")
 
 
+def _sanitize_value_labels(levels: Any, lang: str = "en") -> dict[str, str]:
+    """Return cleaned categorical labels, dropping invalid endpoint-only maps."""
+    if not isinstance(levels, dict) or not levels:
+        return {}
+
+    labels: dict[str, str] = {
+        str(k): get_i18n_text(v, lang).strip() for k, v in levels.items()
+    }
+
+    # Incomplete codebooks (empty labels) should not be exported as categorical maps.
+    if any(not label for label in labels.values()):
+        return {}
+
+    # Endpoint-only sparse maps (e.g., 0/100 VAS anchors) are scale anchors, not levels.
+    numeric_keys: list[float] = []
+    for key in labels.keys():
+        try:
+            numeric_keys.append(float(key))
+        except (TypeError, ValueError):
+            numeric_keys = []
+            break
+    if len(labels) == 2 and numeric_keys:
+        if min(numeric_keys) == 0.0 and max(numeric_keys) == 100.0:
+            return {}
+
+    return labels
+
+
 def _build_variable_metadata(
     columns: list[str],
     participants_meta: dict,
@@ -395,10 +423,9 @@ def _build_variable_metadata(
                 if desc:
                     variable_labels[col] = get_i18n_text(desc, lang)
                 levels = col_meta.get("Levels") or col_meta.get("levels") or {}
-                if levels and isinstance(levels, dict):
-                    value_labels[col] = {
-                        str(k): get_i18n_text(v, lang) for k, v in levels.items()
-                    }
+                sanitized = _sanitize_value_labels(levels, lang)
+                if sanitized:
+                    value_labels[col] = sanitized
 
     # From participants.json
     for col in columns:
@@ -411,11 +438,9 @@ def _build_variable_metadata(
                     variable_labels[col] = get_i18n_text(desc, lang)
                 # Levels/value labels
                 levels = col_meta.get("Levels") or col_meta.get("levels") or {}
-                if levels and isinstance(levels, dict):
-                    # Convert to {code: label} format
-                    value_labels[col] = {
-                        str(k): get_i18n_text(v, lang) for k, v in levels.items()
-                    }
+                sanitized = _sanitize_value_labels(levels, lang)
+                if sanitized:
+                    value_labels[col] = sanitized
 
     # From recipe Scores - extract full details
     scores = recipe.get("Scores") or []
@@ -779,6 +804,87 @@ def _prepare_dataframe_for_sav(df: Any) -> Any:
             out[col] = numeric.round().astype("Int64")
         else:
             out[col] = numeric.astype(float)
+
+    return out
+
+
+def _normalize_declared_data_type(value: Any) -> str | None:
+    """Normalize declared datatype labels to canonical recipe export types."""
+    token = str(value or "").strip().lower()
+    if not token:
+        return None
+
+    mapping = {
+        "int": "integer",
+        "integer": "integer",
+        "long": "integer",
+        "numeric": "float",
+        "number": "float",
+        "float": "float",
+        "double": "float",
+        "text": "string",
+        "string": "string",
+        "str": "string",
+        "bool": "boolean",
+        "boolean": "boolean",
+    }
+    return mapping.get(token)
+
+
+def _apply_declared_datatypes(df: Any, declared_datatypes: dict[str, Any]) -> Any:
+    """Apply recipe-declared datatypes to dataframe columns when safely coercible."""
+    import pandas as pd
+
+    if df is None or not isinstance(declared_datatypes, dict) or not declared_datatypes:
+        return df
+
+    out = df.copy()
+
+    for col, declared_type in declared_datatypes.items():
+        if col not in out.columns:
+            continue
+
+        normalized_type = _normalize_declared_data_type(declared_type)
+        if normalized_type is None:
+            continue
+
+        if normalized_type == "string":
+            out[col] = out[col].astype("string")
+            continue
+
+        text = out[col].astype("string").str.strip()
+        lower = text.str.lower()
+        non_missing_mask = text.notna() & (~lower.isin(_MISSING_TEXT_TOKENS))
+        numeric = pd.to_numeric(
+            text.str.replace(",", ".", regex=False),
+            errors="coerce",
+        )
+
+        if int(numeric[non_missing_mask].notna().sum()) != int(non_missing_mask.sum()):
+            continue
+
+        if normalized_type == "integer":
+            out[col] = numeric.round().astype("Int64")
+            continue
+
+        if normalized_type == "float":
+            out[col] = numeric.astype(float)
+            continue
+
+        if normalized_type == "boolean":
+            bool_map = {
+                "true": True,
+                "false": False,
+                "1": True,
+                "0": False,
+                "yes": True,
+                "no": False,
+            }
+            mapped = lower.map(bool_map)
+            valid_mask = text.notna() & (~lower.isin(_MISSING_TEXT_TOKENS))
+            if int(mapped[valid_mask].notna().sum()) != int(valid_mask.sum()):
+                continue
+            out[col] = mapped.astype("boolean")
 
     return out
 
