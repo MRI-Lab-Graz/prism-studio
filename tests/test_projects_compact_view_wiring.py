@@ -63,9 +63,11 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
         content = PROJECTS_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn(
-            '{% from "includes/ui/macros.html" import page_header %}', content
+            '{% from "includes/ui/macros.html" import page_header, help_panel %}',
+            content,
         )
         self.assertIn("{{ page_header(", content)
+        self.assertIn("{% call help_panel(", content)
         self.assertIn('id="projectsPreliminaryBadge"', content)
         self.assertIn("Preliminary", content)
 
