@@ -120,9 +120,10 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("Native folder picker failed, falling back to in-app browser:", content)
 
     def test_new_project_draft_clear_uses_api_fallback(self):
-        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        content = PROJECTS_SELECTION_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("fetchWithApiFallback('/api/projects/current', {", content)
+        self.assertIn("body: JSON.stringify({ path: '' })", content)
 
     def test_recent_projects_controller_owns_storage_sync_and_rendering(self):
         content = PROJECTS_RECENT_PROJECTS_MODULE.read_text(encoding="utf-8")
@@ -259,10 +260,10 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("bindProjectBoxActionButtons();", open_project_content)
 
     def test_unsaved_new_project_detector_ignores_default_form_values(self):
-        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        content = PROJECTS_SELECTION_MODULE.read_text(encoding="utf-8")
 
         self.assertIn(
-            "if (options.some(option => option.selected !== option.defaultSelected)) {",
+            "if (options.some((option) => option.selected !== option.defaultSelected)) {",
             content,
         )
         self.assertIn(
@@ -558,11 +559,13 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
     def test_preserved_project_shows_open_section_without_validation(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        bootstrap_content = PROJECTS_BOOTSTRAP_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("function ensureOpenSectionVisibleForLoadedProject() {", content)
         self.assertIn("if (!path || !shouldHideProjectTypeSelectionWhenLoaded()) {", content)
         self.assertIn("selectProjectType('open');", content)
-        self.assertIn("ensureOpenSectionVisibleForLoadedProject();", content)
+        self.assertIn("ensureOpenSectionVisibleForLoadedProject,", content)
+        self.assertIn("ensureOpenSectionVisibleForLoadedProject();", bootstrap_content)
 
     def test_navbar_recent_project_redirect_preserves_current_project_only(self):
         content = BASE_TEMPLATE.read_text(encoding="utf-8")
@@ -774,8 +777,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("import { initProjectSelectionController } from './project-selection.js';", core_content)
         self.assertIn("const projectSelectionController = initProjectSelectionController({", core_content)
         self.assertIn(
-            "await loadProjectWithoutValidation(validationPath, null, { skipContextGuard: true });",
-            open_content,
+            "await loadProjectWithoutValidation(path, null, { skipContextGuard: true });",
+            core_content,
         )
         self.assertIn(
             "if (!skipContextGuard && !confirmProjectContextChange('load another project', normalizedPath)) {",
@@ -851,7 +854,11 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "setMetadataSaveStatus(loadingMessage, studyMetadataLoadInFlight ? 'muted' : 'warning');",
+            "setMetadataSaveStatus(loadingMessage, 'muted');",
+            content,
+        )
+        self.assertIn(
+            "setMetadataSaveStatus(loadingMessage, 'warning');",
             content,
         )
         self.assertIn("async function loadStudyMetadata() {", load_content)

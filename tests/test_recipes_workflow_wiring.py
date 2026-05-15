@@ -7,6 +7,9 @@ RECIPES_SCRIPT = REPO_ROOT / "app" / "static" / "js" / "recipes.js"
 CONVERTER_BOOTSTRAP_SCRIPT = (
     REPO_ROOT / "app" / "static" / "js" / "converter-bootstrap.js"
 )
+CONVERTER_LOG_RENDERER_SCRIPT = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "log-renderer.js"
+)
 STUDIO_THEME_CSS = REPO_ROOT / "app" / "static" / "css" / "studio-theme.css"
 
 
@@ -100,12 +103,24 @@ class TestRecipesWorkflowWiring(unittest.TestCase):
     def test_terminal_logs_highlight_backend_command_segments(self):
         recipes_content = RECIPES_SCRIPT.read_text(encoding="utf-8")
         converter_content = CONVERTER_BOOTSTRAP_SCRIPT.read_text(encoding="utf-8")
+        converter_log_renderer_content = CONVERTER_LOG_RENDERER_SCRIPT.read_text(
+            encoding="utf-8"
+        )
         css_content = STUDIO_THEME_CSS.read_text(encoding="utf-8")
 
         self.assertIn("rawMessage.match(/(\\bcmd=)(.+)$/)", recipes_content)
         self.assertIn("commandSpan.className = 'backend-command-text';", recipes_content)
-        self.assertIn("rawMessage.match(/(\\bcmd=)(.+)$/)", converter_content)
-        self.assertIn("commandSpan.className = 'backend-command-text';", converter_content)
+        self.assertIn(
+            "import { appendConverterLogBatch, appendConverterLogLine } from './modules/converter/log-renderer.js';",
+            converter_content,
+        )
+        self.assertIn(
+            "rawMessage.match(/(\\bcmd=)(.+)$/)", converter_log_renderer_content
+        )
+        self.assertIn(
+            "commandSpan.className = 'backend-command-text';",
+            converter_log_renderer_content,
+        )
         self.assertIn(".studio-theme .backend-command-text", css_content)
 
 
