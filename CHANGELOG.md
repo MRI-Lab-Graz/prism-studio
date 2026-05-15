@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Projects UI Harmonization**: Migrated the Projects page to shared page-header/help-panel primitives while preserving preliminary-state and beginner-help workflows.
 - **Validator Landing UI Harmonization**: Migrated the Dataset Validation landing page to shared page-header/section-card/help-panel primitives while preserving validation target and progress wiring.
 - **Converter UI Harmonization**: Migrated the Converter page to shared page-header/help-panel primitives and added focused converter template wiring assertions.
+- **Survey Library UI Harmonization**: Migrated the Survey Library page to shared page-header/help-panel primitives and added focused library workflow wiring assertions.
+- **Shared Help-Panel Coverage Guard**: Added a regression test that enforces shared help-panel macro imports across harmonized top-level templates.
+- **Workflow Wiring Test Realignment**: Updated stale frontend wiring assertions to match the current module split (projects selection/open/bootstrap and converter log-renderer), restoring broad wiring-suite green status.
+- **Library Action Wiring Consolidation**: Moved Survey Library action handlers from inline template JavaScript to `static/js/library.js` and wired requests through shared relative-path API fallback behavior.
 
 ## [1.15.2] - 2026-04-28
 

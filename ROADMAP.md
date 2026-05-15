@@ -44,6 +44,10 @@ Progress snapshot:
 - Projects page now uses shared page-header and help-panel primitives, preserving preliminary badge visibility and beginner-help toggle behavior.
 - Validator main page now uses shared page-header, section-card, and help-panel primitives, preserving validation target/progress wiring.
 - Converter page now uses shared page-header and help-panel primitives, with dedicated converter workflow wiring assertions.
+- Survey Library page now uses shared page-header and help-panel primitives, with dedicated workflow wiring assertions.
+- Added a top-level template coverage guard test to keep shared help-panel imports from regressing.
+- Reconciled stale workflow-wiring assertions to current frontend module ownership (projects selection/open/bootstrap and converter log-renderer), with broad regression sweep passing.
+- Library page action handlers were extracted from inline template JS into a dedicated module using shared relative-path API fallback wiring.
 - Project identity icons are now assigned per study via backend metadata, and rendered in navbar/current-project + recent-project surfaces with regression coverage.
 
 Next action:
