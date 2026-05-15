@@ -717,7 +717,10 @@ def _build_combined_output_metadata(
 
 
 def _coerce_value_labeled_columns_for_sav(
-    df: Any, value_labels: dict[str, dict]
+    df: Any,
+    value_labels: dict[str, dict],
+    *,
+    skip_numeric_coercion_columns: set[str] | None = None,
 ) -> Any:
     """Convert value-labeled columns to numeric where label keys are numeric."""
     import pandas as pd
@@ -726,8 +729,11 @@ def _coerce_value_labeled_columns_for_sav(
         return df
 
     out = df.copy()
+    skip_columns = {str(col) for col in (skip_numeric_coercion_columns or set())}
     for col, labels in value_labels.items():
         if col not in out.columns or not isinstance(labels, dict) or not labels:
+            continue
+        if str(col) in skip_columns:
             continue
 
         numeric_keys: list[float] = []
@@ -1045,6 +1051,48 @@ def _build_sav_value_labels(
     return out
 
 
+def _build_sav_variable_measure(
+    columns: list[str],
+    *,
+    participants_meta: dict,
+) -> dict[str, str]:
+    """Build SPSS variable_measure metadata for participant variables."""
+    measures: dict[str, str] = {}
+
+    for col in columns:
+        if col in {"participant_id", "session", "run"}:
+            measures[col] = "nominal"
+            continue
+
+        col_meta = participants_meta.get(col)
+        if not isinstance(col_meta, dict):
+            continue
+
+        variable_type = str(
+            col_meta.get("VariableType") or col_meta.get("variable_type") or ""
+        ).strip().lower()
+        declared_type = _normalize_declared_data_type(
+            col_meta.get("DataType") or col_meta.get("data_type")
+        )
+
+        if variable_type in {"categorical", "nominal", "category"}:
+            measures[col] = "nominal"
+            continue
+        if variable_type == "ordinal":
+            measures[col] = "ordinal"
+            continue
+        if variable_type in {"continuous", "scale"}:
+            measures[col] = "scale"
+            continue
+
+        if declared_type in {"integer", "float", "boolean"}:
+            measures[col] = "scale"
+        elif declared_type == "string":
+            measures[col] = "nominal"
+
+    return measures
+
+
 def _write_codebook_json(
     path: Path,
     variable_labels: dict,
@@ -1281,6 +1329,51 @@ def _build_participant_value_lookup(participants_df: Any) -> dict[str, dict[str,
     return lookup
 
 
+def _participant_export_columns(participants_df: Any) -> list[str]:
+    """Return participant.tsv columns to carry into exported outputs."""
+    if participants_df is None or "participant_id" not in participants_df.columns:
+        return []
+    return [str(col) for col in participants_df.columns if str(col) != "participant_id"]
+
+
+def _build_participant_export_frame(participants_df: Any) -> Any:
+    """Build a one-row-per-participant frame for post-merge enrichment."""
+    if participants_df is None:
+        return None
+    if "participant_id" not in participants_df.columns:
+        return None
+
+    export_cols = ["participant_id"] + _participant_export_columns(participants_df)
+    if len(export_cols) <= 1:
+        return None
+
+    frame = participants_df.loc[:, [c for c in export_cols if c in participants_df.columns]].copy()
+    if frame.empty:
+        return None
+
+    frame = frame.dropna(subset=["participant_id"]).drop_duplicates(
+        subset=["participant_id"], keep="first"
+    )
+    return frame
+
+
+def _participants_categorical_columns(participants_meta: dict) -> set[str]:
+    """Return participant columns declared as categorical in participants.json."""
+    categorical: set[str] = set()
+    if not isinstance(participants_meta, dict):
+        return categorical
+
+    for col, meta in participants_meta.items():
+        if not isinstance(meta, dict):
+            continue
+        variable_type = str(
+            meta.get("VariableType") or meta.get("variable_type") or ""
+        ).strip().lower()
+        if variable_type in {"categorical", "nominal", "category"}:
+            categorical.add(str(col))
+    return categorical
+
+
 def _participant_raw_exclude_columns(participants_df: Any) -> set[str]:
     """Columns to hide from raw survey export rows.
 
@@ -1290,6 +1383,40 @@ def _participant_raw_exclude_columns(participants_df: Any) -> set[str]:
     if participants_df is None:
         return set()
     return {str(col) for col in participants_df.columns if str(col) != "participant_id"}
+
+
+def _resolve_recipe_scores(recipe: dict, resolved_version: str | None) -> list[dict]:
+    """Resolve the active score block, accounting for VersionedScores."""
+    versioned_scores = recipe.get("VersionedScores") or {}
+    if resolved_version and resolved_version in versioned_scores:
+        return versioned_scores[resolved_version] or []
+    return recipe.get("Scores") or []
+
+
+def _resolve_recipe_score_names(recipe: dict, resolved_version: str | None) -> set[str]:
+    """Return score variable names for the active recipe/version."""
+    names: set[str] = set()
+    for score in _resolve_recipe_scores(recipe, resolved_version):
+        name = str((score or {}).get("Name", "")).strip()
+        if name:
+            names.add(name)
+    return names
+
+
+def _merge_all_output_column_name(
+    recipe_id: str,
+    column: str,
+    *,
+    score_names: set[str],
+    include_recipe_prefix: bool,
+) -> str:
+    """Pick a merge-all column name with score columns always recipe-prefixed."""
+    col = str(column)
+    if col in score_names:
+        return _prefixed_recipe_column_name(recipe_id, col)
+    if include_recipe_prefix:
+        return _prefixed_recipe_column_name(recipe_id, col)
+    return col
 
 
 def _inject_participant_values_into_rows(
@@ -1630,11 +1757,7 @@ def _apply_survey_derivative_recipe_to_rows(
 
     # VersionedScores: if recipe defines per-variant score lists and a version is
     # resolved for this file, use that variant's scores; fall back to top-level Scores.
-    versioned_scores = recipe.get("VersionedScores") or {}
-    if resolved_version and resolved_version in versioned_scores:
-        scores = versioned_scores[resolved_version] or []
-    else:
-        scores = recipe.get("Scores") or []
+    scores = _resolve_recipe_scores(recipe, resolved_version)
     score_names = [
         str(s.get("Name", "")).strip() for s in scores if str(s.get("Name", "")).strip()
     ]
@@ -2289,6 +2412,7 @@ def _export_recipe_aggregated(
     processed_count = 0
     final_header = []
     participant_lookup = _build_participant_value_lookup(participants_df)
+    participant_columns = _participant_export_columns(participants_df)
     raw_exclude_columns = _participant_raw_exclude_columns(participants_df)
 
     for in_path in matching:
@@ -2334,6 +2458,8 @@ def _export_recipe_aggregated(
             merged: dict[str, Any] = {"participant_id": sub_id, "session": ses_id}
             if run_id is not None:
                 merged["run"] = run_id
+            for participant_col in participant_columns:
+                merged[participant_col] = participant_values.get(participant_col, "n/a")
             for col in out_header:
                 merged[col] = score_row.get(col, "n/a")
             rows_accum.append(merged)
@@ -2342,11 +2468,17 @@ def _export_recipe_aggregated(
         return processed_count, 0, None, None, []
 
     df = pd.DataFrame(rows_accum)
-    # Ensure column order: participant_id, session, [run], then score columns
+    # Ensure column order: participant_id, session, [run], participant columns, then score columns
     _run_col = ["run"] if "run" in df.columns else []
+    ordered_participant_cols = [c for c in participant_columns if c in df.columns]
     cols = [
         c
-        for c in (["participant_id", "session"] + _run_col + [c for c in final_header])
+        for c in (
+            ["participant_id", "session"]
+            + _run_col
+            + ordered_participant_cols
+            + [c for c in final_header]
+        )
         if c in df.columns
     ]
     df = df.loc[:, cols]
@@ -2469,9 +2601,15 @@ def _export_recipe_aggregated(
         try:
             import pyreadstat
 
+            participant_categorical_cols = _participants_categorical_columns(participants_meta)
             df_for_sav = _prepare_dataframe_for_sav(df_for_write)
+            for participant_col in participant_categorical_cols:
+                if participant_col in df_for_sav.columns:
+                    df_for_sav[participant_col] = df_for_sav[participant_col].astype("string")
             df_for_sav = _coerce_value_labeled_columns_for_sav(
-                df_for_sav, val_labels
+                df_for_sav,
+                val_labels,
+                skip_numeric_coercion_columns=participant_categorical_cols,
             )
 
             # Sanitize SPSS variable names (illegal chars + leading digit names).
@@ -2491,11 +2629,21 @@ def _export_recipe_aggregated(
                 rename_map=spss_rename_map,
             )
 
+            sav_variable_measure = _build_sav_variable_measure(
+                list(df_for_write.columns),
+                participants_meta=participants_meta,
+            )
+            sav_variable_measure = {
+                spss_rename_map.get(col, col): measure
+                for col, measure in sav_variable_measure.items()
+            }
+
             pyreadstat.write_sav(
                 df_for_sav,
                 str(out_fname),
                 column_labels=sav_var_labels if sav_var_labels else None,
                 variable_value_labels=sav_val_labels if sav_val_labels else None,
+                variable_measure=sav_variable_measure if sav_variable_measure else None,
             )
             _write_codebook_json(
                 codebook_json_path,
@@ -2956,15 +3104,18 @@ def compute_survey_recipes(
                     if not out_header:
                         continue
 
+                    score_names = _resolve_recipe_score_names(recipe, resolved_ver)
+
                     for score_row in out_rows:
                         merged = {"participant_id": sub_id, "session": ses_id}
                         if run_id is not None:
                             merged["run"] = run_id
                         for col in out_header:
-                            prefixed_col = (
-                                _prefixed_recipe_column_name(recipe_id, col)
-                                if include_recipe_prefix
-                                else col
+                            prefixed_col = _merge_all_output_column_name(
+                                recipe_id,
+                                col,
+                                score_names=score_names,
+                                include_recipe_prefix=include_recipe_prefix,
                             )
                             merged[prefixed_col] = score_row.get(col, "n/a")
                         rows_accum.append(merged)
@@ -3086,15 +3237,21 @@ def compute_survey_recipes(
                         if not out_header:
                             continue
 
+                        score_names = _resolve_recipe_score_names(
+                            raw_only_recipe,
+                            None,
+                        )
+
                         for raw_row in out_rows:
                             merged = {"participant_id": sub_id, "session": ses_id}
                             if run_id is not None:
                                 merged["run"] = run_id
                             for col in out_header:
-                                prefixed_col = (
-                                    _prefixed_recipe_column_name(missing_task, col)
-                                    if include_recipe_prefix
-                                    else col
+                                prefixed_col = _merge_all_output_column_name(
+                                    missing_task,
+                                    col,
+                                    score_names=score_names,
+                                    include_recipe_prefix=include_recipe_prefix,
                                 )
                                 merged[prefixed_col] = raw_row.get(col, "n/a")
                             rows_accum.append(merged)
@@ -3284,6 +3441,36 @@ def compute_survey_recipes(
                 if fallback_note is None:
                     fallback_note = f"Could not create wide combined layout: {e}"
 
+        participant_export_df = _build_participant_export_frame(participants_df)
+        if (
+            participant_export_df is not None
+            and not participant_export_df.empty
+            and "participant_id" in combined_df.columns
+        ):
+            combined_df = combined_df.merge(
+                participant_export_df,
+                on="participant_id",
+                how="left",
+            )
+
+            ordered_prefix_cols = [
+                col for col in ["participant_id", "session", "run"] if col in combined_df.columns
+            ]
+            participant_cols = [
+                col
+                for col in participant_export_df.columns
+                if col != "participant_id" and col in combined_df.columns
+            ]
+            remaining_cols = [
+                col
+                for col in combined_df.columns
+                if col not in set(ordered_prefix_cols + participant_cols)
+            ]
+            combined_df = combined_df.loc[
+                :,
+                ordered_prefix_cols + participant_cols + remaining_cols,
+            ]
+
         combined_var_labels, combined_value_labels, combined_score_details = (
             _build_combined_output_metadata(
                 columns=list(combined_df.columns),
@@ -3327,14 +3514,22 @@ def compute_survey_recipes(
             try:
                 import pyreadstat
 
+                participant_categorical_cols = _participants_categorical_columns(participants_meta)
                 combined_for_write = _apply_missing_export_policy(
                     combined_df,
                     missing_policy=missing_policy,
                     missing_numeric_value=missing_numeric_value,
                 )
                 combined_for_sav = _prepare_dataframe_for_sav(combined_for_write)
+                for participant_col in participant_categorical_cols:
+                    if participant_col in combined_for_sav.columns:
+                        combined_for_sav[participant_col] = combined_for_sav[
+                            participant_col
+                        ].astype("string")
                 combined_for_sav = _coerce_value_labeled_columns_for_sav(
-                    combined_for_sav, combined_value_labels
+                    combined_for_sav,
+                    combined_value_labels,
+                    skip_numeric_coercion_columns=participant_categorical_cols,
                 )
 
                 # Sanitize SPSS variable names (illegal chars + leading digit names).
@@ -3354,11 +3549,21 @@ def compute_survey_recipes(
                     rename_map=rename_map_sav,
                 )
 
+                sav_variable_measure = _build_sav_variable_measure(
+                    list(combined_df.columns),
+                    participants_meta=participants_meta,
+                )
+                sav_variable_measure = {
+                    rename_map_sav.get(col, col): measure
+                    for col, measure in sav_variable_measure.items()
+                }
+
                 pyreadstat.write_sav(
                     combined_for_sav,
                     str(out_path),
                     column_labels=sav_var_labels if sav_var_labels else None,
                     variable_value_labels=sav_val_labels if sav_val_labels else None,
+                    variable_measure=sav_variable_measure if sav_variable_measure else None,
                 )
             except Exception as e:
                 # Clean up potential 0-byte .sav file left by failed write
