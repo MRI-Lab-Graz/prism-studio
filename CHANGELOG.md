@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Shared Help-Panel Coverage Guard**: Added a regression test that enforces shared help-panel macro imports across harmonized top-level templates.
 - **Workflow Wiring Test Realignment**: Updated stale frontend wiring assertions to match the current module split (projects selection/open/bootstrap and converter log-renderer), restoring broad wiring-suite green status.
 - **Library Action Wiring Consolidation**: Moved Survey Library action handlers from inline template JavaScript to `static/js/library.js` and wired requests through shared relative-path API fallback behavior.
+- **Frontend Assessment Phase Pivot**: Marked UI harmonization tranche complete in roadmap tracking and started Projects page structural assessment checkpoint documentation (Phase 1.2).
 
 ## [1.15.2] - 2026-04-28
 
