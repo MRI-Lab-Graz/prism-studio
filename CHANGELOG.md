@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Workflow Wiring Test Realignment**: Updated stale frontend wiring assertions to match the current module split (projects selection/open/bootstrap and converter log-renderer), restoring broad wiring-suite green status.
 - **Library Action Wiring Consolidation**: Moved Survey Library action handlers from inline template JavaScript to `static/js/library.js` and wired requests through shared relative-path API fallback behavior.
 - **Frontend Assessment Phase Pivot**: Marked UI harmonization tranche complete in roadmap tracking and started Projects page structural assessment checkpoint documentation (Phase 1.2).
+- **Validator Assessment Kickoff**: Started Phase 1.3 validator structural assessment documentation, including backend command ownership mapping, stability findings, and remediation slice acceptance criteria.
+- **Results Assessment Kickoff**: Started Phase 1.4 results structural assessment documentation, including re-validation progress lifecycle findings and result-action state hardening slices.
+- **Template Editor Assessment Kickoff**: Started Phase 2.1 template editor structural assessment documentation, including project-context race guardrails and safe-save/import contract slices.
+- **Recipe Builder Assessment Kickoff**: Started Phase 2.2 recipe builder structural assessment documentation, including async stale-load guardrails and recipe save/compatibility contract slices.
+- **Survey Customizer Assessment Kickoff**: Started Phase 2.3 survey customizer structural assessment documentation, including session-state hydration safeguards and project-bound export-copy guardrails.
+- **Survey Generator Assessment Kickoff**: Started Phase 2.4 survey generator structural assessment documentation, including merged-library reload guardrails and customizer handoff payload contract slices.
+- **File Management Assessment Kickoff**: Started Phase 2.5 file management structural assessment documentation, including multi-tool state isolation guardrails and preview-then-apply contract slices.
+- **JSON Editor Assessment Kickoff**: Started Phase 3.1 JSON editor structural assessment documentation, including project-root sync safeguards and local-vs-project persistence contract slices.
 
 ## [1.15.2] - 2026-04-28
 
