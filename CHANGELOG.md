@@ -27,6 +27,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Survey Generator Assessment Kickoff**: Started Phase 2.4 survey generator structural assessment documentation, including merged-library reload guardrails and customizer handoff payload contract slices.
 - **File Management Assessment Kickoff**: Started Phase 2.5 file management structural assessment documentation, including multi-tool state isolation guardrails and preview-then-apply contract slices.
 - **JSON Editor Assessment Kickoff**: Started Phase 3.1 JSON editor structural assessment documentation, including project-root sync safeguards and local-vs-project persistence contract slices.
+- **Neurobagel Workflow Assessment Kickoff**: Started Phase 3.2 neurobagel workflow structural assessment documentation, including duplicate fetch ownership guardrails and preview-vs-saved schema state precedence slices.
+- **Library and Library Editor Assessment Kickoff**: Started Phase 3.3 library/editor structural assessment documentation, including inline-editor fetch ownership guardrails and advanced JSON runtime dependency slices.
+- **Specifications Assessment Kickoff**: Started Phase 3.4 specifications structural assessment documentation, including derivative-link state guardrails and route ownership consolidation slices.
+- **PRISM App Runner Assessment Kickoff**: Started Phase 3.5 PRISM App Runner structural assessment documentation, including disabled-state contract guardrails and runner-control drift remediation slices.
+- **Home Page Assessment Kickoff**: Started Phase 3.6 home-page structural assessment documentation, including route-policy guardrails and include-composition integrity slices.
+- **Shared Module Assessment Kickoff**: Started Phase 4.1 shared-module structural assessment documentation, including API fallback policy, project-state precedence, and bounded polling contract slices.
+- **Phase-Boundary Smoke Sweep Complete**: Executed consolidated post-checkpoint smoke validation across completed assessment suites (54 passed) and recorded baseline continuity in roadmap/tracker artifacts.
+- **Neurobagel Fetch Ownership Unification**: Updated Neurobagel widget participant loading to use shared API fallback wiring and prevented global helper overwrite collisions in mixed runtime loading paths.
+- **Library Editor Module Extraction**: Replaced inline Library Editor runtime script with `app/static/js/library_editor.js` and routed draft-save requests through shared relative-path API fallback wiring.
+- **PRISM App Runner Stale-Control Cleanup**: Removed stale/non-rendered image-scan control branches from app-runner frontend wiring and tightened browse-kind handling with dedicated regression assertions.
 
 ## [1.15.2] - 2026-04-28
 

@@ -885,11 +885,27 @@ window.autoDetectDataType = function(colName, uniqueValues) {
   return 'text';
 };
 
-// Fetch NeuroBagel participants dictionary from API
-window.fetchNeurobagelParticipants = async function() {
+// Fetch NeuroBagel participants dictionary from API.
+// Do not override the global helper if another script already provided it.
+let neurobagelWidgetFetchWithApiFallbackPromise = null;
+
+function loadNeurobagelWidgetFetchWithApiFallback() {
+  if (!neurobagelWidgetFetchWithApiFallbackPromise) {
+    neurobagelWidgetFetchWithApiFallbackPromise = import('/static/js/shared/api.js').then(({ fetchWithApiFallback }) => {
+      if (typeof fetchWithApiFallback !== 'function') {
+        throw new Error('Shared API helper is unavailable.');
+      }
+      return fetchWithApiFallback;
+    });
+  }
+  return neurobagelWidgetFetchWithApiFallbackPromise;
+}
+
+async function fetchNeurobagelParticipantsViaSharedApi() {
   console.log('📡 Fetching NeuroBagel participants data...');
   try {
-    const response = await fetch('/api/neurobagel/participants');
+    const fetchWithApiFallback = await loadNeurobagelWidgetFetchWithApiFallback();
+    const response = await fetchWithApiFallback('/api/neurobagel/participants');
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
@@ -901,7 +917,11 @@ window.fetchNeurobagelParticipants = async function() {
     // Return empty structure to allow widget to continue
     return { properties: {} };
   }
-};
+}
+
+if (typeof window.fetchNeurobagelParticipants !== 'function') {
+  window.fetchNeurobagelParticipants = fetchNeurobagelParticipantsViaSharedApi;
+}
 
 window.renderNeurobagelWidget = async function() {
   console.log('🧠 renderNeurobagelWidget called');
