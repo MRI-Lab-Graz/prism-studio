@@ -4,15 +4,15 @@ Last updated: 2026-05-15
 
 ## Current Mission
 
-Continue Priority 1.36 execution as the primary workstream.
-Focus on page-by-page structural assessment, runtime resilience checks, and focused smoke validation.
+Sustain completed Priority 1.36 guardrails as the primary frontend baseline.
+Focus on keeping structural assessment remediations, runtime resilience checks, and focused smoke/coverage gates green.
 
 ## Status Board
 
 | Priority | Title | Status | Next Action |
 |---|---|---|---|
 | 1.26 | UI harmonization and beginner-help improvements | COMPLETED | Keep shared-help-panel coverage and wiring regressions in standard frontend gates |
-| 1.36 | Frontend structural assessment (page-by-page) | IN PROGRESS | Continue remaining high-priority remediations after completing initial 3-slice stabilization set |
+| 1.36 | Frontend structural assessment (page-by-page) | COMPLETED | Keep remediated workflow wiring and phase-boundary coverage confirmation in standard gates |
 | 1.35 | Survey converter workflow hardening and backend command consolidation | COMPLETED | Keep post-merge stability checks in standard gates |
 | 2 | Export anonymization: participant ID renaming | COMPLETED | Keep export anonymization checks in standard gates |
 | 3 | JSON tag stripping and NIfTI GZIP header cleaning | DEFERRED | Revisit after Priority 2 is complete |
@@ -88,10 +88,16 @@ Current checkpoint:
 - Validator target/request assembly consolidation slice is complete with shared request-option helpers across start paths.
 - Results action-state contract hardening slice is complete with logic-level interaction guards.
 - Focused cross-page smoke confirmation is complete (33 passed across remediated workflow suites).
+- Phase-boundary full-suite coverage confirmation is complete (`./rtk coverage`: 2206 passed, 3 skipped).
+- Coverage blocker remediation is complete: recipe merge-all score-prefix policy, participant-column export propagation, and SAV participant metadata/measure handling were repaired in backend recipe export logic.
 - Detailed assessment plan remains in [docs/FRONTEND_STRUCTURAL_ASSESSMENT_2026-05.md](docs/FRONTEND_STRUCTURAL_ASSESSMENT_2026-05.md).
 
-Next action:
-- Close Priority 1.36 high-risk remediation tranche and run phase-boundary coverage confirmation.
+Closeout:
+- Priority 1.36 high-risk remediation tranche is closed.
+- Phase-boundary full-suite coverage confirmation is green.
+
+Maintenance action:
+1. Keep the focused cross-page remediation smoke suite and `./rtk coverage` in standard frontend release gates.
 
 ### Priority 1.35 - Survey converter workflow hardening and backend command consolidation
 
@@ -116,7 +122,7 @@ Immediate next actions:
 
 Closeout:
 - Priority 2 is complete and validated.
-- Continue execution on Priority 1.36 active workstream.
+- Keep Priority 1.36 maintenance gates active.
 
 ## Deferred
 

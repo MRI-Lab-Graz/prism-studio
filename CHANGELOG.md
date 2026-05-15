@@ -43,6 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Validator/Results Abortable Polling Hardening**: Added explicit abortable polling session contracts for validator and re-validation progress loops to prevent stale overlapping updates across reconnect/navigation edges.
 - **Validator Target/Request Assembly Consolidation**: Added canonical validator request-option resolvers and shared form-data assembly helpers across current-project, server-folder, and upload validation starts.
 - **Results Action-State Contract Hardening**: Added logic-level result-action lock guards (click/keyboard prevention) so interaction blocking is enforced independently of CSS pointer styling.
+- **Recipe Export Regression Repair**: Fixed backend recipe export contracts for merge-all score prefixing, participant-column propagation in per-recipe/combined outputs, and SAV sociodemographic measure/type handling.
+- **Phase-Boundary Coverage Closeout**: Restored full-suite green state after Priority 1.36 remediation tranche closeout (`./rtk coverage`: 2206 passed, 3 skipped).
 
 ## [1.15.2] - 2026-04-28
 
