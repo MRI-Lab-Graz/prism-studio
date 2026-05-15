@@ -108,4 +108,11 @@ Primary implementation surface:
 - Phase 4.1 shared module checkpoint started in [docs/FRONTEND_ASSESSMENT_SHARED_MODULES_2026-05.md](docs/FRONTEND_ASSESSMENT_SHARED_MODULES_2026-05.md).
 - Phase 4.2 phase-boundary smoke sweep completed (54 passed across completed checkpoint suites).
 - Initial remediation stabilization set completed for top findings: Neurobagel fetch ownership unification, Library Editor module extraction with shared save fallback wiring, and PRISM App Runner stale-control cleanup.
+- Follow-up remediation completed: Library Editor advanced-mode resilience now degrades explicitly when JSONEditor assets are unavailable.
+- Follow-up remediation completed: PRISM App Runner disabled-state frontend guarding now aligns runtime actions with disabled HTML/API contracts.
+- Follow-up remediation completed: shared API/project-state/job-polling contract coverage hardening via focused shared-module wiring tests.
+- Follow-up remediation completed: validator/results progress polling now uses abortable single-loop session contracts with focused regression coverage.
+- Follow-up remediation completed: validator target/request assembly is consolidated through canonical shared request-option helpers.
+- Follow-up remediation completed: results action-state locking now uses logic-level interaction guards beyond CSS-only blocking.
+- Focused cross-page remediation smoke confirmation completed (33 passed across the remediated workflow suites).
 - UI harmonization gating remains green and now serves as baseline safety net while page-by-page structural assessment continues.

@@ -969,12 +969,22 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("{{ page_header(", content)
         self.assertIn("{% call help_panel(", content)
         self.assertIn('id="saveSurveyBtn"', content)
+        self.assertIn('id="libraryAdvancedUnavailableNotice"', content)
         self.assertIn(
             '<script type="module" src="{{ url_for(\'static\', filename=\'js/library_editor.js\', v=prism_static_asset_token) }}"></script>',
             content,
         )
         self.assertIn(
             "import { fetchWithRelativePathFallback } from './shared/api.js';",
+            script_content,
+        )
+        self.assertIn(
+            "const advancedUnavailableNotice = document.getElementById('libraryAdvancedUnavailableNotice');",
+            script_content,
+        )
+        self.assertIn("jsonTab.disabled = true;", script_content)
+        self.assertIn(
+            "advancedUnavailableNotice.classList.remove('d-none');",
             script_content,
         )
         self.assertIn(

@@ -57,7 +57,7 @@ Current guardrails:
 - Browse handler now resolves picker kind explicitly from rendered control attributes and reports stable status text.
 - Primary compatibility/run flow remains functional with required controls.
 
-### High - Feature-disabled state relies on dual contract (HTML fieldset disable + API 503)
+### High - Feature-disabled state relies on dual contract (HTML fieldset disable + API 503) (resolved)
 
 Affected:
 
@@ -72,6 +72,7 @@ Current guardrails:
 
 - Page handler always renders disabled-state context when feature flag is off.
 - API handlers consistently return disabled payload/status when feature is off.
+- Frontend script now detects disabled page state and blocks runtime actions consistently (including startup remote-profile bootstrap).
 - Wiring and handler tests explicitly enforce this contract.
 
 ## Runtime Smoke Checklist (Phase 3.5)
@@ -111,7 +112,8 @@ Validation:
 
 - Slice A completed: stale/non-rendered image control references and related no-op branches were removed from [app/static/js/prism_app_runner.js](app/static/js/prism_app_runner.js).
 - Slice A validation completed: runner wiring assertions now explicitly guard against stale-control regressions in [tests/test_prism_app_runner_workflow_wiring.py](tests/test_prism_app_runner_workflow_wiring.py).
-- Slice B remains active: disabled-state HTML/API lockstep checks stay in regression gates.
+- Slice B completed: disabled-state frontend guards now align runtime behavior with disabled HTML/API contracts and suppress disabled-startup profile fetches.
+- Slice B validation completed: [tests/test_prism_app_runner_workflow_wiring.py](tests/test_prism_app_runner_workflow_wiring.py) and [tests/test_prism_app_runner_page_handlers.py](tests/test_prism_app_runner_page_handlers.py) are green.
 
 ## Exit Criteria for PRISM App Runner Assessment
 

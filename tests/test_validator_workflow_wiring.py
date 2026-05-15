@@ -65,6 +65,13 @@ class TestValidatorWorkflowWiring(unittest.TestCase):
         self.assertIn(
             "const response = await fetchWithApiFallback(progressUrl, {", content
         )
+        self.assertIn("let validationPollAbortController = null;", content)
+        self.assertIn("function abortValidationPolling() {", content)
+        self.assertIn("function beginValidationPollingSession() {", content)
+        self.assertIn("async function waitForValidationPollInterval(ms, signal) {", content)
+        self.assertIn("async function pollValidationProgress(progressUrl, progressFloor = 0, signal = null)", content)
+        self.assertIn("signal,", content)
+        self.assertIn("window.addEventListener('pagehide', abortValidationPolling);", content)
         self.assertIn(
             "const response = await fetchWithApiFallback(requestUrl, {", content
         )
@@ -82,15 +89,16 @@ class TestValidatorWorkflowWiring(unittest.TestCase):
             "function hasExplicitLibraryPathOverride(value, defaultValue) {", content
         )
         self.assertIn("function getExplicitLibraryPathOverride() {", content)
+        self.assertIn("function resolveValidationRequestOptions() {", content)
+        self.assertIn(
+            "function appendValidationRequestOptions(formData, requestOptions) {",
+            content,
+        )
+        self.assertIn("function buildFolderValidationRequestData(folderPath) {", content)
         self.assertIn("async function refreshDefaultLibraryPath() {", content)
         self.assertIn("/api/validation/default-library-path", content)
-        self.assertIn(
-            "const libraryPathOverride = getExplicitLibraryPathOverride();", content
-        )
-        self.assertIn(
-            "validationData.append('library_path', libraryPathOverride);", content
-        )
-        self.assertIn("formData.append('library_path', libraryPathOverride);", content)
+        self.assertIn("appendValidationRequestOptions(validationData, resolveValidationRequestOptions());", content)
+        self.assertIn("appendValidationRequestOptions(formData, resolveValidationRequestOptions());", content)
         self.assertNotIn("function getEffectiveLibraryPath() {", content)
 
     def test_validator_drop_handler_no_longer_marks_folder_as_selected(self):
@@ -159,10 +167,19 @@ class TestValidatorWorkflowWiring(unittest.TestCase):
             "return sharedFetchWithRelativePathFallback(url, options, fallbackMessage);",
             content,
         )
-        self.assertIn("async function pollRevalidationProgress(progressUrl, progressFloor = 0)", content)
+        self.assertIn("let revalidationPollAbortController = null;", content)
+        self.assertIn("function abortRevalidationPolling() {", content)
+        self.assertIn("function beginRevalidationPollingSession() {", content)
+        self.assertIn("async function waitForRevalidationPollInterval(ms, signal) {", content)
+        self.assertIn("async function pollRevalidationProgress(progressUrl, progressFloor = 0, signal = null)", content)
+        self.assertIn("window.addEventListener('pagehide', abortRevalidationPolling);", content)
+        self.assertIn("function isResultActionLocked(node) {", content)
+        self.assertIn("function bindResultActionGuards() {", content)
+        self.assertIn("node.dataset.actionLocked = disabled ? 'true' : 'false';", content)
+        self.assertIn("bindResultActionGuards();", content)
         self.assertIn("headers: { 'X-Requested-With': 'XMLHttpRequest' },", content)
         self.assertIn("method: 'POST'", content)
-        self.assertIn("await pollRevalidationProgress(payload.progress_url, 5);", content)
+        self.assertIn("await pollRevalidationProgress(payload.progress_url, 5, pollSignal);", content)
         self.assertIn("setActionsDisabled(true);", content)
         self.assertIn("showRevalidationError(error.message || 'Re-validation failed.');", content)
 

@@ -81,10 +81,17 @@ Current checkpoint:
 - Shared module phase checkpoint is captured in [docs/FRONTEND_ASSESSMENT_SHARED_MODULES_2026-05.md](docs/FRONTEND_ASSESSMENT_SHARED_MODULES_2026-05.md).
 - Phase-boundary smoke sweep is complete (54 passed across the completed checkpoint suites).
 - Initial remediation stabilization set is complete: Neurobagel fetch ownership unification, Library Editor module extraction with shared fallback save wiring, and PRISM App Runner stale-control cleanup.
+- Library Editor advanced-mode CDN resilience slice is complete via explicit graceful-degrade behavior and focused wiring coverage.
+- PRISM App Runner disabled-state contract hardening slice is complete with explicit frontend action guards and disabled-startup suppression.
+- Shared-module API/project-state/polling contract coverage hardening slice is complete with focused wiring regression tests.
+- Validator/Results abortable polling lifecycle hardening slice is complete with signal-aware single-loop guardrails and focused regression coverage.
+- Validator target/request assembly consolidation slice is complete with shared request-option helpers across start paths.
+- Results action-state contract hardening slice is complete with logic-level interaction guards.
+- Focused cross-page smoke confirmation is complete (33 passed across remediated workflow suites).
 - Detailed assessment plan remains in [docs/FRONTEND_STRUCTURAL_ASSESSMENT_2026-05.md](docs/FRONTEND_STRUCTURAL_ASSESSMENT_2026-05.md).
 
 Next action:
-- Continue with the next remediation tranche, prioritizing Library Editor advanced-mode CDN resilience and additional runner workflow contract hardening.
+- Close Priority 1.36 high-risk remediation tranche and run phase-boundary coverage confirmation.
 
 ### Priority 1.35 - Survey converter workflow hardening and backend command consolidation
 

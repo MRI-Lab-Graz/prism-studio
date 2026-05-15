@@ -135,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const simpleView = document.getElementById('simple-view');
     const simpleTab = document.getElementById('simple-tab');
     const jsonTab = document.getElementById('json-tab');
+    const advancedUnavailableNotice = document.getElementById('libraryAdvancedUnavailableNotice');
     const addQuestionCardBtn = document.getElementById('addQuestionCardBtn');
     const saveSurveyBtn = document.getElementById('saveSurveyBtn');
 
@@ -151,8 +152,16 @@ document.addEventListener('DOMContentLoaded', () => {
         editor.set(currentData);
     } else if (jsonTab) {
         jsonTab.classList.add('disabled');
+        jsonTab.disabled = true;
         jsonTab.setAttribute('aria-disabled', 'true');
         jsonTab.setAttribute('title', 'Advanced JSON is unavailable in this runtime.');
+        jsonTab.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+        });
+        if (advancedUnavailableNotice) {
+            advancedUnavailableNotice.classList.remove('d-none');
+        }
     }
 
     function renderSimpleEditor(data) {
