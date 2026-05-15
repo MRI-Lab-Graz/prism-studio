@@ -2,6 +2,7 @@ from pathlib import Path
 
 from flask import jsonify, request, session
 from werkzeug.utils import secure_filename
+from src.system_files import filter_system_files
 
 
 def handle_api_survey_check_project_templates(
@@ -127,9 +128,16 @@ def handle_api_survey_check_project_templates(
         return jsonify({"error": upload_error}), 400
 
     template_dir = project_root / "code" / "library" / "survey"
-    template_files = (
-        sorted(template_dir.glob("survey-*.json")) if template_dir.is_dir() else []
-    )
+    if template_dir.is_dir():
+        template_candidates = sorted(template_dir.glob("survey-*.json"))
+        allowed_names = set(
+            filter_system_files([path.name for path in template_candidates])
+        )
+        template_files = [
+            path for path in template_candidates if path.name in allowed_names
+        ]
+    else:
+        template_files = []
     tasks = sorted(
         {
             file_path.stem[len("survey-") :]

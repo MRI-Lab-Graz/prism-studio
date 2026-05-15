@@ -6,8 +6,15 @@ from pathlib import Path
 from typing import Any
 
 from flask import current_app, has_app_context
+from src.system_files import filter_system_files
 
 from .conversion_utils import expected_delimiter_for_suffix, resolve_existing_project_root
+
+
+def _list_non_system_survey_templates(directory: Path) -> list[Path]:
+    candidates = sorted(directory.glob("survey-*.json"))
+    allowed_names = set(filter_system_files([path.name for path in candidates]))
+    return [path for path in candidates if path.name in allowed_names]
 
 
 def resolve_official_survey_dir(project_path: str | None) -> Path | None:
@@ -30,7 +37,7 @@ def resolve_official_survey_dir(project_path: str | None) -> Path | None:
 
     for candidate in candidates:
         if candidate.exists() and candidate.is_dir():
-            if list(candidate.glob("survey-*.json")):
+            if _list_non_system_survey_templates(candidate):
                 return candidate
     return None
 
@@ -118,8 +125,8 @@ def copy_official_templates_to_project(
     if project_root is None:
         return summary
 
-    if (official_dir / "survey").is_dir() and not list(
-        official_dir.glob("survey-*.json")
+    if (official_dir / "survey").is_dir() and not _list_non_system_survey_templates(
+        official_dir
     ):
         official_dir = official_dir / "survey"
 
@@ -198,12 +205,12 @@ def infer_tasks_against_official_templates(
         }
 
     survey_official_dir = official_dir
-    if (official_dir / "survey").is_dir() and not list(
-        official_dir.glob("survey-*.json")
+    if (official_dir / "survey").is_dir() and not _list_non_system_survey_templates(
+        official_dir
     ):
         survey_official_dir = official_dir / "survey"
 
-    official_templates = sorted(survey_official_dir.glob("survey-*.json"))
+    official_templates = _list_non_system_survey_templates(survey_official_dir)
     if not official_templates:
         return {
             "tasks": [],
