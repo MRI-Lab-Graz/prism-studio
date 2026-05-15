@@ -7,6 +7,16 @@ SPECIFICATIONS_SCRIPT = REPO_ROOT / "app" / "static" / "js" / "specifications.js
 
 
 class TestSpecificationsWorkflowWiring(unittest.TestCase):
+    def test_specifications_uses_shared_header_and_help_panel_macros(self):
+        template_content = SPECIFICATIONS_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            '{% from "includes/ui/macros.html" import page_header, help_panel %}',
+            template_content,
+        )
+        self.assertIn("{{ page_header(", template_content)
+        self.assertIn("{% call help_panel(", template_content)
+
     def test_specifications_derivative_links_follow_project_change_events(self):
         template_content = SPECIFICATIONS_TEMPLATE.read_text(encoding="utf-8")
         script_content = SPECIFICATIONS_SCRIPT.read_text(encoding="utf-8")

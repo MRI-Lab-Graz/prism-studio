@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Specifications UI Harmonization**: Migrated the Specifications page to shared page-header/help-panel primitives and retained project-bound derivative-link wiring behavior with focused regression assertions.
+- **Analysis Outputs UI Harmonization**: Migrated the Analysis Outputs (Recipes) page to shared page-header/help-panel primitives and added focused wiring assertions while keeping project-bound API fallback behavior unchanged.
+
 ## [1.15.2] - 2026-04-28
 
 This release focuses on workflow reliability across project open/validate flows,

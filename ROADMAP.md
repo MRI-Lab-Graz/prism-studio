@@ -38,6 +38,8 @@ Progress snapshot:
 - Survey Customizer now uses shared page-header and help-panel primitives, with dedicated workflow wiring assertions.
 - File Management page now uses shared page-header and help-panel primitives, with dedicated workflow wiring assertions.
 - Recipe Builder page now uses shared page-header and help-panel primitives, with dedicated workflow wiring assertions.
+- Specifications page now uses shared page-header and help-panel primitives, while preserving project-bound derivative link wiring checks.
+- Analysis Outputs page now uses shared page-header and help-panel primitives, with dedicated workflow wiring assertions.
 - Project identity icons are now assigned per study via backend metadata, and rendered in navbar/current-project + recent-project surfaces with regression coverage.
 
 Next action:
