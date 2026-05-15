@@ -3,6 +3,9 @@ const prismAppRunnerScriptUrl = document.currentScript?.src || window.location.h
 document.addEventListener('DOMContentLoaded', function () {
   const root = document.getElementById('appRunnerRoot');
   if (!root) return;
+  const prismAppRunnerDisabledNotice = document.getElementById('prismAppRunnerDisabledNotice');
+  const prismAppRunnerHasDisabledFieldset = root.querySelector('fieldset[disabled][aria-disabled="true"]');
+  const prismAppRunnerDisabled = Boolean(prismAppRunnerDisabledNotice || prismAppRunnerHasDisabledFieldset);
 
   const sharedApiModuleUrl = new URL('./shared/api.js', prismAppRunnerScriptUrl).href;
   let sharedFetchWithApiFallbackPromise = null;
@@ -232,6 +235,13 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   runBtn.addEventListener('click', async function () {
+    if (prismAppRunnerDisabled) {
+      statusBox.classList.remove('d-none', 'alert-success', 'alert-info', 'alert-danger');
+      statusBox.classList.add('alert-warning');
+      statusBox.textContent = 'PRISM App Runner is temporarily unavailable.';
+      return;
+    }
+
     runBtn.disabled = true;
     statusBox.classList.remove('d-none', 'alert-success', 'alert-warning', 'alert-danger');
     statusBox.classList.add('alert-info');
@@ -269,6 +279,14 @@ document.addEventListener('DOMContentLoaded', function () {
     runStatus.classList.remove('d-none', 'alert-info', 'alert-success', 'alert-warning', 'alert-danger');
     runStatus.classList.add(level || 'alert-info');
     runStatus.textContent = message;
+  }
+
+  function ensureRunnerEnabled() {
+    if (!prismAppRunnerDisabled) {
+      return true;
+    }
+    setRunStatus('PRISM App Runner is temporarily unavailable in this build.', 'alert-warning');
+    return false;
   }
 
   function getSelectedDockerImage() {
@@ -363,6 +381,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('[data-browse-kind][data-browse-target]').forEach(button => {
     button.addEventListener('click', async function () {
+      if (!ensureRunnerEnabled()) return;
+
       const kind = (button.getAttribute('data-browse-kind') || '').trim();
       const targetId = (button.getAttribute('data-browse-target') || '').trim();
       const dialogTitle = (button.getAttribute('data-browse-title') || '').trim();
@@ -446,6 +466,8 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   remoteProfileSelect?.addEventListener('change', async function () {
+    if (!ensureRunnerEnabled()) return;
+
     const profileName = (remoteProfileSelect.value || '').trim();
     if (!profileName) return;
     try {
@@ -464,6 +486,8 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   saveRemoteProfileBtn?.addEventListener('click', async function () {
+    if (!ensureRunnerEnabled()) return;
+
     const name = (remoteProfileName?.value || '').trim();
     if (!name) {
       setRunStatus('Please enter a profile name before saving.', 'alert-danger');
@@ -498,6 +522,8 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   deleteRemoteProfileBtn?.addEventListener('click', async function () {
+    if (!ensureRunnerEnabled()) return;
+
     const profileName = (remoteProfileSelect?.value || remoteProfileName?.value || '').trim();
     if (!profileName) {
       setRunStatus('Select a profile to delete.', 'alert-danger');
@@ -546,6 +572,8 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   fetchDockerTagsBtn?.addEventListener('click', async function () {
+    if (!ensureRunnerEnabled()) return;
+
     const repository = (dockerRepository?.value || '').trim();
     if (!repository) {
       setRunStatus('Please enter a Docker Hub repository first.', 'alert-danger');
@@ -600,6 +628,8 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   pullDockerImageBtn?.addEventListener('click', async function () {
+    if (!ensureRunnerEnabled()) return;
+
     const image = getSelectedDockerImage() || (runContainerPath?.value || '').trim();
     if (!image) {
       setRunStatus('Select repository and tag first, or provide a container image.', 'alert-danger');
@@ -680,6 +710,8 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   loadOptionsBtn?.addEventListener('click', async function () {
+    if (!ensureRunnerEnabled()) return;
+
     const selectedDockerImage = getSelectedDockerImage();
     if (selectedDockerImage && runContainerPath) {
       runContainerPath.value = selectedDockerImage;
@@ -747,6 +779,8 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   runBidsAppBtn?.addEventListener('click', async function () {
+    if (!ensureRunnerEnabled()) return;
+
     const projectPath = resolveProjectPath();
     if (!projectPath) {
       setRunStatus('No active PRISM project loaded.', 'alert-danger');
@@ -844,5 +878,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  refreshRemoteProfiles();
+  if (!prismAppRunnerDisabled) {
+    refreshRemoteProfiles();
+  }
 });

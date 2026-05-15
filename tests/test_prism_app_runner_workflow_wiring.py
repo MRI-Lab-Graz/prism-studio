@@ -55,6 +55,33 @@ class TestPrismAppRunnerWorkflowWiring(unittest.TestCase):
         )
         self.assertIn("const kindLabel = kind || 'path';", script_content)
 
+    def test_prism_app_runner_script_guards_frontend_actions_when_disabled(self):
+        script_content = PRISM_APP_RUNNER_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "const prismAppRunnerDisabledNotice = document.getElementById('prismAppRunnerDisabledNotice');",
+            script_content,
+        )
+        self.assertIn(
+            "const prismAppRunnerHasDisabledFieldset = root.querySelector('fieldset[disabled][aria-disabled=\"true\"]');",
+            script_content,
+        )
+        self.assertIn(
+            "const prismAppRunnerDisabled = Boolean(prismAppRunnerDisabledNotice || prismAppRunnerHasDisabledFieldset);",
+            script_content,
+        )
+        self.assertIn("function ensureRunnerEnabled() {", script_content)
+        self.assertIn(
+            "setRunStatus('PRISM App Runner is temporarily unavailable in this build.', 'alert-warning');",
+            script_content,
+        )
+        self.assertIn(
+            "statusBox.textContent = 'PRISM App Runner is temporarily unavailable.';",
+            script_content,
+        )
+        self.assertIn("if (!prismAppRunnerDisabled) {", script_content)
+        self.assertIn("refreshRemoteProfiles();", script_content)
+
     def test_prism_app_runner_template_renders_disabled_html_state(self):
         template_content = PRISM_APP_RUNNER_TEMPLATE.read_text(encoding="utf-8")
 

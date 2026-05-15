@@ -109,6 +109,13 @@ Validation:
 - Focused validator workflow wiring tests for override and target-selection behavior.
 - Focused upload/validate-folder endpoint contract tests.
 
+## Remediation Progress (2026-05-15)
+
+- Slice A completed: validator progress polling now uses an explicit abortable polling-session contract (single active loop with signal-aware wait/fetch and pagehide cancellation).
+- Slice A validation completed: [tests/test_validator_workflow_wiring.py](tests/test_validator_workflow_wiring.py) and [tests/test_web_validation_progress.py](tests/test_web_validation_progress.py) are green.
+- Slice B completed: canonical target/request assembly now routes through shared resolver + append helpers across current-project, server-folder, and upload starts.
+- Slice B validation completed: [tests/test_validator_workflow_wiring.py](tests/test_validator_workflow_wiring.py) and [tests/test_web_validation_progress.py](tests/test_web_validation_progress.py) are green.
+
 ## Exit Criteria for Validator Assessment
 
 - Critical findings: none open.

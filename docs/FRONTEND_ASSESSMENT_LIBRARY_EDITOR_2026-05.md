@@ -54,7 +54,7 @@ Current guardrails:
 - Save success/failure feedback remains explicit and visible.
 - Save action continues to go through backend draft API.
 
-### High - External JSON editor CDN dependency in runtime-critical editing path
+### High - External JSON editor CDN dependency in runtime-critical editing path (mitigated)
 
 Affected:
 
@@ -68,6 +68,7 @@ Current guardrails:
 
 - Simple editor path remains available in-page for common edits.
 - Advanced editor sync rejects invalid JSON before switching back to simple mode.
+- When JSONEditor assets are unavailable, advanced mode is explicitly disabled with a visible warning notice while save flow remains available in simple mode.
 
 ## Runtime Smoke Checklist (Phase 3.3)
 
@@ -105,7 +106,8 @@ Validation:
 
 - Slice A completed: `library_editor.html` now bootstraps a dedicated module (`app/static/js/library_editor.js`) and save calls route through `fetchWithRelativePathFallback`.
 - Slice A validation completed: focused wiring checks in [tests/test_projects_workflow_wiring.py](tests/test_projects_workflow_wiring.py) and [tests/test_library_workflow_wiring.py](tests/test_library_workflow_wiring.py) are green.
-- Slice B remains open: advanced JSON mode still depends on CDN JSONEditor assets and needs explicit offline fallback handling.
+- Slice B completed: advanced mode now degrades explicitly when JSONEditor assets are unavailable (disabled tab + visible guidance), while simple-mode editing/saving remains intact.
+- Slice B validation completed: graceful-degrade wiring is asserted in [tests/test_projects_workflow_wiring.py](tests/test_projects_workflow_wiring.py).
 
 ## Exit Criteria for Library and Library Editor Assessment
 
