@@ -115,4 +115,6 @@ Primary implementation surface:
 - Follow-up remediation completed: validator target/request assembly is consolidated through canonical shared request-option helpers.
 - Follow-up remediation completed: results action-state locking now uses logic-level interaction guards beyond CSS-only blocking.
 - Focused cross-page remediation smoke confirmation completed (33 passed across the remediated workflow suites).
+- Phase-boundary full-suite coverage confirmation completed (`./rtk coverage`: 2206 passed, 3 skipped).
+- Coverage blocker remediation completed in backend recipes export logic: merge-all score-prefix policy alignment, participant-column propagation into aggregated outputs, and SAV participant measure/type handling for sociodemographics.
 - UI harmonization gating remains green and now serves as baseline safety net while page-by-page structural assessment continues.
