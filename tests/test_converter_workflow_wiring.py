@@ -299,6 +299,7 @@ PARTICIPANTS_MERGE_SUMMARY_RENDERERS_MODULE = (
     / "converter"
     / "participants-merge-summary-renderers.js"
 )
+CONVERTER_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter.html"
 SURVEY_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter_survey.html"
 CONVERSION_SURVEY_BLUEPRINT = (
     REPO_ROOT
@@ -312,6 +313,16 @@ TOOLS_BLUEPRINT = (
     REPO_ROOT / "app" / "src" / "web" / "blueprints" / "tools.py"
 )
 class TestConverterWorkflowWiring(unittest.TestCase):
+    def test_converter_template_uses_shared_header_and_help_panel_macros(self):
+        content = CONVERTER_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            '{% from "includes/ui/macros.html" import page_header, help_panel %}',
+            content,
+        )
+        self.assertIn("{{ page_header(", content)
+        self.assertIn("{% call help_panel(", content)
+
     def test_converter_module_aggregator_uses_single_bootstrap_entrypoint(self):
         content = CONVERTER_INDEX.read_text(encoding="utf-8")
 
