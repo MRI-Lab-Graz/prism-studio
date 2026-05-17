@@ -371,7 +371,66 @@ Current branch progress on this phase:
 - `participants-merge-summary.js` now delegates session-resolution row HTML generation to pure renderer helpers while preserving existing decision-state and listener orchestration
 - extracted participants merge summary session hint/preview text formatting into pure renderer helpers
 - `participants-merge-summary.js` now delegates session-resolution hint text construction to `participants-merge-summary-renderers.js`, keeping controller flow/event wiring unchanged
+- extracted participants merge summary decision-initialization helpers into `participants-merge-summary-decisions.js`
+- `participants-merge-summary.js` now delegates session-resolution and harmonization decision seed-map construction to that helper module while retaining state application and event wiring locally
+- extracted participants merge summary harmonization status/convert-hint text resolvers into `participants-merge-summary-status.js`
+- `participants-merge-summary.js` now delegates harmonization status text/class selection and convert-hint text selection to pure status helpers while keeping DOM updates and listeners in the controller
+- extracted participants merge summary harmonization field hint/feedback resolver into `participants-merge-summary-status.js`
+- `participants-merge-summary.js` now delegates per-field keep-both hint/feedback text resolution to a pure helper while keeping DOM class toggles and input listeners in the controller
+- extracted participants merge summary convert-button visual-state resolver into `participants-merge-summary-status.js`
+- `participants-merge-summary.js` now delegates convert-button enabled/tone view selection to a pure helper and applies it through one local updater to avoid duplicate UI toggling code
+- extracted participants merge summary harmonization event payload resolver into `participants-merge-summary-decisions.js`
+- `participants-merge-summary.js` now delegates action/new-column payload shaping for harmonization change/input handlers to that decision helper while preserving existing event timing and DOM flow
+- extracted participants merge summary session-resolution event payload resolver into `participants-merge-summary-decisions.js`
+- `participants-merge-summary.js` now delegates action/session/session-column payload shaping for session-resolution change handlers to that decision helper while preserving existing event timing and DOM flow
+- extracted participants merge summary session-select enabled-state resolver into `participants-merge-summary-renderers.js`
+- `participants-merge-summary.js` now delegates session select enabled/disabled view decisions to a shared helper used by both session row rendering and session-resolution change handlers
+- extracted participants merge summary conflict-actions visibility/download-state resolver into `participants-merge-summary-status.js`
+- `participants-merge-summary.js` now delegates conflict-actions visibility and download button enablement decisions to a pure status helper while keeping DOM updates local
+- extracted participants merge summary new-columns text/visibility resolver into `participants-merge-summary-status.js`
+- `participants-merge-summary.js` now delegates new-columns summary text/visibility view selection to a pure status helper while keeping DOM updates local
+- extracted participants merge summary conflict-list html/visibility resolver into `participants-merge-summary-status.js`
+- `participants-merge-summary.js` now delegates conflict-list html/visibility selection to a pure status helper while keeping DOM updates local
+- extracted participants merge summary alert/title/body text resolver into `participants-merge-summary-status.js`
+- `participants-merge-summary.js` now delegates merge summary alert tone, title text, and summary text decisioning to a pure status helper while keeping DOM updates local
+- extracted participants merge summary badge-text resolver into `participants-merge-summary-status.js`
+- `participants-merge-summary.js` now delegates matched/new/fill/conflict badge text construction to a pure status helper while keeping DOM updates local
+- extracted participants merge summary local DOM visibility/content updaters inside `participants-merge-summary.js`
+- `participants-merge-summary.js` now applies new-columns/conflict-list/conflict-actions views through shared local updaters to keep DOM mutations centralized and reduce repeated class toggles
 - focused converter wiring tests cover this seam and are green: `tests/test_converter_participants_workflow_wiring.py` and `tests/test_converter_workflow_wiring.py`
+- extracted survey file-separator controller into `survey-file-separator-controller.js`
+- `survey-convert.js` now delegates delimiter detection, selected-separator resolution, and separator-group visibility updates to that controller while keeping existing conversion flow/event wiring unchanged
+- extracted survey workflow response controller into `survey-workflow-response-controller.js`
+- `survey-convert.js` now delegates workflow JSON response parsing through that controller instead of local wrapper helpers, while `survey-workflow-response-utils.js` remains the canonical parsing/summarization implementation
+- extracted survey selected-input controller into `survey-selected-input-controller.js`
+- `survey-convert.js` now delegates uploaded-file/server-path input resolution, request form-data input append, and input fingerprint construction through that controller while preserving existing workflow orchestration
+- extracted survey session-input controller into `survey-session-input-controller.js`
+- `survey-convert.js` now delegates survey/biometrics session value reads and detected-session picker hydration through that controller while preserving existing event binding and project-session refresh flow
+- extracted survey convert feedback adapter into `survey-convert-feedback-adapter.js`
+- `survey-convert.js` now delegates project-save summary and participant-registry feedback forwarding through that adapter, removing local pass-through wrappers while preserving feedback fallback behavior before controller initialization
+- extracted survey run progress adapter into `survey-run-progress-adapter.js`
+- `survey-convert.js` now delegates progress view forwarding (`set/start/advance/pause/resume/finish/hide`) through that adapter while preserving existing run lifecycle orchestration and callback signatures
+- extracted survey active-run state adapter into `survey-active-run-state.js`
+- `survey-convert.js` now delegates active run tracking/cancel state (`set/clear/cancel/get mode/get abort controller/get canceled-by-user`) through that adapter while preserving preview/convert run cancellation behavior
+- extracted survey near-item-match adapter into `survey-near-item-match-adapter.js`
+- `survey-convert.js` now delegates near-item-match fallback forwarding (`collect/build-confirmation/prompt`) through that adapter while preserving existing review-controller behavior and fallback semantics
+- extracted survey value-offset editor adapter into `survey-value-offset-editor-adapter.js`
+- `survey-convert.js` now delegates value-offset editor forwarding (`apply`, status/signature helpers, editor render/focus/state helpers, and manual-offset accessors) through that adapter while preserving the existing value-offset controller behavior
+- extracted survey conversion-results adapter into `survey-conversion-results-adapter.js`
+- `survey-convert.js` now delegates conversion summary/log/unmatched/validation forwarding (`append/reset/display`) through that adapter while preserving controller initialization order and behavior
+- extracted survey template render adapter into `survey-template-render-adapter.js`
+- `survey-convert.js` now delegates template-results and participant-metadata display forwarding (`single/groups/questions/metadata-section`) through that adapter while preserving template generation behavior
+- removed local survey version-context pass-through wrappers in `survey-convert.js`
+- `survey-convert.js` now calls `survey-version-context-utils.js` exports directly for version/session/run key + timeline context normalization/comparison helpers, reducing orchestrator glue without behavior changes
+- removed local `resetSurveyImportFormState` pass-through wrapper from `survey-convert.js`
+- `survey-convert.js` now calls `surveyImportFormStateController.resetSurveyImportFormState` directly at existing project-change and clear-input callsites, preserving import-form reset behavior
+
+Converter-phase stopping rule (next-days completion target):
+
+- stop participants merge-summary extraction once remaining code is primarily event binding glue and direct DOM node lookup/update with no additional reusable decision logic
+- only approve another extraction when it yields a standalone, testable decision/payload/view function used in at least two call sites
+- after one final participants seam, shift effort to the next largest converter surface (`survey-convert.js`) and avoid creating new participants helper modules unless fixing a bug
+- treat Phase 4 participants work as structurally complete after three consecutive focused green runs with no stale wiring assertion drift
 
 ### Phase 5. Template Editor Refactor
 
