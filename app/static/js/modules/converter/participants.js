@@ -18,7 +18,6 @@ export function initParticipants() {
     const participantsPanel = document.getElementById('participants-panel');
     if (!participantsPanel) return;
     const neurobagelWidgetUrl = participantsPanel.dataset.neurobagelWidgetUrl || '/static/neurobagel_widget.html';
-    const jsonEditorUrl = participantsPanel.dataset.jsonEditorUrl || '/json-editor';
     // Track whether preview has been completed
     let participantsPreviewCompleted = false;
     let participantsExcelSheetCount = null;
@@ -113,10 +112,6 @@ export function initParticipants() {
         return '';
     }
 
-    function getParticipantsSelectedFilename() {
-        return resolveParticipantsFileName(getParticipantsSelectedLocalFile() || getParticipantsSelectedServerFilePath());
-    }
-
     function hasParticipantsFileSelection() {
         return Boolean(getParticipantsSelectedLocalFile() || getParticipantsSelectedServerFilePath());
     }
@@ -140,19 +135,6 @@ export function initParticipants() {
         if (resetSourcedataSelection) {
             participantsSourcedataQuickSelectController.clearSelectedFile();
         }
-    }
-
-    function refreshParticipantsSourcedataQuickSelect(projectPath = resolveCurrentProjectPath()) {
-        participantsSourcedataQuickSelectController.refresh(projectPath);
-    }
-
-    async function pickServerParticipantsFile() {
-        return pickServerFile({
-            title: 'Select Participants File on Server',
-            confirmLabel: 'Use This File',
-            extensions: '.xlsx,.csv,.tsv,.sav,.rds,.rdata,.rda,.lsa',
-            startPath: getParticipantsSelectedServerFilePath(),
-        });
     }
 
     function applyParticipantsPickerUiState() {
@@ -848,7 +830,9 @@ export function initParticipants() {
         const fileNameField = document.getElementById('participantsSelectedFileName');
         if (!fileNameField) return;
 
-        const selected = getParticipantsSelectedFilename();
+        const selected = resolveParticipantsFileName(
+            getParticipantsSelectedLocalFile() || getParticipantsSelectedServerFilePath()
+        );
         fileNameField.value = selected || 'No file selected';
     }
     
@@ -1389,7 +1373,12 @@ export function initParticipants() {
     const participantsBrowseServerFileBtn = document.getElementById('participantsBrowseServerFileBtn');
     if (participantsBrowseServerFileBtn) {
         participantsBrowseServerFileBtn.addEventListener('click', async function() {
-            const pickedPath = await pickServerParticipantsFile();
+            const pickedPath = await pickServerFile({
+                title: 'Select Participants File on Server',
+                confirmLabel: 'Use This File',
+                extensions: '.xlsx,.csv,.tsv,.sav,.rds,.rdata,.rda,.lsa',
+                startPath: getParticipantsSelectedServerFilePath(),
+            });
             if (!pickedPath) {
                 return;
             }
@@ -1450,7 +1439,7 @@ export function initParticipants() {
         window.addEventListener('prism-project-changed', function() {
             resetParticipantsPanelState();
             updateParticipantsButtonState();
-            refreshParticipantsSourcedataQuickSelect();
+            participantsSourcedataQuickSelectController.refresh(resolveCurrentProjectPath());
         });
         window.__participantsProjectChangeListenerBound = true;
     }
@@ -3313,21 +3302,7 @@ export function initParticipants() {
     });
     
     // ===== NEUROBAGEL ANNOTATION HANDLERS =====
-    
-    // Function to open participants.json editor
-    function openParticipantsEditor() {
-        const currentProjectPath = resolveCurrentProjectPath();
-        if (!currentProjectPath) {
-            const errorDiv = document.getElementById('participantsError');
-            errorDiv.textContent = 'Please select a project first from the top of the page';
-            errorDiv.classList.remove('d-none');
-            return;
-        }
-        
-        // Navigate to JSON editor with autoload flag and file type
-        window.location.href = `${jsonEditorUrl}?autoload=participants&from=converter`;
-    }
-    
+
     document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async function() {
         const saveBtn = this;
         const originalLabel = saveBtn.innerHTML;

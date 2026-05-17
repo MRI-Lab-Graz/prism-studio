@@ -14,22 +14,6 @@ export function createSurveyConvertFeedbackAdapter({
         return feedbackController.getProjectSaveSummary(data);
     }
 
-    function openConverterTab(target) {
-        const feedbackController = getFeedbackController();
-        if (!feedbackController) {
-            return false;
-        }
-        return feedbackController.openConverterTab(target);
-    }
-
-    function showConvertInfoMessage(message, options = {}) {
-        const feedbackController = getFeedbackController();
-        if (!feedbackController) {
-            return;
-        }
-        feedbackController.showConvertInfoMessage(message, options);
-    }
-
     function getParticipantRegistryWarning(payload) {
         const feedbackController = getFeedbackController();
         if (!feedbackController) {
@@ -48,8 +32,6 @@ export function createSurveyConvertFeedbackAdapter({
 
     return {
         getProjectSaveSummary,
-        openConverterTab,
-        showConvertInfoMessage,
         getParticipantRegistryWarning,
         showParticipantRegistryWarning,
     };
