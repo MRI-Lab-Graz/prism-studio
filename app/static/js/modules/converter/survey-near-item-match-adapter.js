@@ -6,22 +6,6 @@ export function createSurveyNearItemMatchAdapter({
         return controller && typeof controller === 'object' ? controller : null;
     };
 
-    function collectNearMatchCandidates(payload) {
-        const nearItemMatchReviewController = getNearItemMatchReviewController();
-        if (!nearItemMatchReviewController) {
-            return [];
-        }
-        return nearItemMatchReviewController.collectNearMatchCandidates(payload);
-    }
-
-    function buildNearMatchConfirmationMessage(payload, actionLabel) {
-        const nearItemMatchReviewController = getNearItemMatchReviewController();
-        if (!nearItemMatchReviewController) {
-            return '';
-        }
-        return nearItemMatchReviewController.buildNearMatchConfirmationMessage(payload, actionLabel);
-    }
-
     function promptNearMatchSelection(payload, actionLabel) {
         const nearItemMatchReviewController = getNearItemMatchReviewController();
         if (!nearItemMatchReviewController) {
@@ -31,8 +15,6 @@ export function createSurveyNearItemMatchAdapter({
     }
 
     return {
-        collectNearMatchCandidates,
-        buildNearMatchConfirmationMessage,
         promptNearMatchSelection,
     };
 }

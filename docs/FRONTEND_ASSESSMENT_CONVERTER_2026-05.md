@@ -1,6 +1,6 @@
 # Frontend Structural Assessment - Converter (Phase 1.1)
 
-Date: 2026-05-12
+Date: 2026-05-12 (updated 2026-05-17)
 
 Scope:
 
@@ -282,6 +282,22 @@ Implementation checkpoint (2026-05-12):
 - Completed: wired Environment on-status log bursts to `appendLogBatch` (with safe fallback) in [app/static/js/modules/converter/environment.js](app/static/js/modules/converter/environment.js).
 - Completed: wired Biometrics API log-array handling to batched append via `appendBiometricsLogEntries` in [app/static/js/modules/converter/biometrics.js](app/static/js/modules/converter/biometrics.js).
 - Completed: extended wiring assertions for `appendLogBatch` integration in [tests/test_converter_workflow_wiring.py](tests/test_converter_workflow_wiring.py).
+
+Implementation checkpoint (2026-05-17):
+
+- Completed: reduced survey converter orchestrator glue in [app/static/js/modules/converter/survey-convert.js](app/static/js/modules/converter/survey-convert.js) by removing dead/single-use wrappers and unused bindings while preserving behavior.
+- Completed: narrowed survey adapter/controller API surfaces to active callsites only:
+	- [app/static/js/modules/converter/survey-convert-feedback-adapter.js](app/static/js/modules/converter/survey-convert-feedback-adapter.js)
+	- [app/static/js/modules/converter/survey-convert-feedback.js](app/static/js/modules/converter/survey-convert-feedback.js)
+	- [app/static/js/modules/converter/survey-near-item-match-adapter.js](app/static/js/modules/converter/survey-near-item-match-adapter.js)
+	- [app/static/js/modules/converter/survey-value-offset-editor-adapter.js](app/static/js/modules/converter/survey-value-offset-editor-adapter.js)
+	- [app/static/js/modules/converter/survey-value-offset-editor.js](app/static/js/modules/converter/survey-value-offset-editor.js)
+- Completed: reduced participants module glue in [app/static/js/modules/converter/participants.js](app/static/js/modules/converter/participants.js) by inlining single-use server-picker/sourcedata-refresh helpers and removing dead local helpers.
+- Completed: aligned and expanded wiring guards in:
+	- [tests/test_converter_workflow_wiring.py](tests/test_converter_workflow_wiring.py)
+	- [tests/test_converter_participants_workflow_wiring.py](tests/test_converter_participants_workflow_wiring.py)
+- Validation (focused): `pytest -q tests/test_converter_workflow_wiring.py tests/test_converter_participants_workflow_wiring.py` -> 36 passed.
+- Validation (syntax): `node --check` green for touched converter modules.
 
 ## Exit Criteria for Converter Assessment
 

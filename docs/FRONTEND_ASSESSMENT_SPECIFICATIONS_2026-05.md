@@ -2,6 +2,13 @@
 
 Date: 2026-05-15
 
+Synchronization status (2026-05-17):
+
+- Cross-checked against latest converter refactor baseline in [docs/FRONTEND_ASSESSMENT_CONVERTER_2026-05.md](docs/FRONTEND_ASSESSMENT_CONVERTER_2026-05.md).
+- No page-specific finding severity changes in this synchronization pass.
+- Existing remediation slices and validation scope below remain authoritative.
+
+
 Scope:
 
 - Specifications page shell and explanatory navigation model (Core vs Derivatives)

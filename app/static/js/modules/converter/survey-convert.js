@@ -96,9 +96,6 @@ export function initSurveyConvert(elements) {
         templateEditorErrorCta,
         toggleLogBtn,
         validationResultsContainer,
-        validationResultsCard,
-        validationResultsHeader,
-        validationBadge,
         validationSummary,
         validationDetails,
         conversionSummaryContainer,
@@ -160,8 +157,6 @@ export function initSurveyConvert(elements) {
     });
     const {
         getProjectSaveSummary,
-        openConverterTab,
-        showConvertInfoMessage,
         getParticipantRegistryWarning,
         showParticipantRegistryWarning,
     } = surveyConvertFeedbackAdapter;
@@ -171,8 +166,6 @@ export function initSurveyConvert(elements) {
         getSurveyNearItemMatchReviewController: () => surveyNearItemMatchReviewController,
     });
     const {
-        collectNearMatchCandidates,
-        buildNearMatchConfirmationMessage,
         promptNearMatchSelection,
     } = surveyNearItemMatchAdapter;
     let taskValueOffsetRowSequence = 0;
@@ -215,7 +208,6 @@ export function initSurveyConvert(elements) {
     const {
         populateSurveySessionPickerFromDetected,
         getSurveySessionValue,
-        getBiometricsSessionValue,
     } = surveySessionInputController;
 
     const surveyWorkflowProgressController = createSurveyWorkflowProgressController({
@@ -794,15 +786,6 @@ export function initSurveyConvert(elements) {
             convertExcelFile.disabled = connectedToServer;
             convertExcelFile.title = connectedToServer ? 'Connected-to-server mode: use Browse Server File.' : '';
         }
-    }
-
-    async function pickServerSurveyFile() {
-        return pickServerFile({
-            title: 'Select Survey File on Server',
-            confirmLabel: 'Use This File',
-            extensions: '.xlsx,.lsa,.csv,.tsv,.sav,.rds,.rdata,.rda',
-            startPath: convertServerFilePath || ''
-        });
     }
 
     function getTemplateVersionSelections() {
@@ -1518,22 +1501,12 @@ export function initSurveyConvert(elements) {
     });
     const {
         applyAdvancedOptionsState,
-        createTaskValueOffsetRow,
-        getAvailableSurveyTasksForValueOffsets,
-        getTaskValueOffsetMapFromEditorState,
-        getCurrentTaskValueOffsetSelectionSignature,
         hasManualTaskValueOffsets,
-        hasIncompleteTaskValueOffsetRows,
         hasAppliedTaskValueOffsetSelections,
         updateTaskValueOffsetApplyState,
-        getPreferredTaskValueOffsetTask,
-        syncTaskValueOffsetTextFromState,
-        setTaskValueOffsetEditorStateFromText,
-        clearTaskValueOffsetEditorState,
         ensureTaskValueOffsetEditorRow,
         focusTaskValueOffsetEditor,
         renderTaskValueOffsetEditor,
-        handleTaskValueOffsetEditorChanged,
         clearManualValueOffsetAdvice,
         handleApplyTaskValueOffsetsClick,
         getManualTaskValueOffsets,
@@ -1620,21 +1593,6 @@ export function initSurveyConvert(elements) {
     }
 
     const registerSessionInProject = createSessionRegistrar(populateSessionPickers);
-
-    // Mode handling
-    function getConvertMode() {
-        return 'data';
-    }
-
-    function handleModeSwitch() {
-        convertIdColumnGroup?.classList.remove('d-none');
-        convertTemplateExportGroup?.classList.add('d-none');
-        convertLanguageGroup?.classList.remove('d-none');
-        convertAliasGroup?.classList.remove('d-none');
-        convertSessionGroup?.classList.remove('d-none');
-
-        updateConvertBtn();
-    }
 
     // Column detection
     function resetDetectedColumnsState() {
@@ -2037,7 +1995,11 @@ export function initSurveyConvert(elements) {
         });
     }
 
-    handleModeSwitch();
+    convertIdColumnGroup?.classList.remove('d-none');
+    convertTemplateExportGroup?.classList.add('d-none');
+    convertLanguageGroup?.classList.remove('d-none');
+    convertAliasGroup?.classList.remove('d-none');
+    convertSessionGroup?.classList.remove('d-none');
     updateConvertBtn();
     applySurveyPickerUiState();
 
@@ -2055,7 +2017,12 @@ export function initSurveyConvert(elements) {
         });
 
         browseServerSurveyFileBtn.addEventListener('click', async () => {
-            const pickedPath = await pickServerSurveyFile();
+            const pickedPath = await pickServerFile({
+                title: 'Select Survey File on Server',
+                confirmLabel: 'Use This File',
+                extensions: '.xlsx,.lsa,.csv,.tsv,.sav,.rds,.rdata,.rda',
+                startPath: convertServerFilePath || '',
+            });
             if (!pickedPath) return;
 
             convertServerFilePath = pickedPath;
@@ -2317,7 +2284,7 @@ export function initSurveyConvert(elements) {
         displayParticipantMetadataSection,
     } = surveyTemplateRenderAdapter;
 
-    const surveyTemplateGenerationController = createSurveyTemplateGenerationController({
+    createSurveyTemplateGenerationController({
         convertBtn,
         convertDatasetName,
         convertError,
@@ -2437,12 +2404,6 @@ export function initSurveyConvert(elements) {
 
     surveyConversionLogController.initialize();
     surveyUnmatchedTemplatesController.initialize();
-
-    // ===== TEMPLATE GENERATION =====
-
-    async function handleTemplateGeneration(file) {
-        await surveyTemplateGenerationController.handleTemplateGeneration(file);
-    }
 
     // ===== PARTICIPANT METADATA MARKING =====
 

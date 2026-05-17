@@ -424,6 +424,26 @@ Current branch progress on this phase:
 - `survey-convert.js` now calls `survey-version-context-utils.js` exports directly for version/session/run key + timeline context normalization/comparison helpers, reducing orchestrator glue without behavior changes
 - removed local `resetSurveyImportFormState` pass-through wrapper from `survey-convert.js`
 - `survey-convert.js` now calls `surveyImportFormStateController.resetSurveyImportFormState` directly at existing project-change and clear-input callsites, preserving import-form reset behavior
+- removed dead local helpers from `survey-convert.js` (`getConvertMode` and `handleTemplateGeneration`) to reduce orchestrator-only glue that was no longer wired
+- removed single-use `pickServerSurveyFile` wrapper from `survey-convert.js`
+- server file picking now calls `pickServerFile(...)` directly in the existing browse-button handler with the same dialog options/filters
+- removed one-call `handleModeSwitch` helper and inlined the same mode-UI setup at init, reducing local wrapper surface without changing visible behavior
+- trimmed unused `openConverterTab` / `showConvertInfoMessage` destructuring from `surveyConvertFeedbackAdapter` wiring in `survey-convert.js`
+- reduced `survey-convert-feedback-adapter.js` surface by removing unused `openConverterTab` and `showConvertInfoMessage` proxy methods (no remaining orchestrator callsites)
+- reduced `survey-convert-feedback.js` public return surface to only the methods still consumed by adapter callers (`getProjectSaveSummary`, `getParticipantRegistryWarning`, `showParticipantRegistryWarning`)
+- reduced `survey-near-item-match-adapter.js` surface to only `promptNearMatchSelection` and removed unused collect/build proxy methods + corresponding `survey-convert.js` destructuring
+- removed duplicate initialization `updateConvertBtn()` call in `survey-convert.js` (single call retained)
+- inlined single-use `openConverterTab` helper in `survey-convert-feedback.js` by calling `activateConverterTab(...)` directly inside the CTA click handler
+- removed unused value-offset adapter destructuring entries from `survey-convert.js`; orchestrator now imports only methods it actually invokes
+- reduced `survey-value-offset-editor-adapter.js` to export only the methods still used by `survey-convert.js`, removing unused proxy forwarders
+- reduced `survey-value-offset-editor.js` controller return object to methods still consumed through current adapter/orchestrator wiring
+- removed unused `getBiometricsSessionValue` destructuring from `survey-convert.js` (session input controller method remains owned in its module)
+- removed unused `validationResultsCard`, `validationResultsHeader`, and `validationBadge` element destructuring from `survey-convert.js`
+- removed unused local binding for template generation controller in `survey-convert.js` while keeping the initialization call
+- removed single-use `pickServerParticipantsFile` wrapper from `participants.js` and inlined `pickServerFile(...)` at the browse-button callsite with the same options
+- removed single-use `refreshParticipantsSourcedataQuickSelect` wrapper from `participants.js`; refresh now calls `participantsSourcedataQuickSelectController.refresh(resolveCurrentProjectPath())` directly
+- removed single-use `getParticipantsSelectedFilename` wrapper from `participants.js`; file-name display now resolves directly via `resolveParticipantsFileName(...)` at callsite
+- removed dead `openParticipantsEditor` helper (and now-unused `jsonEditorUrl` local) from `participants.js`
 
 Converter-phase stopping rule (next-days completion target):
 

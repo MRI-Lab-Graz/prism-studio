@@ -88,7 +88,7 @@ Primary implementation surface:
 - [app/src/web/blueprints/conversion_survey_handlers.py](app/src/web/blueprints/conversion_survey_handlers.py)
 - [app/src/web/blueprints/conversion_participants_blueprint.py](app/src/web/blueprints/conversion_participants_blueprint.py)
 
-## Current Checkpoint (2026-05-15)
+## Current Checkpoint (2026-05-17)
 
 - Phase 1.1 Converter checkpoint completed and captured in [docs/FRONTEND_ASSESSMENT_CONVERTER_2026-05.md](docs/FRONTEND_ASSESSMENT_CONVERTER_2026-05.md).
 - Phase 1.2 Projects checkpoint started in [docs/FRONTEND_ASSESSMENT_PROJECTS_2026-05.md](docs/FRONTEND_ASSESSMENT_PROJECTS_2026-05.md).
@@ -114,6 +114,7 @@ Primary implementation surface:
 - Follow-up remediation completed: validator/results progress polling now uses abortable single-loop session contracts with focused regression coverage.
 - Follow-up remediation completed: validator target/request assembly is consolidated through canonical shared request-option helpers.
 - Follow-up remediation completed: results action-state locking now uses logic-level interaction guards beyond CSS-only blocking.
+- Follow-up converter remediation completed: survey/participants glue-reduction pass removed dead wrappers and narrowed adapter/controller API surfaces; focused converter wiring suites remain green (36 passed).
 - Focused cross-page remediation smoke confirmation completed (33 passed across the remediated workflow suites).
 - Phase-boundary full-suite coverage confirmation completed (`./rtk coverage`: 2206 passed, 3 skipped).
 - Coverage blocker remediation completed in backend recipes export logic: merge-all score-prefix policy alignment, participant-column propagation into aggregated outputs, and SAV participant measure/type handling for sociodemographics.

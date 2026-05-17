@@ -126,6 +126,31 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
+            "const pickedPath = await pickServerFile({",
+            content,
+        )
+        self.assertIn(
+            "title: 'Select Participants File on Server',",
+            content,
+        )
+        self.assertIn(
+            "confirmLabel: 'Use This File',",
+            content,
+        )
+        self.assertIn(
+            "extensions: '.xlsx,.csv,.tsv,.sav,.rds,.rdata,.rda,.lsa',",
+            content,
+        )
+        self.assertNotIn("async function pickServerParticipantsFile()", content)
+        self.assertIn(
+            "participantsSourcedataQuickSelectController.refresh(resolveCurrentProjectPath());",
+            content,
+        )
+        self.assertNotIn(
+            "function refreshParticipantsSourcedataQuickSelect(projectPath = resolveCurrentProjectPath())",
+            content,
+        )
+        self.assertIn(
             "const response = await fetchWithApiFallback(getParticipantsProjectSchemaUrl(projectPath));",
             content,
         )
