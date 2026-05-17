@@ -444,6 +444,22 @@ Current branch progress on this phase:
 - removed single-use `refreshParticipantsSourcedataQuickSelect` wrapper from `participants.js`; refresh now calls `participantsSourcedataQuickSelectController.refresh(resolveCurrentProjectPath())` directly
 - removed single-use `getParticipantsSelectedFilename` wrapper from `participants.js`; file-name display now resolves directly via `resolveParticipantsFileName(...)` at callsite
 - removed dead `openParticipantsEditor` helper (and now-unused `jsonEditorUrl` local) from `participants.js`
+- removed unused survey validation card/header/badge element wiring from `converter-bootstrap.js` init payload after `survey-convert.js` stopped consuming those fields
+- deduplicated repeated participant column-name normalization logic in `participants.js` by introducing shared `normalizeParticipantColumnName(...)` helper and removing duplicate local `normalizeColName(...)` closures
+- removed single-use local retry/offset helpers in `survey-convert.js` (`clearRetryResolutionState`, `getAppliedTaskOffset`, `offsetsAreEqual`) and inlined equivalent logic at existing callsites
+- removed dead merge-decision getter wrappers from `participants.js` and now call `getParticipantsMergeHarmonizationDecisionsPayload(...)` directly at the harmonization assessment callsite
+- inlined single-use `getSelectedIdMapFingerprint` helper into `getSurveyPreviewContextKey(...)` in `survey-convert.js` while preserving the same id-map fingerprint format
+- removed single-use `getSessionValue` wrapper from `converter-bootstrap.js`; `getBiometricsSessionValue` now calls `getSessionInputValue(...)` directly
+- removed single-use `setSurveyPreviewSelectedTasks` and `openAdvancedOptionsValueOffsetEditor` wrappers from `survey-convert.js` by inlining equivalent callbacks directly into `createSurveyConversionSummaryController(...)` wiring
+- removed single-use `scheduleParticipantsMergePreviewRefresh` and `buildParticipantsMergeConflictFormData` wrappers from `participants.js` by inlining equivalent callbacks directly into merge controller wiring
+- removed single-use `displayValidationResults` and `getBiometricsSessionValue` wrappers from `converter-bootstrap.js` by inlining equivalent callbacks directly into `initBiometrics(...)` wiring
+- removed single-use `getCurrentSessionLabel` wrapper from `survey-convert.js` by inlining equivalent session-label normalization inside `buildVersionWizard(...)`
+- removed single-use `shouldSyncVersionWizardContext` wrapper from `survey-convert.js` by inlining equivalent eligibility checks at the start of `syncVersionWizardContext(...)`
+- moved single-use top-level `formatVersionWizardSessionLabel` helper into `buildVersionWizard(...)` local scope (`formatContextSessionLabel`) to keep version-wizard formatting logic owned by its only caller
+- removed single-use `applyPreparedSurveyWorkflowContext` wrapper from `survey-convert.js` by inlining equivalent context-apply logic directly into `createSurveyWorkflowPrepareController(...)` wiring
+- removed single-use `setSurveyPreviewSelectionState` wrapper from `survey-convert.js` by inlining equivalent preview-selection state logic directly into `createSurveyWorkflowPreviewController(...)` wiring
+- removed single-use `isPreviewStaleOnlyByOffsetChanges` wrapper from `survey-convert.js` by inlining equivalent stale-preview offset comparison logic directly into `updateSurveyWorkflowHint(...)`
+- removed single-use `showManualValueOffsetReview` wrapper from `survey-convert.js` by inlining equivalent manual-offset review UI/log logic directly into `createSurveyWorkflowPrepareController(...)` wiring
 
 Converter-phase stopping rule (next-days completion target):
 
