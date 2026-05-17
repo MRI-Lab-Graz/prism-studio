@@ -1,10 +1,27 @@
-import { escapeHtml } from '../../shared/dom.js';
 import {
     buildParticipantsMergeConflictListHtml,
     buildParticipantsMergeHarmonizationRowsHtml,
     buildParticipantsMergeSessionResolutionHintText,
     buildParticipantsMergeSessionResolutionRowsHtml,
+    isParticipantsMergeSessionResolutionSessionEnabled,
 } from './participants-merge-summary-renderers.js';
+import {
+    getParticipantsMergeHarmonizationDecisionPayload,
+    getParticipantsMergeHarmonizationDecisionUpdates,
+    getParticipantsMergeSessionResolutionDecisionPayload,
+    getParticipantsMergeSessionResolutionDecisionUpdates,
+} from './participants-merge-summary-decisions.js';
+import {
+    getParticipantsMergeBadgeTexts,
+    getParticipantsMergeConflictActionsView,
+    getParticipantsMergeConflictListView,
+    getParticipantsMergeConvertButtonView,
+    getParticipantsMergeConvertHintText,
+    getParticipantsMergeHarmonizationFieldView,
+    getParticipantsMergeNewColumnsView,
+    getParticipantsMergeSummaryView,
+    getParticipantsMergeHarmonizationStatusView,
+} from './participants-merge-summary-status.js';
 
 export function createParticipantsMergeSummaryController({
     assessMergeHarmonizationState,
@@ -53,6 +70,25 @@ export function createParticipantsMergeSummaryController({
             return;
         }
 
+        const applyVisibilityClass = (element, isVisible) => {
+            element.classList.toggle('d-none', !Boolean(isVisible));
+        };
+
+        const applyTextVisibilityView = (element, view) => {
+            element.textContent = String(view?.text || '');
+            applyVisibilityClass(element, view?.isVisible);
+        };
+
+        const applyHtmlVisibilityView = (element, view) => {
+            element.innerHTML = String(view?.html || '');
+            applyVisibilityClass(element, view?.isVisible);
+        };
+
+        const applyConflictActionsView = (view) => {
+            applyVisibilityClass(conflictActions, view?.showActions);
+            downloadButton.disabled = !Boolean(view?.isDownloadEnabled);
+        };
+
         if (!previewData || !previewData.merge_mode) {
             summary.classList.add('d-none');
             conflictActions.classList.add('d-none');
@@ -93,81 +129,56 @@ export function createParticipantsMergeSummaryController({
         const sessionResolutionRequired = Boolean(previewData.session_resolution_required);
         const canApply = Boolean(previewData.can_apply);
 
-        matchedBadge.textContent = `${matchedCount} matched`;
-        newParticipantsBadge.textContent = `${newParticipantCount} new participant${newParticipantCount === 1 ? '' : 's'}`;
-        fillBadge.textContent = `${fillCount} filled value${fillCount === 1 ? '' : 's'}`;
-        conflictBadge.textContent = `${conflictCount} conflict${conflictCount === 1 ? '' : 's'}`;
+        const badgeTexts = getParticipantsMergeBadgeTexts({
+            matchedCount,
+            newParticipantCount,
+            fillCount,
+            conflictCount,
+        });
+        matchedBadge.textContent = badgeTexts.matchedText;
+        newParticipantsBadge.textContent = badgeTexts.newParticipantsText;
+        fillBadge.textContent = badgeTexts.fillText;
+        conflictBadge.textContent = badgeTexts.conflictText;
 
+        const summaryView = getParticipantsMergeSummaryView({
+            canApply,
+            existingOnlyCount,
+            newParticipantCount,
+            mergeQuality,
+            sessionResolutionRequired,
+            conflictCount,
+        });
         summary.classList.remove('d-none', 'alert-success', 'alert-warning', 'alert-info');
-        summary.classList.add(canApply ? 'alert-success' : 'alert-warning');
-        title.textContent = canApply ? 'Merge Preview Ready' : 'Merge Preview Blocked';
+        summary.classList.add(summaryView.alertToneClass);
+        title.textContent = summaryView.titleText;
+        summaryText.textContent = summaryView.summaryText;
 
-        if (canApply) {
-            summaryText.textContent = existingOnlyCount > 0
-                ? `This merge can be applied safely. ${existingOnlyCount} existing participant${existingOnlyCount === 1 ? '' : 's'} will stay unchanged.`
-                : 'This merge can be applied safely. All overlapping non-empty values agree.';
+        const newColumnsView = getParticipantsMergeNewColumnsView({ newColumns });
+        applyTextVisibilityView(columnsText, newColumnsView);
 
-            const incomingTotalCells = Number(mergeQuality.incoming_new_participant_total_value_cells || 0);
-            const incomingMissingCells = Number(mergeQuality.incoming_new_participant_missing_value_cells || 0);
-            const incomingAllMissingRows = Number(mergeQuality.incoming_new_participants_all_missing_values || 0);
-            if (newParticipantCount > 0 && incomingTotalCells > 0 && incomingMissingCells > 0) {
-                const missingPercent = Math.round((incomingMissingCells / incomingTotalCells) * 100);
-                const allMissingNote = incomingAllMissingRows > 0
-                    ? ` ${incomingAllMissingRows} new participant row${incomingAllMissingRows === 1 ? ' is' : 's are'} fully empty in the imported file.`
-                    : '';
-                summaryText.textContent += ` Imported values for new participants are sparse (${incomingMissingCells}/${incomingTotalCells} missing cells, ${missingPercent}%).${allMissingNote}`;
-            }
-        } else if (sessionResolutionRequired && conflictCount === 0) {
-            summaryText.textContent = 'This merge is blocked until session resolution is chosen for columns that vary across repeated participant rows.';
-        } else {
-            summaryText.textContent = 'This merge is blocked because conflicting non-empty values were found. Existing participants.tsv remains authoritative until conflicts are resolved.';
-        }
+        const conflictListView = getParticipantsMergeConflictListView({
+            conflicts,
+            buildConflictListHtml: buildParticipantsMergeConflictListHtml,
+        });
+        applyHtmlVisibilityView(conflictList, conflictListView);
 
-        if (newColumns.length > 0) {
-            columnsText.textContent = `New columns from the import: ${newColumns.join(', ')}`;
-            columnsText.classList.remove('d-none');
-        } else {
-            columnsText.textContent = '';
-            columnsText.classList.add('d-none');
-        }
-
-        if (conflicts.length > 0) {
-            conflictList.innerHTML = buildParticipantsMergeConflictListHtml(conflicts);
-            conflictList.classList.remove('d-none');
-        } else {
-            conflictList.innerHTML = '';
-            conflictList.classList.add('d-none');
-        }
-
-        if (conflictCount > 0) {
-            conflictActions.classList.remove('d-none');
-            downloadButton.disabled = false;
-        } else {
-            conflictActions.classList.add('d-none');
-            downloadButton.disabled = true;
-        }
+        const conflictActionsView = getParticipantsMergeConflictActionsView({
+            conflictCount,
+        });
+        applyConflictActionsView(conflictActionsView);
 
         if (!(window.participantsMergeSessionResolutionDecisions && typeof window.participantsMergeSessionResolutionDecisions === 'object')) {
             window.participantsMergeSessionResolutionDecisions = {};
         }
 
         if (sessionResolutionCandidates.length > 0) {
-            sessionResolutionCandidates.forEach((candidate) => {
-                const columnName = String(candidate && candidate.column ? candidate.column : '').trim();
-                if (!columnName) {
-                    return;
-                }
-
-                const serverEntry = sessionResolutionDecisions[columnName];
-                const selectedAction = String(serverEntry?.action || candidate.selected_action || '').trim();
-                const selectedSession = String(serverEntry?.session || candidate.selected_session || '').trim();
-                const sessionColumn = String(candidate.session_column || '').trim();
-                window.participantsMergeSessionResolutionDecisions[columnName] = {
-                    action: selectedAction,
-                    session: selectedSession,
-                    session_column: sessionColumn,
-                };
-            });
+            Object.assign(
+                window.participantsMergeSessionResolutionDecisions,
+                getParticipantsMergeSessionResolutionDecisionUpdates({
+                    sessionResolutionCandidates,
+                    sessionResolutionDecisions,
+                }),
+            );
 
             sessionResolutionHint.textContent = buildParticipantsMergeSessionResolutionHintText({
                 previewData,
@@ -197,14 +208,15 @@ export function createParticipantsMergeSummaryController({
                     const action = String(selectEl.value || '').trim();
                     const sessionValue = sessionSelect ? String(sessionSelect.value || '').trim() : '';
                     if (sessionSelect) {
-                        sessionSelect.disabled = action !== 'pick_session';
+                        sessionSelect.disabled = !isParticipantsMergeSessionResolutionSessionEnabled(action);
                     }
 
-                    window.participantsMergeSessionResolutionDecisions[columnName] = {
+                    window.participantsMergeSessionResolutionDecisions[columnName] = getParticipantsMergeSessionResolutionDecisionPayload({
                         action,
-                        session: action === 'pick_session' ? sessionValue : '',
-                        session_column: String(previewData.session_resolution_column || '').trim(),
-                    };
+                        session: sessionValue,
+                        sessionColumn: previewData.session_resolution_column,
+                        clearSessionWhenNotPickSession: true,
+                    });
 
                     schedulePreviewRefresh();
                 });
@@ -224,15 +236,16 @@ export function createParticipantsMergeSummaryController({
 
                     const actionSelect = row.querySelector('.participants-session-resolution-action');
                     const action = actionSelect ? String(actionSelect.value || '').trim() : '';
-                    if (action !== 'pick_session') {
+                    if (!isParticipantsMergeSessionResolutionSessionEnabled(action)) {
                         return;
                     }
 
-                    window.participantsMergeSessionResolutionDecisions[columnName] = {
+                    window.participantsMergeSessionResolutionDecisions[columnName] = getParticipantsMergeSessionResolutionDecisionPayload({
                         action,
-                        session: String(sessionEl.value || '').trim(),
-                        session_column: String(previewData.session_resolution_column || '').trim(),
-                    };
+                        session: sessionEl.value,
+                        sessionColumn: previewData.session_resolution_column,
+                        clearSessionWhenNotPickSession: true,
+                    });
 
                     schedulePreviewRefresh();
                 });
@@ -246,60 +259,46 @@ export function createParticipantsMergeSummaryController({
             window.participantsMergeHarmonizationDecisions = {};
         }
 
+        const updateConvertButtonVisualState = (canConvert) => {
+            const convertBtn = document.getElementById('participantsConvertBtn');
+            if (!convertBtn) {
+                return;
+            }
+
+            const convertButtonView = getParticipantsMergeConvertButtonView({ canConvert });
+            convertBtn.disabled = !convertButtonView.isEnabled;
+            convertBtn.classList.remove('btn-outline-secondary', 'btn-success');
+            convertBtn.classList.add(convertButtonView.toneClass);
+        };
+
         if (harmonizationCandidates.length === 0) {
             harmonizationSection.classList.add('d-none');
             harmonizationStatus.classList.add('d-none');
             harmonizationStatus.textContent = '';
             harmonizationList.innerHTML = '';
 
-            const convertBtn = document.getElementById('participantsConvertBtn');
             const convertHint = document.getElementById('convertBtnHint');
             const canConvert = canApplyConversion();
-            if (convertBtn) {
-                convertBtn.disabled = !canConvert;
-                convertBtn.classList.remove('btn-outline-secondary', 'btn-success');
-                convertBtn.classList.add(canConvert ? 'btn-success' : 'btn-outline-secondary');
-            }
+            updateConvertButtonVisualState(canConvert);
             if (convertHint) {
-                if (sessionResolutionRequired && conflictCount === 0) {
-                    convertHint.textContent = 'Choose session resolution before applying merge';
-                } else {
-                    convertHint.textContent = canConvert
-                        ? 'Ready to apply conflict-free merge'
-                        : 'Resolve merge conflicts first';
-                }
+                convertHint.textContent = getParticipantsMergeConvertHintText({
+                    hasInvalidKeepBoth: false,
+                    sessionResolutionRequired,
+                    conflictCount,
+                    canConvert,
+                });
             }
             refreshApplyStatusBadge(previewData);
             return;
         }
 
-        harmonizationCandidates.forEach((candidate) => {
-            const columnName = String(candidate && candidate.column ? candidate.column : '').trim();
-            if (!columnName) {
-                return;
-            }
-
-            const serverEntry = serverDecisions[columnName];
-            const fallbackAction = String(candidate.selected_action || 'keep_existing').trim().toLowerCase();
-            const fallbackNewColumn = String(candidate.selected_new_column || candidate.default_new_column || '').trim();
-
-            let selectedAction = fallbackAction;
-            let selectedNewColumn = fallbackNewColumn;
-
-            if (serverEntry && typeof serverEntry === 'object') {
-                selectedAction = String(serverEntry.action || fallbackAction).trim().toLowerCase();
-                selectedNewColumn = String(serverEntry.new_column || fallbackNewColumn).trim();
-            }
-
-            if (!['keep_existing', 'use_incoming', 'keep_both'].includes(selectedAction)) {
-                selectedAction = 'keep_existing';
-            }
-
-            window.participantsMergeHarmonizationDecisions[columnName] = {
-                action: selectedAction,
-                new_column: selectedAction === 'keep_both' ? selectedNewColumn : '',
-            };
-        });
+        Object.assign(
+            window.participantsMergeHarmonizationDecisions,
+            getParticipantsMergeHarmonizationDecisionUpdates({
+                harmonizationCandidates,
+                harmonizationDecisions: serverDecisions,
+            }),
+        );
 
         harmonizationHint.textContent = `Equivalent coding detected in ${harmonizationCandidates.length} column(s). Choose how merge should harmonize these values.`;
 
@@ -326,61 +325,39 @@ export function createParticipantsMergeSummaryController({
                 }
 
                 const action = String(actionEl.value || 'keep_existing').trim();
-                if (action !== 'keep_both') {
-                    inputEl.classList.remove('is-invalid');
-                    feedbackEl.textContent = '';
-                    hintEl.textContent = 'No extra column will be created for this field.';
-                    return;
-                }
-
-                const errorText = String(invalidByColumn[columnName] || '').trim();
-                if (errorText) {
+                const fieldView = getParticipantsMergeHarmonizationFieldView({
+                    action,
+                    errorText: invalidByColumn[columnName],
+                    targetName: inputEl.value,
+                });
+                if (fieldView.isInvalid) {
                     inputEl.classList.add('is-invalid');
-                    feedbackEl.textContent = errorText;
-                    hintEl.textContent = '';
                 } else {
                     inputEl.classList.remove('is-invalid');
-                    feedbackEl.textContent = '';
-                    const targetName = String(inputEl.value || '').trim();
-                    hintEl.textContent = targetName
-                        ? `Incoming coding will be written to ${targetName}.`
-                        : 'Enter the new incoming-coded column name.';
                 }
+                feedbackEl.textContent = fieldView.feedbackText;
+                hintEl.textContent = fieldView.hintText;
             });
 
             harmonizationStatus.classList.remove('d-none', 'text-danger', 'text-warning', 'text-muted', 'text-success');
-            if (harmonizationState.hasInvalidKeepBoth) {
-                harmonizationStatus.classList.add('text-danger');
-                harmonizationStatus.textContent = 'Fix Keep both column names before applying merge.';
-            } else if (mergePreviewRefreshPending()) {
-                harmonizationStatus.textContent = 'Refreshing merge preview with updated harmonization settings...';
-                harmonizationStatus.classList.add('text-muted');
-            } else if (conflictCount > 0) {
-                harmonizationStatus.classList.add('text-warning');
-                harmonizationStatus.textContent = 'Harmonization can resolve equivalent coding only. Remaining conflicts must be fixed in source data.';
-            } else {
-                harmonizationStatus.classList.add('text-success');
-                harmonizationStatus.textContent = 'Merge is conflict-free. Confirm harmonization choices, then apply merge.';
-            }
+            const statusView = getParticipantsMergeHarmonizationStatusView({
+                harmonizationState,
+                isRefreshPending: mergePreviewRefreshPending(),
+                conflictCount,
+            });
+            harmonizationStatus.classList.add(statusView.toneClass);
+            harmonizationStatus.textContent = statusView.text;
 
-            const convertBtn = document.getElementById('participantsConvertBtn');
             const convertHint = document.getElementById('convertBtnHint');
             const canConvert = canApplyConversion();
-            if (convertBtn) {
-                convertBtn.disabled = !canConvert;
-                convertBtn.classList.remove('btn-outline-secondary', 'btn-success');
-                convertBtn.classList.add(canConvert ? 'btn-success' : 'btn-outline-secondary');
-            }
+            updateConvertButtonVisualState(canConvert);
             if (convertHint) {
-                if (harmonizationState.hasInvalidKeepBoth) {
-                    convertHint.textContent = 'Fix Keep both column names before applying merge';
-                } else if (sessionResolutionRequired && conflictCount === 0) {
-                    convertHint.textContent = 'Choose session resolution before applying merge';
-                } else {
-                    convertHint.textContent = canConvert
-                        ? 'Ready to apply conflict-free merge'
-                        : 'Resolve merge conflicts first';
-                }
+                convertHint.textContent = getParticipantsMergeConvertHintText({
+                    hasInvalidKeepBoth: harmonizationState.hasInvalidKeepBoth,
+                    sessionResolutionRequired,
+                    conflictCount,
+                    canConvert,
+                });
             }
 
             refreshApplyStatusBadge(previewData);
@@ -406,10 +383,10 @@ export function createParticipantsMergeSummaryController({
                     inputEl.disabled = action !== 'keep_both';
                 }
 
-                window.participantsMergeHarmonizationDecisions[columnName] = {
+                window.participantsMergeHarmonizationDecisions[columnName] = getParticipantsMergeHarmonizationDecisionPayload({
                     action,
-                    new_column: action === 'keep_both' ? newColumn : '',
-                };
+                    newColumn,
+                });
 
                 refreshHarmonizationUiState();
                 schedulePreviewRefresh();
@@ -434,10 +411,10 @@ export function createParticipantsMergeSummaryController({
                     return;
                 }
 
-                window.participantsMergeHarmonizationDecisions[columnName] = {
+                window.participantsMergeHarmonizationDecisions[columnName] = getParticipantsMergeHarmonizationDecisionPayload({
                     action,
-                    new_column: String(inputEl.value || '').trim(),
-                };
+                    newColumn: inputEl.value,
+                });
 
                 refreshHarmonizationUiState();
             });
@@ -459,10 +436,10 @@ export function createParticipantsMergeSummaryController({
                     return;
                 }
 
-                window.participantsMergeHarmonizationDecisions[columnName] = {
+                window.participantsMergeHarmonizationDecisions[columnName] = getParticipantsMergeHarmonizationDecisionPayload({
                     action,
-                    new_column: String(inputEl.value || '').trim(),
-                };
+                    newColumn: inputEl.value,
+                });
 
                 refreshHarmonizationUiState();
                 schedulePreviewRefresh();

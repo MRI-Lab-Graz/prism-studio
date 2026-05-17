@@ -18,6 +18,10 @@ function buildSessionSplitGeneratedPreview(columnName, availableSessions, genera
     return 'session-specific columns';
 }
 
+export function isParticipantsMergeSessionResolutionSessionEnabled(action) {
+    return String(action || '').trim() === 'pick_session';
+}
+
 export function buildParticipantsMergeConflictListHtml(conflicts, { maxVisible = 6 } = {}) {
     const safeConflicts = Array.isArray(conflicts) ? conflicts : [];
     if (safeConflicts.length === 0) {
@@ -144,7 +148,7 @@ export function buildParticipantsMergeSessionResolutionRowsHtml({
                     </div>
                     <div class="col-md-4">
                         <label class="form-label form-label-sm mb-1">Session (for Take one)</label>
-                        <select id="${escapeHtml(sessionSelectId)}" class="form-select form-select-sm participants-session-resolution-session" ${selectedAction === 'pick_session' ? '' : 'disabled'}>
+                        <select id="${escapeHtml(sessionSelectId)}" class="form-select form-select-sm participants-session-resolution-session" ${isParticipantsMergeSessionResolutionSessionEnabled(selectedAction) ? '' : 'disabled'}>
                             <option value="">Choose session...</option>
                             ${availableSessions.map((sessionValue) => `<option value="${escapeHtml(sessionValue)}" ${selectedSession === sessionValue ? 'selected' : ''}>${escapeHtml(sessionValue)}</option>`).join('')}
                         </select>

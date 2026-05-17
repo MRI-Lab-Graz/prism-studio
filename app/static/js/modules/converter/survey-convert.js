@@ -12,39 +12,40 @@ import { createSurveyWorkflowPrepareController } from './survey-workflow-prepare
 import { createSurveyWorkflowConvertController } from './survey-workflow-convert.js';
 import { createSurveyWorkflowConvertResultsController } from './survey-workflow-convert-results.js';
 import { createSurveyWorkflowProgressController } from './survey-workflow-progress.js';
+import { createSurveyActiveRunState } from './survey-active-run-state.js';
+import { createSurveyRunProgressAdapter } from './survey-run-progress-adapter.js';
 import { createSurveySourcedataQuickSelectController } from './survey-sourcedata-quick-select.js';
 import { createSurveyTemplateResultsController } from './survey-template-results.js';
+import { createSurveyTemplateRenderAdapter } from './survey-template-render-adapter.js';
 import { createSurveyTemplateGenerationController } from './survey-template-generation.js';
 import { createSurveyConversionSummaryController } from './survey-conversion-summary.js';
 import { createSurveyConversionLogController } from './survey-conversion-log.js';
+import { createSurveyConversionResultsAdapter } from './survey-conversion-results-adapter.js';
+import { createSurveyConvertFeedbackAdapter } from './survey-convert-feedback-adapter.js';
 import { createSurveyConvertFeedbackController } from './survey-convert-feedback.js';
-import {
-    getSelectedSeparator as getSelectedSeparatorWithSeparatorUtils,
-    isDelimitedSurveyFilename as isDelimitedSurveyFilenameWithSeparatorUtils,
-    updateSeparatorVisibility as updateSeparatorVisibilityWithSeparatorUtils,
-} from './survey-file-separator-utils.js';
+import { createSurveyFileSeparatorController } from './survey-file-separator-controller.js';
 import { createSurveyUnmatchedTemplatesController } from './survey-unmatched-templates.js';
 import { createSurveyImportFormStateController } from './survey-import-form-state.js';
+import { createSurveyNearItemMatchAdapter } from './survey-near-item-match-adapter.js';
 import { createSurveyNearItemMatchReviewController } from './survey-near-item-match-review.js';
 import { pickServerFile, prefersServerPicker } from './server-picker.js';
-import { getSessionInputValue } from './session-picker.js';
+import { createSurveySelectedInputController } from './survey-selected-input-controller.js';
+import { createSurveySessionInputController } from './survey-session-input-controller.js';
 import { createSurveyValidationResultsController } from './survey-validation-results.js';
 import { createSurveyValueOffsetEditorController } from './survey-value-offset-editor.js';
+import { createSurveyValueOffsetEditorAdapter } from './survey-value-offset-editor-adapter.js';
+import { createSurveyWorkflowResponseController } from './survey-workflow-response-controller.js';
 import {
-    buildVersionSelectionKey as buildVersionSelectionKeyWithUtils,
-    compareTimelineContexts as compareTimelineContextsWithUtils,
-    compareTimelineSessions as compareTimelineSessionsWithUtils,
-    deriveDetectedContexts as deriveDetectedContextsWithUtils,
-    getTimelineRunSortMeta as getTimelineRunSortMetaWithUtils,
-    getTimelineSessionSortMeta as getTimelineSessionSortMetaWithUtils,
-    normalizeTimelineSessionToken as normalizeTimelineSessionTokenWithUtils,
-    normalizeVersionSelectionRun as normalizeVersionSelectionRunWithUtils,
-    normalizeVersionSelectionSession as normalizeVersionSelectionSessionWithUtils,
+    buildVersionSelectionKey,
+    compareTimelineContexts,
+    compareTimelineSessions,
+    deriveDetectedContexts,
+    getTimelineRunSortMeta,
+    getTimelineSessionSortMeta,
+    normalizeTimelineSessionToken,
+    normalizeVersionSelectionRun,
+    normalizeVersionSelectionSession,
 } from './survey-version-context-utils.js';
-import {
-    parseJsonResponse as parseJsonResponseWithWorkflowUtils,
-    summarizeServerResponseText as summarizeServerResponseTextWithWorkflowUtils,
-} from './survey-workflow-response-utils.js';
 import {
     collectSuggestedValueOffsets,
     formatOffsetMagnitude,
@@ -144,12 +145,36 @@ export function initSurveyConvert(elements) {
     let versionWizardRetryGateMode = null;
     let isConvertRunning = false;
     let isPreviewRunning = false;
-    let activeRunAbortController = null;
-    let activeRunMode = null;
-    let activeRunCancelledByUser = false;
+    const surveyActiveRunState = createSurveyActiveRunState();
+    const {
+        setActiveSurveyRun,
+        clearActiveSurveyRun,
+        cancelActiveSurveyRun,
+        getActiveRunAbortController,
+        getActiveRunMode,
+        getActiveRunCancelledByUser,
+    } = surveyActiveRunState;
     let surveyConvertFeedbackController = null;
+    const surveyConvertFeedbackAdapter = createSurveyConvertFeedbackAdapter({
+        getSurveyConvertFeedbackController: () => surveyConvertFeedbackController,
+    });
+    const {
+        getProjectSaveSummary,
+        openConverterTab,
+        showConvertInfoMessage,
+        getParticipantRegistryWarning,
+        showParticipantRegistryWarning,
+    } = surveyConvertFeedbackAdapter;
     let currentTemplateData = null;
     let surveyNearItemMatchReviewController = null;
+    const surveyNearItemMatchAdapter = createSurveyNearItemMatchAdapter({
+        getSurveyNearItemMatchReviewController: () => surveyNearItemMatchReviewController,
+    });
+    const {
+        collectNearMatchCandidates,
+        buildNearMatchConfirmationMessage,
+        promptNearMatchSelection,
+    } = surveyNearItemMatchAdapter;
     let taskValueOffsetRowSequence = 0;
     let taskValueOffsetEditorState = [];
     let appliedTaskValueOffsetSelectionSignature = '';
@@ -158,6 +183,40 @@ export function initSurveyConvert(elements) {
         availableTasks: [],
         selectedTasks: []
     };
+
+    const surveyFileSeparatorController = createSurveyFileSeparatorController({
+        convertSeparator,
+        surveySeparatorGroup,
+    });
+    const {
+        isDelimitedSurveyFilename,
+        getSelectedSeparator,
+        updateSeparatorVisibility,
+    } = surveyFileSeparatorController;
+    const surveyWorkflowResponseController = createSurveyWorkflowResponseController();
+    const { parseJsonResponse } = surveyWorkflowResponseController;
+    const surveySelectedInputController = createSurveySelectedInputController({
+        convertExcelFile,
+        getConvertServerFilePath: () => convertServerFilePath,
+    });
+    const {
+        getSelectedSurveyFile,
+        getSelectedSurveyFilename,
+        hasSelectedSurveyInput,
+        appendSurveyInputToFormData,
+        getSelectedSurveyFingerprint,
+    } = surveySelectedInputController;
+    const surveySessionInputController = createSurveySessionInputController({
+        convertSessionSelect,
+        convertSessionCustom,
+        biometricsSessionSelect,
+        biometricsSessionCustom,
+    });
+    const {
+        populateSurveySessionPickerFromDetected,
+        getSurveySessionValue,
+        getBiometricsSessionValue,
+    } = surveySessionInputController;
 
     const surveyWorkflowProgressController = createSurveyWorkflowProgressController({
         surveyRunProgressContainer,
@@ -168,6 +227,18 @@ export function initSurveyConvert(elements) {
             updateConvertBtn();
         },
     });
+    const surveyRunProgressAdapter = createSurveyRunProgressAdapter({
+        surveyWorkflowProgressController,
+    });
+    const {
+        setSurveyRunProgress,
+        hideSurveyRunProgress,
+        startSurveyRunProgress,
+        advanceSurveyRunProgress,
+        pauseSurveyRunProgress,
+        resumeSurveyRunProgress,
+        finishSurveyRunProgress,
+    } = surveyRunProgressAdapter;
 
     const surveySourcedataQuickSelectController = createSurveySourcedataQuickSelectController({
         sourcedataQuickSelect,
@@ -177,7 +248,7 @@ export function initSurveyConvert(elements) {
         resolveCurrentProjectPath,
         onProjectChanged: () => {
             cancelActiveSurveyRun();
-            resetSurveyImportFormState({ clearSelectedInput: true });
+            surveyImportFormStateController.resetSurveyImportFormState({ clearSelectedInput: true });
         },
     });
 
@@ -214,55 +285,6 @@ export function initSurveyConvert(elements) {
         getTemplateWorkflowGate: () => templateWorkflowGate,
         updateVersionWizardActionState,
     });
-
-    function getSelectedSurveyFile() {
-        return (convertExcelFile && convertExcelFile.files && convertExcelFile.files[0])
-            ? convertExcelFile.files[0]
-            : null;
-    }
-
-    function getSelectedSurveyFilename() {
-        const selectedFile = getSelectedSurveyFile();
-        if (selectedFile && selectedFile.name) {
-            return selectedFile.name;
-        }
-        if (convertServerFilePath) {
-            const tokens = convertServerFilePath.split('/');
-            return tokens[tokens.length - 1] || convertServerFilePath;
-        }
-        return '';
-    }
-
-    function hasSelectedSurveyInput() {
-        return Boolean(getSelectedSurveyFile() || convertServerFilePath);
-    }
-
-    function appendSurveyInputToFormData(formData) {
-        const selectedFile = getSelectedSurveyFile();
-        if (selectedFile) {
-            formData.append('excel', selectedFile);
-            return { file: selectedFile, filename: selectedFile.name };
-        }
-        if (convertServerFilePath) {
-            formData.append('source_file_path', convertServerFilePath);
-            return { file: null, filename: getSelectedSurveyFilename() };
-        }
-        return { file: null, filename: '' };
-    }
-
-    function getSelectedSurveyFingerprint() {
-        const selectedFile = getSelectedSurveyFile();
-        if (selectedFile) {
-            const lastModified = Number.isFinite(Number(selectedFile.lastModified))
-                ? Number(selectedFile.lastModified)
-                : 0;
-            return `upload:${selectedFile.name}:${selectedFile.size}:${lastModified}`;
-        }
-        if (convertServerFilePath) {
-            return `server:${convertServerFilePath}`;
-        }
-        return '';
-    }
 
     function resetSurveyRefreshFingerprint() {
         lastDetectedSurveyFingerprint = '';
@@ -496,113 +518,12 @@ export function initSurveyConvert(elements) {
         return baseMessage;
     }
 
-    function summarizeServerResponseText(rawText) {
-        return summarizeServerResponseTextWithWorkflowUtils(rawText);
-    }
-
-    async function parseJsonResponse(response, requestLabel = 'Request') {
-        return parseJsonResponseWithWorkflowUtils(response, requestLabel);
-    }
-
     function normalizeNearMatchTaskName(value) {
         return String(value || '').trim().toLowerCase();
     }
 
-    function collectNearMatchCandidates(payload) {
-        if (!surveyNearItemMatchReviewController) {
-            return [];
-        }
-        return surveyNearItemMatchReviewController.collectNearMatchCandidates(payload);
-    }
-
-    function buildNearMatchConfirmationMessage(payload, actionLabel) {
-        if (!surveyNearItemMatchReviewController) {
-            return '';
-        }
-        return surveyNearItemMatchReviewController.buildNearMatchConfirmationMessage(payload, actionLabel);
-    }
-
-    function promptNearMatchSelection(payload, actionLabel) {
-        if (!surveyNearItemMatchReviewController) {
-            return Promise.resolve({ approved: false, selectedTasks: [], selectedCandidateCount: 0 });
-        }
-        return surveyNearItemMatchReviewController.promptNearMatchSelection(payload, actionLabel);
-    }
-
     function normalizeTaskValueOffsets(offsetMap) {
         return normalizeTaskValueOffsetsMap(offsetMap, normalizeNearMatchTaskName);
-    }
-
-    function createTaskValueOffsetRow(task = '', offset = null) {
-        return surveyValueOffsetEditorController.createTaskValueOffsetRow(task, offset);
-    }
-
-    function getAvailableSurveyTasksForValueOffsets() {
-        return surveyValueOffsetEditorController.getAvailableSurveyTasksForValueOffsets();
-    }
-
-    function getTaskValueOffsetMapFromEditorState() {
-        return surveyValueOffsetEditorController.getTaskValueOffsetMapFromEditorState();
-    }
-
-    function getCurrentTaskValueOffsetSelectionSignature() {
-        return surveyValueOffsetEditorController.getCurrentTaskValueOffsetSelectionSignature();
-    }
-
-    function hasManualTaskValueOffsets() {
-        return surveyValueOffsetEditorController.hasManualTaskValueOffsets();
-    }
-
-    function hasIncompleteTaskValueOffsetRows() {
-        return surveyValueOffsetEditorController.hasIncompleteTaskValueOffsetRows();
-    }
-
-    function hasAppliedTaskValueOffsetSelections() {
-        return surveyValueOffsetEditorController.hasAppliedTaskValueOffsetSelections();
-    }
-
-    function updateTaskValueOffsetApplyState() {
-        surveyValueOffsetEditorController.updateTaskValueOffsetApplyState();
-    }
-
-    function getPreferredTaskValueOffsetTask() {
-        return surveyValueOffsetEditorController.getPreferredTaskValueOffsetTask();
-    }
-
-    function syncTaskValueOffsetTextFromState() {
-        surveyValueOffsetEditorController.syncTaskValueOffsetTextFromState();
-    }
-
-    function setTaskValueOffsetEditorStateFromText(rawText) {
-        surveyValueOffsetEditorController.setTaskValueOffsetEditorStateFromText(rawText);
-    }
-
-    function clearTaskValueOffsetEditorState() {
-        surveyValueOffsetEditorController.clearTaskValueOffsetEditorState();
-    }
-
-    function ensureTaskValueOffsetEditorRow(task = '') {
-        return surveyValueOffsetEditorController.ensureTaskValueOffsetEditorRow(task);
-    }
-
-    function focusTaskValueOffsetEditor(rowId = null) {
-        surveyValueOffsetEditorController.focusTaskValueOffsetEditor(rowId);
-    }
-
-    function renderTaskValueOffsetEditor() {
-        return surveyValueOffsetEditorController.renderTaskValueOffsetEditor();
-    }
-
-    function handleTaskValueOffsetEditorChanged() {
-        surveyValueOffsetEditorController.handleTaskValueOffsetEditorChanged();
-    }
-
-    function clearManualValueOffsetAdvice() {
-        surveyValueOffsetEditorController.clearManualValueOffsetAdvice();
-    }
-
-    function handleApplyTaskValueOffsetsClick() {
-        surveyValueOffsetEditorController.handleApplyTaskValueOffsetsClick();
     }
 
     function ensureSurveyAdvancedOptionsVisible() {
@@ -629,10 +550,6 @@ export function initSurveyConvert(elements) {
 
     function parseTaskValueOffsetsText(rawText) {
         return parseTaskValueOffsetsTextWithNormalizer(rawText, normalizeNearMatchTaskName);
-    }
-
-    function getManualTaskValueOffsets() {
-        return surveyValueOffsetEditorController.getManualTaskValueOffsets();
     }
 
     function getManualValueOffsetReviewMessage(payload, mode) {
@@ -728,58 +645,6 @@ export function initSurveyConvert(elements) {
         }
         const errorMessage = String(error.message || '').toLowerCase();
         return errorMessage.includes('aborted') || errorMessage.includes('aborterror');
-    }
-
-    function setActiveSurveyRun(mode, controller) {
-        activeRunMode = mode;
-        activeRunAbortController = controller;
-        activeRunCancelledByUser = false;
-    }
-
-    function clearActiveSurveyRun(mode = null) {
-        if (mode && activeRunMode && activeRunMode !== mode) {
-            return;
-        }
-        activeRunMode = null;
-        activeRunAbortController = null;
-        activeRunCancelledByUser = false;
-    }
-
-    function cancelActiveSurveyRun() {
-        if (!activeRunAbortController) {
-            return false;
-        }
-        activeRunCancelledByUser = true;
-        activeRunAbortController.abort();
-        return true;
-    }
-
-    function setSurveyRunProgress(options) {
-        surveyWorkflowProgressController.setSurveyRunProgress(options);
-    }
-
-    function hideSurveyRunProgress() {
-        surveyWorkflowProgressController.hideSurveyRunProgress();
-    }
-
-    function startSurveyRunProgress(mode) {
-        surveyWorkflowProgressController.startSurveyRunProgress(mode);
-    }
-
-    function advanceSurveyRunProgress(mode, percent, label) {
-        surveyWorkflowProgressController.advanceSurveyRunProgress(mode, percent, label);
-    }
-
-    function pauseSurveyRunProgress(mode, label) {
-        surveyWorkflowProgressController.pauseSurveyRunProgress(mode, label);
-    }
-
-    function resumeSurveyRunProgress(mode, percent, label) {
-        surveyWorkflowProgressController.resumeSurveyRunProgress(mode, percent, label);
-    }
-
-    function finishSurveyRunProgress(mode, outcome) {
-        surveyWorkflowProgressController.finishSurveyRunProgress(mode, outcome);
     }
 
     function mergeNearMatchTasks(existingTasks, nextTasks) {
@@ -938,22 +803,6 @@ export function initSurveyConvert(elements) {
             extensions: '.xlsx,.lsa,.csv,.tsv,.sav,.rds,.rdata,.rda',
             startPath: convertServerFilePath || ''
         });
-    }
-
-    function normalizeVersionSelectionSession(session) {
-        return normalizeVersionSelectionSessionWithUtils(session);
-    }
-
-    function normalizeVersionSelectionRun(run) {
-        return normalizeVersionSelectionRunWithUtils(run);
-    }
-
-    function buildVersionSelectionKey({ task, session = null, run = null }) {
-        return buildVersionSelectionKeyWithUtils({ task, session, run });
-    }
-
-    function getTimelineRunSortMeta(value) {
-        return getTimelineRunSortMetaWithUtils(value);
     }
 
     function getTemplateVersionSelections() {
@@ -1132,26 +981,6 @@ export function initSurveyConvert(elements) {
         appliedTemplateVersionSelectionSignature = '';
         versionWizardState = { multivariantTasks: {}, taskRuns: {}, previewParticipants: [], detectedSessions: [] };
         updateVersionWizardActionState();
-    }
-
-    function normalizeTimelineSessionToken(value) {
-        return normalizeTimelineSessionTokenWithUtils(value);
-    }
-
-    function getTimelineSessionSortMeta(value) {
-        return getTimelineSessionSortMetaWithUtils(value);
-    }
-
-    function compareTimelineSessions(left, right) {
-        return compareTimelineSessionsWithUtils(left, right);
-    }
-
-    function compareTimelineContexts(left, right) {
-        return compareTimelineContextsWithUtils(left, right);
-    }
-
-    function deriveDetectedContexts(taskRuns, previewParticipants, detectedSessions = []) {
-        return deriveDetectedContextsWithUtils(taskRuns, previewParticipants, detectedSessions);
     }
 
     function getCurrentSessionLabel() {
@@ -1684,10 +1513,44 @@ export function initSurveyConvert(elements) {
         formatSignedOffset,
         escapeHtml,
     });
-
-    function applyAdvancedOptionsState() {
-        surveyValueOffsetEditorController.applyAdvancedOptionsState();
-    }
+    const surveyValueOffsetEditorAdapter = createSurveyValueOffsetEditorAdapter({
+        surveyValueOffsetEditorController,
+    });
+    const {
+        applyAdvancedOptionsState,
+        createTaskValueOffsetRow,
+        getAvailableSurveyTasksForValueOffsets,
+        getTaskValueOffsetMapFromEditorState,
+        getCurrentTaskValueOffsetSelectionSignature,
+        hasManualTaskValueOffsets,
+        hasIncompleteTaskValueOffsetRows,
+        hasAppliedTaskValueOffsetSelections,
+        updateTaskValueOffsetApplyState,
+        getPreferredTaskValueOffsetTask,
+        syncTaskValueOffsetTextFromState,
+        setTaskValueOffsetEditorStateFromText,
+        clearTaskValueOffsetEditorState,
+        ensureTaskValueOffsetEditorRow,
+        focusTaskValueOffsetEditor,
+        renderTaskValueOffsetEditor,
+        handleTaskValueOffsetEditorChanged,
+        clearManualValueOffsetAdvice,
+        handleApplyTaskValueOffsetsClick,
+        getManualTaskValueOffsets,
+    } = surveyValueOffsetEditorAdapter;
+    const surveyConversionResultsAdapter = createSurveyConversionResultsAdapter({
+        getSurveyConversionSummaryController: () => surveyConversionSummaryController,
+        getSurveyConversionLogController: () => surveyConversionLogController,
+        getSurveyUnmatchedTemplatesController: () => surveyUnmatchedTemplatesController,
+        getSurveyValidationResultsController: () => surveyValidationResultsController,
+    });
+    const {
+        appendLog,
+        resetConversionUI,
+        displayConversionSummary,
+        displayUnmatchedGroupsError,
+        displayValidationResults,
+    } = surveyConversionResultsAdapter;
 
     if (convertDatasetName) {
         convertDatasetName.addEventListener('input', () => {
@@ -1727,106 +1590,6 @@ export function initSurveyConvert(elements) {
         });
 
         updateIdMapClearButtonState();
-    }
-
-    // Session picker functions
-    function populateSurveySessionPickerFromDetected(detectedSessions) {
-        if (!convertSessionSelect || !Array.isArray(detectedSessions) || detectedSessions.length === 0) {
-            return false;
-        }
-
-        const normalizedSessions = [...new Set(
-            detectedSessions
-                .map((value) => String(value || '').trim())
-                .filter(Boolean)
-        )];
-        if (normalizedSessions.length === 0) {
-            return false;
-        }
-
-        while (convertSessionSelect.options.length > 1) {
-            convertSessionSelect.remove(1);
-        }
-
-        const allOpt = document.createElement('option');
-        allOpt.value = 'all';
-        allOpt.textContent = '✓ All sessions';
-        convertSessionSelect.appendChild(allOpt);
-
-        normalizedSessions.forEach((ses) => {
-            const opt = document.createElement('option');
-            opt.value = ses;
-            opt.textContent = ses;
-            convertSessionSelect.appendChild(opt);
-        });
-
-        if (!getSurveySessionValue()) {
-            convertSessionSelect.value = normalizedSessions.length === 1 ? normalizedSessions[0] : 'all';
-        }
-        if (convertSessionCustom) {
-            convertSessionCustom.value = '';
-        }
-
-        return true;
-    }
-
-    function getSessionValue(selectEl, customEl) {
-        return getSessionInputValue(selectEl, customEl);
-    }
-
-    function getSurveySessionValue() {
-        return getSessionValue(convertSessionSelect, convertSessionCustom);
-    }
-
-    function getBiometricsSessionValue() {
-        return getSessionValue(biometricsSessionSelect, biometricsSessionCustom);
-    }
-
-    function getProjectSaveSummary(data) {
-        if (!surveyConvertFeedbackController) {
-            return { target: 'the active project', countNote: '' };
-        }
-        return surveyConvertFeedbackController.getProjectSaveSummary(data);
-    }
-
-    function openConverterTab(target) {
-        if (!surveyConvertFeedbackController) {
-            return false;
-        }
-        return surveyConvertFeedbackController.openConverterTab(target);
-    }
-
-    function showConvertInfoMessage(message, options = {}) {
-        if (!surveyConvertFeedbackController) {
-            return;
-        }
-        surveyConvertFeedbackController.showConvertInfoMessage(message, options);
-    }
-
-    function getParticipantRegistryWarning(payload) {
-        if (!surveyConvertFeedbackController) {
-            return null;
-        }
-        return surveyConvertFeedbackController.getParticipantRegistryWarning(payload);
-    }
-
-    function showParticipantRegistryWarning(messagePrefix, warning) {
-        if (!surveyConvertFeedbackController) {
-            return;
-        }
-        surveyConvertFeedbackController.showParticipantRegistryWarning(messagePrefix, warning);
-    }
-
-    function isDelimitedSurveyFilename(filename) {
-        return isDelimitedSurveyFilenameWithSeparatorUtils(filename);
-    }
-
-    function getSelectedSeparator(filename = '') {
-        return getSelectedSeparatorWithSeparatorUtils(filename, convertSeparator);
-    }
-
-    function updateSeparatorVisibility(filename = '') {
-        updateSeparatorVisibilityWithSeparatorUtils(filename, surveySeparatorGroup);
     }
 
     if (convertSessionSelect) {
@@ -2155,7 +1918,7 @@ export function initSurveyConvert(elements) {
             if (hasRunningRequest) {
                 const modeLabel = isConvertRunning ? 'Conversion' : 'Preview';
                 surveyRunCancelBtn.classList.remove('d-none');
-                surveyRunCancelBtn.disabled = !activeRunAbortController;
+                surveyRunCancelBtn.disabled = !getActiveRunAbortController();
                 surveyRunCancelBtn.innerHTML = `<i class="fas fa-stop-circle me-2"></i>Cancel ${modeLabel}`;
             } else {
                 surveyRunCancelBtn.classList.add('d-none');
@@ -2182,7 +1945,7 @@ export function initSurveyConvert(elements) {
 
     if (surveyRunCancelBtn) {
         surveyRunCancelBtn.addEventListener('click', function() {
-            const mode = activeRunMode || surveyWorkflowProgressController.getRunProgressMode();
+            const mode = getActiveRunMode() || surveyWorkflowProgressController.getRunProgressMode();
             const modeLabel = mode === 'convert' ? 'conversion' : 'preview';
             const canceled = cancelActiveSurveyRun();
             if (!canceled) {
@@ -2231,16 +1994,12 @@ export function initSurveyConvert(elements) {
         updateConvertBtn();
     });
 
-    function resetSurveyImportFormState({ clearSelectedInput = false } = {}) {
-        surveyImportFormStateController.resetSurveyImportFormState({ clearSelectedInput });
-    }
-
     clearConvertExcelFileBtn?.addEventListener('click', function() {
         convertServerFilePath = '';
         resetSurveyRefreshFingerprint();
         convertExcelFile.value = '';
         convertExcelFile.dispatchEvent(new Event('change', { bubbles: true }));
-        resetSurveyImportFormState();
+        surveyImportFormStateController.resetSurveyImportFormState();
     });
 
     const idColSelect = document.getElementById('convertIdColumn');
@@ -2331,26 +2090,6 @@ export function initSurveyConvert(elements) {
     });
 
     surveySourcedataQuickSelectController.initialize();
-
-    function appendLog(message, type = 'info', logElement = null) {
-        surveyConversionLogController.appendLog(message, type, logElement);
-    }
-
-    function resetConversionUI() {
-        surveyConversionLogController.resetConversionUI();
-    }
-
-    function displayConversionSummary(summary) {
-        surveyConversionSummaryController.displayConversionSummary(summary);
-    }
-
-    function displayUnmatchedGroupsError(data) {
-        surveyUnmatchedTemplatesController.displayUnmatchedGroupsError(data);
-    }
-
-    function displayValidationResults(validation, prefix = '') {
-        surveyValidationResultsController.displayValidationResults(validation, prefix);
-    }
 
     surveyConvertFeedbackController = createSurveyConvertFeedbackController({
         convertInfo,
@@ -2484,8 +2223,8 @@ export function initSurveyConvert(elements) {
         isAbortError,
         clearActiveSurveyRun,
         finishSurveyRunProgress,
-        getActiveRunMode: () => activeRunMode,
-        getActiveRunCancelledByUser: () => activeRunCancelledByUser,
+        getActiveRunMode,
+        getActiveRunCancelledByUser,
         getVersionWizardRetryGateMode: () => versionWizardRetryGateMode,
         setVersionWizardRetryGateMode: (value) => {
             versionWizardRetryGateMode = value;
@@ -2552,8 +2291,8 @@ export function initSurveyConvert(elements) {
         enrichSurveyRunErrorMessage,
         clearActiveSurveyRun,
         finishSurveyRunProgress,
-        getActiveRunMode: () => activeRunMode,
-        getActiveRunCancelledByUser: () => activeRunCancelledByUser,
+        getActiveRunMode,
+        getActiveRunCancelledByUser,
         getVersionWizardRetryGateMode: () => versionWizardRetryGateMode,
         setVersionWizardRetryGateMode: (value) => {
             versionWizardRetryGateMode = value;
@@ -2567,6 +2306,16 @@ export function initSurveyConvert(elements) {
     const surveyTemplateResultsController = createSurveyTemplateResultsController({
         escapeHtml,
     });
+    const surveyTemplateRenderAdapter = createSurveyTemplateRenderAdapter({
+        getSurveyTemplateResultsController: () => surveyTemplateResultsController,
+        getParticipantsMetadataController: () => participantsMetadataController,
+    });
+    const {
+        displayTemplateSingle,
+        displayTemplateGroups,
+        displayTemplateQuestions,
+        displayParticipantMetadataSection,
+    } = surveyTemplateRenderAdapter;
 
     const surveyTemplateGenerationController = createSurveyTemplateGenerationController({
         convertBtn,
@@ -2584,18 +2333,10 @@ export function initSurveyConvert(elements) {
                 templateResultsContainer.classList.remove('d-none');
             }
         },
-        displayTemplateSingle: (data) => {
-            surveyTemplateResultsController.displayTemplateSingle(data);
-        },
-        displayTemplateGroups: (data) => {
-            surveyTemplateResultsController.displayTemplateGroups(data);
-        },
-        displayTemplateQuestions: (data) => {
-            surveyTemplateResultsController.displayTemplateQuestions(data);
-        },
-        displayParticipantMetadataSection: (data) => {
-            participantsMetadataController.displayParticipantMetadataSection(data);
-        },
+        displayTemplateSingle,
+        displayTemplateGroups,
+        displayTemplateQuestions,
+        displayParticipantMetadataSection,
         updateConvertBtn,
     });
 
