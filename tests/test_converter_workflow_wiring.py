@@ -566,7 +566,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("appendConverterLogBatch(", content)
         self.assertIn("appendConverterLogLine(", content)
         self.assertIn("displayConverterValidationResults(validation, prefix, escapeHtml);", content)
-        self.assertIn("return getSessionInputValue(selectEl, customEl);", content)
+        self.assertIn("getBiometricsSessionValue: () => getSessionInputValue(", content)
         self.assertIn("sessionPickerController.populateSessionPickers(projectPath);", content)
         self.assertIn(
             "window.addEventListener('prism-project-changed', function() {", content

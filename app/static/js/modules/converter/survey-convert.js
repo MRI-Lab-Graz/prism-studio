@@ -280,25 +280,12 @@ export function initSurveyConvert(elements) {
 
     function resetSurveyRefreshFingerprint() {
         lastDetectedSurveyFingerprint = '';
-        clearRetryResolutionState();
+        confirmedNearMatchTasks = [];
         clearSurveyPreviewSelectionState();
     }
 
     function normalizeSurveyTaskName(value) {
         return normalizeNearMatchTaskName(value).replace(/^survey-/, '');
-    }
-
-    function getSelectedIdMapFingerprint() {
-        const selectedFile = convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0]
-            ? convertIdMapFile.files[0]
-            : null;
-        if (!selectedFile) {
-            return '';
-        }
-        const lastModified = Number.isFinite(Number(selectedFile.lastModified))
-            ? Number(selectedFile.lastModified)
-            : 0;
-        return `id-map:${selectedFile.name}:${selectedFile.size}:${lastModified}`;
     }
 
     function getSurveyPreviewContextKey({ includeValueOffsets = true } = {}) {
@@ -315,9 +302,16 @@ export function initSurveyConvert(elements) {
                 return leftKey.localeCompare(rightKey);
             });
 
+        const selectedIdMapFile = convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0]
+            ? convertIdMapFile.files[0]
+            : null;
+        const idMapFingerprint = selectedIdMapFile
+            ? `id-map:${selectedIdMapFile.name}:${selectedIdMapFile.size}:${Number.isFinite(Number(selectedIdMapFile.lastModified)) ? Number(selectedIdMapFile.lastModified) : 0}`
+            : '';
+
         return JSON.stringify({
             input: getSelectedSurveyFingerprint(),
-            idMap: getSelectedIdMapFingerprint(),
+            idMap: idMapFingerprint,
             idColumn: String(convertIdColumn?.value || '').trim(),
             session: String(getSurveySessionValue() || '').trim(),
             sessionColumn: String(convertSessionColumnOverride?.value || '').trim(),
@@ -346,67 +340,11 @@ export function initSurveyConvert(elements) {
         renderTaskValueOffsetEditor();
     }
 
-    function setSurveyPreviewSelectionState(taskSummaries, previewKey = getSurveyPreviewContextKey()) {
-        if (!Array.isArray(taskSummaries) || taskSummaries.length === 0) {
-            clearSurveyPreviewSelectionState();
-            return;
-        }
-
-        const availableTasks = taskSummaries
-            .map((entry) => normalizeSurveyTaskName(entry && entry.task))
-            .filter(Boolean);
-        const selectedTasks = taskSummaries
-            .filter((entry) => entry && entry.selected !== false)
-            .map((entry) => normalizeSurveyTaskName(entry && entry.task))
-            .filter(Boolean);
-
-        surveyPreviewSelectionState = {
-            previewKey,
-            availableTasks,
-            selectedTasks: selectedTasks.length > 0 ? selectedTasks : [...availableTasks]
-        };
-        renderTaskValueOffsetEditor();
-    }
-
-    function setSurveyPreviewSelectedTasks(selectedTasks) {
-        surveyPreviewSelectionState = {
-            ...surveyPreviewSelectionState,
-            selectedTasks: Array.isArray(selectedTasks) ? selectedTasks : []
-        };
-    }
-
     function hasFreshSurveyPreviewSelectionState() {
         return Boolean(
             surveyPreviewSelectionState.previewKey
             && surveyPreviewSelectionState.availableTasks.length > 0
             && surveyPreviewSelectionState.previewKey === getSurveyPreviewContextKey()
-        );
-    }
-
-    function isPreviewStaleOnlyByOffsetChanges() {
-        if (!surveyPreviewSelectionState.previewKey || surveyPreviewSelectionState.availableTasks.length === 0) {
-            return false;
-        }
-
-        let previousPayload;
-        let currentPayload;
-        try {
-            previousPayload = JSON.parse(surveyPreviewSelectionState.previewKey);
-            currentPayload = JSON.parse(getSurveyPreviewContextKey());
-        } catch (_error) {
-            return false;
-        }
-
-        if (!previousPayload || !currentPayload || typeof previousPayload !== 'object' || typeof currentPayload !== 'object') {
-            return false;
-        }
-
-        const previousWithoutOffsets = { ...previousPayload, valueOffsetsText: '' };
-        const currentWithoutOffsets = { ...currentPayload, valueOffsetsText: '' };
-
-        return (
-            JSON.stringify(previousWithoutOffsets) === JSON.stringify(currentWithoutOffsets)
-            && String(previousPayload.valueOffsetsText || '') !== String(currentPayload.valueOffsetsText || '')
         );
     }
 
@@ -445,7 +383,30 @@ export function initSurveyConvert(elements) {
             message = 'Project template metadata is incomplete. Finish template edits, then rerun Step 4 (Preview).';
             className = 'form-text text-warning mb-2';
         } else if (!hasFreshPreviewReview) {
-            if (isPreviewStaleOnlyByOffsetChanges()) {
+            let previewStaleOnlyByOffsetChanges = false;
+            if (surveyPreviewSelectionState.previewKey && surveyPreviewSelectionState.availableTasks.length > 0) {
+                try {
+                    const previousPayload = JSON.parse(surveyPreviewSelectionState.previewKey);
+                    const currentPayload = JSON.parse(getSurveyPreviewContextKey());
+                    if (
+                        previousPayload
+                        && currentPayload
+                        && typeof previousPayload === 'object'
+                        && typeof currentPayload === 'object'
+                    ) {
+                        const previousWithoutOffsets = { ...previousPayload, valueOffsetsText: '' };
+                        const currentWithoutOffsets = { ...currentPayload, valueOffsetsText: '' };
+                        previewStaleOnlyByOffsetChanges = (
+                            JSON.stringify(previousWithoutOffsets) === JSON.stringify(currentWithoutOffsets)
+                            && String(previousPayload.valueOffsetsText || '') !== String(currentPayload.valueOffsetsText || '')
+                        );
+                    }
+                } catch (_error) {
+                    previewStaleOnlyByOffsetChanges = false;
+                }
+            }
+
+            if (previewStaleOnlyByOffsetChanges) {
                 message = 'Manual offsets changed. Run Step 4 (Preview) again to validate the new scale handling before Step 5 unlocks.';
             } else {
                 message = 'Run Step 4 (Preview) after your latest changes before converting.';
@@ -535,11 +496,6 @@ export function initSurveyConvert(elements) {
         }
     }
 
-    function openAdvancedOptionsValueOffsetEditor() {
-        ensureSurveyAdvancedOptionsVisible();
-        focusTaskValueOffsetEditor();
-    }
-
     function parseTaskValueOffsetsText(rawText) {
         return parseTaskValueOffsetsTextWithNormalizer(rawText, normalizeNearMatchTaskName);
     }
@@ -593,40 +549,6 @@ export function initSurveyConvert(elements) {
         return lines.join('\n');
     }
 
-    function showManualValueOffsetReview(payload, mode, selectedValueOffsets = {}) {
-        if (convertValueOffsetAdvice) {
-            convertValueOffsetAdvice.textContent = getManualValueOffsetReviewMessage(payload, mode);
-            convertValueOffsetAdvice.classList.remove('d-none');
-        }
-
-        const task = normalizeNearMatchTaskName(payload && payload.task);
-        const configuredOffset = parseNumericOffsetValue(payload && payload.configured_offset);
-        if (
-            task
-            && configuredOffset !== null
-            && isConfiguredOffsetFailureForCurrentSelection(payload, selectedValueOffsets)
-        ) {
-            convertInfo.textContent = `Manual task offset ${formatSignedOffset(configuredOffset)} for ${task} did not resolve this dataset. Update Advanced options and run Preview again.`;
-            ensureSurveyAdvancedOptionsVisible();
-        } else {
-            convertInfo.textContent = 'Out-of-range values were found. Fix source values first, then run Preview again. Manual task offsets are optional in Advanced options.';
-        }
-        convertInfo.classList.remove('d-none');
-        appendLog(getManualValueOffsetReviewMessage(payload, mode), 'warning');
-        if (
-            task
-            && configuredOffset !== null
-            && isConfiguredOffsetFailureForCurrentSelection(payload, selectedValueOffsets)
-        ) {
-            const rowId = ensureTaskValueOffsetEditorRow(task);
-            focusTaskValueOffsetEditor(rowId);
-        }
-    }
-
-    function clearRetryResolutionState() {
-        confirmedNearMatchTasks = [];
-    }
-
     function isAbortError(error) {
         if (!error) {
             return false;
@@ -649,38 +571,28 @@ export function initSurveyConvert(elements) {
         )];
     }
 
-    function offsetsAreEqual(left, right, tolerance = 1e-9) {
-        const leftValue = Number(left);
-        const rightValue = Number(right);
-        if (!Number.isFinite(leftValue) || !Number.isFinite(rightValue)) {
-            return false;
-        }
-        return Math.abs(leftValue - rightValue) <= tolerance;
-    }
-
-    function getAppliedTaskOffset(offsetMap, taskName) {
-        const normalizedOffsets = normalizeTaskValueOffsets(offsetMap);
-        const normalizedTask = normalizeNearMatchTaskName(taskName);
-        if (normalizedTask && Object.prototype.hasOwnProperty.call(normalizedOffsets, normalizedTask)) {
-            return normalizedOffsets[normalizedTask];
-        }
-        if (Object.prototype.hasOwnProperty.call(normalizedOffsets, '*')) {
-            return normalizedOffsets['*'];
-        }
-        return null;
-    }
-
     function isConfiguredOffsetFailureForCurrentSelection(payload, selectedOffsets) {
         const configuredOffset = parseNumericOffsetValue(payload && payload.configured_offset);
         if (configuredOffset === null) {
             return false;
         }
         const task = normalizeNearMatchTaskName(payload && payload.task);
-        const appliedOffset = getAppliedTaskOffset(selectedOffsets, task);
+        const normalizedOffsets = normalizeTaskValueOffsets(selectedOffsets);
+        let appliedOffset = null;
+        if (task && Object.prototype.hasOwnProperty.call(normalizedOffsets, task)) {
+            appliedOffset = normalizedOffsets[task];
+        } else if (Object.prototype.hasOwnProperty.call(normalizedOffsets, '*')) {
+            appliedOffset = normalizedOffsets['*'];
+        }
         if (appliedOffset === null) {
             return false;
         }
-        return offsetsAreEqual(configuredOffset, appliedOffset);
+        const configuredOffsetValue = Number(configuredOffset);
+        const appliedOffsetValue = Number(appliedOffset);
+        if (!Number.isFinite(configuredOffsetValue) || !Number.isFinite(appliedOffsetValue)) {
+            return false;
+        }
+        return Math.abs(configuredOffsetValue - appliedOffsetValue) <= 1e-9;
     }
 
     function getEffectiveNearMatchTasks(nextTasks = null) {
@@ -748,31 +660,6 @@ export function initSurveyConvert(elements) {
                 return Boolean(selectedVersion && allowedVersions.includes(selectedVersion));
             });
         });
-    }
-
-    function applyPreparedSurveyWorkflowContext(data) {
-        const multivariantTasks = (data && typeof data.multivariant_tasks === 'object' && data.multivariant_tasks)
-            ? data.multivariant_tasks
-            : {};
-        if (Object.keys(multivariantTasks).length > 0) {
-            buildVersionWizard(
-                multivariantTasks,
-                (data && typeof data.task_runs === 'object' && data.task_runs) || {},
-                Array.isArray(data?.preview_participants) ? data.preview_participants : [],
-                Array.isArray(data?.detected_sessions) ? data.detected_sessions : []
-            );
-        } else {
-            hideVersionWizard();
-        }
-
-        templateWorkflowGate = (
-            data
-            && data.workflow_gate
-            && typeof data.workflow_gate === 'object'
-        ) ? data.workflow_gate : null;
-        setTemplateEditorErrorCtaVisible(Boolean(templateWorkflowGate && templateWorkflowGate.blocked));
-
-        return multivariantTasks;
     }
 
     function applySurveyPickerUiState() {
@@ -966,12 +853,6 @@ export function initSurveyConvert(elements) {
         updateVersionWizardActionState();
     }
 
-    function getCurrentSessionLabel() {
-        const currentSession = getSurveySessionValue();
-        if (!currentSession) return 'current session';
-        return currentSession === 'all' ? 'all detected sessions' : `session ${currentSession}`;
-    }
-
     function buildVariantDefinitionBadges(variantDefinitions, selectedVersion) {
         if (!Array.isArray(variantDefinitions) || variantDefinitions.length === 0) {
             return '';
@@ -993,15 +874,6 @@ export function initSurveyConvert(elements) {
             .join(' ');
     }
 
-    function formatVersionWizardSessionLabel(session, fallbackLabel) {
-        const rawValue = String(session || fallbackLabel || '').trim();
-        if (!rawValue) return 'Session current';
-        if (rawValue.toLowerCase() === 'all detected sessions') return rawValue;
-        const normalizedValue = rawValue.replace(/^ses-/i, '').replace(/[-_]+/g, ' ').trim();
-        if (!normalizedValue) return 'Session current';
-        return `Session ${normalizedValue}`;
-    }
-
     function formatVersionWizardRunLabel(run) {
         const normalizedRun = normalizeVersionSelectionRun(run);
         if (!normalizedRun) return 'Single run';
@@ -1021,7 +893,10 @@ export function initSurveyConvert(elements) {
         }
 
         const detectedContexts = deriveDetectedContexts(taskRuns, previewParticipants, detectedSessions);
-        const sessionLabel = getCurrentSessionLabel();
+        const currentSession = getSurveySessionValue();
+        const sessionLabel = !currentSession
+            ? 'current session'
+            : (currentSession === 'all' ? 'all detected sessions' : `session ${currentSession}`);
         const nextSelections = {};
         let timelineStep = 0;
         surveyVersionWizardBody.innerHTML = '';
@@ -1043,6 +918,15 @@ export function initSurveyConvert(elements) {
             if (badgeContainer) {
                 badgeContainer.innerHTML = buildVariantDefinitionBadges(variantDefinitions, normalizedSelection);
             }
+        };
+
+        const formatContextSessionLabel = (session) => {
+            const rawValue = String(session || sessionLabel || '').trim();
+            if (!rawValue) return 'Session current';
+            if (rawValue.toLowerCase() === 'all detected sessions') return rawValue;
+            const normalizedValue = rawValue.replace(/^ses-/i, '').replace(/[-_]+/g, ' ').trim();
+            if (!normalizedValue) return 'Session current';
+            return `Session ${normalizedValue}`;
         };
 
         entries.sort(([a], [b]) => a.localeCompare(b)).forEach(([task, info]) => {
@@ -1123,7 +1007,7 @@ export function initSurveyConvert(elements) {
                 const { context, selectionKey, preferredSelection } = entry;
                 nextSelections[selectionKey] = preferredSelection;
 
-                const contextSessionLabel = formatVersionWizardSessionLabel(context.session, sessionLabel);
+                const contextSessionLabel = formatContextSessionLabel(context.session);
                 const runLabel = formatVersionWizardRunLabel(context.run);
                 const selectorId = `surveyVersionSelect-${task}-${String(context.session || 'base').replace(/[^a-zA-Z0-9_-]/g, '_')}-${String(context.run || 'base').replace(/[^a-zA-Z0-9_-]/g, '_')}`;
                 const row = document.createElement('div');
@@ -1354,22 +1238,15 @@ export function initSurveyConvert(elements) {
         }
     }
 
-    function shouldSyncVersionWizardContext() {
-        const filename = getSelectedSurveyFilename();
-        if (!filename || filename.toLowerCase().endsWith('.lss')) {
-            return false;
-        }
-        const idValue = String(document.getElementById('convertIdColumn')?.value || '').trim();
-        return Boolean(idValue && idValue !== 'auto');
-    }
-
     async function syncVersionWizardContext({
         showErrors = false,
         allowNearItemMatch = false,
         nearMatchTasks = null,
         taskValueOffsets = null,
     } = {}) {
-        if (!shouldSyncVersionWizardContext()) {
+        const filename = getSelectedSurveyFilename();
+        const idValue = String(document.getElementById('convertIdColumn')?.value || '').trim();
+        if (!filename || filename.toLowerCase().endsWith('.lss') || !idValue || idValue === 'auto') {
             hideVersionWizard();
             return { hasMultivariant: false, skipped: true };
         }
@@ -2087,10 +1964,62 @@ export function initSurveyConvert(elements) {
         resumeSurveyRunProgress,
         isAbortError,
         enrichSurveyRunErrorMessage,
-        showManualValueOffsetReview,
+        showManualValueOffsetReview: (payload, mode, selectedValueOffsets = {}) => {
+            const reviewMessage = getManualValueOffsetReviewMessage(payload, mode);
+            if (convertValueOffsetAdvice) {
+                convertValueOffsetAdvice.textContent = reviewMessage;
+                convertValueOffsetAdvice.classList.remove('d-none');
+            }
+
+            const task = normalizeNearMatchTaskName(payload && payload.task);
+            const configuredOffset = parseNumericOffsetValue(payload && payload.configured_offset);
+            if (
+                task
+                && configuredOffset !== null
+                && isConfiguredOffsetFailureForCurrentSelection(payload, selectedValueOffsets)
+            ) {
+                convertInfo.textContent = `Manual task offset ${formatSignedOffset(configuredOffset)} for ${task} did not resolve this dataset. Update Advanced options and run Preview again.`;
+                ensureSurveyAdvancedOptionsVisible();
+            } else {
+                convertInfo.textContent = 'Out-of-range values were found. Fix source values first, then run Preview again. Manual task offsets are optional in Advanced options.';
+            }
+            convertInfo.classList.remove('d-none');
+            appendLog(reviewMessage, 'warning');
+            if (
+                task
+                && configuredOffset !== null
+                && isConfiguredOffsetFailureForCurrentSelection(payload, selectedValueOffsets)
+            ) {
+                const rowId = ensureTaskValueOffsetEditorRow(task);
+                focusTaskValueOffsetEditor(rowId);
+            }
+        },
         promptNearMatchSelection,
         mergeNearMatchTasks,
-        applyPreparedSurveyWorkflowContext,
+        applyPreparedSurveyWorkflowContext: (data) => {
+            const multivariantTasks = (data && typeof data.multivariant_tasks === 'object' && data.multivariant_tasks)
+                ? data.multivariant_tasks
+                : {};
+            if (Object.keys(multivariantTasks).length > 0) {
+                buildVersionWizard(
+                    multivariantTasks,
+                    (data && typeof data.task_runs === 'object' && data.task_runs) || {},
+                    Array.isArray(data?.preview_participants) ? data.preview_participants : [],
+                    Array.isArray(data?.detected_sessions) ? data.detected_sessions : []
+                );
+            } else {
+                hideVersionWizard();
+            }
+
+            templateWorkflowGate = (
+                data
+                && data.workflow_gate
+                && typeof data.workflow_gate === 'object'
+            ) ? data.workflow_gate : null;
+            setTemplateEditorErrorCtaVisible(Boolean(templateWorkflowGate && templateWorkflowGate.blocked));
+
+            return multivariantTasks;
+        },
         hasAppliedVersionWizardSelections,
         convertError,
         convertInfo,
@@ -2178,7 +2107,27 @@ export function initSurveyConvert(elements) {
         displayUnmatchedGroupsError,
         populateSurveySessionPickerFromDetected,
         getParticipantRegistryWarning,
-        setSurveyPreviewSelectionState,
+        setSurveyPreviewSelectionState: (taskSummaries, previewKey = getSurveyPreviewContextKey()) => {
+            if (!Array.isArray(taskSummaries) || taskSummaries.length === 0) {
+                clearSurveyPreviewSelectionState();
+                return;
+            }
+
+            const availableTasks = taskSummaries
+                .map((entry) => normalizeSurveyTaskName(entry && entry.task))
+                .filter(Boolean);
+            const selectedTasks = taskSummaries
+                .filter((entry) => entry && entry.selected !== false)
+                .map((entry) => normalizeSurveyTaskName(entry && entry.task))
+                .filter(Boolean);
+
+            surveyPreviewSelectionState = {
+                previewKey,
+                availableTasks,
+                selectedTasks: selectedTasks.length > 0 ? selectedTasks : [...availableTasks]
+            };
+            renderTaskValueOffsetEditor();
+        },
         displayConversionSummary,
         normalizeSurveyTaskName,
         displayValidationResults,
@@ -2313,11 +2262,19 @@ export function initSurveyConvert(elements) {
         toggleSummaryBtn,
         convertDatasetName,
         getSurveyPreviewSelectionState: () => surveyPreviewSelectionState,
-        setSurveyPreviewSelectedTasks,
+        setSurveyPreviewSelectedTasks: (selectedTasks) => {
+            surveyPreviewSelectionState = {
+                ...surveyPreviewSelectionState,
+                selectedTasks: Array.isArray(selectedTasks) ? selectedTasks : []
+            };
+        },
         normalizeSurveyTaskName,
         formatSignedOffset,
         escapeHtml,
-        openAdvancedOptionsValueOffsetEditor,
+        openAdvancedOptionsValueOffsetEditor: () => {
+            ensureSurveyAdvancedOptionsVisible();
+            focusTaskValueOffsetEditor();
+        },
         updateConvertBtn,
     });
 

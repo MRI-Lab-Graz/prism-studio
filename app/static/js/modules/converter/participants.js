@@ -10,7 +10,6 @@ import { createParticipantsMergeSummaryController } from './participants-merge-s
 import {
     getParticipantsMergeHarmonizationDecisions as getParticipantsMergeHarmonizationDecisionsPayload,
     appendParticipantsMergeHarmonizationDecisions as appendParticipantsMergeHarmonizationDecisionsPayload,
-    getParticipantsMergeSessionResolutionDecisions as getParticipantsMergeSessionResolutionDecisionsPayload,
     appendParticipantsMergeSessionResolutionDecisions as appendParticipantsMergeSessionResolutionDecisionsPayload,
 } from './participants-merge-decision-payload.js';
 
@@ -69,7 +68,13 @@ export function initParticipants() {
         getPreviewData: () => window.lastParticipantsPreviewData,
         getWorkflowMode: () => getParticipantsWorkflowMode(),
         getFileAction: () => getParticipantsFileAction(),
-        buildConflictFormData: () => buildParticipantsMergeConflictFormData(),
+        buildConflictFormData: () => {
+            const formData = new FormData();
+            appendParticipantsFileImportFields(formData);
+            appendParticipantsMergeHarmonizationDecisions(formData);
+            appendParticipantsMergeSessionResolutionDecisions(formData);
+            return formData;
+        },
         parseJsonResponse: (response) => parseParticipantsJsonResponse(response),
     });
 
@@ -77,7 +82,9 @@ export function initParticipants() {
     const participantsMergeSummaryController = createParticipantsMergeSummaryController({
         assessMergeHarmonizationState: (previewData) => assessParticipantsMergeHarmonizationState(previewData),
         canApplyParticipantsConversion: () => canApplyParticipantsConversion(),
-        scheduleMergePreviewRefresh: () => scheduleParticipantsMergePreviewRefresh(),
+        scheduleMergePreviewRefresh: () => {
+            participantsMergePreviewRefreshController.schedule();
+        },
         updateMergeApplyStatusBadge: (previewData) => updateParticipantsMergeApplyStatusBadge(previewData),
         isMergePreviewRefreshPending: () => participantsMergePreviewRefreshController.isPending(),
     });
@@ -110,6 +117,10 @@ export function initParticipants() {
             return fileOrPath.name;
         }
         return '';
+    }
+
+    function normalizeParticipantColumnName(value) {
+        return String(value || '').toLowerCase().replace(/_/g, '').trim();
     }
 
     function hasParticipantsFileSelection() {
@@ -299,7 +310,9 @@ export function initParticipants() {
             };
         }
 
-        const decisions = getParticipantsMergeHarmonizationDecisions();
+        const decisions = getParticipantsMergeHarmonizationDecisionsPayload(
+            window.participantsMergeHarmonizationDecisions
+        );
         const serverDecisions = (previewData.harmonization_decisions && typeof previewData.harmonization_decisions === 'object')
             ? previewData.harmonization_decisions
             : {};
@@ -2356,16 +2369,12 @@ export function initParticipants() {
         const allColumns = window.neurobagelWidgetState?.allColumns || {};
         const knownMappings = Object.values(window.neurobagelCommonMappings || {});
     
-        function normalizeColName(value) {
-            return String(value || '').toLowerCase().replace(/_/g, '').trim();
-        }
-    
         function findColumnState(colName) {
             if (Object.prototype.hasOwnProperty.call(allColumns, colName)) {
                 return allColumns[colName];
             }
-            const target = normalizeColName(colName);
-            const matchedKey = Object.keys(allColumns).find(key => normalizeColName(key) === target);
+                const target = normalizeParticipantColumnName(colName);
+                const matchedKey = Object.keys(allColumns).find(key => normalizeParticipantColumnName(key) === target);
             return matchedKey ? allColumns[matchedKey] : null;
         }
     
@@ -2462,22 +2471,10 @@ export function initParticipants() {
         return selectedSource;
     }
 
-    function getParticipantsMergeHarmonizationDecisions() {
-        return getParticipantsMergeHarmonizationDecisionsPayload(
-            window.participantsMergeHarmonizationDecisions
-        );
-    }
-
     function appendParticipantsMergeHarmonizationDecisions(formData) {
         appendParticipantsMergeHarmonizationDecisionsPayload(
             formData,
             window.participantsMergeHarmonizationDecisions
-        );
-    }
-
-    function getParticipantsMergeSessionResolutionDecisions() {
-        return getParticipantsMergeSessionResolutionDecisionsPayload(
-            window.participantsMergeSessionResolutionDecisions
         );
     }
 
@@ -2486,18 +2483,6 @@ export function initParticipants() {
             formData,
             window.participantsMergeSessionResolutionDecisions
         );
-    }
-
-    function scheduleParticipantsMergePreviewRefresh() {
-        participantsMergePreviewRefreshController.schedule();
-    }
-
-    function buildParticipantsMergeConflictFormData() {
-        const formData = new FormData();
-        appendParticipantsFileImportFields(formData);
-        appendParticipantsMergeHarmonizationDecisions(formData);
-        appendParticipantsMergeSessionResolutionDecisions(formData);
-        return formData;
     }
 
     function getParticipantsProjectSchemaUrl(projectPath = resolveCurrentProjectPath()) {
@@ -2895,10 +2880,6 @@ export function initParticipants() {
         const tsvColumnMap = window.participantsTsvData || {};
         const tsvColumns = Object.keys(tsvColumnMap);
     
-        function normalizeColName(value) {
-            return String(value || '').toLowerCase().replace(/_/g, '').trim();
-        }
-    
         function normalizeSchemaToken(value) {
             return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '').trim();
         }
@@ -2948,9 +2929,9 @@ export function initParticipants() {
         }
     
         for (const [colName, colData] of Object.entries(allColumns)) {
-            const colNameNormalized = normalizeColName(colName);
+            const colNameNormalized = normalizeParticipantColumnName(colName);
             const matchedTsvColumn = tsvColumns.find(c => {
-                const cNorm = normalizeColName(c);
+                const cNorm = normalizeParticipantColumnName(c);
                 return cNorm === colNameNormalized || cNorm === String(colName || '').toLowerCase();
             });
     
