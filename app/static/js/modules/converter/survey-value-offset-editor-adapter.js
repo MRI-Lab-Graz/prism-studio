@@ -5,28 +5,8 @@ export function createSurveyValueOffsetEditorAdapter({
         return surveyValueOffsetEditorController.applyAdvancedOptionsState();
     }
 
-    function createTaskValueOffsetRow(task = '', offset = null) {
-        return surveyValueOffsetEditorController.createTaskValueOffsetRow(task, offset);
-    }
-
-    function getAvailableSurveyTasksForValueOffsets() {
-        return surveyValueOffsetEditorController.getAvailableSurveyTasksForValueOffsets();
-    }
-
-    function getTaskValueOffsetMapFromEditorState() {
-        return surveyValueOffsetEditorController.getTaskValueOffsetMapFromEditorState();
-    }
-
-    function getCurrentTaskValueOffsetSelectionSignature() {
-        return surveyValueOffsetEditorController.getCurrentTaskValueOffsetSelectionSignature();
-    }
-
     function hasManualTaskValueOffsets() {
         return surveyValueOffsetEditorController.hasManualTaskValueOffsets();
-    }
-
-    function hasIncompleteTaskValueOffsetRows() {
-        return surveyValueOffsetEditorController.hasIncompleteTaskValueOffsetRows();
     }
 
     function hasAppliedTaskValueOffsetSelections() {
@@ -35,22 +15,6 @@ export function createSurveyValueOffsetEditorAdapter({
 
     function updateTaskValueOffsetApplyState() {
         return surveyValueOffsetEditorController.updateTaskValueOffsetApplyState();
-    }
-
-    function getPreferredTaskValueOffsetTask() {
-        return surveyValueOffsetEditorController.getPreferredTaskValueOffsetTask();
-    }
-
-    function syncTaskValueOffsetTextFromState() {
-        return surveyValueOffsetEditorController.syncTaskValueOffsetTextFromState();
-    }
-
-    function setTaskValueOffsetEditorStateFromText(rawText) {
-        return surveyValueOffsetEditorController.setTaskValueOffsetEditorStateFromText(rawText);
-    }
-
-    function clearTaskValueOffsetEditorState() {
-        return surveyValueOffsetEditorController.clearTaskValueOffsetEditorState();
     }
 
     function ensureTaskValueOffsetEditorRow(task = '') {
@@ -63,10 +27,6 @@ export function createSurveyValueOffsetEditorAdapter({
 
     function renderTaskValueOffsetEditor() {
         return surveyValueOffsetEditorController.renderTaskValueOffsetEditor();
-    }
-
-    function handleTaskValueOffsetEditorChanged() {
-        return surveyValueOffsetEditorController.handleTaskValueOffsetEditorChanged();
     }
 
     function clearManualValueOffsetAdvice() {
@@ -83,22 +43,12 @@ export function createSurveyValueOffsetEditorAdapter({
 
     return {
         applyAdvancedOptionsState,
-        createTaskValueOffsetRow,
-        getAvailableSurveyTasksForValueOffsets,
-        getTaskValueOffsetMapFromEditorState,
-        getCurrentTaskValueOffsetSelectionSignature,
         hasManualTaskValueOffsets,
-        hasIncompleteTaskValueOffsetRows,
         hasAppliedTaskValueOffsetSelections,
         updateTaskValueOffsetApplyState,
-        getPreferredTaskValueOffsetTask,
-        syncTaskValueOffsetTextFromState,
-        setTaskValueOffsetEditorStateFromText,
-        clearTaskValueOffsetEditorState,
         ensureTaskValueOffsetEditorRow,
         focusTaskValueOffsetEditor,
         renderTaskValueOffsetEditor,
-        handleTaskValueOffsetEditorChanged,
         clearManualValueOffsetAdvice,
         handleApplyTaskValueOffsetsClick,
         getManualTaskValueOffsets,

@@ -4,10 +4,6 @@ export function createSurveyConvertFeedbackController({
     convertInfo,
     appendLog,
 }) {
-    function openConverterTab(target) {
-        return activateConverterTab(target, { focus: true });
-    }
-
     function showConvertInfoMessage(message, options = {}) {
         if (!convertInfo) {
             return;
@@ -48,7 +44,7 @@ export function createSurveyConvertFeedbackController({
             actionButton.appendChild(buttonIcon);
             actionButton.appendChild(document.createTextNode(String(action.label || 'Open')));
             actionButton.addEventListener('click', () => {
-                if (!openConverterTab(action.target)) {
+                if (!activateConverterTab(action.target, { focus: true })) {
                     appendLog('Could not open the requested converter tab.', 'warning');
                 }
             });
@@ -107,8 +103,6 @@ export function createSurveyConvertFeedbackController({
     return {
         getProjectSaveSummary,
         getParticipantRegistryWarning,
-        openConverterTab,
-        showConvertInfoMessage,
         showParticipantRegistryWarning,
     };
 }

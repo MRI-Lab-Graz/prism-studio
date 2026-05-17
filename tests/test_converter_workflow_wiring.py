@@ -499,7 +499,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             participants_content,
         )
         self.assertIn(
-            "participantsSourcedataQuickSelectController.refresh(projectPath);",
+            "participantsSourcedataQuickSelectController.refresh(resolveCurrentProjectPath());",
             participants_content,
         )
         self.assertIn(
@@ -1115,7 +1115,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             participants_content,
         )
         self.assertIn(
-            "participantsSourcedataQuickSelectController.refresh(projectPath);",
+            "participantsSourcedataQuickSelectController.refresh(resolveCurrentProjectPath());",
             participants_content,
         )
         self.assertIn(
@@ -1507,7 +1507,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "window.addEventListener('prism-project-changed', function() {",
             participants_content,
         )
-        self.assertIn("refreshParticipantsSourcedataQuickSelect();", participants_content)
+        self.assertIn(
+            "participantsSourcedataQuickSelectController.refresh(resolveCurrentProjectPath());",
+            participants_content,
+        )
 
     def test_participants_preview_and_convert_handlers_use_run_lock(self):
         participants_content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
@@ -1617,6 +1620,14 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "import { pickServerFile, prefersServerPicker } from './server-picker.js';",
             content,
         )
+        self.assertIn("const pickedPath = await pickServerFile({", content)
+        self.assertIn("title: 'Select Survey File on Server',", content)
+        self.assertIn("confirmLabel: 'Use This File',", content)
+        self.assertIn(
+            "extensions: '.xlsx,.lsa,.csv,.tsv,.sav,.rds,.rdata,.rda',",
+            content,
+        )
+        self.assertNotIn("async function pickServerSurveyFile() {", content)
         self.assertIn(
             "import { createSurveySessionInputController } from './survey-session-input-controller.js';",
             content,
@@ -1634,7 +1645,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "const {\n        populateSurveySessionPickerFromDetected,\n        getSurveySessionValue,\n        getBiometricsSessionValue,\n    } = surveySessionInputController;",
+            "const {\n        populateSurveySessionPickerFromDetected,\n        getSurveySessionValue,\n    } = surveySessionInputController;",
             content,
         )
         self.assertIn(
@@ -1710,7 +1721,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "const {\n        getProjectSaveSummary,\n        openConverterTab,\n        showConvertInfoMessage,\n        getParticipantRegistryWarning,\n        showParticipantRegistryWarning,\n    } = surveyConvertFeedbackAdapter;",
+            "const {\n        getProjectSaveSummary,\n        getParticipantRegistryWarning,\n        showParticipantRegistryWarning,\n    } = surveyConvertFeedbackAdapter;",
             content,
         )
         self.assertIn(
@@ -1718,11 +1729,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "const {\n        collectNearMatchCandidates,\n        buildNearMatchConfirmationMessage,\n        promptNearMatchSelection,\n    } = surveyNearItemMatchAdapter;",
+            "const {\n        promptNearMatchSelection,\n    } = surveyNearItemMatchAdapter;",
             content,
         )
         self.assertIn(
-            "const surveyTemplateGenerationController = createSurveyTemplateGenerationController({",
+            "createSurveyTemplateGenerationController({",
             content,
         )
         self.assertIn(
@@ -1733,10 +1744,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "const {\n        displayTemplateSingle,\n        displayTemplateGroups,\n        displayTemplateQuestions,\n        displayParticipantMetadataSection,\n    } = surveyTemplateRenderAdapter;",
             content,
         )
-        self.assertIn(
-            "await surveyTemplateGenerationController.handleTemplateGeneration(file);",
-            content,
-        )
+        self.assertNotIn("async function handleTemplateGeneration(file) {", content)
         self.assertIn(
             "export function createSurveyTemplateGenerationController({",
             template_generation_content,
@@ -1794,6 +1802,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "const surveySourcedataQuickSelectController = createSurveySourcedataQuickSelectController({",
             content,
         )
+        self.assertNotIn("function handleModeSwitch() {", content)
         self.assertIn("surveySourcedataQuickSelectController.initialize();", content)
         self.assertIn("onProjectChanged: () => {", content)
         self.assertIn("surveyImportFormStateController.resetSurveyImportFormState();", content)
@@ -1991,7 +2000,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
 
         self.assertIn("let taskValueOffsetEditorState = [];", module_content)
         self.assertIn("let appliedTaskValueOffsetSelectionSignature = '';", module_content)
-        self.assertIn("syncTaskValueOffsetTextFromState,", module_content)
+        self.assertIn("handleApplyTaskValueOffsetsClick,", module_content)
         self.assertIn("surveyPreviewSelectionState.availableTasks", module_content)
         self.assertIn(
             "import { createSurveyValueOffsetEditorController } from './survey-value-offset-editor.js';",
@@ -2010,7 +2019,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             module_content,
         )
         self.assertIn(
-            "const {\n        applyAdvancedOptionsState,\n        createTaskValueOffsetRow,\n        getAvailableSurveyTasksForValueOffsets,\n        getTaskValueOffsetMapFromEditorState,\n        getCurrentTaskValueOffsetSelectionSignature,\n        hasManualTaskValueOffsets,\n        hasIncompleteTaskValueOffsetRows,\n        hasAppliedTaskValueOffsetSelections,\n        updateTaskValueOffsetApplyState,\n        getPreferredTaskValueOffsetTask,\n        syncTaskValueOffsetTextFromState,\n        setTaskValueOffsetEditorStateFromText,\n        clearTaskValueOffsetEditorState,\n        ensureTaskValueOffsetEditorRow,\n        focusTaskValueOffsetEditor,\n        renderTaskValueOffsetEditor,\n        handleTaskValueOffsetEditorChanged,\n        clearManualValueOffsetAdvice,\n        handleApplyTaskValueOffsetsClick,\n        getManualTaskValueOffsets,\n    } = surveyValueOffsetEditorAdapter;",
+            "const {\n        applyAdvancedOptionsState,\n        hasManualTaskValueOffsets,\n        hasAppliedTaskValueOffsetSelections,\n        updateTaskValueOffsetApplyState,\n        ensureTaskValueOffsetEditorRow,\n        focusTaskValueOffsetEditor,\n        renderTaskValueOffsetEditor,\n        clearManualValueOffsetAdvice,\n        handleApplyTaskValueOffsetsClick,\n        getManualTaskValueOffsets,\n    } = surveyValueOffsetEditorAdapter;",
             module_content,
         )
         self.assertIn("getTemplateWorkflowGate: () => templateWorkflowGate,", module_content)
@@ -2147,12 +2156,20 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "return surveyValueOffsetEditorController.handleApplyTaskValueOffsetsClick();",
             value_offset_editor_adapter_content,
         )
-        self.assertIn(
+        self.assertNotIn(
             "return surveyValueOffsetEditorController.getAvailableSurveyTasksForValueOffsets();",
             value_offset_editor_adapter_content,
         )
         self.assertIn(
             "return surveyValueOffsetEditorController.renderTaskValueOffsetEditor();",
+            value_offset_editor_adapter_content,
+        )
+        self.assertNotIn(
+            "function getAvailableSurveyTasksForValueOffsets()",
+            value_offset_editor_adapter_content,
+        )
+        self.assertNotIn(
+            "function handleTaskValueOffsetEditorChanged()",
             value_offset_editor_adapter_content,
         )
         self.assertIn(
@@ -2389,7 +2406,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             survey_content,
         )
         self.assertIn(
-            "const {\n        populateSurveySessionPickerFromDetected,\n        getSurveySessionValue,\n        getBiometricsSessionValue,\n    } = surveySessionInputController;",
+            "const {\n        populateSurveySessionPickerFromDetected,\n        getSurveySessionValue,\n    } = surveySessionInputController;",
             survey_content,
         )
         self.assertIn(
@@ -2493,7 +2510,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             survey_content,
         )
         self.assertIn(
-            "const {\n        getProjectSaveSummary,\n        openConverterTab,\n        showConvertInfoMessage,\n        getParticipantRegistryWarning,\n        showParticipantRegistryWarning,\n    } = surveyConvertFeedbackAdapter;",
+            "const {\n        getProjectSaveSummary,\n        getParticipantRegistryWarning,\n        showParticipantRegistryWarning,\n    } = surveyConvertFeedbackAdapter;",
             survey_content,
         )
         self.assertIn(
@@ -2501,7 +2518,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             survey_content,
         )
         self.assertIn(
-            "const {\n        collectNearMatchCandidates,\n        buildNearMatchConfirmationMessage,\n        promptNearMatchSelection,\n    } = surveyNearItemMatchAdapter;",
+            "const {\n        promptNearMatchSelection,\n    } = surveyNearItemMatchAdapter;",
             survey_content,
         )
         self.assertIn(
@@ -2533,7 +2550,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             survey_content,
         )
         self.assertIn(
-            "const {\n        applyAdvancedOptionsState,\n        createTaskValueOffsetRow,\n        getAvailableSurveyTasksForValueOffsets,\n        getTaskValueOffsetMapFromEditorState,\n        getCurrentTaskValueOffsetSelectionSignature,\n        hasManualTaskValueOffsets,\n        hasIncompleteTaskValueOffsetRows,\n        hasAppliedTaskValueOffsetSelections,\n        updateTaskValueOffsetApplyState,\n        getPreferredTaskValueOffsetTask,\n        syncTaskValueOffsetTextFromState,\n        setTaskValueOffsetEditorStateFromText,\n        clearTaskValueOffsetEditorState,\n        ensureTaskValueOffsetEditorRow,\n        focusTaskValueOffsetEditor,\n        renderTaskValueOffsetEditor,\n        handleTaskValueOffsetEditorChanged,\n        clearManualValueOffsetAdvice,\n        handleApplyTaskValueOffsetsClick,\n        getManualTaskValueOffsets,\n    } = surveyValueOffsetEditorAdapter;",
+            "const {\n        applyAdvancedOptionsState,\n        hasManualTaskValueOffsets,\n        hasAppliedTaskValueOffsetSelections,\n        updateTaskValueOffsetApplyState,\n        ensureTaskValueOffsetEditorRow,\n        focusTaskValueOffsetEditor,\n        renderTaskValueOffsetEditor,\n        clearManualValueOffsetAdvice,\n        handleApplyTaskValueOffsetsClick,\n        getManualTaskValueOffsets,\n    } = surveyValueOffsetEditorAdapter;",
             survey_content,
         )
         self.assertIn("surveyConversionLogController.initialize();", survey_content)
@@ -2996,7 +3013,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             convert_feedback_content,
         )
         self.assertIn(
-            "return activateConverterTab(target, { focus: true });",
+            "if (!activateConverterTab(action.target, { focus: true })) {",
             convert_feedback_content,
         )
         self.assertIn(
@@ -3012,11 +3029,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "function getProjectSaveSummary(data)",
             convert_feedback_adapter_content,
         )
-        self.assertIn(
+        self.assertNotIn(
             "function openConverterTab(target)",
             convert_feedback_adapter_content,
         )
-        self.assertIn(
+        self.assertNotIn(
             "function showConvertInfoMessage(message, options = {})",
             convert_feedback_adapter_content,
         )
@@ -3122,11 +3139,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "export function createSurveyNearItemMatchAdapter({",
             near_item_match_adapter_content,
         )
-        self.assertIn(
+        self.assertNotIn(
             "function collectNearMatchCandidates(payload)",
             near_item_match_adapter_content,
         )
-        self.assertIn(
+        self.assertNotIn(
             "function buildNearMatchConfirmationMessage(payload, actionLabel)",
             near_item_match_adapter_content,
         )
