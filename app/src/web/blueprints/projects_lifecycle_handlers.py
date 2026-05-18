@@ -63,7 +63,12 @@ def _build_project_quick_summary(root_path: Path) -> dict[str, Any]:
         return {}
 
 
-def handle_set_current(get_current_project, set_current_project, save_last_project):
+def handle_set_current(
+    get_current_project,
+    set_current_project,
+    save_last_project,
+    close_project_session=None,
+):
     """Set or clear current project in session and persisted settings."""
     data = request.get_json()
     if not data:
@@ -72,6 +77,11 @@ def handle_set_current(get_current_project, set_current_project, save_last_proje
     path = data.get("path")
 
     if not path:
+        if close_project_session is not None:
+            try:
+                close_project_session(reason="project_cleared")
+            except Exception:
+                pass
         session.pop("current_project_path", None)
         session.pop("current_project_name", None)
         session.pop("current_project_icon", None)
