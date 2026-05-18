@@ -110,6 +110,19 @@
     font-weight: 600;
 }
 
+.studio-theme .navbar .navbar-nav > .nav-item > .nav-link {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.studio-theme .navbar .navbar-nav > .nav-item > .nav-link > i[class*="fa-"] {
+    flex: 0 0 auto;
+    width: 1.1rem;
+    line-height: 1;
+    text-align: center;
+}
+
 .studio-theme .navbar .nav-link:hover,
 .studio-theme .navbar .nav-link:focus,
 .studio-theme .navbar .nav-link.active {
