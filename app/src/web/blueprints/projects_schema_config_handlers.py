@@ -154,6 +154,9 @@ def handle_get_project_preferences(get_current_project, namespace: str | None = 
         if namespace == "export":
             resolved_preferences = dict(namespace_preferences)
             app_settings = load_app_settings(app_root=str(Path(current_app.root_path)))
+            project_has_explicit_defacing_mode = str(
+                resolved_preferences.get("defacing_confirmation_mode") or ""
+            ).strip().lower() in {"risk", "always"}
             resolved_preferences["defacing_confirmation_mode"] = (
                 normalize_export_defacing_confirmation_mode(
                     resolved_preferences.get("defacing_confirmation_mode"),
@@ -164,7 +167,17 @@ def handle_get_project_preferences(get_current_project, namespace: str | None = 
                     ),
                 )
             )
-            return jsonify({"success": True, "preferences": resolved_preferences})
+            return jsonify(
+                {
+                    "success": True,
+                    "preferences": resolved_preferences,
+                    "inherited_preferences": {
+                        "defacing_confirmation_mode": (
+                            not project_has_explicit_defacing_mode
+                        )
+                    },
+                }
+            )
 
         return jsonify({"success": True, "preferences": namespace_preferences})
 
@@ -212,10 +225,19 @@ def handle_save_project_preferences(get_current_project, namespace: str | None =
 
     if namespace:
         # Merge into specific namespace
-        current_prefs[namespace] = {
+        namespace_prefs = {
             **(current_prefs.get(namespace) or {}),
             **new_prefs,
         }
+        if namespace == "export":
+            mode = str(namespace_prefs.get("defacing_confirmation_mode") or "").strip()
+            normalized_mode = mode.lower()
+            if normalized_mode in {"risk", "always"}:
+                namespace_prefs["defacing_confirmation_mode"] = normalized_mode
+            else:
+                namespace_prefs.pop("defacing_confirmation_mode", None)
+
+        current_prefs[namespace] = namespace_prefs
     else:
         # Replace all preferences
         current_prefs = new_prefs

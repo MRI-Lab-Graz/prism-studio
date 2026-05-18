@@ -15,6 +15,9 @@ let exportPreferencesLoadToken = 0;
 let isApplyingExportPreferences = false;
 let exportModuleInitialized = false;
 let lastLoadedExportPreferences = getDefaultExportPreferences();
+let lastExportPreferenceInheritance = {
+    defacing_confirmation_mode: false,
+};
 let lastExportStructureStatus = {
     message: 'Load a project to view export filters.',
     tone: 'muted',
@@ -199,12 +202,29 @@ function updateExportSnapshotUi() {
 
     if (preferenceSummary && preferenceDetail) {
         if (currentProjectPath) {
-            preferenceSummary.textContent = 'Saved per project';
-            preferenceDetail.textContent = 'Output folder and export filters are remembered automatically.';
+            const defacingMode = normalizeDefacingConfirmationMode(
+                lastLoadedExportPreferences.defacing_confirmation_mode
+            );
+            const defacingModeLabel = defacingMode === 'always'
+                ? 'always ask before MRI scrub export'
+                : 'ask only on detected defacing risk';
+            const defacingModeSource = lastExportPreferenceInheritance.defacing_confirmation_mode
+                ? 'inherited from Global Settings'
+                : 'saved in project export preferences';
+
+            preferenceSummary.textContent = lastExportPreferenceInheritance.defacing_confirmation_mode
+                ? 'Project + global defaults'
+                : 'Saved per project';
+            preferenceDetail.textContent = `Output folder and export filters are remembered automatically. Defacing confirmation: ${defacingModeLabel} (${defacingModeSource}).`;
         } else {
             preferenceSummary.textContent = 'Inactive until a project is loaded';
             preferenceDetail.textContent = 'Load or create a project before export preferences can be restored.';
         }
+    }
+
+    const resetDefacingModeBtn = getById('exportDefacingUseGlobalDefault');
+    if (resetDefacingModeBtn) {
+        resetDefacingModeBtn.disabled = !currentProjectPath || lastExportPreferenceInheritance.defacing_confirmation_mode;
     }
 
     if (outputFolderHelp) {
@@ -330,6 +350,12 @@ function saveExportPreferencesPatch(preferencesPatch) {
         ...lastLoadedExportPreferences,
         ...preferencesPatch,
     });
+    if (Object.prototype.hasOwnProperty.call(preferencesPatch, 'defacing_confirmation_mode')) {
+        lastExportPreferenceInheritance = {
+            ...lastExportPreferenceInheritance,
+            defacing_confirmation_mode: false,
+        };
+    }
     updateExportSnapshotUi();
 
     return fetchWithApiFallback('/api/projects/preferences/export', {
@@ -360,6 +386,9 @@ export function showExportCard() {
 
     const outputFolderInput = getById('exportOutputFolder');
     lastLoadedExportPreferences = getDefaultExportPreferences();
+    lastExportPreferenceInheritance = {
+        defacing_confirmation_mode: false,
+    };
     lastExportStructureStatus = {
         message: 'Load a project to view export filters.',
         tone: 'muted',
@@ -502,6 +531,9 @@ export async function loadExportPreferences() {
     if (!requestProjectPath) {
         exportPreferencesLoadToken += 1;
         lastLoadedExportPreferences = getDefaultExportPreferences();
+        lastExportPreferenceInheritance = {
+            defacing_confirmation_mode: false,
+        };
         if (outputFolderInput) {
             outputFolderInput.value = '';
         }
@@ -522,6 +554,10 @@ export async function loadExportPreferences() {
         const normalized = resp.ok && data.success
             ? normalizeExportPreferences(data.preferences)
             : getDefaultExportPreferences();
+        const inheritedPreferences = data.inherited_preferences || {};
+        lastExportPreferenceInheritance = {
+            defacing_confirmation_mode: Boolean(inheritedPreferences.defacing_confirmation_mode),
+        };
 
         lastLoadedExportPreferences = normalized;
         if (outputFolderInput) {
@@ -535,6 +571,9 @@ export async function loadExportPreferences() {
             return lastLoadedExportPreferences;
         }
         lastLoadedExportPreferences = getDefaultExportPreferences();
+        lastExportPreferenceInheritance = {
+            defacing_confirmation_mode: false,
+        };
         if (outputFolderInput) {
             outputFolderInput.value = '';
         }
@@ -609,6 +648,24 @@ export function initExportForm() {
     if (defacingConfirmAlwaysToggle) {
         defacingConfirmAlwaysToggle.addEventListener('change', () => {
             saveExportPreferencesPatch({ defacing_confirmation_mode: getSelectedDefacingConfirmationMode() });
+        });
+    }
+
+    const resetDefacingModeBtn = getById('exportDefacingUseGlobalDefault');
+    if (resetDefacingModeBtn) {
+        resetDefacingModeBtn.addEventListener('click', async () => {
+            const projectPath = resolveCurrentProjectPath();
+            if (!projectPath) {
+                return;
+            }
+
+            resetDefacingModeBtn.disabled = true;
+            try {
+                await saveExportPreferencesPatch({ defacing_confirmation_mode: null });
+                await loadExportPreferences();
+            } finally {
+                updateExportSnapshotUi();
+            }
         });
     }
 
