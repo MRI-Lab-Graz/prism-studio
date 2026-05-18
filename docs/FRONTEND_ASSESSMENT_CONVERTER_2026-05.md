@@ -2,6 +2,12 @@
 
 Date: 2026-05-12 (updated 2026-05-17)
 
+Synchronization status (2026-05-17):
+
+- Cross-checked against current converter modularization baseline and shared polling/run-state contracts.
+- No finding severity changes in this synchronization pass.
+- Existing remediation slices and validation scope below remain authoritative.
+
 Scope:
 
 - Converter shell page and all converter tabs
@@ -36,7 +42,7 @@ Ownership gap candidates to validate/fix:
 - Any frontend-side transformation logic that changes domain behavior before backend execution must be moved into backend (or re-validated server-side).
 - Polling/cancel/retry policy should remain frontend UX only; job state truth must remain backend-owned.
 
-## Workflow and Stability Findings
+## Current Stability Findings
 
 ### High - Polling helper has no abort signal contract
 
@@ -175,6 +181,14 @@ Recommendation:
 Coverage:
 
 - Add a lightweight perf smoke benchmark for log append throughput.
+
+## Runtime Smoke Checklist (Phase 1.1)
+
+1. Trigger converter runs in Participants, Survey, and one async modality (Environment/Physio/Eyetracking) and verify one active run per action path.
+2. Switch project context during an active async conversion and verify polling stops cleanly with no stale status/log updates.
+3. Verify repeated click attempts on preview/convert actions do not create duplicate backend jobs.
+4. Verify status/cancel handling for unknown or stale job IDs returns safe failure feedback without leaking prior job state.
+5. Run long log-producing conversions and confirm log rendering uses safe DOM append paths without UI lockups.
 
 ## Remediation Slices
 
