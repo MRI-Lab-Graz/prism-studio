@@ -3,6 +3,7 @@ import os
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -99,6 +100,68 @@ class TestProjectManager(unittest.TestCase):
             result = manager.create_project(str(project_path), {"name": "demo_project"})
 
             self.assertTrue(result.get("success"), result)
+
+    @patch("src.project_manager.shutil.which", return_value=None)
+    def test_create_project_datalad_is_default_but_optional_when_missing(self, _mock_which):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            result = manager.create_project(str(project_path), {"name": "demo_project"})
+
+        self.assertTrue(result.get("success"), result)
+        self.assertTrue(result.get("datalad", {}).get("requested"))
+        self.assertFalse(result.get("datalad", {}).get("available"))
+        self.assertIn("continued without", result.get("datalad", {}).get("message", ""))
+
+    @patch("src.project_manager.subprocess.run")
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_create_project_allows_opting_out_of_datalad(
+        self, _mock_which, mock_run
+    ):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            result = manager.create_project(
+                str(project_path),
+                {"name": "demo_project", "use_datalad": False},
+            )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertFalse(result.get("datalad", {}).get("requested"))
+        self.assertFalse(result.get("datalad", {}).get("initialized"))
+        mock_run.assert_not_called()
+
+    @patch(
+        "src.project_manager.subprocess.run",
+        return_value=SimpleNamespace(returncode=0, stdout="", stderr=""),
+    )
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_create_project_initializes_and_saves_datalad_dataset(
+        self, _mock_which, mock_run
+    ):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            result = manager.create_project(str(project_path), {"name": "demo_project"})
+
+        self.assertTrue(result.get("success"), result)
+        self.assertTrue(result.get("datalad", {}).get("initialized"))
+        self.assertTrue(result.get("datalad", {}).get("saved"))
+        self.assertEqual(
+            mock_run.call_args_list[0].kwargs.get("cwd"),
+            str(project_path),
+        )
+        self.assertEqual(
+            mock_run.call_args_list[0].args[0],
+            ["/usr/bin/datalad", "create", "--force"],
+        )
+        self.assertEqual(
+            mock_run.call_args_list[1].args[0],
+            ["/usr/bin/datalad", "save", "-m", "Initialize PRISM dataset structure"],
+        )
 
     def test_create_project_reports_existing_nonempty_target_actionably(self):
         manager = ProjectManager()
