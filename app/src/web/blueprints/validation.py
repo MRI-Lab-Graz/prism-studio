@@ -31,6 +31,9 @@ from src.web.validation import (
     fail_progress,
     get_progress,
     clear_progress,
+    cancel_progress,
+    mark_progress_cancelled,
+    ValidationCancelledError,
 )
 from src.web.upload import (
     process_folder_upload as _process_folder_upload,
@@ -128,6 +131,36 @@ def get_validation_progress(job_id):
     """Get progress for a validation job (polled by UI)."""
     progress_data = get_progress(job_id)
     return _set_no_cache_headers(jsonify(progress_data))
+
+
+@validation_bp.route("/api/progress/<job_id>/cancel", methods=["DELETE", "POST"])
+def cancel_validation_progress(job_id):
+    """Request cancellation for a running validation job."""
+    accepted = cancel_progress(job_id)
+    payload = get_progress(job_id)
+
+    if accepted:
+        response = jsonify(
+            {
+                "success": True,
+                "job_id": job_id,
+                "status": payload.get("status", "cancelling"),
+                "message": payload.get(
+                    "message", "Cancellation requested. Waiting for validator to stop..."
+                ),
+            }
+        )
+        return _set_no_cache_headers(response), 202
+
+    response = jsonify(
+        {
+            "success": False,
+            "job_id": job_id,
+            "status": payload.get("status", "pending"),
+            "message": payload.get("message", "Validation job cannot be cancelled."),
+        }
+    )
+    return _set_no_cache_headers(response), 200
 
 
 def _request_wants_json_response() -> bool:
@@ -396,6 +429,12 @@ def _execute_validation_job(
 ) -> str:
     """Run one validation job end-to-end and store its result."""
 
+    def _raise_if_cancelled() -> None:
+        current = get_progress(job_id)
+        status = str(current.get("status") or "").strip().lower()
+        if status in {"cancelling", "cancelled"}:
+            raise ValidationCancelledError("Validation cancelled by user.")
+
     def _phase_for_message(message: str) -> tuple[str, str]:
         normalized = (message or "").strip().lower()
         if "running bids validator" in normalized:
@@ -407,6 +446,7 @@ def _execute_validation_job(
         return "validation", "determinate"
 
     def progress_callback(progress: int, message: str):
+        _raise_if_cancelled()
         phase, progress_mode = _phase_for_message(message)
         update_progress(
             job_id,
@@ -416,6 +456,8 @@ def _execute_validation_job(
             phase=phase,
             progress_mode=progress_mode,
         )
+
+    _raise_if_cancelled()
 
     update_progress(
         job_id,
@@ -436,6 +478,8 @@ def _execute_validation_job(
         project_path=project_path,
         progress_callback=progress_callback,
     )
+
+    _raise_if_cancelled()
 
     results = _build_validation_results_payload(
         issues=issues,
@@ -471,6 +515,10 @@ def _run_validation_job_async(**kwargs) -> None:
     job_id = kwargs.get("job_id", "")
     try:
         _execute_validation_job(**kwargs)
+    except ValidationCancelledError as exc:
+        if temp_dir and os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        mark_progress_cancelled(job_id, str(exc) or "Validation cancelled by user.")
     except Exception as exc:
         if temp_dir and os.path.exists(temp_dir):
             shutil.rmtree(temp_dir, ignore_errors=True)

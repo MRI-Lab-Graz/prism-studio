@@ -80,7 +80,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const validationProgressError = document.getElementById('validationProgressError');
     const resumeValidationWrap = document.getElementById('resumeValidationWrap');
     const resumeValidationBtn = document.getElementById('resumeValidationBtn');
+    const pauseValidationBtn = document.getElementById('pauseValidationBtn');
+    const cancelValidationBtn = document.getElementById('cancelValidationBtn');
+    const cancelValidationButtonHtml = '<i class="fas fa-stop-circle me-2"></i>Cancel Validation';
+    const cancelValidationPendingHtml = '<i class="fas fa-spinner fa-spin me-2"></i>Cancelling...';
     let validationInProgress = false;
+    let validationJobDetached = false;
     let activeValidationJobId = null;
     let libraryDefaultRequestToken = 0;
     let progressDisplayState = {
@@ -89,22 +94,25 @@ document.addEventListener('DOMContentLoaded', function() {
         phaseStartedAt: 0,
     };
     let validationPollAbortController = null;
+    let validationPollingAbortReason = '';
     let selectedServerFolderPath = '';
 
     function isAbortError(error) {
         return Boolean(error && (error.name === 'AbortError' || /aborted/i.test(error.message || '')));
     }
 
-    function abortValidationPolling() {
+    function abortValidationPolling(reason = 'manual') {
         if (!validationPollAbortController) {
             return;
         }
+        validationPollingAbortReason = reason;
         validationPollAbortController.abort();
         validationPollAbortController = null;
     }
 
     function beginValidationPollingSession() {
-        abortValidationPolling();
+        abortValidationPolling('restart');
+        validationPollingAbortReason = '';
         validationPollAbortController = new AbortController();
         return validationPollAbortController.signal;
     }
@@ -173,7 +181,49 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!resumeValidationWrap) {
             return;
         }
-        resumeValidationWrap.classList.toggle('d-none', !show);
+        const shouldShow = Boolean(show) && !validationInProgress;
+        resumeValidationWrap.classList.toggle('d-none', !shouldShow);
+    }
+
+    function showPauseValidationButton(show) {
+        if (!pauseValidationBtn) {
+            return;
+        }
+        pauseValidationBtn.classList.toggle('d-none', !show);
+    }
+
+    function showCancelValidationButton(show, options = {}) {
+        if (!cancelValidationBtn) {
+            return;
+        }
+
+        const cancelling = Boolean(options.cancelling);
+        cancelValidationBtn.classList.toggle('d-none', !show);
+        cancelValidationBtn.disabled = Boolean(options.disabled || cancelling);
+        cancelValidationBtn.innerHTML = cancelling
+            ? cancelValidationPendingHtml
+            : cancelValidationButtonHtml;
+    }
+
+    function getVisibleValidationProgress() {
+        if (validationProgressBar) {
+            const raw = Number(validationProgressBar.getAttribute('aria-valuenow'));
+            if (Number.isFinite(raw)) {
+                return Math.max(0, Math.min(100, raw));
+            }
+        }
+        return Math.max(0, Math.min(100, Number(progressDisplayState.visualProgress) || 0));
+    }
+
+    function getActiveValidationJobIdentifier() {
+        if (activeValidationJobId) {
+            return activeValidationJobId;
+        }
+        const stored = readStoredValidationJob();
+        if (stored && isStoredValidationJobCompatible(stored)) {
+            return stored.jobId || '';
+        }
+        return '';
     }
 
     function readStoredValidationJob() {
@@ -450,8 +500,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function restoreValidationButton(options = {}) {
         const clearStoredJob = options.clearStoredJob !== false;
-        abortValidationPolling();
+        abortValidationPolling('reset');
         validationInProgress = false;
+        validationJobDetached = false;
         activeValidationJobId = null;
         progressDisplayState = {
             phase: 'idle',
@@ -465,6 +516,9 @@ document.addEventListener('DOMContentLoaded', function() {
             uploadBtn.disabled = false;
             uploadBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Start Validation';
         }
+        showPauseValidationButton(false);
+        showCancelValidationButton(false);
+        showResumeValidationButton(false);
         updateTargetState();
     }
 
@@ -556,6 +610,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 labelText: progressUi.labelText,
             });
 
+            if (status === 'running' || status === 'pending') {
+                showPauseValidationButton(true);
+                showCancelValidationButton(true);
+            }
+
             if (status === 'complete') {
                 clearStoredValidationJob();
                 if (payload.redirect_url) {
@@ -565,6 +624,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (payload.result_id) {
                     window.location.href = `/results/${encodeURIComponent(payload.result_id)}`;
                     return;
+                }
+                return;
+            }
+
+            if (status === 'cancelling') {
+                showPauseValidationButton(false);
+                showCancelValidationButton(true, { cancelling: true });
+                continue;
+            }
+
+            if (status === 'cancelled') {
+                clearStoredValidationJob();
+                restoreValidationButton();
+                showValidationError(payload.message || 'Validation cancelled.');
+                if (uploadInfo) {
+                    uploadInfo.innerHTML = '<i class="fas fa-ban me-1 text-warning"></i>Validation cancelled.';
                 }
                 return;
             }
@@ -582,8 +657,11 @@ document.addEventListener('DOMContentLoaded', function() {
         hideValidationError();
         showResumeValidationButton(false);
         validationInProgress = true;
+        validationJobDetached = false;
         activeValidationJobId = null;
         clearStoredValidationJob();
+        showPauseValidationButton(true);
+        showCancelValidationButton(true);
 
         const initialMessage = options.initialMessage || 'Starting validation...';
         const progressFloor = Number.isFinite(Number(options.progressFloor))
@@ -642,6 +720,90 @@ document.addEventListener('DOMContentLoaded', function() {
             text.textContent = message;
             uploadInfo.appendChild(icon);
             uploadInfo.appendChild(text);
+        }
+    }
+
+    function pauseActiveValidationUpdates() {
+        if (!validationInProgress) {
+            return;
+        }
+
+        const storedJob = readStoredValidationJob();
+        const canResume = Boolean(storedJob && isStoredValidationJobCompatible(storedJob));
+        if (!canResume) {
+            showValidationError('Cannot pause updates because this validation job cannot be resumed from this target.');
+            return;
+        }
+
+        abortValidationPolling('pause');
+        validationInProgress = false;
+        validationJobDetached = true;
+        activeValidationJobId = storedJob.jobId || activeValidationJobId;
+
+        showPauseValidationButton(false);
+        showResumeValidationButton(true);
+        showCancelValidationButton(true);
+
+        const currentProgress = getVisibleValidationProgress();
+        setValidationProgress(
+            currentProgress,
+            'Live updates paused. Validation continues in the background.',
+            { animated: false }
+        );
+
+        if (uploadBtn) {
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<i class="fas fa-pause me-2"></i>Validation Running (updates paused)';
+        }
+
+        if (uploadInfo) {
+            uploadInfo.innerHTML = '<i class="fas fa-pause-circle me-1 text-warning"></i>Updates paused. Use Resume Updates to reconnect or Cancel Validation to stop this run.';
+        }
+    }
+
+    async function requestValidationCancellation(jobId) {
+        const response = await fetchWithApiFallback(
+            `/api/progress/${encodeURIComponent(jobId)}/cancel`,
+            {
+                method: 'DELETE',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            }
+        );
+
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(payload.error || 'Could not cancel validation.');
+        }
+
+        return payload;
+    }
+
+    async function cancelActiveValidationJob() {
+        const jobId = getActiveValidationJobIdentifier();
+        if (!jobId) {
+            showValidationError('No active validation job is available to cancel.');
+            return;
+        }
+
+        hideValidationError();
+        showPauseValidationButton(false);
+        showCancelValidationButton(true, { cancelling: true });
+
+        const currentProgress = getVisibleValidationProgress();
+        setValidationProgress(currentProgress, 'Requesting cancellation...', { animated: true });
+
+        try {
+            const payload = await requestValidationCancellation(jobId);
+            const message = payload.message || 'Cancellation requested. Waiting for validator to stop...';
+            setValidationProgress(currentProgress, message, { animated: true });
+
+            if (validationJobDetached && !validationInProgress) {
+                await resumeStoredValidationJob();
+            }
+        } catch (error) {
+            showCancelValidationButton(true);
+            showPauseValidationButton(validationInProgress);
+            showValidationError(error.message || 'Could not cancel validation.');
         }
     }
 
@@ -774,7 +936,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (validationInProgress) {
+        if (validationInProgress || validationJobDetached) {
             uploadBtn.disabled = true;
             return;
         }
@@ -1162,6 +1324,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 } catch (error) {
                     if (isAbortError(error)) {
+                        if (validationPollingAbortReason === 'pause') {
+                            validationPollingAbortReason = '';
+                            return false;
+                        }
                         restoreValidationButton({ clearStoredJob: false });
                         return false;
                     }
@@ -1196,6 +1362,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             } catch (error) {
                 if (isAbortError(error)) {
+                    if (validationPollingAbortReason === 'pause') {
+                        validationPollingAbortReason = '';
+                        return false;
+                    }
                     restoreValidationButton({ clearStoredJob: false });
                     return false;
                 }
@@ -1304,6 +1474,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             if (isAbortError(error)) {
+                if (validationPollingAbortReason === 'pause') {
+                    validationPollingAbortReason = '';
+                    return false;
+                }
                 restoreValidationButton({ clearStoredJob: false });
                 return false;
             }
@@ -1329,7 +1503,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         hideValidationError();
         validationInProgress = true;
+        validationJobDetached = false;
         activeValidationJobId = storedJob.jobId || null;
+        showResumeValidationButton(false);
+        showPauseValidationButton(true);
+        showCancelValidationButton(true);
 
         if (uploadBtn) {
             uploadBtn.disabled = true;
@@ -1356,6 +1534,10 @@ document.addEventListener('DOMContentLoaded', function() {
             return true;
         } catch (error) {
             if (isAbortError(error)) {
+                if (validationPollingAbortReason === 'pause') {
+                    validationPollingAbortReason = '';
+                    return false;
+                }
                 restoreValidationButton({ clearStoredJob: false });
                 return false;
             }
@@ -1364,11 +1546,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    window.addEventListener('pagehide', abortValidationPolling);
+    window.addEventListener('pagehide', function() {
+        abortValidationPolling('pagehide');
+    });
+
+    if (pauseValidationBtn) {
+        pauseValidationBtn.addEventListener('click', function() {
+            pauseActiveValidationUpdates();
+        });
+    }
 
     if (resumeValidationBtn) {
         resumeValidationBtn.addEventListener('click', function() {
             resumeStoredValidationJob();
+        });
+    }
+
+    if (cancelValidationBtn) {
+        cancelValidationBtn.addEventListener('click', function() {
+            void cancelActiveValidationJob();
         });
     }
 
@@ -1378,6 +1574,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (storedValidationJob && !canResumeStoredJob) {
         clearStoredValidationJob();
     }
+    showPauseValidationButton(false);
+    showCancelValidationButton(false);
     showResumeValidationButton(canResumeStoredJob);
     if (canResumeStoredJob) {
         resumeStoredValidationJob();
