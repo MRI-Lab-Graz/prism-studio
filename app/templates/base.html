@@ -9,6 +9,20 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/studio-theme.css', v='20260505-sticky-header') }}" rel="stylesheet">
+    <script>
+        (() => {
+            const storageKey = 'prism_beginner_help_mode';
+            let enabled = true;
+            try {
+                const value = localStorage.getItem(storageKey);
+                enabled = value === null ? true : value === '1';
+            } catch (_) {
+                enabled = true;
+            }
+            document.documentElement.setAttribute('data-beginner-help-mode', enabled ? 'on' : 'off');
+            window.prismBeginnerHelpMode = enabled;
+        })();
+    </script>
     {% block styles %}{% endblock %}
     <style>
         .upload-area {
@@ -87,6 +101,9 @@
         }
         .studio-help-panel {
             border-radius: 10px;
+        }
+        html[data-beginner-help-mode="off"] [data-help-panel][data-help-default-mode="beginner"] {
+            display: none;
         }
         .studio-help-panel .card-header {
             border-top-left-radius: 10px;

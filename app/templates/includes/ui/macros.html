@@ -13,7 +13,12 @@
 {%- endmacro %}
 
 {% macro help_panel(title, variant='info', expanded=true, icon_class='fas fa-circle-info', body_padding='py-2', extra_classes='mb-3', default_mode='') -%}
-<div class="card border-{{ variant }} {{ extra_classes }} studio-help-panel" data-help-panel data-help-expanded="{{ 'true' if expanded else 'false' }}" data-help-initial-expanded="{{ 'true' if expanded else 'false' }}"{% if default_mode %} data-help-default-mode="{{ default_mode }}"{% endif %}>
+{% set normalized_title = title|default('', true)|trim|lower %}
+{% set resolved_default_mode = default_mode|trim %}
+{% if not resolved_default_mode and normalized_title in ['quick guide', 'quick start'] %}
+{% set resolved_default_mode = 'beginner' %}
+{% endif %}
+<div class="card border-{{ variant }} {{ extra_classes }} studio-help-panel" data-help-panel data-help-expanded="{{ 'true' if expanded else 'false' }}" data-help-initial-expanded="{{ 'true' if expanded else 'false' }}"{% if resolved_default_mode %} data-help-default-mode="{{ resolved_default_mode }}"{% endif %}>
     <div class="card-header bg-{{ variant }} bg-opacity-10 py-2 d-flex align-items-center justify-content-between">
         <div class="fw-semibold text-{{ variant }}-emphasis">
             <i class="{{ icon_class }} me-2"></i>{{ title }}
