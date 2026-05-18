@@ -47,6 +47,10 @@ _validation_progress_lock = threading.Lock()
 _PROGRESS_TTL_SECONDS = 2 * 60 * 60
 
 
+class ValidationCancelledError(RuntimeError):
+    """Raised when a running validation job is cancelled by the user."""
+
+
 def _purge_expired_progress_locked() -> None:
     """Drop stale progress entries. Must be called under lock."""
     now = time.time()
@@ -155,6 +159,53 @@ def clear_progress(job_id: str):
     """Clear progress for a completed job."""
     with _validation_progress_lock:
         _validation_progress.pop(job_id, None)
+
+
+def cancel_progress(
+    job_id: str,
+    message: str = "Cancellation requested. Waiting for validator to stop...",
+) -> bool:
+    """Request cancellation for a running validation job.
+
+    Returns:
+        True when cancellation was accepted, False when the job is already done.
+    """
+    current = get_progress(job_id)
+    status = str(current.get("status") or "").strip().lower()
+    if "updated_at" not in current and status == "pending":
+        return False
+    if status in {"complete", "error", "cancelled"}:
+        return False
+
+    progress = max(0, min(100, int(current.get("progress", 0))))
+    update_progress(
+        job_id,
+        progress,
+        message,
+        status="cancelling",
+        phase="cancelled",
+        progress_mode="determinate",
+        error=message,
+    )
+    return True
+
+
+def mark_progress_cancelled(
+    job_id: str,
+    message: str = "Validation cancelled by user.",
+) -> None:
+    """Mark a validation job as cancelled."""
+    current = get_progress(job_id)
+    progress = max(0, min(100, int(current.get("progress", 0))))
+    update_progress(
+        job_id,
+        progress,
+        message,
+        status="cancelled",
+        phase="cancelled",
+        progress_mode="determinate",
+        error=message,
+    )
 
 
 # Alias removed — use get_progress() / update_progress() / clear_progress() directly
@@ -269,6 +320,8 @@ def run_validation(
                         elif len(args) == 2:
                             progress_callback(args[0], args[1])
                     except Exception as cb_err:
+                        if isinstance(cb_err, ValidationCancelledError):
+                            raise
                         # Fallback or ignore if it fails
                         print(f"DEBUG: Callback error: {cb_err}")
 
@@ -295,6 +348,8 @@ def run_validation(
 
             return web_issues, stats
         except Exception as e:
+            if isinstance(e, ValidationCancelledError):
+                raise
             print(f"⚠️  Error running core validator directly: {e}")
             # Fall through to subprocess
 
