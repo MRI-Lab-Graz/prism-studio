@@ -49,6 +49,7 @@ def test_app_settings_loads_bundle_default_then_saves_to_user_dir(
 
     saved_data = json.loads(saved_path.read_text(encoding="utf-8"))
     assert saved_data["showDedicatedTerminal"] is False
+    assert saved_data["exportDefacingConfirmationMode"] == "risk"
 
     reloaded = config.load_app_settings(app_root=str(bundled_root))
     assert reloaded.global_library_root == "/user/library"

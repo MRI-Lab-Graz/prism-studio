@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "includes/ui/macros.html" import page_header %}
+{% from "includes/ui/macros.html" import page_header, help_panel %}
 
 {% block title %}PRISM Studio - Validation Results{% endblock %}
 
@@ -46,6 +46,14 @@
                 </a>
             </div>
         </div>
+
+        {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
+        <div class="small">
+            <p class="mb-2"><strong>Re-validate quickly:</strong> choose a mode and run re-validation to verify fixes on the same dataset.</p>
+            <p class="mb-2"><strong>Read summary first:</strong> check Errors and Warnings totals, then open grouped issues with fix hints.</p>
+            <p class="mb-0"><strong>Next step:</strong> download the report for documentation, or validate another dataset directly from this page.</p>
+        </div>
+        {% endcall %}
 
         <div class="card border-0 shadow-sm mb-4 d-none revalidate-progress-panel" id="revalidateProgressPanel" aria-live="polite" aria-atomic="true">
             <div class="card-body">

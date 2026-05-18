@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Specifications UI Harmonization**: Migrated the Specifications page to shared page-header/help-panel primitives and retained project-bound derivative-link wiring behavior with focused regression assertions.
+- **Analysis Outputs UI Harmonization**: Migrated the Analysis Outputs (Recipes) page to shared page-header/help-panel primitives and added focused wiring assertions while keeping project-bound API fallback behavior unchanged.
+- **Validation Results UI Harmonization**: Migrated the Validation Results page to shared page-header/help-panel primitives and added focused validator wiring assertions.
+- **Projects UI Harmonization**: Migrated the Projects page to shared page-header/help-panel primitives while preserving preliminary-state and beginner-help workflows.
+- **Validator Landing UI Harmonization**: Migrated the Dataset Validation landing page to shared page-header/section-card/help-panel primitives while preserving validation target and progress wiring.
+- **Converter UI Harmonization**: Migrated the Converter page to shared page-header/help-panel primitives and added focused converter template wiring assertions.
+- **Survey Library UI Harmonization**: Migrated the Survey Library page to shared page-header/help-panel primitives and added focused library workflow wiring assertions.
+- **Shared Help-Panel Coverage Guard**: Added a regression test that enforces shared help-panel macro imports across harmonized top-level templates.
+- **Workflow Wiring Test Realignment**: Updated stale frontend wiring assertions to match the current module split (projects selection/open/bootstrap and converter log-renderer), restoring broad wiring-suite green status.
+- **Library Action Wiring Consolidation**: Moved Survey Library action handlers from inline template JavaScript to `static/js/library.js` and wired requests through shared relative-path API fallback behavior.
+- **Frontend Assessment Phase Pivot**: Marked UI harmonization tranche complete in roadmap tracking and started Projects page structural assessment checkpoint documentation (Phase 1.2).
+- **Validator Assessment Kickoff**: Started Phase 1.3 validator structural assessment documentation, including backend command ownership mapping, stability findings, and remediation slice acceptance criteria.
+- **Results Assessment Kickoff**: Started Phase 1.4 results structural assessment documentation, including re-validation progress lifecycle findings and result-action state hardening slices.
+- **Template Editor Assessment Kickoff**: Started Phase 2.1 template editor structural assessment documentation, including project-context race guardrails and safe-save/import contract slices.
+- **Recipe Builder Assessment Kickoff**: Started Phase 2.2 recipe builder structural assessment documentation, including async stale-load guardrails and recipe save/compatibility contract slices.
+- **Survey Customizer Assessment Kickoff**: Started Phase 2.3 survey customizer structural assessment documentation, including session-state hydration safeguards and project-bound export-copy guardrails.
+- **Survey Generator Assessment Kickoff**: Started Phase 2.4 survey generator structural assessment documentation, including merged-library reload guardrails and customizer handoff payload contract slices.
+- **File Management Assessment Kickoff**: Started Phase 2.5 file management structural assessment documentation, including multi-tool state isolation guardrails and preview-then-apply contract slices.
+- **JSON Editor Assessment Kickoff**: Started Phase 3.1 JSON editor structural assessment documentation, including project-root sync safeguards and local-vs-project persistence contract slices.
+- **Neurobagel Workflow Assessment Kickoff**: Started Phase 3.2 neurobagel workflow structural assessment documentation, including duplicate fetch ownership guardrails and preview-vs-saved schema state precedence slices.
+- **Library and Library Editor Assessment Kickoff**: Started Phase 3.3 library/editor structural assessment documentation, including inline-editor fetch ownership guardrails and advanced JSON runtime dependency slices.
+- **Specifications Assessment Kickoff**: Started Phase 3.4 specifications structural assessment documentation, including derivative-link state guardrails and route ownership consolidation slices.
+- **PRISM App Runner Assessment Kickoff**: Started Phase 3.5 PRISM App Runner structural assessment documentation, including disabled-state contract guardrails and runner-control drift remediation slices.
+- **Home Page Assessment Kickoff**: Started Phase 3.6 home-page structural assessment documentation, including route-policy guardrails and include-composition integrity slices.
+- **Shared Module Assessment Kickoff**: Started Phase 4.1 shared-module structural assessment documentation, including API fallback policy, project-state precedence, and bounded polling contract slices.
+- **Phase-Boundary Smoke Sweep Complete**: Executed consolidated post-checkpoint smoke validation across completed assessment suites (54 passed) and recorded baseline continuity in roadmap/tracker artifacts.
+- **Neurobagel Fetch Ownership Unification**: Updated Neurobagel widget participant loading to use shared API fallback wiring and prevented global helper overwrite collisions in mixed runtime loading paths.
+- **Library Editor Module Extraction**: Replaced inline Library Editor runtime script with `app/static/js/library_editor.js` and routed draft-save requests through shared relative-path API fallback wiring.
+- **Library Editor Advanced-Mode Graceful Degrade**: Added explicit fallback behavior when JSONEditor CDN assets are unavailable (visible warning + disabled Advanced JSON tab) while preserving simple-mode save flow.
+- **PRISM App Runner Stale-Control Cleanup**: Removed stale/non-rendered image-scan control branches from app-runner frontend wiring and tightened browse-kind handling with dedicated regression assertions.
+- **PRISM App Runner Disabled-State Frontend Guarding**: Added explicit frontend disabled-state guards (including startup profile-fetch suppression) so UI runtime behavior stays aligned with disabled HTML/API contracts.
+- **Shared Module Contract Coverage Hardening**: Added focused shared-module wiring coverage for API fallback policy, project-state precedence, and job-polling retry/timeout/abort bounds.
+- **Validator/Results Abortable Polling Hardening**: Added explicit abortable polling session contracts for validator and re-validation progress loops to prevent stale overlapping updates across reconnect/navigation edges.
+- **Validator Target/Request Assembly Consolidation**: Added canonical validator request-option resolvers and shared form-data assembly helpers across current-project, server-folder, and upload validation starts.
+- **Results Action-State Contract Hardening**: Added logic-level result-action lock guards (click/keyboard prevention) so interaction blocking is enforced independently of CSS pointer styling.
+- **Recipe Export Regression Repair**: Fixed backend recipe export contracts for merge-all score prefixing, participant-column propagation in per-recipe/combined outputs, and SAV sociodemographic measure/type handling.
+- **Phase-Boundary Coverage Closeout**: Restored full-suite green state after Priority 1.36 remediation tranche closeout (`./rtk coverage`: 2206 passed, 3 skipped).
+- **Export Privacy Hardening (Priority 3 Slice A)**: Added export-time MRI sidecar sensitive-tag scrubbing plus `.nii.gz` GZIP header normalization (cleared `MTIME`/`FNAME`) and wired this behavior through the projects export scrub option.
+- **Export Privacy Regression Coverage Expansion**: Added focused export tests for root-level `.nii.gz` header cleaning and explicit no-clean behavior to protect header-preservation defaults.
+
 ## [1.15.2] - 2026-04-28
 
 This release focuses on workflow reliability across project open/validate flows,

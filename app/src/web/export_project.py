@@ -8,6 +8,8 @@ with optional anonymization of participant IDs and copyright-protected content.
 import os
 import json
 import zipfile
+import gzip
+import io
 from pathlib import Path
 from typing import Any, Dict, Optional, Set
 
@@ -166,6 +168,7 @@ def export_project(
     exclude_modalities: Optional[Set[str]] = None,
     exclude_acq: Optional[Dict[str, Set[str]]] = None,
     scrub_mri_json: bool = False,
+    clean_nifti_gzip_headers: bool = False,
     progress_callback=None,
     cancelled_flag=None,
 ) -> Dict[str, Any]:
@@ -182,6 +185,8 @@ def export_project(
         include_derivatives: Include derivatives/ folder
         include_code: Include code/ folder
         include_analysis: Include analysis/ folder
+        clean_nifti_gzip_headers: Normalize .nii.gz GZIP headers (mtime/FNAME)
+            in exported copies for privacy-safe sharing.
         progress_callback: Optional callable(percent, message) for progress updates
         cancelled_flag: Optional threading.Event; set it to request cancellation
 
@@ -329,6 +334,28 @@ def export_project(
         except OSError:
             return ""
 
+    def _clean_nifti_gzip_bytes(source_file: Path) -> bytes:
+        """Return .nii.gz payload with scrubbed GZIP header metadata.
+
+        Sets mtime to 0 and removes embedded original filename (FNAME).
+        If recompression fails, fall back to original file bytes.
+        """
+        try:
+            with gzip.open(source_file, "rb") as gz_in:
+                payload = gz_in.read()
+
+            out_buffer = io.BytesIO()
+            with gzip.GzipFile(
+                filename="",
+                mode="wb",
+                fileobj=out_buffer,
+                mtime=0,
+            ) as gz_out:
+                gz_out.write(payload)
+            return out_buffer.getvalue()
+        except Exception:
+            return source_file.read_bytes()
+
     def _add_tree(
         zipf: zipfile.ZipFile,
         source_root: Path,
@@ -415,6 +442,12 @@ def export_project(
                 elif filename.endswith(".tsv") and anonymize and participant_mapping:
                     zipf.writestr(arcname, _tsv_bytes(source_file))
                     stats["files_anonymized"] += 1
+                elif (
+                    filename.lower().endswith(".nii.gz")
+                    and clean_nifti_gzip_headers
+                ):
+                    zipf.writestr(arcname, _clean_nifti_gzip_bytes(source_file))
+                    stats["files_anonymized"] += 1
                 else:
                     zipf.write(source_file, arcname)
 
@@ -473,6 +506,8 @@ def export_project(
                 zipf.writestr(filename, _json_bytes(source_file))
             elif filename.endswith(".tsv") and anonymize and participant_mapping:
                 zipf.writestr(filename, _tsv_bytes(source_file))
+            elif filename.lower().endswith(".nii.gz") and clean_nifti_gzip_headers:
+                zipf.writestr(filename, _clean_nifti_gzip_bytes(source_file))
             else:
                 zipf.write(source_file, filename)
             stats["files_processed"] += 1

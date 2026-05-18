@@ -88,7 +88,66 @@ document.addEventListener('DOMContentLoaded', function() {
         visualProgress: 0,
         phaseStartedAt: 0,
     };
+    let validationPollAbortController = null;
     let selectedServerFolderPath = '';
+
+    function isAbortError(error) {
+        return Boolean(error && (error.name === 'AbortError' || /aborted/i.test(error.message || '')));
+    }
+
+    function abortValidationPolling() {
+        if (!validationPollAbortController) {
+            return;
+        }
+        validationPollAbortController.abort();
+        validationPollAbortController = null;
+    }
+
+    function beginValidationPollingSession() {
+        abortValidationPolling();
+        validationPollAbortController = new AbortController();
+        return validationPollAbortController.signal;
+    }
+
+    function finishValidationPollingSession(signal) {
+        if (
+            validationPollAbortController
+            && validationPollAbortController.signal === signal
+        ) {
+            validationPollAbortController = null;
+        }
+    }
+
+    async function waitForValidationPollInterval(ms, signal) {
+        if (!(signal && typeof signal.addEventListener === 'function')) {
+            await new Promise((resolve) => setTimeout(resolve, ms));
+            return;
+        }
+
+        await new Promise((resolve, reject) => {
+            if (signal.aborted) {
+                const abortError = new Error('Validation polling aborted.');
+                abortError.name = 'AbortError';
+                reject(abortError);
+                return;
+            }
+
+            const timer = setTimeout(() => {
+                signal.removeEventListener('abort', onAbort);
+                resolve();
+            }, ms);
+
+            const onAbort = () => {
+                clearTimeout(timer);
+                signal.removeEventListener('abort', onAbort);
+                const abortError = new Error('Validation polling aborted.');
+                abortError.name = 'AbortError';
+                reject(abortError);
+            };
+
+            signal.addEventListener('abort', onAbort, { once: true });
+        });
+    }
 
     function prefersServerPicker() {
         return Boolean(
@@ -240,6 +299,43 @@ document.addEventListener('DOMContentLoaded', function() {
         return '';
     }
 
+    function getSelectedValidationMode() {
+        const selectedModeRadio = document.querySelector('input[name="validation_mode"]:checked');
+        return selectedModeRadio ? selectedModeRadio.value : 'both';
+    }
+
+    function getSelectedValidationSchemaVersion() {
+        return schemaVersionSelect ? schemaVersionSelect.value : 'stable';
+    }
+
+    function resolveValidationRequestOptions() {
+        return {
+            validationMode: getSelectedValidationMode(),
+            schemaVersion: getSelectedValidationSchemaVersion(),
+            includeBidsWarnings: Boolean(bidsWarningsCheckbox && bidsWarningsCheckbox.checked),
+            libraryPathOverride: getExplicitLibraryPathOverride(),
+        };
+    }
+
+    function appendValidationRequestOptions(formData, requestOptions) {
+        const options = requestOptions || resolveValidationRequestOptions();
+        formData.append('validation_mode', options.validationMode || 'both');
+        formData.append('schema_version', options.schemaVersion || 'stable');
+        if (options.includeBidsWarnings) {
+            formData.append('bids_warnings', 'true');
+        }
+        if (options.libraryPathOverride) {
+            formData.append('library_path', options.libraryPathOverride);
+        }
+    }
+
+    function buildFolderValidationRequestData(folderPath) {
+        const validationData = new FormData();
+        validationData.append('folder_path', folderPath);
+        appendValidationRequestOptions(validationData, resolveValidationRequestOptions());
+        return validationData;
+    }
+
     async function refreshDefaultLibraryPath() {
         if (!libraryPathInput) {
             return;
@@ -354,6 +450,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function restoreValidationButton(options = {}) {
         const clearStoredJob = options.clearStoredJob !== false;
+        abortValidationPolling();
         validationInProgress = false;
         activeValidationJobId = null;
         progressDisplayState = {
@@ -423,15 +520,22 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    async function pollValidationProgress(progressUrl, progressFloor = 0) {
+    async function pollValidationProgress(progressUrl, progressFloor = 0, signal = null) {
         const MAX_POLLS = 4500;
 
         for (let attempt = 0; attempt < MAX_POLLS; attempt += 1) {
-            await new Promise((resolve) => setTimeout(resolve, 800));
+            await waitForValidationPollInterval(800, signal);
+
+            if (signal && signal.aborted) {
+                const abortError = new Error('Validation polling aborted.');
+                abortError.name = 'AbortError';
+                throw abortError;
+            }
 
             const response = await fetchWithApiFallback(progressUrl, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                cache: 'no-store'
+                cache: 'no-store',
+                signal,
             });
             const payload = await response.json().catch(() => ({}));
 
@@ -517,7 +621,12 @@ document.addEventListener('DOMContentLoaded', function() {
             targetKind: options.targetKind || '',
             targetPath: options.targetPath || '',
         });
-        await pollValidationProgress(payload.progress_url, progressFloor);
+        const pollSignal = beginValidationPollingSession();
+        try {
+            await pollValidationProgress(payload.progress_url, progressFloor, pollSignal);
+        } finally {
+            finishValidationPollingSession(pollSignal);
+        }
     }
 
     function renderValidationFailure(message) {
@@ -1042,23 +1151,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const validateFolderUrl = (submitForm && submitForm.dataset && submitForm.dataset.validateFolderUrl)
                     ? submitForm.dataset.validateFolderUrl
                     : '/validate_folder';
-
-                const selectedModeRadio = document.querySelector('input[name="validation_mode"]:checked');
-                const selectedMode = selectedModeRadio ? selectedModeRadio.value : 'both';
-
-                const schemaVersion = schemaVersionSelect ? schemaVersionSelect.value : 'stable';
-                const libraryPathOverride = getExplicitLibraryPathOverride();
-
-                const validationData = new FormData();
-                validationData.append('folder_path', currentProjectPath);
-                validationData.append('validation_mode', selectedMode);
-                validationData.append('schema_version', schemaVersion);
-                if (bidsWarningsCheckbox && bidsWarningsCheckbox.checked) {
-                    validationData.append('bids_warnings', 'true');
-                }
-                if (libraryPathOverride) {
-                    validationData.append('library_path', libraryPathOverride);
-                }
+                const validationData = buildFolderValidationRequestData(currentProjectPath);
 
                 try {
                     await startValidationRequest(validateFolderUrl, validationData, {
@@ -1068,6 +1161,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         targetPath: normalizeProjectPath(currentProjectPath),
                     });
                 } catch (error) {
+                    if (isAbortError(error)) {
+                        restoreValidationButton({ clearStoredJob: false });
+                        return false;
+                    }
                     console.error('Validation error:', error);
                     renderValidationFailure(error.message || 'Current project validation failed.');
                 }
@@ -1088,23 +1185,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const validateFolderUrl = (submitForm && submitForm.dataset && submitForm.dataset.validateFolderUrl)
                 ? submitForm.dataset.validateFolderUrl
                 : '/validate_folder';
-
-            const selectedModeRadio = document.querySelector('input[name="validation_mode"]:checked');
-            const selectedMode = selectedModeRadio ? selectedModeRadio.value : 'both';
-
-            const schemaVersion = schemaVersionSelect ? schemaVersionSelect.value : 'stable';
-            const libraryPathOverride = getExplicitLibraryPathOverride();
-
-            const validationData = new FormData();
-            validationData.append('folder_path', selectedServerFolderPath);
-            validationData.append('validation_mode', selectedMode);
-            validationData.append('schema_version', schemaVersion);
-            if (bidsWarningsCheckbox && bidsWarningsCheckbox.checked) {
-                validationData.append('bids_warnings', 'true');
-            }
-            if (libraryPathOverride) {
-                validationData.append('library_path', libraryPathOverride);
-            }
+            const validationData = buildFolderValidationRequestData(selectedServerFolderPath);
 
             try {
                 await startValidationRequest(validateFolderUrl, validationData, {
@@ -1114,6 +1195,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     targetPath: normalizeProjectPath(selectedServerFolderPath),
                 });
             } catch (error) {
+                if (isAbortError(error)) {
+                    restoreValidationButton({ clearStoredJob: false });
+                    return false;
+                }
                 console.error('Validation error:', error);
                 renderValidationFailure(error.message || 'Server-folder validation failed.');
             }
@@ -1123,23 +1208,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const form = submitForm;
         const formData = new FormData();
         
-        // Add Validation Mode
-        const selectedModeRadio = document.querySelector('input[name="validation_mode"]:checked');
-        const selectedMode = selectedModeRadio ? selectedModeRadio.value : 'both';
-        formData.append('validation_mode', selectedMode);
-        
-        // Add BIDS options
-        if (bidsWarningsCheckbox && bidsWarningsCheckbox.checked) {
-            formData.append('bids_warnings', 'true');
-        }
-        
-        // Add Schema Version
-        const schemaVersion = schemaVersionSelect ? schemaVersionSelect.value : 'stable';
-        formData.append('schema_version', schemaVersion);
-        const libraryPathOverride = getExplicitLibraryPathOverride();
-        if (libraryPathOverride) {
-            formData.append('library_path', libraryPathOverride);
-        }
+        appendValidationRequestOptions(formData, resolveValidationRequestOptions());
 
         // Show progress
         hideValidationError();
@@ -1234,6 +1303,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
         } catch (error) {
+            if (isAbortError(error)) {
+                restoreValidationButton({ clearStoredJob: false });
+                return false;
+            }
             console.error('Upload error:', error);
             renderValidationFailure(`Upload failed: ${error.message}`);
         }
@@ -1270,13 +1343,28 @@ document.addEventListener('DOMContentLoaded', function() {
         );
 
         try {
-            await pollValidationProgress(storedJob.progressUrl, storedJob.progressFloor || 0);
+            const pollSignal = beginValidationPollingSession();
+            try {
+                await pollValidationProgress(
+                    storedJob.progressUrl,
+                    storedJob.progressFloor || 0,
+                    pollSignal
+                );
+            } finally {
+                finishValidationPollingSession(pollSignal);
+            }
             return true;
         } catch (error) {
+            if (isAbortError(error)) {
+                restoreValidationButton({ clearStoredJob: false });
+                return false;
+            }
             renderValidationFailure(`${error.message || 'Validation progress could not be resumed.'} Reload this page or click resume to try again.`);
             return false;
         }
     }
+
+    window.addEventListener('pagehide', abortValidationPolling);
 
     if (resumeValidationBtn) {
         resumeValidationBtn.addEventListener('click', function() {

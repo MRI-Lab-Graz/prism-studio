@@ -128,6 +128,7 @@ def test_load_app_settings_defaults_when_missing(tmp_path, monkeypatch):
     assert settings.backend_monitoring_verbose is False
     assert settings.show_dedicated_terminal is False
     assert settings.connected_to_server is False
+    assert settings.export_defacing_confirmation_mode == "risk"
 
 
 def test_save_and_load_app_settings_roundtrip(tmp_path, monkeypatch):
@@ -146,6 +147,7 @@ def test_save_and_load_app_settings_roundtrip(tmp_path, monkeypatch):
         backend_monitoring_verbose=True,
         show_dedicated_terminal=True,
         connected_to_server=True,
+        export_defacing_confirmation_mode="always",
     )
 
     saved_path = save_app_settings(settings, app_root=str(tmp_path))
@@ -159,6 +161,7 @@ def test_save_and_load_app_settings_roundtrip(tmp_path, monkeypatch):
     assert loaded.backend_monitoring_verbose is True
     assert loaded.show_dedicated_terminal is True
     assert loaded.connected_to_server is True
+    assert loaded.export_defacing_confirmation_mode == "always"
 
 
 def test_get_effective_library_paths_from_configured_root(tmp_path):

@@ -1,0 +1,10 @@
+{% macro project_flow_strip(modifier_class, strip_id, items) -%}
+<div class="project-flow-strip {{ modifier_class }} mb-3" id="{{ strip_id }}">
+    {% for label, detail in items %}
+    <div class="project-flow-strip__item">
+        <span class="project-flow-strip__label">{{ label }}</span>
+        <strong>{{ detail | safe }}</strong>
+    </div>
+    {% endfor %}
+</div>
+{%- endmacro %}

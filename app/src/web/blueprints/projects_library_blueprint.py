@@ -17,7 +17,10 @@ def get_modalities():
 @projects_library_bp.route("/api/settings/global-library", methods=["GET"])
 def get_global_library_settings():
     """Get the global template library settings."""
-    from src.config import load_app_settings
+    from src.config import (
+        load_app_settings,
+        normalize_export_defacing_confirmation_mode,
+    )
     from flask import current_app
 
     app_root = Path(current_app.root_path)
@@ -43,6 +46,9 @@ def get_global_library_settings():
             "backend_monitoring_verbose": bool(settings.backend_monitoring_verbose),
             "show_dedicated_terminal": bool(settings.show_dedicated_terminal),
             "connected_to_server": bool(settings.connected_to_server),
+            "export_defacing_confirmation_mode": normalize_export_defacing_confirmation_mode(
+                getattr(settings, "export_defacing_confirmation_mode", "risk")
+            ),
         }
     )
 
@@ -156,7 +162,11 @@ def set_dedicated_terminal_setting():
 @projects_library_bp.route("/api/settings/global-library", methods=["POST"])
 def set_global_library_settings():
     """Update the global template library settings."""
-    from src.config import load_app_settings, save_app_settings
+    from src.config import (
+        load_app_settings,
+        normalize_export_defacing_confirmation_mode,
+        save_app_settings,
+    )
     from flask import current_app
     import os
 
@@ -201,6 +211,21 @@ def set_global_library_settings():
     if "connected_to_server" in data:
         settings.connected_to_server = bool(data.get("connected_to_server"))
 
+    if "export_defacing_confirmation_mode" in data:
+        raw_mode = data.get("export_defacing_confirmation_mode")
+        normalized_mode = normalize_export_defacing_confirmation_mode(raw_mode)
+        if str(raw_mode or "").strip().lower() not in {"risk", "always"}:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": "Invalid export_defacing_confirmation_mode. Use 'risk' or 'always'.",
+                    }
+                ),
+                400,
+            )
+        settings.export_defacing_confirmation_mode = normalized_mode
+
     try:
         app_root = Path(current_app.root_path)
         settings_path = save_app_settings(settings, str(app_root))
@@ -211,6 +236,9 @@ def set_global_library_settings():
                 "global_template_library_path": settings.global_template_library_path,
                 "global_recipes_path": settings.global_recipes_path,
                 "connected_to_server": bool(settings.connected_to_server),
+                "export_defacing_confirmation_mode": normalize_export_defacing_confirmation_mode(
+                    getattr(settings, "export_defacing_confirmation_mode", "risk")
+                ),
             }
         )
     except Exception as e:
