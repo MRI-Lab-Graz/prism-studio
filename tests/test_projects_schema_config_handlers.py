@@ -5,6 +5,7 @@ import tempfile
 import unittest
 import importlib
 from pathlib import Path
+from unittest.mock import patch
 
 from flask import Flask
 
@@ -175,6 +176,86 @@ class TestProjectsSchemaConfigHandlers(unittest.TestCase):
         self.assertTrue(payload["success"])
         self.assertEqual(payload["preferences"]["output_folder"], "/tmp/export-out")
         self.assertEqual(payload["preferences"]["exclude_sessions"], ["ses-02"])
+        self.assertIn("inherited_preferences", payload)
+        self.assertTrue(payload["inherited_preferences"]["defacing_confirmation_mode"])
+
+    def test_get_export_preferences_inherits_app_default_confirmation_mode(self):
+        other_project = self._make_project("other_project")
+        (other_project / ".prismrc.json").write_text(
+            json.dumps(
+                {
+                    "projectPreferences": {
+                        "export": {
+                            "output_folder": "/tmp/export-out",
+                        }
+                    }
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        from src import config as config_module
+
+        user_settings_dir = Path(self.tmp_dir.name) / "user-settings"
+        user_settings_dir.mkdir(parents=True, exist_ok=True)
+        (user_settings_dir / config_module.APP_SETTINGS_FILENAME).write_text(
+            json.dumps({"exportDefacingConfirmationMode": "always"}, indent=2),
+            encoding="utf-8",
+        )
+
+        with patch.object(
+            config_module,
+            "_get_user_app_settings_dir",
+            return_value=user_settings_dir,
+        ):
+            with self.app.test_request_context(
+                "/api/projects/preferences/export",
+                method="GET",
+                query_string={"project_path": str(other_project)},
+            ):
+                response = self.handle_get_project_preferences(
+                    get_current_project=self._get_current_project,
+                    namespace="export",
+                )
+
+        payload = response.get_json()
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["preferences"]["output_folder"], "/tmp/export-out")
+        self.assertEqual(payload["preferences"]["defacing_confirmation_mode"], "always")
+        self.assertTrue(payload["inherited_preferences"]["defacing_confirmation_mode"])
+
+    def test_get_export_preferences_marks_explicit_confirmation_mode_as_not_inherited(self):
+        other_project = self._make_project("other_project")
+        (other_project / ".prismrc.json").write_text(
+            json.dumps(
+                {
+                    "projectPreferences": {
+                        "export": {
+                            "output_folder": "/tmp/export-out",
+                            "defacing_confirmation_mode": "risk",
+                        }
+                    }
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        with self.app.test_request_context(
+            "/api/projects/preferences/export",
+            method="GET",
+            query_string={"project_path": str(other_project)},
+        ):
+            response = self.handle_get_project_preferences(
+                get_current_project=self._get_current_project,
+                namespace="export",
+            )
+
+        payload = response.get_json()
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["preferences"]["defacing_confirmation_mode"], "risk")
+        self.assertFalse(payload["inherited_preferences"]["defacing_confirmation_mode"])
 
     def test_save_project_preferences_can_target_explicit_project_path(self):
         other_project = self._make_project("other_project")
@@ -209,6 +290,52 @@ class TestProjectsSchemaConfigHandlers(unittest.TestCase):
         self.assertEqual(export_prefs["output_folder"], "/tmp/export-target")
         self.assertEqual(export_prefs["exclude_modalities"], ["func"])
         self.assertFalse((self.project_path / ".prismrc.json").exists())
+
+    def test_save_export_preferences_clears_invalid_defacing_confirmation_override(self):
+        other_project = self._make_project("other_project")
+        (other_project / ".prismrc.json").write_text(
+            json.dumps(
+                {
+                    "projectPreferences": {
+                        "export": {
+                            "defacing_confirmation_mode": "always",
+                            "output_folder": "/tmp/export-out",
+                        }
+                    }
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        with self.app.test_request_context(
+            "/api/projects/preferences/export",
+            method="POST",
+            json={
+                "project_path": str(other_project),
+                "preferences": {
+                    "defacing_confirmation_mode": None,
+                },
+            },
+        ):
+            response = self.handle_save_project_preferences(
+                get_current_project=self._get_current_project,
+                namespace="export",
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        payload = resp_obj.get_json()
+
+        self.assertEqual(status_code, 200)
+        self.assertTrue(payload["success"])
+
+        saved = json.loads(
+            (other_project / ".prismrc.json").read_text(encoding="utf-8")
+        )
+        export_prefs = saved["projectPreferences"]["export"]
+        self.assertEqual(export_prefs["output_folder"], "/tmp/export-out")
+        self.assertNotIn("defacing_confirmation_mode", export_prefs)
 
     def test_get_project_schema_config_can_target_explicit_project_path(self):
         other_project = self._make_project("other_project")

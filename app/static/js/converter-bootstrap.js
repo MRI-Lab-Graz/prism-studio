@@ -44,21 +44,6 @@ document.addEventListener('DOMContentLoaded', function() {
         );
     }
 
-    function displayValidationResults(validation, prefix = '') {
-        displayConverterValidationResults(validation, prefix, escapeHtml);
-    }
-
-    function getSessionValue(selectEl, customEl) {
-        return getSessionInputValue(selectEl, customEl);
-    }
-
-    function getBiometricsSessionValue() {
-        return getSessionValue(
-            document.getElementById('biometricsSessionSelect'),
-            document.getElementById('biometricsSessionCustom')
-        );
-    }
-
     function populateSessionPickers(projectPath = resolveCurrentProjectPath()) {
         sessionPickerController.populateSessionPickers(projectPath);
     }
@@ -124,9 +109,6 @@ document.addEventListener('DOMContentLoaded', function() {
             templateEditorErrorCta: document.getElementById('templateEditorErrorCta'),
             toggleLogBtn: document.getElementById('toggleLogBtn'),
             validationResultsContainer: document.getElementById('validationResultsContainer'),
-            validationResultsCard: document.getElementById('validationResultsCard'),
-            validationResultsHeader: document.getElementById('validationResultsHeader'),
-            validationBadge: document.getElementById('validationBadge'),
             validationSummary: document.getElementById('validationSummary'),
             validationDetails: document.getElementById('validationDetails'),
             conversionSummaryContainer: document.getElementById('conversionSummaryContainer'),
@@ -167,9 +149,14 @@ document.addEventListener('DOMContentLoaded', function() {
             biometricsSessionCustom: document.getElementById('biometricsSessionCustom'),
             appendLog,
             appendLogBatch,
-            displayValidationResults,
+            displayValidationResults: (validation, prefix = '') => {
+                displayConverterValidationResults(validation, prefix, escapeHtml);
+            },
             registerSessionInProject,
-            getBiometricsSessionValue
+            getBiometricsSessionValue: () => getSessionInputValue(
+                document.getElementById('biometricsSessionSelect'),
+                document.getElementById('biometricsSessionCustom')
+            )
         });
     }
 

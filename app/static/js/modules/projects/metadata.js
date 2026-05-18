@@ -4,6 +4,13 @@
  */
 
 import { setButtonLoading, showToast, showTopFeedback, textToArray as _textToArray } from './helpers.js';
+import { createMetadataDescriptionController } from './metadata-description.js';
+import { createStudyMetadataLoadController } from './metadata-load.js';
+import { createMetadataMethodsController } from './metadata-methods.js';
+import { createMetadataOrcidController } from './metadata-orcid.js';
+import { createStudyMetadataSaveController } from './metadata-save.js';
+import { createMetadataStatusController } from './metadata-status.js';
+import { createStudyMetadataSubmitController } from './metadata-submit.js';
 import { validateAuthorsBadge, validateRecLocationBadge, validateProjectField, validateRecMethodBadge, validateDateRangeBadge, validateFundingBadge, validateEthicsBadge, validateEligibilityCriteriaBadges } from './validation.js';
 import {
     getProjectStateSnapshot,
@@ -29,13 +36,203 @@ let _bidsVersion = '1.10.1';
 })();
 
 let metadataLoadToken = 0;
-let methodsRequestToken = 0;
-let lastMethodsProjectPath = '';
-let studyMetadataLoadInFlight = false;
-let studyMetadataLoadInFlightToken = 0;
-let studyMetadataReadyProjectPath = '';
-let studyMetadataBaselineSnapshot = '';
 let studyMetadataSubmitInFlight = false;
+
+const metadataStatusController = createMetadataStatusController({
+    escapeHtml,
+    fetchWithApiFallback,
+    getCurrentProjectPath: _getCurrentProjectPath,
+    withProjectPathQuery: _withProjectPathQuery,
+    isProjectRequestCurrent: _isProjectRequestCurrent,
+    onStatusesChanged: () => {
+        if (lastCompleteness) {
+            updateCompletenessUI(lastCompleteness);
+        }
+    },
+});
+
+const studyMetadataSubmitController = createStudyMetadataSubmitController({
+    getCurrentProjectPath: _getCurrentProjectPath,
+    getSubmitInFlight: () => studyMetadataSubmitInFlight,
+});
+
+const metadataDescriptionController = createMetadataDescriptionController({
+    fetchWithApiFallback,
+    getCurrentProjectPath: _getCurrentProjectPath,
+    getCurrentProjectName: _getCurrentProjectName,
+    setCurrentProjectName: _setCurrentProjectName,
+    getMetadataLoadToken: () => metadataLoadToken,
+    isProjectRequestCurrent: _isProjectRequestCurrent,
+    withProjectPathQuery: _withProjectPathQuery,
+    getAuthorsList,
+    getCitationAuthorsList,
+    getEthicsApprovals,
+    getFundingList,
+    getBidsVersion: () => _bidsVersion,
+    getAuthorOptionalFormatErrors: _getAuthorOptionalFormatErrors,
+    normalizeDoi: _normalizeDoi,
+    isValidDoiFormat: _isValidDoiFormat,
+    buildDraftDatasetDescriptionForValidation,
+    buildDraftCitationFieldsForValidation,
+    displayMetadataIssues,
+    refreshMetadataValidationState,
+    refreshCitationHealthStatus: () => metadataStatusController.refreshCitationHealthStatus(),
+    refreshMetadataSyncStatus: () => metadataStatusController.refreshMetadataSyncStatus(),
+    cleanMetadataText: _cleanMetadataText,
+    cleanMetadataList: _cleanMetadataList,
+    setAuthorsList,
+    setEthicsApprovals,
+    setFundingFromDescription,
+});
+
+const studyMetadataLoadController = createStudyMetadataLoadController({
+    getCurrentProjectPath: _getCurrentProjectPath,
+    getSubmitInFlight: () => studyMetadataSubmitInFlight,
+    getFormSnapshot: _snapshotStudyMetadataForm,
+    incrementMetadataLoadToken: () => ++metadataLoadToken,
+    isProjectRequestCurrent: _isProjectRequestCurrent,
+    onLoadStateChanged: () => updateCreateProjectButton(),
+    beforeLoad: async () => {
+        await loadDatasetDescriptionFields();
+    },
+    fetchStudyMetadata: (projectPath) => fetchWithApiFallback(
+        _withProjectPathQuery('/api/projects/study-metadata', projectPath)
+    ),
+    applyStudyMetadataPayload: (data) => {
+        const sm = data.study_metadata;
+
+        const overview = sm.Overview || {};
+        document.getElementById('smOverviewMain').value = overview.Main || '';
+        setOverviewList('smOverviewIV', overview.IndependentVariables);
+        setOverviewList('smOverviewDV', overview.DependentVariables);
+        setOverviewList('smOverviewCV', overview.ControlVariables);
+        setOverviewList('smOverviewQA', overview.QualityAssessment);
+
+        const sd = sm.StudyDesign || {};
+        document.getElementById('smSDType').value = sd.Type || '';
+        document.getElementById('smSDConditionType').value = sm.Conditions?.Type || '';
+        document.getElementById('smSDTypeDesc').value = sd.TypeDescription || '';
+        document.getElementById('smSDBlinding').value = sd.Blinding || '';
+        document.getElementById('smSDRandomization').value = sd.Randomization || '';
+        document.getElementById('smSDControl').value = sd.ControlCondition || '';
+        toggleExperimentalFields();
+
+        const rec = sm.Recruitment || {};
+        if (Array.isArray(rec.Method)) {
+            setRecMethodList(rec.Method);
+        } else if (typeof rec.Method === 'string') {
+            setRecMethodList(rec.Method.split(';').map(s => s.trim()).filter(s => s));
+        } else {
+            setRecMethodList([]);
+        }
+        if (Array.isArray(rec.Location)) {
+            setRecLocationList(rec.Location);
+        } else if (typeof rec.Location === 'string') {
+            setRecLocationList(rec.Location.split(';').map(s => s.trim()).filter(s => s));
+        } else {
+            setRecLocationList([]);
+        }
+        const period = rec.Period || {};
+        setYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth', period.Start || '');
+        setYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth', period.End || '');
+        if (rec.Compensation) {
+            const comp = String(rec.Compensation).toLowerCase();
+            if (comp.includes('no')) {
+                document.getElementById('smRecCompensation').value = 'No financial compensation';
+            } else if (comp.includes('financial')) {
+                document.getElementById('smRecCompensation').value = 'Financial compensation';
+            } else {
+                document.getElementById('smRecCompensation').value = rec.Compensation;
+            }
+        } else {
+            document.getElementById('smRecCompensation').value = '';
+        }
+
+        const elig = sm.Eligibility || {};
+        setOverviewList('smEligInclusion', elig.InclusionCriteria);
+        setOverviewList('smEligExclusion', elig.ExclusionCriteria);
+        document.getElementById('smEligSampleSize').value = elig.TargetSampleSize || '';
+        document.getElementById('smEligPower').value = elig.PowerAnalysis || '';
+
+        const proc = sm.Procedure || {};
+        document.getElementById('smProcOverview').value = proc.Overview || '';
+        document.getElementById('smProcConsent').value = proc.InformedConsent || '';
+        setOverviewList('smProcQC', proc.QualityControl);
+        document.getElementById('smProcMissing').value = proc.MissingDataHandling || '';
+        document.getElementById('smProcDebriefing').value = proc.Debriefing || '';
+        document.getElementById('smProcAdditionalData').value = proc.AdditionalData || '';
+        document.getElementById('smProcNotes').value = proc.Notes || '';
+
+        const missingData = sm.MissingData || {};
+        document.getElementById('smMissingDesc').value = missingData.Description || '';
+        document.getElementById('smMissingFiles').value = missingData.MissingFiles || '';
+        document.getElementById('smKnownIssues').value = missingData.KnownIssues || '';
+
+        document.getElementById('smReferencesText').value = Array.isArray(sm.References)
+            ? sm.References.join('\n')
+            : (sm.References || '');
+
+        _applyHints(data.hints || {});
+
+        // Keep frontend readiness scoring semantics stable by recomputing from the
+        // current form state instead of mixing in backend completeness payloads.
+        updateCompletenessUI(computeLocalCompleteness());
+
+        updateCreateProjectButton();
+
+        // Trigger validation on all study metadata fields so badges turn green if filled
+        setTimeout(() => {
+            refreshMetadataValidationState({ onlyFilled: true });
+        }, 150);
+    },
+    refreshStatusSnapshots: async () => {
+        await refreshCitationHealthStatus();
+        await refreshMetadataSyncStatus();
+    },
+    setLoadErrorStatus: () => setMetadataSaveStatus('Project metadata could not be loaded.', 'danger'),
+    clearLoadStatus: () => setMetadataSaveStatus('', 'muted'),
+});
+
+const studyMetadataSaveController = createStudyMetadataSaveController({
+    fetchWithApiFallback,
+    getCurrentProjectPath: _getCurrentProjectPath,
+    buildCleanPayload: () => _buildStudyMetadataCleanPayload(),
+    saveDatasetDescription: (projectPath) => saveDatasetDescription(projectPath),
+    generateReadmeSilent: (projectPath) => generateReadmeSilent(projectPath),
+    refreshMetadataSyncStatus: () => metadataStatusController.refreshMetadataSyncStatus(),
+    captureBaseline: () => studyMetadataLoadController.captureBaseline(),
+    updateCompletenessUI,
+    computeLocalCompleteness,
+    setMetadataSaveStatus,
+    updateCreateProjectButton,
+    showToast,
+    showTopFeedback,
+    setButtonLoading,
+});
+
+const metadataMethodsController = createMetadataMethodsController({
+    escapeHtml,
+    fetchWithApiFallback,
+    getCurrentProjectPath: _getCurrentProjectPath,
+    setButtonLoading,
+});
+
+const metadataOrcidController = createMetadataOrcidController({
+    escapeHtml,
+    extractOrcidId: _extractOrcidId,
+    fetchWithApiFallback,
+    setButtonLoading,
+    showToast,
+    applyOrcidCandidateToAuthorRow: _applyOrcidCandidateToAuthorRow,
+});
+
+const getLastCitationStatus = metadataStatusController.getLastCitationStatus;
+const getLastMetadataSyncStatus = metadataStatusController.getLastMetadataSyncStatus;
+const renderMetadataRepairHint = metadataStatusController.renderMetadataRepairHint;
+export const refreshCitationHealthStatus = metadataStatusController.refreshCitationHealthStatus;
+export const refreshMetadataSyncStatus = metadataStatusController.refreshMetadataSyncStatus;
+const requestMetadataRepairSave = studyMetadataSubmitController.requestMetadataRepairSave;
+export const bindProjectBoxActionButtons = studyMetadataSubmitController.bindProjectBoxActionButtons;
 
 function _withProjectPathQuery(baseUrl, projectPath) {
     if (!projectPath) return baseUrl;
@@ -51,22 +248,6 @@ function _isProjectRequestCurrent(projectPath, requestToken = null) {
         return false;
     }
     return true;
-}
-
-function _resetMethodsPreviewState() {
-    _methodsMd = '';
-    _methodsHtml = '';
-    _methodsFilenameBase = 'methods_section_en';
-
-    const resultDiv = document.getElementById('methodsResult');
-    const errorDiv = document.getElementById('methodsError');
-    const preview = document.getElementById('methodsPreview');
-    const badgesDiv = document.getElementById('methodsSectionsBadges');
-
-    if (resultDiv) resultDiv.style.display = 'none';
-    if (errorDiv) errorDiv.style.display = 'none';
-    if (preview) preview.innerHTML = '';
-    if (badgesDiv) badgesDiv.innerHTML = '';
 }
 
 function _getCurrentProjectPath() {
@@ -125,32 +306,117 @@ function _snapshotStudyMetadataForm() {
     return values.join('\u001e');
 }
 
+function _cleanUndefinedMetadataValue(value) {
+    if (Array.isArray(value)) return value.length > 0 ? value : undefined;
+    if (value && typeof value === 'object') {
+        const cleaned = {};
+        for (const [key, nestedValue] of Object.entries(value)) {
+            const cleanedValue = _cleanUndefinedMetadataValue(nestedValue);
+            if (cleanedValue !== undefined) cleaned[key] = cleanedValue;
+        }
+        return Object.keys(cleaned).length > 0 ? cleaned : undefined;
+    }
+    return value;
+}
+
+function _buildStudyMetadataPayload() {
+    const basics = {
+        Name: document.getElementById('metadataName')?.value?.trim() || undefined,
+        Authors: getAuthorsList(),
+        Keywords: (document.getElementById('metadataKeywords')?.value || '')
+            .split(',').map(s => s.trim()).filter(s => s),
+        EthicsApprovals: getEthicsApprovals(),
+        Funding: getFundingList(),
+    };
+
+    return {
+        Basics: basics,
+        Overview: {
+            Main: document.getElementById('smOverviewMain').value || undefined,
+            IndependentVariables: getOverviewList('smOverviewIV') || undefined,
+            DependentVariables: getOverviewList('smOverviewDV') || undefined,
+            ControlVariables: getOverviewList('smOverviewCV') || undefined,
+            QualityAssessment: getOverviewList('smOverviewQA') || undefined,
+        },
+        StudyDesign: {
+            Type: document.getElementById('smSDType').value || undefined,
+            TypeDescription: document.getElementById('smSDTypeDesc').value || undefined,
+            Blinding: document.getElementById('smSDBlinding').value || undefined,
+            Randomization: document.getElementById('smSDRandomization').value || undefined,
+            ControlCondition: document.getElementById('smSDControl').value || undefined,
+        },
+        Conditions: {
+            Type: document.getElementById('smSDConditionType').value || undefined,
+        },
+        Recruitment: {
+            Method: (function() {
+                const list = getRecMethodList();
+                if (!list.length) return undefined;
+                return list.join('; ');
+            })(),
+            Location: (function() {
+                const list = getRecLocationList();
+                if (!list.length) return undefined;
+                return list.join('; ');
+            })(),
+            Period: {
+                Start: getYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth') || undefined,
+                End: getYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth') || undefined,
+            },
+            Compensation: document.getElementById('smRecCompensation').value || undefined,
+        },
+        Eligibility: {
+            InclusionCriteria: getOverviewList('smEligInclusion') || undefined,
+            ExclusionCriteria: getOverviewList('smEligExclusion') || undefined,
+            TargetSampleSize: parseInt(document.getElementById('smEligSampleSize').value) || undefined,
+            PowerAnalysis: document.getElementById('smEligPower').value || undefined,
+        },
+        Procedure: {
+            Overview: document.getElementById('smProcOverview').value || undefined,
+            InformedConsent: document.getElementById('smProcConsent').value || undefined,
+            QualityControl: getOverviewList('smProcQC') || undefined,
+            MissingDataHandling: document.getElementById('smProcMissing').value || undefined,
+            Debriefing: document.getElementById('smProcDebriefing').value || undefined,
+            AdditionalData: document.getElementById('smProcAdditionalData').value || undefined,
+            Notes: document.getElementById('smProcNotes').value || undefined,
+        },
+        MissingData: {
+            Description: document.getElementById('smMissingDesc').value || undefined,
+            MissingFiles: document.getElementById('smMissingFiles').value || undefined,
+            KnownIssues: document.getElementById('smKnownIssues').value || undefined,
+        },
+        References: document.getElementById('smReferencesText').value || undefined,
+    };
+}
+
+function _buildStudyMetadataCleanPayload() {
+    const payload = _buildStudyMetadataPayload();
+    const cleanPayload = {};
+    for (const [key, value] of Object.entries(payload)) {
+        const cleanedValue = _cleanUndefinedMetadataValue(value);
+        cleanPayload[key] = cleanedValue || {};
+    }
+    return cleanPayload;
+}
+
 function _captureStudyMetadataBaseline() {
-    studyMetadataBaselineSnapshot = _snapshotStudyMetadataForm();
+    studyMetadataLoadController.captureBaseline();
 }
 
 function _resetStudyMetadataTracking() {
-    studyMetadataLoadInFlight = false;
-    studyMetadataLoadInFlightToken = 0;
-    studyMetadataReadyProjectPath = '';
-    studyMetadataBaselineSnapshot = '';
+    studyMetadataLoadController.resetTracking();
 }
 
 function _isStudyMetadataReadyForCurrentProject() {
-    const currentProjectPath = _getCurrentProjectPath();
-    return Boolean(currentProjectPath) && studyMetadataReadyProjectPath === currentProjectPath;
+    return studyMetadataLoadController.isReadyForCurrentProject();
 }
 
 export function isStudyMetadataBusy() {
-    return studyMetadataLoadInFlight || studyMetadataSubmitInFlight;
+    return studyMetadataLoadController.isBusy();
 }
 
 export function hasUnsavedStudyMetadataChanges() {
-    if (!_isStudyMetadataReadyForCurrentProject() || studyMetadataLoadInFlight || studyMetadataSubmitInFlight) {
-        return false;
-    }
-
-    return _snapshotStudyMetadataForm() !== studyMetadataBaselineSnapshot;
+    return studyMetadataLoadController.hasUnsavedChanges();
 }
 
 // ===== AUTHORS =====
@@ -260,7 +526,6 @@ function _addRoleToRow(row, roleValue) {
 function _attachRolePickerHandlers(row) {
     const rolesInput = row.querySelector('.author-roles');
     const rolePicker = row.querySelector('.author-role-picker');
-    const roleAddBtn = row.querySelector('.author-add-role');
 
     if (rolesInput) {
         rolesInput.addEventListener('blur', () => _syncRoleBadges(row));
@@ -271,12 +536,6 @@ function _attachRolePickerHandlers(row) {
                 updateCreateProjectButton();
                 validateAuthorsBadge();
             }
-        });
-    }
-
-    if (roleAddBtn) {
-        roleAddBtn.addEventListener('click', () => {
-            _addRoleToRow(row, rolePicker?.value || '');
         });
     }
 
@@ -330,15 +589,6 @@ function _normalizeOrcid(value) {
     return `https://orcid.org/${orcidId}`;
 }
 
-function _normalizeNameForMatch(value) {
-    return String(value || '')
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-}
-
 function _applyOrcidCandidateToAuthorRow(row, candidate) {
     if (!row || !candidate) return;
 
@@ -364,261 +614,6 @@ function _applyOrcidCandidateToAuthorRow(row, candidate) {
     _updateAuthorRowLabels();
     updateCreateProjectButton();
     validateAuthorsBadge();
-}
-
-async function _chooseOrcidCandidate(candidates, firstName, lastName, currentOrcid = '') {
-    if (!Array.isArray(candidates) || candidates.length === 0) return null;
-    if (candidates.length === 1) return candidates[0];
-
-    const currentOrcidId = _extractOrcidId(currentOrcid);
-
-    const targetFirst = _normalizeNameForMatch(firstName);
-    const targetLast = _normalizeNameForMatch(lastName);
-    const exactMatches = candidates.filter(candidate => {
-        const candidateFirst = _normalizeNameForMatch(candidate.given_names || '');
-        const candidateLast = _normalizeNameForMatch(candidate.family_name || '');
-        return targetFirst && targetLast && candidateFirst === targetFirst && candidateLast === targetLast;
-    });
-    if (exactMatches.length === 1) {
-        return exactMatches[0];
-    }
-
-    if (!(window.bootstrap && typeof window.bootstrap.Modal === 'function')) {
-        const defaultIndex = Math.max(
-            0,
-            candidates.findIndex((candidate) => {
-                const candidateOrcid = candidate.orcid_id || candidate.orcid || '';
-                return currentOrcidId && _extractOrcidId(candidateOrcid) === currentOrcidId;
-            })
-        );
-        const options = candidates
-            .map((candidate, index) => {
-                const displayName = String(candidate.display_name || '').trim() || `Candidate ${index + 1}`;
-                const orcidId = String(candidate.orcid_id || '').trim() || String(candidate.orcid || '').trim();
-                const marker = currentOrcidId && _extractOrcidId(orcidId) === currentOrcidId
-                    ? ' [current]'
-                    : '';
-                return `${index + 1}. ${displayName} (${orcidId})${marker}`;
-            })
-            .join('\n');
-
-        const choice = window.prompt(
-            `Multiple ORCID matches found.${currentOrcidId ? `\nCurrent ORCID in field: ${currentOrcidId}` : ''}\nEnter a number (1-${candidates.length}) to choose:\n\n${options}`,
-            String(defaultIndex + 1)
-        );
-        if (choice === null) {
-            return null;
-        }
-
-        const selectedIndex = Number.parseInt(choice, 10) - 1;
-        if (Number.isNaN(selectedIndex) || selectedIndex < 0 || selectedIndex >= candidates.length) {
-            return null;
-        }
-
-        return candidates[selectedIndex];
-    }
-
-    return new Promise((resolve) => {
-        const modalEl = document.createElement('div');
-        modalEl.className = 'modal fade';
-        modalEl.tabIndex = -1;
-        modalEl.setAttribute('aria-hidden', 'true');
-
-        const defaultSelectedIndex = currentOrcidId
-            ? candidates.findIndex((candidate) => {
-                const candidateOrcid = candidate.orcid_id || candidate.orcid || '';
-                return _extractOrcidId(candidateOrcid) === currentOrcidId;
-            })
-            : -1;
-        const selectedIndex = defaultSelectedIndex >= 0 ? defaultSelectedIndex : 0;
-
-        const candidateRows = candidates
-            .map((candidate, index) => {
-                const displayName = String(candidate.display_name || '').trim() || `Candidate ${index + 1}`;
-                const givenName = String(candidate.given_names || '').trim();
-                const familyName = String(candidate.family_name || '').trim();
-                const normalizedName = [givenName, familyName].filter(Boolean).join(' ').trim();
-                const nameLabel = normalizedName || displayName;
-                const orcidId = String(candidate.orcid_id || '').trim() || String(candidate.orcid || '').trim();
-                const normalizedOrcidId = _extractOrcidId(orcidId);
-                const orcidUrl = String(candidate.orcid || '').trim();
-                const affiliation = String(candidate.affiliation || '').trim();
-                const publicDataAvailable = Boolean(candidate.public_data_available);
-                const publicDataStatus = String(candidate.public_data_status || '').trim()
-                    || (publicDataAvailable ? 'Public profile data available' : 'Limited public profile data');
-                const isCurrent = Boolean(currentOrcidId && normalizedOrcidId === currentOrcidId);
-                const checked = index === selectedIndex ? ' checked' : '';
-                const currentBadge = isCurrent
-                    ? '<span class="badge text-bg-info ms-2">Current value</span>'
-                    : '';
-                const affiliationLabel = affiliation
-                    ? escapeHtml(affiliation)
-                    : '<span class="text-muted">No public affiliation data</span>';
-                const availabilityBadge = publicDataAvailable
-                    ? `<span class="badge text-bg-success">${escapeHtml(publicDataStatus)}</span>`
-                    : `<span class="badge text-bg-secondary">${escapeHtml(publicDataStatus)}</span>`;
-                return `
-                    <tr>
-                        <td class="text-center align-middle">
-                            <input
-                                class="form-check-input"
-                                type="radio"
-                                name="orcidCandidate"
-                                value="${index}"
-                                aria-label="Select ${escapeHtml(nameLabel)}"
-                                ${checked}
-                            >
-                        </td>
-                        <td class="align-middle">${escapeHtml(nameLabel)}${currentBadge}</td>
-                        <td class="align-middle"><code>${escapeHtml(orcidId || 'n/a')}</code></td>
-                        <td class="align-middle">${affiliationLabel}</td>
-                        <td class="align-middle">${availabilityBadge}</td>
-                        <td class="align-middle">${orcidUrl ? `<a href="${escapeHtml(orcidUrl)}" target="_blank" rel="noopener noreferrer">Open</a>` : '-'}</td>
-                    </tr>
-                `;
-            })
-            .join('');
-
-        const currentOrcidNotice = currentOrcidId
-            ? `<div class="alert alert-info py-2 mb-2"><strong>Current ORCID in field:</strong> <code>${escapeHtml(currentOrcidId)}</code></div>`
-            : '';
-
-        modalEl.innerHTML = `
-            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Multiple ORCID matches found</h5>
-                        <button type="button" class="btn-close" aria-label="Close" data-role="close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p class="mb-2">Select the correct person before filling the ORCID field.</p>
-                        ${currentOrcidNotice}
-                        <p class="text-muted small mb-2">Some ORCID profiles expose limited public data. Missing affiliation does not mean the ORCID is invalid.</p>
-                        <div class="table-responsive border rounded">
-                            <table class="table table-sm align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th scope="col" class="text-center">Pick</th>
-                                        <th scope="col">Name</th>
-                                        <th scope="col">ORCID</th>
-                                        <th scope="col">Affiliation</th>
-                                        <th scope="col">Public data</th>
-                                        <th scope="col">Profile</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${candidateRows}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-role="cancel">Cancel</button>
-                        <button type="button" class="btn btn-primary" data-role="apply">Use selected ORCID</button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modalEl);
-
-        const modal = new window.bootstrap.Modal(modalEl, {
-            backdrop: 'static',
-            keyboard: false,
-        });
-
-        const applyBtn = modalEl.querySelector('[data-role="apply"]');
-        const cancelBtn = modalEl.querySelector('[data-role="cancel"]');
-        const closeBtn = modalEl.querySelector('[data-role="close"]');
-        let selectedCandidate = candidates[selectedIndex] || null;
-
-        const applySelection = () => {
-            const selectedInput = modalEl.querySelector('input[name="orcidCandidate"]:checked');
-            const selectedIndex = Number.parseInt(String(selectedInput?.value || ''), 10);
-            if (!Number.isNaN(selectedIndex) && selectedIndex >= 0 && selectedIndex < candidates.length) {
-                selectedCandidate = candidates[selectedIndex];
-            } else {
-                selectedCandidate = null;
-            }
-            modal.hide();
-        };
-
-        const cancelSelection = () => {
-            selectedCandidate = null;
-            modal.hide();
-        };
-
-        applyBtn?.addEventListener('click', applySelection);
-        cancelBtn?.addEventListener('click', cancelSelection);
-        closeBtn?.addEventListener('click', cancelSelection);
-
-        modalEl.addEventListener('hidden.bs.modal', () => {
-            modal.dispose();
-            modalEl.remove();
-            resolve(selectedCandidate);
-        }, { once: true });
-
-        modal.show();
-    });
-}
-
-async function _lookupOrcidForAuthorRow(row) {
-    if (!row) return;
-
-    const first = String(row.querySelector('.author-first')?.value || '').trim();
-    const last = String(row.querySelector('.author-last')?.value || '').trim();
-    const currentOrcid = String(row.querySelector('.author-orcid')?.value || '').trim();
-    if (!first && !last) {
-        showToast('Enter first name and/or last name before ORCID lookup.', 'warning');
-        return;
-    }
-
-    const lookupBtn = row.querySelector('.author-orcid-find');
-    const originalBtnText = lookupBtn ? setButtonLoading(lookupBtn, true, 'Searching...') : null;
-
-    try {
-        const params = new URLSearchParams();
-        if (first) params.set('given_names', first);
-        if (last) params.set('family_name', last);
-        if (currentOrcid) params.set('current_orcid', currentOrcid);
-        params.set('limit', '10');
-
-        const response = await fetchWithApiFallback(`/api/projects/orcid/search?${params.toString()}`);
-        const payload = await response.json();
-        if (!response.ok || !payload?.success) {
-            throw new Error(payload?.error || 'ORCID lookup failed');
-        }
-
-        if (!document.body.contains(row)) {
-            return;
-        }
-
-        const candidates = Array.isArray(payload.candidates) ? payload.candidates : [];
-        if (candidates.length === 0) {
-            showToast('No ORCID match found for this name.', 'warning');
-            return;
-        }
-
-        const chosenCandidate = await _chooseOrcidCandidate(candidates, first, last, currentOrcid);
-        if (!chosenCandidate) {
-            showToast('ORCID selection canceled.', 'warning');
-            return;
-        }
-
-        _applyOrcidCandidateToAuthorRow(row, chosenCandidate);
-        showToast(`ORCID selected: ${chosenCandidate.orcid_id || chosenCandidate.orcid || 'n/a'}`, 'success');
-    } catch (error) {
-        showToast(error?.message || 'ORCID lookup failed', 'danger');
-    } finally {
-        if (lookupBtn) {
-            setButtonLoading(
-                lookupBtn,
-                false,
-                'Searching...',
-                originalBtnText || '<i class="fas fa-magnifying-glass"></i>'
-            );
-        }
-    }
 }
 
 function _normalizeDoi(value) {
@@ -653,227 +648,6 @@ function _cleanMetadataList(values) {
     return source
         .map(item => _cleanMetadataText(item))
         .filter(Boolean);
-}
-
-let lastCitationStatus = {
-    exists: null,
-    valid: null,
-    issues: [],
-    consistent: null,
-    consistencyIssues: []
-};
-
-let lastMetadataSyncStatus = {
-    projectJsonExists: null,
-    datasetDescriptionExists: null,
-    citationExists: null,
-    consistent: null,
-    issues: []
-};
-
-function requestMetadataRepairSave() {
-    const form = document.getElementById('studyMetadataForm');
-    if (!form) return;
-
-    const preferredSubmitter = document.getElementById('createProjectSubmitBtn');
-    form.dataset.submitIntent = 'standard';
-
-    const active = document.activeElement;
-    if (active instanceof HTMLElement && form.contains(active) && typeof active.blur === 'function') {
-        active.blur();
-    }
-
-    window.requestAnimationFrame(() => {
-        if (typeof form.requestSubmit === 'function' && preferredSubmitter) {
-            form.requestSubmit(preferredSubmitter);
-            return;
-        }
-
-        form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-    });
-}
-
-function _renderMetadataRepairHint() {
-    const metadataIssues = Array.isArray(lastMetadataSyncStatus.issues)
-        ? lastMetadataSyncStatus.issues.filter(issue => String(issue || '').trim())
-        : [];
-    const citationIssues = Array.isArray(lastCitationStatus.consistencyIssues)
-        ? lastCitationStatus.consistencyIssues.filter(issue => String(issue || '').trim())
-        : [];
-
-    const metadataNeedsRepair = lastMetadataSyncStatus.consistent === false;
-    const citationNeedsRegeneration = (
-        lastCitationStatus.exists === true
-        && lastCitationStatus.valid === true
-        && lastCitationStatus.consistent === false
-        && metadataNeedsRepair !== true
-    );
-
-    if (!metadataNeedsRepair && !citationNeedsRegeneration) {
-        return '';
-    }
-
-    const combinedIssues = metadataNeedsRepair ? metadataIssues : citationIssues;
-    const visibleIssues = combinedIssues.slice(0, 3);
-    const remainingIssues = Math.max(0, combinedIssues.length - visibleIssues.length);
-    const issueListHtml = visibleIssues.length
-        ? `
-            <ul class="mb-0 ps-3 small">
-                ${visibleIssues.map(issue => `<li>${escapeHtml(issue)}</li>`).join('')}
-                ${remainingIssues > 0 ? `<li>+${remainingIssues} more issue${remainingIssues > 1 ? 's' : ''}</li>` : ''}
-            </ul>
-        `
-        : '';
-
-    if (metadataNeedsRepair) {
-        return `
-            <div class="alert alert-warning mt-3 mb-0" role="status">
-                <div class="d-flex flex-column gap-2">
-                    <div>
-                        <strong>How to fix this:</strong>
-                        Review the metadata fields below, then save the project to rewrite <code>project.json</code>, <code>dataset_description.json</code>, <code>CITATION.cff</code>, and <code>README.md</code> from the current form values.
-                    </div>
-                    ${issueListHtml}
-                    <div class="d-flex flex-wrap gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-warning" data-action="repair-metadata-sync">
-                            <i class="fas fa-save me-1"></i>Save Current Metadata To Project Files
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    return `
-        <div class="alert alert-warning mt-3 mb-0" role="status">
-            <div class="d-flex flex-column gap-2">
-                <div>
-                    <strong>How to fix this:</strong>
-                    The project metadata is already aligned, but <code>CITATION.cff</code> differs from it. Regenerate the citation file to bring it back in sync.
-                </div>
-                ${issueListHtml}
-                <div class="d-flex flex-wrap gap-2">
-                    <button type="button" class="btn btn-sm btn-outline-warning" data-action="regenerate-citation-sync">
-                        <i class="fas fa-rotate me-1"></i>Regenerate CITATION.cff
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function _renderMetadataSyncStatus(status) {
-    lastMetadataSyncStatus = {
-        projectJsonExists: status?.project_json_exists,
-        datasetDescriptionExists: status?.dataset_description_exists,
-        citationExists: status?.citation_exists,
-        consistent: status?.consistent,
-        issues: Array.isArray(status?.issues) ? status.issues : []
-    };
-
-    if (lastCompleteness) {
-        updateCompletenessUI(lastCompleteness);
-    }
-}
-
-function _renderCitationHealthStatus(status) {
-    lastCitationStatus = {
-        exists: status?.exists,
-        valid: status?.valid,
-        issues: Array.isArray(status?.issues) ? status.issues : [],
-        consistent: status?.consistent,
-        consistencyIssues: Array.isArray(status?.consistency_issues)
-            ? status.consistency_issues
-            : []
-    };
-
-    if (lastCompleteness) {
-        updateCompletenessUI(lastCompleteness);
-    }
-}
-
-export async function refreshCitationHealthStatus() {
-    const requestProjectPath = _getCurrentProjectPath();
-    if (!requestProjectPath) {
-        _renderCitationHealthStatus({ exists: true, valid: true, issues: [] });
-        return;
-    }
-
-    try {
-        const response = await fetchWithApiFallback(
-            _withProjectPathQuery('/api/projects/citation/status', requestProjectPath)
-        );
-        const data = await response.json();
-        if (!_isProjectRequestCurrent(requestProjectPath)) {
-            return;
-        }
-        if (!data.success) {
-            _renderCitationHealthStatus({
-                exists: true,
-                valid: false,
-                issues: [data.error || 'Could not read citation status.']
-            });
-            return;
-        }
-        _renderCitationHealthStatus(data);
-    } catch (error) {
-        if (!_isProjectRequestCurrent(requestProjectPath)) {
-            return;
-        }
-        _renderCitationHealthStatus({
-            exists: true,
-            valid: false,
-            issues: ['Could not read citation status.']
-        });
-        console.debug('Citation status check failed:', error);
-    }
-}
-
-export async function refreshMetadataSyncStatus() {
-    const requestProjectPath = _getCurrentProjectPath();
-    if (!requestProjectPath) {
-        _renderMetadataSyncStatus({
-            project_json_exists: true,
-            dataset_description_exists: true,
-            citation_exists: true,
-            consistent: true,
-            issues: []
-        });
-        return;
-    }
-
-    try {
-        const response = await fetchWithApiFallback(
-            _withProjectPathQuery('/api/projects/metadata/status', requestProjectPath)
-        );
-        const data = await response.json();
-        if (!_isProjectRequestCurrent(requestProjectPath)) {
-            return;
-        }
-        if (!data.success) {
-            _renderMetadataSyncStatus({
-                project_json_exists: true,
-                dataset_description_exists: true,
-                citation_exists: true,
-                consistent: false,
-                issues: [data.error || 'Could not read metadata consistency status.']
-            });
-            return;
-        }
-        _renderMetadataSyncStatus(data);
-    } catch (error) {
-        if (!_isProjectRequestCurrent(requestProjectPath)) {
-            return;
-        }
-        _renderMetadataSyncStatus({
-            project_json_exists: true,
-            dataset_description_exists: true,
-            citation_exists: true,
-            consistent: false,
-            issues: ['Could not read metadata consistency status.']
-        });
-        console.debug('Metadata consistency status check failed:', error);
-    }
 }
 
 async function regenerateCitationCff() {
@@ -1291,9 +1065,6 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}) {
                     <option value="">Select CRediT role...</option>
                     ${CREDIT_ROLES.map(role => `<option value="${_escapeHtmlAttr(role)}">${_escapeHtmlAttr(role)}</option>`).join('')}
                 </select>
-                <button type="button" class="btn btn-outline-primary btn-sm author-add-role" title="Add selected role">
-                    <i class="fas fa-plus me-1"></i>Add Role
-                </button>
                 <small class="text-muted">Pick from CRediT or type custom roles above.</small>
             </div>
             <div class="col-12 d-flex flex-wrap gap-1 author-roles-badges"></div>
@@ -1350,7 +1121,7 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}) {
     });
 
     row.querySelector('.author-orcid-find')?.addEventListener('click', async () => {
-        await _lookupOrcidForAuthorRow(row);
+        await metadataOrcidController.lookupOrcidForAuthorRow(row);
     });
 
     list.appendChild(row);
@@ -2414,23 +2185,36 @@ export function updateCreateProjectButton() {
     ].filter(Boolean);
 
     const currentProjectPath = _getCurrentProjectPath();
+    const studyMetadataLoadInFlight = studyMetadataLoadController.getLoadInFlight();
     const metadataReadyForCurrentProject = Boolean(currentProjectPath)
         && !studyMetadataLoadInFlight
-        && studyMetadataReadyProjectPath === currentProjectPath;
+        && studyMetadataLoadController.getReadyProjectPath() === currentProjectPath;
 
     if (!isCreateMode && currentProjectPath && !metadataReadyForCurrentProject) {
         const loadingMessage = studyMetadataLoadInFlight
             ? 'Loading project metadata...'
             : 'Project metadata could not be loaded yet.';
-        setCreateButtonDisabled(true);
-        setPreliminaryDisabled(true);
-        setCreateTitle(loadingMessage);
-        setPreliminaryTitle(loadingMessage);
-        setMetadataSaveStatus(loadingMessage, studyMetadataLoadInFlight ? 'muted' : 'warning');
+
+        if (studyMetadataLoadInFlight) {
+            setCreateButtonDisabled(true);
+            setPreliminaryDisabled(true);
+            setCreateTitle(loadingMessage);
+            setPreliminaryTitle(loadingMessage);
+            setMetadataSaveStatus(loadingMessage, 'muted');
+            actionHints.forEach(actionHint => {
+                actionHint.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading project metadata before save actions become available.';
+            });
+            return;
+        }
+
+        // Keep actions clickable so users can trigger a metadata reload retry via save.
+        setCreateButtonDisabled(false);
+        setPreliminaryDisabled(false);
+        setCreateTitle('Project metadata is unavailable. Click save to retry loading metadata first.');
+        setPreliminaryTitle('Project metadata is unavailable. Click save to retry loading metadata first.');
+        setMetadataSaveStatus(loadingMessage, 'warning');
         actionHints.forEach(actionHint => {
-            actionHint.innerHTML = studyMetadataLoadInFlight
-                ? '<i class="fas fa-spinner fa-spin me-1"></i>Loading project metadata before save actions become available.'
-                : '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>Project metadata is unavailable right now, so save actions are temporarily disabled.';
+            actionHint.innerHTML = '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>Project metadata is unavailable. Click save to retry metadata loading, then save once it is ready.';
         });
         return;
     }
@@ -2736,165 +2520,24 @@ function buildDraftCitationFieldsForValidation() {
     };
 }
 
-let descriptionValidationTimer = null;
 export async function validateDatasetDescriptionDraftLive() {
-    // Don't validate for new projects (only when editing existing projects)
-    const requestProjectPath = _getCurrentProjectPath();
-    if (!requestProjectPath) {
-        return;
-    }
-    
-    const payload = {
-        description: buildDraftDatasetDescriptionForValidation(),
-        citation_fields: buildDraftCitationFieldsForValidation(),
-    };
-    try {
-        const response = await fetchWithApiFallback('/api/projects/description/validate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...payload, project_path: requestProjectPath })
-        });
-        const result = await response.json();
-        if (result.success) {
-            displayMetadataIssues(result.issues || []);
-        }
-    } catch (error) {
-        // Keep UX quiet for transient validation failures
-        console.debug('Live description validation failed:', error);
-    }
+    return metadataDescriptionController.validateDatasetDescriptionDraftLive();
 }
 
 export function scheduleLiveDescriptionValidation() {
-    if (descriptionValidationTimer) {
-        clearTimeout(descriptionValidationTimer);
-    }
-    descriptionValidationTimer = setTimeout(() => {
-        validateDatasetDescriptionDraftLive();
-    }, 250);
+    metadataDescriptionController.scheduleLiveDescriptionValidation();
 }
 
 function getDefaultProjectSchemaVersion() {
-    const schemaSelect = document.getElementById('metadataSchemaVersion');
-    const selectedDefault = schemaSelect?.querySelector('option[selected]')?.value;
-    const stableOption = schemaSelect?.querySelector('option[value="stable"]')?.value;
-    return selectedDefault || stableOption || schemaSelect?.options?.[0]?.value || 'stable';
-}
-
-function getSelectedProjectSchemaVersion() {
-    return (document.getElementById('metadataSchemaVersion')?.value || '').trim() || getDefaultProjectSchemaVersion();
-}
-
-function setProjectSchemaVersionSelection(schemaVersion) {
-    const schemaSelect = document.getElementById('metadataSchemaVersion');
-    if (!schemaSelect) return;
-
-    const requestedVersion = String(schemaVersion || '').trim();
-    const fallbackVersion = getDefaultProjectSchemaVersion();
-    const nextValue = requestedVersion || fallbackVersion;
-    const hasOption = Array.from(schemaSelect.options).some(option => option.value === nextValue);
-    schemaSelect.value = hasOption ? nextValue : fallbackVersion;
-}
-
-async function loadProjectSchemaConfig() {
-    const requestProjectPath = _getCurrentProjectPath();
-    if (!requestProjectPath) {
-        setProjectSchemaVersionSelection(getDefaultProjectSchemaVersion());
-        return;
-    }
-
-    const requestToken = metadataLoadToken;
-
-    try {
-        const response = await fetchWithApiFallback(
-            _withProjectPathQuery('/api/projects/schema-config', requestProjectPath)
-        );
-        const data = await response.json();
-        if (!_isProjectRequestCurrent(requestProjectPath, requestToken)) {
-            return;
-        }
-        if (data.success) {
-            setProjectSchemaVersionSelection(data.schema_version || getDefaultProjectSchemaVersion());
-        }
-    } catch (error) {
-        if (!_isProjectRequestCurrent(requestProjectPath, requestToken)) {
-            return;
-        }
-        console.error('Error loading project schema config:', error);
-        setProjectSchemaVersionSelection(getDefaultProjectSchemaVersion());
-    }
+    return metadataDescriptionController.getDefaultProjectSchemaVersion();
 }
 
 export async function saveProjectSchemaConfig() {
-    const schemaVersion = getSelectedProjectSchemaVersion();
-    const requestProjectPath = _getCurrentProjectPath();
-    if (!requestProjectPath) {
-        return { success: true, schema_version: schemaVersion, deferred: true };
-    }
-
-    const response = await fetchWithApiFallback('/api/projects/schema-config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ project_path: requestProjectPath, schema_version: schemaVersion })
-    });
-    const result = await response.json();
-    if (!result.success) {
-        throw new Error(result.error || 'Failed to save project schema version');
-    }
-    return result;
+    return metadataDescriptionController.saveProjectSchemaConfig();
 }
 
 export async function loadDatasetDescriptionFields() {
-    const requestProjectPath = _getCurrentProjectPath();
-    if (!requestProjectPath) return;
-
-    const requestToken = metadataLoadToken;
-
-    try {
-        await loadProjectSchemaConfig();
-        if (!_isProjectRequestCurrent(requestProjectPath, requestToken)) {
-            return;
-        }
-
-        const response = await fetchWithApiFallback(
-            _withProjectPathQuery('/api/projects/description', requestProjectPath)
-        );
-        const data = await response.json();
-        if (!_isProjectRequestCurrent(requestProjectPath, requestToken)) {
-            return;
-        }
-
-        if (data.success && data.description) {
-            const desc = data.description;
-
-            document.getElementById('metadataName').value = _cleanMetadataText(desc.Name || '');
-            setAuthorsList(Array.isArray(desc.Authors) ? desc.Authors : (desc.Authors ? [desc.Authors] : []));
-            document.getElementById('metadataLicense').value = _cleanMetadataText(desc.License || '') || 'CC0';
-            document.getElementById('metadataAcknowledgements').value = _cleanMetadataText(desc.Acknowledgements || '');
-            document.getElementById('metadataDOI').value = _cleanMetadataText(desc.DatasetDOI || '');
-            setEthicsApprovals(desc.EthicsApprovals);
-            document.getElementById('metadataKeywords').value = _cleanMetadataList(desc.Keywords).join(', ');
-            document.getElementById('metadataType').value = _cleanMetadataText(desc.DatasetType || '');
-            document.getElementById('metadataHED').value = _cleanMetadataList(desc.HEDVersion).join(', ');
-            setFundingFromDescription(desc.Funding);
-            document.getElementById('metadataHowToAcknowledge').value = _cleanMetadataText(desc.HowToAcknowledge || '');
-            document.getElementById('metadataReferences').value = _cleanMetadataList(desc.ReferencesAndLinks).join(', ');
-
-            displayMetadataIssues(data.issues || []);
-            
-            // Trigger validation on all loaded fields so badges turn green if filled
-            setTimeout(() => {
-                refreshMetadataValidationState({
-                    onlyFilled: true,
-                    includeRequirementGapWarning: true
-                });
-            }, 100);
-        }
-    } catch (error) {
-        if (!_isProjectRequestCurrent(requestProjectPath, requestToken)) {
-            return;
-        }
-        console.error('Error loading dataset description:', error);
-    }
+    return metadataDescriptionController.loadDatasetDescriptionFields();
 }
 
 export function displayMetadataIssues(issues) {
@@ -2933,93 +2576,8 @@ export function displayMetadataIssues(issues) {
 }
 
 export async function saveDatasetDescription(projectPath = null) {
-    try {
-        const requestProjectPath = String(projectPath || _getCurrentProjectPath()).trim();
-        if (!requestProjectPath) {
-            throw new Error('No project selected');
-        }
-
-        const nameField = document.getElementById('metadataName');
-        if (!nameField || !nameField.value.trim()) {
-            throw new Error('REQUIRED FIELD: Dataset Name is mandatory per BIDS specification');
-        }
-
-        const overviewMain = document.getElementById('smOverviewMain');
-        const overviewText = overviewMain ? overviewMain.value.trim() : '';
-        const doiValue = document.getElementById('metadataDOI').value.trim();
-        const normalizedDoi = _normalizeDoi(doiValue);
-
-        const formatErrors = _getAuthorOptionalFormatErrors();
-        if (doiValue && !_isValidDoiFormat(doiValue)) {
-            formatErrors.push('Dataset DOI format is invalid (use 10.xxxx/... or https://doi.org/10.xxxx/...).');
-        }
-        if (formatErrors.length) {
-            throw new Error(formatErrors.join(' '));
-        }
-
-        const description = {
-            Name: nameField.value.trim(),
-            Authors: getAuthorsList(),
-            License: document.getElementById('metadataLicense').value,
-            Acknowledgements: document.getElementById('metadataAcknowledgements').value,
-            DatasetDOI: normalizedDoi,
-            EthicsApprovals: getEthicsApprovals(),
-            Keywords: document.getElementById('metadataKeywords').value.split(',').map(s => s.trim()).filter(s => s),
-            BIDSVersion: _bidsVersion,
-            DatasetType: document.getElementById('metadataType').value || undefined,
-            HowToAcknowledge: document.getElementById('metadataHowToAcknowledge').value,
-            Funding: getFundingList(),
-            ReferencesAndLinks: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
-            HEDVersion: document.getElementById('metadataHED').value.trim(),
-            Description: overviewText || undefined
-        };
-
-        const citationFields = {
-            Authors: getCitationAuthorsList(),
-            License: document.getElementById('metadataLicense').value,
-            HowToAcknowledge: document.getElementById('metadataHowToAcknowledge').value,
-            ReferencesAndLinks: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
-        };
-
-        try {
-            const currentResp = await fetchWithApiFallback(
-                _withProjectPathQuery('/api/projects/description', requestProjectPath)
-            );
-            const currentData = await currentResp.json();
-            if (currentData.success && currentData.description) {
-                description.GeneratedBy = currentData.description.GeneratedBy;
-                description.SourceDatasets = currentData.description.SourceDatasets;
-                description.DatasetLinks = currentData.description.DatasetLinks;
-            }
-        } catch (e) {
-            console.warn('Could not merge with existing description', e);
-        }
-
-        const response = await fetchWithApiFallback('/api/projects/description', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ project_path: requestProjectPath, description, citation_fields: citationFields })
-        });
-
-        const result = await response.json();
-        if (result.success) {
-            await saveProjectSchemaConfig();
-            displayMetadataIssues(result.issues || []);
-            if (requestProjectPath === _getCurrentProjectPath()) {
-                await refreshCitationHealthStatus();
-                await refreshMetadataSyncStatus();
-            }
-
-            if (requestProjectPath === _getCurrentProjectPath() && description.Name && description.Name !== _getCurrentProjectName()) {
-                _setCurrentProjectName(description.Name);
-            }
-        } else {
-            throw new Error(result.error || 'Failed to save metadata');
-        }
-    } catch (error) {
-        console.error('Error saving dataset description:', error);
-        throw error;
-    }
+    const requestProjectPath = String(projectPath || _getCurrentProjectPath()).trim();
+    return metadataDescriptionController.saveDatasetDescription(requestProjectPath);
 }
 
 // ===== STUDY METADATA =====
@@ -3186,151 +2744,7 @@ function _applyHints(hints) {
 }
 
 export async function loadStudyMetadata() {
-    let requestProjectPath = '';
-    let requestToken = null;
-    let loadSucceeded = false;
-
-    try {
-        requestProjectPath = _getCurrentProjectPath();
-        if (!requestProjectPath) return;
-
-        requestToken = ++metadataLoadToken;
-        studyMetadataLoadInFlight = true;
-        studyMetadataLoadInFlightToken = requestToken;
-        studyMetadataReadyProjectPath = '';
-        studyMetadataBaselineSnapshot = '';
-        updateCreateProjectButton();
-
-        await loadDatasetDescriptionFields();
-        if (!_isProjectRequestCurrent(requestProjectPath, requestToken)) {
-            return;
-        }
-
-        const response = await fetchWithApiFallback(
-            _withProjectPathQuery('/api/projects/study-metadata', requestProjectPath)
-        );
-        const data = await response.json();
-        if (!_isProjectRequestCurrent(requestProjectPath, requestToken)) {
-            return;
-        }
-        if (!data.success) {
-            setMetadataSaveStatus('Project metadata could not be loaded.', 'danger');
-            return;
-        }
-
-        const sm = data.study_metadata;
-
-        const overview = sm.Overview || {};
-        document.getElementById('smOverviewMain').value = overview.Main || '';
-        setOverviewList('smOverviewIV', overview.IndependentVariables);
-        setOverviewList('smOverviewDV', overview.DependentVariables);
-        setOverviewList('smOverviewCV', overview.ControlVariables);
-        setOverviewList('smOverviewQA', overview.QualityAssessment);
-
-        const sd = sm.StudyDesign || {};
-        document.getElementById('smSDType').value = sd.Type || '';
-        document.getElementById('smSDConditionType').value = sm.Conditions?.Type || '';
-        document.getElementById('smSDTypeDesc').value = sd.TypeDescription || '';
-        document.getElementById('smSDBlinding').value = sd.Blinding || '';
-        document.getElementById('smSDRandomization').value = sd.Randomization || '';
-        document.getElementById('smSDControl').value = sd.ControlCondition || '';
-        toggleExperimentalFields();
-
-        const rec = sm.Recruitment || {};
-        if (Array.isArray(rec.Method)) {
-            setRecMethodList(rec.Method);
-        } else if (typeof rec.Method === 'string') {
-            setRecMethodList(rec.Method.split(';').map(s => s.trim()).filter(s => s));
-        } else {
-            setRecMethodList([]);
-        }
-        if (Array.isArray(rec.Location)) {
-            setRecLocationList(rec.Location);
-        } else if (typeof rec.Location === 'string') {
-            setRecLocationList(rec.Location.split(';').map(s => s.trim()).filter(s => s));
-        } else {
-            setRecLocationList([]);
-        }
-        const period = rec.Period || {};
-        setYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth', period.Start || '');
-        setYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth', period.End || '');
-        if (rec.Compensation) {
-            const comp = String(rec.Compensation).toLowerCase();
-            if (comp.includes('no')) {
-                document.getElementById('smRecCompensation').value = 'No financial compensation';
-            } else if (comp.includes('financial')) {
-                document.getElementById('smRecCompensation').value = 'Financial compensation';
-            } else {
-                document.getElementById('smRecCompensation').value = rec.Compensation;
-            }
-        } else {
-            document.getElementById('smRecCompensation').value = '';
-        }
-
-        const elig = sm.Eligibility || {};
-        setOverviewList('smEligInclusion', elig.InclusionCriteria);
-        setOverviewList('smEligExclusion', elig.ExclusionCriteria);
-        document.getElementById('smEligSampleSize').value = elig.TargetSampleSize || '';
-        document.getElementById('smEligPower').value = elig.PowerAnalysis || '';
-
-        const proc = sm.Procedure || {};
-        document.getElementById('smProcOverview').value = proc.Overview || '';
-        document.getElementById('smProcConsent').value = proc.InformedConsent || '';
-        setOverviewList('smProcQC', proc.QualityControl);
-        document.getElementById('smProcMissing').value = proc.MissingDataHandling || '';
-        document.getElementById('smProcDebriefing').value = proc.Debriefing || '';
-        document.getElementById('smProcAdditionalData').value = proc.AdditionalData || '';
-        document.getElementById('smProcNotes').value = proc.Notes || '';
-
-        const missingData = sm.MissingData || {};
-        document.getElementById('smMissingDesc').value = missingData.Description || '';
-        document.getElementById('smMissingFiles').value = missingData.MissingFiles || '';
-        document.getElementById('smKnownIssues').value = missingData.KnownIssues || '';
-
-        document.getElementById('smReferencesText').value = Array.isArray(sm.References)
-            ? sm.References.join('\n')
-            : (sm.References || '');
-
-        _applyHints(data.hints || {});
-
-        // Keep frontend readiness scoring semantics stable by recomputing from the
-        // current form state instead of mixing in backend completeness payloads.
-        updateCompletenessUI(computeLocalCompleteness());
-
-        updateCreateProjectButton();
-        
-        // Trigger validation on all study metadata fields so badges turn green if filled
-        setTimeout(() => {
-            refreshMetadataValidationState({ onlyFilled: true });
-        }, 150);
-
-        await refreshCitationHealthStatus();
-        await refreshMetadataSyncStatus();
-        loadSucceeded = true;
-    } catch (error) {
-        console.error('Error loading study metadata:', error);
-        if (requestToken !== null && _isProjectRequestCurrent(requestProjectPath, requestToken)) {
-            setMetadataSaveStatus('Project metadata could not be loaded.', 'danger');
-        }
-    } finally {
-        if (requestToken !== null && requestToken === studyMetadataLoadInFlightToken) {
-            studyMetadataLoadInFlight = false;
-        }
-
-        if (requestToken !== null && _isProjectRequestCurrent(requestProjectPath, requestToken)) {
-            if (loadSucceeded) {
-                studyMetadataReadyProjectPath = requestProjectPath;
-                _captureStudyMetadataBaseline();
-                if (!studyMetadataSubmitInFlight) {
-                    setMetadataSaveStatus('', 'muted');
-                }
-            } else {
-                studyMetadataReadyProjectPath = '';
-            }
-
-            updateCreateProjectButton();
-        }
-    }
+    return studyMetadataLoadController.loadStudyMetadata();
 }
 
 export function toggleExperimentalFields() {
@@ -3812,6 +3226,7 @@ export function updateCompletenessUI(completeness) {
 
     let metadataDotClass = 'empty';
     let metadataText = 'Metadata sync status pending...';
+    const lastMetadataSyncStatus = getLastMetadataSyncStatus();
 
     if (
         lastMetadataSyncStatus.projectJsonExists === false
@@ -3837,6 +3252,7 @@ export function updateCompletenessUI(completeness) {
 
     let citationDotClass = 'empty';
     let citationText = 'CITATION.cff status pending...';
+    const lastCitationStatus = getLastCitationStatus();
 
     if (
         lastCitationStatus.exists === true
@@ -3864,7 +3280,7 @@ export function updateCompletenessUI(completeness) {
         <span class="section-badge ${citationStatusClass}">${citationText}</span>
     </div>`;
 
-    html += _renderMetadataRepairHint();
+    html += renderMetadataRepairHint();
 
     dotsDiv.innerHTML = html;
 }
@@ -3920,67 +3336,7 @@ if (createProjectForm) {
     createProjectForm.addEventListener('change', scheduleLiveDescriptionValidation);
 }
 
-function shouldSubmitStudyMetadataFromPrimaryButton() {
-    const createSection = document.getElementById('section-create');
-    const createActive = Boolean(createSection && createSection.classList.contains('active'));
-    return !createActive && Boolean(_getCurrentProjectPath());
-}
-
-// Some browsers/UI states consume the first click as a blur/change event.
-// Bridge click -> requestSubmit so save works on first click consistently.
-const createProjectSubmitBtn = document.getElementById('createProjectSubmitBtn');
-if (studyMetadataForm && createProjectSubmitBtn) {
-    let pointerTriggeredSubmit = false;
-
-    const triggerSubmit = () => {
-        if (!shouldSubmitStudyMetadataFromPrimaryButton()) {
-            return;
-        }
-        if (studyMetadataSubmitInFlight) return;
-
-        const active = document.activeElement;
-        const activeInsideForm =
-            active instanceof HTMLElement
-            && active !== createProjectSubmitBtn
-            && studyMetadataForm.contains(active);
-
-        if (activeInsideForm && typeof active.blur === 'function') {
-            active.blur();
-        }
-
-        window.requestAnimationFrame(() => {
-            if (studyMetadataSubmitInFlight) return;
-            if (typeof studyMetadataForm.requestSubmit === 'function') {
-                studyMetadataForm.requestSubmit(createProjectSubmitBtn);
-                return;
-            }
-
-            studyMetadataForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-        });
-    };
-
-    createProjectSubmitBtn.addEventListener('pointerdown', (event) => {
-        if (event.button !== 0) return;
-        if (!shouldSubmitStudyMetadataFromPrimaryButton()) {
-            return;
-        }
-        event.preventDefault();
-        pointerTriggeredSubmit = true;
-        triggerSubmit();
-    });
-
-    createProjectSubmitBtn.addEventListener('click', (event) => {
-        if (!shouldSubmitStudyMetadataFromPrimaryButton()) {
-            return;
-        }
-        event.preventDefault();
-        if (pointerTriggeredSubmit) {
-            pointerTriggeredSubmit = false;
-            return;
-        }
-        triggerSubmit();
-    });
-}
+studyMetadataSubmitController.initPrimaryStudyMetadataSubmitButton();
 
 studyMetadataForm?.addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -3996,6 +3352,23 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
     const releaseSubmitLock = () => {
         studyMetadataSubmitInFlight = false;
     };
+
+    const createSection = document.getElementById('section-create');
+    const isCreateMode = Boolean(createSection && createSection.classList.contains('active'));
+    const requestProjectPath = _getCurrentProjectPath();
+
+    if (!isCreateMode && requestProjectPath && !_isStudyMetadataReadyForCurrentProject()) {
+        setMetadataSaveStatus('Loading project metadata before saving...', 'muted');
+        await loadStudyMetadata();
+
+        if (!_isStudyMetadataReadyForCurrentProject()) {
+            showTopFeedback('Project metadata could not be loaded. Please try again.', 'warning');
+            setMetadataSaveStatus('Project metadata could not be loaded. Save aborted.', 'warning');
+            updateCreateProjectButton();
+            releaseSubmitLock();
+            return;
+        }
+    }
 
     setMetadataSaveStatus('Checking fields...', 'muted');
 
@@ -4056,205 +3429,9 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
         return;
     }
 
-    const saveButtons = [
-        document.getElementById('createProjectSubmitBtn'),
-        document.getElementById('projectBoxSaveBtn'),
-        document.getElementById('projectBoxPreliminarySaveBtn')
-    ].filter(Boolean);
-    const originalButtonTexts = new Map();
-    saveButtons.forEach(button => {
-        originalButtonTexts.set(button, setButtonLoading(button, true, 'Saving...'));
-    });
-    if (!isPreliminarySave) {
-        setMetadataSaveStatus('Saving metadata...', 'muted');
-    }
-    let saveSucceeded = false;
-
     try {
-        const basics = {
-            Name: document.getElementById('metadataName')?.value?.trim() || undefined,
-            Authors: getAuthorsList(),
-            Keywords: (document.getElementById('metadataKeywords')?.value || '')
-                .split(',').map(s => s.trim()).filter(s => s),
-            EthicsApprovals: getEthicsApprovals(),
-            Funding: getFundingList(),
-        };
-
-        const payload = {
-            Basics: basics,
-            Overview: {
-                Main: document.getElementById('smOverviewMain').value || undefined,
-                IndependentVariables: getOverviewList('smOverviewIV') || undefined,
-                DependentVariables: getOverviewList('smOverviewDV') || undefined,
-                ControlVariables: getOverviewList('smOverviewCV') || undefined,
-                QualityAssessment: getOverviewList('smOverviewQA') || undefined,
-            },
-            StudyDesign: {
-                Type: document.getElementById('smSDType').value || undefined,
-                TypeDescription: document.getElementById('smSDTypeDesc').value || undefined,
-                Blinding: document.getElementById('smSDBlinding').value || undefined,
-                Randomization: document.getElementById('smSDRandomization').value || undefined,
-                ControlCondition: document.getElementById('smSDControl').value || undefined,
-            },
-            Conditions: {
-                Type: document.getElementById('smSDConditionType').value || undefined,
-            },
-            Recruitment: {
-                Method: (function() {
-                    const list = getRecMethodList();
-                    if (!list.length) return undefined;
-                    return list.join('; ');
-                })(),
-                Location: (function() {
-                    const list = getRecLocationList();
-                    if (!list.length) return undefined;
-                    return list.join('; ');
-                })(),
-                Period: {
-                    Start: getYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth') || undefined,
-                    End: getYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth') || undefined,
-                },
-                Compensation: document.getElementById('smRecCompensation').value || undefined,
-            },
-            Eligibility: {
-                InclusionCriteria: getOverviewList('smEligInclusion') || undefined,
-                ExclusionCriteria: getOverviewList('smEligExclusion') || undefined,
-                TargetSampleSize: parseInt(document.getElementById('smEligSampleSize').value) || undefined,
-                PowerAnalysis: document.getElementById('smEligPower').value || undefined,
-            },
-            Procedure: {
-                Overview: document.getElementById('smProcOverview').value || undefined,
-                InformedConsent: document.getElementById('smProcConsent').value || undefined,
-                QualityControl: getOverviewList('smProcQC') || undefined,
-                MissingDataHandling: document.getElementById('smProcMissing').value || undefined,
-                Debriefing: document.getElementById('smProcDebriefing').value || undefined,
-                AdditionalData: document.getElementById('smProcAdditionalData').value || undefined,
-                Notes: document.getElementById('smProcNotes').value || undefined,
-            },
-            MissingData: {
-                Description: document.getElementById('smMissingDesc').value || undefined,
-                MissingFiles: document.getElementById('smMissingFiles').value || undefined,
-                KnownIssues: document.getElementById('smKnownIssues').value || undefined,
-            },
-            References: document.getElementById('smReferencesText').value || undefined,
-        };
-
-        function cleanUndefined(obj) {
-            if (Array.isArray(obj)) return obj.length > 0 ? obj : undefined;
-            if (obj && typeof obj === 'object') {
-                const cleaned = {};
-                for (const [k, v] of Object.entries(obj)) {
-                    const cv = cleanUndefined(v);
-                    if (cv !== undefined) cleaned[k] = cv;
-                }
-                return Object.keys(cleaned).length > 0 ? cleaned : undefined;
-            }
-            return obj;
-        }
-
-        const cleanPayload = {};
-        for (const [k, v] of Object.entries(payload)) {
-            const cv = cleanUndefined(v);
-            cleanPayload[k] = cv || {};
-        }
-
-        const requestProjectPath = _getCurrentProjectPath();
-        const response = await fetchWithApiFallback('/api/projects/study-metadata', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ project_path: requestProjectPath, ...cleanPayload })
-        });
-
-        const result = await response.json();
-        if (result.success) {
-            // Keep frontend readiness scoring semantics stable by recomputing from
-            // the current form state after save.
-            updateCompletenessUI(computeLocalCompleteness());
-            let datasetDescriptionSaved = true;
-            try {
-                await saveDatasetDescription(requestProjectPath);
-                showToast('Dataset description saved', 'success');
-            } catch (error) {
-                if (!isPreliminarySave) {
-                    throw error;
-                }
-                datasetDescriptionSaved = false;
-                console.warn('Preliminary save: dataset_description save deferred:', error);
-            }
-
-            const readmeResult = await generateReadmeSilent(requestProjectPath);
-
-            if (requestProjectPath === _getCurrentProjectPath()) {
-                await refreshMetadataSyncStatus();
-                _captureStudyMetadataBaseline();
-            }
-
-            saveSucceeded = true;
-            saveButtons.forEach(button => {
-                button.innerHTML = '<i class="fas fa-check me-1"></i>Saved Successfully!';
-                button.classList.add('btn-success');
-                button.classList.remove('btn-info', 'btn-warning');
-                button.disabled = false;
-            });
-
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            const statsGrid = document.querySelector('.stats-grid');
-            if (statsGrid) {
-                statsGrid.classList.add('highlight-success');
-                setTimeout(() => statsGrid.classList.remove('highlight-success'), 1200);
-            }
-
-            if (isPreliminarySave) {
-                if (datasetDescriptionSaved) {
-                    const preliminaryMessage = readmeResult.success
-                        ? 'Preliminary project state saved. You can complete required metadata later.'
-                        : 'Preliminary project state saved, but README generation failed. You can complete required metadata later.';
-                    showTopFeedback(preliminaryMessage, 'warning');
-                    setMetadataSaveStatus(
-                        readmeResult.success
-                            ? 'Preliminary state saved. Required metadata is still incomplete.'
-                            : 'Preliminary state saved. README generation failed.',
-                        'warning'
-                    );
-                } else {
-                    showTopFeedback('Preliminary study metadata saved. Dataset description save deferred until required fields are complete.', 'warning');
-                    setMetadataSaveStatus('Preliminary save completed. Dataset description update deferred.', 'warning');
-                }
-            } else if (readmeResult.success) {
-                showToast('Study metadata saved successfully', 'success');
-                showTopFeedback('Study metadata saved successfully.', 'success');
-                setMetadataSaveStatus('Saved successfully. Metadata and derived files were updated.', 'success');
-            } else {
-                showToast('Study metadata saved, but README generation failed.', 'warning');
-                showTopFeedback('Study metadata saved, but README generation failed.', 'warning');
-                setMetadataSaveStatus('Saved metadata files, but README generation failed.', 'warning');
-            }
-
-            // Reset button to original state after 2 seconds
-            setTimeout(() => {
-                saveButtons.forEach(button => {
-                    setButtonLoading(button, false, null, originalButtonTexts.get(button) || null);
-                });
-                updateCreateProjectButton();
-            }, 2000);
-        } else {
-            showToast('Failed to save: ' + result.error, 'danger');
-            showTopFeedback('Failed to save study metadata: ' + (result.error || 'Unknown error'), 'danger');
-            setMetadataSaveStatus('Save failed: ' + (result.error || 'Unknown error'), 'danger');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    } catch (error) {
-        showToast('Error: ' + error.message, 'danger');
-        showTopFeedback('Error while saving study metadata: ' + error.message, 'danger');
-        setMetadataSaveStatus('Save failed: ' + error.message, 'danger');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        await studyMetadataSaveController.saveStudyMetadata({ isPreliminarySave });
     } finally {
-        if (!saveSucceeded) {
-            saveButtons.forEach(button => {
-                setButtonLoading(button, false, null, originalButtonTexts.get(button) || null);
-            });
-            updateCreateProjectButton();
-        }
         releaseSubmitLock();
     }
 });
@@ -4262,105 +3439,15 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
 // ===== GENERATE METHODS SECTION =====
 
 export function showMethodsCard() {
-    const card = document.getElementById('methodsSectionCard');
-    if (!card) return;
-    const currentProjectPath = _getCurrentProjectPath();
-    if (currentProjectPath !== lastMethodsProjectPath) {
-        lastMethodsProjectPath = currentProjectPath;
-        _resetMethodsPreviewState();
-    }
-    card.style.display = currentProjectPath ? 'block' : 'none';
+    metadataMethodsController.showMethodsCard();
 }
 
-let _methodsMd = '';
-let _methodsHtml = '';
-let _methodsFilenameBase = 'methods_section_en';
-
 export async function generateMethodsSection() {
-    const btn = document.getElementById('generateMethodsBtn');
-    const originalText = setButtonLoading(btn, true, 'Generating...');
-
-    const resultDiv = document.getElementById('methodsResult');
-    const errorDiv = document.getElementById('methodsError');
-    resultDiv.style.display = 'none';
-    errorDiv.style.display = 'none';
-
-    const lang = document.getElementById('methodsLanguage').value;
-    const detailLevel = document.getElementById('methodsDetailLevel').value;
-    const continuous = true;
-    const requestProjectPath = _getCurrentProjectPath();
-    const requestToken = ++methodsRequestToken;
-
-    if (!requestProjectPath) {
-        errorDiv.style.display = 'block';
-        errorDiv.innerHTML = `
-            <div class="alert alert-warning py-2">
-                <i class="fas fa-info-circle me-2"></i>No project selected.
-            </div>`;
-        setButtonLoading(btn, false, null, originalText);
-        return;
-    }
-
-    try {
-        const response = await fetchWithApiFallback('/api/projects/generate-methods', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ project_path: requestProjectPath, language: lang, detail_level: detailLevel, continuous: continuous })
-        });
-        const data = await response.json();
-        if (requestToken !== methodsRequestToken || requestProjectPath !== _getCurrentProjectPath()) {
-            return;
-        }
-
-        if (!data.success) {
-            errorDiv.style.display = 'block';
-            errorDiv.innerHTML = `
-                <div class="alert alert-warning py-2">
-                    <i class="fas fa-info-circle me-2"></i>${escapeHtml(data.error || 'Could not generate methods section.')}
-                </div>`;
-            return;
-        }
-
-        _methodsMd = data.md;
-        _methodsHtml = data.html;
-        _methodsFilenameBase = data.filename_base;
-
-        const badgesDiv = document.getElementById('methodsSectionsBadges');
-        badgesDiv.innerHTML = (data.sections_used || []).map(
-            s => `<span class="badge bg-success bg-opacity-75 me-1">${s}</span>`
-        ).join('');
-
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(data.html, 'text/html');
-        document.getElementById('methodsPreview').innerHTML = doc.body.innerHTML;
-        resultDiv.style.display = 'block';
-    } catch (error) {
-        if (requestToken !== methodsRequestToken || requestProjectPath !== _getCurrentProjectPath()) {
-            return;
-        }
-        errorDiv.style.display = 'block';
-        errorDiv.innerHTML = `
-            <div class="alert alert-danger py-2">
-                <i class="fas fa-exclamation-circle me-2"></i>${escapeHtml(error.message || 'Could not generate methods section.')}
-            </div>`;
-    } finally {
-        setButtonLoading(btn, false, null, originalText);
-    }
+    await metadataMethodsController.generateMethodsSection();
 }
 
 export function downloadMethods(format) {
-    const content = format === 'md' ? _methodsMd : _methodsHtml;
-    const mimeType = format === 'md' ? 'text/markdown' : 'text/html';
-    const ext = format === 'md' ? '.md' : '.html';
-    const blob = new Blob([content], { type: mimeType + ';charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = _methodsFilenameBase + ext;
-    document.body.appendChild(a);
-    a.click();
-    URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    metadataMethodsController.downloadMethods(format);
 }
 
 // ===== README GENERATION =====
@@ -4449,7 +3536,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.addEventListener('prism-project-changed', () => {
         metadataLoadToken += 1;
-        methodsRequestToken += 1;
+        metadataMethodsController.handleProjectChanged();
         _resetStudyMetadataTracking();
         if (!studyMetadataSubmitInFlight) {
             updateCreateProjectButton();
@@ -4492,26 +3579,7 @@ document.addEventListener('DOMContentLoaded', function() {
         fundingNoBtn.addEventListener('click', () => setFundingChoice('no'));
     }
 
-    const generateMethodsBtn = document.getElementById('generateMethodsBtn');
-    if (generateMethodsBtn) {
-        generateMethodsBtn.addEventListener('click', () => {
-            generateMethodsSection();
-        });
-    }
-
-    const downloadMethodsMdBtn = document.getElementById('downloadMethodsMdBtn');
-    if (downloadMethodsMdBtn) {
-        downloadMethodsMdBtn.addEventListener('click', () => {
-            downloadMethods('md');
-        });
-    }
-
-    const downloadMethodsHtmlBtn = document.getElementById('downloadMethodsHtmlBtn');
-    if (downloadMethodsHtmlBtn) {
-        downloadMethodsHtmlBtn.addEventListener('click', () => {
-            downloadMethods('html');
-        });
-    }
+    metadataMethodsController.initMethodsControls();
 
     setEthicsChoice(document.getElementById('metadataEthicsApproved')?.value || '');
     setFundingChoice(document.getElementById('metadataFundingDeclared')?.value || '');

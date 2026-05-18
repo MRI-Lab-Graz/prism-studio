@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "includes/ui/macros.html" import page_header %}
+{% from "includes/ui/macros.html" import page_header, help_panel %}
 
 {% block title %}PRISM Studio - Specifications{% endblock %}
 
@@ -14,6 +14,14 @@
             'PRISM Specifications',
             'Understanding the Psychological Research Information System Model'
         ) }}
+
+        {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
+        <div class="small">
+            <p class="mb-2"><strong>Use Core first:</strong> Set up or load your project in Projects, then validate structure and metadata in Validator.</p>
+            <p class="mb-2"><strong>Derivatives are project-bound:</strong> Survey Export and Recipes become active when a current project is loaded.</p>
+            <p class="mb-0"><strong>Compatibility:</strong> PRISM extends BIDS with additional schemas while keeping BIDS apps usable on PRISM datasets.</p>
+        </div>
+        {% endcall %}
 
         <div class="card mb-4 border-primary">
             <div class="card-body">

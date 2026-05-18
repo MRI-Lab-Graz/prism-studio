@@ -52,6 +52,7 @@ def test_projects_export_uses_fixed_internal_anonymization_settings(tmp_path):
                     "project_path": str(project_dir),
                     "anonymize": True,
                     "mask_questions": False,
+                    "scrub_mri_json": True,
                     "include_derivatives": True,
                     "include_code": False,
                     "include_analysis": False,
@@ -61,6 +62,8 @@ def test_projects_export_uses_fixed_internal_anonymization_settings(tmp_path):
     assert response.status_code == 200
     assert called["anonymize"] is True
     assert called["mask_questions"] is False
+    assert called["scrub_mri_json"] is True
+    assert called["clean_nifti_gzip_headers"] is True
     assert called["id_length"] == 8
     assert called["deterministic"] is True
 
@@ -94,6 +97,7 @@ def test_projects_export_start_uses_fixed_internal_anonymization_settings(tmp_pa
                     "project_path": str(project_dir),
                     "anonymize": True,
                     "mask_questions": False,
+                    "scrub_mri_json": True,
                     "include_derivatives": True,
                     "include_code": False,
                     "include_analysis": False,
@@ -113,6 +117,8 @@ def test_projects_export_start_uses_fixed_internal_anonymization_settings(tmp_pa
     assert isinstance(export_kwargs, dict)
     assert export_kwargs["anonymize"] is True
     assert export_kwargs["mask_questions"] is False
+    assert export_kwargs["scrub_mri_json"] is True
+    assert export_kwargs["clean_nifti_gzip_headers"] is True
     assert export_kwargs["id_length"] == 8
     assert export_kwargs["deterministic"] is True
     assert args[2] == "study_anonymized_export.zip"
@@ -164,6 +170,66 @@ def test_projects_export_start_uses_non_anonymized_filename_when_disabled(tmp_pa
     assert isinstance(export_kwargs, dict)
     assert export_kwargs["anonymize"] is False
     assert args[2] == "study_export.zip"
+
+
+def test_projects_export_start_status_includes_defacing_warning_metadata(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    class _FakeThread:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def start(self):
+            pass
+
+    with patch(
+        "src.web.blueprints.projects_export_blueprint.threading.Thread",
+        side_effect=lambda *args, **kwargs: _FakeThread(*args, **kwargs),
+    ):
+        with patch(
+            "src.mri_json_scrubber.build_defacing_report",
+            return_value=[
+                {"status": "defaced", "file": "sub-001/anat/sub-001_T1w.json"},
+                {"status": "not_defaced", "file": "sub-002/anat/sub-002_T1w.json"},
+                {"status": "unknown", "file": "sub-003/anat/sub-003_T1w.json"},
+            ],
+        ):
+            with app.test_client() as client:
+                start_resp = client.post(
+                    "/api/projects/export/start",
+                    json={
+                        "project_path": str(project_dir),
+                        "anonymize": False,
+                        "mask_questions": False,
+                        "scrub_mri_json": True,
+                        "include_derivatives": False,
+                        "include_code": False,
+                        "include_analysis": False,
+                    },
+                )
+
+                assert start_resp.status_code == 200
+                payload = start_resp.get_json() or {}
+                job_id = payload.get("job_id")
+                assert job_id
+
+                status_resp = client.get(
+                    f"/api/projects/export/{job_id}/status"
+                )
+
+    assert status_resp.status_code == 200
+    status_payload = status_resp.get_json() or {}
+    warning = status_payload.get("defacing_warning") or {}
+
+    assert warning.get("risk_count") == 2
+    assert warning.get("counts", {}).get("defaced") == 1
+    assert warning.get("counts", {}).get("not_defaced") == 1
+    assert warning.get("counts", {}).get("unknown") == 1
+    assert "warning-only" in str(warning.get("message", ""))
 
 
 def test_export_status_payload_does_not_expose_mapping_metadata(tmp_path):

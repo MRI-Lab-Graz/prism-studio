@@ -340,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pageToggleCheckbox.checked = enabled;
     }
 
-    function setPanelExpanded(panel, expanded) {
+    function setPanelExpanded(panel, expanded, rememberChoice = false) {
         const content = panel.querySelector('[data-help-content]');
         const toggle = panel.querySelector('[data-help-toggle]');
         if (content) {
@@ -356,6 +356,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         panel.dataset.helpExpanded = expanded ? 'true' : 'false';
+        if (rememberChoice) {
+            panel.dataset.helpUserExpanded = expanded ? 'true' : 'false';
+        }
     }
 
     function setLegacyHelpBlockExpanded(block, expanded) {
@@ -416,8 +419,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function applyHelpPanels(enabled) {
         document.querySelectorAll('[data-help-panel]').forEach(panel => {
-            const explicit = panel.dataset.helpExpanded;
-            const expanded = explicit === 'true' || (explicit !== 'false' && enabled);
+            const manual = panel.dataset.helpUserExpanded;
+            if (manual === 'true' || manual === 'false') {
+                setPanelExpanded(panel, manual === 'true');
+                return;
+            }
+
+            const defaultMode = String(panel.dataset.helpDefaultMode || '').trim().toLowerCase();
+            if (defaultMode === 'beginner') {
+                setPanelExpanded(panel, enabled);
+                return;
+            }
+
+            const initialExpanded = panel.dataset.helpInitialExpanded;
+            const expanded = initialExpanded === 'true' || (initialExpanded !== 'false' && enabled);
             setPanelExpanded(panel, expanded);
         });
     }
@@ -448,7 +463,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const panel = toggle.closest('[data-help-panel]');
             if (!panel) return;
             const isExpanded = panel.dataset.helpExpanded === 'true';
-            setPanelExpanded(panel, !isExpanded);
+            setPanelExpanded(panel, !isExpanded, true);
         });
     });
 
