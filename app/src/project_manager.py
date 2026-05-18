@@ -30,7 +30,7 @@ import shutil
 import subprocess
 from pathlib import Path
 from datetime import date
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Union
 from urllib.parse import urlparse
 
 from src.fixer import DatasetFixer
@@ -121,7 +121,7 @@ class ProjectManager:
         modalities = ["survey", "biometrics"]  # Default core modalities for folders
 
         created_files = []
-        datalad_result: Dict[str, Any] | None = None
+        datalad_result: Optional[Dict[str, Any]] = None
 
         try:
             # Create project root
@@ -275,7 +275,7 @@ class ProjectManager:
             if modality not in BIDS_PASSTHROUGH_MODALITIES
         ]
         created_files: List[str] = []
-        datalad_result: Dict[str, Any] | None = None
+        datalad_result: Optional[Dict[str, Any]] = None
 
         try:
             datalad_result = self._create_datalad_dataset(
@@ -787,7 +787,7 @@ class ProjectManager:
     def _create_datalad_dataset(
         self,
         project_path: Path,
-        enabled: bool | str | None = True,
+        enabled: Union[bool, str, None] = True,
     ) -> Dict[str, Any]:
         """Initialise a DataLad dataset when requested and available."""
         requested = self._normalize_feature_toggle(enabled, default=True)
