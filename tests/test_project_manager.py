@@ -3,9 +3,8 @@ import os
 import sys
 import tempfile
 import unittest
-from types import SimpleNamespace
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
@@ -135,7 +134,7 @@ class TestProjectManager(unittest.TestCase):
 
     @patch(
         "src.project_manager.subprocess.run",
-        return_value=SimpleNamespace(returncode=0, stdout="", stderr=""),
+        return_value=Mock(returncode=0, stdout="", stderr=""),
     )
     @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
     def test_create_project_initializes_and_saves_datalad_dataset(
