@@ -2,6 +2,10 @@ import { setButtonLoading } from './helpers.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { escapeHtml } from '../../shared/dom.js';
 
+function normalizeExportDefacingConfirmationMode(value) {
+    return String(value || '').trim().toLowerCase() === 'always' ? 'always' : 'risk';
+}
+
 export async function loadGlobalSettings() {
     try {
         const response = await fetchWithApiFallback('/api/settings/global-library');
@@ -19,6 +23,13 @@ export async function loadGlobalSettings() {
             const connectedToggle = document.getElementById('connectedToServerToggle');
             if (connectedToggle) {
                 connectedToggle.checked = Boolean(data.connected_to_server);
+            }
+
+            const exportDefacingConfirmationModeSelect = document.getElementById('exportDefacingConfirmationMode');
+            if (exportDefacingConfirmationModeSelect) {
+                exportDefacingConfirmationModeSelect.value = normalizeExportDefacingConfirmationMode(
+                    data.export_defacing_confirmation_mode
+                );
             }
 
             if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.setConnectedToServer === 'function') {
@@ -261,6 +272,9 @@ export function initProjectSettingsForm() {
         const libraryPath = document.getElementById('globalLibraryPath').value.trim();
         const recipesPath = document.getElementById('globalRecipesPath').value.trim();
         const connectedToServer = Boolean(document.getElementById('connectedToServerToggle')?.checked);
+        const exportDefacingConfirmationMode = normalizeExportDefacingConfirmationMode(
+            document.getElementById('exportDefacingConfirmationMode')?.value
+        );
 
         try {
             const response = await fetchWithApiFallback('/api/settings/global-library', {
@@ -270,6 +284,7 @@ export function initProjectSettingsForm() {
                     global_template_library_path: libraryPath,
                     global_recipes_path: recipesPath,
                     connected_to_server: connectedToServer,
+                    export_defacing_confirmation_mode: exportDefacingConfirmationMode,
                 })
             });
             const result = await response.json();
@@ -299,6 +314,7 @@ export function initProjectSettingsForm() {
                     detail: {
                         global_library_path: document.getElementById('globalLibraryPath').value,
                         connected_to_server: connectedToServer,
+                        export_defacing_confirmation_mode: exportDefacingConfirmationMode,
                     }
                 }));
             }

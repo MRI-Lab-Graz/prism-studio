@@ -48,6 +48,18 @@
                             </div>
                         </div>
                         <div class="col-12">
+                            <label for="exportDefacingConfirmationMode" class="form-label fw-bold">
+                                <i class="fas fa-user-shield me-1"></i>Default Export Defacing Confirmation
+                            </label>
+                            <select class="form-select" id="exportDefacingConfirmationMode">
+                                <option value="risk" selected>Ask only when unresolved defacing risk is detected</option>
+                                <option value="always">Always ask before export when MRI JSON scrubbing is enabled</option>
+                            </select>
+                            <small class="text-muted">
+                                Global default policy for export confirmation. Project-level export preferences can still override this behavior.
+                            </small>
+                        </div>
+                        <div class="col-12">
                             <label for="globalLibraryPath" class="form-label fw-bold">
                                 <i class="fas fa-database me-1"></i>Global Survey Template Library
                             </label>

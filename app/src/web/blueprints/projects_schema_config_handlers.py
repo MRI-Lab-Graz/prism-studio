@@ -3,7 +3,12 @@ from pathlib import Path
 
 from flask import current_app, jsonify, request
 
-from src.config import load_config, save_config
+from src.config import (
+    load_app_settings,
+    load_config,
+    normalize_export_defacing_confirmation_mode,
+    save_config,
+)
 from src.cross_platform import safe_path_join
 from src.schema_manager import get_available_schema_versions
 from .projects_helpers import (
@@ -145,7 +150,23 @@ def handle_get_project_preferences(get_current_project, namespace: str | None = 
     prefs = config.project_preferences or {}
 
     if namespace:
-        return jsonify({"success": True, "preferences": prefs.get(namespace, {})})
+        namespace_preferences = prefs.get(namespace, {})
+        if namespace == "export":
+            resolved_preferences = dict(namespace_preferences)
+            app_settings = load_app_settings(app_root=str(Path(current_app.root_path)))
+            resolved_preferences["defacing_confirmation_mode"] = (
+                normalize_export_defacing_confirmation_mode(
+                    resolved_preferences.get("defacing_confirmation_mode"),
+                    fallback=getattr(
+                        app_settings,
+                        "export_defacing_confirmation_mode",
+                        "risk",
+                    ),
+                )
+            )
+            return jsonify({"success": True, "preferences": resolved_preferences})
+
+        return jsonify({"success": True, "preferences": namespace_preferences})
 
     return jsonify({"success": True, "preferences": prefs})
 
