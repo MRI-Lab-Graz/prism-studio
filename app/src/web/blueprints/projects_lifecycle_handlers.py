@@ -145,6 +145,7 @@ def handle_create_project(project_manager, set_current_project, save_last_projec
 
         config = {
             "name": data.get("name", Path(path).name),
+            "use_datalad": data.get("use_datalad", True),
             "authors": data.get("authors"),
             "license": data.get("license"),
             "doi": data.get("doi"),
@@ -203,6 +204,7 @@ def handle_init_on_bids(project_manager, set_current_project, save_last_project)
 
         config = {
             "name": data.get("name"),
+            "use_datalad": data.get("use_datalad", True),
             "authors": data.get("authors"),
             "license": data.get("license"),
             "doi": data.get("doi"),
