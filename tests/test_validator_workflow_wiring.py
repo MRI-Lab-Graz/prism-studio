@@ -32,6 +32,8 @@ class TestValidatorWorkflowWiring(unittest.TestCase):
         )
         self.assertIn('id="resumeValidationWrap"', content)
         self.assertIn('id="resumeValidationBtn"', content)
+        self.assertIn('id="pauseValidationBtn"', content)
+        self.assertIn('id="cancelValidationBtn"', content)
 
     def test_validator_script_uses_fallback_and_resumable_progress(self):
         content = VALIDATOR_SCRIPT.read_text(encoding="utf-8")
@@ -66,17 +68,21 @@ class TestValidatorWorkflowWiring(unittest.TestCase):
             "const response = await fetchWithApiFallback(progressUrl, {", content
         )
         self.assertIn("let validationPollAbortController = null;", content)
-        self.assertIn("function abortValidationPolling() {", content)
+        self.assertIn("function abortValidationPolling(reason = 'manual') {", content)
         self.assertIn("function beginValidationPollingSession() {", content)
         self.assertIn("async function waitForValidationPollInterval(ms, signal) {", content)
         self.assertIn("async function pollValidationProgress(progressUrl, progressFloor = 0, signal = null)", content)
         self.assertIn("signal,", content)
-        self.assertIn("window.addEventListener('pagehide', abortValidationPolling);", content)
+        self.assertIn("window.addEventListener('pagehide', function() {", content)
+        self.assertIn("abortValidationPolling('pagehide');", content)
         self.assertIn(
             "const response = await fetchWithApiFallback(requestUrl, {", content
         )
         self.assertIn("persistActiveValidationJob({", content)
         self.assertIn("async function resumeStoredValidationJob() {", content)
+        self.assertIn("function pauseActiveValidationUpdates() {", content)
+        self.assertIn("async function cancelActiveValidationJob() {", content)
+        self.assertIn("/api/progress/${encodeURIComponent(jobId)}/cancel", content)
         self.assertIn("resumeStoredValidationJob();", content)
 
     def test_validator_script_refreshes_default_library_path_and_only_submits_explicit_override(

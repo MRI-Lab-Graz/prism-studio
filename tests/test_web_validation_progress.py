@@ -36,6 +36,72 @@ def test_progress_helpers_keep_completion_metadata():
     job_id = "job-progress-test"
     clear_progress(job_id)
 
+
+def test_cancel_validation_progress_endpoint_marks_job_cancelling():
+    app = _build_app()
+    job_id = "job-cancel-request"
+    clear_progress(job_id)
+    update_progress(
+        job_id,
+        42,
+        "Validating dataset...",
+        status="running",
+        phase="validation",
+        progress_mode="determinate",
+    )
+
+    with app.test_client() as client:
+        response = client.delete(
+            f"/api/progress/{job_id}/cancel",
+            headers={"X-Requested-With": "XMLHttpRequest"},
+        )
+
+    assert response.status_code == 202
+    payload = response.get_json()
+    assert payload["success"] is True
+    assert payload["status"] == "cancelling"
+
+    progress_payload = get_progress(job_id)
+    assert progress_payload["status"] == "cancelling"
+    assert "Cancellation requested" in progress_payload["message"]
+
+    clear_progress(job_id)
+
+
+def test_run_validation_job_async_marks_cancelled_state(monkeypatch):
+    job_id = "job-cancelled-async"
+    clear_progress(job_id)
+    update_progress(
+        job_id,
+        35,
+        "Validating dataset...",
+        status="running",
+        phase="validation",
+        progress_mode="determinate",
+    )
+
+    monkeypatch.setattr(
+        validation_blueprint_module,
+        "_execute_validation_job",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            validation_blueprint_module.ValidationCancelledError(
+                "Validation cancelled by user."
+            )
+        ),
+    )
+
+    validation_blueprint_module._run_validation_job_async(
+        job_id=job_id,
+        temp_dir=None,
+    )
+
+    payload = get_progress(job_id)
+    assert payload["status"] == "cancelled"
+    assert payload["phase"] == "cancelled"
+    assert "cancelled" in payload["message"].lower()
+
+    clear_progress(job_id)
+
     update_progress(
         job_id,
         15,

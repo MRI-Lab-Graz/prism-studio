@@ -28,6 +28,14 @@
         font-size: 0.84rem;
         color: #6c757d;
     }
+
+    .validation-progress-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
     
     @media (max-width: 768px) {
         .validation-progress-meta {
@@ -240,14 +248,23 @@
                                 <div id="validationStatusText">Preparing validation...</div>
                                 <div class="validation-progress-note">Results open automatically when validation finishes.</div>
                             </div>
+
+                            <div class="validation-progress-actions mt-3">
+                                <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="pauseValidationBtn">
+                                    <i class="fas fa-pause me-2"></i>Pause Updates
+                                </button>
+                                <div class="d-none" id="resumeValidationWrap">
+                                    <button type="button" class="btn btn-outline-success btn-sm" id="resumeValidationBtn">
+                                        <i class="fas fa-rotate-right me-2"></i>Resume Updates
+                                    </button>
+                                </div>
+                                <button type="button" class="btn btn-outline-danger btn-sm d-none" id="cancelValidationBtn">
+                                    <i class="fas fa-stop-circle me-2"></i>Cancel Validation
+                                </button>
+                            </div>
                         </div>
 
                         <div class="alert alert-danger d-none mt-3" id="validationProgressError" role="alert"></div>
-                        <div class="mt-2 d-none" id="resumeValidationWrap">
-                            <button type="button" class="btn btn-outline-success btn-sm" id="resumeValidationBtn">
-                                <i class="fas fa-rotate-right me-2"></i>Resume Active Validation
-                            </button>
-                        </div>
                         
                         <div class="mt-2 text-center">
                             <small class="text-muted" id="uploadInfo"></small>
