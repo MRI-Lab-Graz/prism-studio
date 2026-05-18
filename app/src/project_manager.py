@@ -787,7 +787,7 @@ class ProjectManager:
     def _create_datalad_dataset(
         self,
         project_path: Path,
-        enabled: Any = True,
+        enabled: bool | str | None = True,
     ) -> Dict[str, Any]:
         """Initialise a DataLad dataset when requested and available."""
         requested = self._normalize_feature_toggle(enabled, default=True)
@@ -807,7 +807,7 @@ class ProjectManager:
         result["available"] = bool(datalad_executable)
         if not datalad_executable:
             result["message"] = (
-                "DataLad is not installed in this runtime. PRISM continued without "
+                "DataLad is not installed in this environment. PRISM continued without "
                 "DataLad integration."
             )
             return result
