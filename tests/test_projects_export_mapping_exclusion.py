@@ -563,3 +563,187 @@ def test_export_nifti_gzip_headers_unchanged_when_cleaning_disabled(tmp_path):
 
     assert int.from_bytes(exported_nifti[4:8], "little") == original_mtime
     assert ((exported_nifti[3] & 0x08) != 0) is original_has_fname
+
+
+def test_export_scrub_mri_json_mixed_modality_tree_preserves_non_mri(tmp_path):
+    project_dir = tmp_path / "study"
+
+    anat_dir = project_dir / "sub-001" / "ses-01" / "anat"
+    func_dir = project_dir / "sub-001" / "ses-01" / "func"
+    dwi_dir = project_dir / "sub-001" / "ses-01" / "dwi"
+    fmap_dir = project_dir / "sub-001" / "ses-01" / "fmap"
+    eeg_dir = project_dir / "sub-001" / "ses-01" / "eeg"
+    for folder in (anat_dir, func_dir, dwi_dir, fmap_dir, eeg_dir):
+        folder.mkdir(parents=True)
+
+    (anat_dir / "sub-001_ses-01_T1w.json").write_text(
+        json.dumps(
+            {
+                "StationName": "ANAT-Scanner",
+                "PatientName": "Sensitive Name",
+                "ImageOrientationPatientDICOM": [1, 0, 0, 0, 1, 0],
+                "EchoTime": 0.003,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (func_dir / "sub-001_ses-01_task-rest_bold.json").write_text(
+        json.dumps(
+            {
+                "StationName": "FUNC-Scanner",
+                "PatientName": "Keep In FUNC",
+                "ImageOrientationPatientDICOM": [1, 0, 0, 0, 1, 0],
+                "RepetitionTime": 2.0,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (dwi_dir / "sub-001_ses-01_dwi.json").write_text(
+        json.dumps(
+            {
+                "DeviceSerialNumber": "DWI-123",
+                "ImageOrientationPatientDICOM": [1, 0, 0, 0, 1, 0],
+                "TotalReadoutTime": 0.04,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (fmap_dir / "sub-001_ses-01_dir-AP_epi.json").write_text(
+        json.dumps(
+            {
+                "StationName": "FMAP-Scanner",
+                "ImageOrientationPatientDICOM": [1, 0, 0, 0, 1, 0],
+                "IntendedFor": "sub-001/ses-01/func/sub-001_ses-01_task-rest_bold.nii.gz",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (eeg_dir / "sub-001_ses-01_task-rest_eeg.json").write_text(
+        json.dumps(
+            {
+                "StationName": "EEG-Scanner",
+                "Manufacturer": "Acme EEG",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    output_zip = tmp_path / "export_mixed_modalities_scrub.zip"
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=False,
+        mask_questions=False,
+        include_derivatives=False,
+        include_code=False,
+        include_analysis=False,
+        scrub_mri_json=True,
+    )
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        anat = json.loads(
+            archive.read("sub-001/ses-01/anat/sub-001_ses-01_T1w.json").decode("utf-8")
+        )
+        func = json.loads(
+            archive.read("sub-001/ses-01/func/sub-001_ses-01_task-rest_bold.json").decode(
+                "utf-8"
+            )
+        )
+        dwi = json.loads(
+            archive.read("sub-001/ses-01/dwi/sub-001_ses-01_dwi.json").decode("utf-8")
+        )
+        fmap = json.loads(
+            archive.read("sub-001/ses-01/fmap/sub-001_ses-01_dir-AP_epi.json").decode(
+                "utf-8"
+            )
+        )
+        eeg = json.loads(
+            archive.read("sub-001/ses-01/eeg/sub-001_ses-01_task-rest_eeg.json").decode(
+                "utf-8"
+            )
+        )
+
+    assert "StationName" not in anat
+    assert "PatientName" not in anat
+    assert "ImageOrientationPatientDICOM" not in anat
+    assert anat["EchoTime"] == 0.003
+
+    assert "StationName" not in func
+    assert "ImageOrientationPatientDICOM" not in func
+    assert func["PatientName"] == "Keep In FUNC"
+    assert func["RepetitionTime"] == 2.0
+
+    assert "DeviceSerialNumber" not in dwi
+    assert "ImageOrientationPatientDICOM" not in dwi
+    assert dwi["TotalReadoutTime"] == 0.04
+
+    assert "StationName" not in fmap
+    assert "ImageOrientationPatientDICOM" not in fmap
+    assert fmap["IntendedFor"] == "sub-001/ses-01/func/sub-001_ses-01_task-rest_bold.nii.gz"
+
+    # Non-MRI sidecars must remain untouched by MRI scrub mode.
+    assert eeg["StationName"] == "EEG-Scanner"
+    assert eeg["Manufacturer"] == "Acme EEG"
+
+
+def test_export_clean_nifti_gzip_headers_handles_nested_and_derivative_paths(tmp_path):
+    project_dir = tmp_path / "study"
+
+    long_stem = (
+        "sub-001_ses-verylongsessionlabel_task-verylongtaskname"
+        "_acq-ultralongacquisitionlabel_run-01_desc-ultralongdescriptor_bold"
+    )
+
+    nested_sources = {
+        project_dir
+        / "sub-001"
+        / "ses-verylongsessionlabel"
+        / "func"
+        / f"{long_stem}.nii.gz": b"func-payload",
+        project_dir
+        / "sub-001"
+        / "ses-verylongsessionlabel"
+        / "dwi"
+        / "sub-001_ses-verylongsessionlabel_dir-AP_dwi.nii.gz": b"dwi-payload",
+        project_dir
+        / "derivatives"
+        / "qc"
+        / "sub-001"
+        / "ses-verylongsessionlabel"
+        / "func"
+        / f"{long_stem}_desc-qc.nii.gz": b"derivative-payload",
+    }
+
+    for index, (path, payload) in enumerate(nested_sources.items(), start=1):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("wb") as fh:
+            with gzip.GzipFile(
+                filename=f"source-{index}.nii",
+                mode="wb",
+                fileobj=fh,
+                mtime=1_700_010_000 + index,
+            ) as gz_out:
+                gz_out.write(payload)
+
+    output_zip = tmp_path / "export_nested_nifti_clean.zip"
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=False,
+        mask_questions=False,
+        include_derivatives=True,
+        include_code=False,
+        include_analysis=False,
+        clean_nifti_gzip_headers=True,
+    )
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        for source_path, expected_payload in nested_sources.items():
+            arcname = str(source_path.relative_to(project_dir))
+            exported_nifti = archive.read(arcname)
+
+            assert int.from_bytes(exported_nifti[4:8], "little") == 0
+            assert (exported_nifti[3] & 0x08) == 0
+
+            with gzip.GzipFile(fileobj=io.BytesIO(exported_nifti), mode="rb") as gz_in:
+                assert gz_in.read() == expected_payload
