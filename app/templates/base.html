@@ -249,8 +249,9 @@
     {% set derivatives_enabled = current_project.path and derivatives_available %}
     {% set request_path = request.path or '' %}
     {% set prepare_active = request_path.startswith('/converter') or request_path.startswith('/template-editor') or request.endpoint in ['tools.converter', 'tools_template_editor.template_editor'] %}
-    {% set modify_active = request_path.startswith('/validate') or request_path.startswith('/file-management') or request_path.startswith('/editor') or request_path.startswith('/specifications') or request.blueprint in ['validation', 'json_editor'] or request.endpoint in ['tools.file_management', 'specifications'] %}
+    {% set modify_active = request_path.startswith('/validate') or request_path.startswith('/file-management') or request_path.startswith('/editor') or request.blueprint in ['validation', 'json_editor'] or request.endpoint in ['tools.file_management'] %}
     {% set export_active = request_path.startswith('/survey-generator') or request_path.startswith('/recipes') or request_path.startswith('/recipe-builder') or request_path.startswith('/prism-app-runner') or request.endpoint in ['tools.survey_generator', 'tools.recipes', 'tools.recipe_builder', 'tools.prism_app_runner'] %}
+    {% set docs_active = request_path.startswith('/specifications') or request.endpoint in ['specifications'] %}
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top studio-navbar-shell">
         <div class="container-xxl px-3 px-xxl-4">
             <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
@@ -343,10 +344,6 @@
                                 <span class="navbar-flow-item-title"><i class="fas fa-pen-fancy me-2 text-secondary"></i>JSON Editor (Advanced)</span>
                                 <span class="navbar-flow-item-hint">Fine-tune metadata fields when needed</span>
                             </a></li>
-                            <li><a class="dropdown-item navbar-flow-item" href="{{ url_for('specifications') }}" title="Review PRISM specifications and expected file conventions">
-                                <span class="navbar-flow-item-title"><i class="fas fa-book me-2 text-primary"></i>Specs</span>
-                                <span class="navbar-flow-item-hint">Reference rules and examples while editing</span>
-                            </a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><span class="dropdown-item-text text-muted small">Next: Export Derivatives</span></li>
                         </ul>
@@ -405,10 +402,20 @@
                         </ul>
                     </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="https://prism-studio.readthedocs.io/en/latest/" target="_blank" rel="noopener">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle{% if docs_active %} active{% endif %}" href="#" id="docsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-book-open me-1"></i>Docs
                         </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="docsDropdown">
+                            <li><a class="dropdown-item navbar-flow-item" href="https://prism-studio.readthedocs.io/en/latest/" target="_blank" rel="noopener" title="Open the PRISM Studio online documentation in a new tab">
+                                <span class="navbar-flow-item-title"><i class="fas fa-book-open me-2 text-primary"></i>Online Docs</span>
+                                <span class="navbar-flow-item-hint">Guides, tutorials, and full feature documentation</span>
+                            </a></li>
+                            <li><a class="dropdown-item navbar-flow-item" href="{{ url_for('specifications') }}" title="Review PRISM specifications and expected file conventions">
+                                <span class="navbar-flow-item-title"><i class="fas fa-book me-2 text-secondary"></i>Specs</span>
+                                <span class="navbar-flow-item-hint">Reference rules and examples used across workflows</span>
+                            </a></li>
+                        </ul>
                     </li>
                 </ul>
             </div>
