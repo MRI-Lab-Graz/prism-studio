@@ -526,7 +526,6 @@ function _addRoleToRow(row, roleValue) {
 function _attachRolePickerHandlers(row) {
     const rolesInput = row.querySelector('.author-roles');
     const rolePicker = row.querySelector('.author-role-picker');
-    const roleAddBtn = row.querySelector('.author-add-role');
 
     if (rolesInput) {
         rolesInput.addEventListener('blur', () => _syncRoleBadges(row));
@@ -537,12 +536,6 @@ function _attachRolePickerHandlers(row) {
                 updateCreateProjectButton();
                 validateAuthorsBadge();
             }
-        });
-    }
-
-    if (roleAddBtn) {
-        roleAddBtn.addEventListener('click', () => {
-            _addRoleToRow(row, rolePicker?.value || '');
         });
     }
 
@@ -1072,9 +1065,6 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}) {
                     <option value="">Select CRediT role...</option>
                     ${CREDIT_ROLES.map(role => `<option value="${_escapeHtmlAttr(role)}">${_escapeHtmlAttr(role)}</option>`).join('')}
                 </select>
-                <button type="button" class="btn btn-outline-primary btn-sm author-add-role" title="Add selected role">
-                    <i class="fas fa-plus me-1"></i>Add Role
-                </button>
                 <small class="text-muted">Pick from CRediT or type custom roles above.</small>
             </div>
             <div class="col-12 d-flex flex-wrap gap-1 author-roles-badges"></div>
