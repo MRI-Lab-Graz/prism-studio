@@ -15,6 +15,9 @@ let exportPreferencesLoadToken = 0;
 let isApplyingExportPreferences = false;
 let exportModuleInitialized = false;
 let lastLoadedExportPreferences = getDefaultExportPreferences();
+let lastExportPreferenceInheritance = {
+    defacing_confirmation_mode: false,
+};
 let lastExportStructureStatus = {
     message: 'Load a project to view export filters.',
     tone: 'muted',
@@ -27,6 +30,7 @@ function getDefaultExportPreferences() {
         exclude_modalities: [],
         exclude_acq: {},
         validation_mode: 'both',
+        defacing_confirmation_mode: 'risk',
     };
 }
 
@@ -44,6 +48,16 @@ function normalizeExportValidationMode(value) {
 function getSelectedExportValidationMode() {
     const select = getById('exportValidationMode');
     return normalizeExportValidationMode(select?.value || 'both');
+}
+
+function normalizeDefacingConfirmationMode(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    return normalized === 'always' ? 'always' : 'risk';
+}
+
+function getSelectedDefacingConfirmationMode() {
+    const always = getById('exportDefacingConfirmAlways')?.checked || false;
+    return always ? 'always' : 'risk';
 }
 
 function getExportValidationStatusText(validationMode) {
@@ -108,6 +122,7 @@ function normalizeExportPreferences(preferences) {
     normalized.exclude_modalities = normalizePreferenceStringArray(preferences.exclude_modalities);
     normalized.exclude_acq = normalizeAcqPreferenceMap(preferences.exclude_acq);
     normalized.validation_mode = normalizeExportValidationMode(preferences.validation_mode);
+    normalized.defacing_confirmation_mode = normalizeDefacingConfirmationMode(preferences.defacing_confirmation_mode);
     return normalized;
 }
 
@@ -187,12 +202,29 @@ function updateExportSnapshotUi() {
 
     if (preferenceSummary && preferenceDetail) {
         if (currentProjectPath) {
-            preferenceSummary.textContent = 'Saved per project';
-            preferenceDetail.textContent = 'Output folder and export filters are remembered automatically.';
+            const defacingMode = normalizeDefacingConfirmationMode(
+                lastLoadedExportPreferences.defacing_confirmation_mode
+            );
+            const defacingModeLabel = defacingMode === 'always'
+                ? 'always ask before MRI scrub export'
+                : 'ask only on detected defacing risk';
+            const defacingModeSource = lastExportPreferenceInheritance.defacing_confirmation_mode
+                ? 'inherited from Global Settings'
+                : 'saved in project export preferences';
+
+            preferenceSummary.textContent = lastExportPreferenceInheritance.defacing_confirmation_mode
+                ? 'Project + global defaults'
+                : 'Saved per project';
+            preferenceDetail.textContent = `Output folder and export filters are remembered automatically. Defacing confirmation: ${defacingModeLabel} (${defacingModeSource}).`;
         } else {
             preferenceSummary.textContent = 'Inactive until a project is loaded';
             preferenceDetail.textContent = 'Load or create a project before export preferences can be restored.';
         }
+    }
+
+    const resetDefacingModeBtn = getById('exportDefacingUseGlobalDefault');
+    if (resetDefacingModeBtn) {
+        resetDefacingModeBtn.disabled = !currentProjectPath || lastExportPreferenceInheritance.defacing_confirmation_mode;
     }
 
     if (outputFolderHelp) {
@@ -242,6 +274,27 @@ function updateExportSnapshotUi() {
     );
 }
 
+async function fetchDefacingSummary(projectPath) {
+    const resp = await fetchWithApiFallback('/api/projects/export/defacing-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_path: projectPath })
+    });
+    const result = await resp.json();
+    if (!resp.ok || result.error) {
+        throw new Error(result.error || 'Error fetching defacing report');
+    }
+
+    const counts = result.counts || { defaced: 0, not_defaced: 0, unknown: 0 };
+    const notDefacedCount = Number(counts.not_defaced || 0);
+    const unknownCount = Number(counts.unknown || 0);
+    return {
+        counts,
+        report: Array.isArray(result.report) ? result.report : [],
+        riskCount: notDefacedCount + unknownCount,
+    };
+}
+
 function getExportFilterCheckbox(className, value) {
     return Array.from(document.querySelectorAll(`.${className}`))
         .find(checkbox => checkbox.value === value) || null;
@@ -278,6 +331,11 @@ function applyExportPreferencesToFilters(preferences = lastLoadedExportPreferenc
         validationModeSelect.value = normalized.validation_mode;
     }
 
+    const defacingConfirmAlwaysToggle = getById('exportDefacingConfirmAlways');
+    if (defacingConfirmAlwaysToggle) {
+        defacingConfirmAlwaysToggle.checked = normalized.defacing_confirmation_mode === 'always';
+    }
+
     isApplyingExportPreferences = false;
     updateExportSnapshotUi();
 }
@@ -292,6 +350,12 @@ function saveExportPreferencesPatch(preferencesPatch) {
         ...lastLoadedExportPreferences,
         ...preferencesPatch,
     });
+    if (Object.prototype.hasOwnProperty.call(preferencesPatch, 'defacing_confirmation_mode')) {
+        lastExportPreferenceInheritance = {
+            ...lastExportPreferenceInheritance,
+            defacing_confirmation_mode: false,
+        };
+    }
     updateExportSnapshotUi();
 
     return fetchWithApiFallback('/api/projects/preferences/export', {
@@ -322,6 +386,9 @@ export function showExportCard() {
 
     const outputFolderInput = getById('exportOutputFolder');
     lastLoadedExportPreferences = getDefaultExportPreferences();
+    lastExportPreferenceInheritance = {
+        defacing_confirmation_mode: false,
+    };
     lastExportStructureStatus = {
         message: 'Load a project to view export filters.',
         tone: 'muted',
@@ -464,6 +531,9 @@ export async function loadExportPreferences() {
     if (!requestProjectPath) {
         exportPreferencesLoadToken += 1;
         lastLoadedExportPreferences = getDefaultExportPreferences();
+        lastExportPreferenceInheritance = {
+            defacing_confirmation_mode: false,
+        };
         if (outputFolderInput) {
             outputFolderInput.value = '';
         }
@@ -484,6 +554,10 @@ export async function loadExportPreferences() {
         const normalized = resp.ok && data.success
             ? normalizeExportPreferences(data.preferences)
             : getDefaultExportPreferences();
+        const inheritedPreferences = data.inherited_preferences || {};
+        lastExportPreferenceInheritance = {
+            defacing_confirmation_mode: Boolean(inheritedPreferences.defacing_confirmation_mode),
+        };
 
         lastLoadedExportPreferences = normalized;
         if (outputFolderInput) {
@@ -497,6 +571,9 @@ export async function loadExportPreferences() {
             return lastLoadedExportPreferences;
         }
         lastLoadedExportPreferences = getDefaultExportPreferences();
+        lastExportPreferenceInheritance = {
+            defacing_confirmation_mode: false,
+        };
         if (outputFolderInput) {
             outputFolderInput.value = '';
         }
@@ -567,6 +644,31 @@ export function initExportForm() {
         });
     }
 
+    const defacingConfirmAlwaysToggle = getById('exportDefacingConfirmAlways');
+    if (defacingConfirmAlwaysToggle) {
+        defacingConfirmAlwaysToggle.addEventListener('change', () => {
+            saveExportPreferencesPatch({ defacing_confirmation_mode: getSelectedDefacingConfirmationMode() });
+        });
+    }
+
+    const resetDefacingModeBtn = getById('exportDefacingUseGlobalDefault');
+    if (resetDefacingModeBtn) {
+        resetDefacingModeBtn.addEventListener('click', async () => {
+            const projectPath = resolveCurrentProjectPath();
+            if (!projectPath) {
+                return;
+            }
+
+            resetDefacingModeBtn.disabled = true;
+            try {
+                await saveExportPreferencesPatch({ defacing_confirmation_mode: null });
+                await loadExportPreferences();
+            } finally {
+                updateExportSnapshotUi();
+            }
+        });
+    }
+
     const templateExportButton = getById('templateExportButton');
     if (templateExportButton) {
         templateExportButton.addEventListener('click', handleTemplateExport);
@@ -582,18 +684,8 @@ export function initExportForm() {
             checkDefacingBtn.disabled = true;
             checkDefacingBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Checking…';
             try {
-                const resp = await fetchWithApiFallback('/api/projects/export/defacing-report', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ project_path: projectPath })
-                });
-                const result = await resp.json();
-                if (!resp.ok || result.error) {
-                    if (reportDiv) { reportDiv.style.display = 'block'; reportDiv.innerHTML = `<div class="alert alert-danger py-1 mb-0">${result.error || 'Error fetching report'}</div>`; }
-                    return;
-                }
+                const { counts, report } = await fetchDefacingSummary(projectPath);
                 if (!reportDiv) return;
-                const { counts, report } = result;
                 if (!report || report.length === 0) {
                     reportDiv.innerHTML = '<span class="text-muted small">No anatomical JSON sidecars found.</span>';
                 } else {
@@ -752,6 +844,51 @@ async function handleExportSubmit(e) {
         exclude_acq: _getUncheckedAcqByModality(),
     };
 
+    if (data.scrub_mri_json) {
+        const defacingConfirmationMode = getSelectedDefacingConfirmationMode();
+        try {
+            if (statusText) {
+                statusText.textContent = 'Checking defacing status before export...';
+            }
+            const defacingSummary = await fetchDefacingSummary(currentProjectPath);
+            if (defacingConfirmationMode === 'always' || defacingSummary.riskCount > 0) {
+                const counts = defacingSummary.counts || {};
+                const confirmMessage = defacingSummary.riskCount > 0
+                    ? `Defacing check found ${counts.not_defaced || 0} not-defaced and ${counts.unknown || 0} unknown anatomical scan(s). Continue export anyway?`
+                    : 'Defacing check did not detect unresolved risk in anatomical scans. Continue export anyway?';
+                const continueExport = window.confirm(
+                    confirmMessage
+                );
+                if (!continueExport) {
+                    if (progressDiv) hide(progressDiv);
+                    if (resultDiv) {
+                        show(resultDiv);
+                        setHtml(resultDiv, '<div class="alert alert-warning"><i class="fas fa-ban me-2"></i>Export cancelled before start: defacing risk was not accepted.</div>');
+                    }
+                    return;
+                }
+            }
+        } catch {
+            if (defacingConfirmationMode === 'always') {
+                const continueExport = window.confirm(
+                    'Could not retrieve defacing status before export. Continue export anyway?'
+                );
+                if (!continueExport) {
+                    if (progressDiv) hide(progressDiv);
+                    if (resultDiv) {
+                        show(resultDiv);
+                        setHtml(resultDiv, '<div class="alert alert-warning"><i class="fas fa-ban me-2"></i>Export cancelled before start: defacing risk was not accepted.</div>');
+                    }
+                    return;
+                }
+            }
+        }
+
+        if (statusText) {
+            statusText.textContent = getExportValidationStatusText(selectedValidationMode);
+        }
+    }
+
     let jobId = null;
     let cancelled = false;
 
@@ -824,11 +961,21 @@ async function handleExportSubmit(e) {
                     if (resultDiv) {
                         show(resultDiv);
                         const savedPath = status.zip_path || 'unknown location';
+                        const defacingWarning = status.defacing_warning || null;
+                        const defacingWarningHtml = (defacingWarning && defacingWarning.message)
+                            ? `
+                                <div class="alert alert-warning mt-2 mb-0">
+                                    <i class="fas fa-triangle-exclamation me-2"></i>${escapeHtml(defacingWarning.message)}
+                                </div>
+                            `
+                            : '';
                         setHtml(resultDiv, `
                             <div class="alert alert-success">
                                 <h5><i class="fas fa-check-circle me-2"></i>Export Successful!</h5>
                                 <p class="mb-0">ZIP saved to:<br>
                                 <code class="user-select-all">${escapeHtml(savedPath)}</code></p>
+                            </div>
+                            ${defacingWarningHtml}
                     `);
                 }
                 return;

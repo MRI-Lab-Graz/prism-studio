@@ -12,39 +12,40 @@ import { createSurveyWorkflowPrepareController } from './survey-workflow-prepare
 import { createSurveyWorkflowConvertController } from './survey-workflow-convert.js';
 import { createSurveyWorkflowConvertResultsController } from './survey-workflow-convert-results.js';
 import { createSurveyWorkflowProgressController } from './survey-workflow-progress.js';
+import { createSurveyActiveRunState } from './survey-active-run-state.js';
+import { createSurveyRunProgressAdapter } from './survey-run-progress-adapter.js';
 import { createSurveySourcedataQuickSelectController } from './survey-sourcedata-quick-select.js';
 import { createSurveyTemplateResultsController } from './survey-template-results.js';
+import { createSurveyTemplateRenderAdapter } from './survey-template-render-adapter.js';
 import { createSurveyTemplateGenerationController } from './survey-template-generation.js';
 import { createSurveyConversionSummaryController } from './survey-conversion-summary.js';
 import { createSurveyConversionLogController } from './survey-conversion-log.js';
+import { createSurveyConversionResultsAdapter } from './survey-conversion-results-adapter.js';
+import { createSurveyConvertFeedbackAdapter } from './survey-convert-feedback-adapter.js';
 import { createSurveyConvertFeedbackController } from './survey-convert-feedback.js';
-import {
-    getSelectedSeparator as getSelectedSeparatorWithSeparatorUtils,
-    isDelimitedSurveyFilename as isDelimitedSurveyFilenameWithSeparatorUtils,
-    updateSeparatorVisibility as updateSeparatorVisibilityWithSeparatorUtils,
-} from './survey-file-separator-utils.js';
+import { createSurveyFileSeparatorController } from './survey-file-separator-controller.js';
 import { createSurveyUnmatchedTemplatesController } from './survey-unmatched-templates.js';
 import { createSurveyImportFormStateController } from './survey-import-form-state.js';
+import { createSurveyNearItemMatchAdapter } from './survey-near-item-match-adapter.js';
 import { createSurveyNearItemMatchReviewController } from './survey-near-item-match-review.js';
 import { pickServerFile, prefersServerPicker } from './server-picker.js';
-import { getSessionInputValue } from './session-picker.js';
+import { createSurveySelectedInputController } from './survey-selected-input-controller.js';
+import { createSurveySessionInputController } from './survey-session-input-controller.js';
 import { createSurveyValidationResultsController } from './survey-validation-results.js';
 import { createSurveyValueOffsetEditorController } from './survey-value-offset-editor.js';
+import { createSurveyValueOffsetEditorAdapter } from './survey-value-offset-editor-adapter.js';
+import { createSurveyWorkflowResponseController } from './survey-workflow-response-controller.js';
 import {
-    buildVersionSelectionKey as buildVersionSelectionKeyWithUtils,
-    compareTimelineContexts as compareTimelineContextsWithUtils,
-    compareTimelineSessions as compareTimelineSessionsWithUtils,
-    deriveDetectedContexts as deriveDetectedContextsWithUtils,
-    getTimelineRunSortMeta as getTimelineRunSortMetaWithUtils,
-    getTimelineSessionSortMeta as getTimelineSessionSortMetaWithUtils,
-    normalizeTimelineSessionToken as normalizeTimelineSessionTokenWithUtils,
-    normalizeVersionSelectionRun as normalizeVersionSelectionRunWithUtils,
-    normalizeVersionSelectionSession as normalizeVersionSelectionSessionWithUtils,
+    buildVersionSelectionKey,
+    compareTimelineContexts,
+    compareTimelineSessions,
+    deriveDetectedContexts,
+    getTimelineRunSortMeta,
+    getTimelineSessionSortMeta,
+    normalizeTimelineSessionToken,
+    normalizeVersionSelectionRun,
+    normalizeVersionSelectionSession,
 } from './survey-version-context-utils.js';
-import {
-    parseJsonResponse as parseJsonResponseWithWorkflowUtils,
-    summarizeServerResponseText as summarizeServerResponseTextWithWorkflowUtils,
-} from './survey-workflow-response-utils.js';
 import {
     collectSuggestedValueOffsets,
     formatOffsetMagnitude,
@@ -95,9 +96,6 @@ export function initSurveyConvert(elements) {
         templateEditorErrorCta,
         toggleLogBtn,
         validationResultsContainer,
-        validationResultsCard,
-        validationResultsHeader,
-        validationBadge,
         validationSummary,
         validationDetails,
         conversionSummaryContainer,
@@ -144,12 +142,32 @@ export function initSurveyConvert(elements) {
     let versionWizardRetryGateMode = null;
     let isConvertRunning = false;
     let isPreviewRunning = false;
-    let activeRunAbortController = null;
-    let activeRunMode = null;
-    let activeRunCancelledByUser = false;
+    const surveyActiveRunState = createSurveyActiveRunState();
+    const {
+        setActiveSurveyRun,
+        clearActiveSurveyRun,
+        cancelActiveSurveyRun,
+        getActiveRunAbortController,
+        getActiveRunMode,
+        getActiveRunCancelledByUser,
+    } = surveyActiveRunState;
     let surveyConvertFeedbackController = null;
+    const surveyConvertFeedbackAdapter = createSurveyConvertFeedbackAdapter({
+        getSurveyConvertFeedbackController: () => surveyConvertFeedbackController,
+    });
+    const {
+        getProjectSaveSummary,
+        getParticipantRegistryWarning,
+        showParticipantRegistryWarning,
+    } = surveyConvertFeedbackAdapter;
     let currentTemplateData = null;
     let surveyNearItemMatchReviewController = null;
+    const surveyNearItemMatchAdapter = createSurveyNearItemMatchAdapter({
+        getSurveyNearItemMatchReviewController: () => surveyNearItemMatchReviewController,
+    });
+    const {
+        promptNearMatchSelection,
+    } = surveyNearItemMatchAdapter;
     let taskValueOffsetRowSequence = 0;
     let taskValueOffsetEditorState = [];
     let appliedTaskValueOffsetSelectionSignature = '';
@@ -158,6 +176,39 @@ export function initSurveyConvert(elements) {
         availableTasks: [],
         selectedTasks: []
     };
+
+    const surveyFileSeparatorController = createSurveyFileSeparatorController({
+        convertSeparator,
+        surveySeparatorGroup,
+    });
+    const {
+        isDelimitedSurveyFilename,
+        getSelectedSeparator,
+        updateSeparatorVisibility,
+    } = surveyFileSeparatorController;
+    const surveyWorkflowResponseController = createSurveyWorkflowResponseController();
+    const { parseJsonResponse } = surveyWorkflowResponseController;
+    const surveySelectedInputController = createSurveySelectedInputController({
+        convertExcelFile,
+        getConvertServerFilePath: () => convertServerFilePath,
+    });
+    const {
+        getSelectedSurveyFile,
+        getSelectedSurveyFilename,
+        hasSelectedSurveyInput,
+        appendSurveyInputToFormData,
+        getSelectedSurveyFingerprint,
+    } = surveySelectedInputController;
+    const surveySessionInputController = createSurveySessionInputController({
+        convertSessionSelect,
+        convertSessionCustom,
+        biometricsSessionSelect,
+        biometricsSessionCustom,
+    });
+    const {
+        populateSurveySessionPickerFromDetected,
+        getSurveySessionValue,
+    } = surveySessionInputController;
 
     const surveyWorkflowProgressController = createSurveyWorkflowProgressController({
         surveyRunProgressContainer,
@@ -168,6 +219,18 @@ export function initSurveyConvert(elements) {
             updateConvertBtn();
         },
     });
+    const surveyRunProgressAdapter = createSurveyRunProgressAdapter({
+        surveyWorkflowProgressController,
+    });
+    const {
+        setSurveyRunProgress,
+        hideSurveyRunProgress,
+        startSurveyRunProgress,
+        advanceSurveyRunProgress,
+        pauseSurveyRunProgress,
+        resumeSurveyRunProgress,
+        finishSurveyRunProgress,
+    } = surveyRunProgressAdapter;
 
     const surveySourcedataQuickSelectController = createSurveySourcedataQuickSelectController({
         sourcedataQuickSelect,
@@ -177,7 +240,7 @@ export function initSurveyConvert(elements) {
         resolveCurrentProjectPath,
         onProjectChanged: () => {
             cancelActiveSurveyRun();
-            resetSurveyImportFormState({ clearSelectedInput: true });
+            surveyImportFormStateController.resetSurveyImportFormState({ clearSelectedInput: true });
         },
     });
 
@@ -215,76 +278,14 @@ export function initSurveyConvert(elements) {
         updateVersionWizardActionState,
     });
 
-    function getSelectedSurveyFile() {
-        return (convertExcelFile && convertExcelFile.files && convertExcelFile.files[0])
-            ? convertExcelFile.files[0]
-            : null;
-    }
-
-    function getSelectedSurveyFilename() {
-        const selectedFile = getSelectedSurveyFile();
-        if (selectedFile && selectedFile.name) {
-            return selectedFile.name;
-        }
-        if (convertServerFilePath) {
-            const tokens = convertServerFilePath.split('/');
-            return tokens[tokens.length - 1] || convertServerFilePath;
-        }
-        return '';
-    }
-
-    function hasSelectedSurveyInput() {
-        return Boolean(getSelectedSurveyFile() || convertServerFilePath);
-    }
-
-    function appendSurveyInputToFormData(formData) {
-        const selectedFile = getSelectedSurveyFile();
-        if (selectedFile) {
-            formData.append('excel', selectedFile);
-            return { file: selectedFile, filename: selectedFile.name };
-        }
-        if (convertServerFilePath) {
-            formData.append('source_file_path', convertServerFilePath);
-            return { file: null, filename: getSelectedSurveyFilename() };
-        }
-        return { file: null, filename: '' };
-    }
-
-    function getSelectedSurveyFingerprint() {
-        const selectedFile = getSelectedSurveyFile();
-        if (selectedFile) {
-            const lastModified = Number.isFinite(Number(selectedFile.lastModified))
-                ? Number(selectedFile.lastModified)
-                : 0;
-            return `upload:${selectedFile.name}:${selectedFile.size}:${lastModified}`;
-        }
-        if (convertServerFilePath) {
-            return `server:${convertServerFilePath}`;
-        }
-        return '';
-    }
-
     function resetSurveyRefreshFingerprint() {
         lastDetectedSurveyFingerprint = '';
-        clearRetryResolutionState();
+        confirmedNearMatchTasks = [];
         clearSurveyPreviewSelectionState();
     }
 
     function normalizeSurveyTaskName(value) {
         return normalizeNearMatchTaskName(value).replace(/^survey-/, '');
-    }
-
-    function getSelectedIdMapFingerprint() {
-        const selectedFile = convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0]
-            ? convertIdMapFile.files[0]
-            : null;
-        if (!selectedFile) {
-            return '';
-        }
-        const lastModified = Number.isFinite(Number(selectedFile.lastModified))
-            ? Number(selectedFile.lastModified)
-            : 0;
-        return `id-map:${selectedFile.name}:${selectedFile.size}:${lastModified}`;
     }
 
     function getSurveyPreviewContextKey({ includeValueOffsets = true } = {}) {
@@ -301,9 +302,16 @@ export function initSurveyConvert(elements) {
                 return leftKey.localeCompare(rightKey);
             });
 
+        const selectedIdMapFile = convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0]
+            ? convertIdMapFile.files[0]
+            : null;
+        const idMapFingerprint = selectedIdMapFile
+            ? `id-map:${selectedIdMapFile.name}:${selectedIdMapFile.size}:${Number.isFinite(Number(selectedIdMapFile.lastModified)) ? Number(selectedIdMapFile.lastModified) : 0}`
+            : '';
+
         return JSON.stringify({
             input: getSelectedSurveyFingerprint(),
-            idMap: getSelectedIdMapFingerprint(),
+            idMap: idMapFingerprint,
             idColumn: String(convertIdColumn?.value || '').trim(),
             session: String(getSurveySessionValue() || '').trim(),
             sessionColumn: String(convertSessionColumnOverride?.value || '').trim(),
@@ -332,67 +340,11 @@ export function initSurveyConvert(elements) {
         renderTaskValueOffsetEditor();
     }
 
-    function setSurveyPreviewSelectionState(taskSummaries, previewKey = getSurveyPreviewContextKey()) {
-        if (!Array.isArray(taskSummaries) || taskSummaries.length === 0) {
-            clearSurveyPreviewSelectionState();
-            return;
-        }
-
-        const availableTasks = taskSummaries
-            .map((entry) => normalizeSurveyTaskName(entry && entry.task))
-            .filter(Boolean);
-        const selectedTasks = taskSummaries
-            .filter((entry) => entry && entry.selected !== false)
-            .map((entry) => normalizeSurveyTaskName(entry && entry.task))
-            .filter(Boolean);
-
-        surveyPreviewSelectionState = {
-            previewKey,
-            availableTasks,
-            selectedTasks: selectedTasks.length > 0 ? selectedTasks : [...availableTasks]
-        };
-        renderTaskValueOffsetEditor();
-    }
-
-    function setSurveyPreviewSelectedTasks(selectedTasks) {
-        surveyPreviewSelectionState = {
-            ...surveyPreviewSelectionState,
-            selectedTasks: Array.isArray(selectedTasks) ? selectedTasks : []
-        };
-    }
-
     function hasFreshSurveyPreviewSelectionState() {
         return Boolean(
             surveyPreviewSelectionState.previewKey
             && surveyPreviewSelectionState.availableTasks.length > 0
             && surveyPreviewSelectionState.previewKey === getSurveyPreviewContextKey()
-        );
-    }
-
-    function isPreviewStaleOnlyByOffsetChanges() {
-        if (!surveyPreviewSelectionState.previewKey || surveyPreviewSelectionState.availableTasks.length === 0) {
-            return false;
-        }
-
-        let previousPayload;
-        let currentPayload;
-        try {
-            previousPayload = JSON.parse(surveyPreviewSelectionState.previewKey);
-            currentPayload = JSON.parse(getSurveyPreviewContextKey());
-        } catch (_error) {
-            return false;
-        }
-
-        if (!previousPayload || !currentPayload || typeof previousPayload !== 'object' || typeof currentPayload !== 'object') {
-            return false;
-        }
-
-        const previousWithoutOffsets = { ...previousPayload, valueOffsetsText: '' };
-        const currentWithoutOffsets = { ...currentPayload, valueOffsetsText: '' };
-
-        return (
-            JSON.stringify(previousWithoutOffsets) === JSON.stringify(currentWithoutOffsets)
-            && String(previousPayload.valueOffsetsText || '') !== String(currentPayload.valueOffsetsText || '')
         );
     }
 
@@ -431,7 +383,30 @@ export function initSurveyConvert(elements) {
             message = 'Project template metadata is incomplete. Finish template edits, then rerun Step 4 (Preview).';
             className = 'form-text text-warning mb-2';
         } else if (!hasFreshPreviewReview) {
-            if (isPreviewStaleOnlyByOffsetChanges()) {
+            let previewStaleOnlyByOffsetChanges = false;
+            if (surveyPreviewSelectionState.previewKey && surveyPreviewSelectionState.availableTasks.length > 0) {
+                try {
+                    const previousPayload = JSON.parse(surveyPreviewSelectionState.previewKey);
+                    const currentPayload = JSON.parse(getSurveyPreviewContextKey());
+                    if (
+                        previousPayload
+                        && currentPayload
+                        && typeof previousPayload === 'object'
+                        && typeof currentPayload === 'object'
+                    ) {
+                        const previousWithoutOffsets = { ...previousPayload, valueOffsetsText: '' };
+                        const currentWithoutOffsets = { ...currentPayload, valueOffsetsText: '' };
+                        previewStaleOnlyByOffsetChanges = (
+                            JSON.stringify(previousWithoutOffsets) === JSON.stringify(currentWithoutOffsets)
+                            && String(previousPayload.valueOffsetsText || '') !== String(currentPayload.valueOffsetsText || '')
+                        );
+                    }
+                } catch (_error) {
+                    previewStaleOnlyByOffsetChanges = false;
+                }
+            }
+
+            if (previewStaleOnlyByOffsetChanges) {
                 message = 'Manual offsets changed. Run Step 4 (Preview) again to validate the new scale handling before Step 5 unlocks.';
             } else {
                 message = 'Run Step 4 (Preview) after your latest changes before converting.';
@@ -496,113 +471,12 @@ export function initSurveyConvert(elements) {
         return baseMessage;
     }
 
-    function summarizeServerResponseText(rawText) {
-        return summarizeServerResponseTextWithWorkflowUtils(rawText);
-    }
-
-    async function parseJsonResponse(response, requestLabel = 'Request') {
-        return parseJsonResponseWithWorkflowUtils(response, requestLabel);
-    }
-
     function normalizeNearMatchTaskName(value) {
         return String(value || '').trim().toLowerCase();
     }
 
-    function collectNearMatchCandidates(payload) {
-        if (!surveyNearItemMatchReviewController) {
-            return [];
-        }
-        return surveyNearItemMatchReviewController.collectNearMatchCandidates(payload);
-    }
-
-    function buildNearMatchConfirmationMessage(payload, actionLabel) {
-        if (!surveyNearItemMatchReviewController) {
-            return '';
-        }
-        return surveyNearItemMatchReviewController.buildNearMatchConfirmationMessage(payload, actionLabel);
-    }
-
-    function promptNearMatchSelection(payload, actionLabel) {
-        if (!surveyNearItemMatchReviewController) {
-            return Promise.resolve({ approved: false, selectedTasks: [], selectedCandidateCount: 0 });
-        }
-        return surveyNearItemMatchReviewController.promptNearMatchSelection(payload, actionLabel);
-    }
-
     function normalizeTaskValueOffsets(offsetMap) {
         return normalizeTaskValueOffsetsMap(offsetMap, normalizeNearMatchTaskName);
-    }
-
-    function createTaskValueOffsetRow(task = '', offset = null) {
-        return surveyValueOffsetEditorController.createTaskValueOffsetRow(task, offset);
-    }
-
-    function getAvailableSurveyTasksForValueOffsets() {
-        return surveyValueOffsetEditorController.getAvailableSurveyTasksForValueOffsets();
-    }
-
-    function getTaskValueOffsetMapFromEditorState() {
-        return surveyValueOffsetEditorController.getTaskValueOffsetMapFromEditorState();
-    }
-
-    function getCurrentTaskValueOffsetSelectionSignature() {
-        return surveyValueOffsetEditorController.getCurrentTaskValueOffsetSelectionSignature();
-    }
-
-    function hasManualTaskValueOffsets() {
-        return surveyValueOffsetEditorController.hasManualTaskValueOffsets();
-    }
-
-    function hasIncompleteTaskValueOffsetRows() {
-        return surveyValueOffsetEditorController.hasIncompleteTaskValueOffsetRows();
-    }
-
-    function hasAppliedTaskValueOffsetSelections() {
-        return surveyValueOffsetEditorController.hasAppliedTaskValueOffsetSelections();
-    }
-
-    function updateTaskValueOffsetApplyState() {
-        surveyValueOffsetEditorController.updateTaskValueOffsetApplyState();
-    }
-
-    function getPreferredTaskValueOffsetTask() {
-        return surveyValueOffsetEditorController.getPreferredTaskValueOffsetTask();
-    }
-
-    function syncTaskValueOffsetTextFromState() {
-        surveyValueOffsetEditorController.syncTaskValueOffsetTextFromState();
-    }
-
-    function setTaskValueOffsetEditorStateFromText(rawText) {
-        surveyValueOffsetEditorController.setTaskValueOffsetEditorStateFromText(rawText);
-    }
-
-    function clearTaskValueOffsetEditorState() {
-        surveyValueOffsetEditorController.clearTaskValueOffsetEditorState();
-    }
-
-    function ensureTaskValueOffsetEditorRow(task = '') {
-        return surveyValueOffsetEditorController.ensureTaskValueOffsetEditorRow(task);
-    }
-
-    function focusTaskValueOffsetEditor(rowId = null) {
-        surveyValueOffsetEditorController.focusTaskValueOffsetEditor(rowId);
-    }
-
-    function renderTaskValueOffsetEditor() {
-        return surveyValueOffsetEditorController.renderTaskValueOffsetEditor();
-    }
-
-    function handleTaskValueOffsetEditorChanged() {
-        surveyValueOffsetEditorController.handleTaskValueOffsetEditorChanged();
-    }
-
-    function clearManualValueOffsetAdvice() {
-        surveyValueOffsetEditorController.clearManualValueOffsetAdvice();
-    }
-
-    function handleApplyTaskValueOffsetsClick() {
-        surveyValueOffsetEditorController.handleApplyTaskValueOffsetsClick();
     }
 
     function ensureSurveyAdvancedOptionsVisible() {
@@ -622,17 +496,8 @@ export function initSurveyConvert(elements) {
         }
     }
 
-    function openAdvancedOptionsValueOffsetEditor() {
-        ensureSurveyAdvancedOptionsVisible();
-        focusTaskValueOffsetEditor();
-    }
-
     function parseTaskValueOffsetsText(rawText) {
         return parseTaskValueOffsetsTextWithNormalizer(rawText, normalizeNearMatchTaskName);
-    }
-
-    function getManualTaskValueOffsets() {
-        return surveyValueOffsetEditorController.getManualTaskValueOffsets();
     }
 
     function getManualValueOffsetReviewMessage(payload, mode) {
@@ -684,40 +549,6 @@ export function initSurveyConvert(elements) {
         return lines.join('\n');
     }
 
-    function showManualValueOffsetReview(payload, mode, selectedValueOffsets = {}) {
-        if (convertValueOffsetAdvice) {
-            convertValueOffsetAdvice.textContent = getManualValueOffsetReviewMessage(payload, mode);
-            convertValueOffsetAdvice.classList.remove('d-none');
-        }
-
-        const task = normalizeNearMatchTaskName(payload && payload.task);
-        const configuredOffset = parseNumericOffsetValue(payload && payload.configured_offset);
-        if (
-            task
-            && configuredOffset !== null
-            && isConfiguredOffsetFailureForCurrentSelection(payload, selectedValueOffsets)
-        ) {
-            convertInfo.textContent = `Manual task offset ${formatSignedOffset(configuredOffset)} for ${task} did not resolve this dataset. Update Advanced options and run Preview again.`;
-            ensureSurveyAdvancedOptionsVisible();
-        } else {
-            convertInfo.textContent = 'Out-of-range values were found. Fix source values first, then run Preview again. Manual task offsets are optional in Advanced options.';
-        }
-        convertInfo.classList.remove('d-none');
-        appendLog(getManualValueOffsetReviewMessage(payload, mode), 'warning');
-        if (
-            task
-            && configuredOffset !== null
-            && isConfiguredOffsetFailureForCurrentSelection(payload, selectedValueOffsets)
-        ) {
-            const rowId = ensureTaskValueOffsetEditorRow(task);
-            focusTaskValueOffsetEditor(rowId);
-        }
-    }
-
-    function clearRetryResolutionState() {
-        confirmedNearMatchTasks = [];
-    }
-
     function isAbortError(error) {
         if (!error) {
             return false;
@@ -730,58 +561,6 @@ export function initSurveyConvert(elements) {
         return errorMessage.includes('aborted') || errorMessage.includes('aborterror');
     }
 
-    function setActiveSurveyRun(mode, controller) {
-        activeRunMode = mode;
-        activeRunAbortController = controller;
-        activeRunCancelledByUser = false;
-    }
-
-    function clearActiveSurveyRun(mode = null) {
-        if (mode && activeRunMode && activeRunMode !== mode) {
-            return;
-        }
-        activeRunMode = null;
-        activeRunAbortController = null;
-        activeRunCancelledByUser = false;
-    }
-
-    function cancelActiveSurveyRun() {
-        if (!activeRunAbortController) {
-            return false;
-        }
-        activeRunCancelledByUser = true;
-        activeRunAbortController.abort();
-        return true;
-    }
-
-    function setSurveyRunProgress(options) {
-        surveyWorkflowProgressController.setSurveyRunProgress(options);
-    }
-
-    function hideSurveyRunProgress() {
-        surveyWorkflowProgressController.hideSurveyRunProgress();
-    }
-
-    function startSurveyRunProgress(mode) {
-        surveyWorkflowProgressController.startSurveyRunProgress(mode);
-    }
-
-    function advanceSurveyRunProgress(mode, percent, label) {
-        surveyWorkflowProgressController.advanceSurveyRunProgress(mode, percent, label);
-    }
-
-    function pauseSurveyRunProgress(mode, label) {
-        surveyWorkflowProgressController.pauseSurveyRunProgress(mode, label);
-    }
-
-    function resumeSurveyRunProgress(mode, percent, label) {
-        surveyWorkflowProgressController.resumeSurveyRunProgress(mode, percent, label);
-    }
-
-    function finishSurveyRunProgress(mode, outcome) {
-        surveyWorkflowProgressController.finishSurveyRunProgress(mode, outcome);
-    }
-
     function mergeNearMatchTasks(existingTasks, nextTasks) {
         return [...new Set(
             ([])
@@ -792,38 +571,28 @@ export function initSurveyConvert(elements) {
         )];
     }
 
-    function offsetsAreEqual(left, right, tolerance = 1e-9) {
-        const leftValue = Number(left);
-        const rightValue = Number(right);
-        if (!Number.isFinite(leftValue) || !Number.isFinite(rightValue)) {
-            return false;
-        }
-        return Math.abs(leftValue - rightValue) <= tolerance;
-    }
-
-    function getAppliedTaskOffset(offsetMap, taskName) {
-        const normalizedOffsets = normalizeTaskValueOffsets(offsetMap);
-        const normalizedTask = normalizeNearMatchTaskName(taskName);
-        if (normalizedTask && Object.prototype.hasOwnProperty.call(normalizedOffsets, normalizedTask)) {
-            return normalizedOffsets[normalizedTask];
-        }
-        if (Object.prototype.hasOwnProperty.call(normalizedOffsets, '*')) {
-            return normalizedOffsets['*'];
-        }
-        return null;
-    }
-
     function isConfiguredOffsetFailureForCurrentSelection(payload, selectedOffsets) {
         const configuredOffset = parseNumericOffsetValue(payload && payload.configured_offset);
         if (configuredOffset === null) {
             return false;
         }
         const task = normalizeNearMatchTaskName(payload && payload.task);
-        const appliedOffset = getAppliedTaskOffset(selectedOffsets, task);
+        const normalizedOffsets = normalizeTaskValueOffsets(selectedOffsets);
+        let appliedOffset = null;
+        if (task && Object.prototype.hasOwnProperty.call(normalizedOffsets, task)) {
+            appliedOffset = normalizedOffsets[task];
+        } else if (Object.prototype.hasOwnProperty.call(normalizedOffsets, '*')) {
+            appliedOffset = normalizedOffsets['*'];
+        }
         if (appliedOffset === null) {
             return false;
         }
-        return offsetsAreEqual(configuredOffset, appliedOffset);
+        const configuredOffsetValue = Number(configuredOffset);
+        const appliedOffsetValue = Number(appliedOffset);
+        if (!Number.isFinite(configuredOffsetValue) || !Number.isFinite(appliedOffsetValue)) {
+            return false;
+        }
+        return Math.abs(configuredOffsetValue - appliedOffsetValue) <= 1e-9;
     }
 
     function getEffectiveNearMatchTasks(nextTasks = null) {
@@ -893,31 +662,6 @@ export function initSurveyConvert(elements) {
         });
     }
 
-    function applyPreparedSurveyWorkflowContext(data) {
-        const multivariantTasks = (data && typeof data.multivariant_tasks === 'object' && data.multivariant_tasks)
-            ? data.multivariant_tasks
-            : {};
-        if (Object.keys(multivariantTasks).length > 0) {
-            buildVersionWizard(
-                multivariantTasks,
-                (data && typeof data.task_runs === 'object' && data.task_runs) || {},
-                Array.isArray(data?.preview_participants) ? data.preview_participants : [],
-                Array.isArray(data?.detected_sessions) ? data.detected_sessions : []
-            );
-        } else {
-            hideVersionWizard();
-        }
-
-        templateWorkflowGate = (
-            data
-            && data.workflow_gate
-            && typeof data.workflow_gate === 'object'
-        ) ? data.workflow_gate : null;
-        setTemplateEditorErrorCtaVisible(Boolean(templateWorkflowGate && templateWorkflowGate.blocked));
-
-        return multivariantTasks;
-    }
-
     function applySurveyPickerUiState() {
         const connectedToServer = prefersServerPicker();
 
@@ -929,31 +673,6 @@ export function initSurveyConvert(elements) {
             convertExcelFile.disabled = connectedToServer;
             convertExcelFile.title = connectedToServer ? 'Connected-to-server mode: use Browse Server File.' : '';
         }
-    }
-
-    async function pickServerSurveyFile() {
-        return pickServerFile({
-            title: 'Select Survey File on Server',
-            confirmLabel: 'Use This File',
-            extensions: '.xlsx,.lsa,.csv,.tsv,.sav,.rds,.rdata,.rda',
-            startPath: convertServerFilePath || ''
-        });
-    }
-
-    function normalizeVersionSelectionSession(session) {
-        return normalizeVersionSelectionSessionWithUtils(session);
-    }
-
-    function normalizeVersionSelectionRun(run) {
-        return normalizeVersionSelectionRunWithUtils(run);
-    }
-
-    function buildVersionSelectionKey({ task, session = null, run = null }) {
-        return buildVersionSelectionKeyWithUtils({ task, session, run });
-    }
-
-    function getTimelineRunSortMeta(value) {
-        return getTimelineRunSortMetaWithUtils(value);
     }
 
     function getTemplateVersionSelections() {
@@ -1134,32 +853,6 @@ export function initSurveyConvert(elements) {
         updateVersionWizardActionState();
     }
 
-    function normalizeTimelineSessionToken(value) {
-        return normalizeTimelineSessionTokenWithUtils(value);
-    }
-
-    function getTimelineSessionSortMeta(value) {
-        return getTimelineSessionSortMetaWithUtils(value);
-    }
-
-    function compareTimelineSessions(left, right) {
-        return compareTimelineSessionsWithUtils(left, right);
-    }
-
-    function compareTimelineContexts(left, right) {
-        return compareTimelineContextsWithUtils(left, right);
-    }
-
-    function deriveDetectedContexts(taskRuns, previewParticipants, detectedSessions = []) {
-        return deriveDetectedContextsWithUtils(taskRuns, previewParticipants, detectedSessions);
-    }
-
-    function getCurrentSessionLabel() {
-        const currentSession = getSurveySessionValue();
-        if (!currentSession) return 'current session';
-        return currentSession === 'all' ? 'all detected sessions' : `session ${currentSession}`;
-    }
-
     function buildVariantDefinitionBadges(variantDefinitions, selectedVersion) {
         if (!Array.isArray(variantDefinitions) || variantDefinitions.length === 0) {
             return '';
@@ -1181,15 +874,6 @@ export function initSurveyConvert(elements) {
             .join(' ');
     }
 
-    function formatVersionWizardSessionLabel(session, fallbackLabel) {
-        const rawValue = String(session || fallbackLabel || '').trim();
-        if (!rawValue) return 'Session current';
-        if (rawValue.toLowerCase() === 'all detected sessions') return rawValue;
-        const normalizedValue = rawValue.replace(/^ses-/i, '').replace(/[-_]+/g, ' ').trim();
-        if (!normalizedValue) return 'Session current';
-        return `Session ${normalizedValue}`;
-    }
-
     function formatVersionWizardRunLabel(run) {
         const normalizedRun = normalizeVersionSelectionRun(run);
         if (!normalizedRun) return 'Single run';
@@ -1209,7 +893,10 @@ export function initSurveyConvert(elements) {
         }
 
         const detectedContexts = deriveDetectedContexts(taskRuns, previewParticipants, detectedSessions);
-        const sessionLabel = getCurrentSessionLabel();
+        const currentSession = getSurveySessionValue();
+        const sessionLabel = !currentSession
+            ? 'current session'
+            : (currentSession === 'all' ? 'all detected sessions' : `session ${currentSession}`);
         const nextSelections = {};
         let timelineStep = 0;
         surveyVersionWizardBody.innerHTML = '';
@@ -1231,6 +918,15 @@ export function initSurveyConvert(elements) {
             if (badgeContainer) {
                 badgeContainer.innerHTML = buildVariantDefinitionBadges(variantDefinitions, normalizedSelection);
             }
+        };
+
+        const formatContextSessionLabel = (session) => {
+            const rawValue = String(session || sessionLabel || '').trim();
+            if (!rawValue) return 'Session current';
+            if (rawValue.toLowerCase() === 'all detected sessions') return rawValue;
+            const normalizedValue = rawValue.replace(/^ses-/i, '').replace(/[-_]+/g, ' ').trim();
+            if (!normalizedValue) return 'Session current';
+            return `Session ${normalizedValue}`;
         };
 
         entries.sort(([a], [b]) => a.localeCompare(b)).forEach(([task, info]) => {
@@ -1311,7 +1007,7 @@ export function initSurveyConvert(elements) {
                 const { context, selectionKey, preferredSelection } = entry;
                 nextSelections[selectionKey] = preferredSelection;
 
-                const contextSessionLabel = formatVersionWizardSessionLabel(context.session, sessionLabel);
+                const contextSessionLabel = formatContextSessionLabel(context.session);
                 const runLabel = formatVersionWizardRunLabel(context.run);
                 const selectorId = `surveyVersionSelect-${task}-${String(context.session || 'base').replace(/[^a-zA-Z0-9_-]/g, '_')}-${String(context.run || 'base').replace(/[^a-zA-Z0-9_-]/g, '_')}`;
                 const row = document.createElement('div');
@@ -1542,22 +1238,15 @@ export function initSurveyConvert(elements) {
         }
     }
 
-    function shouldSyncVersionWizardContext() {
-        const filename = getSelectedSurveyFilename();
-        if (!filename || filename.toLowerCase().endsWith('.lss')) {
-            return false;
-        }
-        const idValue = String(document.getElementById('convertIdColumn')?.value || '').trim();
-        return Boolean(idValue && idValue !== 'auto');
-    }
-
     async function syncVersionWizardContext({
         showErrors = false,
         allowNearItemMatch = false,
         nearMatchTasks = null,
         taskValueOffsets = null,
     } = {}) {
-        if (!shouldSyncVersionWizardContext()) {
+        const filename = getSelectedSurveyFilename();
+        const idValue = String(document.getElementById('convertIdColumn')?.value || '').trim();
+        if (!filename || filename.toLowerCase().endsWith('.lss') || !idValue || idValue === 'auto') {
             hideVersionWizard();
             return { hasMultivariant: false, skipped: true };
         }
@@ -1684,10 +1373,34 @@ export function initSurveyConvert(elements) {
         formatSignedOffset,
         escapeHtml,
     });
-
-    function applyAdvancedOptionsState() {
-        surveyValueOffsetEditorController.applyAdvancedOptionsState();
-    }
+    const surveyValueOffsetEditorAdapter = createSurveyValueOffsetEditorAdapter({
+        surveyValueOffsetEditorController,
+    });
+    const {
+        applyAdvancedOptionsState,
+        hasManualTaskValueOffsets,
+        hasAppliedTaskValueOffsetSelections,
+        updateTaskValueOffsetApplyState,
+        ensureTaskValueOffsetEditorRow,
+        focusTaskValueOffsetEditor,
+        renderTaskValueOffsetEditor,
+        clearManualValueOffsetAdvice,
+        handleApplyTaskValueOffsetsClick,
+        getManualTaskValueOffsets,
+    } = surveyValueOffsetEditorAdapter;
+    const surveyConversionResultsAdapter = createSurveyConversionResultsAdapter({
+        getSurveyConversionSummaryController: () => surveyConversionSummaryController,
+        getSurveyConversionLogController: () => surveyConversionLogController,
+        getSurveyUnmatchedTemplatesController: () => surveyUnmatchedTemplatesController,
+        getSurveyValidationResultsController: () => surveyValidationResultsController,
+    });
+    const {
+        appendLog,
+        resetConversionUI,
+        displayConversionSummary,
+        displayUnmatchedGroupsError,
+        displayValidationResults,
+    } = surveyConversionResultsAdapter;
 
     if (convertDatasetName) {
         convertDatasetName.addEventListener('input', () => {
@@ -1729,106 +1442,6 @@ export function initSurveyConvert(elements) {
         updateIdMapClearButtonState();
     }
 
-    // Session picker functions
-    function populateSurveySessionPickerFromDetected(detectedSessions) {
-        if (!convertSessionSelect || !Array.isArray(detectedSessions) || detectedSessions.length === 0) {
-            return false;
-        }
-
-        const normalizedSessions = [...new Set(
-            detectedSessions
-                .map((value) => String(value || '').trim())
-                .filter(Boolean)
-        )];
-        if (normalizedSessions.length === 0) {
-            return false;
-        }
-
-        while (convertSessionSelect.options.length > 1) {
-            convertSessionSelect.remove(1);
-        }
-
-        const allOpt = document.createElement('option');
-        allOpt.value = 'all';
-        allOpt.textContent = '✓ All sessions';
-        convertSessionSelect.appendChild(allOpt);
-
-        normalizedSessions.forEach((ses) => {
-            const opt = document.createElement('option');
-            opt.value = ses;
-            opt.textContent = ses;
-            convertSessionSelect.appendChild(opt);
-        });
-
-        if (!getSurveySessionValue()) {
-            convertSessionSelect.value = normalizedSessions.length === 1 ? normalizedSessions[0] : 'all';
-        }
-        if (convertSessionCustom) {
-            convertSessionCustom.value = '';
-        }
-
-        return true;
-    }
-
-    function getSessionValue(selectEl, customEl) {
-        return getSessionInputValue(selectEl, customEl);
-    }
-
-    function getSurveySessionValue() {
-        return getSessionValue(convertSessionSelect, convertSessionCustom);
-    }
-
-    function getBiometricsSessionValue() {
-        return getSessionValue(biometricsSessionSelect, biometricsSessionCustom);
-    }
-
-    function getProjectSaveSummary(data) {
-        if (!surveyConvertFeedbackController) {
-            return { target: 'the active project', countNote: '' };
-        }
-        return surveyConvertFeedbackController.getProjectSaveSummary(data);
-    }
-
-    function openConverterTab(target) {
-        if (!surveyConvertFeedbackController) {
-            return false;
-        }
-        return surveyConvertFeedbackController.openConverterTab(target);
-    }
-
-    function showConvertInfoMessage(message, options = {}) {
-        if (!surveyConvertFeedbackController) {
-            return;
-        }
-        surveyConvertFeedbackController.showConvertInfoMessage(message, options);
-    }
-
-    function getParticipantRegistryWarning(payload) {
-        if (!surveyConvertFeedbackController) {
-            return null;
-        }
-        return surveyConvertFeedbackController.getParticipantRegistryWarning(payload);
-    }
-
-    function showParticipantRegistryWarning(messagePrefix, warning) {
-        if (!surveyConvertFeedbackController) {
-            return;
-        }
-        surveyConvertFeedbackController.showParticipantRegistryWarning(messagePrefix, warning);
-    }
-
-    function isDelimitedSurveyFilename(filename) {
-        return isDelimitedSurveyFilenameWithSeparatorUtils(filename);
-    }
-
-    function getSelectedSeparator(filename = '') {
-        return getSelectedSeparatorWithSeparatorUtils(filename, convertSeparator);
-    }
-
-    function updateSeparatorVisibility(filename = '') {
-        updateSeparatorVisibilityWithSeparatorUtils(filename, surveySeparatorGroup);
-    }
-
     if (convertSessionSelect) {
         convertSessionSelect.addEventListener('change', function() {
             if (this.value && convertSessionCustom) convertSessionCustom.value = '';
@@ -1857,21 +1470,6 @@ export function initSurveyConvert(elements) {
     }
 
     const registerSessionInProject = createSessionRegistrar(populateSessionPickers);
-
-    // Mode handling
-    function getConvertMode() {
-        return 'data';
-    }
-
-    function handleModeSwitch() {
-        convertIdColumnGroup?.classList.remove('d-none');
-        convertTemplateExportGroup?.classList.add('d-none');
-        convertLanguageGroup?.classList.remove('d-none');
-        convertAliasGroup?.classList.remove('d-none');
-        convertSessionGroup?.classList.remove('d-none');
-
-        updateConvertBtn();
-    }
 
     // Column detection
     function resetDetectedColumnsState() {
@@ -2155,7 +1753,7 @@ export function initSurveyConvert(elements) {
             if (hasRunningRequest) {
                 const modeLabel = isConvertRunning ? 'Conversion' : 'Preview';
                 surveyRunCancelBtn.classList.remove('d-none');
-                surveyRunCancelBtn.disabled = !activeRunAbortController;
+                surveyRunCancelBtn.disabled = !getActiveRunAbortController();
                 surveyRunCancelBtn.innerHTML = `<i class="fas fa-stop-circle me-2"></i>Cancel ${modeLabel}`;
             } else {
                 surveyRunCancelBtn.classList.add('d-none');
@@ -2182,7 +1780,7 @@ export function initSurveyConvert(elements) {
 
     if (surveyRunCancelBtn) {
         surveyRunCancelBtn.addEventListener('click', function() {
-            const mode = activeRunMode || surveyWorkflowProgressController.getRunProgressMode();
+            const mode = getActiveRunMode() || surveyWorkflowProgressController.getRunProgressMode();
             const modeLabel = mode === 'convert' ? 'conversion' : 'preview';
             const canceled = cancelActiveSurveyRun();
             if (!canceled) {
@@ -2231,16 +1829,12 @@ export function initSurveyConvert(elements) {
         updateConvertBtn();
     });
 
-    function resetSurveyImportFormState({ clearSelectedInput = false } = {}) {
-        surveyImportFormStateController.resetSurveyImportFormState({ clearSelectedInput });
-    }
-
     clearConvertExcelFileBtn?.addEventListener('click', function() {
         convertServerFilePath = '';
         resetSurveyRefreshFingerprint();
         convertExcelFile.value = '';
         convertExcelFile.dispatchEvent(new Event('change', { bubbles: true }));
-        resetSurveyImportFormState();
+        surveyImportFormStateController.resetSurveyImportFormState();
     });
 
     const idColSelect = document.getElementById('convertIdColumn');
@@ -2278,7 +1872,11 @@ export function initSurveyConvert(elements) {
         });
     }
 
-    handleModeSwitch();
+    convertIdColumnGroup?.classList.remove('d-none');
+    convertTemplateExportGroup?.classList.add('d-none');
+    convertLanguageGroup?.classList.remove('d-none');
+    convertAliasGroup?.classList.remove('d-none');
+    convertSessionGroup?.classList.remove('d-none');
     updateConvertBtn();
     applySurveyPickerUiState();
 
@@ -2296,7 +1894,12 @@ export function initSurveyConvert(elements) {
         });
 
         browseServerSurveyFileBtn.addEventListener('click', async () => {
-            const pickedPath = await pickServerSurveyFile();
+            const pickedPath = await pickServerFile({
+                title: 'Select Survey File on Server',
+                confirmLabel: 'Use This File',
+                extensions: '.xlsx,.lsa,.csv,.tsv,.sav,.rds,.rdata,.rda',
+                startPath: convertServerFilePath || '',
+            });
             if (!pickedPath) return;
 
             convertServerFilePath = pickedPath;
@@ -2332,26 +1935,6 @@ export function initSurveyConvert(elements) {
 
     surveySourcedataQuickSelectController.initialize();
 
-    function appendLog(message, type = 'info', logElement = null) {
-        surveyConversionLogController.appendLog(message, type, logElement);
-    }
-
-    function resetConversionUI() {
-        surveyConversionLogController.resetConversionUI();
-    }
-
-    function displayConversionSummary(summary) {
-        surveyConversionSummaryController.displayConversionSummary(summary);
-    }
-
-    function displayUnmatchedGroupsError(data) {
-        surveyUnmatchedTemplatesController.displayUnmatchedGroupsError(data);
-    }
-
-    function displayValidationResults(validation, prefix = '') {
-        surveyValidationResultsController.displayValidationResults(validation, prefix);
-    }
-
     surveyConvertFeedbackController = createSurveyConvertFeedbackController({
         convertInfo,
         appendLog,
@@ -2381,10 +1964,62 @@ export function initSurveyConvert(elements) {
         resumeSurveyRunProgress,
         isAbortError,
         enrichSurveyRunErrorMessage,
-        showManualValueOffsetReview,
+        showManualValueOffsetReview: (payload, mode, selectedValueOffsets = {}) => {
+            const reviewMessage = getManualValueOffsetReviewMessage(payload, mode);
+            if (convertValueOffsetAdvice) {
+                convertValueOffsetAdvice.textContent = reviewMessage;
+                convertValueOffsetAdvice.classList.remove('d-none');
+            }
+
+            const task = normalizeNearMatchTaskName(payload && payload.task);
+            const configuredOffset = parseNumericOffsetValue(payload && payload.configured_offset);
+            if (
+                task
+                && configuredOffset !== null
+                && isConfiguredOffsetFailureForCurrentSelection(payload, selectedValueOffsets)
+            ) {
+                convertInfo.textContent = `Manual task offset ${formatSignedOffset(configuredOffset)} for ${task} did not resolve this dataset. Update Advanced options and run Preview again.`;
+                ensureSurveyAdvancedOptionsVisible();
+            } else {
+                convertInfo.textContent = 'Out-of-range values were found. Fix source values first, then run Preview again. Manual task offsets are optional in Advanced options.';
+            }
+            convertInfo.classList.remove('d-none');
+            appendLog(reviewMessage, 'warning');
+            if (
+                task
+                && configuredOffset !== null
+                && isConfiguredOffsetFailureForCurrentSelection(payload, selectedValueOffsets)
+            ) {
+                const rowId = ensureTaskValueOffsetEditorRow(task);
+                focusTaskValueOffsetEditor(rowId);
+            }
+        },
         promptNearMatchSelection,
         mergeNearMatchTasks,
-        applyPreparedSurveyWorkflowContext,
+        applyPreparedSurveyWorkflowContext: (data) => {
+            const multivariantTasks = (data && typeof data.multivariant_tasks === 'object' && data.multivariant_tasks)
+                ? data.multivariant_tasks
+                : {};
+            if (Object.keys(multivariantTasks).length > 0) {
+                buildVersionWizard(
+                    multivariantTasks,
+                    (data && typeof data.task_runs === 'object' && data.task_runs) || {},
+                    Array.isArray(data?.preview_participants) ? data.preview_participants : [],
+                    Array.isArray(data?.detected_sessions) ? data.detected_sessions : []
+                );
+            } else {
+                hideVersionWizard();
+            }
+
+            templateWorkflowGate = (
+                data
+                && data.workflow_gate
+                && typeof data.workflow_gate === 'object'
+            ) ? data.workflow_gate : null;
+            setTemplateEditorErrorCtaVisible(Boolean(templateWorkflowGate && templateWorkflowGate.blocked));
+
+            return multivariantTasks;
+        },
         hasAppliedVersionWizardSelections,
         convertError,
         convertInfo,
@@ -2472,7 +2107,27 @@ export function initSurveyConvert(elements) {
         displayUnmatchedGroupsError,
         populateSurveySessionPickerFromDetected,
         getParticipantRegistryWarning,
-        setSurveyPreviewSelectionState,
+        setSurveyPreviewSelectionState: (taskSummaries, previewKey = getSurveyPreviewContextKey()) => {
+            if (!Array.isArray(taskSummaries) || taskSummaries.length === 0) {
+                clearSurveyPreviewSelectionState();
+                return;
+            }
+
+            const availableTasks = taskSummaries
+                .map((entry) => normalizeSurveyTaskName(entry && entry.task))
+                .filter(Boolean);
+            const selectedTasks = taskSummaries
+                .filter((entry) => entry && entry.selected !== false)
+                .map((entry) => normalizeSurveyTaskName(entry && entry.task))
+                .filter(Boolean);
+
+            surveyPreviewSelectionState = {
+                previewKey,
+                availableTasks,
+                selectedTasks: selectedTasks.length > 0 ? selectedTasks : [...availableTasks]
+            };
+            renderTaskValueOffsetEditor();
+        },
         displayConversionSummary,
         normalizeSurveyTaskName,
         displayValidationResults,
@@ -2484,8 +2139,8 @@ export function initSurveyConvert(elements) {
         isAbortError,
         clearActiveSurveyRun,
         finishSurveyRunProgress,
-        getActiveRunMode: () => activeRunMode,
-        getActiveRunCancelledByUser: () => activeRunCancelledByUser,
+        getActiveRunMode,
+        getActiveRunCancelledByUser,
         getVersionWizardRetryGateMode: () => versionWizardRetryGateMode,
         setVersionWizardRetryGateMode: (value) => {
             versionWizardRetryGateMode = value;
@@ -2552,8 +2207,8 @@ export function initSurveyConvert(elements) {
         enrichSurveyRunErrorMessage,
         clearActiveSurveyRun,
         finishSurveyRunProgress,
-        getActiveRunMode: () => activeRunMode,
-        getActiveRunCancelledByUser: () => activeRunCancelledByUser,
+        getActiveRunMode,
+        getActiveRunCancelledByUser,
         getVersionWizardRetryGateMode: () => versionWizardRetryGateMode,
         setVersionWizardRetryGateMode: (value) => {
             versionWizardRetryGateMode = value;
@@ -2567,8 +2222,18 @@ export function initSurveyConvert(elements) {
     const surveyTemplateResultsController = createSurveyTemplateResultsController({
         escapeHtml,
     });
+    const surveyTemplateRenderAdapter = createSurveyTemplateRenderAdapter({
+        getSurveyTemplateResultsController: () => surveyTemplateResultsController,
+        getParticipantsMetadataController: () => participantsMetadataController,
+    });
+    const {
+        displayTemplateSingle,
+        displayTemplateGroups,
+        displayTemplateQuestions,
+        displayParticipantMetadataSection,
+    } = surveyTemplateRenderAdapter;
 
-    const surveyTemplateGenerationController = createSurveyTemplateGenerationController({
+    createSurveyTemplateGenerationController({
         convertBtn,
         convertDatasetName,
         convertError,
@@ -2584,18 +2249,10 @@ export function initSurveyConvert(elements) {
                 templateResultsContainer.classList.remove('d-none');
             }
         },
-        displayTemplateSingle: (data) => {
-            surveyTemplateResultsController.displayTemplateSingle(data);
-        },
-        displayTemplateGroups: (data) => {
-            surveyTemplateResultsController.displayTemplateGroups(data);
-        },
-        displayTemplateQuestions: (data) => {
-            surveyTemplateResultsController.displayTemplateQuestions(data);
-        },
-        displayParticipantMetadataSection: (data) => {
-            participantsMetadataController.displayParticipantMetadataSection(data);
-        },
+        displayTemplateSingle,
+        displayTemplateGroups,
+        displayTemplateQuestions,
+        displayParticipantMetadataSection,
         updateConvertBtn,
     });
 
@@ -2605,11 +2262,19 @@ export function initSurveyConvert(elements) {
         toggleSummaryBtn,
         convertDatasetName,
         getSurveyPreviewSelectionState: () => surveyPreviewSelectionState,
-        setSurveyPreviewSelectedTasks,
+        setSurveyPreviewSelectedTasks: (selectedTasks) => {
+            surveyPreviewSelectionState = {
+                ...surveyPreviewSelectionState,
+                selectedTasks: Array.isArray(selectedTasks) ? selectedTasks : []
+            };
+        },
         normalizeSurveyTaskName,
         formatSignedOffset,
         escapeHtml,
-        openAdvancedOptionsValueOffsetEditor,
+        openAdvancedOptionsValueOffsetEditor: () => {
+            ensureSurveyAdvancedOptionsVisible();
+            focusTaskValueOffsetEditor();
+        },
         updateConvertBtn,
     });
 
@@ -2696,12 +2361,6 @@ export function initSurveyConvert(elements) {
 
     surveyConversionLogController.initialize();
     surveyUnmatchedTemplatesController.initialize();
-
-    // ===== TEMPLATE GENERATION =====
-
-    async function handleTemplateGeneration(file) {
-        await surveyTemplateGenerationController.handleTemplateGeneration(file);
-    }
 
     // ===== PARTICIPANT METADATA MARKING =====
 

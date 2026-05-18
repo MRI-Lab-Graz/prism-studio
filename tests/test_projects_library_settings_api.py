@@ -172,19 +172,41 @@ def test_global_library_setting_roundtrip_updates_connected_mode(tmp_path, monke
             "global_recipes_path": str(recipe_dir),
             "default_modalities": ["survey"],
             "connected_to_server": True,
+            "export_defacing_confirmation_mode": "always",
         },
     )
     assert response.status_code == 200
     payload = response.get_json()
     assert payload["success"] is True
     assert payload["connected_to_server"] is True
+    assert payload["export_defacing_confirmation_mode"] == "always"
 
     get_response = client.get("/api/settings/global-library")
     assert get_response.status_code == 200
     get_payload = get_response.get_json()
     assert get_payload["success"] is True
     assert get_payload["connected_to_server"] is True
+    assert get_payload["export_defacing_confirmation_mode"] == "always"
     assert get_payload["global_template_library_path"] == str(library_dir)
+
+
+def test_global_library_setting_rejects_invalid_export_defacing_mode(
+    tmp_path, monkeypatch
+):
+    app = _build_app_for_blueprint()
+    from src import config as config_module
+
+    monkeypatch.setattr(config_module, "_get_user_app_settings_dir", lambda: tmp_path)
+
+    client = app.test_client()
+    response = client.post(
+        "/api/settings/global-library",
+        json={"export_defacing_confirmation_mode": "sometimes"},
+    )
+    assert response.status_code == 400
+    payload = response.get_json()
+    assert payload["success"] is False
+    assert "export_defacing_confirmation_mode" in payload["error"]
 
 
 def test_get_library_path_without_current_project(tmp_path, monkeypatch):

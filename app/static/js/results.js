@@ -28,11 +28,70 @@ document.addEventListener('DOMContentLoaded', () => {
     let sharedFetchWithRelativePathFallbackPromise = null;
 
     let revalidationInProgress = false;
+    let revalidationPollAbortController = null;
     let progressDisplayState = {
         phase: 'idle',
         visualProgress: 0,
         phaseStartedAt: 0,
     };
+
+    function isAbortError(error) {
+        return Boolean(error && (error.name === 'AbortError' || /aborted/i.test(error.message || '')));
+    }
+
+    function abortRevalidationPolling() {
+        if (!revalidationPollAbortController) {
+            return;
+        }
+        revalidationPollAbortController.abort();
+        revalidationPollAbortController = null;
+    }
+
+    function beginRevalidationPollingSession() {
+        abortRevalidationPolling();
+        revalidationPollAbortController = new AbortController();
+        return revalidationPollAbortController.signal;
+    }
+
+    function finishRevalidationPollingSession(signal) {
+        if (
+            revalidationPollAbortController
+            && revalidationPollAbortController.signal === signal
+        ) {
+            revalidationPollAbortController = null;
+        }
+    }
+
+    async function waitForRevalidationPollInterval(ms, signal) {
+        if (!(signal && typeof signal.addEventListener === 'function')) {
+            await new Promise((resolve) => setTimeout(resolve, ms));
+            return;
+        }
+
+        await new Promise((resolve, reject) => {
+            if (signal.aborted) {
+                const abortError = new Error('Re-validation polling aborted.');
+                abortError.name = 'AbortError';
+                reject(abortError);
+                return;
+            }
+
+            const timer = setTimeout(() => {
+                signal.removeEventListener('abort', onAbort);
+                resolve();
+            }, ms);
+
+            const onAbort = () => {
+                clearTimeout(timer);
+                signal.removeEventListener('abort', onAbort);
+                const abortError = new Error('Re-validation polling aborted.');
+                abortError.name = 'AbortError';
+                reject(abortError);
+            };
+
+            signal.addEventListener('abort', onAbort, { once: true });
+        });
+    }
 
     function loadSharedFetchWithRelativePathFallback() {
         if (!sharedFetchWithRelativePathFallbackPromise) {
@@ -82,8 +141,50 @@ document.addEventListener('DOMContentLoaded', () => {
         revalidateSubmitBtn.innerHTML = defaultSubmitHtml;
     }
 
+    function isResultActionLocked(node) {
+        if (!node) {
+            return false;
+        }
+        if (node.dataset.actionLocked === 'true') {
+            return true;
+        }
+        if (node.tagName === 'A') {
+            return node.getAttribute('aria-disabled') === 'true';
+        }
+        return Boolean(node.disabled);
+    }
+
+    function bindResultActionGuards() {
+        resultActionNodes.forEach((node) => {
+            node.addEventListener('click', (event) => {
+                if (!isResultActionLocked(node)) {
+                    return;
+                }
+                event.preventDefault();
+                event.stopPropagation();
+            });
+
+            if (node.tagName !== 'A') {
+                return;
+            }
+
+            node.addEventListener('keydown', (event) => {
+                if (!isResultActionLocked(node)) {
+                    return;
+                }
+                if (event.key !== 'Enter' && event.key !== ' ') {
+                    return;
+                }
+                event.preventDefault();
+                event.stopPropagation();
+            });
+        });
+    }
+
     function setActionsDisabled(disabled) {
         resultActionNodes.forEach((node) => {
+            node.dataset.actionLocked = disabled ? 'true' : 'false';
+
             if (node.tagName === 'A') {
                 if (disabled) {
                     node.dataset.prevAriaDisabled = node.getAttribute('aria-disabled') || '';
@@ -225,15 +326,22 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    async function pollRevalidationProgress(progressUrl, progressFloor = 0) {
+    async function pollRevalidationProgress(progressUrl, progressFloor = 0, signal = null) {
         const MAX_POLLS = 4500;
 
         for (let attempt = 0; attempt < MAX_POLLS; attempt += 1) {
-            await new Promise((resolve) => setTimeout(resolve, 800));
+            await waitForRevalidationPollInterval(800, signal);
+
+            if (signal && signal.aborted) {
+                const abortError = new Error('Re-validation polling aborted.');
+                abortError.name = 'AbortError';
+                throw abortError;
+            }
 
             const response = await fetchWithApiFallback(progressUrl, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 cache: 'no-store',
+                signal,
             });
             const payload = await response.json().catch(() => ({}));
 
@@ -327,14 +435,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Re-validation job did not provide a progress URL.');
             }
 
-            await pollRevalidationProgress(payload.progress_url, 5);
+            const pollSignal = beginRevalidationPollingSession();
+            try {
+                await pollRevalidationProgress(payload.progress_url, 5, pollSignal);
+            } finally {
+                finishRevalidationPollingSession(pollSignal);
+            }
         } catch (error) {
             revalidationInProgress = false;
             setActionsDisabled(false);
             setSubmitLoading(false);
+            if (isAbortError(error)) {
+                return;
+            }
             showRevalidationError(error.message || 'Re-validation failed.');
         }
     }
+
+    window.addEventListener('pagehide', abortRevalidationPolling);
+
+    bindResultActionGuards();
 
     revalidateForm.addEventListener('submit', startRevalidation);
 });

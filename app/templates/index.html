@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "includes/ui/macros.html" import page_header %}
+{% from "includes/ui/macros.html" import page_header, section_card, help_panel %}
 
 {% block title %}PRISM Studio - Dataset Validation{% endblock %}
 
@@ -46,13 +46,16 @@
             'Validate your psychological dataset structure and metadata'
         ) }}
 
+        {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
+        <div class="small">
+            <p class="mb-2"><strong>Pick a target:</strong> validate the current loaded project by default, or switch to another dataset folder.</p>
+            <p class="mb-2"><strong>Start simple:</strong> run standard validation first, then enable advanced options only when you need overrides.</p>
+            <p class="mb-0"><strong>Track progress:</strong> validation runs locally and updates progress live before opening the results page.</p>
+        </div>
+        {% endcall %}
+
         <!-- Main Upload Card -->
-        <div class="card feature-card mb-4 border-success">
-            <div class="card-body p-5">
-                <h3 class="card-title text-start mb-4">
-                    <i class="fas fa-check-circle text-success me-2"></i>
-                    Dataset Validation
-                </h3>
+        {% call section_card('Dataset Validation', 'fas fa-check-circle', 'text-success', 'feature-card mb-4 border-success', 'p-5', 'card-title text-start mb-4') %}
 
                 <p class="text-start text-muted mb-4">
                     The PRISM Validator ensures your dataset follows the PRISM structure and BIDS standards.
@@ -152,8 +155,7 @@
                                     </label>
                                     <div>
                                         <div class="form-check mb-2">
-                                            <input class="form-check-input advanced-option" type="radio" name="validation_mode" id="mode_both" value="both" checked disabled>
-                                            <label class="form-check-label fw-bold" for="mode_both">Full Validation (PRISM + BIDS)</label>
+                {% endcall %}
                                         </div>
                                         <div class="form-check mb-2">
                                             <input class="form-check-input advanced-option" type="radio" name="validation_mode" id="mode_prism" value="prism" disabled>

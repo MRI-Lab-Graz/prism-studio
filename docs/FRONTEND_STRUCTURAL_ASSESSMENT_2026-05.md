@@ -87,3 +87,35 @@ Primary implementation surface:
 - [app/src/web/blueprints/conversion.py](app/src/web/blueprints/conversion.py)
 - [app/src/web/blueprints/conversion_survey_handlers.py](app/src/web/blueprints/conversion_survey_handlers.py)
 - [app/src/web/blueprints/conversion_participants_blueprint.py](app/src/web/blueprints/conversion_participants_blueprint.py)
+
+## Current Checkpoint (2026-05-17)
+
+- Phase 1.1 Converter checkpoint completed and captured in [docs/FRONTEND_ASSESSMENT_CONVERTER_2026-05.md](docs/FRONTEND_ASSESSMENT_CONVERTER_2026-05.md).
+- Phase 1.2 Projects checkpoint started in [docs/FRONTEND_ASSESSMENT_PROJECTS_2026-05.md](docs/FRONTEND_ASSESSMENT_PROJECTS_2026-05.md).
+- Phase 1.3 Validator checkpoint started in [docs/FRONTEND_ASSESSMENT_VALIDATOR_2026-05.md](docs/FRONTEND_ASSESSMENT_VALIDATOR_2026-05.md).
+- Phase 1.4 Results checkpoint started in [docs/FRONTEND_ASSESSMENT_RESULTS_2026-05.md](docs/FRONTEND_ASSESSMENT_RESULTS_2026-05.md).
+- Phase 2.1 Template Editor checkpoint started in [docs/FRONTEND_ASSESSMENT_TEMPLATE_EDITOR_2026-05.md](docs/FRONTEND_ASSESSMENT_TEMPLATE_EDITOR_2026-05.md).
+- Phase 2.2 Recipe Builder checkpoint started in [docs/FRONTEND_ASSESSMENT_RECIPE_BUILDER_2026-05.md](docs/FRONTEND_ASSESSMENT_RECIPE_BUILDER_2026-05.md).
+- Phase 2.3 Survey Customizer checkpoint started in [docs/FRONTEND_ASSESSMENT_SURVEY_CUSTOMIZER_2026-05.md](docs/FRONTEND_ASSESSMENT_SURVEY_CUSTOMIZER_2026-05.md).
+- Phase 2.4 Survey Generator checkpoint started in [docs/FRONTEND_ASSESSMENT_SURVEY_GENERATOR_2026-05.md](docs/FRONTEND_ASSESSMENT_SURVEY_GENERATOR_2026-05.md).
+- Phase 2.5 File Management checkpoint started in [docs/FRONTEND_ASSESSMENT_FILE_MANAGEMENT_2026-05.md](docs/FRONTEND_ASSESSMENT_FILE_MANAGEMENT_2026-05.md).
+- Phase 3.1 JSON Editor checkpoint started in [docs/FRONTEND_ASSESSMENT_JSON_EDITOR_2026-05.md](docs/FRONTEND_ASSESSMENT_JSON_EDITOR_2026-05.md).
+- Phase 3.2 Neurobagel workflow checkpoint started in [docs/FRONTEND_ASSESSMENT_NEUROBAGEL_WORKFLOW_2026-05.md](docs/FRONTEND_ASSESSMENT_NEUROBAGEL_WORKFLOW_2026-05.md).
+- Phase 3.3 Library and Library Editor checkpoint started in [docs/FRONTEND_ASSESSMENT_LIBRARY_EDITOR_2026-05.md](docs/FRONTEND_ASSESSMENT_LIBRARY_EDITOR_2026-05.md).
+- Phase 3.4 Specifications checkpoint started in [docs/FRONTEND_ASSESSMENT_SPECIFICATIONS_2026-05.md](docs/FRONTEND_ASSESSMENT_SPECIFICATIONS_2026-05.md).
+- Phase 3.5 PRISM App Runner checkpoint started in [docs/FRONTEND_ASSESSMENT_PRISM_APP_RUNNER_2026-05.md](docs/FRONTEND_ASSESSMENT_PRISM_APP_RUNNER_2026-05.md).
+- Phase 3.6 Home page checkpoint started in [docs/FRONTEND_ASSESSMENT_HOME_2026-05.md](docs/FRONTEND_ASSESSMENT_HOME_2026-05.md).
+- Phase 4.1 shared module checkpoint started in [docs/FRONTEND_ASSESSMENT_SHARED_MODULES_2026-05.md](docs/FRONTEND_ASSESSMENT_SHARED_MODULES_2026-05.md).
+- Phase 4.2 phase-boundary smoke sweep completed (54 passed across completed checkpoint suites).
+- Initial remediation stabilization set completed for top findings: Neurobagel fetch ownership unification, Library Editor module extraction with shared save fallback wiring, and PRISM App Runner stale-control cleanup.
+- Follow-up remediation completed: Library Editor advanced-mode resilience now degrades explicitly when JSONEditor assets are unavailable.
+- Follow-up remediation completed: PRISM App Runner disabled-state frontend guarding now aligns runtime actions with disabled HTML/API contracts.
+- Follow-up remediation completed: shared API/project-state/job-polling contract coverage hardening via focused shared-module wiring tests.
+- Follow-up remediation completed: validator/results progress polling now uses abortable single-loop session contracts with focused regression coverage.
+- Follow-up remediation completed: validator target/request assembly is consolidated through canonical shared request-option helpers.
+- Follow-up remediation completed: results action-state locking now uses logic-level interaction guards beyond CSS-only blocking.
+- Follow-up converter remediation completed: survey/participants glue-reduction pass removed dead wrappers and narrowed adapter/controller API surfaces; focused converter wiring suites remain green (36 passed).
+- Focused cross-page remediation smoke confirmation completed (33 passed across the remediated workflow suites).
+- Phase-boundary full-suite coverage confirmation completed (`./rtk coverage`: 2206 passed, 3 skipped).
+- Coverage blocker remediation completed in backend recipes export logic: merge-all score-prefix policy alignment, participant-column propagation into aggregated outputs, and SAV participant measure/type handling for sociodemographics.
+- UI harmonization gating remains green and now serves as baseline safety net while page-by-page structural assessment continues.

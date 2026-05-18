@@ -203,6 +203,11 @@ if getattr(sys, "frozen", False):
 else:
     app = Flask(__name__)
 
+# Avoid stale ES-module subresources after page-shell/controller refactors.
+# The HTML entrypoint is versioned, but nested JS/CSS imports can still be cached
+# independently by the browser if Flask serves them with a positive max-age.
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+
 # Global shutdown flag to signal graceful termination
 _shutdown_requested = threading.Event()
 

@@ -281,6 +281,21 @@ def merge_cli_args(config: PrismConfig, args: Any) -> PrismConfig:
 # =============================================================================
 
 APP_SETTINGS_FILENAME = "prism_studio_settings.json"
+EXPORT_DEFACING_CONFIRMATION_MODES = {"risk", "always"}
+
+
+def normalize_export_defacing_confirmation_mode(
+    value: object, *, fallback: str = "risk"
+) -> str:
+    """Normalize defacing confirmation mode to a supported app setting value."""
+    fallback_mode = (
+        str(fallback).strip().lower() if str(fallback).strip() else "risk"
+    )
+    if fallback_mode not in EXPORT_DEFACING_CONFIRMATION_MODES:
+        fallback_mode = "risk"
+
+    mode = str(value or "").strip().lower()
+    return mode if mode in EXPORT_DEFACING_CONFIRMATION_MODES else fallback_mode
 
 
 def _get_user_app_settings_dir() -> Path:
@@ -340,6 +355,11 @@ class AppSettings:
     # If enabled, UI file pickers should always target the server filesystem.
     # If disabled, browser/native picker flows remain the default.
     connected_to_server: bool = False
+
+    # Default export confirmation behavior when MRI defacing status is checked.
+    # 'risk' => ask only when unresolved risk is detected.
+    # 'always' => ask before export regardless of risk summary.
+    export_defacing_confirmation_mode: str = "risk"
 
     # Settings file location (set after loading)
     _settings_path: Optional[str] = None
@@ -416,6 +436,9 @@ def load_app_settings(app_root: Optional[str] = None) -> AppSettings:
             ),
             show_dedicated_terminal=bool(data.get("showDedicatedTerminal", False)),
             connected_to_server=bool(data.get("connectedToServer", False)),
+            export_defacing_confirmation_mode=normalize_export_defacing_confirmation_mode(
+                data.get("exportDefacingConfirmationMode", "risk")
+            ),
         )
         settings._settings_path = settings_path
         return settings
@@ -451,6 +474,9 @@ def save_app_settings(settings: AppSettings, app_root: Optional[str] = None) -> 
         "backendMonitoringVerbose": settings.backend_monitoring_verbose,
         "showDedicatedTerminal": settings.show_dedicated_terminal,
         "connectedToServer": settings.connected_to_server,
+        "exportDefacingConfirmationMode": normalize_export_defacing_confirmation_mode(
+            settings.export_defacing_confirmation_mode
+        ),
     }
 
     # Remove None values
