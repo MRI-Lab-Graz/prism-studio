@@ -371,8 +371,14 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         )
         self.assertIn("exclude_acq: _getUncheckedAcqByModality(),", content)
         self.assertIn("validation_mode: 'both',", content)
+        self.assertIn("defacing_confirmation_mode: 'risk',", content)
+        self.assertIn("function getSelectedDefacingConfirmationMode() {", content)
         self.assertIn(
             "saveExportPreferencesPatch({ validation_mode: getSelectedExportValidationMode() });",
+            content,
+        )
+        self.assertIn(
+            "saveExportPreferencesPatch({ defacing_confirmation_mode: getSelectedDefacingConfirmationMode() });",
             content,
         )
         self.assertIn("updateExportSnapshotUi();", content)
@@ -438,6 +444,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         content = EXPORT_SECTION_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn('id="templateExportButton"', content)
+        self.assertIn('id="exportDefacingConfirmAlways"', content)
         self.assertIn("Template Export", content)
 
     def test_export_async_completion_renders_saved_zip_path_from_status(self):
@@ -458,8 +465,12 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("if (data.scrub_mri_json) {", content)
+        self.assertIn("const defacingConfirmationMode = getSelectedDefacingConfirmationMode();", content)
         self.assertIn("const defacingSummary = await fetchDefacingSummary(currentProjectPath);", content)
+        self.assertIn("if (defacingConfirmationMode === 'always' || defacingSummary.riskCount > 0) {", content)
         self.assertIn("const continueExport = window.confirm(", content)
+        self.assertIn("Defacing check did not detect unresolved risk in anatomical scans. Continue export anyway?", content)
+        self.assertIn("Could not retrieve defacing status before export. Continue export anyway?", content)
         self.assertIn("Continue export anyway?", content)
 
     def test_create_and_init_flows_use_fallback_and_refresh_project_sections(self):
