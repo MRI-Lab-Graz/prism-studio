@@ -395,6 +395,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
     def test_export_actions_use_desktop_api_fallback(self):
         content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
 
+        self.assertIn("async function fetchDefacingSummary(projectPath) {", content)
         self.assertIn(
             "const resp = await fetchWithApiFallback('/api/projects/export/browse-folder', { method: 'POST' });",
             content,
@@ -448,8 +449,18 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn("const savedPath = status.zip_path || 'unknown location';", content)
+        self.assertIn("const defacingWarning = status.defacing_warning || null;", content)
+        self.assertIn("defacingWarning && defacingWarning.message", content)
         self.assertIn("ZIP saved to:", content)
         self.assertIn("escapeHtml(savedPath)", content)
+
+    def test_export_submit_prompts_for_defacing_risk_when_scrub_enabled(self):
+        content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("if (data.scrub_mri_json) {", content)
+        self.assertIn("const defacingSummary = await fetchDefacingSummary(currentProjectPath);", content)
+        self.assertIn("const continueExport = window.confirm(", content)
+        self.assertIn("Continue export anyway?", content)
 
     def test_create_and_init_flows_use_fallback_and_refresh_project_sections(self):
         init_content = PROJECTS_INIT_ON_BIDS_MODULE.read_text(encoding="utf-8")

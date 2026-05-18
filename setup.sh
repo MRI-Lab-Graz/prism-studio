@@ -112,6 +112,15 @@ PY
     fi
 }
 
+is_python_executable_usable() {
+    local candidate="$1"
+    if [ ! -x "$candidate" ]; then
+        return 1
+    fi
+
+    "$candidate" -c "import sys" >/dev/null 2>&1
+}
+
 select_venv_creator_python() {
     local candidate=""
     local active_venv_abs=""
@@ -222,6 +231,9 @@ VENV_PYTHON_UNIX="$VENV_DIR/bin/python"
 if [ -d "$VENV_DIR" ]; then
     if [ -L "$VENV_PYTHON_UNIX" ]; then
         echo_info "Existing '$VENV_DIR' uses a symlinked Python interpreter; recreating strict local venv."
+        rm -rf "$VENV_DIR"
+    elif ! is_python_executable_usable "$VENV_PYTHON_UNIX"; then
+        echo_info "Existing '$VENV_DIR' has an unusable Python interpreter; recreating strict local venv."
         rm -rf "$VENV_DIR"
     else
         echo_info "Virtual environment already exists in '$VENV_DIR' - reusing it."
