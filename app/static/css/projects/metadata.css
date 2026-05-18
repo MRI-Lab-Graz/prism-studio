@@ -149,7 +149,13 @@
 
 .sm-section-toggle__title {
     font-weight: 700;
-    color: #1f2d38;
+    color: #1f8b5c;
+}
+
+.sm-section-toggle:hover .sm-section-toggle__title,
+.sm-section-toggle:focus .sm-section-toggle__title,
+.sm-section-toggle[aria-expanded="true"] .sm-section-toggle__title {
+    color: #176845;
 }
 
 .sm-section-toggle__badge {
