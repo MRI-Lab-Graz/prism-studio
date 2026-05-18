@@ -118,9 +118,10 @@ Current checkpoint:
 - Focused export privacy suite is green after the expansion (`tests/test_projects_export_mapping_exclusion.py`: 15 passed).
 - Defacing warning-only metadata is now surfaced in async export status payloads (non-blocking) and rendered in export success UI when risk is detected.
 - Export submit UX now adds an explicit pre-export confirmation step when MRI scrub mode is enabled and defacing risk is detected.
+- Export preferences now support configurable defacing confirmation mode (always ask vs ask only on detected risk), persisted per project in UI preferences.
 
 Next action:
-1. Evaluate whether the defacing confirmation prompt should be configurable (always ask vs ask only on risk) in export preferences.
+1. Decide whether defacing confirmation mode should also be exposed as a stricter backend policy option for team-wide defaults.
 
 ## Up Next
 
@@ -158,3 +159,4 @@ Changelog remains canonical for release-facing history:
 - Export privacy tests should always include both positive MRI scrubbing assertions and non-MRI preservation checks, plus nested/derivative path variants for `.nii.gz` header cleaning.
 - For potentially disruptive privacy checks, shipping warning metadata in async status first is a low-risk way to add guidance without blocking export flows.
 - Adding a lightweight confirmation at submit-time is an effective second step to increase user awareness without introducing backend export blockers.
+- Persisting the confirmation mode as project preference keeps privacy UX configurable without duplicating backend export logic.
