@@ -7,6 +7,7 @@ import os
 import shlex
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 from pathlib import PureWindowsPath
 
@@ -14,6 +15,7 @@ from flask import session
 
 from src.config import load_app_settings
 from src.cross_platform import normalize_path
+from src.project_session_logging import record_project_session_command
 
 _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 _ANSI_GREEN = "\033[32m"
@@ -1525,6 +1527,56 @@ def is_backend_monitoring_verbose_enabled(app_root: str) -> bool:
     return verbose_enabled
 
 
+def _is_backend_terminal_command(command: str) -> bool:
+    """Return True for CLI commands that execute backend-owned workflows."""
+    command_text = str(command or "").strip()
+    if not command_text:
+        return False
+
+    try:
+        tokens = shlex.split(command_text)
+    except ValueError:
+        tokens = command_text.split()
+
+    if len(tokens) < 2:
+        return False
+
+    python_token = str(tokens[0]).strip().lower()
+    script_token = str(tokens[1]).strip().lower()
+    return python_token in {"python", "python3"} and script_token in {
+        "prism.py",
+        "prism_tools.py",
+    }
+
+
+def _build_structured_terminal_lines(message: str, prefix: str) -> list[str]:
+    """Render terminal output using date/time/action columns."""
+    text = str(message or "").strip()
+    if not text:
+        return []
+
+    action_text = text
+    command_text = ""
+    if "\ncmd=" in text:
+        action_text, command_payload = text.split("\ncmd=", 1)
+        command_text = f"cmd={command_payload.strip()}"
+
+    timestamp = datetime.now().astimezone()
+    date_text = timestamp.strftime("%Y-%m-%d")
+    time_text = timestamp.strftime("%H:%M:%S")
+
+    lines = [f"[{prefix}] {date_text}\t{time_text}\tACTION\t{action_text.strip()}"]
+    if command_text:
+        rendered_command = command_text
+        if _supports_ansi_color():
+            rendered_command = f"{_ANSI_GREEN}{command_text}{_ANSI_RESET}"
+        lines.append(
+            f"[{prefix}] {date_text}\t{time_text}\tCOMMAND\t{rendered_command}"
+        )
+
+    return lines
+
+
 def emit_backend_action(
     message: str,
     app_root: str,
@@ -1540,30 +1592,47 @@ def emit_backend_action(
     if not text:
         return
 
-    cmd_idx = text.find("cmd=")
-    if cmd_idx >= 0 and _supports_ansi_color():
-        head = text[:cmd_idx]
-        command_segment = text[cmd_idx:]
-        text = f"{head}{_ANSI_GREEN}{command_segment}{_ANSI_RESET}"
+    lines = _build_structured_terminal_lines(text, prefix)
+    if not lines:
+        return
 
-    if not text.startswith("["):
-        text = f"[{prefix}] {text}"
-
-    print(f"\n{text}\n")
+    print(f"\n{'\n'.join(lines)}\n")
 
 
 def emit_backend_request_action(req, app_root: str) -> None:
     """Print backend action line for mutating HTTP requests when enabled."""
+    method = (req.method or "").upper()
+    path = req.path or "/"
+    endpoint = _resolve_request_endpoint(req)
+
+    mapped_terminal_command = _build_terminal_command(req)
+    backend_terminal_command = (
+        mapped_terminal_command
+        if _is_backend_terminal_command(mapped_terminal_command)
+        else ""
+    )
+
+    if backend_terminal_command and method in _MUTATING_METHODS:
+        try:
+            record_project_session_command(
+                backend_terminal_command,
+                method=method,
+                endpoint=endpoint,
+            )
+        except Exception:
+            # Session logging must never block web request handling.
+            pass
+
     monitoring_enabled, verbose_enabled = _get_backend_monitoring_state(app_root)
     if not monitoring_enabled:
         return
 
-    method = (req.method or "").upper()
     if method not in _MUTATING_METHODS and not verbose_enabled:
         return
 
-    path = req.path or "/"
-    endpoint = _resolve_request_endpoint(req)
+    if method in _MUTATING_METHODS and not verbose_enabled and not backend_terminal_command:
+        return
+
     if endpoint in _SUPPRESSED_ENDPOINTS and not verbose_enabled:
         return
 
@@ -1577,9 +1646,13 @@ def emit_backend_request_action(req, app_root: str) -> None:
     if payload_summary:
         action = f"{action} | {payload_summary}"
 
-    terminal_command = _build_terminal_command(req)
-    if not terminal_command and verbose_enabled:
-        terminal_command = _build_generic_request_terminal_command(req)
+    if verbose_enabled:
+        terminal_command = mapped_terminal_command
+        if not terminal_command:
+            terminal_command = _build_generic_request_terminal_command(req)
+    else:
+        terminal_command = backend_terminal_command
+
     if terminal_command:
         action = f"{action}\ncmd={terminal_command}"
 

@@ -936,7 +936,9 @@ def test_emit_backend_request_action_includes_batch_convert_start_command(capsys
     assert "physio" in captured
 
 
-def test_emit_backend_request_action_includes_physio_rename_command(capsys):
+def test_emit_backend_request_action_hides_physio_rename_frontend_command_by_default(
+    capsys,
+):
     app = Flask(__name__)
 
     def _noop_view():
@@ -965,12 +967,9 @@ def test_emit_backend_request_action_includes_physio_rename_command(capsys):
         emit_backend_request_action(request, app_root=str(APP_PATH))
 
     captured = capsys.readouterr().out
-    assert "POST /api/physio-rename -> physio rename" in captured
-    assert "cmd=curl -X POST" in captured
-    assert "pattern=(.*)" in captured
-    assert "replacement=sub-01_task-rest_physio" in captured
-    assert "filenames[]=input1.raw" in captured
-    assert "source_paths[]=subj1/session1/input1.raw" in captured
+    assert "POST /api/physio-rename -> physio rename" not in captured
+    assert "cmd=" not in captured
+    assert captured.strip() == ""
 
 
 def test_emit_backend_request_action_includes_save_participant_mapping_command(capsys):
@@ -1301,12 +1300,12 @@ def test_emit_backend_request_action_uses_project_prefix_and_absolute_path_for_s
 
     captured = capsys.readouterr().out
     expected_path = str(Path("../Thunder/129_PK01/rawdata").resolve())
-    assert "[PROJECT]" in captured
-    assert "POST /api/projects/current -> set current project" in captured
-    assert f"path={expected_path}" in captured
-    assert "\ncmd=curl -X POST" in captured
-    assert "cmd=curl -X POST" in captured
-    assert expected_path in captured
+    assert "[PROJECT]" not in captured
+    assert "POST /api/projects/current -> set current project" not in captured
+    assert f"path={expected_path}" not in captured
+    assert "cmd=" not in captured
+    assert expected_path not in captured
+    assert captured.strip() == ""
 
 
 def test_emit_backend_request_action_uses_project_prefix_and_absolute_path_for_export_structure(
@@ -1333,11 +1332,12 @@ def test_emit_backend_request_action_uses_project_prefix_and_absolute_path_for_e
 
     captured = capsys.readouterr().out
     expected_path = str(Path("../Thunder/129_PK01/rawdata").resolve())
-    assert "[PROJECT]" in captured
-    assert "POST /api/projects/export/structure -> export project structure" in captured
-    assert f"project_path={expected_path}" in captured
-    assert "cmd=curl -X POST" in captured
-    assert expected_path in captured
+    assert "[PROJECT]" not in captured
+    assert "POST /api/projects/export/structure -> export project structure" not in captured
+    assert f"project_path={expected_path}" not in captured
+    assert "cmd=" not in captured
+    assert expected_path not in captured
+    assert captured.strip() == ""
 
 
 def test_emit_backend_request_action_includes_template_export_command(capsys):
@@ -1366,12 +1366,43 @@ def test_emit_backend_request_action_includes_template_export_command(capsys):
 
     captured = capsys.readouterr().out
     expected_project_path = str(Path("../Thunder/129_PK01/rawdata").resolve())
-    expected_output_folder = str(Path("../exports").resolve())
-    assert "[PROJECT]" in captured
-    assert "POST /api/projects/template-export -> template export project" in captured
-    assert f"project_path={expected_project_path}" in captured
-    assert f"cmd=curl -X POST http://localhost/api/projects/template-export" in captured
-    assert expected_output_folder in captured
+    assert "[PROJECT]" not in captured
+    assert "POST /api/projects/template-export -> template export project" not in captured
+    assert f"project_path={expected_project_path}" not in captured
+    assert "cmd=" not in captured
+    assert captured.strip() == ""
+
+
+def test_emit_backend_request_action_shows_frontend_command_when_verbose_enabled(capsys):
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/projects/current",
+        endpoint="projects.set_current",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with patch(
+        "src.web.backend_monitoring.load_app_settings",
+        return_value=AppSettings(
+            backend_monitoring=True,
+            backend_monitoring_verbose=True,
+        ),
+    ):
+        with app.test_request_context(
+            "/api/projects/current",
+            method="POST",
+            json={"path": "../Thunder/129_PK01/rawdata"},
+        ):
+            emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "POST /api/projects/current -> set current project" in captured
+    assert "cmd=curl -X POST" in captured
 
 
 def test_emit_backend_request_action_includes_recipes_surveys_command(capsys):
@@ -1409,3 +1440,69 @@ def test_emit_backend_request_action_includes_recipes_surveys_command(capsys):
     assert expected_dataset_path in captured
     assert "--merge-all" in captured
     assert "--no-recipe-prefix" in captured
+
+
+def test_emit_backend_request_action_records_session_command_when_monitoring_disabled():
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/validate_folder",
+        endpoint="validation.validate_folder",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with patch(
+        "src.web.backend_monitoring.load_app_settings",
+        return_value=AppSettings(
+            backend_monitoring=False,
+            backend_monitoring_verbose=False,
+        ),
+    ):
+        with patch(
+            "src.web.backend_monitoring.record_project_session_command"
+        ) as mock_record_command:
+            with app.test_request_context(
+                "/validate_folder",
+                method="POST",
+                data={
+                    "folder_path": "/tmp/ds",
+                    "validation_mode": "both",
+                },
+            ):
+                emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    mock_record_command.assert_called_once()
+    args, kwargs = mock_record_command.call_args
+    assert args[0] == "python prism.py /tmp/ds --bids"
+    assert kwargs["method"] == "POST"
+    assert kwargs["endpoint"] == "validation.validate_folder"
+
+
+def test_emit_backend_request_action_does_not_record_frontend_command_to_session_log():
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/projects/current",
+        endpoint="projects.set_current",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with patch(
+        "src.web.backend_monitoring.record_project_session_command"
+    ) as mock_record_command:
+        with app.test_request_context(
+            "/api/projects/current",
+            method="POST",
+            json={"path": "../Thunder/129_PK01/rawdata"},
+        ):
+            emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    mock_record_command.assert_not_called()
