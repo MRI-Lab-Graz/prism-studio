@@ -231,6 +231,19 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertIn("backendMonitoringVerboseToggle", settings_template)
+        self.assertIn("exportDefacingConfirmationMode", settings_template)
+        self.assertIn(
+            "function normalizeExportDefacingConfirmationMode(value) {",
+            settings_content,
+        )
+        self.assertIn(
+            "const exportDefacingConfirmationModeSelect = document.getElementById('exportDefacingConfirmationMode');",
+            settings_content,
+        )
+        self.assertIn(
+            "export_defacing_confirmation_mode: exportDefacingConfirmationMode,",
+            settings_content,
+        )
         self.assertIn(
             "const verboseToggle = document.getElementById('backendMonitoringVerboseToggle');",
             settings_content,

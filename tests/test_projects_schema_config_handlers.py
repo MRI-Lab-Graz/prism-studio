@@ -5,6 +5,7 @@ import tempfile
 import unittest
 import importlib
 from pathlib import Path
+from unittest.mock import patch
 
 from flask import Flask
 
@@ -175,6 +176,51 @@ class TestProjectsSchemaConfigHandlers(unittest.TestCase):
         self.assertTrue(payload["success"])
         self.assertEqual(payload["preferences"]["output_folder"], "/tmp/export-out")
         self.assertEqual(payload["preferences"]["exclude_sessions"], ["ses-02"])
+
+    def test_get_export_preferences_inherits_app_default_confirmation_mode(self):
+        other_project = self._make_project("other_project")
+        (other_project / ".prismrc.json").write_text(
+            json.dumps(
+                {
+                    "projectPreferences": {
+                        "export": {
+                            "output_folder": "/tmp/export-out",
+                        }
+                    }
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        from src import config as config_module
+
+        user_settings_dir = Path(self.tmp_dir.name) / "user-settings"
+        user_settings_dir.mkdir(parents=True, exist_ok=True)
+        (user_settings_dir / config_module.APP_SETTINGS_FILENAME).write_text(
+            json.dumps({"exportDefacingConfirmationMode": "always"}, indent=2),
+            encoding="utf-8",
+        )
+
+        with patch.object(
+            config_module,
+            "_get_user_app_settings_dir",
+            return_value=user_settings_dir,
+        ):
+            with self.app.test_request_context(
+                "/api/projects/preferences/export",
+                method="GET",
+                query_string={"project_path": str(other_project)},
+            ):
+                response = self.handle_get_project_preferences(
+                    get_current_project=self._get_current_project,
+                    namespace="export",
+                )
+
+        payload = response.get_json()
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["preferences"]["output_folder"], "/tmp/export-out")
+        self.assertEqual(payload["preferences"]["defacing_confirmation_mode"], "always")
 
     def test_save_project_preferences_can_target_explicit_project_path(self):
         other_project = self._make_project("other_project")

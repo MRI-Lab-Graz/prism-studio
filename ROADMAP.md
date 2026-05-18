@@ -119,9 +119,11 @@ Current checkpoint:
 - Defacing warning-only metadata is now surfaced in async export status payloads (non-blocking) and rendered in export success UI when risk is detected.
 - Export submit UX now adds an explicit pre-export confirmation step when MRI scrub mode is enabled and defacing risk is detected.
 - Export preferences now support configurable defacing confirmation mode (always ask vs ask only on detected risk), persisted per project in UI preferences.
+- Backend app settings now provide a team-level default for export defacing confirmation mode, and export preference reads inherit this default when project preference is unset.
+- Global Settings UI now exposes the backend export defacing confirmation default (risk vs always) and persists it through the settings API.
 
 Next action:
-1. Decide whether defacing confirmation mode should also be exposed as a stricter backend policy option for team-wide defaults.
+1. Evaluate whether to add per-project visibility of the inherited global defacing policy in the export card summary.
 
 ## Up Next
 
@@ -160,3 +162,5 @@ Changelog remains canonical for release-facing history:
 - For potentially disruptive privacy checks, shipping warning metadata in async status first is a low-risk way to add guidance without blocking export flows.
 - Adding a lightweight confirmation at submit-time is an effective second step to increase user awareness without introducing backend export blockers.
 - Persisting the confirmation mode as project preference keeps privacy UX configurable without duplicating backend export logic.
+- A backend default policy with project-level override provides a stable global baseline while preserving per-project flexibility.
+- Exposing the global policy in Settings keeps team defaults discoverable while preserving project-level opt-in overrides.
