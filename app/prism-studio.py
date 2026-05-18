@@ -146,6 +146,7 @@ from src.dedicated_terminal import (
     build_windows_dedicated_terminal_command,
     should_relaunch_in_dedicated_terminal,
 )
+from src.project_session_logging import close_project_session
 from src.version_utils import is_newer_release_available
 
 try:
@@ -216,6 +217,7 @@ def cleanup_and_exit(exit_code=0):
     """Cleanup resources and exit the entire process (not just Flask)."""
     try:
         print("🛑 Cleaning up resources...")
+        close_project_session(reason="prism_closed")
         # Signal shutdown
         _shutdown_requested.set()
         # Give threads a moment to clean up

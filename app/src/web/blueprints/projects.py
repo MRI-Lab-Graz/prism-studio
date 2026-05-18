@@ -12,6 +12,7 @@ from pathlib import Path
 from flask import Blueprint, render_template, jsonify, session, request, current_app
 
 from src.project_manager import ProjectManager, get_available_modalities
+from src.project_session_logging import activate_project_session, close_project_session
 from src.schema_manager import get_available_schema_versions
 from .projects_citation_helpers import (
     _validate_recruitment_payload,
@@ -110,6 +111,12 @@ def set_current_project(path: str, name: str | None = None, icon: str | None = N
     else:
         session.pop("current_project_icon", None)
 
+    # Project session logging starts when a project is activated.
+    try:
+        activate_project_session(path)
+    except Exception:
+        pass
+
 
 def get_bids_file_path(project_path: Path, filename: str) -> Path:
     """Get path to a BIDS metadata file at the project (dataset) root.
@@ -137,6 +144,10 @@ def projects_page():
 
     # Only clear current project on explicit request.
     if clear_current:
+        try:
+            close_project_session(reason="project_cleared")
+        except Exception:
+            pass
         session.pop("current_project_path", None)
         session.pop("current_project_name", None)
         session.pop("current_project_icon", None)
@@ -171,6 +182,7 @@ def set_current():
         get_current_project=get_current_project,
         set_current_project=set_current_project,
         save_last_project=_save_last_project,
+        close_project_session=close_project_session,
     )
 
 

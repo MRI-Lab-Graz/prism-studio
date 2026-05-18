@@ -297,6 +297,48 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertEqual(response.get_json()["projects"], recent_payload)
         mock_load.assert_called_once()
 
+    def test_set_current_clear_closes_project_session(self):
+        captured: dict[str, str | None] = {}
+        closed_reasons: list[str] = []
+
+        def get_current_project():
+            return {
+                "path": session.get("current_project_path", ""),
+                "name": session.get("current_project_name", ""),
+            }
+
+        def set_current_project(path: str, name: str | None = None):
+            captured["path"] = path
+            captured["name"] = name
+
+        def save_last_project(path: str | None, name: str | None):
+            captured["last_path"] = path
+            captured["last_name"] = name
+
+        def close_project_session(*, reason: str = "session_closed"):
+            closed_reasons.append(reason)
+
+        with self.app.test_request_context(
+            "/api/projects/current",
+            method="POST",
+            json={"path": ""},
+        ):
+            session["current_project_path"] = str(self.project_root)
+            session["current_project_name"] = "Demo"
+            response = self.handle_set_current(
+                get_current_project=get_current_project,
+                set_current_project=set_current_project,
+                save_last_project=save_last_project,
+                close_project_session=close_project_session,
+            )
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(body["current"], {"path": "", "name": ""})
+        self.assertEqual(captured.get("last_path"), None)
+        self.assertEqual(captured.get("last_name"), None)
+        self.assertEqual(closed_reasons, ["project_cleared"])
+
     def test_set_current_respects_valid_icon_override(self):
         requested_icon = "🧠"
         captured = {}
