@@ -419,13 +419,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function applyHelpPanels(enabled) {
         document.querySelectorAll('[data-help-panel]').forEach(panel => {
+            const defaultMode = String(panel.dataset.helpDefaultMode || '').trim().toLowerCase();
+            const beginnerOnly = defaultMode === 'beginner';
+            panel.classList.toggle('d-none', beginnerOnly && !enabled);
+
+            if (beginnerOnly && !enabled) {
+                setPanelExpanded(panel, false);
+                return;
+            }
+
             const manual = panel.dataset.helpUserExpanded;
             if (manual === 'true' || manual === 'false') {
                 setPanelExpanded(panel, manual === 'true');
                 return;
             }
 
-            const defaultMode = String(panel.dataset.helpDefaultMode || '').trim().toLowerCase();
             if (defaultMode === 'beginner') {
                 setPanelExpanded(panel, enabled);
                 return;
