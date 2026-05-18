@@ -27,6 +27,7 @@ function getDefaultExportPreferences() {
         exclude_modalities: [],
         exclude_acq: {},
         validation_mode: 'both',
+        defacing_confirmation_mode: 'risk',
     };
 }
 
@@ -44,6 +45,16 @@ function normalizeExportValidationMode(value) {
 function getSelectedExportValidationMode() {
     const select = getById('exportValidationMode');
     return normalizeExportValidationMode(select?.value || 'both');
+}
+
+function normalizeDefacingConfirmationMode(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    return normalized === 'always' ? 'always' : 'risk';
+}
+
+function getSelectedDefacingConfirmationMode() {
+    const always = getById('exportDefacingConfirmAlways')?.checked || false;
+    return always ? 'always' : 'risk';
 }
 
 function getExportValidationStatusText(validationMode) {
@@ -108,6 +119,7 @@ function normalizeExportPreferences(preferences) {
     normalized.exclude_modalities = normalizePreferenceStringArray(preferences.exclude_modalities);
     normalized.exclude_acq = normalizeAcqPreferenceMap(preferences.exclude_acq);
     normalized.validation_mode = normalizeExportValidationMode(preferences.validation_mode);
+    normalized.defacing_confirmation_mode = normalizeDefacingConfirmationMode(preferences.defacing_confirmation_mode);
     return normalized;
 }
 
@@ -297,6 +309,11 @@ function applyExportPreferencesToFilters(preferences = lastLoadedExportPreferenc
     const validationModeSelect = getById('exportValidationMode');
     if (validationModeSelect) {
         validationModeSelect.value = normalized.validation_mode;
+    }
+
+    const defacingConfirmAlwaysToggle = getById('exportDefacingConfirmAlways');
+    if (defacingConfirmAlwaysToggle) {
+        defacingConfirmAlwaysToggle.checked = normalized.defacing_confirmation_mode === 'always';
     }
 
     isApplyingExportPreferences = false;
@@ -588,6 +605,13 @@ export function initExportForm() {
         });
     }
 
+    const defacingConfirmAlwaysToggle = getById('exportDefacingConfirmAlways');
+    if (defacingConfirmAlwaysToggle) {
+        defacingConfirmAlwaysToggle.addEventListener('change', () => {
+            saveExportPreferencesPatch({ defacing_confirmation_mode: getSelectedDefacingConfirmationMode() });
+        });
+    }
+
     const templateExportButton = getById('templateExportButton');
     if (templateExportButton) {
         templateExportButton.addEventListener('click', handleTemplateExport);
@@ -764,15 +788,19 @@ async function handleExportSubmit(e) {
     };
 
     if (data.scrub_mri_json) {
+        const defacingConfirmationMode = getSelectedDefacingConfirmationMode();
         try {
             if (statusText) {
                 statusText.textContent = 'Checking defacing status before export...';
             }
             const defacingSummary = await fetchDefacingSummary(currentProjectPath);
-            if (defacingSummary.riskCount > 0) {
+            if (defacingConfirmationMode === 'always' || defacingSummary.riskCount > 0) {
                 const counts = defacingSummary.counts || {};
+                const confirmMessage = defacingSummary.riskCount > 0
+                    ? `Defacing check found ${counts.not_defaced || 0} not-defaced and ${counts.unknown || 0} unknown anatomical scan(s). Continue export anyway?`
+                    : 'Defacing check did not detect unresolved risk in anatomical scans. Continue export anyway?';
                 const continueExport = window.confirm(
-                    `Defacing check found ${counts.not_defaced || 0} not-defaced and ${counts.unknown || 0} unknown anatomical scan(s). Continue export anyway?`
+                    confirmMessage
                 );
                 if (!continueExport) {
                     if (progressDiv) hide(progressDiv);
@@ -784,7 +812,23 @@ async function handleExportSubmit(e) {
                 }
             }
         } catch {
-            // Keep export available when defacing report lookup is unavailable.
+            if (defacingConfirmationMode === 'always') {
+                const continueExport = window.confirm(
+                    'Could not retrieve defacing status before export. Continue export anyway?'
+                );
+                if (!continueExport) {
+                    if (progressDiv) hide(progressDiv);
+                    if (resultDiv) {
+                        show(resultDiv);
+                        setHtml(resultDiv, '<div class="alert alert-warning"><i class="fas fa-ban me-2"></i>Export cancelled before start: defacing risk was not accepted.</div>');
+                    }
+                    return;
+                }
+            }
+        }
+
+        if (statusText) {
+            statusText.textContent = getExportValidationStatusText(selectedValidationMode);
         }
     }
 
