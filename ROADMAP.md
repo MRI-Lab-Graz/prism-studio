@@ -121,9 +121,11 @@ Current checkpoint:
 - Export preferences now support configurable defacing confirmation mode (always ask vs ask only on detected risk), persisted per project in UI preferences.
 - Backend app settings now provide a team-level default for export defacing confirmation mode, and export preference reads inherit this default when project preference is unset.
 - Global Settings UI now exposes the backend export defacing confirmation default (risk vs always) and persists it through the settings API.
+- Export card preference snapshot now shows defacing confirmation mode and indicates whether it is inherited from global settings or explicitly saved in project export preferences.
+- Export UI now includes a one-click reset action that removes project defacing confirmation override and reverts behavior to inherited global default.
 
 Next action:
-1. Evaluate whether to add per-project visibility of the inherited global defacing policy in the export card summary.
+1. Add an integration test that validates full defacing policy lifecycle (global default -> project override -> reset to inherited) across settings and export preferences APIs.
 
 ## Up Next
 
@@ -164,3 +166,5 @@ Changelog remains canonical for release-facing history:
 - Persisting the confirmation mode as project preference keeps privacy UX configurable without duplicating backend export logic.
 - A backend default policy with project-level override provides a stable global baseline while preserving per-project flexibility.
 - Exposing the global policy in Settings keeps team defaults discoverable while preserving project-level opt-in overrides.
+- Showing source attribution (project override vs inherited default) in the export snapshot helps avoid ambiguity in privacy confirmation behavior.
+- Supporting explicit reset-to-inherited in UI reduces misconfiguration risk and keeps global privacy policy enforcement easy to recover.

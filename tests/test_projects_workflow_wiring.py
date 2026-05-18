@@ -375,6 +375,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "if (requestToken !== exportPreferencesLoadToken || requestProjectPath !== resolveCurrentProjectPath()) {",
             content,
         )
+        self.assertIn("const inheritedPreferences = data.inherited_preferences || {};", content)
         self.assertIn("loadExportPreferences();", content)
         self.assertIn(
             "exclude_sessions: _getUncheckedValues('export-session-filter')", content
@@ -394,6 +395,11 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "saveExportPreferencesPatch({ defacing_confirmation_mode: getSelectedDefacingConfirmationMode() });",
             content,
         )
+        self.assertIn(
+            "await saveExportPreferencesPatch({ defacing_confirmation_mode: null });",
+            content,
+        )
+        self.assertIn("const resetDefacingModeBtn = getById('exportDefacingUseGlobalDefault');", content)
         self.assertIn("updateExportSnapshotUi();", content)
 
     def test_export_summary_ui_wiring_present(self):
@@ -407,6 +413,14 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("exportScopeSummary", content)
         self.assertIn("exportDestinationSummary", content)
         self.assertIn("exportPreferenceSummary", content)
+        self.assertIn("Defacing confirmation:", content)
+        self.assertIn("Project + global defaults", content)
+        self.assertIn("saved in project export preferences", content)
+        self.assertIn("inherited from Global Settings", content)
+        self.assertIn(
+            "resetDefacingModeBtn.disabled = !currentProjectPath || lastExportPreferenceInheritance.defacing_confirmation_mode;",
+            content,
+        )
         self.assertIn("exportSessionsChip", content)
         self.assertIn("exportModalitiesChip", content)
         self.assertIn("exportAcqChip", content)
@@ -458,6 +472,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
         self.assertIn('id="templateExportButton"', content)
         self.assertIn('id="exportDefacingConfirmAlways"', content)
+        self.assertIn('id="exportDefacingUseGlobalDefault"', content)
         self.assertIn("Template Export", content)
 
     def test_export_async_completion_renders_saved_zip_path_from_status(self):
