@@ -83,7 +83,9 @@ def _fetch_json(url: str, timeout_seconds: float = _DEFAULT_TIMEOUT_SECONDS) -> 
     )
     try:
         # URL is restricted to the validated public ORCID HTTPS API.
-        with urlopen(request, timeout=timeout_seconds) as response:  # nosec B310
+        with urlopen(
+            request, timeout=timeout_seconds
+        ) as response:  # nosec B310
             payload = response.read().decode("utf-8")
     except HTTPError as exc:
         raise OrcidLookupError(f"ORCID request failed with HTTP {exc.code}") from exc
