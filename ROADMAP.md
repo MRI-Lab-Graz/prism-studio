@@ -114,9 +114,13 @@ Current checkpoint:
 - Slice A completed in backend export pipeline: optional MRI sidecar sensitive-field scrubbing plus .nii.gz GZIP header normalization (mtime/FNAME).
 - Route wiring updated so export privacy option (`scrub_mri_json`) enables both sidecar scrubbing and NIfTI header cleanup.
 - Focused validation expanded (26 passed across export backend and blueprint contract suites), including root-level `.nii.gz` and cleaning-disabled header-preservation cases.
+- Additional Priority 3 coverage slice completed: mixed-modality MRI sidecar scrubbing checks plus nested/derivative long-path `.nii.gz` header-cleaning checks.
+- Focused export privacy suite is green after the expansion (`tests/test_projects_export_mapping_exclusion.py`: 15 passed).
+- Defacing warning-only metadata is now surfaced in async export status payloads (non-blocking) and rendered in export success UI when risk is detected.
+- Export submit UX now adds an explicit pre-export confirmation step when MRI scrub mode is enabled and defacing risk is detected.
 
 Next action:
-1. Extend coverage for broader MRI privacy cases (mixed modality trees and larger path variants), then evaluate optional defacing-gated export warnings.
+1. Evaluate whether the defacing confirmation prompt should be configurable (always ask vs ask only on risk) in export preferences.
 
 ## Up Next
 
@@ -151,3 +155,6 @@ Changelog remains canonical for release-facing history:
 ## Lessons Learned
 
 - Keep icon assignment in backend metadata (project.json) and only render in frontend adapters to avoid drift between session, recent-project cache, and persisted project state.
+- Export privacy tests should always include both positive MRI scrubbing assertions and non-MRI preservation checks, plus nested/derivative path variants for `.nii.gz` header cleaning.
+- For potentially disruptive privacy checks, shipping warning metadata in async status first is a low-risk way to add guidance without blocking export flows.
+- Adding a lightweight confirmation at submit-time is an effective second step to increase user awareness without introducing backend export blockers.

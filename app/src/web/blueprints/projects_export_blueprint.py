@@ -224,6 +224,45 @@ def _run_pre_export_validation(project_path: Path, validation_mode: str) -> str 
     )
 
 
+def _build_export_defacing_warning(
+    project_path: Path, scrub_mri_json: bool
+) -> Optional[dict]:
+    """Build warning-only defacing metadata for async export status payloads.
+
+    This never blocks export. It only surfaces a summary when MRI JSON scrub is
+    enabled and anatomical scans appear not defaced or unknown.
+    """
+    if not scrub_mri_json:
+        return None
+
+    try:
+        from src.mri_json_scrubber import build_defacing_report
+
+        report = build_defacing_report(project_path)
+    except Exception:
+        return None
+
+    counts = {"defaced": 0, "not_defaced": 0, "unknown": 0}
+    for entry in report:
+        status = str(entry.get("status", "unknown"))
+        if status not in counts:
+            status = "unknown"
+        counts[status] += 1
+
+    risk_count = counts["not_defaced"] + counts["unknown"]
+    if risk_count <= 0:
+        return None
+
+    return {
+        "message": (
+            "Defacing check: some anatomical scans are not defaced or unknown. "
+            "Export continued because this is warning-only."
+        ),
+        "counts": counts,
+        "risk_count": risk_count,
+    }
+
+
 def _run_export_job(
     job_id: str, export_kwargs: dict, filename: str, output_folder: Optional[str] = None
 ) -> None:
@@ -555,6 +594,10 @@ def export_project_start():
         job_id = str(uuid.uuid4())
         _create_export_job(job_id)
 
+        defacing_warning = _build_export_defacing_warning(resolved, scrub_mri_json)
+        if defacing_warning:
+            _update_export_job(job_id, defacing_warning=defacing_warning)
+
         t = threading.Thread(
             target=_run_export_job,
             args=(job_id, export_kwargs, filename, output_folder),
@@ -582,6 +625,7 @@ def export_job_status(job_id: str):
             "message": job.get("message", ""),
             "error": job.get("error"),
             "zip_path": job.get("zip_path"),
+            "defacing_warning": job.get("defacing_warning"),
         }
     )
 
