@@ -270,6 +270,36 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertFalse(body["has_non_system_entries"])
         self.assertFalse(body["available"])
 
+    def test_project_path_status_includes_datalad_preflight_state(self):
+        target_root = Path(self.tmp_dir.name) / "new_target"
+
+        with patch.object(
+            self.module.shutil,
+            "which",
+            side_effect=lambda executable: {
+                "datalad": "/usr/bin/datalad",
+                "git-annex": None,
+            }.get(executable),
+        ):
+            with self.app.test_request_context(
+                "/api/projects/path-status",
+                method="POST",
+                json={"path": str(target_root)},
+            ):
+                response = self.handle_project_path_status()
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        body = resp_obj.get_json()
+
+        self.assertEqual(status_code, 200)
+        self.assertTrue(body["success"])
+        self.assertIn("datalad_preflight", body)
+        self.assertTrue(body["datalad_preflight"]["available"])
+        self.assertFalse(body["datalad_preflight"]["annex_available"])
+        self.assertFalse(body["datalad_preflight"]["can_enable"])
+        self.assertIn("git-annex", body["datalad_preflight"]["message"])
+
     def test_create_project_forwards_datalad_opt_out(self):
         manager = _ProjectManagerStub()
         captured = {}

@@ -54,7 +54,6 @@ import {
 } from '../../shared/project-state.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { escapeHtml } from '../../shared/dom.js';
-import { prefersServerPicker } from '../../shared/path-picker.js';
 
 let projectsPageInitialized = false;
 
@@ -187,7 +186,7 @@ initProjectInitOnBidsController({
     showMethodsCard,
 });
 
-initProjectFileBrowser({ fetchWithApiFallback, prefersServerPicker });
+initProjectFileBrowser({ fetchWithApiFallback });
 
 initCreateProjectController({
     fetchWithApiFallback,

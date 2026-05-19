@@ -115,10 +115,13 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
         self.assertIn("export function prefersServerPicker()", content)
         self.assertIn("export async function browseFolderWithFallback(fetchWithApiFallback, options = {})", content)
+        self.assertIn("export async function browseFileWithFallback(fetchWithApiFallback, options = {})", content)
         self.assertIn("window.PrismFileSystemMode.prefersServerPicker()", content)
         self.assertIn("const response = await fetchWithApiFallback('/api/browse-folder');", content)
+        self.assertIn("const response = await fetchWithApiFallback(`/api/browse-file${query}`);", content)
         self.assertIn("window.PrismFolderBrowser.open({", content)
         self.assertIn("Native folder picker failed, falling back to in-app browser:", content)
+        self.assertIn("Native file picker failed, falling back to in-app browser:", content)
 
     def test_new_project_draft_clear_uses_api_fallback(self):
         content = PROJECTS_SELECTION_MODULE.read_text(encoding="utf-8")
@@ -307,7 +310,10 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         content = PROJECTS_FILE_BROWSER_MODULE.read_text(encoding="utf-8")
         core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
+        self.assertIn("import { browseFileWithFallback } from '../../shared/path-picker.js';", content)
         self.assertIn("const res = await fetchWithApiFallback(url);", content)
+        self.assertIn("const pickedPath = await browseFileWithFallback(fetchWithApiFallback, {", content)
+        self.assertIn("await openProjectBrowserModal(startPath || null);", content)
         self.assertIn(
             'class="d-flex align-items-center w-100 px-3 py-2 border-0 border-bottom fb-project-json text-start"',
             content,
@@ -321,13 +327,12 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn("export function initProjectFileBrowser(", content)
-        self.assertIn("initProjectFileBrowser({ fetchWithApiFallback, prefersServerPicker });", core_content)
+        self.assertIn("initProjectFileBrowser({ fetchWithApiFallback });", core_content)
 
     def test_projects_core_uses_shared_path_picker(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
         picker_content = PROJECTS_PATH_PICKERS_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("import { prefersServerPicker } from '../../shared/path-picker.js';", content)
         self.assertIn("import { initProjectPathPickers } from './path-pickers.js';", content)
         self.assertIn("initProjectPathPickers({", content)
         self.assertNotIn("await browseFolderWithFallback(fetchWithApiFallback, {", content)
@@ -563,10 +568,14 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("async function checkCreateTargetStatus() {", content)
+        self.assertIn("function buildDataladPreflightHtml(status, targetPath) {", content)
         self.assertIn(
             "const response = await fetchWithApiFallback('/api/projects/path-status', {",
             content,
         )
+        self.assertIn("status?.datalad_preflight", content)
+        self.assertIn("document.getElementById('projectUseDatalad')?.checked !== false", content)
+        self.assertIn("projectUseDataladInput.addEventListener('change', function() {", content)
         self.assertIn("const targetStatus = await checkCreateTargetStatus();", create_content)
         self.assertIn("if (targetStatus.conflict) {", create_content)
         self.assertIn("const fullPath = joinProjectTargetPath(projectPath, projectName);", create_content)

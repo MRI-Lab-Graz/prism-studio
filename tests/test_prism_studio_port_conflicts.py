@@ -114,3 +114,24 @@ def test_main_does_not_auto_fallback_for_explicit_port(
 
     assert captured["port"] == 5001
     assert captured["force"] is False
+
+
+def test_startup_dependency_steps_report_ready_and_not_installed(
+    prism_studio_module, monkeypatch, capsys
+):
+    monkeypatch.setattr(
+        prism_studio_module.shutil,
+        "which",
+        lambda executable: "/usr/bin/datalad" if executable == "datalad" else None,
+    )
+
+    capsys.readouterr()
+    prism_studio_module._print_startup_dependency_step("DataLad", "datalad")
+    prism_studio_module._print_startup_dependency_step("git-annex", "git-annex")
+    output = capsys.readouterr().out
+
+    assert "DataLad" in output
+    assert "git-annex" in output
+    assert "ready" in output
+    assert "not installed (optional)" in output
+    assert "! git-annex" in output
