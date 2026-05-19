@@ -364,6 +364,60 @@ class TestProjectManager(unittest.TestCase):
         self.assertFalse(result.get("success"))
         self.assertIn("git-annex", result.get("error", ""))
 
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_export_project_to_plain_folder_strips_repository_metadata(self, _mock_which):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / ".git").mkdir(parents=True, exist_ok=True)
+            (project_path / ".gitattributes").write_text("* annex.largefiles=anything\n", encoding="utf-8")
+            (project_path / "CHANGES").write_text("history\n", encoding="utf-8")
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+            subject_dir = project_path / "sub-001" / "beh"
+            subject_dir.mkdir(parents=True, exist_ok=True)
+            (subject_dir / "sub-001_task-demo_events.tsv").write_text(
+                "participant_id\tvalue\nsub-001\t1\n",
+                encoding="utf-8",
+            )
+
+            export_root = Path(tmp) / "exports"
+            result = manager.export_project_to_plain_folder(
+                project_path,
+                output_root=export_root,
+            )
+
+            self.assertTrue(result.get("success"), result)
+            output_path = Path(result["output_path"])
+            self.assertTrue(output_path.exists())
+            self.assertEqual(
+                result.get("excluded_repository_metadata"),
+                [".datalad", ".git", ".gitattributes", ".gitignore", ".gitmodules", "CHANGES"],
+            )
+            self.assertTrue((output_path / "dataset_description.json").exists())
+            self.assertTrue((output_path / "sub-001" / "beh" / "sub-001_task-demo_events.tsv").exists())
+            self.assertFalse((output_path / ".git").exists())
+            self.assertFalse((output_path / ".datalad").exists())
+            self.assertFalse((output_path / ".gitattributes").exists())
+            self.assertFalse((output_path / "CHANGES").exists())
+
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_export_project_to_plain_folder_accepts_nontracked_project(self, _mock_which):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            result = manager.export_project_to_plain_folder(project_path)
+
+            self.assertTrue(result.get("success"), result)
+            self.assertTrue(Path(result["output_path"]).exists())
+
+
     def test_create_project_reports_existing_nonempty_target_actionably(self):
         manager = ProjectManager()
 

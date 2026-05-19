@@ -463,7 +463,14 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "const response = await fetchWithApiFallback('/api/projects/template-export', {",
             content,
         )
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/projects/export/folder', {",
+            content,
+        )
+        self.assertIn("const excludedMetadata = Array.isArray(result.excluded_repository_metadata)", content)
+        self.assertIn("Stripped repository metadata:", content)
         self.assertIn("const templateExportButton = getById('templateExportButton');", content)
+        self.assertIn("const plainFolderExportButton = getById('plainFolderExportButton');", content)
         self.assertIn("const uploadReadyExportButton = getById('uploadReadyExportButton');", content)
         self.assertIn("validation_mode: getSelectedExportValidationMode(),", content)
         self.assertIn("async function requestCancelForActiveJob() {", content)
@@ -489,10 +496,12 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
     def test_export_template_button_is_present_in_projects_export_section(self):
         content = EXPORT_SECTION_TEMPLATE.read_text(encoding="utf-8")
 
+        self.assertIn('id="plainFolderExportButton"', content)
         self.assertIn('id="uploadReadyExportButton"', content)
         self.assertIn('id="templateExportButton"', content)
         self.assertIn('id="exportDefacingConfirmAlways"', content)
         self.assertIn('id="exportDefacingUseGlobalDefault"', content)
+        self.assertIn("Folder Export", content)
         self.assertIn("Upload-Ready ZIP", content)
         self.assertIn("Template Export", content)
 
