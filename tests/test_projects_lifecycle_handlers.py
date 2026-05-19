@@ -36,6 +36,15 @@ class _ProjectManagerStub:
         self.init_calls.append((path, config))
         return {"success": True, "path": path, "created_files": [], "message": "ok"}
 
+    def get_datalad_status(self, path: str):
+        return {
+            "enabled": False,
+            "available": False,
+            "can_save": False,
+            "message": "Current project is not a DataLad dataset.",
+            "path": str(path),
+        }
+
 
 class TestProjectsLifecycleHandlers(unittest.TestCase):
     def setUp(self):
@@ -273,6 +282,196 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertTrue(body["success"])
         self.assertEqual(manager.init_calls[0][1]["use_datalad"], True)
 
+    def test_create_project_response_includes_current_project_datalad_state(self):
+        manager = _ProjectManagerStub()
+        manager.get_datalad_status = lambda path: {
+            "enabled": True,
+            "available": True,
+            "can_save": True,
+            "message": "Current project is tracked by DataLad.",
+            "path": str(path),
+        }
+
+        target_path = Path(self.tmp_dir.name) / "created_project"
+        with self.app.test_request_context(
+            "/api/projects/create",
+            method="POST",
+            json={"path": str(target_path), "name": "created_project", "use_datalad": True},
+        ):
+            response = self.module.handle_create_project(
+                project_manager=manager,
+                set_current_project=lambda path, name=None: None,
+                save_last_project=lambda path, name=None: None,
+            )
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertTrue(body["current_project"]["datalad"]["enabled"])
+
+    def test_projects_get_current_project_includes_datalad_status(self):
+        projects_module = importlib.import_module("src.web.blueprints.projects")
+
+        with self.app.test_request_context("/projects"):
+            session["current_project_path"] = str(self.project_root)
+            session["current_project_name"] = "demo_project"
+            session["current_project_icon"] = "🧪"
+            original_manager = projects_module._project_manager
+            try:
+                class _DataladManager:
+                    def get_datalad_status(self, path):
+                        return {
+                            "enabled": True,
+                            "available": True,
+                            "can_save": True,
+                            "message": "Current project is tracked by DataLad.",
+                            "path": str(path),
+                        }
+
+                projects_module._project_manager = _DataladManager()
+                current = projects_module.get_current_project()
+            finally:
+                projects_module._project_manager = original_manager
+
+        self.assertTrue(current["datalad"]["enabled"])
+
+    def test_projects_save_datalad_snapshot_route_returns_current_project(self):
+        projects_module = importlib.import_module("src.web.blueprints.projects")
+
+        with self.app.test_request_context(
+            "/api/projects/datalad/save",
+            method="POST",
+            json={"message": "Checkpoint metadata updates"},
+        ):
+            session["current_project_path"] = str(self.project_root)
+            session["current_project_name"] = "demo_project"
+            session["current_project_icon"] = "🧪"
+            original_manager = projects_module._project_manager
+            try:
+                class _DataladManager:
+                    def get_datalad_status(self, path):
+                        return {
+                            "enabled": True,
+                            "available": True,
+                            "can_save": True,
+                            "message": "Current project is tracked by DataLad.",
+                            "path": str(path),
+                        }
+
+                    def save_datalad_snapshot(self, path, *, message):
+                        return {
+                            "success": True,
+                            "message": f'Saved with message "{message}".',
+                            "datalad": self.get_datalad_status(path),
+                        }
+
+                projects_module._project_manager = _DataladManager()
+                response = projects_module.save_datalad_snapshot()
+            finally:
+                projects_module._project_manager = original_manager
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(body["current_project"]["path"], str(self.project_root))
+
+    def test_projects_enable_datalad_route_returns_current_project(self):
+        projects_module = importlib.import_module("src.web.blueprints.projects")
+
+        with self.app.test_request_context(
+            "/api/projects/datalad/enable",
+            method="POST",
+            json={"message": "Enable DataLad for PRISM project"},
+        ):
+            session["current_project_path"] = str(self.project_root)
+            session["current_project_name"] = "demo_project"
+            session["current_project_icon"] = "🧪"
+            original_manager = projects_module._project_manager
+            try:
+                class _DataladManager:
+                    def get_datalad_status(self, path):
+                        return {
+                            "enabled": True,
+                            "available": True,
+                            "can_save": True,
+                            "message": "Current project is tracked by DataLad.",
+                            "path": str(path),
+                        }
+
+                    def enable_datalad_for_project(self, path, *, message):
+                        return {
+                            "success": True,
+                            "message": f'Enabled with message "{message}".',
+                            "datalad": self.get_datalad_status(path),
+                        }
+
+                projects_module._project_manager = _DataladManager()
+                response = projects_module.enable_datalad_for_project()
+            finally:
+                projects_module._project_manager = original_manager
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(body["current_project"]["path"], str(self.project_root))
+
+    def test_projects_set_current_project_autosaves_previous_datalad_dataset_on_switch(self):
+        projects_module = importlib.import_module("src.web.blueprints.projects")
+
+        with self.app.test_request_context("/api/projects/current", method="POST"):
+            session["current_project_path"] = str(self.project_root)
+            session["current_project_name"] = "demo_project"
+            session["current_project_icon"] = "🧪"
+            original_manager = projects_module._project_manager
+            original_activate = projects_module.activate_project_session
+            try:
+                autosave_calls = []
+                activated_paths = []
+
+                class _DataladManager:
+                    def autosave_datalad_snapshot(self, path, *, reason):
+                        autosave_calls.append((path, reason))
+                        return {"success": True, "attempted": True, "message": "ok"}
+
+                projects_module._project_manager = _DataladManager()
+                projects_module.activate_project_session = lambda path: activated_paths.append(path)
+
+                projects_module.set_current_project(str(self.project_root_alt), "Alt Dataset")
+            finally:
+                projects_module._project_manager = original_manager
+                projects_module.activate_project_session = original_activate
+
+        self.assertEqual(
+            autosave_calls,
+            [(str(self.project_root), f"project_switch next_project={self.project_root_alt}")],
+        )
+        self.assertEqual(activated_paths, [str(self.project_root_alt)])
+
+    def test_projects_set_current_project_skips_autosave_when_project_unchanged(self):
+        projects_module = importlib.import_module("src.web.blueprints.projects")
+
+        with self.app.test_request_context("/api/projects/current", method="POST"):
+            session["current_project_path"] = str(self.project_root)
+            session["current_project_name"] = "demo_project"
+            original_manager = projects_module._project_manager
+            original_activate = projects_module.activate_project_session
+            try:
+                autosave_calls = []
+                activated_paths = []
+
+                class _DataladManager:
+                    def autosave_datalad_snapshot(self, path, *, reason):
+                        autosave_calls.append((path, reason))
+                        return {"success": True, "attempted": True, "message": "ok"}
+
+                projects_module._project_manager = _DataladManager()
+                projects_module.activate_project_session = lambda path: activated_paths.append(path)
+
+                projects_module.set_current_project(str(self.project_root), "demo_project")
+            finally:
+                projects_module._project_manager = original_manager
+                projects_module.activate_project_session = original_activate
+
+        self.assertEqual(autosave_calls, [])
+        self.assertEqual(activated_paths, [str(self.project_root)])
+
     def test_project_state_flow_load_switch_create_mode_and_recent_reload(self):
         (self.project_root / "project.json").write_text(
             '{"name": "Primary Dataset"}',
@@ -367,6 +566,7 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
     def test_set_current_clear_closes_project_session(self):
         captured: dict[str, str | None] = {}
         closed_reasons: list[str] = []
+        autosaved: list[tuple[str | None, str]] = []
 
         def get_current_project():
             return {
@@ -385,6 +585,9 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         def close_project_session(*, reason: str = "session_closed"):
             closed_reasons.append(reason)
 
+        def autosave_current_project(path: str | None, *, reason: str):
+            autosaved.append((path, reason))
+
         with self.app.test_request_context(
             "/api/projects/current",
             method="POST",
@@ -397,6 +600,7 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
                 set_current_project=set_current_project,
                 save_last_project=save_last_project,
                 close_project_session=close_project_session,
+                autosave_current_project=autosave_current_project,
             )
 
         body = response.get_json()
@@ -404,6 +608,7 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertEqual(body["current"], {"path": "", "name": ""})
         self.assertEqual(captured.get("last_path"), None)
         self.assertEqual(captured.get("last_name"), None)
+        self.assertEqual(autosaved, [(str(self.project_root), "project_cleared")])
         self.assertEqual(closed_reasons, ["project_cleared"])
 
     def test_set_current_respects_valid_icon_override(self):

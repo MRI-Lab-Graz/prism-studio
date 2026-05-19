@@ -83,3 +83,17 @@ def test_switching_projects_closes_previous_session_and_starts_new_one(tmp_path)
     logger.close_active_session(reason="prism_closed")
     second_events_after_close = _read_event_lines(second_log)
     assert any("\tSESSION_END\treason=prism_closed" in line for line in second_events_after_close)
+
+
+def test_get_active_project_root_tracks_current_session(tmp_path):
+    logger = ProjectSessionLogger()
+    project_root = tmp_path / "demo_project"
+    project_root.mkdir(parents=True, exist_ok=True)
+
+    assert logger.get_active_project_root() is None
+
+    logger.activate_project(project_root)
+    assert logger.get_active_project_root() == project_root
+
+    logger.close_active_session(reason="prism_closed")
+    assert logger.get_active_project_root() is None

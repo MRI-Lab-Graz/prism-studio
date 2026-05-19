@@ -117,7 +117,7 @@ into backend contracts.
 
 **Workflow analysis completed (survey scope):**
 - Documented current survey flow and flagged stale/revisited paths in
-  `docs/SURVEY_CONVERTER_WORKFLOW_AUDIT_2026-05-09.md`.
+  `docs/_archive/SURVEY_CONVERTER_WORKFLOW_AUDIT_2026-05-09.md`.
 - Confirmed active converter entrypoint is `app/static/js/converter-bootstrap.js`
   while legacy converter module paths still exist.
 - Identified backend endpoint split (`/api/survey-convert` zip-style legacy path

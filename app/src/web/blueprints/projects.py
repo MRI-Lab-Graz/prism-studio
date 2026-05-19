@@ -87,10 +87,12 @@ _project_manager = ProjectManager()
 
 def get_current_project() -> dict:
     """Get the current working project from session."""
+    project_path = session.get("current_project_path")
     return {
-        "path": session.get("current_project_path"),
+        "path": project_path,
         "name": session.get("current_project_name"),
         "icon": session.get("current_project_icon"),
+        "datalad": _project_manager.get_datalad_status(project_path),
     }
 
 
@@ -98,6 +100,12 @@ def set_current_project(path: str, name: str | None = None, icon: str | None = N
     """Set the current working project in session."""
     previous_path = session.get("current_project_path")
     previous_icon = session.get("current_project_icon")
+
+    if previous_path and str(previous_path).strip() != str(path).strip():
+        _autosave_current_datalad_project(
+            previous_path,
+            reason=f"project_switch next_project={path}",
+        )
 
     session["current_project_path"] = path
     session["current_project_name"] = name or Path(path).name
@@ -131,6 +139,34 @@ def get_bids_file_path(project_path: Path, filename: str) -> Path:
     return project_path / filename
 
 
+def _autosave_current_datalad_project(project_path: str | None, *, reason: str):
+    """Best-effort DataLad autosave before a project is deactivated."""
+    normalized_path = str(project_path or "").strip()
+    if not normalized_path:
+        return None
+
+    try:
+        result = _project_manager.autosave_datalad_snapshot(normalized_path, reason=reason)
+    except Exception as exc:
+        current_app.logger.warning(
+            "DataLad autosave crashed for %s (%s): %s",
+            normalized_path,
+            reason,
+            exc,
+        )
+        return None
+
+    if result.get("attempted") and not result.get("success"):
+        current_app.logger.warning(
+            "DataLad autosave failed for %s (%s): %s",
+            normalized_path,
+            reason,
+            result.get("error") or result.get("message") or "Unknown error",
+        )
+
+    return result
+
+
 @projects_bp.route("/projects")
 def projects_page():
     """Render the Projects management page.
@@ -144,6 +180,10 @@ def projects_page():
 
     # Only clear current project on explicit request.
     if clear_current:
+        _autosave_current_datalad_project(
+            session.get("current_project_path"),
+            reason="project_cleared",
+        )
         try:
             close_project_session(reason="project_cleared")
         except Exception:
@@ -183,7 +223,42 @@ def set_current():
         set_current_project=set_current_project,
         save_last_project=_save_last_project,
         close_project_session=close_project_session,
+        autosave_current_project=_autosave_current_datalad_project,
     )
+
+
+@projects_bp.route("/api/projects/datalad/save", methods=["POST"])
+def save_datalad_snapshot():
+    """Create a DataLad snapshot for the current project."""
+    current_project = get_current_project()
+    project_path = str(current_project.get("path") or "").strip()
+    if not project_path:
+        return jsonify({"success": False, "error": "No current project loaded."}), 400
+
+    data = request.get_json(silent=True) or {}
+    message = str(data.get("message") or "").strip() or "Save PRISM project changes"
+    result = _project_manager.save_datalad_snapshot(project_path, message=message)
+    result["current_project"] = get_current_project()
+    if result.get("success"):
+        return jsonify(result)
+    return jsonify(result), 400
+
+
+@projects_bp.route("/api/projects/datalad/enable", methods=["POST"])
+def enable_datalad_for_project():
+    """Enable DataLad for the current project."""
+    current_project = get_current_project()
+    project_path = str(current_project.get("path") or "").strip()
+    if not project_path:
+        return jsonify({"success": False, "error": "No current project loaded."}), 400
+
+    data = request.get_json(silent=True) or {}
+    message = str(data.get("message") or "").strip() or "Enable DataLad for PRISM project"
+    result = _project_manager.enable_datalad_for_project(project_path, message=message)
+    result["current_project"] = get_current_project()
+    if result.get("success"):
+        return jsonify(result)
+    return jsonify(result), 400
 
 
 def _save_last_project(path: str | None, name: str | None):

@@ -35,13 +35,11 @@ exclude_patterns = [
     "WINDOWS_VM_BUILD_TESTING.md",
     "COMPLETE_WINDOWS_SUMMARY.md",
     # Internal planning and release notes not in toctree
-    "BEGINNER_HELP_ROADMAP_2026-04-02.md",
     "RELEASE_NOTES_TEMPLATE.md",
     "RELEASE_NOTES_v1.14.0.md",
     "RELEASE_NOTES_v1.15.0.md",
     "RELEASE_NOTES_v1.15.1.md",
     "RELEASE_NOTES_v1.15.2.md",
-    "READTHEDOCS_AUDIT_2026-04-14.md",
     # Advanced pages intentionally hidden from public RTD navigation.
     "BIDS_AUTO_MAPPING_COMPLETE.md",
     "BIDS_COMPLIANCE_IMPLEMENTATION.md",

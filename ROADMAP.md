@@ -104,7 +104,7 @@ Maintenance action:
 Status: completed and merged.
 
 Reference:
-- [docs/SURVEY_WORKFLOW_HARDENING_2026.md](docs/SURVEY_WORKFLOW_HARDENING_2026.md)
+- [docs/_archive/SURVEY_WORKFLOW_HARDENING_2026.md](docs/_archive/SURVEY_WORKFLOW_HARDENING_2026.md)
 
 ### Priority 3 - JSON tag stripping and NIfTI GZIP header cleaning
 
@@ -134,7 +134,7 @@ Next action:
 Goal: fully anonymize participant identities in exported datasets while keeping source datasets untouched.
 
 Execution note:
-- [docs/PRIORITY_2_EXPORT_ANONYMIZATION_2026-05.md](docs/PRIORITY_2_EXPORT_ANONYMIZATION_2026-05.md)
+- [docs/_archive/PRIORITY_2_EXPORT_ANONYMIZATION_2026-05.md](docs/_archive/PRIORITY_2_EXPORT_ANONYMIZATION_2026-05.md)
 
 Immediate next actions:
 1. Completed: deterministic participant mapping wiring in project export adapters (sync + async routes).
