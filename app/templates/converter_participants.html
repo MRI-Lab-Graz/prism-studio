@@ -50,14 +50,16 @@
                 <div class="row g-3">
                     <div class="col-md-5 studio-file-picker">
                         <label for="participantsDataFile" class="form-label">Participant Data File</label>
-                        <div class="input-group">
-                            <button class="btn btn-outline-secondary" type="button" id="participantsChooseFileBtn">Choose File</button>
+                        <div class="input-group studio-picker-group">
                             <input class="form-control d-none" type="file" id="participantsDataFile" accept=".xlsx,.csv,.tsv,.sav,.rds,.rdata,.rda,.lsa">
-                            <button class="btn btn-outline-secondary d-none" type="button" id="participantsBrowseServerFileBtn" aria-label="Browse server participants file" title="Browse server participants file">
+                            <input class="form-control" type="text" id="participantsSelectedFileName" value="No file selected" readonly>
+                            <button class="btn btn-outline-secondary studio-picker-trigger" type="button" id="participantsChooseFileBtn">Browse</button>
+                            <button class="btn btn-outline-secondary studio-picker-trigger d-none" type="button" id="participantsBrowseServerFileBtn" aria-label="Browse server participants file" title="Browse server participants file">
                                 <i class="fas fa-server me-1"></i>Server
                             </button>
-                            <input class="form-control" type="text" id="participantsSelectedFileName" value="No file selected" readonly>
-                            <button class="btn btn-outline-secondary" type="button" id="participantsClearFileBtn" title="Clear selected file and reset this panel" aria-label="Clear selected file and reset this panel">X</button>
+                            <button class="btn btn-outline-secondary studio-picker-clear" type="button" id="participantsClearFileBtn" title="Clear selected file and reset this panel" aria-label="Clear selected file and reset this panel">
+                                <i class="fas fa-times"></i><span class="visually-hidden">Clear</span>
+                            </button>
                         </div>
                         <small class="form-text text-muted">
                             Supports: Excel (.xlsx), CSV (.csv), TSV (.tsv), SPSS (.sav), R data (.rds/.rdata), LimeSurvey (.lsa)

@@ -36,14 +36,14 @@
 {% macro file_picker(label, input_id, accept='', help_text='', clear_btn_id='', clear_btn_hidden=true, multiple=false, wrapper_classes='', input_extra_classes='', label_classes='form-label', help_key='', extra_input_attrs='') -%}
 <div class="studio-file-picker {{ wrapper_classes }}">
     <label for="{{ input_id }}" class="{{ label_classes }}">{{ label }}</label>
-    <div class="input-group">
+    <div class="input-group studio-picker-group">
         <input class="form-control {{ input_extra_classes }}" type="file" id="{{ input_id }}"
                {% if accept %}accept="{{ accept }}"{% endif %}
                {% if multiple %}multiple{% endif %}
                {% if help_key %}data-help-key="{{ help_key }}"{% endif %}
                {% if extra_input_attrs %}{{ extra_input_attrs|safe }}{% endif %}>
         {% if clear_btn_id %}
-        <button class="btn btn-outline-secondary{% if clear_btn_hidden %} d-none{% endif %}" type="button" id="{{ clear_btn_id }}" aria-label="Clear selected file" title="Clear selection">
+        <button class="btn btn-outline-secondary studio-picker-clear{% if clear_btn_hidden %} d-none{% endif %}" type="button" id="{{ clear_btn_id }}" aria-label="Clear selected file" title="Clear selection">
             <i class="fas fa-times"></i>
         </button>
         {% endif %}
@@ -58,16 +58,16 @@
 {%- endmacro %}
 
 {% macro path_picker(label, input_id, button_id, placeholder='', help_text='', button_label='Browse', button_title='', value='', required=false, wrapper_classes='', input_extra_classes='', label_classes='form-label', help_key='', extra_input_attrs='') -%}
-<div class="{{ wrapper_classes }}">
+<div class="studio-path-picker {{ wrapper_classes }}">
     <label for="{{ input_id }}" class="{{ label_classes }}">{{ label }}{% if caller is defined %} {{ caller() }}{% endif %}</label>
-    <div class="input-group">
+    <div class="input-group studio-picker-group">
         <input type="text" class="form-control {{ input_extra_classes }}" id="{{ input_id }}"
                {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
                {% if value %}value="{{ value }}"{% endif %}
                {% if required %}required{% endif %}
                {% if help_key %}data-help-key="{{ help_key }}"{% endif %}
                {% if extra_input_attrs %}{{ extra_input_attrs|safe }}{% endif %}>
-        <button class="btn btn-outline-secondary" type="button" id="{{ button_id }}"{% if button_title %} title="{{ button_title }}"{% endif %}>
+        <button class="btn btn-outline-secondary studio-picker-trigger" type="button" id="{{ button_id }}"{% if button_title %} title="{{ button_title }}"{% endif %}>
             <i class="fas fa-folder-open"></i> {{ button_label }}
         </button>
     </div>
