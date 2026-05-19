@@ -355,6 +355,8 @@ function applyExportPreferencesToFilters(preferences = lastLoadedExportPreferenc
         checkbox.checked = !excludedEntries.includes(checkbox.value);
     });
 
+    syncAllModalitySubfilterStates();
+
     const validationModeSelect = getById('exportValidationMode');
     if (validationModeSelect) {
         validationModeSelect.value = normalized.validation_mode;
@@ -527,14 +529,80 @@ function _renderCheckboxListWithAcq(containerId, items, acqLabels, taskLabels = 
         return `
         <div class="form-check">
             <input class="form-check-input export-modality-filter" type="checkbox"
-                   id="${id}" value="${escapeHtml(item)}" checked
-                   onchange="document.querySelectorAll('#acq_group_${item} .export-acq-filter').forEach(cb => { cb.disabled = !this.checked; cb.checked = this.checked ? cb.checked : false; })">
+                   id="${id}" value="${escapeHtml(item)}" checked>
             <label class="form-check-label" for="${id}">
                 <code>${escapeHtml(item)}</code>
             </label>
         </div>${acqHtml}`;
     }).join('');
     setHtml(container, html);
+    syncAllModalitySubfilterStates();
+}
+
+function getSubfiltersForModality(modality) {
+    return Array.from(document.querySelectorAll('.export-acq-filter'))
+        .filter(checkbox => String(checkbox.dataset.modality || '').trim() === modality);
+}
+
+function applyModalitySubfilterState(modalityCheckbox) {
+    const modality = String(modalityCheckbox?.value || '').trim();
+    if (!modality) {
+        return;
+    }
+
+    const subfilters = getSubfiltersForModality(modality);
+    if (!subfilters.length) {
+        if (modalityCheckbox) {
+            modalityCheckbox.indeterminate = false;
+        }
+        return;
+    }
+
+    if (modalityCheckbox.checked) {
+        const hasSelectedSubfilter = subfilters.some(checkbox => checkbox.checked);
+        subfilters.forEach(checkbox => {
+            checkbox.disabled = false;
+            if (!hasSelectedSubfilter) {
+                checkbox.checked = true;
+            }
+        });
+    } else {
+        subfilters.forEach(checkbox => {
+            checkbox.disabled = true;
+            checkbox.checked = false;
+        });
+    }
+
+    syncModalitySubfilterState(modality);
+}
+
+function syncModalitySubfilterState(modality) {
+    const modalityCheckbox = getExportFilterCheckbox('export-modality-filter', modality);
+    if (!modalityCheckbox) {
+        return;
+    }
+
+    const subfilters = getSubfiltersForModality(modality);
+    if (!subfilters.length) {
+        modalityCheckbox.indeterminate = false;
+        return;
+    }
+
+    const checkedCount = subfilters.filter(checkbox => checkbox.checked).length;
+    const hasSelectedSubfilter = checkedCount > 0;
+
+    modalityCheckbox.checked = hasSelectedSubfilter;
+    modalityCheckbox.indeterminate = hasSelectedSubfilter && checkedCount < subfilters.length;
+
+    subfilters.forEach(checkbox => {
+        checkbox.disabled = !hasSelectedSubfilter;
+    });
+}
+
+function syncAllModalitySubfilterStates() {
+    document.querySelectorAll('.export-modality-filter').forEach(checkbox => {
+        syncModalitySubfilterState(String(checkbox.value || '').trim());
+    });
 }
 
 /**
@@ -644,10 +712,20 @@ export function initExportForm() {
                 || target.classList.contains('export-modality-filter')
                 || target.classList.contains('export-acq-filter')
             ) {
+                if (target.classList.contains('export-modality-filter')) {
+                    applyModalitySubfilterState(target);
+                } else if (target.classList.contains('export-acq-filter')) {
+                    const modality = String(target.dataset.modality || '').trim();
+                    if (modality) {
+                        syncModalitySubfilterState(modality);
+                    }
+                }
+
                 saveExportPreferencesPatch({
                     exclude_sessions: _getUncheckedValues('export-session-filter'),
                     exclude_modalities: _getUncheckedValues('export-modality-filter'),
                     exclude_acq: _getUncheckedAcqByModality(),
+                    exclude_tasks: _getUncheckedTaskByModality(),
                 });
             }
         });
