@@ -10,6 +10,7 @@ from src.project_structure import (
     get_project_modalities_and_sessions,
     get_project_quick_summary,
     _extract_acq,
+    _extract_task,
 )
 
 
@@ -24,12 +25,21 @@ class TestExtractAcq:
         assert _extract_acq("sub-01_acq-64ch_bold.json") == "64ch"
 
 
+class TestExtractTask:
+    def test_present(self):
+        assert _extract_task("sub-01_ses-01_task-ads_survey.tsv") == "ads"
+
+    def test_absent(self):
+        assert _extract_task("sub-01_ses-01_survey.tsv") is None
+
+
 class TestGetProjectModalitiesAndSessions:
     def test_empty_project(self, tmp_path):
         result = get_project_modalities_and_sessions(tmp_path)
         assert result["sessions"] == []
         assert result["modalities"] == []
         assert result["acq_labels"] == {}
+        assert result["task_labels"] == {}
 
     def test_non_subject_dirs_ignored(self, tmp_path):
         (tmp_path / "code").mkdir()
@@ -66,6 +76,18 @@ class TestGetProjectModalitiesAndSessions:
         (mod / "sub-01_ses-01_acq-highres_bold.nii.gz").touch()
         result = get_project_modalities_and_sessions(tmp_path)
         assert sorted(result["acq_labels"]["func"]) == ["highres", "standard"]
+
+    def test_survey_acq_variants_do_not_surface_as_export_acq_labels(self, tmp_path):
+        mod = tmp_path / "sub-01" / "ses-01" / "survey"
+        mod.mkdir(parents=True)
+        (mod / "sub-01_ses-01_task-ads_acq-7_survey.tsv").touch()
+        (mod / "sub-01_ses-01_task-ads_acq-7_survey.json").touch()
+
+        result = get_project_modalities_and_sessions(tmp_path)
+
+        assert "survey" in result["modalities"]
+        assert "survey" not in result["acq_labels"]
+        assert result["task_labels"]["survey"] == ["ads"]
 
     def test_hidden_dirs_ignored(self, tmp_path):
         (tmp_path / "sub-01" / ".git").mkdir(parents=True)

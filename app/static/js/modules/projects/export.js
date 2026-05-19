@@ -29,6 +29,7 @@ function getDefaultExportPreferences() {
         exclude_sessions: [],
         exclude_modalities: [],
         exclude_acq: {},
+        exclude_tasks: {},
         validation_mode: 'both',
         defacing_confirmation_mode: 'risk',
     };
@@ -69,6 +70,7 @@ function buildExportRequestData(currentProjectPath, overrides = {}) {
         exclude_sessions: _getUncheckedValues('export-session-filter'),
         exclude_modalities: _getUncheckedValues('export-modality-filter'),
         exclude_acq: _getUncheckedAcqByModality(),
+        exclude_tasks: _getUncheckedTaskByModality(),
         ...overrides,
     };
 }
@@ -110,7 +112,7 @@ function normalizePreferenceStringArray(values) {
     return normalized;
 }
 
-function normalizeAcqPreferenceMap(value) {
+function normalizeGroupedPreferenceMap(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
         return {};
     }
@@ -138,7 +140,8 @@ function normalizeExportPreferences(preferences) {
         : '';
     normalized.exclude_sessions = normalizePreferenceStringArray(preferences.exclude_sessions);
     normalized.exclude_modalities = normalizePreferenceStringArray(preferences.exclude_modalities);
-    normalized.exclude_acq = normalizeAcqPreferenceMap(preferences.exclude_acq);
+    normalized.exclude_acq = normalizeGroupedPreferenceMap(preferences.exclude_acq);
+    normalized.exclude_tasks = normalizeGroupedPreferenceMap(preferences.exclude_tasks);
     normalized.validation_mode = normalizeExportValidationMode(preferences.validation_mode);
     normalized.defacing_confirmation_mode = normalizeDefacingConfirmationMode(preferences.defacing_confirmation_mode);
     return normalized;
@@ -148,10 +151,14 @@ function formatExcludedCount(count, singular, plural = `${singular}s`) {
     return `${count} ${count === 1 ? singular : plural}`;
 }
 
-function countExcludedAcqLabels(excludedAcq) {
-    return Object.values(excludedAcq || {}).reduce((total, values) => {
+function countExcludedGroupedLabels(groupedValues) {
+    return Object.values(groupedValues || {}).reduce((total, values) => {
         return total + (Array.isArray(values) ? values.length : 0);
     }, 0);
+}
+
+function countExcludedSubfilterLabels(excludedAcq, excludedTasks) {
+    return countExcludedGroupedLabels(excludedAcq) + countExcludedGroupedLabels(excludedTasks);
 }
 
 function setExportChipState(chipId, text, tone = 'neutral') {
@@ -178,7 +185,8 @@ function updateExportSnapshotUi() {
     const excludedSessions = _getUncheckedValues('export-session-filter');
     const excludedModalities = _getUncheckedValues('export-modality-filter');
     const excludedAcq = _getUncheckedAcqByModality();
-    const excludedAcqCount = countExcludedAcqLabels(excludedAcq);
+    const excludedTasks = _getUncheckedTaskByModality();
+    const excludedSubfilterCount = countExcludedSubfilterLabels(excludedAcq, excludedTasks);
 
     if (scopeSummary && scopeDetail) {
         if (!currentProjectPath) {
@@ -189,9 +197,9 @@ function updateExportSnapshotUi() {
                 ? 'Export filters need attention'
                 : 'Preparing export scope';
             scopeDetail.textContent = lastExportStructureStatus.message;
-        } else if (!excludedSessions.length && !excludedModalities.length && !excludedAcqCount) {
+        } else if (!excludedSessions.length && !excludedModalities.length && !excludedSubfilterCount) {
             scopeSummary.textContent = 'Everything currently included';
-            scopeDetail.textContent = 'Uncheck sessions, modalities, or acquisition labels below to narrow the export.';
+            scopeDetail.textContent = 'Uncheck sessions, modalities, or task/acquisition labels below to narrow the export.';
         } else {
             scopeSummary.textContent = 'Custom export scope active';
             scopeDetail.textContent = [
@@ -201,9 +209,9 @@ function updateExportSnapshotUi() {
                 excludedModalities.length
                     ? `${formatExcludedCount(excludedModalities.length, 'modality')} excluded`
                     : 'all modalities included',
-                excludedAcqCount
-                    ? `${formatExcludedCount(excludedAcqCount, 'acquisition label')} excluded`
-                    : 'all acquisition labels included',
+                excludedSubfilterCount
+                    ? `${formatExcludedCount(excludedSubfilterCount, 'task/acquisition label')} excluded`
+                    : 'all task/acquisition labels included',
             ].join(' | ');
         }
     }
@@ -254,7 +262,7 @@ function updateExportSnapshotUi() {
     if (!currentProjectPath) {
         setExportChipState('exportSessionsChip', 'Sessions: waiting for active project', 'warning');
         setExportChipState('exportModalitiesChip', 'Modalities: waiting for active project', 'warning');
-        setExportChipState('exportAcqChip', 'Acquisition labels: waiting for active project', 'warning');
+        setExportChipState('exportAcqChip', 'Task/acquisition labels: waiting for active project', 'warning');
         return;
     }
 
@@ -265,7 +273,7 @@ function updateExportSnapshotUi() {
             : 'waiting for project structure';
         setExportChipState('exportSessionsChip', `Sessions: ${waitingLabel}`, tone);
         setExportChipState('exportModalitiesChip', `Modalities: ${waitingLabel}`, tone);
-        setExportChipState('exportAcqChip', `Acquisition labels: ${waitingLabel}`, tone);
+        setExportChipState('exportAcqChip', `Task/acquisition labels: ${waitingLabel}`, tone);
         return;
     }
 
@@ -285,10 +293,10 @@ function updateExportSnapshotUi() {
     );
     setExportChipState(
         'exportAcqChip',
-        excludedAcqCount
-            ? `Acquisition labels: ${formatExcludedCount(excludedAcqCount, 'label')} excluded`
-            : 'Acquisition labels: all included',
-        excludedAcqCount ? 'active' : 'neutral'
+        excludedSubfilterCount
+            ? `Task/acquisition labels: ${formatExcludedCount(excludedSubfilterCount, 'label')} excluded`
+            : 'Task/acquisition labels: all included',
+        excludedSubfilterCount ? 'active' : 'neutral'
     );
 }
 
@@ -335,12 +343,15 @@ function applyExportPreferencesToFilters(preferences = lastLoadedExportPreferenc
 
     document.querySelectorAll('.export-acq-filter').forEach(checkbox => {
         const modality = String(checkbox.dataset.modality || '').trim();
+        const filterKind = String(checkbox.dataset.filterKind || 'acq').trim();
         const modalityCheckbox = getExportFilterCheckbox('export-modality-filter', modality);
         if (modalityCheckbox && !modalityCheckbox.checked) {
             return;
         }
 
-        const excludedEntries = normalized.exclude_acq[modality] || [];
+        const excludedEntries = filterKind === 'task'
+            ? (normalized.exclude_tasks[modality] || [])
+            : (normalized.exclude_acq[modality] || []);
         checkbox.checked = !excludedEntries.includes(checkbox.value);
     });
 
@@ -465,7 +476,12 @@ export async function loadProjectStructure() {
         }
 
         _renderCheckboxList('exportSessionList', data.sessions || [], 'session');
-        _renderCheckboxListWithAcq('exportModalityList', data.modalities || [], data.acq_labels || {});
+        _renderCheckboxListWithAcq(
+            'exportModalityList',
+            data.modalities || [],
+            data.acq_labels || {},
+            data.task_labels || {}
+        );
         lastExportStructureStatus = {
             message: 'Current project structure loaded. Uncheck items below to narrow the export.',
             tone: 'ready',
@@ -478,9 +494,9 @@ export async function loadProjectStructure() {
 }
 
 /**
- * Render modality checkboxes with optional acq- sub-checkboxes.
+ * Render modality checkboxes with optional task/acq sub-checkboxes.
  */
-function _renderCheckboxListWithAcq(containerId, items, acqLabels) {
+function _renderCheckboxListWithAcq(containerId, items, acqLabels, taskLabels = {}) {
     const container = getById(containerId);
     if (!container) return;
     if (!items.length) {
@@ -489,16 +505,21 @@ function _renderCheckboxListWithAcq(containerId, items, acqLabels) {
     }
     const html = items.map(item => {
         const id = `export_modality_${item.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        const tasks = taskLabels[item] || [];
         const acqs = acqLabels[item] || [];
-        const acqHtml = acqs.length ? `
+        const subfilters = [
+            ...tasks.map(task => ({ value: task, kind: 'task' })),
+            ...acqs.map(acq => ({ value: acq, kind: 'acq' })),
+        ];
+        const acqHtml = subfilters.length ? `
         <div class="ms-4 mt-1" id="acq_group_${item}">
-            ${acqs.map(acq => {
-                const acqId = `export_acq_${item}_${acq.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            ${subfilters.map(({ value, kind }) => {
+                const acqId = `export_${kind}_${item}_${value.replace(/[^a-zA-Z0-9]/g, '_')}`;
                 return `<div class="form-check form-check-sm">
                     <input class="form-check-input export-acq-filter" type="checkbox"
-                           id="${acqId}" value="${escapeHtml(acq)}" data-modality="${escapeHtml(item)}" checked>
+                           id="${acqId}" value="${escapeHtml(value)}" data-modality="${escapeHtml(item)}" data-filter-kind="${escapeHtml(kind)}" checked>
                     <label class="form-check-label small text-muted" for="${acqId}">
-                        <code>${escapeHtml(acq)}</code>
+                        <code>${escapeHtml(value)}</code>
                     </label>
                 </div>`;
             }).join('')}
@@ -1148,9 +1169,20 @@ function _getUncheckedValues(className) {
  * Return a dict of {modality: [acq_label, ...]} for unchecked acq checkboxes.
  */
 function _getUncheckedAcqByModality() {
+    return _getUncheckedSubfiltersByKind('acq');
+}
+
+/**
+ * Return a dict of {modality: [task_label, ...]} for unchecked task checkboxes.
+ */
+function _getUncheckedTaskByModality() {
+    return _getUncheckedSubfiltersByKind('task');
+}
+
+function _getUncheckedSubfiltersByKind(kind) {
     const result = {};
     document.querySelectorAll('.export-acq-filter').forEach(cb => {
-        if (!cb.checked) {
+        if (!cb.checked && String(cb.dataset.filterKind || 'acq') === kind) {
             const mod = cb.dataset.modality;
             if (mod) {
                 if (!result[mod]) result[mod] = [];

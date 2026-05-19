@@ -611,7 +611,7 @@ def export_project_start():
             include_analysis = False
             exclude_version_control_metadata = True
 
-        # Optional session / modality / acq filters
+        # Optional session / modality / sublabel filters
         exclude_sessions_list = data.get("exclude_sessions") or []
         exclude_modalities_list = data.get("exclude_modalities") or []
         # exclude_acq: dict of {modality: [acq_label, ...]} from client
@@ -619,6 +619,13 @@ def export_project_start():
         exclude_acq = (
             {mod: set(labels) for mod, labels in exclude_acq_raw.items() if labels}
             if exclude_acq_raw
+            else None
+        )
+        # exclude_tasks: dict of {modality: [task_label, ...]} from client
+        exclude_tasks_raw = data.get("exclude_tasks") or {}
+        exclude_tasks = (
+            {mod: set(labels) for mod, labels in exclude_tasks_raw.items() if labels}
+            if exclude_tasks_raw
             else None
         )
 
@@ -647,6 +654,7 @@ def export_project_start():
                 set(exclude_modalities_list) if exclude_modalities_list else None
             ),
             "exclude_acq": exclude_acq,
+            "exclude_tasks": exclude_tasks,
         }
 
         job_id = str(uuid.uuid4())
