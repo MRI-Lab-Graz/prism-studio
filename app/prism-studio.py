@@ -162,8 +162,10 @@ def _startup_colorize(text: str, tone: str) -> str:
 
 def _print_startup_intro() -> None:
     print()
-    print(_startup_colorize("Welcome to PRISM Studio", "headline"))
+    print(_startup_colorize("PRISM Studio", "headline"))
     print(_startup_colorize("Structured research data, without the friction.", "muted"))
+    print(_startup_colorize("You need friction to walk.", "muted"))
+    print(_startup_colorize("Not to work.", "muted"))
     print(_startup_colorize("MRI-LAB GRAZ", "accent"))
     print()
     print(_startup_colorize("Pre-flight check", "accent"))
@@ -224,7 +226,7 @@ def _show_startup_dialog(url: str) -> None:
 
         tk.Label(
             container,
-            text="Welcome to PRISM Studio",
+            text="PRISM Studio",
             font=("Segoe UI", 18, "bold"),
             anchor="w",
             bg="#f6f8f5",
@@ -233,12 +235,31 @@ def _show_startup_dialog(url: str) -> None:
 
         tk.Label(
             container,
-            text="The best home for structured research data.",
+            text="Structured research data, without the friction.",
             font=("Segoe UI", 11),
             anchor="w",
             bg="#f6f8f5",
             fg="#52616f",
-            pady=6,
+            pady=(6, 0),
+        ).pack(fill="x")
+
+        tk.Label(
+            container,
+            text="You need friction to walk.",
+            font=("Segoe UI", 11),
+            anchor="w",
+            bg="#f6f8f5",
+            fg="#52616f",
+        ).pack(fill="x")
+
+        tk.Label(
+            container,
+            text="Not to work.",
+            font=("Segoe UI", 11),
+            anchor="w",
+            bg="#f6f8f5",
+            fg="#52616f",
+            pady=(0, 6),
         ).pack(fill="x")
 
         tk.Label(

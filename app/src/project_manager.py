@@ -131,6 +131,12 @@ class ProjectManager:
                 project_path,
                 enabled=config.get("use_datalad"),
             )
+            gitattributes_created = self._ensure_datalad_editable_metadata_policy(
+                project_path,
+                datalad_result,
+            )
+            if gitattributes_created:
+                created_files.append(".gitattributes")
 
             # 1. Create dataset_description.json in root (BIDS standard)
             desc_path = project_path / "dataset_description.json"
@@ -282,6 +288,12 @@ class ProjectManager:
                 project_path,
                 enabled=config.get("use_datalad"),
             )
+            gitattributes_created = self._ensure_datalad_editable_metadata_policy(
+                project_path,
+                datalad_result,
+            )
+            if gitattributes_created:
+                created_files.append(".gitattributes")
 
             # --- .bidsignore ------------------------------------------------
             bidsignore_path = project_path / ".bidsignore"
@@ -1161,6 +1173,56 @@ class ProjectManager:
 
         result["message"] = f"DataLad save failed: {detail or 'Unknown DataLad error.'}"
         return result
+
+    def _ensure_datalad_editable_metadata_policy(
+        self,
+        project_path: Path,
+        datalad_result: Dict[str, Any],
+    ) -> bool:
+        """Keep core project metadata in Git so PRISM can edit it in place."""
+        if not datalad_result.get("initialized"):
+            return False
+
+        gitattributes_path = project_path / ".gitattributes"
+        policy_lines = [
+            ".gitattributes annex.largefiles=nothing",
+            ".bidsignore annex.largefiles=nothing",
+            ".prismrc.json annex.largefiles=nothing",
+            "CHANGES annex.largefiles=nothing",
+            "CITATION.cff annex.largefiles=nothing",
+            "README.md annex.largefiles=nothing",
+            "dataset_description.json annex.largefiles=nothing",
+            "project.json annex.largefiles=nothing",
+        ]
+
+        existing_content = ""
+        existing_lines = set()
+        if gitattributes_path.exists():
+            try:
+                existing_content = CrossPlatformFile.read_text(str(gitattributes_path))
+            except Exception:
+                existing_content = ""
+            existing_lines = {
+                line.strip()
+                for line in existing_content.splitlines()
+                if line.strip()
+            }
+
+        missing_lines = [line for line in policy_lines if line not in existing_lines]
+        if not missing_lines:
+            return False
+
+        if existing_content.strip():
+            new_content = existing_content.rstrip() + "\n" + "\n".join(missing_lines) + "\n"
+        else:
+            new_content = (
+                "# Keep PRISM metadata files editable when DataLad is enabled.\n"
+                + "\n".join(missing_lines)
+                + "\n"
+            )
+
+        CrossPlatformFile.write_text(str(gitattributes_path), new_content)
+        return True
 
     def _build_auto_datalad_save_message(self, reason: str) -> str:
         """Return a stable commit message for lifecycle-triggered DataLad saves."""
