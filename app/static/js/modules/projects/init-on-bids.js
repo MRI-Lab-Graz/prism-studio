@@ -17,6 +17,7 @@ export function initProjectInitOnBidsController({
     initBidsSubmitBtn.addEventListener('click', async function() {
         const bidsPath = (document.getElementById('initBidsPath')?.value || '').trim();
         const displayName = (document.getElementById('initBidsName')?.value || '').trim();
+        const useDatalad = document.getElementById('initBidsUseDatalad')?.checked !== false;
 
         if (!bidsPath) {
             alert('Please select or enter the BIDS dataset root folder.');
@@ -39,7 +40,11 @@ export function initProjectInitOnBidsController({
             const response = await fetchWithApiFallback('/api/projects/init-on-bids', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: bidsPath, name: displayName || undefined })
+                body: JSON.stringify({
+                    path: bidsPath,
+                    name: displayName || undefined,
+                    use_datalad: useDatalad
+                })
             });
             const result = await response.json();
 
@@ -48,6 +53,13 @@ export function initProjectInitOnBidsController({
                     .map(filePath => `<li><code>${escapeHtml(filePath)}</code></li>`)
                     .join('');
                 const noneAdded = !result.created_files || result.created_files.length === 0;
+                const dataladNotice = result.datalad?.message
+                    ? `
+                        <div class="alert alert-${result.datalad.saved ? 'info' : (result.datalad.requested ? 'warning' : 'secondary')} mt-3 mb-0">
+                            <i class="fas fa-code-branch me-2"></i>${escapeHtml(result.datalad.message)}
+                        </div>
+                    `
+                    : '';
                 resultDiv.innerHTML = `
                     <div class="alert alert-success">
                         <h5><i class="fas fa-check-circle me-2"></i>PRISM Initialised Successfully!</h5>
@@ -66,6 +78,7 @@ export function initProjectInitOnBidsController({
                                 </a>
                             </div>
                         </div>
+                        ${dataladNotice}
                     </div>
                 `;
                 applyCurrentProject(result.current_project);
