@@ -1453,13 +1453,17 @@ def test_build_terminal_command_for_projects_datalad_enable_repairs_next_missing
         (project_path / "sub-172").mkdir(parents=True, exist_ok=True)
         resolved_project_path = project_path.resolve()
 
-        with app.test_request_context(
-            "/api/projects/datalad/enable",
-            method="POST",
-            json={"message": "Enable DataLad for PRISM project"},
+        with patch(
+            "src.web.backend_monitoring.ProjectManager._get_registered_nested_dataset_paths",
+            return_value={"sub-171"},
         ):
-            session["current_project_path"] = str(project_path)
-            cmd = _build_terminal_command(request)
+            with app.test_request_context(
+                "/api/projects/datalad/enable",
+                method="POST",
+                json={"message": "Enable DataLad for PRISM project"},
+            ):
+                session["current_project_path"] = str(project_path)
+                cmd = _build_terminal_command(request)
 
     assert cmd == (
         f"datalad -C {resolved_project_path} create -d . --force sub-172 && "
@@ -1502,7 +1506,7 @@ def test_build_terminal_command_for_projects_datalad_enable_migrates_parent_trac
 
     assert cmd == (
         f"git -C {resolved_project_path} rm --cached -r -- derivatives && "
-        f"datalad -C {resolved_project_path} save -m 'Prepare \"derivatives\" for nested DataLad dataset' && "
+        f"datalad -C {resolved_project_path} save -m 'Stage parent untracking for nested DataLad dataset \"derivatives\"' && "
         f"datalad -C {resolved_project_path} create -d . --force derivatives && "
         f"datalad -C {resolved_project_path / 'derivatives'} save -m 'Initialize DataLad nested dataset \"derivatives\"' && "
         f"datalad -C {resolved_project_path} save -m 'Enable DataLad for PRISM project'"
