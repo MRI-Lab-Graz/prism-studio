@@ -55,6 +55,24 @@ function normalizeDefacingConfirmationMode(value) {
     return normalized === 'always' ? 'always' : 'risk';
 }
 
+function buildExportRequestData(currentProjectPath, overrides = {}) {
+    return {
+        project_path: currentProjectPath,
+        anonymize: getById('exportAnonymize')?.checked || false,
+        mask_questions: getById('exportMaskQuestions')?.checked || false,
+        scrub_mri_json: getById('exportScrubMriJson')?.checked || false,
+        include_derivatives: getById('exportDerivatives')?.checked || false,
+        include_code: getById('exportCode')?.checked || false,
+        include_analysis: getById('exportAnalysis')?.checked || false,
+        output_folder: (getById('exportOutputFolder')?.value || '').trim() || null,
+        validation_mode: getSelectedExportValidationMode(),
+        exclude_sessions: _getUncheckedValues('export-session-filter'),
+        exclude_modalities: _getUncheckedValues('export-modality-filter'),
+        exclude_acq: _getUncheckedAcqByModality(),
+        ...overrides,
+    };
+}
+
 function getSelectedDefacingConfirmationMode() {
     const always = getById('exportDefacingConfirmAlways')?.checked || false;
     return always ? 'always' : 'risk';
@@ -674,6 +692,11 @@ export function initExportForm() {
         templateExportButton.addEventListener('click', handleTemplateExport);
     }
 
+    const uploadReadyExportButton = getById('uploadReadyExportButton');
+    if (uploadReadyExportButton) {
+        uploadReadyExportButton.addEventListener('click', handleUploadReadyExport);
+    }
+
     // Defacing status check
     const checkDefacingBtn = getById('exportCheckDefacing');
     if (checkDefacingBtn) {
@@ -805,14 +828,44 @@ async function handleTemplateExport(e) {
 async function handleExportSubmit(e) {
     e.preventDefault();
 
+    const btn = this.querySelector('button[type="submit"]');
+    await runProjectExport({
+        button: btn,
+        loadingText: 'Starting Export...',
+        requestOverrides: {},
+        successHeading: 'Export Successful!',
+    });
+}
+
+async function handleUploadReadyExport(e) {
+    e.preventDefault();
+
+    await runProjectExport({
+        button: this,
+        loadingText: 'Preparing Upload-Ready ZIP...',
+        requestOverrides: {
+            export_preset: 'upload_ready',
+        },
+        successHeading: 'Upload-Ready Export Successful!',
+        successNoteHtml: '<p class="mb-2">PRISM excluded <code>code/</code>, <code>derivatives/</code>, <code>analysis/</code>, and version-control metadata such as DataLad traces.</p>',
+    });
+}
+
+async function runProjectExport({
+    button,
+    loadingText,
+    requestOverrides,
+    successHeading,
+    successNoteHtml = '',
+}) {
+
     const currentProjectPath = resolveCurrentProjectPath();
     if (!currentProjectPath) {
         alert('No project is currently loaded');
         return;
     }
 
-    const btn = this.querySelector('button[type="submit"]');
-    const originalText = setButtonLoading(btn, true, 'Starting Export...');
+    const originalText = setButtonLoading(button, true, loadingText);
 
     const progressDiv = getById('exportProgress');
     const progressBar = getById('exportProgressBar');
@@ -824,25 +877,11 @@ async function handleExportSubmit(e) {
     // Reset and show progress
     if (progressBar) { progressBar.style.width = '0%'; }
     if (progressText) progressText.textContent = '0%';
-    const selectedValidationMode = getSelectedExportValidationMode();
+    const data = buildExportRequestData(currentProjectPath, requestOverrides);
+    const selectedValidationMode = normalizeExportValidationMode(data.validation_mode);
     if (statusText) statusText.textContent = getExportValidationStatusText(selectedValidationMode);
     if (progressDiv) show(progressDiv);
     if (resultDiv) hide(resultDiv);
-
-    const data = {
-        project_path: currentProjectPath,
-        anonymize: getById('exportAnonymize')?.checked || false,
-        mask_questions: getById('exportMaskQuestions')?.checked || false,
-        scrub_mri_json: getById('exportScrubMriJson')?.checked || false,
-        include_derivatives: getById('exportDerivatives')?.checked || false,
-        include_code: getById('exportCode')?.checked || false,
-        include_analysis: getById('exportAnalysis')?.checked || false,
-        output_folder: (getById('exportOutputFolder')?.value || '').trim() || null,
-        validation_mode: selectedValidationMode,
-        exclude_sessions: _getUncheckedValues('export-session-filter'),
-        exclude_modalities: _getUncheckedValues('export-modality-filter'),
-        exclude_acq: _getUncheckedAcqByModality(),
-    };
 
     if (data.scrub_mri_json) {
         const defacingConfirmationMode = getSelectedDefacingConfirmationMode();
@@ -971,7 +1010,8 @@ async function handleExportSubmit(e) {
                             : '';
                         setHtml(resultDiv, `
                             <div class="alert alert-success">
-                                <h5><i class="fas fa-check-circle me-2"></i>Export Successful!</h5>
+                                <h5><i class="fas fa-check-circle me-2"></i>${escapeHtml(successHeading)}</h5>
+                                ${successNoteHtml}
                                 <p class="mb-0">ZIP saved to:<br>
                                 <code class="user-select-all">${escapeHtml(savedPath)}</code></p>
                             </div>
@@ -1012,7 +1052,7 @@ async function handleExportSubmit(e) {
             cancelBtn.onclick = null;
         }
         if (!cancelled) {
-            setButtonLoading(btn, false, null, originalText);
+            setButtonLoading(button, false, null, originalText);
         }
     }
 }
