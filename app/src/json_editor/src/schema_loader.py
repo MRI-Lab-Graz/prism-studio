@@ -6,8 +6,15 @@ It provides utilities to extract dataset_description field definitions.
 """
 
 import json
+import os
 from pathlib import Path
 from typing import Dict, Any, Optional, cast
+
+
+def _startup_detail_print(message: str) -> None:
+    if os.environ.get("PRISM_STARTUP_HIDE_DETAILS") == "1":
+        return
+    print(message)
 
 try:
     import requests
@@ -58,7 +65,7 @@ class BIDSSchemaLoader:
             try:
                 with open(self.schema_file, "r") as f:
                     self.schema = json.load(f)
-                print(f"[OK] Schema loaded from cache: {self.schema_file}")
+                _startup_detail_print(f"[OK] Schema loaded from cache: {self.schema_file}")
                 self._extract_version()
                 return self.schema
             except Exception as e:
@@ -82,7 +89,7 @@ class BIDSSchemaLoader:
         :return: True if successful, False otherwise
         """
         try:
-            print("Downloading BIDS schema from remote source...")
+            _startup_detail_print("Downloading BIDS schema from remote source...")
             url = "https://bids-specification.readthedocs.io/en/latest/schema.json"
             response = requests.get(url, timeout=10)
             response.raise_for_status()
@@ -93,7 +100,7 @@ class BIDSSchemaLoader:
             with open(self.schema_file, "w") as f:
                 json.dump(self.schema, f, indent=2)
 
-            print(f"[OK] Schema loaded from remote and cached to: {self.schema_file}")
+            _startup_detail_print(f"[OK] Schema loaded from remote and cached to: {self.schema_file}")
             self._extract_version()
             return True
 
@@ -114,7 +121,7 @@ class BIDSSchemaLoader:
             return False
 
         try:
-            print("Loading schema from bidsschematools package...")
+            _startup_detail_print("Loading schema from bidsschematools package...")
             schema = cast(Any, bst).schema.load_schema()
             # Convert Namespace to dict
             self.schema = self._namespace_to_dict(schema)
@@ -123,7 +130,7 @@ class BIDSSchemaLoader:
             with open(self.schema_file, "w") as f:
                 json.dump(self.schema, f, indent=2)
 
-            print("[OK] Schema loaded from bidsschematools and cached")
+            _startup_detail_print("[OK] Schema loaded from bidsschematools and cached")
             self._extract_version()
             return True
 
@@ -148,7 +155,7 @@ class BIDSSchemaLoader:
         """Extract BIDS version from schema"""
         try:
             self.schema_version = self.schema.get("bids_version", "unknown")
-            print(f"  BIDS Version: {self.schema_version}")
+            _startup_detail_print(f"  BIDS Version: {self.schema_version}")
         except Exception:
             pass
 

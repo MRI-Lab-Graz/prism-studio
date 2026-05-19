@@ -6,8 +6,15 @@ that can be integrated into the main prism web interface.
 
 from flask import Blueprint, render_template, request, jsonify
 from pathlib import Path
+import os
 import sys
 from src.web.blueprints.conversion_utils import resolve_existing_project_root
+
+
+def _startup_detail_print(message: str) -> None:
+    if os.environ.get("PRISM_STARTUP_HIDE_DETAILS") == "1":
+        return
+    print(message)
 
 # Import JSON editor components
 try:
@@ -18,14 +25,14 @@ try:
     if str(abs_path) not in sys.path:
         sys.path.insert(0, str(abs_path))
 
-    print(f"INFO JSON Editor path: {abs_path}")
+    _startup_detail_print(f"INFO JSON Editor path: {abs_path}")
 
     # Now import from the json_editor src
     from backend.file_manager import FileManager
     from backend.json_validator import JSONValidator
     from schema_loader import BIDSSchemaLoader
 
-    print("OK JSON Editor components imported successfully")
+    _startup_detail_print("OK JSON Editor components imported successfully")
 except ImportError as e:
     print(f"WARN Could not import JSON editor components: {e}")
     import traceback
