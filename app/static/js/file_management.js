@@ -179,12 +179,31 @@ document.addEventListener('DOMContentLoaded', () => {
         renamerClearServerSelectionBtn.classList.add('d-none');
     }
 
+    function getPathPicker() {
+        return window.PrismPathPicker || null;
+    }
+
     function prefersServerPicker() {
-        return Boolean(
-            window.PrismFileSystemMode
-            && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
-            && window.PrismFileSystemMode.prefersServerPicker()
-        );
+        const pathPicker = getPathPicker();
+        return Boolean(pathPicker && typeof pathPicker.prefersServerPicker === 'function' && pathPicker.prefersServerPicker());
+    }
+
+    async function pickServerFolder(options = {}) {
+        const pathPicker = getPathPicker();
+        if (!(pathPicker && typeof pathPicker.pickServerFolder === 'function')) {
+            return '';
+        }
+
+        return pathPicker.pickServerFolder(options);
+    }
+
+    async function pickServerFile(options = {}) {
+        const pathPicker = getPathPicker();
+        if (!(pathPicker && typeof pathPicker.pickServerFile === 'function')) {
+            return '';
+        }
+
+        return pathPicker.pickServerFile(options);
     }
 
     function applyRemotePickerUiState() {
@@ -580,11 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (wideLongBrowseServerFileBtn) {
         wideLongBrowseServerFileBtn.addEventListener('click', async () => {
-            if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFile === 'function')) {
-                return;
-            }
-
-            const pickedPath = await window.PrismFileSystemMode.pickFile({
+            const pickedPath = await pickServerFile({
                 title: 'Select Wide Table on Server',
                 confirmLabel: 'Use This File',
                 extensions: '.csv,.tsv,.xlsx',
@@ -968,14 +983,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (organizeBrowseServerFileBtn) {
         organizeBrowseServerFileBtn.addEventListener('click', async () => {
-            if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFile === 'function')) {
-                return;
-            }
             try {
                 const startPath = organizeServerFilePaths.length > 0
                     ? getParentDirectory(organizeServerFilePaths[organizeServerFilePaths.length - 1])
                     : '';
-                const picked = await window.PrismFileSystemMode.pickFile({
+                const picked = await pickServerFile({
                     title: 'Select File to Organize (Server)',
                     confirmLabel: 'Add This File',
                     startPath,
@@ -2040,10 +2052,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         serverFolderButton.addEventListener('click', async () => {
-            if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFolder === 'function')) {
-                return;
-            }
-            const picked = await window.PrismFileSystemMode.pickFolder({
+            const picked = await pickServerFolder({
                 title: 'Select Folder to Organize (Server)',
                 confirmLabel: 'Use This Folder',
                 startPath: organizeServerFolderPath || ''
@@ -2073,8 +2082,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
-            window.PrismFileSystemMode.init().then(() => {
+        if (window.PrismPathPicker && typeof window.PrismPathPicker.init === 'function') {
+            window.PrismPathPicker.init().then(() => {
                 applyRemotePickerUiState();
             }).catch(() => {
                 // Keep default host picker behavior on init failures.
@@ -3281,11 +3290,8 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         browseServerRenamerFolderBtn.addEventListener('click', async () => {
-            if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFolder === 'function')) {
-                return;
-            }
             try {
-                const picked = await window.PrismFileSystemMode.pickFolder({
+                const picked = await pickServerFolder({
                     title: 'Select Folder to Rename (Server)',
                     confirmLabel: 'Use This Folder',
                     startPath: renamerServerFolderPath || ''
@@ -3309,14 +3315,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         browseServerRenamerFileBtn.addEventListener('click', async () => {
-            if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFile === 'function')) {
-                return;
-            }
             try {
                 const startPath = renamerServerEntries.length > 0
                     ? getParentDirectory(renamerServerEntries[renamerServerEntries.length - 1].path || '')
                     : '';
-                const picked = await window.PrismFileSystemMode.pickFile({
+                const picked = await pickServerFile({
                     title: 'Select File to Rename (Server)',
                     confirmLabel: 'Add This File',
                     startPath,
@@ -3364,8 +3367,8 @@ document.addEventListener('DOMContentLoaded', () => {
             updateRenamerBtn();
         });
 
-        if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
-            window.PrismFileSystemMode.init().then(() => {
+        if (window.PrismPathPicker && typeof window.PrismPathPicker.init === 'function') {
+            window.PrismPathPicker.init().then(() => {
                 applyRemotePickerUiState();
             }).catch(() => {
                 // Keep host picker as fallback.
