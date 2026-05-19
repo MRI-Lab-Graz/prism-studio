@@ -403,6 +403,46 @@ class TestProjectManager(unittest.TestCase):
             self.assertFalse((output_path / ".gitattributes").exists())
             self.assertFalse((output_path / "CHANGES").exists())
 
+    def test_export_project_to_plain_folder_materializes_symlinked_files(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            annex_target = project_path / ".git" / "annex" / "objects" / "payload.tsv"
+            annex_target.parent.mkdir(parents=True, exist_ok=True)
+            annex_target.write_text("participant_id\tvalue\nsub-001\t1\n", encoding="utf-8")
+
+            linked_file = project_path / "sub-001" / "beh" / "sub-001_task-demo_events.tsv"
+            linked_file.parent.mkdir(parents=True, exist_ok=True)
+
+            try:
+                linked_file.symlink_to(annex_target)
+            except (NotImplementedError, OSError) as exc:
+                self.skipTest(f"symlink creation unavailable: {exc}")
+
+            export_root = Path(tmp) / "exports"
+            result = manager.export_project_to_plain_folder(
+                project_path,
+                output_root=export_root,
+            )
+
+            self.assertTrue(result.get("success"), result)
+            output_file = (
+                Path(result["output_path"])
+                / "sub-001"
+                / "beh"
+                / "sub-001_task-demo_events.tsv"
+            )
+            self.assertTrue(output_file.exists())
+            self.assertFalse(output_file.is_symlink())
+            self.assertEqual(
+                output_file.read_text(encoding="utf-8"),
+                "participant_id\tvalue\nsub-001\t1\n",
+            )
+
     @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
     def test_export_project_to_plain_folder_accepts_nontracked_project(self, _mock_which):
         manager = ProjectManager()
