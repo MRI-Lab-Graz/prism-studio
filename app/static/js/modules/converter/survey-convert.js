@@ -101,6 +101,7 @@ export function initSurveyConvert(elements) {
         conversionSummaryContainer,
         conversionSummaryBody,
         toggleSummaryBtn,
+        appendLog: bootstrapAppendLog,
         // Shared functions
         populateSessionPickers
     } = elements;
@@ -252,7 +253,7 @@ export function initSurveyConvert(elements) {
         toggleLogBtn,
         getSelectedSurveyFilename,
         convertIdColumn,
-        appendLog,
+        appendLog: bootstrapAppendLog,
         resolveCurrentProjectPath,
         appendSurveyInputToFormData,
         getSelectedSeparator,
