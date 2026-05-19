@@ -1,4 +1,6 @@
-export function initProjectFileBrowser({ fetchWithApiFallback, prefersServerPicker }) {
+import { browseFileWithFallback } from '../../shared/path-picker.js';
+
+export function initProjectFileBrowser({ fetchWithApiFallback }) {
     const browseExistingPath = document.getElementById('browseExistingPath');
     if (!browseExistingPath) {
         return;
@@ -14,6 +16,12 @@ export function initProjectFileBrowser({ fetchWithApiFallback, prefersServerPick
     const selectBtn = document.getElementById('fsBrowserSelectBtn');
     const selectedHintEl = document.getElementById('fsBrowserSelectedHint');
     const selectedPathEl = document.getElementById('fsBrowserSelectedPath');
+
+    async function openProjectBrowserModal(path = null) {
+        await load(path);
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
 
     function escHtml(value) {
         return String(value)
@@ -91,23 +99,7 @@ export function initProjectFileBrowser({ fetchWithApiFallback, prefersServerPick
     }
 
     browseExistingPath.addEventListener('click', async function() {
-        if (prefersServerPicker()
-            && window.PrismFileSystemMode
-            && typeof window.PrismFileSystemMode.pickFile === 'function') {
-            const existingInput = document.getElementById('existingPath');
-            const pickedPath = await window.PrismFileSystemMode.pickFile({
-                title: 'Select project.json on Server',
-                confirmLabel: 'Use This File',
-                extensions: '.json',
-                startPath: existingInput && existingInput.value ? existingInput.value : ''
-            });
-
-            if (pickedPath && existingInput) {
-                existingInput.value = pickedPath;
-            }
-            return;
-        }
-
+        const existingInput = document.getElementById('existingPath');
         const existing = (document.getElementById('existingPath')?.value || '').trim();
         let startPath = null;
         if (existing) {
@@ -117,9 +109,26 @@ export function initProjectFileBrowser({ fetchWithApiFallback, prefersServerPick
             }
         }
 
-        load(startPath || null);
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
+        try {
+            const pickedPath = await browseFileWithFallback(fetchWithApiFallback, {
+                title: 'Select project.json',
+                confirmLabel: 'Use This File',
+                extensions: '.json',
+                startPath: existingInput && existingInput.value ? existingInput.value : '',
+                projectJsonOnly: true,
+                fallback: async () => {
+                    await openProjectBrowserModal(startPath || null);
+                    return '';
+                }
+            });
+
+            if (pickedPath && existingInput) {
+                existingInput.value = pickedPath;
+            }
+        } catch (error) {
+            console.error('Project file picker error:', error);
+            alert('Failed to open project picker. Please enter path manually.');
+        }
     });
 
     if (upBtn) {

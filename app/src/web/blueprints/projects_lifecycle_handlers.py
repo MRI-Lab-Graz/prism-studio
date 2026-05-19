@@ -1,5 +1,6 @@
 import os
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -70,6 +71,32 @@ def _build_project_quick_summary(root_path: Path) -> dict[str, Any]:
         return get_project_quick_summary(root_path)
     except Exception:
         return {}
+
+
+def _get_datalad_preflight_status() -> dict[str, Any]:
+    """Return lightweight DataLad/git-annex availability for project creation."""
+    datalad_executable = shutil.which("datalad")
+    git_annex_executable = shutil.which("git-annex")
+
+    if datalad_executable and git_annex_executable:
+        message = "DataLad and git-annex are available for project setup."
+    elif datalad_executable:
+        message = (
+            "git-annex is not installed, so PRISM will create the project without "
+            "DataLad even if you leave the DataLad option enabled."
+        )
+    else:
+        message = (
+            "DataLad is not installed, so PRISM will create the project without "
+            "DataLad even if you leave the DataLad option enabled."
+        )
+
+    return {
+        "available": bool(datalad_executable),
+        "annex_available": bool(git_annex_executable),
+        "can_enable": bool(datalad_executable and git_annex_executable),
+        "message": message,
+    }
 
 
 def handle_set_current(
@@ -364,6 +391,7 @@ def handle_project_path_status():
                 "project_json_path": (
                     str(resolved_project_json) if resolved_project_json else None
                 ),
+                "datalad_preflight": _get_datalad_preflight_status(),
             }
         )
     except Exception as error:

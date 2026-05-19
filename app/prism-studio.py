@@ -187,6 +187,16 @@ def _print_startup_step(label: str, state: str = "ready", detail: str = "") -> N
     print(_startup_colorize(base, state if state in {"ready", "warning", "error", "info"} else "muted"))
 
 
+def _print_startup_dependency_step(label: str, binary: str) -> None:
+    """Print a concise dependency status line for optional launcher tools."""
+    available = bool(shutil.which(binary))
+    if available:
+        _print_startup_step(label)
+        return
+
+    _print_startup_step(label, "warning", "not installed (optional)")
+
+
 def _print_startup_ready(url: str, *, public: bool, log_file: Path | None = None) -> None:
     print()
     print(_startup_colorize(f"Open in browser: {url}", "info"))
@@ -201,6 +211,8 @@ def _print_startup_ready(url: str, *, public: bool, log_file: Path | None = None
 
 _print_startup_intro()
 _startup_module_check()
+_print_startup_dependency_step("DataLad", "datalad")
+_print_startup_dependency_step("git-annex", "git-annex")
 
 
 def _print_startup_welcome(url: str, *, public: bool, log_file: Path | None = None) -> None:
