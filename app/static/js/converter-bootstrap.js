@@ -114,6 +114,7 @@ document.addEventListener('DOMContentLoaded', function() {
             conversionSummaryContainer: document.getElementById('conversionSummaryContainer'),
             conversionSummaryBody: document.getElementById('conversionSummaryBody'),
             toggleSummaryBtn: document.getElementById('toggleSummaryBtn'),
+            appendLog,
             populateSessionPickers
         });
     }

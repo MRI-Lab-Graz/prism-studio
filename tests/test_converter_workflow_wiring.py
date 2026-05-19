@@ -572,6 +572,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "window.addEventListener('prism-project-changed', function() {", content
         )
         self.assertIn("appendLogBatch,", content)
+        self.assertIn("appendLog,", content)
 
     def test_converter_bootstrap_supports_tab_query_parameter(self):
         content = CONVERTER_BOOTSTRAP.read_text(encoding="utf-8")
@@ -1552,6 +1553,18 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "updateParticipantsButtonState({ skipIdAutoDetect: true });",
             convert_block,
         )
+
+    def test_participants_local_picker_uses_native_trigger_path(self):
+        participants_content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+        template_content = (REPO_ROOT / "app" / "templates" / "converter_participants.html").read_text(encoding="utf-8")
+
+        self.assertIn("function openParticipantsLocalFilePicker(fileInput) {", participants_content)
+        self.assertIn("if (typeof fileInput.showPicker === 'function') {", participants_content)
+        self.assertIn("fileInput.showPicker();", participants_content)
+        self.assertIn("openParticipantsLocalFilePicker(fileInput);", participants_content)
+        self.assertIn('id="participantsDataFile"', template_content)
+        self.assertIn('class="visually-hidden"', template_content)
+        self.assertNotIn('class="form-control d-none" type="file" id="participantsDataFile"', template_content)
 
     def test_eyetracking_template_references_bids_modality(self):
         content = EYETRACKING_TEMPLATE.read_text(encoding="utf-8")
