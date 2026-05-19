@@ -135,3 +135,35 @@ def test_startup_dependency_steps_report_ready_and_not_installed(
     assert "ready" in output
     assert "not installed (optional)" in output
     assert "! git-annex" in output
+
+
+def test_inject_utilities_exposes_request_api_origin(
+    prism_studio_module, monkeypatch
+):
+    monkeypatch.setattr(prism_studio_module, "get_prism_studio_version", lambda: "1.0.0")
+    monkeypatch.setattr(
+        prism_studio_module,
+        "get_latest_prism_studio_version",
+        lambda: ("1.0.0", "https://example.invalid/release"),
+    )
+    monkeypatch.setattr(
+        prism_studio_module,
+        "is_newer_release_available",
+        lambda current, latest: False,
+    )
+
+    import src.project_manager as project_manager_module
+
+    monkeypatch.setattr(
+        project_manager_module.ProjectManager,
+        "get_datalad_status",
+        lambda self, project_path: {"path": project_path, "enabled": False},
+    )
+
+    with prism_studio_module.app.test_request_context(
+        "/",
+        base_url="http://127.0.0.1:5002",
+    ):
+        injected = prism_studio_module.inject_utilities()
+
+    assert injected["prism_api_origin"] == "http://127.0.0.1:5002"

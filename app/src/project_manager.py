@@ -1344,6 +1344,23 @@ class ProjectManager:
                 skipped_paths.append(relative_dataset_text)
                 continue
 
+            if self._parent_tracks_nested_dataset_path(project_path, dataset_path):
+                migration_result = self._migrate_parent_tracked_directory_to_subdataset(
+                    project_path,
+                    dataset_path,
+                    datalad_executable,
+                )
+                if migration_result.get("success"):
+                    created_paths.append(relative_dataset_text)
+                    if remaining_budget is not None:
+                        remaining_budget -= 1
+                    continue
+
+                failed_paths.append(
+                    f"{relative_dataset_text} ({migration_result.get('message') or 'Could not migrate tracked parent content.'})"
+                )
+                continue
+
             try:
                 create_process = subprocess.run(
                     [
@@ -1371,7 +1388,9 @@ class ProjectManager:
                     or create_process.stdout
                     or "Unknown DataLad error"
                 ).strip()
-                failed_paths.append(f"{relative_dataset_text} ({detail})")
+                failed_paths.append(
+                    f"{relative_dataset_text} ({self._summarize_datalad_error(detail)})"
+                )
                 continue
 
             save_result = self._run_datalad_save(
@@ -1381,7 +1400,9 @@ class ProjectManager:
             )
             if not (save_result.get("saved") or save_result.get("no_changes")):
                 detail = save_result.get("message") or "Unknown DataLad error."
-                failed_paths.append(f"{relative_dataset_text} ({detail})")
+                failed_paths.append(
+                    f"{relative_dataset_text} ({self._summarize_datalad_error(detail)})"
+                )
                 continue
 
             created_paths.append(relative_dataset_text)
@@ -1404,6 +1425,120 @@ class ProjectManager:
             "subject_datasets_existing": existing_paths,
             "subject_dataset_failures": failed_paths,
         }
+
+    def _parent_tracks_nested_dataset_path(
+        self,
+        project_path: Path,
+        dataset_path: Path,
+    ) -> bool:
+        """Return True when the parent dataset already tracks content below a nested path."""
+        relative_dataset_text = dataset_path.relative_to(project_path).as_posix()
+        try:
+            process = subprocess.run(
+                ["git", "ls-files", "-z", "--", relative_dataset_text],
+                cwd=str(project_path),
+                capture_output=True,
+                text=False,
+                check=False,
+            )
+        except Exception:
+            return False
+
+        return process.returncode == 0 and bool(process.stdout)
+
+    def _migrate_parent_tracked_directory_to_subdataset(
+        self,
+        project_path: Path,
+        dataset_path: Path,
+        datalad_executable: str,
+    ) -> Dict[str, Any]:
+        """Convert a parent-tracked directory into a nested DataLad subdataset."""
+        relative_dataset_text = dataset_path.relative_to(project_path).as_posix()
+        remove_process = subprocess.run(
+            ["git", "rm", "--cached", "-r", "--", relative_dataset_text],
+            cwd=str(project_path),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if remove_process.returncode != 0:
+            detail = (
+                remove_process.stderr
+                or remove_process.stdout
+                or "Could not untrack parent content."
+            ).strip()
+            return {
+                "success": False,
+                "message": self._summarize_datalad_error(detail),
+            }
+
+        prep_save_result = self._run_datalad_save(
+            project_path,
+            message=f'Prepare "{relative_dataset_text}" for nested DataLad dataset',
+            datalad_executable=datalad_executable,
+        )
+        if not (prep_save_result.get("saved") or prep_save_result.get("no_changes")):
+            detail = prep_save_result.get("message") or "Could not save parent dataset state."
+            return {
+                "success": False,
+                "message": self._summarize_datalad_error(detail),
+            }
+
+        create_process = subprocess.run(
+            [
+                datalad_executable,
+                "create",
+                "-d",
+                ".",
+                "--force",
+                relative_dataset_text,
+            ],
+            cwd=str(project_path),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if create_process.returncode != 0:
+            detail = (
+                create_process.stderr
+                or create_process.stdout
+                or "Unknown DataLad error"
+            ).strip()
+            return {
+                "success": False,
+                "message": self._summarize_datalad_error(detail),
+            }
+
+        nested_save_result = self._run_datalad_save(
+            dataset_path,
+            message=f'Initialize DataLad nested dataset "{dataset_path.name}"',
+            datalad_executable=datalad_executable,
+        )
+        if not (nested_save_result.get("saved") or nested_save_result.get("no_changes")):
+            detail = nested_save_result.get("message") or "Could not save nested dataset."
+            return {
+                "success": False,
+                "message": self._summarize_datalad_error(detail),
+            }
+
+        return {"success": True, "message": "Migrated tracked parent content into a nested DataLad dataset."}
+
+    def _summarize_datalad_error(self, detail: str) -> str:
+        """Reduce verbose DataLad stderr/stdout into a concise UI-safe summary."""
+        normalized_detail = str(detail or "Unknown DataLad error.").strip()
+        if not normalized_detail:
+            return "Unknown DataLad error."
+
+        lowered_detail = normalized_detail.lower()
+        if "collision with content in parent dataset" in lowered_detail:
+            return "parent dataset still tracks content under this directory"
+        if "nothing to save" in lowered_detail:
+            return "no changes were pending"
+
+        first_line = normalized_detail.splitlines()[0].strip()
+        if len(first_line) > 220:
+            return first_line[:217].rstrip() + "..."
+        return first_line
 
     def _summarize_nested_subdatasets(self, project_path: Path) -> Dict[str, Any]:
         """Return nested DataLad registration progress for a project."""
