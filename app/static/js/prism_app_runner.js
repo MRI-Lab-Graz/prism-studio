@@ -27,29 +27,25 @@ document.addEventListener('DOMContentLoaded', function () {
     return sharedFetchWithApiFallback(url, options, fallbackMessage);
   }
 
+  function getPathPicker() {
+    return window.PrismPathPicker || null;
+  }
+
   function _escHtml(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   async function browseFolderWithFallback(startPath, title) {
-    try {
-      const response = await fetchWithApiFallback('/api/browse-folder');
-      const data = await response.json();
-      if (!response.ok || data.error) {
-        throw new Error(data.error || 'Folder picker unavailable.');
-      }
-      return (data.path || '').trim();
-    } catch (error) {
-      console.warn('Native folder picker failed, falling back to in-app browser:', error);
-      if (window.PrismFolderBrowser && typeof window.PrismFolderBrowser.open === 'function') {
-        return window.PrismFolderBrowser.open({
-          title: title || 'Select Folder',
-          confirmLabel: 'Use This Folder',
-          startPath: startPath || ''
-        });
-      }
-      throw error;
+    const pathPicker = getPathPicker();
+    if (!(pathPicker && typeof pathPicker.browseFolder === 'function')) {
+      throw new Error('Folder picker unavailable.');
     }
+
+    return pathPicker.browseFolder({
+      title: title || 'Select Folder',
+      confirmLabel: 'Use This Folder',
+      startPath: startPath || ''
+    });
   }
 
   const runBtn = document.getElementById('runCompatibilityBtn');
@@ -371,12 +367,17 @@ document.addEventListener('DOMContentLoaded', function () {
       return browseFolderWithFallback(startPath, title);
     }
 
-    const response = await fetchWithApiFallback('/api/browse-file?project_json_only=0');
-    const data = await response.json();
-    if (!response.ok || data.error) {
-      throw new Error(data.error || 'Path picker failed.');
+    const pathPicker = getPathPicker();
+    if (!(pathPicker && typeof pathPicker.browseFile === 'function')) {
+      throw new Error('Path picker unavailable.');
     }
-    return (data.path || '').trim();
+
+    return pathPicker.browseFile({
+      title: title || 'Select File',
+      confirmLabel: 'Use This File',
+      startPath: startPath || '',
+      projectJsonOnly: false
+    });
   }
 
   document.querySelectorAll('[data-browse-kind][data-browse-target]').forEach(button => {

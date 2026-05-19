@@ -157,24 +157,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function prefersServerPicker() {
-        return Boolean(
-            window.PrismFileSystemMode
-            && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
-            && window.PrismFileSystemMode.prefersServerPicker()
-        );
+    function getPathPicker() {
+        return window.PrismPathPicker || null;
     }
 
-    async function pickServerFolder(options = {}) {
-        if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFolder === 'function')) {
-            return '';
+    function prefersServerPicker() {
+        const pathPicker = getPathPicker();
+        return Boolean(pathPicker && typeof pathPicker.prefersServerPicker === 'function' && pathPicker.prefersServerPicker());
+    }
+
+    async function browseFolder(options = {}) {
+        const pathPicker = getPathPicker();
+        if (!(pathPicker && typeof pathPicker.browseFolder === 'function')) {
+            throw new Error('Folder picker unavailable.');
         }
 
-        return window.PrismFileSystemMode.pickFolder({
-            title: options.title || 'Select Folder',
-            confirmLabel: options.confirmLabel || 'Use This Folder',
-            startPath: options.startPath || ''
-        });
+        return pathPicker.browseFolder(options);
     }
 
     function showResumeValidationButton(show) {
@@ -1103,34 +1101,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (browseLibraryBtn && libraryPathInput) {
         browseLibraryBtn.addEventListener('click', async function() {
-            if (prefersServerPicker()) {
-                try {
-                    const pickedPath = await pickServerFolder({
-                        title: 'Select Template Library Root',
-                        confirmLabel: 'Use This Folder',
-                        startPath: (libraryPathInput.value || '').trim()
-                    });
-                    if (pickedPath) {
-                        libraryPathInput.value = pickedPath;
-                    }
-                } catch (err) {
-                    console.error('Failed to browse for library folder:', err);
-                    alert('Could not open server folder browser. Please type the path manually.');
-                }
-                return;
-            }
-
-            fetchWithApiFallback('/api/browse-folder')
-                .then(r => r.json())
-                .then(data => {
-                    if (data.path) {
-                        libraryPathInput.value = data.path;
-                    }
-                })
-                .catch(err => {
-                    console.error('Failed to browse for library folder:', err);
-                    alert('Could not open folder browser. Please type the path manually.');
+            try {
+                const pickedPath = await browseFolder({
+                    title: prefersServerPicker() ? 'Select Template Library Root on Server' : 'Select Template Library Root',
+                    confirmLabel: 'Use This Folder',
+                    startPath: (libraryPathInput.value || '').trim()
                 });
+                if (pickedPath) {
+                    libraryPathInput.value = pickedPath;
+                }
+            } catch (err) {
+                console.error('Failed to browse for library folder:', err);
+                alert('Could not open folder browser. Please type the path manually.');
+            }
         });
     }
 

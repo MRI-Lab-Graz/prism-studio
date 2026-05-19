@@ -1,30 +1,30 @@
-function getFileSystemMode() {
-    return typeof window !== 'undefined' ? window.PrismFileSystemMode : null;
+function getPathPicker() {
+    return typeof window !== 'undefined' ? window.PrismPathPicker : null;
 }
 
 export function prefersServerPicker() {
-    const fileSystemMode = getFileSystemMode();
+    const pathPicker = getPathPicker();
     return Boolean(
-        fileSystemMode
-        && typeof fileSystemMode.prefersServerPicker === 'function'
-        && fileSystemMode.prefersServerPicker()
+        pathPicker
+        && typeof pathPicker.prefersServerPicker === 'function'
+        && pathPicker.prefersServerPicker()
     );
 }
 
 export async function pickServerFile(options) {
-    const fileSystemMode = getFileSystemMode();
-    if (!(fileSystemMode && typeof fileSystemMode.pickFile === 'function')) {
+    const pathPicker = getPathPicker();
+    if (!(pathPicker && typeof pathPicker.pickServerFile === 'function')) {
         return '';
     }
 
-    return fileSystemMode.pickFile(options);
+    return pathPicker.pickServerFile(options);
 }
 
 export async function pickServerFolder(options) {
-    const fileSystemMode = getFileSystemMode();
-    if (!(fileSystemMode && typeof fileSystemMode.pickFolder === 'function')) {
+    const pathPicker = getPathPicker();
+    if (!(pathPicker && typeof pathPicker.pickServerFolder === 'function')) {
         return '';
     }
 
-    return fileSystemMode.pickFolder(options);
+    return pathPicker.pickServerFolder(options);
 }

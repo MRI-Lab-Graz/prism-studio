@@ -82,6 +82,27 @@
         return sharedFetchWithApiFallback(url, options, fallbackMessage);
     }
 
+    function openInAppPicker(options = {}) {
+        if (!(window.PrismFolderBrowser && typeof window.PrismFolderBrowser.open === 'function')) {
+            return null;
+        }
+
+        return window.PrismFolderBrowser.open(options);
+    }
+
+    async function runInAppFallback(options = {}, fallback = null) {
+        if (typeof fallback === 'function') {
+            return fallback();
+        }
+
+        const inAppResult = openInAppPicker(options);
+        if (inAppResult !== null) {
+            return inAppResult;
+        }
+
+        throw new Error('In-app picker unavailable.');
+    }
+
     async function init() {
         if (state.initialized) {
             return state;
@@ -146,6 +167,59 @@
         return window.PrismFolderBrowser.open(Object.assign({}, options || {}, { mode: 'file' }));
     }
 
+    async function browseFolder(options = {}) {
+        await init();
+
+        if (getEffectiveMode() === 'server') {
+            return pickFolder(options);
+        }
+
+        try {
+            const response = await fetchWithApiFallback('/api/browse-folder');
+            const data = await response.json();
+            if (!response.ok || data.error) {
+                throw new Error(data.error || 'Folder picker unavailable.');
+            }
+            return (data.path || '').trim();
+        } catch (error) {
+            console.warn('Native folder picker failed, falling back to in-app browser:', error);
+            return runInAppFallback({
+                title: options.title || 'Select Folder',
+                confirmLabel: options.confirmLabel || 'Select Folder',
+                startPath: options.startPath || '',
+                mode: 'folder'
+            }, options.fallback);
+        }
+    }
+
+    async function browseFile(options = {}) {
+        await init();
+
+        if (getEffectiveMode() === 'server') {
+            return pickFile(options);
+        }
+
+        try {
+            const projectJsonOnly = options.projectJsonOnly !== false;
+            const query = projectJsonOnly ? '' : '?project_json_only=0';
+            const response = await fetchWithApiFallback(`/api/browse-file${query}`);
+            const data = await response.json();
+            if (!response.ok || data.error) {
+                throw new Error(data.error || 'File picker unavailable.');
+            }
+            return (data.path || '').trim();
+        } catch (error) {
+            console.warn('Native file picker failed, falling back to in-app browser:', error);
+            return runInAppFallback({
+                title: options.title || 'Select File',
+                confirmLabel: options.confirmLabel || 'Use This File',
+                startPath: options.startPath || '',
+                extensions: options.extensions || '',
+                mode: 'file'
+            }, options.fallback);
+        }
+    }
+
     window.PrismFileSystemMode = {
         init,
         getState: () => ({
@@ -173,6 +247,15 @@
         prefersServerPicker: () => getEffectiveMode() === 'server',
         pickFolder,
         pickFile,
+    };
+
+    window.PrismPathPicker = {
+        init,
+        prefersServerPicker: () => getEffectiveMode() === 'server',
+        browseFolder,
+        browseFile,
+        pickServerFolder: pickFolder,
+        pickServerFile: pickFile,
     };
 
     window.PrismFileSystemMode.init();
