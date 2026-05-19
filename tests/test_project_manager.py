@@ -182,6 +182,27 @@ class TestProjectManager(unittest.TestCase):
             )
             self.assertEqual(
                 mock_run.call_args_list[1].args[0],
+                ["/usr/bin/datalad", "create", "-d", ".", "--force", "derivatives"],
+            )
+            self.assertEqual(
+                mock_run.call_args_list[1].kwargs.get("cwd"),
+                str(project_path),
+            )
+            self.assertEqual(
+                mock_run.call_args_list[2].args[0],
+                [
+                    "/usr/bin/datalad",
+                    "save",
+                    "-m",
+                    'Initialize DataLad nested dataset "derivatives"',
+                ],
+            )
+            self.assertEqual(
+                mock_run.call_args_list[2].kwargs.get("cwd"),
+                str(project_path / "derivatives"),
+            )
+            self.assertEqual(
+                mock_run.call_args_list[3].args[0],
                 ["/usr/bin/datalad", "save", "-m", "Initialize PRISM dataset structure"],
             )
             gitattributes_content = (project_path / ".gitattributes").read_text(
@@ -195,6 +216,160 @@ class TestProjectManager(unittest.TestCase):
                 "CITATION.cff annex.largefiles=nothing", gitattributes_content
             )
 
+    @patch("src.project_manager.subprocess.run")
+    @patch("src.project_manager.shutil.which")
+    def test_create_datalad_dataset_initializes_derivatives_and_subject_subdatasets(
+        self, mock_which, mock_run
+    ):
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
+        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "dataset"
+            (project_path / "derivatives").mkdir(parents=True, exist_ok=True)
+            (project_path / "sub-001").mkdir(parents=True, exist_ok=True)
+            (project_path / "sub-002").mkdir(parents=True, exist_ok=True)
+            (project_path / "README").mkdir(parents=True, exist_ok=True)
+            (project_path / "sub-001" / "data.tsv").write_text("value\n1\n", encoding="utf-8")
+            (project_path / "sub-002" / "data.tsv").write_text("value\n2\n", encoding="utf-8")
+
+            result = manager._create_datalad_dataset(project_path, enabled=True)
+
+        self.assertTrue(result.get("initialized"), result)
+        self.assertEqual(
+            result.get("subdatasets_created"),
+            ["derivatives", "sub-001", "sub-002"],
+        )
+        self.assertEqual(result.get("subdatasets_existing"), [])
+        self.assertEqual(result.get("subdataset_failures"), [])
+        self.assertEqual(
+            mock_run.call_args_list[0].args[0],
+            ["/usr/bin/datalad", "create", "--force"],
+        )
+        self.assertEqual(
+            mock_run.call_args_list[1].args[0],
+            ["/usr/bin/datalad", "create", "-d", ".", "--force", "derivatives"],
+        )
+        self.assertEqual(
+            mock_run.call_args_list[2].args[0],
+            [
+                "/usr/bin/datalad",
+                "save",
+                "-m",
+                'Initialize DataLad nested dataset "derivatives"',
+            ],
+        )
+        self.assertEqual(
+            mock_run.call_args_list[3].args[0],
+            ["/usr/bin/datalad", "create", "-d", ".", "--force", "sub-001"],
+        )
+        self.assertEqual(
+            mock_run.call_args_list[3].kwargs.get("cwd"),
+            str(project_path),
+        )
+        self.assertEqual(
+            mock_run.call_args_list[4].args[0],
+            [
+                "/usr/bin/datalad",
+                "save",
+                "-m",
+                'Initialize DataLad nested dataset "sub-001"',
+            ],
+        )
+        self.assertEqual(
+            mock_run.call_args_list[4].kwargs.get("cwd"),
+            str(project_path / "sub-001"),
+        )
+        self.assertEqual(
+            mock_run.call_args_list[5].args[0],
+            ["/usr/bin/datalad", "create", "-d", ".", "--force", "sub-002"],
+        )
+        self.assertEqual(
+            mock_run.call_args_list[6].args[0],
+            [
+                "/usr/bin/datalad",
+                "save",
+                "-m",
+                'Initialize DataLad nested dataset "sub-002"',
+            ],
+        )
+
+    @patch("src.project_manager.subprocess.run")
+    @patch("src.project_manager.shutil.which")
+    def test_create_datalad_dataset_skips_subjects_that_are_already_datasets(
+        self, mock_which, mock_run
+    ):
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
+        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "rawdata"
+            subject_existing = project_path / "sub-171"
+            subject_missing = project_path / "sub-172"
+            subject_existing.mkdir(parents=True, exist_ok=True)
+            subject_missing.mkdir(parents=True, exist_ok=True)
+            (subject_existing / ".datalad").mkdir(parents=True, exist_ok=True)
+            (subject_missing / "data.tsv").write_text("value\n1\n", encoding="utf-8")
+
+            result = manager._create_datalad_dataset(project_path, enabled=True)
+
+        self.assertTrue(result.get("initialized"), result)
+        self.assertEqual(result.get("subdatasets_created"), ["sub-172"])
+        self.assertEqual(result.get("subdatasets_existing"), ["sub-171"])
+        self.assertEqual(result.get("subdataset_failures"), [])
+        self.assertEqual(result.get("subdatasets_remaining_count"), 0)
+        self.assertEqual(
+            mock_run.call_args_list[1].args[0],
+            ["/usr/bin/datalad", "create", "-d", ".", "--force", "sub-172"],
+        )
+
+    @patch("src.project_manager.subprocess.run")
+    @patch("src.project_manager.shutil.which")
+    def test_create_nested_subdatasets_can_limit_repairs_to_one_per_call(
+        self, mock_which, mock_run
+    ):
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
+        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "rawdata"
+            (project_path / "sub-001").mkdir(parents=True, exist_ok=True)
+            (project_path / "sub-002").mkdir(parents=True, exist_ok=True)
+
+            result = manager._create_nested_subdatasets(
+                project_path,
+                "/usr/bin/datalad",
+                max_to_create=1,
+            )
+
+        self.assertEqual(result.get("subdatasets_created"), ["sub-001"])
+        self.assertEqual(result.get("subdatasets_skipped"), ["sub-002"])
+        self.assertEqual(result.get("subdatasets_remaining_count"), 1)
+        self.assertEqual(
+            mock_run.call_args_list[0].args[0],
+            ["/usr/bin/datalad", "create", "-d", ".", "--force", "sub-001"],
+        )
+        self.assertEqual(len(mock_run.call_args_list), 2)
+
+    def test_iter_nested_dataset_paths_includes_rawdata_subjects_for_parent_project(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "project"
+            (project_path / "derivatives").mkdir(parents=True, exist_ok=True)
+            (project_path / "rawdata" / "sub-001").mkdir(parents=True, exist_ok=True)
+            (project_path / "rawdata" / "sub-002").mkdir(parents=True, exist_ok=True)
+
+            result = manager._iter_nested_dataset_paths(project_path)
+
+        self.assertEqual(
+            [path.relative_to(project_path).as_posix() for path in result],
+            ["derivatives", "rawdata/sub-001", "rawdata/sub-002"],
+        )
+
     @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
     def test_get_datalad_status_detects_project_dataset(self, _mock_which):
         manager = ProjectManager()
@@ -202,6 +377,9 @@ class TestProjectManager(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             project_path = Path(tmp) / "demo_project"
             (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "sub-001").mkdir(parents=True, exist_ok=True)
+            (project_path / "sub-001" / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "sub-002").mkdir(parents=True, exist_ok=True)
 
             result = manager.get_datalad_status(project_path)
 
@@ -209,6 +387,11 @@ class TestProjectManager(unittest.TestCase):
         self.assertTrue(result.get("available"))
         self.assertTrue(result.get("annex_available"))
         self.assertTrue(result.get("can_save"))
+        self.assertEqual(result.get("subdatasets_total_count"), 2)
+        self.assertEqual(result.get("subdatasets_registered_count"), 1)
+        self.assertEqual(result.get("subdatasets_remaining_count"), 1)
+        self.assertEqual(result.get("subdatasets_progress_percent"), 50)
+        self.assertEqual(result.get("next_missing_subdataset"), "sub-002")
 
     @patch("src.project_manager.shutil.which")
     def test_get_datalad_status_reports_missing_git_annex(self, mock_which):
@@ -348,6 +531,138 @@ class TestProjectManager(unittest.TestCase):
 
         self.assertTrue(result.get("success"), result)
         self.assertIn("already tracked by DataLad", result.get("message", ""))
+
+    @patch("src.project_manager.subprocess.run")
+    @patch("src.project_manager.shutil.which")
+    def test_enable_datalad_for_project_backfills_missing_subject_subdatasets(
+        self, mock_which, mock_run
+    ):
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
+        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "rawdata"
+            subject_existing = project_path / "sub-171"
+            subject_missing = project_path / "sub-172"
+            subject_remaining = project_path / "sub-173"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            subject_existing.mkdir(parents=True, exist_ok=True)
+            subject_missing.mkdir(parents=True, exist_ok=True)
+            subject_remaining.mkdir(parents=True, exist_ok=True)
+            (subject_existing / ".datalad").mkdir(parents=True, exist_ok=True)
+            (subject_missing / "data.tsv").write_text("value\n1\n", encoding="utf-8")
+            (subject_remaining / "data.tsv").write_text("value\n2\n", encoding="utf-8")
+
+            result = manager.enable_datalad_for_project(project_path)
+
+        self.assertTrue(result.get("success"), result)
+        self.assertIn("Added 1 nested subdataset", result.get("message", ""))
+        self.assertIn("run repair again to continue", result.get("message", ""))
+        self.assertEqual(
+            result.get("datalad", {}).get("subdatasets_created"),
+            ["sub-172"],
+        )
+        self.assertEqual(
+            result.get("datalad", {}).get("subdatasets_existing"),
+            ["sub-171"],
+        )
+        self.assertEqual(
+            result.get("datalad", {}).get("subdatasets_skipped"),
+            ["sub-173"],
+        )
+        self.assertEqual(
+            result.get("datalad", {}).get("subdatasets_remaining_count"),
+            1,
+        )
+        self.assertEqual(
+            mock_run.call_args_list[0].args[0],
+            ["/usr/bin/datalad", "create", "-d", ".", "--force", "sub-172"],
+        )
+        self.assertEqual(
+            mock_run.call_args_list[0].kwargs.get("cwd"),
+            str(project_path),
+        )
+        self.assertEqual(
+            mock_run.call_args_list[1].args[0],
+            [
+                "/usr/bin/datalad",
+                "save",
+                "-m",
+                'Initialize DataLad nested dataset "sub-172"',
+            ],
+        )
+        self.assertEqual(
+            mock_run.call_args_list[1].kwargs.get("cwd"),
+            str(subject_missing),
+        )
+        self.assertEqual(
+            mock_run.call_args_list[2].args[0],
+            ["/usr/bin/datalad", "save", "-m", "Enable DataLad for PRISM project"],
+        )
+
+    @patch("src.project_manager.subprocess.run")
+    @patch("src.project_manager.shutil.which")
+    def test_enable_datalad_for_project_backfills_derivatives_subdataset(
+        self, mock_which, mock_run
+    ):
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
+        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "derivatives").mkdir(parents=True, exist_ok=True)
+
+            result = manager.enable_datalad_for_project(project_path)
+
+        self.assertTrue(result.get("success"), result)
+        self.assertIn("Added 1 nested subdataset", result.get("message", ""))
+        self.assertEqual(
+            result.get("datalad", {}).get("subdatasets_remaining_count"),
+            0,
+        )
+        self.assertEqual(
+            result.get("datalad", {}).get("subdatasets_created"),
+            ["derivatives"],
+        )
+        self.assertEqual(
+            mock_run.call_args_list[0].args[0],
+            ["/usr/bin/datalad", "create", "-d", ".", "--force", "derivatives"],
+        )
+        self.assertEqual(
+            mock_run.call_args_list[1].args[0],
+            [
+                "/usr/bin/datalad",
+                "save",
+                "-m",
+                'Initialize DataLad nested dataset "derivatives"',
+            ],
+        )
+
+    @patch("src.project_manager.subprocess.run")
+    @patch("src.project_manager.shutil.which")
+    def test_enable_datalad_for_project_reports_failure_when_next_repair_fails(
+        self, mock_which, mock_run
+    ):
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
+        mock_run.return_value = Mock(returncode=1, stdout="", stderr="boom")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "rawdata"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "sub-172").mkdir(parents=True, exist_ok=True)
+
+            result = manager.enable_datalad_for_project(project_path)
+
+        self.assertTrue(result.get("success"), result)
+        self.assertIn("could not register the next missing nested dataset", result.get("message", ""))
+        self.assertEqual(
+            result.get("datalad", {}).get("subdataset_failures"),
+            ["sub-172 (boom)"],
+        )
 
     @patch("src.project_manager.shutil.which")
     def test_enable_datalad_for_project_fails_without_git_annex(self, mock_which):

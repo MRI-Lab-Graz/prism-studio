@@ -122,7 +122,7 @@
 
 /* Shared action button styling across converter panels */
 .converter-action-btn {
-    min-height: 54px;
+    min-height: var(--studio-action-button-min-height);
     border-radius: 10px;
     font-weight: 600;
 }
