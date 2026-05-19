@@ -12,6 +12,15 @@ function getFallbackApiOrigin() {
     if (configuredOrigin) {
         return configuredOrigin.replace(/\/$/, '');
     }
+
+    const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
+    const currentOrigin = (window.location && typeof window.location.origin === 'string')
+        ? window.location.origin.trim()
+        : '';
+    if ((protocol === 'http:' || protocol === 'https:') && currentOrigin && currentOrigin !== 'null') {
+        return currentOrigin.replace(/\/$/, '');
+    }
+
     return 'http://127.0.0.1:5001';
 }
 

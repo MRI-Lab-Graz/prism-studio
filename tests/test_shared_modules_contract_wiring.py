@@ -17,6 +17,8 @@ class TestSharedModulesContractWiring(unittest.TestCase):
 
         self.assertIn("function getFallbackApiOrigin() {", content)
         self.assertIn("const configuredOrigin = (window.PRISM_API_ORIGIN || '').trim();", content)
+        self.assertIn("const currentOrigin = (window.location && typeof window.location.origin === 'string')", content)
+        self.assertIn("if ((protocol === 'http:' || protocol === 'https:') && currentOrigin && currentOrigin !== 'null') {", content)
         self.assertIn("return 'http://127.0.0.1:5001';", content)
         self.assertIn("function canRetryApiWithFallback(url) {", content)
         self.assertIn("url.startsWith('/api/') || url.startsWith('/editor/api/')", content)

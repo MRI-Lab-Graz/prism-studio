@@ -1468,6 +1468,47 @@ def test_build_terminal_command_for_projects_datalad_enable_repairs_next_missing
     )
 
 
+def test_build_terminal_command_for_projects_datalad_enable_migrates_parent_tracked_derivatives():
+    app = Flask(__name__)
+    app.secret_key = "test-secret"  # pragma: allowlist secret
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/projects/datalad/enable",
+        endpoint="projects.enable_datalad_for_project",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with tempfile.TemporaryDirectory() as tmp:
+        project_path = Path(tmp) / "rawdata"
+        (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+        (project_path / "derivatives").mkdir(parents=True, exist_ok=True)
+        resolved_project_path = project_path.resolve()
+
+        with patch(
+            "src.web.backend_monitoring.ProjectManager._parent_tracks_nested_dataset_path",
+            return_value=True,
+        ):
+            with app.test_request_context(
+                "/api/projects/datalad/enable",
+                method="POST",
+                json={"message": "Enable DataLad for PRISM project"},
+            ):
+                session["current_project_path"] = str(project_path)
+                cmd = _build_terminal_command(request)
+
+    assert cmd == (
+        f"git -C {resolved_project_path} rm --cached -r -- derivatives && "
+        f"datalad -C {resolved_project_path} save -m 'Prepare \"derivatives\" for nested DataLad dataset' && "
+        f"datalad -C {resolved_project_path} create -d . --force derivatives && "
+        f"datalad -C {resolved_project_path / 'derivatives'} save -m 'Initialize DataLad nested dataset \"derivatives\"' && "
+        f"datalad -C {resolved_project_path} save -m 'Enable DataLad for PRISM project'"
+    )
+
+
 def test_emit_backend_request_action_includes_recipes_surveys_command(capsys):
     app = Flask(__name__)
 

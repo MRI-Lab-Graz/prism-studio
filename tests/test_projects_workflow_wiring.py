@@ -104,11 +104,13 @@ LIBRARY_EDITOR_SCRIPT = REPO_ROOT / "app" / "static" / "js" / "library_editor.js
 class TestProjectsWorkflowWiring(unittest.TestCase):
     def test_shared_api_exports_desktop_fallback_helper(self):
         content = SHARED_API_MODULE.read_text(encoding="utf-8")
+        base_content = BASE_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn("export async function fetchWithApiFallback(", content)
         self.assertIn("url.startsWith('/api/')", content)
         self.assertIn("return 'http://127.0.0.1:5001';", content)
         self.assertIn("credentials: 'include'", content)
+        self.assertIn("window.PRISM_API_ORIGIN = {{ prism_api_origin|tojson }};", base_content)
 
     def test_shared_path_picker_honors_server_preference_and_in_app_fallback(self):
         content = SHARED_PATH_PICKER_MODULE.read_text(encoding="utf-8")

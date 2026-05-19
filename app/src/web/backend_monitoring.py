@@ -444,6 +444,35 @@ def _build_projects_datalad_enable_terminal_command(req) -> str:
 
     nested_root = project_root / Path(next_missing)
     nested_name = nested_root.name
+    requires_parent_untrack = ProjectManager()._parent_tracks_nested_dataset_path(
+        project_root,
+        nested_root,
+    )
+    if requires_parent_untrack:
+        return _render_shell_segments(
+            [
+                ["git", "-C", str(project_root), "rm", "--cached", "-r", "--", next_missing],
+                [
+                    "datalad",
+                    "-C",
+                    str(project_root),
+                    "save",
+                    "-m",
+                    f'Prepare "{next_missing}" for nested DataLad dataset',
+                ],
+                ["datalad", "-C", str(project_root), "create", "-d", ".", "--force", next_missing],
+                [
+                    "datalad",
+                    "-C",
+                    str(nested_root),
+                    "save",
+                    "-m",
+                    f'Initialize DataLad nested dataset "{nested_name}"',
+                ],
+                ["datalad", "-C", str(project_root), "save", "-m", message],
+            ]
+        )
+
     return _render_shell_segments(
         [
             ["datalad", "-C", str(project_root), "create", "-d", ".", "--force", next_missing],

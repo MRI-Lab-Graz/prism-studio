@@ -156,9 +156,13 @@ class TestProjectManager(unittest.TestCase):
         "src.project_manager.subprocess.run",
         return_value=Mock(returncode=0, stdout="", stderr=""),
     )
+    @patch(
+        "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
+        return_value=False,
+    )
     @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
     def test_create_project_initializes_and_saves_datalad_dataset(
-        self, _mock_which, mock_run
+        self, _mock_which, _mock_parent_tracks, mock_run
     ):
         manager = ProjectManager()
 
@@ -217,9 +221,13 @@ class TestProjectManager(unittest.TestCase):
             )
 
     @patch("src.project_manager.subprocess.run")
+    @patch(
+        "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
+        return_value=False,
+    )
     @patch("src.project_manager.shutil.which")
     def test_create_datalad_dataset_initializes_derivatives_and_subject_subdatasets(
-        self, mock_which, mock_run
+        self, mock_which, _mock_parent_tracks, mock_run
     ):
         manager = ProjectManager()
         mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
@@ -296,9 +304,13 @@ class TestProjectManager(unittest.TestCase):
         )
 
     @patch("src.project_manager.subprocess.run")
+    @patch(
+        "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
+        return_value=False,
+    )
     @patch("src.project_manager.shutil.which")
     def test_create_datalad_dataset_skips_subjects_that_are_already_datasets(
-        self, mock_which, mock_run
+        self, mock_which, _mock_parent_tracks, mock_run
     ):
         manager = ProjectManager()
         mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
@@ -326,9 +338,13 @@ class TestProjectManager(unittest.TestCase):
         )
 
     @patch("src.project_manager.subprocess.run")
+    @patch(
+        "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
+        return_value=False,
+    )
     @patch("src.project_manager.shutil.which")
     def test_create_nested_subdatasets_can_limit_repairs_to_one_per_call(
-        self, mock_which, mock_run
+        self, mock_which, _mock_parent_tracks, mock_run
     ):
         manager = ProjectManager()
         mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
@@ -533,9 +549,13 @@ class TestProjectManager(unittest.TestCase):
         self.assertIn("already tracked by DataLad", result.get("message", ""))
 
     @patch("src.project_manager.subprocess.run")
+    @patch(
+        "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
+        return_value=False,
+    )
     @patch("src.project_manager.shutil.which")
     def test_enable_datalad_for_project_backfills_missing_subject_subdatasets(
-        self, mock_which, mock_run
+        self, mock_which, _mock_parent_tracks, mock_run
     ):
         manager = ProjectManager()
         mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
@@ -602,9 +622,13 @@ class TestProjectManager(unittest.TestCase):
         )
 
     @patch("src.project_manager.subprocess.run")
+    @patch(
+        "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
+        return_value=False,
+    )
     @patch("src.project_manager.shutil.which")
     def test_enable_datalad_for_project_backfills_derivatives_subdataset(
-        self, mock_which, mock_run
+        self, mock_which, _mock_parent_tracks, mock_run
     ):
         manager = ProjectManager()
         mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
@@ -642,9 +666,13 @@ class TestProjectManager(unittest.TestCase):
         )
 
     @patch("src.project_manager.subprocess.run")
+    @patch(
+        "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
+        return_value=False,
+    )
     @patch("src.project_manager.shutil.which")
     def test_enable_datalad_for_project_reports_failure_when_next_repair_fails(
-        self, mock_which, mock_run
+        self, mock_which, _mock_parent_tracks, mock_run
     ):
         manager = ProjectManager()
         mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
@@ -662,6 +690,48 @@ class TestProjectManager(unittest.TestCase):
         self.assertEqual(
             result.get("datalad", {}).get("subdataset_failures"),
             ["sub-172 (boom)"],
+        )
+
+    @patch("src.project_manager.subprocess.run")
+    @patch(
+        "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
+        return_value=True,
+    )
+    @patch("src.project_manager.shutil.which")
+    def test_enable_datalad_for_project_migrates_parent_tracked_derivatives(
+        self, mock_which, _mock_parent_tracks, mock_run
+    ):
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
+        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "derivatives").mkdir(parents=True, exist_ok=True)
+            (project_path / "derivatives" / "file.txt").write_text("demo\n", encoding="utf-8")
+
+            result = manager.enable_datalad_for_project(project_path)
+
+        self.assertTrue(result.get("success"), result)
+        self.assertIn("Added 1 nested subdataset", result.get("message", ""))
+        commands = [call.args[0] for call in mock_run.call_args_list]
+        self.assertIn(
+            ["git", "rm", "--cached", "-r", "--", "derivatives"],
+            commands,
+        )
+        self.assertIn(
+            [
+                "/usr/bin/datalad",
+                "save",
+                "-m",
+                'Prepare "derivatives" for nested DataLad dataset',
+            ],
+            commands,
+        )
+        self.assertIn(
+            ["/usr/bin/datalad", "create", "-d", ".", "--force", "derivatives"],
+            commands,
         )
 
     @patch("src.project_manager.shutil.which")
