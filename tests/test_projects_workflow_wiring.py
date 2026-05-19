@@ -399,6 +399,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "exclude_modalities: _getUncheckedValues('export-modality-filter')", content
         )
         self.assertIn("exclude_acq: _getUncheckedAcqByModality(),", content)
+        self.assertIn("exclude_tasks: _getUncheckedTaskByModality(),", content)
         self.assertIn("validation_mode: 'both',", content)
         self.assertIn("defacing_confirmation_mode: 'risk',", content)
         self.assertIn("function getSelectedDefacingConfirmationMode() {", content)
@@ -424,7 +425,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn(
             "function setExportChipState(chipId, text, tone = 'neutral') {", content
         )
-        self.assertIn("function countExcludedAcqLabels(excludedAcq) {", content)
+        self.assertIn("function countExcludedSubfilterLabels(excludedAcq, excludedTasks) {", content)
         self.assertIn("exportScopeSummary", content)
         self.assertIn("exportDestinationSummary", content)
         self.assertIn("exportPreferenceSummary", content)
@@ -439,6 +440,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("exportSessionsChip", content)
         self.assertIn("exportModalitiesChip", content)
         self.assertIn("exportAcqChip", content)
+        self.assertIn("Task/acquisition labels", content)
 
     def test_export_actions_use_desktop_api_fallback(self):
         content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")

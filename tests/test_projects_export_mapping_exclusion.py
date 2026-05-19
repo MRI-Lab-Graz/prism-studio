@@ -124,6 +124,55 @@ def test_export_includes_root_prism_metadata_files(tmp_path):
     assert ".bidsignore" in names
 
 
+def test_export_can_exclude_survey_tasks_and_matching_root_sidecars(tmp_path):
+    project_dir = tmp_path / "study"
+    survey_dir = project_dir / "sub-001" / "ses-01" / "survey"
+    survey_dir.mkdir(parents=True)
+
+    (project_dir / "task-ads_survey.json").write_text(
+        '{"Study": {"TaskName": "ads"}}\n', encoding="utf-8"
+    )
+    (project_dir / "task-phq_survey.json").write_text(
+        '{"Study": {"TaskName": "phq"}}\n', encoding="utf-8"
+    )
+    (survey_dir / "sub-001_ses-01_task-ads_survey.tsv").write_text(
+        "participant_id\tvalue\nsub-001\t1\n",
+        encoding="utf-8",
+    )
+    (survey_dir / "sub-001_ses-01_task-ads_survey.json").write_text(
+        '{"Study": {"TaskName": "ads"}}\n', encoding="utf-8"
+    )
+    (survey_dir / "sub-001_ses-01_task-phq_survey.tsv").write_text(
+        "participant_id\tvalue\nsub-001\t2\n",
+        encoding="utf-8",
+    )
+    (survey_dir / "sub-001_ses-01_task-phq_survey.json").write_text(
+        '{"Study": {"TaskName": "phq"}}\n', encoding="utf-8"
+    )
+
+    output_zip = tmp_path / "export_survey_task_filtered.zip"
+
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=False,
+        include_derivatives=False,
+        include_code=False,
+        include_analysis=False,
+        exclude_tasks={"survey": {"ads"}},
+    )
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        names = set(archive.namelist())
+
+    assert "sub-001/ses-01/survey/sub-001_ses-01_task-ads_survey.tsv" not in names
+    assert "sub-001/ses-01/survey/sub-001_ses-01_task-ads_survey.json" not in names
+    assert "task-ads_survey.json" not in names
+    assert "sub-001/ses-01/survey/sub-001_ses-01_task-phq_survey.tsv" in names
+    assert "sub-001/ses-01/survey/sub-001_ses-01_task-phq_survey.json" in names
+    assert "task-phq_survey.json" in names
+
+
 def test_export_can_strip_version_control_metadata_for_upload_ready_shares(tmp_path):
     project_dir = tmp_path / "study"
     project_dir.mkdir(parents=True)

@@ -222,6 +222,49 @@ def test_projects_export_start_upload_ready_preset_forces_safe_export_defaults(t
     assert args[2] == "study_anonymized_upload_ready_export.zip"
 
 
+def test_projects_export_start_passes_survey_task_filters_to_export_job(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    captured: dict[str, object] = {}
+
+    class _FakeThread:
+        def __init__(self, target=None, args=(), daemon=None):
+            captured["target"] = target
+            captured["args"] = args
+            captured["daemon"] = daemon
+
+        def start(self):
+            captured["started"] = True
+
+    with patch(
+        "src.web.blueprints.projects_export_blueprint.threading.Thread",
+        side_effect=lambda *args, **kwargs: _FakeThread(*args, **kwargs),
+    ):
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/start",
+                json={
+                    "project_path": str(project_dir),
+                    "anonymize": False,
+                    "exclude_tasks": {"survey": ["ads"]},
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("job_id")
+
+    args = captured.get("args")
+    assert isinstance(args, tuple)
+    export_kwargs = args[1]
+    assert isinstance(export_kwargs, dict)
+    assert export_kwargs["exclude_tasks"] == {"survey": {"ads"}}
+
+
 def test_projects_export_start_status_includes_defacing_warning_metadata(tmp_path):
     app = _build_app()
 
