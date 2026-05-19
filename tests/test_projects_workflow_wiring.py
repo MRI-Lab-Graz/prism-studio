@@ -151,6 +151,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         )
         self.assertIn("const projectsRoot = document.getElementById('projectsRoot');", current_state_content)
         self.assertIn("const globalProjectState = getProjectStateSnapshot();", current_state_content)
+        self.assertIn("let currentProjectDatalad = null;", current_state_content)
+        self.assertIn("window.updateNavbarProject(currentProjectName, currentProjectPath, currentProjectIcon, currentProjectDatalad);", current_state_content)
         self.assertIn("window.addEventListener('prism-project-changed', function(event) {", current_state_content)
         self.assertLess(
             core_content.index("const currentProjectStateController = createProjectsCurrentStateController({"),
@@ -160,6 +162,18 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             core_content.index("const recentProjectsController = createRecentProjectsController({"),
             core_content.index("initProjectInitOnBidsController({"),
         )
+
+    def test_open_project_loaded_state_owns_datalad_actions(self):
+        content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("function renderProjectBoxDataladState(", content)
+        self.assertIn('id="projectBoxDataladStateBadge"', content)
+        self.assertIn('id="projectBoxDataladEnableBtn"', content)
+        self.assertIn('id="projectBoxDataladSaveBtn"', content)
+        self.assertIn("fetchWithApiFallback('/api/projects/datalad/enable'", content)
+        self.assertIn("fetchWithApiFallback('/api/projects/datalad/save'", content)
+        self.assertIn("window.prompt('Commit message for this checkpoint'", content)
+        self.assertIn("window.setNavbarDataladFeedback?.(", content)
 
     def test_settings_and_fix_actions_use_api_fallback(self):
         settings_content = PROJECTS_SETTINGS_MODULE.read_text(encoding="utf-8")

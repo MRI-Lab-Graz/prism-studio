@@ -5,6 +5,7 @@ export function createProjectsCurrentStateController({
     let currentProjectPath = '';
     let currentProjectName = '';
     let currentProjectIcon = '';
+    let currentProjectDatalad = null;
 
     const allowedProjectIcons = [
         '🧪',
@@ -31,8 +32,40 @@ export function createProjectsCurrentStateController({
         return normalizeProjectIconClass(iconClass) || '🧪';
     }
 
-    function setGlobalProjectState(path, name, icon = '') {
-        setProjectStateSnapshot(path, name, icon);
+    function normalizeDataladState(dataladState, fallbackPath = '') {
+        if (!dataladState || typeof dataladState !== 'object' || Array.isArray(dataladState)) {
+            return {
+                enabled: false,
+                available: false,
+                annexAvailable: false,
+                canSave: false,
+                canEnable: false,
+                message: fallbackPath ? 'Current project is not a DataLad dataset.' : 'Load a project to see DataLad status.',
+                path: fallbackPath,
+            };
+        }
+
+        const resolvedPath = (typeof dataladState.path === 'string' ? dataladState.path.trim() : '') || fallbackPath;
+        return {
+            enabled: Boolean(dataladState.enabled),
+            available: Boolean(dataladState.available),
+            annexAvailable: Boolean(dataladState.annex_available ?? dataladState.annexAvailable),
+            canSave: Boolean(dataladState.can_save ?? dataladState.canSave),
+            canEnable: Boolean(dataladState.can_enable ?? dataladState.canEnable),
+            message: typeof dataladState.message === 'string' && dataladState.message.trim()
+                ? dataladState.message.trim()
+                : (resolvedPath ? 'Current project is not a DataLad dataset.' : 'Load a project to see DataLad status.'),
+            path: resolvedPath,
+        };
+    }
+
+    function setGlobalProjectState(pathOrState, name, icon = '', datalad = undefined) {
+        if (pathOrState && typeof pathOrState === 'object' && !Array.isArray(pathOrState)) {
+            setProjectStateSnapshot(pathOrState);
+            return;
+        }
+
+        setProjectStateSnapshot(pathOrState, name, icon, datalad);
     }
 
     function shouldHideProjectTypeSelectionWhenLoaded() {
@@ -62,6 +95,7 @@ export function createProjectsCurrentStateController({
             path: currentProjectPath,
             name: currentProjectName,
             icon: currentProjectIcon,
+            datalad: currentProjectDatalad,
         };
     }
 
@@ -72,6 +106,7 @@ export function createProjectsCurrentStateController({
         currentProjectIcon = currentProjectPath
             ? resolveProjectIconClass(incomingIcon || currentProjectIcon)
             : '';
+        currentProjectDatalad = normalizeDataladState(project && project.datalad, currentProjectPath);
 
         const existingPathInput = document.getElementById('existingPath');
         if (existingPathInput && currentProjectPath) {
@@ -81,17 +116,23 @@ export function createProjectsCurrentStateController({
         updateProjectTypeSelectionVisibility();
 
         if (window.updateNavbarProject) {
-            window.updateNavbarProject(currentProjectName, currentProjectPath, currentProjectIcon);
+            window.updateNavbarProject(currentProjectName, currentProjectPath, currentProjectIcon, currentProjectDatalad);
             return;
         }
 
-        setGlobalProjectState(currentProjectPath, currentProjectName, currentProjectIcon);
+        setGlobalProjectState({
+            path: currentProjectPath,
+            name: currentProjectName,
+            icon: currentProjectIcon,
+            datalad: currentProjectDatalad,
+        });
     }
 
     const globalProjectState = getProjectStateSnapshot();
     const globalProjectPath = String(globalProjectState.path || '').trim();
     const globalProjectName = String(globalProjectState.name || '').trim();
     const globalProjectIcon = normalizeProjectIconClass(globalProjectState.icon);
+    const globalProjectDatalad = normalizeDataladState(globalProjectState.datalad, globalProjectPath);
 
     if (projectsRoot) {
         currentProjectPath = projectsRoot.dataset.currentProjectPath || globalProjectPath || '';
@@ -99,13 +140,20 @@ export function createProjectsCurrentStateController({
         currentProjectIcon = currentProjectPath
             ? resolveProjectIconClass(projectsRoot.dataset.currentProjectIcon || globalProjectIcon)
             : '';
+        currentProjectDatalad = normalizeDataladState(globalProjectDatalad, currentProjectPath);
     } else {
         currentProjectPath = globalProjectPath;
         currentProjectName = globalProjectName;
         currentProjectIcon = currentProjectPath ? resolveProjectIconClass(globalProjectIcon) : '';
+        currentProjectDatalad = normalizeDataladState(globalProjectDatalad, currentProjectPath);
     }
 
-    setGlobalProjectState(currentProjectPath, currentProjectName, currentProjectIcon);
+    setGlobalProjectState({
+        path: currentProjectPath,
+        name: currentProjectName,
+        icon: currentProjectIcon,
+        datalad: currentProjectDatalad,
+    });
     updateProjectTypeSelectionVisibility();
 
     window.addEventListener('prism-project-changed', function(event) {
@@ -120,10 +168,15 @@ export function createProjectsCurrentStateController({
         const nextIcon = eventState && typeof eventState.icon === 'string'
             ? eventState.icon.trim()
             : String(fallbackState.icon || '').trim();
+        const nextDatalad = normalizeDataladState(
+            eventState && eventState.datalad,
+            nextPath || String(fallbackState.path || '').trim()
+        );
 
         currentProjectPath = nextPath;
         currentProjectName = nextName;
         currentProjectIcon = nextPath ? resolveProjectIconClass(nextIcon || currentProjectIcon) : '';
+        currentProjectDatalad = nextDatalad;
         updateProjectTypeSelectionVisibility();
     });
 

@@ -784,6 +784,226 @@ class ProjectManager:
                 return True
         return bool(value)
 
+    def get_datalad_status(self, path: Union[str, Path, None]) -> Dict[str, Any]:
+        """Return lightweight DataLad status for a project path."""
+        project_path = Path(path) if path else None
+        datalad_executable = shutil.which("datalad")
+        git_annex_executable = shutil.which("git-annex")
+        available = bool(datalad_executable)
+        annex_available = bool(git_annex_executable)
+
+        result: Dict[str, Any] = {
+            "enabled": False,
+            "available": available,
+            "annex_available": annex_available,
+            "can_save": False,
+            "can_enable": False,
+            "message": "",
+            "path": str(project_path) if project_path else "",
+        }
+
+        if not project_path:
+            result["message"] = "Load a project to see DataLad status."
+            return result
+
+        if not project_path.exists() or not project_path.is_dir():
+            result["message"] = "Current project path is unavailable."
+            return result
+
+        if not (project_path / ".datalad").exists():
+            if not available:
+                result["message"] = "DataLad is not installed in this environment."
+                return result
+            if not annex_available:
+                result["message"] = "git-annex is not installed, so new DataLad projects cannot be initialized."
+                return result
+
+            result["can_enable"] = True
+            result["message"] = "Current project is not a DataLad dataset."
+            return result
+
+        result["enabled"] = True
+        if not available:
+            result["message"] = (
+                "Current project is a DataLad dataset, but the datalad executable "
+                "is not available in this environment."
+            )
+            return result
+
+        result["can_save"] = True
+        if annex_available:
+            result["message"] = "Current project is tracked by DataLad."
+        else:
+            result["message"] = (
+                "Current project is tracked by DataLad, but git-annex is not "
+                "available in this environment."
+            )
+        result["executable"] = datalad_executable
+        if git_annex_executable:
+            result["annex_executable"] = git_annex_executable
+        return result
+
+    def save_datalad_snapshot(
+        self,
+        path: Union[str, Path],
+        *,
+        message: str,
+    ) -> Dict[str, Any]:
+        """Persist current project changes into DataLad with a user-supplied message."""
+        project_path = Path(path)
+        status = self.get_datalad_status(project_path)
+        result: Dict[str, Any] = {
+            "success": False,
+            "path": str(project_path),
+            "datalad": dict(status),
+        }
+
+        if not project_path.exists() or not project_path.is_dir():
+            result["error"] = f"Path does not exist or is not a directory: {project_path}"
+            return result
+
+        if not status.get("enabled"):
+            result["error"] = status.get("message") or "Current project is not a DataLad dataset."
+            return result
+
+        if not status.get("available"):
+            result["error"] = status.get("message") or "DataLad is not available in this environment."
+            return result
+
+        save_result = self._run_datalad_save(
+            project_path,
+            message=message,
+            datalad_executable=status.get("executable"),
+        )
+        refreshed_status = self.get_datalad_status(project_path)
+        save_result.update(refreshed_status)
+        result["datalad"] = save_result
+        if save_result.get("saved") or save_result.get("no_changes"):
+            result["success"] = True
+            result["message"] = save_result.get("message", "DataLad save completed.")
+            return result
+
+        result["error"] = save_result.get("message") or "DataLad save failed."
+        return result
+
+    def autosave_datalad_snapshot(
+        self,
+        path: Union[str, Path],
+        *,
+        reason: str,
+    ) -> Dict[str, Any]:
+        """Best-effort DataLad autosave used when PRISM changes project context."""
+        project_path = Path(path)
+        normalized_reason = str(reason or "").strip() or "session_closed"
+        status = self.get_datalad_status(project_path)
+        result: Dict[str, Any] = {
+            "success": False,
+            "attempted": False,
+            "skipped": False,
+            "reason": normalized_reason,
+            "path": str(project_path),
+            "datalad": dict(status),
+        }
+
+        if not project_path.exists() or not project_path.is_dir():
+            result["skipped"] = True
+            result["message"] = f"Path does not exist or is not a directory: {project_path}"
+            return result
+
+        if not status.get("enabled"):
+            result["success"] = True
+            result["skipped"] = True
+            result["message"] = status.get("message") or "Current project is not a DataLad dataset."
+            return result
+
+        if not status.get("available"):
+            result["message"] = status.get("message") or "DataLad is not available in this environment."
+            return result
+
+        save_result = self._run_datalad_save(
+            project_path,
+            message=self._build_auto_datalad_save_message(normalized_reason),
+            datalad_executable=status.get("executable"),
+        )
+        refreshed_status = self.get_datalad_status(project_path)
+        save_result.update(refreshed_status)
+        result["attempted"] = True
+        result["datalad"] = save_result
+
+        if save_result.get("saved") or save_result.get("no_changes"):
+            result["success"] = True
+            result["message"] = save_result.get("message") or "DataLad auto-save completed."
+            return result
+
+        result["error"] = save_result.get("message") or "DataLad auto-save failed."
+        result["message"] = result["error"]
+        return result
+
+    def enable_datalad_for_project(
+        self,
+        path: Union[str, Path],
+        *,
+        message: str = "Enable DataLad for PRISM project",
+    ) -> Dict[str, Any]:
+        """Initialize DataLad for an existing project and save an initial snapshot."""
+        project_path = Path(path)
+        result: Dict[str, Any] = {
+            "success": False,
+            "path": str(project_path),
+        }
+
+        if not project_path.exists() or not project_path.is_dir():
+            result["error"] = f"Path does not exist or is not a directory: {project_path}"
+            result["datalad"] = self.get_datalad_status(project_path)
+            return result
+
+        status = self.get_datalad_status(project_path)
+        if status.get("enabled"):
+            result["success"] = True
+            result["message"] = "Current project is already tracked by DataLad."
+            result["datalad"] = status
+            return result
+
+        datalad_result = self._create_datalad_dataset(project_path, enabled=True)
+        refreshed_status = self.get_datalad_status(project_path)
+
+        if not datalad_result.get("initialized"):
+            datalad_result.update(refreshed_status)
+            result["error"] = datalad_result.get("message") or "Could not enable DataLad for this project."
+            result["datalad"] = datalad_result
+            return result
+
+        datalad_result = self._save_datalad_changes(
+            project_path,
+            datalad_result,
+            message=message,
+        )
+        refreshed_status = self.get_datalad_status(project_path)
+        if not refreshed_status.get("enabled") and datalad_result.get("initialized"):
+            refreshed_status["enabled"] = True
+            refreshed_status["available"] = bool(datalad_result.get("available"))
+            refreshed_status["can_save"] = bool(
+                datalad_result.get("saved")
+                or datalad_result.get("no_changes")
+                or datalad_result.get("available")
+            )
+            refreshed_status["message"] = (
+                datalad_result.get("message")
+                or "DataLad enabled for the current project."
+            )
+        datalad_result.update(refreshed_status)
+        result["datalad"] = datalad_result
+        result["success"] = bool(
+            refreshed_status.get("enabled") or datalad_result.get("initialized")
+        )
+
+        if result["success"]:
+            result["message"] = datalad_result.get("message") or "DataLad enabled for the current project."
+            return result
+
+        result["error"] = datalad_result.get("message") or "Could not enable DataLad for this project."
+        return result
+
     def _create_datalad_dataset(
         self,
         project_path: Path,
@@ -804,6 +1024,7 @@ class ProjectManager:
             return result
 
         datalad_executable = shutil.which("datalad")
+        git_annex_executable = shutil.which("git-annex")
         result["available"] = bool(datalad_executable)
         if not datalad_executable:
             result["message"] = (
@@ -812,7 +1033,16 @@ class ProjectManager:
             )
             return result
 
+        result["annex_available"] = bool(git_annex_executable)
+        if not git_annex_executable:
+            result["message"] = (
+                "git-annex is not installed in this environment. PRISM continued "
+                "without DataLad integration."
+            )
+            return result
+
         result["executable"] = datalad_executable
+        result["annex_executable"] = git_annex_executable
 
         try:
             process = subprocess.run(
@@ -855,45 +1085,93 @@ class ProjectManager:
         if not result.get("initialized"):
             return result
 
-        datalad_executable = result.get("executable") or shutil.which("datalad")
-        if not datalad_executable:
-            result["available"] = False
+        save_result = self._run_datalad_save(
+            project_path,
+            message=message,
+            datalad_executable=result.get("executable"),
+        )
+        result.update(save_result)
+
+        if save_result.get("saved"):
+            result["message"] = f'DataLad dataset initialized and saved with message "{message}".'
+            return result
+
+        if save_result.get("no_changes"):
+            result["message"] = "DataLad dataset initialized. No additional DataLad save was needed."
+            return result
+
+        if not save_result.get("available"):
             result["message"] = (
                 "DataLad was initialized, but the executable is no longer available "
                 "to save changes."
             )
             return result
 
+        detail = save_result.get("message") or "Unknown DataLad error."
+        result["message"] = f"DataLad dataset initialized, but saving project changes failed: {detail}"
+        return result
+
+    def _run_datalad_save(
+        self,
+        project_path: Path,
+        *,
+        message: str,
+        datalad_executable: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Run a DataLad save command and normalize the result payload."""
+        normalized_message = str(message or "").strip() or "Save PRISM project changes"
+        result: Dict[str, Any] = {
+            "available": False,
+            "saved": False,
+            "no_changes": False,
+            "save_message": normalized_message,
+            "message": "",
+        }
+
+        resolved_executable = datalad_executable or shutil.which("datalad")
+        if not resolved_executable:
+            result["message"] = "DataLad executable is not available."
+            return result
+
+        result["available"] = True
+        result["executable"] = str(resolved_executable)
+
         try:
             process = subprocess.run(
-                [str(datalad_executable), "save", "-m", message],
+                [str(resolved_executable), "save", "-m", normalized_message],
                 cwd=str(project_path),
                 capture_output=True,
                 text=True,
                 check=False,
             )
         except Exception as exc:
-            result["message"] = (
-                f"DataLad dataset initialized, but saving changes failed "
-                f"({type(exc).__name__}: {exc})."
-            )
+            result["message"] = f"DataLad save failed ({type(exc).__name__}: {exc})."
             return result
 
         if process.returncode == 0:
             result["saved"] = True
-            result["message"] = f'DataLad dataset initialized and saved with message "{message}".'
+            result["message"] = f'DataLad saved changes with message "{normalized_message}".'
             return result
 
         detail = (process.stderr or process.stdout or "").strip()
         if "nothing to save" in detail.lower():
-            result["message"] = "DataLad dataset initialized. No additional DataLad save was needed."
+            result["no_changes"] = True
+            result["message"] = "No DataLad changes were pending."
             return result
 
-        result["message"] = (
-            "DataLad dataset initialized, but saving project changes failed: "
-            f"{detail or 'Unknown DataLad error'}."
-        )
+        result["message"] = f"DataLad save failed: {detail or 'Unknown DataLad error.'}"
         return result
+
+    def _build_auto_datalad_save_message(self, reason: str) -> str:
+        """Return a stable commit message for lifecycle-triggered DataLad saves."""
+        normalized_reason = str(reason or "").strip().lower()
+        if normalized_reason.startswith("project_switch"):
+            return "PRISM auto-save before project switch"
+        if normalized_reason == "project_cleared":
+            return "PRISM auto-save before clearing current project"
+        if normalized_reason == "prism_closed":
+            return "PRISM auto-save on PRISM close"
+        return "PRISM auto-save"
 
     def _create_bidsignore(self, modalities: List[str]) -> str:
         """Create .bidsignore content."""

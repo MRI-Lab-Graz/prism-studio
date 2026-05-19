@@ -94,9 +94,9 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
         init_content = INIT_BIDS_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn('id="projectUseDatalad"', create_content)
-        self.assertIn("Initialize as a DataLad dataset", create_content)
+        self.assertIn("Use DataLad version control for this new project", create_content)
         self.assertIn('id="initBidsUseDatalad"', init_content)
-        self.assertIn("Wrap this dataset with DataLad", init_content)
+        self.assertIn("Use DataLad version control for this dataset", init_content)
 
     def test_projects_cards_explain_starting_points(self):
         content = PROJECTS_TEMPLATE.read_text(encoding="utf-8")
