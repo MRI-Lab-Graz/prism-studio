@@ -9,6 +9,30 @@ export function initCreatePreflightController({
     let createTargetStatusRequestToken = 0;
     let createTargetStatusDebounceTimer = null;
 
+    function getCreateDataladToggleState() {
+        return document.getElementById('projectUseDatalad')?.checked !== false;
+    }
+
+    function buildDataladPreflightHtml(status, targetPath) {
+        const dataladPreflight = status?.datalad_preflight;
+        if (!getCreateDataladToggleState() || !dataladPreflight || dataladPreflight.can_enable) {
+            return '';
+        }
+
+        const title = dataladPreflight.available ? 'git-annex Missing' : 'DataLad Missing';
+        const targetHtml = targetPath
+            ? `<p class="mb-2"><strong>Target:</strong> <code>${escapeHtml(targetPath)}</code></p>`
+            : '';
+
+        return `
+            <div class="alert alert-warning mb-0">
+                <h5><i class="fas fa-code-branch me-2"></i>${title}</h5>
+                ${targetHtml}
+                <p class="mb-0">${escapeHtml(dataladPreflight.message || 'DataLad tools are not available for project setup.')}</p>
+            </div>
+        `;
+    }
+
     function resetCreateTargetStatusChecks() {
         if (createTargetStatusDebounceTimer) {
             window.clearTimeout(createTargetStatusDebounceTimer);
@@ -42,13 +66,23 @@ export function initCreatePreflightController({
                 return { conflict: false, stale: true };
             }
 
+            const dataladWarningHtml = buildDataladPreflightHtml(status, targetPath);
+
             if (!status || status.success !== true || status.exists !== true) {
-                clearCreateResult('preflight');
+                if (dataladWarningHtml) {
+                    setCreateResultHtml(dataladWarningHtml, 'preflight');
+                } else {
+                    clearCreateResult('preflight');
+                }
                 return { conflict: false, targetPath };
             }
 
             if (status.is_dir && status.is_empty_dir) {
-                clearCreateResult('preflight');
+                if (dataladWarningHtml) {
+                    setCreateResultHtml(dataladWarningHtml, 'preflight');
+                } else {
+                    clearCreateResult('preflight');
+                }
                 return { conflict: false, targetPath, status };
             }
 
@@ -85,6 +119,7 @@ export function initCreatePreflightController({
                         <p class="mb-0">${message}</p>
                         ${actionHtml}
                     </div>
+                    ${dataladWarningHtml}
                 `,
                 'preflight'
             );
@@ -161,6 +196,13 @@ export function initCreatePreflightController({
         projectPathInput.addEventListener('change', function() {
             this.classList.remove('is-invalid');
             clearCreateResult();
+            scheduleCreateTargetStatusCheck();
+        });
+    }
+
+    const projectUseDataladInput = document.getElementById('projectUseDatalad');
+    if (projectUseDataladInput) {
+        projectUseDataladInput.addEventListener('change', function() {
             scheduleCreateTargetStatusCheck();
         });
     }
