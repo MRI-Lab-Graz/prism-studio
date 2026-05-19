@@ -224,6 +224,60 @@ export function initOpenProjectController({
         );
     }
 
+    async function pollCurrentProjectDataladStateWhileBusy({
+        currentPath,
+        actionState,
+        busyMarkup,
+        fallbackTarget,
+    }) {
+        const normalizedPath = String(currentPath || '').trim();
+        if (!normalizedPath) {
+            return;
+        }
+
+        while (actionState.active) {
+            await new Promise((resolve) => window.setTimeout(resolve, 1500));
+            if (!actionState.active) {
+                return;
+            }
+
+            try {
+                const response = await fetchWithApiFallback('/api/projects/current', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+                const current = await response.json().catch(() => null);
+                if (!actionState.active || !response.ok || !current || typeof current !== 'object') {
+                    continue;
+                }
+
+                const responsePath = String(current.path || '').trim();
+                if (responsePath !== normalizedPath) {
+                    continue;
+                }
+
+                applyCurrentProject(current);
+                renderProjectBoxDataladState(current.datalad, normalizedPath);
+
+                const liveDataladState = normalizeDataladState(current.datalad, normalizedPath);
+                const liveTarget = liveDataladState.nextMissingSubdataset || fallbackTarget || 'the next nested dataset';
+                const liveMessage = `Repairing ${liveTarget}. Large tracked folders can take a while. Watch the backend terminal for progress.`;
+                setProjectBoxDataladFeedback(liveMessage, 'muted');
+                window.setNavbarDataladFeedback?.(liveMessage, 'muted', 'Running');
+
+                const enableButton = document.getElementById('projectBoxDataladEnableBtn');
+                if (enableButton && actionState.active) {
+                    enableButton.disabled = true;
+                    enableButton.innerHTML = busyMarkup;
+                }
+            } catch (_error) {
+                if (!actionState.active) {
+                    return;
+                }
+            }
+        }
+    }
+
     function bindProjectBoxDataladActions() {
         const enableButton = document.getElementById('projectBoxDataladEnableBtn');
         if (enableButton && enableButton.dataset.bound !== '1') {
@@ -243,9 +297,22 @@ export function initOpenProjectController({
                 }
 
                 const originalText = enableButton.innerHTML;
+                const currentDataladState = normalizeDataladState(getCurrentProjectState().datalad, currentPath);
+                const busyLabel = currentDataladState.enabled ? 'Repairing...' : 'Enabling...';
+                const busyMarkup = `<i class="fas fa-spinner fa-spin me-1"></i>${busyLabel}`;
                 enableButton.disabled = true;
-                enableButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Enabling...';
-                setProjectBoxDataladFeedback('', 'muted');
+                enableButton.innerHTML = busyMarkup;
+                const repairTarget = currentDataladState.nextMissingSubdataset || 'the next nested dataset';
+                const pendingMessage = `Repairing ${repairTarget}. Large tracked folders can take a while. Watch the backend terminal for progress.`;
+                setProjectBoxDataladFeedback(pendingMessage, 'muted');
+                window.setNavbarDataladFeedback?.(pendingMessage, 'muted', 'Running');
+                const actionState = { active: true };
+                const pollingPromise = pollCurrentProjectDataladStateWhileBusy({
+                    currentPath,
+                    actionState,
+                    busyMarkup,
+                    fallbackTarget: repairTarget,
+                });
 
                 try {
                     const response = await fetchWithApiFallback('/api/projects/datalad/enable', {
@@ -267,6 +334,8 @@ export function initOpenProjectController({
                     setProjectBoxDataladFeedback(errorMessage, 'danger');
                     window.setNavbarDataladFeedback?.(errorMessage, 'danger', 'Error');
                 } finally {
+                    actionState.active = false;
+                    await pollingPromise.catch(() => {});
                     enableButton.innerHTML = originalText;
                     renderProjectBoxDataladState(getCurrentProjectState().datalad, currentPath);
                 }

@@ -1703,7 +1703,7 @@ def emit_backend_action(
         return
 
     rendered_lines = "\n".join(lines)
-    print(f"\n{rendered_lines}\n")
+    print(f"\n{rendered_lines}\n", flush=True)
 
 
 def emit_backend_request_action(req, app_root: str) -> None:

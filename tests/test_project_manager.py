@@ -3,6 +3,7 @@ import os
 import sys
 import tempfile
 import unittest
+import subprocess
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -733,6 +734,34 @@ class TestProjectManager(unittest.TestCase):
             ["/usr/bin/datalad", "create", "-d", ".", "--force", "derivatives"],
             commands,
         )
+
+    @patch(
+        "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
+        return_value=True,
+    )
+    @patch("src.project_manager.shutil.which")
+    @patch("src.project_manager.subprocess.run")
+    def test_enable_datalad_for_project_reports_timeout_for_parent_untrack_step(
+        self, mock_run, mock_which, _mock_parent_tracks
+    ):
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
+        mock_run.side_effect = subprocess.TimeoutExpired(
+            cmd=["git", "rm", "--cached", "-r", "--", "derivatives"],
+            timeout=120,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "derivatives").mkdir(parents=True, exist_ok=True)
+
+            result = manager.enable_datalad_for_project(project_path)
+
+        self.assertTrue(result.get("success"), result)
+        failures = result.get("datalad", {}).get("subdataset_failures") or []
+        self.assertEqual(len(failures), 1)
+        self.assertIn("timed out after 120 seconds", failures[0])
 
     @patch("src.project_manager.shutil.which")
     def test_enable_datalad_for_project_fails_without_git_annex(self, mock_which):

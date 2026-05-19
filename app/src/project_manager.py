@@ -60,6 +60,7 @@ BIDS_PASSTHROUGH_MODALITIES = {"eyetracking"}
 # Valid project name pattern (no spaces, filesystem-safe)
 PROJECT_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
 VALID_DATASET_TYPES = {"raw", "derivative"}
+DATALAD_REPAIR_STEP_TIMEOUT_SECONDS = 120
 
 
 class ProjectManager:
@@ -1375,7 +1376,13 @@ class ProjectManager:
                     capture_output=True,
                     text=True,
                     check=False,
+                    timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
                 )
+            except subprocess.TimeoutExpired:
+                failed_paths.append(
+                    f"{relative_dataset_text} ({self._format_repair_timeout_message(f'Creating nested DataLad dataset \"{relative_dataset_text}\"')})"
+                )
+                continue
             except Exception as exc:
                 failed_paths.append(
                     f"{relative_dataset_text} ({type(exc).__name__}: {exc})"
@@ -1446,6 +1453,42 @@ class ProjectManager:
 
         return process.returncode == 0 and bool(process.stdout)
 
+    def _emit_backend_progress(
+        self,
+        message: str,
+        *,
+        command: str = "",
+    ) -> None:
+        """Emit an immediate terminal progress line for long DataLad repair steps."""
+        try:
+            from flask import current_app, has_app_context
+
+            if not has_app_context():
+                return
+
+            from src.web.backend_monitoring import emit_backend_action
+
+            payload = str(message or "").strip()
+            command_text = str(command or "").strip()
+            if not payload:
+                return
+            if command_text:
+                payload = f"{payload}\ncmd={command_text}"
+            emit_backend_action(
+                payload,
+                app_root=str(Path(current_app.root_path)),
+                prefix="PROJECT",
+                force_emit=True,
+            )
+        except Exception:
+            pass
+
+    def _format_repair_timeout_message(self, step_label: str) -> str:
+        return (
+            f"{step_label} timed out after {DATALAD_REPAIR_STEP_TIMEOUT_SECONDS} seconds. "
+            "Large tracked directories can take a while; please review the backend terminal output and retry."
+        )
+
     def _migrate_parent_tracked_directory_to_subdataset(
         self,
         project_path: Path,
@@ -1454,13 +1497,27 @@ class ProjectManager:
     ) -> Dict[str, Any]:
         """Convert a parent-tracked directory into a nested DataLad subdataset."""
         relative_dataset_text = dataset_path.relative_to(project_path).as_posix()
-        remove_process = subprocess.run(
-            ["git", "rm", "--cached", "-r", "--", relative_dataset_text],
-            cwd=str(project_path),
-            capture_output=True,
-            text=True,
-            check=False,
+        remove_command = ["git", "rm", "--cached", "-r", "--", relative_dataset_text]
+        self._emit_backend_progress(
+            f'Preparing nested DataLad dataset for "{relative_dataset_text}" by untracking parent-owned content.',
+            command=" ".join(remove_command),
         )
+        try:
+            remove_process = subprocess.run(
+                remove_command,
+                cwd=str(project_path),
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            return {
+                "success": False,
+                "message": self._format_repair_timeout_message(
+                    f'Untracking parent content under "{relative_dataset_text}"'
+                ),
+            }
         if remove_process.returncode != 0:
             detail = (
                 remove_process.stderr
@@ -1472,6 +1529,13 @@ class ProjectManager:
                 "message": self._summarize_datalad_error(detail),
             }
 
+        self._emit_backend_progress(
+            f'Checkpointing parent dataset before creating nested dataset "{relative_dataset_text}".',
+            command=(
+                f'{datalad_executable} save -m '
+                f'"Prepare \"{relative_dataset_text}\" for nested DataLad dataset"'
+            ),
+        )
         prep_save_result = self._run_datalad_save(
             project_path,
             message=f'Prepare "{relative_dataset_text}" for nested DataLad dataset',
@@ -1484,20 +1548,34 @@ class ProjectManager:
                 "message": self._summarize_datalad_error(detail),
             }
 
-        create_process = subprocess.run(
-            [
-                datalad_executable,
-                "create",
-                "-d",
-                ".",
-                "--force",
-                relative_dataset_text,
-            ],
-            cwd=str(project_path),
-            capture_output=True,
-            text=True,
-            check=False,
+        create_command = [
+            datalad_executable,
+            "create",
+            "-d",
+            ".",
+            "--force",
+            relative_dataset_text,
+        ]
+        self._emit_backend_progress(
+            f'Creating nested DataLad dataset "{relative_dataset_text}".',
+            command=" ".join(create_command),
         )
+        try:
+            create_process = subprocess.run(
+                create_command,
+                cwd=str(project_path),
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            return {
+                "success": False,
+                "message": self._format_repair_timeout_message(
+                    f'Creating nested DataLad dataset "{relative_dataset_text}"'
+                ),
+            }
         if create_process.returncode != 0:
             detail = (
                 create_process.stderr
@@ -1509,6 +1587,13 @@ class ProjectManager:
                 "message": self._summarize_datalad_error(detail),
             }
 
+        self._emit_backend_progress(
+            f'Saving nested DataLad dataset "{dataset_path.name}".',
+            command=(
+                f'{datalad_executable} -C {dataset_path} save -m '
+                f'"Initialize DataLad nested dataset \"{dataset_path.name}\""'
+            ),
+        )
         nested_save_result = self._run_datalad_save(
             dataset_path,
             message=f'Initialize DataLad nested dataset "{dataset_path.name}"',
@@ -1521,7 +1606,10 @@ class ProjectManager:
                 "message": self._summarize_datalad_error(detail),
             }
 
-        return {"success": True, "message": "Migrated tracked parent content into a nested DataLad dataset."}
+        return {
+            "success": True,
+            "message": "Migrated tracked parent content into a nested DataLad dataset.",
+        }
 
     def _summarize_datalad_error(self, detail: str) -> str:
         """Reduce verbose DataLad stderr/stdout into a concise UI-safe summary."""
@@ -1565,7 +1653,6 @@ class ProjectManager:
             "subdatasets_progress_percent": progress_percent,
             "next_missing_subdataset": missing_paths[0] if missing_paths else "",
         }
-
     def _iter_nested_dataset_paths(self, project_path: Path) -> List[Path]:
         """Return immediate project directories that should become DataLad subdatasets."""
         nested_paths: List[Path] = []
@@ -1675,7 +1762,13 @@ class ProjectManager:
                 capture_output=True,
                 text=True,
                 check=False,
+                timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
             )
+        except subprocess.TimeoutExpired:
+            result["message"] = self._format_repair_timeout_message(
+                f'DataLad save for "{project_path.name}"'
+            )
+            return result
         except Exception as exc:
             result["message"] = f"DataLad save failed ({type(exc).__name__}: {exc})."
             return result
