@@ -895,6 +895,7 @@ def inject_utilities():
             current_version,
             latest_version,
         ),
+        "prism_api_origin": request.host_url.rstrip("/"),
         "prism_static_asset_token": app.config.get("PRISM_STARTUP_ID", "dev"),
     }
 
