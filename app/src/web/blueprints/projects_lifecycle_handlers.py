@@ -42,10 +42,19 @@ def _derive_project_name(root_path: Path, fallback_name: str | None = None) -> s
     return root_path.name
 
 
-def _derive_project_icon(root_path: Path, fallback_icon: Any = None) -> str:
-    """Resolve and persist project icon with safe fallback behavior."""
+def _derive_project_icon(
+    root_path: Path,
+    fallback_icon: Any = None,
+    *,
+    persist_when_missing: bool = True,
+) -> str:
+    """Resolve project icon with optional persistence for explicit write flows."""
     try:
-        return resolve_project_icon(root_path, fallback_icon=fallback_icon)
+        return resolve_project_icon(
+            root_path,
+            fallback_icon=fallback_icon,
+            persist_when_missing=persist_when_missing,
+        )
     except Exception:
         return normalize_project_icon(fallback_icon) or choose_random_project_icon()
 
@@ -117,7 +126,12 @@ def handle_set_current(
     path = str(resolved_root)
 
     resolved_name = _derive_project_name(Path(path), fallback_name=name)
-    resolved_icon = _derive_project_icon(Path(path), fallback_icon=data.get("icon"))
+    requested_icon = normalize_project_icon(data.get("icon"))
+    resolved_icon = _derive_project_icon(
+        Path(path),
+        fallback_icon=requested_icon,
+        persist_when_missing=bool(requested_icon),
+    )
 
     set_current_project(path, resolved_name)
     session["current_project_icon"] = resolved_icon
@@ -154,7 +168,7 @@ def handle_create_project(project_manager, set_current_project, save_last_projec
 
         config = {
             "name": data.get("name", Path(path).name),
-            "use_datalad": data.get("use_datalad", True),
+            "use_datalad": data.get("use_datalad", False),
             "authors": data.get("authors"),
             "license": data.get("license"),
             "doi": data.get("doi"),
@@ -214,7 +228,7 @@ def handle_init_on_bids(project_manager, set_current_project, save_last_project)
 
         config = {
             "name": data.get("name"),
-            "use_datalad": data.get("use_datalad", True),
+            "use_datalad": data.get("use_datalad", False),
             "authors": data.get("authors"),
             "license": data.get("license"),
             "doi": data.get("doi"),
