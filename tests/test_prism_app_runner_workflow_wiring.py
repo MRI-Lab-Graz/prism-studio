@@ -32,7 +32,9 @@ class TestPrismAppRunnerWorkflowWiring(unittest.TestCase):
             "return sharedFetchWithApiFallback(url, options, fallbackMessage);",
             script_content,
         )
-        self.assertIn("await fetchWithApiFallback('/api/browse-folder');", script_content)
+        self.assertIn("function getPathPicker() {", script_content)
+        self.assertIn("return pathPicker.browseFolder({", script_content)
+        self.assertIn("return pathPicker.browseFile({", script_content)
         self.assertIn("await fetchWithApiFallback('/api/prism-app-runner/compatibility', {", script_content)
         self.assertIn("await fetchWithApiFallback('/api/prism-app-runner/remote-profiles');", script_content)
         self.assertIn("await fetchWithApiFallback(`/api/prism-app-runner/remote-profiles/${encodeURIComponent(profileName)}`, {", script_content)

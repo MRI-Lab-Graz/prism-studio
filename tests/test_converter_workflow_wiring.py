@@ -1785,7 +1785,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "export async function pickServerFolder(options)",
             server_picker_content,
         )
-        self.assertIn("window.PrismFileSystemMode", server_picker_content)
+        self.assertIn("window.PrismPathPicker", server_picker_content)
         self.assertIn("fetchWithApiFallback('/api/survey-generate-templates', {", template_generation_content)
         self.assertIn("showTemplateResultsContainer();", template_generation_content)
         self.assertIn("displayParticipantMetadataSection(data);", template_generation_content)

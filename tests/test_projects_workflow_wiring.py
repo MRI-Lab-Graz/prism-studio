@@ -114,14 +114,12 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         content = SHARED_PATH_PICKER_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("export function prefersServerPicker()", content)
-        self.assertIn("export async function browseFolderWithFallback(fetchWithApiFallback, options = {})", content)
-        self.assertIn("export async function browseFileWithFallback(fetchWithApiFallback, options = {})", content)
+        self.assertIn("export async function browseFolderWithFallback(_fetchWithApiFallback, options = {})", content)
+        self.assertIn("export async function browseFileWithFallback(_fetchWithApiFallback, options = {})", content)
+        self.assertIn("return typeof window !== 'undefined' ? window.PrismPathPicker : null;", content)
+        self.assertIn("return requirePathPicker('browseFolder').browseFolder(options);", content)
+        self.assertIn("return requirePathPicker('browseFile').browseFile(options);", content)
         self.assertIn("window.PrismFileSystemMode.prefersServerPicker()", content)
-        self.assertIn("const response = await fetchWithApiFallback('/api/browse-folder');", content)
-        self.assertIn("const response = await fetchWithApiFallback(`/api/browse-file${query}`);", content)
-        self.assertIn("window.PrismFolderBrowser.open({", content)
-        self.assertIn("Native folder picker failed, falling back to in-app browser:", content)
-        self.assertIn("Native file picker failed, falling back to in-app browser:", content)
 
     def test_new_project_draft_clear_uses_api_fallback(self):
         content = PROJECTS_SELECTION_MODULE.read_text(encoding="utf-8")

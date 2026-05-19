@@ -31,6 +31,11 @@ class TestFilesystemModeWiring(unittest.TestCase):
             "return sharedFetchWithApiFallback(url, options, fallbackMessage);",
             content,
         )
+        self.assertIn("async function browseFolder(options = {}) {", content)
+        self.assertIn("async function browseFile(options = {}) {", content)
+        self.assertIn("window.PrismPathPicker = {", content)
+        self.assertIn("pickServerFolder: pickFolder,", content)
+        self.assertIn("pickServerFile: pickFile,", content)
 
 
 if __name__ == "__main__":
