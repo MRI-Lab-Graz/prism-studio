@@ -661,3 +661,42 @@ def test_template_export_route_blocks_when_validation_fails(tmp_path):
     assert payload.get("success") is False
     assert "Export blocked" in str(payload.get("error", ""))
     mock_export.assert_not_called()
+
+
+def test_project_folder_export_route_uses_project_manager_and_output_folder(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / ".datalad").mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    out_dir = tmp_path / "exports"
+
+    with patch(
+        "src.project_manager.ProjectManager.export_project_to_plain_folder",
+        return_value={
+            "success": True,
+            "output_path": str(out_dir / "study_folder_export"),
+            "excluded_repository_metadata": [".datalad", ".git"],
+            "message": "ok",
+        },
+    ) as mock_export:
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/folder",
+                json={
+                    "project_path": str(project_dir),
+                    "output_folder": str(out_dir),
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("success") is True
+    assert payload.get("output_path", "").endswith("study_folder_export")
+    assert payload.get("excluded_repository_metadata") == [".datalad", ".git"]
+    mock_export.assert_called_once_with(
+        project_dir,
+        output_root=str(out_dir),
+    )

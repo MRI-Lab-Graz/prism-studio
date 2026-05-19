@@ -528,6 +528,32 @@ def export_browse_folder():
     return jsonify({"folder": outcome.path or None})
 
 
+@projects_export_bp.route("/api/projects/export/folder", methods=["POST"])
+def export_project_folder():
+    """Create a plain folder export without Git/DataLad metadata."""
+    try:
+        from src.project_manager import ProjectManager
+
+        data = request.get_json() or {}
+        project_path_raw = data.get("project_path")
+        resolved = _resolve_project_root_path(project_path_raw)
+        if resolved is None:
+            return jsonify({"success": False, "error": "Invalid project path"}), 400
+
+        output_folder = data.get("output_folder") or None
+
+        manager = ProjectManager()
+        result = manager.export_project_to_plain_folder(
+            resolved,
+            output_root=output_folder,
+        )
+        if result.get("success"):
+            return jsonify(result)
+        return jsonify(result), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @projects_export_bp.route("/api/projects/export/defacing-report", methods=["POST"])
 def export_defacing_report():
     """Return a defacing status report for all anatomical scans in the project."""
