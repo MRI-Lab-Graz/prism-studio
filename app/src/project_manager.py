@@ -215,6 +215,12 @@ class ProjectManager:
             created_files.extend(library_files)
 
             if datalad_result is not None:
+                datalad_result.update(
+                    self._create_nested_subdatasets(
+                        project_path,
+                        str(datalad_result.get("executable") or ""),
+                    )
+                )
                 datalad_result = self._save_datalad_changes(
                     project_path,
                     datalad_result,
@@ -369,6 +375,12 @@ class ProjectManager:
                     created_files.append(f"{folder}/")
 
             if datalad_result is not None:
+                datalad_result.update(
+                    self._create_nested_subdatasets(
+                        project_path,
+                        str(datalad_result.get("executable") or ""),
+                    )
+                )
                 datalad_result = self._save_datalad_changes(
                     project_path,
                     datalad_result,
@@ -812,6 +824,11 @@ class ProjectManager:
             "can_enable": False,
             "message": "",
             "path": str(project_path) if project_path else "",
+            "subdatasets_total_count": 0,
+            "subdatasets_registered_count": 0,
+            "subdatasets_remaining_count": 0,
+            "subdatasets_progress_percent": 0,
+            "next_missing_subdataset": "",
         }
 
         if not project_path:
@@ -835,6 +852,7 @@ class ProjectManager:
             return result
 
         result["enabled"] = True
+        result.update(self._summarize_nested_subdatasets(project_path))
         if not available:
             result["message"] = (
                 "Current project is a DataLad dataset, but the datalad executable "
@@ -844,7 +862,14 @@ class ProjectManager:
 
         result["can_save"] = True
         if annex_available:
-            result["message"] = "Current project is tracked by DataLad."
+            if result.get("subdatasets_total_count"):
+                result["message"] = (
+                    "Current project is tracked by DataLad. "
+                    f"Nested datasets: {result.get('subdatasets_registered_count', 0)}/"
+                    f"{result.get('subdatasets_total_count', 0)} registered."
+                )
+            else:
+                result["message"] = "Current project is tracked by DataLad."
         else:
             result["message"] = (
                 "Current project is tracked by DataLad, but git-annex is not "
@@ -1041,6 +1066,120 @@ class ProjectManager:
 
         status = self.get_datalad_status(project_path)
         if status.get("enabled"):
+            datalad_executable = status.get("executable") or shutil.which("datalad")
+            if datalad_executable:
+                datalad_result: Dict[str, Any] = {
+                    "requested": True,
+                    "available": True,
+                    "initialized": True,
+                    "saved": False,
+                    "executable": str(datalad_executable),
+                }
+                datalad_result.update(
+                    self._create_nested_subdatasets(
+                        project_path,
+                        str(datalad_executable),
+                        max_to_create=1,
+                    )
+                )
+
+                created_subdatasets = datalad_result.get(
+                    "subdatasets_created",
+                    [],
+                )
+                failed_subdatasets = datalad_result.get(
+                    "subdataset_failures",
+                    [],
+                )
+                remaining_subdatasets = int(
+                    datalad_result.get("subdatasets_remaining_count", 0)
+                )
+                if created_subdatasets:
+                    save_result = self._run_datalad_save(
+                        project_path,
+                        message=message,
+                        datalad_executable=str(datalad_executable),
+                    )
+                    datalad_result.update(save_result)
+                    if save_result.get("saved"):
+                        if remaining_subdatasets > 0:
+                            datalad_result["message"] = (
+                                f'Current project is already tracked by DataLad. Added '
+                                f'{len(created_subdatasets)} nested subdataset(s) and saved '
+                                f'with message "{message}". {remaining_subdatasets} '
+                                f'nested subdataset(s) remain; run repair again to continue.'
+                            )
+                        else:
+                            datalad_result["message"] = (
+                                f'Current project is already tracked by DataLad. Added '
+                                f'{len(created_subdatasets)} nested subdataset(s) '
+                                f'and saved with message "{message}".'
+                            )
+                    elif save_result.get("no_changes"):
+                        if remaining_subdatasets > 0:
+                            datalad_result["message"] = (
+                                f"Current project is already tracked by DataLad. Added "
+                                f"{len(created_subdatasets)} nested subdataset(s). "
+                                f"{remaining_subdatasets} nested subdataset(s) remain; run "
+                                f"repair again to continue."
+                            )
+                        else:
+                            datalad_result["message"] = (
+                                f"Current project is already tracked by DataLad. Added "
+                                f"{len(created_subdatasets)} nested subdataset(s)."
+                            )
+                    else:
+                        datalad_result["message"] = (
+                            save_result.get("message")
+                            or "DataLad save failed while registering nested subdatasets."
+                        )
+                elif failed_subdatasets:
+                    datalad_result["message"] = (
+                        "DataLad repair could not register the next missing nested "
+                        f"dataset: {failed_subdatasets[0]}"
+                    )
+                else:
+                    datalad_result.update(status)
+                    datalad_result["message"] = "Current project is already tracked by DataLad."
+
+                message_text = datalad_result.get("message")
+                progress_total = int(datalad_result.get("subdatasets_total_count", 0) or 0)
+                progress_registered = int(
+                    datalad_result.get("subdatasets_registered_count", 0) or 0
+                )
+                progress_remaining = int(
+                    datalad_result.get("subdatasets_remaining_count", 0) or 0
+                )
+                progress_next_missing = str(
+                    datalad_result.get("next_missing_subdataset") or ""
+                ).strip()
+                refreshed_status = self.get_datalad_status(project_path)
+                datalad_result.update(refreshed_status)
+                if progress_total and int(datalad_result.get("subdatasets_total_count", 0) or 0) < progress_total:
+                    datalad_result["subdatasets_total_count"] = progress_total
+                if progress_registered and int(datalad_result.get("subdatasets_registered_count", 0) or 0) < progress_registered:
+                    datalad_result["subdatasets_registered_count"] = progress_registered
+                if progress_remaining < int(datalad_result.get("subdatasets_remaining_count", 0) or 0):
+                    datalad_result["subdatasets_remaining_count"] = progress_remaining
+                if progress_total:
+                    registered_count = int(
+                        datalad_result.get("subdatasets_registered_count", 0) or 0
+                    )
+                    total_count = int(
+                        datalad_result.get("subdatasets_total_count", 0) or 0
+                    )
+                    datalad_result["subdatasets_progress_percent"] = (
+                        100 if total_count == 0 else int((registered_count * 100) / total_count)
+                    )
+                if progress_next_missing and not str(datalad_result.get("next_missing_subdataset") or "").strip():
+                    datalad_result["next_missing_subdataset"] = progress_next_missing
+                if message_text:
+                    datalad_result["message"] = message_text
+                result["success"] = True
+                result["message"] = datalad_result.get("message") or "Current project is already tracked by DataLad."
+                result["datalad"] = datalad_result
+                return result
+
             result["success"] = True
             result["message"] = "Current project is already tracked by DataLad."
             result["datalad"] = status
@@ -1149,9 +1288,185 @@ class ProjectManager:
             )
             return result
 
+        nested_result = self._create_nested_subdatasets(
+            project_path,
+            datalad_executable,
+        )
+        result.update(nested_result)
         result["initialized"] = True
         result["message"] = "DataLad dataset initialized."
         return result
+
+    def _create_nested_subdatasets(
+        self,
+        project_path: Path,
+        datalad_executable: str,
+        *,
+        max_to_create: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Create nested DataLad subdatasets under an existing project dataset."""
+        created_paths: List[str] = []
+        existing_paths: List[str] = []
+        failed_paths: List[str] = []
+        skipped_paths: List[str] = []
+
+        if not datalad_executable:
+            return {
+                "subdatasets_created": created_paths,
+                "subdatasets_existing": existing_paths,
+                "subdataset_failures": failed_paths,
+                "subdatasets_skipped": skipped_paths,
+                "subdatasets_total_count": 0,
+                "subdatasets_registered_count": 0,
+                "subdatasets_remaining_count": 0,
+                "subject_datasets_created": created_paths,
+                "subject_datasets_existing": existing_paths,
+                "subject_dataset_failures": failed_paths,
+            }
+
+        nested_dataset_paths = self._iter_nested_dataset_paths(project_path)
+        missing_dataset_paths = [
+            dataset_path
+            for dataset_path in nested_dataset_paths
+            if not self._is_datalad_dataset(dataset_path)
+        ]
+        remaining_budget = max_to_create if max_to_create is not None else None
+
+        for dataset_path in nested_dataset_paths:
+            relative_dataset_path = dataset_path.relative_to(project_path)
+            relative_dataset_text = relative_dataset_path.as_posix()
+
+            if self._is_datalad_dataset(dataset_path):
+                existing_paths.append(relative_dataset_text)
+                continue
+
+            if remaining_budget is not None and remaining_budget <= 0:
+                skipped_paths.append(relative_dataset_text)
+                continue
+
+            try:
+                create_process = subprocess.run(
+                    [
+                        datalad_executable,
+                        "create",
+                        "-d",
+                        ".",
+                        "--force",
+                        relative_dataset_text,
+                    ],
+                    cwd=str(project_path),
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+            except Exception as exc:
+                failed_paths.append(
+                    f"{relative_dataset_text} ({type(exc).__name__}: {exc})"
+                )
+                continue
+
+            if create_process.returncode != 0:
+                detail = (
+                    create_process.stderr
+                    or create_process.stdout
+                    or "Unknown DataLad error"
+                ).strip()
+                failed_paths.append(f"{relative_dataset_text} ({detail})")
+                continue
+
+            save_result = self._run_datalad_save(
+                dataset_path,
+                message=f'Initialize DataLad nested dataset "{dataset_path.name}"',
+                datalad_executable=datalad_executable,
+            )
+            if not (save_result.get("saved") or save_result.get("no_changes")):
+                detail = save_result.get("message") or "Unknown DataLad error."
+                failed_paths.append(f"{relative_dataset_text} ({detail})")
+                continue
+
+            created_paths.append(relative_dataset_text)
+            if remaining_budget is not None:
+                remaining_budget -= 1
+
+        return {
+            "subdatasets_created": created_paths,
+            "subdatasets_existing": existing_paths,
+            "subdataset_failures": failed_paths,
+            "subdatasets_skipped": skipped_paths,
+            "subdatasets_total_count": len(nested_dataset_paths),
+            "subdatasets_registered_count": len(existing_paths) + len(created_paths),
+            "subdatasets_missing_before": [
+                dataset_path.relative_to(project_path).as_posix()
+                for dataset_path in missing_dataset_paths
+            ],
+            "subdatasets_remaining_count": len(missing_dataset_paths) - len(created_paths),
+            "subject_datasets_created": created_paths,
+            "subject_datasets_existing": existing_paths,
+            "subject_dataset_failures": failed_paths,
+        }
+
+    def _summarize_nested_subdatasets(self, project_path: Path) -> Dict[str, Any]:
+        """Return nested DataLad registration progress for a project."""
+        nested_dataset_paths = self._iter_nested_dataset_paths(project_path)
+        existing_paths: List[str] = []
+        missing_paths: List[str] = []
+
+        for dataset_path in nested_dataset_paths:
+            relative_path = dataset_path.relative_to(project_path).as_posix()
+            if self._is_datalad_dataset(dataset_path):
+                existing_paths.append(relative_path)
+            else:
+                missing_paths.append(relative_path)
+
+        total_count = len(nested_dataset_paths)
+        registered_count = len(existing_paths)
+        remaining_count = len(missing_paths)
+        progress_percent = 100 if total_count == 0 else int((registered_count * 100) / total_count)
+
+        return {
+            "subdatasets_total_count": total_count,
+            "subdatasets_registered_count": registered_count,
+            "subdatasets_remaining_count": remaining_count,
+            "subdatasets_progress_percent": progress_percent,
+            "next_missing_subdataset": missing_paths[0] if missing_paths else "",
+        }
+
+    def _iter_nested_dataset_paths(self, project_path: Path) -> List[Path]:
+        """Return immediate project directories that should become DataLad subdatasets."""
+        nested_paths: List[Path] = []
+        seen_paths = set()
+
+        derivatives_path = project_path / "derivatives"
+        if derivatives_path.is_dir():
+            nested_paths.append(derivatives_path)
+            seen_paths.add(str(derivatives_path.resolve()))
+
+        candidate_roots = [project_path]
+
+        rawdata_path = project_path / "rawdata"
+        if rawdata_path.is_dir():
+            candidate_roots.append(rawdata_path)
+
+        for candidate_root in candidate_roots:
+            if not candidate_root.is_dir():
+                continue
+
+            for child_path in sorted(candidate_root.iterdir()):
+                if not child_path.is_dir() or not child_path.name.startswith("sub-"):
+                    continue
+
+                resolved_path = str(child_path.resolve())
+                if resolved_path in seen_paths:
+                    continue
+
+                seen_paths.add(resolved_path)
+                nested_paths.append(child_path)
+
+        return nested_paths
+
+    def _is_datalad_dataset(self, path: Path) -> bool:
+        """Return True when a path already has Git/DataLad dataset metadata."""
+        return (path / ".datalad").exists() or (path / ".git").exists()
 
     def _save_datalad_changes(
         self,

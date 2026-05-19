@@ -19,6 +19,11 @@ function normalizeBooleanStateValue(value) {
 }
 
 function normalizeDataladStateValue(value, fallbackPath = '') {
+    function normalizeCountStateValue(countValue, defaultValue = 0) {
+        const parsed = Number.parseInt(String(countValue ?? ''), 10);
+        return Number.isFinite(parsed) && parsed >= 0 ? parsed : defaultValue;
+    }
+
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
         return {
             enabled: false,
@@ -28,6 +33,11 @@ function normalizeDataladStateValue(value, fallbackPath = '') {
             canEnable: false,
             message: fallbackPath ? 'Current project is not a DataLad dataset.' : 'Load a project to see DataLad status.',
             path: fallbackPath,
+            subdatasetsTotalCount: 0,
+            subdatasetsRegisteredCount: 0,
+            subdatasetsRemainingCount: 0,
+            subdatasetsProgressPercent: 0,
+            nextMissingSubdataset: '',
         };
     }
 
@@ -40,6 +50,11 @@ function normalizeDataladStateValue(value, fallbackPath = '') {
         canEnable: normalizeBooleanStateValue(value.can_enable ?? value.canEnable),
         message: normalizeStateValue(value.message) || (resolvedPath ? 'Current project is not a DataLad dataset.' : 'Load a project to see DataLad status.'),
         path: resolvedPath,
+        subdatasetsTotalCount: normalizeCountStateValue(value.subdatasets_total_count ?? value.subdatasetsTotalCount),
+        subdatasetsRegisteredCount: normalizeCountStateValue(value.subdatasets_registered_count ?? value.subdatasetsRegisteredCount),
+        subdatasetsRemainingCount: normalizeCountStateValue(value.subdatasets_remaining_count ?? value.subdatasetsRemainingCount),
+        subdatasetsProgressPercent: normalizeCountStateValue(value.subdatasets_progress_percent ?? value.subdatasetsProgressPercent),
+        nextMissingSubdataset: normalizeStateValue(value.next_missing_subdataset ?? value.nextMissingSubdataset),
     };
 }
 

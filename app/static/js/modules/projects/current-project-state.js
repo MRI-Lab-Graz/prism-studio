@@ -33,6 +33,11 @@ export function createProjectsCurrentStateController({
     }
 
     function normalizeDataladState(dataladState, fallbackPath = '') {
+        const normalizeCount = (value, defaultValue = 0) => {
+            const parsed = Number.parseInt(String(value ?? ''), 10);
+            return Number.isFinite(parsed) && parsed >= 0 ? parsed : defaultValue;
+        };
+
         if (!dataladState || typeof dataladState !== 'object' || Array.isArray(dataladState)) {
             return {
                 enabled: false,
@@ -42,6 +47,11 @@ export function createProjectsCurrentStateController({
                 canEnable: false,
                 message: fallbackPath ? 'Current project is not a DataLad dataset.' : 'Load a project to see DataLad status.',
                 path: fallbackPath,
+                subdatasetsTotalCount: 0,
+                subdatasetsRegisteredCount: 0,
+                subdatasetsRemainingCount: 0,
+                subdatasetsProgressPercent: 0,
+                nextMissingSubdataset: '',
             };
         }
 
@@ -56,6 +66,13 @@ export function createProjectsCurrentStateController({
                 ? dataladState.message.trim()
                 : (resolvedPath ? 'Current project is not a DataLad dataset.' : 'Load a project to see DataLad status.'),
             path: resolvedPath,
+            subdatasetsTotalCount: normalizeCount(dataladState.subdatasets_total_count ?? dataladState.subdatasetsTotalCount),
+            subdatasetsRegisteredCount: normalizeCount(dataladState.subdatasets_registered_count ?? dataladState.subdatasetsRegisteredCount),
+            subdatasetsRemainingCount: normalizeCount(dataladState.subdatasets_remaining_count ?? dataladState.subdatasetsRemainingCount),
+            subdatasetsProgressPercent: normalizeCount(dataladState.subdatasets_progress_percent ?? dataladState.subdatasetsProgressPercent),
+            nextMissingSubdataset: typeof (dataladState.next_missing_subdataset ?? dataladState.nextMissingSubdataset) === 'string'
+                ? String(dataladState.next_missing_subdataset ?? dataladState.nextMissingSubdataset).trim()
+                : '',
         };
     }
 

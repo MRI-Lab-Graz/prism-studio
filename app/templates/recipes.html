@@ -44,7 +44,6 @@
   .analysis-step-header p {
     margin-bottom: 0;
     color: #667085;
-    font-size: 0.95rem;
   }
 
   .analysis-option-group {
@@ -316,7 +315,7 @@
         </div>
 
         <div class="analysis-runbar">
-          <button class="btn btn-primary w-100" type="button" id="derivRunBtn" {% if not current_project.path %}disabled{% endif %}>
+          <button class="btn btn-primary w-100 studio-action-btn" type="button" id="derivRunBtn" {% if not current_project.path %}disabled{% endif %}>
             <i class="fas fa-play me-2"></i>Create Output
           </button>
         </div>
