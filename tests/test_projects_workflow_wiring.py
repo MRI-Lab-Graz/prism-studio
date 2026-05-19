@@ -400,6 +400,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         )
         self.assertIn("exclude_acq: _getUncheckedAcqByModality(),", content)
         self.assertIn("exclude_tasks: _getUncheckedTaskByModality(),", content)
+        self.assertIn("applyModalitySubfilterState(target);", content)
+        self.assertIn("syncModalitySubfilterState(modality);", content)
         self.assertIn("validation_mode: 'both',", content)
         self.assertIn("defacing_confirmation_mode: 'risk',", content)
         self.assertIn("function getSelectedDefacingConfirmationMode() {", content)
@@ -426,6 +428,9 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "function setExportChipState(chipId, text, tone = 'neutral') {", content
         )
         self.assertIn("function countExcludedSubfilterLabels(excludedAcq, excludedTasks) {", content)
+        self.assertIn("function applyModalitySubfilterState(modalityCheckbox) {", content)
+        self.assertIn("function syncModalitySubfilterState(modality) {", content)
+        self.assertIn("function syncAllModalitySubfilterStates() {", content)
         self.assertIn("exportScopeSummary", content)
         self.assertIn("exportDestinationSummary", content)
         self.assertIn("exportPreferenceSummary", content)
