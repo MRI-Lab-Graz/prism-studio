@@ -898,6 +898,76 @@ class ProjectManager:
         result["error"] = save_result.get("message") or "DataLad save failed."
         return result
 
+    def export_project_to_plain_folder(
+        self,
+        path: Union[str, Path],
+        *,
+        output_root: Union[str, Path, None] = None,
+    ) -> Dict[str, Any]:
+        """Export a project to a plain folder copy without Git/DataLad metadata."""
+        project_path = Path(path)
+        status = self.get_datalad_status(project_path)
+        result: Dict[str, Any] = {
+            "success": False,
+            "path": str(project_path),
+            "datalad": dict(status),
+        }
+
+        if not project_path.exists() or not project_path.is_dir():
+            result["error"] = f"Path does not exist or is not a directory: {project_path}"
+            return result
+
+        destination_root = (
+            Path(output_root).expanduser() if output_root else project_path.parent
+        ).resolve()
+
+        if destination_root.exists() and not destination_root.is_dir():
+            result["error"] = (
+                f"Export destination is not a folder: {destination_root}"
+            )
+            return result
+
+        destination_root.mkdir(parents=True, exist_ok=True)
+
+        target_name = f"{project_path.name}_folder_export"
+        export_path = destination_root / target_name
+        suffix = 2
+        while export_path.exists():
+            export_path = destination_root / f"{target_name}_{suffix}"
+            suffix += 1
+
+        ignored_names = {
+            ".git",
+            ".datalad",
+            ".gitattributes",
+            ".gitignore",
+            ".gitmodules",
+            "CHANGES",
+        }
+
+        def _ignore(_current_dir: str, names: List[str]) -> List[str]:
+            return [name for name in names if name in ignored_names]
+
+        try:
+            shutil.copytree(
+                project_path,
+                export_path,
+                copy_function=shutil.copy2,
+                ignore=_ignore,
+                symlinks=False,
+            )
+        except Exception as exc:
+            result["error"] = f"Could not export project folder: {exc}"
+            return result
+
+        result["success"] = True
+        result["output_path"] = str(export_path)
+        result["excluded_repository_metadata"] = sorted(ignored_names)
+        result["message"] = (
+            f"Project folder export created at {export_path} without Git/DataLad metadata."
+        )
+        return result
+
     def autosave_datalad_snapshot(
         self,
         path: Union[str, Path],

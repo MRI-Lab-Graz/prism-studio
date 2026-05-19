@@ -692,6 +692,11 @@ export function initExportForm() {
         templateExportButton.addEventListener('click', handleTemplateExport);
     }
 
+    const plainFolderExportButton = getById('plainFolderExportButton');
+    if (plainFolderExportButton) {
+        plainFolderExportButton.addEventListener('click', handlePlainFolderExport);
+    }
+
     const uploadReadyExportButton = getById('uploadReadyExportButton');
     if (uploadReadyExportButton) {
         uploadReadyExportButton.addEventListener('click', handleUploadReadyExport);
@@ -849,6 +854,78 @@ async function handleUploadReadyExport(e) {
         successHeading: 'Upload-Ready Export Successful!',
         successNoteHtml: '<p class="mb-2">PRISM excluded <code>code/</code>, <code>derivatives/</code>, <code>analysis/</code>, and version-control metadata such as DataLad traces.</p>',
     });
+}
+
+async function handlePlainFolderExport(e) {
+    e.preventDefault();
+
+    const currentProjectPath = resolveCurrentProjectPath();
+    if (!currentProjectPath) {
+        alert('No project is currently loaded');
+        return;
+    }
+
+    const btn = this;
+    const originalText = setButtonLoading(btn, true, 'Exporting Folder...');
+    const progressDiv = getById('exportProgress');
+    const resultDiv = getById('exportResult');
+    const statusText = getById('exportStatusText');
+
+    if (progressDiv) show(progressDiv);
+    if (resultDiv) hide(resultDiv);
+    if (statusText) {
+        statusText.textContent = 'Creating plain folder export without Git/DataLad metadata...';
+    }
+
+    try {
+        const response = await fetchWithApiFallback('/api/projects/export/folder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                project_path: currentProjectPath,
+                output_folder: (getById('exportOutputFolder')?.value || '').trim() || null,
+            }),
+        });
+        const result = await response.json().catch(() => ({ success: false, error: 'Invalid server response.' }));
+
+        if (progressDiv) hide(progressDiv);
+        if (resultDiv) show(resultDiv);
+
+        if (response.ok && result.success) {
+            const savedPath = result.output_path || 'unknown location';
+            const excludedMetadata = Array.isArray(result.excluded_repository_metadata)
+                ? result.excluded_repository_metadata.filter((value) => typeof value === 'string' && value.trim())
+                : [];
+            const excludedMetadataHtml = excludedMetadata.length
+                ? `<p class="mb-2">Stripped repository metadata: <code>${escapeHtml(excludedMetadata.join(', '))}</code></p>`
+                : '';
+            setHtml(resultDiv, `
+                <div class="alert alert-success">
+                    <h5><i class="fas fa-check-circle me-2"></i>Folder Export Successful!</h5>
+                    <p class="mb-2">PRISM created a normal folder copy without Git/DataLad metadata or hidden repository files.</p>
+                    ${excludedMetadataHtml}
+                    <p class="mb-0">Folder saved to:<br>
+                    <code class="user-select-all">${escapeHtml(savedPath)}</code></p>
+                </div>
+            `);
+            return;
+        }
+
+        throw new Error(result.error || result.message || 'Folder export failed.');
+    } catch (error) {
+        if (progressDiv) hide(progressDiv);
+        if (resultDiv) {
+            show(resultDiv);
+            setHtml(resultDiv, `
+                <div class="alert alert-danger">
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>Folder Export Failed</h5>
+                    <p class="mb-0">${escapeHtml(error.message || 'Folder export failed.')}</p>
+                </div>
+            `);
+        }
+    } finally {
+        setButtonLoading(btn, false, null, originalText);
+    }
 }
 
 async function runProjectExport({
