@@ -178,6 +178,14 @@ class TestProjectManager(unittest.TestCase):
             mock_run.call_args_list[1].args[0],
             ["/usr/bin/datalad", "save", "-m", "Initialize PRISM dataset structure"],
         )
+        gitattributes_content = (project_path / ".gitattributes").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "dataset_description.json annex.largefiles=nothing",
+            gitattributes_content,
+        )
+        self.assertIn("CITATION.cff annex.largefiles=nothing", gitattributes_content)
 
     @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
     def test_get_datalad_status_detects_project_dataset(self, _mock_which):
