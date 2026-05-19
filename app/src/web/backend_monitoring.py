@@ -458,7 +458,7 @@ def _build_projects_datalad_enable_terminal_command(req) -> str:
                     str(project_root),
                     "save",
                     "-m",
-                    f'Prepare "{next_missing}" for nested DataLad dataset',
+                    f'Stage parent untracking for nested DataLad dataset "{next_missing}"',
                 ],
                 ["datalad", "-C", str(project_root), "create", "-d", ".", "--force", next_missing],
                 [

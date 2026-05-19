@@ -61,6 +61,7 @@ BIDS_PASSTHROUGH_MODALITIES = {"eyetracking"}
 PROJECT_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
 VALID_DATASET_TYPES = {"raw", "derivative"}
 DATALAD_REPAIR_STEP_TIMEOUT_SECONDS = 120
+REGISTERED_SUBDATASET_QUERY_TIMEOUT_SECONDS = 30
 
 
 class ProjectManager:
@@ -1326,10 +1327,18 @@ class ProjectManager:
             }
 
         nested_dataset_paths = self._iter_nested_dataset_paths(project_path)
+        registered_paths = self._get_registered_nested_dataset_paths(
+            project_path,
+            datalad_executable=datalad_executable,
+        )
         missing_dataset_paths = [
             dataset_path
             for dataset_path in nested_dataset_paths
-            if not self._is_datalad_dataset(dataset_path)
+            if not self._is_registered_nested_dataset(
+                project_path,
+                dataset_path,
+                registered_paths=registered_paths,
+            )
         ]
         remaining_budget = max_to_create if max_to_create is not None else None
 
@@ -1337,8 +1346,18 @@ class ProjectManager:
             relative_dataset_path = dataset_path.relative_to(project_path)
             relative_dataset_text = relative_dataset_path.as_posix()
 
-            if self._is_datalad_dataset(dataset_path):
+            if self._is_registered_nested_dataset(
+                project_path,
+                dataset_path,
+                registered_paths=registered_paths,
+            ):
                 existing_paths.append(relative_dataset_text)
+                continue
+
+            if self._is_datalad_dataset(dataset_path):
+                failed_paths.append(
+                    f"{relative_dataset_text} ({self._build_nested_step_failure('verify nested dataset registration', 'local DataLad metadata exists but the parent dataset does not list this path as a registered subdataset')})"
+                )
                 continue
 
             if remaining_budget is not None and remaining_budget <= 0:
@@ -1352,6 +1371,7 @@ class ProjectManager:
                     datalad_executable,
                 )
                 if migration_result.get("success"):
+                    registered_paths.add(relative_dataset_text)
                     created_paths.append(relative_dataset_text)
                     if remaining_budget is not None:
                         remaining_budget -= 1
@@ -1380,7 +1400,7 @@ class ProjectManager:
                 )
             except subprocess.TimeoutExpired:
                 failed_paths.append(
-                    f"{relative_dataset_text} ({self._format_repair_timeout_message(f'Creating nested DataLad dataset \"{relative_dataset_text}\"')})"
+                    f"{relative_dataset_text} ({self._format_repair_timeout_message(f'create nested dataset \"{relative_dataset_text}\"')})"
                 )
                 continue
             except Exception as exc:
@@ -1396,7 +1416,7 @@ class ProjectManager:
                     or "Unknown DataLad error"
                 ).strip()
                 failed_paths.append(
-                    f"{relative_dataset_text} ({self._summarize_datalad_error(detail)})"
+                    f"{relative_dataset_text} ({self._build_nested_step_failure('create nested dataset', detail)})"
                 )
                 continue
 
@@ -1408,7 +1428,21 @@ class ProjectManager:
             if not (save_result.get("saved") or save_result.get("no_changes")):
                 detail = save_result.get("message") or "Unknown DataLad error."
                 failed_paths.append(
-                    f"{relative_dataset_text} ({self._summarize_datalad_error(detail)})"
+                    f"{relative_dataset_text} ({self._build_nested_step_failure('save nested dataset', detail)})"
+                )
+                continue
+
+            registered_paths = self._get_registered_nested_dataset_paths(
+                project_path,
+                datalad_executable=datalad_executable,
+            )
+            if not self._is_registered_nested_dataset(
+                project_path,
+                dataset_path,
+                registered_paths=registered_paths,
+            ):
+                failed_paths.append(
+                    f"{relative_dataset_text} ({self._build_nested_step_failure('verify nested dataset registration', 'parent dataset still does not list this path as a registered subdataset after create/save')})"
                 )
                 continue
 
@@ -1489,6 +1523,85 @@ class ProjectManager:
             "Large tracked directories can take a while; please review the backend terminal output and retry."
         )
 
+    def _build_nested_step_failure(self, step_label: str, detail: str = "") -> str:
+        """Return a step-scoped nested dataset failure message."""
+        normalized_step = str(step_label or "nested DataLad step").strip()
+        normalized_detail = self._summarize_datalad_error(detail) if detail else ""
+        if normalized_detail:
+            return f"{normalized_step} failed: {normalized_detail}"
+        return f"{normalized_step} failed"
+
+    def _get_registered_nested_dataset_paths(
+        self,
+        project_path: Path,
+        *,
+        datalad_executable: Optional[str] = None,
+    ) -> set[str]:
+        """Return nested paths registered in the parent dataset."""
+        registered_paths: set[str] = set()
+
+        gitmodules_path = project_path / ".gitmodules"
+        if gitmodules_path.is_file():
+            try:
+                for line in gitmodules_path.read_text(encoding="utf-8").splitlines():
+                    match = re.match(r"^\s*path\s*=\s*(.+?)\s*$", line)
+                    if not match:
+                        continue
+                    candidate_path = match.group(1).strip()
+                    if candidate_path:
+                        registered_paths.add(candidate_path)
+            except OSError:
+                pass
+
+        resolved_executable = datalad_executable or shutil.which("datalad")
+        if not resolved_executable:
+            return registered_paths
+
+        try:
+            process = subprocess.run(
+                [str(resolved_executable), "subdatasets"],
+                cwd=str(project_path),
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=REGISTERED_SUBDATASET_QUERY_TIMEOUT_SECONDS,
+            )
+        except Exception:
+            return registered_paths
+
+        if process.returncode != 0:
+            return registered_paths
+
+        for line in str(process.stdout or "").splitlines():
+            match = re.search(r"\):\s+(.*?)\s+\((?:dataset|gitmodule)\)\s*$", line.strip())
+            if not match:
+                continue
+            candidate_path = match.group(1).strip()
+            if candidate_path:
+                registered_paths.add(candidate_path)
+
+        return registered_paths
+
+    def _is_registered_nested_dataset(
+        self,
+        project_path: Path,
+        dataset_path: Path,
+        *,
+        registered_paths: Optional[set[str]] = None,
+        datalad_executable: Optional[str] = None,
+    ) -> bool:
+        """Return True only when the parent dataset registers this nested dataset."""
+        relative_dataset_text = dataset_path.relative_to(project_path).as_posix()
+        resolved_registered_paths = (
+            registered_paths
+            if registered_paths is not None
+            else self._get_registered_nested_dataset_paths(
+                project_path,
+                datalad_executable=datalad_executable,
+            )
+        )
+        return relative_dataset_text in resolved_registered_paths
+
     def _migrate_parent_tracked_directory_to_subdataset(
         self,
         project_path: Path,
@@ -1497,6 +1610,9 @@ class ProjectManager:
     ) -> Dict[str, Any]:
         """Convert a parent-tracked directory into a nested DataLad subdataset."""
         relative_dataset_text = dataset_path.relative_to(project_path).as_posix()
+        stage_parent_message = (
+            f'Stage parent untracking for nested DataLad dataset "{relative_dataset_text}"'
+        )
         remove_command = ["git", "rm", "--cached", "-r", "--", relative_dataset_text]
         self._emit_backend_progress(
             f'Preparing nested DataLad dataset for "{relative_dataset_text}" by untracking parent-owned content.',
@@ -1526,26 +1642,32 @@ class ProjectManager:
             ).strip()
             return {
                 "success": False,
-                "message": self._summarize_datalad_error(detail),
+                "message": self._build_nested_step_failure(
+                    "untrack parent content",
+                    detail,
+                ),
             }
 
         self._emit_backend_progress(
             f'Checkpointing parent dataset before creating nested dataset "{relative_dataset_text}".',
             command=(
                 f'{datalad_executable} save -m '
-                f'"Prepare \"{relative_dataset_text}\" for nested DataLad dataset"'
+                f'"{stage_parent_message}"'
             ),
         )
         prep_save_result = self._run_datalad_save(
             project_path,
-            message=f'Prepare "{relative_dataset_text}" for nested DataLad dataset',
+            message=stage_parent_message,
             datalad_executable=datalad_executable,
         )
         if not (prep_save_result.get("saved") or prep_save_result.get("no_changes")):
             detail = prep_save_result.get("message") or "Could not save parent dataset state."
             return {
                 "success": False,
-                "message": self._summarize_datalad_error(detail),
+                "message": self._build_nested_step_failure(
+                    "save parent staging state",
+                    detail,
+                ),
             }
 
         create_command = [
@@ -1584,7 +1706,10 @@ class ProjectManager:
             ).strip()
             return {
                 "success": False,
-                "message": self._summarize_datalad_error(detail),
+                "message": self._build_nested_step_failure(
+                    "create nested dataset",
+                    detail,
+                ),
             }
 
         self._emit_backend_progress(
@@ -1603,7 +1728,23 @@ class ProjectManager:
             detail = nested_save_result.get("message") or "Could not save nested dataset."
             return {
                 "success": False,
-                "message": self._summarize_datalad_error(detail),
+                "message": self._build_nested_step_failure(
+                    "save nested dataset",
+                    detail,
+                ),
+            }
+
+        if not self._is_registered_nested_dataset(
+            project_path,
+            dataset_path,
+            datalad_executable=datalad_executable,
+        ):
+            return {
+                "success": False,
+                "message": self._build_nested_step_failure(
+                    "verify nested dataset registration",
+                    "parent dataset still does not list this path as a registered subdataset after migration",
+                ),
             }
 
         return {
@@ -1631,12 +1772,13 @@ class ProjectManager:
     def _summarize_nested_subdatasets(self, project_path: Path) -> Dict[str, Any]:
         """Return nested DataLad registration progress for a project."""
         nested_dataset_paths = self._iter_nested_dataset_paths(project_path)
+        registered_paths = self._get_registered_nested_dataset_paths(project_path)
         existing_paths: List[str] = []
         missing_paths: List[str] = []
 
         for dataset_path in nested_dataset_paths:
             relative_path = dataset_path.relative_to(project_path).as_posix()
-            if self._is_datalad_dataset(dataset_path):
+            if relative_path in registered_paths:
                 existing_paths.append(relative_path)
             else:
                 missing_paths.append(relative_path)
@@ -1653,6 +1795,7 @@ class ProjectManager:
             "subdatasets_progress_percent": progress_percent,
             "next_missing_subdataset": missing_paths[0] if missing_paths else "",
         }
+
     def _iter_nested_dataset_paths(self, project_path: Path) -> List[Path]:
         """Return immediate project directories that should become DataLad subdatasets."""
         nested_paths: List[Path] = []
