@@ -424,7 +424,10 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         with self.app.test_request_context(
             "/api/projects/datalad/enable",
             method="POST",
-            json={"message": "Enable DataLad for PRISM project"},
+            json={
+                "message": "Enable DataLad for PRISM project",
+                "confirmed": True,
+            },
         ):
             session["current_project_path"] = str(self.project_root)
             session["current_project_name"] = "demo_project"
@@ -456,6 +459,27 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         body = response.get_json()
         self.assertTrue(body["success"])
         self.assertEqual(body["current_project"]["path"], str(self.project_root))
+
+    def test_projects_enable_datalad_route_requires_confirmation(self):
+        projects_module = importlib.import_module("src.web.blueprints.projects")
+
+        with self.app.test_request_context(
+            "/api/projects/datalad/enable",
+            method="POST",
+            json={"message": "Enable DataLad for PRISM project"},
+        ):
+            session["current_project_path"] = str(self.project_root)
+            session["current_project_name"] = "demo_project"
+            session["current_project_icon"] = "🧪"
+            response = projects_module.enable_datalad_for_project()
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        body = resp_obj.get_json()
+
+        self.assertEqual(status_code, 400)
+        self.assertFalse(body["success"])
+        self.assertIn("explicit confirmation", body["error"])
 
     def test_projects_set_current_project_autosaves_previous_datalad_dataset_on_switch(self):
         projects_module = importlib.import_module("src.web.blueprints.projects")

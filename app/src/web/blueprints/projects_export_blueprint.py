@@ -28,6 +28,7 @@ _EXPORT_JOB_PRUNE_INTERVAL_SECONDS = 30.0
 _EXPORT_DONE_STATUSES = {"complete", "error", "cancelled"}
 _last_export_prune_at = 0.0
 _EXPORT_VALIDATION_MODES = {"both", "bids", "prism", "ignore", "none"}
+_EXPORT_PRESETS = {"standard", "upload_ready"}
 
 
 def _export_now() -> float:
@@ -126,6 +127,13 @@ def _normalize_export_validation_mode(raw_mode: object) -> str:
     if mode == "none":
         return "ignore"
     return mode
+
+
+def _normalize_export_preset(raw_preset: object) -> str:
+    preset = str(raw_preset or "").strip().lower()
+    if preset not in _EXPORT_PRESETS:
+        return "standard"
+    return preset
 
 
 def _export_validation_flags(validation_mode: str) -> tuple[bool, bool]:
@@ -433,10 +441,20 @@ def export_project():
         # Keep anonymization settings simple in UI: fixed deterministic IDs when enabled.
         id_length = 8
         deterministic = True
+        export_preset = _normalize_export_preset(data.get("export_preset", "standard"))
         include_derivatives = bool(data.get("include_derivatives", True))
         include_code = bool(data.get("include_code", True))
         include_analysis = bool(data.get("include_analysis", False))
+        exclude_version_control_metadata = bool(
+            data.get("exclude_version_control_metadata", False)
+        )
         scrub_mri_json = bool(data.get("scrub_mri_json", False))
+
+        if export_preset == "upload_ready":
+            include_derivatives = False
+            include_code = False
+            include_analysis = False
+            exclude_version_control_metadata = True
 
         # Create temporary file for ZIP
         temp_fd, temp_path = tempfile.mkstemp(suffix=".zip")
@@ -454,6 +472,7 @@ def export_project():
                 include_derivatives=include_derivatives,
                 include_code=include_code,
                 include_analysis=include_analysis,
+                exclude_version_control_metadata=exclude_version_control_metadata,
                 scrub_mri_json=scrub_mri_json,
                 clean_nifti_gzip_headers=scrub_mri_json,
             )
@@ -461,7 +480,8 @@ def export_project():
             # Generate filename
             project_name = project_path.name
             anon_suffix = "_anonymized" if anonymize else ""
-            filename = f"{project_name}{anon_suffix}_export.zip"
+            preset_suffix = "_upload_ready" if export_preset == "upload_ready" else ""
+            filename = f"{project_name}{anon_suffix}{preset_suffix}_export.zip"
 
             return _build_zip_stream_response(
                 Path(temp_path),
@@ -546,14 +566,24 @@ def export_project_start():
 
         anonymize = bool(data.get("anonymize", True))
         mask_questions = bool(data.get("mask_questions", True))
+        export_preset = _normalize_export_preset(data.get("export_preset", "standard"))
         include_derivatives = bool(data.get("include_derivatives", True))
         include_code = bool(data.get("include_code", True))
         include_analysis = bool(data.get("include_analysis", False))
+        exclude_version_control_metadata = bool(
+            data.get("exclude_version_control_metadata", False)
+        )
         scrub_mri_json = bool(data.get("scrub_mri_json", False))
         validation_mode = _normalize_export_validation_mode(
             data.get("validation_mode", "both")
         )
         output_folder: Optional[str] = data.get("output_folder") or None
+
+        if export_preset == "upload_ready":
+            include_derivatives = False
+            include_code = False
+            include_analysis = False
+            exclude_version_control_metadata = True
 
         # Optional session / modality / acq filters
         exclude_sessions_list = data.get("exclude_sessions") or []
@@ -568,7 +598,8 @@ def export_project_start():
 
         project_name = resolved.name
         anon_suffix = "_anonymized" if anonymize else ""
-        filename = f"{project_name}{anon_suffix}_export.zip"
+        preset_suffix = "_upload_ready" if export_preset == "upload_ready" else ""
+        filename = f"{project_name}{anon_suffix}{preset_suffix}_export.zip"
 
         export_kwargs = {
             "project_path": resolved,
@@ -579,6 +610,7 @@ def export_project_start():
             "include_derivatives": include_derivatives,
             "include_code": include_code,
             "include_analysis": include_analysis,
+            "exclude_version_control_metadata": exclude_version_control_metadata,
             "scrub_mri_json": scrub_mri_json,
             "clean_nifti_gzip_headers": scrub_mri_json,
             "validation_mode": validation_mode,

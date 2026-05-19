@@ -172,6 +172,56 @@ def test_projects_export_start_uses_non_anonymized_filename_when_disabled(tmp_pa
     assert args[2] == "study_export.zip"
 
 
+def test_projects_export_start_upload_ready_preset_forces_safe_export_defaults(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    captured: dict[str, object] = {}
+
+    class _FakeThread:
+        def __init__(self, target=None, args=(), daemon=None):
+            captured["target"] = target
+            captured["args"] = args
+            captured["daemon"] = daemon
+
+        def start(self):
+            captured["started"] = True
+
+    with patch(
+        "src.web.blueprints.projects_export_blueprint.threading.Thread",
+        side_effect=lambda *args, **kwargs: _FakeThread(*args, **kwargs),
+    ):
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/start",
+                json={
+                    "project_path": str(project_dir),
+                    "anonymize": True,
+                    "include_derivatives": True,
+                    "include_code": True,
+                    "include_analysis": True,
+                    "export_preset": "upload_ready",
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("job_id")
+
+    args = captured.get("args")
+    assert isinstance(args, tuple)
+    export_kwargs = args[1]
+    assert isinstance(export_kwargs, dict)
+    assert export_kwargs["include_derivatives"] is False
+    assert export_kwargs["include_code"] is False
+    assert export_kwargs["include_analysis"] is False
+    assert export_kwargs["exclude_version_control_metadata"] is True
+    assert args[2] == "study_anonymized_upload_ready_export.zip"
+
+
 def test_projects_export_start_status_includes_defacing_warning_metadata(tmp_path):
     app = _build_app()
 

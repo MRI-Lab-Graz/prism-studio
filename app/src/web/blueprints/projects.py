@@ -253,6 +253,20 @@ def enable_datalad_for_project():
         return jsonify({"success": False, "error": "No current project loaded."}), 400
 
     data = request.get_json(silent=True) or {}
+    if not bool(data.get("confirmed")):
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": (
+                        "Enable DataLad requires explicit confirmation because it "
+                        "modifies the current project in place."
+                    ),
+                }
+            ),
+            400,
+        )
+
     message = str(data.get("message") or "").strip() or "Enable DataLad for PRISM project"
     result = _project_manager.enable_datalad_for_project(project_path, message=message)
     result["current_project"] = get_current_project()
