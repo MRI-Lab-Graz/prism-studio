@@ -21,10 +21,20 @@ from src.project_icons import get_project_icon_classes
 class _ProjectManagerStub:
     def __init__(self):
         self.validated_path = None
+        self.create_calls = []
+        self.init_calls = []
 
     def validate_structure(self, path: str):
         self.validated_path = path
         return {"valid": True, "issues": [], "fixable_issues": [], "stats": {}}
+
+    def create_project(self, path: str, config: dict):
+        self.create_calls.append((path, config))
+        return {"success": True, "path": path, "created_files": [], "message": "ok"}
+
+    def init_on_existing_bids(self, path: str, config: dict):
+        self.init_calls.append((path, config))
+        return {"success": True, "path": path, "created_files": [], "message": "ok"}
 
 
 class TestProjectsLifecycleHandlers(unittest.TestCase):
@@ -205,6 +215,63 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertTrue(body["is_empty_dir"])
         self.assertFalse(body["has_non_system_entries"])
         self.assertFalse(body["available"])
+
+    def test_create_project_forwards_datalad_opt_out(self):
+        manager = _ProjectManagerStub()
+        captured = {}
+
+        def set_current_project(path: str, name: str | None = None):
+            captured["path"] = path
+            captured["name"] = name
+
+        def save_last_project(path: str | None, name: str | None):
+            captured["last_path"] = path
+            captured["last_name"] = name
+
+        target_path = Path(self.tmp_dir.name) / "created_project"
+        with self.app.test_request_context(
+            "/api/projects/create",
+            method="POST",
+            json={"path": str(target_path), "name": "created_project", "use_datalad": False},
+        ):
+            response = self.module.handle_create_project(
+                project_manager=manager,
+                set_current_project=set_current_project,
+                save_last_project=save_last_project,
+            )
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(manager.create_calls[0][1]["use_datalad"], False)
+
+    def test_init_on_bids_forwards_datalad_default(self):
+        manager = _ProjectManagerStub()
+        captured = {}
+
+        def set_current_project(path: str, name: str | None = None):
+            captured["path"] = path
+            captured["name"] = name
+
+        def save_last_project(path: str | None, name: str | None):
+            captured["last_path"] = path
+            captured["last_name"] = name
+
+        target_path = Path(self.tmp_dir.name) / "existing_bids"
+        target_path.mkdir(parents=True, exist_ok=True)
+        with self.app.test_request_context(
+            "/api/projects/init-on-bids",
+            method="POST",
+            json={"path": str(target_path), "name": "existing_bids"},
+        ):
+            response = self.module.handle_init_on_bids(
+                project_manager=manager,
+                set_current_project=set_current_project,
+                save_last_project=save_last_project,
+            )
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(manager.init_calls[0][1]["use_datalad"], True)
 
     def test_project_state_flow_load_switch_create_mode_and_recent_reload(self):
         (self.project_root / "project.json").write_text(

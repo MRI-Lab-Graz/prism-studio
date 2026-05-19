@@ -156,6 +156,7 @@ export function initCreateProjectController({
         const data = {
             path: fullPath,
             name: projectName,
+            use_datalad: document.getElementById('projectUseDatalad')?.checked !== false,
             authors: getCitationAuthorsList(),
             license: document.getElementById('metadataLicense').value,
             doi: document.getElementById('metadataDOI').value.trim(),
@@ -231,6 +232,13 @@ export function initCreateProjectController({
             const result = await response.json();
 
             if (result.success) {
+                const dataladNotice = result.datalad?.message
+                    ? `
+                        <div class="alert alert-${result.datalad.saved ? 'info' : (result.datalad.requested ? 'warning' : 'secondary')} mt-3 mb-0">
+                            <i class="fas fa-code-branch me-2"></i>${escapeHtml(result.datalad.message)}
+                        </div>
+                    `
+                    : '';
                 setCreateResultHtml(`
                     <div class="alert alert-success">
                         <h5><i class="fas fa-check-circle me-2"></i>Project Created Successfully!</h5>
@@ -252,6 +260,7 @@ export function initCreateProjectController({
                                 Add subject folders and metadata before validating to avoid missing data errors.
                             </small>
                         </div>
+                        ${dataladNotice}
                     </div>
                 `);
 
