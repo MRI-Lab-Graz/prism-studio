@@ -184,6 +184,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("confirmed: true", content)
         self.assertIn("backfill one missing nested dataset per click", content)
         self.assertIn("backfilling one missing nested dataset for this click", content)
+        self.assertIn("Watch the backend terminal for progress.", content)
         self.assertIn("subdatasetsProgressPercent", content)
         self.assertIn("nextMissingSubdataset", content)
         self.assertIn("window.prompt('Commit message for this checkpoint'", content)
