@@ -1596,7 +1596,8 @@ def emit_backend_action(
     if not lines:
         return
 
-    print(f"\n{'\n'.join(lines)}\n")
+    rendered_lines = "\n".join(lines)
+    print(f"\n{rendered_lines}\n")
 
 
 def emit_backend_request_action(req, app_root: str) -> None:

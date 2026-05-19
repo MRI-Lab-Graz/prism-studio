@@ -49,6 +49,8 @@ else:
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
+os.environ.setdefault("PRISM_STARTUP_HIDE_DETAILS", "1")
+
 from src.dedicated_terminal import should_stream_frozen_logs_to_attached_terminal
 
 # Setup logging for compiled version (no console on Windows)
@@ -109,7 +111,7 @@ if getattr(sys, "frozen", False):
     sys.stdout = LogWriter(logger, logging.INFO, stream=console_stream)
     sys.stderr = LogWriter(logger, logging.ERROR, stream=console_stream)
 
-    print(f"PRISM Studio starting... Log file: {log_file}")
+    # Startup summary is printed later in a structured form.
 
 
 def _startup_module_check() -> None:
@@ -129,7 +131,168 @@ def _startup_module_check() -> None:
         )
 
 
+def _supports_startup_color() -> bool:
+    stream = getattr(sys, "stdout", None)
+    return bool(
+        stream
+        and hasattr(stream, "isatty")
+        and stream.isatty()
+        and os.environ.get("TERM") not in {None, "", "dumb"}
+    )
+
+
+def _startup_colorize(text: str, tone: str) -> str:
+    if not _supports_startup_color():
+        return text
+
+    tones = {
+        "headline": "1;38;5;238",
+        "accent": "1;38;5;35",
+        "muted": "38;5;245",
+        "ready": "1;38;5;35",
+        "warning": "1;38;5;178",
+        "error": "1;38;5;160",
+        "info": "1;38;5;39",
+    }
+    code = tones.get(tone)
+    if not code:
+        return text
+    return f"\033[{code}m{text}\033[0m"
+
+
+def _print_startup_intro() -> None:
+    print()
+    print(_startup_colorize("Welcome to PRISM Studio", "headline"))
+    print(_startup_colorize("Structured research data, without the friction.", "muted"))
+    print(_startup_colorize("MRI-LAB GRAZ", "accent"))
+    print()
+    print(_startup_colorize("Pre-flight check", "accent"))
+
+
+def _print_startup_step(label: str, state: str = "ready", detail: str = "") -> None:
+    icon = {"ready": "✓", "warning": "!", "error": "✗", "info": "•"}.get(
+        state, "•"
+    )
+    state_label = {
+        "ready": "ready",
+        "warning": "attention",
+        "error": "failed",
+        "info": "in progress",
+    }.get(state, state)
+    base = f"  {icon} {label:<22} {state_label}"
+    if detail:
+        base = f"{base}  {detail}"
+    print(_startup_colorize(base, state if state in {"ready", "warning", "error", "info"} else "muted"))
+
+
+def _print_startup_ready(url: str, *, public: bool, log_file: Path | None = None) -> None:
+    print()
+    print(_startup_colorize(f"Open in browser: {url}", "info"))
+    if public:
+        print(_startup_colorize("Mode: public access enabled for this session.", "warning"))
+    if log_file is not None:
+        print(_startup_colorize(f"Startup log: {log_file}", "muted"))
+    print(_startup_colorize("Status: ready. Launching the interface now.", "ready"))
+    print(_startup_colorize("Press Ctrl+C to stop the server", "muted"))
+    print()
+
+
+_print_startup_intro()
 _startup_module_check()
+
+
+def _print_startup_welcome(url: str, *, public: bool, log_file: Path | None = None) -> None:
+    """Print a concise, friendlier startup summary for terminal launches."""
+    _print_startup_ready(url, public=public, log_file=log_file)
+
+
+def _show_startup_dialog(url: str) -> None:
+    """Show a small startup window with progress for compiled desktop builds."""
+    try:
+        import tkinter as tk
+        from tkinter import ttk
+
+        root = tk.Tk()
+        root.title("PRISM Studio")
+        root.configure(bg="#f6f8f5")
+        root.geometry("460x230")
+        root.resizable(False, False)
+        root.attributes("-topmost", True)
+
+        container = tk.Frame(root, bg="#f6f8f5", padx=24, pady=20)
+        container.pack(fill="both", expand=True)
+
+        tk.Label(
+            container,
+            text="Welcome to PRISM Studio",
+            font=("Segoe UI", 18, "bold"),
+            anchor="w",
+            bg="#f6f8f5",
+            fg="#24313f",
+        ).pack(fill="x")
+
+        tk.Label(
+            container,
+            text="The best home for structured research data.",
+            font=("Segoe UI", 11),
+            anchor="w",
+            bg="#f6f8f5",
+            fg="#52616f",
+            pady=6,
+        ).pack(fill="x")
+
+        tk.Label(
+            container,
+            text="MRI-LAB GRAZ",
+            font=("Segoe UI", 10, "bold"),
+            anchor="w",
+            bg="#f6f8f5",
+            fg="#1f8b5c",
+            pady=2,
+        ).pack(fill="x")
+
+        status_frame = tk.Frame(container, bg="#eaf4ee", padx=14, pady=12)
+        status_frame.pack(fill="x", pady=(14, 0))
+
+        tk.Label(
+            status_frame,
+            text="Running pre-flight checks",
+            font=("Segoe UI", 11, "bold"),
+            anchor="w",
+            bg="#eaf4ee",
+            fg="#24313f",
+        ).pack(fill="x")
+
+        ttk.Progressbar(status_frame, mode="indeterminate", length=360).pack(
+            fill="x", pady=(10, 8)
+        )
+        progressbar = status_frame.winfo_children()[-1]
+        progressbar.start(12)
+
+        tk.Label(
+            status_frame,
+            text="Opening your workspace in the browser. Details stay in the terminal.",
+            font=("Segoe UI", 9),
+            anchor="w",
+            justify="left",
+            bg="#eaf4ee",
+            fg="#52616f",
+        ).pack(fill="x")
+
+        tk.Label(
+            container,
+            text=url,
+            font=("Consolas", 9),
+            anchor="w",
+            bg="#f6f8f5",
+            fg="#52616f",
+            pady=14,
+        ).pack(fill="x")
+
+        root.after(3200, root.destroy)
+        root.mainloop()
+    except Exception as e:
+        print(f"Could not show startup notification: {e}")
 
 # Import refactored web modules
 get_error_description: Any = None
@@ -167,7 +330,7 @@ try:
     endpoint_exists = _endpoint_exists
     run_validation = _run_validation
 
-    print("[OK] Web modules loaded from src/web/")
+    _print_startup_step("Web modules")
 except ImportError as e:
     print(f"[WARN]  Could not import web modules: {e}")
     endpoint_exists = lambda _endpoint: False
@@ -183,7 +346,7 @@ else:
 try:
     from src.survey_manager import SurveyManager
 
-    print("[OK] SurveyManager loaded")
+    _print_startup_step("Survey manager")
 except ImportError as e:
     SurveyManager = None
     print(f"[WARN]  Could not import SurveyManager: {e}")
@@ -279,17 +442,16 @@ from src.config import get_effective_library_paths
 lib_paths = get_effective_library_paths(app_root=str(BASE_DIR))
 if lib_paths["global_library_path"]:
     survey_library_path = Path(lib_paths["global_library_path"])
-    print(f"[INFO]  Using global library: {survey_library_path}")
 else:
     # Fallback to legacy survey_library folder
     survey_library_path = BASE_DIR / "survey_library"
-    print(f"[INFO]  Using fallback library: {survey_library_path}")
+    _print_startup_step("Survey library", "info", "using built-in library")
 
 survey_manager = None
 if SurveyManager:
     survey_manager = SurveyManager(survey_library_path)
     app.config["SURVEY_MANAGER"] = survey_manager
-    print(f"[OK] Survey Manager initialized at {survey_library_path}")
+    _print_startup_step("Survey library")
 
 # Register JSON Editor blueprint if available
 try:
@@ -297,7 +459,7 @@ try:
 
     json_editor_bp = create_json_editor_blueprint(bids_folder=None)
     app.register_blueprint(json_editor_bp)
-    print("[OK] JSON Editor blueprint registered at /editor")
+    _print_startup_step("JSON editor")
 except ImportError as e:
     print(f"[INFO]  JSON Editor not available: {e}")
 except Exception as e:
@@ -310,7 +472,7 @@ try:
     schema_dir = str(BASE_DIR / "schemas")
     api_bp = create_api_blueprint(schema_dir=schema_dir)
     app.register_blueprint(api_bp)
-    print("[OK] REST API registered at /api/v1")
+    _print_startup_step("REST API")
 except ImportError as e:
     print(f"[INFO]  REST API not available: {e}")
 except Exception as e:
@@ -364,10 +526,7 @@ for module_name, blueprint_attr, label in modular_blueprints:
         print(f"[WARN]  Could not register modular blueprint '{label}': {e}")
 
 if registered_modular_blueprints:
-    print(
-        "[OK] Modular blueprints registered: "
-        + ", ".join(registered_modular_blueprints)
-    )
+    _print_startup_step("Workflow routes")
 else:
     print("[WARN]  No modular blueprints were registered")
 
@@ -1227,19 +1386,8 @@ def main():
     scheme = "http"
     url = f"{scheme}://{display_host}:{port}"
 
-    print("Starting PRISM Studio")
-    print(f"URL: {url}")
-    if args.public:
-        print(
-            "[WARN]  Warning: Running in public mode - accessible from other computers"
-        )
-    print("Press Ctrl+C to stop the server")
-
-    # Show log location for compiled version
-    if getattr(sys, "frozen", False):
-        log_file = Path.home() / "prism_studio.log"
-        print(f"Log file: {log_file}")
-    print()
+    startup_log_file = Path.home() / "prism_studio.log" if getattr(sys, "frozen", False) else None
+    _print_startup_welcome(url, public=bool(args.public), log_file=startup_log_file)
 
     # On Windows compiled version, show a startup notification
     if (
@@ -1247,26 +1395,7 @@ def main():
         and sys.platform.startswith("win")
         and not args.no_browser
     ):
-
-        def show_startup_dialog():
-            """Show startup notification with proper DPI scaling using tkinter"""
-            try:
-                import tkinter as tk
-                from tkinter import messagebox
-
-                root = tk.Tk()
-                root.withdraw()  # Hide main window
-                root.attributes("-topmost", True)  # Bring to front
-
-                messagebox.showinfo(
-                    "PRISM Studio",
-                    f"PRISM Studio is starting...\n\nOpening browser at:\n{url}\n\nIf browser doesn't open automatically,\nplease visit the URL manually.",
-                )
-                root.destroy()
-            except Exception as e:
-                print(f"Could not show startup notification: {e}")
-
-        threading.Thread(target=show_startup_dialog, daemon=True).start()
+        threading.Thread(target=lambda: _show_startup_dialog(url), daemon=True).start()
 
     # Open browser in a separate thread to avoid blocking the Flask server
     if not args.no_browser:
