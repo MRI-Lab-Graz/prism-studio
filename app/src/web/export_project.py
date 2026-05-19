@@ -16,6 +16,24 @@ from typing import Any, Dict, Optional, Set
 from src.survey_scale_inference import get_survey_item_map
 
 
+VERSION_CONTROL_METADATA_DIRS = frozenset({".git", ".datalad"})
+VERSION_CONTROL_METADATA_FILES = frozenset(
+    {".gitattributes", ".gitignore", ".gitmodules", "CHANGES"}
+)
+
+
+def _is_version_control_metadata_path(path_parts: tuple[str, ...]) -> bool:
+    """Return True when a relative export path points at VCS/DataLad metadata."""
+    normalized_parts = tuple(str(part) for part in path_parts if str(part))
+    if not normalized_parts:
+        return False
+
+    if any(part in VERSION_CONTROL_METADATA_DIRS for part in normalized_parts):
+        return True
+
+    return normalized_parts[-1] in VERSION_CONTROL_METADATA_FILES
+
+
 def _masked_like(value: Any, masked_text: str) -> Any:
     if isinstance(value, dict):
         masked = {str(key): masked_text for key in value.keys() if isinstance(key, str)}
@@ -167,6 +185,7 @@ def export_project(
     exclude_sessions: Optional[Set[str]] = None,
     exclude_modalities: Optional[Set[str]] = None,
     exclude_acq: Optional[Dict[str, Set[str]]] = None,
+    exclude_version_control_metadata: bool = False,
     scrub_mri_json: bool = False,
     clean_nifti_gzip_headers: bool = False,
     progress_callback=None,
@@ -185,6 +204,7 @@ def export_project(
         include_derivatives: Include derivatives/ folder
         include_code: Include code/ folder
         include_analysis: Include analysis/ folder
+        exclude_version_control_metadata: Strip Git/DataLad metadata from ZIP
         clean_nifti_gzip_headers: Normalize .nii.gz GZIP headers (mtime/FNAME)
             in exported copies for privacy-safe sharing.
         progress_callback: Optional callable(percent, message) for progress updates
@@ -236,18 +256,34 @@ def export_project(
         "analysis": include_analysis,
     }
 
+    def _count_exportable_files(source_root: Path) -> int:
+        total = 0
+        for root, dirs, files in os.walk(source_root):
+            rel_parts = Path(root).relative_to(source_root).parts
+            if exclude_version_control_metadata:
+                dirs[:] = [
+                    dirname
+                    for dirname in dirs
+                    if not _is_version_control_metadata_path(rel_parts + (dirname,))
+                ]
+                files = [
+                    filename
+                    for filename in files
+                    if not _is_version_control_metadata_path(rel_parts + (filename,))
+                ]
+            total += len(files)
+        return total
+
     # Pre-count total files for accurate progress
     total_files = sum(
-        len(files)
+        _count_exportable_files(project_path / folder_name)
         for folder_name, should_include in folders_to_copy.items()
         if should_include and (project_path / folder_name).exists()
-        for _, _, files in os.walk(project_path / folder_name)
     )
     total_files += sum(
-        len(files)
+        _count_exportable_files(item)
         for item in project_path.iterdir()
         if item.is_dir() and item.name.startswith("sub-")
-        for _, _, files in os.walk(item)
     )
     total_files = max(total_files, 1)
 
@@ -370,6 +406,17 @@ def export_project(
             rel_root = Path(root).relative_to(source_root)
             # Check if this path is under an excluded session or modality
             rel_parts = rel_root.parts
+            if exclude_version_control_metadata:
+                _dirs[:] = [
+                    dirname
+                    for dirname in _dirs
+                    if not _is_version_control_metadata_path(rel_parts + (dirname,))
+                ]
+                files = [
+                    filename
+                    for filename in files
+                    if not _is_version_control_metadata_path(rel_parts + (filename,))
+                ]
             if (
                 skip_sessions
                 and rel_parts
@@ -495,6 +542,10 @@ def export_project(
         # (e.g., dataset_description.json, .prismrc.json, task-*_survey.json).
         for source_file in sorted(project_path.iterdir()):
             if not source_file.is_file():
+                continue
+            if exclude_version_control_metadata and _is_version_control_metadata_path(
+                (source_file.name,)
+            ):
                 continue
             if source_file.name == "participants_mapping.json":
                 continue

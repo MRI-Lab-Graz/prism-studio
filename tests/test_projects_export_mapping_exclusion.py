@@ -124,6 +124,61 @@ def test_export_includes_root_prism_metadata_files(tmp_path):
     assert ".bidsignore" in names
 
 
+def test_export_can_strip_version_control_metadata_for_upload_ready_shares(tmp_path):
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True)
+
+    (project_dir / "participants.tsv").write_text(
+        "participant_id\tage\nsub-001\t30\n",
+        encoding="utf-8",
+    )
+    (project_dir / "dataset_description.json").write_text(
+        '{"Name": "Demo", "BIDSVersion": "1.10.1"}\n', encoding="utf-8"
+    )
+    (project_dir / ".bidsignore").write_text("*.log\n", encoding="utf-8")
+    (project_dir / ".gitattributes").write_text("* annex.largefiles=anything\n", encoding="utf-8")
+    (project_dir / ".gitignore").write_text(".DS_Store\n", encoding="utf-8")
+    (project_dir / "CHANGES").write_text("Initial DataLad state\n", encoding="utf-8")
+
+    code_dir = project_dir / "code"
+    code_dir.mkdir(parents=True)
+    (code_dir / "some_script.py").write_text("print('ok')\n", encoding="utf-8")
+    (code_dir / ".gitignore").write_text("*.tmp\n", encoding="utf-8")
+    (code_dir / ".datalad").mkdir(parents=True)
+    (code_dir / ".datalad" / "config").write_text("[datalad]\n", encoding="utf-8")
+
+    subject_dir = project_dir / "sub-001" / "beh"
+    subject_dir.mkdir(parents=True)
+    (subject_dir / "sub-001_task-test_events.tsv").write_text(
+        "participant_id\tvalue\nsub-001\t1\n",
+        encoding="utf-8",
+    )
+
+    output_zip = tmp_path / "export_upload_ready.zip"
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=False,
+        include_derivatives=False,
+        include_code=True,
+        include_analysis=False,
+        exclude_version_control_metadata=True,
+    )
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        names = set(archive.namelist())
+
+    assert "dataset_description.json" in names
+    assert ".bidsignore" in names
+    assert "code/some_script.py" in names
+    assert "sub-001/beh/sub-001_task-test_events.tsv" in names
+    assert ".gitattributes" not in names
+    assert ".gitignore" not in names
+    assert "CHANGES" not in names
+    assert "code/.gitignore" not in names
+    assert all("/.datalad/" not in name for name in names)
+
+
 def test_export_anonymize_keeps_overlapping_subject_ids_distinct(tmp_path):
     project_dir = tmp_path / "study"
     project_dir.mkdir(parents=True)

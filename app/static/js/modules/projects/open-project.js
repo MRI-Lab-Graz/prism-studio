@@ -178,6 +178,15 @@ export function initOpenProjectController({
         return nextProjectState;
     }
 
+    function confirmEnableDatalad(currentPath) {
+        return window.confirm(
+            'Enable DataLad version control for this project?\n\n'
+            + 'This will modify the project in place by creating DataLad/Git metadata and saving an initial snapshot.\n\n'
+            + 'Only continue if you explicitly want DataLad for this dataset.\n\n'
+            + `Project: ${currentPath}`
+        );
+    }
+
     function bindProjectBoxDataladActions() {
         const enableButton = document.getElementById('projectBoxDataladEnableBtn');
         if (enableButton && enableButton.dataset.bound !== '1') {
@@ -190,6 +199,12 @@ export function initOpenProjectController({
                     return;
                 }
 
+                if (!confirmEnableDatalad(currentPath)) {
+                    setProjectBoxDataladFeedback('DataLad enable cancelled.', 'muted');
+                    window.setNavbarDataladFeedback?.('DataLad enable cancelled.', 'muted', 'Cancelled');
+                    return;
+                }
+
                 const originalText = enableButton.innerHTML;
                 enableButton.disabled = true;
                 enableButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Enabling...';
@@ -199,7 +214,7 @@ export function initOpenProjectController({
                     const response = await fetchWithApiFallback('/api/projects/datalad/enable', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({})
+                        body: JSON.stringify({ confirmed: true })
                     });
                     const data = await response.json().catch(() => ({ success: false, error: 'Invalid server response.' }));
                     if (!response.ok || !data.success) {
