@@ -56,6 +56,220 @@ export function initOpenProjectController({
         return labels;
     }
 
+    function normalizeDataladState(dataladState, fallbackPath = '') {
+        const resolvedPath = (typeof dataladState?.path === 'string' ? dataladState.path.trim() : '') || String(fallbackPath || '').trim();
+        const defaultMessage = resolvedPath
+            ? 'Current project is not a DataLad dataset.'
+            : 'Load a project to see DataLad status.';
+
+        if (!dataladState || typeof dataladState !== 'object' || Array.isArray(dataladState)) {
+            return {
+                enabled: false,
+                available: false,
+                annexAvailable: false,
+                canSave: false,
+                canEnable: false,
+                message: defaultMessage,
+                path: resolvedPath,
+            };
+        }
+
+        const message = typeof dataladState.message === 'string' && dataladState.message.trim()
+            ? dataladState.message.trim()
+            : defaultMessage;
+
+        return {
+            enabled: Boolean(dataladState.enabled),
+            available: Boolean(dataladState.available),
+            annexAvailable: Boolean(dataladState.annex_available ?? dataladState.annexAvailable),
+            canSave: Boolean(dataladState.can_save ?? dataladState.canSave),
+            canEnable: Boolean(dataladState.can_enable ?? dataladState.canEnable),
+            message,
+            path: resolvedPath,
+        };
+    }
+
+    function setProjectBoxDataladFeedback(message, kind = 'muted') {
+        const feedback = document.getElementById('projectBoxDataladFeedback');
+        if (!feedback) {
+            return;
+        }
+
+        const normalizedMessage = String(message || '').trim();
+        feedback.className = 'small mt-2';
+        if (!normalizedMessage) {
+            feedback.classList.add('d-none');
+            feedback.textContent = '';
+            return;
+        }
+
+        feedback.classList.remove('d-none');
+        if (kind === 'success') {
+            feedback.classList.add('text-success');
+        } else if (kind === 'danger') {
+            feedback.classList.add('text-danger');
+        } else {
+            feedback.classList.add('text-muted');
+        }
+        feedback.textContent = normalizedMessage;
+    }
+
+    function renderProjectBoxDataladState(dataladState, fallbackPath = '') {
+        const status = document.getElementById('projectBoxDataladStatus');
+        const hint = document.getElementById('projectBoxDataladHint');
+        const stateBadge = document.getElementById('projectBoxDataladStateBadge');
+        const enableButton = document.getElementById('projectBoxDataladEnableBtn');
+        const saveButton = document.getElementById('projectBoxDataladSaveBtn');
+        if (!status || !hint || !stateBadge || !enableButton || !saveButton) {
+            return;
+        }
+
+        const state = normalizeDataladState(dataladState, fallbackPath);
+        status.textContent = state.message;
+        stateBadge.className = 'badge rounded-pill';
+        enableButton.classList.remove('d-none');
+
+        if (state.enabled && state.available) {
+            stateBadge.classList.add('bg-success', 'text-white');
+            stateBadge.textContent = 'Tracked';
+            hint.textContent = 'This project is already DataLad-tracked. Use Save DataLad Snapshot when you want an explicit version-control checkpoint.';
+            enableButton.classList.add('d-none');
+            enableButton.disabled = true;
+            enableButton.title = 'DataLad is already enabled for this project';
+        } else if (state.enabled) {
+            stateBadge.classList.add('bg-warning', 'text-dark');
+            stateBadge.textContent = 'Tracked';
+            hint.textContent = 'This project is DataLad-tracked, but DataLad is not currently available in this environment.';
+            enableButton.classList.add('d-none');
+            enableButton.disabled = true;
+            enableButton.title = 'DataLad is already enabled for this project';
+        } else {
+            stateBadge.classList.add('bg-light', 'text-muted', 'border');
+            stateBadge.textContent = 'Not tracked';
+            hint.textContent = state.canEnable
+                ? 'Enable DataLad version control here for the current project.'
+                : (state.available && !state.annexAvailable
+                    ? 'git-annex is missing, so PRISM cannot initialize a new DataLad dataset here.'
+                    : 'DataLad is not available in this environment.');
+            enableButton.disabled = !state.canEnable;
+            enableButton.title = state.canEnable
+                ? 'Initialize DataLad for the current project'
+                : (state.available && !state.annexAvailable
+                    ? 'git-annex not available'
+                    : 'DataLad executable not available');
+        }
+
+        saveButton.disabled = !state.canSave;
+        saveButton.title = state.canSave
+            ? 'Create a DataLad snapshot for the current project'
+            : (state.enabled
+                ? 'DataLad executable not available'
+                : 'Current project is not a DataLad dataset');
+    }
+
+    function applyProjectDataladResponse(data) {
+        const currentState = getCurrentProjectState();
+        const nextProjectState = data.current_project && typeof data.current_project === 'object'
+            ? data.current_project
+            : { ...currentState, datalad: data.datalad };
+
+        applyCurrentProject(nextProjectState);
+        renderProjectBoxDataladState(nextProjectState.datalad, nextProjectState.path);
+        return nextProjectState;
+    }
+
+    function bindProjectBoxDataladActions() {
+        const enableButton = document.getElementById('projectBoxDataladEnableBtn');
+        if (enableButton && enableButton.dataset.bound !== '1') {
+            enableButton.dataset.bound = '1';
+            enableButton.addEventListener('click', async function() {
+                const currentPath = String(getCurrentProjectState().path || '').trim();
+                if (!currentPath) {
+                    setProjectBoxDataladFeedback('Load a project first.', 'danger');
+                    window.setNavbarDataladFeedback?.('Load a project first.', 'danger', 'Error');
+                    return;
+                }
+
+                const originalText = enableButton.innerHTML;
+                enableButton.disabled = true;
+                enableButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Enabling...';
+                setProjectBoxDataladFeedback('', 'muted');
+
+                try {
+                    const response = await fetchWithApiFallback('/api/projects/datalad/enable', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    });
+                    const data = await response.json().catch(() => ({ success: false, error: 'Invalid server response.' }));
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.error || data.message || 'Could not enable DataLad.');
+                    }
+
+                    applyProjectDataladResponse(data);
+                    const successMessage = data.message || (data.datalad && data.datalad.message) || 'DataLad enabled.';
+                    setProjectBoxDataladFeedback(successMessage, 'success');
+                    window.setNavbarDataladFeedback?.(successMessage, 'success', 'Enabled');
+                } catch (error) {
+                    const errorMessage = error.message || 'Could not enable DataLad.';
+                    setProjectBoxDataladFeedback(errorMessage, 'danger');
+                    window.setNavbarDataladFeedback?.(errorMessage, 'danger', 'Error');
+                } finally {
+                    enableButton.innerHTML = originalText;
+                    renderProjectBoxDataladState(getCurrentProjectState().datalad, currentPath);
+                }
+            });
+        }
+
+        const saveButton = document.getElementById('projectBoxDataladSaveBtn');
+        if (saveButton && saveButton.dataset.bound !== '1') {
+            saveButton.dataset.bound = '1';
+            saveButton.addEventListener('click', async function() {
+                const currentPath = String(getCurrentProjectState().path || '').trim();
+                if (!currentPath) {
+                    setProjectBoxDataladFeedback('Load a project first.', 'danger');
+                    window.setNavbarDataladFeedback?.('Load a project first.', 'danger', 'Error');
+                    return;
+                }
+
+                const requestedMessage = window.prompt('Commit message for this checkpoint', 'Checkpoint PRISM project changes');
+                if (requestedMessage === null) {
+                    return;
+                }
+
+                const saveMessage = String(requestedMessage || '').trim() || 'Checkpoint PRISM project changes';
+                const originalText = saveButton.innerHTML;
+                saveButton.disabled = true;
+                saveButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+                setProjectBoxDataladFeedback('', 'muted');
+
+                try {
+                    const response = await fetchWithApiFallback('/api/projects/datalad/save', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: saveMessage })
+                    });
+                    const data = await response.json().catch(() => ({ success: false, error: 'Invalid server response.' }));
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.error || data.message || 'Could not save DataLad changes.');
+                    }
+
+                    applyProjectDataladResponse(data);
+                    const successMessage = data.message || (data.datalad && data.datalad.message) || 'DataLad save completed.';
+                    setProjectBoxDataladFeedback(successMessage, 'success');
+                    window.setNavbarDataladFeedback?.(successMessage, 'success', 'Saved');
+                } catch (error) {
+                    const errorMessage = error.message || 'Could not save DataLad changes.';
+                    setProjectBoxDataladFeedback(errorMessage, 'danger');
+                    window.setNavbarDataladFeedback?.(errorMessage, 'danger', 'Error');
+                } finally {
+                    saveButton.innerHTML = originalText;
+                    renderProjectBoxDataladState(getCurrentProjectState().datalad, currentPath);
+                }
+            });
+        }
+    }
+
     function renderProjectQuickSummary(summary) {
         if (!summary || typeof summary !== 'object' || Array.isArray(summary)) {
             return '<p class="mb-0 text-muted"><i class="fas fa-info-circle me-1"></i>Quick summary unavailable for this project.</p>';
@@ -129,6 +343,27 @@ export function initOpenProjectController({
                         </a>
                     </div>
                 </div>
+                <div class="alert alert-light border mt-3 mb-0" role="status">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <strong><i class="fas fa-code-branch me-1"></i>DataLad Version Control</strong>
+                                <span class="badge rounded-pill bg-light text-muted border" id="projectBoxDataladStateBadge">Not tracked</span>
+                            </div>
+                            <div class="small text-muted mt-2" id="projectBoxDataladStatus">Checking DataLad status...</div>
+                            <div class="small text-muted mt-1" id="projectBoxDataladHint">Project-scoped DataLad setup and manual saves live here.</div>
+                            <div class="small mt-2 d-none" id="projectBoxDataladFeedback" aria-live="polite"></div>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap justify-content-lg-end">
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="projectBoxDataladEnableBtn">
+                                <i class="fas fa-plus me-1"></i>Enable DataLad
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-success" id="projectBoxDataladSaveBtn">
+                                <i class="fas fa-floppy-disk me-1"></i>Save DataLad Snapshot
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <div class="d-flex flex-column align-items-end mt-2">
                     <div class="d-flex gap-2 flex-wrap justify-content-end">
                         <button type="button" class="btn btn-outline-warning" id="projectBoxPreliminarySaveBtn">
@@ -198,7 +433,9 @@ export function initOpenProjectController({
             showMethodsCard();
 
             renderLoadedProjectState(loadedName, loadedPath, projectSummary);
+            renderProjectBoxDataladState(currentState.datalad, loadedPath);
             bindProjectBoxActionButtons();
+            bindProjectBoxDataladActions();
             updateCreateProjectButton();
 
             return true;

@@ -132,6 +132,11 @@ class ProjectSessionLogger:
         with self._lock:
             return self._active_log_path
 
+    def get_active_project_root(self) -> Path | None:
+        """Return the active project root tracked by the current session."""
+        with self._lock:
+            return self._active_project_root
+
     def _build_log_path(self, project_root: Path, started_at: datetime) -> Path:
         log_dir = project_root / "code" / "logs"
         base_name = f"prism_session_{started_at.strftime('%Y%m%d_%H%M%S')}.log"
@@ -210,6 +215,11 @@ def get_active_project_session_log_path() -> Path | None:
     return _PROJECT_SESSION_LOGGER.get_active_log_path()
 
 
+def get_active_project_session_root() -> Path | None:
+    """Return the active project root tracked by the current session, if any."""
+    return _PROJECT_SESSION_LOGGER.get_active_project_root()
+
+
 @atexit.register
 def _close_project_session_on_exit() -> None:
     _PROJECT_SESSION_LOGGER.close_active_session(reason="prism_closed")
@@ -221,4 +231,5 @@ __all__ = [
     "close_project_session",
     "record_project_session_command",
     "get_active_project_session_log_path",
+    "get_active_project_session_root",
 ]

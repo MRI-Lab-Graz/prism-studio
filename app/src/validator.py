@@ -10,8 +10,8 @@ import gzip
 from pathlib import Path
 from datetime import datetime
 from jsonschema import validate, ValidationError
-from schema_manager import validate_schema_version, apply_schema_validation_profile
-from cross_platform import (
+from src.schema_manager import validate_schema_version, apply_schema_validation_profile
+from src.cross_platform import (
     normalize_path,
     safe_path_join,
     CrossPlatformFile,

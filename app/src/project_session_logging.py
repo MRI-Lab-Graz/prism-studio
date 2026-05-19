@@ -19,6 +19,7 @@ activate_project_session = _real.activate_project_session
 close_project_session = _real.close_project_session
 record_project_session_command = _real.record_project_session_command
 get_active_project_session_log_path = _real.get_active_project_session_log_path
+get_active_project_session_root = _real.get_active_project_session_root
 
 __all__ = [
     "ProjectSessionLogger",
@@ -26,4 +27,5 @@ __all__ = [
     "close_project_session",
     "record_project_session_command",
     "get_active_project_session_log_path",
+    "get_active_project_session_root",
 ]

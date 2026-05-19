@@ -14,9 +14,28 @@ class TestNavbarProjectEventWiring(unittest.TestCase):
             "function applyNavbarStateFromProjectState(projectState)", content
         )
         self.assertIn('No project loaded', content)
-        self.assertIn("badge bg-light text-muted border", content)
+        self.assertIn("badge bg-light text-muted", content)
+        self.assertIn('id="navbarDataladToggle"', content)
+        self.assertIn("function renderNavbarDataladState(projectState)", content)
         self.assertIn("setFileManagementState(Boolean(nextPath));", content)
         self.assertIn("setDerivativesState(Boolean(nextPath));", content)
+
+    def test_navbar_datalad_indicator_wires_direct_save_without_menu(self):
+        content = BASE_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertNotIn('id="navbarDataladMenu"', content)
+        self.assertIn('id="navbarDataladStateBadge"', content)
+        self.assertIn('id="navbarDataladTrackedIcon"', content)
+        self.assertIn('id="navbarDataladToggleFeedback"', content)
+        self.assertIn('data-can-enable="{{ \'true\' if current_project_datalad.can_enable else \'false\' }}"', content)
+        self.assertIn("function setNavbarDataladFeedback(message, kind = 'muted', toggleLabel = '')", content)
+        self.assertIn("async function saveNavbarDataladSnapshot()", content)
+        self.assertIn("window.prompt('Commit message for this checkpoint'", content)
+        self.assertIn("navbarFetchWithApiFallback('/api/projects/datalad/save'", content)
+        self.assertIn("navbarDataladToggle?.addEventListener('click', async function(e)", content)
+        self.assertIn("window.setNavbarDataladFeedback = setNavbarDataladFeedback;", content)
+        self.assertNotIn("const navbarDataladSaveBtn = document.getElementById('navbarDataladSaveBtn');", content)
+        self.assertNotIn("const navbarDataladEnableBtn = document.getElementById('navbarDataladEnableBtn');", content)
 
     def test_navbar_recent_project_loader_uses_credentialed_fallback_fetch(self):
         content = BASE_TEMPLATE.read_text(encoding="utf-8")

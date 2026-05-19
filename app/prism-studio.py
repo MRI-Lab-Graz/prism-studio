@@ -146,7 +146,8 @@ from src.dedicated_terminal import (
     build_windows_dedicated_terminal_command,
     should_relaunch_in_dedicated_terminal,
 )
-from src.project_session_logging import close_project_session
+from src.project_manager import ProjectManager
+from src.project_session_logging import close_project_session, get_active_project_session_root
 from src.version_utils import is_newer_release_available
 
 try:
@@ -211,12 +212,24 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
 # Global shutdown flag to signal graceful termination
 _shutdown_requested = threading.Event()
+_shutdown_project_manager = ProjectManager()
 
 
 def cleanup_and_exit(exit_code=0):
     """Cleanup resources and exit the entire process (not just Flask)."""
     try:
         print("🛑 Cleaning up resources...")
+        active_project_root = get_active_project_session_root()
+        if active_project_root is not None:
+            autosave_result = _shutdown_project_manager.autosave_datalad_snapshot(
+                active_project_root,
+                reason="prism_closed",
+            )
+            if autosave_result.get("attempted") and not autosave_result.get("success"):
+                print(
+                    "[WARN]  DataLad auto-save failed during shutdown: "
+                    f"{autosave_result.get('error') or autosave_result.get('message') or 'Unknown error'}"
+                )
         close_project_session(reason="prism_closed")
         # Signal shutdown
         _shutdown_requested.set()
@@ -664,9 +677,12 @@ def get_latest_prism_studio_version() -> tuple[str, str]:
 def inject_utilities():
     """Inject utility functions into all templates"""
     from flask import session
+    from src.project_manager import ProjectManager
 
     current_version = get_prism_studio_version()
     latest_version, latest_release_url = get_latest_prism_studio_version()
+    project_path = session.get("current_project_path")
+    current_project_datalad = ProjectManager().get_datalad_status(project_path)
 
     return {
         "get_filename_from_path": get_filename_from_path,
@@ -675,9 +691,10 @@ def inject_utilities():
         "get_error_documentation_url": get_error_documentation_url,
         "endpoint_exists": endpoint_exists,
         "current_project": {
-            "path": session.get("current_project_path"),
+            "path": project_path,
             "name": session.get("current_project_name"),
             "icon": session.get("current_project_icon"),
+            "datalad": current_project_datalad,
         },
         "prism_studio_version": current_version,
         "latest_prism_studio_version": latest_version,

@@ -68,6 +68,7 @@ def handle_set_current(
     set_current_project,
     save_last_project,
     close_project_session=None,
+    autosave_current_project=None,
 ):
     """Set or clear current project in session and persisted settings."""
     data = request.get_json()
@@ -77,6 +78,14 @@ def handle_set_current(
     path = data.get("path")
 
     if not path:
+        if autosave_current_project is not None:
+            try:
+                autosave_current_project(
+                    session.get("current_project_path"),
+                    reason="project_cleared",
+                )
+            except Exception:
+                pass
         if close_project_session is not None:
             try:
                 close_project_session(reason="project_cleared")
@@ -182,6 +191,7 @@ def handle_create_project(project_manager, set_current_project, save_last_projec
                 "path": str(Path(path)),
                 "name": project_name,
                 "icon": project_icon,
+                "datalad": project_manager.get_datalad_status(path),
                 "project_json_path": str(Path(path) / "project.json"),
             }
             return jsonify(result)
@@ -230,6 +240,7 @@ def handle_init_on_bids(project_manager, set_current_project, save_last_project)
                 "path": str(Path(path)),
                 "name": project_name,
                 "icon": project_icon,
+                "datalad": project_manager.get_datalad_status(path),
                 "project_json_path": str(Path(path) / "project.json"),
             }
             return jsonify(result)
@@ -294,6 +305,7 @@ def handle_validate_project(project_manager, set_current_project, save_last_proj
             "path": root_path,
             "name": project_name,
             "icon": project_icon,
+            "datalad": project_manager.get_datalad_status(root_path),
             "project_json_path": project_json_path,
         }
 

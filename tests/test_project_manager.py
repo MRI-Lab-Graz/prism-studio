@@ -113,6 +113,23 @@ class TestProjectManager(unittest.TestCase):
         self.assertFalse(result.get("datalad", {}).get("available"))
         self.assertIn("continued without", result.get("datalad", {}).get("message", ""))
 
+    @patch("src.project_manager.shutil.which")
+    def test_create_project_continues_without_datalad_when_git_annex_missing(self, mock_which):
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: (
+            "/usr/bin/datalad" if executable == "datalad" else None
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            result = manager.create_project(str(project_path), {"name": "demo_project"})
+
+        self.assertTrue(result.get("success"), result)
+        self.assertTrue(result.get("datalad", {}).get("requested"))
+        self.assertFalse(result.get("datalad", {}).get("initialized"))
+        self.assertFalse(result.get("datalad", {}).get("annex_available"))
+        self.assertIn("git-annex", result.get("datalad", {}).get("message", ""))
+
     @patch("src.project_manager.subprocess.run")
     @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
     def test_create_project_allows_opting_out_of_datalad(
@@ -161,6 +178,175 @@ class TestProjectManager(unittest.TestCase):
             mock_run.call_args_list[1].args[0],
             ["/usr/bin/datalad", "save", "-m", "Initialize PRISM dataset structure"],
         )
+
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_get_datalad_status_detects_project_dataset(self, _mock_which):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+
+            result = manager.get_datalad_status(project_path)
+
+        self.assertTrue(result.get("enabled"))
+        self.assertTrue(result.get("available"))
+        self.assertTrue(result.get("annex_available"))
+        self.assertTrue(result.get("can_save"))
+
+    @patch("src.project_manager.shutil.which")
+    def test_get_datalad_status_reports_missing_git_annex(self, mock_which):
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: (
+            "/usr/bin/datalad" if executable == "datalad" else None
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+
+            result = manager.get_datalad_status(project_path)
+
+        self.assertFalse(result.get("enabled"))
+        self.assertTrue(result.get("available"))
+        self.assertFalse(result.get("annex_available"))
+        self.assertFalse(result.get("can_enable"))
+        self.assertIn("git-annex", result.get("message", ""))
+
+    @patch(
+        "src.project_manager.subprocess.run",
+        return_value=Mock(returncode=0, stdout="", stderr=""),
+    )
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_save_datalad_snapshot_runs_save_for_existing_dataset(
+        self, _mock_which, mock_run
+    ):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            result = manager.save_datalad_snapshot(
+                project_path,
+                message="Checkpoint metadata updates",
+            )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertEqual(
+            mock_run.call_args.args[0],
+            ["/usr/bin/datalad", "save", "-m", "Checkpoint metadata updates"],
+        )
+
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_save_datalad_snapshot_rejects_non_datalad_project(self, _mock_which):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            result = manager.save_datalad_snapshot(
+                project_path,
+                message="Checkpoint metadata updates",
+            )
+
+        self.assertFalse(result.get("success"))
+        self.assertIn("not a DataLad dataset", result.get("error", ""))
+
+    @patch(
+        "src.project_manager.subprocess.run",
+        return_value=Mock(returncode=0, stdout="", stderr=""),
+    )
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_autosave_datalad_snapshot_uses_lifecycle_message_for_project_switch(
+        self, _mock_which, mock_run
+    ):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            result = manager.autosave_datalad_snapshot(
+                project_path,
+                reason="project_switch next_project=/tmp/other",
+            )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertTrue(result.get("attempted"), result)
+        self.assertEqual(
+            mock_run.call_args.args[0],
+            ["/usr/bin/datalad", "save", "-m", "PRISM auto-save before project switch"],
+        )
+
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_autosave_datalad_snapshot_skips_non_datalad_project(self, _mock_which):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            result = manager.autosave_datalad_snapshot(
+                project_path,
+                reason="prism_closed",
+            )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertTrue(result.get("skipped"), result)
+        self.assertFalse(result.get("attempted"), result)
+
+    @patch(
+        "src.project_manager.subprocess.run",
+        return_value=Mock(returncode=0, stdout="", stderr=""),
+    )
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_enable_datalad_for_project_initializes_and_saves_dataset(
+        self, _mock_which, mock_run
+    ):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            result = manager.enable_datalad_for_project(
+                project_path,
+                message="Enable DataLad for PRISM project",
+            )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertEqual(
+            mock_run.call_args_list[0].args[0],
+            ["/usr/bin/datalad", "create", "--force"],
+        )
+        self.assertEqual(
+            mock_run.call_args_list[1].args[0],
+            ["/usr/bin/datalad", "save", "-m", "Enable DataLad for PRISM project"],
+        )
+
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_enable_datalad_for_project_is_idempotent_for_existing_dataset(self, _mock_which):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            result = manager.enable_datalad_for_project(project_path)
+
+        self.assertTrue(result.get("success"), result)
+        self.assertIn("already tracked by DataLad", result.get("message", ""))
+
+    @patch("src.project_manager.shutil.which")
+    def test_enable_datalad_for_project_fails_without_git_annex(self, mock_which):
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: (
+            "/usr/bin/datalad" if executable == "datalad" else None
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            result = manager.enable_datalad_for_project(project_path)
+
+        self.assertFalse(result.get("success"))
+        self.assertIn("git-annex", result.get("error", ""))
 
     def test_create_project_reports_existing_nonempty_target_actionably(self):
         manager = ProjectManager()
