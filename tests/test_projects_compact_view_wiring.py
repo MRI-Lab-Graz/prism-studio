@@ -89,6 +89,15 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
         self.assertIn('id="createProjectSubmitBtnTop"', content)
         self.assertIn('id="preliminaryCreateBtnTop"', content)
 
+    def test_project_setup_forms_include_datalad_toggle(self):
+        create_content = CREATE_FORM_TEMPLATE.read_text(encoding="utf-8")
+        init_content = INIT_BIDS_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="projectUseDatalad"', create_content)
+        self.assertIn("Initialize as a DataLad dataset", create_content)
+        self.assertIn('id="initBidsUseDatalad"', init_content)
+        self.assertIn("Wrap this dataset with DataLad", init_content)
+
     def test_projects_cards_explain_starting_points(self):
         content = PROJECTS_TEMPLATE.read_text(encoding="utf-8")
 

@@ -26,9 +26,11 @@ Usage:
 
 import json
 import re
+import shutil
+import subprocess
 from pathlib import Path
 from datetime import date
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Union
 from urllib.parse import urlparse
 
 from src.fixer import DatasetFixer
@@ -119,10 +121,16 @@ class ProjectManager:
         modalities = ["survey", "biometrics"]  # Default core modalities for folders
 
         created_files = []
+        datalad_result: Optional[Dict[str, Any]] = None
 
         try:
             # Create project root
             project_path.mkdir(parents=True, exist_ok=True)
+
+            datalad_result = self._create_datalad_dataset(
+                project_path,
+                enabled=config.get("use_datalad"),
+            )
 
             # 1. Create dataset_description.json in root (BIDS standard)
             desc_path = project_path / "dataset_description.json"
@@ -200,15 +208,28 @@ class ProjectManager:
             library_files = self._create_library_structure(project_path, modalities)
             created_files.extend(library_files)
 
-            return {
+            if datalad_result is not None:
+                datalad_result = self._save_datalad_changes(
+                    project_path,
+                    datalad_result,
+                    message="Initialize PRISM dataset structure",
+                )
+
+            result = {
                 "success": True,
                 "path": str(project_path),
                 "created_files": created_files,
                 "message": f"Project '{name}' created successfully with {len(created_files)} files",
             }
+            if datalad_result is not None:
+                result["datalad"] = datalad_result
+            return result
 
         except Exception as e:
-            return {"success": False, "error": str(e), "created_files": created_files}
+            result = {"success": False, "error": str(e), "created_files": created_files}
+            if datalad_result is not None:
+                result["datalad"] = datalad_result
+            return result
 
     def init_on_existing_bids(
         self, path: str, config: Optional[Dict[str, Any]] = None
@@ -254,8 +275,14 @@ class ProjectManager:
             if modality not in BIDS_PASSTHROUGH_MODALITIES
         ]
         created_files: List[str] = []
+        datalad_result: Optional[Dict[str, Any]] = None
 
         try:
+            datalad_result = self._create_datalad_dataset(
+                project_path,
+                enabled=config.get("use_datalad"),
+            )
+
             # --- .bidsignore ------------------------------------------------
             bidsignore_path = project_path / ".bidsignore"
             if not bidsignore_path.exists():
@@ -329,6 +356,13 @@ class ProjectManager:
                     folder_path.mkdir(exist_ok=True)
                     created_files.append(f"{folder}/")
 
+            if datalad_result is not None:
+                datalad_result = self._save_datalad_changes(
+                    project_path,
+                    datalad_result,
+                    message="Initialize PRISM on existing BIDS dataset",
+                )
+
             skipped = (
                 "  (existing files were not modified)" if not created_files else ""
             )
@@ -336,15 +370,21 @@ class ProjectManager:
                 f"PRISM initialised on '{name}': "
                 f"{len(created_files)} file(s) added.{skipped}"
             )
-            return {
+            result = {
                 "success": True,
                 "path": str(project_path),
                 "created_files": created_files,
                 "message": msg,
             }
+            if datalad_result is not None:
+                result["datalad"] = datalad_result
+            return result
 
         except Exception as exc:
-            return {"success": False, "error": str(exc), "created_files": created_files}
+            result = {"success": False, "error": str(exc), "created_files": created_files}
+            if datalad_result is not None:
+                result["datalad"] = datalad_result
+            return result
 
     def validate_structure(self, path: str) -> Dict[str, Any]:
         """
@@ -729,6 +769,131 @@ class ProjectManager:
     def _create_participants_tsv(self) -> str:
         """Create participants.tsv header (no sample rows)."""
         return "participant_id\tage\tsex\n"
+
+    def _normalize_feature_toggle(self, value: Any, default: bool = True) -> bool:
+        """Normalize optional boolean-style configuration values."""
+        if value is None:
+            return default
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"0", "false", "no", "off"}:
+                return False
+            if normalized in {"1", "true", "yes", "on"}:
+                return True
+        return bool(value)
+
+    def _create_datalad_dataset(
+        self,
+        project_path: Path,
+        enabled: Union[bool, str, None] = True,
+    ) -> Dict[str, Any]:
+        """Initialise a DataLad dataset when requested and available."""
+        requested = self._normalize_feature_toggle(enabled, default=True)
+        result: Dict[str, Any] = {
+            "requested": requested,
+            "available": False,
+            "initialized": False,
+            "saved": False,
+            "message": "",
+        }
+
+        if not requested:
+            result["message"] = "DataLad initialization skipped by user choice."
+            return result
+
+        datalad_executable = shutil.which("datalad")
+        result["available"] = bool(datalad_executable)
+        if not datalad_executable:
+            result["message"] = (
+                "DataLad is not installed in this environment. PRISM continued without "
+                "DataLad integration."
+            )
+            return result
+
+        result["executable"] = datalad_executable
+
+        try:
+            process = subprocess.run(
+                [datalad_executable, "create", "--force"],
+                cwd=str(project_path),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except Exception as exc:
+            result["message"] = (
+                f"DataLad initialization failed ({type(exc).__name__}: {exc}). "
+                "PRISM continued without DataLad integration."
+            )
+            return result
+
+        if process.returncode != 0:
+            detail = (process.stderr or process.stdout or "Unknown DataLad error").strip()
+            result["message"] = (
+                f"DataLad initialization failed: {detail}. "
+                "PRISM continued without DataLad integration."
+            )
+            return result
+
+        result["initialized"] = True
+        result["message"] = "DataLad dataset initialized."
+        return result
+
+    def _save_datalad_changes(
+        self,
+        project_path: Path,
+        datalad_result: Dict[str, Any],
+        *,
+        message: str,
+    ) -> Dict[str, Any]:
+        """Persist project changes into DataLad with a stable message when possible."""
+        result = dict(datalad_result)
+        result["save_message"] = message
+
+        if not result.get("initialized"):
+            return result
+
+        datalad_executable = result.get("executable") or shutil.which("datalad")
+        if not datalad_executable:
+            result["available"] = False
+            result["message"] = (
+                "DataLad was initialized, but the executable is no longer available "
+                "to save changes."
+            )
+            return result
+
+        try:
+            process = subprocess.run(
+                [str(datalad_executable), "save", "-m", message],
+                cwd=str(project_path),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except Exception as exc:
+            result["message"] = (
+                f"DataLad dataset initialized, but saving changes failed "
+                f"({type(exc).__name__}: {exc})."
+            )
+            return result
+
+        if process.returncode == 0:
+            result["saved"] = True
+            result["message"] = f'DataLad dataset initialized and saved with message "{message}".'
+            return result
+
+        detail = (process.stderr or process.stdout or "").strip()
+        if "nothing to save" in detail.lower():
+            result["message"] = "DataLad dataset initialized. No additional DataLad save was needed."
+            return result
+
+        result["message"] = (
+            "DataLad dataset initialized, but saving project changes failed: "
+            f"{detail or 'Unknown DataLad error'}."
+        )
+        return result
 
     def _create_bidsignore(self, modalities: List[str]) -> str:
         """Create .bidsignore content."""
