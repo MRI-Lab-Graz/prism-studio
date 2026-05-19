@@ -148,6 +148,23 @@ export function initParticipants() {
         }
     }
 
+    function openParticipantsLocalFilePicker(fileInput) {
+        if (!(fileInput instanceof HTMLInputElement) || fileInput.disabled) {
+            return;
+        }
+
+        if (typeof fileInput.showPicker === 'function') {
+            try {
+                fileInput.showPicker();
+                return;
+            } catch (_error) {
+                // Fall back to click() for browsers that expose showPicker but reject it here.
+            }
+        }
+
+        fileInput.click();
+    }
+
     function applyParticipantsPickerUiState() {
         const connectedToServer = prefersServerPicker();
         const fileInput = document.getElementById('participantsDataFile');
@@ -1379,7 +1396,7 @@ export function initParticipants() {
     const participantsChooseFileBtn = document.getElementById('participantsChooseFileBtn');
     if (participantsChooseFileBtn && fileInput) {
         participantsChooseFileBtn.addEventListener('click', function() {
-            fileInput.click();
+            openParticipantsLocalFilePicker(fileInput);
         });
     }
 
