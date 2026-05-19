@@ -117,6 +117,50 @@
             font-weight: 600;
             margin-bottom: 0.35rem;
         }
+        .studio-path-picker .form-label {
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+        }
+        .studio-picker-group {
+            gap: 0.65rem;
+            align-items: center;
+        }
+        .studio-picker-group > .form-control,
+        .studio-picker-group > .form-select,
+        .studio-picker-group > .input-group-text {
+            min-width: 0;
+            border-radius: var(--bs-border-radius) !important;
+        }
+        .studio-picker-group > .form-control,
+        .studio-picker-group > .form-select {
+            flex: 1 1 16rem;
+        }
+        .studio-picker-group > .form-control[type="file"] {
+            flex-basis: 18rem;
+        }
+        .studio-picker-group > .btn,
+        .studio-picker-group > .input-group-text {
+            flex: 0 0 auto;
+            white-space: nowrap;
+            border-radius: var(--bs-border-radius) !important;
+        }
+        .studio-picker-group > .studio-picker-trigger {
+            min-width: 6.5rem;
+            justify-content: center;
+        }
+        .studio-picker-group > .studio-picker-clear {
+            min-width: 2.5rem;
+            padding-inline: 0.65rem;
+            justify-content: center;
+        }
+        .studio-picker-group > .form-control[readonly] {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .studio-file-picker .studio-picker-group > .form-control[readonly] {
+            flex: 1 1 10rem;
+        }
         .studio-file-picker .form-control[type="file"] {
             font-size: 0.92rem;
             min-height: 2.45rem;
@@ -235,6 +279,21 @@
         html[data-beginner-help-mode="on"] .studio-theme textarea:not([disabled]) {
             border-color: var(--studio-brand-accent);
             box-shadow: 0 0 0 0.12rem rgba(255, 213, 0, 0.26);
+        }
+        @media (max-width: 575.98px) {
+            .studio-picker-group > .form-control,
+            .studio-picker-group > .form-control,
+            .studio-picker-group > .form-select,
+            .studio-picker-group > .input-group-text {
+                flex: 1 1 100%;
+                width: 100%;
+            }
+            .studio-picker-group > .btn {
+                min-width: 0;
+            }
+            .studio-picker-group > .form-control[readonly] {
+                text-overflow: clip;
+            }
         }
     </style>
 </head>
