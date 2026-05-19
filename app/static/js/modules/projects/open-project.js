@@ -57,6 +57,11 @@ export function initOpenProjectController({
     }
 
     function normalizeDataladState(dataladState, fallbackPath = '') {
+        const normalizeCount = (value, defaultValue = 0) => {
+            const parsed = Number.parseInt(String(value ?? ''), 10);
+            return Number.isFinite(parsed) && parsed >= 0 ? parsed : defaultValue;
+        };
+
         const resolvedPath = (typeof dataladState?.path === 'string' ? dataladState.path.trim() : '') || String(fallbackPath || '').trim();
         const defaultMessage = resolvedPath
             ? 'Current project is not a DataLad dataset.'
@@ -71,6 +76,11 @@ export function initOpenProjectController({
                 canEnable: false,
                 message: defaultMessage,
                 path: resolvedPath,
+                subdatasetsTotalCount: 0,
+                subdatasetsRegisteredCount: 0,
+                subdatasetsRemainingCount: 0,
+                subdatasetsProgressPercent: 0,
+                nextMissingSubdataset: '',
             };
         }
 
@@ -86,6 +96,13 @@ export function initOpenProjectController({
             canEnable: Boolean(dataladState.can_enable ?? dataladState.canEnable),
             message,
             path: resolvedPath,
+            subdatasetsTotalCount: normalizeCount(dataladState.subdatasets_total_count ?? dataladState.subdatasetsTotalCount),
+            subdatasetsRegisteredCount: normalizeCount(dataladState.subdatasets_registered_count ?? dataladState.subdatasetsRegisteredCount),
+            subdatasetsRemainingCount: normalizeCount(dataladState.subdatasets_remaining_count ?? dataladState.subdatasetsRemainingCount),
+            subdatasetsProgressPercent: normalizeCount(dataladState.subdatasets_progress_percent ?? dataladState.subdatasetsProgressPercent),
+            nextMissingSubdataset: typeof (dataladState.next_missing_subdataset ?? dataladState.nextMissingSubdataset) === 'string'
+                ? String(dataladState.next_missing_subdataset ?? dataladState.nextMissingSubdataset).trim()
+                : '',
         };
     }
 
@@ -120,7 +137,10 @@ export function initOpenProjectController({
         const stateBadge = document.getElementById('projectBoxDataladStateBadge');
         const enableButton = document.getElementById('projectBoxDataladEnableBtn');
         const saveButton = document.getElementById('projectBoxDataladSaveBtn');
-        if (!status || !hint || !stateBadge || !enableButton || !saveButton) {
+        const progressWrap = document.getElementById('projectBoxDataladProgressWrap');
+        const progressBar = document.getElementById('projectBoxDataladProgressBar');
+        const progressLabel = document.getElementById('projectBoxDataladProgressLabel');
+        if (!status || !hint || !stateBadge || !enableButton || !saveButton || !progressWrap || !progressBar || !progressLabel) {
             return;
         }
 
@@ -128,21 +148,38 @@ export function initOpenProjectController({
         status.textContent = state.message;
         stateBadge.className = 'badge rounded-pill';
         enableButton.classList.remove('d-none');
+        enableButton.innerHTML = '<i class="fas fa-plus me-1"></i>Enable DataLad';
+
+        if (state.enabled && state.subdatasetsTotalCount > 0) {
+            progressWrap.classList.remove('d-none');
+            progressBar.style.width = `${state.subdatasetsProgressPercent}%`;
+            progressBar.setAttribute('aria-valuenow', String(state.subdatasetsProgressPercent));
+            progressBar.textContent = `${state.subdatasetsProgressPercent}%`;
+            progressLabel.textContent = state.subdatasetsRemainingCount > 0
+                ? `Nested datasets: ${state.subdatasetsRegisteredCount}/${state.subdatasetsTotalCount} registered. Next: ${state.nextMissingSubdataset || 'pending'}.`
+                : `Nested datasets complete: ${state.subdatasetsRegisteredCount}/${state.subdatasetsTotalCount} registered.`;
+        } else {
+            progressWrap.classList.add('d-none');
+            progressBar.style.width = '0%';
+            progressBar.setAttribute('aria-valuenow', '0');
+            progressBar.textContent = '';
+            progressLabel.textContent = '';
+        }
 
         if (state.enabled && state.available) {
             stateBadge.classList.add('bg-success', 'text-white');
             stateBadge.textContent = 'Tracked';
-            hint.textContent = 'This project is already DataLad-tracked. Use Save DataLad Snapshot when you want an explicit version-control checkpoint.';
-            enableButton.classList.add('d-none');
-            enableButton.disabled = true;
-            enableButton.title = 'DataLad is already enabled for this project';
+            hint.textContent = 'This project is already DataLad-tracked. Use Repair DataLad Structure to backfill one missing nested dataset per click, or Save DataLad Snapshot for an explicit checkpoint.';
+            enableButton.innerHTML = '<i class="fas fa-screwdriver-wrench me-1"></i>Repair DataLad Structure';
+            enableButton.disabled = false;
+            enableButton.title = 'Repair or complete DataLad setup for the current project';
         } else if (state.enabled) {
             stateBadge.classList.add('bg-warning', 'text-dark');
             stateBadge.textContent = 'Tracked';
             hint.textContent = 'This project is DataLad-tracked, but DataLad is not currently available in this environment.';
-            enableButton.classList.add('d-none');
             enableButton.disabled = true;
-            enableButton.title = 'DataLad is already enabled for this project';
+            enableButton.innerHTML = '<i class="fas fa-screwdriver-wrench me-1"></i>Repair DataLad Structure';
+            enableButton.title = 'DataLad executable not available';
         } else {
             stateBadge.classList.add('bg-light', 'text-muted', 'border');
             stateBadge.textContent = 'Not tracked';
@@ -170,7 +207,7 @@ export function initOpenProjectController({
     function applyProjectDataladResponse(data) {
         const currentState = getCurrentProjectState();
         const nextProjectState = data.current_project && typeof data.current_project === 'object'
-            ? data.current_project
+            ? { ...data.current_project, datalad: data.datalad || data.current_project.datalad }
             : { ...currentState, datalad: data.datalad };
 
         applyCurrentProject(nextProjectState);
@@ -181,7 +218,7 @@ export function initOpenProjectController({
     function confirmEnableDatalad(currentPath) {
         return window.confirm(
             'Enable DataLad version control for this project?\n\n'
-            + 'This will modify the project in place by creating DataLad/Git metadata and saving an initial snapshot.\n\n'
+            + 'This will modify the project in place by creating or repairing DataLad/Git metadata, backfilling one missing nested dataset for this click, and saving a snapshot.\n\n'
             + 'Only continue if you explicitly want DataLad for this dataset.\n\n'
             + `Project: ${currentPath}`
         );
@@ -367,6 +404,12 @@ export function initOpenProjectController({
                             </div>
                             <div class="small text-muted mt-2" id="projectBoxDataladStatus">Checking DataLad status...</div>
                             <div class="small text-muted mt-1" id="projectBoxDataladHint">Project-scoped DataLad setup and manual saves live here.</div>
+                            <div class="mt-2 d-none" id="projectBoxDataladProgressWrap">
+                                <div class="small text-muted mb-1" id="projectBoxDataladProgressLabel"></div>
+                                <div class="progress" style="height: 0.7rem;">
+                                    <div class="progress-bar bg-success" id="projectBoxDataladProgressBar" role="progressbar" style="width: 0%;" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+                                </div>
+                            </div>
                             <div class="small mt-2 d-none" id="projectBoxDataladFeedback" aria-live="polite"></div>
                         </div>
                         <div class="d-flex gap-2 flex-wrap justify-content-lg-end">

@@ -418,6 +418,9 @@ PARTICIPANTS_MERGE_SUMMARY_STATUS_MODULE = (
 )
 CONVERTER_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter.html"
 SURVEY_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter_survey.html"
+PARTICIPANTS_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter_participants.html"
+BIOMETRICS_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter_biometrics.html"
+ENVIRONMENT_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter_environment.html"
 CONVERSION_SURVEY_BLUEPRINT = (
     REPO_ROOT
     / "app"
@@ -1556,7 +1559,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
 
     def test_participants_local_picker_uses_native_trigger_path(self):
         participants_content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
-        template_content = (REPO_ROOT / "app" / "templates" / "converter_participants.html").read_text(encoding="utf-8")
+        template_content = PARTICIPANTS_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn("function openParticipantsLocalFilePicker(fileInput) {", participants_content)
         self.assertIn("if (typeof fileInput.showPicker === 'function') {", participants_content)
@@ -1565,6 +1568,24 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn('id="participantsDataFile"', template_content)
         self.assertIn('class="visually-hidden"', template_content)
         self.assertNotIn('class="form-control d-none" type="file" id="participantsDataFile"', template_content)
+
+    def test_other_converter_local_file_inputs_remain_direct_visible_controls(self):
+        survey_content = SURVEY_TEMPLATE.read_text(encoding="utf-8")
+        biometrics_content = BIOMETRICS_TEMPLATE.read_text(encoding="utf-8")
+        environment_content = ENVIRONMENT_TEMPLATE.read_text(encoding="utf-8")
+        eyetracking_content = EYETRACKING_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('class="form-control" type="file" id="convertExcelFile"', survey_content)
+        self.assertNotIn('visually-hidden" type="file" id="convertExcelFile"', survey_content)
+
+        self.assertIn('class="form-control" type="file" id="biometricsDataFile"', biometrics_content)
+        self.assertNotIn('visually-hidden" type="file" id="biometricsDataFile"', biometrics_content)
+
+        self.assertIn('class="form-control" type="file" id="envDataFile"', environment_content)
+        self.assertNotIn('visually-hidden" type="file" id="envDataFile"', environment_content)
+
+        self.assertIn('class="form-control" type="file" id="eyetrackingBatchFiles"', eyetracking_content)
+        self.assertNotIn('visually-hidden" type="file" id="eyetrackingBatchFiles"', eyetracking_content)
 
     def test_eyetracking_template_references_bids_modality(self):
         content = EYETRACKING_TEMPLATE.read_text(encoding="utf-8")

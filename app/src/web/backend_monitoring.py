@@ -15,6 +15,7 @@ from flask import session
 
 from src.config import load_app_settings
 from src.cross_platform import normalize_path
+from src.project_manager import ProjectManager
 from src.project_session_logging import record_project_session_command
 
 _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
@@ -72,6 +73,8 @@ _ENDPOINT_LABELS = {
     "projects.open_project": "open project",
     "projects.validate_project": "validate project",
     "projects.fix_project": "apply project fixes",
+    "projects.save_datalad_snapshot": "save DataLad snapshot",
+    "projects.enable_datalad_for_project": "repair DataLad structure",
     "projects_export.export_project_structure": "export project structure",
     "projects_export.template_export_project": "template export project",
     "projects_library.set_backend_monitoring_setting": "update backend monitoring setting",
@@ -389,6 +392,70 @@ def _build_projects_export_structure_terminal_command(req) -> str:
             "Content-Type: application/json",
             "-d",
             json.dumps(body),
+        ]
+    )
+
+
+def _build_projects_datalad_save_terminal_command(req) -> str:
+    """Build exact datalad save command for project snapshot endpoint."""
+    payload = req.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+
+    project_root = _session_project_root()
+    if project_root is None:
+        return ""
+
+    message = str(payload.get("message") or "").strip() or "Save PRISM project changes"
+    cmd_parts = ["datalad", "-C", str(project_root), "save", "-m", message]
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
+def _build_projects_datalad_enable_terminal_command(req) -> str:
+    """Build exact datalad init/repair command for DataLad enable endpoint."""
+    def _render_shell_segments(segments: list[list[str]]) -> str:
+        rendered_segments = []
+        for segment in segments:
+            rendered_segments.append(" ".join(shlex.quote(part) for part in segment))
+        return " && ".join(rendered_segments)
+
+    payload = req.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+
+    project_root = _session_project_root()
+    if project_root is None:
+        return ""
+
+    message = str(payload.get("message") or "").strip() or "Enable DataLad for PRISM project"
+    status = ProjectManager().get_datalad_status(project_root)
+
+    if not status.get("enabled"):
+        return _render_shell_segments(
+            [
+                ["datalad", "-C", str(project_root), "create", "--force"],
+                ["datalad", "-C", str(project_root), "save", "-m", message],
+            ]
+        )
+
+    next_missing = str(status.get("next_missing_subdataset") or "").strip()
+    if not next_missing:
+        return ""
+
+    nested_root = project_root / Path(next_missing)
+    nested_name = nested_root.name
+    return _render_shell_segments(
+        [
+            ["datalad", "-C", str(project_root), "create", "-d", ".", "--force", next_missing],
+            [
+                "datalad",
+                "-C",
+                str(nested_root),
+                "save",
+                "-m",
+                f'Initialize DataLad nested dataset "{nested_name}"',
+            ],
+            ["datalad", "-C", str(project_root), "save", "-m", message],
         ]
     )
 
@@ -1435,6 +1502,10 @@ def _build_terminal_command(req) -> str:
         return _build_save_participant_mapping_terminal_command(req)
     if endpoint == "projects.set_current":
         return _build_projects_set_current_terminal_command(req)
+    if endpoint == "projects.save_datalad_snapshot":
+        return _build_projects_datalad_save_terminal_command(req)
+    if endpoint == "projects.enable_datalad_for_project":
+        return _build_projects_datalad_enable_terminal_command(req)
     if endpoint == "projects_export.export_project_structure":
         return _build_projects_export_structure_terminal_command(req)
     if endpoint == "projects_export.template_export_project":
@@ -1537,6 +1608,12 @@ def _is_backend_terminal_command(command: str) -> bool:
         tokens = shlex.split(command_text)
     except ValueError:
         tokens = command_text.split()
+
+    if not tokens:
+        return False
+
+    if str(tokens[0]).strip().lower() == "datalad":
+        return True
 
     if len(tokens) < 2:
         return False

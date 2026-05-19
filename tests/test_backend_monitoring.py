@@ -1,5 +1,6 @@
 import sys
 import io
+import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -1403,6 +1404,68 @@ def test_emit_backend_request_action_shows_frontend_command_when_verbose_enabled
     captured = capsys.readouterr().out
     assert "POST /api/projects/current -> set current project" in captured
     assert "cmd=curl -X POST" in captured
+
+
+def test_build_terminal_command_for_projects_datalad_save_uses_backend_datalad_command():
+    app = Flask(__name__)
+    app.secret_key = "test-secret"  # pragma: allowlist secret
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/projects/datalad/save",
+        endpoint="projects.save_datalad_snapshot",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/projects/datalad/save",
+        method="POST",
+        json={"message": "Checkpoint metadata updates"},
+    ):
+        session["current_project_path"] = "/tmp/demo_project"
+        cmd = _build_terminal_command(request)
+
+    assert cmd == "datalad -C /private/tmp/demo_project save -m 'Checkpoint metadata updates'"
+
+
+def test_build_terminal_command_for_projects_datalad_enable_repairs_next_missing_dataset():
+    app = Flask(__name__)
+    app.secret_key = "test-secret"  # pragma: allowlist secret
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/projects/datalad/enable",
+        endpoint="projects.enable_datalad_for_project",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with tempfile.TemporaryDirectory() as tmp:
+        project_path = Path(tmp) / "rawdata"
+        (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+        (project_path / "sub-171").mkdir(parents=True, exist_ok=True)
+        (project_path / "sub-171" / ".datalad").mkdir(parents=True, exist_ok=True)
+        (project_path / "sub-172").mkdir(parents=True, exist_ok=True)
+        resolved_project_path = project_path.resolve()
+
+        with app.test_request_context(
+            "/api/projects/datalad/enable",
+            method="POST",
+            json={"message": "Enable DataLad for PRISM project"},
+        ):
+            session["current_project_path"] = str(project_path)
+            cmd = _build_terminal_command(request)
+
+    assert cmd == (
+        f"datalad -C {resolved_project_path} create -d . --force sub-172 && "
+        f"datalad -C {resolved_project_path / 'sub-172'} save -m 'Initialize DataLad nested dataset \"sub-172\"' && "
+        f"datalad -C {resolved_project_path} save -m 'Enable DataLad for PRISM project'"
+    )
 
 
 def test_emit_backend_request_action_includes_recipes_surveys_command(capsys):
