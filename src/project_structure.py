@@ -16,6 +16,12 @@ def _extract_acq(filename: str) -> str | None:
     return m.group(1) if m else None
 
 
+def _extract_task(filename: str) -> str | None:
+    """Return the task- label value from a BIDS filename, or None."""
+    m = re.search(r"(?:^|_)task-([A-Za-z0-9]+)", filename)
+    return m.group(1) if m else None
+
+
 def get_project_quick_summary(project_path: Path) -> Dict[str, object]:
     """Return lightweight project summary counts without running validation.
 
@@ -65,17 +71,27 @@ def get_project_modalities_and_sessions(project_path: Path) -> Dict[str, object]
                   empty list when no session level is used.
         modalities: sorted list of modality folder names (e.g. ["eeg", "survey", "func"]).
         acq_labels: dict mapping modality name -> sorted list of unique acq- values found.
+        task_labels: dict mapping modality name -> sorted list of unique task- values found.
     """
     sessions: Set[str] = set()
     modalities: Set[str] = set()
     acq_labels: Dict[str, Set[str]] = {}
+    task_labels: Dict[str, Set[str]] = {}
+    acq_label_modalities = {"anat", "dwi", "eeg", "fmap", "func", "perf"}
 
     def _scan_modality_dir(modality_name: str, modality_dir: Path) -> None:
         modalities.add(modality_name)
         if not modality_dir.is_dir():
             return
         for fname in modality_dir.iterdir():
-            if fname.is_file():
+            if not fname.is_file():
+                continue
+            if modality_name == "survey":
+                task = _extract_task(fname.name)
+                if task:
+                    task_labels.setdefault(modality_name, set()).add(task)
+                continue
+            if modality_name in acq_label_modalities:
                 acq = _extract_acq(fname.name)
                 if acq:
                     acq_labels.setdefault(modality_name, set()).add(acq)
@@ -98,4 +114,5 @@ def get_project_modalities_and_sessions(project_path: Path) -> Dict[str, object]
         "sessions": sorted(sessions),
         "modalities": sorted(modalities),
         "acq_labels": {k: sorted(v) for k, v in acq_labels.items()},
+        "task_labels": {k: sorted(v) for k, v in task_labels.items()},
     }

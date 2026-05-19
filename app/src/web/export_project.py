@@ -185,6 +185,7 @@ def export_project(
     exclude_sessions: Optional[Set[str]] = None,
     exclude_modalities: Optional[Set[str]] = None,
     exclude_acq: Optional[Dict[str, Set[str]]] = None,
+    exclude_tasks: Optional[Dict[str, Set[str]]] = None,
     exclude_version_control_metadata: bool = False,
     scrub_mri_json: bool = False,
     clean_nifti_gzip_headers: bool = False,
@@ -399,6 +400,7 @@ def export_project(
         skip_sessions: Optional[Set[str]] = None,
         skip_modalities: Optional[Set[str]] = None,
         skip_acq: Optional[Dict[str, Set[str]]] = None,
+        skip_tasks: Optional[Dict[str, Set[str]]] = None,
     ) -> None:
         """Walk source_root and write every file directly into zipf."""
         for root, _dirs, files in os.walk(source_root):
@@ -453,6 +455,12 @@ def export_project(
 
                     acq_m = _re.search(r"_acq-([A-Za-z0-9]+)", filename)
                     if acq_m and acq_m.group(1) in skip_acq[_cur_modality]:
+                        continue
+                if skip_tasks and _cur_modality and _cur_modality in skip_tasks:
+                    import re as _re
+
+                    task_m = _re.search(r"(?:^|_)task-([A-Za-z0-9]+)", filename)
+                    if task_m and task_m.group(1) in skip_tasks[_cur_modality]:
                         continue
                 source_file = Path(root) / filename
                 stats["files_processed"] += 1
@@ -533,6 +541,7 @@ def export_project(
                 skip_sessions=exclude_sessions or None,
                 skip_modalities=exclude_modalities or None,
                 skip_acq=exclude_acq or None,
+                skip_tasks=exclude_tasks or None,
             )
 
         _report(88, "Adding root files...")
@@ -553,6 +562,12 @@ def export_project(
             if source_file.resolve() == output_zip.resolve():
                 continue
             filename = source_file.name
+            if exclude_tasks and "survey" in exclude_tasks:
+                import re as _re
+
+                task_m = _re.search(r"^task-([A-Za-z0-9]+)_survey\.json$", filename)
+                if task_m and task_m.group(1) in exclude_tasks["survey"]:
+                    continue
             if filename.endswith(".json"):
                 zipf.writestr(filename, _json_bytes(source_file))
             elif filename.endswith(".tsv") and anonymize and participant_mapping:
