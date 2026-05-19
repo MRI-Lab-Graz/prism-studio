@@ -178,6 +178,51 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertEqual(captured["last_name"], "Resolved Name")
         self.assertIn(body["current"]["icon"], self.allowed_icons)
 
+    def test_set_current_does_not_persist_generated_icon_on_open(self):
+        (self.project_root / "project.json").write_text(
+            '{"name": "Resolved Name"}', encoding="utf-8"
+        )
+
+        captured = {}
+
+        def get_current_project():
+            return {
+                "path": captured.get("path", ""),
+                "name": captured.get("name", ""),
+            }
+
+        def set_current_project(path: str, name: str | None = None):
+            captured["path"] = path
+            captured["name"] = name
+
+        def save_last_project(path: str | None, name: str | None):
+            captured["last_path"] = path
+            captured["last_name"] = name
+
+        with self.app.test_request_context(
+            "/api/projects/current",
+            method="POST",
+            json={"path": str(self.project_root), "name": "Resolved Name"},
+        ):
+            response = self.handle_set_current(
+                get_current_project=get_current_project,
+                set_current_project=set_current_project,
+                save_last_project=save_last_project,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        body = resp_obj.get_json()
+
+        self.assertEqual(status_code, 200)
+        self.assertTrue(body["success"])
+        self.assertIn(body["current"]["icon"], self.allowed_icons)
+
+        project_payload = json.loads(
+            (self.project_root / "project.json").read_text(encoding="utf-8")
+        )
+        self.assertNotIn("icon", project_payload)
+
     def test_project_path_status_accepts_project_directory(self):
         with self.app.test_request_context(
             "/api/projects/path-status",
@@ -253,7 +298,7 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertTrue(body["success"])
         self.assertEqual(manager.create_calls[0][1]["use_datalad"], False)
 
-    def test_init_on_bids_forwards_datalad_default(self):
+    def test_init_on_bids_forwards_datalad_default_off(self):
         manager = _ProjectManagerStub()
         captured = {}
 
@@ -280,7 +325,7 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
 
         body = response.get_json()
         self.assertTrue(body["success"])
-        self.assertEqual(manager.init_calls[0][1]["use_datalad"], True)
+        self.assertEqual(manager.init_calls[0][1]["use_datalad"], False)
 
     def test_create_project_response_includes_current_project_datalad_state(self):
         manager = _ProjectManagerStub()

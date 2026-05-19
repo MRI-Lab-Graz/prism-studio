@@ -101,7 +101,7 @@ class TestProjectManager(unittest.TestCase):
             self.assertTrue(result.get("success"), result)
 
     @patch("src.project_manager.shutil.which", return_value=None)
-    def test_create_project_datalad_is_default_but_optional_when_missing(self, _mock_which):
+    def test_create_project_datalad_is_opt_in_when_missing(self, _mock_which):
         manager = ProjectManager()
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -109,9 +109,9 @@ class TestProjectManager(unittest.TestCase):
             result = manager.create_project(str(project_path), {"name": "demo_project"})
 
         self.assertTrue(result.get("success"), result)
-        self.assertTrue(result.get("datalad", {}).get("requested"))
+        self.assertFalse(result.get("datalad", {}).get("requested"))
         self.assertFalse(result.get("datalad", {}).get("available"))
-        self.assertIn("continued without", result.get("datalad", {}).get("message", ""))
+        self.assertIn("skipped by user choice", result.get("datalad", {}).get("message", ""))
 
     @patch("src.project_manager.shutil.which")
     def test_create_project_continues_without_datalad_when_git_annex_missing(self, mock_which):
@@ -122,7 +122,10 @@ class TestProjectManager(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             project_path = Path(tmp) / "demo_project"
-            result = manager.create_project(str(project_path), {"name": "demo_project"})
+            result = manager.create_project(
+                str(project_path),
+                {"name": "demo_project", "use_datalad": True},
+            )
 
         self.assertTrue(result.get("success"), result)
         self.assertTrue(result.get("datalad", {}).get("requested"))
@@ -161,31 +164,36 @@ class TestProjectManager(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             project_path = Path(tmp) / "demo_project"
-            result = manager.create_project(str(project_path), {"name": "demo_project"})
+            result = manager.create_project(
+                str(project_path),
+                {"name": "demo_project", "use_datalad": True},
+            )
 
-        self.assertTrue(result.get("success"), result)
-        self.assertTrue(result.get("datalad", {}).get("initialized"))
-        self.assertTrue(result.get("datalad", {}).get("saved"))
-        self.assertEqual(
-            mock_run.call_args_list[0].kwargs.get("cwd"),
-            str(project_path),
-        )
-        self.assertEqual(
-            mock_run.call_args_list[0].args[0],
-            ["/usr/bin/datalad", "create", "--force"],
-        )
-        self.assertEqual(
-            mock_run.call_args_list[1].args[0],
-            ["/usr/bin/datalad", "save", "-m", "Initialize PRISM dataset structure"],
-        )
-        gitattributes_content = (project_path / ".gitattributes").read_text(
-            encoding="utf-8"
-        )
-        self.assertIn(
-            "dataset_description.json annex.largefiles=nothing",
-            gitattributes_content,
-        )
-        self.assertIn("CITATION.cff annex.largefiles=nothing", gitattributes_content)
+            self.assertTrue(result.get("success"), result)
+            self.assertTrue(result.get("datalad", {}).get("initialized"))
+            self.assertTrue(result.get("datalad", {}).get("saved"))
+            self.assertEqual(
+                mock_run.call_args_list[0].kwargs.get("cwd"),
+                str(project_path),
+            )
+            self.assertEqual(
+                mock_run.call_args_list[0].args[0],
+                ["/usr/bin/datalad", "create", "--force"],
+            )
+            self.assertEqual(
+                mock_run.call_args_list[1].args[0],
+                ["/usr/bin/datalad", "save", "-m", "Initialize PRISM dataset structure"],
+            )
+            gitattributes_content = (project_path / ".gitattributes").read_text(
+                encoding="utf-8"
+            )
+            self.assertIn(
+                "dataset_description.json annex.largefiles=nothing",
+                gitattributes_content,
+            )
+            self.assertIn(
+                "CITATION.cff annex.largefiles=nothing", gitattributes_content
+            )
 
     @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
     def test_get_datalad_status_detects_project_dataset(self, _mock_which):
@@ -1156,6 +1164,28 @@ class TestProjectManager(unittest.TestCase):
 
         issue_codes = {issue.get("code") for issue in result.get("issues", [])}
         self.assertIn("PRISM301", issue_codes)
+
+    def test_validate_structure_does_not_modify_bidsignore(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            created = manager.create_project(
+                str(project_path), {"name": "demo_project"}
+            )
+            self.assertTrue(created.get("success"), created)
+
+            bidsignore_path = project_path / ".bidsignore"
+            original_content = "# Existing rules\ncustom-rule/\n"
+            bidsignore_path.write_text(original_content, encoding="utf-8")
+
+            result = manager.validate_structure(str(project_path))
+
+            self.assertTrue(result.get("valid"), result)
+            self.assertEqual(
+                bidsignore_path.read_text(encoding="utf-8"),
+                original_content,
+            )
 
     def test_validate_structure_surfaces_runner_warnings_separately(self):
         manager = ProjectManager()

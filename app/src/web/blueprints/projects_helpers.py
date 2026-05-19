@@ -145,7 +145,7 @@ def _resolve_recent_project_icon(canonical_path: str, raw_icon: object) -> str:
     project_root = _resolve_project_root_path(canonical_path)
     if project_root is not None:
         try:
-            return resolve_project_icon(project_root)
+            return resolve_project_icon(project_root, persist_when_missing=False)
         except Exception:
             pass
 

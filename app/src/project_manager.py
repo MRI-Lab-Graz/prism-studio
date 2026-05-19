@@ -129,7 +129,7 @@ class ProjectManager:
 
             datalad_result = self._create_datalad_dataset(
                 project_path,
-                enabled=config.get("use_datalad"),
+                enabled=config.get("use_datalad", False),
             )
             gitattributes_created = self._ensure_datalad_editable_metadata_policy(
                 project_path,
@@ -286,7 +286,7 @@ class ProjectManager:
         try:
             datalad_result = self._create_datalad_dataset(
                 project_path,
-                enabled=config.get("use_datalad"),
+                enabled=config.get("use_datalad", False),
             )
             gitattributes_created = self._ensure_datalad_editable_metadata_policy(
                 project_path,
