@@ -542,7 +542,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("const materializeAnnexToggle = getById('exportMaterializeAnnex');", content)
         self.assertIn("const uploadReadyExportButton = getById('uploadReadyExportButton');", content)
         self.assertIn("if (targetId !== 'exportMaterializeAnnex') {", content)
-        self.assertIn("const preflightSummary = await ensureAnnexAvailabilitySummary(currentProjectPath, { force: false });", content)
+        self.assertIn("const preflightSummary = await ensureAnnexAvailabilitySummary(currentProjectPath, { force: true });", content)
         self.assertIn("renderAnnexAvailabilityReport(preflightSummary);", content)
         self.assertIn("validation_mode: getSelectedExportValidationMode(),", content)
         self.assertIn("repository_mode: getSelectedExportRepositoryMode(),", content)
