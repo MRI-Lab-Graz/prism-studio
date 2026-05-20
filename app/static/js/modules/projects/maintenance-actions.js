@@ -43,11 +43,27 @@ export function createProjectMaintenanceActions({
 
     async function clearCurrentProject() {
         try {
-            await fetchWithApiFallback('/api/projects/current', {
+            const response = await fetchWithApiFallback('/api/projects/current', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ path: null })
             });
+
+            const data = await response.json().catch(() => ({}));
+            if (response.ok && data && typeof data === 'object') {
+                const autosave = data.autosave_previous;
+                if (autosave && autosave.attempted && !autosave.success) {
+                    const detail = String(
+                        autosave.error
+                        || autosave.message
+                        || 'DataLad auto-save failed while clearing the previous project.'
+                    ).trim();
+                    if (detail) {
+                        window.setNavbarDataladFeedback?.(detail, 'danger', 'Auto-save failed');
+                    }
+                }
+            }
+
             onCurrentProjectCleared();
         } catch (error) {
             console.error('Error clearing project:', error);

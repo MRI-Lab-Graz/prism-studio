@@ -913,6 +913,7 @@ class ProjectManager:
             project_path,
             message=message,
             datalad_executable=status.get("executable"),
+            recursive=True,
         )
         refreshed_status = self.get_datalad_status(project_path)
         save_result.update(refreshed_status)
@@ -1077,6 +1078,14 @@ class ProjectManager:
                     "saved": False,
                     "executable": str(datalad_executable),
                 }
+                gitattributes_policy_updated = (
+                    self._ensure_datalad_editable_metadata_policy(
+                        project_path,
+                        {"initialized": True},
+                    )
+                )
+                if gitattributes_policy_updated:
+                    datalad_result["gitattributes_policy_updated"] = True
                 datalad_result.update(
                     self._create_nested_subdatasets(
                         project_path,
@@ -1142,7 +1151,13 @@ class ProjectManager:
                     )
                 else:
                     datalad_result.update(status)
-                    datalad_result["message"] = "Current project is already tracked by DataLad."
+                    if gitattributes_policy_updated:
+                        datalad_result["message"] = (
+                            "Current project is already tracked by DataLad. "
+                            "Updated DataLad text-file tracking defaults in .gitattributes."
+                        )
+                    else:
+                        datalad_result["message"] = "Current project is already tracked by DataLad."
 
                 message_text = datalad_result.get("message")
                 progress_total = int(datalad_result.get("subdatasets_total_count", 0) or 0)
@@ -1195,6 +1210,13 @@ class ProjectManager:
             result["error"] = datalad_result.get("message") or "Could not enable DataLad for this project."
             result["datalad"] = datalad_result
             return result
+
+        gitattributes_policy_updated = self._ensure_datalad_editable_metadata_policy(
+            project_path,
+            datalad_result,
+        )
+        if gitattributes_policy_updated:
+            datalad_result["gitattributes_policy_updated"] = True
 
         datalad_result = self._save_datalad_changes(
             project_path,
@@ -1364,7 +1386,13 @@ class ProjectManager:
                 skipped_paths.append(relative_dataset_text)
                 continue
 
-            if self._parent_tracks_nested_dataset_path(project_path, dataset_path):
+            if self._parent_tracks_nested_dataset_path(
+                project_path,
+                dataset_path,
+            ) or self._parent_has_staged_nested_dataset_deletions(
+                project_path,
+                dataset_path,
+            ):
                 migration_result = self._migrate_parent_tracked_directory_to_subdataset(
                     project_path,
                     dataset_path,
@@ -1438,6 +1466,26 @@ class ProjectManager:
             return False
 
         return process.returncode == 0 and bool(process.stdout)
+
+    def _parent_has_staged_nested_dataset_deletions(
+        self,
+        project_path: Path,
+        dataset_path: Path,
+    ) -> bool:
+        """Return True when a nested path is already staged for deletion from the parent dataset."""
+        relative_dataset_text = dataset_path.relative_to(project_path).as_posix()
+        try:
+            process = subprocess.run(
+                ["git", "diff", "--cached", "--name-only", "--", relative_dataset_text],
+                cwd=str(project_path),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except Exception:
+            return False
+
+        return process.returncode == 0 and bool(str(process.stdout or "").strip())
 
     def _emit_backend_progress(
         self,
@@ -1565,38 +1613,63 @@ class ProjectManager:
         stage_parent_message = (
             f'Stage parent untracking for nested DataLad dataset "{relative_dataset_text}"'
         )
-        remove_command = ["git", "rm", "--cached", "-r", "--", relative_dataset_text]
-        self._emit_backend_progress(
-            f'Preparing nested DataLad dataset for "{relative_dataset_text}" by untracking parent-owned content.',
-            command=" ".join(remove_command),
+        parent_tracks_dataset_path = self._parent_tracks_nested_dataset_path(
+            project_path,
+            dataset_path,
         )
-        try:
-            remove_process = subprocess.run(
-                remove_command,
-                cwd=str(project_path),
-                capture_output=True,
-                text=True,
-                check=False,
-                timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
+        staged_parent_deletions = self._parent_has_staged_nested_dataset_deletions(
+            project_path,
+            dataset_path,
+        )
+
+        if parent_tracks_dataset_path:
+            remove_command = ["git", "rm", "--cached", "-r", "--", relative_dataset_text]
+            self._emit_backend_progress(
+                f'Preparing nested DataLad dataset for "{relative_dataset_text}" by untracking parent-owned content.',
+                command=" ".join(remove_command),
             )
-        except subprocess.TimeoutExpired:
-            return {
-                "success": False,
-                "message": self._format_repair_timeout_message(
-                    f'Untracking parent content under "{relative_dataset_text}"'
-                ),
-            }
-        if remove_process.returncode != 0:
-            detail = (
-                remove_process.stderr
-                or remove_process.stdout
-                or "Could not untrack parent content."
-            ).strip()
+            try:
+                remove_process = subprocess.run(
+                    remove_command,
+                    cwd=str(project_path),
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
+                )
+            except subprocess.TimeoutExpired:
+                return {
+                    "success": False,
+                    "message": self._format_repair_timeout_message(
+                        f'Untracking parent content under "{relative_dataset_text}"'
+                    ),
+                }
+            if remove_process.returncode != 0:
+                detail = (
+                    remove_process.stderr
+                    or remove_process.stdout
+                    or "Could not untrack parent content."
+                ).strip()
+                return {
+                    "success": False,
+                    "message": self._build_nested_step_failure(
+                        "untrack parent content",
+                        detail,
+                    ),
+                }
+        elif staged_parent_deletions:
+            return self._migrate_staged_parent_deletions_to_subdataset(
+                project_path,
+                dataset_path,
+                datalad_executable,
+                stage_parent_message=stage_parent_message,
+            )
+        else:
             return {
                 "success": False,
                 "message": self._build_nested_step_failure(
-                    "untrack parent content",
-                    detail,
+                    "verify parent tracking state",
+                    "parent dataset no longer tracks this path and no staged parent deletions were found",
                 ),
             }
 
@@ -1623,7 +1696,15 @@ class ProjectManager:
                 ),
             }
 
-        if self._parent_tracks_nested_dataset_path(project_path, dataset_path):
+        parent_still_tracks = self._parent_tracks_nested_dataset_path(
+            project_path,
+            dataset_path,
+        )
+        parent_has_staged_deletions = self._parent_has_staged_nested_dataset_deletions(
+            project_path,
+            dataset_path,
+        )
+        if parent_still_tracks:
             return {
                 "success": False,
                 "message": self._build_nested_step_failure(
@@ -1634,6 +1715,13 @@ class ProjectManager:
                     ),
                 ),
             }
+        if parent_has_staged_deletions:
+            return self._migrate_staged_parent_deletions_to_subdataset(
+                project_path,
+                dataset_path,
+                datalad_executable,
+                stage_parent_message=stage_parent_message,
+            )
 
         create_result = self._create_registered_nested_dataset(
             project_path,
@@ -1647,17 +1735,131 @@ class ProjectManager:
             }
         return create_result
 
+    def _migrate_staged_parent_deletions_to_subdataset(
+        self,
+        project_path: Path,
+        dataset_path: Path,
+        datalad_executable: str,
+        *,
+        stage_parent_message: str,
+    ) -> Dict[str, Any]:
+        """Finalize a nested dataset migration when parent deletions are already staged."""
+        relative_dataset_text = dataset_path.relative_to(project_path).as_posix()
+        self._emit_backend_progress(
+            f'Continuing nested DataLad migration for "{relative_dataset_text}" from staged parent deletions.',
+            command=f'git diff --cached --name-only -- {relative_dataset_text}',
+        )
+
+        staged_dataset_path: Optional[Path] = None
+        if dataset_path.exists() and dataset_path.is_dir():
+            try:
+                has_existing_content = any(dataset_path.iterdir())
+            except Exception as exc:
+                return {
+                    "success": False,
+                    "message": self._build_nested_step_failure(
+                        "inspect existing directory content",
+                        f"{type(exc).__name__}: {exc}",
+                    ),
+                }
+            if has_existing_content:
+                staged_dataset_path = self._build_nested_dataset_staging_path(
+                    project_path,
+                    dataset_path,
+                )
+                self._emit_backend_progress(
+                    f'Parking existing content before committing parent deletions for "{relative_dataset_text}".',
+                    command=f'mv "{dataset_path}" "{staged_dataset_path}"',
+                )
+                try:
+                    dataset_path.rename(staged_dataset_path)
+                except Exception as exc:
+                    return {
+                        "success": False,
+                        "message": self._build_nested_step_failure(
+                            "stage existing directory content",
+                            f"{type(exc).__name__}: {exc}",
+                        ),
+                    }
+
+        self._emit_backend_progress(
+            f'Checkpointing staged parent deletions before creating nested dataset "{relative_dataset_text}".',
+            command=(
+                f'git commit -m "{stage_parent_message}" -- '
+                f'{relative_dataset_text}'
+            ),
+        )
+        prep_save_result = self._run_git_commit_for_path(
+            project_path,
+            relative_dataset_text=relative_dataset_text,
+            message=stage_parent_message,
+        )
+        if not (prep_save_result.get("saved") or prep_save_result.get("no_changes")):
+            restore_detail = self._restore_staged_nested_dataset_content(
+                dataset_path,
+                staged_dataset_path,
+            )
+            detail = prep_save_result.get("message") or "Could not commit parent dataset state."
+            if restore_detail:
+                detail = f"{detail} {restore_detail}".strip()
+            return {
+                "success": False,
+                "message": self._build_nested_step_failure(
+                    "save parent staging state",
+                    detail,
+                ),
+            }
+
+        if self._parent_tracks_nested_dataset_path(
+            project_path,
+            dataset_path,
+        ) or self._parent_has_staged_nested_dataset_deletions(
+            project_path,
+            dataset_path,
+        ):
+            restore_detail = self._restore_staged_nested_dataset_content(
+                dataset_path,
+                staged_dataset_path,
+            )
+            detail = (
+                "parent dataset still tracks or has staged deletions under "
+                f'"{relative_dataset_text}" after path-scoped parent commit'
+            )
+            if restore_detail:
+                detail = f"{detail} {restore_detail}".strip()
+            return {
+                "success": False,
+                "message": self._build_nested_step_failure(
+                    "verify parent untracking",
+                    detail,
+                ),
+            }
+
+        create_result = self._create_registered_nested_dataset(
+            project_path,
+            dataset_path,
+            datalad_executable,
+            staged_dataset_path=staged_dataset_path,
+        )
+        if create_result.get("success"):
+            return {
+                "success": True,
+                "message": "Migrated tracked parent content into a nested DataLad dataset.",
+            }
+        return create_result
+
     def _create_registered_nested_dataset(
         self,
         project_path: Path,
         dataset_path: Path,
         datalad_executable: str,
+        *,
+        staged_dataset_path: Optional[Path] = None,
     ) -> Dict[str, Any]:
         """Create a registered nested DataLad dataset, staging existing content aside if needed."""
         relative_dataset_text = dataset_path.relative_to(project_path).as_posix()
 
-        staged_dataset_path: Optional[Path] = None
-        if dataset_path.exists() and dataset_path.is_dir():
+        if staged_dataset_path is None and dataset_path.exists() and dataset_path.is_dir():
             try:
                 has_existing_content = any(dataset_path.iterdir())
             except Exception as exc:
@@ -1977,6 +2179,7 @@ class ProjectManager:
         message: str,
         datalad_executable: Optional[str] = None,
         updated_only: bool = False,
+        recursive: bool = False,
     ) -> Dict[str, Any]:
         """Run a DataLad save command and normalize the result payload."""
         normalized_message = str(message or "").strip() or "Save PRISM project changes"
@@ -1986,6 +2189,7 @@ class ProjectManager:
             "no_changes": False,
             "save_message": normalized_message,
             "updated_only": bool(updated_only),
+            "recursive": bool(recursive),
             "message": "",
         }
 
@@ -1997,6 +2201,8 @@ class ProjectManager:
         result["available"] = True
         result["executable"] = str(resolved_executable)
         save_command = [str(resolved_executable), "save"]
+        if recursive:
+            save_command.append("-r")
         if updated_only:
             save_command.append("--updated")
         save_command.extend(["-m", normalized_message])
@@ -2021,16 +2227,86 @@ class ProjectManager:
 
         if process.returncode == 0:
             result["saved"] = True
-            result["message"] = f'DataLad saved changes with message "{normalized_message}".'
+            if recursive:
+                result["message"] = (
+                    f'DataLad recursively saved project and nested dataset changes '
+                    f'with message "{normalized_message}".'
+                )
+            else:
+                result["message"] = f'DataLad saved changes with message "{normalized_message}".'
             return result
 
         detail = (process.stderr or process.stdout or "").strip()
         if "nothing to save" in detail.lower():
             result["no_changes"] = True
-            result["message"] = "No DataLad changes were pending."
+            if recursive:
+                result["message"] = (
+                    "No DataLad changes were pending in the project or nested datasets."
+                )
+            else:
+                result["message"] = "No DataLad changes were pending."
             return result
 
         result["message"] = f"DataLad save failed: {detail or 'Unknown DataLad error.'}"
+        return result
+
+    def _run_git_commit_for_path(
+        self,
+        project_path: Path,
+        *,
+        relative_dataset_text: str,
+        message: str,
+    ) -> Dict[str, Any]:
+        """Commit staged parent changes for one nested path after working-tree content is parked aside."""
+        normalized_message = str(message or "").strip() or "Checkpoint parent dataset changes"
+        result: Dict[str, Any] = {
+            "available": True,
+            "saved": False,
+            "no_changes": False,
+            "save_message": normalized_message,
+            "message": "",
+        }
+
+        commit_command = [
+            "git",
+            "commit",
+            "-m",
+            normalized_message,
+            "--",
+            relative_dataset_text,
+        ]
+
+        try:
+            process = subprocess.run(
+                commit_command,
+                cwd=str(project_path),
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            result["message"] = self._format_repair_timeout_message(
+                f'Git commit for "{relative_dataset_text}"'
+            )
+            return result
+        except Exception as exc:
+            result["message"] = f"Git commit failed ({type(exc).__name__}: {exc})."
+            return result
+
+        if process.returncode == 0:
+            result["saved"] = True
+            result["message"] = f'Git committed staged parent changes for "{relative_dataset_text}".'
+            return result
+
+        detail = (process.stderr or process.stdout or "").strip()
+        lowered_detail = detail.lower()
+        if "nothing to commit" in lowered_detail or "no changes added to commit" in lowered_detail:
+            result["no_changes"] = True
+            result["message"] = "No staged parent changes were pending."
+            return result
+
+        result["message"] = f"Git commit failed: {detail or 'Unknown Git error.'}"
         return result
 
     def _ensure_datalad_editable_metadata_policy(
@@ -2038,12 +2314,25 @@ class ProjectManager:
         project_path: Path,
         datalad_result: Dict[str, Any],
     ) -> bool:
-        """Keep core project metadata in Git so PRISM can edit it in place."""
+        """Keep core project metadata and common text files in Git."""
         if not datalad_result.get("initialized"):
             return False
 
         gitattributes_path = project_path / ".gitattributes"
         policy_lines = [
+            "*.cfg annex.largefiles=nothing",
+            "*.csv annex.largefiles=nothing",
+            "*.ini annex.largefiles=nothing",
+            "*.json annex.largefiles=nothing",
+            "*.jsonl annex.largefiles=nothing",
+            "*.md annex.largefiles=nothing",
+            "*.ndjson annex.largefiles=nothing",
+            "*.toml annex.largefiles=nothing",
+            "*.tsv annex.largefiles=nothing",
+            "*.txt annex.largefiles=nothing",
+            "*.xml annex.largefiles=nothing",
+            "*.yaml annex.largefiles=nothing",
+            "*.yml annex.largefiles=nothing",
             ".gitattributes annex.largefiles=nothing",
             ".bidsignore annex.largefiles=nothing",
             ".prismrc.json annex.largefiles=nothing",
@@ -2075,7 +2364,7 @@ class ProjectManager:
             new_content = existing_content.rstrip() + "\n" + "\n".join(missing_lines) + "\n"
         else:
             new_content = (
-                "# Keep PRISM metadata files editable when DataLad is enabled.\n"
+                "# Keep PRISM metadata and common text files editable when DataLad is enabled.\n"
                 + "\n".join(missing_lines)
                 + "\n"
             )

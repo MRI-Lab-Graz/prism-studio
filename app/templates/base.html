@@ -709,6 +709,30 @@
             }
         }
 
+        function buildNavbarAutosaveFailureMessage(autosaveResult) {
+            if (!autosaveResult || typeof autosaveResult !== 'object') {
+                return '';
+            }
+
+            const attempted = Boolean(autosaveResult.attempted);
+            const success = Boolean(autosaveResult.success);
+            if (!attempted || success) {
+                return '';
+            }
+
+            const baseMessage = normalizeProjectStateValue(
+                autosaveResult.error
+                || autosaveResult.message
+                || 'Previous project DataLad auto-save failed.'
+            );
+            if (!baseMessage) {
+                return '';
+            }
+
+            const reason = normalizeProjectStateValue(autosaveResult.reason);
+            return reason ? `${baseMessage} (reason: ${reason})` : baseMessage;
+        }
+
         async function setCurrentProjectFromNavbar(path, name, icon) {
             const payload = {
                 path: String(path || '').trim(),
@@ -758,6 +782,11 @@
                 );
             } else {
                 updateNavbarProject(payload.name, payload.path, payload.icon, readNavbarDataladStateFromDom());
+            }
+
+            const autosaveMessage = buildNavbarAutosaveFailureMessage(data.autosave_previous);
+            if (autosaveMessage) {
+                setNavbarDataladFeedback(autosaveMessage, 'danger', 'Auto-save failed');
             }
         }
 
@@ -819,6 +848,28 @@
                 ? 'Current project is not a DataLad dataset.'
                 : 'Load a project to see DataLad status.';
 
+            function normalizeSetupIntent(value) {
+                const normalized = normalizeProjectStateValue(value).toLowerCase();
+                if (normalized === 'enabled' || normalized === 'declined') {
+                    return normalized;
+                }
+                return 'unknown';
+            }
+
+            function normalizeAskOnOpen(value, defaultValue = true) {
+                if (typeof value === 'boolean') {
+                    return value;
+                }
+                const normalized = normalizeProjectStateValue(value).toLowerCase();
+                if (normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on') {
+                    return true;
+                }
+                if (normalized === 'false' || normalized === '0' || normalized === 'no' || normalized === 'off') {
+                    return false;
+                }
+                return Boolean(defaultValue);
+            }
+
             if (!dataladState || typeof dataladState !== 'object' || Array.isArray(dataladState)) {
                 return {
                     enabled: false,
@@ -827,11 +878,14 @@
                     canSave: false,
                     canEnable: false,
                     message: defaultMessage,
-                    path: fallbackPath
+                    path: fallbackPath,
+                    setupIntent: 'unknown',
+                    askOnOpen: true,
                 };
             }
 
             const nextPath = normalizeProjectStateValue(dataladState.path) || fallbackPath;
+            const setupIntent = normalizeSetupIntent(dataladState.setup_intent ?? dataladState.setupIntent);
             return {
                 enabled: normalizeBooleanStateValue(dataladState.enabled),
                 available: normalizeBooleanStateValue(dataladState.available),
@@ -839,8 +893,45 @@
                 canSave: normalizeBooleanStateValue(dataladState.can_save ?? dataladState.canSave),
                 canEnable: normalizeBooleanStateValue(dataladState.can_enable ?? dataladState.canEnable),
                 message: normalizeProjectStateValue(dataladState.message) || defaultMessage,
-                path: nextPath
+                path: nextPath,
+                setupIntent,
+                askOnOpen: normalizeAskOnOpen(
+                    dataladState.ask_on_open ?? dataladState.askOnOpen,
+                    setupIntent !== 'enabled'
+                ),
             };
+        }
+
+        function getNavbarDataladOperationState() {
+            const state = window.prismDataladOperationState;
+            if (!state || typeof state !== 'object' || Array.isArray(state)) {
+                return { active: false, source: '' };
+            }
+            return {
+                active: Boolean(state.active),
+                source: normalizeProjectStateValue(state.source),
+            };
+        }
+
+        function setNavbarDataladOperationState(active, source = '') {
+            window.prismDataladOperationState = {
+                active: Boolean(active),
+                source: normalizeProjectStateValue(source),
+            };
+        }
+
+        function getNavbarDataladLockMessage(operationState) {
+            const source = normalizeProjectStateValue(operationState && operationState.source);
+            if (source === 'project_box_enable') {
+                return 'A DataLad enable/repair action is already running in Project Manager. Please wait.';
+            }
+            if (source === 'project_box_save') {
+                return 'A DataLad save is already running in Project Manager. Please wait.';
+            }
+            if (source === 'navbar_save') {
+                return 'A DataLad save is already running. Please wait.';
+            }
+            return 'Another DataLad action is already running. Please wait.';
         }
 
         function readNavbarDataladStateFromDom() {
@@ -856,7 +947,9 @@
                 can_enable: toggle.dataset.canEnable,
                 can_save: toggle.dataset.canSave,
                 message: toggle.dataset.message,
-                path: toggle.dataset.path
+                path: toggle.dataset.path,
+                setup_intent: toggle.dataset.setupIntent,
+                ask_on_open: toggle.dataset.askOnOpen,
             }, { path: toggle.dataset.path });
         }
 
@@ -911,7 +1004,7 @@
             const dataladState = normalizeDataladState(projectState && projectState.datalad, { path: nextPath || toggle.dataset.path });
             const icon = toggle.querySelector('[data-navbar-datalad-icon]');
             const statusTitleSuffix = dataladState.canSave
-                ? 'Click to save with a commit message. Use Project Manager for setup.'
+                ? 'Click to save project and nested datasets with a commit message. Use Project Manager for setup.'
                 : 'Open Project Manager for DataLad setup and saves.';
 
             toggle.dataset.path = dataladState.path || nextPath;
@@ -921,6 +1014,8 @@
             toggle.dataset.canEnable = dataladState.canEnable ? 'true' : 'false';
             toggle.dataset.canSave = dataladState.canSave ? 'true' : 'false';
             toggle.dataset.message = dataladState.message || '';
+            toggle.dataset.setupIntent = dataladState.setupIntent || 'unknown';
+            toggle.dataset.askOnOpen = dataladState.askOnOpen ? 'true' : 'false';
             icon?.classList.remove('text-success', 'text-warning', 'text-muted');
             trackedIcon?.classList.add('d-none');
             trackedIcon?.classList.remove('text-success', 'text-warning');
@@ -972,6 +1067,12 @@
                 return;
             }
 
+            const operationState = getNavbarDataladOperationState();
+            if (operationState.active && operationState.source !== 'navbar_save') {
+                setNavbarDataladFeedback(getNavbarDataladLockMessage(operationState), 'danger', 'Busy');
+                return;
+            }
+
             const requestedMessage = window.prompt('Commit message for this checkpoint', 'Checkpoint PRISM project changes');
             if (requestedMessage === null) {
                 return;
@@ -979,6 +1080,7 @@
 
             const saveMessage = normalizeProjectStateValue(requestedMessage) || 'Checkpoint PRISM project changes';
             setNavbarDataladFeedback('', 'muted');
+            setNavbarDataladOperationState(true, 'navbar_save');
 
             try {
                 const response = await navbarFetchWithApiFallback('/api/projects/datalad/save', {
@@ -998,6 +1100,8 @@
                 setNavbarDataladFeedback(data.message || (data.datalad && data.datalad.message) || 'DataLad save completed.', 'success', 'Saved');
             } catch (error) {
                 setNavbarDataladFeedback(error.message || 'Could not save DataLad changes.', 'danger', 'Error');
+            } finally {
+                setNavbarDataladOperationState(false);
             }
         }
 
@@ -1059,6 +1163,8 @@
                         || next.datalad.annexAvailable !== currentDatalad.annexAvailable
                         || next.datalad.canSave !== currentDatalad.canSave
                         || next.datalad.canEnable !== currentDatalad.canEnable
+                        || next.datalad.setupIntent !== currentDatalad.setupIntent
+                        || next.datalad.askOnOpen !== currentDatalad.askOnOpen
                         || next.datalad.message !== currentDatalad.message;
                     state = next;
                     syncDomBindings(state);

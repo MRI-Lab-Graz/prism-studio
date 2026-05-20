@@ -37,6 +37,26 @@ export function createProjectsCurrentStateController({
             const parsed = Number.parseInt(String(value ?? ''), 10);
             return Number.isFinite(parsed) && parsed >= 0 ? parsed : defaultValue;
         };
+        const normalizeSetupIntent = (value) => {
+            const normalized = String(value || '').trim().toLowerCase();
+            if (normalized === 'enabled' || normalized === 'declined') {
+                return normalized;
+            }
+            return 'unknown';
+        };
+        const normalizeAskOnOpen = (value, defaultValue = true) => {
+            if (typeof value === 'boolean') {
+                return value;
+            }
+            const normalized = String(value || '').trim().toLowerCase();
+            if (normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on') {
+                return true;
+            }
+            if (normalized === 'false' || normalized === '0' || normalized === 'no' || normalized === 'off') {
+                return false;
+            }
+            return Boolean(defaultValue);
+        };
 
         if (!dataladState || typeof dataladState !== 'object' || Array.isArray(dataladState)) {
             return {
@@ -47,6 +67,8 @@ export function createProjectsCurrentStateController({
                 canEnable: false,
                 message: fallbackPath ? 'Current project is not a DataLad dataset.' : 'Load a project to see DataLad status.',
                 path: fallbackPath,
+                setupIntent: 'unknown',
+                askOnOpen: true,
                 subdatasetsTotalCount: 0,
                 subdatasetsRegisteredCount: 0,
                 subdatasetsRemainingCount: 0,
@@ -56,6 +78,7 @@ export function createProjectsCurrentStateController({
         }
 
         const resolvedPath = (typeof dataladState.path === 'string' ? dataladState.path.trim() : '') || fallbackPath;
+        const setupIntent = normalizeSetupIntent(dataladState.setup_intent ?? dataladState.setupIntent);
         return {
             enabled: Boolean(dataladState.enabled),
             available: Boolean(dataladState.available),
@@ -66,6 +89,11 @@ export function createProjectsCurrentStateController({
                 ? dataladState.message.trim()
                 : (resolvedPath ? 'Current project is not a DataLad dataset.' : 'Load a project to see DataLad status.'),
             path: resolvedPath,
+            setupIntent,
+            askOnOpen: normalizeAskOnOpen(
+                dataladState.ask_on_open ?? dataladState.askOnOpen,
+                setupIntent !== 'enabled'
+            ),
             subdatasetsTotalCount: normalizeCount(dataladState.subdatasets_total_count ?? dataladState.subdatasetsTotalCount),
             subdatasetsRegisteredCount: normalizeCount(dataladState.subdatasets_registered_count ?? dataladState.subdatasetsRegisteredCount),
             subdatasetsRemainingCount: normalizeCount(dataladState.subdatasets_remaining_count ?? dataladState.subdatasetsRemainingCount),

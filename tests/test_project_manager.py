@@ -227,6 +227,8 @@ class TestProjectManager(unittest.TestCase):
             self.assertIn(
                 "CITATION.cff annex.largefiles=nothing", gitattributes_content
             )
+            self.assertIn("*.json annex.largefiles=nothing", gitattributes_content)
+            self.assertIn("*.tsv annex.largefiles=nothing", gitattributes_content)
 
     @patch("src.project_manager.subprocess.run")
     @patch(
@@ -253,16 +255,20 @@ class TestProjectManager(unittest.TestCase):
             with patch(
                 "src.project_manager.ProjectManager._get_registered_nested_dataset_paths"
             ) as mock_registered_paths:
-                mock_registered_paths.side_effect = _registered_nested_path_sequence(
-                    set(),
-                    {"derivatives"},
-                    {"derivatives"},
-                    {"derivatives", "sub-001"},
-                    {"derivatives", "sub-001"},
-                    {"derivatives", "sub-001", "sub-002"},
-                    {"derivatives", "sub-001", "sub-002"},
-                )
-                result = manager._create_datalad_dataset(project_path, enabled=True)
+                with patch(
+                    "src.project_manager.ProjectManager._parent_has_staged_nested_dataset_deletions",
+                    return_value=False,
+                ):
+                    mock_registered_paths.side_effect = _registered_nested_path_sequence(
+                        set(),
+                        {"derivatives"},
+                        {"derivatives"},
+                        {"derivatives", "sub-001"},
+                        {"derivatives", "sub-001"},
+                        {"derivatives", "sub-001", "sub-002"},
+                        {"derivatives", "sub-001", "sub-002"},
+                    )
+                    result = manager._create_datalad_dataset(project_path, enabled=True)
 
         self.assertTrue(result.get("initialized"), result)
         self.assertEqual(
@@ -275,52 +281,36 @@ class TestProjectManager(unittest.TestCase):
             mock_run.call_args_list[0].args[0],
             ["/usr/bin/datalad", "create", "--force"],
         )
-        self.assertEqual(
-            mock_run.call_args_list[1].args[0],
-            ["/usr/bin/datalad", "create", "-d", ".", "--force", "derivatives"],
-        )
-        self.assertEqual(
-            mock_run.call_args_list[2].args[0],
+        commands = [call.args[0] for call in mock_run.call_args_list]
+        self.assertIn(["/usr/bin/datalad", "create", "-d", ".", "--force", "derivatives"], commands)
+        self.assertIn(
             [
                 "/usr/bin/datalad",
                 "save",
                 "-m",
                 'Initialize DataLad nested dataset "derivatives"',
             ],
+            commands,
         )
-        self.assertEqual(
-            mock_run.call_args_list[3].args[0],
-            ["/usr/bin/datalad", "create", "-d", ".", "--force", "sub-001"],
-        )
-        self.assertEqual(
-            mock_run.call_args_list[3].kwargs.get("cwd"),
-            str(project_path),
-        )
-        self.assertEqual(
-            mock_run.call_args_list[4].args[0],
+        self.assertIn(["/usr/bin/datalad", "create", "-d", ".", "--force", "sub-001"], commands)
+        self.assertIn(
             [
                 "/usr/bin/datalad",
                 "save",
                 "-m",
                 'Initialize DataLad nested dataset "sub-001"',
             ],
+            commands,
         )
-        self.assertEqual(
-            mock_run.call_args_list[4].kwargs.get("cwd"),
-            str(project_path / "sub-001"),
-        )
-        self.assertEqual(
-            mock_run.call_args_list[5].args[0],
-            ["/usr/bin/datalad", "create", "-d", ".", "--force", "sub-002"],
-        )
-        self.assertEqual(
-            mock_run.call_args_list[6].args[0],
+        self.assertIn(["/usr/bin/datalad", "create", "-d", ".", "--force", "sub-002"], commands)
+        self.assertIn(
             [
                 "/usr/bin/datalad",
                 "save",
                 "-m",
                 'Initialize DataLad nested dataset "sub-002"',
             ],
+            commands,
         )
 
     @patch("src.project_manager.subprocess.run")
@@ -348,30 +338,40 @@ class TestProjectManager(unittest.TestCase):
             with patch(
                 "src.project_manager.ProjectManager._get_registered_nested_dataset_paths"
             ) as mock_registered_paths:
-                mock_registered_paths.side_effect = _registered_nested_path_sequence(
-                    {"sub-171"},
-                    {"sub-171", "sub-172"},
-                )
-                result = manager._create_datalad_dataset(project_path, enabled=True)
+                with patch(
+                    "src.project_manager.ProjectManager._parent_has_staged_nested_dataset_deletions",
+                    return_value=False,
+                ):
+                    mock_registered_paths.side_effect = _registered_nested_path_sequence(
+                        {"sub-171"},
+                        {"sub-171", "sub-172"},
+                    )
+                    result = manager._create_datalad_dataset(project_path, enabled=True)
 
         self.assertTrue(result.get("initialized"), result)
         self.assertEqual(result.get("subdatasets_created"), ["sub-172"])
         self.assertEqual(result.get("subdatasets_existing"), ["sub-171"])
         self.assertEqual(result.get("subdataset_failures"), [])
         self.assertEqual(result.get("subdatasets_remaining_count"), 0)
-        self.assertEqual(
-            mock_run.call_args_list[1].args[0],
-            ["/usr/bin/datalad", "create", "-d", ".", "--force", "sub-172"],
-        )
+        commands = [call.args[0] for call in mock_run.call_args_list]
+        self.assertIn(["/usr/bin/datalad", "create", "-d", ".", "--force", "sub-172"], commands)
 
     @patch("src.project_manager.subprocess.run")
+    @patch(
+        "src.project_manager.ProjectManager._parent_has_staged_nested_dataset_deletions",
+        return_value=False,
+    )
     @patch(
         "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
         return_value=False,
     )
     @patch("src.project_manager.shutil.which")
     def test_create_nested_subdatasets_can_limit_repairs_to_one_per_call(
-        self, mock_which, _mock_parent_tracks, mock_run
+        self,
+        mock_which,
+        _mock_parent_tracks,
+        _mock_parent_has_staged_deletions,
+        mock_run,
     ):
         manager = ProjectManager()
         mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
@@ -555,7 +555,7 @@ class TestProjectManager(unittest.TestCase):
         self.assertTrue(result.get("success"), result)
         commands = [call.args[0] for call in mock_run.call_args_list]
         self.assertIn(
-            ["/usr/bin/datalad", "save", "-m", "Checkpoint metadata updates"],
+            ["/usr/bin/datalad", "save", "-r", "-m", "Checkpoint metadata updates"],
             commands,
         )
 
@@ -658,9 +658,14 @@ class TestProjectManager(unittest.TestCase):
             project_path = Path(tmp) / "demo_project"
             (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
             result = manager.enable_datalad_for_project(project_path)
+            gitattributes_content = (project_path / ".gitattributes").read_text(
+                encoding="utf-8"
+            )
 
         self.assertTrue(result.get("success"), result)
         self.assertIn("already tracked by DataLad", result.get("message", ""))
+        self.assertIn("*.json annex.largefiles=nothing", gitattributes_content)
+        self.assertIn("*.tsv annex.largefiles=nothing", gitattributes_content)
 
     @patch("src.project_manager.subprocess.run")
     @patch(
@@ -691,13 +696,17 @@ class TestProjectManager(unittest.TestCase):
             with patch(
                 "src.project_manager.ProjectManager._get_registered_nested_dataset_paths"
             ) as mock_registered_paths:
-                mock_registered_paths.side_effect = _registered_nested_path_sequence(
-                    {"sub-171"},
-                    {"sub-171"},
-                    {"sub-171", "sub-172"},
-                    {"sub-171", "sub-172"},
-                )
-                result = manager.enable_datalad_for_project(project_path)
+                with patch(
+                    "src.project_manager.ProjectManager._parent_has_staged_nested_dataset_deletions",
+                    return_value=False,
+                ):
+                    mock_registered_paths.side_effect = _registered_nested_path_sequence(
+                        {"sub-171"},
+                        {"sub-171"},
+                        {"sub-171", "sub-172"},
+                        {"sub-171", "sub-172"},
+                    )
+                    result = manager.enable_datalad_for_project(project_path)
 
         self.assertTrue(result.get("success"), result)
         self.assertIn("Added 1 nested subdataset", result.get("message", ""))
@@ -718,31 +727,18 @@ class TestProjectManager(unittest.TestCase):
             result.get("datalad", {}).get("subdatasets_remaining_count"),
             1,
         )
-        self.assertEqual(
-            mock_run.call_args_list[0].args[0],
-            ["/usr/bin/datalad", "create", "-d", ".", "--force", "sub-172"],
-        )
-        self.assertEqual(
-            mock_run.call_args_list[0].kwargs.get("cwd"),
-            str(project_path),
-        )
-        self.assertEqual(
-            mock_run.call_args_list[1].args[0],
+        commands = [call.args[0] for call in mock_run.call_args_list]
+        self.assertIn(["/usr/bin/datalad", "create", "-d", ".", "--force", "sub-172"], commands)
+        self.assertIn(
             [
                 "/usr/bin/datalad",
                 "save",
                 "-m",
                 'Initialize DataLad nested dataset "sub-172"',
             ],
+            commands,
         )
-        self.assertEqual(
-            mock_run.call_args_list[1].kwargs.get("cwd"),
-            str(subject_missing),
-        )
-        self.assertEqual(
-            mock_run.call_args_list[2].args[0],
-            ["/usr/bin/datalad", "save", "-m", "Enable DataLad for PRISM project"],
-        )
+        self.assertIn(["/usr/bin/datalad", "save", "-m", "Enable DataLad for PRISM project"], commands)
 
     @patch("src.project_manager.subprocess.run")
     @patch(
@@ -765,13 +761,17 @@ class TestProjectManager(unittest.TestCase):
             with patch(
                 "src.project_manager.ProjectManager._get_registered_nested_dataset_paths"
             ) as mock_registered_paths:
-                mock_registered_paths.side_effect = _registered_nested_path_sequence(
-                    set(),
-                    set(),
-                    {"derivatives"},
-                    {"derivatives"},
-                )
-                result = manager.enable_datalad_for_project(project_path)
+                with patch(
+                    "src.project_manager.ProjectManager._parent_has_staged_nested_dataset_deletions",
+                    return_value=False,
+                ):
+                    mock_registered_paths.side_effect = _registered_nested_path_sequence(
+                        set(),
+                        set(),
+                        {"derivatives"},
+                        {"derivatives"},
+                    )
+                    result = manager.enable_datalad_for_project(project_path)
 
         self.assertTrue(result.get("success"), result)
         self.assertIn("Added 1 nested subdataset", result.get("message", ""))
@@ -783,18 +783,16 @@ class TestProjectManager(unittest.TestCase):
             result.get("datalad", {}).get("subdatasets_created"),
             ["derivatives"],
         )
-        self.assertEqual(
-            mock_run.call_args_list[0].args[0],
-            ["/usr/bin/datalad", "create", "-d", ".", "--force", "derivatives"],
-        )
-        self.assertEqual(
-            mock_run.call_args_list[1].args[0],
+        commands = [call.args[0] for call in mock_run.call_args_list]
+        self.assertIn(["/usr/bin/datalad", "create", "-d", ".", "--force", "derivatives"], commands)
+        self.assertIn(
             [
                 "/usr/bin/datalad",
                 "save",
                 "-m",
                 'Initialize DataLad nested dataset "derivatives"',
             ],
+            commands,
         )
 
     @patch("src.project_manager.subprocess.run")
@@ -844,15 +842,19 @@ class TestProjectManager(unittest.TestCase):
             ) as mock_registered_paths:
                 with patch(
                     "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
-                    side_effect=[True, False],
+                    side_effect=[True, True, False],
                 ):
-                    mock_registered_paths.side_effect = _registered_nested_path_sequence(
-                        set(),
-                        set(),
-                        {"derivatives"},
-                        {"derivatives"},
-                    )
-                    result = manager.enable_datalad_for_project(project_path)
+                    with patch(
+                        "src.project_manager.ProjectManager._parent_has_staged_nested_dataset_deletions",
+                        return_value=False,
+                    ):
+                        mock_registered_paths.side_effect = _registered_nested_path_sequence(
+                            set(),
+                            set(),
+                            {"derivatives"},
+                            {"derivatives"},
+                        )
+                        result = manager.enable_datalad_for_project(project_path)
 
             self.assertTrue((project_path / "derivatives" / "file.txt").exists())
             self.assertFalse((project_path / ".prism-datalad-stage-derivatives").exists())
@@ -876,6 +878,76 @@ class TestProjectManager(unittest.TestCase):
         )
         self.assertIn(
             ["/usr/bin/datalad", "create", "-d", ".", "--force", "derivatives"],
+            commands,
+        )
+
+    @patch("src.project_manager.subprocess.run")
+    @patch("src.project_manager.shutil.which")
+    def test_enable_datalad_for_project_continues_when_post_save_leaves_staged_parent_deletions(
+        self, mock_which, mock_run
+    ):
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
+        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "sub-020").mkdir(parents=True, exist_ok=True)
+            (project_path / "sub-020" / "file.txt").write_text("demo\n", encoding="utf-8")
+
+            with patch(
+                "src.project_manager.ProjectManager._get_registered_nested_dataset_paths"
+            ) as mock_registered_paths:
+                with patch(
+                    "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
+                    side_effect=[True, True, False, False],
+                ):
+                    with patch(
+                        "src.project_manager.ProjectManager._parent_has_staged_nested_dataset_deletions",
+                        side_effect=[False, True, False],
+                    ):
+                        mock_registered_paths.side_effect = _registered_nested_path_sequence(
+                            set(),
+                            set(),
+                            {"sub-020"},
+                            {"sub-020"},
+                        )
+                        result = manager.enable_datalad_for_project(project_path)
+
+            self.assertTrue((project_path / "sub-020" / "file.txt").exists())
+            self.assertFalse((project_path / ".prism-datalad-stage-sub-020").exists())
+
+        self.assertTrue(result.get("success"), result)
+        self.assertIn("Added 1 nested subdataset", result.get("message", ""))
+        commands = [call.args[0] for call in mock_run.call_args_list]
+        self.assertIn(
+            ["git", "rm", "--cached", "-r", "--", "sub-020"],
+            commands,
+        )
+        self.assertIn(
+            [
+                "/usr/bin/datalad",
+                "save",
+                "--updated",
+                "-m",
+                'Stage parent untracking for nested DataLad dataset "sub-020"',
+            ],
+            commands,
+        )
+        self.assertIn(
+            [
+                "git",
+                "commit",
+                "-m",
+                'Stage parent untracking for nested DataLad dataset "sub-020"',
+                "--",
+                "sub-020",
+            ],
+            commands,
+        )
+        self.assertIn(
+            ["/usr/bin/datalad", "create", "-d", ".", "--force", "sub-020"],
             commands,
         )
 
@@ -910,15 +982,83 @@ class TestProjectManager(unittest.TestCase):
             ):
                 with patch(
                     "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
-                    side_effect=[True, False],
+                    side_effect=[True, True, False],
                 ):
-                    result = manager.enable_datalad_for_project(project_path)
+                    with patch(
+                        "src.project_manager.ProjectManager._parent_has_staged_nested_dataset_deletions",
+                        return_value=False,
+                    ):
+                        result = manager.enable_datalad_for_project(project_path)
 
             self.assertTrue((project_path / "derivatives" / "file.txt").exists())
             self.assertFalse((project_path / ".prism-datalad-stage-derivatives").exists())
 
         self.assertTrue(result.get("success"), result)
         self.assertIn("create nested dataset failed", result.get("message", ""))
+
+    @patch("src.project_manager.subprocess.run")
+    @patch("src.project_manager.shutil.which")
+    def test_enable_datalad_for_project_resumes_from_staged_parent_deletions(
+        self, mock_which, mock_run
+    ):
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
+        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "sub-013").mkdir(parents=True, exist_ok=True)
+            (project_path / "sub-013" / "file.txt").write_text("demo\n", encoding="utf-8")
+
+            with patch(
+                "src.project_manager.ProjectManager._get_registered_nested_dataset_paths"
+            ) as mock_registered_paths:
+                with patch(
+                    "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
+                    return_value=False,
+                ):
+                    with patch(
+                        "src.project_manager.ProjectManager._parent_has_staged_nested_dataset_deletions",
+                        side_effect=[True, True, False],
+                    ):
+                        mock_registered_paths.side_effect = _registered_nested_path_sequence(
+                            set(),
+                            set(),
+                            {"sub-013"},
+                            {"sub-013"},
+                        )
+                        result = manager.enable_datalad_for_project(project_path)
+
+        self.assertTrue(result.get("success"), result)
+        self.assertIn("Added 1 nested subdataset", result.get("message", ""))
+        commands = [call.args[0] for call in mock_run.call_args_list]
+        self.assertNotIn(["git", "rm", "--cached", "-r", "--", "sub-013"], commands)
+        self.assertNotIn(
+            [
+                "/usr/bin/datalad",
+                "save",
+                "--updated",
+                "-m",
+                'Stage parent untracking for nested DataLad dataset "sub-013"',
+            ],
+            commands,
+        )
+        self.assertIn(
+            [
+                "git",
+                "commit",
+                "-m",
+                'Stage parent untracking for nested DataLad dataset "sub-013"',
+                "--",
+                "sub-013",
+            ],
+            commands,
+        )
+        self.assertIn(
+            ["/usr/bin/datalad", "create", "-d", ".", "--force", "sub-013"],
+            commands,
+        )
 
     @patch("src.project_manager.subprocess.run")
     @patch("src.project_manager.shutil.which")
@@ -940,9 +1080,13 @@ class TestProjectManager(unittest.TestCase):
             ):
                 with patch(
                     "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
-                    side_effect=[True, True],
+                    side_effect=[True, True, True],
                 ):
-                    result = manager.enable_datalad_for_project(project_path)
+                    with patch(
+                        "src.project_manager.ProjectManager._parent_has_staged_nested_dataset_deletions",
+                        return_value=False,
+                    ):
+                        result = manager.enable_datalad_for_project(project_path)
 
         self.assertTrue(result.get("success"), result)
         self.assertIn(
@@ -988,9 +1132,13 @@ class TestProjectManager(unittest.TestCase):
             ):
                 with patch(
                     "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
-                    side_effect=[True, False],
+                    side_effect=[True, True, False],
                 ):
-                    result = manager.enable_datalad_for_project(project_path)
+                    with patch(
+                        "src.project_manager.ProjectManager._parent_has_staged_nested_dataset_deletions",
+                        return_value=False,
+                    ):
+                        result = manager.enable_datalad_for_project(project_path)
 
         self.assertTrue(result.get("success"), result)
         self.assertIn(

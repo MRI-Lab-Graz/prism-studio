@@ -385,6 +385,19 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
 
     def test_projects_get_current_project_includes_datalad_status(self):
         projects_module = importlib.import_module("src.web.blueprints.projects")
+        (self.project_root / ".prismrc.json").write_text(
+            json.dumps(
+                {
+                    "projectPreferences": {
+                        "datalad": {
+                            "setup_intent": "declined",
+                            "ask_on_open": False,
+                        }
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
 
         with self.app.test_request_context("/projects"):
             session["current_project_path"] = str(self.project_root)
@@ -408,6 +421,8 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
                 projects_module._project_manager = original_manager
 
         self.assertTrue(current["datalad"]["enabled"])
+        self.assertEqual(current["datalad"]["setup_intent"], "declined")
+        self.assertFalse(current["datalad"]["ask_on_open"])
 
     def test_projects_save_datalad_snapshot_route_returns_current_project(self):
         projects_module = importlib.import_module("src.web.blueprints.projects")
@@ -532,7 +547,10 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
                 projects_module._project_manager = _DataladManager()
                 projects_module.activate_project_session = lambda path: activated_paths.append(path)
 
-                projects_module.set_current_project(str(self.project_root_alt), "Alt Dataset")
+                autosave_result = projects_module.set_current_project(
+                    str(self.project_root_alt),
+                    "Alt Dataset",
+                )
             finally:
                 projects_module._project_manager = original_manager
                 projects_module.activate_project_session = original_activate
@@ -541,6 +559,7 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
             autosave_calls,
             [(str(self.project_root), f"project_switch next_project={self.project_root_alt}")],
         )
+        self.assertEqual(autosave_result["success"], True)
         self.assertEqual(activated_paths, [str(self.project_root_alt)])
 
     def test_projects_set_current_project_skips_autosave_when_project_unchanged(self):
@@ -709,6 +728,100 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertEqual(captured.get("last_name"), None)
         self.assertEqual(autosaved, [(str(self.project_root), "project_cleared")])
         self.assertEqual(closed_reasons, ["project_cleared"])
+
+    def test_set_current_clear_includes_autosave_failure_payload(self):
+        captured: dict[str, str | None] = {}
+
+        def get_current_project():
+            return {
+                "path": session.get("current_project_path", ""),
+                "name": session.get("current_project_name", ""),
+            }
+
+        def set_current_project(path: str, name: str | None = None):
+            captured["path"] = path
+            captured["name"] = name
+
+        def save_last_project(path: str | None, name: str | None):
+            captured["last_path"] = path
+            captured["last_name"] = name
+
+        def autosave_current_project(path: str | None, *, reason: str):
+            return {
+                "success": False,
+                "attempted": True,
+                "skipped": False,
+                "reason": reason,
+                "path": str(path or ""),
+                "error": "DataLad auto-save failed.",
+                "message": "DataLad auto-save failed.",
+            }
+
+        with self.app.test_request_context(
+            "/api/projects/current",
+            method="POST",
+            json={"path": ""},
+        ):
+            session["current_project_path"] = str(self.project_root)
+            session["current_project_name"] = "Demo"
+            response = self.handle_set_current(
+                get_current_project=get_current_project,
+                set_current_project=set_current_project,
+                save_last_project=save_last_project,
+                autosave_current_project=autosave_current_project,
+            )
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(body["current"], {"path": "", "name": ""})
+        self.assertIn("autosave_previous", body)
+        self.assertFalse(body["autosave_previous"]["success"])
+        self.assertTrue(body["autosave_previous"]["attempted"])
+        self.assertEqual(body["autosave_previous"]["reason"], "project_cleared")
+
+    def test_set_current_switch_includes_autosave_previous_payload(self):
+        captured: dict[str, str | None] = {}
+
+        def get_current_project():
+            return {
+                "path": captured.get("path", ""),
+                "name": captured.get("name", ""),
+            }
+
+        def set_current_project(path: str, name: str | None = None):
+            captured["path"] = path
+            captured["name"] = name
+            return {
+                "success": False,
+                "attempted": True,
+                "skipped": False,
+                "reason": "project_switch",
+                "path": str(self.project_root),
+                "error": "DataLad auto-save failed.",
+                "message": "DataLad auto-save failed.",
+            }
+
+        def save_last_project(path: str | None, name: str | None):
+            captured["last_path"] = path
+            captured["last_name"] = name
+
+        with self.app.test_request_context(
+            "/api/projects/current",
+            method="POST",
+            json={"path": str(self.project_root_alt), "name": "Alt Dataset"},
+        ):
+            response = self.handle_set_current(
+                get_current_project=get_current_project,
+                set_current_project=set_current_project,
+                save_last_project=save_last_project,
+            )
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(body["current"]["path"], str(self.project_root_alt))
+        self.assertIn("autosave_previous", body)
+        self.assertFalse(body["autosave_previous"]["success"])
+        self.assertTrue(body["autosave_previous"]["attempted"])
 
     def test_set_current_respects_valid_icon_override(self):
         requested_icon = "🧠"
