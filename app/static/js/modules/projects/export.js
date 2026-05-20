@@ -10,6 +10,7 @@ import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 
 const EXPORT_VALIDATION_MODES = new Set(['both', 'bids', 'prism', 'ignore']);
 const EXPORT_REPOSITORY_MODES = new Set(['datalad_free', 'datalad_preserving']);
+const ANNEX_AVAILABILITY_CACHE_TTL_MS = 15000;
 
 let projectStructureLoadToken = 0;
 let exportPreferencesLoadToken = 0;
@@ -26,6 +27,7 @@ let lastExportStructureStatus = {
 };
 let lastAnnexAvailabilityScopeSignature = '';
 let lastAnnexAvailabilitySummary = null;
+let lastAnnexAvailabilityCheckedAtMs = 0;
 
 function getDefaultExportPreferences() {
     return {
@@ -152,6 +154,7 @@ function buildAnnexAvailabilityScopeSignature(projectPath) {
 function clearAnnexAvailabilityCache() {
     lastAnnexAvailabilityScopeSignature = '';
     lastAnnexAvailabilitySummary = null;
+    lastAnnexAvailabilityCheckedAtMs = 0;
 }
 
 function resetAnnexAvailabilityReport() {
@@ -453,13 +456,25 @@ async function fetchAnnexAvailabilitySummary(projectPath) {
 
 async function ensureAnnexAvailabilitySummary(projectPath, { force = false } = {}) {
     const scopeSignature = buildAnnexAvailabilityScopeSignature(projectPath);
-    if (!force && lastAnnexAvailabilitySummary && lastAnnexAvailabilityScopeSignature === scopeSignature) {
+    const cacheAgeMs = Date.now() - lastAnnexAvailabilityCheckedAtMs;
+    const hasFreshCache = Number.isFinite(cacheAgeMs)
+        && lastAnnexAvailabilityCheckedAtMs > 0
+        && cacheAgeMs >= 0
+        && cacheAgeMs < ANNEX_AVAILABILITY_CACHE_TTL_MS;
+
+    if (
+        !force
+        && hasFreshCache
+        && lastAnnexAvailabilitySummary
+        && lastAnnexAvailabilityScopeSignature === scopeSignature
+    ) {
         return lastAnnexAvailabilitySummary;
     }
 
     const summary = await fetchAnnexAvailabilitySummary(projectPath);
     lastAnnexAvailabilityScopeSignature = scopeSignature;
     lastAnnexAvailabilitySummary = summary;
+    lastAnnexAvailabilityCheckedAtMs = Date.now();
     return summary;
 }
 
@@ -1061,7 +1076,7 @@ export function initExportForm() {
             }
 
             try {
-                const summary = await ensureAnnexAvailabilitySummary(projectPath, { force: false });
+                const summary = await ensureAnnexAvailabilitySummary(projectPath, { force: true });
                 renderAnnexAvailabilityReport(summary);
             } catch (error) {
                 renderAnnexAvailabilityError(error);
@@ -1280,7 +1295,7 @@ async function handlePlainFolderExport(e) {
 
     if (materializeAnnex) {
         try {
-            const preflightSummary = await ensureAnnexAvailabilitySummary(currentProjectPath, { force: false });
+            const preflightSummary = await ensureAnnexAvailabilitySummary(currentProjectPath, { force: true });
             renderAnnexAvailabilityReport(preflightSummary);
             const missingPreflightCount = Number(preflightSummary.missing_files_count || 0);
             if (missingPreflightCount > 0 && statusText) {
