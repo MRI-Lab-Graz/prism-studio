@@ -523,6 +523,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("const materializationWarnings = Array.isArray(result.materialization_warnings)", content)
         self.assertIn("const missingFilesCount = Number(result.missing_files_count || 0);", content)
         self.assertIn("const missingFilePreview = Array.isArray(result.missing_files_preview)", content)
+        self.assertIn("const missingPreviewRoot = typeof result.missing_files_preview_root === 'string'", content)
+        self.assertIn("Relative to:", content)
         self.assertIn("const excludedMetadata = Array.isArray(result.excluded_repository_metadata)", content)
         self.assertIn("Stripped repository metadata:", content)
         self.assertIn("const templateExportButton = getById('templateExportButton');", content)

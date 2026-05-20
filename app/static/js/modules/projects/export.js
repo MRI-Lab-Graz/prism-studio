@@ -1130,6 +1130,9 @@ async function handlePlainFolderExport(e) {
                     .filter((value) => typeof value === 'string' && value.trim())
                     .slice(0, 5)
                 : [];
+            const missingPreviewRoot = typeof result.missing_files_preview_root === 'string'
+                ? result.missing_files_preview_root.trim()
+                : '';
             const excludedMetadataHtml = excludedMetadata.length
                 ? `<p class="mb-2">Stripped repository metadata: <code>${escapeHtml(excludedMetadata.join(', '))}</code></p>`
                 : '';
@@ -1142,7 +1145,7 @@ async function handlePlainFolderExport(e) {
                     ? `<div class="alert alert-info mb-2"><p class="mb-1">Materialization notes:</p>${materializationWarningsHtml}</div>`
                     : '');
             const missingPreviewHtml = missingFilePreview.length
-                ? `<details class="mt-2"><summary>Skipped files preview</summary><ul class="mb-0">${missingFilePreview.map((value) => `<li><code class="user-select-all">${escapeHtml(value)}</code></li>`).join('')}</ul></details>`
+                ? `<details class="mt-2"><summary>Skipped files preview</summary>${missingPreviewRoot ? `<p class="small text-muted mb-1">Relative to: <code class="user-select-all">${escapeHtml(missingPreviewRoot)}</code></p>` : ''}<ul class="mb-0">${missingFilePreview.map((value) => `<li><code class="user-select-all">${escapeHtml(value)}</code></li>`).join('')}</ul></details>`
                 : '';
             const warningHtml = (warningText || missingFilesCount > 0)
                 ? `<div class="alert alert-warning mb-2">`
