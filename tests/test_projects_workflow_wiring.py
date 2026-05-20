@@ -116,14 +116,12 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         content = SHARED_PATH_PICKER_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("export function prefersServerPicker()", content)
-        self.assertIn("export async function browseFolderWithFallback(fetchWithApiFallback, options = {})", content)
-        self.assertIn("export async function browseFileWithFallback(fetchWithApiFallback, options = {})", content)
+        self.assertIn("export async function browseFolderWithFallback(_fetchWithApiFallback, options = {})", content)
+        self.assertIn("export async function browseFileWithFallback(_fetchWithApiFallback, options = {})", content)
         self.assertIn("window.PrismFileSystemMode.prefersServerPicker()", content)
-        self.assertIn("const response = await fetchWithApiFallback('/api/browse-folder');", content)
-        self.assertIn("const response = await fetchWithApiFallback(`/api/browse-file${query}`);", content)
-        self.assertIn("window.PrismFolderBrowser.open({", content)
-        self.assertIn("Native folder picker failed, falling back to in-app browser:", content)
-        self.assertIn("Native file picker failed, falling back to in-app browser:", content)
+        self.assertIn("return requirePathPicker('browseFolder').browseFolder(options);", content)
+        self.assertIn("return requirePathPicker('browseFile').browseFile(options);", content)
+        self.assertIn("throw new Error('Shared path picker is unavailable.');", content)
 
     def test_new_project_draft_clear_uses_api_fallback(self):
         content = PROJECTS_SELECTION_MODULE.read_text(encoding="utf-8")
@@ -189,6 +187,10 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("nextMissingSubdataset", content)
         self.assertIn("window.prompt('Commit message for this checkpoint'", content)
         self.assertIn("window.setNavbarDataladFeedback?.(", content)
+        self.assertIn("const DATALAD_PREFERENCES_NAMESPACE = 'datalad';", content)
+        self.assertIn("/api/projects/preferences/${DATALAD_PREFERENCES_NAMESPACE}", content)
+        self.assertIn("window.prismDataladOperationState", content)
+        self.assertIn("maybePromptDataladOptIn", content)
 
     def test_settings_and_fix_actions_use_api_fallback(self):
         settings_content = PROJECTS_SETTINGS_MODULE.read_text(encoding="utf-8")
@@ -419,7 +421,13 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("applyModalitySubfilterState(target);", content)
         self.assertIn("syncModalitySubfilterState(modality);", content)
         self.assertIn("validation_mode: 'both',", content)
+        self.assertIn("repository_mode: 'datalad_free',", content)
         self.assertIn("defacing_confirmation_mode: 'risk',", content)
+        self.assertIn("function getSelectedExportRepositoryMode() {", content)
+        self.assertIn(
+            "saveExportPreferencesPatch({ repository_mode: getSelectedExportRepositoryMode() });",
+            content,
+        )
         self.assertIn("function getSelectedDefacingConfirmationMode() {", content)
         self.assertIn(
             "saveExportPreferencesPatch({ validation_mode: getSelectedExportValidationMode() });",
@@ -450,6 +458,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("exportScopeSummary", content)
         self.assertIn("exportDestinationSummary", content)
         self.assertIn("exportPreferenceSummary", content)
+        self.assertIn("ZIP repository mode:", content)
         self.assertIn("Defacing confirmation:", content)
         self.assertIn("Project + global defaults", content)
         self.assertIn("saved in project export preferences", content)
@@ -467,6 +476,12 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("function buildExportRequestData(currentProjectPath, overrides = {}) {", content)
+        self.assertIn(
+            "exclude_version_control_metadata: getSelectedExportRepositoryMode() === 'datalad_free',",
+            content,
+        )
+        self.assertIn("function getExportRepositoryModeStatusSuffix(repositoryMode) {", content)
+        self.assertIn("function getExportRepositoryModeSuccessNote(repositoryMode) {", content)
         self.assertIn("async function fetchDefacingSummary(projectPath) {", content)
         self.assertIn(
             "const resp = await fetchWithApiFallback('/api/projects/export/browse-folder', { method: 'POST' });",
@@ -481,6 +496,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn("export_preset: 'upload_ready',", content)
+        self.assertIn("repository_mode: 'datalad_free',", content)
         self.assertIn("Upload-Ready Export Successful!", content)
         self.assertIn(
             "const response = await fetchWithApiFallback('/api/projects/template-export', {",
@@ -496,6 +512,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("const plainFolderExportButton = getById('plainFolderExportButton');", content)
         self.assertIn("const uploadReadyExportButton = getById('uploadReadyExportButton');", content)
         self.assertIn("validation_mode: getSelectedExportValidationMode(),", content)
+        self.assertIn("repository_mode: getSelectedExportRepositoryMode(),", content)
         self.assertIn("async function requestCancelForActiveJob() {", content)
         self.assertIn("await requestCancelForActiveJob();", content)
         self.assertIn("const statusResp = await fetchWithApiFallback(", content)
@@ -522,6 +539,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn('id="plainFolderExportButton"', content)
         self.assertIn('id="uploadReadyExportButton"', content)
         self.assertIn('id="templateExportButton"', content)
+        self.assertIn('id="exportRepositoryMode"', content)
         self.assertIn('id="exportDefacingConfirmAlways"', content)
         self.assertIn('id="exportDefacingUseGlobalDefault"', content)
         self.assertIn("Folder Export", content)
@@ -909,6 +927,17 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("initProjectSelectionUi();", bootstrap_content)
         self.assertIn("initProjectSelectionUi: () => projectSelectionController.initProjectSelectionUi(),", core_content)
 
+    def test_project_switch_and_clear_paths_surface_non_blocking_autosave_feedback(self):
+        open_content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
+        selection_content = PROJECTS_SELECTION_MODULE.read_text(encoding="utf-8")
+        maintenance_content = PROJECTS_MAINTENANCE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("showAutosaveFailureFeedback(result.autosave_previous);", open_content)
+        self.assertIn("const autosave = data.autosave_previous;", selection_content)
+        self.assertIn("window.setNavbarDataladFeedback?.(detail, 'danger', 'Auto-save failed');", selection_content)
+        self.assertIn("const autosave = data.autosave_previous;", maintenance_content)
+        self.assertIn("window.setNavbarDataladFeedback?.(detail, 'danger', 'Auto-save failed');", maintenance_content)
+
     def test_projects_bootstrap_controller_owns_page_init_wiring(self):
         content = PROJECTS_BOOTSTRAP_MODULE.read_text(encoding="utf-8")
 
@@ -1064,6 +1093,9 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn('value="prism"', content)
         self.assertIn('value="bids"', content)
         self.assertIn('value="ignore"', content)
+        self.assertIn('id="exportRepositoryMode"', content)
+        self.assertIn('value="datalad_free"', content)
+        self.assertIn('value="datalad_preserving"', content)
 
     def test_library_editor_uses_shared_header_and_help_macros(self):
         content = LIBRARY_EDITOR_TEMPLATE.read_text(encoding="utf-8")

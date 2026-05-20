@@ -359,6 +359,19 @@
                             </div>
                         </div>
 
+                        <div class="col-12 mt-3">
+                            <label class="form-label fw-bold" for="exportRepositoryMode">
+                                <i class="fas fa-code-branch me-1"></i>Repository mode (ZIP exports)
+                            </label>
+                            <select class="form-select" id="exportRepositoryMode">
+                                <option value="datalad_free" selected>DataLad-free (recommended for sharing)</option>
+                                <option value="datalad_preserving">DataLad-preserving (keep Git/DataLad metadata)</option>
+                            </select>
+                            <div class="form-text">
+                                DataLad-free removes hidden Git/DataLad repository metadata from ZIP exports. DataLad-preserving keeps repository metadata for reproducible DataLad workflows.
+                            </div>
+                        </div>
+
                         <!-- Export Buttons -->
                         <div class="col-12 mt-4">
                             <button type="button" class="btn btn-outline-success btn-lg me-2" id="plainFolderExportButton">
@@ -381,7 +394,7 @@
                             </button>
                             <div class="form-text mt-2">
                                 <i class="fas fa-info-circle me-1"></i>
-                                Folder export creates a normal folder copy without hidden Git/DataLad repository files. Standard export creates a shareable ZIP. Upload-ready ZIP strips <code>code/</code>, <code>derivatives/</code>, <code>analysis/</code>, and version-control metadata such as DataLad traces. Template export keeps metadata and removes participant-specific dataset content. ANC export creates a submission-ready dataset folder.
+                                Folder export creates a normal folder copy without hidden Git/DataLad repository files. Standard export creates a shareable ZIP and follows the repository mode you choose above. Upload-ready ZIP strips <code>code/</code>, <code>derivatives/</code>, <code>analysis/</code>, and version-control metadata such as DataLad traces. Template export keeps metadata and removes participant-specific dataset content. ANC export creates a submission-ready dataset folder.
                             </div>
                         </div>
                     </div>

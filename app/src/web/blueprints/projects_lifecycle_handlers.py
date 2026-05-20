@@ -114,14 +114,23 @@ def handle_set_current(
     path = data.get("path")
 
     if not path:
+        autosave_previous = None
         if autosave_current_project is not None:
             try:
-                autosave_current_project(
+                autosave_previous = autosave_current_project(
                     session.get("current_project_path"),
                     reason="project_cleared",
                 )
-            except Exception:
-                pass
+            except Exception as exc:
+                autosave_previous = {
+                    "success": False,
+                    "attempted": True,
+                    "skipped": False,
+                    "reason": "project_cleared",
+                    "path": str(session.get("current_project_path") or "").strip(),
+                    "error": str(exc),
+                    "message": f"DataLad auto-save failed: {exc}",
+                }
         if close_project_session is not None:
             try:
                 close_project_session(reason="project_cleared")
@@ -131,7 +140,13 @@ def handle_set_current(
         session.pop("current_project_name", None)
         session.pop("current_project_icon", None)
         save_last_project(None, None)
-        return jsonify({"success": True, "current": get_current_project()})
+        response_payload: dict[str, Any] = {
+            "success": True,
+            "current": get_current_project(),
+        }
+        if isinstance(autosave_previous, dict):
+            response_payload["autosave_previous"] = autosave_previous
+        return jsonify(response_payload)
 
     name = data.get("name")
 
@@ -160,7 +175,7 @@ def handle_set_current(
         persist_when_missing=bool(requested_icon),
     )
 
-    set_current_project(path, resolved_name)
+    autosave_previous = set_current_project(path, resolved_name)
     session["current_project_icon"] = resolved_icon
     save_last_project(path, resolved_name)
 
@@ -168,13 +183,15 @@ def handle_set_current(
     current = dict(get_current_project() or {})
     current["icon"] = resolved_icon
 
-    return jsonify(
-        {
-            "success": True,
-            "current": current,
-            "project_summary": summary,
-        }
-    )
+    response_payload: dict[str, Any] = {
+        "success": True,
+        "current": current,
+        "project_summary": summary,
+    }
+    if isinstance(autosave_previous, dict):
+        response_payload["autosave_previous"] = autosave_previous
+
+    return jsonify(response_payload)
 
 
 def handle_create_project(project_manager, set_current_project, save_last_project):

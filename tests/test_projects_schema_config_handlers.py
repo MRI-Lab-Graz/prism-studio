@@ -176,8 +176,10 @@ class TestProjectsSchemaConfigHandlers(unittest.TestCase):
         self.assertTrue(payload["success"])
         self.assertEqual(payload["preferences"]["output_folder"], "/tmp/export-out")
         self.assertEqual(payload["preferences"]["exclude_sessions"], ["ses-02"])
+        self.assertEqual(payload["preferences"]["repository_mode"], "datalad_free")
         self.assertIn("inherited_preferences", payload)
         self.assertTrue(payload["inherited_preferences"]["defacing_confirmation_mode"])
+        self.assertTrue(payload["inherited_preferences"]["repository_mode"])
 
     def test_get_export_preferences_inherits_app_default_confirmation_mode(self):
         other_project = self._make_project("other_project")
@@ -234,6 +236,7 @@ class TestProjectsSchemaConfigHandlers(unittest.TestCase):
                         "export": {
                             "output_folder": "/tmp/export-out",
                             "defacing_confirmation_mode": "risk",
+                            "repository_mode": "datalad_preserving",
                         }
                     }
                 },
@@ -255,7 +258,9 @@ class TestProjectsSchemaConfigHandlers(unittest.TestCase):
         payload = response.get_json()
         self.assertTrue(payload["success"])
         self.assertEqual(payload["preferences"]["defacing_confirmation_mode"], "risk")
+        self.assertEqual(payload["preferences"]["repository_mode"], "datalad_preserving")
         self.assertFalse(payload["inherited_preferences"]["defacing_confirmation_mode"])
+        self.assertFalse(payload["inherited_preferences"]["repository_mode"])
 
     def test_save_project_preferences_can_target_explicit_project_path(self):
         other_project = self._make_project("other_project")
@@ -268,6 +273,7 @@ class TestProjectsSchemaConfigHandlers(unittest.TestCase):
                 "preferences": {
                     "output_folder": "/tmp/export-target",
                     "exclude_modalities": ["func"],
+                    "repository_mode": "datalad_preserving",
                 },
             },
         ):
@@ -289,6 +295,7 @@ class TestProjectsSchemaConfigHandlers(unittest.TestCase):
         export_prefs = saved["projectPreferences"]["export"]
         self.assertEqual(export_prefs["output_folder"], "/tmp/export-target")
         self.assertEqual(export_prefs["exclude_modalities"], ["func"])
+        self.assertEqual(export_prefs["repository_mode"], "datalad_preserving")
         self.assertFalse((self.project_path / ".prismrc.json").exists())
 
     def test_save_export_preferences_clears_invalid_defacing_confirmation_override(self):

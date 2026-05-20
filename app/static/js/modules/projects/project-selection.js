@@ -95,9 +95,32 @@ export function initProjectSelectionController({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ path: '' })
-        }).catch(() => {
-            // UI state remains source of truth for this interaction.
-        });
+        })
+            .then(async (response) => {
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data || typeof data !== 'object') {
+                    return;
+                }
+
+                const autosave = data.autosave_previous;
+                if (!autosave || !autosave.attempted || autosave.success) {
+                    return;
+                }
+
+                const detail = String(
+                    autosave.error
+                    || autosave.message
+                    || 'DataLad auto-save failed while clearing the previous project.'
+                ).trim();
+                if (!detail) {
+                    return;
+                }
+
+                window.setNavbarDataladFeedback?.(detail, 'danger', 'Auto-save failed');
+            })
+            .catch(() => {
+                // UI state remains source of truth for this interaction.
+            });
     }
 
     function selectProjectType(type) {

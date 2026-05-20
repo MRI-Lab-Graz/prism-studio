@@ -407,7 +407,7 @@ def _build_projects_datalad_save_terminal_command(req) -> str:
         return ""
 
     message = str(payload.get("message") or "").strip() or "Save PRISM project changes"
-    cmd_parts = ["datalad", "-C", str(project_root), "save", "-m", message]
+    cmd_parts = ["datalad", "-C", str(project_root), "save", "-r", "-m", message]
     return " ".join(shlex.quote(part) for part in cmd_parts)
 
 

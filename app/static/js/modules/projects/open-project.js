@@ -14,6 +14,10 @@ export function initOpenProjectController({
     showMethodsCard,
     bindProjectBoxActionButtons,
 }) {
+    const DATALAD_PREFERENCES_NAMESPACE = 'datalad';
+    const DATALAD_DEFAULT_COMMIT_MESSAGE = 'Checkpoint PRISM project changes';
+    let dataladOptInPromptToken = 0;
+
     function setProjectValidationResult(html) {
         const resultDiv = document.getElementById('validationResult');
         if (!resultDiv) return;
@@ -28,6 +32,83 @@ export function initOpenProjectController({
                 <p class="mb-0">${escapeHtml(message)}</p>
             </div>
         `);
+    }
+
+    function buildAutosaveFailureMessage(autosaveResult) {
+        if (!autosaveResult || typeof autosaveResult !== 'object') {
+            return '';
+        }
+
+        const attempted = Boolean(autosaveResult.attempted);
+        const success = Boolean(autosaveResult.success);
+        if (!attempted || success) {
+            return '';
+        }
+
+        const baseMessage = String(
+            autosaveResult.error
+            || autosaveResult.message
+            || 'Previous project DataLad auto-save failed.'
+        ).trim();
+        const reason = String(autosaveResult.reason || '').trim();
+        if (!reason) {
+            return baseMessage;
+        }
+        return `${baseMessage} (reason: ${reason})`;
+    }
+
+    function showAutosaveFailureFeedback(autosaveResult) {
+        const message = buildAutosaveFailureMessage(autosaveResult);
+        if (!message) {
+            return;
+        }
+
+        setProjectBoxDataladFeedback(message, 'danger');
+        window.setNavbarDataladFeedback?.(message, 'danger', 'Auto-save failed');
+    }
+
+    function normalizeDataladBoolean(value, defaultValue = false) {
+        if (typeof value === 'boolean') {
+            return value;
+        }
+        const normalized = String(value || '').trim().toLowerCase();
+        if (normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on') {
+            return true;
+        }
+        if (normalized === 'false' || normalized === '0' || normalized === 'no' || normalized === 'off') {
+            return false;
+        }
+        return Boolean(defaultValue);
+    }
+
+    function normalizeDataladSetupIntent(value) {
+        const normalized = String(value || '').trim().toLowerCase();
+        if (normalized === 'enabled' || normalized === 'declined') {
+            return normalized;
+        }
+        return 'unknown';
+    }
+
+    function normalizeDataladAskOnOpen(value, defaultValue = true) {
+        return normalizeDataladBoolean(value, defaultValue);
+    }
+
+    function getDataladOperationState() {
+        const state = window.prismDataladOperationState;
+        if (!state || typeof state !== 'object' || Array.isArray(state)) {
+            return { active: false, source: '' };
+        }
+        return {
+            active: Boolean(state.active),
+            source: String(state.source || '').trim(),
+        };
+    }
+
+    function setDataladOperationState(active, source = '') {
+        window.prismDataladOperationState = {
+            active: Boolean(active),
+            source: String(source || '').trim(),
+        };
     }
 
     function normalizeProjectSummaryCount(value) {
@@ -76,6 +157,8 @@ export function initOpenProjectController({
                 canEnable: false,
                 message: defaultMessage,
                 path: resolvedPath,
+                setupIntent: 'unknown',
+                askOnOpen: true,
                 subdatasetsTotalCount: 0,
                 subdatasetsRegisteredCount: 0,
                 subdatasetsRemainingCount: 0,
@@ -87,15 +170,21 @@ export function initOpenProjectController({
         const message = typeof dataladState.message === 'string' && dataladState.message.trim()
             ? dataladState.message.trim()
             : defaultMessage;
+        const setupIntent = normalizeDataladSetupIntent(dataladState.setup_intent ?? dataladState.setupIntent);
 
         return {
-            enabled: Boolean(dataladState.enabled),
-            available: Boolean(dataladState.available),
-            annexAvailable: Boolean(dataladState.annex_available ?? dataladState.annexAvailable),
-            canSave: Boolean(dataladState.can_save ?? dataladState.canSave),
-            canEnable: Boolean(dataladState.can_enable ?? dataladState.canEnable),
+            enabled: normalizeDataladBoolean(dataladState.enabled),
+            available: normalizeDataladBoolean(dataladState.available),
+            annexAvailable: normalizeDataladBoolean(dataladState.annex_available ?? dataladState.annexAvailable),
+            canSave: normalizeDataladBoolean(dataladState.can_save ?? dataladState.canSave),
+            canEnable: normalizeDataladBoolean(dataladState.can_enable ?? dataladState.canEnable),
             message,
             path: resolvedPath,
+            setupIntent,
+            askOnOpen: normalizeDataladAskOnOpen(
+                dataladState.ask_on_open ?? dataladState.askOnOpen,
+                setupIntent !== 'enabled'
+            ),
             subdatasetsTotalCount: normalizeCount(dataladState.subdatasets_total_count ?? dataladState.subdatasetsTotalCount),
             subdatasetsRegisteredCount: normalizeCount(dataladState.subdatasets_registered_count ?? dataladState.subdatasetsRegisteredCount),
             subdatasetsRemainingCount: normalizeCount(dataladState.subdatasets_remaining_count ?? dataladState.subdatasetsRemainingCount),
@@ -202,6 +291,16 @@ export function initOpenProjectController({
             : (state.enabled
                 ? 'DataLad executable not available'
                 : 'Current project is not a DataLad dataset');
+
+        if (!state.enabled && state.setupIntent === 'declined' && !state.askOnOpen) {
+            hint.textContent = 'DataLad setup is currently skipped for this project. Use Enable DataLad any time to opt in.';
+        }
+
+        const operationState = getDataladOperationState();
+        if (operationState.active) {
+            enableButton.disabled = true;
+            saveButton.disabled = true;
+        }
     }
 
     function applyProjectDataladResponse(data) {
@@ -213,6 +312,118 @@ export function initOpenProjectController({
         applyCurrentProject(nextProjectState);
         renderProjectBoxDataladState(nextProjectState.datalad, nextProjectState.path);
         return nextProjectState;
+    }
+
+    function normalizeDataladPreferences(preferences, fallbackState = null) {
+        const fallback = fallbackState || {};
+        const setupIntent = normalizeDataladSetupIntent(
+            preferences?.setup_intent
+            ?? preferences?.setupIntent
+            ?? fallback.setupIntent
+            ?? fallback.setup_intent
+        );
+        return {
+            setup_intent: setupIntent,
+            ask_on_open: normalizeDataladAskOnOpen(
+                preferences?.ask_on_open ?? preferences?.askOnOpen,
+                setupIntent !== 'enabled'
+            ),
+        };
+    }
+
+    function applyDataladPreferencePatchToState(preferencesPatch = {}) {
+        const currentState = getCurrentProjectState();
+        const currentPath = String(currentState.path || '').trim();
+        if (!currentPath) {
+            return;
+        }
+
+        const currentDatalad = normalizeDataladState(currentState.datalad, currentPath);
+        const nextSetupIntent = normalizeDataladSetupIntent(
+            preferencesPatch.setup_intent
+            ?? preferencesPatch.setupIntent
+            ?? currentDatalad.setupIntent
+        );
+        const nextAskOnOpen = normalizeDataladAskOnOpen(
+            preferencesPatch.ask_on_open ?? preferencesPatch.askOnOpen,
+            nextSetupIntent !== 'enabled'
+        );
+        const nextDatalad = {
+            ...currentDatalad,
+            setupIntent: nextSetupIntent,
+            askOnOpen: nextAskOnOpen,
+        };
+
+        applyCurrentProject({
+            ...currentState,
+            path: currentPath,
+            datalad: nextDatalad,
+        });
+        renderProjectBoxDataladState(nextDatalad, currentPath);
+    }
+
+    async function loadDataladPreferences(projectPath) {
+        const normalizedPath = String(projectPath || '').trim();
+        const fallbackState = normalizeDataladState(getCurrentProjectState().datalad, normalizedPath);
+        if (!normalizedPath) {
+            return normalizeDataladPreferences({}, fallbackState);
+        }
+
+        try {
+            const query = encodeURIComponent(normalizedPath);
+            const response = await fetchWithApiFallback(`/api/projects/preferences/${DATALAD_PREFERENCES_NAMESPACE}?project_path=${query}`);
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Could not load DataLad preferences.');
+            }
+
+            const normalized = normalizeDataladPreferences(data.preferences, fallbackState);
+            applyDataladPreferencePatchToState(normalized);
+            return normalized;
+        } catch (error) {
+            console.warn('Could not load DataLad preferences:', error);
+            return normalizeDataladPreferences({}, fallbackState);
+        }
+    }
+
+    async function saveDataladPreferences(projectPath, preferencesPatch) {
+        const normalizedPath = String(projectPath || '').trim();
+        if (!normalizedPath) {
+            return null;
+        }
+
+        const fallbackState = normalizeDataladState(getCurrentProjectState().datalad, normalizedPath);
+        const normalizedPatch = normalizeDataladPreferences(preferencesPatch, fallbackState);
+        const response = await fetchWithApiFallback(`/api/projects/preferences/${DATALAD_PREFERENCES_NAMESPACE}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                project_path: normalizedPath,
+                preferences: normalizedPatch,
+            }),
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || 'Could not save DataLad preferences.');
+        }
+
+        const normalizedResponse = normalizeDataladPreferences(data.preferences, fallbackState);
+        applyDataladPreferencePatchToState(normalizedResponse);
+        return normalizedResponse;
+    }
+
+    function getDataladLockMessage(operationState) {
+        if (operationState?.source === 'navbar_save') {
+            return 'A DataLad save is already running from the navbar. Please wait for it to finish.';
+        }
+        if (operationState?.source === 'project_box_enable') {
+            return 'A DataLad enable/repair action is already running. Please wait for it to finish.';
+        }
+        if (operationState?.source === 'project_box_save') {
+            return 'A DataLad save is already running. Please wait for it to finish.';
+        }
+        return 'Another DataLad action is already running. Please wait for it to finish.';
     }
 
     function confirmEnableDatalad(currentPath) {
@@ -278,67 +489,184 @@ export function initOpenProjectController({
         }
     }
 
+    async function runProjectBoxEnableDatalad(currentPath, { skipConfirmation = false } = {}) {
+        const normalizedPath = String(currentPath || '').trim();
+        if (!normalizedPath) {
+            setProjectBoxDataladFeedback('Load a project first.', 'danger');
+            window.setNavbarDataladFeedback?.('Load a project first.', 'danger', 'Error');
+            return false;
+        }
+
+        const operationState = getDataladOperationState();
+        if (operationState.active) {
+            const lockMessage = getDataladLockMessage(operationState);
+            setProjectBoxDataladFeedback(lockMessage, 'danger');
+            window.setNavbarDataladFeedback?.(lockMessage, 'danger', 'Busy');
+            return false;
+        }
+
+        if (!skipConfirmation && !confirmEnableDatalad(normalizedPath)) {
+            setProjectBoxDataladFeedback('DataLad enable cancelled.', 'muted');
+            window.setNavbarDataladFeedback?.('DataLad enable cancelled.', 'muted', 'Cancelled');
+            return false;
+        }
+
+        const enableButton = document.getElementById('projectBoxDataladEnableBtn');
+        const saveButton = document.getElementById('projectBoxDataladSaveBtn');
+        const originalEnableMarkup = enableButton?.innerHTML || '';
+        const originalSaveDisabled = Boolean(saveButton?.disabled);
+
+        const currentDataladState = normalizeDataladState(getCurrentProjectState().datalad, normalizedPath);
+        const busyLabel = currentDataladState.enabled ? 'Repairing...' : 'Enabling...';
+        const busyMarkup = `<i class="fas fa-spinner fa-spin me-1"></i>${busyLabel}`;
+        if (enableButton) {
+            enableButton.disabled = true;
+            enableButton.innerHTML = busyMarkup;
+        }
+        if (saveButton) {
+            saveButton.disabled = true;
+        }
+
+        const repairTarget = currentDataladState.nextMissingSubdataset || 'the next nested dataset';
+        const pendingMessage = `Repairing ${repairTarget}. Large tracked folders can take a while. Watch the backend terminal for progress.`;
+        setProjectBoxDataladFeedback(pendingMessage, 'muted');
+        window.setNavbarDataladFeedback?.(pendingMessage, 'muted', 'Running');
+
+        const actionState = { active: true };
+        setDataladOperationState(true, 'project_box_enable');
+        const pollingPromise = pollCurrentProjectDataladStateWhileBusy({
+            currentPath: normalizedPath,
+            actionState,
+            busyMarkup,
+            fallbackTarget: repairTarget,
+        });
+
+        try {
+            const response = await fetchWithApiFallback('/api/projects/datalad/enable', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ confirmed: true }),
+            });
+            const data = await response.json().catch(() => ({ success: false, error: 'Invalid server response.' }));
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || data.message || 'Could not enable DataLad.');
+            }
+
+            applyProjectDataladResponse(data);
+            const successMessage = data.message || (data.datalad && data.datalad.message) || 'DataLad enabled.';
+            setProjectBoxDataladFeedback(successMessage, 'success');
+            window.setNavbarDataladFeedback?.(successMessage, 'success', 'Enabled');
+            return true;
+        } catch (error) {
+            const errorMessage = error.message || 'Could not enable DataLad.';
+            setProjectBoxDataladFeedback(errorMessage, 'danger');
+            window.setNavbarDataladFeedback?.(errorMessage, 'danger', 'Error');
+            return false;
+        } finally {
+            actionState.active = false;
+            await pollingPromise.catch(() => {});
+            setDataladOperationState(false);
+            if (enableButton) {
+                enableButton.innerHTML = originalEnableMarkup;
+            }
+            if (saveButton) {
+                saveButton.disabled = originalSaveDisabled;
+            }
+            renderProjectBoxDataladState(getCurrentProjectState().datalad, normalizedPath);
+        }
+    }
+
+    async function maybePromptDataladOptIn(projectPath) {
+        const normalizedPath = String(projectPath || '').trim();
+        if (!normalizedPath) {
+            return;
+        }
+
+        const promptToken = ++dataladOptInPromptToken;
+        const currentDataladState = normalizeDataladState(getCurrentProjectState().datalad, normalizedPath);
+        if (currentDataladState.enabled || !currentDataladState.canEnable) {
+            return;
+        }
+
+        const preferences = await loadDataladPreferences(normalizedPath);
+        if (promptToken !== dataladOptInPromptToken) {
+            return;
+        }
+
+        if (!preferences.ask_on_open || preferences.setup_intent === 'enabled') {
+            return;
+        }
+
+        const confirmMessage = [
+            'Do you want to enable DataLad version control for this project now?',
+            '',
+            'PRISM can work without DataLad. Enabling DataLad modifies the project in place by creating or repairing DataLad/Git metadata and writing a snapshot.',
+            '',
+            `Project: ${normalizedPath}`,
+        ].join('\n');
+        const shouldEnable = window.confirm(confirmMessage);
+        if (promptToken !== dataladOptInPromptToken) {
+            return;
+        }
+
+        if (!shouldEnable) {
+            const askAgain = window.confirm(
+                'DataLad setup skipped for now.\n\nClick OK to ask again next time this project opens.\nClick Cancel to stop asking for this project.'
+            );
+            const declinedPreferences = {
+                setup_intent: 'declined',
+                ask_on_open: Boolean(askAgain),
+            };
+            try {
+                await saveDataladPreferences(normalizedPath, declinedPreferences);
+            } catch (error) {
+                console.warn('Could not persist declined DataLad setup preference:', error);
+                applyDataladPreferencePatchToState(declinedPreferences);
+            }
+
+            const declinedMessage = askAgain
+                ? 'DataLad setup skipped. PRISM will ask again next time you open this project.'
+                : 'DataLad setup skipped. PRISM will stop asking for this project unless you enable DataLad manually.';
+            setProjectBoxDataladFeedback(declinedMessage, 'muted');
+            window.setNavbarDataladFeedback?.(declinedMessage, 'muted', askAgain ? 'Later' : 'Skipped');
+            return;
+        }
+
+        const optimisticEnabledPreferences = {
+            setup_intent: 'enabled',
+            ask_on_open: false,
+        };
+        try {
+            await saveDataladPreferences(normalizedPath, optimisticEnabledPreferences);
+        } catch (error) {
+            console.warn('Could not persist pre-enable DataLad preference:', error);
+            applyDataladPreferencePatchToState(optimisticEnabledPreferences);
+        }
+
+        const enabled = await runProjectBoxEnableDatalad(normalizedPath, { skipConfirmation: true });
+        if (enabled) {
+            return;
+        }
+
+        const retryPreferences = {
+            setup_intent: 'unknown',
+            ask_on_open: true,
+        };
+        try {
+            await saveDataladPreferences(normalizedPath, retryPreferences);
+        } catch (error) {
+            console.warn('Could not persist retry DataLad preference state:', error);
+            applyDataladPreferencePatchToState(retryPreferences);
+        }
+    }
+
     function bindProjectBoxDataladActions() {
         const enableButton = document.getElementById('projectBoxDataladEnableBtn');
         if (enableButton && enableButton.dataset.bound !== '1') {
             enableButton.dataset.bound = '1';
             enableButton.addEventListener('click', async function() {
                 const currentPath = String(getCurrentProjectState().path || '').trim();
-                if (!currentPath) {
-                    setProjectBoxDataladFeedback('Load a project first.', 'danger');
-                    window.setNavbarDataladFeedback?.('Load a project first.', 'danger', 'Error');
-                    return;
-                }
-
-                if (!confirmEnableDatalad(currentPath)) {
-                    setProjectBoxDataladFeedback('DataLad enable cancelled.', 'muted');
-                    window.setNavbarDataladFeedback?.('DataLad enable cancelled.', 'muted', 'Cancelled');
-                    return;
-                }
-
-                const originalText = enableButton.innerHTML;
-                const currentDataladState = normalizeDataladState(getCurrentProjectState().datalad, currentPath);
-                const busyLabel = currentDataladState.enabled ? 'Repairing...' : 'Enabling...';
-                const busyMarkup = `<i class="fas fa-spinner fa-spin me-1"></i>${busyLabel}`;
-                enableButton.disabled = true;
-                enableButton.innerHTML = busyMarkup;
-                const repairTarget = currentDataladState.nextMissingSubdataset || 'the next nested dataset';
-                const pendingMessage = `Repairing ${repairTarget}. Large tracked folders can take a while. Watch the backend terminal for progress.`;
-                setProjectBoxDataladFeedback(pendingMessage, 'muted');
-                window.setNavbarDataladFeedback?.(pendingMessage, 'muted', 'Running');
-                const actionState = { active: true };
-                const pollingPromise = pollCurrentProjectDataladStateWhileBusy({
-                    currentPath,
-                    actionState,
-                    busyMarkup,
-                    fallbackTarget: repairTarget,
-                });
-
-                try {
-                    const response = await fetchWithApiFallback('/api/projects/datalad/enable', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ confirmed: true })
-                    });
-                    const data = await response.json().catch(() => ({ success: false, error: 'Invalid server response.' }));
-                    if (!response.ok || !data.success) {
-                        throw new Error(data.error || data.message || 'Could not enable DataLad.');
-                    }
-
-                    applyProjectDataladResponse(data);
-                    const successMessage = data.message || (data.datalad && data.datalad.message) || 'DataLad enabled.';
-                    setProjectBoxDataladFeedback(successMessage, 'success');
-                    window.setNavbarDataladFeedback?.(successMessage, 'success', 'Enabled');
-                } catch (error) {
-                    const errorMessage = error.message || 'Could not enable DataLad.';
-                    setProjectBoxDataladFeedback(errorMessage, 'danger');
-                    window.setNavbarDataladFeedback?.(errorMessage, 'danger', 'Error');
-                } finally {
-                    actionState.active = false;
-                    await pollingPromise.catch(() => {});
-                    enableButton.innerHTML = originalText;
-                    renderProjectBoxDataladState(getCurrentProjectState().datalad, currentPath);
-                }
+                await runProjectBoxEnableDatalad(currentPath);
             });
         }
 
@@ -353,16 +681,30 @@ export function initOpenProjectController({
                     return;
                 }
 
-                const requestedMessage = window.prompt('Commit message for this checkpoint', 'Checkpoint PRISM project changes');
+                const operationState = getDataladOperationState();
+                if (operationState.active) {
+                    const lockMessage = getDataladLockMessage(operationState);
+                    setProjectBoxDataladFeedback(lockMessage, 'danger');
+                    window.setNavbarDataladFeedback?.(lockMessage, 'danger', 'Busy');
+                    return;
+                }
+
+                const requestedMessage = window.prompt('Commit message for this checkpoint', DATALAD_DEFAULT_COMMIT_MESSAGE);
                 if (requestedMessage === null) {
                     return;
                 }
 
-                const saveMessage = String(requestedMessage || '').trim() || 'Checkpoint PRISM project changes';
+                const saveMessage = String(requestedMessage || '').trim() || DATALAD_DEFAULT_COMMIT_MESSAGE;
                 const originalText = saveButton.innerHTML;
+                const enableButton = document.getElementById('projectBoxDataladEnableBtn');
+                const originalEnableDisabled = Boolean(enableButton?.disabled);
                 saveButton.disabled = true;
+                if (enableButton) {
+                    enableButton.disabled = true;
+                }
                 saveButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
                 setProjectBoxDataladFeedback('', 'muted');
+                setDataladOperationState(true, 'project_box_save');
 
                 try {
                     const response = await fetchWithApiFallback('/api/projects/datalad/save', {
@@ -384,7 +726,11 @@ export function initOpenProjectController({
                     setProjectBoxDataladFeedback(errorMessage, 'danger');
                     window.setNavbarDataladFeedback?.(errorMessage, 'danger', 'Error');
                 } finally {
+                    setDataladOperationState(false);
                     saveButton.innerHTML = originalText;
+                    if (enableButton) {
+                        enableButton.disabled = originalEnableDisabled;
+                    }
                     renderProjectBoxDataladState(getCurrentProjectState().datalad, currentPath);
                 }
             });
@@ -564,6 +910,8 @@ export function initOpenProjectController({
             bindProjectBoxActionButtons();
             bindProjectBoxDataladActions();
             updateCreateProjectButton();
+            showAutosaveFailureFeedback(result.autosave_previous);
+            await maybePromptDataladOptIn(loadedPath);
 
             return true;
         } catch (error) {
