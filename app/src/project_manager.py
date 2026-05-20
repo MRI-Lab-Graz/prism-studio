@@ -931,6 +931,13 @@ class ProjectManager:
         path: Union[str, Path],
         *,
         output_root: Union[str, Path, None] = None,
+        include_derivatives: bool = True,
+        include_code: bool = True,
+        include_analysis: bool = True,
+        exclude_sessions: Optional[set[str]] = None,
+        exclude_modalities: Optional[set[str]] = None,
+        exclude_acq: Optional[Dict[str, set[str]]] = None,
+        exclude_tasks: Optional[Dict[str, set[str]]] = None,
     ) -> Dict[str, Any]:
         """Export a project to a plain folder copy without Git/DataLad metadata."""
         project_path = Path(path)
@@ -973,16 +980,143 @@ class ProjectManager:
             "CHANGES",
         }
 
+        included_top_level_folders = {
+            "derivatives": include_derivatives,
+            "code": include_code,
+            "analysis": include_analysis,
+        }
+
+        normalized_exclude_sessions = {
+            str(label).strip()
+            for label in (exclude_sessions or set())
+            if str(label).strip()
+        }
+        normalized_exclude_modalities = {
+            str(label).strip()
+            for label in (exclude_modalities or set())
+            if str(label).strip()
+        }
+        normalized_exclude_acq = {
+            str(modality).strip(): {
+                str(label).strip() for label in labels if str(label).strip()
+            }
+            for modality, labels in (exclude_acq or {}).items()
+            if str(modality).strip() and labels
+        }
+        normalized_exclude_tasks = {
+            str(modality).strip(): {
+                str(label).strip() for label in labels if str(label).strip()
+            }
+            for modality, labels in (exclude_tasks or {}).items()
+            if str(modality).strip() and labels
+        }
+        missing_source_paths: List[str] = []
+
+        def _should_exclude_export_entry(rel_parts: tuple[str, ...], *, is_dir: bool) -> bool:
+            if not rel_parts:
+                return False
+
+            if len(rel_parts) == 1:
+                root_name = rel_parts[0]
+                if root_name in included_top_level_folders:
+                    return not included_top_level_folders[root_name]
+                if not is_dir:
+                    survey_task_filters = normalized_exclude_tasks.get("survey", set())
+                    if survey_task_filters:
+                        task_match = re.search(
+                            r"^task-([A-Za-z0-9]+)_survey\\.json$", root_name
+                        )
+                        if task_match and task_match.group(1) in survey_task_filters:
+                            return True
+                return False
+
+            if not rel_parts[0].startswith("sub-"):
+                return False
+
+            part_index = 1
+            if (
+                part_index < len(rel_parts)
+                and rel_parts[part_index].startswith("ses-")
+            ):
+                session_label = rel_parts[part_index]
+                if session_label in normalized_exclude_sessions:
+                    return True
+                part_index += 1
+
+            if part_index >= len(rel_parts):
+                return False
+
+            modality = rel_parts[part_index]
+            if modality in normalized_exclude_modalities:
+                return True
+
+            if is_dir:
+                return False
+
+            filename = rel_parts[-1]
+            excluded_acq_labels = normalized_exclude_acq.get(modality, set())
+            if excluded_acq_labels:
+                acq_match = re.search(r"_acq-([A-Za-z0-9]+)", filename)
+                if acq_match and acq_match.group(1) in excluded_acq_labels:
+                    return True
+
+            excluded_task_labels = normalized_exclude_tasks.get(modality, set())
+            if excluded_task_labels:
+                task_match = re.search(r"(?:^|_)task-([A-Za-z0-9]+)", filename)
+                if task_match and task_match.group(1) in excluded_task_labels:
+                    return True
+
+            return False
+
         def _ignore(_current_dir: str, names: List[str]) -> List[str]:
-            return [name for name in names if name in ignored_names]
+            current_dir = Path(_current_dir)
+            filtered_names: List[str] = []
+            non_system_names = set(filter_system_files(names))
+            for name in names:
+                if name not in non_system_names:
+                    filtered_names.append(name)
+                    continue
+
+                if name in ignored_names:
+                    filtered_names.append(name)
+                    continue
+
+                candidate = current_dir / name
+                try:
+                    rel_parts = candidate.relative_to(project_path).parts
+                except ValueError:
+                    continue
+
+                if candidate.is_symlink() and not candidate.exists():
+                    missing_source_paths.append(str(candidate))
+                    filtered_names.append(name)
+                    continue
+
+                if _should_exclude_export_entry(rel_parts, is_dir=candidate.is_dir()):
+                    filtered_names.append(name)
+
+            return filtered_names
+
+        def _copy_with_missing_tolerance(src: str, dst: str) -> str:
+            try:
+                return shutil.copy2(src, dst)
+            except FileNotFoundError:
+                missing_source_paths.append(src)
+                return dst
+            except OSError as exc:
+                if exc.errno == 2:
+                    missing_source_paths.append(src)
+                    return dst
+                raise
 
         try:
             shutil.copytree(
                 project_path,
                 export_path,
-                copy_function=shutil.copy2,
+                copy_function=_copy_with_missing_tolerance,
                 ignore=_ignore,
                 symlinks=False,
+                ignore_dangling_symlinks=True,
             )
         except Exception as exc:
             result["error"] = f"Could not export project folder: {exc}"
@@ -991,9 +1125,25 @@ class ProjectManager:
         result["success"] = True
         result["output_path"] = str(export_path)
         result["excluded_repository_metadata"] = sorted(ignored_names)
-        result["message"] = (
-            f"Project folder export created at {export_path} without Git/DataLad metadata."
-        )
+        result["message"] = f"Project folder export created at {export_path} without Git/DataLad metadata."
+        if missing_source_paths:
+            unique_missing_paths = sorted(set(missing_source_paths))
+            result["partial_export"] = True
+            result["missing_files_count"] = len(unique_missing_paths)
+            result["missing_files_preview"] = unique_missing_paths[:20]
+            if status.get("enabled"):
+                warning = (
+                    f"Skipped {len(unique_missing_paths)} file(s) that are not available locally. "
+                    "This project is tracked by DataLad/git-annex; run 'datalad get -r .' "
+                    "in the project folder, then export again to include all annexed content."
+                )
+            else:
+                warning = (
+                    f"Skipped {len(unique_missing_paths)} file(s) that were not found during export. "
+                    "Re-run export after restoring missing files if you need a complete copy."
+                )
+            result["warning"] = warning
+            result["message"] = f"{result['message']} {warning}"
         return result
 
     def autosave_datalad_snapshot(

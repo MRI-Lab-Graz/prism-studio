@@ -177,10 +177,12 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn('id="projectBoxDataladProgressBar"', content)
         self.assertIn('id="projectBoxDataladProgressLabel"', content)
         self.assertIn("Repair DataLad Structure", content)
+        self.assertIn("DataLad Structure Complete", content)
         self.assertIn("fetchWithApiFallback('/api/projects/datalad/enable'", content)
         self.assertIn("fetchWithApiFallback('/api/projects/datalad/save'", content)
         self.assertIn("confirmed: true", content)
         self.assertIn("backfill one missing nested dataset per click", content)
+        self.assertIn("DataLad structure is complete for this project.", content)
         self.assertIn("backfilling one missing nested dataset for this click", content)
         self.assertIn("Watch the backend terminal for progress.", content)
         self.assertIn("subdatasetsProgressPercent", content)
@@ -476,6 +478,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("function buildExportRequestData(currentProjectPath, overrides = {}) {", content)
+        self.assertIn("function buildFolderExportRequestData(currentProjectPath) {", content)
         self.assertIn(
             "exclude_version_control_metadata: getSelectedExportRepositoryMode() === 'datalad_free',",
             content,
@@ -506,6 +509,10 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "const response = await fetchWithApiFallback('/api/projects/export/folder', {",
             content,
         )
+        self.assertIn("const data = buildFolderExportRequestData(currentProjectPath);", content)
+        self.assertIn("const warningText = typeof result.warning === 'string'", content)
+        self.assertIn("const missingFilesCount = Number(result.missing_files_count || 0);", content)
+        self.assertIn("const missingFilePreview = Array.isArray(result.missing_files_preview)", content)
         self.assertIn("const excludedMetadata = Array.isArray(result.excluded_repository_metadata)", content)
         self.assertIn("Stripped repository metadata:", content)
         self.assertIn("const templateExportButton = getById('templateExportButton');", content)
