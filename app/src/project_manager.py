@@ -1382,53 +1382,14 @@ class ProjectManager:
                 )
                 continue
 
-            try:
-                create_process = subprocess.run(
-                    [
-                        datalad_executable,
-                        "create",
-                        "-d",
-                        ".",
-                        "--force",
-                        relative_dataset_text,
-                    ],
-                    cwd=str(project_path),
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                    timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
-                )
-            except subprocess.TimeoutExpired:
-                failed_paths.append(
-                    f"{relative_dataset_text} ({self._format_repair_timeout_message(f'create nested dataset \"{relative_dataset_text}\"')})"
-                )
-                continue
-            except Exception as exc:
-                failed_paths.append(
-                    f"{relative_dataset_text} ({type(exc).__name__}: {exc})"
-                )
-                continue
-
-            if create_process.returncode != 0:
-                detail = (
-                    create_process.stderr
-                    or create_process.stdout
-                    or "Unknown DataLad error"
-                ).strip()
-                failed_paths.append(
-                    f"{relative_dataset_text} ({self._build_nested_step_failure('create nested dataset', detail)})"
-                )
-                continue
-
-            save_result = self._run_datalad_save(
+            create_result = self._create_registered_nested_dataset(
+                project_path,
                 dataset_path,
-                message=f'Initialize DataLad nested dataset "{dataset_path.name}"',
-                datalad_executable=datalad_executable,
+                datalad_executable,
             )
-            if not (save_result.get("saved") or save_result.get("no_changes")):
-                detail = save_result.get("message") or "Unknown DataLad error."
+            if not create_result.get("success"):
                 failed_paths.append(
-                    f"{relative_dataset_text} ({self._build_nested_step_failure('save nested dataset', detail)})"
+                    f"{relative_dataset_text} ({create_result.get('message') or 'Could not create nested DataLad dataset.'})"
                 )
                 continue
 
@@ -1436,15 +1397,6 @@ class ProjectManager:
                 project_path,
                 datalad_executable=datalad_executable,
             )
-            if not self._is_registered_nested_dataset(
-                project_path,
-                dataset_path,
-                registered_paths=registered_paths,
-            ):
-                failed_paths.append(
-                    f"{relative_dataset_text} ({self._build_nested_step_failure('verify nested dataset registration', 'parent dataset still does not list this path as a registered subdataset after create/save')})"
-                )
-                continue
 
             created_paths.append(relative_dataset_text)
             if remaining_budget is not None:
@@ -1651,7 +1603,7 @@ class ProjectManager:
         self._emit_backend_progress(
             f'Checkpointing parent dataset before creating nested dataset "{relative_dataset_text}".',
             command=(
-                f'{datalad_executable} save -m '
+                f'{datalad_executable} save --updated -m '
                 f'"{stage_parent_message}"'
             ),
         )
@@ -1659,6 +1611,7 @@ class ProjectManager:
             project_path,
             message=stage_parent_message,
             datalad_executable=datalad_executable,
+            updated_only=True,
         )
         if not (prep_save_result.get("saved") or prep_save_result.get("no_changes")):
             detail = prep_save_result.get("message") or "Could not save parent dataset state."
@@ -1669,6 +1622,73 @@ class ProjectManager:
                     detail,
                 ),
             }
+
+        if self._parent_tracks_nested_dataset_path(project_path, dataset_path):
+            return {
+                "success": False,
+                "message": self._build_nested_step_failure(
+                    "verify parent untracking",
+                    (
+                        "parent dataset still tracks content under "
+                        f'"{relative_dataset_text}" after updated-only staging save'
+                    ),
+                ),
+            }
+
+        create_result = self._create_registered_nested_dataset(
+            project_path,
+            dataset_path,
+            datalad_executable,
+        )
+        if create_result.get("success"):
+            return {
+                "success": True,
+                "message": "Migrated tracked parent content into a nested DataLad dataset.",
+            }
+        return create_result
+
+    def _create_registered_nested_dataset(
+        self,
+        project_path: Path,
+        dataset_path: Path,
+        datalad_executable: str,
+    ) -> Dict[str, Any]:
+        """Create a registered nested DataLad dataset, staging existing content aside if needed."""
+        relative_dataset_text = dataset_path.relative_to(project_path).as_posix()
+
+        staged_dataset_path: Optional[Path] = None
+        if dataset_path.exists() and dataset_path.is_dir():
+            try:
+                has_existing_content = any(dataset_path.iterdir())
+            except Exception as exc:
+                return {
+                    "success": False,
+                    "message": self._build_nested_step_failure(
+                        "inspect existing directory content",
+                        f"{type(exc).__name__}: {exc}",
+                    ),
+                }
+            if has_existing_content:
+                staged_dataset_path = self._build_nested_dataset_staging_path(
+                    project_path,
+                    dataset_path,
+                )
+                self._emit_backend_progress(
+                    f'Parking existing content before creating nested dataset "{relative_dataset_text}".',
+                    command=(
+                        f'mv "{dataset_path}" "{staged_dataset_path}"'
+                    ),
+                )
+                try:
+                    dataset_path.rename(staged_dataset_path)
+                except Exception as exc:
+                    return {
+                        "success": False,
+                        "message": self._build_nested_step_failure(
+                            "stage existing directory content",
+                            f"{type(exc).__name__}: {exc}",
+                        ),
+                    }
 
         create_command = [
             datalad_executable,
@@ -1704,6 +1724,13 @@ class ProjectManager:
                 or create_process.stdout
                 or "Unknown DataLad error"
             ).strip()
+            rollback_detail = self._restore_staged_nested_dataset_content(
+                dataset_path,
+                staged_dataset_path,
+                remove_created_dataset=True,
+            )
+            if rollback_detail:
+                detail = f"{detail} {rollback_detail}".strip()
             return {
                 "success": False,
                 "message": self._build_nested_step_failure(
@@ -1711,6 +1738,26 @@ class ProjectManager:
                     detail,
                 ),
             }
+
+        if staged_dataset_path is not None:
+            self._emit_backend_progress(
+                f'Restoring content into nested DataLad dataset "{relative_dataset_text}".',
+                command=(
+                    f'mv "{staged_dataset_path}"/* "{dataset_path}"/'
+                ),
+            )
+            restore_detail = self._restore_staged_nested_dataset_content(
+                dataset_path,
+                staged_dataset_path,
+            )
+            if restore_detail:
+                return {
+                    "success": False,
+                    "message": self._build_nested_step_failure(
+                        "restore nested dataset content",
+                        restore_detail,
+                    ),
+                }
 
         self._emit_backend_progress(
             f'Saving nested DataLad dataset "{dataset_path.name}".',
@@ -1743,14 +1790,64 @@ class ProjectManager:
                 "success": False,
                 "message": self._build_nested_step_failure(
                     "verify nested dataset registration",
-                    "parent dataset still does not list this path as a registered subdataset after migration",
+                    "parent dataset still does not list this path as a registered subdataset after create/save",
                 ),
             }
 
         return {
             "success": True,
-            "message": "Migrated tracked parent content into a nested DataLad dataset.",
+            "message": "Created nested DataLad dataset.",
         }
+
+    def _build_nested_dataset_staging_path(
+        self,
+        project_path: Path,
+        dataset_path: Path,
+    ) -> Path:
+        """Return a unique hidden staging path for temporary nested dataset moves."""
+        relative_dataset_text = dataset_path.relative_to(project_path).as_posix()
+        safe_label = relative_dataset_text.replace("/", "__")
+        staged_dataset_path = project_path / f".prism-datalad-stage-{safe_label}"
+        suffix = 1
+        while staged_dataset_path.exists():
+            staged_dataset_path = project_path / f".prism-datalad-stage-{safe_label}-{suffix}"
+            suffix += 1
+        return staged_dataset_path
+
+    def _restore_staged_nested_dataset_content(
+        self,
+        dataset_path: Path,
+        staged_dataset_path: Optional[Path],
+        *,
+        remove_created_dataset: bool = False,
+    ) -> str:
+        """Restore staged directory content into the nested dataset path."""
+        if staged_dataset_path is None or not staged_dataset_path.exists():
+            return ""
+
+        try:
+            if remove_created_dataset and dataset_path.exists():
+                if dataset_path.is_dir() and not any(dataset_path.iterdir()):
+                    dataset_path.rmdir()
+                else:
+                    return (
+                        f'could not restore staged content because "{dataset_path}" '
+                        "already contains unexpected files"
+                    )
+
+            if not dataset_path.exists():
+                staged_dataset_path.rename(dataset_path)
+                return ""
+
+            if not dataset_path.is_dir():
+                return f'could not restore staged content because "{dataset_path}" is not a directory'
+
+            for child in list(staged_dataset_path.iterdir()):
+                child.rename(dataset_path / child.name)
+            staged_dataset_path.rmdir()
+            return ""
+        except Exception as exc:
+            return f"{type(exc).__name__}: {exc}"
 
     def _summarize_datalad_error(self, detail: str) -> str:
         """Reduce verbose DataLad stderr/stdout into a concise UI-safe summary."""
@@ -1879,6 +1976,7 @@ class ProjectManager:
         *,
         message: str,
         datalad_executable: Optional[str] = None,
+        updated_only: bool = False,
     ) -> Dict[str, Any]:
         """Run a DataLad save command and normalize the result payload."""
         normalized_message = str(message or "").strip() or "Save PRISM project changes"
@@ -1887,6 +1985,7 @@ class ProjectManager:
             "saved": False,
             "no_changes": False,
             "save_message": normalized_message,
+            "updated_only": bool(updated_only),
             "message": "",
         }
 
@@ -1897,10 +1996,14 @@ class ProjectManager:
 
         result["available"] = True
         result["executable"] = str(resolved_executable)
+        save_command = [str(resolved_executable), "save"]
+        if updated_only:
+            save_command.append("--updated")
+        save_command.extend(["-m", normalized_message])
 
         try:
             process = subprocess.run(
-                [str(resolved_executable), "save", "-m", normalized_message],
+                save_command,
                 cwd=str(project_path),
                 capture_output=True,
                 text=True,
