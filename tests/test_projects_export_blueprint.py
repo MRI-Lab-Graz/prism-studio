@@ -795,3 +795,84 @@ def test_project_folder_export_route_forwards_scope_filters(tmp_path):
         exclude_tasks={"func": {"rest"}},
         materialize_annex_content=True,
     )
+
+
+def test_project_annex_availability_route_uses_project_manager(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    with patch(
+        "src.project_manager.ProjectManager.preview_plain_folder_export_availability",
+        return_value={
+            "success": True,
+            "missing_files_count": 3,
+            "missing_files_preview": ["sub-001/ses-1/anat/sub-001_T1w.nii.gz"],
+            "message": "Detected 3 missing files.",
+        },
+    ) as mock_preview:
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/annex-availability",
+                json={
+                    "project_path": str(project_dir),
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("success") is True
+    assert payload.get("missing_files_count") == 3
+    mock_preview.assert_called_once_with(
+        project_dir,
+        include_derivatives=True,
+        include_code=True,
+        include_analysis=True,
+        exclude_sessions=None,
+        exclude_modalities=None,
+        exclude_acq=None,
+        exclude_tasks=None,
+    )
+
+
+def test_project_annex_availability_route_forwards_scope_filters(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    with patch(
+        "src.project_manager.ProjectManager.preview_plain_folder_export_availability",
+        return_value={"success": True, "missing_files_count": 0},
+    ) as mock_preview:
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/annex-availability",
+                json={
+                    "project_path": str(project_dir),
+                    "include_derivatives": False,
+                    "include_code": True,
+                    "include_analysis": False,
+                    "exclude_sessions": ["ses-2", ""],
+                    "exclude_modalities": ["dwi"],
+                    "exclude_acq": {"dwi": ["1k20", ""]},
+                    "exclude_tasks": {"func": ["rest"]},
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("success") is True
+    mock_preview.assert_called_once_with(
+        project_dir,
+        include_derivatives=False,
+        include_code=True,
+        include_analysis=False,
+        exclude_sessions={"ses-2"},
+        exclude_modalities={"dwi"},
+        exclude_acq={"dwi": {"1k20"}},
+        exclude_tasks={"func": {"rest"}},
+    )

@@ -24,6 +24,8 @@ let lastExportStructureStatus = {
     message: 'Load a project to view export filters.',
     tone: 'muted',
 };
+let lastAnnexAvailabilityScopeSignature = '';
+let lastAnnexAvailabilitySummary = null;
 
 function getDefaultExportPreferences() {
     return {
@@ -103,6 +105,61 @@ function buildFolderExportRequestData(currentProjectPath) {
         exclude_tasks: _getUncheckedTaskByModality(),
         materialize_annex_content: getById('exportMaterializeAnnex')?.checked || false,
     };
+}
+
+function normalizeAnnexScopeStringArray(values) {
+    if (!Array.isArray(values)) {
+        return [];
+    }
+    return Array.from(new Set(values
+        .map((value) => String(value || '').trim())
+        .filter((value) => value.length > 0)))
+        .sort((a, b) => a.localeCompare(b));
+}
+
+function normalizeAnnexScopeGroupedLabels(values) {
+    if (!values || typeof values !== 'object') {
+        return {};
+    }
+
+    return Object.keys(values)
+        .map((key) => String(key || '').trim())
+        .filter((key) => key.length > 0)
+        .sort((a, b) => a.localeCompare(b))
+        .reduce((accumulator, key) => {
+            const normalizedLabels = normalizeAnnexScopeStringArray(values[key]);
+            if (normalizedLabels.length) {
+                accumulator[key] = normalizedLabels;
+            }
+            return accumulator;
+        }, {});
+}
+
+function buildAnnexAvailabilityScopeSignature(projectPath) {
+    const data = buildFolderExportRequestData(projectPath);
+    return JSON.stringify({
+        project_path: String(projectPath || '').trim(),
+        include_derivatives: Boolean(data.include_derivatives),
+        include_code: Boolean(data.include_code),
+        include_analysis: Boolean(data.include_analysis),
+        exclude_sessions: normalizeAnnexScopeStringArray(data.exclude_sessions),
+        exclude_modalities: normalizeAnnexScopeStringArray(data.exclude_modalities),
+        exclude_acq: normalizeAnnexScopeGroupedLabels(data.exclude_acq),
+        exclude_tasks: normalizeAnnexScopeGroupedLabels(data.exclude_tasks),
+    });
+}
+
+function clearAnnexAvailabilityCache() {
+    lastAnnexAvailabilityScopeSignature = '';
+    lastAnnexAvailabilitySummary = null;
+}
+
+function resetAnnexAvailabilityReport() {
+    clearAnnexAvailabilityCache();
+    const reportDiv = getById('exportAnnexAvailabilityReport');
+    if (!reportDiv) return;
+    reportDiv.style.display = 'none';
+    setHtml(reportDiv, '');
 }
 
 function getSelectedDefacingConfirmationMode() {
@@ -380,6 +437,79 @@ async function fetchDefacingSummary(projectPath) {
     };
 }
 
+async function fetchAnnexAvailabilitySummary(projectPath) {
+    const data = buildFolderExportRequestData(projectPath);
+    const resp = await fetchWithApiFallback('/api/projects/export/annex-availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+    const result = await resp.json().catch(() => ({ success: false, error: 'Invalid server response.' }));
+    if (!resp.ok || !result.success) {
+        throw new Error(result.error || result.message || 'Could not check annex availability.');
+    }
+    return result;
+}
+
+async function ensureAnnexAvailabilitySummary(projectPath, { force = false } = {}) {
+    const scopeSignature = buildAnnexAvailabilityScopeSignature(projectPath);
+    if (!force && lastAnnexAvailabilitySummary && lastAnnexAvailabilityScopeSignature === scopeSignature) {
+        return lastAnnexAvailabilitySummary;
+    }
+
+    const summary = await fetchAnnexAvailabilitySummary(projectPath);
+    lastAnnexAvailabilityScopeSignature = scopeSignature;
+    lastAnnexAvailabilitySummary = summary;
+    return summary;
+}
+
+function renderAnnexAvailabilityReport(summary) {
+    const reportDiv = getById('exportAnnexAvailabilityReport');
+    if (!reportDiv) {
+        return;
+    }
+
+    const missingCount = Number(summary?.missing_files_count || 0);
+    const preview = Array.isArray(summary?.missing_files_preview)
+        ? summary.missing_files_preview
+            .filter((value) => typeof value === 'string' && value.trim())
+            .slice(0, 8)
+        : [];
+    const previewRoot = typeof summary?.missing_files_preview_root === 'string'
+        ? summary.missing_files_preview_root.trim()
+        : '';
+    const hintCommand = typeof summary?.hint_command === 'string'
+        ? summary.hint_command.trim()
+        : '';
+    const message = typeof summary?.message === 'string'
+        ? summary.message.trim()
+        : '';
+
+    if (missingCount > 0) {
+        const previewHtml = preview.length
+            ? `<details class="mt-2"><summary>Missing files preview</summary>${previewRoot ? `<p class="small text-muted mb-1">Relative to: <code class="user-select-all">${escapeHtml(previewRoot)}</code></p>` : ''}<ul class="mb-0">${preview.map((value) => `<li><code class="user-select-all">${escapeHtml(value)}</code></li>`).join('')}</ul></details>`
+            : '';
+        const hintHtml = hintCommand
+            ? `<p class="mb-0 small">Try: <code class="user-select-all">${escapeHtml(hintCommand)}</code></p>`
+            : '';
+        setHtml(reportDiv, `<div class="alert alert-warning py-2 mb-0"><strong>Annex availability check:</strong> ${escapeHtml(message || `Detected ${missingCount} missing local file(s).`)}${previewHtml}${hintHtml}</div>`);
+    } else {
+        const alertClass = summary?.is_datalad_dataset ? 'alert-success' : 'alert-info';
+        setHtml(reportDiv, `<div class="alert ${alertClass} py-2 mb-0">${escapeHtml(message || 'No missing local files detected for the current export scope.')}</div>`);
+    }
+
+    reportDiv.style.display = 'block';
+}
+
+function renderAnnexAvailabilityError(error) {
+    const reportDiv = getById('exportAnnexAvailabilityReport');
+    if (!reportDiv) {
+        return;
+    }
+    setHtml(reportDiv, `<div class="alert alert-danger py-2 mb-0">${escapeHtml(error?.message || 'Could not check annex availability.')}</div>`);
+    reportDiv.style.display = 'block';
+}
+
 function getExportFilterCheckbox(className, value) {
     return Array.from(document.querySelectorAll(`.${className}`))
         .find(checkbox => checkbox.value === value) || null;
@@ -500,6 +630,7 @@ export function showExportCard() {
         if (outputFolderInput) {
             outputFolderInput.value = '';
         }
+        resetAnnexAvailabilityReport();
         show(card);
         loadProjectStructure();
         loadExportPreferences();
@@ -509,6 +640,7 @@ export function showExportCard() {
         if (outputFolderInput) {
             outputFolderInput.value = '';
         }
+        resetAnnexAvailabilityReport();
         renderProjectStructureStatus('Load a project to view export filters.');
         hide(card);
     }
@@ -781,6 +913,11 @@ export function initExportForm() {
                 return;
             }
 
+            const targetId = String(target.id || '').trim();
+            if (targetId !== 'exportMaterializeAnnex') {
+                resetAnnexAvailabilityReport();
+            }
+
             if (
                 target.classList.contains('export-session-filter')
                 || target.classList.contains('export-modality-filter')
@@ -815,6 +952,7 @@ export function initExportForm() {
                     const input = getById('exportOutputFolder');
                     if (input) input.value = data.folder;
                     saveExportPreferencesPatch({ output_folder: data.folder });
+                    resetAnnexAvailabilityReport();
                 }
             } catch { /* ignore */ }
         });
@@ -825,6 +963,7 @@ export function initExportForm() {
     if (folderInput) {
         folderInput.addEventListener('change', () => {
             saveExportPreferencesPatch({ output_folder: folderInput.value.trim() });
+            resetAnnexAvailabilityReport();
         });
     }
 
@@ -875,6 +1014,59 @@ export function initExportForm() {
     const plainFolderExportButton = getById('plainFolderExportButton');
     if (plainFolderExportButton) {
         plainFolderExportButton.addEventListener('click', handlePlainFolderExport);
+    }
+
+    const checkAnnexAvailabilityBtn = getById('exportCheckAnnexAvailability');
+    if (checkAnnexAvailabilityBtn) {
+        checkAnnexAvailabilityBtn.addEventListener('click', async () => {
+            const projectPath = resolveCurrentProjectPath();
+            if (!projectPath) {
+                alert('No project is currently loaded');
+                return;
+            }
+
+            const originalLabel = checkAnnexAvailabilityBtn.innerHTML;
+            checkAnnexAvailabilityBtn.disabled = true;
+            checkAnnexAvailabilityBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Checking availability...';
+
+            try {
+                const summary = await ensureAnnexAvailabilitySummary(projectPath, { force: true });
+                renderAnnexAvailabilityReport(summary);
+            } catch (error) {
+                renderAnnexAvailabilityError(error);
+            } finally {
+                checkAnnexAvailabilityBtn.disabled = false;
+                checkAnnexAvailabilityBtn.innerHTML = originalLabel;
+            }
+        });
+    }
+
+    const materializeAnnexToggle = getById('exportMaterializeAnnex');
+    if (materializeAnnexToggle) {
+        materializeAnnexToggle.addEventListener('change', async () => {
+            if (!materializeAnnexToggle.checked) {
+                resetAnnexAvailabilityReport();
+                return;
+            }
+
+            const projectPath = resolveCurrentProjectPath();
+            if (!projectPath) {
+                return;
+            }
+
+            const reportDiv = getById('exportAnnexAvailabilityReport');
+            if (reportDiv) {
+                setHtml(reportDiv, '<div class="alert alert-info py-2 mb-0"><i class="fas fa-spinner fa-spin me-1"></i>Checking annex availability for the current export scope...</div>');
+                reportDiv.style.display = 'block';
+            }
+
+            try {
+                const summary = await ensureAnnexAvailabilitySummary(projectPath, { force: false });
+                renderAnnexAvailabilityReport(summary);
+            } catch (error) {
+                renderAnnexAvailabilityError(error);
+            }
+        });
     }
 
     const uploadReadyExportButton = getById('uploadReadyExportButton');
@@ -1082,9 +1274,29 @@ async function handlePlainFolderExport(e) {
     setFolderProgress(progressPercent);
     if (statusText) {
         statusText.textContent = materializeAnnex
-            ? 'Materializing DataLad content and creating plain folder export...'
+            ? 'Checking annex availability for selected scope...'
             : 'Creating plain folder export without Git/DataLad metadata...';
     }
+
+    if (materializeAnnex) {
+        try {
+            const preflightSummary = await ensureAnnexAvailabilitySummary(currentProjectPath, { force: false });
+            renderAnnexAvailabilityReport(preflightSummary);
+            const missingPreflightCount = Number(preflightSummary.missing_files_count || 0);
+            if (missingPreflightCount > 0 && statusText) {
+                statusText.textContent = `Detected ${missingPreflightCount} missing local file(s); continuing with materialized folder export...`;
+            }
+        } catch (preflightError) {
+            renderAnnexAvailabilityError(preflightError);
+            if (statusText) {
+                statusText.textContent = 'Could not complete annex preflight automatically; continuing with materialized folder export...';
+            }
+        }
+        if (statusText) {
+            statusText.textContent = 'Materializing DataLad content and creating plain folder export...';
+        }
+    }
+
     progressTimerId = window.setInterval(() => {
         if (progressPercent >= maxPendingPercent) {
             return;

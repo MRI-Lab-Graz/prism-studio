@@ -1454,7 +1454,10 @@ class TestProjectManager(unittest.TestCase):
                     "message": "Current project is tracked by DataLad.",
                 },
             ):
-                with patch("src.project_manager.tempfile.mkdtemp", return_value=str(materialization_workspace)):
+                with patch(
+                    "src.project_manager.tempfile.mkdtemp",
+                    return_value=str(materialization_workspace),
+                ) as mock_mkdtemp:
                     with patch("src.project_manager.subprocess.run", side_effect=_fake_run) as mock_run:
                         result = manager.export_project_to_plain_folder(
                             project_path,
@@ -1469,11 +1472,74 @@ class TestProjectManager(unittest.TestCase):
             self.assertTrue((output_path / "sub-001" / "anat" / "sub-001_T1w.nii.gz").exists())
             self.assertFalse((output_path / ".git").exists())
             self.assertFalse(materialization_workspace.exists())
+            temp_dir = mock_mkdtemp.call_args.kwargs.get("dir")
+            self.assertIsNotNone(temp_dir)
+            self.assertEqual(Path(str(temp_dir)).resolve(), export_root.resolve())
+            self.assertTrue(
+                str(mock_mkdtemp.call_args.kwargs.get("prefix", "")).startswith(
+                    ".prism-folder-export-"
+                )
+            )
 
             commands = [" ".join(str(part) for part in call.args[0]) for call in mock_run.call_args_list]
             self.assertTrue(any(command.startswith("/usr/bin/datalad clone ") for command in commands), commands)
             self.assertTrue(any(command.startswith("/usr/bin/datalad get -r --on-failure ignore .") for command in commands), commands)
             self.assertTrue(any(command.startswith("/usr/bin/git-annex unlock .") for command in commands), commands)
+
+    def test_preview_plain_folder_export_availability_reports_missing_annex_symlinks(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            missing_annex_file = (
+                project_path
+                / "sub-001"
+                / "ses-1"
+                / "anat"
+                / "sub-001_ses-1_T1w.nii.gz"
+            )
+            missing_annex_file.parent.mkdir(parents=True, exist_ok=True)
+            existing_file = (
+                project_path
+                / "sub-001"
+                / "ses-1"
+                / "func"
+                / "sub-001_ses-1_task-rest_bold.nii.gz"
+            )
+            existing_file.parent.mkdir(parents=True, exist_ok=True)
+            existing_file.write_bytes(b"nifti")
+
+            try:
+                missing_annex_file.symlink_to(project_path / "missing_payload.nii.gz")
+            except (NotImplementedError, OSError) as exc:
+                self.skipTest(f"symlink creation unavailable: {exc}")
+
+            with patch.object(
+                manager,
+                "get_datalad_status",
+                return_value={
+                    "enabled": True,
+                    "available": True,
+                    "message": "Current project is tracked by DataLad.",
+                },
+            ):
+                result = manager.preview_plain_folder_export_availability(
+                    project_path,
+                    exclude_modalities={"func"},
+                )
+
+            self.assertTrue(result.get("success"), result)
+            self.assertEqual(result.get("missing_files_count"), 1)
+            self.assertEqual(
+                result.get("missing_files_preview"),
+                ["sub-001/ses-1/anat/sub-001_ses-1_T1w.nii.gz"],
+            )
+            self.assertEqual(result.get("missing_files_preview_root"), str(project_path))
+            self.assertIn("datalad -C", str(result.get("hint_command", "")))
 
     def test_export_project_to_plain_folder_materialize_requires_datalad_executable(self):
         manager = ProjectManager()
