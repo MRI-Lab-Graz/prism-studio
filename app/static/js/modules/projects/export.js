@@ -101,6 +101,7 @@ function buildFolderExportRequestData(currentProjectPath) {
         exclude_modalities: _getUncheckedValues('export-modality-filter'),
         exclude_acq: _getUncheckedAcqByModality(),
         exclude_tasks: _getUncheckedTaskByModality(),
+        materialize_annex_content: getById('exportMaterializeAnnex')?.checked || false,
     };
 }
 
@@ -1049,14 +1050,47 @@ async function handlePlainFolderExport(e) {
     const btn = this;
     const originalText = setButtonLoading(btn, true, 'Exporting Folder...');
     const progressDiv = getById('exportProgress');
+    const progressBar = getById('exportProgressBar');
+    const progressText = getById('exportProgressText');
     const resultDiv = getById('exportResult');
     const statusText = getById('exportStatusText');
+    const cancelBtn = getById('exportCancelBtn');
+    const materializeAnnex = getById('exportMaterializeAnnex')?.checked || false;
+
+    let progressPercent = materializeAnnex ? 8 : 12;
+    const maxPendingPercent = materializeAnnex ? 94 : 88;
+    const progressStep = materializeAnnex ? 2 : 4;
+    const progressTickMs = materializeAnnex ? 900 : 650;
+    let progressTimerId = null;
+
+    const setFolderProgress = (nextPercent) => {
+        const boundedPercent = Math.max(0, Math.min(100, Number(nextPercent) || 0));
+        progressPercent = boundedPercent;
+        if (progressBar) {
+            progressBar.style.width = `${boundedPercent}%`;
+        }
+        if (progressText) {
+            progressText.textContent = `${boundedPercent}%`;
+        }
+    };
 
     if (progressDiv) show(progressDiv);
     if (resultDiv) hide(resultDiv);
-    if (statusText) {
-        statusText.textContent = 'Creating plain folder export without Git/DataLad metadata...';
+    if (cancelBtn) {
+        cancelBtn.style.display = 'none';
     }
+    setFolderProgress(progressPercent);
+    if (statusText) {
+        statusText.textContent = materializeAnnex
+            ? 'Materializing DataLad content and creating plain folder export...'
+            : 'Creating plain folder export without Git/DataLad metadata...';
+    }
+    progressTimerId = window.setInterval(() => {
+        if (progressPercent >= maxPendingPercent) {
+            return;
+        }
+        setFolderProgress(Math.min(maxPendingPercent, progressPercent + progressStep));
+    }, progressTickMs);
 
     try {
         const data = buildFolderExportRequestData(currentProjectPath);
@@ -1067,10 +1101,16 @@ async function handlePlainFolderExport(e) {
         });
         const result = await response.json().catch(() => ({ success: false, error: 'Invalid server response.' }));
 
+        if (statusText) {
+            statusText.textContent = 'Finalizing folder export...';
+        }
+        setFolderProgress(97);
+
         if (progressDiv) hide(progressDiv);
         if (resultDiv) show(resultDiv);
 
         if (response.ok && result.success) {
+            setFolderProgress(100);
             const savedPath = result.output_path || 'unknown location';
             const excludedMetadata = Array.isArray(result.excluded_repository_metadata)
                 ? result.excluded_repository_metadata.filter((value) => typeof value === 'string' && value.trim())
@@ -1078,6 +1118,12 @@ async function handlePlainFolderExport(e) {
             const warningText = typeof result.warning === 'string'
                 ? result.warning.trim()
                 : '';
+            const materializedExport = Boolean(result.materialized_export);
+            const materializationWarnings = Array.isArray(result.materialization_warnings)
+                ? result.materialization_warnings
+                    .filter((value) => typeof value === 'string' && value.trim())
+                    .slice(0, 5)
+                : [];
             const missingFilesCount = Number(result.missing_files_count || 0);
             const missingFilePreview = Array.isArray(result.missing_files_preview)
                 ? result.missing_files_preview
@@ -1087,6 +1133,14 @@ async function handlePlainFolderExport(e) {
             const excludedMetadataHtml = excludedMetadata.length
                 ? `<p class="mb-2">Stripped repository metadata: <code>${escapeHtml(excludedMetadata.join(', '))}</code></p>`
                 : '';
+            const materializationWarningsHtml = materializationWarnings.length
+                ? `<details class="mt-2"><summary>Materialization warnings</summary><ul class="mb-0">${materializationWarnings.map((value) => `<li>${escapeHtml(value)}</li>`).join('')}</ul></details>`
+                : '';
+            const materializationHtml = materializedExport
+                ? `<div class="alert alert-info mb-2"><p class="mb-1"><i class="fas fa-database me-2"></i>PRISM created this folder from a temporary DataLad clone after running <code>datalad get -r .</code>.</p>${materializationWarningsHtml}</div>`
+                : (materializationWarningsHtml
+                    ? `<div class="alert alert-info mb-2"><p class="mb-1">Materialization notes:</p>${materializationWarningsHtml}</div>`
+                    : '');
             const missingPreviewHtml = missingFilePreview.length
                 ? `<details class="mt-2"><summary>Skipped files preview</summary><ul class="mb-0">${missingFilePreview.map((value) => `<li><code class="user-select-all">${escapeHtml(value)}</code></li>`).join('')}</ul></details>`
                 : '';
@@ -1100,6 +1154,7 @@ async function handlePlainFolderExport(e) {
                 <div class="alert alert-success">
                     <h5><i class="fas fa-check-circle me-2"></i>Folder Export Successful!</h5>
                     <p class="mb-2">PRISM created a normal folder copy without Git/DataLad metadata or hidden repository files.</p>
+                    ${materializationHtml}
                     ${excludedMetadataHtml}
                     ${warningHtml}
                     <p class="mb-0">Folder saved to:<br>
@@ -1111,6 +1166,7 @@ async function handlePlainFolderExport(e) {
 
         throw new Error(result.error || result.message || 'Folder export failed.');
     } catch (error) {
+        setFolderProgress(100);
         if (progressDiv) hide(progressDiv);
         if (resultDiv) {
             show(resultDiv);
@@ -1122,6 +1178,12 @@ async function handlePlainFolderExport(e) {
             `);
         }
     } finally {
+        if (progressTimerId !== null) {
+            window.clearInterval(progressTimerId);
+        }
+        if (cancelBtn) {
+            cancelBtn.style.display = '';
+        }
         setButtonLoading(btn, false, null, originalText);
     }
 }
