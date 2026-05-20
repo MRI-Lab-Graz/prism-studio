@@ -90,6 +90,20 @@ function buildExportRequestData(currentProjectPath, overrides = {}) {
     };
 }
 
+function buildFolderExportRequestData(currentProjectPath) {
+    return {
+        project_path: currentProjectPath,
+        output_folder: (getById('exportOutputFolder')?.value || '').trim() || null,
+        include_derivatives: getById('exportDerivatives')?.checked || false,
+        include_code: getById('exportCode')?.checked || false,
+        include_analysis: getById('exportAnalysis')?.checked || false,
+        exclude_sessions: _getUncheckedValues('export-session-filter'),
+        exclude_modalities: _getUncheckedValues('export-modality-filter'),
+        exclude_acq: _getUncheckedAcqByModality(),
+        exclude_tasks: _getUncheckedTaskByModality(),
+    };
+}
+
 function getSelectedDefacingConfirmationMode() {
     const always = getById('exportDefacingConfirmAlways')?.checked || false;
     return always ? 'always' : 'risk';
@@ -1045,13 +1059,11 @@ async function handlePlainFolderExport(e) {
     }
 
     try {
+        const data = buildFolderExportRequestData(currentProjectPath);
         const response = await fetchWithApiFallback('/api/projects/export/folder', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                project_path: currentProjectPath,
-                output_folder: (getById('exportOutputFolder')?.value || '').trim() || null,
-            }),
+            body: JSON.stringify(data),
         });
         const result = await response.json().catch(() => ({ success: false, error: 'Invalid server response.' }));
 
@@ -1063,14 +1075,33 @@ async function handlePlainFolderExport(e) {
             const excludedMetadata = Array.isArray(result.excluded_repository_metadata)
                 ? result.excluded_repository_metadata.filter((value) => typeof value === 'string' && value.trim())
                 : [];
+            const warningText = typeof result.warning === 'string'
+                ? result.warning.trim()
+                : '';
+            const missingFilesCount = Number(result.missing_files_count || 0);
+            const missingFilePreview = Array.isArray(result.missing_files_preview)
+                ? result.missing_files_preview
+                    .filter((value) => typeof value === 'string' && value.trim())
+                    .slice(0, 5)
+                : [];
             const excludedMetadataHtml = excludedMetadata.length
                 ? `<p class="mb-2">Stripped repository metadata: <code>${escapeHtml(excludedMetadata.join(', '))}</code></p>`
+                : '';
+            const missingPreviewHtml = missingFilePreview.length
+                ? `<details class="mt-2"><summary>Skipped files preview</summary><ul class="mb-0">${missingFilePreview.map((value) => `<li><code class="user-select-all">${escapeHtml(value)}</code></li>`).join('')}</ul></details>`
+                : '';
+            const warningHtml = (warningText || missingFilesCount > 0)
+                ? `<div class="alert alert-warning mb-2">`
+                    + `<p class="mb-1"><i class="fas fa-exclamation-triangle me-2"></i>${escapeHtml(warningText || `Skipped ${missingFilesCount} file(s) that were not available locally during export.`)}</p>`
+                    + missingPreviewHtml
+                    + `</div>`
                 : '';
             setHtml(resultDiv, `
                 <div class="alert alert-success">
                     <h5><i class="fas fa-check-circle me-2"></i>Folder Export Successful!</h5>
                     <p class="mb-2">PRISM created a normal folder copy without Git/DataLad metadata or hidden repository files.</p>
                     ${excludedMetadataHtml}
+                    ${warningHtml}
                     <p class="mb-0">Folder saved to:<br>
                     <code class="user-select-all">${escapeHtml(savedPath)}</code></p>
                 </div>

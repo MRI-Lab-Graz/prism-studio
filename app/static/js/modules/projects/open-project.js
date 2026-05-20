@@ -258,10 +258,18 @@ export function initOpenProjectController({
         if (state.enabled && state.available) {
             stateBadge.classList.add('bg-success', 'text-white');
             stateBadge.textContent = 'Tracked';
-            hint.textContent = 'This project is already DataLad-tracked. Use Repair DataLad Structure to backfill one missing nested dataset per click, or Save DataLad Snapshot for an explicit checkpoint.';
-            enableButton.innerHTML = '<i class="fas fa-screwdriver-wrench me-1"></i>Repair DataLad Structure';
-            enableButton.disabled = false;
-            enableButton.title = 'Repair or complete DataLad setup for the current project';
+            const hasNestedRepairsRemaining = state.subdatasetsRemainingCount > 0;
+            if (hasNestedRepairsRemaining) {
+                hint.textContent = 'This project is already DataLad-tracked. Use Repair DataLad Structure to backfill one missing nested dataset per click, or Save DataLad Snapshot for an explicit checkpoint.';
+                enableButton.innerHTML = '<i class="fas fa-screwdriver-wrench me-1"></i>Repair DataLad Structure';
+                enableButton.disabled = false;
+                enableButton.title = 'Repair or complete DataLad setup for the current project';
+            } else {
+                hint.textContent = 'DataLad structure is complete for this project. Use Save DataLad Snapshot for an explicit checkpoint.';
+                enableButton.innerHTML = '<i class="fas fa-check me-1"></i>DataLad Structure Complete';
+                enableButton.disabled = true;
+                enableButton.title = 'No missing nested datasets to repair';
+            }
         } else if (state.enabled) {
             stateBadge.classList.add('bg-warning', 'text-dark');
             stateBadge.textContent = 'Tracked';

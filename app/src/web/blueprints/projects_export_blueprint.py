@@ -542,10 +542,62 @@ def export_project_folder():
 
         output_folder = data.get("output_folder") or None
 
+        manager_kwargs: Dict[str, object] = {
+            "output_root": output_folder,
+        }
+
+        scope_keys = {
+            "include_derivatives",
+            "include_code",
+            "include_analysis",
+            "exclude_sessions",
+            "exclude_modalities",
+            "exclude_acq",
+            "exclude_tasks",
+        }
+        if any(key in data for key in scope_keys):
+            def _normalize_labels(values: object) -> set[str]:
+                if not isinstance(values, (list, tuple, set)):
+                    return set()
+                normalized = {
+                    str(value).strip() for value in values if str(value).strip()
+                }
+                return normalized
+
+            def _normalize_grouped_labels(values: object) -> Dict[str, set[str]]:
+                if not isinstance(values, dict):
+                    return {}
+                normalized: Dict[str, set[str]] = {}
+                for modality, labels in values.items():
+                    modality_name = str(modality).strip()
+                    if not modality_name:
+                        continue
+                    normalized_labels = _normalize_labels(labels)
+                    if normalized_labels:
+                        normalized[modality_name] = normalized_labels
+                return normalized
+
+            exclude_sessions = _normalize_labels(data.get("exclude_sessions"))
+            exclude_modalities = _normalize_labels(data.get("exclude_modalities"))
+            exclude_acq = _normalize_grouped_labels(data.get("exclude_acq"))
+            exclude_tasks = _normalize_grouped_labels(data.get("exclude_tasks"))
+
+            manager_kwargs.update(
+                {
+                    "include_derivatives": bool(data.get("include_derivatives", True)),
+                    "include_code": bool(data.get("include_code", True)),
+                    "include_analysis": bool(data.get("include_analysis", True)),
+                    "exclude_sessions": exclude_sessions or None,
+                    "exclude_modalities": exclude_modalities or None,
+                    "exclude_acq": exclude_acq or None,
+                    "exclude_tasks": exclude_tasks or None,
+                }
+            )
+
         manager = ProjectManager()
         result = manager.export_project_to_plain_folder(
             resolved,
-            output_root=output_folder,
+            **manager_kwargs,
         )
         if result.get("success"):
             return jsonify(result)
