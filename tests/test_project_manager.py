@@ -1405,6 +1405,157 @@ class TestProjectManager(unittest.TestCase):
             self.assertFalse((output_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_acq-T1w_echo-1_mpm.nii.gz").exists())
             self.assertFalse((output_path / "sub-001" / "ses-1" / ".DS_Store").exists())
 
+    def test_export_project_to_plain_folder_materializes_via_temporary_datalad_clone(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            export_root = Path(tmp) / "exports"
+            materialization_workspace = Path(tmp) / "materialized_workspace"
+
+            def _fake_run(command, **_kwargs):
+                normalized = [str(part) for part in command]
+                if len(normalized) >= 2 and normalized[0] == "/usr/bin/datalad" and normalized[1] == "clone":
+                    clone_path = Path(normalized[-1])
+                    clone_path.mkdir(parents=True, exist_ok=True)
+                    (clone_path / ".datalad").mkdir(parents=True, exist_ok=True)
+                    (clone_path / ".git").mkdir(parents=True, exist_ok=True)
+                    (clone_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+                    clone_file = clone_path / "sub-001" / "anat" / "sub-001_T1w.nii.gz"
+                    clone_file.parent.mkdir(parents=True, exist_ok=True)
+                    clone_file.write_bytes(b"nifti")
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if normalized[:3] == ["/usr/bin/datalad", "get", "-r"]:
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if normalized[:3] == ["/usr/bin/git-annex", "unlock", "."]:
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
+
+            with patch.object(
+                manager,
+                "get_datalad_status",
+                return_value={
+                    "enabled": True,
+                    "available": True,
+                    "executable": "/usr/bin/datalad",
+                    "annex_executable": "/usr/bin/git-annex",
+                    "message": "Current project is tracked by DataLad.",
+                },
+            ):
+                with patch("src.project_manager.tempfile.mkdtemp", return_value=str(materialization_workspace)):
+                    with patch("src.project_manager.subprocess.run", side_effect=_fake_run) as mock_run:
+                        result = manager.export_project_to_plain_folder(
+                            project_path,
+                            output_root=export_root,
+                            materialize_annex_content=True,
+                        )
+
+            self.assertTrue(result.get("success"), result)
+            self.assertTrue(result.get("materialized_export"), result)
+            output_path = Path(result["output_path"])
+            self.assertTrue((output_path / "dataset_description.json").exists())
+            self.assertTrue((output_path / "sub-001" / "anat" / "sub-001_T1w.nii.gz").exists())
+            self.assertFalse((output_path / ".git").exists())
+            self.assertFalse(materialization_workspace.exists())
+
+            commands = [" ".join(str(part) for part in call.args[0]) for call in mock_run.call_args_list]
+            self.assertTrue(any(command.startswith("/usr/bin/datalad clone ") for command in commands), commands)
+            self.assertTrue(any(command.startswith("/usr/bin/datalad get -r --on-failure ignore .") for command in commands), commands)
+            self.assertTrue(any(command.startswith("/usr/bin/git-annex unlock .") for command in commands), commands)
+
+    def test_export_project_to_plain_folder_materialize_requires_datalad_executable(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            with patch.object(
+                manager,
+                "get_datalad_status",
+                return_value={
+                    "enabled": True,
+                    "available": True,
+                    "executable": None,
+                    "annex_executable": None,
+                    "message": "Current project is tracked by DataLad.",
+                },
+            ):
+                with patch("src.project_manager.shutil.which", return_value=None):
+                    result = manager.export_project_to_plain_folder(
+                        project_path,
+                        materialize_annex_content=True,
+                    )
+
+        self.assertFalse(result.get("success"), result)
+        self.assertIn("requires the datalad executable", result.get("error", ""))
+
+    def test_export_project_to_plain_folder_materialize_get_failure_becomes_warning(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            export_root = Path(tmp) / "exports"
+            materialization_workspace = Path(tmp) / "materialized_workspace"
+
+            def _fake_run(command, **_kwargs):
+                normalized = [str(part) for part in command]
+                if len(normalized) >= 2 and normalized[0] == "/usr/bin/datalad" and normalized[1] == "clone":
+                    clone_path = Path(normalized[-1])
+                    clone_path.mkdir(parents=True, exist_ok=True)
+                    (clone_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if normalized[:5] == ["/usr/bin/datalad", "get", "-r", "--on-failure", "ignore"]:
+                    return subprocess.CompletedProcess(
+                        command,
+                        1,
+                        "[INFO] Ensuring presence ...",
+                        "",
+                    )
+
+                if normalized[:3] == ["/usr/bin/git-annex", "unlock", "."]:
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
+
+            with patch.object(
+                manager,
+                "get_datalad_status",
+                return_value={
+                    "enabled": True,
+                    "available": True,
+                    "executable": "/usr/bin/datalad",
+                    "annex_executable": "/usr/bin/git-annex",
+                    "message": "Current project is tracked by DataLad.",
+                },
+            ):
+                with patch("src.project_manager.tempfile.mkdtemp", return_value=str(materialization_workspace)):
+                    with patch("src.project_manager.subprocess.run", side_effect=_fake_run):
+                        result = manager.export_project_to_plain_folder(
+                            project_path,
+                            output_root=export_root,
+                            materialize_annex_content=True,
+                        )
+
+            self.assertTrue(result.get("success"), result)
+            self.assertTrue(result.get("materialized_export"), result)
+            warnings = result.get("materialization_warnings") or []
+            self.assertTrue(any("could not retrieve all annexed content" in str(item) for item in warnings), warnings)
+
     @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
     def test_export_project_to_plain_folder_accepts_nontracked_project(self, _mock_which):
         manager = ProjectManager()

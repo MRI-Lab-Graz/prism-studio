@@ -554,6 +554,7 @@ def export_project_folder():
             "exclude_modalities",
             "exclude_acq",
             "exclude_tasks",
+            "materialize_annex_content",
         }
         if any(key in data for key in scope_keys):
             def _normalize_labels(values: object) -> set[str]:
@@ -591,6 +592,9 @@ def export_project_folder():
                     "exclude_modalities": exclude_modalities or None,
                     "exclude_acq": exclude_acq or None,
                     "exclude_tasks": exclude_tasks or None,
+                    "materialize_annex_content": bool(
+                        data.get("materialize_annex_content", False)
+                    ),
                 }
             )
 

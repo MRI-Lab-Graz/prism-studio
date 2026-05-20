@@ -28,6 +28,7 @@ import json
 import re
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 from datetime import date
 from typing import Dict, List, Any, Optional, Union
@@ -62,6 +63,7 @@ PROJECT_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
 VALID_DATASET_TYPES = {"raw", "derivative"}
 DATALAD_REPAIR_STEP_TIMEOUT_SECONDS = 120
 REGISTERED_SUBDATASET_QUERY_TIMEOUT_SECONDS = 30
+DATALAD_EXPORT_STEP_TIMEOUT_SECONDS = 60 * 60
 
 
 class ProjectManager:
@@ -938,6 +940,7 @@ class ProjectManager:
         exclude_modalities: Optional[set[str]] = None,
         exclude_acq: Optional[Dict[str, set[str]]] = None,
         exclude_tasks: Optional[Dict[str, set[str]]] = None,
+        materialize_annex_content: bool = False,
     ) -> Dict[str, Any]:
         """Export a project to a plain folder copy without Git/DataLad metadata."""
         project_path = Path(path)
@@ -970,6 +973,129 @@ class ProjectManager:
         while export_path.exists():
             export_path = destination_root / f"{target_name}_{suffix}"
             suffix += 1
+
+        self._emit_backend_progress(
+            f'Starting plain folder export for "{project_path.name}".',
+            command=(
+                f'python prism.py projects export-folder --project "{project_path}" '
+                f'--output "{export_path}"'
+            ),
+        )
+
+        copy_source_path = project_path
+        materialized_export = False
+        materialization_warnings: List[str] = []
+        materialization_workspace: Optional[Path] = None
+
+        if materialize_annex_content:
+            if not status.get("enabled"):
+                materialization_warnings.append(
+                    "Materialized DataLad export was requested, but this project is not tracked by DataLad. "
+                    "PRISM exported directly from the current folder."
+                )
+            else:
+                resolved_datalad = str(
+                    status.get("executable") or shutil.which("datalad") or ""
+                ).strip()
+                if not resolved_datalad:
+                    result["error"] = (
+                        "Materialized DataLad-free folder export requires the datalad executable."
+                    )
+                    return result
+
+                materialization_workspace = Path(
+                    tempfile.mkdtemp(prefix="prism-folder-export-")
+                )
+                clone_source_path = materialization_workspace / project_path.name
+
+                def _run_materialization_step(
+                    command: List[str],
+                    *,
+                    cwd: Optional[Path],
+                    step_label: str,
+                ) -> tuple[bool, str]:
+                    self._emit_backend_progress(
+                        f"{step_label} for DataLad-free folder export.",
+                        command=" ".join(str(part) for part in command),
+                    )
+                    try:
+                        process = subprocess.run(
+                            command,
+                            cwd=str(cwd) if cwd else None,
+                            capture_output=True,
+                            text=True,
+                            check=False,
+                            timeout=DATALAD_EXPORT_STEP_TIMEOUT_SECONDS,
+                        )
+                    except subprocess.TimeoutExpired:
+                        return (
+                            False,
+                            f"{step_label} timed out after {DATALAD_EXPORT_STEP_TIMEOUT_SECONDS} seconds.",
+                        )
+                    except Exception as exc:
+                        return (
+                            False,
+                            f"{step_label} failed ({type(exc).__name__}: {exc}).",
+                        )
+
+                    if process.returncode == 0:
+                        return True, ""
+
+                    detail = (process.stderr or process.stdout or "").strip()
+                    return (
+                        False,
+                        f"{step_label} failed: {self._summarize_datalad_error(detail)}",
+                    )
+
+                clone_ok, clone_error = _run_materialization_step(
+                    [
+                        resolved_datalad,
+                        "clone",
+                        str(project_path),
+                        str(clone_source_path),
+                    ],
+                    cwd=None,
+                    step_label="DataLad clone",
+                )
+                if not clone_ok:
+                    if materialization_workspace.exists():
+                        shutil.rmtree(materialization_workspace, ignore_errors=True)
+                    result["error"] = clone_error
+                    return result
+
+                get_ok, get_error = _run_materialization_step(
+                    [resolved_datalad, "get", "-r", "--on-failure", "ignore", "."],
+                    cwd=clone_source_path,
+                    step_label="DataLad get -r .",
+                )
+                if not get_ok:
+                    materialization_warnings.append(
+                        "DataLad get -r . could not retrieve all annexed content from remotes; "
+                        "continuing with locally available files."
+                    )
+                    if str(get_error or "").strip():
+                        materialization_warnings.append(get_error)
+
+                resolved_annex = str(
+                    status.get("annex_executable") or shutil.which("git-annex") or ""
+                ).strip()
+                if resolved_annex:
+                    unlock_ok, unlock_error = _run_materialization_step(
+                        [resolved_annex, "unlock", "."],
+                        cwd=clone_source_path,
+                        step_label="git annex unlock .",
+                    )
+                    if not unlock_ok:
+                        materialization_warnings.append(
+                            f"{unlock_error} Continuing with symlink-following copy."
+                        )
+                else:
+                    materialization_warnings.append(
+                        "git-annex executable is unavailable; continuing without unlock."
+                    )
+
+                copy_source_path = clone_source_path
+                materialized_export = True
 
         ignored_names = {
             ".git",
@@ -1083,7 +1209,7 @@ class ProjectManager:
 
                 candidate = current_dir / name
                 try:
-                    rel_parts = candidate.relative_to(project_path).parts
+                    rel_parts = candidate.relative_to(copy_source_path).parts
                 except ValueError:
                     continue
 
@@ -1110,8 +1236,12 @@ class ProjectManager:
                 raise
 
         try:
+            self._emit_backend_progress(
+                f'Starting filesystem copy for plain folder export "{export_path.name}".',
+                command=f'cp -a "{copy_source_path}" "{export_path}"',
+            )
             shutil.copytree(
-                project_path,
+                copy_source_path,
                 export_path,
                 copy_function=_copy_with_missing_tolerance,
                 ignore=_ignore,
@@ -1121,11 +1251,18 @@ class ProjectManager:
         except Exception as exc:
             result["error"] = f"Could not export project folder: {exc}"
             return result
+        finally:
+            if materialization_workspace is not None and materialization_workspace.exists():
+                shutil.rmtree(materialization_workspace, ignore_errors=True)
 
         result["success"] = True
         result["output_path"] = str(export_path)
         result["excluded_repository_metadata"] = sorted(ignored_names)
         result["message"] = f"Project folder export created at {export_path} without Git/DataLad metadata."
+        if materialized_export:
+            result["materialized_export"] = True
+        if materialization_warnings:
+            result["materialization_warnings"] = materialization_warnings[:10]
         if missing_source_paths:
             unique_missing_paths = sorted(set(missing_source_paths))
             result["partial_export"] = True
@@ -1144,6 +1281,10 @@ class ProjectManager:
                 )
             result["warning"] = warning
             result["message"] = f"{result['message']} {warning}"
+        self._emit_backend_progress(
+            f'Finished plain folder export for "{project_path.name}".',
+            command=f'open "{export_path}"',
+        )
         return result
 
     def autosave_datalad_snapshot(
