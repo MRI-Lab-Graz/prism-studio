@@ -9,8 +9,11 @@ Provides routes for:
 """
 
 from pathlib import Path
+from typing import Any
+
 from flask import Blueprint, render_template, jsonify, session, request, current_app
 
+from src.config import load_config
 from src.project_manager import ProjectManager, get_available_modalities
 from src.project_session_logging import activate_project_session, close_project_session
 from src.schema_manager import get_available_schema_versions
@@ -83,16 +86,74 @@ projects_bp = Blueprint("projects", __name__)
 
 # Shared project manager instance
 _project_manager = ProjectManager()
+_DATALAD_SETUP_INTENTS = {"unknown", "enabled", "declined"}
+
+
+def _normalize_datalad_preference_bool(value: object, *, default: bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "off"}:
+            return False
+    if value is None:
+        return default
+    return bool(value)
+
+
+def _get_datalad_setup_preferences(project_path: str | None) -> dict[str, Any]:
+    defaults = {
+        "setup_intent": "unknown",
+        "ask_on_open": True,
+    }
+    normalized_path = str(project_path or "").strip()
+    if not normalized_path:
+        return defaults
+
+    try:
+        root_path = Path(normalized_path)
+        if root_path.is_file() and root_path.name == "project.json":
+            root_path = root_path.parent
+
+        config = load_config(str(root_path))
+        project_preferences = config.project_preferences
+        if not isinstance(project_preferences, dict):
+            return defaults
+
+        datalad_preferences = project_preferences.get("datalad")
+        if not isinstance(datalad_preferences, dict):
+            return defaults
+
+        raw_setup_intent = str(datalad_preferences.get("setup_intent") or "").strip().lower()
+        setup_intent = raw_setup_intent if raw_setup_intent in _DATALAD_SETUP_INTENTS else "unknown"
+        ask_on_open = _normalize_datalad_preference_bool(
+            datalad_preferences.get("ask_on_open"),
+            default=setup_intent != "enabled",
+        )
+        return {
+            "setup_intent": setup_intent,
+            "ask_on_open": ask_on_open,
+        }
+    except Exception:
+        return defaults
 
 
 def get_current_project() -> dict:
     """Get the current working project from session."""
     project_path = session.get("current_project_path")
+    datalad_status = _project_manager.get_datalad_status(project_path)
+    datalad_status = datalad_status if isinstance(datalad_status, dict) else {}
+    datalad_status = {
+        **datalad_status,
+        **_get_datalad_setup_preferences(project_path),
+    }
     return {
         "path": project_path,
         "name": session.get("current_project_name"),
         "icon": session.get("current_project_icon"),
-        "datalad": _project_manager.get_datalad_status(project_path),
+        "datalad": datalad_status,
     }
 
 
@@ -100,9 +161,10 @@ def set_current_project(path: str, name: str | None = None, icon: str | None = N
     """Set the current working project in session."""
     previous_path = session.get("current_project_path")
     previous_icon = session.get("current_project_icon")
+    autosave_previous = None
 
     if previous_path and str(previous_path).strip() != str(path).strip():
-        _autosave_current_datalad_project(
+        autosave_previous = _autosave_current_datalad_project(
             previous_path,
             reason=f"project_switch next_project={path}",
         )
@@ -124,6 +186,8 @@ def set_current_project(path: str, name: str | None = None, icon: str | None = N
         activate_project_session(path)
     except Exception:
         pass
+
+    return autosave_previous
 
 
 def get_bids_file_path(project_path: Path, filename: str) -> Path:
@@ -148,13 +212,22 @@ def _autosave_current_datalad_project(project_path: str | None, *, reason: str):
     try:
         result = _project_manager.autosave_datalad_snapshot(normalized_path, reason=reason)
     except Exception as exc:
+        error_text = str(exc)
         current_app.logger.warning(
             "DataLad autosave crashed for %s (%s): %s",
             normalized_path,
             reason,
             exc,
         )
-        return None
+        return {
+            "success": False,
+            "attempted": True,
+            "skipped": False,
+            "reason": reason,
+            "path": normalized_path,
+            "error": error_text,
+            "message": f"DataLad auto-save failed: {error_text}",
+        }
 
     if result.get("attempted") and not result.get("success"):
         current_app.logger.warning(

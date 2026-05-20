@@ -24,6 +24,28 @@ function normalizeDataladStateValue(value, fallbackPath = '') {
         return Number.isFinite(parsed) && parsed >= 0 ? parsed : defaultValue;
     }
 
+    function normalizeSetupIntentStateValue(setupIntentValue) {
+        const normalized = normalizeStateValue(setupIntentValue).toLowerCase();
+        if (normalized === 'enabled' || normalized === 'declined') {
+            return normalized;
+        }
+        return 'unknown';
+    }
+
+    function normalizeAskOnOpenStateValue(askOnOpenValue, defaultValue = true) {
+        if (typeof askOnOpenValue === 'boolean') {
+            return askOnOpenValue;
+        }
+        const normalized = normalizeStateValue(askOnOpenValue).toLowerCase();
+        if (normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on') {
+            return true;
+        }
+        if (normalized === 'false' || normalized === '0' || normalized === 'no' || normalized === 'off') {
+            return false;
+        }
+        return Boolean(defaultValue);
+    }
+
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
         return {
             enabled: false,
@@ -33,6 +55,8 @@ function normalizeDataladStateValue(value, fallbackPath = '') {
             canEnable: false,
             message: fallbackPath ? 'Current project is not a DataLad dataset.' : 'Load a project to see DataLad status.',
             path: fallbackPath,
+            setupIntent: 'unknown',
+            askOnOpen: true,
             subdatasetsTotalCount: 0,
             subdatasetsRegisteredCount: 0,
             subdatasetsRemainingCount: 0,
@@ -42,6 +66,7 @@ function normalizeDataladStateValue(value, fallbackPath = '') {
     }
 
     const resolvedPath = normalizeStateValue(value.path) || fallbackPath;
+    const setupIntent = normalizeSetupIntentStateValue(value.setup_intent ?? value.setupIntent);
     return {
         enabled: normalizeBooleanStateValue(value.enabled),
         available: normalizeBooleanStateValue(value.available),
@@ -50,6 +75,11 @@ function normalizeDataladStateValue(value, fallbackPath = '') {
         canEnable: normalizeBooleanStateValue(value.can_enable ?? value.canEnable),
         message: normalizeStateValue(value.message) || (resolvedPath ? 'Current project is not a DataLad dataset.' : 'Load a project to see DataLad status.'),
         path: resolvedPath,
+        setupIntent,
+        askOnOpen: normalizeAskOnOpenStateValue(
+            value.ask_on_open ?? value.askOnOpen,
+            setupIntent !== 'enabled'
+        ),
         subdatasetsTotalCount: normalizeCountStateValue(value.subdatasets_total_count ?? value.subdatasetsTotalCount),
         subdatasetsRegisteredCount: normalizeCountStateValue(value.subdatasets_registered_count ?? value.subdatasetsRegisteredCount),
         subdatasetsRemainingCount: normalizeCountStateValue(value.subdatasets_remaining_count ?? value.subdatasetsRemainingCount),

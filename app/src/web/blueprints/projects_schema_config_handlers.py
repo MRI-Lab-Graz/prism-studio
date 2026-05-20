@@ -17,6 +17,20 @@ from .projects_helpers import (
 )
 
 
+_EXPORT_REPOSITORY_MODES = {"datalad_free", "datalad_preserving"}
+
+
+def _normalize_export_repository_mode(
+    value: object,
+    *,
+    fallback: str = "datalad_free",
+) -> str:
+    mode = str(value or "").strip().lower()
+    if mode in _EXPORT_REPOSITORY_MODES:
+        return mode
+    return fallback
+
+
 def _get_schema_dir() -> str:
     return safe_path_join(current_app.root_path, "schemas")
 
@@ -157,6 +171,9 @@ def handle_get_project_preferences(get_current_project, namespace: str | None = 
             project_has_explicit_defacing_mode = str(
                 resolved_preferences.get("defacing_confirmation_mode") or ""
             ).strip().lower() in {"risk", "always"}
+            project_has_explicit_repository_mode = str(
+                resolved_preferences.get("repository_mode") or ""
+            ).strip().lower() in _EXPORT_REPOSITORY_MODES
             resolved_preferences["defacing_confirmation_mode"] = (
                 normalize_export_defacing_confirmation_mode(
                     resolved_preferences.get("defacing_confirmation_mode"),
@@ -167,6 +184,10 @@ def handle_get_project_preferences(get_current_project, namespace: str | None = 
                     ),
                 )
             )
+            resolved_preferences["repository_mode"] = _normalize_export_repository_mode(
+                resolved_preferences.get("repository_mode"),
+                fallback="datalad_free",
+            )
             return jsonify(
                 {
                     "success": True,
@@ -174,7 +195,10 @@ def handle_get_project_preferences(get_current_project, namespace: str | None = 
                     "inherited_preferences": {
                         "defacing_confirmation_mode": (
                             not project_has_explicit_defacing_mode
-                        )
+                        ),
+                        "repository_mode": (
+                            not project_has_explicit_repository_mode
+                        ),
                     },
                 }
             )
@@ -236,6 +260,13 @@ def handle_save_project_preferences(get_current_project, namespace: str | None =
                 namespace_prefs["defacing_confirmation_mode"] = normalized_mode
             else:
                 namespace_prefs.pop("defacing_confirmation_mode", None)
+
+            repository_mode = str(namespace_prefs.get("repository_mode") or "").strip()
+            normalized_repository_mode = repository_mode.lower()
+            if normalized_repository_mode in _EXPORT_REPOSITORY_MODES:
+                namespace_prefs["repository_mode"] = normalized_repository_mode
+            else:
+                namespace_prefs.pop("repository_mode", None)
 
         current_prefs[namespace] = namespace_prefs
     else:

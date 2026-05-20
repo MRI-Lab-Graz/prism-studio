@@ -9,6 +9,7 @@ import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 
 const EXPORT_VALIDATION_MODES = new Set(['both', 'bids', 'prism', 'ignore']);
+const EXPORT_REPOSITORY_MODES = new Set(['datalad_free', 'datalad_preserving']);
 
 let projectStructureLoadToken = 0;
 let exportPreferencesLoadToken = 0;
@@ -16,6 +17,7 @@ let isApplyingExportPreferences = false;
 let exportModuleInitialized = false;
 let lastLoadedExportPreferences = getDefaultExportPreferences();
 let lastExportPreferenceInheritance = {
+    repository_mode: false,
     defacing_confirmation_mode: false,
 };
 let lastExportStructureStatus = {
@@ -31,6 +33,7 @@ function getDefaultExportPreferences() {
         exclude_acq: {},
         exclude_tasks: {},
         validation_mode: 'both',
+        repository_mode: 'datalad_free',
         defacing_confirmation_mode: 'risk',
     };
 }
@@ -51,6 +54,16 @@ function getSelectedExportValidationMode() {
     return normalizeExportValidationMode(select?.value || 'both');
 }
 
+function normalizeExportRepositoryMode(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    return EXPORT_REPOSITORY_MODES.has(normalized) ? normalized : 'datalad_free';
+}
+
+function getSelectedExportRepositoryMode() {
+    const select = getById('exportRepositoryMode');
+    return normalizeExportRepositoryMode(select?.value || 'datalad_free');
+}
+
 function normalizeDefacingConfirmationMode(value) {
     const normalized = String(value || '').trim().toLowerCase();
     return normalized === 'always' ? 'always' : 'risk';
@@ -67,6 +80,8 @@ function buildExportRequestData(currentProjectPath, overrides = {}) {
         include_analysis: getById('exportAnalysis')?.checked || false,
         output_folder: (getById('exportOutputFolder')?.value || '').trim() || null,
         validation_mode: getSelectedExportValidationMode(),
+        repository_mode: getSelectedExportRepositoryMode(),
+        exclude_version_control_metadata: getSelectedExportRepositoryMode() === 'datalad_free',
         exclude_sessions: _getUncheckedValues('export-session-filter'),
         exclude_modalities: _getUncheckedValues('export-modality-filter'),
         exclude_acq: _getUncheckedAcqByModality(),
@@ -92,6 +107,21 @@ function getExportValidationStatusText(validationMode) {
         return 'Running PRISM validation before export...';
     }
     return 'Running PRISM + BIDS validation before export...';
+}
+
+function getExportRepositoryModeStatusSuffix(repositoryMode) {
+    const mode = normalizeExportRepositoryMode(repositoryMode);
+    return mode === 'datalad_preserving'
+        ? 'Repository metadata will be preserved.'
+        : 'Repository metadata will be removed.';
+}
+
+function getExportRepositoryModeSuccessNote(repositoryMode) {
+    const mode = normalizeExportRepositoryMode(repositoryMode);
+    if (mode === 'datalad_preserving') {
+        return '<p class="mb-2">This ZIP keeps hidden Git/DataLad repository metadata for reproducible DataLad workflows.</p>';
+    }
+    return '<p class="mb-2">This ZIP excludes hidden Git/DataLad repository metadata for a DataLad-free sharing package.</p>';
 }
 
 function normalizePreferenceStringArray(values) {
@@ -143,6 +173,7 @@ function normalizeExportPreferences(preferences) {
     normalized.exclude_acq = normalizeGroupedPreferenceMap(preferences.exclude_acq);
     normalized.exclude_tasks = normalizeGroupedPreferenceMap(preferences.exclude_tasks);
     normalized.validation_mode = normalizeExportValidationMode(preferences.validation_mode);
+    normalized.repository_mode = normalizeExportRepositoryMode(preferences.repository_mode);
     normalized.defacing_confirmation_mode = normalizeDefacingConfirmationMode(preferences.defacing_confirmation_mode);
     return normalized;
 }
@@ -231,17 +262,30 @@ function updateExportSnapshotUi() {
             const defacingMode = normalizeDefacingConfirmationMode(
                 lastLoadedExportPreferences.defacing_confirmation_mode
             );
+            const repositoryMode = normalizeExportRepositoryMode(
+                lastLoadedExportPreferences.repository_mode
+            );
             const defacingModeLabel = defacingMode === 'always'
                 ? 'always ask before MRI scrub export'
                 : 'ask only on detected defacing risk';
+            const repositoryModeLabel = repositoryMode === 'datalad_preserving'
+                ? 'DataLad-preserving ZIP mode'
+                : 'DataLad-free ZIP mode';
             const defacingModeSource = lastExportPreferenceInheritance.defacing_confirmation_mode
                 ? 'inherited from Global Settings'
                 : 'saved in project export preferences';
+            const repositoryModeSource = lastExportPreferenceInheritance.repository_mode
+                ? 'using default export mode'
+                : 'saved in project export preferences';
+            const hasInheritedPreference = Boolean(
+                lastExportPreferenceInheritance.defacing_confirmation_mode
+                || lastExportPreferenceInheritance.repository_mode
+            );
 
-            preferenceSummary.textContent = lastExportPreferenceInheritance.defacing_confirmation_mode
+            preferenceSummary.textContent = hasInheritedPreference
                 ? 'Project + global defaults'
                 : 'Saved per project';
-            preferenceDetail.textContent = `Output folder and export filters are remembered automatically. Defacing confirmation: ${defacingModeLabel} (${defacingModeSource}).`;
+            preferenceDetail.textContent = `Output folder and export filters are remembered automatically. ZIP repository mode: ${repositoryModeLabel} (${repositoryModeSource}). Defacing confirmation: ${defacingModeLabel} (${defacingModeSource}).`;
         } else {
             preferenceSummary.textContent = 'Inactive until a project is loaded';
             preferenceDetail.textContent = 'Load or create a project before export preferences can be restored.';
@@ -362,6 +406,11 @@ function applyExportPreferencesToFilters(preferences = lastLoadedExportPreferenc
         validationModeSelect.value = normalized.validation_mode;
     }
 
+    const repositoryModeSelect = getById('exportRepositoryMode');
+    if (repositoryModeSelect) {
+        repositoryModeSelect.value = normalized.repository_mode;
+    }
+
     const defacingConfirmAlwaysToggle = getById('exportDefacingConfirmAlways');
     if (defacingConfirmAlwaysToggle) {
         defacingConfirmAlwaysToggle.checked = normalized.defacing_confirmation_mode === 'always';
@@ -385,6 +434,12 @@ function saveExportPreferencesPatch(preferencesPatch) {
         lastExportPreferenceInheritance = {
             ...lastExportPreferenceInheritance,
             defacing_confirmation_mode: false,
+        };
+    }
+    if (Object.prototype.hasOwnProperty.call(preferencesPatch, 'repository_mode')) {
+        lastExportPreferenceInheritance = {
+            ...lastExportPreferenceInheritance,
+            repository_mode: false,
         };
     }
     updateExportSnapshotUi();
@@ -418,6 +473,7 @@ export function showExportCard() {
     const outputFolderInput = getById('exportOutputFolder');
     lastLoadedExportPreferences = getDefaultExportPreferences();
     lastExportPreferenceInheritance = {
+        repository_mode: false,
         defacing_confirmation_mode: false,
     };
     lastExportStructureStatus = {
@@ -639,6 +695,7 @@ export async function loadExportPreferences() {
         exportPreferencesLoadToken += 1;
         lastLoadedExportPreferences = getDefaultExportPreferences();
         lastExportPreferenceInheritance = {
+            repository_mode: false,
             defacing_confirmation_mode: false,
         };
         if (outputFolderInput) {
@@ -663,6 +720,7 @@ export async function loadExportPreferences() {
             : getDefaultExportPreferences();
         const inheritedPreferences = data.inherited_preferences || {};
         lastExportPreferenceInheritance = {
+            repository_mode: Boolean(inheritedPreferences.repository_mode),
             defacing_confirmation_mode: Boolean(inheritedPreferences.defacing_confirmation_mode),
         };
 
@@ -679,6 +737,7 @@ export async function loadExportPreferences() {
         }
         lastLoadedExportPreferences = getDefaultExportPreferences();
         lastExportPreferenceInheritance = {
+            repository_mode: false,
             defacing_confirmation_mode: false,
         };
         if (outputFolderInput) {
@@ -758,6 +817,13 @@ export function initExportForm() {
     if (validationModeSelect) {
         validationModeSelect.addEventListener('change', () => {
             saveExportPreferencesPatch({ validation_mode: getSelectedExportValidationMode() });
+        });
+    }
+
+    const repositoryModeSelect = getById('exportRepositoryMode');
+    if (repositoryModeSelect) {
+        repositoryModeSelect.addEventListener('change', () => {
+            saveExportPreferencesPatch({ repository_mode: getSelectedExportRepositoryMode() });
         });
     }
 
@@ -949,6 +1015,8 @@ async function handleUploadReadyExport(e) {
         loadingText: 'Preparing Upload-Ready ZIP...',
         requestOverrides: {
             export_preset: 'upload_ready',
+            repository_mode: 'datalad_free',
+            exclude_version_control_metadata: true,
         },
         successHeading: 'Upload-Ready Export Successful!',
         successNoteHtml: '<p class="mb-2">PRISM excluded <code>code/</code>, <code>derivatives/</code>, <code>analysis/</code>, and version-control metadata such as DataLad traces.</p>',
@@ -1055,7 +1123,15 @@ async function runProjectExport({
     if (progressText) progressText.textContent = '0%';
     const data = buildExportRequestData(currentProjectPath, requestOverrides);
     const selectedValidationMode = normalizeExportValidationMode(data.validation_mode);
-    if (statusText) statusText.textContent = getExportValidationStatusText(selectedValidationMode);
+    const selectedRepositoryMode = normalizeExportRepositoryMode(data.repository_mode);
+    const effectiveRepositoryMode = data.export_preset === 'upload_ready'
+        ? 'datalad_free'
+        : selectedRepositoryMode;
+    data.repository_mode = effectiveRepositoryMode;
+    data.exclude_version_control_metadata = effectiveRepositoryMode === 'datalad_free';
+    if (statusText) {
+        statusText.textContent = `${getExportValidationStatusText(selectedValidationMode)} ${getExportRepositoryModeStatusSuffix(effectiveRepositoryMode)}`;
+    }
     if (progressDiv) show(progressDiv);
     if (resultDiv) hide(resultDiv);
 
@@ -1100,7 +1176,7 @@ async function runProjectExport({
         }
 
         if (statusText) {
-            statusText.textContent = getExportValidationStatusText(selectedValidationMode);
+            statusText.textContent = `${getExportValidationStatusText(selectedValidationMode)} ${getExportRepositoryModeStatusSuffix(effectiveRepositoryMode)}`;
         }
     }
 
@@ -1176,6 +1252,7 @@ async function runProjectExport({
                     if (resultDiv) {
                         show(resultDiv);
                         const savedPath = status.zip_path || 'unknown location';
+                        const repositoryModeNoteHtml = successNoteHtml || getExportRepositoryModeSuccessNote(effectiveRepositoryMode);
                         const defacingWarning = status.defacing_warning || null;
                         const defacingWarningHtml = (defacingWarning && defacingWarning.message)
                             ? `
@@ -1187,7 +1264,7 @@ async function runProjectExport({
                         setHtml(resultDiv, `
                             <div class="alert alert-success">
                                 <h5><i class="fas fa-check-circle me-2"></i>${escapeHtml(successHeading)}</h5>
-                                ${successNoteHtml}
+                                ${repositoryModeNoteHtml}
                                 <p class="mb-0">ZIP saved to:<br>
                                 <code class="user-select-all">${escapeHtml(savedPath)}</code></p>
                             </div>
