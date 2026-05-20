@@ -479,6 +479,10 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
         self.assertIn("function buildExportRequestData(currentProjectPath, overrides = {}) {", content)
         self.assertIn("function buildFolderExportRequestData(currentProjectPath) {", content)
+        self.assertIn("function buildAnnexAvailabilityScopeSignature(projectPath) {", content)
+        self.assertIn("async function ensureAnnexAvailabilitySummary(projectPath, { force = false } = {}) {", content)
+        self.assertIn("function renderAnnexAvailabilityReport(summary) {", content)
+        self.assertIn("function renderAnnexAvailabilityError(error) {", content)
         self.assertIn("materialize_annex_content: getById('exportMaterializeAnnex')?.checked || false,", content)
         self.assertIn(
             "exclude_version_control_metadata: getSelectedExportRepositoryMode() === 'datalad_free',",
@@ -487,8 +491,13 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("function getExportRepositoryModeStatusSuffix(repositoryMode) {", content)
         self.assertIn("function getExportRepositoryModeSuccessNote(repositoryMode) {", content)
         self.assertIn("async function fetchDefacingSummary(projectPath) {", content)
+        self.assertIn("async function fetchAnnexAvailabilitySummary(projectPath) {", content)
         self.assertIn(
             "const resp = await fetchWithApiFallback('/api/projects/export/browse-folder', { method: 'POST' });",
+            content,
+        )
+        self.assertIn(
+            "const resp = await fetchWithApiFallback('/api/projects/export/annex-availability', {",
             content,
         )
         self.assertIn(
@@ -529,7 +538,12 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("Stripped repository metadata:", content)
         self.assertIn("const templateExportButton = getById('templateExportButton');", content)
         self.assertIn("const plainFolderExportButton = getById('plainFolderExportButton');", content)
+        self.assertIn("const checkAnnexAvailabilityBtn = getById('exportCheckAnnexAvailability');", content)
+        self.assertIn("const materializeAnnexToggle = getById('exportMaterializeAnnex');", content)
         self.assertIn("const uploadReadyExportButton = getById('uploadReadyExportButton');", content)
+        self.assertIn("if (targetId !== 'exportMaterializeAnnex') {", content)
+        self.assertIn("const preflightSummary = await ensureAnnexAvailabilitySummary(currentProjectPath, { force: false });", content)
+        self.assertIn("renderAnnexAvailabilityReport(preflightSummary);", content)
         self.assertIn("validation_mode: getSelectedExportValidationMode(),", content)
         self.assertIn("repository_mode: getSelectedExportRepositoryMode(),", content)
         self.assertIn("async function requestCancelForActiveJob() {", content)
@@ -559,6 +573,9 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn('id="uploadReadyExportButton"', content)
         self.assertIn('id="templateExportButton"', content)
         self.assertIn('id="exportMaterializeAnnex"', content)
+        self.assertIn('id="exportCheckAnnexAvailability"', content)
+        self.assertIn('id="exportAnnexAvailabilityReport"', content)
+        self.assertIn("PRISM checks annex availability automatically", content)
         self.assertIn('id="exportRepositoryMode"', content)
         self.assertIn('id="exportDefacingConfirmAlways"', content)
         self.assertIn('id="exportDefacingUseGlobalDefault"', content)
