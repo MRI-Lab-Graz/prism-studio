@@ -382,6 +382,12 @@
                             <div class="form-text">
                                 For DataLad projects, PRISM uses a temporary clone, runs <code>datalad get -r .</code> and <code>git annex unlock .</code>, then writes a Git/DataLad-free folder copy.
                             </div>
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="exportCheckAnnexAvailability">
+                                    <i class="fas fa-database me-1"></i>Check annex availability (current scope)
+                                </button>
+                            </div>
+                            <div class="mt-2" id="exportAnnexAvailabilityReport" style="display: none;"></div>
                         </div>
 
                         <!-- Export Buttons -->

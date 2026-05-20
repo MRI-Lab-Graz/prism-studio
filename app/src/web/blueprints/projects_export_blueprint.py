@@ -610,6 +610,63 @@ def export_project_folder():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@projects_export_bp.route("/api/projects/export/annex-availability", methods=["POST"])
+def export_project_annex_availability():
+    """Preview missing local files for current folder export scope."""
+    try:
+        from src.project_manager import ProjectManager
+
+        data = request.get_json() or {}
+        project_path_raw = data.get("project_path")
+        resolved = _resolve_project_root_path(project_path_raw)
+        if resolved is None:
+            return jsonify({"success": False, "error": "Invalid project path"}), 400
+
+        def _normalize_labels(values: object) -> set[str]:
+            if not isinstance(values, (list, tuple, set)):
+                return set()
+            normalized = {
+                str(value).strip() for value in values if str(value).strip()
+            }
+            return normalized
+
+        def _normalize_grouped_labels(values: object) -> Dict[str, set[str]]:
+            if not isinstance(values, dict):
+                return {}
+            normalized: Dict[str, set[str]] = {}
+            for modality, labels in values.items():
+                modality_name = str(modality).strip()
+                if not modality_name:
+                    continue
+                normalized_labels = _normalize_labels(labels)
+                if normalized_labels:
+                    normalized[modality_name] = normalized_labels
+            return normalized
+
+        exclude_sessions = _normalize_labels(data.get("exclude_sessions"))
+        exclude_modalities = _normalize_labels(data.get("exclude_modalities"))
+        exclude_acq = _normalize_grouped_labels(data.get("exclude_acq"))
+        exclude_tasks = _normalize_grouped_labels(data.get("exclude_tasks"))
+
+        manager = ProjectManager()
+        result = manager.preview_plain_folder_export_availability(
+            resolved,
+            include_derivatives=bool(data.get("include_derivatives", True)),
+            include_code=bool(data.get("include_code", True)),
+            include_analysis=bool(data.get("include_analysis", True)),
+            exclude_sessions=exclude_sessions or None,
+            exclude_modalities=exclude_modalities or None,
+            exclude_acq=exclude_acq or None,
+            exclude_tasks=exclude_tasks or None,
+        )
+
+        if result.get("success"):
+            return jsonify(result)
+        return jsonify(result), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @projects_export_bp.route("/api/projects/export/defacing-report", methods=["POST"])
 def export_defacing_report():
     """Return a defacing status report for all anatomical scans in the project."""

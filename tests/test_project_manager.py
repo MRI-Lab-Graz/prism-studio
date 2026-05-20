@@ -1398,7 +1398,12 @@ class TestProjectManager(unittest.TestCase):
                 "sub-001_ses-1_acq-T1w_echo-1_mpm.nii.gz",
                 str(missing_preview[0]),
             )
+            self.assertFalse(str(missing_preview[0]).startswith("/"))
             self.assertNotIn(".DS_Store", "\n".join(str(value) for value in missing_preview))
+            self.assertEqual(
+                result.get("missing_files_preview_root"),
+                str(project_path),
+            )
 
             output_path = Path(result["output_path"])
             self.assertTrue((output_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_T1w.nii.gz").exists())
@@ -1555,6 +1560,69 @@ class TestProjectManager(unittest.TestCase):
             self.assertTrue(result.get("materialized_export"), result)
             warnings = result.get("materialization_warnings") or []
             self.assertTrue(any("could not retrieve all annexed content" in str(item) for item in warnings), warnings)
+
+    def test_export_project_to_plain_folder_materialize_get_unknown_flag_falls_back(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            export_root = Path(tmp) / "exports"
+            materialization_workspace = Path(tmp) / "materialized_workspace"
+
+            def _fake_run(command, **_kwargs):
+                normalized = [str(part) for part in command]
+                if len(normalized) >= 2 and normalized[0] == "/usr/bin/datalad" and normalized[1] == "clone":
+                    clone_path = Path(normalized[-1])
+                    clone_path.mkdir(parents=True, exist_ok=True)
+                    (clone_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if normalized[:5] == ["/usr/bin/datalad", "get", "-r", "--on-failure", "ignore"]:
+                    return subprocess.CompletedProcess(
+                        command,
+                        1,
+                        "",
+                        "[ERROR] unknown argument: --on-failure",
+                    )
+
+                if normalized[:4] == ["/usr/bin/datalad", "get", "-r", "."]:
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if normalized[:3] == ["/usr/bin/git-annex", "unlock", "."]:
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
+
+            with patch.object(
+                manager,
+                "get_datalad_status",
+                return_value={
+                    "enabled": True,
+                    "available": True,
+                    "executable": "/usr/bin/datalad",
+                    "annex_executable": "/usr/bin/git-annex",
+                    "message": "Current project is tracked by DataLad.",
+                },
+            ):
+                with patch("src.project_manager.tempfile.mkdtemp", return_value=str(materialization_workspace)):
+                    with patch("src.project_manager.subprocess.run", side_effect=_fake_run) as mock_run:
+                        result = manager.export_project_to_plain_folder(
+                            project_path,
+                            output_root=export_root,
+                            materialize_annex_content=True,
+                        )
+
+            self.assertTrue(result.get("success"), result)
+            self.assertTrue(result.get("materialized_export"), result)
+            self.assertFalse(result.get("materialization_warnings"), result)
+
+            commands = [" ".join(str(part) for part in call.args[0]) for call in mock_run.call_args_list]
+            self.assertTrue(any(command.startswith("/usr/bin/datalad get -r --on-failure ignore .") for command in commands), commands)
+            self.assertTrue(any(command.startswith("/usr/bin/datalad get -r .") for command in commands), commands)
 
     @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
     def test_export_project_to_plain_folder_accepts_nontracked_project(self, _mock_which):
