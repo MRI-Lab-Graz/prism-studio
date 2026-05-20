@@ -76,6 +76,7 @@ _ENDPOINT_LABELS = {
     "projects.save_datalad_snapshot": "save DataLad snapshot",
     "projects.enable_datalad_for_project": "repair DataLad structure",
     "projects_export.export_project_structure": "export project structure",
+    "projects_export.export_project_folder": "folder export project",
     "projects_export.template_export_project": "template export project",
     "projects_library.set_backend_monitoring_setting": "update backend monitoring setting",
     "projects_library.set_global_library_settings": "save global library settings",
@@ -394,6 +395,58 @@ def _build_projects_export_structure_terminal_command(req) -> str:
             json.dumps(body),
         ]
     )
+
+
+def _build_projects_folder_export_terminal_command(req) -> str:
+    """Build backend command preview for plain folder export endpoint."""
+    payload = req.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+
+    project_path = _absolute_path_value(payload.get("project_path")) or "<project-path>"
+    output_folder = _absolute_path_value(payload.get("output_folder"))
+
+    cmd_parts = [
+        "python",
+        "prism.py",
+        "projects",
+        "export-folder",
+        "--project",
+        project_path,
+    ]
+
+    if output_folder:
+        cmd_parts.extend(["--output", output_folder])
+
+    if bool(payload.get("materialize_annex_content", False)):
+        cmd_parts.append("--materialize-annex-content")
+
+    if bool(payload.get("include_derivatives", True)) is False:
+        cmd_parts.append("--exclude-derivatives")
+    if bool(payload.get("include_code", True)) is False:
+        cmd_parts.append("--exclude-code")
+    if bool(payload.get("include_analysis", True)) is False:
+        cmd_parts.append("--exclude-analysis")
+
+    exclude_sessions = payload.get("exclude_sessions") or []
+    if isinstance(exclude_sessions, (list, tuple, set)):
+        normalized_sessions = [
+            str(value).strip() for value in exclude_sessions if str(value).strip()
+        ]
+        if normalized_sessions:
+            cmd_parts.extend(["--exclude-sessions", ",".join(normalized_sessions)])
+
+    exclude_modalities = payload.get("exclude_modalities") or []
+    if isinstance(exclude_modalities, (list, tuple, set)):
+        normalized_modalities = [
+            str(value).strip() for value in exclude_modalities if str(value).strip()
+        ]
+        if normalized_modalities:
+            cmd_parts.extend(
+                ["--exclude-modalities", ",".join(normalized_modalities)]
+            )
+
+    return " ".join(shlex.quote(part) for part in cmd_parts)
 
 
 def _build_projects_datalad_save_terminal_command(req) -> str:
@@ -1538,6 +1591,8 @@ def _build_terminal_command(req) -> str:
         return _build_projects_datalad_enable_terminal_command(req)
     if endpoint == "projects_export.export_project_structure":
         return _build_projects_export_structure_terminal_command(req)
+    if endpoint == "projects_export.export_project_folder":
+        return _build_projects_folder_export_terminal_command(req)
     if endpoint == "projects_export.template_export_project":
         return _build_projects_template_export_terminal_command(req)
     return ""

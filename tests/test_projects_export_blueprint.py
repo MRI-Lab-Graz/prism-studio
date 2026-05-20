@@ -776,6 +776,7 @@ def test_project_folder_export_route_forwards_scope_filters(tmp_path):
                     "exclude_modalities": ["dwi"],
                     "exclude_acq": {"dwi": ["1k20", ""]},
                     "exclude_tasks": {"func": ["rest"]},
+                    "materialize_annex_content": True,
                 },
             )
 
@@ -792,4 +793,5 @@ def test_project_folder_export_route_forwards_scope_filters(tmp_path):
         exclude_modalities={"dwi"},
         exclude_acq={"dwi": {"1k20"}},
         exclude_tasks={"func": {"rest"}},
+        materialize_annex_content=True,
     )

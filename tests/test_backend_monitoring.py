@@ -89,6 +89,76 @@ def test_build_validate_folder_command_uses_session_project_path():
     assert cmd == "python prism.py /tmp/from-session"
 
 
+def test_build_terminal_command_for_project_folder_export_endpoint():
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/projects/export/folder",
+        endpoint="projects_export.export_project_folder",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/projects/export/folder",
+        method="POST",
+        json={
+            "project_path": "/tmp/study",
+            "output_folder": "/tmp/exports",
+            "materialize_annex_content": True,
+            "include_derivatives": False,
+            "include_analysis": False,
+            "exclude_sessions": ["ses-2", ""],
+            "exclude_modalities": ["dwi"],
+        },
+    ):
+        cmd = _build_terminal_command(request)
+
+    expected_project = str(Path("/tmp/study").resolve(strict=False))
+    expected_output = str(Path("/tmp/exports").resolve(strict=False))
+
+    assert cmd == (
+        f"python prism.py projects export-folder --project {expected_project} --output {expected_output} "
+        "--materialize-annex-content --exclude-derivatives --exclude-analysis "
+        "--exclude-sessions ses-2 --exclude-modalities dwi"
+    )
+
+
+def test_emit_backend_request_action_includes_project_folder_export_command(capsys):
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/projects/export/folder",
+        endpoint="projects_export.export_project_folder",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/projects/export/folder",
+        method="POST",
+        json={
+            "project_path": "/tmp/study",
+            "materialize_annex_content": True,
+        },
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    expected_project = str(Path("/tmp/study").resolve(strict=False))
+    assert "POST /api/projects/export/folder -> folder export project" in captured
+    assert (
+        f"cmd=python prism.py projects export-folder --project {expected_project} "
+        "--materialize-annex-content"
+    ) in captured
+
+
 def test_build_terminal_command_for_survey_convert_endpoint():
     app = Flask(__name__)
 

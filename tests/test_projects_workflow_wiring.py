@@ -479,6 +479,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
         self.assertIn("function buildExportRequestData(currentProjectPath, overrides = {}) {", content)
         self.assertIn("function buildFolderExportRequestData(currentProjectPath) {", content)
+        self.assertIn("materialize_annex_content: getById('exportMaterializeAnnex')?.checked || false,", content)
         self.assertIn(
             "exclude_version_control_metadata: getSelectedExportRepositoryMode() === 'datalad_free',",
             content,
@@ -510,7 +511,16 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn("const data = buildFolderExportRequestData(currentProjectPath);", content)
+        self.assertIn("const progressBar = getById('exportProgressBar');", content)
+        self.assertIn("const progressText = getById('exportProgressText');", content)
+        self.assertIn("const cancelBtn = getById('exportCancelBtn');", content)
+        self.assertIn("const materializeAnnex = getById('exportMaterializeAnnex')?.checked || false;", content)
+        self.assertIn("progressTimerId = window.setInterval(() => {", content)
+        self.assertIn("setFolderProgress(97);", content)
+        self.assertIn("window.clearInterval(progressTimerId);", content)
         self.assertIn("const warningText = typeof result.warning === 'string'", content)
+        self.assertIn("const materializedExport = Boolean(result.materialized_export);", content)
+        self.assertIn("const materializationWarnings = Array.isArray(result.materialization_warnings)", content)
         self.assertIn("const missingFilesCount = Number(result.missing_files_count || 0);", content)
         self.assertIn("const missingFilePreview = Array.isArray(result.missing_files_preview)", content)
         self.assertIn("const excludedMetadata = Array.isArray(result.excluded_repository_metadata)", content)
@@ -546,6 +556,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn('id="plainFolderExportButton"', content)
         self.assertIn('id="uploadReadyExportButton"', content)
         self.assertIn('id="templateExportButton"', content)
+        self.assertIn('id="exportMaterializeAnnex"', content)
         self.assertIn('id="exportRepositoryMode"', content)
         self.assertIn('id="exportDefacingConfirmAlways"', content)
         self.assertIn('id="exportDefacingUseGlobalDefault"', content)
