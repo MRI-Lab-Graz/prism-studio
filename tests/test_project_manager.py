@@ -1271,6 +1271,140 @@ class TestProjectManager(unittest.TestCase):
                 "participant_id\tvalue\nsub-001\t1\n",
             )
 
+    def test_export_project_to_plain_folder_honors_scope_filters(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+            (project_path / "analysis").mkdir(parents=True, exist_ok=True)
+            (project_path / "analysis" / "qc.txt").write_text("qc\n", encoding="utf-8")
+
+            included_file = (
+                project_path
+                / "sub-001"
+                / "ses-1"
+                / "anat"
+                / "sub-001_ses-1_T1w.nii.gz"
+            )
+            included_file.parent.mkdir(parents=True, exist_ok=True)
+            included_file.write_bytes(b"nifti")
+
+            excluded_file = (
+                project_path
+                / "sub-001"
+                / "ses-3"
+                / "dwi"
+                / "sub-001_ses-3_acq-1k20_dwi.nii.gz"
+            )
+            excluded_file.parent.mkdir(parents=True, exist_ok=True)
+
+            try:
+                excluded_file.symlink_to(project_path / "missing_dwi_payload.nii.gz")
+            except (NotImplementedError, OSError) as exc:
+                self.skipTest(f"symlink creation unavailable: {exc}")
+
+            export_root = Path(tmp) / "exports"
+            result = manager.export_project_to_plain_folder(
+                project_path,
+                output_root=export_root,
+                include_analysis=False,
+                exclude_sessions={"ses-3"},
+                exclude_modalities={"dwi"},
+            )
+
+            self.assertTrue(result.get("success"), result)
+            output_path = Path(result["output_path"])
+            self.assertTrue(
+                (
+                    output_path
+                    / "sub-001"
+                    / "ses-1"
+                    / "anat"
+                    / "sub-001_ses-1_T1w.nii.gz"
+                ).exists()
+            )
+            self.assertFalse((output_path / "sub-001" / "ses-3").exists())
+            self.assertFalse((output_path / "analysis").exists())
+
+    def test_export_project_to_plain_folder_skips_missing_annex_content_with_warning(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+
+            system_file = project_path / "sub-001" / "ses-1" / ".DS_Store"
+            system_file.parent.mkdir(parents=True, exist_ok=True)
+            missing_system_target = project_path / "missing_system_payload"
+
+            missing_annex_file = (
+                project_path
+                / "sub-001"
+                / "ses-1"
+                / "anat"
+                / "sub-001_ses-1_acq-T1w_echo-1_mpm.nii.gz"
+            )
+            missing_annex_file.parent.mkdir(parents=True, exist_ok=True)
+            missing_annex_target = (
+                project_path
+                / ".git"
+                / "annex"
+                / "objects"
+                / "missing_annex_payload.nii.gz"
+            )
+
+            kept_file = (
+                project_path
+                / "sub-001"
+                / "ses-1"
+                / "anat"
+                / "sub-001_ses-1_T1w.nii.gz"
+            )
+            kept_file.write_bytes(b"nifti")
+
+            try:
+                system_file.symlink_to(missing_system_target)
+                missing_annex_file.symlink_to(missing_annex_target)
+            except (NotImplementedError, OSError) as exc:
+                self.skipTest(f"symlink creation unavailable: {exc}")
+
+            export_root = Path(tmp) / "exports"
+            with patch.object(
+                manager,
+                "get_datalad_status",
+                return_value={
+                    "enabled": True,
+                    "available": True,
+                    "message": "Current project is tracked by DataLad.",
+                },
+            ):
+                result = manager.export_project_to_plain_folder(
+                    project_path,
+                    output_root=export_root,
+                )
+
+            self.assertTrue(result.get("success"), result)
+            self.assertTrue(result.get("partial_export"), result)
+            self.assertEqual(result.get("missing_files_count"), 1)
+            self.assertIn("datalad get -r .", result.get("warning", ""))
+
+            missing_preview = result.get("missing_files_preview") or []
+            self.assertEqual(len(missing_preview), 1)
+            self.assertIn(
+                "sub-001_ses-1_acq-T1w_echo-1_mpm.nii.gz",
+                str(missing_preview[0]),
+            )
+            self.assertNotIn(".DS_Store", "\n".join(str(value) for value in missing_preview))
+
+            output_path = Path(result["output_path"])
+            self.assertTrue((output_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_T1w.nii.gz").exists())
+            self.assertFalse((output_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_acq-T1w_echo-1_mpm.nii.gz").exists())
+            self.assertFalse((output_path / "sub-001" / "ses-1" / ".DS_Store").exists())
+
     @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
     def test_export_project_to_plain_folder_accepts_nontracked_project(self, _mock_which):
         manager = ProjectManager()
