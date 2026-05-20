@@ -1506,7 +1506,7 @@ def test_build_terminal_command_for_projects_datalad_enable_migrates_parent_trac
 
     assert cmd == (
         f"git -C {resolved_project_path} rm --cached -r -- derivatives && "
-        f"datalad -C {resolved_project_path} save -m 'Stage parent untracking for nested DataLad dataset \"derivatives\"' && "
+        f"datalad -C {resolved_project_path} save --updated -m 'Stage parent untracking for nested DataLad dataset \"derivatives\"' && "
         f"datalad -C {resolved_project_path} create -d . --force derivatives && "
         f"datalad -C {resolved_project_path / 'derivatives'} save -m 'Initialize DataLad nested dataset \"derivatives\"' && "
         f"datalad -C {resolved_project_path} save -m 'Enable DataLad for PRISM project'"
