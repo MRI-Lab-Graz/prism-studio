@@ -25,10 +25,12 @@ Usage:
 """
 
 import json
+import os
 import re
 import shutil
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 from datetime import date
 from typing import Dict, List, Any, Optional, Union
@@ -967,6 +969,30 @@ class ProjectManager:
 
         destination_root.mkdir(parents=True, exist_ok=True)
 
+        def _cleanup_workspace(path: Optional[Path]) -> None:
+            if path is None:
+                return
+            try:
+                if path.exists():
+                    shutil.rmtree(path, ignore_errors=True)
+            except Exception:
+                pass
+
+        def _cleanup_stale_workspaces(root: Path) -> None:
+            # Best-effort cleanup for stale interrupted exports.
+            stale_cutoff = time.time() - (24 * 60 * 60)
+            for candidate in root.glob(".prism-folder-export-*"):
+                if not candidate.is_dir():
+                    continue
+                try:
+                    if candidate.stat().st_mtime > stale_cutoff:
+                        continue
+                except OSError:
+                    continue
+                _cleanup_workspace(candidate)
+
+        _cleanup_stale_workspaces(destination_root)
+
         target_name = f"{project_path.name}_folder_export"
         export_path = destination_root / target_name
         suffix = 2
@@ -1004,7 +1030,10 @@ class ProjectManager:
                     return result
 
                 materialization_workspace = Path(
-                    tempfile.mkdtemp(prefix="prism-folder-export-")
+                    tempfile.mkdtemp(
+                        prefix=".prism-folder-export-",
+                        dir=str(destination_root),
+                    )
                 )
                 clone_source_path = materialization_workspace / project_path.name
 
@@ -1058,8 +1087,7 @@ class ProjectManager:
                     step_label="DataLad clone",
                 )
                 if not clone_ok:
-                    if materialization_workspace.exists():
-                        shutil.rmtree(materialization_workspace, ignore_errors=True)
+                    _cleanup_workspace(materialization_workspace)
                     result["error"] = clone_error
                     return result
 
@@ -1068,6 +1096,19 @@ class ProjectManager:
                     cwd=clone_source_path,
                     step_label="DataLad get -r .",
                 )
+                if (
+                    not get_ok
+                    and "--on-failure" in str(get_error or "").lower()
+                    and (
+                        "unknown argument" in str(get_error or "").lower()
+                        or "unrecognized arguments" in str(get_error or "").lower()
+                    )
+                ):
+                    get_ok, get_error = _run_materialization_step(
+                        [resolved_datalad, "get", "-r", "."],
+                        cwd=clone_source_path,
+                        step_label="DataLad get -r . (compatibility fallback)",
+                    )
                 if not get_ok:
                     materialization_warnings.append(
                         "DataLad get -r . could not retrieve all annexed content from remotes; "
@@ -1252,8 +1293,7 @@ class ProjectManager:
             result["error"] = f"Could not export project folder: {exc}"
             return result
         finally:
-            if materialization_workspace is not None and materialization_workspace.exists():
-                shutil.rmtree(materialization_workspace, ignore_errors=True)
+            _cleanup_workspace(materialization_workspace)
 
         result["success"] = True
         result["output_path"] = str(export_path)
@@ -1264,10 +1304,21 @@ class ProjectManager:
         if materialization_warnings:
             result["materialization_warnings"] = materialization_warnings[:10]
         if missing_source_paths:
-            unique_missing_paths = sorted(set(missing_source_paths))
+            relative_missing_paths: List[str] = []
+            for source_path in sorted(set(missing_source_paths)):
+                source_candidate = Path(str(source_path))
+                try:
+                    relative_missing_paths.append(
+                        source_candidate.relative_to(copy_source_path).as_posix()
+                    )
+                except Exception:
+                    relative_missing_paths.append(str(source_path))
+
+            unique_missing_paths = sorted(set(relative_missing_paths))
             result["partial_export"] = True
             result["missing_files_count"] = len(unique_missing_paths)
             result["missing_files_preview"] = unique_missing_paths[:20]
+            result["missing_files_preview_root"] = str(project_path)
             if status.get("enabled"):
                 warning = (
                     f"Skipped {len(unique_missing_paths)} file(s) that are not available locally. "
@@ -1285,6 +1336,202 @@ class ProjectManager:
             f'Finished plain folder export for "{project_path.name}".',
             command=f'open "{export_path}"',
         )
+        return result
+
+    def preview_plain_folder_export_availability(
+        self,
+        path: Union[str, Path],
+        *,
+        include_derivatives: bool = True,
+        include_code: bool = True,
+        include_analysis: bool = True,
+        exclude_sessions: Optional[set[str]] = None,
+        exclude_modalities: Optional[set[str]] = None,
+        exclude_acq: Optional[Dict[str, set[str]]] = None,
+        exclude_tasks: Optional[Dict[str, set[str]]] = None,
+    ) -> Dict[str, Any]:
+        """Report missing local files for the current plain folder export scope."""
+        project_path = Path(path)
+        status = self.get_datalad_status(project_path)
+        result: Dict[str, Any] = {
+            "success": False,
+            "path": str(project_path),
+            "datalad": dict(status),
+            "is_datalad_dataset": bool(status.get("enabled")),
+        }
+
+        if not project_path.exists() or not project_path.is_dir():
+            result["error"] = f"Path does not exist or is not a directory: {project_path}"
+            return result
+
+        ignored_names = {
+            ".git",
+            ".datalad",
+            ".gitattributes",
+            ".gitignore",
+            ".gitmodules",
+            "CHANGES",
+        }
+
+        included_top_level_folders = {
+            "derivatives": include_derivatives,
+            "code": include_code,
+            "analysis": include_analysis,
+        }
+
+        normalized_exclude_sessions = {
+            str(label).strip()
+            for label in (exclude_sessions or set())
+            if str(label).strip()
+        }
+        normalized_exclude_modalities = {
+            str(label).strip()
+            for label in (exclude_modalities or set())
+            if str(label).strip()
+        }
+        normalized_exclude_acq = {
+            str(modality).strip(): {
+                str(label).strip() for label in labels if str(label).strip()
+            }
+            for modality, labels in (exclude_acq or {}).items()
+            if str(modality).strip() and labels
+        }
+        normalized_exclude_tasks = {
+            str(modality).strip(): {
+                str(label).strip() for label in labels if str(label).strip()
+            }
+            for modality, labels in (exclude_tasks or {}).items()
+            if str(modality).strip() and labels
+        }
+
+        def _should_exclude_export_entry(rel_parts: tuple[str, ...], *, is_dir: bool) -> bool:
+            if not rel_parts:
+                return False
+
+            if len(rel_parts) == 1:
+                root_name = rel_parts[0]
+                if root_name in included_top_level_folders:
+                    return not included_top_level_folders[root_name]
+                if not is_dir:
+                    survey_task_filters = normalized_exclude_tasks.get("survey", set())
+                    if survey_task_filters:
+                        task_match = re.search(
+                            r"^task-([A-Za-z0-9]+)_survey\\.json$", root_name
+                        )
+                        if task_match and task_match.group(1) in survey_task_filters:
+                            return True
+                return False
+
+            if not rel_parts[0].startswith("sub-"):
+                return False
+
+            part_index = 1
+            if (
+                part_index < len(rel_parts)
+                and rel_parts[part_index].startswith("ses-")
+            ):
+                session_label = rel_parts[part_index]
+                if session_label in normalized_exclude_sessions:
+                    return True
+                part_index += 1
+
+            if part_index >= len(rel_parts):
+                return False
+
+            modality = rel_parts[part_index]
+            if modality in normalized_exclude_modalities:
+                return True
+
+            if is_dir:
+                return False
+
+            filename = rel_parts[-1]
+            excluded_acq_labels = normalized_exclude_acq.get(modality, set())
+            if excluded_acq_labels:
+                acq_match = re.search(r"_acq-([A-Za-z0-9]+)", filename)
+                if acq_match and acq_match.group(1) in excluded_acq_labels:
+                    return True
+
+            excluded_task_labels = normalized_exclude_tasks.get(modality, set())
+            if excluded_task_labels:
+                task_match = re.search(r"(?:^|_)task-([A-Za-z0-9]+)", filename)
+                if task_match and task_match.group(1) in excluded_task_labels:
+                    return True
+
+            return False
+
+        missing_paths: List[str] = []
+
+        for root, dir_names, file_names in os.walk(project_path):
+            current_dir = Path(root)
+            rel_root_parts = current_dir.relative_to(project_path).parts
+
+            non_system_dirs = set(filter_system_files(dir_names))
+            kept_dirs: List[str] = []
+            for dir_name in list(dir_names):
+                if dir_name not in non_system_dirs:
+                    continue
+                if dir_name in ignored_names:
+                    continue
+
+                rel_parts = rel_root_parts + (dir_name,)
+                candidate = current_dir / dir_name
+
+                if _should_exclude_export_entry(rel_parts, is_dir=True):
+                    continue
+
+                if candidate.is_symlink() and not candidate.exists():
+                    missing_paths.append(Path(*rel_parts).as_posix())
+                    continue
+
+                kept_dirs.append(dir_name)
+
+            dir_names[:] = kept_dirs
+
+            non_system_files = set(filter_system_files(file_names))
+            for file_name in file_names:
+                if file_name not in non_system_files:
+                    continue
+                if file_name in ignored_names:
+                    continue
+
+                rel_parts = rel_root_parts + (file_name,)
+                if _should_exclude_export_entry(rel_parts, is_dir=False):
+                    continue
+
+                candidate = current_dir / file_name
+                if candidate.is_symlink() and not candidate.exists():
+                    missing_paths.append(Path(*rel_parts).as_posix())
+
+        unique_missing_paths = sorted(set(missing_paths))
+        missing_count = len(unique_missing_paths)
+
+        result["success"] = True
+        result["missing_files_count"] = missing_count
+        result["missing_files_preview"] = unique_missing_paths[:20]
+        result["missing_files_preview_root"] = str(project_path)
+        result["complete"] = missing_count == 0
+
+        if status.get("enabled"):
+            hint_command = f'datalad -C "{project_path}" get -r .'
+            result["hint_command"] = hint_command
+            if missing_count:
+                result["message"] = (
+                    f"Detected {missing_count} file(s) that are not available locally for the current export scope."
+                )
+            else:
+                result["message"] = (
+                    "All selected files appear available locally for folder export."
+                )
+        elif missing_count:
+            result["message"] = (
+                f"Detected {missing_count} missing file target(s) in the current export scope."
+            )
+        else:
+            result["message"] = (
+                "Project is not tracked by DataLad and no missing local file targets were detected."
+            )
+
         return result
 
     def autosave_datalad_snapshot(
