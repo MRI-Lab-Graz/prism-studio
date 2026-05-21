@@ -851,3 +851,39 @@ def test_export_clean_nifti_gzip_headers_handles_nested_and_derivative_paths(tmp
 
             with gzip.GzipFile(fileobj=io.BytesIO(exported_nifti), mode="rb") as gz_in:
                 assert gz_in.read() == expected_payload
+
+
+def test_export_sourcedata_is_excluded_by_default_and_included_when_requested(tmp_path):
+    project_dir = tmp_path / "study"
+    sourcedata_file = project_dir / "sourcedata" / "survey" / "demo.csv"
+    sourcedata_file.parent.mkdir(parents=True, exist_ok=True)
+    sourcedata_file.write_text("participant_id,value\nsub-001,1\n", encoding="utf-8")
+
+    default_zip = tmp_path / "export_default.zip"
+    export_project(
+        project_path=project_dir,
+        output_zip=default_zip,
+        anonymize=False,
+        include_derivatives=False,
+        include_code=False,
+        include_analysis=False,
+    )
+
+    with zipfile.ZipFile(default_zip, "r") as archive:
+        names = set(archive.namelist())
+    assert "sourcedata/survey/demo.csv" not in names
+
+    with_sourcedata_zip = tmp_path / "export_with_sourcedata.zip"
+    export_project(
+        project_path=project_dir,
+        output_zip=with_sourcedata_zip,
+        anonymize=False,
+        include_derivatives=False,
+        include_sourcedata=True,
+        include_code=False,
+        include_analysis=False,
+    )
+
+    with zipfile.ZipFile(with_sourcedata_zip, "r") as archive:
+        names = set(archive.namelist())
+    assert "sourcedata/survey/demo.csv" in names

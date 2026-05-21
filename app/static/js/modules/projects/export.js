@@ -81,6 +81,7 @@ function buildExportRequestData(currentProjectPath, overrides = {}) {
         mask_questions: getById('exportMaskQuestions')?.checked || false,
         scrub_mri_json: getById('exportScrubMriJson')?.checked || false,
         include_derivatives: getById('exportDerivatives')?.checked || false,
+        include_sourcedata: getById('exportSourcedata')?.checked || false,
         include_code: getById('exportCode')?.checked || false,
         include_analysis: getById('exportAnalysis')?.checked || false,
         output_folder: (getById('exportOutputFolder')?.value || '').trim() || null,
@@ -101,6 +102,7 @@ function buildFolderExportRequestData(currentProjectPath) {
         project_path: currentProjectPath,
         output_folder: (getById('exportOutputFolder')?.value || '').trim() || null,
         include_derivatives: getById('exportDerivatives')?.checked || false,
+        include_sourcedata: getById('exportSourcedata')?.checked || false,
         include_code: getById('exportCode')?.checked || false,
         include_analysis: getById('exportAnalysis')?.checked || false,
         exclude_subjects: _getUncheckedValues('export-subject-filter'),
@@ -145,6 +147,7 @@ function buildAnnexAvailabilityScopeSignature(projectPath) {
     return JSON.stringify({
         project_path: String(projectPath || '').trim(),
         include_derivatives: Boolean(data.include_derivatives),
+        include_sourcedata: Boolean(data.include_sourcedata),
         include_code: Boolean(data.include_code),
         include_analysis: Boolean(data.include_analysis),
         exclude_subjects: normalizeAnnexScopeStringArray(data.exclude_subjects),
@@ -863,6 +866,40 @@ function _renderCheckboxList(containerId, items, prefix) {
     setHtml(container, html);
 }
 
+function setAllExportScopeFiltersChecked(checked) {
+    const desiredState = Boolean(checked);
+    const subjectFilters = Array.from(document.querySelectorAll('.export-subject-filter'));
+    const sessionFilters = Array.from(document.querySelectorAll('.export-session-filter'));
+    const modalityFilters = Array.from(document.querySelectorAll('.export-modality-filter'));
+
+    if (!subjectFilters.length && !sessionFilters.length && !modalityFilters.length) {
+        return;
+    }
+
+    subjectFilters.forEach(checkbox => {
+        checkbox.checked = desiredState;
+    });
+
+    sessionFilters.forEach(checkbox => {
+        checkbox.checked = desiredState;
+    });
+
+    modalityFilters.forEach(checkbox => {
+        checkbox.checked = desiredState;
+        applyModalitySubfilterState(checkbox);
+    });
+
+    resetAnnexAvailabilityReport();
+    saveExportPreferencesPatch({
+        exclude_subjects: _getUncheckedValues('export-subject-filter'),
+        exclude_sessions: _getUncheckedValues('export-session-filter'),
+        exclude_modalities: _getUncheckedValues('export-modality-filter'),
+        exclude_acq: _getUncheckedAcqByModality(),
+        exclude_tasks: _getUncheckedTaskByModality(),
+    });
+    updateExportSnapshotUi();
+}
+
 /**
  * Load saved export preferences for the current project.
  */
@@ -1044,6 +1081,22 @@ export function initExportForm() {
     const plainFolderExportButton = getById('plainFolderExportButton');
     if (plainFolderExportButton) {
         plainFolderExportButton.addEventListener('click', handlePlainFolderExport);
+    }
+
+    const uncheckAllFiltersBtn = getById('exportUncheckAllFilters');
+    if (uncheckAllFiltersBtn) {
+        uncheckAllFiltersBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            setAllExportScopeFiltersChecked(false);
+        });
+    }
+
+    const checkAllFiltersBtn = getById('exportCheckAllFilters');
+    if (checkAllFiltersBtn) {
+        checkAllFiltersBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            setAllExportScopeFiltersChecked(true);
+        });
     }
 
     const checkAnnexAvailabilityBtn = getById('exportCheckAnnexAvailability');
