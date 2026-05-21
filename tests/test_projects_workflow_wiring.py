@@ -416,6 +416,9 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "exclude_sessions: _getUncheckedValues('export-session-filter')", content
         )
         self.assertIn(
+            "exclude_subjects: _getUncheckedValues('export-subject-filter')", content
+        )
+        self.assertIn(
             "exclude_modalities: _getUncheckedValues('export-modality-filter')", content
         )
         self.assertIn("exclude_acq: _getUncheckedAcqByModality(),", content)
@@ -483,7 +486,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("async function ensureAnnexAvailabilitySummary(projectPath, { force = false } = {}) {", content)
         self.assertIn("function renderAnnexAvailabilityReport(summary) {", content)
         self.assertIn("function renderAnnexAvailabilityError(error) {", content)
-        self.assertIn("materialize_annex_content: getById('exportMaterializeAnnex')?.checked || false,", content)
+        self.assertIn("materialize_annex_content: true,", content)
         self.assertIn(
             "exclude_version_control_metadata: getSelectedExportRepositoryMode() === 'datalad_free',",
             content,
@@ -523,7 +526,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("const progressBar = getById('exportProgressBar');", content)
         self.assertIn("const progressText = getById('exportProgressText');", content)
         self.assertIn("const cancelBtn = getById('exportCancelBtn');", content)
-        self.assertIn("const materializeAnnex = getById('exportMaterializeAnnex')?.checked || false;", content)
+        self.assertIn("const materializeAnnex = true;", content)
         self.assertIn("progressTimerId = window.setInterval(() => {", content)
         self.assertIn("setFolderProgress(97);", content)
         self.assertIn("window.clearInterval(progressTimerId);", content)
@@ -539,9 +542,9 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("const templateExportButton = getById('templateExportButton');", content)
         self.assertIn("const plainFolderExportButton = getById('plainFolderExportButton');", content)
         self.assertIn("const checkAnnexAvailabilityBtn = getById('exportCheckAnnexAvailability');", content)
-        self.assertIn("const materializeAnnexToggle = getById('exportMaterializeAnnex');", content)
+        self.assertNotIn("const materializeAnnexToggle = getById('exportMaterializeAnnex');", content)
         self.assertIn("const uploadReadyExportButton = getById('uploadReadyExportButton');", content)
-        self.assertIn("if (targetId !== 'exportMaterializeAnnex') {", content)
+        self.assertIn("resetAnnexAvailabilityReport();", content)
         self.assertIn("const preflightSummary = await ensureAnnexAvailabilitySummary(currentProjectPath, { force: true });", content)
         self.assertIn("renderAnnexAvailabilityReport(preflightSummary);", content)
         self.assertIn("validation_mode: getSelectedExportValidationMode(),", content)
@@ -572,10 +575,11 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn('id="plainFolderExportButton"', content)
         self.assertIn('id="uploadReadyExportButton"', content)
         self.assertIn('id="templateExportButton"', content)
-        self.assertIn('id="exportMaterializeAnnex"', content)
+        self.assertIn('id="exportSubjectList"', content)
+        self.assertIn("Complete DataLad-free folder export", content)
         self.assertIn('id="exportCheckAnnexAvailability"', content)
         self.assertIn('id="exportAnnexAvailabilityReport"', content)
-        self.assertIn("PRISM checks annex availability automatically", content)
+        self.assertIn("PRISM now applies this automatically for folder export", content)
         self.assertIn('id="exportRepositoryMode"', content)
         self.assertIn('id="exportDefacingConfirmAlways"', content)
         self.assertIn('id="exportDefacingUseGlobalDefault"', content)

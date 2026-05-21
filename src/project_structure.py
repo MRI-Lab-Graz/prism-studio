@@ -63,16 +63,18 @@ def get_project_quick_summary(project_path: Path) -> Dict[str, object]:
 
 def get_project_modalities_and_sessions(project_path: Path) -> Dict[str, object]:
     """
-    Scan a PRISM/BIDS project and return the available sessions, modalities,
-    and per-modality acq- labels.
+    Scan a PRISM/BIDS project and return available subjects, sessions,
+    modalities, and per-modality acq/task labels.
 
     Returns a dict with:
+        subjects: sorted list of subject folder labels (e.g. ["sub-01", "sub-02"]).
         sessions: sorted list of session labels (e.g. ["ses-01", "ses-02"]),
                   empty list when no session level is used.
         modalities: sorted list of modality folder names (e.g. ["eeg", "survey", "func"]).
         acq_labels: dict mapping modality name -> sorted list of unique acq- values found.
         task_labels: dict mapping modality name -> sorted list of unique task- values found.
     """
+    subjects: Set[str] = set()
     sessions: Set[str] = set()
     modalities: Set[str] = set()
     acq_labels: Dict[str, Set[str]] = {}
@@ -99,6 +101,7 @@ def get_project_modalities_and_sessions(project_path: Path) -> Dict[str, object]
     for sub_dir in sorted(project_path.iterdir()):
         if not (sub_dir.is_dir() and sub_dir.name.startswith("sub-")):
             continue
+        subjects.add(sub_dir.name)
         for child in sub_dir.iterdir():
             if not child.is_dir():
                 continue
@@ -111,6 +114,7 @@ def get_project_modalities_and_sessions(project_path: Path) -> Dict[str, object]
                 _scan_modality_dir(child.name, child)
 
     return {
+        "subjects": sorted(subjects),
         "sessions": sorted(sessions),
         "modalities": sorted(modalities),
         "acq_labels": {k: sorted(v) for k, v in acq_labels.items()},

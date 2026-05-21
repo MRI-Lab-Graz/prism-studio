@@ -33,7 +33,7 @@ import tempfile
 import time
 from pathlib import Path
 from datetime import date
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Optional, Set, Union
 from urllib.parse import urlparse
 
 from src.fixer import DatasetFixer
@@ -66,6 +66,11 @@ VALID_DATASET_TYPES = {"raw", "derivative"}
 DATALAD_REPAIR_STEP_TIMEOUT_SECONDS = 120
 REGISTERED_SUBDATASET_QUERY_TIMEOUT_SECONDS = 30
 DATALAD_EXPORT_STEP_TIMEOUT_SECONDS = 60 * 60
+EXPORT_TEMP_WORKSPACE_PREFIX = ".prism-folder-export-"
+EXPORT_TEMP_WORKSPACE_LOCKFILE = ".prism-export-active.json"
+EXPORT_TEMP_WORKSPACE_STALE_SECONDS = 15 * 60
+EXPORT_TEMP_WORKSPACE_LOW_FREE_BYTES = 20 * 1024 * 1024 * 1024
+EXPORT_TEMP_WORKSPACE_LOW_FREE_RATIO = 0.10
 
 
 class ProjectManager:
@@ -938,6 +943,7 @@ class ProjectManager:
         include_derivatives: bool = True,
         include_code: bool = True,
         include_analysis: bool = True,
+        exclude_subjects: Optional[set[str]] = None,
         exclude_sessions: Optional[set[str]] = None,
         exclude_modalities: Optional[set[str]] = None,
         exclude_acq: Optional[Dict[str, set[str]]] = None,
@@ -969,6 +975,50 @@ class ProjectManager:
 
         destination_root.mkdir(parents=True, exist_ok=True)
 
+        def _workspace_lock_file(path: Path) -> Path:
+            return path / EXPORT_TEMP_WORKSPACE_LOCKFILE
+
+        def _is_pid_alive(pid: int) -> bool:
+            if pid <= 0:
+                return False
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                return False
+            except PermissionError:
+                return True
+            except OSError:
+                return False
+            return True
+
+        def _workspace_is_active(path: Path) -> bool:
+            lock_file = _workspace_lock_file(path)
+            if not lock_file.exists():
+                return False
+            try:
+                lock_data = json.loads(lock_file.read_text(encoding="utf-8"))
+            except Exception:
+                return False
+
+            pid_value = lock_data.get("pid")
+            try:
+                pid_int = int(pid_value)
+            except (TypeError, ValueError):
+                return False
+            return _is_pid_alive(pid_int)
+
+        def _mark_workspace_active(path: Path) -> None:
+            lock_file = _workspace_lock_file(path)
+            payload = {
+                "pid": os.getpid(),
+                "started_at": time.time(),
+            }
+            try:
+                lock_file.write_text(json.dumps(payload), encoding="utf-8")
+            except Exception:
+                # Best effort only; cleanup logic still falls back to mtime checks.
+                pass
+
         def _cleanup_workspace(path: Optional[Path]) -> None:
             if path is None:
                 return
@@ -978,11 +1028,14 @@ class ProjectManager:
             except Exception:
                 pass
 
-        def _cleanup_stale_workspaces(root: Path) -> None:
-            # Best-effort cleanup for stale interrupted exports.
-            stale_cutoff = time.time() - (24 * 60 * 60)
-            for candidate in root.glob(".prism-folder-export-*"):
+        def _cleanup_stale_workspaces(root: Path, *, min_age_seconds: int) -> int:
+            # Best-effort cleanup for interrupted exports from prior runs.
+            removed_count = 0
+            stale_cutoff = time.time() - max(0, int(min_age_seconds))
+            for candidate in root.glob(f"{EXPORT_TEMP_WORKSPACE_PREFIX}*"):
                 if not candidate.is_dir():
+                    continue
+                if _workspace_is_active(candidate):
                     continue
                 try:
                     if candidate.stat().st_mtime > stale_cutoff:
@@ -990,8 +1043,38 @@ class ProjectManager:
                 except OSError:
                     continue
                 _cleanup_workspace(candidate)
+                removed_count += 1
+            return removed_count
 
-        _cleanup_stale_workspaces(destination_root)
+        def _cleanup_stale_workspaces_on_low_space(root: Path) -> int:
+            try:
+                usage = shutil.disk_usage(root)
+            except Exception:
+                return 0
+
+            if usage.total <= 0:
+                return 0
+            low_space = usage.free <= EXPORT_TEMP_WORKSPACE_LOW_FREE_BYTES or (
+                usage.free / usage.total
+            ) <= EXPORT_TEMP_WORKSPACE_LOW_FREE_RATIO
+            if low_space:
+                return _cleanup_stale_workspaces(root, min_age_seconds=0)
+            return 0
+
+        stale_cleanup_count = _cleanup_stale_workspaces(
+            destination_root,
+            min_age_seconds=EXPORT_TEMP_WORKSPACE_STALE_SECONDS,
+        )
+        low_space_cleanup_count = _cleanup_stale_workspaces_on_low_space(destination_root)
+        total_cleanup_count = stale_cleanup_count + low_space_cleanup_count
+        if total_cleanup_count > 0:
+            self._emit_backend_progress(
+                (
+                    f"Cleaned up {total_cleanup_count} stale temporary export workspace(s) "
+                    f"in {destination_root}."
+                ),
+                command=f'find "{destination_root}" -maxdepth 1 -type d -name "{EXPORT_TEMP_WORKSPACE_PREFIX}*"',
+            )
 
         target_name = f"{project_path.name}_folder_export"
         export_path = destination_root / target_name
@@ -1017,6 +1100,11 @@ class ProjectManager:
             "derivatives": include_derivatives,
             "code": include_code,
             "analysis": include_analysis,
+        }
+        materialization_exclude_subjects = {
+            str(label).strip()
+            for label in (exclude_subjects or set())
+            if str(label).strip()
         }
         materialization_exclude_sessions = {
             str(label).strip()
@@ -1048,6 +1136,9 @@ class ProjectManager:
         ) -> bool:
             if not rel_parts:
                 return False
+
+            if rel_parts[0].startswith("sub-") and rel_parts[0] in materialization_exclude_subjects:
+                return True
 
             if len(rel_parts) == 1:
                 root_name = rel_parts[0]
@@ -1149,6 +1240,85 @@ class ProjectManager:
 
             return sorted(set(selected_files))
 
+        def _collect_materialization_recursive_scope_dirs(dataset_root: Path) -> List[str]:
+            # Prefer modality-level roots for scoped recursion. Fall back to session/subject
+            # roots only when deeper scope roots are not discoverable pre-materialization.
+            subject_dirs: Set[str] = set()
+            session_dirs: Set[str] = set()
+            modality_dirs: Set[str] = set()
+
+            subject_has_children: Dict[str, bool] = {}
+            session_has_modalities: Dict[str, bool] = {}
+            ignored_names_for_materialization = {
+                ".git",
+                ".datalad",
+                ".gitattributes",
+                ".gitignore",
+                ".gitmodules",
+                "CHANGES",
+            }
+
+            for current_dir_raw, dirnames, _filenames in os.walk(dataset_root):
+                current_dir = Path(current_dir_raw)
+
+                non_system_dirs = set(filter_system_files(dirnames))
+                kept_dirs: List[str] = []
+                for dirname in dirnames:
+                    if dirname not in non_system_dirs:
+                        continue
+                    if dirname in ignored_names_for_materialization:
+                        continue
+                    candidate_dir = current_dir / dirname
+                    try:
+                        rel_parts = candidate_dir.relative_to(dataset_root).parts
+                    except ValueError:
+                        continue
+                    if _materialization_should_exclude_entry(rel_parts, is_dir=True):
+                        continue
+                    kept_dirs.append(dirname)
+
+                    if not rel_parts or not rel_parts[0].startswith("sub-"):
+                        continue
+
+                    rel_path = Path(*rel_parts).as_posix()
+                    subject_key = rel_parts[0]
+
+                    if len(rel_parts) == 1:
+                        subject_dirs.add(rel_path)
+                        subject_has_children.setdefault(subject_key, False)
+                        continue
+
+                    subject_has_children[subject_key] = True
+
+                    part_index = 1
+                    session_key: Optional[str] = None
+                    if rel_parts[part_index].startswith("ses-"):
+                        session_key = Path(*rel_parts[:2]).as_posix()
+                        session_dirs.add(session_key)
+                        session_has_modalities.setdefault(session_key, False)
+                        part_index += 1
+
+                    if part_index >= len(rel_parts):
+                        continue
+
+                    if len(rel_parts) == part_index + 1:
+                        modality_dirs.add(rel_path)
+                        if session_key:
+                            session_has_modalities[session_key] = True
+                dirnames[:] = kept_dirs
+
+            selected_dirs: Set[str] = set(modality_dirs)
+
+            for session_dir in sorted(session_dirs):
+                if not session_has_modalities.get(session_dir, False):
+                    selected_dirs.add(session_dir)
+
+            for subject_dir in sorted(subject_dirs):
+                if not subject_has_children.get(subject_dir, False):
+                    selected_dirs.add(subject_dir)
+
+            return sorted(selected_dirs)
+
         if materialize_annex_content:
             if not status.get("enabled"):
                 materialization_warnings.append(
@@ -1167,10 +1337,11 @@ class ProjectManager:
 
                 materialization_workspace = Path(
                     tempfile.mkdtemp(
-                        prefix=".prism-folder-export-",
+                        prefix=EXPORT_TEMP_WORKSPACE_PREFIX,
                         dir=str(destination_root),
                     )
                 )
+                _mark_workspace_active(materialization_workspace)
                 clone_source_path = materialization_workspace / project_path.name
 
                 def _run_materialization_step(
@@ -1227,44 +1398,150 @@ class ProjectManager:
                     result["error"] = clone_error
                     return result
 
+                def _run_datalad_get_chunks(
+                    target_chunks: List[List[str]],
+                    *,
+                    recursive: bool,
+                    no_data: bool,
+                    step_label_prefix: str,
+                ) -> bool:
+                    get_failed_local = False
+                    base_command = [resolved_datalad, "get"]
+                    if recursive:
+                        base_command.append("-r")
+                    if no_data:
+                        # Install/resolve nested dataset structure without pulling full file payloads.
+                        base_command.append("-n")
+
+                    def _without_no_data_flag(command: List[str]) -> List[str]:
+                        return [part for part in command if part != "-n"]
+
+                    for chunk_index, chunk in enumerate(target_chunks, start=1):
+                        active_base_command = list(base_command)
+                        get_ok, get_error = _run_materialization_step(
+                            [*active_base_command, "--on-failure", "ignore", *chunk],
+                            cwd=clone_source_path,
+                            step_label=(
+                                f"{step_label_prefix} "
+                                f"({chunk_index}/{len(target_chunks)})"
+                            ),
+                        )
+
+                        if (
+                            not get_ok
+                            and no_data
+                            and any(
+                                fragment in str(get_error or "").lower()
+                                for fragment in [
+                                    "unknown argument: -n",
+                                    "unrecognized arguments: -n",
+                                    "unknown option: -n",
+                                ]
+                            )
+                        ):
+                            active_base_command = _without_no_data_flag(active_base_command)
+                            get_ok, get_error = _run_materialization_step(
+                                [*active_base_command, "--on-failure", "ignore", *chunk],
+                                cwd=clone_source_path,
+                                step_label=(
+                                    f"{step_label_prefix} "
+                                    f"({chunk_index}/{len(target_chunks)}) no-data compatibility fallback"
+                                ),
+                            )
+
+                        if (
+                            not get_ok
+                            and "--on-failure" in str(get_error or "").lower()
+                            and (
+                                "unknown argument" in str(get_error or "").lower()
+                                or "unrecognized arguments" in str(get_error or "").lower()
+                            )
+                        ):
+                            get_ok, get_error = _run_materialization_step(
+                                [*active_base_command, *chunk],
+                                cwd=clone_source_path,
+                                step_label=(
+                                    f"{step_label_prefix} "
+                                    f"({chunk_index}/{len(target_chunks)}) compatibility fallback"
+                                ),
+                            )
+                        if not get_ok:
+                            get_failed_local = True
+                            if str(get_error or "").strip():
+                                materialization_warnings.append(get_error)
+
+                    return get_failed_local
+
+                selected_recursive_scope_dirs = _collect_materialization_recursive_scope_dirs(
+                    clone_source_path
+                )
+                if selected_recursive_scope_dirs:
+                    scope_chunks = [
+                        selected_recursive_scope_dirs[index:index + 200]
+                        for index in range(0, len(selected_recursive_scope_dirs), 200)
+                    ]
+                    scope_get_failed = _run_datalad_get_chunks(
+                        scope_chunks,
+                        recursive=True,
+                        no_data=True,
+                        step_label_prefix="DataLad get selected scope metadata recursively",
+                    )
+                    if scope_get_failed:
+                        materialization_warnings.append(
+                            "DataLad get could not fully recurse selected scope metadata; "
+                            "continuing with locally available files."
+                        )
+
                 selected_materialization_targets = _collect_materialization_targets(
                     clone_source_path
                 )
+
+                has_subject_scope_dirs = any(
+                    str(path).startswith("sub-")
+                    for path in selected_recursive_scope_dirs
+                )
+                has_subject_materialization_targets = any(
+                    str(path).startswith("sub-")
+                    for path in selected_materialization_targets
+                )
+
+                if has_subject_scope_dirs and not has_subject_materialization_targets:
+                    scope_chunks = [
+                        selected_recursive_scope_dirs[index:index + 200]
+                        for index in range(0, len(selected_recursive_scope_dirs), 200)
+                    ]
+                    scope_data_get_failed = _run_datalad_get_chunks(
+                        scope_chunks,
+                        recursive=True,
+                        no_data=False,
+                        step_label_prefix="DataLad get selected scope data recursively fallback",
+                    )
+                    if scope_data_get_failed:
+                        materialization_warnings.append(
+                            "DataLad fallback recursion could not materialize all selected scope data; "
+                            "continuing with locally available files."
+                        )
+                    selected_materialization_targets = _collect_materialization_targets(
+                        clone_source_path
+                    )
+
+                if not selected_materialization_targets:
+                    materialization_warnings.append(
+                        "No files matched the current folder export scope after materialization preflight; "
+                        "continuing with folder structure only."
+                    )
+
                 target_chunks = [
                     selected_materialization_targets[index:index + 200]
                     for index in range(0, len(selected_materialization_targets), 200)
                 ]
 
-                get_failed = False
-                for chunk_index, chunk in enumerate(target_chunks, start=1):
-                    get_ok, get_error = _run_materialization_step(
-                        [resolved_datalad, "get", "--on-failure", "ignore", *chunk],
-                        cwd=clone_source_path,
-                        step_label=(
-                            "DataLad get selected export content "
-                            f"({chunk_index}/{len(target_chunks)})"
-                        ),
-                    )
-                    if (
-                        not get_ok
-                        and "--on-failure" in str(get_error or "").lower()
-                        and (
-                            "unknown argument" in str(get_error or "").lower()
-                            or "unrecognized arguments" in str(get_error or "").lower()
-                        )
-                    ):
-                        get_ok, get_error = _run_materialization_step(
-                            [resolved_datalad, "get", *chunk],
-                            cwd=clone_source_path,
-                            step_label=(
-                                "DataLad get selected export content "
-                                f"({chunk_index}/{len(target_chunks)}) compatibility fallback"
-                            ),
-                        )
-                    if not get_ok:
-                        get_failed = True
-                        if str(get_error or "").strip():
-                            materialization_warnings.append(get_error)
+                get_failed = _run_datalad_get_chunks(
+                    target_chunks,
+                    recursive=False,
+                    no_data=False,
+                    step_label_prefix="DataLad get selected export content",
+                )
 
                 if get_failed:
                     materialization_warnings.append(
@@ -1301,7 +1578,85 @@ class ProjectManager:
                             "Continuing with symlink-following copy."
                         )
 
-                copy_source_path = clone_source_path
+                selected_subject_scope_dirs = [
+                    scope_dir
+                    for scope_dir in selected_recursive_scope_dirs
+                    if str(scope_dir).startswith("sub-")
+                ]
+
+                def _has_visible_files_in_selected_scopes(
+                    dataset_root: Path,
+                    scope_dirs: List[str],
+                ) -> bool:
+                    ignored_names_for_visibility_scan = {
+                        ".git",
+                        ".datalad",
+                        ".gitattributes",
+                        ".gitignore",
+                        ".gitmodules",
+                        "CHANGES",
+                    }
+
+                    for scope_dir in scope_dirs:
+                        scope_path = dataset_root / scope_dir
+                        if not scope_path.exists() or not scope_path.is_dir():
+                            continue
+
+                        for current_dir_raw, dirnames, filenames in os.walk(scope_path):
+                            current_dir = Path(current_dir_raw)
+
+                            non_system_dirs = set(filter_system_files(dirnames))
+                            dirnames[:] = [
+                                dirname
+                                for dirname in dirnames
+                                if dirname in non_system_dirs
+                                and dirname not in ignored_names_for_visibility_scan
+                            ]
+
+                            non_system_files = set(filter_system_files(filenames))
+                            for filename in filenames:
+                                if filename not in non_system_files:
+                                    continue
+                                if filename in ignored_names_for_visibility_scan:
+                                    continue
+
+                                candidate_file = current_dir / filename
+                                try:
+                                    rel_parts = candidate_file.relative_to(dataset_root).parts
+                                except ValueError:
+                                    continue
+
+                                if _materialization_should_exclude_entry(
+                                    rel_parts,
+                                    is_dir=False,
+                                ):
+                                    continue
+
+                                if candidate_file.exists() and candidate_file.is_file():
+                                    return True
+                    return False
+
+                clone_has_visible_subject_files = _has_visible_files_in_selected_scopes(
+                    clone_source_path,
+                    selected_subject_scope_dirs,
+                )
+                source_has_visible_subject_files = _has_visible_files_in_selected_scopes(
+                    project_path,
+                    selected_subject_scope_dirs,
+                )
+
+                if (
+                    selected_subject_scope_dirs
+                    and not clone_has_visible_subject_files
+                    and source_has_visible_subject_files
+                ):
+                    materialization_warnings.append(
+                        "Temporary clone did not expose selected subject files in the working tree; "
+                        "exporting selected scope directly from the source project files."
+                    )
+                    copy_source_path = project_path
+                else:
+                    copy_source_path = clone_source_path
                 materialized_export = True
 
         ignored_names = {
@@ -1317,6 +1672,12 @@ class ProjectManager:
             "derivatives": include_derivatives,
             "code": include_code,
             "analysis": include_analysis,
+        }
+
+        normalized_exclude_subjects = {
+            str(label).strip()
+            for label in (exclude_subjects or set())
+            if str(label).strip()
         }
 
         normalized_exclude_sessions = {
@@ -1348,6 +1709,9 @@ class ProjectManager:
         def _should_exclude_export_entry(rel_parts: tuple[str, ...], *, is_dir: bool) -> bool:
             if not rel_parts:
                 return False
+
+            if rel_parts[0].startswith("sub-") and rel_parts[0] in normalized_exclude_subjects:
+                return True
 
             if len(rel_parts) == 1:
                 root_name = rel_parts[0]
@@ -1442,6 +1806,48 @@ class ProjectManager:
                     return dst
                 raise
 
+        def _count_visible_scoped_subject_files(root_path: Path) -> int:
+            visible_file_count = 0
+            for current_dir_raw, dir_names, file_names in os.walk(root_path):
+                current_dir = Path(current_dir_raw)
+                try:
+                    rel_root_parts = current_dir.relative_to(root_path).parts
+                except Exception:
+                    continue
+
+                non_system_dirs = set(filter_system_files(dir_names))
+                kept_dirs: List[str] = []
+                for dir_name in list(dir_names):
+                    if dir_name not in non_system_dirs:
+                        continue
+                    if dir_name in ignored_names:
+                        continue
+
+                    rel_parts = rel_root_parts + (dir_name,)
+                    if _should_exclude_export_entry(rel_parts, is_dir=True):
+                        continue
+                    kept_dirs.append(dir_name)
+                dir_names[:] = kept_dirs
+
+                non_system_files = set(filter_system_files(file_names))
+                for file_name in file_names:
+                    if file_name not in non_system_files:
+                        continue
+                    if file_name in ignored_names:
+                        continue
+
+                    rel_parts = rel_root_parts + (file_name,)
+                    if not rel_parts or not rel_parts[0].startswith("sub-"):
+                        continue
+                    if _should_exclude_export_entry(rel_parts, is_dir=False):
+                        continue
+
+                    candidate = current_dir / file_name
+                    if candidate.exists() and candidate.is_file():
+                        visible_file_count += 1
+
+            return visible_file_count
+
         try:
             self._emit_backend_progress(
                 f'Starting filesystem copy for plain folder export "{export_path.name}".',
@@ -1453,13 +1859,57 @@ class ProjectManager:
                 copy_function=_copy_with_missing_tolerance,
                 ignore=_ignore,
                 symlinks=False,
-                ignore_dangling_symlinks=True,
+                ignore_dangling_symlinks=False,
             )
         except Exception as exc:
             result["error"] = f"Could not export project folder: {exc}"
             return result
         finally:
             _cleanup_workspace(materialization_workspace)
+
+        if materialized_export and copy_source_path != project_path:
+            exported_visible_subject_files = _count_visible_scoped_subject_files(
+                export_path
+            )
+            source_visible_subject_files = _count_visible_scoped_subject_files(
+                project_path
+            )
+
+            if (
+                exported_visible_subject_files == 0
+                and source_visible_subject_files > 0
+            ):
+                materialization_warnings.append(
+                    "Materialized temporary clone export contained no scoped subject files; "
+                    "retrying scoped copy directly from source project files."
+                )
+
+                try:
+                    shutil.rmtree(export_path, ignore_errors=True)
+                except Exception:
+                    pass
+
+                missing_source_paths = []
+                copy_source_path = project_path
+                try:
+                    self._emit_backend_progress(
+                        (
+                            "Retrying filesystem copy from source project because "
+                            "temporary clone did not expose scoped subject files."
+                        ),
+                        command=f'cp -a "{copy_source_path}" "{export_path}"',
+                    )
+                    shutil.copytree(
+                        copy_source_path,
+                        export_path,
+                        copy_function=_copy_with_missing_tolerance,
+                        ignore=_ignore,
+                        symlinks=False,
+                        ignore_dangling_symlinks=False,
+                    )
+                except Exception as exc:
+                    result["error"] = f"Could not export project folder: {exc}"
+                    return result
 
         if materialized_export and missing_source_paths:
             # A temporary clone can miss locally present annex payloads; recover from source project.
@@ -1548,6 +1998,7 @@ class ProjectManager:
         include_derivatives: bool = True,
         include_code: bool = True,
         include_analysis: bool = True,
+        exclude_subjects: Optional[set[str]] = None,
         exclude_sessions: Optional[set[str]] = None,
         exclude_modalities: Optional[set[str]] = None,
         exclude_acq: Optional[Dict[str, set[str]]] = None,
@@ -1582,6 +2033,12 @@ class ProjectManager:
             "analysis": include_analysis,
         }
 
+        normalized_exclude_subjects = {
+            str(label).strip()
+            for label in (exclude_subjects or set())
+            if str(label).strip()
+        }
+
         normalized_exclude_sessions = {
             str(label).strip()
             for label in (exclude_sessions or set())
@@ -1610,6 +2067,9 @@ class ProjectManager:
         def _should_exclude_export_entry(rel_parts: tuple[str, ...], *, is_dir: bool) -> bool:
             if not rel_parts:
                 return False
+
+            if rel_parts[0].startswith("sub-") and rel_parts[0] in normalized_exclude_subjects:
+                return True
 
             if len(rel_parts) == 1:
                 root_name = rel_parts[0]

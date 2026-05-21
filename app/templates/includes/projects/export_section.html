@@ -177,13 +177,19 @@
 
                                                 <div class="col-12"><hr class="my-2"></div>
 
-                                                <div class="col-md-6">
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold">Subjects <span class="text-muted fw-normal small">(uncheck to exclude)</span></label>
+                                                    <div id="exportSubjectList">
+                                                        <span class="text-muted small">Load a project to see available subjects.</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
                                                     <label class="form-label fw-bold">Sessions <span class="text-muted fw-normal small">(uncheck to exclude)</span></label>
                                                     <div id="exportSessionList">
                                                         <span class="text-muted small">Load a project to see available sessions.</span>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-6">
+                                                <div class="col-md-4">
                                                     <label class="form-label fw-bold">Modalities <span class="text-muted fw-normal small">(uncheck to exclude)</span></label>
                                                     <div id="exportModalityList">
                                                         <span class="text-muted small">Load a project to see available modalities.</span>
@@ -373,17 +379,14 @@
                         </div>
 
                         <div class="col-12 mt-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="exportMaterializeAnnex">
-                                <label class="form-check-label fw-semibold" for="exportMaterializeAnnex">
-                                    Complete DataLad-free folder export (materialize annex content first)
-                                </label>
+                            <div class="fw-semibold">
+                                Complete DataLad-free folder export (materialize annex content first)
                             </div>
                             <div class="form-text">
                                 For DataLad projects, PRISM uses a temporary clone, materializes only files in the selected export scope, then writes a Git/DataLad-free folder copy.
                             </div>
                             <div class="form-text text-muted mt-1">
-                                PRISM checks annex availability automatically when you enable this option and again before folder export starts.
+                                PRISM now applies this automatically for folder export and checks annex availability again before folder export starts.
                             </div>
                             <div class="mt-2">
                                 <button type="button" class="btn btn-outline-secondary btn-sm" id="exportCheckAnnexAvailability">
@@ -415,7 +418,7 @@
                             </button>
                             <div class="form-text mt-2">
                                 <i class="fas fa-info-circle me-1"></i>
-                                Folder export creates a normal folder copy without hidden Git/DataLad repository files. Enable the complete DataLad-free option above when annexed content must be materialized before export. Standard export creates a shareable ZIP and follows the repository mode you choose above. Upload-ready ZIP strips <code>code/</code>, <code>derivatives/</code>, <code>analysis/</code>, and version-control metadata such as DataLad traces. Template export keeps metadata and removes participant-specific dataset content. ANC export creates a submission-ready dataset folder.
+                                Folder export creates a normal folder copy without hidden Git/DataLad repository files and always materializes selected annex content first when needed. Standard export creates a shareable ZIP and follows the repository mode you choose above. Upload-ready ZIP strips <code>code/</code>, <code>derivatives/</code>, <code>analysis/</code>, and version-control metadata such as DataLad traces. Template export keeps metadata and removes participant-specific dataset content. ANC export creates a submission-ready dataset folder.
                             </div>
                         </div>
                     </div>

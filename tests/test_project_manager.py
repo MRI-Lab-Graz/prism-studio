@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 import unittest
 import subprocess
 from pathlib import Path
@@ -1487,6 +1488,282 @@ class TestProjectManager(unittest.TestCase):
             self.assertTrue(any("sub-001/anat/sub-001_T1w.nii.gz" in command for command in commands if command.startswith("/usr/bin/datalad get ")), commands)
             self.assertTrue(any(command.startswith("/usr/bin/git-annex unlock ") for command in commands), commands)
 
+    def test_export_project_to_plain_folder_materialize_recurses_subject_scope_when_clone_has_no_subject_files(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            export_root = Path(tmp) / "exports"
+            materialization_workspace = Path(tmp) / "materialized_workspace"
+
+            def _fake_run(command, **kwargs):
+                normalized = [str(part) for part in command]
+                cwd = Path(str(kwargs.get("cwd"))) if kwargs.get("cwd") else None
+
+                if len(normalized) >= 2 and normalized[0] == "/usr/bin/datalad" and normalized[1] == "clone":
+                    clone_path = Path(normalized[-1])
+                    clone_path.mkdir(parents=True, exist_ok=True)
+                    (clone_path / ".datalad").mkdir(parents=True, exist_ok=True)
+                    (clone_path / ".git").mkdir(parents=True, exist_ok=True)
+                    (clone_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+                    # Simulate a clone layout where subject folders exist but files are not yet visible.
+                    (clone_path / "sub-001" / "ses-2" / "anat").mkdir(parents=True, exist_ok=True)
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if (
+                    len(normalized) >= 5
+                    and normalized[0] == "/usr/bin/datalad"
+                    and normalized[1] == "get"
+                    and "-r" in normalized
+                    and "--on-failure" in normalized
+                    and "ignore" in normalized
+                ):
+                    if cwd is not None:
+                        subject_file = cwd / "sub-001" / "ses-2" / "anat" / "sub-001_ses-2_T1w.nii.gz"
+                        subject_file.parent.mkdir(parents=True, exist_ok=True)
+                        subject_file.write_bytes(b"nifti")
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if normalized[:4] == ["/usr/bin/datalad", "get", "--on-failure", "ignore"]:
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if len(normalized) >= 2 and normalized[0] == "/usr/bin/git-annex" and normalized[1] == "unlock":
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
+
+            with patch.object(
+                manager,
+                "get_datalad_status",
+                return_value={
+                    "enabled": True,
+                    "available": True,
+                    "executable": "/usr/bin/datalad",
+                    "annex_executable": "/usr/bin/git-annex",
+                    "message": "Current project is tracked by DataLad.",
+                },
+            ):
+                with patch(
+                    "src.project_manager.tempfile.mkdtemp",
+                    return_value=str(materialization_workspace),
+                ):
+                    with patch("src.project_manager.subprocess.run", side_effect=_fake_run) as mock_run:
+                        result = manager.export_project_to_plain_folder(
+                            project_path,
+                            output_root=export_root,
+                            materialize_annex_content=True,
+                            exclude_sessions={"ses-1", "ses-3"},
+                        )
+
+            self.assertTrue(result.get("success"), result)
+            output_path = Path(result["output_path"])
+            self.assertTrue(
+                (output_path / "sub-001" / "ses-2" / "anat" / "sub-001_ses-2_T1w.nii.gz").exists()
+            )
+
+            commands = [" ".join(str(part) for part in call.args[0]) for call in mock_run.call_args_list]
+            self.assertTrue(
+                any(
+                    command.startswith("/usr/bin/datalad get -r -n --on-failure ignore ")
+                    or command.startswith("/usr/bin/datalad get -r --on-failure ignore ")
+                    for command in commands
+                ),
+                commands,
+            )
+            self.assertTrue(
+                any(
+                    command.startswith("/usr/bin/datalad get --on-failure ignore ")
+                    and "sub-001/ses-2/anat/sub-001_ses-2_T1w.nii.gz" in command
+                    for command in commands
+                ),
+                commands,
+            )
+
+    def test_export_project_to_plain_folder_materialize_fallback_recurses_with_data_when_subject_targets_missing(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            export_root = Path(tmp) / "exports"
+            materialization_workspace = Path(tmp) / "materialized_workspace"
+
+            def _fake_run(command, **kwargs):
+                normalized = [str(part) for part in command]
+                cwd = Path(str(kwargs.get("cwd"))) if kwargs.get("cwd") else None
+
+                if len(normalized) >= 2 and normalized[0] == "/usr/bin/datalad" and normalized[1] == "clone":
+                    clone_path = Path(normalized[-1])
+                    clone_path.mkdir(parents=True, exist_ok=True)
+                    (clone_path / ".datalad").mkdir(parents=True, exist_ok=True)
+                    (clone_path / ".git").mkdir(parents=True, exist_ok=True)
+                    (clone_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+                    # Subdataset directories are present, but no subject files are discoverable yet.
+                    (clone_path / "sub-001" / "ses-2" / "anat").mkdir(parents=True, exist_ok=True)
+                    # Keep at least one top-level file so target collection is not empty.
+                    (clone_path / "task-rest_survey.json").write_text("{}\n", encoding="utf-8")
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if (
+                    len(normalized) >= 3
+                    and normalized[0] == "/usr/bin/datalad"
+                    and normalized[1] == "get"
+                    and "-r" in normalized
+                    and "-n" in normalized
+                ):
+                    # Metadata recursion does not expose subject file entries in this scenario.
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if (
+                    len(normalized) >= 5
+                    and normalized[0] == "/usr/bin/datalad"
+                    and normalized[1] == "get"
+                    and "-r" in normalized
+                    and "--on-failure" in normalized
+                    and "ignore" in normalized
+                    and "-n" not in normalized
+                ):
+                    # Fallback recursive data get makes subject files available for copy.
+                    if cwd is not None:
+                        subject_file = cwd / "sub-001" / "ses-2" / "anat" / "sub-001_ses-2_T1w.nii.gz"
+                        subject_file.parent.mkdir(parents=True, exist_ok=True)
+                        subject_file.write_bytes(b"nifti")
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if normalized[:4] == ["/usr/bin/datalad", "get", "--on-failure", "ignore"]:
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if len(normalized) >= 2 and normalized[0] == "/usr/bin/git-annex" and normalized[1] == "unlock":
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
+
+            with patch.object(
+                manager,
+                "get_datalad_status",
+                return_value={
+                    "enabled": True,
+                    "available": True,
+                    "executable": "/usr/bin/datalad",
+                    "annex_executable": "/usr/bin/git-annex",
+                    "message": "Current project is tracked by DataLad.",
+                },
+            ):
+                with patch(
+                    "src.project_manager.tempfile.mkdtemp",
+                    return_value=str(materialization_workspace),
+                ):
+                    with patch("src.project_manager.subprocess.run", side_effect=_fake_run) as mock_run:
+                        result = manager.export_project_to_plain_folder(
+                            project_path,
+                            output_root=export_root,
+                            materialize_annex_content=True,
+                            exclude_sessions={"ses-1", "ses-3"},
+                        )
+
+            self.assertTrue(result.get("success"), result)
+            output_path = Path(result["output_path"])
+            self.assertTrue(
+                (output_path / "sub-001" / "ses-2" / "anat" / "sub-001_ses-2_T1w.nii.gz").exists()
+            )
+
+            commands = [" ".join(str(part) for part in call.args[0]) for call in mock_run.call_args_list]
+            self.assertTrue(
+                any(
+                    command.startswith("/usr/bin/datalad get -r -n --on-failure ignore ")
+                    or command.startswith("/usr/bin/datalad get -r --on-failure ignore ")
+                    for command in commands
+                ),
+                commands,
+            )
+            self.assertTrue(
+                any(
+                    command.startswith("/usr/bin/datalad get -r --on-failure ignore ")
+                    and "sub-001/ses-2/anat" in command
+                    for command in commands
+                ),
+                commands,
+            )
+
+    def test_export_project_to_plain_folder_materialize_falls_back_to_source_when_clone_has_no_subject_files(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+            source_subject_file = project_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_T1w.nii.gz"
+            source_subject_file.parent.mkdir(parents=True, exist_ok=True)
+            source_subject_file.write_bytes(b"nifti")
+
+            export_root = Path(tmp) / "exports"
+            materialization_workspace = Path(tmp) / "materialized_workspace"
+
+            def _fake_run(command, **_kwargs):
+                normalized = [str(part) for part in command]
+                if len(normalized) >= 2 and normalized[0] == "/usr/bin/datalad" and normalized[1] == "clone":
+                    clone_path = Path(normalized[-1])
+                    clone_path.mkdir(parents=True, exist_ok=True)
+                    (clone_path / ".datalad").mkdir(parents=True, exist_ok=True)
+                    (clone_path / ".git").mkdir(parents=True, exist_ok=True)
+                    (clone_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+                    # Keep subject scope structure but do not expose subject files in clone working tree.
+                    (clone_path / "sub-001" / "ses-1" / "anat").mkdir(parents=True, exist_ok=True)
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if normalized[0:2] == ["/usr/bin/datalad", "get"]:
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if normalized[0:2] == ["/usr/bin/git-annex", "unlock"]:
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
+
+            with patch.object(
+                manager,
+                "get_datalad_status",
+                return_value={
+                    "enabled": True,
+                    "available": True,
+                    "executable": "/usr/bin/datalad",
+                    "annex_executable": "/usr/bin/git-annex",
+                    "message": "Current project is tracked by DataLad.",
+                },
+            ):
+                with patch(
+                    "src.project_manager.tempfile.mkdtemp",
+                    return_value=str(materialization_workspace),
+                ):
+                    with patch("src.project_manager.subprocess.run", side_effect=_fake_run):
+                        result = manager.export_project_to_plain_folder(
+                            project_path,
+                            output_root=export_root,
+                            materialize_annex_content=True,
+                        )
+
+            self.assertTrue(result.get("success"), result)
+            output_path = Path(result["output_path"])
+            self.assertTrue(
+                (output_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_T1w.nii.gz").exists()
+            )
+            warnings = result.get("materialization_warnings") or []
+            self.assertTrue(
+                any(
+                    "Temporary clone did not expose selected subject files" in warning
+                    or "retrying scoped copy directly from source project files" in warning
+                    for warning in warnings
+                ),
+                warnings,
+            )
+
     def test_export_project_to_plain_folder_materialize_gets_only_selected_scope_targets(self):
         manager = ProjectManager()
 
@@ -1632,7 +1909,11 @@ class TestProjectManager(unittest.TestCase):
             self.assertIsNone(result.get("missing_files_count"), result)
             warnings = result.get("materialization_warnings") or []
             self.assertTrue(
-                any("Recovered 1 file(s) from the source project" in str(item) for item in warnings),
+                any(
+                    "Recovered 1 file(s) from the source project" in str(item)
+                    or "Temporary clone did not expose selected subject files" in str(item)
+                    for item in warnings
+                ),
                 warnings,
             )
 
@@ -1865,6 +2146,59 @@ class TestProjectManager(unittest.TestCase):
 
             self.assertTrue(result.get("success"), result)
             self.assertTrue(Path(result["output_path"]).exists())
+
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_export_project_to_plain_folder_exclude_subjects_filters_output(self, _mock_which):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            subj1_file = project_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_T1w.nii.gz"
+            subj1_file.parent.mkdir(parents=True, exist_ok=True)
+            subj1_file.write_bytes(b"nifti-1")
+
+            subj2_file = project_path / "sub-002" / "ses-1" / "anat" / "sub-002_ses-1_T1w.nii.gz"
+            subj2_file.parent.mkdir(parents=True, exist_ok=True)
+            subj2_file.write_bytes(b"nifti-2")
+
+            result = manager.export_project_to_plain_folder(
+                project_path,
+                exclude_subjects={"sub-002"},
+            )
+
+            self.assertTrue(result.get("success"), result)
+            output_path = Path(result["output_path"])
+            self.assertTrue((output_path / "sub-001").exists())
+            self.assertFalse((output_path / "sub-002").exists())
+
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_export_project_to_plain_folder_cleans_stale_hidden_workspaces(self, _mock_which):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            export_root = Path(tmp) / "exports"
+            export_root.mkdir(parents=True, exist_ok=True)
+            stale_workspace = export_root / ".prism-folder-export-old"
+            stale_workspace.mkdir(parents=True, exist_ok=True)
+            (stale_workspace / "payload.bin").write_bytes(b"stale")
+
+            old_timestamp = time.time() - (2 * 60 * 60)
+            os.utime(stale_workspace, (old_timestamp, old_timestamp))
+
+            result = manager.export_project_to_plain_folder(
+                project_path,
+                output_root=export_root,
+            )
+
+            self.assertTrue(result.get("success"), result)
+            self.assertFalse(stale_workspace.exists())
 
 
     def test_create_project_reports_existing_nonempty_target_actionably(self):
