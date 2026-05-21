@@ -57,6 +57,7 @@ from .projects_sessions_handlers import (
 from .projects_methods_handlers import handle_generate_methods_section
 from .projects_lifecycle_handlers import (
     handle_create_project,
+    handle_datalad_preflight_status,
     handle_fix_project,
     handle_get_fixable_issues,
     handle_get_recent_projects,
@@ -428,6 +429,12 @@ def validate_project():
 def project_path_status():
     """Return lightweight availability info for a project.json path."""
     return handle_project_path_status()
+
+
+@projects_bp.route("/api/projects/datalad/preflight", methods=["GET"])
+def datalad_preflight_status():
+    """Return machine availability info for DataLad project setup."""
+    return handle_datalad_preflight_status()
 
 
 @projects_bp.route("/api/projects/recruitment-location-search", methods=["GET"])
