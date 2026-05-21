@@ -8,9 +8,85 @@ export function initCreatePreflightController({
 }) {
     let createTargetStatusRequestToken = 0;
     let createTargetStatusDebounceTimer = null;
+    let createDataladPreflightStatus = null;
 
     function getCreateDataladToggleState() {
         return document.getElementById('projectUseDatalad')?.checked !== false;
+    }
+
+    function renderCreateDataladAvailability(status, options = {}) {
+        const container = document.getElementById('createDataladAvailability');
+        if (!container) {
+            return;
+        }
+
+        const loadFailed = options.loadFailed === true;
+        const dataladPreflight = status?.datalad_preflight || null;
+        const dataladRequested = getCreateDataladToggleState();
+
+        let alertClass = 'alert-secondary';
+        let iconClass = 'fa-circle-info text-muted';
+        let title = 'DataLad Status Unknown';
+        let message = 'Could not check DataLad availability on this machine right now.';
+        let detail = 'PRISM can still create the project without DataLad.';
+
+        if (dataladPreflight) {
+            const available = dataladPreflight.available === true;
+            const annexAvailable = dataladPreflight.annex_available === true;
+            const canEnable = dataladPreflight.can_enable === true;
+            const baseMessage = String(dataladPreflight.message || '').trim();
+
+            if (canEnable) {
+                alertClass = dataladRequested ? 'alert-success' : 'alert-secondary';
+                iconClass = dataladRequested ? 'fa-circle-check text-success' : 'fa-circle-info text-muted';
+                title = 'DataLad Ready';
+                message = baseMessage || 'DataLad and git-annex are available for project setup.';
+                detail = dataladRequested
+                    ? 'This project will be initialized with DataLad when you create it.'
+                    : 'Turn the switch on if you want PRISM to initialize DataLad for this project.';
+            } else if (available && !annexAvailable) {
+                alertClass = dataladRequested ? 'alert-warning' : 'alert-secondary';
+                iconClass = dataladRequested ? 'fa-triangle-exclamation text-warning' : 'fa-circle-info text-muted';
+                title = 'git-annex Missing';
+                message = baseMessage || 'git-annex is not installed, so DataLad project setup is unavailable.';
+                detail = 'PRISM will still create the project, but without DataLad version control.';
+            } else {
+                alertClass = dataladRequested ? 'alert-warning' : 'alert-secondary';
+                iconClass = dataladRequested ? 'fa-triangle-exclamation text-warning' : 'fa-circle-info text-muted';
+                title = 'DataLad Missing';
+                message = baseMessage || 'DataLad is not installed, so DataLad project setup is unavailable.';
+                detail = 'PRISM will still create the project, but without DataLad version control.';
+            }
+        } else if (loadFailed) {
+            alertClass = dataladRequested ? 'alert-warning' : 'alert-secondary';
+            iconClass = dataladRequested ? 'fa-triangle-exclamation text-warning' : 'fa-circle-info text-muted';
+        }
+
+        container.className = `alert ${alertClass} py-2 px-3 mt-2 mb-0 small`;
+        container.innerHTML = `
+            <div class="d-flex align-items-start gap-2">
+                <i class="fas ${iconClass} mt-1" aria-hidden="true"></i>
+                <div>
+                    <div class="fw-semibold">${escapeHtml(title)}</div>
+                    <div>${escapeHtml(message)}</div>
+                    <div class="mt-1">${escapeHtml(detail)}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    async function refreshCreateDataladAvailability() {
+        try {
+            const response = await fetchWithApiFallback('/api/projects/datalad/preflight');
+            const status = await response.json().catch(() => null);
+            createDataladPreflightStatus = status;
+            renderCreateDataladAvailability(status);
+            return status;
+        } catch (_error) {
+            createDataladPreflightStatus = null;
+            renderCreateDataladAvailability(null, { loadFailed: true });
+            return null;
+        }
     }
 
     function buildDataladPreflightHtml(status, targetPath) {
@@ -65,6 +141,9 @@ export function initCreatePreflightController({
             if (requestToken !== createTargetStatusRequestToken) {
                 return { conflict: false, stale: true };
             }
+
+            createDataladPreflightStatus = status;
+            renderCreateDataladAvailability(status);
 
             const dataladWarningHtml = buildDataladPreflightHtml(status, targetPath);
 
@@ -203,6 +282,7 @@ export function initCreatePreflightController({
     const projectUseDataladInput = document.getElementById('projectUseDatalad');
     if (projectUseDataladInput) {
         projectUseDataladInput.addEventListener('change', function() {
+            renderCreateDataladAvailability(createDataladPreflightStatus);
             scheduleCreateTargetStatusCheck();
         });
     }
@@ -218,9 +298,12 @@ export function initCreatePreflightController({
         });
     }
 
+    refreshCreateDataladAvailability().catch(() => {});
+
     return {
         resetCreateTargetStatusChecks,
         checkCreateTargetStatus,
+        refreshCreateDataladAvailability,
         scheduleCreateTargetStatusCheck,
         submitOpenProjectPath,
     };

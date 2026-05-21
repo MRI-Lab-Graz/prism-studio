@@ -99,6 +99,11 @@ def _get_datalad_preflight_status() -> dict[str, Any]:
     }
 
 
+def handle_datalad_preflight_status():
+    """Return lightweight DataLad/git-annex availability for project setup UI."""
+    return jsonify({"success": True, "datalad_preflight": _get_datalad_preflight_status()})
+
+
 def handle_set_current(
     get_current_project,
     set_current_project,
