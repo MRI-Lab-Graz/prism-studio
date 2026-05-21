@@ -443,6 +443,7 @@ def export_project():
         deterministic = True
         export_preset = _normalize_export_preset(data.get("export_preset", "standard"))
         include_derivatives = bool(data.get("include_derivatives", True))
+        include_sourcedata = bool(data.get("include_sourcedata", False))
         include_code = bool(data.get("include_code", True))
         include_analysis = bool(data.get("include_analysis", False))
         exclude_version_control_metadata = bool(
@@ -452,6 +453,7 @@ def export_project():
 
         if export_preset == "upload_ready":
             include_derivatives = False
+            include_sourcedata = False
             include_code = False
             include_analysis = False
             exclude_version_control_metadata = True
@@ -470,6 +472,7 @@ def export_project():
                 id_length=id_length,
                 deterministic=deterministic,
                 include_derivatives=include_derivatives,
+                include_sourcedata=include_sourcedata,
                 include_code=include_code,
                 include_analysis=include_analysis,
                 exclude_version_control_metadata=exclude_version_control_metadata,
@@ -548,6 +551,7 @@ def export_project_folder():
 
         scope_keys = {
             "include_derivatives",
+            "include_sourcedata",
             "include_code",
             "include_analysis",
             "exclude_subjects",
@@ -588,6 +592,7 @@ def export_project_folder():
             manager_kwargs.update(
                 {
                     "include_derivatives": bool(data.get("include_derivatives", True)),
+                    "include_sourcedata": bool(data.get("include_sourcedata", False)),
                     "include_code": bool(data.get("include_code", True)),
                     "include_analysis": bool(data.get("include_analysis", True)),
                     "exclude_sessions": exclude_sessions or None,
@@ -656,6 +661,7 @@ def export_project_annex_availability():
         manager = ProjectManager()
         manager_kwargs = {
             "include_derivatives": bool(data.get("include_derivatives", True)),
+            "include_sourcedata": bool(data.get("include_sourcedata", False)),
             "include_code": bool(data.get("include_code", True)),
             "include_analysis": bool(data.get("include_analysis", True)),
             "exclude_sessions": exclude_sessions or None,
@@ -718,6 +724,7 @@ def export_project_start():
         mask_questions = bool(data.get("mask_questions", True))
         export_preset = _normalize_export_preset(data.get("export_preset", "standard"))
         include_derivatives = bool(data.get("include_derivatives", True))
+        include_sourcedata = bool(data.get("include_sourcedata", False))
         include_code = bool(data.get("include_code", True))
         include_analysis = bool(data.get("include_analysis", False))
         exclude_version_control_metadata = bool(
@@ -731,6 +738,7 @@ def export_project_start():
 
         if export_preset == "upload_ready":
             include_derivatives = False
+            include_sourcedata = False
             include_code = False
             include_analysis = False
             exclude_version_control_metadata = True
@@ -765,6 +773,7 @@ def export_project_start():
             "id_length": 8,
             "deterministic": True,
             "include_derivatives": include_derivatives,
+            "include_sourcedata": include_sourcedata,
             "include_code": include_code,
             "include_analysis": include_analysis,
             "exclude_version_control_metadata": exclude_version_control_metadata,

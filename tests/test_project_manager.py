@@ -2175,6 +2175,30 @@ class TestProjectManager(unittest.TestCase):
             self.assertFalse((output_path / "sub-002").exists())
 
     @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_export_project_to_plain_folder_excludes_sourcedata_by_default(self, _mock_which):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+            (project_path / "sourcedata").mkdir(parents=True, exist_ok=True)
+            (project_path / "sourcedata" / "raw.csv").write_text("a,b\n1,2\n", encoding="utf-8")
+
+            default_result = manager.export_project_to_plain_folder(project_path)
+            self.assertTrue(default_result.get("success"), default_result)
+            default_output = Path(default_result["output_path"])
+            self.assertFalse((default_output / "sourcedata").exists())
+
+            included_result = manager.export_project_to_plain_folder(
+                project_path,
+                include_sourcedata=True,
+            )
+            self.assertTrue(included_result.get("success"), included_result)
+            included_output = Path(included_result["output_path"])
+            self.assertTrue((included_output / "sourcedata" / "raw.csv").exists())
+
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
     def test_export_project_to_plain_folder_cleans_stale_hidden_workspaces(self, _mock_which):
         manager = ProjectManager()
 
