@@ -36,6 +36,7 @@ class TestExtractTask:
 class TestGetProjectModalitiesAndSessions:
     def test_empty_project(self, tmp_path):
         result = get_project_modalities_and_sessions(tmp_path)
+        assert result["subjects"] == []
         assert result["sessions"] == []
         assert result["modalities"] == []
         assert result["acq_labels"] == {}
@@ -60,6 +61,7 @@ class TestGetProjectModalitiesAndSessions:
         mod.mkdir(parents=True)
         (mod / "sub-01_ses-01_task-rest_bold.nii.gz").touch()
         result = get_project_modalities_and_sessions(tmp_path)
+        assert result["subjects"] == ["sub-01"]
         assert result["sessions"] == ["ses-01"]
         assert "func" in result["modalities"]
 
@@ -98,6 +100,7 @@ class TestGetProjectModalitiesAndSessions:
         for sub in ["sub-01", "sub-02"]:
             (tmp_path / sub / "survey").mkdir(parents=True)
         result = get_project_modalities_and_sessions(tmp_path)
+        assert result["subjects"] == ["sub-01", "sub-02"]
         assert result["modalities"] == ["survey"]
 
     def test_file_directly_in_subject_dir_ignored(self, tmp_path):
