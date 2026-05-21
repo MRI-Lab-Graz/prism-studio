@@ -27,6 +27,7 @@ Usage:
 import json
 import os
 import re
+import stat
 import shutil
 import subprocess
 import tempfile
@@ -1020,14 +1021,38 @@ class ProjectManager:
                 # Best effort only; cleanup logic still falls back to mtime checks.
                 pass
 
-        def _cleanup_workspace(path: Optional[Path]) -> None:
+        def _cleanup_workspace(path: Optional[Path]) -> bool:
             if path is None:
-                return
+                return True
+
+            def _onerror(func, target, _exc_info):
+                target_path = Path(str(target))
+                try:
+                    if target_path.is_dir():
+                        os.chmod(target_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+                    else:
+                        os.chmod(target_path, stat.S_IRUSR | stat.S_IWUSR)
+                except Exception:
+                    pass
+                try:
+                    func(target)
+                except Exception:
+                    pass
+
             try:
-                if path.exists():
-                    shutil.rmtree(path, ignore_errors=True)
+                if not path.exists():
+                    return True
+
+                shutil.rmtree(path, onerror=_onerror)
+                if not path.exists():
+                    return True
+
+                shutil.rmtree(path, onerror=_onerror)
+                return not path.exists()
+            except FileNotFoundError:
+                return True
             except Exception:
-                pass
+                return False
 
         def _cleanup_stale_workspaces(root: Path, *, min_age_seconds: int) -> int:
             # Best-effort cleanup for interrupted exports from prior runs.
@@ -1043,8 +1068,8 @@ class ProjectManager:
                         continue
                 except OSError:
                     continue
-                _cleanup_workspace(candidate)
-                removed_count += 1
+                if _cleanup_workspace(candidate):
+                    removed_count += 1
             return removed_count
 
         def _cleanup_stale_workspaces_on_low_space(root: Path) -> int:
@@ -1096,6 +1121,7 @@ class ProjectManager:
         materialized_export = False
         materialization_warnings: List[str] = []
         materialization_workspace: Optional[Path] = None
+        workspace_cleanup_error: Optional[str] = None
 
         materialization_included_top_level_folders = {
             "derivatives": include_derivatives,
@@ -1396,7 +1422,11 @@ class ProjectManager:
                     step_label="DataLad clone",
                 )
                 if not clone_ok:
-                    _cleanup_workspace(materialization_workspace)
+                    if not _cleanup_workspace(materialization_workspace):
+                        clone_error = (
+                            f"{clone_error} Temporary export workspace could not be deleted: "
+                            f"{materialization_workspace}"
+                        )
                     result["error"] = clone_error
                     return result
 
@@ -1868,7 +1898,11 @@ class ProjectManager:
             result["error"] = f"Could not export project folder: {exc}"
             return result
         finally:
-            _cleanup_workspace(materialization_workspace)
+            if not _cleanup_workspace(materialization_workspace):
+                workspace_cleanup_error = (
+                    "Temporary export workspace could not be deleted after export: "
+                    f"{materialization_workspace}"
+                )
 
         if materialized_export and copy_source_path != project_path:
             exported_visible_subject_files = _count_visible_scoped_subject_files(
@@ -1950,6 +1984,10 @@ class ProjectManager:
                     "after temporary clone materialization left them unavailable."
                 )
             missing_source_paths = unresolved_source_paths
+
+        if workspace_cleanup_error:
+            result["error"] = workspace_cleanup_error
+            return result
 
         result["success"] = True
         result["output_path"] = str(export_path)
