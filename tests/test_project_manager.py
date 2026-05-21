@@ -1,5 +1,6 @@
 import json
 import os
+import stat
 import sys
 import tempfile
 import time
@@ -1487,6 +1488,70 @@ class TestProjectManager(unittest.TestCase):
             self.assertTrue(any(command.startswith("/usr/bin/datalad get --on-failure ignore ") for command in commands), commands)
             self.assertTrue(any("sub-001/anat/sub-001_T1w.nii.gz" in command for command in commands if command.startswith("/usr/bin/datalad get ")), commands)
             self.assertTrue(any(command.startswith("/usr/bin/git-annex unlock ") for command in commands), commands)
+
+    def test_export_project_to_plain_folder_deletes_read_only_temporary_workspace(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            export_root = Path(tmp) / "exports"
+            materialization_workspace = Path(tmp) / "materialized_workspace"
+
+            def _fake_run(command, **_kwargs):
+                normalized = [str(part) for part in command]
+                if len(normalized) >= 2 and normalized[0] == "/usr/bin/datalad" and normalized[1] == "clone":
+                    clone_path = Path(normalized[-1])
+                    clone_path.mkdir(parents=True, exist_ok=True)
+                    (clone_path / ".datalad").mkdir(parents=True, exist_ok=True)
+                    (clone_path / ".git").mkdir(parents=True, exist_ok=True)
+                    (clone_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+                    clone_dir = clone_path / "sub-001" / "anat"
+                    clone_dir.mkdir(parents=True, exist_ok=True)
+                    clone_file = clone_dir / "sub-001_T1w.nii.gz"
+                    clone_file.write_bytes(b"nifti")
+
+                    # Simulate read-only annex payloads that used to survive cleanup.
+                    os.chmod(clone_file, stat.S_IRUSR)
+                    os.chmod(clone_dir, stat.S_IRUSR | stat.S_IXUSR)
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if normalized[:4] == ["/usr/bin/datalad", "get", "--on-failure", "ignore"]:
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if len(normalized) >= 2 and normalized[0] == "/usr/bin/git-annex" and normalized[1] == "unlock":
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
+
+            with patch.object(
+                manager,
+                "get_datalad_status",
+                return_value={
+                    "enabled": True,
+                    "available": True,
+                    "executable": "/usr/bin/datalad",
+                    "annex_executable": "/usr/bin/git-annex",
+                    "message": "Current project is tracked by DataLad.",
+                },
+            ):
+                with patch(
+                    "src.project_manager.tempfile.mkdtemp",
+                    return_value=str(materialization_workspace),
+                ):
+                    with patch("src.project_manager.subprocess.run", side_effect=_fake_run):
+                        result = manager.export_project_to_plain_folder(
+                            project_path,
+                            output_root=export_root,
+                            materialize_annex_content=True,
+                        )
+
+            self.assertTrue(result.get("success"), result)
+            self.assertFalse(materialization_workspace.exists())
 
     def test_export_project_to_plain_folder_materialize_recurses_subject_scope_when_clone_has_no_subject_files(self):
         manager = ProjectManager()
