@@ -647,7 +647,12 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("async function checkCreateTargetStatus() {", content)
+        self.assertIn("async function refreshCreateDataladAvailability() {", content)
         self.assertIn("function buildDataladPreflightHtml(status, targetPath) {", content)
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/projects/datalad/preflight');",
+            content,
+        )
         self.assertIn(
             "const response = await fetchWithApiFallback('/api/projects/path-status', {",
             content,
@@ -655,6 +660,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("status?.datalad_preflight", content)
         self.assertIn("document.getElementById('projectUseDatalad')?.checked !== false", content)
         self.assertIn("projectUseDataladInput.addEventListener('change', function() {", content)
+        self.assertIn("renderCreateDataladAvailability(createDataladPreflightStatus);", content)
+        self.assertIn("refreshCreateDataladAvailability().catch(() => {});", content)
         self.assertIn("const targetStatus = await checkCreateTargetStatus();", create_content)
         self.assertIn("if (targetStatus.conflict) {", create_content)
         self.assertIn("const fullPath = joinProjectTargetPath(projectPath, projectName);", create_content)

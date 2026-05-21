@@ -63,6 +63,7 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.module = importlib.import_module(
             "src.web.blueprints.projects_lifecycle_handlers"
         )
+        self.handle_datalad_preflight_status = self.module.handle_datalad_preflight_status
         self.handle_validate_project = self.module.handle_validate_project
         self.handle_project_path_status = self.module.handle_project_path_status
         self.handle_set_current = self.module.handle_set_current
@@ -299,6 +300,33 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertFalse(body["datalad_preflight"]["annex_available"])
         self.assertFalse(body["datalad_preflight"]["can_enable"])
         self.assertIn("git-annex", body["datalad_preflight"]["message"])
+
+    def test_datalad_preflight_status_reports_machine_availability(self):
+        with patch.object(
+            self.module.shutil,
+            "which",
+            side_effect=lambda executable: {
+                "datalad": "/usr/bin/datalad",
+                "git-annex": "/usr/bin/git-annex",
+            }.get(executable),
+        ):
+            with self.app.test_request_context(
+                "/api/projects/datalad/preflight",
+                method="GET",
+            ):
+                response = self.handle_datalad_preflight_status()
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        body = resp_obj.get_json()
+
+        self.assertEqual(status_code, 200)
+        self.assertTrue(body["success"])
+        self.assertIn("datalad_preflight", body)
+        self.assertTrue(body["datalad_preflight"]["available"])
+        self.assertTrue(body["datalad_preflight"]["annex_available"])
+        self.assertTrue(body["datalad_preflight"]["can_enable"])
+        self.assertIn("DataLad and git-annex", body["datalad_preflight"]["message"])
 
     def test_create_project_forwards_datalad_opt_out(self):
         manager = _ProjectManagerStub()
