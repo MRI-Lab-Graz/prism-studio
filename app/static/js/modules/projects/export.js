@@ -1367,7 +1367,7 @@ async function handlePlainFolderExport(e) {
                 ? `<details class="mt-2"><summary>Materialization warnings</summary><ul class="mb-0">${materializationWarnings.map((value) => `<li>${escapeHtml(value)}</li>`).join('')}</ul></details>`
                 : '';
             const materializationHtml = materializedExport
-                ? `<div class="alert alert-info mb-2"><p class="mb-1"><i class="fas fa-database me-2"></i>PRISM created this folder from a temporary DataLad clone after running <code>datalad get -r .</code>.</p>${materializationWarningsHtml}</div>`
+                ? `<div class="alert alert-info mb-2"><p class="mb-1"><i class="fas fa-database me-2"></i>PRISM created this folder from a temporary DataLad clone and materialized only files in the selected export scope.</p>${materializationWarningsHtml}</div>`
                 : (materializationWarningsHtml
                     ? `<div class="alert alert-info mb-2"><p class="mb-1">Materialization notes:</p>${materializationWarningsHtml}</div>`
                     : '');
