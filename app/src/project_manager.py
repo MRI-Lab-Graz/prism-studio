@@ -941,6 +941,7 @@ class ProjectManager:
         *,
         output_root: Union[str, Path, None] = None,
         include_derivatives: bool = True,
+        include_sourcedata: bool = False,
         include_code: bool = True,
         include_analysis: bool = True,
         exclude_subjects: Optional[set[str]] = None,
@@ -1098,6 +1099,7 @@ class ProjectManager:
 
         materialization_included_top_level_folders = {
             "derivatives": include_derivatives,
+            "sourcedata": include_sourcedata,
             "code": include_code,
             "analysis": include_analysis,
         }
@@ -1670,6 +1672,7 @@ class ProjectManager:
 
         included_top_level_folders = {
             "derivatives": include_derivatives,
+            "sourcedata": include_sourcedata,
             "code": include_code,
             "analysis": include_analysis,
         }
@@ -1996,6 +1999,7 @@ class ProjectManager:
         path: Union[str, Path],
         *,
         include_derivatives: bool = True,
+        include_sourcedata: bool = False,
         include_code: bool = True,
         include_analysis: bool = True,
         exclude_subjects: Optional[set[str]] = None,
@@ -2029,6 +2033,7 @@ class ProjectManager:
 
         included_top_level_folders = {
             "derivatives": include_derivatives,
+            "sourcedata": include_sourcedata,
             "code": include_code,
             "analysis": include_analysis,
         }

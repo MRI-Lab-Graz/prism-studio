@@ -180,6 +180,7 @@ def export_project(
     id_length: int = 8,
     deterministic: bool = True,
     include_derivatives: bool = True,
+    include_sourcedata: bool = False,
     include_code: bool = True,
     include_analysis: bool = False,
     exclude_sessions: Optional[Set[str]] = None,
@@ -203,6 +204,7 @@ def export_project(
         id_length: Length of random ID part
         deterministic: Use deterministic random ID generation
         include_derivatives: Include derivatives/ folder
+        include_sourcedata: Include sourcedata/ folder
         include_code: Include code/ folder
         include_analysis: Include analysis/ folder
         exclude_version_control_metadata: Strip Git/DataLad metadata from ZIP
@@ -253,6 +255,7 @@ def export_project(
     # Decide which top-level folders to include
     folders_to_copy = {
         "derivatives": include_derivatives,
+        "sourcedata": include_sourcedata,
         "code": include_code,
         "analysis": include_analysis,
     }

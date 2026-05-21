@@ -487,6 +487,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("function renderAnnexAvailabilityReport(summary) {", content)
         self.assertIn("function renderAnnexAvailabilityError(error) {", content)
         self.assertIn("materialize_annex_content: true,", content)
+        self.assertIn("include_sourcedata: getById('exportSourcedata')?.checked || false,", content)
         self.assertIn(
             "exclude_version_control_metadata: getSelectedExportRepositoryMode() === 'datalad_free',",
             content,
@@ -541,6 +542,11 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("Stripped repository metadata:", content)
         self.assertIn("const templateExportButton = getById('templateExportButton');", content)
         self.assertIn("const plainFolderExportButton = getById('plainFolderExportButton');", content)
+        self.assertIn("const uncheckAllFiltersBtn = getById('exportUncheckAllFilters');", content)
+        self.assertIn("setAllExportScopeFiltersChecked(false);", content)
+        self.assertIn("const checkAllFiltersBtn = getById('exportCheckAllFilters');", content)
+        self.assertIn("setAllExportScopeFiltersChecked(true);", content)
+        self.assertIn("include_sourcedata: Boolean(data.include_sourcedata),", content)
         self.assertIn("const checkAnnexAvailabilityBtn = getById('exportCheckAnnexAvailability');", content)
         self.assertNotIn("const materializeAnnexToggle = getById('exportMaterializeAnnex');", content)
         self.assertIn("const uploadReadyExportButton = getById('uploadReadyExportButton');", content)
@@ -575,6 +581,9 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn('id="plainFolderExportButton"', content)
         self.assertIn('id="uploadReadyExportButton"', content)
         self.assertIn('id="templateExportButton"', content)
+        self.assertIn('id="exportSourcedata"', content)
+        self.assertIn('id="exportUncheckAllFilters"', content)
+        self.assertIn('id="exportCheckAllFilters"', content)
         self.assertIn('id="exportSubjectList"', content)
         self.assertIn("Complete DataLad-free folder export", content)
         self.assertIn('id="exportCheckAnnexAvailability"', content)

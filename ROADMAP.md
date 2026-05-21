@@ -168,3 +168,4 @@ Changelog remains canonical for release-facing history:
 - Exposing the global policy in Settings keeps team defaults discoverable while preserving project-level opt-in overrides.
 - Showing source attribution (project override vs inherited default) in the export snapshot helps avoid ambiguity in privacy confirmation behavior.
 - Supporting explicit reset-to-inherited in UI reduces misconfiguration risk and keeps global privacy policy enforcement easy to recover.
+- For folder-oriented exports, `sourcedata/` should be opt-in by default and its include toggle should be threaded through annex-availability scope signatures to avoid stale preview caching.

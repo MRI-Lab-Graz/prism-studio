@@ -66,6 +66,7 @@ def test_projects_export_uses_fixed_internal_anonymization_settings(tmp_path):
     assert called["clean_nifti_gzip_headers"] is True
     assert called["id_length"] == 8
     assert called["deterministic"] is True
+    assert called["include_sourcedata"] is False
 
 
 def test_projects_export_start_uses_fixed_internal_anonymization_settings(tmp_path):
@@ -121,6 +122,7 @@ def test_projects_export_start_uses_fixed_internal_anonymization_settings(tmp_pa
     assert export_kwargs["clean_nifti_gzip_headers"] is True
     assert export_kwargs["id_length"] == 8
     assert export_kwargs["deterministic"] is True
+    assert export_kwargs["include_sourcedata"] is False
     assert args[2] == "study_anonymized_export.zip"
 
 
@@ -169,6 +171,7 @@ def test_projects_export_start_uses_non_anonymized_filename_when_disabled(tmp_pa
     export_kwargs = args[1]
     assert isinstance(export_kwargs, dict)
     assert export_kwargs["anonymize"] is False
+    assert export_kwargs["include_sourcedata"] is False
     assert args[2] == "study_export.zip"
 
 
@@ -216,6 +219,7 @@ def test_projects_export_start_upload_ready_preset_forces_safe_export_defaults(t
     export_kwargs = args[1]
     assert isinstance(export_kwargs, dict)
     assert export_kwargs["include_derivatives"] is False
+    assert export_kwargs["include_sourcedata"] is False
     assert export_kwargs["include_code"] is False
     assert export_kwargs["include_analysis"] is False
     assert export_kwargs["exclude_version_control_metadata"] is True
@@ -770,6 +774,7 @@ def test_project_folder_export_route_forwards_scope_filters(tmp_path):
                     "project_path": str(project_dir),
                     "output_folder": str(out_dir),
                     "include_derivatives": False,
+                    "include_sourcedata": True,
                     "include_code": True,
                     "include_analysis": False,
                     "exclude_sessions": ["ses-2", ""],
@@ -787,6 +792,7 @@ def test_project_folder_export_route_forwards_scope_filters(tmp_path):
         project_dir,
         output_root=str(out_dir),
         include_derivatives=False,
+        include_sourcedata=True,
         include_code=True,
         include_analysis=False,
         exclude_sessions={"ses-2"},
@@ -833,6 +839,7 @@ def test_project_folder_export_route_forwards_subject_scope_filter(tmp_path):
         output_root=str(out_dir),
         exclude_subjects={"sub-002"},
         include_derivatives=True,
+        include_sourcedata=False,
         include_code=True,
         include_analysis=True,
         exclude_sessions=None,
@@ -874,6 +881,7 @@ def test_project_annex_availability_route_uses_project_manager(tmp_path):
     mock_preview.assert_called_once_with(
         project_dir,
         include_derivatives=True,
+        include_sourcedata=False,
         include_code=True,
         include_analysis=True,
         exclude_sessions=None,
@@ -900,6 +908,7 @@ def test_project_annex_availability_route_forwards_scope_filters(tmp_path):
                 json={
                     "project_path": str(project_dir),
                     "include_derivatives": False,
+                    "include_sourcedata": True,
                     "include_code": True,
                     "include_analysis": False,
                     "exclude_sessions": ["ses-2", ""],
@@ -915,6 +924,7 @@ def test_project_annex_availability_route_forwards_scope_filters(tmp_path):
     mock_preview.assert_called_once_with(
         project_dir,
         include_derivatives=False,
+        include_sourcedata=True,
         include_code=True,
         include_analysis=False,
         exclude_sessions={"ses-2"},
@@ -950,6 +960,7 @@ def test_project_annex_availability_route_forwards_subject_scope_filter(tmp_path
     mock_preview.assert_called_once_with(
         project_dir,
         include_derivatives=True,
+        include_sourcedata=False,
         include_code=True,
         include_analysis=True,
         exclude_subjects={"sub-003"},
