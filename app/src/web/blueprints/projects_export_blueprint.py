@@ -550,6 +550,7 @@ def export_project_folder():
             "include_derivatives",
             "include_code",
             "include_analysis",
+            "exclude_subjects",
             "exclude_sessions",
             "exclude_modalities",
             "exclude_acq",
@@ -578,6 +579,7 @@ def export_project_folder():
                         normalized[modality_name] = normalized_labels
                 return normalized
 
+            exclude_subjects = _normalize_labels(data.get("exclude_subjects"))
             exclude_sessions = _normalize_labels(data.get("exclude_sessions"))
             exclude_modalities = _normalize_labels(data.get("exclude_modalities"))
             exclude_acq = _normalize_grouped_labels(data.get("exclude_acq"))
@@ -597,6 +599,8 @@ def export_project_folder():
                     ),
                 }
             )
+            if "exclude_subjects" in data:
+                manager_kwargs["exclude_subjects"] = exclude_subjects or None
 
         manager = ProjectManager()
         result = manager.export_project_to_plain_folder(
@@ -643,21 +647,28 @@ def export_project_annex_availability():
                     normalized[modality_name] = normalized_labels
             return normalized
 
+        exclude_subjects = _normalize_labels(data.get("exclude_subjects"))
         exclude_sessions = _normalize_labels(data.get("exclude_sessions"))
         exclude_modalities = _normalize_labels(data.get("exclude_modalities"))
         exclude_acq = _normalize_grouped_labels(data.get("exclude_acq"))
         exclude_tasks = _normalize_grouped_labels(data.get("exclude_tasks"))
 
         manager = ProjectManager()
+        manager_kwargs = {
+            "include_derivatives": bool(data.get("include_derivatives", True)),
+            "include_code": bool(data.get("include_code", True)),
+            "include_analysis": bool(data.get("include_analysis", True)),
+            "exclude_sessions": exclude_sessions or None,
+            "exclude_modalities": exclude_modalities or None,
+            "exclude_acq": exclude_acq or None,
+            "exclude_tasks": exclude_tasks or None,
+        }
+        if "exclude_subjects" in data:
+            manager_kwargs["exclude_subjects"] = exclude_subjects or None
+
         result = manager.preview_plain_folder_export_availability(
             resolved,
-            include_derivatives=bool(data.get("include_derivatives", True)),
-            include_code=bool(data.get("include_code", True)),
-            include_analysis=bool(data.get("include_analysis", True)),
-            exclude_sessions=exclude_sessions or None,
-            exclude_modalities=exclude_modalities or None,
-            exclude_acq=exclude_acq or None,
-            exclude_tasks=exclude_tasks or None,
+            **manager_kwargs,
         )
 
         if result.get("success"):

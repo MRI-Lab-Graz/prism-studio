@@ -32,6 +32,7 @@ let lastAnnexAvailabilityCheckedAtMs = 0;
 function getDefaultExportPreferences() {
     return {
         output_folder: '',
+        exclude_subjects: [],
         exclude_sessions: [],
         exclude_modalities: [],
         exclude_acq: {},
@@ -86,6 +87,7 @@ function buildExportRequestData(currentProjectPath, overrides = {}) {
         validation_mode: getSelectedExportValidationMode(),
         repository_mode: getSelectedExportRepositoryMode(),
         exclude_version_control_metadata: getSelectedExportRepositoryMode() === 'datalad_free',
+        exclude_subjects: _getUncheckedValues('export-subject-filter'),
         exclude_sessions: _getUncheckedValues('export-session-filter'),
         exclude_modalities: _getUncheckedValues('export-modality-filter'),
         exclude_acq: _getUncheckedAcqByModality(),
@@ -101,11 +103,12 @@ function buildFolderExportRequestData(currentProjectPath) {
         include_derivatives: getById('exportDerivatives')?.checked || false,
         include_code: getById('exportCode')?.checked || false,
         include_analysis: getById('exportAnalysis')?.checked || false,
+        exclude_subjects: _getUncheckedValues('export-subject-filter'),
         exclude_sessions: _getUncheckedValues('export-session-filter'),
         exclude_modalities: _getUncheckedValues('export-modality-filter'),
         exclude_acq: _getUncheckedAcqByModality(),
         exclude_tasks: _getUncheckedTaskByModality(),
-        materialize_annex_content: getById('exportMaterializeAnnex')?.checked || false,
+        materialize_annex_content: true,
     };
 }
 
@@ -144,6 +147,7 @@ function buildAnnexAvailabilityScopeSignature(projectPath) {
         include_derivatives: Boolean(data.include_derivatives),
         include_code: Boolean(data.include_code),
         include_analysis: Boolean(data.include_analysis),
+        exclude_subjects: normalizeAnnexScopeStringArray(data.exclude_subjects),
         exclude_sessions: normalizeAnnexScopeStringArray(data.exclude_sessions),
         exclude_modalities: normalizeAnnexScopeStringArray(data.exclude_modalities),
         exclude_acq: normalizeAnnexScopeGroupedLabels(data.exclude_acq),
@@ -243,6 +247,7 @@ function normalizeExportPreferences(preferences) {
     normalized.output_folder = typeof preferences.output_folder === 'string'
         ? preferences.output_folder.trim()
         : '';
+    normalized.exclude_subjects = normalizePreferenceStringArray(preferences.exclude_subjects);
     normalized.exclude_sessions = normalizePreferenceStringArray(preferences.exclude_sessions);
     normalized.exclude_modalities = normalizePreferenceStringArray(preferences.exclude_modalities);
     normalized.exclude_acq = normalizeGroupedPreferenceMap(preferences.exclude_acq);
@@ -286,8 +291,10 @@ function updateExportSnapshotUi() {
     const outputFolderHelp = getById('exportOutputFolderHelp');
 
     const outputFolder = (outputFolderInput?.value || '').trim();
+    const subjectCount = document.querySelectorAll('.export-subject-filter').length;
     const sessionCount = document.querySelectorAll('.export-session-filter').length;
     const modalityCount = document.querySelectorAll('.export-modality-filter').length;
+    const excludedSubjects = _getUncheckedValues('export-subject-filter');
     const excludedSessions = _getUncheckedValues('export-session-filter');
     const excludedModalities = _getUncheckedValues('export-modality-filter');
     const excludedAcq = _getUncheckedAcqByModality();
@@ -298,17 +305,20 @@ function updateExportSnapshotUi() {
         if (!currentProjectPath) {
             scopeSummary.textContent = 'Load a project to unlock export';
             scopeDetail.textContent = 'Export choices appear once a project is your active working study.';
-        } else if (!sessionCount && !modalityCount) {
+        } else if (!subjectCount && !sessionCount && !modalityCount) {
             scopeSummary.textContent = lastExportStructureStatus.tone === 'warning'
                 ? 'Export filters need attention'
                 : 'Preparing export scope';
             scopeDetail.textContent = lastExportStructureStatus.message;
-        } else if (!excludedSessions.length && !excludedModalities.length && !excludedSubfilterCount) {
+        } else if (!excludedSubjects.length && !excludedSessions.length && !excludedModalities.length && !excludedSubfilterCount) {
             scopeSummary.textContent = 'Everything currently included';
-            scopeDetail.textContent = 'Uncheck sessions, modalities, or task/acquisition labels below to narrow the export.';
+            scopeDetail.textContent = 'Uncheck subjects, sessions, modalities, or task/acquisition labels below to narrow the export.';
         } else {
             scopeSummary.textContent = 'Custom export scope active';
             scopeDetail.textContent = [
+                excludedSubjects.length
+                    ? `${formatExcludedCount(excludedSubjects.length, 'subject')} excluded`
+                    : 'all subjects included',
                 excludedSessions.length
                     ? `${formatExcludedCount(excludedSessions.length, 'session')} excluded`
                     : 'all sessions included',
@@ -385,7 +395,7 @@ function updateExportSnapshotUi() {
         return;
     }
 
-    if (!sessionCount && !modalityCount) {
+    if (!subjectCount && !sessionCount && !modalityCount) {
         const tone = lastExportStructureStatus.tone === 'warning' ? 'warning' : 'neutral';
         const waitingLabel = lastExportStructureStatus.tone === 'warning'
             ? 'structure unavailable'
@@ -536,6 +546,10 @@ function applyExportPreferencesToFilters(preferences = lastLoadedExportPreferenc
 
     isApplyingExportPreferences = true;
 
+    document.querySelectorAll('.export-subject-filter').forEach(checkbox => {
+        checkbox.checked = !normalized.exclude_subjects.includes(checkbox.value);
+    });
+
     document.querySelectorAll('.export-session-filter').forEach(checkbox => {
         checkbox.checked = !normalized.exclude_sessions.includes(checkbox.value);
     });
@@ -617,6 +631,7 @@ function renderProjectStructureStatus(message, tone = 'muted') {
     lastExportStructureStatus = { message, tone };
     const cssClass = tone === 'warning' ? 'text-warning' : 'text-muted';
     const markup = `<span class="${cssClass} small">${escapeHtml(message)}</span>`;
+    setHtml(getById('exportSubjectList'), markup);
     setHtml(getById('exportSessionList'), markup);
     setHtml(getById('exportModalityList'), markup);
     updateExportSnapshotUi();
@@ -695,6 +710,7 @@ export async function loadProjectStructure() {
             return;
         }
 
+        _renderCheckboxList('exportSubjectList', data.subjects || [], 'subject');
         _renderCheckboxList('exportSessionList', data.sessions || [], 'session');
         _renderCheckboxListWithAcq(
             'exportModalityList',
@@ -928,13 +944,11 @@ export function initExportForm() {
                 return;
             }
 
-            const targetId = String(target.id || '').trim();
-            if (targetId !== 'exportMaterializeAnnex') {
-                resetAnnexAvailabilityReport();
-            }
+            resetAnnexAvailabilityReport();
 
             if (
-                target.classList.contains('export-session-filter')
+                target.classList.contains('export-subject-filter')
+                || target.classList.contains('export-session-filter')
                 || target.classList.contains('export-modality-filter')
                 || target.classList.contains('export-acq-filter')
             ) {
@@ -948,6 +962,7 @@ export function initExportForm() {
                 }
 
                 saveExportPreferencesPatch({
+                    exclude_subjects: _getUncheckedValues('export-subject-filter'),
                     exclude_sessions: _getUncheckedValues('export-session-filter'),
                     exclude_modalities: _getUncheckedValues('export-modality-filter'),
                     exclude_acq: _getUncheckedAcqByModality(),
@@ -1052,34 +1067,6 @@ export function initExportForm() {
             } finally {
                 checkAnnexAvailabilityBtn.disabled = false;
                 checkAnnexAvailabilityBtn.innerHTML = originalLabel;
-            }
-        });
-    }
-
-    const materializeAnnexToggle = getById('exportMaterializeAnnex');
-    if (materializeAnnexToggle) {
-        materializeAnnexToggle.addEventListener('change', async () => {
-            if (!materializeAnnexToggle.checked) {
-                resetAnnexAvailabilityReport();
-                return;
-            }
-
-            const projectPath = resolveCurrentProjectPath();
-            if (!projectPath) {
-                return;
-            }
-
-            const reportDiv = getById('exportAnnexAvailabilityReport');
-            if (reportDiv) {
-                setHtml(reportDiv, '<div class="alert alert-info py-2 mb-0"><i class="fas fa-spinner fa-spin me-1"></i>Checking annex availability for the current export scope...</div>');
-                reportDiv.style.display = 'block';
-            }
-
-            try {
-                const summary = await ensureAnnexAvailabilitySummary(projectPath, { force: true });
-                renderAnnexAvailabilityReport(summary);
-            } catch (error) {
-                renderAnnexAvailabilityError(error);
             }
         });
     }
@@ -1262,13 +1249,16 @@ async function handlePlainFolderExport(e) {
     const resultDiv = getById('exportResult');
     const statusText = getById('exportStatusText');
     const cancelBtn = getById('exportCancelBtn');
-    const materializeAnnex = getById('exportMaterializeAnnex')?.checked || false;
+    const materializeAnnex = true;
 
     let progressPercent = materializeAnnex ? 8 : 12;
     const maxPendingPercent = materializeAnnex ? 94 : 88;
     const progressStep = materializeAnnex ? 2 : 4;
     const progressTickMs = materializeAnnex ? 900 : 650;
     let progressTimerId = null;
+    let statusPulseTimerId = null;
+    let statusPulseTick = 0;
+    const exportStartedAtMs = Date.now();
 
     const setFolderProgress = (nextPercent) => {
         const boundedPercent = Math.max(0, Math.min(100, Number(nextPercent) || 0));
@@ -1318,6 +1308,20 @@ async function handlePlainFolderExport(e) {
         }
         setFolderProgress(Math.min(maxPendingPercent, progressPercent + progressStep));
     }, progressTickMs);
+
+    statusPulseTimerId = window.setInterval(() => {
+        if (!statusText || progressPercent < maxPendingPercent) {
+            return;
+        }
+        const elapsedSeconds = Math.max(0, Math.floor((Date.now() - exportStartedAtMs) / 1000));
+        const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+        const remainingSeconds = elapsedSeconds % 60;
+        const dots = '.'.repeat((statusPulseTick % 3) + 1);
+        statusPulseTick += 1;
+        statusText.textContent = materializeAnnex
+            ? `Still materializing selected scope (${elapsedMinutes}m ${remainingSeconds}s elapsed)${dots}`
+            : `Still creating folder export (${elapsedMinutes}m ${remainingSeconds}s elapsed)${dots}`;
+    }, 5000);
 
     try {
         const data = buildFolderExportRequestData(currentProjectPath);
@@ -1410,6 +1414,9 @@ async function handlePlainFolderExport(e) {
     } finally {
         if (progressTimerId !== null) {
             window.clearInterval(progressTimerId);
+        }
+        if (statusPulseTimerId !== null) {
+            window.clearInterval(statusPulseTimerId);
         }
         if (cancelBtn) {
             cancelBtn.style.display = '';

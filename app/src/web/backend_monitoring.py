@@ -428,6 +428,14 @@ def _build_projects_folder_export_terminal_command(req) -> str:
     if bool(payload.get("include_analysis", True)) is False:
         cmd_parts.append("--exclude-analysis")
 
+    exclude_subjects = payload.get("exclude_subjects") or []
+    if isinstance(exclude_subjects, (list, tuple, set)):
+        normalized_subjects = [
+            str(value).strip() for value in exclude_subjects if str(value).strip()
+        ]
+        if normalized_subjects:
+            cmd_parts.extend(["--exclude-subjects", ",".join(normalized_subjects)])
+
     exclude_sessions = payload.get("exclude_sessions") or []
     if isinstance(exclude_sessions, (list, tuple, set)):
         normalized_sessions = [
