@@ -1013,6 +1013,142 @@ class ProjectManager:
         materialization_warnings: List[str] = []
         materialization_workspace: Optional[Path] = None
 
+        materialization_included_top_level_folders = {
+            "derivatives": include_derivatives,
+            "code": include_code,
+            "analysis": include_analysis,
+        }
+        materialization_exclude_sessions = {
+            str(label).strip()
+            for label in (exclude_sessions or set())
+            if str(label).strip()
+        }
+        materialization_exclude_modalities = {
+            str(label).strip()
+            for label in (exclude_modalities or set())
+            if str(label).strip()
+        }
+        materialization_exclude_acq = {
+            str(modality).strip(): {
+                str(label).strip() for label in labels if str(label).strip()
+            }
+            for modality, labels in (exclude_acq or {}).items()
+            if str(modality).strip() and labels
+        }
+        materialization_exclude_tasks = {
+            str(modality).strip(): {
+                str(label).strip() for label in labels if str(label).strip()
+            }
+            for modality, labels in (exclude_tasks or {}).items()
+            if str(modality).strip() and labels
+        }
+
+        def _materialization_should_exclude_entry(
+            rel_parts: tuple[str, ...], *, is_dir: bool
+        ) -> bool:
+            if not rel_parts:
+                return False
+
+            if len(rel_parts) == 1:
+                root_name = rel_parts[0]
+                if root_name in materialization_included_top_level_folders:
+                    return not materialization_included_top_level_folders[root_name]
+                if not is_dir:
+                    survey_task_filters = materialization_exclude_tasks.get("survey", set())
+                    if survey_task_filters:
+                        task_match = re.search(
+                            r"^task-([A-Za-z0-9]+)_survey\\.json$", root_name
+                        )
+                        if task_match and task_match.group(1) in survey_task_filters:
+                            return True
+                return False
+
+            if not rel_parts[0].startswith("sub-"):
+                return False
+
+            part_index = 1
+            if (
+                part_index < len(rel_parts)
+                and rel_parts[part_index].startswith("ses-")
+            ):
+                session_label = rel_parts[part_index]
+                if session_label in materialization_exclude_sessions:
+                    return True
+                part_index += 1
+
+            if part_index >= len(rel_parts):
+                return False
+
+            modality = rel_parts[part_index]
+            if modality in materialization_exclude_modalities:
+                return True
+
+            if is_dir:
+                return False
+
+            filename = rel_parts[-1]
+            excluded_acq_labels = materialization_exclude_acq.get(modality, set())
+            if excluded_acq_labels:
+                acq_match = re.search(r"_acq-([A-Za-z0-9]+)", filename)
+                if acq_match and acq_match.group(1) in excluded_acq_labels:
+                    return True
+
+            excluded_task_labels = materialization_exclude_tasks.get(modality, set())
+            if excluded_task_labels:
+                task_match = re.search(r"(?:^|_)task-([A-Za-z0-9]+)", filename)
+                if task_match and task_match.group(1) in excluded_task_labels:
+                    return True
+
+            return False
+
+        def _collect_materialization_targets(dataset_root: Path) -> List[str]:
+            selected_files: List[str] = []
+            ignored_names_for_materialization = {
+                ".git",
+                ".datalad",
+                ".gitattributes",
+                ".gitignore",
+                ".gitmodules",
+                "CHANGES",
+            }
+
+            for current_dir_raw, dirnames, filenames in os.walk(dataset_root):
+                current_dir = Path(current_dir_raw)
+
+                non_system_dirs = set(filter_system_files(dirnames))
+                kept_dirs: List[str] = []
+                for dirname in dirnames:
+                    if dirname not in non_system_dirs:
+                        continue
+                    if dirname in ignored_names_for_materialization:
+                        continue
+                    candidate_dir = current_dir / dirname
+                    try:
+                        rel_parts = candidate_dir.relative_to(dataset_root).parts
+                    except ValueError:
+                        continue
+                    if _materialization_should_exclude_entry(rel_parts, is_dir=True):
+                        continue
+                    kept_dirs.append(dirname)
+                dirnames[:] = kept_dirs
+
+                non_system_files = set(filter_system_files(filenames))
+                for filename in filenames:
+                    if filename not in non_system_files:
+                        continue
+                    if filename in ignored_names_for_materialization:
+                        continue
+                    candidate_file = current_dir / filename
+                    try:
+                        rel_parts = candidate_file.relative_to(dataset_root).parts
+                    except ValueError:
+                        continue
+                    if _materialization_should_exclude_entry(rel_parts, is_dir=False):
+                        continue
+                    selected_files.append(Path(*rel_parts).as_posix())
+
+            return sorted(set(selected_files))
+
         if materialize_annex_content:
             if not status.get("enabled"):
                 materialization_warnings.append(
@@ -1091,49 +1227,79 @@ class ProjectManager:
                     result["error"] = clone_error
                     return result
 
-                get_ok, get_error = _run_materialization_step(
-                    [resolved_datalad, "get", "-r", "--on-failure", "ignore", "."],
-                    cwd=clone_source_path,
-                    step_label="DataLad get -r .",
+                selected_materialization_targets = _collect_materialization_targets(
+                    clone_source_path
                 )
-                if (
-                    not get_ok
-                    and "--on-failure" in str(get_error or "").lower()
-                    and (
-                        "unknown argument" in str(get_error or "").lower()
-                        or "unrecognized arguments" in str(get_error or "").lower()
-                    )
-                ):
+                target_chunks = [
+                    selected_materialization_targets[index:index + 200]
+                    for index in range(0, len(selected_materialization_targets), 200)
+                ]
+
+                get_failed = False
+                for chunk_index, chunk in enumerate(target_chunks, start=1):
                     get_ok, get_error = _run_materialization_step(
-                        [resolved_datalad, "get", "-r", "."],
+                        [resolved_datalad, "get", "--on-failure", "ignore", *chunk],
                         cwd=clone_source_path,
-                        step_label="DataLad get -r . (compatibility fallback)",
+                        step_label=(
+                            "DataLad get selected export content "
+                            f"({chunk_index}/{len(target_chunks)})"
+                        ),
                     )
-                if not get_ok:
+                    if (
+                        not get_ok
+                        and "--on-failure" in str(get_error or "").lower()
+                        and (
+                            "unknown argument" in str(get_error or "").lower()
+                            or "unrecognized arguments" in str(get_error or "").lower()
+                        )
+                    ):
+                        get_ok, get_error = _run_materialization_step(
+                            [resolved_datalad, "get", *chunk],
+                            cwd=clone_source_path,
+                            step_label=(
+                                "DataLad get selected export content "
+                                f"({chunk_index}/{len(target_chunks)}) compatibility fallback"
+                            ),
+                        )
+                    if not get_ok:
+                        get_failed = True
+                        if str(get_error or "").strip():
+                            materialization_warnings.append(get_error)
+
+                if get_failed:
                     materialization_warnings.append(
-                        "DataLad get -r . could not retrieve all annexed content from remotes; "
+                        "DataLad get could not retrieve all selected export content from remotes; "
                         "continuing with locally available files."
                     )
-                    if str(get_error or "").strip():
-                        materialization_warnings.append(get_error)
 
                 resolved_annex = str(
                     status.get("annex_executable") or shutil.which("git-annex") or ""
                 ).strip()
-                if resolved_annex:
-                    unlock_ok, unlock_error = _run_materialization_step(
-                        [resolved_annex, "unlock", "."],
-                        cwd=clone_source_path,
-                        step_label="git annex unlock .",
-                    )
-                    if not unlock_ok:
-                        materialization_warnings.append(
-                            f"{unlock_error} Continuing with symlink-following copy."
-                        )
-                else:
+                if not resolved_annex and target_chunks:
                     materialization_warnings.append(
                         "git-annex executable is unavailable; continuing without unlock."
                     )
+                if resolved_annex:
+                    unlock_failed = False
+                    for chunk_index, chunk in enumerate(target_chunks, start=1):
+                        unlock_ok, unlock_error = _run_materialization_step(
+                            [resolved_annex, "unlock", *chunk],
+                            cwd=clone_source_path,
+                            step_label=(
+                                "git annex unlock selected export content "
+                                f"({chunk_index}/{len(target_chunks)})"
+                            ),
+                        )
+                        if not unlock_ok:
+                            unlock_failed = True
+                            if str(unlock_error or "").strip():
+                                materialization_warnings.append(unlock_error)
+
+                    if unlock_failed:
+                        materialization_warnings.append(
+                            "git annex unlock could not unlock all selected export files. "
+                            "Continuing with symlink-following copy."
+                        )
 
                 copy_source_path = clone_source_path
                 materialized_export = True
@@ -1294,6 +1460,43 @@ class ProjectManager:
             return result
         finally:
             _cleanup_workspace(materialization_workspace)
+
+        if materialized_export and missing_source_paths:
+            # A temporary clone can miss locally present annex payloads; recover from source project.
+            unresolved_source_paths: List[str] = []
+            recovered_missing_files = 0
+            for source_path in sorted(set(missing_source_paths)):
+                source_candidate = Path(str(source_path))
+                try:
+                    rel_path = source_candidate.relative_to(copy_source_path)
+                except Exception:
+                    unresolved_source_paths.append(str(source_candidate))
+                    continue
+
+                original_candidate = project_path / rel_path
+                if not original_candidate.exists() or original_candidate.is_dir():
+                    unresolved_source_paths.append(str(source_candidate))
+                    continue
+
+                destination_candidate = export_path / rel_path
+                try:
+                    destination_candidate.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(str(original_candidate), str(destination_candidate))
+                    recovered_missing_files += 1
+                except FileNotFoundError:
+                    unresolved_source_paths.append(str(source_candidate))
+                except OSError as exc:
+                    if exc.errno == 2:
+                        unresolved_source_paths.append(str(source_candidate))
+                    else:
+                        raise
+
+            if recovered_missing_files:
+                materialization_warnings.append(
+                    f"Recovered {recovered_missing_files} file(s) from the source project "
+                    "after temporary clone materialization left them unavailable."
+                )
+            missing_source_paths = unresolved_source_paths
 
         result["success"] = True
         result["output_path"] = str(export_path)

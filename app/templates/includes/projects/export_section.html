@@ -146,13 +146,13 @@
                                                         </label>
                                                     </div>
                                                     <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" id="exportDerivatives" checked>
+                                                        <input class="form-check-input" type="checkbox" id="exportDerivatives">
                                                         <label class="form-check-label" for="exportDerivatives">
                                                             <code>derivatives/</code> - Processed data
                                                         </label>
                                                     </div>
                                                     <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" id="exportCode" checked>
+                                                        <input class="form-check-input" type="checkbox" id="exportCode">
                                                         <label class="form-check-label" for="exportCode">
                                                             <code>code/</code> - Analysis scripts and recipes
                                                         </label>
@@ -380,7 +380,7 @@
                                 </label>
                             </div>
                             <div class="form-text">
-                                For DataLad projects, PRISM uses a temporary clone, runs <code>datalad get -r .</code> and <code>git annex unlock .</code>, then writes a Git/DataLad-free folder copy.
+                                For DataLad projects, PRISM uses a temporary clone, materializes only files in the selected export scope, then writes a Git/DataLad-free folder copy.
                             </div>
                             <div class="form-text text-muted mt-1">
                                 PRISM checks annex availability automatically when you enable this option and again before folder export starts.
