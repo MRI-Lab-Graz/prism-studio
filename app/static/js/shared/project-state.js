@@ -133,10 +133,11 @@ export function resolveCurrentProjectIcon() {
     return normalizeStateValue(getProjectStateSnapshot().icon);
 }
 
-export function setProjectStateSnapshot(pathOrState, name, icon = '', datalad = undefined) {
-    const nextStateInput = pathOrState && typeof pathOrState === 'object' && !Array.isArray(pathOrState)
-        ? pathOrState
-        : { path: pathOrState, name, icon, datalad };
+export function setProjectStateSnapshot(path, name, icon = '') {
+    const datalad = arguments.length > 3 ? arguments[3] : undefined;
+    const nextStateInput = path && typeof path === 'object' && !Array.isArray(path)
+        ? path
+        : { path, name, icon, datalad };
     const nextPath = normalizeStateValue(nextStateInput.path);
     const nextState = {
         path: nextPath,
