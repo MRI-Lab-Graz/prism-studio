@@ -3946,7 +3946,6 @@ class ProjectManager:
         if not datalad_result.get("initialized"):
             return False
 
-        gitattributes_path = project_path / ".gitattributes"
         policy_lines = [
             "*.cfg annex.largefiles=nothing",
             "*.csv annex.largefiles=nothing",
@@ -3971,34 +3970,50 @@ class ProjectManager:
             "project.json annex.largefiles=nothing",
         ]
 
-        existing_content = ""
-        existing_lines = set()
-        if gitattributes_path.exists():
-            try:
-                existing_content = CrossPlatformFile.read_text(str(gitattributes_path))
-            except Exception:
-                existing_content = ""
-            existing_lines = {
-                line.strip()
-                for line in existing_content.splitlines()
-                if line.strip()
-            }
+        dataset_roots: set[Path] = {project_path}
+        try:
+            for marker in project_path.rglob(".datalad"):
+                if marker.is_dir():
+                    dataset_roots.add(marker.parent)
+        except Exception:
+            # Fall back to project root policy only if recursive scan fails.
+            pass
 
-        missing_lines = [line for line in policy_lines if line not in existing_lines]
-        if not missing_lines:
-            return False
+        updated = False
+        for dataset_root in sorted(dataset_roots):
+            gitattributes_path = dataset_root / ".gitattributes"
+            existing_content = ""
+            existing_lines = set()
+            if gitattributes_path.exists():
+                try:
+                    existing_content = CrossPlatformFile.read_text(str(gitattributes_path))
+                except Exception:
+                    existing_content = ""
+                existing_lines = {
+                    line.strip()
+                    for line in existing_content.splitlines()
+                    if line.strip()
+                }
 
-        if existing_content.strip():
-            new_content = existing_content.rstrip() + "\n" + "\n".join(missing_lines) + "\n"
-        else:
-            new_content = (
-                "# Keep PRISM metadata and common text files editable when DataLad is enabled.\n"
-                + "\n".join(missing_lines)
-                + "\n"
-            )
+            missing_lines = [line for line in policy_lines if line not in existing_lines]
+            if not missing_lines:
+                continue
 
-        CrossPlatformFile.write_text(str(gitattributes_path), new_content)
-        return True
+            if existing_content.strip():
+                new_content = (
+                    existing_content.rstrip() + "\n" + "\n".join(missing_lines) + "\n"
+                )
+            else:
+                new_content = (
+                    "# Keep PRISM metadata and common text files editable when DataLad is enabled.\n"
+                    + "\n".join(missing_lines)
+                    + "\n"
+                )
+
+            CrossPlatformFile.write_text(str(gitattributes_path), new_content)
+            updated = True
+
+        return updated
 
     def _build_auto_datalad_save_message(self, reason: str) -> str:
         """Return a stable commit message for lifecycle-triggered DataLad saves."""

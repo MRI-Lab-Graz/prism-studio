@@ -22,6 +22,9 @@ def test_bids_file_deleter_apply_for_plain_project(tmp_path):
     assert result["deleted_count"] == 1
     assert result["removed_empty_dirs"] >= 1
     assert "datalad" not in result
+    assert "python prism.py file-management delete-files" in str(
+        result.get("backend_command", "")
+    )
     assert not target.exists()
 
 
@@ -52,6 +55,10 @@ def test_bids_file_deleter_apply_saves_datalad_dataset(tmp_path, monkeypatch):
     assert datalad.get("enabled") is True
     assert datalad.get("available") is True
     assert datalad.get("saved") is True
+    assert "datalad save -r --updated -m" in str(datalad.get("command", ""))
+    assert "python prism.py file-management delete-files" in str(
+        result.get("backend_command", "")
+    )
 
     command = observed.get("command")
     assert isinstance(command, list)
@@ -80,3 +87,7 @@ def test_bids_file_deleter_apply_reports_missing_datalad_executable(tmp_path, mo
     assert datalad.get("available") is False
     assert datalad.get("saved") is False
     assert "not available" in str(datalad.get("message", "")).lower()
+    assert "datalad save -r --updated -m" in str(datalad.get("command", ""))
+    assert "python prism.py file-management delete-files" in str(
+        result.get("backend_command", "")
+    )

@@ -435,6 +435,73 @@ def test_wide_to_long_convert_command_uses_prism_cli():
     )
 
 
+def test_file_delete_apply_command_uses_prism_cli():
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/file-management/delete",
+        endpoint="tools.api_file_management_delete",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/file-management/delete",
+        method="POST",
+        json={
+            "action": "apply",
+            "project_path": "/tmp/study",
+            "modality": "dwi",
+            "entity_filters": {"acq": "1k20", "ses": "2"},
+            "subjects": ["sub-170"],
+        },
+    ):
+        cmd = _build_terminal_command(request)
+
+    expected_project = str(Path("/tmp/study").resolve(strict=False))
+    assert cmd == (
+        f"python prism.py file-management delete-files --project {expected_project} "
+        "--modality dwi --entity-filter acq=1k20 --entity-filter ses=2 "
+        "--subjects sub-170 --apply"
+    )
+
+
+def test_emit_backend_request_action_includes_file_delete_command(capsys):
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/file-management/delete",
+        endpoint="tools.api_file_management_delete",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/file-management/delete",
+        method="POST",
+        json={
+            "action": "apply",
+            "project_path": "/tmp/study",
+            "entity_filters": {"acq": "1k20"},
+        },
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    expected_project = str(Path("/tmp/study").resolve(strict=False))
+    assert "POST /api/file-management/delete -> file delete" in captured
+    assert (
+        f"cmd=python prism.py file-management delete-files --project {expected_project} "
+        "--entity-filter acq=1k20 --apply"
+    ) in captured
+
+
 def test_emit_backend_request_action_includes_survey_check_templates_command(capsys):
     app = Flask(__name__)
 
