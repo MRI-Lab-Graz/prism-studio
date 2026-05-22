@@ -1,1 +1,0 @@
-create(error): derivatives (dataset) [collision with content in parent dataset at /Users/karl/work/github/prism-studio/tmp_investigation_2/root_ds: ['/Users/karl/work/github/prism-studio/tmp_investigation_2/root_ds/derivatives/file1.txt', '/Users/karl/work/github/prism-studio/tmp_investigation_2/root_ds/derivatives/sub/file2.txt']]
