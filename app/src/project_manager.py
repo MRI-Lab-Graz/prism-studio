@@ -67,6 +67,7 @@ VALID_DATASET_TYPES = {"raw", "derivative"}
 DATALAD_REPAIR_STEP_TIMEOUT_SECONDS = 120
 REGISTERED_SUBDATASET_QUERY_TIMEOUT_SECONDS = 30
 DATALAD_EXPORT_STEP_TIMEOUT_SECONDS = 60 * 60
+DATALAD_TEXT_POLICY_JSON_RULE = "*.json annex.largefiles=nothing"
 EXPORT_TEMP_WORKSPACE_PREFIX = ".prism-folder-export-"
 EXPORT_TEMP_WORKSPACE_LOCKFILE = ".prism-export-active.json"
 EXPORT_TEMP_WORKSPACE_STALE_SECONDS = 15 * 60
@@ -1152,6 +1153,10 @@ class ProjectManager:
             "subdatasets_progress_percent": 0,
             "next_missing_subdataset": "",
             "subdatasets_topology_mode": "",
+            "text_policy_complete": True,
+            "text_policy_dataset_count": 0,
+            "text_policy_missing_count": 0,
+            "text_policy_missing_examples": [],
         }
 
         if not project_path:
@@ -1176,11 +1181,22 @@ class ProjectManager:
 
         result["enabled"] = True
         result.update(self._summarize_nested_subdatasets(project_path))
+        result.update(self._summarize_datalad_text_policy(project_path))
+
+        missing_text_policy_count = int(result.get("text_policy_missing_count", 0) or 0)
+        text_policy_warning = ""
+        if missing_text_policy_count > 0:
+            text_policy_warning = (
+                " Text-file Git tracking policy is missing in "
+                f"{missing_text_policy_count} dataset(s). Use Save DataLad Snapshot "
+                "to apply .gitattributes policy across nested datasets."
+            )
+
         if not available:
             result["message"] = (
                 "Current project is a DataLad dataset, but the datalad executable "
                 "is not available in this environment."
-            )
+            ) + text_policy_warning
             return result
 
         result["can_save"] = True
@@ -1206,6 +1222,8 @@ class ProjectManager:
                 "Current project is tracked by DataLad, but git-annex is not "
                 "available in this environment."
             )
+        if text_policy_warning:
+            result["message"] = f"{result['message']}{text_policy_warning}"
         result["executable"] = datalad_executable
         if git_annex_executable:
             result["annex_executable"] = git_annex_executable
@@ -1238,6 +1256,13 @@ class ProjectManager:
             result["error"] = status.get("message") or "DataLad is not available in this environment."
             return result
 
+        gitattributes_policy_updated = self._ensure_datalad_editable_metadata_policy(
+            project_path,
+            {"initialized": True},
+        )
+        if gitattributes_policy_updated:
+            result["datalad"]["gitattributes_policy_updated"] = True
+
         save_result = self._run_datalad_save(
             project_path,
             message=message,
@@ -1246,6 +1271,12 @@ class ProjectManager:
         )
         refreshed_status = self.get_datalad_status(project_path)
         save_result.update(refreshed_status)
+        if gitattributes_policy_updated:
+            save_result["gitattributes_policy_updated"] = True
+            save_result["message"] = (
+                (save_result.get("message") or "DataLad save completed.")
+                + " Updated DataLad text-file tracking policy across dataset roots."
+            )
         result["datalad"] = save_result
         if save_result.get("saved") or save_result.get("no_changes"):
             result["success"] = True
@@ -3937,6 +3968,77 @@ class ProjectManager:
         result["message"] = f"Git commit failed: {detail or 'Unknown Git error.'}"
         return result
 
+    def _iter_datalad_dataset_roots(self, project_path: Path) -> List[Path]:
+        """Return likely dataset roots without full recursive filesystem scans.
+
+        Fast-path order:
+        1) project root
+        2) paths declared in `.gitmodules`
+        3) top-level child dirs that contain `.datalad`
+
+        Avoid using `rglob('.datalad')` here because project load status calls this
+        frequently and full recursive scans can time out on large remote/external
+        datasets.
+        """
+        dataset_roots: set[Path] = {project_path}
+
+        gitmodules_path = project_path / ".gitmodules"
+        if gitmodules_path.is_file():
+            try:
+                for line in gitmodules_path.read_text(encoding="utf-8").splitlines():
+                    match = re.match(r"^\s*path\s*=\s*(.+?)\s*$", line)
+                    if not match:
+                        continue
+                    rel_path = match.group(1).strip()
+                    if not rel_path:
+                        continue
+                    candidate = project_path / rel_path
+                    if candidate.is_dir():
+                        dataset_roots.add(candidate)
+            except OSError:
+                pass
+
+        try:
+            for child in project_path.iterdir():
+                if child.is_dir() and (child / ".datalad").is_dir():
+                    dataset_roots.add(child)
+        except OSError:
+            pass
+
+        return sorted(dataset_roots)
+
+    def _summarize_datalad_text_policy(self, project_path: Path) -> Dict[str, Any]:
+        """Report whether text-file Git tracking policy is present in dataset roots."""
+        dataset_roots = self._iter_datalad_dataset_roots(project_path)
+        missing_roots: List[str] = []
+
+        for dataset_root in dataset_roots:
+            gitattributes_path = dataset_root / ".gitattributes"
+            has_rule = False
+            if gitattributes_path.is_file():
+                try:
+                    content = CrossPlatformFile.read_text(str(gitattributes_path))
+                    has_rule = DATALAD_TEXT_POLICY_JSON_RULE in content
+                except Exception:
+                    has_rule = False
+
+            if not has_rule:
+                if dataset_root == project_path:
+                    missing_roots.append(".")
+                else:
+                    try:
+                        missing_roots.append(dataset_root.relative_to(project_path).as_posix())
+                    except ValueError:
+                        missing_roots.append(str(dataset_root))
+
+        missing_count = len(missing_roots)
+        return {
+            "text_policy_complete": missing_count == 0,
+            "text_policy_dataset_count": len(dataset_roots),
+            "text_policy_missing_count": missing_count,
+            "text_policy_missing_examples": missing_roots[:10],
+        }
+
     def _ensure_datalad_editable_metadata_policy(
         self,
         project_path: Path,
@@ -3970,17 +4072,8 @@ class ProjectManager:
             "project.json annex.largefiles=nothing",
         ]
 
-        dataset_roots: set[Path] = {project_path}
-        try:
-            for marker in project_path.rglob(".datalad"):
-                if marker.is_dir():
-                    dataset_roots.add(marker.parent)
-        except Exception:
-            # Fall back to project root policy only if recursive scan fails.
-            pass
-
         updated = False
-        for dataset_root in sorted(dataset_roots):
+        for dataset_root in self._iter_datalad_dataset_roots(project_path):
             gitattributes_path = dataset_root / ".gitattributes"
             existing_content = ""
             existing_lines = set()
