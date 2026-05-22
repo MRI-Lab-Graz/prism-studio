@@ -287,15 +287,49 @@ def handle_init_on_bids(project_manager, set_current_project, save_last_project)
         if not data:
             return jsonify({"success": False, "error": "No data provided"}), 400
 
-        path = data.get("path")
-        if not path:
-            return jsonify({"success": False, "error": "Path is required"}), 400
+        remote_url = str(data.get("remote_url") or "").strip()
+        has_remote_source = bool(remote_url)
+
+        request_path = str(data.get("path") or "").strip()
+        bids_path = str(data.get("bids_path") or "").strip()
+        clone_path = str(data.get("clone_path") or "").strip()
+
+        if has_remote_source:
+            path = clone_path or request_path
+            if not path:
+                return (
+                    jsonify(
+                        {
+                            "success": False,
+                            "error": (
+                                "Clone destination is required when using a Git/DataLad URL."
+                            ),
+                        }
+                    ),
+                    400,
+                )
+        else:
+            path = bids_path or request_path
+            if not path:
+                return (
+                    jsonify(
+                        {
+                            "success": False,
+                            "error": (
+                                "BIDS dataset root is required when no Git/DataLad URL is provided."
+                            ),
+                        }
+                    ),
+                    400,
+                )
+
+        requested_use_datalad = bool(data.get("use_datalad", False))
 
         config = {
             "name": data.get("name"),
-            "use_datalad": data.get("use_datalad", False),
-            "remote_url": data.get("remote_url"),
-            "source_type": data.get("source_type"),
+            "use_datalad": requested_use_datalad if not has_remote_source else False,
+            "remote_url": remote_url or None,
+            "source_type": data.get("source_type") or ("remote" if has_remote_source else "local"),
             "authors": data.get("authors"),
             "license": data.get("license"),
             "doi": data.get("doi"),

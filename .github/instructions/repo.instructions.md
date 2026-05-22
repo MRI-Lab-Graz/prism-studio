@@ -37,6 +37,7 @@ Webinterface is BASED on prism.py - not a separate tool!
 - make sure to run the tests after making changes
 - if you are adding a new feature, please add tests for it
 - make a roadmap and mark solved issues, add "lessions-learned"
+- DataLad dataset topology rule: when DataLad is used, the project root must be the superdataset and each `sub-*` folder must be handled as a nested dataset. For OpenNeuro/DataLad remotes, ensure nested dataset structure is resolved locally after install.
 
 ## autonomous execution mode (default)
 - continue end-to-end without asking for confirmation between safe incremental steps

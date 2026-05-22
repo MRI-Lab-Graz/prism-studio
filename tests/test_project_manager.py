@@ -211,7 +211,7 @@ class TestProjectManager(unittest.TestCase):
                     "/usr/bin/datalad",
                     "save",
                     "-m",
-                    'Initialize DataLad nested dataset "derivatives"',
+                    'PRISM: Nested structure conversion (initialize "derivatives")',
                 ],
                 commands,
             )
@@ -290,7 +290,7 @@ class TestProjectManager(unittest.TestCase):
                 "/usr/bin/datalad",
                 "save",
                 "-m",
-                'Initialize DataLad nested dataset "derivatives"',
+                'PRISM: Nested structure conversion (initialize "derivatives")',
             ],
             commands,
         )
@@ -300,7 +300,7 @@ class TestProjectManager(unittest.TestCase):
                 "/usr/bin/datalad",
                 "save",
                 "-m",
-                'Initialize DataLad nested dataset "sub-001"',
+                'PRISM: Nested structure conversion (initialize "sub-001")',
             ],
             commands,
         )
@@ -310,7 +310,7 @@ class TestProjectManager(unittest.TestCase):
                 "/usr/bin/datalad",
                 "save",
                 "-m",
-                'Initialize DataLad nested dataset "sub-002"',
+                'PRISM: Nested structure conversion (initialize "sub-002")',
             ],
             commands,
         )
@@ -452,6 +452,17 @@ class TestProjectManager(unittest.TestCase):
                     )
                     return subprocess.CompletedProcess(command, 0, "", "")
 
+                if normalized == [
+                    "/usr/bin/datalad",
+                    "-C",
+                    str(project_path),
+                    "get",
+                    "-n",
+                    "-r",
+                    ".",
+                ]:
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
                 return subprocess.CompletedProcess(command, 1, "", "unexpected command")
 
             mock_run.side_effect = _fake_run
@@ -475,6 +486,18 @@ class TestProjectManager(unittest.TestCase):
                 "-s",
                 "https://github.com/OpenNeuroDatasets/ds003612.git",
                 str(project_path),
+            ],
+            commands,
+        )
+        self.assertIn(
+            [
+                "/usr/bin/datalad",
+                "-C",
+                str(project_path),
+                "get",
+                "-n",
+                "-r",
+                ".",
             ],
             commands,
         )
@@ -894,7 +917,7 @@ class TestProjectManager(unittest.TestCase):
                 "/usr/bin/datalad",
                 "save",
                 "-m",
-                'Initialize DataLad nested dataset "sub-172"',
+                'PRISM: Nested structure conversion (initialize "sub-172")',
             ],
             commands,
         )
@@ -950,7 +973,7 @@ class TestProjectManager(unittest.TestCase):
                 "/usr/bin/datalad",
                 "save",
                 "-m",
-                'Initialize DataLad nested dataset "derivatives"',
+                'PRISM: Nested structure conversion (initialize "derivatives")',
             ],
             commands,
         )
@@ -1032,7 +1055,7 @@ class TestProjectManager(unittest.TestCase):
                 "save",
                 "--updated",
                 "-m",
-                'Stage parent untracking for nested DataLad dataset "derivatives"',
+                'PRISM: Converting data into nested PRISM-structure (prepare parent untracking "derivatives")',
             ],
             commands,
         )
@@ -1091,7 +1114,7 @@ class TestProjectManager(unittest.TestCase):
                 "save",
                 "--updated",
                 "-m",
-                'Stage parent untracking for nested DataLad dataset "sub-020"',
+                'PRISM: Converting data into nested PRISM-structure (prepare parent untracking "sub-020")',
             ],
             commands,
         )
@@ -1100,7 +1123,7 @@ class TestProjectManager(unittest.TestCase):
                 "git",
                 "commit",
                 "-m",
-                'Stage parent untracking for nested DataLad dataset "sub-020"',
+                'PRISM: Converting data into nested PRISM-structure (prepare parent untracking "sub-020")',
                 "--",
                 "sub-020",
             ],
@@ -1200,7 +1223,7 @@ class TestProjectManager(unittest.TestCase):
                 "save",
                 "--updated",
                 "-m",
-                'Stage parent untracking for nested DataLad dataset "sub-013"',
+                'PRISM: Converting data into nested PRISM-structure (prepare parent untracking "sub-013")',
             ],
             commands,
         )
@@ -1209,7 +1232,7 @@ class TestProjectManager(unittest.TestCase):
                 "git",
                 "commit",
                 "-m",
-                'Stage parent untracking for nested DataLad dataset "sub-013"',
+                'PRISM: Converting data into nested PRISM-structure (prepare parent untracking "sub-013")',
                 "--",
                 "sub-013",
             ],
@@ -1263,7 +1286,7 @@ class TestProjectManager(unittest.TestCase):
                 "save",
                 "--updated",
                 "-m",
-                'Stage parent untracking for nested DataLad dataset "sub-035"',
+                'PRISM: Converting data into nested PRISM-structure (prepare parent untracking "sub-035")',
             ],
             commands,
         )

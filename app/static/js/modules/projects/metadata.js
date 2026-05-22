@@ -2109,6 +2109,10 @@ function _updateProjectsPreliminaryBadge(validation, isCreateMode) {
 }
 
 export function updateCreateProjectButton() {
+    // Keep section badges (Required/FAIR) in sync with the current form state.
+    const completeness = computeLocalCompleteness();
+    updateCompletenessUI(completeness);
+
     const projectBoxSaveBtn = document.getElementById('projectBoxSaveBtn');
     const createButtons = [
         document.getElementById('createProjectSubmitBtn'),

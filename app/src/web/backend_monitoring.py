@@ -520,7 +520,10 @@ def _build_projects_datalad_enable_terminal_command(req) -> str:
                     "save",
                     "--updated",
                     "-m",
-                    f'Stage parent untracking for nested DataLad dataset "{next_missing}"',
+                    (
+                        "PRISM: Converting data into nested PRISM-structure "
+                        f'(prepare parent untracking "{next_missing}")'
+                    ),
                 ],
                 ["datalad", "-C", str(project_root), "create", "-d", ".", "--force", next_missing],
                 [
@@ -529,7 +532,10 @@ def _build_projects_datalad_enable_terminal_command(req) -> str:
                     str(nested_root),
                     "save",
                     "-m",
-                    f'Initialize DataLad nested dataset "{nested_name}"',
+                    (
+                        "PRISM: Nested structure conversion "
+                        f'(initialize "{nested_name}")'
+                    ),
                 ],
                 ["datalad", "-C", str(project_root), "save", "-m", message],
             ]
@@ -544,7 +550,10 @@ def _build_projects_datalad_enable_terminal_command(req) -> str:
                 str(nested_root),
                 "save",
                 "-m",
-                f'Initialize DataLad nested dataset "{nested_name}"',
+                (
+                    "PRISM: Nested structure conversion "
+                    f'(initialize "{nested_name}")'
+                ),
             ],
             ["datalad", "-C", str(project_root), "save", "-m", message],
         ]
