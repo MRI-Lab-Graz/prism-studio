@@ -111,7 +111,7 @@ class TestGetProjectModalitiesAndSessions:
 
         assert sorted(result["acq_labels"]["anat"]) == ["T1w", "T2w"]
 
-    def test_dwi_collects_suffix_and_acq_labels(self, tmp_path):
+    def test_dwi_collects_combined_acq_suffix_labels(self, tmp_path):
         mod = tmp_path / "sub-01" / "ses-01" / "dwi"
         mod.mkdir(parents=True)
         (mod / "sub-01_ses-01_acq-shell1_dwi.nii.gz").touch()
@@ -119,9 +119,9 @@ class TestGetProjectModalitiesAndSessions:
 
         result = get_project_modalities_and_sessions(tmp_path)
 
-        assert sorted(result["acq_labels"]["dwi"]) == ["dwi", "sbref", "shell1"]
+        assert sorted(result["acq_labels"]["dwi"]) == ["sbref", "shell1-dwi"]
 
-    def test_fmap_collects_suffix_and_acq_labels(self, tmp_path):
+    def test_fmap_collects_combined_acq_suffix_labels(self, tmp_path):
         mod = tmp_path / "sub-01" / "ses-01" / "fmap"
         mod.mkdir(parents=True)
         (mod / "sub-01_ses-01_acq-gre_magnitude1.nii.gz").touch()
@@ -129,7 +129,7 @@ class TestGetProjectModalitiesAndSessions:
 
         result = get_project_modalities_and_sessions(tmp_path)
 
-        assert sorted(result["acq_labels"]["fmap"]) == ["epi", "gre", "magnitude1"]
+        assert sorted(result["acq_labels"]["fmap"]) == ["epi", "gre-magnitude1"]
 
     def test_survey_acq_variants_do_not_surface_as_export_acq_labels(self, tmp_path):
         mod = tmp_path / "sub-01" / "ses-01" / "survey"
