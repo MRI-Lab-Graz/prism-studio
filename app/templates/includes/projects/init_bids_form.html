@@ -15,10 +15,12 @@
                 ]) }}
                 <div class="alert alert-info mb-3">
                     <i class="fas fa-info-circle me-2"></i>
-                    Point to your existing BIDS root (the folder containing <code>dataset_description.json</code>).
+                    Point to your existing BIDS root (the folder containing <code>dataset_description.json</code>)
+                    or provide a Git/DataLad URL plus a local clone destination.
                     PRISM will add <code>.bidsignore</code>, <code>.prismrc.json</code>, <code>project.json</code>
                     and the standard <code>sourcedata/</code>, <code>derivatives/</code>, <code>code/</code> folders
-                    without touching any of your existing data files.
+                    without touching any of your existing data files. OpenNeuro-style remotes are
+                    installed with DataLad first.
                 </div>
                 <form id="initBidsForm">
                     <div class="row g-3">
@@ -32,6 +34,28 @@
                             <input type="text" class="form-control" id="initBidsName"
                                    placeholder="leave blank to use folder name">
                             <small class="text-muted">Stored in <code>project.json</code></small>
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-8">
+                            <label for="initBidsRemoteUrl" class="form-label fw-bold">Git / DataLad URL <span class="badge bg-secondary">optional</span></label>
+                            <input type="text" class="form-control" id="initBidsRemoteUrl"
+                                   placeholder="https://github.com/OpenNeuroDatasets/ds003612.git">
+                            <small class="text-muted">Fill this together with Clone Destination when starting from a remote dataset. Leave blank to use the local BIDS root above.</small>
+                        </div>
+                        <div class="col-md-4">
+                            {% call path_picker('Clone Destination', 'initBidsClonePath', 'browseInitBidsClonePath', '/path/to/save-new-project', 'Required when using a Git/DataLad URL', 'Browse', '', '', false, '', '', 'form-label fw-bold') %}
+                            <span class="badge bg-secondary">remote only</span>
+                            {% endcall %}
+                        </div>
+                    </div>
+                    <div id="initBidsRemoteStatus" class="alert alert-secondary py-2 px-3 mt-3 mb-0 small">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="fas fa-circle-info text-muted mt-1" aria-hidden="true"></i>
+                            <div>
+                                <div class="fw-semibold">Remote Source Check</div>
+                                <div>OpenNeuro-style URLs are checked for DataLad requirements before PRISM starts the clone.</div>
+                            </div>
                         </div>
                     </div>
                     <div class="form-check form-switch mt-3">

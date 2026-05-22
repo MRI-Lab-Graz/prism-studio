@@ -63,6 +63,7 @@ from .projects_lifecycle_handlers import (
     handle_get_recent_projects,
     handle_init_on_bids,
     handle_project_path_status,
+    handle_remote_source_status,
     handle_recruitment_location_search,
     handle_set_current,
     handle_set_recent_projects,
@@ -435,6 +436,12 @@ def project_path_status():
 def datalad_preflight_status():
     """Return machine availability info for DataLad project setup."""
     return handle_datalad_preflight_status()
+
+
+@projects_bp.route("/api/projects/remote-source-status", methods=["POST"])
+def remote_source_status():
+    """Return remote dataset requirements for the init-on-bids form."""
+    return handle_remote_source_status(_project_manager)
 
 
 @projects_bp.route("/api/projects/recruitment-location-search", methods=["GET"])

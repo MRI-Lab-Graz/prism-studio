@@ -359,6 +359,164 @@ class TestProjectManager(unittest.TestCase):
         self.assertIn(["/usr/bin/datalad", "create", "-d", ".", "--force", "sub-172"], commands)
 
     @patch("src.project_manager.subprocess.run")
+    @patch("src.project_manager.shutil.which")
+    def test_create_datalad_dataset_keeps_existing_datalad_root_idempotent(
+        self,
+        mock_which,
+        mock_run,
+    ):
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "dataset"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+
+            result = manager._create_datalad_dataset(project_path, enabled=False)
+
+        self.assertTrue(result.get("initialized"), result)
+        self.assertIn("already tracked by DataLad", result.get("message", ""))
+        mock_run.assert_not_called()
+
+    def test_inspect_remote_dataset_source_marks_openneuro_github_as_datalad(self):
+        manager = ProjectManager()
+
+        result = manager.inspect_remote_dataset_source(
+            "https://github.com/OpenNeuroDatasets/ds003612.git"
+        )
+
+        self.assertTrue(result.get("valid"), result)
+        self.assertEqual(result.get("remote_kind"), "openneuro")
+        self.assertTrue(result.get("requires_datalad"), result)
+        self.assertEqual(result.get("clone_method"), "datalad_install")
+
+    def test_inspect_remote_dataset_source_marks_generic_git_as_git_clone(self):
+        manager = ProjectManager()
+
+        result = manager.inspect_remote_dataset_source(
+            "https://github.com/example/dataset.git"
+        )
+
+        self.assertTrue(result.get("valid"), result)
+        self.assertEqual(result.get("remote_kind"), "git")
+        self.assertFalse(result.get("requires_datalad"), result)
+        self.assertEqual(result.get("clone_method"), "git_clone")
+
+    @patch("src.project_manager.ProjectManager._run_datalad_save")
+    @patch("src.project_manager.ProjectManager._create_nested_subdatasets")
+    @patch("src.project_manager.shutil.which")
+    @patch("src.project_manager.subprocess.run")
+    def test_init_on_existing_bids_installs_openneuro_remote_with_datalad(
+        self,
+        mock_run,
+        mock_which,
+        mock_create_nested,
+        mock_run_datalad_save,
+    ):
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: {
+            "datalad": "/usr/bin/datalad",
+            "git-annex": "/usr/bin/git-annex",
+        }.get(executable)
+        mock_create_nested.return_value = {
+            "subdatasets_created": [],
+            "subdatasets_existing": [],
+            "subdataset_failures": [],
+            "subdatasets_skipped": [],
+            "subdatasets_total_count": 0,
+            "subdatasets_registered_count": 0,
+            "subdatasets_remaining_count": 0,
+            "subject_datasets_created": [],
+            "subject_datasets_existing": [],
+            "subject_dataset_failures": [],
+        }
+        mock_run_datalad_save.return_value = {
+            "available": True,
+            "saved": True,
+            "message": 'DataLad saved changes with message "Initialize PRISM on existing BIDS dataset".',
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "ds003612"
+
+            def _fake_run(command, **_kwargs):
+                normalized = [str(part) for part in command]
+                if normalized[:3] == ["/usr/bin/datalad", "install", "-s"]:
+                    destination_path = Path(normalized[4])
+                    destination_path.mkdir(parents=True, exist_ok=True)
+                    (destination_path / ".datalad").mkdir(parents=True, exist_ok=True)
+                    (destination_path / ".git").mkdir(parents=True, exist_ok=True)
+                    (destination_path / "dataset_description.json").write_text(
+                        "{}\n",
+                        encoding="utf-8",
+                    )
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
+
+            mock_run.side_effect = _fake_run
+
+            result = manager.init_on_existing_bids(
+                str(project_path),
+                {
+                    "remote_url": "https://github.com/OpenNeuroDatasets/ds003612.git",
+                    "use_datalad": False,
+                },
+            )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertEqual(result.get("source", {}).get("clone_method"), "datalad_install")
+        self.assertIn("OpenNeuro", result.get("source", {}).get("message", ""))
+        commands = [call.args[0] for call in mock_run.call_args_list]
+        self.assertIn(
+            [
+                "/usr/bin/datalad",
+                "install",
+                "-s",
+                "https://github.com/OpenNeuroDatasets/ds003612.git",
+                str(project_path),
+            ],
+            commands,
+        )
+        self.assertNotIn(["/usr/bin/datalad", "create", "--force"], commands)
+
+    @patch("src.project_manager.subprocess.run")
+    def test_init_on_existing_bids_clones_generic_remote_with_git(self, mock_run):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo-remote"
+
+            def _fake_run(command, **_kwargs):
+                normalized = [str(part) for part in command]
+                if normalized[:2] == ["git", "clone"]:
+                    destination_path = Path(normalized[3])
+                    destination_path.mkdir(parents=True, exist_ok=True)
+                    (destination_path / ".git").mkdir(parents=True, exist_ok=True)
+                    (destination_path / "dataset_description.json").write_text(
+                        "{}\n",
+                        encoding="utf-8",
+                    )
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
+
+            mock_run.side_effect = _fake_run
+
+            result = manager.init_on_existing_bids(
+                str(project_path),
+                {
+                    "remote_url": "https://github.com/example/dataset.git",
+                    "use_datalad": False,
+                },
+            )
+
+            self.assertTrue((project_path / "project.json").exists())
+
+        self.assertTrue(result.get("success"), result)
+        self.assertEqual(result.get("source", {}).get("clone_method"), "git_clone")
+
+    @patch("src.project_manager.subprocess.run")
     @patch(
         "src.project_manager.ProjectManager._parent_has_staged_nested_dataset_deletions",
         return_value=False,

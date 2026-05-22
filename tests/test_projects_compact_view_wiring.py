@@ -98,6 +98,7 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
         self.assertIn('id="createDataladAvailability"', create_content)
         self.assertIn("Checking whether DataLad and git-annex are available on this machine", create_content)
         self.assertIn('id="initBidsUseDatalad"', init_content)
+        self.assertIn('id="initBidsRemoteStatus"', init_content)
         self.assertIn("Use DataLad version control for this dataset", init_content)
 
     def test_projects_cards_explain_starting_points(self):
