@@ -9,6 +9,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/studio-theme.css', v='20260505-sticky-header') }}" rel="stylesheet">
+    {% set prism_api_origin = prism_api_origin|default('') %}
     <script>
         (() => {
             const storageKey = 'prism_beginner_help_mode';
