@@ -104,8 +104,8 @@ def get_project_modalities_and_sessions(project_path: Path) -> Dict[str, object]
         acq_labels: dict mapping modality name -> sorted list of differentiators found.
             For most modalities this is acq- values. For MRI modalities where
             suffixes are semantically meaningful (anat, dwi, fmap, perf),
-            terminal filename suffix labels are also included
-            (for example, T1w, sbref, phasediff, asl).
+            labels combine acq+suffix when both are present (for example,
+            diffall-epi) so they appear as a single acquisition variant.
         task_labels: dict mapping modality name -> sorted list of unique task- values found.
     """
     subjects: Set[str] = set()
@@ -130,15 +130,15 @@ def get_project_modalities_and_sessions(project_path: Path) -> Dict[str, object]
                 if task:
                     task_labels.setdefault(modality_name, set()).add(task)
 
-            if modality_name in suffix_label_modalities:
-                suffix = _extract_suffix_label(fname.name)
-                if suffix:
-                    acq_labels.setdefault(modality_name, set()).add(suffix)
+            suffix = _extract_suffix_label(fname.name) if modality_name in suffix_label_modalities else None
+            acq = _extract_acq(fname.name) if modality_name in acq_label_modalities else None
 
-            if modality_name in acq_label_modalities:
-                acq = _extract_acq(fname.name)
-                if acq:
-                    acq_labels.setdefault(modality_name, set()).add(acq)
+            if modality_name in {"dwi", "fmap", "perf"} and acq and suffix:
+                acq_labels.setdefault(modality_name, set()).add(f"{acq}-{suffix}")
+            elif suffix:
+                acq_labels.setdefault(modality_name, set()).add(suffix)
+            elif acq:
+                acq_labels.setdefault(modality_name, set()).add(acq)
 
     for sub_dir in sorted(project_path.iterdir()):
         if not (sub_dir.is_dir() and sub_dir.name.startswith("sub-")):
