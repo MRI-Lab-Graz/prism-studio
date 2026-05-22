@@ -20,6 +20,31 @@ VERSION_CONTROL_METADATA_DIRS = frozenset({".git", ".datalad"})
 VERSION_CONTROL_METADATA_FILES = frozenset(
     {".gitattributes", ".gitignore", ".gitmodules", "CHANGES"}
 )
+MRI_SUFFIX_LABEL_MODALITIES = frozenset({"anat", "dwi", "fmap", "perf"})
+
+
+def _extract_terminal_suffix_label(filename: str) -> str | None:
+    """Return the terminal BIDS suffix token from a filename, or None."""
+    name = str(filename or "").strip()
+    if not name:
+        return None
+
+    lower_name = name.lower()
+    for compound_ext in (".nii.gz", ".tsv.gz"):
+        if lower_name.endswith(compound_ext):
+            name = name[: -len(compound_ext)]
+            break
+    else:
+        if "." in name:
+            name = name.rsplit(".", 1)[0]
+
+    if not name:
+        return None
+
+    suffix = name.rsplit("_", 1)[-1]
+    if not suffix or "-" in suffix:
+        return None
+    return suffix
 
 
 def _is_version_control_metadata_path(path_parts: tuple[str, ...]) -> bool:
@@ -454,6 +479,10 @@ def export_project(
                     continue
                 # Filter by acq- label if requested
                 if skip_acq and _cur_modality and _cur_modality in skip_acq:
+                    if _cur_modality in MRI_SUFFIX_LABEL_MODALITIES:
+                        suffix_label = _extract_terminal_suffix_label(filename)
+                        if suffix_label and suffix_label in skip_acq[_cur_modality]:
+                            continue
                     import re as _re
 
                     acq_m = _re.search(r"_acq-([A-Za-z0-9]+)", filename)

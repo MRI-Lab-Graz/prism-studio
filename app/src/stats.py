@@ -5,6 +5,30 @@ Dataset statistics and consistency checking
 import re
 
 
+def _extract_suffix_label(filename):
+    """Return the terminal BIDS suffix token from a filename, or None."""
+    name = str(filename or "").strip()
+    if not name:
+        return None
+
+    lower_name = name.lower()
+    for compound_ext in (".nii.gz", ".tsv.gz"):
+        if lower_name.endswith(compound_ext):
+            name = name[: -len(compound_ext)]
+            break
+    else:
+        if "." in name:
+            name = name.rsplit(".", 1)[0]
+
+    if not name:
+        return None
+
+    suffix = name.rsplit("_", 1)[-1]
+    if not suffix or "-" in suffix:
+        return None
+    return suffix
+
+
 class DatasetStats:
     """Collect and analyze dataset statistics"""
 
@@ -12,7 +36,7 @@ class DatasetStats:
         self.subjects = set()
         self.sessions = set()
         self.modalities = {}  # modality -> file count
-        self.acq_labels = {}  # modality -> set of acq- values
+        self.acq_labels = {}  # modality -> set of acq- and MRI suffix differentiators
         self.tasks = set()
         self.beh_tasks = set()
         self.func_tasks = set()
@@ -52,6 +76,11 @@ class DatasetStats:
             )
             if acq_match:
                 self.acq_labels.setdefault(modality, set()).add(acq_match.group(1))
+
+            if modality in ["anat", "dwi", "fmap", "perf"]:
+                suffix_label = _extract_suffix_label(filename)
+                if suffix_label:
+                    self.acq_labels.setdefault(modality, set()).add(suffix_label)
 
         # Only add to tasks if it's not a modality that has its own specific category
         if task and modality not in [

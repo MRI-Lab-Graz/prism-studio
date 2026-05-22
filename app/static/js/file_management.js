@@ -3897,11 +3897,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const deleted = Number(payload.deleted_count || 0);
         const deletedSidecars = Number(payload.deleted_sidecars || 0);
         const removedDirs = Number(payload.removed_empty_dirs || 0);
+        const datalad = payload && typeof payload.datalad === 'object' ? payload.datalad : null;
         const sidecarNote = deletedSidecars > 0 ? ` ${deletedSidecars} orphaned root sidecar(s) removed.` : '';
         const dirNote = removedDirs > 0 ? ` ${removedDirs} empty folder(s) removed.` : '';
+        let dataladNote = '';
+        if (datalad && datalad.enabled) {
+            const dataladMessage = escapeHtml(String(datalad.message || ''));
+            if (datalad.saved) {
+                dataladNote = `<div class="mt-2 small text-success"><i class="fas fa-database me-1"></i>${dataladMessage || 'DataLad save completed.'}</div>`;
+            } else {
+                dataladNote = `<div class="mt-2 small text-warning"><i class="fas fa-database me-1"></i>${dataladMessage || 'DataLad save did not complete automatically.'}</div>`;
+            }
+        }
         fileDeleteResult.innerHTML = `
             <div class="alert alert-success py-2 mb-0">
                 <i class="fas fa-check-circle me-1"></i><strong>Deleted ${deleted} file(s).</strong>${sidecarNote}${dirNote}
+                ${dataladNote}
             </div>
         `;
     }
