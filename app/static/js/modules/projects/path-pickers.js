@@ -77,4 +77,12 @@ export function initProjectPathPickers({ fetchWithApiFallback, validateProjectFi
         confirmLabel: 'Use This Folder',
         fetchWithApiFallback,
     });
+
+    bindFolderPickerButton({
+        buttonId: 'browseInitBidsClonePath',
+        inputId: 'initBidsClonePath',
+        title: 'Select Clone Destination',
+        confirmLabel: 'Use This Folder',
+        fetchWithApiFallback,
+    });
 }

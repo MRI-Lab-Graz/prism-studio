@@ -36,6 +36,25 @@ class _ProjectManagerStub:
         self.init_calls.append((path, config))
         return {"success": True, "path": path, "created_files": [], "message": "ok"}
 
+    def inspect_remote_dataset_source(self, remote_url: str):
+        normalized = str(remote_url or "").strip()
+        if not normalized:
+            return {
+                "active": False,
+                "valid": False,
+                "requires_datalad": False,
+                "message": "",
+            }
+        return {
+            "active": True,
+            "valid": True,
+            "remote_url": normalized,
+            "remote_kind": "openneuro" if "OpenNeuroDatasets" in normalized else "git",
+            "requires_datalad": "OpenNeuroDatasets" in normalized,
+            "clone_method": "datalad_install" if "OpenNeuroDatasets" in normalized else "git_clone",
+            "message": "ok",
+        }
+
     def get_datalad_status(self, path: str):
         return {
             "enabled": False,
@@ -64,6 +83,7 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
             "src.web.blueprints.projects_lifecycle_handlers"
         )
         self.handle_datalad_preflight_status = self.module.handle_datalad_preflight_status
+        self.handle_remote_source_status = self.module.handle_remote_source_status
         self.handle_validate_project = self.module.handle_validate_project
         self.handle_project_path_status = self.module.handle_project_path_status
         self.handle_set_current = self.module.handle_set_current
@@ -328,6 +348,47 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertTrue(body["datalad_preflight"]["can_enable"])
         self.assertIn("DataLad and git-annex", body["datalad_preflight"]["message"])
 
+    def test_remote_source_status_marks_openneuro_remote_disabled_without_datalad(self):
+        manager = _ProjectManagerStub()
+
+        with patch.object(
+            self.module.shutil,
+            "which",
+            side_effect=lambda executable: None,
+        ):
+            with self.app.test_request_context(
+                "/api/projects/remote-source-status",
+                method="POST",
+                json={"remote_url": "https://github.com/OpenNeuroDatasets/ds003612.git"},
+            ):
+                response = self.handle_remote_source_status(manager)
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertTrue(body["remote_source"]["requires_datalad"])
+        self.assertTrue(body["remote_source"]["disabled"])
+        self.assertFalse(body["remote_source"]["datalad_preflight"]["can_enable"])
+
+    def test_remote_source_status_keeps_generic_git_enabled_without_datalad(self):
+        manager = _ProjectManagerStub()
+
+        with patch.object(
+            self.module.shutil,
+            "which",
+            side_effect=lambda executable: None,
+        ):
+            with self.app.test_request_context(
+                "/api/projects/remote-source-status",
+                method="POST",
+                json={"remote_url": "https://github.com/example/dataset.git"},
+            ):
+                response = self.handle_remote_source_status(manager)
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertFalse(body["remote_source"]["requires_datalad"])
+        self.assertFalse(body["remote_source"]["disabled"])
+
     def test_create_project_forwards_datalad_opt_out(self):
         manager = _ProjectManagerStub()
         captured = {}
@@ -384,6 +445,35 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         body = response.get_json()
         self.assertTrue(body["success"])
         self.assertEqual(manager.init_calls[0][1]["use_datalad"], False)
+
+    def test_init_on_bids_forwards_remote_clone_config(self):
+        manager = _ProjectManagerStub()
+
+        target_path = Path(self.tmp_dir.name) / "remote_bids"
+        with self.app.test_request_context(
+            "/api/projects/init-on-bids",
+            method="POST",
+            json={
+                "path": str(target_path),
+                "name": "remote_bids",
+                "remote_url": "https://github.com/OpenNeuroDatasets/ds003612.git",
+                "source_type": "remote",
+                "use_datalad": False,
+            },
+        ):
+            response = self.module.handle_init_on_bids(
+                project_manager=manager,
+                set_current_project=lambda path, name=None: None,
+                save_last_project=lambda path, name=None: None,
+            )
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(
+            manager.init_calls[0][1]["remote_url"],
+            "https://github.com/OpenNeuroDatasets/ds003612.git",
+        )
+        self.assertEqual(manager.init_calls[0][1]["source_type"], "remote")
 
     def test_create_project_response_includes_current_project_datalad_state(self):
         manager = _ProjectManagerStub()
