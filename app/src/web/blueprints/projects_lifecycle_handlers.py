@@ -15,6 +15,8 @@ from src.system_files import filter_system_files
 
 _RECRUITMENT_GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 _RECRUITMENT_GEOCODING_TIMEOUT_SECONDS = 5
+_DATALAD_DOCS_URL = "https://www.datalad.org/"
+_DATALAD_INSTALL_HINT = "Install with: uv tool install datalad git-annex"
 
 
 def _normalize_dataset_type(dataset_type):
@@ -83,12 +85,14 @@ def _get_datalad_preflight_status() -> dict[str, Any]:
     elif datalad_executable:
         message = (
             "git-annex is not installed, so PRISM will create the project without "
-            "DataLad even if you leave the DataLad option enabled."
+            "DataLad even if you leave the DataLad option enabled. "
+            f"{_DATALAD_INSTALL_HINT}. Learn more: {_DATALAD_DOCS_URL}"
         )
     else:
         message = (
             "DataLad is not installed, so PRISM will create the project without "
-            "DataLad even if you leave the DataLad option enabled."
+            "DataLad even if you leave the DataLad option enabled. "
+            f"{_DATALAD_INSTALL_HINT}. Learn more: {_DATALAD_DOCS_URL}"
         )
 
     return {

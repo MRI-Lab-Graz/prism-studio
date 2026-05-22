@@ -214,6 +214,7 @@ def export_project(
     exclude_tasks: Optional[Dict[str, Set[str]]] = None,
     exclude_version_control_metadata: bool = False,
     scrub_mri_json: bool = False,
+    scrub_mri_json_groups: Optional[Set[str]] = None,
     clean_nifti_gzip_headers: bool = False,
     progress_callback=None,
     cancelled_flag=None,
@@ -347,7 +348,11 @@ def export_project(
 
             if is_mri_json_sidecar(source_file):
                 modality = detect_modality_from_path(source_file)
-                data, _removed = scrub_sensitive_json_fields(data, modality=modality)
+                data, _removed = scrub_sensitive_json_fields(
+                    data,
+                    modality=modality,
+                    selected_groups=scrub_mri_json_groups,
+                )
         if mask_questions and isinstance(data, dict):
             for question_num, item in enumerate(
                 get_survey_item_map(data).values(), start=1

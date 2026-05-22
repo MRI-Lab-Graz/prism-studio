@@ -44,7 +44,7 @@ def generate_random_id(
 
 def create_participant_mapping(
     participant_ids: List[str],
-    output_file: Path,
+    output_file: Optional[Path] = None,
     id_length: int = 6,
     deterministic: bool = True,
 ) -> Dict[str, str]:
@@ -53,7 +53,8 @@ def create_participant_mapping(
 
     Args:
         participant_ids: List of original participant IDs
-        output_file: Path to save the mapping JSON
+        output_file: Optional path to save the mapping JSON. When None,
+            mapping is generated in-memory only and not persisted to disk.
         id_length: Length of random ID part
         deterministic: If True, same input always generates same random IDs
 
@@ -86,19 +87,20 @@ def create_participant_mapping(
         if attempts >= 1000:
             raise RuntimeError(f"Could not generate unique ID for {original_id}")
 
-    # Save mapping
-    output_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(
-            {
-                "_description": "Participant ID anonymization mapping",
-                "_warning": "KEEP THIS FILE SECURE! It allows re-identification.",
-                "mapping": mapping,
-                "reverse_mapping": {v: k for k, v in mapping.items()},
-            },
-            f,
-            indent=2,
-        )
+    # Save mapping only when a path is provided.
+    if output_file is not None:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "_description": "Participant ID anonymization mapping",
+                    "_warning": "KEEP THIS FILE SECURE! It allows re-identification.",
+                    "mapping": mapping,
+                    "reverse_mapping": {v: k for k, v in mapping.items()},
+                },
+                f,
+                indent=2,
+            )
 
     return mapping
 

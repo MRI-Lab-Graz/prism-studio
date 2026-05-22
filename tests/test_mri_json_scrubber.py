@@ -14,6 +14,7 @@ from src.mri_json_scrubber import (
     detect_modality_from_path,
     is_mri_json_sidecar,
     is_anatomical_defaced,
+    deface_anatomical_scans,
     scan_mri_jsons,
     build_defacing_report,
     _has_defaced_filename,
@@ -75,6 +76,51 @@ class TestScrubSensitiveJsonFields:
         scrubbed, removed = scrub_sensitive_json_fields(data)
         assert scrubbed == {}
         assert set(removed) == ALWAYS_SCRUB
+
+    def test_publicbids_style_sensitive_keys_removed(self):
+        data = {
+            "Manufacturer": "Siemens",
+            "StudyInstanceUID": "1.2.3",
+            "AccessionNumber": "A-123",
+            "EchoTime": 0.003,
+        }
+        scrubbed, removed = scrub_sensitive_json_fields(data)
+        assert "Manufacturer" not in scrubbed
+        assert "StudyInstanceUID" not in scrubbed
+        assert "AccessionNumber" not in scrubbed
+        assert "EchoTime" in scrubbed
+        assert "Manufacturer" in removed
+
+    def test_pattern_sensitive_keys_removed(self):
+        data = {
+            "Private_ScannerTag": "secret",
+            "px_hidden": "secret",
+            "UserDefinedFoo": "secret",
+            "SubjectCode": "sub-001",
+            "TaskName": "stroop",
+        }
+        scrubbed, removed = scrub_sensitive_json_fields(data)
+        assert "Private_ScannerTag" not in scrubbed
+        assert "px_hidden" not in scrubbed
+        assert "UserDefinedFoo" not in scrubbed
+        assert "SubjectCode" not in scrubbed
+        assert "TaskName" in scrubbed
+        assert "SubjectCode" in removed
+
+    def test_selected_groups_limit_scrubbing_scope(self):
+        data = {
+            "StationName": "Scanner-123",
+            "PatientName": "Sensitive Name",
+            "EchoTime": 0.003,
+        }
+        scrubbed, _removed = scrub_sensitive_json_fields(
+            data,
+            modality="anat",
+            selected_groups={"scanner_site"},
+        )
+        assert "StationName" not in scrubbed
+        assert scrubbed["PatientName"] == "Sensitive Name"
+        assert scrubbed["EchoTime"] == 0.003
 
 
 # ---------------------------------------------------------------------------
@@ -187,6 +233,23 @@ class TestIsAnatomicalDefaced:
         result = is_anatomical_defaced(sidecar, check_nibabel=False)
         assert result["status"] == "unknown"
         assert result["nifti_found"] is True
+
+    def test_json_metadata_hint_marks_defaced(self, tmp_path):
+        sidecar = tmp_path / "sub-01_T1w.json"
+        sidecar.write_text('{"ImageComments": "Defaced with pydeface"}')
+        nifti = tmp_path / "sub-01_T1w.nii.gz"
+        nifti.touch()
+        result = is_anatomical_defaced(sidecar, check_nibabel=False)
+        assert result["status"] == "defaced"
+
+    def test_defacing_artifact_marks_defaced(self, tmp_path):
+        sidecar = tmp_path / "sub-01_T1w.json"
+        sidecar.write_text("{}")
+        nifti = tmp_path / "sub-01_T1w.nii.gz"
+        nifti.touch()
+        (tmp_path / "sub-01_desc-defaceMask_T1w.nii.gz").touch()
+        result = is_anatomical_defaced(sidecar, check_nibabel=False)
+        assert result["status"] == "defaced"
 
 
 # ---------------------------------------------------------------------------
@@ -358,3 +421,21 @@ class TestBuildDefacingReportExtra:
         assert len(report) == 1
         assert "sub-01" in report[0]["file"]
         assert "T1w" in report[0]["file"]
+
+
+class TestDefaceAnatomicalScans:
+    def test_returns_error_when_pydeface_missing(self, tmp_path, monkeypatch):
+        from src import mri_json_scrubber
+
+        monkeypatch.setattr(mri_json_scrubber.shutil, "which", lambda _cmd: None)
+        result = deface_anatomical_scans(tmp_path)
+        assert result["success"] is False
+        assert "pydeface" in str(result.get("error") or "")
+
+    def test_no_anatomical_files_is_success(self, tmp_path, monkeypatch):
+        from src import mri_json_scrubber
+
+        monkeypatch.setattr(mri_json_scrubber.shutil, "which", lambda _cmd: "/usr/bin/pydeface")
+        result = deface_anatomical_scans(tmp_path)
+        assert result["success"] is True
+        assert result["counts"]["total"] == 0
