@@ -25,8 +25,8 @@
                 <form id="initBidsForm">
                     <div class="row g-3">
                         <div class="col-md-8">
-                            {% call path_picker('BIDS Dataset Root', 'initBidsPath', 'browseInitBidsPath', '/path/to/your-bids-dataset', 'Must contain dataset_description.json', 'Browse', '', '', true, '', '', 'form-label fw-bold') %}
-                            <span class="badge bg-danger">REQUIRED</span>
+                            {% call path_picker('BIDS Dataset Root', 'initBidsPath', 'browseInitBidsPath', '/path/to/your-bids-dataset', 'Required for local init only; must contain dataset_description.json', 'Browse', '', '', false, '', '', 'form-label fw-bold') %}
+                            <span class="badge bg-secondary">local only</span>
                             {% endcall %}
                         </div>
                         <div class="col-md-4">

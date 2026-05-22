@@ -1537,7 +1537,7 @@ def test_build_terminal_command_for_projects_datalad_enable_repairs_next_missing
 
     assert cmd == (
         f"datalad -C {resolved_project_path} create -d . --force sub-172 && "
-        f"datalad -C {resolved_project_path / 'sub-172'} save -m 'Initialize DataLad nested dataset \"sub-172\"' && "
+        f"datalad -C {resolved_project_path / 'sub-172'} save -m 'PRISM: Nested structure conversion (initialize \"sub-172\")' && "
         f"datalad -C {resolved_project_path} save -m 'Enable DataLad for PRISM project'"
     )
 
@@ -1576,9 +1576,9 @@ def test_build_terminal_command_for_projects_datalad_enable_migrates_parent_trac
 
     assert cmd == (
         f"git -C {resolved_project_path} rm --cached -r -- derivatives && "
-        f"datalad -C {resolved_project_path} save --updated -m 'Stage parent untracking for nested DataLad dataset \"derivatives\"' && "
+        f"datalad -C {resolved_project_path} save --updated -m 'PRISM: Converting data into nested PRISM-structure (prepare parent untracking \"derivatives\")' && "
         f"datalad -C {resolved_project_path} create -d . --force derivatives && "
-        f"datalad -C {resolved_project_path / 'derivatives'} save -m 'Initialize DataLad nested dataset \"derivatives\"' && "
+        f"datalad -C {resolved_project_path / 'derivatives'} save -m 'PRISM: Nested structure conversion (initialize \"derivatives\")' && "
         f"datalad -C {resolved_project_path} save -m 'Enable DataLad for PRISM project'"
     )
 

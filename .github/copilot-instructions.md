@@ -23,6 +23,7 @@ PRISM is a hybrid dataset validation tool for psychological experiments. It enfo
 ## Key Conventions
 - **Cross-Platform**: Always use `src.cross_platform` utilities for path handling.
 - **System Files**: Always filter `.DS_Store`, `Thumbs.db` using `system_files.filter_system_files`.
+- **DataLad Topology**: When DataLad is enabled, keep project root as the superdataset and treat each `sub-*` folder as a nested dataset. For OpenNeuro/DataLad remotes, resolve nested dataset structure locally after install.
 
 ## Autonomous Execution Mode (Default)
 - Continue end-to-end without asking for confirmation between safe incremental steps.
