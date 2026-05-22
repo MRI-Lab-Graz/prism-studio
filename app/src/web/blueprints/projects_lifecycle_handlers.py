@@ -104,6 +104,22 @@ def handle_datalad_preflight_status():
     return jsonify({"success": True, "datalad_preflight": _get_datalad_preflight_status()})
 
 
+def handle_remote_source_status(project_manager):
+    """Return remote dataset classification plus machine requirements."""
+    data = request.get_json(silent=True) or {}
+    remote_url = data.get("remote_url")
+    remote_source = project_manager.inspect_remote_dataset_source(remote_url)
+    remote_source["datalad_preflight"] = _get_datalad_preflight_status()
+    if remote_source.get("requires_datalad") and not remote_source["datalad_preflight"].get("can_enable"):
+        remote_source["disabled"] = True
+        remote_source["message"] = (
+            "This OpenNeuro/DataLad dataset requires DataLad and git-annex on this machine before PRISM can initialise it."
+        )
+    else:
+        remote_source["disabled"] = False
+    return jsonify({"success": True, "remote_source": remote_source})
+
+
 def handle_set_current(
     get_current_project,
     set_current_project,
@@ -278,6 +294,8 @@ def handle_init_on_bids(project_manager, set_current_project, save_last_project)
         config = {
             "name": data.get("name"),
             "use_datalad": data.get("use_datalad", False),
+            "remote_url": data.get("remote_url"),
+            "source_type": data.get("source_type"),
             "authors": data.get("authors"),
             "license": data.get("license"),
             "doi": data.get("doi"),
@@ -294,17 +312,18 @@ def handle_init_on_bids(project_manager, set_current_project, save_last_project)
         result = project_manager.init_on_existing_bids(path, config)
 
         if result.get("success"):
-            project_name = config.get("name") or Path(path).name
-            project_icon = _derive_project_icon(Path(path))
-            set_current_project(path, project_name)
+            resolved_path = str(result.get("path") or path)
+            project_name = config.get("name") or Path(resolved_path).name
+            project_icon = _derive_project_icon(Path(resolved_path))
+            set_current_project(resolved_path, project_name)
             session["current_project_icon"] = project_icon
-            save_last_project(path, project_name)
+            save_last_project(resolved_path, project_name)
             result["current_project"] = {
-                "path": str(Path(path)),
+                "path": resolved_path,
                 "name": project_name,
                 "icon": project_icon,
-                "datalad": project_manager.get_datalad_status(path),
-                "project_json_path": str(Path(path) / "project.json"),
+                "datalad": project_manager.get_datalad_status(resolved_path),
+                "project_json_path": str(Path(resolved_path) / "project.json"),
             }
             return jsonify(result)
 

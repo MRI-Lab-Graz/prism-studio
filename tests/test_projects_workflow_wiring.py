@@ -355,6 +355,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("export function initProjectPathPickers({ fetchWithApiFallback, validateProjectField, clearCreateResult })", picker_content)
         self.assertIn("buttonId: 'browseProjectPath'", picker_content)
         self.assertIn("buttonId: 'browseInitBidsPath'", picker_content)
+        self.assertIn("buttonId: 'browseInitBidsClonePath'", picker_content)
         self.assertIn("buttonId: 'browseGlobalLibrary'", picker_content)
         self.assertIn("buttonId: 'browseGlobalRecipes'", picker_content)
 
@@ -363,9 +364,19 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("export function initProjectInitOnBidsController({", content)
+        self.assertIn("let remoteStatusRequestToken = 0;", content)
+        self.assertIn("function renderRemoteStatus(status, options = {}) {", content)
+        self.assertIn("async function refreshRemoteStatus() {", content)
+        self.assertIn("const response = await fetchWithApiFallback('/api/projects/remote-source-status', {", content)
+        self.assertIn("initBidsSubmitBtn.disabled = shouldDisableSubmit;", content)
         self.assertIn("const response = await fetchWithApiFallback('/api/projects/init-on-bids', {", content)
         self.assertIn("PRISM Initialised Successfully!", content)
-        self.assertIn("bidsPath.split(/[\\\\/]/).pop()", content)
+        self.assertIn("const clonePath = (document.getElementById('initBidsClonePath')?.value || '').trim();", content)
+        self.assertIn("const remoteUrl = (document.getElementById('initBidsRemoteUrl')?.value || '').trim();", content)
+        self.assertIn("const targetPath = hasRemote ? clonePath : bidsPath;", content)
+        self.assertIn("remote_url: hasRemote ? remoteUrl : undefined,", content)
+        self.assertIn("source_type: hasRemote ? 'remote' : 'local'", content)
+        self.assertIn("targetPath.split(/[\\\\/]/).pop()", content)
         self.assertIn("import { initProjectInitOnBidsController } from './init-on-bids.js';", core_content)
         self.assertIn("initProjectInitOnBidsController({", core_content)
 
@@ -968,9 +979,28 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             open_content,
         )
         self.assertIn(
-            "if (!confirmProjectContextChange('initialise a PRISM project on another dataset', bidsPath)) {",
+            "if (!confirmProjectContextChange(",
             init_content,
         )
+        self.assertIn(
+            "? 'clone and initialise a PRISM project from a remote BIDS dataset'",
+            init_content,
+        )
+        self.assertIn(
+            ": 'initialise a PRISM project on another dataset',",
+            init_content,
+        )
+        self.assertIn(
+            "targetPath",
+            init_content,
+        )
+
+    def test_init_flow_checks_remote_source_requirements_before_submit(self):
+        content = PROJECTS_INIT_ON_BIDS_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("if (remoteStatus?.remote_source?.disabled) {", content)
+        self.assertIn("if (remoteStatus?.remote_source?.valid === false) {", content)
+        self.assertIn("document.getElementById('initBidsRemoteUrl')?.focus();", content)
 
     def test_project_selection_controller_owns_card_switching(self):
         content = PROJECTS_SELECTION_MODULE.read_text(encoding="utf-8")

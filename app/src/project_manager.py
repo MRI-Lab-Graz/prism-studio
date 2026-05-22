@@ -72,6 +72,7 @@ EXPORT_TEMP_WORKSPACE_LOCKFILE = ".prism-export-active.json"
 EXPORT_TEMP_WORKSPACE_STALE_SECONDS = 15 * 60
 EXPORT_TEMP_WORKSPACE_LOW_FREE_BYTES = 20 * 1024 * 1024 * 1024
 EXPORT_TEMP_WORKSPACE_LOW_FREE_RATIO = 0.10
+REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS = 60 * 60
 
 
 class ProjectManager:
@@ -276,6 +277,16 @@ class ProjectManager:
             config = {}
 
         project_path = Path(path)
+        source_result: Optional[Dict[str, Any]] = None
+
+        remote_url = self._normalize_remote_dataset_url(config.get("remote_url"))
+        if remote_url:
+            source_result = self._acquire_remote_bids_dataset(
+                project_path,
+                remote_url=remote_url,
+            )
+            if not source_result.get("success"):
+                return source_result
 
         if not project_path.exists() or not project_path.is_dir():
             return {
@@ -412,15 +423,236 @@ class ProjectManager:
                 "created_files": created_files,
                 "message": msg,
             }
+            if source_result is not None:
+                result["source"] = source_result
             if datalad_result is not None:
                 result["datalad"] = datalad_result
             return result
 
         except Exception as exc:
             result = {"success": False, "error": str(exc), "created_files": created_files}
+            if source_result is not None:
+                result["source"] = source_result
             if datalad_result is not None:
                 result["datalad"] = datalad_result
             return result
+
+    def _normalize_remote_dataset_url(self, remote_url: Any) -> str:
+        """Return a supported remote dataset URL or an empty string."""
+        normalized = str(remote_url or "").strip()
+        if not normalized:
+            return ""
+
+        if normalized.startswith("git@"):
+            after_at = normalized.split("@", 1)[1] if "@" in normalized else ""
+            host, separator, path = after_at.partition(":")
+            if host and separator and path:
+                return normalized
+            return ""
+
+        parsed = urlparse(normalized)
+        if parsed.scheme.lower() not in {"http", "https", "ssh", "git"}:
+            return ""
+        if not parsed.netloc or not parsed.path:
+            return ""
+        return normalized
+
+    def inspect_remote_dataset_source(self, remote_url: Any) -> Dict[str, Any]:
+        """Classify a remote dataset URL for UI preflight and backend routing."""
+        normalized_remote_url = self._normalize_remote_dataset_url(remote_url)
+        if not normalized_remote_url:
+            return {
+                "active": bool(str(remote_url or "").strip()),
+                "valid": False,
+                "remote_url": "",
+                "remote_kind": "",
+                "requires_datalad": False,
+                "clone_method": "",
+                "message": (
+                    "Git/DataLad URL is invalid. Provide a full https://, ssh://, git:// or git@ URL."
+                ),
+            }
+
+        remote_info = self._classify_remote_dataset_url(normalized_remote_url)
+        requires_datalad = bool(remote_info.get("prefer_datalad"))
+        clone_method = "datalad_install" if requires_datalad else "git_clone"
+        return {
+            "active": True,
+            "valid": True,
+            "remote_url": normalized_remote_url,
+            "remote_kind": str(remote_info.get("kind") or "git"),
+            "requires_datalad": requires_datalad,
+            "clone_method": clone_method,
+            "message": (
+                "This OpenNeuro/DataLad dataset will be installed with DataLad."
+                if requires_datalad
+                else "This remote dataset can be cloned with Git."
+            ),
+        }
+
+    def _classify_remote_dataset_url(self, remote_url: str) -> Dict[str, Any]:
+        """Classify a remote dataset URL for clone/install strategy selection."""
+        normalized = str(remote_url or "").strip()
+        host = ""
+        path = ""
+
+        if normalized.startswith("git@"):
+            after_at = normalized.split("@", 1)[1] if "@" in normalized else ""
+            host, _, ssh_path = after_at.partition(":")
+            path = f"/{ssh_path.lstrip('/')}"
+        else:
+            parsed = urlparse(normalized)
+            host = parsed.netloc
+            path = parsed.path or ""
+
+        normalized_host = host.strip().lower()
+        normalized_path = path.strip()
+        lowered_path = normalized_path.lower()
+        is_openneuro_remote = (
+            (
+                normalized_host in {"openneuro.org", "www.openneuro.org"}
+                and lowered_path.startswith("/git/")
+            )
+            or (
+                normalized_host == "github.com"
+                and lowered_path.startswith("/openneurodatasets/")
+            )
+        )
+
+        return {
+            "kind": "openneuro" if is_openneuro_remote else "git",
+            "host": normalized_host,
+            "path": normalized_path,
+            "prefer_datalad": is_openneuro_remote,
+        }
+
+    def _acquire_remote_bids_dataset(
+        self,
+        destination_path: Path,
+        *,
+        remote_url: str,
+    ) -> Dict[str, Any]:
+        """Clone or install a remote BIDS dataset into a local destination."""
+        remote_status = self.inspect_remote_dataset_source(remote_url)
+        if not remote_status.get("valid"):
+            return {
+                "success": False,
+                "error": str(
+                    remote_status.get("message") or "Remote dataset URL is invalid."
+                ),
+            }
+
+        normalized_remote_url = str(remote_status.get("remote_url") or "").strip()
+
+        if destination_path.exists():
+            if not destination_path.is_dir():
+                return {
+                    "success": False,
+                    "error": (
+                        f"Clone destination exists but is not a directory: {destination_path}"
+                    ),
+                }
+
+            existing_entries = filter_system_files(
+                [entry.name for entry in destination_path.iterdir()]
+            )
+            if existing_entries:
+                return {
+                    "success": False,
+                    "error": (
+                        f"Clone destination '{destination_path}' already exists and is not empty. "
+                        "Choose an empty folder or a new destination path."
+                    ),
+                }
+        else:
+            destination_path.parent.mkdir(parents=True, exist_ok=True)
+
+        clone_method = str(remote_status.get("clone_method") or "git_clone")
+        command: List[str]
+        step_label = "Git clone"
+
+        if remote_status.get("requires_datalad"):
+            datalad_executable = shutil.which("datalad")
+            git_annex_executable = shutil.which("git-annex")
+            missing_tools = [
+                tool_name
+                for tool_name, executable in (
+                    ("DataLad", datalad_executable),
+                    ("git-annex", git_annex_executable),
+                )
+                if not executable
+            ]
+            if missing_tools:
+                missing_text = ", ".join(missing_tools)
+                return {
+                    "success": False,
+                    "error": (
+                        "This remote looks like an OpenNeuro/DataLad dataset and should "
+                        f"be installed with DataLad first. Missing: {missing_text}."
+                    ),
+                }
+
+            clone_method = "datalad_install"
+            step_label = "DataLad install"
+            command = [
+                str(datalad_executable),
+                "install",
+                "-s",
+                normalized_remote_url,
+                str(destination_path),
+            ]
+        else:
+            command = ["git", "clone", normalized_remote_url, str(destination_path)]
+
+        try:
+            process = subprocess.run(
+                command,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            return {
+                "success": False,
+                "error": (
+                    f"{step_label} timed out after {REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS} "
+                    "seconds."
+                ),
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "error": f"{step_label} failed ({type(exc).__name__}: {exc}).",
+            }
+
+        if process.returncode != 0:
+            detail = (process.stderr or process.stdout or f"Unknown {step_label} error.").strip()
+            summary = (
+                self._summarize_datalad_error(detail)
+                if clone_method == "datalad_install"
+                else detail.splitlines()[0].strip() if detail else f"Unknown {step_label} error."
+            )
+            return {
+                "success": False,
+                "error": f"{step_label} failed: {summary}",
+            }
+
+        if clone_method == "datalad_install":
+            message = (
+                f'Installed OpenNeuro/DataLad dataset from "{normalized_remote_url}".'
+            )
+        else:
+            message = f'Cloned remote dataset from "{normalized_remote_url}".'
+
+        return {
+            "success": True,
+            "path": str(destination_path),
+            "remote_url": normalized_remote_url,
+            "remote_kind": str(remote_status.get("remote_kind") or "git"),
+            "clone_method": clone_method,
+            "message": message,
+        }
 
     def validate_structure(self, path: str) -> Dict[str, Any]:
         """
@@ -2508,12 +2740,25 @@ class ProjectManager:
             "message": "",
         }
 
+        existing_datalad_root = (project_path / ".datalad").exists()
+        datalad_executable = shutil.which("datalad")
+        git_annex_executable = shutil.which("git-annex")
+
+        if existing_datalad_root:
+            result["available"] = bool(datalad_executable)
+            result["annex_available"] = bool(git_annex_executable)
+            result["initialized"] = True
+            result["message"] = "Current project is already tracked by DataLad."
+            if datalad_executable:
+                result["executable"] = datalad_executable
+            if git_annex_executable:
+                result["annex_executable"] = git_annex_executable
+            return result
+
         if not requested:
             result["message"] = "DataLad initialization skipped by user choice."
             return result
 
-        datalad_executable = shutil.which("datalad")
-        git_annex_executable = shutil.which("git-annex")
         result["available"] = bool(datalad_executable)
         if not datalad_executable:
             result["message"] = (

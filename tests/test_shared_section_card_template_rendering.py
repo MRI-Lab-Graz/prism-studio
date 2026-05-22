@@ -128,4 +128,6 @@ def test_projects_page_renders_shared_path_pickers() -> None:
     assert b"Project Manager" in response.data
     assert b'id="projectPath"' in response.data
     assert b'id="initBidsPath"' in response.data
+    assert b'id="initBidsRemoteUrl"' in response.data
+    assert b'id="initBidsClonePath"' in response.data
     assert b'id="existingPath"' in response.data
