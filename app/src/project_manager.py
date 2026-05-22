@@ -67,6 +67,8 @@ VALID_DATASET_TYPES = {"raw", "derivative"}
 DATALAD_REPAIR_STEP_TIMEOUT_SECONDS = 120
 REGISTERED_SUBDATASET_QUERY_TIMEOUT_SECONDS = 30
 DATALAD_EXPORT_STEP_TIMEOUT_SECONDS = 60 * 60
+DATALAD_DOCS_URL = "https://www.datalad.org/"
+DATALAD_INSTALL_HINT = "Install with: uv tool install datalad git-annex"
 DATALAD_TEXT_POLICY_JSON_RULE = "*.json annex.largefiles=nothing"
 EXPORT_TEMP_WORKSPACE_PREFIX = ".prism-folder-export-"
 EXPORT_TEMP_WORKSPACE_LOCKFILE = ".prism-export-active.json"
@@ -1169,10 +1171,16 @@ class ProjectManager:
 
         if not (project_path / ".datalad").exists():
             if not available:
-                result["message"] = "DataLad is not installed in this environment."
+                result["message"] = (
+                    "DataLad is not installed in this environment. "
+                    f"{DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
+                )
                 return result
             if not annex_available:
-                result["message"] = "git-annex is not installed, so new DataLad projects cannot be initialized."
+                result["message"] = (
+                    "git-annex is not installed, so new DataLad projects cannot be initialized. "
+                    f"{DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
+                )
                 return result
 
             result["can_enable"] = True
@@ -1195,7 +1203,8 @@ class ProjectManager:
         if not available:
             result["message"] = (
                 "Current project is a DataLad dataset, but the datalad executable "
-                "is not available in this environment."
+                "is not available in this environment. "
+                f"{DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
             ) + text_policy_warning
             return result
 
@@ -1220,7 +1229,8 @@ class ProjectManager:
         else:
             result["message"] = (
                 "Current project is tracked by DataLad, but git-annex is not "
-                "available in this environment."
+                "available in this environment. "
+                f"{DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
             )
         if text_policy_warning:
             result["message"] = f"{result['message']}{text_policy_warning}"
@@ -2893,7 +2903,7 @@ class ProjectManager:
         if not datalad_executable:
             result["message"] = (
                 "DataLad is not installed in this environment. PRISM continued without "
-                "DataLad integration."
+                f"DataLad integration. {DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
             )
             return result
 
@@ -2901,7 +2911,7 @@ class ProjectManager:
         if not git_annex_executable:
             result["message"] = (
                 "git-annex is not installed in this environment. PRISM continued "
-                "without DataLad integration."
+                f"without DataLad integration. {DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
             )
             return result
 

@@ -74,12 +74,44 @@ function normalizeDefacingConfirmationMode(value) {
     return normalized === 'always' ? 'always' : 'risk';
 }
 
+function shouldScrubAllMriTags() {
+    return getById('exportScrubAllTags')?.checked !== false;
+}
+
+function getSelectedMriScrubGroups() {
+    if (shouldScrubAllMriTags()) {
+        return [];
+    }
+
+    return Array.from(document.querySelectorAll('.export-scrub-group'))
+        .filter((checkbox) => checkbox.checked)
+        .map((checkbox) => String(checkbox.value || '').trim())
+        .filter((value) => value.length > 0);
+}
+
+function syncMriScrubControls() {
+    const scrubEnabled = getById('exportScrubMriJson')?.checked || false;
+    const scrubAll = shouldScrubAllMriTags();
+    const groupContainer = getById('exportScrubGroupContainer');
+    const groupCheckboxes = Array.from(document.querySelectorAll('.export-scrub-group'));
+
+    if (groupContainer) {
+        groupContainer.style.display = scrubEnabled && !scrubAll ? 'block' : 'none';
+    }
+
+    groupCheckboxes.forEach((checkbox) => {
+        checkbox.disabled = !scrubEnabled || scrubAll;
+    });
+}
+
 function buildExportRequestData(currentProjectPath, overrides = {}) {
+    const scrubGroups = getSelectedMriScrubGroups();
     return {
         project_path: currentProjectPath,
         anonymize: getById('exportAnonymize')?.checked || false,
         mask_questions: getById('exportMaskQuestions')?.checked || false,
         scrub_mri_json: getById('exportScrubMriJson')?.checked || false,
+        scrub_mri_json_groups: scrubGroups.length ? scrubGroups : null,
         include_derivatives: getById('exportDerivatives')?.checked || false,
         include_sourcedata: getById('exportSourcedata')?.checked || false,
         include_code: getById('exportCode')?.checked || false,
@@ -95,6 +127,37 @@ function buildExportRequestData(currentProjectPath, overrides = {}) {
         exclude_tasks: _getUncheckedTaskByModality(),
         ...overrides,
     };
+}
+
+function renderDefacingTable(reportDiv, counts, report) {
+    if (!reportDiv) {
+        return;
+    }
+
+    if (!report || report.length === 0) {
+        reportDiv.innerHTML = '<span class="text-muted small">No anatomical JSON sidecars found.</span>';
+        reportDiv.style.display = 'block';
+        return;
+    }
+
+    const rows = report.map((entry) => {
+        const icon = entry.status === 'defaced' ? '✅' : entry.status === 'not_defaced' ? '⚠️' : '❓';
+        return `<tr><td class="small text-break">${escapeHtml(entry.file || '')}</td><td>${icon} ${escapeHtml(String(entry.status || '').replace('_', ' '))}</td><td class="small text-muted">${escapeHtml(entry.reason || '')}</td></tr>`;
+    }).join('');
+
+    reportDiv.innerHTML = `
+        <div class="small mb-1">
+            <span class="badge bg-success me-1">${Number(counts?.defaced || 0)} defaced</span>
+            <span class="badge bg-warning text-dark me-1">${Number(counts?.not_defaced || 0)} not defaced</span>
+            <span class="badge bg-secondary">${Number(counts?.unknown || 0)} unknown</span>
+        </div>
+        <div style="max-height:200px;overflow-y:auto;">
+          <table class="table table-sm table-bordered mb-0" style="font-size:0.8em;">
+            <thead><tr><th>File</th><th>Status</th><th>Reason</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    reportDiv.style.display = 'block';
 }
 
 function buildFolderExportRequestData(currentProjectPath) {
@@ -1055,6 +1118,20 @@ export function initExportForm() {
         });
     }
 
+    const scrubMriToggle = getById('exportScrubMriJson');
+    if (scrubMriToggle) {
+        scrubMriToggle.addEventListener('change', () => {
+            syncMriScrubControls();
+        });
+    }
+
+    const scrubAllToggle = getById('exportScrubAllTags');
+    if (scrubAllToggle) {
+        scrubAllToggle.addEventListener('change', () => {
+            syncMriScrubControls();
+        });
+    }
+
     const resetDefacingModeBtn = getById('exportDefacingUseGlobalDefault');
     if (resetDefacingModeBtn) {
         resetDefacingModeBtn.addEventListener('click', async () => {
@@ -1140,28 +1217,7 @@ export function initExportForm() {
             checkDefacingBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Checking…';
             try {
                 const { counts, report } = await fetchDefacingSummary(projectPath);
-                if (!reportDiv) return;
-                if (!report || report.length === 0) {
-                    reportDiv.innerHTML = '<span class="text-muted small">No anatomical JSON sidecars found.</span>';
-                } else {
-                    const rows = report.map(r => {
-                        const icon = r.status === 'defaced' ? '✅' : r.status === 'not_defaced' ? '⚠️' : '❓';
-                        return `<tr><td class="small text-break">${r.file}</td><td>${icon} ${r.status.replace('_', ' ')}</td><td class="small text-muted">${r.reason}</td></tr>`;
-                    }).join('');
-                    reportDiv.innerHTML = `
-                        <div class="small mb-1">
-                            <span class="badge bg-success me-1">${counts.defaced} defaced</span>
-                            <span class="badge bg-warning text-dark me-1">${counts.not_defaced} not defaced</span>
-                            <span class="badge bg-secondary">${counts.unknown} unknown</span>
-                        </div>
-                        <div style="max-height:200px;overflow-y:auto;">
-                          <table class="table table-sm table-bordered mb-0" style="font-size:0.8em;">
-                            <thead><tr><th>File</th><th>Status</th><th>Reason</th></tr></thead>
-                            <tbody>${rows}</tbody>
-                          </table>
-                        </div>`;
-                }
-                reportDiv.style.display = 'block';
+                renderDefacingTable(reportDiv, counts, report);
             } catch (err) {
                 if (reportDiv) { reportDiv.style.display = 'block'; reportDiv.innerHTML = `<div class="alert alert-danger py-1 mb-0">${err.message}</div>`; }
             } finally {
@@ -1170,6 +1226,64 @@ export function initExportForm() {
             }
         });
     }
+
+    const runDefacingBtn = getById('exportRunDefacing');
+    if (runDefacingBtn) {
+        runDefacingBtn.addEventListener('click', async () => {
+            const projectPath = resolveCurrentProjectPath();
+            if (!projectPath) {
+                alert('No project is currently loaded');
+                return;
+            }
+
+            const proceed = window.confirm(
+                'Run pydeface now? This overwrites anatomical NIfTI files in the current project.'
+            );
+            if (!proceed) {
+                return;
+            }
+
+            const reportDiv = getById('exportDefacingReport');
+            const originalLabel = runDefacingBtn.innerHTML;
+            runDefacingBtn.disabled = true;
+            runDefacingBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Defacing...';
+
+            try {
+                const resp = await fetchWithApiFallback('/api/projects/export/deface', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_path: projectPath }),
+                });
+                const result = await resp.json().catch(() => ({}));
+                if (!resp.ok || !result.success) {
+                    throw new Error(result.error || result.message || 'Defacing failed.');
+                }
+
+                const afterCounts = result.report_counts || { defaced: 0, not_defaced: 0, unknown: 0 };
+                const afterReport = Array.isArray(result.report) ? result.report : [];
+                renderDefacingTable(reportDiv, afterCounts, afterReport);
+
+                const defacingCounts = result.defacing?.counts || {};
+                const summaryHtml = `
+                    <div class="alert alert-info py-1 mb-2">
+                        ${escapeHtml(result.message || 'Defacing finished.')} Defaced: ${Number(defacingCounts.defaced || 0)}, already defaced: ${Number(defacingCounts.already_defaced || 0)}, failed: ${Number(defacingCounts.failed || 0)}.
+                    </div>`;
+                if (reportDiv) {
+                    reportDiv.innerHTML = summaryHtml + reportDiv.innerHTML;
+                }
+            } catch (error) {
+                if (reportDiv) {
+                    reportDiv.style.display = 'block';
+                    reportDiv.innerHTML = `<div class="alert alert-danger py-1 mb-0">${escapeHtml(error.message || 'Defacing failed.')}</div>`;
+                }
+            } finally {
+                runDefacingBtn.disabled = false;
+                runDefacingBtn.innerHTML = originalLabel;
+            }
+        });
+    }
+
+    syncMriScrubControls();
 }
 
 export function initializeProjectsExport() {
@@ -1505,6 +1619,20 @@ async function runProjectExport({
     if (progressBar) { progressBar.style.width = '0%'; }
     if (progressText) progressText.textContent = '0%';
     const data = buildExportRequestData(currentProjectPath, requestOverrides);
+    if (data.scrub_mri_json && !shouldScrubAllMriTags()) {
+        const selectedScrubGroups = Array.isArray(data.scrub_mri_json_groups)
+            ? data.scrub_mri_json_groups
+            : [];
+        if (!selectedScrubGroups.length) {
+            if (progressDiv) hide(progressDiv);
+            if (resultDiv) {
+                show(resultDiv);
+                setHtml(resultDiv, '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>Select at least one MRI tag group or enable scrub-all mode.</div>');
+            }
+            setButtonLoading(button, false, null, originalText);
+            return;
+        }
+    }
     const selectedValidationMode = normalizeExportValidationMode(data.validation_mode);
     const selectedRepositoryMode = normalizeExportRepositoryMode(data.repository_mode);
     const effectiveRepositoryMode = data.export_preset === 'upload_ready'

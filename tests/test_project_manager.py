@@ -743,6 +743,7 @@ class TestProjectManager(unittest.TestCase):
         self.assertFalse(result.get("annex_available"))
         self.assertFalse(result.get("can_enable"))
         self.assertIn("git-annex", result.get("message", ""))
+        self.assertIn("uv tool install datalad git-annex", result.get("message", ""))
 
     @patch("src.project_manager.shutil.which")
     def test_get_datalad_status_reports_missing_text_policy(self, mock_which):

@@ -320,6 +320,7 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertFalse(body["datalad_preflight"]["annex_available"])
         self.assertFalse(body["datalad_preflight"]["can_enable"])
         self.assertIn("git-annex", body["datalad_preflight"]["message"])
+        self.assertIn("uv tool install datalad git-annex", body["datalad_preflight"]["message"])
 
     def test_datalad_preflight_status_reports_machine_availability(self):
         with patch.object(
