@@ -3,10 +3,14 @@
 import json
 import os
 import sys
+import csv
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from src.session_assignment_audit import audit_project_session_assignments
+from src.session_assignment_audit import (
+    audit_project_session_assignments,
+    write_project_audit_csv,
+)
 
 
 def _write_sidecar(
@@ -138,3 +142,35 @@ def test_audit_reports_non_numeric_session_label(tmp_path):
     finding_codes = [finding.code for finding in report.findings]
 
     assert "non_numeric_session_label" in finding_codes
+
+
+def test_write_project_audit_csv_contains_session_and_finding_rows(tmp_path):
+    _write_sidecar(
+        tmp_path,
+        subject="sub-001",
+        session="ses-1",
+        acquisition_date="20240201",
+        birth_date="19800101",
+        filename="sub-001_ses-1_acq-mprage_T1w.json",
+    )
+    _write_sidecar(
+        tmp_path,
+        subject="sub-001",
+        session="ses-2",
+        acquisition_date="20240101",
+        birth_date="19800101",
+        filename="sub-001_ses-2_acq-mprage_T1w.json",
+    )
+
+    report = audit_project_session_assignments(tmp_path)
+    csv_path = tmp_path / "audit.csv"
+    write_project_audit_csv(report, csv_path)
+
+    assert csv_path.exists()
+    with csv_path.open("r", encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+
+    record_types = [row["record_type"] for row in rows]
+    assert "session" in record_types
+    assert "finding" in record_types
+    assert any(row["code"] == "session_date_order_mismatch" for row in rows)

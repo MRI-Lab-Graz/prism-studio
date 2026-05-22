@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import re
+import csv
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -78,6 +79,10 @@ class ProjectAudit:
         for subject_audit in self.subjects:
             all_findings.extend(subject_audit.findings)
         return all_findings
+
+
+def _format_date_value(value: date | None) -> str:
+    return value.isoformat() if value is not None else ""
 
 
 def _extract_case_insensitive_value(payload: dict[str, Any], keys: tuple[str, ...]) -> Any:
@@ -361,10 +366,84 @@ def audit_project_session_assignments(
     return ProjectAudit(project_root=root, sidecar_pattern=sidecar_pattern, subjects=audits)
 
 
+def project_audit_csv_rows(report: ProjectAudit) -> list[dict[str, str]]:
+    """Return a flat CSV-friendly table for sessions and findings.
+
+    The table uses a ``record_type`` column:
+    - ``session`` rows hold per-session metadata
+    - ``finding`` rows hold issue entries
+    """
+    rows: list[dict[str, str]] = []
+    project_root_text = str(report.project_root)
+
+    for subject_audit in report.subjects:
+        for session in subject_audit.sessions:
+            rows.append(
+                {
+                    "record_type": "session",
+                    "project_root": project_root_text,
+                    "subject": subject_audit.subject,
+                    "session": session.session,
+                    "session_index": "" if session.session_index is None else str(session.session_index),
+                    "acquisition_date": _format_date_value(session.acquisition_date),
+                    "birth_date": _format_date_value(session.birth_date),
+                    "sidecar_count": str(session.sidecar_count),
+                    "code": "",
+                    "message": "",
+                }
+            )
+
+        for finding in subject_audit.findings:
+            rows.append(
+                {
+                    "record_type": "finding",
+                    "project_root": project_root_text,
+                    "subject": finding.subject,
+                    "session": "",
+                    "session_index": "",
+                    "acquisition_date": "",
+                    "birth_date": "",
+                    "sidecar_count": "",
+                    "code": finding.code,
+                    "message": finding.message,
+                }
+            )
+
+    return rows
+
+
+def write_project_audit_csv(report: ProjectAudit, output_path: Path) -> Path:
+    """Write a CSV report with both session rows and finding rows."""
+    rows = project_audit_csv_rows(report)
+    destination = Path(output_path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+
+    fieldnames = [
+        "record_type",
+        "project_root",
+        "subject",
+        "session",
+        "session_index",
+        "acquisition_date",
+        "birth_date",
+        "sidecar_count",
+        "code",
+        "message",
+    ]
+    with destination.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    return destination
+
+
 __all__ = [
     "AuditFinding",
     "SessionInfo",
     "SubjectAudit",
     "ProjectAudit",
     "audit_project_session_assignments",
+    "project_audit_csv_rows",
+    "write_project_audit_csv",
 ]

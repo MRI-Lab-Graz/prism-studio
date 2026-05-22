@@ -12,7 +12,10 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from src.session_assignment_audit import audit_project_session_assignments
+from src.session_assignment_audit import (
+    audit_project_session_assignments,
+    write_project_audit_csv,
+)
 
 
 def _parse_args() -> argparse.Namespace:
@@ -35,6 +38,11 @@ def _parse_args() -> argparse.Namespace:
         "--show-ok-subjects",
         action="store_true",
         help="Also print subjects without findings",
+    )
+    parser.add_argument(
+        "--csv-out",
+        default="",
+        help="Optional CSV output path for a flat sessions+findings report",
     )
     return parser.parse_args()
 
@@ -59,6 +67,10 @@ def main() -> int:
     print(f"Subjects: {total_subjects}")
     print(f"Subjects with findings: {len(subjects_with_findings)}")
     print(f"Total findings: {total_findings}")
+
+    if args.csv_out:
+        csv_path = write_project_audit_csv(report, Path(args.csv_out))
+        print(f"CSV: {csv_path}")
 
     for subject_audit in report.subjects:
         if not args.show_ok_subjects and not subject_audit.findings:
