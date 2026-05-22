@@ -744,6 +744,38 @@ class TestProjectManager(unittest.TestCase):
         self.assertFalse(result.get("can_enable"))
         self.assertIn("git-annex", result.get("message", ""))
 
+    @patch("src.project_manager.shutil.which")
+    def test_get_datalad_status_reports_missing_text_policy(self, mock_which):
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / ".gitattributes").write_text(
+                "*.json annex.largefiles=nothing\n", encoding="utf-8"
+            )
+            (project_path / "sub-001" / ".datalad").mkdir(parents=True, exist_ok=True)
+
+            with patch.object(
+                ProjectManager,
+                "_summarize_nested_subdatasets",
+                return_value={
+                    "subdatasets_total_count": 1,
+                    "subdatasets_registered_count": 1,
+                    "subdatasets_remaining_count": 0,
+                    "subdatasets_progress_percent": 100,
+                    "next_missing_subdataset": "",
+                    "subdatasets_topology_mode": "local-expected",
+                },
+            ):
+                result = manager.get_datalad_status(project_path)
+
+        self.assertTrue(result.get("enabled"))
+        self.assertFalse(result.get("text_policy_complete"))
+        self.assertEqual(result.get("text_policy_missing_count"), 1)
+        self.assertIn("Text-file Git tracking policy is missing", result.get("message", ""))
+
     @patch(
         "src.project_manager.subprocess.run",
         return_value=Mock(returncode=0, stdout="", stderr=""),
@@ -767,6 +799,7 @@ class TestProjectManager(unittest.TestCase):
                 )
 
         self.assertTrue(result.get("success"), result)
+        self.assertTrue(result.get("datalad", {}).get("gitattributes_policy_updated"))
         commands = [call.args[0] for call in mock_run.call_args_list]
         self.assertIn(
             ["/usr/bin/datalad", "save", "-r", "-m", "Checkpoint metadata updates"],
@@ -911,6 +944,37 @@ class TestProjectManager(unittest.TestCase):
                 {"initialized": True},
             )
             self.assertFalse(updated_second)
+
+    def test_iter_datalad_dataset_roots_uses_gitmodules_paths(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "sub-001").mkdir(parents=True, exist_ok=True)
+            (project_path / "derivatives").mkdir(parents=True, exist_ok=True)
+            (project_path / ".gitmodules").write_text(
+                """
+[submodule \"sub-001\"]
+	path = sub-001
+	url = ./sub-001
+[submodule \"derivatives\"]
+	path = derivatives
+	url = ./derivatives
+""".strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            roots = manager._iter_datalad_dataset_roots(project_path)
+            rel_roots = [
+                "." if root == project_path else root.relative_to(project_path).as_posix()
+                for root in roots
+            ]
+
+        self.assertIn(".", rel_roots)
+        self.assertIn("sub-001", rel_roots)
+        self.assertIn("derivatives", rel_roots)
 
     @patch("src.project_manager.subprocess.run")
     @patch(

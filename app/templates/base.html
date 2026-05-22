@@ -745,7 +745,7 @@
 
             const supportsAbortController = typeof AbortController === 'function';
             const controller = supportsAbortController ? new AbortController() : null;
-            const timeoutMs = 12000;
+            const timeoutMs = 45000;
             const timeoutId = controller
                 ? window.setTimeout(() => controller.abort(), timeoutMs)
                 : null;

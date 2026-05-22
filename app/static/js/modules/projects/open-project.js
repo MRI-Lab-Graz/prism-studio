@@ -16,7 +16,121 @@ export function initOpenProjectController({
 }) {
     const DATALAD_PREFERENCES_NAMESPACE = 'datalad';
     const DATALAD_DEFAULT_COMMIT_MESSAGE = 'Checkpoint PRISM project changes';
+    const DATALAD_SAVE_PROGRESS_STEPS = [
+        { afterSeconds: 0, percent: 8, label: 'Starting DataLad snapshot...' },
+        { afterSeconds: 8, percent: 22, label: 'Applying text-file tracking policy...' },
+        { afterSeconds: 25, percent: 40, label: 'Scanning nested datasets...' },
+        { afterSeconds: 60, percent: 58, label: 'Saving changed datasets recursively...' },
+        { afterSeconds: 120, percent: 72, label: 'Collecting remaining metadata updates...' },
+        { afterSeconds: 240, percent: 86, label: 'Large dataset save in progress (this can take several minutes)...' },
+        { afterSeconds: 420, percent: 94, label: 'Almost done. Waiting for DataLad to finish...' },
+    ];
     let dataladOptInPromptToken = 0;
+    let dataladSaveProgressIntervalId = null;
+    let dataladSaveProgressStartedAt = 0;
+
+    function formatElapsedDuration(totalSeconds) {
+        const seconds = Math.max(0, Number.parseInt(String(totalSeconds ?? ''), 10) || 0);
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const remainder = seconds % 60;
+
+        if (hours > 0) {
+            return `${hours}:${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
+        }
+        return `${minutes}:${String(remainder).padStart(2, '0')}`;
+    }
+
+    function getSaveProgressElements() {
+        return {
+            wrap: document.getElementById('projectBoxDataladSaveProgressWrap'),
+            bar: document.getElementById('projectBoxDataladSaveProgressBar'),
+            label: document.getElementById('projectBoxDataladSaveProgressLabel'),
+        };
+    }
+
+    function stopProjectBoxDataladSaveProgress() {
+        if (dataladSaveProgressIntervalId !== null) {
+            window.clearInterval(dataladSaveProgressIntervalId);
+            dataladSaveProgressIntervalId = null;
+        }
+        dataladSaveProgressStartedAt = 0;
+    }
+
+    function updateProjectBoxDataladSaveProgress(percent, message) {
+        const { wrap, bar, label } = getSaveProgressElements();
+        if (!wrap || !bar || !label) {
+            return;
+        }
+
+        const normalizedPercent = Math.max(0, Math.min(100, Number.parseInt(String(percent ?? ''), 10) || 0));
+        wrap.classList.remove('d-none');
+        bar.style.width = `${normalizedPercent}%`;
+        bar.setAttribute('aria-valuenow', String(normalizedPercent));
+        bar.textContent = normalizedPercent >= 12 ? `${normalizedPercent}%` : '';
+        label.textContent = String(message || '').trim();
+    }
+
+    function startProjectBoxDataladSaveProgress() {
+        stopProjectBoxDataladSaveProgress();
+        dataladSaveProgressStartedAt = Date.now();
+
+        const { wrap, bar } = getSaveProgressElements();
+        if (!wrap || !bar) {
+            return;
+        }
+
+        bar.classList.remove('bg-success', 'bg-danger');
+        bar.classList.add('bg-primary', 'progress-bar-striped', 'progress-bar-animated');
+
+        const tick = () => {
+            const elapsedSeconds = Math.floor((Date.now() - dataladSaveProgressStartedAt) / 1000);
+            let activeStep = DATALAD_SAVE_PROGRESS_STEPS[0];
+
+            for (const step of DATALAD_SAVE_PROGRESS_STEPS) {
+                if (elapsedSeconds >= step.afterSeconds) {
+                    activeStep = step;
+                }
+            }
+
+            const elapsedText = formatElapsedDuration(elapsedSeconds);
+            updateProjectBoxDataladSaveProgress(
+                activeStep.percent,
+                `${activeStep.label} Elapsed ${elapsedText}.`
+            );
+        };
+
+        tick();
+        dataladSaveProgressIntervalId = window.setInterval(tick, 1000);
+    }
+
+    function finishProjectBoxDataladSaveProgress(success = true, message = '') {
+        const { wrap, bar, label } = getSaveProgressElements();
+        if (!wrap || !bar || !label) {
+            stopProjectBoxDataladSaveProgress();
+            return;
+        }
+
+        const elapsedSeconds = dataladSaveProgressStartedAt > 0
+            ? Math.floor((Date.now() - dataladSaveProgressStartedAt) / 1000)
+            : 0;
+        const elapsedText = formatElapsedDuration(elapsedSeconds);
+        stopProjectBoxDataladSaveProgress();
+
+        wrap.classList.remove('d-none');
+        bar.classList.remove('bg-primary', 'progress-bar-striped', 'progress-bar-animated', 'bg-success', 'bg-danger');
+        bar.classList.add(success ? 'bg-success' : 'bg-danger');
+        bar.style.width = '100%';
+        bar.setAttribute('aria-valuenow', '100');
+        bar.textContent = '100%';
+
+        const normalizedMessage = String(message || '').trim();
+        label.textContent = normalizedMessage
+            ? `${normalizedMessage} (${elapsedText})`
+            : (success
+                ? `DataLad snapshot complete in ${elapsedText}.`
+                : `DataLad snapshot failed after ${elapsedText}.`);
+    }
 
     function setProjectValidationResult(html) {
         const resultDiv = document.getElementById('validationResult');
@@ -164,6 +278,7 @@ export function initOpenProjectController({
                 subdatasetsRemainingCount: 0,
                 subdatasetsProgressPercent: 0,
                 nextMissingSubdataset: '',
+                textPolicyMissingCount: 0,
             };
         }
 
@@ -192,6 +307,7 @@ export function initOpenProjectController({
             nextMissingSubdataset: typeof (dataladState.next_missing_subdataset ?? dataladState.nextMissingSubdataset) === 'string'
                 ? String(dataladState.next_missing_subdataset ?? dataladState.nextMissingSubdataset).trim()
                 : '',
+            textPolicyMissingCount: normalizeCount(dataladState.text_policy_missing_count ?? dataladState.textPolicyMissingCount),
         };
     }
 
@@ -265,10 +381,16 @@ export function initOpenProjectController({
                 enableButton.disabled = false;
                 enableButton.title = 'Repair or complete DataLad setup for the current project';
             } else {
-                hint.textContent = 'DataLad structure is complete for this project. Use Save DataLad Snapshot for an explicit checkpoint.';
+                if (state.textPolicyMissingCount > 0) {
+                    hint.textContent = `DataLad structure is complete, but text-file Git tracking policy is missing in ${state.textPolicyMissingCount} dataset(s). Use Save DataLad Snapshot to apply policy and create a checkpoint.`;
+                } else {
+                    hint.textContent = 'DataLad structure is complete for this project. Use Save DataLad Snapshot for an explicit checkpoint.';
+                }
                 enableButton.innerHTML = '<i class="fas fa-check me-1"></i>DataLad Structure Complete';
                 enableButton.disabled = true;
-                enableButton.title = 'No missing nested datasets to repair';
+                enableButton.title = state.textPolicyMissingCount > 0
+                    ? 'Use Save DataLad Snapshot to apply text-file policy'
+                    : 'No missing nested datasets to repair';
             }
         } else if (state.enabled) {
             stateBadge.classList.add('bg-warning', 'text-dark');
@@ -713,6 +835,7 @@ export function initOpenProjectController({
                 saveButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
                 setProjectBoxDataladFeedback('', 'muted');
                 setDataladOperationState(true, 'project_box_save');
+                startProjectBoxDataladSaveProgress();
 
                 try {
                     const response = await fetchWithApiFallback('/api/projects/datalad/save', {
@@ -729,10 +852,12 @@ export function initOpenProjectController({
                     const successMessage = data.message || (data.datalad && data.datalad.message) || 'DataLad save completed.';
                     setProjectBoxDataladFeedback(successMessage, 'success');
                     window.setNavbarDataladFeedback?.(successMessage, 'success', 'Saved');
+                    finishProjectBoxDataladSaveProgress(true, successMessage);
                 } catch (error) {
                     const errorMessage = error.message || 'Could not save DataLad changes.';
                     setProjectBoxDataladFeedback(errorMessage, 'danger');
                     window.setNavbarDataladFeedback?.(errorMessage, 'danger', 'Error');
+                    finishProjectBoxDataladSaveProgress(false, errorMessage);
                 } finally {
                     setDataladOperationState(false);
                     saveButton.innerHTML = originalText;
@@ -831,6 +956,12 @@ export function initOpenProjectController({
                                 <div class="small text-muted mb-1" id="projectBoxDataladProgressLabel"></div>
                                 <div class="progress" style="height: 0.7rem;">
                                     <div class="progress-bar bg-success" id="projectBoxDataladProgressBar" role="progressbar" style="width: 0%;" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+                                </div>
+                            </div>
+                            <div class="mt-2 d-none" id="projectBoxDataladSaveProgressWrap">
+                                <div class="small text-muted mb-1" id="projectBoxDataladSaveProgressLabel"></div>
+                                <div class="progress" style="height: 0.85rem;">
+                                    <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" id="projectBoxDataladSaveProgressBar" role="progressbar" style="width: 0%;" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
                                 </div>
                             </div>
                             <div class="small mt-2 d-none" id="projectBoxDataladFeedback" aria-live="polite"></div>
