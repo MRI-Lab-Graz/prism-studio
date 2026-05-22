@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+import shlex
 import shutil
 import subprocess
 from dataclasses import dataclass, field
@@ -138,6 +139,7 @@ class BidsFileDeleter:
         result["deleted_count"] = deleted
         result["deleted_sidecars"] = deleted_sidecars
         result["removed_empty_dirs"] = removed_dirs
+        result["backend_command"] = self._build_delete_backend_command(plan, apply=True)
 
         datalad_result = self._save_datalad_changes_if_needed(deleted + deleted_sidecars)
         if datalad_result is not None:
@@ -300,6 +302,29 @@ class BidsFileDeleter:
             "entity_filters": plan.entity_filters,
             "subjects": plan.subjects,
         }
+
+    def _build_delete_backend_command(self, plan: _DeletePlan, *, apply: bool) -> str:
+        """Return a CLI-style backend command preview for file deletion."""
+        cmd_parts = [
+            "python",
+            "prism.py",
+            "file-management",
+            "delete-files",
+            "--project",
+            str(self.project_root),
+        ]
+
+        if plan.modality:
+            cmd_parts.extend(["--modality", str(plan.modality)])
+
+        for key, value in sorted(plan.entity_filters.items()):
+            cmd_parts.extend(["--entity-filter", f"{key}={value}"])
+
+        if plan.subjects:
+            cmd_parts.extend(["--subjects", ",".join(sorted(plan.subjects))])
+
+        cmd_parts.append("--apply" if apply else "--preview")
+        return shlex.join(cmd_parts)
 
     # ------------------------------------------------------------------
     # Listing helpers
@@ -594,6 +619,7 @@ class BidsFileDeleter:
             "no_changes": False,
             "save_message": _DATALAD_DELETE_SAVE_MESSAGE,
             "message": "",
+            "command": f'datalad save -r --updated -m "{_DATALAD_DELETE_SAVE_MESSAGE}"',
         }
 
         datalad_executable = shutil.which("datalad")
@@ -614,6 +640,7 @@ class BidsFileDeleter:
             "-m",
             _DATALAD_DELETE_SAVE_MESSAGE,
         ]
+        result["command"] = shlex.join(save_command)
 
         try:
             process = subprocess.run(
