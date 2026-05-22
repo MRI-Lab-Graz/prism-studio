@@ -3897,21 +3897,30 @@ document.addEventListener('DOMContentLoaded', () => {
         const deleted = Number(payload.deleted_count || 0);
         const deletedSidecars = Number(payload.deleted_sidecars || 0);
         const removedDirs = Number(payload.removed_empty_dirs || 0);
+        const backendCommand = escapeHtml(String(payload.backend_command || ''));
         const datalad = payload && typeof payload.datalad === 'object' ? payload.datalad : null;
         const sidecarNote = deletedSidecars > 0 ? ` ${deletedSidecars} orphaned root sidecar(s) removed.` : '';
         const dirNote = removedDirs > 0 ? ` ${removedDirs} empty folder(s) removed.` : '';
+        const backendCommandNote = backendCommand
+            ? `<div class="mt-2 small"><span class="text-muted">Backend command:</span> <code>${backendCommand}</code></div>`
+            : '';
         let dataladNote = '';
         if (datalad && datalad.enabled) {
             const dataladMessage = escapeHtml(String(datalad.message || ''));
+            const dataladCommand = escapeHtml(String(datalad.command || ''));
+            const commandLine = dataladCommand
+                ? `<div class="mt-1"><span class="text-muted">Command:</span> <code>${dataladCommand}</code></div>`
+                : '';
             if (datalad.saved) {
-                dataladNote = `<div class="mt-2 small text-success"><i class="fas fa-database me-1"></i>${dataladMessage || 'DataLad save completed.'}</div>`;
+                dataladNote = `<div class="mt-2 small text-success"><i class="fas fa-database me-1"></i>${dataladMessage || 'DataLad save completed.'}${commandLine}</div>`;
             } else {
-                dataladNote = `<div class="mt-2 small text-warning"><i class="fas fa-database me-1"></i>${dataladMessage || 'DataLad save did not complete automatically.'}</div>`;
+                dataladNote = `<div class="mt-2 small text-warning"><i class="fas fa-database me-1"></i>${dataladMessage || 'DataLad save did not complete automatically.'}${commandLine}</div>`;
             }
         }
         fileDeleteResult.innerHTML = `
             <div class="alert alert-success py-2 mb-0">
                 <i class="fas fa-check-circle me-1"></i><strong>Deleted ${deleted} file(s).</strong>${sidecarNote}${dirNote}
+                ${backendCommandNote}
                 ${dataladNote}
             </div>
         `;
@@ -3949,6 +3958,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 'Permanently delete the previewed files from this project? This action cannot be undone.'
             );
             if (!confirmed) return;
+            if (fileDeleteResult) {
+                fileDeleteResult.innerHTML = `
+                    <div class="alert alert-info py-2 mb-0">
+                        <div class="fw-semibold"><i class="fas fa-spinner fa-spin me-1"></i>Deleting files…</div>
+                        <div class="progress mt-2" style="height: 6px;" role="progressbar" aria-label="Deleting files" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" style="width: 100%"></div>
+                        </div>
+                        <div class="small mt-2 text-muted">Applying file deletions and updating DataLad history if this project is DataLad-tracked.</div>
+                    </div>
+                `;
+            }
         }
 
         setFileDeleteBusy(true);

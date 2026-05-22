@@ -66,6 +66,7 @@ _ENDPOINT_LABELS = {
     "tools.api_recipes_surveys": "recipes survey output",
     "tools.api_file_management_wide_to_long_preview": "wide-to-long preview",
     "tools.api_file_management_wide_to_long": "wide-to-long convert",
+    "tools.api_file_management_delete": "file delete",
     "projects.project_path_status": "check project path availability",
     "projects.set_current": "set current project",
     "projects.create_project": "create project",
@@ -831,6 +832,52 @@ def _build_wide_to_long_terminal_command(req, *, inspect_only: bool) -> str:
     return " ".join(shlex.quote(part) for part in cmd_parts)
 
 
+def _build_file_management_delete_terminal_command(req) -> str:
+    """Build CLI-style backend command preview for file-management delete endpoint."""
+    payload = req.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+
+    action = str(payload.get("action") or "preview").strip().lower()
+    project_path = _absolute_path_value(payload.get("project_path")) or "<project-path>"
+    modality = str(payload.get("modality") or "").strip().lower()
+    entity_filters = payload.get("entity_filters") or {}
+    subjects = payload.get("subjects") or []
+
+    cmd_parts: list[str] = [
+        "python",
+        "prism.py",
+        "file-management",
+        "delete-files",
+        "--project",
+        project_path,
+    ]
+
+    if modality:
+        cmd_parts.extend(["--modality", modality])
+
+    if isinstance(entity_filters, dict):
+        for key in sorted(entity_filters.keys()):
+            value = str(entity_filters.get(key) or "").strip()
+            normalized_key = str(key or "").strip().lower()
+            if normalized_key and value:
+                cmd_parts.extend(["--entity-filter", f"{normalized_key}={value}"])
+
+    if isinstance(subjects, (list, tuple, set)):
+        normalized_subjects = [str(value).strip() for value in subjects if str(value).strip()]
+        if normalized_subjects:
+            cmd_parts.extend(["--subjects", ",".join(normalized_subjects)])
+
+    if action == "apply":
+        cmd_parts.append("--apply")
+    elif action == "options":
+        cmd_parts.append("--list-options")
+    else:
+        cmd_parts.append("--preview")
+
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
 def _build_survey_check_templates_terminal_command(req) -> str:
     """Build command preview for survey template pre-check endpoint."""
     form = req.form
@@ -1582,6 +1629,8 @@ def _build_terminal_command(req) -> str:
         return _build_wide_to_long_terminal_command(req, inspect_only=True)
     if endpoint == "tools.api_file_management_wide_to_long":
         return _build_wide_to_long_terminal_command(req, inspect_only=False)
+    if endpoint == "tools.api_file_management_delete":
+        return _build_file_management_delete_terminal_command(req)
     if endpoint == "conversion.api_environment_preview":
         return _build_environment_preview_terminal_command(req)
     if endpoint == "conversion.api_environment_convert":

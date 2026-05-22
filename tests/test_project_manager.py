@@ -881,6 +881,37 @@ class TestProjectManager(unittest.TestCase):
         self.assertIn("*.json annex.largefiles=nothing", gitattributes_content)
         self.assertIn("*.tsv annex.largefiles=nothing", gitattributes_content)
 
+    def test_editable_metadata_policy_applies_to_nested_datalad_subdatasets(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "sub-001" / ".datalad").mkdir(parents=True, exist_ok=True)
+
+            updated = manager._ensure_datalad_editable_metadata_policy(
+                project_path,
+                {"initialized": True},
+            )
+
+            self.assertTrue(updated)
+            root_gitattributes = (project_path / ".gitattributes").read_text(
+                encoding="utf-8"
+            )
+            nested_gitattributes = (
+                project_path / "sub-001" / ".gitattributes"
+            ).read_text(encoding="utf-8")
+
+            self.assertIn("*.json annex.largefiles=nothing", root_gitattributes)
+            self.assertIn("*.json annex.largefiles=nothing", nested_gitattributes)
+            self.assertIn("*.tsv annex.largefiles=nothing", nested_gitattributes)
+
+            updated_second = manager._ensure_datalad_editable_metadata_policy(
+                project_path,
+                {"initialized": True},
+            )
+            self.assertFalse(updated_second)
+
     @patch("src.project_manager.subprocess.run")
     @patch(
         "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
