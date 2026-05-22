@@ -98,9 +98,62 @@
                                                         <code>anat/</code>, <code>func/</code>, <code>dwi/</code>, and <code>fmap/</code> sidecars.
                                                         Original NIfTI data is not modified.
                                                     </div>
+                                                    <div class="form-check mt-2 ms-4">
+                                                        <input class="form-check-input" type="checkbox" id="exportScrubAllTags" checked>
+                                                        <label class="form-check-label" for="exportScrubAllTags">
+                                                            Scrub all known sensitive MRI tags (recommended)
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-text ms-4 mt-1">
+                                                        Disable this option to select only specific MRI tag groups for scrubbing.
+                                                    </div>
+                                                    <div class="mt-2 ms-4" id="exportScrubGroupContainer" style="display:none;">
+                                                        <div class="small fw-semibold mb-1">Selected MRI scrub tag groups</div>
+                                                        <div class="row g-1">
+                                                            <div class="col-md-6">
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input export-scrub-group" type="checkbox" id="exportScrubGroupScanner" value="scanner_site" checked>
+                                                                    <label class="form-check-label small" for="exportScrubGroupScanner">Scanner and site identifiers</label>
+                                                                </div>
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input export-scrub-group" type="checkbox" id="exportScrubGroupTimes" value="timestamps" checked>
+                                                                    <label class="form-check-label small" for="exportScrubGroupTimes">Dates and timestamps</label>
+                                                                </div>
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input export-scrub-group" type="checkbox" id="exportScrubGroupPersonnel" value="personnel" checked>
+                                                                    <label class="form-check-label small" for="exportScrubGroupPersonnel">Personnel names</label>
+                                                                </div>
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input export-scrub-group" type="checkbox" id="exportScrubGroupPatient" value="patient_subject" checked>
+                                                                    <label class="form-check-label small" for="exportScrubGroupPatient">Patient and subject metadata</label>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input export-scrub-group" type="checkbox" id="exportScrubGroupUids" value="uids_identifiers" checked>
+                                                                    <label class="form-check-label small" for="exportScrubGroupUids">UIDs and study identifiers</label>
+                                                                </div>
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input export-scrub-group" type="checkbox" id="exportScrubGroupProtocol" value="protocol_comments" checked>
+                                                                    <label class="form-check-label small" for="exportScrubGroupProtocol">Protocol and comments</label>
+                                                                </div>
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input export-scrub-group" type="checkbox" id="exportScrubGroupGeometry" value="geometry" checked>
+                                                                    <label class="form-check-label small" for="exportScrubGroupGeometry">Geometry and position fields</label>
+                                                                </div>
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input export-scrub-group" type="checkbox" id="exportScrubGroupPrivate" value="private_patterns" checked>
+                                                                    <label class="form-check-label small" for="exportScrubGroupPrivate">Private/custom key patterns</label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                     <div class="mt-2 ms-4">
                                                         <button type="button" class="btn btn-sm btn-outline-secondary" id="exportCheckDefacing">
                                                             <i class="fas fa-search me-1"></i>Check defacing status of anatomical scans
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-warning ms-2" id="exportRunDefacing">
+                                                            <i class="fas fa-user-shield me-1"></i>Deface anatomical scans now
                                                         </button>
                                                         <div id="exportDefacingReport" class="mt-2" style="display:none;"></div>
                                                     </div>

@@ -24,6 +24,8 @@ from __future__ import annotations
 import json
 import logging
 import re
+import shutil
+import subprocess
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -42,35 +44,84 @@ ALWAYS_SCRUB: Set[str] = {
     "InstitutionName",
     "InstitutionAddress",
     "InstitutionalDepartmentName",
+    "Manufacturer",
     "ManufacturersModelName",
+    "SoftwareVersions",
+    "SoftwareVersion",
+    "ApplicationName",
+    "ApplicationVersion",
+    "ImplementationVersionName",
+    "SourceApplicationEntityTitle",
+    "BidsGuess",
     # Operator / personnel
     "OperatorsName",
     "ReferringPhysicianName",
+    "PerformingPhysicianName",
     "PerformingPhysiciansName",
+    "RequestingPhysician",
+    "PhysiciansOfRecord",
+    "NameOfPhysiciansReadingStudy",
     # Dates / times (can link back to a specific session)
     "AcquisitionDateTime",
     "AcquisitionDate",
     "AcquisitionTime",
+    "StudyTime",
     "SeriesDate",
+    "SeriesTime",
     "StudyDate",
     "ContentDate",
+    "ContentTime",
     "PatientBirthDate",
+    # Study / procedure identifiers
+    "StudyInstanceUID",
+    "SeriesInstanceUID",
+    "StudyID",
+    "SeriesNumber",
+    "AccessionNumber",
+    "RequestedProcedureID",
+    "ScheduledProcedureStepID",
+    "PerformedProcedureStepID",
+    "SOPInstanceUID",
+    "MediaStorageSOPInstanceUID",
+    "FrameOfReferenceUID",
+    "SynchronizationFrameOfReferenceUID",
+    # Protocol comments can reveal scanner/site specifics
+    "ProtocolName",
+    "ProcedureStepDescription",
+    "SeriesDescription",
+    "RequestAttributesSequence",
+    "PerformedProcedureStepDescription",
+    "ImageComments",
+    "AcquisitionComments",
+    "StudyComments",
 }
 
 #: Additional fields scrubbed for anatomical modalities (anat/).
 ANAT_EXTRA_SCRUB: Set[str] = {
     "ImageOrientationPatientDICOM",
+    "ImagePositionPatientDICOM",
     # Patient info sometimes encoded in anat sidecars
     "PatientName",
     "PatientID",
     "PatientSex",
     "PatientAge",
     "PatientWeight",
+    "PatientPosition",
+    "BodyPartExamined",
+    "PatientOrientation",
+    "SliceLocation",
+    "TablePosition",
+    "MagneticFieldStrength",
+    "ReceiveCoilName",
+    "TransmitCoilName",
+    "GradientSetType",
+    "MRTransmitCoilSequence",
 }
 
 #: Fields to scrub for functional (func/) and diffusion (dwi/) sidecars.
 FUNC_DWI_EXTRA_SCRUB: Set[str] = {
     "ImageOrientationPatientDICOM",
+    "ImagePositionPatientDICOM",
 }
 
 #: Fieldmap (fmap/) — same as func/dwi.
@@ -102,6 +153,130 @@ ANAT_SUFFIXES: Set[str] = {
     "T2map",
 }
 
+# Pattern-based key matching inspired by publicBIDS scrubber.
+_PREFIX_SCRUB_PATTERNS: Tuple[str, ...] = (
+    "private_",
+    "userdefined_",
+    "userdefined",
+    "px_",
+)
+_WORD_FRAGMENT_SCRUB_PATTERNS: Tuple[str, ...] = (
+    "patient",
+    "subject",
+    "physician",
+    "operator",
+)
+
+# JSON fields that may indicate a scan is already defaced.
+_DEFACING_METADATA_HINT_KEYS: Tuple[str, ...] = (
+    "deidentificationmethod",
+    "deidentificationmethoddescription",
+    "imagecomments",
+    "description",
+)
+_DEFACING_METADATA_HINT_VALUES: Tuple[str, ...] = (
+    "deface",
+    "defaced",
+    "skullstrip",
+    "skull-stripped",
+    "face removed",
+)
+
+# Grouped scrub controls for UI/API selection mode.
+SCRUB_TAG_GROUP_FIELDS: Dict[str, Set[str]] = {
+    "scanner_site": {
+        "DeviceSerialNumber",
+        "StationName",
+        "InstitutionName",
+        "InstitutionAddress",
+        "InstitutionalDepartmentName",
+        "Manufacturer",
+        "ManufacturersModelName",
+        "SoftwareVersions",
+        "SoftwareVersion",
+        "ApplicationName",
+        "ApplicationVersion",
+        "ImplementationVersionName",
+        "SourceApplicationEntityTitle",
+        "BidsGuess",
+        "MagneticFieldStrength",
+        "ReceiveCoilName",
+        "TransmitCoilName",
+        "GradientSetType",
+        "MRTransmitCoilSequence",
+    },
+    "timestamps": {
+        "AcquisitionDateTime",
+        "AcquisitionDate",
+        "AcquisitionTime",
+        "StudyTime",
+        "SeriesDate",
+        "SeriesTime",
+        "StudyDate",
+        "ContentDate",
+        "ContentTime",
+    },
+    "personnel": {
+        "OperatorsName",
+        "ReferringPhysicianName",
+        "PerformingPhysicianName",
+        "PerformingPhysiciansName",
+        "RequestingPhysician",
+        "PhysiciansOfRecord",
+        "NameOfPhysiciansReadingStudy",
+    },
+    "patient_subject": {
+        "PatientBirthDate",
+        "PatientName",
+        "PatientID",
+        "PatientSex",
+        "PatientAge",
+        "PatientWeight",
+        "PatientPosition",
+        "BodyPartExamined",
+        "PatientOrientation",
+    },
+    "uids_identifiers": {
+        "StudyInstanceUID",
+        "SeriesInstanceUID",
+        "StudyID",
+        "SeriesNumber",
+        "AccessionNumber",
+        "RequestedProcedureID",
+        "ScheduledProcedureStepID",
+        "PerformedProcedureStepID",
+        "SOPInstanceUID",
+        "MediaStorageSOPInstanceUID",
+        "FrameOfReferenceUID",
+        "SynchronizationFrameOfReferenceUID",
+    },
+    "protocol_comments": {
+        "ProtocolName",
+        "ProcedureStepDescription",
+        "SeriesDescription",
+        "RequestAttributesSequence",
+        "PerformedProcedureStepDescription",
+        "ImageComments",
+        "AcquisitionComments",
+        "StudyComments",
+    },
+    "geometry": {
+        "ImageOrientationPatientDICOM",
+        "ImagePositionPatientDICOM",
+        "SliceLocation",
+        "TablePosition",
+    },
+    # Enables wildcard-like privacy sweep patterns (Private_*, Patient*, ...).
+    "private_patterns": set(),
+}
+
+_GROUP_PREFIX_PATTERN_TRIGGERS: Set[str] = {"private_patterns"}
+_GROUP_WORD_PATTERN_TRIGGERS: Set[str] = {
+    "private_patterns",
+    "patient_subject",
+    "personnel",
+}
+
 
 # ---------------------------------------------------------------------------
 # Core scrubbing function
@@ -112,6 +287,7 @@ def scrub_sensitive_json_fields(
     data: Dict[str, Any],
     modality: Optional[str] = None,
     extra_fields: Optional[Set[str]] = None,
+    selected_groups: Optional[Set[str]] = None,
 ) -> Tuple[Dict[str, Any], List[str]]:
     """Remove privacy-sensitive fields from a BIDS JSON sidecar.
 
@@ -120,28 +296,76 @@ def scrub_sensitive_json_fields(
         modality: BIDS modality folder name ('anat', 'func', 'dwi', 'fmap').
                   If None, only ALWAYS_SCRUB fields are removed.
         extra_fields: Any additional field names to remove on top of the
-                      standard sets.
+                  standard sets.
+        selected_groups: Optional set of scrub tag group IDs. When provided,
+                 only those groups are used (instead of full scrub-all).
 
     Returns:
         Tuple of (scrubbed_data, removed_fields) where removed_fields is the
         list of field names that were actually present and removed.
     """
-    to_remove: Set[str] = set(ALWAYS_SCRUB)
-    if modality and modality in _MODALITY_EXTRA:
-        to_remove |= _MODALITY_EXTRA[modality]
+    normalized_modality = str(modality or "").strip().lower()
+    normalized_groups = {
+        str(group or "").strip().lower()
+        for group in (selected_groups or set())
+        if str(group or "").strip()
+    }
+
+    if normalized_groups:
+        to_remove: Set[str] = set()
+        for group_id in normalized_groups:
+            to_remove |= SCRUB_TAG_GROUP_FIELDS.get(group_id, set())
+        apply_pattern_sweep = (
+            (not normalized_modality or normalized_modality in MRI_MODALITIES)
+            and bool(normalized_groups & _GROUP_PREFIX_PATTERN_TRIGGERS)
+        )
+        apply_word_pattern_sweep = (
+            (not normalized_modality or normalized_modality in MRI_MODALITIES)
+            and bool(normalized_groups & _GROUP_WORD_PATTERN_TRIGGERS)
+        )
+    else:
+        to_remove = set(ALWAYS_SCRUB)
+        if modality and modality in _MODALITY_EXTRA:
+            to_remove |= _MODALITY_EXTRA[modality]
+        apply_pattern_sweep = (
+            not normalized_modality or normalized_modality in MRI_MODALITIES
+        )
+        apply_word_pattern_sweep = apply_pattern_sweep
+
     if extra_fields:
         to_remove |= extra_fields
 
-    # Build case-insensitive lookup so we match regardless of capitalisation
-    key_map: Dict[str, str] = {k.lower(): k for k in data.keys()}
     removed: List[str] = []
-
     scrubbed = dict(data)
-    for field in to_remove:
-        actual_key = key_map.get(field.lower())
-        if actual_key is not None and actual_key in scrubbed:
-            del scrubbed[actual_key]
-            removed.append(actual_key)
+
+    def _mark_removed(key: str) -> None:
+        if key not in removed:
+            removed.append(key)
+
+    # Exact-key (case-insensitive) removals.
+    exact_remove_lower = {field.lower() for field in to_remove}
+
+    for key in list(scrubbed.keys()):
+        key_lower = key.lower()
+        should_remove = key_lower in exact_remove_lower
+
+        # Pattern removals keep parity with publicBIDS-style privacy sweeps.
+        if (
+            not should_remove
+            and apply_pattern_sweep
+            and key_lower.startswith(_PREFIX_SCRUB_PATTERNS)
+        ):
+            should_remove = True
+        if (
+            not should_remove
+            and apply_word_pattern_sweep
+            and any(word in key_lower for word in _WORD_FRAGMENT_SCRUB_PATTERNS)
+        ):
+            should_remove = True
+
+        if should_remove:
+            del scrubbed[key]
+            _mark_removed(key)
 
     if removed:
         logger.debug("Scrubbed %d field(s): %s", len(removed), removed)
@@ -240,6 +464,224 @@ def _nibabel_defacing_heuristic(nifti_path: Path) -> Optional[bool]:
         return None
 
 
+def _json_metadata_defacing_heuristic(json_sidecar: Path) -> Optional[bool]:
+    """Check JSON metadata for explicit defacing hints.
+
+    Returns:
+        True when metadata strongly suggests a defaced image, else None.
+    """
+    try:
+        with open(json_sidecar, "r", encoding="utf-8") as fh:
+            payload = json.load(fh)
+    except Exception:
+        return None
+
+    if not isinstance(payload, dict):
+        return None
+
+    for key, value in payload.items():
+        key_text = str(key or "").strip().lower()
+        if key_text not in _DEFACING_METADATA_HINT_KEYS:
+            continue
+        value_text = str(value or "").strip().lower()
+        if any(hint in value_text for hint in _DEFACING_METADATA_HINT_VALUES):
+            return True
+    return None
+
+
+def _has_defacing_sidecar_artifact(nifti_path: Path) -> bool:
+    """Return True when nearby files indicate defacing artifacts or outputs."""
+    parent = nifti_path.parent
+    name_lower = nifti_path.name.lower()
+    base_name = name_lower
+    if base_name.endswith(".nii.gz"):
+        base_name = base_name[: -len(".nii.gz")]
+    elif base_name.endswith(".nii"):
+        base_name = base_name[: -len(".nii")]
+
+    # Keep matching narrow to avoid unrelated derivatives in the same folder.
+    subject_prefix = base_name.rsplit("_", 1)[0] if "_" in base_name else base_name
+    for sibling in parent.iterdir():
+        sibling_name = sibling.name.lower()
+        if subject_prefix and not sibling_name.startswith(subject_prefix):
+            continue
+        if "deface" in sibling_name or "skullstrip" in sibling_name:
+            return True
+    return False
+
+
+def _iter_anatomical_nifti_files(project_path: Path) -> List[Path]:
+    """Return anatomical NIfTI files under sub-*/anat/ that match known suffixes."""
+    results: List[Path] = []
+    for sub_dir in project_path.iterdir():
+        if not (sub_dir.is_dir() and sub_dir.name.startswith("sub-")):
+            continue
+        for nifti_file in sub_dir.rglob("*.nii*"):
+            if detect_modality_from_path(nifti_file) != "anat":
+                continue
+            filename = nifti_file.name
+            if not any(
+                f"_{suffix}.nii" in filename or f"_{suffix}.nii.gz" in filename
+                for suffix in ANAT_SUFFIXES
+            ):
+                continue
+            results.append(nifti_file)
+    return sorted(set(results))
+
+
+def deface_anatomical_scans(
+    project_path: Path,
+    *,
+    force: bool = False,
+    timeout_seconds: int = 300,
+) -> Dict[str, Any]:
+    """Run pydeface in-place on anatomical scans and return an operation summary."""
+    pydeface_executable = shutil.which("pydeface")
+    if not pydeface_executable:
+        return {
+            "success": False,
+            "error": (
+                "pydeface is not available in this environment. "
+                "Install pydeface and FSL before running defacing."
+            ),
+            "counts": {
+                "total": 0,
+                "already_defaced": 0,
+                "defaced": 0,
+                "failed": 0,
+                "skipped": 0,
+            },
+            "items": [],
+        }
+
+    anatomical_files = _iter_anatomical_nifti_files(project_path)
+    if not anatomical_files:
+        return {
+            "success": True,
+            "message": "No anatomical scans found to deface.",
+            "counts": {
+                "total": 0,
+                "already_defaced": 0,
+                "defaced": 0,
+                "failed": 0,
+                "skipped": 0,
+            },
+            "items": [],
+        }
+
+    counts = {
+        "total": len(anatomical_files),
+        "already_defaced": 0,
+        "defaced": 0,
+        "failed": 0,
+        "skipped": 0,
+    }
+    items: List[Dict[str, Any]] = []
+
+    for nifti_file in anatomical_files:
+        item_result: Dict[str, Any] = {
+            "file": str(nifti_file.relative_to(project_path)),
+            "status": "",
+            "message": "",
+        }
+
+        sidecar_json = None
+        if nifti_file.name.endswith(".nii.gz"):
+            sidecar_candidate = nifti_file.with_name(
+                nifti_file.name[: -len(".nii.gz")] + ".json"
+            )
+            if sidecar_candidate.exists():
+                sidecar_json = sidecar_candidate
+        elif nifti_file.suffix.lower() == ".nii":
+            sidecar_candidate = nifti_file.with_suffix(".json")
+            if sidecar_candidate.exists():
+                sidecar_json = sidecar_candidate
+
+        if sidecar_json is not None and not force:
+            defacing_state = is_anatomical_defaced(sidecar_json, check_nibabel=True)
+            if defacing_state.get("status") == "defaced":
+                counts["already_defaced"] += 1
+                item_result["status"] = "already_defaced"
+                item_result["message"] = str(defacing_state.get("reason") or "")
+                items.append(item_result)
+                continue
+
+        backup_file = Path(str(nifti_file) + ".prism_bak")
+        try:
+            shutil.copy2(nifti_file, backup_file)
+        except Exception as exc:
+            counts["failed"] += 1
+            item_result["status"] = "failed"
+            item_result["message"] = f"Could not create backup: {exc}"
+            items.append(item_result)
+            continue
+
+        try:
+            process = subprocess.run(
+                [
+                    pydeface_executable,
+                    str(nifti_file),
+                    "--outfile",
+                    str(nifti_file),
+                    "--force",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=max(1, int(timeout_seconds)),
+                check=False,
+            )
+            if process.returncode == 0:
+                counts["defaced"] += 1
+                item_result["status"] = "defaced"
+                item_result["message"] = "Defacing completed"
+                try:
+                    backup_file.unlink(missing_ok=True)
+                except Exception:
+                    pass
+            else:
+                counts["failed"] += 1
+                item_result["status"] = "failed"
+                item_result["message"] = (
+                    (process.stderr or process.stdout or "pydeface failed").strip()
+                )
+                try:
+                    shutil.move(str(backup_file), str(nifti_file))
+                except Exception:
+                    pass
+        except subprocess.TimeoutExpired:
+            counts["failed"] += 1
+            item_result["status"] = "failed"
+            item_result["message"] = "Defacing timed out"
+            try:
+                shutil.move(str(backup_file), str(nifti_file))
+            except Exception:
+                pass
+        except Exception as exc:
+            counts["failed"] += 1
+            item_result["status"] = "failed"
+            item_result["message"] = str(exc)
+            try:
+                shutil.move(str(backup_file), str(nifti_file))
+            except Exception:
+                pass
+
+        items.append(item_result)
+
+    success = counts["failed"] == 0
+    message = (
+        "Defacing completed successfully."
+        if success
+        else "Defacing finished with errors. Review failed files."
+    )
+
+    return {
+        "success": success,
+        "message": message,
+        "counts": counts,
+        "items": items,
+    }
+
+
 def is_anatomical_defaced(
     json_sidecar: Path,
     check_nibabel: bool = True,
@@ -280,7 +722,24 @@ def is_anatomical_defaced(
             "nifti_found": True,
         }
 
-    # 2. nibabel header heuristic
+    # 2. JSON metadata hints (for tools that preserve BIDS names but annotate JSON).
+    metadata_hint = _json_metadata_defacing_heuristic(json_sidecar)
+    if metadata_hint is True:
+        return {
+            "status": "defaced",
+            "reason": "JSON metadata indicates defacing/skull-stripping",
+            "nifti_found": True,
+        }
+
+    # 3. Nearby defacing artifacts (mask or helper outputs).
+    if _has_defacing_sidecar_artifact(nifti):
+        return {
+            "status": "defaced",
+            "reason": "Found nearby defacing artifact/output in same folder",
+            "nifti_found": True,
+        }
+
+    # 4. nibabel header heuristic
     if check_nibabel:
         header_result = _nibabel_defacing_heuristic(nifti)
         if header_result is True:

@@ -16,6 +16,8 @@ export function initOpenProjectController({
 }) {
     const DATALAD_PREFERENCES_NAMESPACE = 'datalad';
     const DATALAD_DEFAULT_COMMIT_MESSAGE = 'Checkpoint PRISM project changes';
+    const DATALAD_DOCS_URL = 'https://www.datalad.org/';
+    const DATALAD_INSTALL_COMMAND = 'uv tool install datalad git-annex';
     const DATALAD_SAVE_PROGRESS_STEPS = [
         { afterSeconds: 0, percent: 8, label: 'Starting DataLad snapshot...' },
         { afterSeconds: 8, percent: 22, label: 'Applying text-file tracking policy...' },
@@ -558,11 +560,36 @@ export function initOpenProjectController({
 
     function confirmEnableDatalad(currentPath) {
         return window.confirm(
-            'Enable DataLad version control for this project?\n\n'
+            'Are you absolutely sure that you want DataLad conversion/tracking for this project?\n\n'
             + 'This will modify the project in place by creating or repairing DataLad/Git metadata, backfilling one missing nested dataset for this click, and saving a snapshot.\n\n'
+            + `Learn more: ${DATALAD_DOCS_URL}\n\n`
             + 'Only continue if you explicitly want DataLad for this dataset.\n\n'
             + `Project: ${currentPath}`
         );
+    }
+
+    function buildMissingDataladToolsMessage(dataladState) {
+        const state = normalizeDataladState(dataladState);
+        const missingTools = [];
+        if (!state.available) {
+            missingTools.push('DataLad');
+        }
+        if (!state.annexAvailable) {
+            missingTools.push('git-annex');
+        }
+
+        const missingToolsLabel = missingTools.length > 1
+            ? `${missingTools.slice(0, -1).join(', ')} and ${missingTools[missingTools.length - 1]}`
+            : (missingTools[0] || 'Required DataLad tools');
+        const singularTool = missingTools.length === 1;
+
+        return [
+            `${missingToolsLabel} ${singularTool ? 'is' : 'are'} not available in this environment.`,
+            '',
+            'Install the missing tools before enabling DataLad tracking for this project.',
+            `Suggested install command: ${DATALAD_INSTALL_COMMAND}`,
+            `Learn more: ${DATALAD_DOCS_URL}`,
+        ].join('\n');
     }
 
     async function pollCurrentProjectDataladStateWhileBusy({
@@ -714,7 +741,7 @@ export function initOpenProjectController({
 
         const promptToken = ++dataladOptInPromptToken;
         const currentDataladState = normalizeDataladState(getCurrentProjectState().datalad, normalizedPath);
-        if (currentDataladState.enabled || !currentDataladState.canEnable) {
+        if (currentDataladState.enabled) {
             return;
         }
 
@@ -727,20 +754,9 @@ export function initOpenProjectController({
             return;
         }
 
-        const confirmMessage = [
-            'Do you want to enable DataLad version control for this project now?',
-            '',
-            'PRISM can work without DataLad. Enabling DataLad modifies the project in place by creating or repairing DataLad/Git metadata and writing a snapshot.',
-            '',
-            `Project: ${normalizedPath}`,
-        ].join('\n');
-        const shouldEnable = window.confirm(confirmMessage);
-        if (promptToken !== dataladOptInPromptToken) {
-            return;
-        }
-
-        if (!shouldEnable) {
+        const persistDeclinedChoice = async (skipPromptMessage = '') => {
             const askAgain = window.confirm(
+                skipPromptMessage ||
                 'DataLad setup skipped for now.\n\nClick OK to ask again next time this project opens.\nClick Cancel to stop asking for this project.'
             );
             const declinedPreferences = {
@@ -759,6 +775,62 @@ export function initOpenProjectController({
                 : 'DataLad setup skipped. PRISM will stop asking for this project unless you enable DataLad manually.';
             setProjectBoxDataladFeedback(declinedMessage, 'muted');
             window.setNavbarDataladFeedback?.(declinedMessage, 'muted', askAgain ? 'Later' : 'Skipped');
+        };
+
+        const confirmMessage = [
+            'Enable DataLad conversion/tracking for this project?',
+            '',
+            'Choose Yes to enable DataLad now. Choose No to keep this project untracked for now.',
+            '',
+            'PRISM can work without DataLad. Enabling DataLad modifies the project in place by creating or repairing DataLad/Git metadata and writing a snapshot.',
+            '',
+            `Learn more: ${DATALAD_DOCS_URL}`,
+            '',
+            `Project: ${normalizedPath}`,
+        ].join('\n');
+        const shouldEnable = window.confirm(confirmMessage);
+        if (promptToken !== dataladOptInPromptToken) {
+            return;
+        }
+
+        if (!shouldEnable) {
+            await persistDeclinedChoice();
+            return;
+        }
+
+        const latestDataladState = normalizeDataladState(getCurrentProjectState().datalad, normalizedPath);
+        if (!latestDataladState.canEnable) {
+            const unavailableToolsMessage = buildMissingDataladToolsMessage(latestDataladState);
+            window.alert(unavailableToolsMessage);
+
+            const shortUnavailableMessage = latestDataladState.available && !latestDataladState.annexAvailable
+                ? `DataLad setup blocked: git-annex is missing. Install tools with "${DATALAD_INSTALL_COMMAND}" and try again.`
+                : `DataLad setup blocked: DataLad and git-annex are missing. Install tools with "${DATALAD_INSTALL_COMMAND}" and try again.`;
+            setProjectBoxDataladFeedback(shortUnavailableMessage, 'danger');
+            window.setNavbarDataladFeedback?.(shortUnavailableMessage, 'danger', 'Missing tools');
+            await persistDeclinedChoice(
+                'DataLad tools are missing on this machine.\n\nClick OK to ask again next time this project opens after you install the tools.\nClick Cancel to stop asking for this project.'
+            );
+            return;
+        }
+
+        const absolutelySureMessage = [
+            'Are you absolutely sure that you want a DataLad conversion/tracking setup for this project?',
+            '',
+            'This action modifies the project in place by creating or repairing DataLad/Git metadata and writing a snapshot.',
+            '',
+            `Learn more: ${DATALAD_DOCS_URL}`,
+            '',
+            `Project: ${normalizedPath}`,
+        ].join('\n');
+        const absolutelySure = window.confirm(absolutelySureMessage);
+        if (promptToken !== dataladOptInPromptToken) {
+            return;
+        }
+        if (!absolutelySure) {
+            await persistDeclinedChoice(
+                'DataLad setup cancelled before enable.\n\nClick OK to ask again next time this project opens.\nClick Cancel to stop asking for this project.'
+            );
             return;
         }
 

@@ -53,6 +53,7 @@ def test_projects_export_uses_fixed_internal_anonymization_settings(tmp_path):
                     "anonymize": True,
                     "mask_questions": False,
                     "scrub_mri_json": True,
+                    "scrub_mri_json_groups": ["scanner_site", "timestamps"],
                     "include_derivatives": True,
                     "include_code": False,
                     "include_analysis": False,
@@ -63,6 +64,7 @@ def test_projects_export_uses_fixed_internal_anonymization_settings(tmp_path):
     assert called["anonymize"] is True
     assert called["mask_questions"] is False
     assert called["scrub_mri_json"] is True
+    assert called["scrub_mri_json_groups"] == {"scanner_site", "timestamps"}
     assert called["clean_nifti_gzip_headers"] is True
     assert called["id_length"] == 8
     assert called["deterministic"] is True
@@ -99,6 +101,7 @@ def test_projects_export_start_uses_fixed_internal_anonymization_settings(tmp_pa
                     "anonymize": True,
                     "mask_questions": False,
                     "scrub_mri_json": True,
+                    "scrub_mri_json_groups": ["scanner_site", "timestamps"],
                     "include_derivatives": True,
                     "include_code": False,
                     "include_analysis": False,
@@ -119,6 +122,7 @@ def test_projects_export_start_uses_fixed_internal_anonymization_settings(tmp_pa
     assert export_kwargs["anonymize"] is True
     assert export_kwargs["mask_questions"] is False
     assert export_kwargs["scrub_mri_json"] is True
+    assert export_kwargs["scrub_mri_json_groups"] == {"scanner_site", "timestamps"}
     assert export_kwargs["clean_nifti_gzip_headers"] is True
     assert export_kwargs["id_length"] == 8
     assert export_kwargs["deterministic"] is True
@@ -173,6 +177,44 @@ def test_projects_export_start_uses_non_anonymized_filename_when_disabled(tmp_pa
     assert export_kwargs["anonymize"] is False
     assert export_kwargs["include_sourcedata"] is False
     assert args[2] == "study_export.zip"
+
+
+def test_projects_export_deface_route_returns_backend_summary(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    with patch(
+        "src.mri_json_scrubber.deface_anatomical_scans",
+        return_value={
+            "success": True,
+            "message": "Defacing completed successfully.",
+            "counts": {"total": 1, "defaced": 1, "already_defaced": 0, "failed": 0, "skipped": 0},
+            "items": [{"file": "sub-01/anat/sub-01_T1w.nii.gz", "status": "defaced", "message": "ok"}],
+        },
+    ), patch(
+        "src.mri_json_scrubber.build_defacing_report",
+        return_value=[
+            {
+                "file": "sub-01/anat/sub-01_T1w.json",
+                "status": "defaced",
+                "reason": "JSON metadata indicates defacing/skull-stripping",
+            }
+        ],
+    ):
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/deface",
+                json={"project_path": str(project_dir)},
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("success") is True
+    assert payload.get("defacing", {}).get("counts", {}).get("defaced") == 1
+    assert payload.get("report_counts", {}).get("defaced") == 1
 
 
 def test_projects_export_start_upload_ready_preset_forces_safe_export_defaults(tmp_path):

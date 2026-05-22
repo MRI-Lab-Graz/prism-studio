@@ -11,7 +11,7 @@ import time
 import traceback
 import uuid
 from threading import Lock
-from typing import Dict, Optional
+from typing import Dict, Optional, Set
 from src.cross_platform import safe_path_join
 from .projects_helpers import _resolve_project_root_path
 
@@ -134,6 +134,15 @@ def _normalize_export_preset(raw_preset: object) -> str:
     if preset not in _EXPORT_PRESETS:
         return "standard"
     return preset
+
+
+def _normalize_scrub_group_ids(raw_groups: object) -> Optional[Set[str]]:
+    if not isinstance(raw_groups, (list, tuple, set)):
+        return None
+    normalized = {
+        str(group).strip().lower() for group in raw_groups if str(group).strip()
+    }
+    return normalized or None
 
 
 def _export_validation_flags(validation_mode: str) -> tuple[bool, bool]:
@@ -450,6 +459,9 @@ def export_project():
             data.get("exclude_version_control_metadata", False)
         )
         scrub_mri_json = bool(data.get("scrub_mri_json", False))
+        scrub_mri_json_groups = _normalize_scrub_group_ids(
+            data.get("scrub_mri_json_groups")
+        )
 
         if export_preset == "upload_ready":
             include_derivatives = False
@@ -477,6 +489,7 @@ def export_project():
                 include_analysis=include_analysis,
                 exclude_version_control_metadata=exclude_version_control_metadata,
                 scrub_mri_json=scrub_mri_json,
+                scrub_mri_json_groups=scrub_mri_json_groups,
                 clean_nifti_gzip_headers=scrub_mri_json,
             )
 
@@ -707,6 +720,45 @@ def export_defacing_report():
         return jsonify({"error": str(e)}), 500
 
 
+@projects_export_bp.route("/api/projects/export/deface", methods=["POST"])
+def export_deface_anatomical_scans():
+    """Run in-place defacing on anatomical scans in the current project."""
+    try:
+        from src.mri_json_scrubber import build_defacing_report, deface_anatomical_scans
+
+        data = request.get_json() or {}
+        project_path_raw = data.get("project_path")
+        resolved = _resolve_project_root_path(project_path_raw)
+        if resolved is None:
+            return jsonify({"success": False, "error": "Invalid project path"}), 400
+
+        force = bool(data.get("force", False))
+        result = deface_anatomical_scans(resolved, force=force)
+        post_report = build_defacing_report(resolved)
+        counts = {"defaced": 0, "not_defaced": 0, "unknown": 0}
+        for entry in post_report:
+            status = str(entry.get("status", "unknown"))
+            if status not in counts:
+                status = "unknown"
+            counts[status] += 1
+
+        payload = {
+            "success": bool(result.get("success", False)),
+            "message": result.get("message") or result.get("error") or "",
+            "error": result.get("error"),
+            "defacing": {
+                "counts": result.get("counts") or {},
+                "items": result.get("items") or [],
+            },
+            "report": post_report,
+            "report_counts": counts,
+        }
+        status_code = 200 if payload["success"] else 400
+        return jsonify(payload), status_code
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @projects_export_bp.route("/api/projects/export/start", methods=["POST"])
 def export_project_start():
     """Start an async export job. Returns {job_id}."""
@@ -731,6 +783,9 @@ def export_project_start():
             data.get("exclude_version_control_metadata", False)
         )
         scrub_mri_json = bool(data.get("scrub_mri_json", False))
+        scrub_mri_json_groups = _normalize_scrub_group_ids(
+            data.get("scrub_mri_json_groups")
+        )
         validation_mode = _normalize_export_validation_mode(
             data.get("validation_mode", "both")
         )
@@ -778,6 +833,7 @@ def export_project_start():
             "include_analysis": include_analysis,
             "exclude_version_control_metadata": exclude_version_control_metadata,
             "scrub_mri_json": scrub_mri_json,
+            "scrub_mri_json_groups": scrub_mri_json_groups,
             "clean_nifti_gzip_headers": scrub_mri_json,
             "validation_mode": validation_mode,
             "exclude_sessions": (
