@@ -22,6 +22,36 @@ def _extract_task(filename: str) -> str | None:
     return m.group(1) if m else None
 
 
+def _extract_suffix_label(filename: str) -> str | None:
+    """Return the terminal BIDS suffix token from a filename, or None.
+
+    Examples:
+        sub-01_ses-01_task-rest_bold.nii.gz -> bold
+        sub-01_ses-01_T1w.nii.gz -> T1w
+    """
+    name = str(filename or "").strip()
+    if not name:
+        return None
+
+    lower_name = name.lower()
+    for compound_ext in (".nii.gz", ".tsv.gz"):
+        if lower_name.endswith(compound_ext):
+            name = name[: -len(compound_ext)]
+            break
+    else:
+        if "." in name:
+            name = name.rsplit(".", 1)[0]
+
+    if not name:
+        return None
+
+    suffix = name.rsplit("_", 1)[-1]
+    # Ignore trailing entities (e.g., run-01) and keep true suffix-like tokens.
+    if not suffix or "-" in suffix:
+        return None
+    return suffix
+
+
 def get_project_quick_summary(project_path: Path) -> Dict[str, object]:
     """Return lightweight project summary counts without running validation.
 
@@ -71,7 +101,11 @@ def get_project_modalities_and_sessions(project_path: Path) -> Dict[str, object]
         sessions: sorted list of session labels (e.g. ["ses-01", "ses-02"]),
                   empty list when no session level is used.
         modalities: sorted list of modality folder names (e.g. ["eeg", "survey", "func"]).
-        acq_labels: dict mapping modality name -> sorted list of unique acq- values found.
+        acq_labels: dict mapping modality name -> sorted list of differentiators found.
+            For most modalities this is acq- values. For MRI modalities where
+            suffixes are semantically meaningful (anat, dwi, fmap, perf),
+            terminal filename suffix labels are also included
+            (for example, T1w, sbref, phasediff, asl).
         task_labels: dict mapping modality name -> sorted list of unique task- values found.
     """
     subjects: Set[str] = set()
@@ -79,7 +113,9 @@ def get_project_modalities_and_sessions(project_path: Path) -> Dict[str, object]
     modalities: Set[str] = set()
     acq_labels: Dict[str, Set[str]] = {}
     task_labels: Dict[str, Set[str]] = {}
-    acq_label_modalities = {"anat", "dwi", "eeg", "fmap", "func", "perf"}
+    task_label_modalities = {"survey", "func"}
+    acq_label_modalities = {"dwi", "eeg", "fmap", "func", "perf"}
+    suffix_label_modalities = {"anat", "dwi", "fmap", "perf"}
 
     def _scan_modality_dir(modality_name: str, modality_dir: Path) -> None:
         modalities.add(modality_name)
@@ -88,11 +124,17 @@ def get_project_modalities_and_sessions(project_path: Path) -> Dict[str, object]
         for fname in modality_dir.iterdir():
             if not fname.is_file():
                 continue
-            if modality_name == "survey":
+
+            if modality_name in task_label_modalities:
                 task = _extract_task(fname.name)
                 if task:
                     task_labels.setdefault(modality_name, set()).add(task)
-                continue
+
+            if modality_name in suffix_label_modalities:
+                suffix = _extract_suffix_label(fname.name)
+                if suffix:
+                    acq_labels.setdefault(modality_name, set()).add(suffix)
+
             if modality_name in acq_label_modalities:
                 acq = _extract_acq(fname.name)
                 if acq:

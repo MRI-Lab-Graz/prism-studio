@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 import re
+import shutil
+import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator
@@ -33,6 +35,8 @@ _SUBJECT_DIR_PATTERN = re.compile(r"^sub-[A-Za-z0-9]+$")
 _SESSION_DIR_PATTERN = re.compile(r"^ses-[A-Za-z0-9]+$")
 _DOUBLE_SUFFIXES = (".nii.gz", ".tsv.gz")
 _MAX_FILTER_VALUES = 200
+_DATALAD_SAVE_TIMEOUT_SECONDS = 120
+_DATALAD_DELETE_SAVE_MESSAGE = "PRISM: Delete files via File Management tool"
 
 
 @dataclass
@@ -134,6 +138,11 @@ class BidsFileDeleter:
         result["deleted_count"] = deleted
         result["deleted_sidecars"] = deleted_sidecars
         result["removed_empty_dirs"] = removed_dirs
+
+        datalad_result = self._save_datalad_changes_if_needed(deleted + deleted_sidecars)
+        if datalad_result is not None:
+            result["datalad"] = datalad_result
+
         return result
 
     # ------------------------------------------------------------------
@@ -566,3 +575,79 @@ class BidsFileDeleter:
                 fp = root_path / filename
                 if fp.is_file():
                     yield fp
+
+    def _save_datalad_changes_if_needed(self, deleted_count: int) -> dict | None:
+        """Save deletions in DataLad datasets when available.
+
+        File deletion itself is completed before this step. A DataLad save
+        failure should not mask successful file deletions.
+        """
+        if deleted_count <= 0:
+            return None
+        if not (self.project_root / ".datalad").exists():
+            return None
+
+        result: dict[str, object] = {
+            "enabled": True,
+            "available": False,
+            "saved": False,
+            "no_changes": False,
+            "save_message": _DATALAD_DELETE_SAVE_MESSAGE,
+            "message": "",
+        }
+
+        datalad_executable = shutil.which("datalad")
+        if not datalad_executable:
+            result["message"] = (
+                "Project is tracked by DataLad, but the datalad executable "
+                "is not available in this environment."
+            )
+            return result
+
+        result["available"] = True
+        result["executable"] = str(datalad_executable)
+        save_command = [
+            str(datalad_executable),
+            "save",
+            "-r",
+            "--updated",
+            "-m",
+            _DATALAD_DELETE_SAVE_MESSAGE,
+        ]
+
+        try:
+            process = subprocess.run(
+                save_command,
+                cwd=str(self.project_root),
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=_DATALAD_SAVE_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            result["message"] = (
+                f"DataLad save timed out after {_DATALAD_SAVE_TIMEOUT_SECONDS} seconds."
+            )
+            return result
+        except Exception as exc:
+            result["message"] = f"DataLad save failed ({type(exc).__name__}: {exc})."
+            return result
+
+        if process.returncode == 0:
+            result["saved"] = True
+            result["message"] = (
+                "DataLad recursively saved project and nested dataset changes "
+                f"with message \"{_DATALAD_DELETE_SAVE_MESSAGE}\"."
+            )
+            return result
+
+        detail = (process.stderr or process.stdout or "").strip()
+        if "nothing to save" in detail.lower():
+            result["no_changes"] = True
+            result["message"] = (
+                "No DataLad changes were pending in the project or nested datasets."
+            )
+            return result
+
+        result["message"] = f"DataLad save failed: {detail or 'Unknown DataLad error.'}"
+        return result

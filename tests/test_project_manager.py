@@ -694,6 +694,37 @@ class TestProjectManager(unittest.TestCase):
         self.assertEqual(result.get("subdatasets_remaining_count"), 2)
         self.assertEqual(result.get("next_missing_subdataset"), "sub-001")
 
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_get_datalad_status_openneuro_remote_uses_registered_topology_only(
+        self, _mock_which
+    ):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "sub-001").mkdir(parents=True, exist_ok=True)
+            (project_path / "sub-002").mkdir(parents=True, exist_ok=True)
+
+            with patch(
+                "src.project_manager.ProjectManager._get_registered_nested_dataset_paths",
+                return_value={"sub-001"},
+            ):
+                with patch(
+                    "src.project_manager.ProjectManager._is_openneuro_remote_dataset",
+                    return_value=True,
+                ):
+                    result = manager.get_datalad_status(project_path)
+
+        self.assertEqual(result.get("subdatasets_total_count"), 1)
+        self.assertEqual(result.get("subdatasets_registered_count"), 1)
+        self.assertEqual(result.get("subdatasets_remaining_count"), 0)
+        self.assertEqual(result.get("subdatasets_progress_percent"), 100)
+        self.assertEqual(result.get("next_missing_subdataset"), "")
+        self.assertEqual(result.get("subdatasets_topology_mode"), "openneuro-registered")
+        self.assertIn("OpenNeuro nested subdatasets", result.get("message", ""))
+        self.assertIn("not the subject count", result.get("message", ""))
+
     @patch("src.project_manager.shutil.which")
     def test_get_datalad_status_reports_missing_git_annex(self, mock_which):
         manager = ProjectManager()
@@ -1510,6 +1541,82 @@ class TestProjectManager(unittest.TestCase):
             )
             self.assertFalse((output_path / "sub-001" / "ses-3").exists())
             self.assertFalse((output_path / "analysis").exists())
+
+    def test_export_project_to_plain_folder_excludes_anat_suffix_labels(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            t1_file = (
+                project_path
+                / "sub-001"
+                / "ses-1"
+                / "anat"
+                / "sub-001_ses-1_T1w.nii.gz"
+            )
+            t2_file = (
+                project_path
+                / "sub-001"
+                / "ses-1"
+                / "anat"
+                / "sub-001_ses-1_T2w.nii.gz"
+            )
+            t1_file.parent.mkdir(parents=True, exist_ok=True)
+            t1_file.write_bytes(b"t1")
+            t2_file.write_bytes(b"t2")
+
+            export_root = Path(tmp) / "exports"
+            result = manager.export_project_to_plain_folder(
+                project_path,
+                output_root=export_root,
+                exclude_acq={"anat": {"T1w"}},
+            )
+
+            self.assertTrue(result.get("success"), result)
+            output_path = Path(result["output_path"])
+            self.assertFalse((output_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_T1w.nii.gz").exists())
+            self.assertTrue((output_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_T2w.nii.gz").exists())
+
+    def test_export_project_to_plain_folder_excludes_dwi_suffix_labels(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            dwi_file = (
+                project_path
+                / "sub-001"
+                / "ses-1"
+                / "dwi"
+                / "sub-001_ses-1_acq-shell1_dwi.nii.gz"
+            )
+            sbref_file = (
+                project_path
+                / "sub-001"
+                / "ses-1"
+                / "dwi"
+                / "sub-001_ses-1_sbref.nii.gz"
+            )
+            dwi_file.parent.mkdir(parents=True, exist_ok=True)
+            dwi_file.write_bytes(b"dwi")
+            sbref_file.write_bytes(b"sbref")
+
+            export_root = Path(tmp) / "exports"
+            result = manager.export_project_to_plain_folder(
+                project_path,
+                output_root=export_root,
+                exclude_acq={"dwi": {"sbref"}},
+            )
+
+            self.assertTrue(result.get("success"), result)
+            output_path = Path(result["output_path"])
+            self.assertTrue((output_path / "sub-001" / "ses-1" / "dwi" / "sub-001_ses-1_acq-shell1_dwi.nii.gz").exists())
+            self.assertFalse((output_path / "sub-001" / "ses-1" / "dwi" / "sub-001_ses-1_sbref.nii.gz").exists())
 
     def test_export_project_to_plain_folder_skips_missing_annex_content_with_warning(self):
         manager = ProjectManager()
