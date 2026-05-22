@@ -570,6 +570,7 @@ class ProjectManager:
         clone_method = str(remote_status.get("clone_method") or "git_clone")
         command: List[str]
         step_label = "Git clone"
+        datalad_executable_text = ""
 
         if remote_status.get("requires_datalad"):
             datalad_executable = shutil.which("datalad")
@@ -594,8 +595,9 @@ class ProjectManager:
 
             clone_method = "datalad_install"
             step_label = "DataLad install"
+            datalad_executable_text = str(datalad_executable or "")
             command = [
-                str(datalad_executable),
+                datalad_executable_text,
                 "install",
                 "-s",
                 normalized_remote_url,
@@ -639,8 +641,59 @@ class ProjectManager:
             }
 
         if clone_method == "datalad_install":
+            resolve_nested_step_label = "DataLad nested dataset structure sync"
+            resolve_nested_command = [
+                datalad_executable_text,
+                "-C",
+                str(destination_path),
+                "get",
+                "-n",
+                "-r",
+                ".",
+            ]
+            try:
+                resolve_nested_process = subprocess.run(
+                    resolve_nested_command,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS,
+                )
+            except subprocess.TimeoutExpired:
+                return {
+                    "success": False,
+                    "error": (
+                        f"{resolve_nested_step_label} timed out after "
+                        f"{REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS} seconds."
+                    ),
+                }
+            except Exception as exc:
+                return {
+                    "success": False,
+                    "error": (
+                        f"{resolve_nested_step_label} failed "
+                        f"({type(exc).__name__}: {exc})."
+                    ),
+                }
+
+            if resolve_nested_process.returncode != 0:
+                detail = (
+                    resolve_nested_process.stderr
+                    or resolve_nested_process.stdout
+                    or f"Unknown {resolve_nested_step_label} error."
+                ).strip()
+                return {
+                    "success": False,
+                    "error": (
+                        f"{resolve_nested_step_label} failed: "
+                        f"{self._summarize_datalad_error(detail)}"
+                    ),
+                }
+
+        if clone_method == "datalad_install":
             message = (
-                f'Installed OpenNeuro/DataLad dataset from "{normalized_remote_url}".'
+                f'Installed OpenNeuro/DataLad dataset from "{normalized_remote_url}" '
+                "and resolved nested dataset structure locally."
             )
         else:
             message = f'Cloned remote dataset from "{normalized_remote_url}".'
@@ -3100,7 +3153,8 @@ class ProjectManager:
         """Convert a parent-tracked directory into a nested DataLad subdataset."""
         relative_dataset_text = dataset_path.relative_to(project_path).as_posix()
         stage_parent_message = (
-            f'Stage parent untracking for nested DataLad dataset "{relative_dataset_text}"'
+            "PRISM: Converting data into nested PRISM-structure "
+            f'(prepare parent untracking "{relative_dataset_text}")'
         )
         parent_tracks_dataset_path = self._parent_tracks_nested_dataset_path(
             project_path,
@@ -3454,12 +3508,16 @@ class ProjectManager:
             f'Saving nested DataLad dataset "{dataset_path.name}".',
             command=(
                 f'{datalad_executable} -C {dataset_path} save -m '
-                f'"Initialize DataLad nested dataset \"{dataset_path.name}\""'
+                f'"PRISM: Nested structure conversion '
+                f'(initialize \"{dataset_path.name}\")"'
             ),
         )
         nested_save_result = self._run_datalad_save(
             dataset_path,
-            message=f'Initialize DataLad nested dataset "{dataset_path.name}"',
+            message=(
+                "PRISM: Nested structure conversion "
+                f'(initialize "{dataset_path.name}")'
+            ),
             datalad_executable=datalad_executable,
         )
         if not (nested_save_result.get("saved") or nested_save_result.get("no_changes")):

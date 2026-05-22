@@ -18,6 +18,27 @@ export function initProjectInitOnBidsController({
     let remoteStatusDebounceTimer = null;
     let remoteStatusState = null;
 
+    function syncDataladToggleVisibility() {
+        const remoteUrl = (document.getElementById('initBidsRemoteUrl')?.value || '').trim();
+        const hasRemote = remoteUrl.length > 0;
+        const dataladToggle = document.getElementById('initBidsUseDatalad');
+        const dataladToggleContainer = dataladToggle?.closest('.form-check');
+
+        if (!dataladToggle || !dataladToggleContainer) {
+            return;
+        }
+
+        if (hasRemote) {
+            dataladToggle.checked = false;
+            dataladToggle.disabled = true;
+            dataladToggleContainer.classList.add('d-none');
+            return;
+        }
+
+        dataladToggle.disabled = false;
+        dataladToggleContainer.classList.remove('d-none');
+    }
+
     function renderRemoteStatus(status, options = {}) {
         const container = document.getElementById('initBidsRemoteStatus');
         if (!container) {
@@ -121,9 +142,11 @@ export function initProjectInitOnBidsController({
     }
 
     document.getElementById('initBidsRemoteUrl')?.addEventListener('input', function() {
+        syncDataladToggleVisibility();
         scheduleRemoteStatusRefresh();
     });
 
+    syncDataladToggleVisibility();
     renderRemoteStatus(null);
 
     initBidsSubmitBtn.addEventListener('click', async function() {
@@ -156,7 +179,7 @@ export function initProjectInitOnBidsController({
         }
 
         if (!hasRemote && !bidsPath) {
-            alert('Please select or enter the BIDS dataset root folder.');
+            alert('Please provide either a BIDS dataset root or a Git/DataLad URL with clone destination.');
             document.getElementById('initBidsPath')?.focus();
             return;
         }
@@ -182,7 +205,9 @@ export function initProjectInitOnBidsController({
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    path: targetPath,
+                    path: targetPath || undefined,
+                    bids_path: bidsPath || undefined,
+                    clone_path: clonePath || undefined,
                     name: displayName || undefined,
                     use_datalad: useDatalad,
                     remote_url: hasRemote ? remoteUrl : undefined,

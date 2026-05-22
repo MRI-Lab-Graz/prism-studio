@@ -995,6 +995,13 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             init_content,
         )
 
+    def test_update_create_button_recomputes_completeness_live(self):
+        content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("export function updateCreateProjectButton() {", content)
+        self.assertIn("const completeness = computeLocalCompleteness();", content)
+        self.assertIn("updateCompletenessUI(completeness);", content)
+
     def test_init_flow_checks_remote_source_requirements_before_submit(self):
         content = PROJECTS_INIT_ON_BIDS_MODULE.read_text(encoding="utf-8")
 

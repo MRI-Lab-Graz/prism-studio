@@ -475,6 +475,83 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         )
         self.assertEqual(manager.init_calls[0][1]["source_type"], "remote")
 
+    def test_init_on_bids_accepts_remote_clone_destination_without_bids_root(self):
+        manager = _ProjectManagerStub()
+
+        clone_path = Path(self.tmp_dir.name) / "remote_clone_destination"
+        with self.app.test_request_context(
+            "/api/projects/init-on-bids",
+            method="POST",
+            json={
+                "clone_path": str(clone_path),
+                "name": "remote_bids",
+                "remote_url": "https://github.com/OpenNeuroDatasets/ds003612.git",
+                "source_type": "remote",
+                "use_datalad": False,
+            },
+        ):
+            response = self.module.handle_init_on_bids(
+                project_manager=manager,
+                set_current_project=lambda path, name=None: None,
+                save_last_project=lambda path, name=None: None,
+            )
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(manager.init_calls[0][0], str(clone_path))
+
+    def test_init_on_bids_remote_request_ignores_datalad_toggle(self):
+        manager = _ProjectManagerStub()
+
+        clone_path = Path(self.tmp_dir.name) / "remote_clone_destination"
+        with self.app.test_request_context(
+            "/api/projects/init-on-bids",
+            method="POST",
+            json={
+                "clone_path": str(clone_path),
+                "name": "remote_bids",
+                "remote_url": "https://github.com/OpenNeuroDatasets/ds003612.git",
+                "source_type": "remote",
+                "use_datalad": True,
+            },
+        ):
+            response = self.module.handle_init_on_bids(
+                project_manager=manager,
+                set_current_project=lambda path, name=None: None,
+                save_last_project=lambda path, name=None: None,
+            )
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertFalse(manager.init_calls[0][1]["use_datalad"])
+
+    def test_init_on_bids_rejects_remote_source_without_clone_destination(self):
+        manager = _ProjectManagerStub()
+
+        with self.app.test_request_context(
+            "/api/projects/init-on-bids",
+            method="POST",
+            json={
+                "name": "remote_bids",
+                "remote_url": "https://github.com/OpenNeuroDatasets/ds003612.git",
+                "source_type": "remote",
+                "use_datalad": False,
+            },
+        ):
+            response = self.module.handle_init_on_bids(
+                project_manager=manager,
+                set_current_project=lambda path, name=None: None,
+                save_last_project=lambda path, name=None: None,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        body = resp_obj.get_json()
+
+        self.assertEqual(status_code, 400)
+        self.assertFalse(body["success"])
+        self.assertIn("Clone destination", body["error"])
+
     def test_create_project_response_includes_current_project_datalad_state(self):
         manager = _ProjectManagerStub()
         manager.get_datalad_status = lambda path: {
