@@ -11,6 +11,7 @@ from src.project_structure import (
     get_project_quick_summary,
     _extract_acq,
     _extract_task,
+    _extract_suffix_label,
 )
 
 
@@ -31,6 +32,17 @@ class TestExtractTask:
 
     def test_absent(self):
         assert _extract_task("sub-01_ses-01_survey.tsv") is None
+
+
+class TestExtractSuffixLabel:
+    def test_present_nifti_gz(self):
+        assert _extract_suffix_label("sub-01_ses-01_task-rest_bold.nii.gz") == "bold"
+
+    def test_present_json(self):
+        assert _extract_suffix_label("sub-01_ses-01_T1w.json") == "T1w"
+
+    def test_absent_for_entity_tail(self):
+        assert _extract_suffix_label("sub-01_ses-01_task-rest_run-01.nii.gz") is None
 
 
 class TestGetProjectModalitiesAndSessions:
@@ -78,6 +90,46 @@ class TestGetProjectModalitiesAndSessions:
         (mod / "sub-01_ses-01_acq-highres_bold.nii.gz").touch()
         result = get_project_modalities_and_sessions(tmp_path)
         assert sorted(result["acq_labels"]["func"]) == ["highres", "standard"]
+
+    def test_func_task_labels_collected(self, tmp_path):
+        mod = tmp_path / "sub-01" / "ses-01" / "func"
+        mod.mkdir(parents=True)
+        (mod / "sub-01_ses-01_task-soccer_bold.nii.gz").touch()
+        (mod / "sub-01_ses-01_task-rest_bold.nii.gz").touch()
+
+        result = get_project_modalities_and_sessions(tmp_path)
+
+        assert sorted(result["task_labels"]["func"]) == ["rest", "soccer"]
+
+    def test_anat_uses_terminal_suffix_labels(self, tmp_path):
+        mod = tmp_path / "sub-01" / "ses-01" / "anat"
+        mod.mkdir(parents=True)
+        (mod / "sub-01_ses-01_T1w.nii.gz").touch()
+        (mod / "sub-01_ses-01_T2w.nii.gz").touch()
+
+        result = get_project_modalities_and_sessions(tmp_path)
+
+        assert sorted(result["acq_labels"]["anat"]) == ["T1w", "T2w"]
+
+    def test_dwi_collects_suffix_and_acq_labels(self, tmp_path):
+        mod = tmp_path / "sub-01" / "ses-01" / "dwi"
+        mod.mkdir(parents=True)
+        (mod / "sub-01_ses-01_acq-shell1_dwi.nii.gz").touch()
+        (mod / "sub-01_ses-01_sbref.nii.gz").touch()
+
+        result = get_project_modalities_and_sessions(tmp_path)
+
+        assert sorted(result["acq_labels"]["dwi"]) == ["dwi", "sbref", "shell1"]
+
+    def test_fmap_collects_suffix_and_acq_labels(self, tmp_path):
+        mod = tmp_path / "sub-01" / "ses-01" / "fmap"
+        mod.mkdir(parents=True)
+        (mod / "sub-01_ses-01_acq-gre_magnitude1.nii.gz").touch()
+        (mod / "sub-01_ses-01_dir-AP_epi.nii.gz").touch()
+
+        result = get_project_modalities_and_sessions(tmp_path)
+
+        assert sorted(result["acq_labels"]["fmap"]) == ["epi", "gre", "magnitude1"]
 
     def test_survey_acq_variants_do_not_surface_as_export_acq_labels(self, tmp_path):
         mod = tmp_path / "sub-01" / "ses-01" / "survey"

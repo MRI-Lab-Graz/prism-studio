@@ -73,6 +73,31 @@ EXPORT_TEMP_WORKSPACE_STALE_SECONDS = 15 * 60
 EXPORT_TEMP_WORKSPACE_LOW_FREE_BYTES = 20 * 1024 * 1024 * 1024
 EXPORT_TEMP_WORKSPACE_LOW_FREE_RATIO = 0.10
 REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS = 60 * 60
+MRI_SUFFIX_LABEL_MODALITIES = {"anat", "dwi", "fmap", "perf"}
+
+
+def _extract_terminal_suffix_label(filename: str) -> str | None:
+    """Return the terminal BIDS suffix token from a filename, or None."""
+    name = str(filename or "").strip()
+    if not name:
+        return None
+
+    lower_name = name.lower()
+    for compound_ext in (".nii.gz", ".tsv.gz"):
+        if lower_name.endswith(compound_ext):
+            name = name[: -len(compound_ext)]
+            break
+    else:
+        if "." in name:
+            name = name.rsplit(".", 1)[0]
+
+    if not name:
+        return None
+
+    suffix = name.rsplit("_", 1)[-1]
+    if not suffix or "-" in suffix:
+        return None
+    return suffix
 
 
 class ProjectManager:
@@ -1126,6 +1151,7 @@ class ProjectManager:
             "subdatasets_remaining_count": 0,
             "subdatasets_progress_percent": 0,
             "next_missing_subdataset": "",
+            "subdatasets_topology_mode": "",
         }
 
         if not project_path:
@@ -1160,11 +1186,19 @@ class ProjectManager:
         result["can_save"] = True
         if annex_available:
             if result.get("subdatasets_total_count"):
-                result["message"] = (
-                    "Current project is tracked by DataLad. "
-                    f"Nested datasets: {result.get('subdatasets_registered_count', 0)}/"
-                    f"{result.get('subdatasets_total_count', 0)} registered."
-                )
+                if result.get("subdatasets_topology_mode") == "openneuro-registered":
+                    result["message"] = (
+                        "Current project is tracked by DataLad. "
+                        f"OpenNeuro nested subdatasets: {result.get('subdatasets_registered_count', 0)}/"
+                        f"{result.get('subdatasets_total_count', 0)} registered "
+                        "(this is not the subject count)."
+                    )
+                else:
+                    result["message"] = (
+                        "Current project is tracked by DataLad. "
+                        f"Nested datasets: {result.get('subdatasets_registered_count', 0)}/"
+                        f"{result.get('subdatasets_total_count', 0)} registered."
+                    )
             else:
                 result["message"] = "Current project is tracked by DataLad."
         else:
@@ -1493,6 +1527,10 @@ class ProjectManager:
             filename = rel_parts[-1]
             excluded_acq_labels = materialization_exclude_acq.get(modality, set())
             if excluded_acq_labels:
+                if modality in MRI_SUFFIX_LABEL_MODALITIES:
+                    suffix_label = _extract_terminal_suffix_label(filename)
+                    if suffix_label and suffix_label in excluded_acq_labels:
+                        return True
                 acq_match = re.search(r"_acq-([A-Za-z0-9]+)", filename)
                 if acq_match and acq_match.group(1) in excluded_acq_labels:
                     return True
@@ -2071,6 +2109,10 @@ class ProjectManager:
             filename = rel_parts[-1]
             excluded_acq_labels = normalized_exclude_acq.get(modality, set())
             if excluded_acq_labels:
+                if modality in MRI_SUFFIX_LABEL_MODALITIES:
+                    suffix_label = _extract_terminal_suffix_label(filename)
+                    if suffix_label and suffix_label in excluded_acq_labels:
+                        return True
                 acq_match = re.search(r"_acq-([A-Za-z0-9]+)", filename)
                 if acq_match and acq_match.group(1) in excluded_acq_labels:
                     return True
@@ -2439,6 +2481,10 @@ class ProjectManager:
             filename = rel_parts[-1]
             excluded_acq_labels = normalized_exclude_acq.get(modality, set())
             if excluded_acq_labels:
+                if modality in MRI_SUFFIX_LABEL_MODALITIES:
+                    suffix_label = _extract_terminal_suffix_label(filename)
+                    if suffix_label and suffix_label in excluded_acq_labels:
+                        return True
                 acq_match = re.search(r"_acq-([A-Za-z0-9]+)", filename)
                 if acq_match and acq_match.group(1) in excluded_acq_labels:
                     return True
@@ -3615,10 +3661,44 @@ class ProjectManager:
             return first_line[:217].rstrip() + "..."
         return first_line
 
+    def _is_openneuro_remote_dataset(self, project_path: Path) -> bool:
+        """Return True when a project's origin remote matches OpenNeuro patterns."""
+        try:
+            process = subprocess.run(
+                ["git", "config", "--get", "remote.origin.url"],
+                cwd=str(project_path),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except Exception:
+            return False
+
+        if process.returncode != 0:
+            return False
+
+        remote_url = str(process.stdout or "").strip()
+        if not remote_url:
+            return False
+
+        remote_info = self._classify_remote_dataset_url(remote_url)
+        return str(remote_info.get("kind") or "").lower() == "openneuro"
+
     def _summarize_nested_subdatasets(self, project_path: Path) -> Dict[str, Any]:
         """Return nested DataLad registration progress for a project."""
-        nested_dataset_paths = self._iter_nested_dataset_paths(project_path)
         registered_paths = self._get_registered_nested_dataset_paths(project_path)
+        if self._is_openneuro_remote_dataset(project_path):
+            # OpenNeuro/DataLad datasets can legitimately use a topology where only
+            # a subset of subject directories are nested datasets.
+            nested_dataset_paths = [
+                project_path / rel_path
+                for rel_path in sorted(registered_paths)
+                if rel_path
+            ]
+            topology_mode = "openneuro-registered"
+        else:
+            nested_dataset_paths = self._iter_nested_dataset_paths(project_path)
+            topology_mode = "local-expected"
         existing_paths: List[str] = []
         missing_paths: List[str] = []
 
@@ -3640,6 +3720,7 @@ class ProjectManager:
             "subdatasets_remaining_count": remaining_count,
             "subdatasets_progress_percent": progress_percent,
             "next_missing_subdataset": missing_paths[0] if missing_paths else "",
+            "subdatasets_topology_mode": topology_mode,
         }
 
     def _iter_nested_dataset_paths(self, project_path: Path) -> List[Path]:

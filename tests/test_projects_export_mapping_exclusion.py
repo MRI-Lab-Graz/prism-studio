@@ -173,6 +173,87 @@ def test_export_can_exclude_survey_tasks_and_matching_root_sidecars(tmp_path):
     assert "task-phq_survey.json" in names
 
 
+def test_export_can_exclude_anat_suffix_labels(tmp_path):
+    project_dir = tmp_path / "study"
+    anat_dir = project_dir / "sub-001" / "ses-01" / "anat"
+    anat_dir.mkdir(parents=True)
+
+    (anat_dir / "sub-001_ses-01_T1w.nii.gz").write_bytes(b"nifti-t1")
+    (anat_dir / "sub-001_ses-01_T2w.nii.gz").write_bytes(b"nifti-t2")
+
+    output_zip = tmp_path / "export_anat_suffix_filtered.zip"
+
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=False,
+        include_derivatives=False,
+        include_code=False,
+        include_analysis=False,
+        exclude_acq={"anat": {"T1w"}},
+    )
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        names = set(archive.namelist())
+
+    assert "sub-001/ses-01/anat/sub-001_ses-01_T1w.nii.gz" not in names
+    assert "sub-001/ses-01/anat/sub-001_ses-01_T2w.nii.gz" in names
+
+
+def test_export_can_exclude_dwi_suffix_labels(tmp_path):
+    project_dir = tmp_path / "study"
+    dwi_dir = project_dir / "sub-001" / "ses-01" / "dwi"
+    dwi_dir.mkdir(parents=True)
+
+    (dwi_dir / "sub-001_ses-01_acq-shell1_dwi.nii.gz").write_bytes(b"nifti-dwi")
+    (dwi_dir / "sub-001_ses-01_sbref.nii.gz").write_bytes(b"nifti-sbref")
+
+    output_zip = tmp_path / "export_dwi_suffix_filtered.zip"
+
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=False,
+        include_derivatives=False,
+        include_code=False,
+        include_analysis=False,
+        exclude_acq={"dwi": {"sbref"}},
+    )
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        names = set(archive.namelist())
+
+    assert "sub-001/ses-01/dwi/sub-001_ses-01_sbref.nii.gz" not in names
+    assert "sub-001/ses-01/dwi/sub-001_ses-01_acq-shell1_dwi.nii.gz" in names
+
+
+def test_export_can_exclude_fmap_suffix_labels(tmp_path):
+    project_dir = tmp_path / "study"
+    fmap_dir = project_dir / "sub-001" / "ses-01" / "fmap"
+    fmap_dir.mkdir(parents=True)
+
+    (fmap_dir / "sub-001_ses-01_dir-AP_epi.nii.gz").write_bytes(b"nifti-epi")
+    (fmap_dir / "sub-001_ses-01_acq-gre_magnitude1.nii.gz").write_bytes(b"nifti-mag")
+
+    output_zip = tmp_path / "export_fmap_suffix_filtered.zip"
+
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=False,
+        include_derivatives=False,
+        include_code=False,
+        include_analysis=False,
+        exclude_acq={"fmap": {"epi"}},
+    )
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        names = set(archive.namelist())
+
+    assert "sub-001/ses-01/fmap/sub-001_ses-01_dir-AP_epi.nii.gz" not in names
+    assert "sub-001/ses-01/fmap/sub-001_ses-01_acq-gre_magnitude1.nii.gz" in names
+
+
 def test_export_can_strip_version_control_metadata_for_upload_ready_shares(tmp_path):
     project_dir = tmp_path / "study"
     project_dir.mkdir(parents=True)
