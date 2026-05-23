@@ -906,10 +906,12 @@ print(json.dumps({\"counts\": counts, \"items\": items}, ensure_ascii=False))
                     )
                 continue
 
-            parsed_counts = parsed.get("counts") if isinstance(parsed.get("counts"), dict) else {}
+            counts_obj = parsed.get("counts")
+            parsed_counts = counts_obj if isinstance(counts_obj, dict) else {}
             counts["defaced"] += int(parsed_counts.get("defaced") or 0)
             counts["failed"] += int(parsed_counts.get("failed") or 0)
-            parsed_items = parsed.get("items") if isinstance(parsed.get("items"), list) else []
+            items_obj = parsed.get("items")
+            parsed_items = items_obj if isinstance(items_obj, list) else []
             for entry in parsed_items:
                 if not isinstance(entry, dict):
                     continue

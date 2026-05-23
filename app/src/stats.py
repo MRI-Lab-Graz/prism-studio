@@ -70,9 +70,8 @@ class DatasetStats:
             if modality not in self.modalities:
                 self.modalities[modality] = 0
             self.modalities[modality] += 1
-            # Track modality differentiators. For MRI-style modalities, combine
-            # acq and suffix when both are present (e.g., diffall-epi) so the
-            # UI does not imply they are separate acquisition families.
+            # Track modality differentiators as independent labels so filters can
+            # target either MRI suffixes (e.g. dwi, sbref) or acq values.
             acq_value = None
             if filename:
                 acq_match = re.search(r"_acq-([A-Za-z0-9]+)", filename)
@@ -83,13 +82,9 @@ class DatasetStats:
             if modality in ["anat", "dwi", "fmap", "perf"]:
                 suffix_label = _extract_suffix_label(filename)
 
-            if modality in ["dwi", "fmap", "perf"] and acq_value and suffix_label:
-                self.acq_labels.setdefault(modality, set()).add(
-                    f"{acq_value}-{suffix_label}"
-                )
-            elif suffix_label:
+            if suffix_label:
                 self.acq_labels.setdefault(modality, set()).add(suffix_label)
-            elif acq_value:
+            if acq_value:
                 self.acq_labels.setdefault(modality, set()).add(acq_value)
 
         # Only add to tasks if it's not a modality that has its own specific category
