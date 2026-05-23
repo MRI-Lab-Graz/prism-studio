@@ -1,93 +1,48 @@
 from __future__ import annotations
 
 import json
-import os
 import sys
 from pathlib import Path
 from typing import Any
 
 from src.bids_entity_rewriter import BidsEntityRewriter
 from src.datalad_execution import (
-    DATALAD_INSTALL_HINT,
-    DATALAD_DOCS_URL,
     is_datalad_dataset,
     parse_json_from_output,
-    resolve_datalad_executable,
-    run_datalad_get_recursive,
-    run_datalad_run,
 )
+from src.datalad_mutation_policy import build_pythonpath_env, run_tracked_mutation
 from src.subject_code_rewriter import SubjectCodeRewriter
-
-
-def _build_pythonpath_env() -> dict[str, str]:
-    repo_root = str(Path(__file__).resolve().parents[1])
-    existing = str(os.environ.get("PYTHONPATH") or "").strip()
-    if existing:
-        return {"PYTHONPATH": f"{repo_root}{os.pathsep}{existing}"}
-    return {"PYTHONPATH": repo_root}
-
-
-def _ensure_datalad_available_or_raise(project_root: Path) -> str:
-    datalad_executable = resolve_datalad_executable()
-    if datalad_executable:
-        return datalad_executable
-    raise ValueError(
-        "This project is tracked by DataLad and rewrite changes require DataLad run. "
-        f"{DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
-    )
 
 
 def _run_wrapped_command_or_raise(
     *,
     project_root: Path,
-    datalad_executable: str,
     message: str,
     command: list[str],
+    get_paths: list[str],
+    get_recursive: bool,
+    get_no_data: bool,
 ) -> dict[str, Any]:
-    get_result = run_datalad_get_recursive(
+    mutation_result = run_tracked_mutation(
         project_root,
-        datalad_executable=datalad_executable,
-        timeout_seconds=1800,
-    )
-    if not get_result.get("success"):
-        raise ValueError(
-            str(get_result.get("message") or "DataLad get failed before rewrite.")
-        )
-
-    run_result = run_datalad_run(
-        project_root,
-        message=message,
+        get_paths=get_paths,
+        run_message=message,
         command=command,
-        datalad_executable=datalad_executable,
-        timeout_seconds=3600,
-        env=_build_pythonpath_env(),
+        get_timeout_seconds=1800,
+        run_timeout_seconds=3600,
+        get_recursive=get_recursive,
+        get_no_data=get_no_data,
+        env=build_pythonpath_env(),
     )
-    if not run_result.get("success"):
-        raise ValueError(
-            str(run_result.get("message") or "DataLad run failed for rewrite.")
-        )
 
-    payload = parse_json_from_output(str(run_result.get("stdout") or ""))
+    run_info = mutation_result.get("run") if isinstance(mutation_result, dict) else {}
+    payload = parse_json_from_output(str((run_info or {}).get("stdout") or ""))
     if not isinstance(payload, dict):
         raise ValueError(
             "DataLad run finished, but PRISM could not parse rewrite output."
         )
 
-    payload["datalad"] = {
-        "used_run": True,
-        "get": {
-            "attempted": bool(get_result.get("attempted")),
-            "success": bool(get_result.get("success")),
-            "message": str(get_result.get("message") or ""),
-            "command": str(get_result.get("command") or ""),
-        },
-        "run": {
-            "attempted": bool(run_result.get("attempted")),
-            "success": bool(run_result.get("success")),
-            "message": str(run_result.get("message") or ""),
-            "command": str(run_result.get("command") or ""),
-        },
-    }
+    payload["datalad"] = {"used_run": True, **mutation_result}
     return payload
 
 
@@ -124,7 +79,6 @@ def apply_subject_rewrite(
             allow_many_to_one=allow_many_to_one,
         )
 
-    datalad_executable = _ensure_datalad_available_or_raise(root)
     script = (
         "import json;"
         "from pathlib import Path;"
@@ -139,11 +93,27 @@ def apply_subject_rewrite(
     )
 
     run_message = "PRISM: Rewrite subject IDs"
+    get_paths = sorted(
+        {
+            str(item.get("from") or "").strip()
+            for item in list(preview.get("file_renames") or [])
+            if isinstance(item, dict) and str(item.get("from") or "").strip()
+        }
+        | {
+            str(item.get("from") or "").strip()
+            for item in list(preview.get("directory_renames") or [])
+            if isinstance(item, dict) and str(item.get("from") or "").strip()
+        }
+    )
+    if not get_paths:
+        get_paths = ["."]
     return _run_wrapped_command_or_raise(
         project_root=root,
-        datalad_executable=datalad_executable,
         message=run_message,
         command=[sys.executable, "-c", script],
+        get_paths=get_paths,
+        get_recursive=True,
+        get_no_data=True,
     )
 
 
@@ -180,7 +150,6 @@ def apply_entity_rewrite(
             replacement=replacement,
         )
 
-    datalad_executable = _ensure_datalad_available_or_raise(root)
     script = (
         "import json;"
         "from pathlib import Path;"
@@ -196,9 +165,20 @@ def apply_entity_rewrite(
     )
 
     run_message = "PRISM: Rewrite BIDS filename entity"
+    get_paths = sorted(
+        {
+            str(item.get("from") or "").strip()
+            for item in list(preview.get("renames") or [])
+            if isinstance(item, dict) and str(item.get("from") or "").strip()
+        }
+    )
+    if not get_paths:
+        get_paths = ["."]
     return _run_wrapped_command_or_raise(
         project_root=root,
-        datalad_executable=datalad_executable,
         message=run_message,
         command=[sys.executable, "-c", script],
+        get_paths=get_paths,
+        get_recursive=False,
+        get_no_data=True,
     )
