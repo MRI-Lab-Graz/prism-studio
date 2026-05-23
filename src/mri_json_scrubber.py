@@ -35,7 +35,7 @@ from src.datalad_execution import (
     DATALAD_INSTALL_HINT,
     is_datalad_dataset,
     resolve_datalad_executable,
-    run_datalad_get_recursive,
+    run_datalad_get_paths,
     run_datalad_run,
 )
 
@@ -658,11 +658,33 @@ def deface_anatomical_scans(
             "Project is tracked by DataLad, but datalad is not available. "
             f"{DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
         )
+        return {
+            "success": False,
+            "error": str(datalad_info["message"]),
+            "counts": {
+                "total": 0,
+                "already_defaced": 0,
+                "defaced": 0,
+                "failed": 0,
+                "skipped": 0,
+            },
+            "items": [],
+            "datalad": datalad_info,
+        }
     elif datalad_tracked and datalad_executable:
-        get_result = run_datalad_get_recursive(
+        get_targets = sorted(
+            {
+                path.relative_to(project_root).as_posix()
+                for path in anatomical_files
+            }
+        )
+        get_result = run_datalad_get_paths(
             project_root,
+            paths=get_targets,
             datalad_executable=datalad_executable,
             timeout_seconds=max(1, int(timeout_seconds)) * 2,
+            recursive=False,
+            no_data=False,
         )
         datalad_info["get"] = {
             "attempted": bool(get_result.get("attempted")),

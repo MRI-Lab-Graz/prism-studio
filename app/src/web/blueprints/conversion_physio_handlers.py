@@ -27,6 +27,7 @@ from .conversion_utils import (
     summarize_project_output_paths,
 )
 from src.web.services.project_registration import register_session_in_project
+from src.datalad_project_copy import copy_files_into_project
 
 # Optional dependencies
 convert_varioport: Any = None
@@ -245,12 +246,10 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
                         )
                         project_root.mkdir(parents=True, exist_ok=True)
 
-                        copied_files: list[Path] = []
+                        copy_pairs: list[tuple[Path, Path]] = []
                         for file in output_dir.rglob("*"):
                             if file.is_file():
                                 if _is_job_cancelled(job_id):
-                                    for copied_file in copied_files:
-                                        copied_file.unlink(missing_ok=True)
                                     _append_job_log(
                                         job_id,
                                         "⏹️ Batch conversion cancelled while copying staged files into the project",
@@ -275,9 +274,18 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
                                         "subject_rewrite_mode", "keep"
                                     ),
                                 )
-                                dest_file.parent.mkdir(parents=True, exist_ok=True)
-                                shutil.copy2(file, dest_file)
-                                copied_files.append(dest_file)
+                                copy_pairs.append((file, dest_file))
+
+                        copy_result = copy_files_into_project(
+                            dataset_root=base_project_root,
+                            copy_pairs=copy_pairs,
+                            run_message="PRISM: Copy batch-converted physio files into project",
+                        )
+                        copied_files = [
+                            base_project_root / rel_path
+                            for rel_path in list(copy_result.get("copied_paths") or [])
+                        ]
+                        payload["datalad"] = copy_result.get("datalad")
 
                         if copied_files:
                             output_paths = summarize_project_output_paths(
@@ -762,12 +770,13 @@ def api_batch_convert():
 
             # If not a dry-run, move files to project if save_to_project is true
             copied_output_paths: list[Path] = []
+            datalad_copy = None
             if not dry_run and save_to_project:
                 project_root = _resolve_project_copy_root(
                     current_project_root, dest_root
                 )
                 project_root.mkdir(parents=True, exist_ok=True)
-                # Copy converted files to project
+                copy_pairs: list[tuple[Path, Path]] = []
                 for file in output_dir.rglob("*"):
                     if file.is_file():
                         rel_path = file.relative_to(output_dir)
@@ -779,9 +788,17 @@ def api_batch_convert():
                             modality_filter=modality_filter,
                             subject_rewrite_mode=subject_rewrite_mode,
                         )
-                        dest_file.parent.mkdir(parents=True, exist_ok=True)
-                        shutil.copy2(file, dest_file)
-                        copied_output_paths.append(dest_file)
+                        copy_pairs.append((file, dest_file))
+
+                datalad_copy = copy_files_into_project(
+                    dataset_root=current_project_root,
+                    copy_pairs=copy_pairs,
+                    run_message="PRISM: Copy batch-converted physio files into project",
+                )
+                copied_output_paths = [
+                    current_project_root / rel_path
+                    for rel_path in list(datalad_copy.get("copied_paths") or [])
+                ]
 
             output_paths = []
             if copied_output_paths and current_project_root is not None:
@@ -808,6 +825,7 @@ def api_batch_convert():
                     "project_output_paths": output_paths,
                     "project_output_path": output_paths[0] if output_paths else None,
                     "project_output_count": len(copied_output_paths),
+                    "datalad": datalad_copy,
                 }
             )
         finally:
@@ -970,7 +988,9 @@ def api_batch_convert():
         project_saved = False
         project_root = None
         base_project_root = None
+        datalad_copy = None
         copied_output_paths: list[Path] = []
+        copy_pairs: list[tuple[Path, Path]] = []
         if save_to_project:
             p_path = _requested_project_path() or session.get("current_project_path")
             if p_path:
@@ -1038,10 +1058,19 @@ def api_batch_convert():
 
                             dest_path = project_root / copy_rel_path
 
-                        dest_path.parent.mkdir(parents=True, exist_ok=True)
-                        shutil.copy2(file_path, dest_path)
-                        project_saved = True
-                        copied_output_paths.append(dest_path)
+                        copy_pairs.append((file_path, dest_path))
+
+        if copy_pairs and base_project_root is not None:
+            datalad_copy = copy_files_into_project(
+                dataset_root=base_project_root,
+                copy_pairs=copy_pairs,
+                run_message="PRISM: Copy converted physio files into project",
+            )
+            copied_output_paths = [
+                base_project_root / rel_path
+                for rel_path in list(datalad_copy.get("copied_paths") or [])
+            ]
+            project_saved = bool(copied_output_paths)
 
         if project_saved and not dry_run:
             from collections import defaultdict
@@ -1093,6 +1122,7 @@ def api_batch_convert():
                 "project_output_paths": output_paths,
                 "project_output_path": output_paths[0] if output_paths else None,
                 "project_output_count": len(copied_output_paths),
+                "datalad": datalad_copy,
                 "warnings": warnings,
             }
         )
@@ -1455,6 +1485,8 @@ def api_physio_rename():
     project_root = None
     base_project_root = None
     copied_output_paths: list[Path] = []
+    copy_pairs: list[tuple[Path, Path]] = []
+    copy_stage_dir: Path | None = None
     if save_to_project:
         try:
             base_project_root = require_existing_project_root(
@@ -1467,6 +1499,7 @@ def api_physio_rename():
 
         project_root = _resolve_project_copy_root(base_project_root, dest_root)
         project_root.mkdir(parents=True, exist_ok=True)
+        copy_stage_dir = Path(tempfile.mkdtemp(prefix="prism_physio_rename_copy_"))
 
     try:
         zip_context = (
@@ -1567,10 +1600,11 @@ def api_physio_rename():
                                     )
                                     warned_subjects.add(subject_label)
 
-                        dest_path.parent.mkdir(parents=True, exist_ok=True)
-                        with open(dest_path, "wb") as out_f:
-                            out_f.write(f_content)
-                        copied_output_paths.append(dest_path)
+                        if copy_stage_dir is None:
+                            raise ValueError("Copy staging folder is unavailable.")
+                        staged_source = copy_stage_dir / f"upload_{idx:05d}_{project_name}"
+                        staged_source.write_bytes(f_content)
+                        copy_pairs.append((staged_source, dest_path))
 
                     results.append(
                         {
@@ -1672,10 +1706,7 @@ def api_physio_rename():
                                     )
                                     warned_subjects.add(subject_label)
 
-                        dest_path.parent.mkdir(parents=True, exist_ok=True)
-                        with open(dest_path, "wb") as out_f:
-                            out_f.write(f_content)
-                        copied_output_paths.append(dest_path)
+                        copy_pairs.append((server_file, dest_path))
 
                     results.append(
                         {
@@ -1693,6 +1724,18 @@ def api_physio_rename():
                             "success": False,
                         }
                     )
+
+        copy_result = None
+        if copy_pairs and base_project_root is not None:
+            copy_result = copy_files_into_project(
+                dataset_root=base_project_root,
+                copy_pairs=copy_pairs,
+                run_message="PRISM: Copy renamed physio files into project",
+            )
+            copied_output_paths = [
+                base_project_root / rel_path
+                for rel_path in list(copy_result.get("copied_paths") or [])
+            ]
 
         zip_base64 = None
         if not skip_zip and mem is not None:
@@ -1721,8 +1764,12 @@ def api_physio_rename():
                 "project_output_paths": output_paths,
                 "project_output_path": output_paths[0] if output_paths else None,
                 "project_output_count": len(copied_output_paths),
+                "datalad": copy_result,
                 "warnings": warnings,
             }
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    finally:
+        if copy_stage_dir is not None:
+            shutil.rmtree(copy_stage_dir, ignore_errors=True)

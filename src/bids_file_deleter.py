@@ -1,14 +1,20 @@
 from __future__ import annotations
 
+import json
 import os
 import re
 import shlex
 import shutil
 import subprocess
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator
 
+from src.datalad_execution import (
+    parse_json_from_output,
+)
+from src.datalad_mutation_policy import build_pythonpath_env, run_tracked_mutation
 from src.system_files import filter_system_files
 
 _IGNORED_DIR_NAMES = {
@@ -38,6 +44,7 @@ _DOUBLE_SUFFIXES = (".nii.gz", ".tsv.gz")
 _MAX_FILTER_VALUES = 200
 _DATALAD_SAVE_TIMEOUT_SECONDS = 120
 _DATALAD_DELETE_SAVE_MESSAGE = "PRISM: Delete files via File Management tool"
+_DATALAD_DELETE_RUN_MESSAGE = "PRISM: Delete files via File Management tool"
 
 
 @dataclass
@@ -91,8 +98,18 @@ class BidsFileDeleter:
         modality: str | None,
         entity_filters: dict[str, str],
         subjects: list[str] | None,
+        *,
+        datalad_allow_run: bool = True,
+        datalad_record_after_apply: bool = True,
     ) -> dict:
         plan = self._build_plan(modality, entity_filters, subjects)
+
+        if (
+            datalad_allow_run
+            and self._is_datalad_dataset()
+            and (plan.targets or plan.orphaned_root_sidecars)
+        ):
+            return self._apply_with_datalad_run(plan)
 
         deleted = 0
         for target in plan.targets:
@@ -141,11 +158,71 @@ class BidsFileDeleter:
         result["removed_empty_dirs"] = removed_dirs
         result["backend_command"] = self._build_delete_backend_command(plan, apply=True)
 
-        datalad_result = self._save_datalad_changes_if_needed(deleted + deleted_sidecars)
-        if datalad_result is not None:
-            result["datalad"] = datalad_result
+        if datalad_record_after_apply:
+            datalad_result = self._save_datalad_changes_if_needed(
+                deleted + deleted_sidecars
+            )
+            if datalad_result is not None:
+                result["datalad"] = datalad_result
 
         return result
+
+    def _is_datalad_dataset(self) -> bool:
+        return (self.project_root / ".datalad").exists()
+
+    def _apply_with_datalad_run(self, plan: _DeletePlan) -> dict:
+        get_paths = sorted(
+            {
+                path.relative_to(self.project_root).as_posix()
+                for path in list(plan.targets) + list(plan.orphaned_root_sidecars)
+                if path.exists()
+            }
+        )
+
+        script = (
+            "import json;"
+            "from pathlib import Path;"
+            "from src.bids_file_deleter import BidsFileDeleter;"
+            f"result=BidsFileDeleter(Path({json.dumps(str(self.project_root))})).apply("
+            f"modality={json.dumps(plan.modality)},"
+            f"entity_filters={json.dumps(plan.entity_filters)},"
+            f"subjects={json.dumps(plan.subjects)},"
+            "datalad_allow_run=False,"
+            "datalad_record_after_apply=False"
+            ");"
+            "print(json.dumps(result, ensure_ascii=False))"
+        )
+
+        mutation_result = run_tracked_mutation(
+            self.project_root,
+            get_paths=get_paths,
+            run_message=_DATALAD_DELETE_RUN_MESSAGE,
+            command=[sys.executable, "-c", script],
+            get_timeout_seconds=max(1, _DATALAD_SAVE_TIMEOUT_SECONDS * 2),
+            run_timeout_seconds=max(1, _DATALAD_SAVE_TIMEOUT_SECONDS * 4),
+            get_recursive=False,
+            get_no_data=True,
+            env=build_pythonpath_env(),
+        )
+
+        run_info = mutation_result.get("run") if isinstance(mutation_result, dict) else {}
+        payload = parse_json_from_output(str((run_info or {}).get("stdout") or ""))
+        if not isinstance(payload, dict):
+            raise ValueError(
+                "DataLad run finished, but PRISM could not parse deletion output."
+            )
+
+        payload["datalad"] = {
+            "enabled": True,
+            "available": True,
+            "used_run": True,
+            "save_message": _DATALAD_DELETE_RUN_MESSAGE,
+            "message": "DataLad run recorded file deletion changes.",
+            "get": mutation_result.get("get"),
+            "run": mutation_result.get("run"),
+            "command": str((run_info or {}).get("command") or ""),
+        }
+        return payload
 
     # ------------------------------------------------------------------
     # Internals
