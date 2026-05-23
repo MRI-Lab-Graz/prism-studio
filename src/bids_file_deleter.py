@@ -170,23 +170,30 @@ class BidsFileDeleter:
     def _is_datalad_dataset(self) -> bool:
         return (self.project_root / ".datalad").exists()
 
-    def _apply_with_datalad_run(self, plan: _DeletePlan) -> dict:
-        get_paths = sorted(
-            {
-                path.relative_to(self.project_root).as_posix()
-                for path in list(plan.targets) + list(plan.orphaned_root_sidecars)
-                if path.exists()
-            }
-        )
+    def _extract_subject_from_relative_path(self, relative_path: str) -> str | None:
+        parts = [part for part in Path(relative_path).parts if part]
+        for part in parts:
+            if _SUBJECT_DIR_PATTERN.fullmatch(part):
+                return part[4:]
+        return None
 
+    def _run_datalad_apply_for_subjects(
+        self,
+        *,
+        modality: str | None,
+        entity_filters: dict[str, str],
+        subjects: list[str] | None,
+        get_paths: list[str],
+        run_message: str,
+    ) -> dict:
         script = (
             "import json;"
             "from pathlib import Path;"
             "from src.bids_file_deleter import BidsFileDeleter;"
             f"result=BidsFileDeleter(Path({json.dumps(str(self.project_root))})).apply("
-            f"modality={json.dumps(plan.modality)},"
-            f"entity_filters={json.dumps(plan.entity_filters)},"
-            f"subjects={json.dumps(plan.subjects)},"
+            f"modality={json.dumps(modality)},"
+            f"entity_filters={json.dumps(entity_filters)},"
+            f"subjects={json.dumps(subjects)},"
             "datalad_allow_run=False,"
             "datalad_record_after_apply=False"
             ");"
@@ -196,7 +203,7 @@ class BidsFileDeleter:
         mutation_result = run_tracked_mutation(
             self.project_root,
             get_paths=get_paths,
-            run_message=_DATALAD_DELETE_RUN_MESSAGE,
+            run_message=run_message,
             command=[sys.executable, "-c", script],
             get_timeout_seconds=max(1, _DATALAD_SAVE_TIMEOUT_SECONDS * 2),
             run_timeout_seconds=max(1, _DATALAD_SAVE_TIMEOUT_SECONDS * 4),
@@ -212,17 +219,122 @@ class BidsFileDeleter:
                 "DataLad run finished, but PRISM could not parse deletion output."
             )
 
-        payload["datalad"] = {
+        payload["_mutation"] = mutation_result
+        return payload
+
+    def _apply_with_datalad_run(self, plan: _DeletePlan) -> dict:
+        plan_targets_rel = [
+            path.relative_to(self.project_root).as_posix() for path in plan.targets
+        ]
+        subject_ids = sorted(
+            {
+                subject
+                for subject in (
+                    self._extract_subject_from_relative_path(rel_path)
+                    for rel_path in plan_targets_rel
+                )
+                if subject
+            }
+        )
+
+        if plan.subjects:
+            grouped_subjects = [s for s in plan.subjects if s in set(subject_ids)]
+            if not grouped_subjects:
+                grouped_subjects = list(plan.subjects)
+        else:
+            grouped_subjects = subject_ids
+
+        if not grouped_subjects:
+            grouped_subjects = [""]
+
+        aggregate_payload: dict | None = None
+        group_details: list[dict] = []
+        total_deleted = 0
+        total_sidecars = 0
+        total_removed_dirs = 0
+
+        for subject in grouped_subjects:
+            subjects_arg = [subject] if subject else plan.subjects
+            run_message = (
+                f"{_DATALAD_DELETE_RUN_MESSAGE} (sub-{subject})"
+                if subject
+                else _DATALAD_DELETE_RUN_MESSAGE
+            )
+            get_paths = sorted(
+                {
+                    rel_path
+                    for rel_path in plan_targets_rel
+                    if (not subject)
+                    or self._extract_subject_from_relative_path(rel_path) == subject
+                }
+            )
+            if not get_paths:
+                get_paths = ["."]
+
+            payload = self._run_datalad_apply_for_subjects(
+                modality=plan.modality,
+                entity_filters=plan.entity_filters,
+                subjects=subjects_arg,
+                get_paths=get_paths,
+                run_message=run_message,
+            )
+            mutation = payload.pop("_mutation", {})
+            total_deleted += int(payload.get("deleted_count") or 0)
+            total_sidecars += int(payload.get("deleted_sidecars") or 0)
+            total_removed_dirs += int(payload.get("removed_empty_dirs") or 0)
+
+            if aggregate_payload is None:
+                aggregate_payload = payload
+                aggregate_payload["files"] = list(payload.get("files") or [])
+                aggregate_payload["empty_dirs_to_remove"] = list(
+                    payload.get("empty_dirs_to_remove") or []
+                )
+                aggregate_payload["orphaned_root_sidecars"] = list(
+                    payload.get("orphaned_root_sidecars") or []
+                )
+            else:
+                aggregate_payload["files"] = sorted(
+                    set(list(aggregate_payload.get("files") or []) + list(payload.get("files") or []))
+                )
+                aggregate_payload["empty_dirs_to_remove"] = sorted(
+                    set(
+                        list(aggregate_payload.get("empty_dirs_to_remove") or [])
+                        + list(payload.get("empty_dirs_to_remove") or [])
+                    )
+                )
+                aggregate_payload["orphaned_root_sidecars"] = sorted(
+                    set(
+                        list(aggregate_payload.get("orphaned_root_sidecars") or [])
+                        + list(payload.get("orphaned_root_sidecars") or [])
+                    )
+                )
+
+            group_details.append(
+                {
+                    "subject": f"sub-{subject}" if subject else "dataset-root",
+                    "get": mutation.get("get"),
+                    "run": mutation.get("run"),
+                }
+            )
+
+        if aggregate_payload is None:
+            raise ValueError("No DataLad delete groups were executed.")
+
+        aggregate_payload["deleted_count"] = total_deleted
+        aggregate_payload["deleted_sidecars"] = total_sidecars
+        aggregate_payload["removed_empty_dirs"] = total_removed_dirs
+        aggregate_payload["datalad"] = {
             "enabled": True,
             "available": True,
             "used_run": True,
             "save_message": _DATALAD_DELETE_RUN_MESSAGE,
-            "message": "DataLad run recorded file deletion changes.",
-            "get": mutation_result.get("get"),
-            "run": mutation_result.get("run"),
-            "command": str((run_info or {}).get("command") or ""),
+            "message": "DataLad run recorded subject-scoped file deletion changes.",
+            "run_per_subject": True,
+            "run_count": len(group_details),
+            "groups": group_details,
+            "command": "datalad run (grouped by subject)",
         }
-        return payload
+        return aggregate_payload
 
     # ------------------------------------------------------------------
     # Internals
