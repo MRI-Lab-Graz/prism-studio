@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -11,12 +12,22 @@ from typing import Any, Sequence
 from src.datalad_execution import is_datalad_dataset, parse_json_from_output
 from src.datalad_mutation_policy import run_tracked_mutation
 
+_SUBJECT_PART_PATTERN = re.compile(r"^sub-[A-Za-z0-9]+$")
+
 
 def _relative_to_root(path: Path, root: Path) -> str:
     try:
         return path.resolve().relative_to(root.resolve()).as_posix()
     except ValueError as exc:
         raise ValueError(f"Path is outside project root: {path}") from exc
+
+
+def _extract_subject_from_rel_path(rel_path: str) -> str | None:
+    parts = [part for part in Path(rel_path).parts if part]
+    for part in parts:
+        if _SUBJECT_PART_PATTERN.fullmatch(part):
+            return part
+    return None
 
 
 def copy_files_into_project(
@@ -62,61 +73,87 @@ def copy_files_into_project(
             },
         }
 
-    existing_rel_paths = [rel for _, dst_path, rel in pairs if dst_path.exists()]
-    manifest = {
-        "copies": [
-            {"src": str(src_path), "dst": str(dst_path), "rel": rel_path}
-            for src_path, dst_path, rel_path in pairs
+    grouped_pairs: dict[str, list[tuple[Path, Path, str]]] = {}
+    for src_path, dst_path, rel_path in pairs:
+        subject = _extract_subject_from_rel_path(rel_path) or "__dataset_root__"
+        grouped_pairs.setdefault(subject, []).append((src_path, dst_path, rel_path))
+
+    all_copied_paths: list[str] = []
+    group_results: list[dict[str, Any]] = []
+    for subject, subject_pairs in sorted(grouped_pairs.items(), key=lambda item: item[0]):
+        existing_rel_paths = [
+            rel for _, dst_path, rel in subject_pairs if dst_path.exists()
         ]
-    }
-
-    fd, manifest_path = tempfile.mkstemp(prefix="prism_datalad_copy_", suffix=".json")
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            json.dump(manifest, handle)
-
-        script = (
-            "import json, shutil, sys; "
-            "from pathlib import Path; "
-            "manifest = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8')); "
-            "copied = []; "
-            "for item in manifest.get('copies', []): "
-            " src = Path(item['src']); dst = Path(item['dst']); "
-            " dst.parent.mkdir(parents=True, exist_ok=True); shutil.copy2(src, dst); copied.append(item['rel']); "
-            "print(json.dumps({'copied_count': len(copied), 'copied_paths': copied}, ensure_ascii=False))"
-        )
-
-        mutation_result = run_tracked_mutation(
-            root,
-            get_paths=existing_rel_paths,
-            run_message=run_message,
-            command=[sys.executable, "-c", script, manifest_path],
-            get_timeout_seconds=1800,
-            run_timeout_seconds=7200,
-            get_recursive=False,
-            get_no_data=False,
-        )
-
-        parsed = parse_json_from_output(
-            mutation_result.get("run", {}).get("stdout") or ""
-        )
-        if not isinstance(parsed, dict):
-            raise ValueError("Could not parse DataLad run output for copied files.")
-
-        copied_paths = parsed.get("copied_paths")
-        if not isinstance(copied_paths, list):
-            copied_paths = []
-
-        return {
-            "copied_count": int(parsed.get("copied_count") or len(copied_paths)),
-            "copied_paths": [str(item) for item in copied_paths],
-            "datalad": {
-                "tracked": True,
-                "used_run": True,
-                "message": str(mutation_result.get("run", {}).get("message") or ""),
-                "command": str(mutation_result.get("run", {}).get("command") or ""),
-                "get": mutation_result.get("get"),
-            },
+        manifest = {
+            "copies": [
+                {"src": str(src_path), "dst": str(dst_path), "rel": rel_path}
+                for src_path, dst_path, rel_path in subject_pairs
+            ]
         }
-    finally:
-        Path(manifest_path).unlink(missing_ok=True)
+
+        fd, manifest_path = tempfile.mkstemp(prefix="prism_datalad_copy_", suffix=".json")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                json.dump(manifest, handle)
+
+            script = (
+                "import json, shutil, sys; "
+                "from pathlib import Path; "
+                "manifest = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8')); "
+                "copied = []; "
+                "for item in manifest.get('copies', []): "
+                " src = Path(item['src']); dst = Path(item['dst']); "
+                " dst.parent.mkdir(parents=True, exist_ok=True); shutil.copy2(src, dst); copied.append(item['rel']); "
+                "print(json.dumps({'copied_count': len(copied), 'copied_paths': copied}, ensure_ascii=False))"
+            )
+
+            subject_message = (
+                f"{run_message} ({subject})"
+                if subject != "__dataset_root__"
+                else run_message
+            )
+            mutation_result = run_tracked_mutation(
+                root,
+                get_paths=existing_rel_paths,
+                run_message=subject_message,
+                command=[sys.executable, "-c", script, manifest_path],
+                get_timeout_seconds=1800,
+                run_timeout_seconds=7200,
+                get_recursive=False,
+                get_no_data=False,
+            )
+
+            parsed = parse_json_from_output(
+                mutation_result.get("run", {}).get("stdout") or ""
+            )
+            if not isinstance(parsed, dict):
+                raise ValueError("Could not parse DataLad run output for copied files.")
+
+            copied_paths = parsed.get("copied_paths")
+            if not isinstance(copied_paths, list):
+                copied_paths = []
+            all_copied_paths.extend(str(item) for item in copied_paths)
+            group_results.append(
+                {
+                    "subject": subject,
+                    "copied_count": int(parsed.get("copied_count") or len(copied_paths)),
+                    "copied_paths": [str(item) for item in copied_paths],
+                    "get": mutation_result.get("get"),
+                    "run": mutation_result.get("run"),
+                }
+            )
+        finally:
+            Path(manifest_path).unlink(missing_ok=True)
+
+    return {
+        "copied_count": len(all_copied_paths),
+        "copied_paths": all_copied_paths,
+        "datalad": {
+            "tracked": True,
+            "used_run": True,
+            "run_per_subject": True,
+            "run_count": len(group_results),
+            "groups": group_results,
+            "message": "DataLad run recorded subject-scoped copy commits.",
+        },
+    }

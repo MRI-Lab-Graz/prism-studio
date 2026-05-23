@@ -485,7 +485,21 @@ class TestDefaceAnatomicalScans:
             if len(command) >= 2 and command[1] == "get":
                 return SimpleNamespace(returncode=0, stdout="get ok", stderr="")
             if len(command) >= 2 and command[1] == "run":
-                return SimpleNamespace(returncode=0, stdout="run ok", stderr="")
+                payload = {
+                    "counts": {"defaced": 1, "failed": 0},
+                    "items": [
+                        {
+                            "file": "sub-001/anat/sub-001_T1w.nii.gz",
+                            "status": "defaced",
+                            "message": "Defacing completed",
+                        }
+                    ],
+                }
+                return SimpleNamespace(
+                    returncode=0,
+                    stdout=f"run log\n{json.dumps(payload)}\n",
+                    stderr="",
+                )
             raise AssertionError(f"Unexpected command: {command}")
 
         monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_subprocess_run)
@@ -496,6 +510,75 @@ class TestDefaceAnatomicalScans:
         assert result["datalad"]["used_run"] is True
         assert any(command[0:2] == ["/usr/bin/datalad", "get"] for command in seen_commands)
         assert any(command[0:2] == ["/usr/bin/datalad", "run"] for command in seen_commands)
+
+    def test_tracked_dataset_defacing_runs_once_per_subject(self, tmp_path, monkeypatch):
+        from src import mri_json_scrubber
+
+        anat_a = tmp_path / "sub-001" / "anat"
+        anat_b = tmp_path / "sub-002" / "anat"
+        anat_a.mkdir(parents=True)
+        anat_b.mkdir(parents=True)
+        (tmp_path / ".datalad").mkdir(parents=True)
+        (anat_a / "sub-001_T1w.nii.gz").write_bytes(b"nifti")
+        (anat_b / "sub-002_T1w.nii.gz").write_bytes(b"nifti")
+
+        def _fake_which(command):
+            if command == "pydeface":
+                return "/usr/bin/pydeface"
+            if command == "datalad":
+                return "/usr/bin/datalad"
+            if command in {"bet", "fsl"}:
+                return "/usr/bin/bet"
+            return ""
+
+        monkeypatch.setattr(mri_json_scrubber.shutil, "which", _fake_which)
+        monkeypatch.setattr("src.datalad_execution.shutil.which", _fake_which)
+
+        seen_commands: list[list[str]] = []
+
+        def _fake_subprocess_run(
+            command,
+            cwd=None,
+            capture_output=True,
+            text=True,
+            timeout=None,
+            check=False,
+            env=None,
+        ):
+            command_as_text = [str(item) for item in command]
+            seen_commands.append(command_as_text)
+            if len(command) >= 2 and command[1] == "get":
+                return SimpleNamespace(returncode=0, stdout="get ok", stderr="")
+            if len(command) >= 2 and command[1] == "run":
+                subject = "sub-001" if "sub-001" in " ".join(command_as_text) else "sub-002"
+                payload = {
+                    "counts": {"defaced": 1, "failed": 0},
+                    "items": [
+                        {
+                            "file": f"{subject}/anat/{subject}_T1w.nii.gz",
+                            "status": "defaced",
+                            "message": "Defacing completed",
+                        }
+                    ],
+                }
+                return SimpleNamespace(
+                    returncode=0,
+                    stdout=f"run log\n{json.dumps(payload)}\n",
+                    stderr="",
+                )
+            raise AssertionError(f"Unexpected command: {command}")
+
+        monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_subprocess_run)
+
+        result = deface_anatomical_scans(tmp_path, force=True)
+        assert result["success"] is True
+        assert result["counts"]["defaced"] == 2
+        datalad = result.get("datalad") or {}
+        assert datalad.get("used_run") is True
+        assert datalad.get("run_count") == 2
+        assert len(datalad.get("groups") or []) == 2
+        run_commands = [command for command in seen_commands if command[1] == "run"]
+        assert len(run_commands) == 2
 
 
 class TestDefacingPreflight:

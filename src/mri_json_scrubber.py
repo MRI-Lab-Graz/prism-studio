@@ -26,6 +26,7 @@ import logging
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -34,6 +35,7 @@ from src.datalad_execution import (
     DATALAD_DOCS_URL,
     DATALAD_INSTALL_HINT,
     is_datalad_dataset,
+    parse_json_from_output,
     resolve_datalad_executable,
     run_datalad_get_paths,
     run_datalad_run,
@@ -599,6 +601,7 @@ def deface_anatomical_scans(
         "run_count": 0,
         "run_failures": 0,
         "get": None,
+        "groups": [],
         "message": "",
     }
 
@@ -672,44 +675,9 @@ def deface_anatomical_scans(
             "datalad": datalad_info,
         }
     elif datalad_tracked and datalad_executable:
-        get_targets = sorted(
-            {
-                path.relative_to(project_root).as_posix()
-                for path in anatomical_files
-            }
+        datalad_info["message"] = (
+            "DataLad run mode is enabled for defacing with one run commit per subject."
         )
-        get_result = run_datalad_get_paths(
-            project_root,
-            paths=get_targets,
-            datalad_executable=datalad_executable,
-            timeout_seconds=max(1, int(timeout_seconds)) * 2,
-            recursive=False,
-            no_data=False,
-        )
-        datalad_info["get"] = {
-            "attempted": bool(get_result.get("attempted")),
-            "success": bool(get_result.get("success")),
-            "message": str(get_result.get("message") or ""),
-            "command": str(get_result.get("command") or ""),
-        }
-        if not get_result.get("success"):
-            return {
-                "success": False,
-                "error": str(
-                    get_result.get("message")
-                    or "DataLad get failed before defacing run."
-                ),
-                "counts": {
-                    "total": 0,
-                    "already_defaced": 0,
-                    "defaced": 0,
-                    "failed": 0,
-                    "skipped": 0,
-                },
-                "items": [],
-                "datalad": datalad_info,
-            }
-        datalad_info["message"] = "DataLad run mode is enabled for defacing."
 
     counts = {
         "total": len(anatomical_files),
@@ -720,14 +688,9 @@ def deface_anatomical_scans(
     }
     items: List[Dict[str, Any]] = []
 
+    files_to_process: list[Path] = []
     for nifti_file in anatomical_files:
         relative_nifti = nifti_file.relative_to(project_root).as_posix()
-        item_result: Dict[str, Any] = {
-            "file": relative_nifti,
-            "status": "",
-            "message": "",
-        }
-
         sidecar_json = None
         if nifti_file.name.endswith(".nii.gz"):
             sidecar_candidate = nifti_file.with_name(
@@ -744,53 +707,253 @@ def deface_anatomical_scans(
             defacing_state = is_anatomical_defaced(sidecar_json, check_nibabel=True)
             if defacing_state.get("status") == "defaced":
                 counts["already_defaced"] += 1
-                item_result["status"] = "already_defaced"
-                item_result["message"] = str(defacing_state.get("reason") or "")
+                items.append(
+                    {
+                        "file": relative_nifti,
+                        "status": "already_defaced",
+                        "message": str(defacing_state.get("reason") or ""),
+                    }
+                )
+                continue
+        files_to_process.append(nifti_file)
+
+    if datalad_tracked and datalad_executable:
+        grouped: Dict[str, list[Path]] = {}
+        for nifti_file in files_to_process:
+            rel_path = nifti_file.relative_to(project_root).as_posix()
+            subject_label = "dataset-root"
+            for part in Path(rel_path).parts:
+                if part.startswith("sub-"):
+                    subject_label = part
+                    break
+            grouped.setdefault(subject_label, []).append(nifti_file)
+
+        for subject_label, subject_files in sorted(grouped.items(), key=lambda item: item[0]):
+            rel_targets = sorted(
+                [path.relative_to(project_root).as_posix() for path in subject_files]
+            )
+            get_result = run_datalad_get_paths(
+                project_root,
+                paths=rel_targets,
+                datalad_executable=datalad_executable,
+                timeout_seconds=max(1, int(timeout_seconds)) * 2,
+                recursive=False,
+                no_data=False,
+            )
+            group_info: Dict[str, Any] = {
+                "subject": subject_label,
+                "get": {
+                    "attempted": bool(get_result.get("attempted")),
+                    "success": bool(get_result.get("success")),
+                    "message": str(get_result.get("message") or ""),
+                    "command": str(get_result.get("command") or ""),
+                },
+                "run": None,
+            }
+            datalad_info["groups"].append(group_info)
+
+            if not get_result.get("success"):
+                datalad_info["run_failures"] = int(datalad_info.get("run_failures") or 0) + 1
+                counts["failed"] += len(rel_targets)
+                for rel_target in rel_targets:
+                    items.append(
+                        {
+                            "file": rel_target,
+                            "status": "failed",
+                            "message": str(
+                                get_result.get("message")
+                                or "DataLad get failed before defacing run."
+                            ),
+                        }
+                    )
+                continue
+
+            manifest = {"files": rel_targets}
+            fd, manifest_path = tempfile.mkstemp(
+                prefix="prism_deface_manifest_", suffix=".json"
+            )
+            script_fd, script_path = tempfile.mkstemp(
+                prefix="prism_deface_runner_", suffix=".py"
+            )
+            try:
+                with open(fd, "w", encoding="utf-8", closefd=True) as handle:
+                    json.dump(manifest, handle)
+                script_content = """import json
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+manifest = json.loads(Path(sys.argv[1]).read_text(encoding=\"utf-8\"))
+project_root = Path(sys.argv[2])
+pydeface_exe = sys.argv[3]
+timeout = max(1, int(sys.argv[4]))
+
+counts = {\"defaced\": 0, \"failed\": 0}
+items = []
+
+for rel in manifest.get(\"files\", []):
+    file_path = project_root / rel
+    backup = None
+    try:
+        with tempfile.NamedTemporaryFile(prefix=\"prism_deface_\", suffix=file_path.suffix, delete=False) as tmp:
+            backup = Path(tmp.name)
+        shutil.copy2(file_path, backup)
+        proc = subprocess.run(
+            [pydeface_exe, rel, \"--outfile\", rel, \"--force\"],
+            cwd=str(project_root),
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+        if proc.returncode == 0:
+            counts[\"defaced\"] += 1
+            items.append({\"file\": rel, \"status\": \"defaced\", \"message\": \"Defacing completed\"})
+        else:
+            counts[\"failed\"] += 1
+            try:
+                shutil.copy2(backup, file_path)
+            except Exception:
+                pass
+            msg = (proc.stderr or proc.stdout or \"pydeface failed\").strip()
+            items.append({\"file\": rel, \"status\": \"failed\", \"message\": msg})
+    except subprocess.TimeoutExpired:
+        counts[\"failed\"] += 1
+        try:
+            if backup is not None:
+                shutil.copy2(backup, file_path)
+        except Exception:
+            pass
+        items.append({\"file\": rel, \"status\": \"failed\", \"message\": \"Defacing timed out\"})
+    except Exception as exc:
+        counts[\"failed\"] += 1
+        try:
+            if backup is not None:
+                shutil.copy2(backup, file_path)
+        except Exception:
+            pass
+        items.append({\"file\": rel, \"status\": \"failed\", \"message\": str(exc)})
+    finally:
+        if backup is not None:
+            try:
+                backup.unlink(missing_ok=True)
+            except Exception:
+                pass
+
+print(json.dumps({\"counts\": counts, \"items\": items}, ensure_ascii=False))
+"""
+                with open(script_fd, "w", encoding="utf-8", closefd=True) as handle:
+                    handle.write(script_content)
+
+                run_message = (
+                    f"PRISM: Deface anatomical scans for {subject_label}"
+                    if subject_label != "dataset-root"
+                    else "PRISM: Deface anatomical scans"
+                )
+                datalad_run_result = run_datalad_run(
+                    project_root,
+                    message=run_message,
+                    command=[
+                        sys.executable,
+                        script_path,
+                        manifest_path,
+                        str(project_root),
+                        pydeface_executable,
+                        str(max(1, int(timeout_seconds))),
+                    ],
+                    datalad_executable=datalad_executable,
+                    timeout_seconds=max(1, int(timeout_seconds)) * 4,
+                )
+            finally:
+                Path(manifest_path).unlink(missing_ok=True)
+                Path(script_path).unlink(missing_ok=True)
+
+            datalad_info["used_run"] = True
+            datalad_info["run_count"] = int(datalad_info.get("run_count") or 0) + 1
+            group_info["run"] = {
+                "attempted": bool(datalad_run_result.get("attempted")),
+                "success": bool(datalad_run_result.get("success")),
+                "message": str(datalad_run_result.get("message") or ""),
+                "command": str(datalad_run_result.get("command") or ""),
+            }
+
+            if not datalad_run_result.get("success"):
+                datalad_info["run_failures"] = int(datalad_info.get("run_failures") or 0) + 1
+                counts["failed"] += len(rel_targets)
+                error_message = str(datalad_run_result.get("message") or "pydeface failed")
+                for rel_target in rel_targets:
+                    items.append(
+                        {
+                            "file": rel_target,
+                            "status": "failed",
+                            "message": error_message,
+                        }
+                    )
+                continue
+
+            parsed = parse_json_from_output(str(datalad_run_result.get("stdout") or ""))
+            if not isinstance(parsed, dict):
+                counts["failed"] += len(rel_targets)
+                for rel_target in rel_targets:
+                    items.append(
+                        {
+                            "file": rel_target,
+                            "status": "failed",
+                            "message": "Defacing run output could not be parsed.",
+                        }
+                    )
+                continue
+
+            parsed_counts = parsed.get("counts") if isinstance(parsed.get("counts"), dict) else {}
+            counts["defaced"] += int(parsed_counts.get("defaced") or 0)
+            counts["failed"] += int(parsed_counts.get("failed") or 0)
+            parsed_items = parsed.get("items") if isinstance(parsed.get("items"), list) else []
+            for entry in parsed_items:
+                if not isinstance(entry, dict):
+                    continue
+                items.append(
+                    {
+                        "file": str(entry.get("file") or ""),
+                        "status": str(entry.get("status") or "failed"),
+                        "message": str(entry.get("message") or ""),
+                    }
+                )
+    else:
+        for nifti_file in files_to_process:
+            relative_nifti = nifti_file.relative_to(project_root).as_posix()
+            item_result: Dict[str, Any] = {
+                "file": relative_nifti,
+                "status": "",
+                "message": "",
+            }
+
+            backup_file: Optional[Path] = None
+            try:
+                with tempfile.NamedTemporaryFile(
+                    prefix="prism_deface_",
+                    suffix=nifti_file.suffix,
+                    delete=False,
+                ) as temp_file:
+                    backup_file = Path(temp_file.name)
+                shutil.copy2(nifti_file, backup_file)
+            except Exception as exc:
+                counts["failed"] += 1
+                item_result["status"] = "failed"
+                item_result["message"] = f"Could not create backup: {exc}"
                 items.append(item_result)
                 continue
 
-        backup_file: Optional[Path] = None
-        try:
-            with tempfile.NamedTemporaryFile(
-                prefix="prism_deface_",
-                suffix=nifti_file.suffix,
-                delete=False,
-            ) as temp_file:
-                backup_file = Path(temp_file.name)
-            shutil.copy2(nifti_file, backup_file)
-        except Exception as exc:
-            counts["failed"] += 1
-            item_result["status"] = "failed"
-            item_result["message"] = f"Could not create backup: {exc}"
-            items.append(item_result)
-            continue
+            try:
+                pydeface_command = [
+                    pydeface_executable,
+                    str(nifti_file),
+                    "--outfile",
+                    str(nifti_file),
+                    "--force",
+                ]
 
-        try:
-            pydeface_command = [
-                pydeface_executable,
-                relative_nifti if datalad_tracked and datalad_executable else str(nifti_file),
-                "--outfile",
-                relative_nifti if datalad_tracked and datalad_executable else str(nifti_file),
-                "--force",
-            ]
-
-            run_success = False
-            run_error_message = ""
-            if datalad_tracked and datalad_executable:
-                datalad_run_result = run_datalad_run(
-                    project_root,
-                    message=f"PRISM: Deface anatomical scan {relative_nifti}",
-                    command=pydeface_command,
-                    datalad_executable=datalad_executable,
-                    timeout_seconds=max(1, int(timeout_seconds)) * 2,
-                )
-                datalad_info["used_run"] = True
-                datalad_info["run_count"] = int(datalad_info.get("run_count") or 0) + 1
-                run_success = bool(datalad_run_result.get("success"))
-                run_error_message = str(datalad_run_result.get("message") or "").strip()
-                if not run_success:
-                    datalad_info["run_failures"] = int(datalad_info.get("run_failures") or 0) + 1
-            else:
                 process = subprocess.run(
                     pydeface_command,
                     capture_output=True,
@@ -805,48 +968,45 @@ def deface_anatomical_scans(
                     else ""
                 )
 
-            if run_success:
-                counts["defaced"] += 1
-                item_result["status"] = "defaced"
-                item_result["message"] = (
-                    "Defacing completed"
-                    + (" (recorded via DataLad run)" if datalad_tracked and datalad_executable else "")
-                )
-            else:
+                if run_success:
+                    counts["defaced"] += 1
+                    item_result["status"] = "defaced"
+                    item_result["message"] = "Defacing completed"
+                else:
+                    counts["failed"] += 1
+                    item_result["status"] = "failed"
+                    item_result["message"] = run_error_message or "pydeface failed"
+                    try:
+                        if backup_file is not None:
+                            shutil.copy2(backup_file, nifti_file)
+                    except Exception:
+                        pass
+            except subprocess.TimeoutExpired:
                 counts["failed"] += 1
                 item_result["status"] = "failed"
-                item_result["message"] = run_error_message or "pydeface failed"
+                item_result["message"] = "Defacing timed out"
                 try:
                     if backup_file is not None:
                         shutil.copy2(backup_file, nifti_file)
                 except Exception:
                     pass
-        except subprocess.TimeoutExpired:
-            counts["failed"] += 1
-            item_result["status"] = "failed"
-            item_result["message"] = "Defacing timed out"
-            try:
-                if backup_file is not None:
-                    shutil.copy2(backup_file, nifti_file)
-            except Exception:
-                pass
-        except Exception as exc:
-            counts["failed"] += 1
-            item_result["status"] = "failed"
-            item_result["message"] = str(exc)
-            try:
-                if backup_file is not None:
-                    shutil.copy2(backup_file, nifti_file)
-            except Exception:
-                pass
-        finally:
-            if backup_file is not None:
+            except Exception as exc:
+                counts["failed"] += 1
+                item_result["status"] = "failed"
+                item_result["message"] = str(exc)
                 try:
-                    backup_file.unlink(missing_ok=True)
+                    if backup_file is not None:
+                        shutil.copy2(backup_file, nifti_file)
                 except Exception:
                     pass
+            finally:
+                if backup_file is not None:
+                    try:
+                        backup_file.unlink(missing_ok=True)
+                    except Exception:
+                        pass
 
-        items.append(item_result)
+            items.append(item_result)
 
     success = counts["failed"] == 0
     message = (

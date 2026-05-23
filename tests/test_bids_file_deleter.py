@@ -105,3 +105,61 @@ def test_bids_file_deleter_apply_reports_missing_datalad_executable(tmp_path, mo
 
     # Strict mode: tracked datasets must not mutate when DataLad is unavailable.
     assert target.exists()
+
+
+def test_bids_file_deleter_apply_runs_once_per_subject_group(tmp_path, monkeypatch):
+    project_root = tmp_path / "project"
+    (project_root / ".datalad").mkdir(parents=True)
+    target_a = project_root / "sub-001" / "func" / "sub-001_task-rest_bold.nii.gz"
+    target_b = project_root / "sub-002" / "func" / "sub-002_task-rest_bold.nii.gz"
+    _touch_file(target_a)
+    _touch_file(target_b)
+
+    observed_commands: list[list[str]] = []
+
+    def _fake_run(
+        command,
+        cwd=None,
+        capture_output=True,
+        text=True,
+        timeout=None,
+        check=False,
+        env=None,
+    ):
+        observed_commands.append([str(item) for item in command])
+        if len(command) >= 2 and command[1] == "get":
+            return SimpleNamespace(returncode=0, stdout="get ok", stderr="")
+        if len(command) >= 2 and command[1] == "run":
+            subject = "sub-001" if "sub-001" in " ".join(command) else "sub-002"
+            payload = {
+                "applied": True,
+                "deleted_count": 1,
+                "deleted_sidecars": 0,
+                "removed_empty_dirs": 1,
+                "files": [f"{subject}/func/{subject}_task-rest_bold.nii.gz"],
+                "empty_dirs_to_remove": [f"{subject}/func"],
+                "orphaned_root_sidecars": [],
+                "backend_command": "python prism.py file-management delete-files --apply",
+            }
+            return SimpleNamespace(
+                returncode=0,
+                stdout=f"run log\n{json.dumps(payload)}\n",
+                stderr="",
+            )
+        raise AssertionError(f"Unexpected command: {command}")
+
+    monkeypatch.setattr(
+        "src.datalad_execution.shutil.which",
+        lambda command: "/usr/bin/datalad" if command == "datalad" else "",
+    )
+    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+
+    deleter = BidsFileDeleter(project_root)
+    result = deleter.apply(modality="func", entity_filters={}, subjects=None)
+
+    assert result["deleted_count"] == 2
+    datalad = result.get("datalad") or {}
+    assert datalad.get("run_per_subject") is True
+    assert datalad.get("run_count") == 2
+    run_commands = [command for command in observed_commands if command[1] == "run"]
+    assert len(run_commands) == 2

@@ -28,6 +28,7 @@ _TEXT_SUFFIXES = {
     ".md",
 }
 _TEXT_FILENAMES = {".bidsignore"}
+_LABEL_PATTERN = re.compile(r"^[A-Za-z0-9]+$")
 
 
 @dataclass(frozen=True)
@@ -42,6 +43,7 @@ class _RewritePlan:
     rule: dict[str, str | int] | None
     allow_many_to_one: bool
     subject_examples: list[str]
+    subjects: list[str]
     subject_token_sources: dict[str, list[str]]
     mapping: dict[str, str]
     directory_ops: list[_RenameOperation]
@@ -84,12 +86,14 @@ class SubjectCodeRewriter:
         example_subject: str | None = None,
         keep_fragment: str | None = None,
         allow_many_to_one: bool = False,
+        subjects: list[str] | None = None,
     ) -> dict:
         plan = self._build_plan(
             mode,
             example_subject=example_subject,
             keep_fragment=keep_fragment,
             allow_many_to_one=allow_many_to_one,
+            subjects=subjects,
         )
         return self._plan_to_dict(plan, applied=False)
 
@@ -99,12 +103,14 @@ class SubjectCodeRewriter:
         example_subject: str | None = None,
         keep_fragment: str | None = None,
         allow_many_to_one: bool = False,
+        subjects: list[str] | None = None,
     ) -> dict:
         plan = self._build_plan(
             mode,
             example_subject=example_subject,
             keep_fragment=keep_fragment,
             allow_many_to_one=allow_many_to_one,
+            subjects=subjects,
         )
         if plan.conflicts:
             raise ValueError(
@@ -153,11 +159,13 @@ class SubjectCodeRewriter:
         example_subject: str | None,
         keep_fragment: str | None,
         allow_many_to_one: bool,
+        subjects: list[str] | None,
     ) -> _RewritePlan:
         if not self.project_root.exists() or not self.project_root.is_dir():
             raise ValueError(f"Project root does not exist: {self.project_root}")
 
         normalized_mode = self._normalize_mode(mode)
+        normalized_subjects = self._normalize_subjects(subjects)
         subject_tokens, subject_token_sources = self._collect_subject_tokens()
         mapping, rule = self._build_subject_mapping(
             normalized_mode,
@@ -165,12 +173,22 @@ class SubjectCodeRewriter:
             example_subject=example_subject,
             keep_fragment=keep_fragment,
         )
+
+        if normalized_subjects:
+            filtered_mapping: dict[str, str] = {}
+            for old_subject, new_subject in mapping.items():
+                old_label = old_subject[4:] if old_subject.startswith("sub-") else old_subject
+                if old_label in normalized_subjects:
+                    filtered_mapping[old_subject] = new_subject
+            mapping = filtered_mapping
+
         if not mapping:
             return _RewritePlan(
                 mode=normalized_mode,
                 rule=rule,
                 allow_many_to_one=allow_many_to_one,
                 subject_examples=subject_tokens,
+                subjects=sorted(normalized_subjects),
                 subject_token_sources=subject_token_sources,
                 mapping={},
                 directory_ops=[],
@@ -205,6 +223,7 @@ class SubjectCodeRewriter:
             rule=rule,
             allow_many_to_one=allow_many_to_one,
             subject_examples=subject_tokens,
+            subjects=sorted(normalized_subjects),
             subject_token_sources=subject_token_sources,
             mapping=mapping,
             directory_ops=directory_ops,
@@ -212,6 +231,19 @@ class SubjectCodeRewriter:
             preview_text_updates=preview_text_updates,
             conflicts=conflicts,
         )
+
+    @staticmethod
+    def _normalize_subjects(subjects: list[str] | None) -> set[str]:
+        if not subjects:
+            return set()
+        normalized: set[str] = set()
+        for subject in subjects:
+            token = str(subject or "").strip()
+            if token.startswith("sub-"):
+                token = token[4:]
+            if token and _LABEL_PATTERN.fullmatch(token):
+                normalized.add(token)
+        return normalized
 
     @staticmethod
     def _normalize_mode(mode: str | None) -> str:
@@ -555,6 +587,7 @@ class SubjectCodeRewriter:
             "mode": plan.mode,
             "rule": plan.rule,
             "allow_many_to_one": bool(plan.allow_many_to_one),
+            "subjects": plan.subjects,
             "applied": applied,
             "subject_examples": plan.subject_examples[:200],
             "subject_token_sources": {
