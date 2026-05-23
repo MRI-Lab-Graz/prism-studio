@@ -6,6 +6,7 @@ from pathlib import Path
 
 from flask import current_app, has_app_context, jsonify, request, send_file, session
 from werkzeug.utils import secure_filename
+from src.datalad_project_copy import copy_files_into_project
 from src.system_files import filter_system_files
 
 try:
@@ -164,6 +165,7 @@ def handle_api_survey_convert(
     archive_sourcedata = request.form.get("archive_sourcedata") == "true"
     project_root = None
     current_project_path = None
+    datalad_copy = None
     if save_to_project:
         if requested_project_root is not None:
             project_root = requested_project_root
@@ -398,6 +400,7 @@ def handle_api_survey_convert(
         if save_to_project:
             dest_root = project_root
             dest_root.mkdir(parents=True, exist_ok=True)
+            copy_pairs: list[tuple[Path, Path]] = []
 
             for item in output_root.rglob("*"):
                 if item.is_file():
@@ -405,14 +408,23 @@ def handle_api_survey_convert(
                         continue
                     rel_path = item.relative_to(output_root)
                     dest = dest_root / rel_path
-                    dest.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(item, dest)
+                    copy_pairs.append((item, dest))
 
             if archive_sourcedata:
                 sourcedata_dir = project_root / "sourcedata"
-                sourcedata_dir.mkdir(parents=True, exist_ok=True)
                 archive_dest = sourcedata_dir / filename
-                shutil.copy2(input_path, archive_dest)
+                copy_pairs.append((input_path, archive_dest))
+
+            try:
+                copy_result = copy_files_into_project(
+                    dataset_root=project_root,
+                    copy_pairs=copy_pairs,
+                    run_message="PRISM: Copy converted survey files into project",
+                )
+            except ValueError as error:
+                return jsonify({"error": str(error)}), 400
+
+            datalad_copy = copy_result.get("datalad")
 
             registration_sessions = iter_session_registration_values(
                 session_override=session_override,
@@ -478,6 +490,10 @@ def handle_api_survey_convert(
             )
         if detected_version:
             response.headers["X-Prism-Detected-SoftwareVersion"] = str(detected_version)
+        if isinstance(datalad_copy, dict):
+            response.headers["X-Prism-Datalad-Used-Run"] = (
+                "true" if datalad_copy.get("used_run") else "false"
+            )
 
         return response
     except zipfile.BadZipFile:

@@ -38,6 +38,11 @@ def _build_app_and_handlers():
         methods=["POST"],
     )
     app.add_url_rule(
+        "/api/survey-convert",
+        view_func=survey.api_survey_convert,
+        methods=["POST"],
+    )
+    app.add_url_rule(
         "/api/survey-workflow-command",
         view_func=survey.api_survey_workflow_command,
         methods=["POST"],
@@ -189,6 +194,80 @@ def test_biometrics_convert_prefers_explicit_project_path(tmp_path, monkeypatch)
     ).exists()
 
 
+def test_biometrics_convert_requires_datalad_for_tracked_project_mutation(
+    tmp_path, monkeypatch
+):
+    app, biometrics, _survey, _physio, _environment = _build_app_and_handlers()
+    project_root = tmp_path / "project"
+    project_root.mkdir(parents=True, exist_ok=True)
+
+    library_root = tmp_path / "library"
+    biometrics_dir = library_root / "biometrics"
+    biometrics_dir.mkdir(parents=True, exist_ok=True)
+    (biometrics_dir / "biometrics-grip.json").write_text("{}", encoding="utf-8")
+
+    monkeypatch.setattr(
+        biometrics,
+        "resolve_effective_library_path",
+        lambda project_path_value=None: library_root,
+    )
+    monkeypatch.setattr(
+        biometrics,
+        "register_session_in_project",
+        lambda *args, **kwargs: None,
+    )
+
+    def fake_convert(**kwargs):
+        output_root = Path(kwargs["output_root"])
+        output_file = (
+            output_root
+            / "sub-01"
+            / "ses-01"
+            / "biometrics"
+            / "sub-01_ses-01_task-grip_biometrics.tsv"
+        )
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text("participant_id\tvalue\nsub-01\t1\n", encoding="utf-8")
+        return SimpleNamespace(
+            id_column="participant_id",
+            session_column=None,
+            tasks_included=["grip"],
+            unknown_columns=[],
+        )
+
+    def raise_missing_datalad(**_kwargs):
+        raise ValueError("mutation changes require DataLad run")
+
+    monkeypatch.setattr(
+        biometrics,
+        "convert_biometrics_table_to_prism_dataset",
+        fake_convert,
+    )
+    monkeypatch.setattr(biometrics, "copy_files_into_project", raise_missing_datalad)
+
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess["current_project_path"] = str(project_root)
+
+        response = client.post(
+            "/api/biometrics-convert",
+            data={
+                "session": "1",
+                "validate": "false",
+                "tasks[]": ["grip"],
+                "data": (
+                    io.BytesIO(b"participant_id,value\nsub-01,1\n"),
+                    "biometrics.csv",
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+
+    assert response.status_code == 400
+    payload = response.get_json()
+    assert "require datalad run" in payload["error"].lower()
+
+
 def test_survey_convert_rejects_stale_project_path(tmp_path, monkeypatch):
     app, _biometrics, survey, _physio, _environment = _build_app_and_handlers()
     library_root = tmp_path / "library"
@@ -325,6 +404,196 @@ def test_survey_convert_validate_returns_participant_registry_warning(
     assert payload["conversion_summary"]["participant_registry_warning"][
         "action"
     ]["target"] == "participants"
+
+
+def test_survey_convert_validate_requires_datalad_for_tracked_project_mutation(
+    tmp_path, monkeypatch
+):
+    app, _biometrics, survey, _physio, _environment = _build_app_and_handlers()
+    library_root = tmp_path / "library"
+    survey_dir = library_root / "survey"
+    survey_dir.mkdir(parents=True, exist_ok=True)
+    (survey_dir / "survey-demo.json").write_text("{}", encoding="utf-8")
+
+    project_root = tmp_path / "project"
+    project_root.mkdir(parents=True, exist_ok=True)
+
+    monkeypatch.setattr(survey, "_resolve_effective_library_path", lambda: library_root)
+    monkeypatch.setattr(
+        survey,
+        "_validate_project_templates_for_tasks",
+        lambda **_kwargs: [],
+    )
+
+    def fake_run_survey_with_official_fallback(_converter, **kwargs):
+        output_root = Path(kwargs["output_root"])
+        if not kwargs.get("dry_run"):
+            output_file = (
+                output_root
+                / "sub-01"
+                / "ses-01"
+                / "survey"
+                / "sub-01_ses-01_task-demo_survey.tsv"
+            )
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+            output_file.write_text(
+                "participant_id\tscore\nsub-01\t1\n", encoding="utf-8"
+            )
+
+        return SimpleNamespace(
+            tasks_included=["demo"],
+            unknown_columns=[],
+            task_runs={},
+            tool_columns=[],
+            template_matches=None,
+            near_match_candidates=[],
+            near_match_applied=False,
+            conversion_warnings=[],
+            participant_registry_warning=None,
+            dry_run_preview={},
+            missing_items_by_task={},
+            id_column="participant_id",
+            session_column=None,
+            run_column=None,
+            detected_sessions=["01"],
+            applied_value_offsets={},
+            value_offset_application_counts={},
+        )
+
+    survey_convert_validate_handlers = importlib.import_module(
+        "src.web.blueprints.conversion_survey_convert_validate_handlers"
+    )
+
+    def raise_missing_datalad(**_kwargs):
+        raise ValueError("mutation changes require DataLad run")
+
+    monkeypatch.setattr(
+        survey,
+        "_run_survey_with_official_fallback",
+        fake_run_survey_with_official_fallback,
+    )
+    monkeypatch.setattr(
+        survey_convert_validate_handlers,
+        "copy_files_into_project",
+        raise_missing_datalad,
+    )
+
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess["current_project_path"] = str(project_root)
+
+        response = client.post(
+            "/api/survey-convert-validate",
+            data={
+                "id_column": "participant_id",
+                "validate": "false",
+                "session": "01",
+                "excel": (
+                    io.BytesIO(b"participant_id,score\nsub-01,1\n"),
+                    "survey.csv",
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+
+    assert response.status_code == 400
+    payload = response.get_json()
+    assert "require datalad run" in payload["error"].lower()
+
+
+def test_survey_convert_requires_datalad_for_tracked_project_mutation(
+    tmp_path, monkeypatch
+):
+    app, _biometrics, survey, _physio, _environment = _build_app_and_handlers()
+    library_root = tmp_path / "library"
+    survey_dir = library_root / "survey"
+    survey_dir.mkdir(parents=True, exist_ok=True)
+    (survey_dir / "survey-demo.json").write_text("{}", encoding="utf-8")
+
+    project_root = tmp_path / "project"
+    project_root.mkdir(parents=True, exist_ok=True)
+
+    monkeypatch.setattr(survey, "_resolve_effective_library_path", lambda: library_root)
+    monkeypatch.setattr(
+        survey,
+        "_validate_project_templates_for_tasks",
+        lambda **_kwargs: [],
+    )
+
+    def fake_run_survey_with_official_fallback(_converter, **kwargs):
+        output_root = Path(kwargs["output_root"])
+        if not kwargs.get("dry_run"):
+            output_file = (
+                output_root
+                / "sub-01"
+                / "ses-01"
+                / "survey"
+                / "sub-01_ses-01_task-demo_survey.tsv"
+            )
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+            output_file.write_text(
+                "participant_id\tscore\nsub-01\t1\n", encoding="utf-8"
+            )
+
+        return SimpleNamespace(
+            tasks_included=["demo"],
+            unknown_columns=[],
+            task_runs={},
+            tool_columns=[],
+            template_matches=None,
+            near_match_candidates=[],
+            near_match_applied=False,
+            conversion_warnings=[],
+            participant_registry_warning=None,
+            dry_run_preview={},
+            missing_items_by_task={},
+            id_column="participant_id",
+            session_column=None,
+            run_column=None,
+            detected_sessions=["01"],
+            applied_value_offsets={},
+            value_offset_application_counts={},
+        )
+
+    survey_convert_handlers = importlib.import_module(
+        "src.web.blueprints.conversion_survey_convert_handlers"
+    )
+
+    def raise_missing_datalad(**_kwargs):
+        raise ValueError("mutation changes require DataLad run")
+
+    monkeypatch.setattr(
+        survey,
+        "_run_survey_with_official_fallback",
+        fake_run_survey_with_official_fallback,
+    )
+    monkeypatch.setattr(
+        survey_convert_handlers,
+        "copy_files_into_project",
+        raise_missing_datalad,
+    )
+
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess["current_project_path"] = str(project_root)
+
+        response = client.post(
+            "/api/survey-convert",
+            data={
+                "id_column": "participant_id",
+                "session": "01",
+                "save_to_project": "true",
+                "excel": (
+                    io.BytesIO(b"participant_id,score\nsub-01,1\n"),
+                    "survey.csv",
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+
+    assert response.status_code == 400
+    payload = response.get_json()
+    assert "require datalad run" in payload["error"].lower()
 
 
 def test_survey_workflow_preview_rejects_stale_explicit_project_path(

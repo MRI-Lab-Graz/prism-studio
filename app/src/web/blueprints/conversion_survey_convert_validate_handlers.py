@@ -4,6 +4,7 @@ from pathlib import Path
 
 from flask import jsonify, request
 from werkzeug.utils import secure_filename
+from src.datalad_project_copy import copy_files_into_project
 from src.system_files import filter_system_files
 
 
@@ -613,6 +614,7 @@ def handle_api_survey_convert_validate(
                 validation_result["warnings"].extend(conversion_warnings)
 
         recipe_offset_sync_summary: dict[str, list[str]] | None = None
+        datalad_copy = None
 
         if save_to_project:
             dest_root = project_root
@@ -622,16 +624,40 @@ def handle_api_survey_convert_validate(
                 "info",
             )
 
-            copied_output_paths: list[Path] = []
+            copy_pairs: list[tuple[Path, Path]] = []
+            output_rel_paths: set[str] = set()
             for item in output_root.rglob("*"):
                 if item.is_file():
                     if not filter_system_files([item.name]):
                         continue
                     rel_path = item.relative_to(output_root)
                     dest = dest_root / rel_path
-                    dest.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(item, dest)
-                    copied_output_paths.append(dest)
+                    output_rel_paths.add(dest.relative_to(project_root).as_posix())
+                    copy_pairs.append((item, dest))
+
+            if archive_sourcedata:
+                sourcedata_dir = project_root / "sourcedata"
+                archive_dest = sourcedata_dir / filename
+                copy_pairs.append((input_path, archive_dest))
+
+            try:
+                copy_result = copy_files_into_project(
+                    dataset_root=project_root,
+                    copy_pairs=copy_pairs,
+                    run_message="PRISM: Copy converted survey files into project",
+                )
+            except ValueError as error:
+                return jsonify({"error": str(error), "log": log_messages}), 400
+
+            copied_rel_paths = [
+                str(path) for path in list(copy_result.get("copied_paths") or [])
+            ]
+            copied_output_paths = [
+                project_root / rel_path
+                for rel_path in copied_rel_paths
+                if rel_path in output_rel_paths
+            ]
+            datalad_copy = copy_result.get("datalad")
 
             cleanup_stale_tool_limesurvey_sidecars(
                 copied_output_paths=copied_output_paths,
@@ -641,10 +667,6 @@ def handle_api_survey_convert_validate(
             add_log("Project updated successfully!", "success")
 
             if archive_sourcedata:
-                sourcedata_dir = project_root / "sourcedata"
-                sourcedata_dir.mkdir(parents=True, exist_ok=True)
-                archive_dest = sourcedata_dir / filename
-                shutil.copy2(input_path, archive_dest)
                 add_log(f"Archived original file to sourcedata/{filename}", "info")
 
             registration_sessions = iter_session_registration_values(
@@ -717,6 +739,7 @@ def handle_api_survey_convert_validate(
             "project_output_paths": [],
             "project_output_path": None,
             "project_output_count": len(copied_output_paths),
+            "datalad": datalad_copy,
         }
         if recipe_offset_sync_summary is not None:
             response_payload["recipe_offset_sync"] = recipe_offset_sync_summary

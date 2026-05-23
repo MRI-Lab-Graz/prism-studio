@@ -27,6 +27,7 @@ from .conversion_utils import (
 from .conversion_request_helpers import (
     resolve_uploaded_or_source_file as _resolve_uploaded_or_source_file,
 )
+from src.datalad_project_copy import copy_files_into_project
 from src.web.services.project_registration import register_session_in_project
 
 # Safe imports for optional dependencies
@@ -198,14 +199,16 @@ def _copy_biometrics_templates_to_project(
     tasks: list[str],
     project_path: str | None,
     log_fn=None,
-) -> None:
-    """Copy used biometrics templates into the active project library."""
+    *,
+    plan_only: bool = False,
+) -> list[tuple[Path, Path]]:
+    """Copy or plan biometrics template copies into the active project library."""
     if not project_path or not tasks:
-        return
+        return []
 
     project_root = resolve_existing_project_root(project_path)
     if project_root is None:
-        return
+        return []
 
     if (source_dir / "biometrics").is_dir() and not list(
         source_dir.glob("biometrics-*.json")
@@ -215,20 +218,28 @@ def _copy_biometrics_templates_to_project(
     dest_dir = project_root / "code" / "library" / "biometrics"
     dest_dir.mkdir(parents=True, exist_ok=True)
 
-    copied = 0
+    copy_pairs: list[tuple[Path, Path]] = []
     for task in tasks:
         src = source_dir / f"biometrics-{task}.json"
         dest = dest_dir / f"biometrics-{task}.json"
         if src.exists() and not dest.exists():
-            shutil.copy2(src, dest)
-            copied += 1
+            copy_pairs.append((src, dest))
 
-    if copied:
-        msg = f"Copied {copied} biometrics template(s) into project library."
+    if copy_pairs:
+        if not plan_only:
+            for src, dest in copy_pairs:
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src, dest)
+            msg = f"Copied {len(copy_pairs)} biometrics template(s) into project library."
+        else:
+            msg = (
+                f"Prepared {len(copy_pairs)} biometrics template(s) for project library copy."
+            )
         if log_fn:
             log_fn(msg, "info")
         else:
             print(f"[PRISM DEBUG] {msg}")
+    return copy_pairs
 
 
 def api_biometrics_convert():
@@ -325,6 +336,7 @@ def api_biometrics_convert():
 
     log = []
     copied_output_paths: list[Path] = []
+    datalad_copy = None
 
     def log_msg(message, type="info"):
         log.append({"message": message, "type": type})
@@ -392,20 +404,43 @@ def api_biometrics_convert():
         # Save to project if requested (but not in dry-run mode)
         if save_to_project and not dry_run and project_root is not None:
             log_msg(f"Saving output to project: {project_root.name}", "info")
+            copy_pairs: list[tuple[Path, Path]] = []
+            output_rel_paths: set[str] = set()
             for item in output_root.rglob("*"):
                 if item.is_file():
                     rel_path = item.relative_to(output_root)
                     dest = project_root / rel_path
-                    dest.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(item, dest)
-                    copied_output_paths.append(dest)
+                    output_rel_paths.add(dest.relative_to(project_root).as_posix())
+                    copy_pairs.append((item, dest))
 
-            _copy_biometrics_templates_to_project(
+            copy_pairs.extend(
+                _copy_biometrics_templates_to_project(
                 source_dir=Path(effective_biometrics_dir),
                 tasks=list(result.tasks_included or []),
                 project_path=str(project_root),
                 log_fn=log_msg,
+                plan_only=True,
             )
+            )
+
+            try:
+                copy_result = copy_files_into_project(
+                    dataset_root=project_root,
+                    copy_pairs=copy_pairs,
+                    run_message="PRISM: Copy converted biometrics files into project",
+                )
+            except ValueError as error:
+                return jsonify({"error": str(error), "log": log}), 400
+
+            copied_rel_paths = [
+                str(path) for path in list(copy_result.get("copied_paths") or [])
+            ]
+            copied_output_paths = [
+                project_root / rel_path
+                for rel_path in copied_rel_paths
+                if rel_path in output_rel_paths
+            ]
+            datalad_copy = copy_result.get("datalad")
 
             log_msg("Project updated successfully!", "success")
 
@@ -529,6 +564,7 @@ def api_biometrics_convert():
             "project_output_paths": [],
             "project_output_path": None,
             "project_output_count": len(copied_output_paths),
+            "datalad": datalad_copy,
         }
 
         if copied_output_paths and project_root is not None:

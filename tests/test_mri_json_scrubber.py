@@ -465,6 +465,10 @@ class TestDefaceAnatomicalScans:
             return ""
 
         monkeypatch.setattr(mri_json_scrubber.shutil, "which", _fake_which)
+        monkeypatch.setattr(
+            "src.datalad_execution.shutil.which",
+            _fake_which,
+        )
 
         seen_commands = []
 
@@ -484,7 +488,7 @@ class TestDefaceAnatomicalScans:
                 return SimpleNamespace(returncode=0, stdout="run ok", stderr="")
             raise AssertionError(f"Unexpected command: {command}")
 
-        monkeypatch.setattr(mri_json_scrubber.subprocess, "run", _fake_subprocess_run)
+        monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_subprocess_run)
 
         result = deface_anatomical_scans(tmp_path, force=True)
         assert result["success"] is True
