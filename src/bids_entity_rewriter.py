@@ -63,6 +63,7 @@ class _EntityRewritePlan:
     replacement: str | None
     available_modalities: list[str]
     available_entities: list[str]
+    subjects: list[str]
     file_ops: list[_RenameOperation]
     preview_text_updates: list[Path]
     conflicts: list[str]
@@ -155,6 +156,7 @@ class BidsEntityRewriter:
         operation: str,
         current_value: str | None = None,
         replacement: str | None = None,
+        subjects: list[str] | None = None,
     ) -> dict:
         plan = self._build_plan(
             modality=modality,
@@ -162,6 +164,7 @@ class BidsEntityRewriter:
             current_value=current_value,
             operation=operation,
             replacement=replacement,
+            subjects=subjects,
         )
         return self._plan_to_dict(plan, applied=False)
 
@@ -172,6 +175,7 @@ class BidsEntityRewriter:
         operation: str,
         current_value: str | None = None,
         replacement: str | None = None,
+        subjects: list[str] | None = None,
     ) -> dict:
         plan = self._build_plan(
             modality=modality,
@@ -179,6 +183,7 @@ class BidsEntityRewriter:
             current_value=current_value,
             operation=operation,
             replacement=replacement,
+            subjects=subjects,
         )
         if plan.conflicts:
             raise ValueError(
@@ -212,12 +217,14 @@ class BidsEntityRewriter:
         current_value: str | None,
         operation: str,
         replacement: str | None,
+        subjects: list[str] | None,
     ) -> _EntityRewritePlan:
         if not self.project_root.exists() or not self.project_root.is_dir():
             raise ValueError(f"Project root does not exist: {self.project_root}")
 
         available_modalities = self.list_modalities()
         normalized_modality = self._normalize_modality(modality)
+        normalized_subjects = self._normalize_subjects(subjects)
         if not normalized_modality:
             raise ValueError("Select a modality before previewing this rewrite.")
 
@@ -257,7 +264,10 @@ class BidsEntityRewriter:
             raise ValueError(f"Part _{normalized_entity} cannot be removed.")
 
         file_ops: list[_RenameOperation] = []
-        for file_path in self._iter_files_for_modality(normalized_modality):
+        for file_path in self._iter_files_for_modality(
+            normalized_modality,
+            subjects=normalized_subjects,
+        ):
             rewritten_name = self._rewrite_filename_for_entity(
                 file_path.name,
                 entity=normalized_entity,
@@ -283,10 +293,24 @@ class BidsEntityRewriter:
             replacement=replacement_value,
             available_modalities=available_modalities,
             available_entities=available_entities,
+            subjects=sorted(normalized_subjects),
             file_ops=file_ops,
             preview_text_updates=preview_text_updates,
             conflicts=conflicts,
         )
+
+    @staticmethod
+    def _normalize_subjects(subjects: list[str] | None) -> set[str]:
+        if not subjects:
+            return set()
+        normalized: set[str] = set()
+        for subject in subjects:
+            token = str(subject or "").strip()
+            if token.startswith("sub-"):
+                token = token[4:]
+            if token and _LABEL_PATTERN.fullmatch(token):
+                normalized.add(token)
+        return normalized
 
     @staticmethod
     def _normalize_modality(modality: str | None) -> str:
@@ -446,10 +470,21 @@ class BidsEntityRewriter:
 
         return f"{rewritten_stem}{extension}"
 
-    def _iter_files_for_modality(self, modality: str):
+    def _subject_label_from_relative_path(self, rel_path: Path) -> str | None:
+        for part in rel_path.parts:
+            if _SUBJECT_DIR_PATTERN.fullmatch(part):
+                return part[4:]
+        return None
+
+    def _iter_files_for_modality(self, modality: str, subjects: set[str] | None = None):
         normalized_modality = self._normalize_modality(modality)
+        subject_filters = set(subjects or set())
         for file_path in self._iter_files():
             rel_path = file_path.relative_to(self.project_root)
+            if subject_filters:
+                subject_label = self._subject_label_from_relative_path(rel_path)
+                if not subject_label or subject_label not in subject_filters:
+                    continue
             path_modality = self._extract_modality_from_relative_path(rel_path)
             if path_modality == normalized_modality:
                 yield file_path
@@ -635,6 +670,7 @@ class BidsEntityRewriter:
             "replacement": plan.replacement or "",
             "available_modalities": plan.available_modalities,
             "available_entities": [f"_{entity}" for entity in plan.available_entities],
+            "subjects": plan.subjects,
             "applied": applied,
             "rename_count": len(plan.file_ops),
             "text_update_count": len(plan.preview_text_updates),

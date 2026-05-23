@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -104,3 +105,62 @@ def test_copy_files_into_project_parses_datalad_run_output(
         "sub-001/func/sub-001_task-rest_physio.edf",
     ]
     assert result.get("datalad", {}).get("used_run") is True
+
+
+def test_copy_files_into_project_runs_per_subject_group(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    dataset_root = tmp_path / "project"
+    (dataset_root / ".datalad").mkdir(parents=True)
+    src_a = tmp_path / "src_a.bin"
+    src_b = tmp_path / "src_b.bin"
+    src_a.write_bytes(b"a")
+    src_b.write_bytes(b"b")
+    dst_a = dataset_root / "sub-001" / "func" / "sub-001_task-rest_physio.edf"
+    dst_b = dataset_root / "sub-002" / "func" / "sub-002_task-rest_physio.edf"
+
+    seen_messages: list[str] = []
+
+    def _fake_run_tracked_mutation(*args, **kwargs):
+        seen_messages.append(str(kwargs.get("run_message") or ""))
+        if "sub-001" in str(kwargs.get("run_message") or ""):
+            copied = ["sub-001/func/sub-001_task-rest_physio.edf"]
+        else:
+            copied = ["sub-002/func/sub-002_task-rest_physio.edf"]
+        return {
+            "tracked": True,
+            "used_run": True,
+            "get": {"success": True},
+            "run": {
+                "message": "ok",
+                "command": "datalad run ...",
+                "stdout": (
+                    '{"copied_count": 1, '
+                    + '"copied_paths": '
+                    + json.dumps(copied)
+                    + "}"
+                ),
+            },
+        }
+
+    monkeypatch.setattr(
+        "src.datalad_project_copy.run_tracked_mutation",
+        _fake_run_tracked_mutation,
+    )
+
+    result = copy_files_into_project(
+        dataset_root=dataset_root,
+        copy_pairs=[(src_a, dst_a), (src_b, dst_b)],
+        run_message="PRISM: copy",
+    )
+
+    assert result.get("copied_count") == 2
+    assert set(result.get("copied_paths") or []) == {
+        "sub-001/func/sub-001_task-rest_physio.edf",
+        "sub-002/func/sub-002_task-rest_physio.edf",
+    }
+    datalad_info = result.get("datalad") or {}
+    assert datalad_info.get("run_per_subject") is True
+    assert datalad_info.get("run_count") == 2
+    assert any("sub-001" in message for message in seen_messages)
+    assert any("sub-002" in message for message in seen_messages)

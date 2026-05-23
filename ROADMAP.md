@@ -1,6 +1,6 @@
 # PRISM Studio - Roadmap
 
-Last updated: 2026-05-15
+Last updated: 2026-05-23
 
 ## Current Mission
 
@@ -14,6 +14,7 @@ Focus on keeping structural assessment remediations, runtime resilience checks, 
 | 1.26 | UI harmonization and beginner-help improvements | COMPLETED | Keep shared-help-panel coverage and wiring regressions in standard frontend gates |
 | 1.36 | Frontend structural assessment (page-by-page) | COMPLETED | Keep remediated workflow wiring and phase-boundary coverage confirmation in standard gates |
 | 1.35 | Survey converter workflow hardening and backend command consolidation | COMPLETED | Keep post-merge stability checks in standard gates |
+| 1.37 | DataLad mutation centralization and per-subject provenance runs | COMPLETED | Keep grouped DataLad-run rewrite/copy/delete/deface suites in standard backend regression gates |
 | 2 | Export anonymization: participant ID renaming | COMPLETED | Keep export anonymization checks in standard gates |
 | 3 | JSON tag stripping and NIfTI GZIP header cleaning | IN PROGRESS | Continue export privacy hardening after slice A (MRI sidecar scrub + .nii.gz header cleanup) |
 
@@ -106,6 +107,20 @@ Status: completed and merged.
 Reference:
 - [docs/_archive/SURVEY_WORKFLOW_HARDENING_2026.md](docs/_archive/SURVEY_WORKFLOW_HARDENING_2026.md)
 
+### Priority 1.37 - DataLad mutation centralization and per-subject provenance runs
+
+Status: completed and merged.
+
+Current checkpoint:
+- Tracked mutation policy is centralized in `src/datalad_mutation_policy.py` and shared by rewrite/copy/delete/deface mutation flows.
+- Converter project-save routes now delegate tracked copies through the canonical backend helper (`src/datalad_project_copy.py`) with strict missing-DataLad error behavior.
+- OpenNeuro/DataLad defacing now preserves lazy materialization by resolving annex content only at deface execution time.
+- Tracked mutation workflows (`copy`, `delete`, `deface`, `subject rewrite`, `entity rewrite`) now execute grouped `datalad run` commits per subject when applicable.
+- Focused and broad regression slices are green after rollout (`77 passed` rewrite/policy/deleter/scrubber suite, `155 passed` conversion/contracts suite).
+
+Maintenance action:
+1. Keep grouped-run rewrite tests and conversion contract suites in standard backend release gates.
+
 ### Priority 3 - JSON tag stripping and NIfTI GZIP header cleaning
 
 Goal: remove export-time metadata leakage from MRI sidecars and compressed NIfTI headers while preserving dataset usability.
@@ -168,3 +183,5 @@ Changelog remains canonical for release-facing history:
 - Exposing the global policy in Settings keeps team defaults discoverable while preserving project-level opt-in overrides.
 - Showing source attribution (project override vs inherited default) in the export snapshot helps avoid ambiguity in privacy confirmation behavior.
 - Supporting explicit reset-to-inherited in UI reduces misconfiguration risk and keeps global privacy policy enforcement easy to recover.
+- Subject-grouped DataLad commits require subject-filter support in canonical rewrite engines; orchestration-only grouping is insufficient.
+- Aggregated grouped-run API payloads should keep legacy top-level keys stable while attaching group provenance under a dedicated `datalad.groups` field.
