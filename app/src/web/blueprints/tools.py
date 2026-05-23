@@ -25,6 +25,10 @@ from src.runtime_dependencies import (
 from src.system_files import filter_system_files
 from src.bids_entity_rewriter import BidsEntityRewriter
 from src.bids_file_deleter import BidsFileDeleter
+from src.repo_rewrite_datalad_runner import (
+    apply_entity_rewrite as apply_entity_rewrite_with_datalad,
+    apply_subject_rewrite as apply_subject_rewrite_with_datalad,
+)
 from src.subject_code_rewriter import SubjectCodeRewriter
 from src.web.blueprints.projects import get_current_project
 from .tools_helpers import (
@@ -1059,11 +1063,12 @@ def api_file_management_entity_rewrite():
                 )
 
         if action == "apply":
-            payload = rewriter.apply(
+            payload = apply_entity_rewrite_with_datalad(
+                project_root,
                 modality=modality,
                 entity=entity,
-                current_value=current_value_filter,
                 operation=operation,
+                current_value=current_value_filter,
                 replacement=replacement_value,
             )
             session.pop(preview_session_key, None)
@@ -1161,7 +1166,8 @@ def api_file_management_subject_rewrite():
                 "subject_examples": rewriter.list_root_subject_ids(),
             }
         elif action == "apply":
-            payload = rewriter.apply(
+            payload = apply_subject_rewrite_with_datalad(
+                project_root,
                 mode=mode,
                 example_subject=example_subject,
                 keep_fragment=keep_fragment,
