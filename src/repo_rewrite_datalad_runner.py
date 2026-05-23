@@ -32,7 +32,7 @@ def _run_wrapped_command_with_mutation_or_raise(
     get_paths: list[str],
     get_recursive: bool,
     get_no_data: bool,
-) -> dict[str, Any]:
+) -> tuple[dict[str, Any], dict[str, Any]]:
     mutation_result = run_tracked_mutation(
         project_root,
         get_paths=get_paths,
@@ -51,6 +51,9 @@ def _run_wrapped_command_with_mutation_or_raise(
         raise ValueError(
             "DataLad run finished, but PRISM could not parse rewrite output."
         )
+
+    if not isinstance(mutation_result, dict):
+        mutation_result = {}
 
     return payload, mutation_result
 
