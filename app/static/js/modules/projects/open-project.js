@@ -562,6 +562,7 @@ export function initOpenProjectController({
         return window.confirm(
             'Are you absolutely sure that you want DataLad conversion/tracking for this project?\n\n'
             + 'This will modify the project in place by creating or repairing DataLad/Git metadata, backfilling one missing nested dataset for this click, and saving a snapshot.\n\n'
+            + 'Answer Yes (OK) to continue, or No (Cancel) to keep the current setup.\n\n'
             + `Learn more: ${DATALAD_DOCS_URL}\n\n`
             + 'Only continue if you explicitly want DataLad for this dataset.\n\n'
             + `Project: ${currentPath}`
@@ -781,6 +782,7 @@ export function initOpenProjectController({
             'Enable DataLad conversion/tracking for this project?',
             '',
             'Choose Yes to enable DataLad now. Choose No to keep this project untracked for now.',
+            'In this dialog: OK = Yes, Cancel = No.',
             '',
             'PRISM can work without DataLad. Enabling DataLad modifies the project in place by creating or repairing DataLad/Git metadata and writing a snapshot.',
             '',
@@ -816,6 +818,8 @@ export function initOpenProjectController({
 
         const absolutelySureMessage = [
             'Are you absolutely sure that you want a DataLad conversion/tracking setup for this project?',
+            '',
+            'In this dialog: OK = Yes, Cancel = No.',
             '',
             'This action modifies the project in place by creating or repairing DataLad/Git metadata and writing a snapshot.',
             '',

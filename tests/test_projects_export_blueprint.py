@@ -217,6 +217,38 @@ def test_projects_export_deface_route_returns_backend_summary(tmp_path):
     assert payload.get("report_counts", {}).get("defaced") == 1
 
 
+def test_projects_export_defacing_preflight_route_returns_status(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    with patch(
+        "src.mri_json_scrubber.get_defacing_preflight",
+        return_value={
+            "has_anatomical_data": True,
+            "pydeface_available": False,
+            "fsl_available": True,
+            "can_run_defacing": False,
+            "missing_requirements": ["pydeface"],
+            "message": "pydeface is not available in this environment.",
+        },
+    ):
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/defacing-preflight",
+                json={"project_path": str(project_dir)},
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("success") is True
+    assert payload.get("has_anatomical_data") is True
+    assert payload.get("can_run_defacing") is False
+    assert "pydeface" in payload.get("missing_requirements", [])
+
+
 def test_projects_export_start_upload_ready_preset_forces_safe_export_defaults(tmp_path):
     app = _build_app()
 

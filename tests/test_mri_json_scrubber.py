@@ -3,6 +3,7 @@
 import json
 import sys
 import os
+from types import SimpleNamespace
 
 import pytest
 
@@ -15,6 +16,8 @@ from src.mri_json_scrubber import (
     is_mri_json_sidecar,
     is_anatomical_defaced,
     deface_anatomical_scans,
+    get_defacing_preflight,
+    has_anatomical_data,
     scan_mri_jsons,
     build_defacing_report,
     _has_defaced_filename,
@@ -427,6 +430,10 @@ class TestDefaceAnatomicalScans:
     def test_returns_error_when_pydeface_missing(self, tmp_path, monkeypatch):
         from src import mri_json_scrubber
 
+        anat = tmp_path / "sub-001" / "anat"
+        anat.mkdir(parents=True)
+        (anat / "sub-001_T1w.nii.gz").write_bytes(b"nifti")
+
         monkeypatch.setattr(mri_json_scrubber.shutil, "which", lambda _cmd: None)
         result = deface_anatomical_scans(tmp_path)
         assert result["success"] is False
@@ -439,3 +446,86 @@ class TestDefaceAnatomicalScans:
         result = deface_anatomical_scans(tmp_path)
         assert result["success"] is True
         assert result["counts"]["total"] == 0
+
+    def test_tracked_dataset_uses_datalad_run(self, tmp_path, monkeypatch):
+        from src import mri_json_scrubber
+
+        anat = tmp_path / "sub-001" / "anat"
+        anat.mkdir(parents=True)
+        (tmp_path / ".datalad").mkdir(parents=True)
+        (anat / "sub-001_T1w.nii.gz").write_bytes(b"nifti")
+
+        def _fake_which(command):
+            if command == "pydeface":
+                return "/usr/bin/pydeface"
+            if command == "datalad":
+                return "/usr/bin/datalad"
+            if command in {"bet", "fsl"}:
+                return "/usr/bin/bet"
+            return ""
+
+        monkeypatch.setattr(mri_json_scrubber.shutil, "which", _fake_which)
+
+        seen_commands = []
+
+        def _fake_subprocess_run(
+            command,
+            cwd=None,
+            capture_output=True,
+            text=True,
+            timeout=None,
+            check=False,
+            env=None,
+        ):
+            seen_commands.append([str(item) for item in command])
+            if len(command) >= 2 and command[1] == "get":
+                return SimpleNamespace(returncode=0, stdout="get ok", stderr="")
+            if len(command) >= 2 and command[1] == "run":
+                return SimpleNamespace(returncode=0, stdout="run ok", stderr="")
+            raise AssertionError(f"Unexpected command: {command}")
+
+        monkeypatch.setattr(mri_json_scrubber.subprocess, "run", _fake_subprocess_run)
+
+        result = deface_anatomical_scans(tmp_path, force=True)
+        assert result["success"] is True
+        assert result["counts"]["defaced"] == 1
+        assert result["datalad"]["used_run"] is True
+        assert any(command[0:2] == ["/usr/bin/datalad", "get"] for command in seen_commands)
+        assert any(command[0:2] == ["/usr/bin/datalad", "run"] for command in seen_commands)
+
+
+class TestDefacingPreflight:
+    def test_has_anatomical_data_true_with_anat_nifti(self, tmp_path):
+        anat = tmp_path / "sub-001" / "anat"
+        anat.mkdir(parents=True)
+        (anat / "sub-001_T1w.nii.gz").write_bytes(b"nifti")
+        assert has_anatomical_data(tmp_path) is True
+
+    def test_preflight_hides_defacing_when_no_anat(self, tmp_path, monkeypatch):
+        from src import mri_json_scrubber
+
+        monkeypatch.setattr(
+            mri_json_scrubber.shutil,
+            "which",
+            lambda cmd: "/usr/bin/pydeface" if cmd == "pydeface" else "/usr/bin/bet",
+        )
+        preflight = get_defacing_preflight(tmp_path)
+        assert preflight["has_anatomical_data"] is False
+        assert preflight["can_run_defacing"] is False
+
+    def test_preflight_requires_fsl_even_when_pydeface_exists(self, tmp_path, monkeypatch):
+        from src import mri_json_scrubber
+
+        anat = tmp_path / "sub-001" / "anat"
+        anat.mkdir(parents=True)
+        (anat / "sub-001_T1w.nii.gz").write_bytes(b"nifti")
+
+        monkeypatch.setattr(
+            mri_json_scrubber.shutil,
+            "which",
+            lambda cmd: "/usr/bin/pydeface" if cmd == "pydeface" else "",
+        )
+        preflight = get_defacing_preflight(tmp_path)
+        assert preflight["pydeface_available"] is True
+        assert preflight["fsl_available"] is False
+        assert preflight["can_run_defacing"] is False

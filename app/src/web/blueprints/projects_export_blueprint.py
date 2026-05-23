@@ -720,6 +720,24 @@ def export_defacing_report():
         return jsonify({"error": str(e)}), 500
 
 
+@projects_export_bp.route("/api/projects/export/defacing-preflight", methods=["POST"])
+def export_defacing_preflight():
+    """Return defacing readiness for current project and environment."""
+    try:
+        from src.mri_json_scrubber import get_defacing_preflight
+
+        data = request.get_json() or {}
+        project_path_raw = data.get("project_path")
+        resolved = _resolve_project_root_path(project_path_raw)
+        if resolved is None:
+            return jsonify({"success": False, "error": "Invalid project path"}), 400
+
+        preflight = get_defacing_preflight(resolved)
+        return jsonify({"success": True, **preflight})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @projects_export_bp.route("/api/projects/export/deface", methods=["POST"])
 def export_deface_anatomical_scans():
     """Run in-place defacing on anatomical scans in the current project."""
@@ -750,6 +768,7 @@ def export_deface_anatomical_scans():
                 "counts": result.get("counts") or {},
                 "items": result.get("items") or [],
             },
+            "datalad": result.get("datalad") or {},
             "report": post_report,
             "report_counts": counts,
         }
