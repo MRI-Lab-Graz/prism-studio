@@ -26,8 +26,18 @@ import logging
 import re
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
+
+from src.datalad_execution import (
+    DATALAD_DOCS_URL,
+    DATALAD_INSTALL_HINT,
+    is_datalad_dataset,
+    resolve_datalad_executable,
+    run_datalad_get_recursive,
+    run_datalad_run,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -529,6 +539,49 @@ def _iter_anatomical_nifti_files(project_path: Path) -> List[Path]:
     return sorted(set(results))
 
 
+def has_anatomical_data(project_path: Path) -> bool:
+    """Return True when the dataset has at least one anatomical NIfTI candidate."""
+    return bool(_iter_anatomical_nifti_files(project_path))
+
+
+def get_defacing_preflight(project_path: Path) -> Dict[str, Any]:
+    """Return defacing prerequisites and dataset readiness for UI/backend checks."""
+    pydeface_executable = shutil.which("pydeface") or ""
+    fsl_executable = shutil.which("fsl") or ""
+    bet_executable = shutil.which("bet") or ""
+    fsl_available = bool(fsl_executable or bet_executable)
+    has_anat = has_anatomical_data(project_path)
+
+    can_run = bool(pydeface_executable) and fsl_available and has_anat
+    missing: List[str] = []
+    if not pydeface_executable:
+        missing.append("pydeface")
+    if not fsl_available:
+        missing.append("FSL (fsl or bet)")
+    if not has_anat:
+        missing.append("anatomical scans")
+
+    if can_run:
+        message = "Defacing is available for this dataset."
+    elif not has_anat:
+        message = "No anatomical scans found in this dataset. Defacing options are hidden."
+    elif not pydeface_executable:
+        message = "pydeface is not available in this environment. Install pydeface and FSL before running defacing."
+    else:
+        message = "FSL is not available in this environment. Install/configure FSL before running defacing."
+
+    return {
+        "has_anatomical_data": has_anat,
+        "pydeface_available": bool(pydeface_executable),
+        "pydeface_executable": pydeface_executable,
+        "fsl_available": fsl_available,
+        "fsl_executable": fsl_executable or bet_executable,
+        "can_run_defacing": can_run,
+        "missing_requirements": missing,
+        "message": message,
+    }
+
+
 def deface_anatomical_scans(
     project_path: Path,
     *,
@@ -536,13 +589,42 @@ def deface_anatomical_scans(
     timeout_seconds: int = 300,
 ) -> Dict[str, Any]:
     """Run pydeface in-place on anatomical scans and return an operation summary."""
-    pydeface_executable = shutil.which("pydeface")
-    if not pydeface_executable:
+    project_root = Path(project_path)
+    datalad_tracked = is_datalad_dataset(project_root)
+    datalad_executable = resolve_datalad_executable() if datalad_tracked else ""
+    datalad_info: Dict[str, Any] = {
+        "tracked": datalad_tracked,
+        "available": bool(datalad_executable),
+        "used_run": False,
+        "run_count": 0,
+        "run_failures": 0,
+        "get": None,
+        "message": "",
+    }
+
+    preflight = get_defacing_preflight(project_path)
+    pydeface_executable = str(preflight.get("pydeface_executable") or "")
+    if not preflight.get("pydeface_available"):
         return {
             "success": False,
-            "error": (
-                "pydeface is not available in this environment. "
-                "Install pydeface and FSL before running defacing."
+            "error": str(preflight.get("message") or "pydeface is unavailable."),
+            "counts": {
+                "total": 0,
+                "already_defaced": 0,
+                "defaced": 0,
+                "failed": 0,
+                "skipped": 0,
+            },
+            "items": [],
+            "datalad": datalad_info,
+        }
+
+    if not preflight.get("fsl_available"):
+        return {
+            "success": False,
+            "error": str(
+                preflight.get("message")
+                or "FSL is not available in this environment."
             ),
             "counts": {
                 "total": 0,
@@ -552,6 +634,7 @@ def deface_anatomical_scans(
                 "skipped": 0,
             },
             "items": [],
+            "datalad": datalad_info,
         }
 
     anatomical_files = _iter_anatomical_nifti_files(project_path)
@@ -567,7 +650,44 @@ def deface_anatomical_scans(
                 "skipped": 0,
             },
             "items": [],
+            "datalad": datalad_info,
         }
+
+    if datalad_tracked and not datalad_executable:
+        datalad_info["message"] = (
+            "Project is tracked by DataLad, but datalad is not available. "
+            f"{DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
+        )
+    elif datalad_tracked and datalad_executable:
+        get_result = run_datalad_get_recursive(
+            project_root,
+            datalad_executable=datalad_executable,
+            timeout_seconds=max(1, int(timeout_seconds)) * 2,
+        )
+        datalad_info["get"] = {
+            "attempted": bool(get_result.get("attempted")),
+            "success": bool(get_result.get("success")),
+            "message": str(get_result.get("message") or ""),
+            "command": str(get_result.get("command") or ""),
+        }
+        if not get_result.get("success"):
+            return {
+                "success": False,
+                "error": str(
+                    get_result.get("message")
+                    or "DataLad get failed before defacing run."
+                ),
+                "counts": {
+                    "total": 0,
+                    "already_defaced": 0,
+                    "defaced": 0,
+                    "failed": 0,
+                    "skipped": 0,
+                },
+                "items": [],
+                "datalad": datalad_info,
+            }
+        datalad_info["message"] = "DataLad run mode is enabled for defacing."
 
     counts = {
         "total": len(anatomical_files),
@@ -579,8 +699,9 @@ def deface_anatomical_scans(
     items: List[Dict[str, Any]] = []
 
     for nifti_file in anatomical_files:
+        relative_nifti = nifti_file.relative_to(project_root).as_posix()
         item_result: Dict[str, Any] = {
-            "file": str(nifti_file.relative_to(project_path)),
+            "file": relative_nifti,
             "status": "",
             "message": "",
         }
@@ -606,8 +727,14 @@ def deface_anatomical_scans(
                 items.append(item_result)
                 continue
 
-        backup_file = Path(str(nifti_file) + ".prism_bak")
+        backup_file: Optional[Path] = None
         try:
+            with tempfile.NamedTemporaryFile(
+                prefix="prism_deface_",
+                suffix=nifti_file.suffix,
+                delete=False,
+            ) as temp_file:
+                backup_file = Path(temp_file.name)
             shutil.copy2(nifti_file, backup_file)
         except Exception as exc:
             counts["failed"] += 1
@@ -617,35 +744,59 @@ def deface_anatomical_scans(
             continue
 
         try:
-            process = subprocess.run(
-                [
-                    pydeface_executable,
-                    str(nifti_file),
-                    "--outfile",
-                    str(nifti_file),
-                    "--force",
-                ],
-                capture_output=True,
-                text=True,
-                timeout=max(1, int(timeout_seconds)),
-                check=False,
-            )
-            if process.returncode == 0:
+            pydeface_command = [
+                pydeface_executable,
+                relative_nifti if datalad_tracked and datalad_executable else str(nifti_file),
+                "--outfile",
+                relative_nifti if datalad_tracked and datalad_executable else str(nifti_file),
+                "--force",
+            ]
+
+            run_success = False
+            run_error_message = ""
+            if datalad_tracked and datalad_executable:
+                datalad_run_result = run_datalad_run(
+                    project_root,
+                    message=f"PRISM: Deface anatomical scan {relative_nifti}",
+                    command=pydeface_command,
+                    datalad_executable=datalad_executable,
+                    timeout_seconds=max(1, int(timeout_seconds)) * 2,
+                )
+                datalad_info["used_run"] = True
+                datalad_info["run_count"] = int(datalad_info.get("run_count") or 0) + 1
+                run_success = bool(datalad_run_result.get("success"))
+                run_error_message = str(datalad_run_result.get("message") or "").strip()
+                if not run_success:
+                    datalad_info["run_failures"] = int(datalad_info.get("run_failures") or 0) + 1
+            else:
+                process = subprocess.run(
+                    pydeface_command,
+                    capture_output=True,
+                    text=True,
+                    timeout=max(1, int(timeout_seconds)),
+                    check=False,
+                )
+                run_success = process.returncode == 0
+                run_error_message = (
+                    (process.stderr or process.stdout or "pydeface failed").strip()
+                    if not run_success
+                    else ""
+                )
+
+            if run_success:
                 counts["defaced"] += 1
                 item_result["status"] = "defaced"
-                item_result["message"] = "Defacing completed"
-                try:
-                    backup_file.unlink(missing_ok=True)
-                except Exception:
-                    pass
+                item_result["message"] = (
+                    "Defacing completed"
+                    + (" (recorded via DataLad run)" if datalad_tracked and datalad_executable else "")
+                )
             else:
                 counts["failed"] += 1
                 item_result["status"] = "failed"
-                item_result["message"] = (
-                    (process.stderr or process.stdout or "pydeface failed").strip()
-                )
+                item_result["message"] = run_error_message or "pydeface failed"
                 try:
-                    shutil.move(str(backup_file), str(nifti_file))
+                    if backup_file is not None:
+                        shutil.copy2(backup_file, nifti_file)
                 except Exception:
                     pass
         except subprocess.TimeoutExpired:
@@ -653,7 +804,8 @@ def deface_anatomical_scans(
             item_result["status"] = "failed"
             item_result["message"] = "Defacing timed out"
             try:
-                shutil.move(str(backup_file), str(nifti_file))
+                if backup_file is not None:
+                    shutil.copy2(backup_file, nifti_file)
             except Exception:
                 pass
         except Exception as exc:
@@ -661,9 +813,16 @@ def deface_anatomical_scans(
             item_result["status"] = "failed"
             item_result["message"] = str(exc)
             try:
-                shutil.move(str(backup_file), str(nifti_file))
+                if backup_file is not None:
+                    shutil.copy2(backup_file, nifti_file)
             except Exception:
                 pass
+        finally:
+            if backup_file is not None:
+                try:
+                    backup_file.unlink(missing_ok=True)
+                except Exception:
+                    pass
 
         items.append(item_result)
 
@@ -679,6 +838,7 @@ def deface_anatomical_scans(
         "message": message,
         "counts": counts,
         "items": items,
+        "datalad": datalad_info,
     }
 
 

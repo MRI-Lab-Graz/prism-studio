@@ -28,6 +28,118 @@ let lastExportStructureStatus = {
 let lastAnnexAvailabilityScopeSignature = '';
 let lastAnnexAvailabilitySummary = null;
 let lastAnnexAvailabilityCheckedAtMs = 0;
+let defacingPreflightLoadToken = 0;
+
+function resetDefacingUiState() {
+    const controls = getById('exportDefacingControls');
+    const preflightStatus = getById('exportDefacingPreflightStatus');
+    const report = getById('exportDefacingReport');
+    const checkBtn = getById('exportCheckDefacing');
+    const runBtn = getById('exportRunDefacing');
+
+    if (controls) {
+        controls.style.display = 'none';
+    }
+    if (preflightStatus) {
+        preflightStatus.style.display = 'none';
+        setHtml(preflightStatus, '');
+    }
+    if (report) {
+        report.style.display = 'none';
+        setHtml(report, '');
+    }
+    if (checkBtn) {
+        checkBtn.disabled = true;
+    }
+    if (runBtn) {
+        runBtn.disabled = true;
+        runBtn.title = '';
+    }
+}
+
+function hasAnatomicalModality(modalities) {
+    return Array.isArray(modalities)
+        && modalities.some((item) => String(item || '').trim().toLowerCase() === 'anat');
+}
+
+function renderDefacingPreflightStatus(preflight) {
+    const preflightStatus = getById('exportDefacingPreflightStatus');
+    if (!preflightStatus) {
+        return;
+    }
+
+    const message = String(preflight?.message || '').trim();
+    if (!message) {
+        preflightStatus.style.display = 'none';
+        setHtml(preflightStatus, '');
+        return;
+    }
+
+    const canRun = Boolean(preflight?.can_run_defacing);
+    const cssClass = canRun ? 'alert alert-info py-1 mb-0' : 'alert alert-warning py-1 mb-0';
+    setHtml(preflightStatus, `<div class="${cssClass}">${escapeHtml(message)}</div>`);
+    preflightStatus.style.display = 'block';
+}
+
+async function fetchDefacingPreflight(projectPath) {
+    const resp = await fetchWithApiFallback('/api/projects/export/defacing-preflight', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_path: projectPath }),
+    });
+    const result = await resp.json().catch(() => ({ success: false, error: 'Invalid server response' }));
+    if (!resp.ok || !result.success) {
+        throw new Error(result.error || 'Could not check defacing prerequisites.');
+    }
+    return result;
+}
+
+async function refreshDefacingPreflight({ projectPath, modalities = [] }) {
+    const requestToken = ++defacingPreflightLoadToken;
+    const controls = getById('exportDefacingControls');
+    const checkBtn = getById('exportCheckDefacing');
+    const runBtn = getById('exportRunDefacing');
+
+    const hasAnat = hasAnatomicalModality(modalities);
+    if (!projectPath || !hasAnat) {
+        resetDefacingUiState();
+        return;
+    }
+
+    if (controls) {
+        controls.style.display = 'block';
+    }
+    if (checkBtn) {
+        checkBtn.disabled = false;
+    }
+    if (runBtn) {
+        runBtn.disabled = true;
+        runBtn.title = 'Checking defacing prerequisites...';
+    }
+
+    try {
+        const preflight = await fetchDefacingPreflight(projectPath);
+        if (requestToken !== defacingPreflightLoadToken) {
+            return;
+        }
+
+        renderDefacingPreflightStatus(preflight);
+        const canRun = Boolean(preflight.can_run_defacing);
+        if (runBtn) {
+            runBtn.disabled = !canRun;
+            runBtn.title = canRun ? '' : String(preflight.message || 'Defacing prerequisites are not met.');
+        }
+    } catch (error) {
+        if (requestToken !== defacingPreflightLoadToken) {
+            return;
+        }
+        renderDefacingPreflightStatus({ message: error?.message || 'Could not check defacing prerequisites.', can_run_defacing: false });
+        if (runBtn) {
+            runBtn.disabled = true;
+            runBtn.title = error?.message || 'Could not check defacing prerequisites.';
+        }
+    }
+}
 
 function getDefaultExportPreferences() {
     return {
@@ -727,6 +839,7 @@ export function showExportCard() {
             outputFolderInput.value = '';
         }
         resetAnnexAvailabilityReport();
+        resetDefacingUiState();
         show(card);
         loadProjectStructure();
         loadExportPreferences();
@@ -737,6 +850,7 @@ export function showExportCard() {
             outputFolderInput.value = '';
         }
         resetAnnexAvailabilityReport();
+        resetDefacingUiState();
         renderProjectStructureStatus('Load a project to view export filters.');
         hide(card);
     }
@@ -751,6 +865,7 @@ export async function loadProjectStructure() {
     const projectPath = resolveCurrentProjectPath();
     if (!projectPath) {
         projectStructureLoadToken += 1;
+        resetDefacingUiState();
         renderProjectStructureStatus('Load a project to view export filters.');
         return;
     }
@@ -766,12 +881,14 @@ export async function loadProjectStructure() {
         });
         if (requestToken !== projectStructureLoadToken) return;
         if (!resp.ok) {
+            resetDefacingUiState();
             renderProjectStructureStatus('Could not load current project structure.', 'warning');
             return;
         }
         const data = await resp.json();
         if (requestToken !== projectStructureLoadToken) return;
         if (!data.success) {
+            resetDefacingUiState();
             renderProjectStructureStatus('Could not load current project structure.', 'warning');
             return;
         }
@@ -788,9 +905,14 @@ export async function loadProjectStructure() {
             message: 'Current project structure loaded. Uncheck items below to narrow the export.',
             tone: 'ready',
         };
+        await refreshDefacingPreflight({
+            projectPath,
+            modalities: data.modalities || [],
+        });
         applyExportPreferencesToFilters(lastLoadedExportPreferences);
     } catch {
         if (requestToken !== projectStructureLoadToken) return;
+        resetDefacingUiState();
         renderProjectStructureStatus('Could not load current project structure.', 'warning');
     }
 }
@@ -1236,6 +1358,32 @@ export function initExportForm() {
                 return;
             }
 
+            const reportDiv = getById('exportDefacingReport');
+
+            try {
+                const preflight = await fetchDefacingPreflight(projectPath);
+                if (!preflight.has_anatomical_data) {
+                    if (reportDiv) {
+                        reportDiv.style.display = 'block';
+                        reportDiv.innerHTML = '<div class="alert alert-info py-1 mb-0">No anatomical scans available in the current dataset.</div>';
+                    }
+                    return;
+                }
+                if (!preflight.can_run_defacing) {
+                    if (reportDiv) {
+                        reportDiv.style.display = 'block';
+                        reportDiv.innerHTML = `<div class="alert alert-warning py-1 mb-0">${escapeHtml(preflight.message || 'Defacing prerequisites are not met.')}</div>`;
+                    }
+                    return;
+                }
+            } catch (preflightError) {
+                if (reportDiv) {
+                    reportDiv.style.display = 'block';
+                    reportDiv.innerHTML = `<div class="alert alert-danger py-1 mb-0">${escapeHtml(preflightError.message || 'Could not check defacing prerequisites.')}</div>`;
+                }
+                return;
+            }
+
             const proceed = window.confirm(
                 'Run pydeface now? This overwrites anatomical NIfTI files in the current project.'
             );
@@ -1243,7 +1391,6 @@ export function initExportForm() {
                 return;
             }
 
-            const reportDiv = getById('exportDefacingReport');
             const originalLabel = runDefacingBtn.innerHTML;
             runDefacingBtn.disabled = true;
             runDefacingBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Defacing...';
@@ -1279,6 +1426,7 @@ export function initExportForm() {
             } finally {
                 runDefacingBtn.disabled = false;
                 runDefacingBtn.innerHTML = originalLabel;
+                await loadProjectStructure();
             }
         });
     }
