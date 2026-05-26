@@ -208,6 +208,7 @@ def export_project(
     include_sourcedata: bool = False,
     include_code: bool = True,
     include_analysis: bool = False,
+    exclude_subjects: Optional[Set[str]] = None,
     exclude_sessions: Optional[Set[str]] = None,
     exclude_modalities: Optional[Set[str]] = None,
     exclude_acq: Optional[Dict[str, Set[str]]] = None,
@@ -233,6 +234,7 @@ def export_project(
         include_sourcedata: Include sourcedata/ folder
         include_code: Include code/ folder
         include_analysis: Include analysis/ folder
+        exclude_subjects: Exclude selected subject directories (for example, {"sub-002"})
         exclude_version_control_metadata: Strip Git/DataLad metadata from ZIP
         clean_nifti_gzip_headers: Normalize .nii.gz GZIP headers (mtime/FNAME)
             in exported copies for privacy-safe sharing.
@@ -286,6 +288,12 @@ def export_project(
         "analysis": include_analysis,
     }
 
+    normalized_exclude_subjects = {
+        str(label).strip()
+        for label in (exclude_subjects or set())
+        if str(label).strip()
+    }
+
     def _count_exportable_files(source_root: Path) -> int:
         total = 0
         for root, dirs, files in os.walk(source_root):
@@ -313,7 +321,11 @@ def export_project(
     total_files += sum(
         _count_exportable_files(item)
         for item in project_path.iterdir()
-        if item.is_dir() and item.name.startswith("sub-")
+        if (
+            item.is_dir()
+            and item.name.startswith("sub-")
+            and item.name not in normalized_exclude_subjects
+        )
     )
     total_files = max(total_files, 1)
 
@@ -562,6 +574,8 @@ def export_project(
         # BIDS subject folders
         for item in sorted(project_path.iterdir()):
             if not (item.is_dir() and item.name.startswith("sub-")):
+                continue
+            if item.name in normalized_exclude_subjects:
                 continue
             arc_name = (
                 anonymize_filename(item.name, participant_mapping)

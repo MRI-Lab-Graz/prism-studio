@@ -748,7 +748,11 @@ async function fetchDefacingSummary(projectPath) {
         throw new Error(variantSelection.errorMessage);
     }
 
-    const requestPayload = { project_path: projectPath };
+    const requestPayload = {
+        project_path: projectPath,
+        exclude_subjects: _getUncheckedValues('export-subject-filter'),
+        exclude_sessions: _getUncheckedValues('export-session-filter'),
+    };
     if (Array.isArray(variantSelection.selectedVariants)) {
         requestPayload.selected_variants = variantSelection.selectedVariants;
     }
@@ -1599,6 +1603,8 @@ export function initExportForm() {
                         project_path: projectPath,
                         repository_mode: selectedRepositoryMode,
                         output_folder: outputFolder,
+                        exclude_subjects: _getUncheckedValues('export-subject-filter'),
+                        exclude_sessions: _getUncheckedValues('export-session-filter'),
                         selected_variants: Array.isArray(variantSelection.selectedVariants)
                             ? variantSelection.selectedVariants
                             : null,

@@ -1667,6 +1667,44 @@ class TestProjectManager(unittest.TestCase):
             self.assertFalse((output_path / ".datalad").exists())
             self.assertFalse((output_path / ".gitattributes").exists())
             self.assertFalse((output_path / "CHANGES").exists())
+            exported_bidsignore = output_path / ".bidsignore"
+            self.assertTrue(exported_bidsignore.exists())
+            bidsignore_text = exported_bidsignore.read_text(encoding="utf-8")
+            self.assertIn("project.json", bidsignore_text)
+            self.assertIn("survey/", bidsignore_text)
+
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_export_project_to_plain_folder_preserves_existing_bidsignore_rules(self, _mock_which):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+            (project_path / ".bidsignore").write_text("*.log\n", encoding="utf-8")
+
+            subject_dir = project_path / "sub-001" / "survey"
+            subject_dir.mkdir(parents=True, exist_ok=True)
+            (subject_dir / "sub-001_task-demo_survey.tsv").write_text(
+                "participant_id\tvalue\nsub-001\t1\n",
+                encoding="utf-8",
+            )
+
+            export_root = Path(tmp) / "exports"
+            result = manager.export_project_to_plain_folder(
+                project_path,
+                output_root=export_root,
+            )
+
+            self.assertTrue(result.get("success"), result)
+            output_path = Path(result["output_path"])
+            bidsignore_path = output_path / ".bidsignore"
+            self.assertTrue(bidsignore_path.exists())
+
+            bidsignore_text = bidsignore_path.read_text(encoding="utf-8")
+            self.assertIn("*.log", bidsignore_text)
+            self.assertIn("survey/", bidsignore_text)
+            self.assertIn("project.json", bidsignore_text)
 
     def test_export_project_to_plain_folder_materializes_symlinked_files(self):
         manager = ProjectManager()
@@ -1802,6 +1840,60 @@ class TestProjectManager(unittest.TestCase):
             output_path = Path(result["output_path"])
             self.assertFalse((output_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_T1w.nii.gz").exists())
             self.assertTrue((output_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_T2w.nii.gz").exists())
+
+    def test_export_project_to_plain_folder_excludes_anat_mpm_suffix_with_acq_entities(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            mpm_file = (
+                project_path
+                / "sub-147"
+                / "ses-1"
+                / "anat"
+                / "sub-147_ses-1_acq-PDw_echo-5_flip-4_mt-off_MPM.nii.gz"
+            )
+            t1_file = (
+                project_path
+                / "sub-147"
+                / "ses-1"
+                / "anat"
+                / "sub-147_ses-1_acq-PDw_T1w.nii.gz"
+            )
+            mpm_file.parent.mkdir(parents=True, exist_ok=True)
+            mpm_file.write_bytes(b"mpm")
+            t1_file.write_bytes(b"t1")
+
+            export_root = Path(tmp) / "exports"
+            result = manager.export_project_to_plain_folder(
+                project_path,
+                output_root=export_root,
+                exclude_acq={"anat": {"PDw-MPM"}},
+            )
+
+            self.assertTrue(result.get("success"), result)
+            output_path = Path(result["output_path"])
+            self.assertFalse(
+                (
+                    output_path
+                    / "sub-147"
+                    / "ses-1"
+                    / "anat"
+                    / "sub-147_ses-1_acq-PDw_echo-5_flip-4_mt-off_MPM.nii.gz"
+                ).exists()
+            )
+            self.assertTrue(
+                (
+                    output_path
+                    / "sub-147"
+                    / "ses-1"
+                    / "anat"
+                    / "sub-147_ses-1_acq-PDw_T1w.nii.gz"
+                ).exists()
+            )
 
     def test_export_project_to_plain_folder_excludes_dwi_suffix_labels(self):
         manager = ProjectManager()

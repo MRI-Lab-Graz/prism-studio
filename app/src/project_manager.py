@@ -125,6 +125,52 @@ def _extract_terminal_suffix_label(filename: str) -> str | None:
     return suffix
 
 
+def _matches_excluded_acq_label(filename: str, excluded_labels: set[str]) -> bool:
+    """Return True when a filename matches one of the excluded acq/suffix labels.
+
+    Accepts both plain labels (for example, ``MPM``) and combined labels
+    (for example, ``PDw-MPM``), and compares case-insensitively.
+    """
+    normalized_labels = {
+        str(label).strip().lower() for label in excluded_labels if str(label).strip()
+    }
+    if not normalized_labels:
+        return False
+
+    suffix_label = _extract_terminal_suffix_label(filename)
+    acq_match = re.search(r"_acq-([A-Za-z0-9]+)", filename)
+    acq_label = acq_match.group(1) if acq_match else None
+
+    normalized_suffix = suffix_label.lower() if suffix_label else ""
+    normalized_acq = acq_label.lower() if acq_label else ""
+
+    if normalized_suffix and normalized_suffix in normalized_labels:
+        return True
+    if normalized_acq and normalized_acq in normalized_labels:
+        return True
+    if (
+        normalized_acq
+        and normalized_suffix
+        and (
+            f"{normalized_acq}-{normalized_suffix}" in normalized_labels
+            or f"{normalized_suffix}-{normalized_acq}" in normalized_labels
+        )
+    ):
+        return True
+
+    if normalized_acq and normalized_suffix:
+        # Accept labels that end in the suffix token when they also include the
+        # same acq token, e.g. "PDw-MPM" for files with acq-PDw ... _MPM.
+        for label in normalized_labels:
+            tokens = [token for token in re.split(r"[-_/]", label) if token]
+            if len(tokens) < 2:
+                continue
+            if tokens[-1] == normalized_suffix and normalized_acq in tokens[:-1]:
+                return True
+
+    return False
+
+
 class ProjectManager:
     """
     Manages PRISM project creation and validation.
@@ -1905,11 +1951,9 @@ class ProjectManager:
             excluded_acq_labels = materialization_exclude_acq.get(modality, set())
             if excluded_acq_labels:
                 if modality in MRI_SUFFIX_LABEL_MODALITIES:
-                    suffix_label = _extract_terminal_suffix_label(filename)
-                    if suffix_label and suffix_label in excluded_acq_labels:
+                    if _matches_excluded_acq_label(filename, excluded_acq_labels):
                         return True
-                acq_match = re.search(r"_acq-([A-Za-z0-9]+)", filename)
-                if acq_match and acq_match.group(1) in excluded_acq_labels:
+                elif _matches_excluded_acq_label(filename, excluded_acq_labels):
                     return True
 
             excluded_task_labels = materialization_exclude_tasks.get(modality, set())
@@ -2487,11 +2531,9 @@ class ProjectManager:
             excluded_acq_labels = normalized_exclude_acq.get(modality, set())
             if excluded_acq_labels:
                 if modality in MRI_SUFFIX_LABEL_MODALITIES:
-                    suffix_label = _extract_terminal_suffix_label(filename)
-                    if suffix_label and suffix_label in excluded_acq_labels:
+                    if _matches_excluded_acq_label(filename, excluded_acq_labels):
                         return True
-                acq_match = re.search(r"_acq-([A-Za-z0-9]+)", filename)
-                if acq_match and acq_match.group(1) in excluded_acq_labels:
+                elif _matches_excluded_acq_label(filename, excluded_acq_labels):
                     return True
 
             excluded_task_labels = normalized_exclude_tasks.get(modality, set())
@@ -2750,6 +2792,19 @@ class ProjectManager:
                 )
             missing_source_paths = unresolved_source_paths
 
+        bidsignore_rules_added: List[str] = []
+        try:
+            from src.bids_integration import check_and_update_bidsignore
+
+            bidsignore_rules_added = check_and_update_bidsignore(
+                str(export_path),
+                PRISM_MODALITIES,
+            )
+        except Exception as exc:
+            materialization_warnings.append(
+                f"Could not update .bidsignore in exported folder: {exc}"
+            )
+
         if workspace_cleanup_error:
             result["error"] = workspace_cleanup_error
             return result
@@ -2761,6 +2816,8 @@ class ProjectManager:
             result["scrubbed_mri_json_fields"] = scrubbed_fields
         result["excluded_repository_metadata"] = sorted(ignored_names)
         result["message"] = f"Project folder export created at {export_path} without Git/DataLad metadata."
+        if bidsignore_rules_added:
+            result["bidsignore_rules_added"] = sorted(bidsignore_rules_added)
         if materialized_export:
             result["materialized_export"] = True
         if materialization_warnings:
@@ -2923,11 +2980,9 @@ class ProjectManager:
             excluded_acq_labels = normalized_exclude_acq.get(modality, set())
             if excluded_acq_labels:
                 if modality in MRI_SUFFIX_LABEL_MODALITIES:
-                    suffix_label = _extract_terminal_suffix_label(filename)
-                    if suffix_label and suffix_label in excluded_acq_labels:
+                    if _matches_excluded_acq_label(filename, excluded_acq_labels):
                         return True
-                acq_match = re.search(r"_acq-([A-Za-z0-9]+)", filename)
-                if acq_match and acq_match.group(1) in excluded_acq_labels:
+                elif _matches_excluded_acq_label(filename, excluded_acq_labels):
                     return True
 
             excluded_task_labels = normalized_exclude_tasks.get(modality, set())
