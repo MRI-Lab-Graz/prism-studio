@@ -29,6 +29,124 @@ let lastAnnexAvailabilityScopeSignature = '';
 let lastAnnexAvailabilitySummary = null;
 let lastAnnexAvailabilityCheckedAtMs = 0;
 let defacingPreflightLoadToken = 0;
+let lastDefacingVariantSelection = null;
+
+function getDefacingVariantCheckboxes() {
+    return Array.from(document.querySelectorAll('.export-defacing-variant-filter'));
+}
+
+function getCheckedDefacingVariantKeys() {
+    return getDefacingVariantCheckboxes()
+        .filter((checkbox) => checkbox.checked)
+        .map((checkbox) => String(checkbox.value || '').trim())
+        .filter((value) => value.length > 0);
+}
+
+function getAllDefacingVariantKeys() {
+    return getDefacingVariantCheckboxes()
+        .map((checkbox) => String(checkbox.value || '').trim())
+        .filter((value) => value.length > 0);
+}
+
+function setDefacingVariantFiltersChecked(checked) {
+    const desiredState = Boolean(checked);
+    getDefacingVariantCheckboxes().forEach((checkbox) => {
+        checkbox.checked = desiredState;
+    });
+    const selected = getCheckedDefacingVariantKeys();
+    lastDefacingVariantSelection = selected.length ? new Set(selected) : null;
+}
+
+function renderDefacingVariantFilterList(availableVariants) {
+    const container = getById('exportDefacingVariantList');
+    const checkAllBtn = getById('exportDefacingCheckAllVariants');
+    const uncheckAllBtn = getById('exportDefacingUncheckAllVariants');
+    if (!container) {
+        return;
+    }
+
+    const variants = Array.isArray(availableVariants)
+        ? availableVariants
+            .filter((entry) => entry && typeof entry === 'object')
+            .map((entry) => ({
+                key: String(entry.key || '').trim(),
+                label: String(entry.label || '').trim(),
+                count: Number(entry.count || 0),
+            }))
+            .filter((entry) => entry.key.length > 0 && entry.label.length > 0)
+        : [];
+
+    if (!variants.length) {
+        setHtml(container, '<span class="text-muted small">No anatomical scan variants detected.</span>');
+        if (checkAllBtn) {
+            checkAllBtn.disabled = true;
+        }
+        if (uncheckAllBtn) {
+            uncheckAllBtn.disabled = true;
+        }
+        lastDefacingVariantSelection = null;
+        return;
+    }
+
+    if (checkAllBtn) {
+        checkAllBtn.disabled = false;
+    }
+    if (uncheckAllBtn) {
+        uncheckAllBtn.disabled = false;
+    }
+
+    const existingSelection = new Set(getCheckedDefacingVariantKeys());
+    const rememberedSelection = lastDefacingVariantSelection instanceof Set
+        ? new Set(Array.from(lastDefacingVariantSelection))
+        : null;
+    const preferredSelection = existingSelection.size
+        ? existingSelection
+        : rememberedSelection;
+
+    const hasPreferredMatch = preferredSelection
+        ? variants.some((entry) => preferredSelection.has(entry.key))
+        : false;
+
+    const html = variants.map((entry, index) => {
+        const inputId = `export_defacing_variant_${index}_${entry.key.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        const checked = hasPreferredMatch ? preferredSelection.has(entry.key) : true;
+        const countLabel = Number.isFinite(entry.count) && entry.count > 0
+            ? ` <span class="text-muted">(${entry.count})</span>`
+            : '';
+        return `<div class="form-check form-check-sm">
+            <input class="form-check-input export-defacing-variant-filter" type="checkbox" id="${inputId}" value="${escapeHtml(entry.key)}" ${checked ? 'checked' : ''}>
+            <label class="form-check-label small" for="${inputId}">${escapeHtml(entry.label)}${countLabel}</label>
+        </div>`;
+    }).join('');
+
+    setHtml(container, html);
+    const selected = getCheckedDefacingVariantKeys();
+    lastDefacingVariantSelection = selected.length ? new Set(selected) : null;
+}
+
+function getSelectedDefacingVariantPayload() {
+    const allVariantKeys = getAllDefacingVariantKeys();
+    if (!allVariantKeys.length) {
+        return { selectedVariants: null, errorMessage: '' };
+    }
+
+    const selectedVariantKeys = getCheckedDefacingVariantKeys();
+    if (!selectedVariantKeys.length) {
+        return {
+            selectedVariants: [],
+            errorMessage: 'Select at least one anatomical scan variant for defacing checks.',
+        };
+    }
+
+    if (selectedVariantKeys.length === allVariantKeys.length) {
+        return { selectedVariants: null, errorMessage: '' };
+    }
+
+    return {
+        selectedVariants: selectedVariantKeys,
+        errorMessage: '',
+    };
+}
 
 function resetDefacingUiState() {
     const controls = getById('exportDefacingControls');
@@ -36,6 +154,9 @@ function resetDefacingUiState() {
     const report = getById('exportDefacingReport');
     const checkBtn = getById('exportCheckDefacing');
     const runBtn = getById('exportRunDefacing');
+    const variantList = getById('exportDefacingVariantList');
+    const checkAllBtn = getById('exportDefacingCheckAllVariants');
+    const uncheckAllBtn = getById('exportDefacingUncheckAllVariants');
 
     if (controls) {
         controls.style.display = 'none';
@@ -55,6 +176,16 @@ function resetDefacingUiState() {
         runBtn.disabled = true;
         runBtn.title = '';
     }
+    if (variantList) {
+        setHtml(variantList, '<span class="text-muted small">Loading anatomical scan variants...</span>');
+    }
+    if (checkAllBtn) {
+        checkAllBtn.disabled = true;
+    }
+    if (uncheckAllBtn) {
+        uncheckAllBtn.disabled = true;
+    }
+    lastDefacingVariantSelection = null;
 }
 
 function hasAnatomicalModality(modalities) {
@@ -123,6 +254,7 @@ async function refreshDefacingPreflight({ projectPath, modalities = [] }) {
             return;
         }
 
+        renderDefacingVariantFilterList(preflight.available_scan_variants || []);
         renderDefacingPreflightStatus(preflight);
         const canRun = Boolean(preflight.can_run_defacing);
         if (runBtn) {
@@ -273,9 +405,12 @@ function renderDefacingTable(reportDiv, counts, report) {
 }
 
 function buildFolderExportRequestData(currentProjectPath) {
+    const scrubGroups = getSelectedMriScrubGroups();
     return {
         project_path: currentProjectPath,
         output_folder: (getById('exportOutputFolder')?.value || '').trim() || null,
+        scrub_mri_json: getById('exportScrubMriJson')?.checked || false,
+        scrub_mri_json_groups: scrubGroups.length ? scrubGroups : null,
         include_derivatives: getById('exportDerivatives')?.checked || false,
         include_sourcedata: getById('exportSourcedata')?.checked || false,
         include_code: getById('exportCode')?.checked || false,
@@ -608,10 +743,20 @@ function updateExportSnapshotUi() {
 }
 
 async function fetchDefacingSummary(projectPath) {
+    const variantSelection = getSelectedDefacingVariantPayload();
+    if (variantSelection.errorMessage) {
+        throw new Error(variantSelection.errorMessage);
+    }
+
+    const requestPayload = { project_path: projectPath };
+    if (Array.isArray(variantSelection.selectedVariants)) {
+        requestPayload.selected_variants = variantSelection.selectedVariants;
+    }
+
     const resp = await fetchWithApiFallback('/api/projects/export/defacing-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ project_path: projectPath })
+        body: JSON.stringify(requestPayload)
     });
     const result = await resp.json();
     if (!resp.ok || result.error) {
@@ -1298,6 +1443,34 @@ export function initExportForm() {
         });
     }
 
+    const checkAllDefacingVariantsBtn = getById('exportDefacingCheckAllVariants');
+    if (checkAllDefacingVariantsBtn) {
+        checkAllDefacingVariantsBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            setDefacingVariantFiltersChecked(true);
+        });
+    }
+
+    const uncheckAllDefacingVariantsBtn = getById('exportDefacingUncheckAllVariants');
+    if (uncheckAllDefacingVariantsBtn) {
+        uncheckAllDefacingVariantsBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            setDefacingVariantFiltersChecked(false);
+        });
+    }
+
+    const defacingVariantList = getById('exportDefacingVariantList');
+    if (defacingVariantList) {
+        defacingVariantList.addEventListener('change', (event) => {
+            const target = event.target;
+            if (!target || !target.classList || !target.classList.contains('export-defacing-variant-filter')) {
+                return;
+            }
+            const selected = getCheckedDefacingVariantKeys();
+            lastDefacingVariantSelection = selected.length ? new Set(selected) : null;
+        });
+    }
+
     const checkAnnexAvailabilityBtn = getById('exportCheckAnnexAvailability');
     if (checkAnnexAvailabilityBtn) {
         checkAnnexAvailabilityBtn.addEventListener('click', async () => {
@@ -1335,6 +1508,16 @@ export function initExportForm() {
             const projectPath = resolveCurrentProjectPath();
             if (!projectPath) { alert('No project is currently loaded'); return; }
             const reportDiv = getById('exportDefacingReport');
+
+            const variantSelection = getSelectedDefacingVariantPayload();
+            if (variantSelection.errorMessage) {
+                if (reportDiv) {
+                    reportDiv.style.display = 'block';
+                    reportDiv.innerHTML = `<div class="alert alert-warning py-1 mb-0">${escapeHtml(variantSelection.errorMessage)}</div>`;
+                }
+                return;
+            }
+
             checkDefacingBtn.disabled = true;
             checkDefacingBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Checking…';
             try {
@@ -1359,6 +1542,14 @@ export function initExportForm() {
             }
 
             const reportDiv = getById('exportDefacingReport');
+            const variantSelection = getSelectedDefacingVariantPayload();
+            if (variantSelection.errorMessage) {
+                if (reportDiv) {
+                    reportDiv.style.display = 'block';
+                    reportDiv.innerHTML = `<div class="alert alert-warning py-1 mb-0">${escapeHtml(variantSelection.errorMessage)}</div>`;
+                }
+                return;
+            }
 
             try {
                 const preflight = await fetchDefacingPreflight(projectPath);
@@ -1384,9 +1575,14 @@ export function initExportForm() {
                 return;
             }
 
-            const proceed = window.confirm(
-                'Run pydeface now? This overwrites anatomical NIfTI files in the current project.'
+            const selectedRepositoryMode = normalizeExportRepositoryMode(
+                getById('exportRepositoryMode')?.value
             );
+            const outputFolder = (getById('exportOutputFolder')?.value || '').trim() || null;
+            const preservingMode = selectedRepositoryMode === 'datalad_preserving';
+            const proceed = window.confirm(preservingMode
+                ? 'Run pydeface for export copy now? PRISM will create a DataLad-preserving export copy, run pydeface via DataLad in that copy, and keep the current project unchanged.'
+                : 'Run pydeface for export copy now? PRISM will copy selected anatomical scans to the export target and deface that copy. The current project stays unchanged.');
             if (!proceed) {
                 return;
             }
@@ -1399,7 +1595,14 @@ export function initExportForm() {
                 const resp = await fetchWithApiFallback('/api/projects/export/deface', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ project_path: projectPath }),
+                    body: JSON.stringify({
+                        project_path: projectPath,
+                        repository_mode: selectedRepositoryMode,
+                        output_folder: outputFolder,
+                        selected_variants: Array.isArray(variantSelection.selectedVariants)
+                            ? variantSelection.selectedVariants
+                            : null,
+                    }),
                 });
                 const result = await resp.json().catch(() => ({}));
                 if (!resp.ok || !result.success) {
@@ -1411,9 +1614,15 @@ export function initExportForm() {
                 renderDefacingTable(reportDiv, afterCounts, afterReport);
 
                 const defacingCounts = result.defacing?.counts || {};
+                const targetMode = String(result.target_mode || '');
+                const targetPath = String(result.target_path || '');
+                const targetSummary = targetMode === 'export_copy'
+                    ? `Target copy: ${escapeHtml(targetPath || 'created in export output folder')}. Source project unchanged.`
+                    : 'Source project unchanged.';
                 const summaryHtml = `
                     <div class="alert alert-info py-1 mb-2">
-                        ${escapeHtml(result.message || 'Defacing finished.')} Defaced: ${Number(defacingCounts.defaced || 0)}, already defaced: ${Number(defacingCounts.already_defaced || 0)}, failed: ${Number(defacingCounts.failed || 0)}.
+                        ${escapeHtml(result.message || 'Defacing finished.')} Defaced: ${Number(defacingCounts.defaced || 0)}, already defaced: ${Number(defacingCounts.already_defaced || 0)}, failed: ${Number(defacingCounts.failed || 0)}.<br>
+                        ${targetSummary}
                     </div>`;
                 if (reportDiv) {
                     reportDiv.innerHTML = summaryHtml + reportDiv.innerHTML;
@@ -1640,6 +1849,15 @@ async function handlePlainFolderExport(e) {
 
     try {
         const data = buildFolderExportRequestData(currentProjectPath);
+        if (data.scrub_mri_json && !shouldScrubAllMriTags()) {
+            const selectedScrubGroups = Array.isArray(data.scrub_mri_json_groups)
+                ? data.scrub_mri_json_groups
+                : [];
+            if (!selectedScrubGroups.length) {
+                throw new Error('Select at least one MRI tag group or enable scrub-all mode.');
+            }
+        }
+
         const response = await fetchWithApiFallback('/api/projects/export/folder', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1796,6 +2014,17 @@ async function runProjectExport({
 
     if (data.scrub_mri_json) {
         const defacingConfirmationMode = getSelectedDefacingConfirmationMode();
+        const variantSelection = getSelectedDefacingVariantPayload();
+        if (variantSelection.errorMessage) {
+            if (progressDiv) hide(progressDiv);
+            if (resultDiv) {
+                show(resultDiv);
+                setHtml(resultDiv, `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>${escapeHtml(variantSelection.errorMessage)}</div>`);
+            }
+            setButtonLoading(button, false, null, originalText);
+            return;
+        }
+
         try {
             if (statusText) {
                 statusText.textContent = 'Checking defacing status before export...';

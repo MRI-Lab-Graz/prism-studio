@@ -16,6 +16,9 @@ export function initOpenProjectController({
 }) {
     const DATALAD_PREFERENCES_NAMESPACE = 'datalad';
     const DATALAD_DEFAULT_COMMIT_MESSAGE = 'Checkpoint PRISM project changes';
+    const DATALAD_TEXT_POLICY_COMMIT_MESSAGE = 'Reapply DataLad text-file tracking policy';
+    const DATALAD_UNANNEX_COMMIT_MESSAGE = 'Unannex selected text patterns for Git tracking';
+    const DATALAD_UNANNEX_DEFAULT_PATTERNS = ['*.tsv', '*.json', '*.csv'];
     const DATALAD_DOCS_URL = 'https://www.datalad.org/';
     const DATALAD_INSTALL_COMMAND = 'uv tool install datalad git-annex';
     const DATALAD_SAVE_PROGRESS_STEPS = [
@@ -344,10 +347,12 @@ export function initOpenProjectController({
         const stateBadge = document.getElementById('projectBoxDataladStateBadge');
         const enableButton = document.getElementById('projectBoxDataladEnableBtn');
         const saveButton = document.getElementById('projectBoxDataladSaveBtn');
+        const policyButton = document.getElementById('projectBoxDataladPolicyBtn');
+        const unannexButton = document.getElementById('projectBoxDataladUnannexBtn');
         const progressWrap = document.getElementById('projectBoxDataladProgressWrap');
         const progressBar = document.getElementById('projectBoxDataladProgressBar');
         const progressLabel = document.getElementById('projectBoxDataladProgressLabel');
-        if (!status || !hint || !stateBadge || !enableButton || !saveButton || !progressWrap || !progressBar || !progressLabel) {
+        if (!status || !hint || !stateBadge || !enableButton || !saveButton || !policyButton || !unannexButton || !progressWrap || !progressBar || !progressLabel) {
             return;
         }
 
@@ -356,6 +361,10 @@ export function initOpenProjectController({
         stateBadge.className = 'badge rounded-pill';
         enableButton.classList.remove('d-none');
         enableButton.innerHTML = '<i class="fas fa-plus me-1"></i>Enable DataLad';
+        policyButton.disabled = true;
+        unannexButton.disabled = true;
+        policyButton.title = 'Current project is not a DataLad dataset';
+        unannexButton.title = 'Current project is not a DataLad dataset';
 
         if (state.enabled && state.subdatasetsTotalCount > 0) {
             progressWrap.classList.remove('d-none');
@@ -384,16 +393,23 @@ export function initOpenProjectController({
                 enableButton.title = 'Repair or complete DataLad setup for the current project';
             } else {
                 if (state.textPolicyMissingCount > 0) {
-                    hint.textContent = `DataLad structure is complete, but text-file Git tracking policy is missing in ${state.textPolicyMissingCount} dataset(s). Use Save DataLad Snapshot to apply policy and create a checkpoint.`;
+                    hint.textContent = `DataLad structure is complete, but text-file Git tracking policy is missing in ${state.textPolicyMissingCount} dataset(s). Use Reapply Text-File Policy to sync .gitattributes across nested datasets.`;
                 } else {
                     hint.textContent = 'DataLad structure is complete for this project. Use Save DataLad Snapshot for an explicit checkpoint.';
                 }
                 enableButton.innerHTML = '<i class="fas fa-check me-1"></i>DataLad Structure Complete';
                 enableButton.disabled = true;
                 enableButton.title = state.textPolicyMissingCount > 0
-                    ? 'Use Save DataLad Snapshot to apply text-file policy'
+                    ? 'Use Reapply Text-File Policy to apply text-file policy'
                     : 'No missing nested datasets to repair';
             }
+
+            policyButton.disabled = false;
+            policyButton.title = 'Reapply DataLad text-file tracking policy across nested datasets';
+            unannexButton.disabled = !state.annexAvailable;
+            unannexButton.title = state.annexAvailable
+                ? 'Unannex selected text-file patterns recursively'
+                : 'git-annex executable not available';
         } else if (state.enabled) {
             stateBadge.classList.add('bg-warning', 'text-dark');
             stateBadge.textContent = 'Tracked';
@@ -401,6 +417,10 @@ export function initOpenProjectController({
             enableButton.disabled = true;
             enableButton.innerHTML = '<i class="fas fa-screwdriver-wrench me-1"></i>Repair DataLad Structure';
             enableButton.title = 'DataLad executable not available';
+            policyButton.disabled = true;
+            unannexButton.disabled = true;
+            policyButton.title = 'DataLad executable not available';
+            unannexButton.title = 'DataLad executable not available';
         } else {
             stateBadge.classList.add('bg-light', 'text-muted', 'border');
             stateBadge.textContent = 'Not tracked';
@@ -415,6 +435,10 @@ export function initOpenProjectController({
                 : (state.available && !state.annexAvailable
                     ? 'git-annex not available'
                     : 'DataLad executable not available');
+            policyButton.disabled = true;
+            unannexButton.disabled = true;
+            policyButton.title = 'Enable DataLad first';
+            unannexButton.title = 'Enable DataLad first';
         }
 
         saveButton.disabled = !state.canSave;
@@ -432,6 +456,8 @@ export function initOpenProjectController({
         if (operationState.active) {
             enableButton.disabled = true;
             saveButton.disabled = true;
+            policyButton.disabled = true;
+            unannexButton.disabled = true;
         }
     }
 
@@ -555,7 +581,219 @@ export function initOpenProjectController({
         if (operationState?.source === 'project_box_save') {
             return 'A DataLad save is already running. Please wait for it to finish.';
         }
+        if (operationState?.source === 'project_box_policy_apply') {
+            return 'A DataLad text-policy action is already running. Please wait for it to finish.';
+        }
+        if (operationState?.source === 'project_box_unannex_text') {
+            return 'A DataLad text unannex action is already running. Please wait for it to finish.';
+        }
         return 'Another DataLad action is already running. Please wait for it to finish.';
+    }
+
+    function normalizeDataladUnannexPatternsInput(rawInput) {
+        const seen = new Set();
+        const normalized = [];
+        String(rawInput || '')
+            .replaceAll(';', ',')
+            .replaceAll('\n', ',')
+            .split(',')
+            .forEach((part) => {
+                const pattern = String(part || '').trim();
+                if (!pattern || seen.has(pattern)) {
+                    return;
+                }
+                seen.add(pattern);
+                normalized.push(pattern);
+            });
+        return normalized;
+    }
+
+    async function runProjectBoxApplyTextPolicy(currentPath) {
+        const normalizedPath = String(currentPath || '').trim();
+        if (!normalizedPath) {
+            setProjectBoxDataladFeedback('Load a project first.', 'danger');
+            window.setNavbarDataladFeedback?.('Load a project first.', 'danger', 'Error');
+            return false;
+        }
+
+        const operationState = getDataladOperationState();
+        if (operationState.active) {
+            const lockMessage = getDataladLockMessage(operationState);
+            setProjectBoxDataladFeedback(lockMessage, 'danger');
+            window.setNavbarDataladFeedback?.(lockMessage, 'danger', 'Busy');
+            return false;
+        }
+
+        const enableButton = document.getElementById('projectBoxDataladEnableBtn');
+        const saveButton = document.getElementById('projectBoxDataladSaveBtn');
+        const policyButton = document.getElementById('projectBoxDataladPolicyBtn');
+        const unannexButton = document.getElementById('projectBoxDataladUnannexBtn');
+        const originalPolicyMarkup = policyButton?.innerHTML || '';
+        const originalEnableDisabled = Boolean(enableButton?.disabled);
+        const originalSaveDisabled = Boolean(saveButton?.disabled);
+        const originalUnannexDisabled = Boolean(unannexButton?.disabled);
+
+        if (policyButton) {
+            policyButton.disabled = true;
+            policyButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Applying...';
+        }
+        if (enableButton) {
+            enableButton.disabled = true;
+        }
+        if (saveButton) {
+            saveButton.disabled = true;
+        }
+        if (unannexButton) {
+            unannexButton.disabled = true;
+        }
+
+        setProjectBoxDataladFeedback('Reapplying DataLad text-file policy across nested datasets...', 'muted');
+        window.setNavbarDataladFeedback?.('Reapplying DataLad text-file policy...', 'muted', 'Running');
+        setDataladOperationState(true, 'project_box_policy_apply');
+
+        try {
+            const response = await fetchWithApiFallback('/api/projects/datalad/text-policy/apply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: DATALAD_TEXT_POLICY_COMMIT_MESSAGE }),
+            });
+            const data = await response.json().catch(() => ({ success: false, error: 'Invalid server response.' }));
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || data.message || 'Could not reapply DataLad text-file policy.');
+            }
+
+            applyProjectDataladResponse(data);
+            const successMessage = data.message || 'DataLad text-file policy reapplied.';
+            setProjectBoxDataladFeedback(successMessage, 'success');
+            window.setNavbarDataladFeedback?.(successMessage, 'success', 'Applied');
+            return true;
+        } catch (error) {
+            const errorMessage = error.message || 'Could not reapply DataLad text-file policy.';
+            setProjectBoxDataladFeedback(errorMessage, 'danger');
+            window.setNavbarDataladFeedback?.(errorMessage, 'danger', 'Error');
+            return false;
+        } finally {
+            setDataladOperationState(false);
+            if (policyButton) {
+                policyButton.innerHTML = originalPolicyMarkup;
+            }
+            if (enableButton) {
+                enableButton.disabled = originalEnableDisabled;
+            }
+            if (saveButton) {
+                saveButton.disabled = originalSaveDisabled;
+            }
+            if (unannexButton) {
+                unannexButton.disabled = originalUnannexDisabled;
+            }
+            renderProjectBoxDataladState(getCurrentProjectState().datalad, normalizedPath);
+        }
+    }
+
+    async function runProjectBoxUnannexTextPatterns(currentPath) {
+        const normalizedPath = String(currentPath || '').trim();
+        if (!normalizedPath) {
+            setProjectBoxDataladFeedback('Load a project first.', 'danger');
+            window.setNavbarDataladFeedback?.('Load a project first.', 'danger', 'Error');
+            return false;
+        }
+
+        const operationState = getDataladOperationState();
+        if (operationState.active) {
+            const lockMessage = getDataladLockMessage(operationState);
+            setProjectBoxDataladFeedback(lockMessage, 'danger');
+            window.setNavbarDataladFeedback?.(lockMessage, 'danger', 'Busy');
+            return false;
+        }
+
+        const input = window.prompt(
+            'Text-file patterns to unannex (comma separated)',
+            DATALAD_UNANNEX_DEFAULT_PATTERNS.join(', ')
+        );
+        if (input === null) {
+            return false;
+        }
+
+        const normalizedPatterns = normalizeDataladUnannexPatternsInput(input);
+        if (!normalizedPatterns.length) {
+            setProjectBoxDataladFeedback('Enter at least one text-file pattern (for example: *.tsv, *.json).', 'danger');
+            window.setNavbarDataladFeedback?.('Enter at least one text-file pattern.', 'danger', 'Error');
+            return false;
+        }
+
+        const enableButton = document.getElementById('projectBoxDataladEnableBtn');
+        const saveButton = document.getElementById('projectBoxDataladSaveBtn');
+        const policyButton = document.getElementById('projectBoxDataladPolicyBtn');
+        const unannexButton = document.getElementById('projectBoxDataladUnannexBtn');
+        const originalUnannexMarkup = unannexButton?.innerHTML || '';
+        const originalEnableDisabled = Boolean(enableButton?.disabled);
+        const originalSaveDisabled = Boolean(saveButton?.disabled);
+        const originalPolicyDisabled = Boolean(policyButton?.disabled);
+
+        if (unannexButton) {
+            unannexButton.disabled = true;
+            unannexButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Unannexing...';
+        }
+        if (enableButton) {
+            enableButton.disabled = true;
+        }
+        if (saveButton) {
+            saveButton.disabled = true;
+        }
+        if (policyButton) {
+            policyButton.disabled = true;
+        }
+
+        setProjectBoxDataladFeedback(`Unannexing patterns: ${normalizedPatterns.join(', ')}`, 'muted');
+        window.setNavbarDataladFeedback?.('Unannexing selected text patterns...', 'muted', 'Running');
+        setDataladOperationState(true, 'project_box_unannex_text');
+
+        try {
+            const response = await fetchWithApiFallback('/api/projects/datalad/unannex-text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    patterns: normalizedPatterns,
+                    message: DATALAD_UNANNEX_COMMIT_MESSAGE,
+                }),
+            });
+            const data = await response.json().catch(() => ({ success: false, error: 'Invalid server response.' }));
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || data.message || 'Could not unannex selected text patterns.');
+            }
+
+            applyProjectDataladResponse(data);
+            const failureCount = Number.parseInt(String(data.failure_count ?? ''), 10) || 0;
+            const successMessage = data.message || 'Unannex action completed.';
+            if (failureCount > 0) {
+                setProjectBoxDataladFeedback(successMessage, 'muted');
+                window.setNavbarDataladFeedback?.(successMessage, 'muted', 'Completed with warnings');
+            } else {
+                setProjectBoxDataladFeedback(successMessage, 'success');
+                window.setNavbarDataladFeedback?.(successMessage, 'success', 'Completed');
+            }
+            return true;
+        } catch (error) {
+            const errorMessage = error.message || 'Could not unannex selected text patterns.';
+            setProjectBoxDataladFeedback(errorMessage, 'danger');
+            window.setNavbarDataladFeedback?.(errorMessage, 'danger', 'Error');
+            return false;
+        } finally {
+            setDataladOperationState(false);
+            if (unannexButton) {
+                unannexButton.innerHTML = originalUnannexMarkup;
+            }
+            if (enableButton) {
+                enableButton.disabled = originalEnableDisabled;
+            }
+            if (saveButton) {
+                saveButton.disabled = originalSaveDisabled;
+            }
+            if (policyButton) {
+                policyButton.disabled = originalPolicyDisabled;
+            }
+            renderProjectBoxDataladState(getCurrentProjectState().datalad, normalizedPath);
+        }
     }
 
     function confirmEnableDatalad(currentPath) {
@@ -944,6 +1182,24 @@ export function initOpenProjectController({
                 }
             });
         }
+
+        const policyButton = document.getElementById('projectBoxDataladPolicyBtn');
+        if (policyButton && policyButton.dataset.bound !== '1') {
+            policyButton.dataset.bound = '1';
+            policyButton.addEventListener('click', async function() {
+                const currentPath = String(getCurrentProjectState().path || '').trim();
+                await runProjectBoxApplyTextPolicy(currentPath);
+            });
+        }
+
+        const unannexButton = document.getElementById('projectBoxDataladUnannexBtn');
+        if (unannexButton && unannexButton.dataset.bound !== '1') {
+            unannexButton.dataset.bound = '1';
+            unannexButton.addEventListener('click', async function() {
+                const currentPath = String(getCurrentProjectState().path || '').trim();
+                await runProjectBoxUnannexTextPatterns(currentPath);
+            });
+        }
     }
 
     function renderProjectQuickSummary(summary) {
@@ -1048,6 +1304,12 @@ export function initOpenProjectController({
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-success" id="projectBoxDataladSaveBtn">
                                 <i class="fas fa-floppy-disk me-1"></i>Save DataLad Snapshot
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="projectBoxDataladPolicyBtn">
+                                <i class="fas fa-sliders me-1"></i>Reapply Text-File Policy
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="projectBoxDataladUnannexBtn">
+                                <i class="fas fa-file-circle-minus me-1"></i>Unannex Text Patterns
                             </button>
                         </div>
                     </div>
