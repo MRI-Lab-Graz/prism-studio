@@ -159,6 +159,61 @@ def test_emit_backend_request_action_includes_project_folder_export_command(caps
     ) in captured
 
 
+def test_build_terminal_command_for_project_defacing_report_endpoint():
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/projects/export/defacing-report",
+        endpoint="projects_export.export_defacing_report",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/projects/export/defacing-report",
+        method="POST",
+        json={
+            "project_path": "/tmp/study",
+            "selected_variants": ["acq:mprage|suffix:t1w"],
+        },
+    ):
+        cmd = _build_terminal_command(request)
+
+    expected_project = str(Path("/tmp/study").resolve(strict=False))
+
+    assert cmd == (
+        "python prism.py projects defacing-report "
+        f"--project {expected_project} --selected-variants 'acq:mprage|suffix:t1w'"
+    )
+
+
+def test_build_terminal_command_for_project_deface_endpoint():
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/projects/export/deface",
+        endpoint="projects_export.export_deface_anatomical_scans",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/projects/export/deface",
+        method="POST",
+        json={"project_path": "/tmp/study"},
+    ):
+        cmd = _build_terminal_command(request)
+
+    expected_project = str(Path("/tmp/study").resolve(strict=False))
+    assert cmd == f"python prism.py projects deface --project {expected_project}"
+
+
 def test_build_terminal_command_for_survey_convert_endpoint():
     app = Flask(__name__)
 
@@ -1647,6 +1702,66 @@ def test_build_terminal_command_for_projects_datalad_enable_migrates_parent_trac
         f"datalad -C {resolved_project_path} create -d . --force derivatives && "
         f"datalad -C {resolved_project_path / 'derivatives'} save -m 'PRISM: Nested structure conversion (initialize \"derivatives\")' && "
         f"datalad -C {resolved_project_path} save -m 'Enable DataLad for PRISM project'"
+    )
+
+
+def test_build_terminal_command_for_projects_datalad_text_policy_apply():
+    app = Flask(__name__)
+    app.secret_key = "test-secret"  # pragma: allowlist secret
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/projects/datalad/text-policy/apply",
+        endpoint="projects.apply_datalad_text_policy",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/projects/datalad/text-policy/apply",
+        method="POST",
+        json={"message": "Reapply DataLad text-file tracking policy"},
+    ):
+        session["current_project_path"] = "/tmp/demo_project"
+        cmd = _build_terminal_command(request)
+
+    assert (
+        cmd
+        == "datalad -C /private/tmp/demo_project save -r -m 'Reapply DataLad text-file tracking policy'"
+    )
+
+
+def test_build_terminal_command_for_projects_datalad_unannex_text_patterns():
+    app = Flask(__name__)
+    app.secret_key = "test-secret"  # pragma: allowlist secret
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/projects/datalad/unannex-text",
+        endpoint="projects.unannex_datalad_text_patterns",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/projects/datalad/unannex-text",
+        method="POST",
+        json={
+            "patterns": ["*.tsv", "*.json"],
+            "message": "Unannex selected text patterns for Git tracking",
+        },
+    ):
+        session["current_project_path"] = "/tmp/demo_project"
+        cmd = _build_terminal_command(request)
+
+    assert (
+        cmd
+        == "git -C /private/tmp/demo_project annex unannex --include '*.tsv' --include '*.json' --all && "
+        "datalad -C /private/tmp/demo_project save -r -m 'Unannex selected text patterns for Git tracking'"
     )
 
 

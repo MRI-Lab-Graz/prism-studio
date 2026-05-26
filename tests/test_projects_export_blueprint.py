@@ -185,8 +185,17 @@ def test_projects_export_deface_route_returns_backend_summary(tmp_path):
     project_dir = tmp_path / "study"
     project_dir.mkdir(parents=True, exist_ok=True)
     (project_dir / "project.json").write_text("{}", encoding="utf-8")
+    copy_target = tmp_path / "study_defacing_export"
 
     with patch(
+        "src.mri_json_scrubber.prepare_defacing_export_copy",
+        return_value={
+            "success": True,
+            "target_path": str(copy_target),
+            "copied_nifti_files": 1,
+            "copied_sidecars": 1,
+        },
+    ), patch(
         "src.mri_json_scrubber.deface_anatomical_scans",
         return_value={
             "success": True,
@@ -215,6 +224,263 @@ def test_projects_export_deface_route_returns_backend_summary(tmp_path):
     assert payload.get("success") is True
     assert payload.get("defacing", {}).get("counts", {}).get("defaced") == 1
     assert payload.get("report_counts", {}).get("defaced") == 1
+    assert payload.get("target_mode") == "export_copy"
+    assert payload.get("target_path") == str(copy_target.resolve(strict=False))
+
+
+def test_projects_export_defacing_report_route_forwards_selected_variants(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    with patch(
+        "src.mri_json_scrubber.build_defacing_report",
+        return_value=[],
+    ) as mock_report:
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/defacing-report",
+                json={
+                    "project_path": str(project_dir),
+                    "selected_variants": ["acq:mprage|suffix:t1w"],
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("success") is True
+
+    args, kwargs = mock_report.call_args
+    assert args[0] == project_dir.resolve(strict=False)
+    assert kwargs.get("selected_variants") == {"acq:mprage|suffix:t1w"}
+
+
+def test_projects_export_deface_route_forwards_selected_variants(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+    copy_target = tmp_path / "study_defacing_export"
+
+    with patch(
+        "src.mri_json_scrubber.prepare_defacing_export_copy",
+        return_value={
+            "success": True,
+            "target_path": str(copy_target),
+            "copied_nifti_files": 1,
+            "copied_sidecars": 0,
+        },
+    ) as mock_prepare, patch(
+        "src.mri_json_scrubber.deface_anatomical_scans",
+        return_value={
+            "success": True,
+            "message": "Defacing completed successfully.",
+            "counts": {"total": 0, "defaced": 0, "already_defaced": 0, "failed": 0, "skipped": 0},
+            "items": [],
+        },
+    ) as mock_deface, patch(
+        "src.mri_json_scrubber.build_defacing_report",
+        return_value=[],
+    ) as mock_report:
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/deface",
+                json={
+                    "project_path": str(project_dir),
+                    "selected_variants": ["acq:mprage|suffix:t1w"],
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("success") is True
+
+    deface_args, deface_kwargs = mock_deface.call_args
+    assert deface_args[0] == copy_target.resolve(strict=False)
+    assert deface_kwargs.get("selected_variants") == {"acq:mprage|suffix:t1w"}
+
+    report_args, report_kwargs = mock_report.call_args
+    assert report_args[0] == copy_target.resolve(strict=False)
+    assert report_kwargs.get("selected_variants") == {"acq:mprage|suffix:t1w"}
+
+    prepare_args, prepare_kwargs = mock_prepare.call_args
+    assert prepare_args[0] == project_dir.resolve(strict=False)
+    assert prepare_kwargs.get("selected_variants") == {"acq:mprage|suffix:t1w"}
+    assert prepare_kwargs.get("preserve_datalad_metadata") is False
+
+
+def test_projects_export_deface_route_uses_export_copy_for_datalad_free_mode(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+    output_dir = tmp_path / "exports"
+    copy_target = output_dir / "study_defacing_export"
+
+    with patch(
+        "src.project_manager.ProjectManager.get_datalad_status",
+        return_value={"enabled": True, "available": True},
+    ), patch(
+        "src.mri_json_scrubber.prepare_defacing_export_copy",
+        return_value={
+            "success": True,
+            "target_path": str(copy_target),
+            "copied_nifti_files": 1,
+            "copied_sidecars": 1,
+        },
+    ) as mock_prepare, patch(
+        "src.mri_json_scrubber.deface_anatomical_scans",
+        return_value={
+            "success": True,
+            "message": "Defacing completed successfully.",
+            "counts": {"total": 1, "defaced": 1, "already_defaced": 0, "failed": 0, "skipped": 0},
+            "items": [],
+        },
+    ) as mock_deface, patch(
+        "src.mri_json_scrubber.build_defacing_report",
+        return_value=[],
+    ):
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/deface",
+                json={
+                    "project_path": str(project_dir),
+                    "repository_mode": "datalad_free",
+                    "output_folder": str(output_dir),
+                    "selected_variants": ["acq:mprage|suffix:t1w"],
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("success") is True
+    assert payload.get("target_mode") == "export_copy"
+    assert payload.get("source_project_path") == str(project_dir.resolve(strict=False))
+    assert payload.get("target_path") == str(copy_target.resolve(strict=False))
+
+    prepare_args, prepare_kwargs = mock_prepare.call_args
+    assert prepare_args[0] == project_dir.resolve(strict=False)
+    assert prepare_args[1] == output_dir.resolve(strict=False)
+    assert prepare_kwargs.get("selected_variants") == {"acq:mprage|suffix:t1w"}
+    assert prepare_kwargs.get("preserve_datalad_metadata") is False
+
+    deface_args, deface_kwargs = mock_deface.call_args
+    assert deface_args[0] == copy_target.resolve(strict=False)
+    assert deface_kwargs.get("selected_variants") == {"acq:mprage|suffix:t1w"}
+
+
+def test_projects_export_deface_route_uses_export_copy_when_datalad_not_enabled(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+    copy_target = tmp_path / "study_defacing_export"
+
+    with patch(
+        "src.project_manager.ProjectManager.get_datalad_status",
+        return_value={"enabled": False, "available": True},
+    ), patch(
+        "src.mri_json_scrubber.prepare_defacing_export_copy",
+        return_value={
+            "success": True,
+            "target_path": str(copy_target),
+            "copied_nifti_files": 1,
+            "copied_sidecars": 0,
+        },
+    ) as mock_prepare, patch(
+        "src.mri_json_scrubber.deface_anatomical_scans",
+        return_value={
+            "success": True,
+            "message": "Defacing completed successfully.",
+            "counts": {"total": 1, "defaced": 1, "already_defaced": 0, "failed": 0, "skipped": 0},
+            "items": [],
+        },
+    ) as mock_deface, patch(
+        "src.mri_json_scrubber.build_defacing_report",
+        return_value=[],
+    ):
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/deface",
+                json={
+                    "project_path": str(project_dir),
+                    "repository_mode": "datalad_preserving",
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("success") is True
+    assert payload.get("target_mode") == "export_copy"
+    assert payload.get("target_path") == str(copy_target.resolve(strict=False))
+    assert mock_prepare.called
+
+    prepare_args, prepare_kwargs = mock_prepare.call_args
+    assert prepare_args[0] == project_dir.resolve(strict=False)
+    assert prepare_kwargs.get("preserve_datalad_metadata") is False
+
+    deface_args, _deface_kwargs = mock_deface.call_args
+    assert deface_args[0] == copy_target.resolve(strict=False)
+
+
+def test_projects_export_deface_route_uses_datalad_preserving_copy_when_enabled(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+    output_dir = tmp_path / "exports"
+    copy_target = output_dir / "study_defacing_export"
+
+    with patch(
+        "src.project_manager.ProjectManager.get_datalad_status",
+        return_value={"enabled": True, "available": True, "executable": "/usr/bin/datalad"},
+    ), patch(
+        "src.mri_json_scrubber.prepare_defacing_export_copy",
+        return_value={
+            "success": True,
+            "target_path": str(copy_target),
+            "copied_nifti_files": 1,
+            "copied_sidecars": 1,
+        },
+    ) as mock_prepare, patch(
+        "src.mri_json_scrubber.deface_anatomical_scans",
+        return_value={
+            "success": True,
+            "message": "Defacing completed successfully.",
+            "counts": {"total": 1, "defaced": 1, "already_defaced": 0, "failed": 0, "skipped": 0},
+            "items": [],
+        },
+    ), patch(
+        "src.mri_json_scrubber.build_defacing_report",
+        return_value=[],
+    ):
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/deface",
+                json={
+                    "project_path": str(project_dir),
+                    "repository_mode": "datalad_preserving",
+                    "output_folder": str(output_dir),
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("success") is True
+    assert payload.get("target_mode") == "export_copy"
+    assert payload.get("target_path") == str(copy_target.resolve(strict=False))
+
+    prepare_args, prepare_kwargs = mock_prepare.call_args
+    assert prepare_args[0] == project_dir.resolve(strict=False)
+    assert prepare_args[1] == output_dir.resolve(strict=False)
+    assert prepare_kwargs.get("preserve_datalad_metadata") is True
+    assert prepare_kwargs.get("datalad_executable") == "/usr/bin/datalad"
 
 
 def test_projects_export_defacing_preflight_route_returns_status(tmp_path):
@@ -874,6 +1140,46 @@ def test_project_folder_export_route_forwards_scope_filters(tmp_path):
         exclude_acq={"dwi": {"1k20"}},
         exclude_tasks={"func": {"rest"}},
         materialize_annex_content=True,
+    )
+
+
+def test_project_folder_export_route_forwards_mri_scrub_options(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    out_dir = tmp_path / "exports"
+
+    with patch(
+        "src.project_manager.ProjectManager.export_project_to_plain_folder",
+        return_value={
+            "success": True,
+            "output_path": str(out_dir / "study_folder_export"),
+            "excluded_repository_metadata": [".datalad", ".git"],
+            "message": "ok",
+        },
+    ) as mock_export:
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/folder",
+                json={
+                    "project_path": str(project_dir),
+                    "output_folder": str(out_dir),
+                    "scrub_mri_json": True,
+                    "scrub_mri_json_groups": ["scanner_site", "timestamps"],
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("success") is True
+    mock_export.assert_called_once_with(
+        project_dir,
+        output_root=str(out_dir),
+        scrub_mri_json=True,
+        scrub_mri_json_groups={"scanner_site", "timestamps"},
     )
 
 

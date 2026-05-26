@@ -105,6 +105,29 @@ def _normalize_datalad_preference_bool(value: object, *, default: bool) -> bool:
     return bool(value)
 
 
+def _normalize_datalad_text_patterns(raw_patterns: object) -> list[str]:
+    """Normalize text-pattern payloads from JSON into a unique ordered list."""
+    if isinstance(raw_patterns, str):
+        values = [raw_patterns]
+    elif isinstance(raw_patterns, (list, tuple, set)):
+        values = [str(value or "") for value in raw_patterns]
+    else:
+        values = []
+
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        for part in (
+            value.replace(";", ",").replace("\n", ",").split(",")
+        ):
+            pattern = part.strip()
+            if not pattern or pattern in seen:
+                continue
+            seen.add(pattern)
+            normalized.append(pattern)
+    return normalized
+
+
 def _get_datalad_setup_preferences(project_path: str | None) -> dict[str, Any]:
     defaults = {
         "setup_intent": "unknown",
@@ -344,6 +367,65 @@ def enable_datalad_for_project():
 
     message = str(data.get("message") or "").strip() or "Enable DataLad for PRISM project"
     result = _project_manager.enable_datalad_for_project(project_path, message=message)
+    result["current_project"] = get_current_project()
+    if result.get("success"):
+        return jsonify(result)
+    return jsonify(result), 400
+
+
+@projects_bp.route("/api/projects/datalad/text-policy/apply", methods=["POST"])
+def apply_datalad_text_policy():
+    """Reapply DataLad text-file tracking policy for current project."""
+    current_project = get_current_project()
+    project_path = str(current_project.get("path") or "").strip()
+    if not project_path:
+        return jsonify({"success": False, "error": "No current project loaded."}), 400
+
+    data = request.get_json(silent=True) or {}
+    message = (
+        str(data.get("message") or "").strip()
+        or "Reapply DataLad text-file tracking policy"
+    )
+    result = _project_manager.reapply_datalad_text_policy(
+        project_path,
+        message=message,
+    )
+    result["current_project"] = get_current_project()
+    if result.get("success"):
+        return jsonify(result)
+    return jsonify(result), 400
+
+
+@projects_bp.route("/api/projects/datalad/unannex-text", methods=["POST"])
+def unannex_datalad_text_patterns():
+    """Unannex selected text patterns recursively for current project."""
+    current_project = get_current_project()
+    project_path = str(current_project.get("path") or "").strip()
+    if not project_path:
+        return jsonify({"success": False, "error": "No current project loaded."}), 400
+
+    data = request.get_json(silent=True) or {}
+    normalized_patterns = _normalize_datalad_text_patterns(data.get("patterns"))
+    if not normalized_patterns:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "Provide at least one text pattern to unannex.",
+                }
+            ),
+            400,
+        )
+
+    message = (
+        str(data.get("message") or "").strip()
+        or "Unannex selected text patterns for Git tracking"
+    )
+    result = _project_manager.unannex_datalad_text_patterns(
+        project_path,
+        patterns=normalized_patterns,
+        message=message,
+    )
     result["current_project"] = get_current_project()
     if result.get("success"):
         return jsonify(result)

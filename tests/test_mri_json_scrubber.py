@@ -3,6 +3,7 @@
 import json
 import sys
 import os
+import shutil
 from types import SimpleNamespace
 
 import pytest
@@ -16,6 +17,7 @@ from src.mri_json_scrubber import (
     is_mri_json_sidecar,
     is_anatomical_defaced,
     deface_anatomical_scans,
+    prepare_defacing_export_copy,
     get_defacing_preflight,
     has_anatomical_data,
     scan_mri_jsons,
@@ -303,6 +305,20 @@ class TestBuildDefacingReport:
         report = build_defacing_report(tmp_path)
         assert report == []
 
+    def test_selected_variants_filter_report_entries(self, tmp_path):
+        anat = tmp_path / "sub-01" / "anat"
+        anat.mkdir(parents=True)
+        (anat / "sub-01_acq-mprage_T1w.json").write_text("{}")
+        (anat / "sub-01_T2w.json").write_text("{}")
+
+        report = build_defacing_report(
+            tmp_path,
+            selected_variants={"acq:mprage|suffix:t1w"},
+        )
+
+        assert len(report) == 1
+        assert report[0]["file"].endswith("sub-01_acq-mprage_T1w.json")
+
 
 # ---------------------------------------------------------------------------
 # _nibabel_defacing_heuristic mocked tests (lines 224-240)
@@ -446,6 +462,22 @@ class TestDefaceAnatomicalScans:
         result = deface_anatomical_scans(tmp_path)
         assert result["success"] is True
         assert result["counts"]["total"] == 0
+
+    def test_selected_variants_without_matches_is_success(self, tmp_path, monkeypatch):
+        from src import mri_json_scrubber
+
+        anat = tmp_path / "sub-001" / "anat"
+        anat.mkdir(parents=True)
+        (anat / "sub-001_T1w.nii.gz").write_bytes(b"nifti")
+
+        monkeypatch.setattr(mri_json_scrubber.shutil, "which", lambda _cmd: None)
+        result = deface_anatomical_scans(
+            tmp_path,
+            selected_variants={"acq:mprage|suffix:t1w"},
+        )
+        assert result["success"] is True
+        assert result["counts"]["total"] == 0
+        assert "matched the selected defacing filters" in str(result.get("message") or "")
 
     def test_tracked_dataset_uses_datalad_run(self, tmp_path, monkeypatch):
         from src import mri_json_scrubber
@@ -616,3 +648,131 @@ class TestDefacingPreflight:
         assert preflight["pydeface_available"] is True
         assert preflight["fsl_available"] is False
         assert preflight["can_run_defacing"] is False
+
+    def test_preflight_includes_available_scan_variants(self, tmp_path, monkeypatch):
+        from src import mri_json_scrubber
+
+        anat = tmp_path / "sub-001" / "anat"
+        anat.mkdir(parents=True)
+        (anat / "sub-001_acq-mprage_T1w.nii.gz").write_bytes(b"nifti")
+        (anat / "sub-001_T2w.nii.gz").write_bytes(b"nifti")
+
+        monkeypatch.setattr(
+            mri_json_scrubber.shutil,
+            "which",
+            lambda cmd: "/usr/bin/pydeface" if cmd == "pydeface" else "/usr/bin/bet",
+        )
+        preflight = get_defacing_preflight(tmp_path)
+
+        variants = preflight.get("available_scan_variants") or []
+        variant_keys = {str(entry.get("key") or "") for entry in variants}
+        assert "acq:mprage|suffix:t1w" in variant_keys
+        assert "suffix:t2w" in variant_keys
+
+
+class TestDefacingExportCopy:
+    def test_prepare_defacing_export_copy_preserves_relative_structure(self, tmp_path):
+        project_path = tmp_path / "study"
+        anat_dir = project_path / "sub-001" / "ses-1" / "anat"
+        func_dir = project_path / "sub-001" / "ses-1" / "func"
+        anat_dir.mkdir(parents=True)
+        func_dir.mkdir(parents=True)
+
+        source_nifti = anat_dir / "sub-001_ses-1_acq-mprage_T1w.nii.gz"
+        source_json = anat_dir / "sub-001_ses-1_acq-mprage_T1w.json"
+        non_anat_file = func_dir / "sub-001_ses-1_task-rest_bold.nii.gz"
+
+        source_nifti.write_bytes(b"nifti")
+        source_json.write_text("{}", encoding="utf-8")
+        non_anat_file.write_bytes(b"bold")
+
+        output_root = tmp_path / "exports"
+        result = prepare_defacing_export_copy(project_path, output_root)
+
+        assert result.get("success") is True
+        target_path = Path(str(result.get("target_path") or ""))
+        assert target_path.exists()
+        assert (target_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_acq-mprage_T1w.nii.gz").exists()
+        assert (target_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_acq-mprage_T1w.json").exists()
+        assert not (target_path / "sub-001" / "ses-1" / "func" / "sub-001_ses-1_task-rest_bold.nii.gz").exists()
+
+    def test_prepare_defacing_export_copy_honors_selected_variants(self, tmp_path):
+        project_path = tmp_path / "study"
+        anat_dir = project_path / "sub-001" / "anat"
+        anat_dir.mkdir(parents=True)
+
+        mprage_nifti = anat_dir / "sub-001_acq-mprage_T1w.nii.gz"
+        t2w_nifti = anat_dir / "sub-001_T2w.nii.gz"
+        mprage_nifti.write_bytes(b"mprage")
+        t2w_nifti.write_bytes(b"t2w")
+
+        output_root = tmp_path / "exports"
+        result = prepare_defacing_export_copy(
+            project_path,
+            output_root,
+            selected_variants={"acq:mprage|suffix:t1w"},
+        )
+
+        assert result.get("success") is True
+        target_path = Path(str(result.get("target_path") or ""))
+        assert (target_path / "sub-001" / "anat" / "sub-001_acq-mprage_T1w.nii.gz").exists()
+        assert not (target_path / "sub-001" / "anat" / "sub-001_T2w.nii.gz").exists()
+
+    def test_prepare_defacing_export_copy_can_clone_datalad_dataset(self, tmp_path, monkeypatch):
+        from src import mri_json_scrubber
+
+        project_path = tmp_path / "study"
+        anat_dir = project_path / "sub-001" / "anat"
+        anat_dir.mkdir(parents=True)
+        (project_path / ".datalad").mkdir(parents=True)
+        (anat_dir / "sub-001_T1w.nii.gz").write_bytes(b"nifti")
+
+        seen_commands = []
+
+        def _fake_subprocess_run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=None,
+            check=False,
+        ):
+            seen_commands.append([str(item) for item in command])
+            destination = Path(str(command[3]))
+            shutil.copytree(project_path, destination)
+            return SimpleNamespace(returncode=0, stdout="ok", stderr="")
+
+        monkeypatch.setattr(mri_json_scrubber, "resolve_datalad_executable", lambda: "/usr/bin/datalad")
+        monkeypatch.setattr(mri_json_scrubber.subprocess, "run", _fake_subprocess_run)
+
+        output_root = tmp_path / "exports"
+        result = prepare_defacing_export_copy(
+            project_path,
+            output_root,
+            preserve_datalad_metadata=True,
+        )
+
+        assert result.get("success") is True
+        target_path = Path(str(result.get("target_path") or ""))
+        assert (target_path / ".datalad").exists()
+        assert (target_path / "sub-001" / "anat" / "sub-001_T1w.nii.gz").exists()
+        assert any(command[0:2] == ["/usr/bin/datalad", "clone"] for command in seen_commands)
+
+    def test_prepare_defacing_export_copy_fails_without_datalad_executable(self, tmp_path, monkeypatch):
+        from src import mri_json_scrubber
+
+        project_path = tmp_path / "study"
+        anat_dir = project_path / "sub-001" / "anat"
+        anat_dir.mkdir(parents=True)
+        (project_path / ".datalad").mkdir(parents=True)
+        (anat_dir / "sub-001_T1w.nii.gz").write_bytes(b"nifti")
+
+        monkeypatch.setattr(mri_json_scrubber, "resolve_datalad_executable", lambda: "")
+
+        result = prepare_defacing_export_copy(
+            project_path,
+            tmp_path / "exports",
+            preserve_datalad_metadata=True,
+        )
+
+        assert result.get("success") is False
+        assert "requires datalad" in str(result.get("error") or "").lower()

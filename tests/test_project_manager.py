@@ -774,7 +774,7 @@ class TestProjectManager(unittest.TestCase):
 
         self.assertTrue(result.get("enabled"))
         self.assertFalse(result.get("text_policy_complete"))
-        self.assertEqual(result.get("text_policy_missing_count"), 1)
+        self.assertEqual(result.get("text_policy_missing_count"), 2)
         self.assertIn("Text-file Git tracking policy is missing", result.get("message", ""))
 
     @patch(
@@ -821,6 +821,133 @@ class TestProjectManager(unittest.TestCase):
 
         self.assertFalse(result.get("success"))
         self.assertIn("not a DataLad dataset", result.get("error", ""))
+
+    @patch(
+        "src.project_manager.subprocess.run",
+        return_value=Mock(returncode=0, stdout="", stderr=""),
+    )
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_reapply_datalad_text_policy_updates_policy_and_saves(
+        self, _mock_which, mock_run
+    ):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            result = manager.reapply_datalad_text_policy(
+                project_path,
+                message="Reapply DataLad text-file tracking policy",
+            )
+
+            gitattributes_content = (project_path / ".gitattributes").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertTrue(result.get("policy_updated"), result)
+        self.assertTrue(result.get("datalad", {}).get("gitattributes_policy_updated"))
+        self.assertIn("*.tsv annex.largefiles=nothing", gitattributes_content)
+        commands = [call.args[0] for call in mock_run.call_args_list]
+        self.assertIn(
+            [
+                "/usr/bin/datalad",
+                "save",
+                "-r",
+                "-m",
+                "Reapply DataLad text-file tracking policy",
+            ],
+            commands,
+        )
+
+    @patch("src.project_manager.subprocess.run")
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_reapply_datalad_text_policy_is_noop_when_policy_current(
+        self, _mock_which, mock_run
+    ):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            manager._ensure_datalad_editable_metadata_policy(
+                project_path,
+                {"initialized": True},
+            )
+
+            result = manager.reapply_datalad_text_policy(
+                project_path,
+                message="Reapply DataLad text-file tracking policy",
+            )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertFalse(result.get("policy_updated"), result)
+        self.assertIn("already up to date", result.get("message", ""))
+        commands = [call.args[0] for call in mock_run.call_args_list if call.args]
+        self.assertFalse(
+            any(command[:2] == ["/usr/bin/datalad", "save"] for command in commands)
+        )
+
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    @patch("src.project_manager.subprocess.run")
+    def test_unannex_datalad_text_patterns_unannexes_and_saves(
+        self, mock_run, _mock_which
+    ):
+        manager = ProjectManager()
+
+        def _subprocess_side_effect(command, *args, **kwargs):
+            if command[:4] == ["git", "annex", "find", "--json"]:
+                return Mock(
+                    returncode=0,
+                    stdout='{"file": "participants.tsv"}\n',
+                    stderr="",
+                )
+            if command[:3] == ["git", "annex", "unannex"]:
+                return Mock(returncode=0, stdout="", stderr="")
+            if command[:2] == ["/usr/bin/datalad", "save"]:
+                return Mock(returncode=0, stdout="", stderr="")
+            return Mock(returncode=0, stdout="", stderr="")
+
+        mock_run.side_effect = _subprocess_side_effect
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "participants.tsv").write_text(
+                "participant_id\nsub-001\n",
+                encoding="utf-8",
+            )
+
+            result = manager.unannex_datalad_text_patterns(
+                project_path,
+                patterns=["*.tsv"],
+                message="Unannex selected text patterns for Git tracking",
+            )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertEqual(result.get("matched_files_count"), 1)
+        self.assertEqual(result.get("unannexed_files_count"), 1)
+        self.assertEqual(result.get("failure_count"), 0)
+
+        commands = [call.args[0] for call in mock_run.call_args_list]
+        self.assertTrue(
+            any(
+                command[:4] == ["git", "annex", "find", "--json"]
+                and "--include" in command
+                and "*.tsv" in command
+                for command in commands
+            )
+        )
+        self.assertIn(
+            [
+                "/usr/bin/datalad",
+                "save",
+                "-r",
+                "-m",
+                "Unannex selected text patterns for Git tracking",
+            ],
+            commands,
+        )
 
     @patch(
         "src.project_manager.subprocess.run",
@@ -1713,6 +1840,61 @@ class TestProjectManager(unittest.TestCase):
             output_path = Path(result["output_path"])
             self.assertTrue((output_path / "sub-001" / "ses-1" / "dwi" / "sub-001_ses-1_acq-shell1_dwi.nii.gz").exists())
             self.assertFalse((output_path / "sub-001" / "ses-1" / "dwi" / "sub-001_ses-1_sbref.nii.gz").exists())
+
+    def test_export_project_to_plain_folder_scrubs_sensitive_mri_json_tags(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            sidecar_path = (
+                project_path
+                / "sub-003"
+                / "ses-1"
+                / "anat"
+                / "sub-003_ses-1_acq-mprage_T1w.json"
+            )
+            sidecar_path.parent.mkdir(parents=True, exist_ok=True)
+            sidecar_path.write_text(
+                json.dumps(
+                    {
+                        "Manufacturer": "Siemens",
+                        "StationName": "AWP175956",
+                        "DeviceSerialNumber": "175956",
+                        "AcquisitionDateTime": "2023-04-19T09:06:20.070000",
+                        "EchoTime": 0.00206,
+                    },
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+
+            export_root = Path(tmp) / "exports"
+            result = manager.export_project_to_plain_folder(
+                project_path,
+                output_root=export_root,
+                scrub_mri_json=True,
+            )
+
+            self.assertTrue(result.get("success"), result)
+            output_sidecar = (
+                Path(result["output_path"])
+                / "sub-003"
+                / "ses-1"
+                / "anat"
+                / "sub-003_ses-1_acq-mprage_T1w.json"
+            )
+            self.assertTrue(output_sidecar.exists())
+            scrubbed_payload = json.loads(output_sidecar.read_text(encoding="utf-8"))
+            self.assertNotIn("Manufacturer", scrubbed_payload)
+            self.assertNotIn("StationName", scrubbed_payload)
+            self.assertNotIn("DeviceSerialNumber", scrubbed_payload)
+            self.assertNotIn("AcquisitionDateTime", scrubbed_payload)
+            self.assertEqual(scrubbed_payload.get("EchoTime"), 0.00206)
+            self.assertGreaterEqual(int(result.get("scrubbed_mri_json_files") or 0), 1)
+            self.assertGreaterEqual(int(result.get("scrubbed_mri_json_fields") or 0), 1)
 
     def test_export_project_to_plain_folder_skips_missing_annex_content_with_warning(self):
         manager = ProjectManager()

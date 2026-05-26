@@ -150,6 +150,23 @@
                                                     </div>
                                                     <div id="exportDefacingControls" style="display:none;">
                                                         <div class="mt-2 ms-4">
+                                                            <label class="form-label fw-semibold mb-1">Anatomical scans to include in defacing checks</label>
+                                                            <div class="d-flex gap-2 mb-2">
+                                                                <button type="button" class="btn btn-sm btn-outline-secondary" id="exportDefacingCheckAllVariants">
+                                                                    Check all
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm btn-outline-secondary" id="exportDefacingUncheckAllVariants">
+                                                                    Uncheck all
+                                                                </button>
+                                                            </div>
+                                                            <div id="exportDefacingVariantList" class="border rounded p-2" style="max-height: 180px; overflow-y: auto;">
+                                                                <span class="text-muted small">Loading anatomical scan variants...</span>
+                                                            </div>
+                                                            <div class="form-text mt-1">
+                                                                Leave all selected to check every anatomical scan. Example: keep only <code>acq-mprage T1w</code> selected.
+                                                            </div>
+                                                        </div>
+                                                        <div class="mt-2 ms-4">
                                                             <button type="button" class="btn btn-sm btn-outline-secondary" id="exportCheckDefacing">
                                                                 <i class="fas fa-search me-1"></i>Check defacing status of anatomical scans
                                                             </button>
