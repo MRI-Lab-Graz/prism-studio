@@ -722,6 +722,110 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertFalse(body["success"])
         self.assertIn("explicit confirmation", body["error"])
 
+    def test_projects_apply_datalad_text_policy_route_returns_current_project(self):
+        projects_module = importlib.import_module("src.web.blueprints.projects")
+
+        with self.app.test_request_context(
+            "/api/projects/datalad/text-policy/apply",
+            method="POST",
+            json={"message": "Reapply DataLad text-file tracking policy"},
+        ):
+            session["current_project_path"] = str(self.project_root)
+            session["current_project_name"] = "demo_project"
+            session["current_project_icon"] = "🧪"
+            original_manager = projects_module._project_manager
+            try:
+                class _DataladManager:
+                    def get_datalad_status(self, path):
+                        return {
+                            "enabled": True,
+                            "available": True,
+                            "can_save": True,
+                            "message": "Current project is tracked by DataLad.",
+                            "path": str(path),
+                        }
+
+                    def reapply_datalad_text_policy(self, path, *, message):
+                        return {
+                            "success": True,
+                            "message": f'Applied with message "{message}".',
+                            "datalad": self.get_datalad_status(path),
+                        }
+
+                projects_module._project_manager = _DataladManager()
+                response = projects_module.apply_datalad_text_policy()
+            finally:
+                projects_module._project_manager = original_manager
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(body["current_project"]["path"], str(self.project_root))
+
+    def test_projects_unannex_datalad_text_patterns_route_returns_current_project(self):
+        projects_module = importlib.import_module("src.web.blueprints.projects")
+
+        with self.app.test_request_context(
+            "/api/projects/datalad/unannex-text",
+            method="POST",
+            json={
+                "patterns": ["*.tsv", "*.json"],
+                "message": "Unannex selected text patterns for Git tracking",
+            },
+        ):
+            session["current_project_path"] = str(self.project_root)
+            session["current_project_name"] = "demo_project"
+            session["current_project_icon"] = "🧪"
+            original_manager = projects_module._project_manager
+            try:
+                class _DataladManager:
+                    def get_datalad_status(self, path):
+                        return {
+                            "enabled": True,
+                            "available": True,
+                            "can_save": True,
+                            "message": "Current project is tracked by DataLad.",
+                            "path": str(path),
+                        }
+
+                    def unannex_datalad_text_patterns(self, path, *, patterns, message):
+                        return {
+                            "success": True,
+                            "patterns": list(patterns),
+                            "message": f'Unannexed with message "{message}".',
+                            "datalad": self.get_datalad_status(path),
+                        }
+
+                projects_module._project_manager = _DataladManager()
+                response = projects_module.unannex_datalad_text_patterns()
+            finally:
+                projects_module._project_manager = original_manager
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(body["patterns"], ["*.tsv", "*.json"])
+        self.assertEqual(body["current_project"]["path"], str(self.project_root))
+
+    def test_projects_unannex_datalad_text_patterns_route_requires_patterns(self):
+        projects_module = importlib.import_module("src.web.blueprints.projects")
+
+        with self.app.test_request_context(
+            "/api/projects/datalad/unannex-text",
+            method="POST",
+            json={"patterns": []},
+        ):
+            session["current_project_path"] = str(self.project_root)
+            session["current_project_name"] = "demo_project"
+            session["current_project_icon"] = "🧪"
+            response = projects_module.unannex_datalad_text_patterns()
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        body = resp_obj.get_json()
+
+        self.assertEqual(status_code, 400)
+        self.assertFalse(body["success"])
+        self.assertIn("at least one text pattern", body["error"])
+
     def test_projects_set_current_project_autosaves_previous_datalad_dataset_on_switch(self):
         projects_module = importlib.import_module("src.web.blueprints.projects")
 

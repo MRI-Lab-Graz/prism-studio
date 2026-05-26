@@ -138,6 +138,7 @@ Current checkpoint:
 - Global Settings UI now exposes the backend export defacing confirmation default (risk vs always) and persists it through the settings API.
 - Export card preference snapshot now shows defacing confirmation mode and indicates whether it is inherited from global settings or explicitly saved in project export preferences.
 - Export UI now includes a one-click reset action that removes project defacing confirmation override and reverts behavior to inherited global default.
+- Export defacing action is now mode-aware and non-mutating: both modes deface an export target copy; DataLad-preserving mode prepares a DataLad clone copy and runs pydeface via DataLad there, while DataLad-free mode defaces a plain structural copy.
 
 Next action:
 1. Add an integration test that validates full defacing policy lifecycle (global default -> project override -> reset to inherited) across settings and export preferences APIs.
@@ -183,5 +184,6 @@ Changelog remains canonical for release-facing history:
 - Exposing the global policy in Settings keeps team defaults discoverable while preserving project-level opt-in overrides.
 - Showing source attribution (project override vs inherited default) in the export snapshot helps avoid ambiguity in privacy confirmation behavior.
 - Supporting explicit reset-to-inherited in UI reduces misconfiguration risk and keeps global privacy policy enforcement easy to recover.
+- For export privacy tooling, keep source rawdata immutable in all export modes: route defacing to an export copy and, when provenance is needed, run pydeface via DataLad on a DataLad-preserving clone target.
 - Subject-grouped DataLad commits require subject-filter support in canonical rewrite engines; orchestration-only grouping is insufficient.
 - Aggregated grouped-run API payloads should keep legacy top-level keys stable while attaching group provenance under a dedicated `datalad.groups` field.

@@ -173,6 +173,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn('id="projectBoxDataladStateBadge"', content)
         self.assertIn('id="projectBoxDataladEnableBtn"', content)
         self.assertIn('id="projectBoxDataladSaveBtn"', content)
+        self.assertIn('id="projectBoxDataladPolicyBtn"', content)
+        self.assertIn('id="projectBoxDataladUnannexBtn"', content)
         self.assertIn('id="projectBoxDataladProgressWrap"', content)
         self.assertIn('id="projectBoxDataladProgressBar"', content)
         self.assertIn('id="projectBoxDataladProgressLabel"', content)
@@ -180,6 +182,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("DataLad Structure Complete", content)
         self.assertIn("fetchWithApiFallback('/api/projects/datalad/enable'", content)
         self.assertIn("fetchWithApiFallback('/api/projects/datalad/save'", content)
+        self.assertIn("fetchWithApiFallback('/api/projects/datalad/text-policy/apply'", content)
+        self.assertIn("fetchWithApiFallback('/api/projects/datalad/unannex-text'", content)
         self.assertIn("confirmed: true", content)
         self.assertIn("backfill one missing nested dataset per click", content)
         self.assertIn("DataLad structure is complete for this project.", content)
@@ -503,6 +507,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("function renderAnnexAvailabilityReport(summary) {", content)
         self.assertIn("function renderAnnexAvailabilityError(error) {", content)
         self.assertIn("materialize_annex_content: true,", content)
+        self.assertIn("scrub_mri_json: getById('exportScrubMriJson')?.checked || false,", content)
+        self.assertIn("scrub_mri_json_groups: scrubGroups.length ? scrubGroups : null,", content)
         self.assertIn("include_sourcedata: getById('exportSourcedata')?.checked || false,", content)
         self.assertIn(
             "exclude_version_control_metadata: getSelectedExportRepositoryMode() === 'datalad_free',",
