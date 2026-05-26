@@ -245,6 +245,8 @@ def test_projects_export_defacing_report_route_forwards_selected_variants(tmp_pa
                 json={
                     "project_path": str(project_dir),
                     "selected_variants": ["acq:mprage|suffix:t1w"],
+                    "exclude_subjects": ["sub-002", ""],
+                    "exclude_sessions": ["ses-2", ""],
                 },
             )
 
@@ -255,6 +257,8 @@ def test_projects_export_defacing_report_route_forwards_selected_variants(tmp_pa
     args, kwargs = mock_report.call_args
     assert args[0] == project_dir.resolve(strict=False)
     assert kwargs.get("selected_variants") == {"acq:mprage|suffix:t1w"}
+    assert kwargs.get("excluded_subjects") == {"sub-002"}
+    assert kwargs.get("excluded_sessions") == {"ses-2"}
 
 
 def test_projects_export_deface_route_forwards_selected_variants(tmp_path):
@@ -291,6 +295,8 @@ def test_projects_export_deface_route_forwards_selected_variants(tmp_path):
                 json={
                     "project_path": str(project_dir),
                     "selected_variants": ["acq:mprage|suffix:t1w"],
+                    "exclude_subjects": ["sub-002", ""],
+                    "exclude_sessions": ["ses-2", ""],
                 },
             )
 
@@ -301,14 +307,20 @@ def test_projects_export_deface_route_forwards_selected_variants(tmp_path):
     deface_args, deface_kwargs = mock_deface.call_args
     assert deface_args[0] == copy_target.resolve(strict=False)
     assert deface_kwargs.get("selected_variants") == {"acq:mprage|suffix:t1w"}
+    assert deface_kwargs.get("excluded_subjects") == {"sub-002"}
+    assert deface_kwargs.get("excluded_sessions") == {"ses-2"}
 
     report_args, report_kwargs = mock_report.call_args
     assert report_args[0] == copy_target.resolve(strict=False)
     assert report_kwargs.get("selected_variants") == {"acq:mprage|suffix:t1w"}
+    assert report_kwargs.get("excluded_subjects") == {"sub-002"}
+    assert report_kwargs.get("excluded_sessions") == {"ses-2"}
 
     prepare_args, prepare_kwargs = mock_prepare.call_args
     assert prepare_args[0] == project_dir.resolve(strict=False)
     assert prepare_kwargs.get("selected_variants") == {"acq:mprage|suffix:t1w"}
+    assert prepare_kwargs.get("excluded_subjects") == {"sub-002"}
+    assert prepare_kwargs.get("excluded_sessions") == {"ses-2"}
     assert prepare_kwargs.get("preserve_datalad_metadata") is False
 
 
@@ -607,6 +619,97 @@ def test_projects_export_start_passes_survey_task_filters_to_export_job(tmp_path
     export_kwargs = args[1]
     assert isinstance(export_kwargs, dict)
     assert export_kwargs["exclude_tasks"] == {"survey": {"ads"}}
+
+
+def test_projects_export_start_forwards_subject_scope_filters_to_export_job(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    captured: dict[str, object] = {}
+
+    class _FakeThread:
+        def __init__(self, target=None, args=(), daemon=None):
+            captured["target"] = target
+            captured["args"] = args
+            captured["daemon"] = daemon
+
+        def start(self):
+            captured["started"] = True
+
+    with patch(
+        "src.web.blueprints.projects_export_blueprint.threading.Thread",
+        side_effect=lambda *args, **kwargs: _FakeThread(*args, **kwargs),
+    ):
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/start",
+                json={
+                    "project_path": str(project_dir),
+                    "anonymize": False,
+                    "exclude_subjects": ["sub-002", ""],
+                    "exclude_sessions": ["ses-2", ""],
+                    "exclude_modalities": ["dwi", ""],
+                    "exclude_acq": {"anat": ["T1w", ""]},
+                    "exclude_tasks": {"survey": ["ads", ""]},
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("job_id")
+
+    args = captured.get("args")
+    assert isinstance(args, tuple)
+    export_kwargs = args[1]
+    assert isinstance(export_kwargs, dict)
+    assert export_kwargs["exclude_subjects"] == {"sub-002"}
+    assert export_kwargs["exclude_sessions"] == {"ses-2"}
+    assert export_kwargs["exclude_modalities"] == {"dwi"}
+    assert export_kwargs["exclude_acq"] == {"anat": {"T1w"}}
+    assert export_kwargs["exclude_tasks"] == {"survey": {"ads"}}
+
+
+def test_projects_export_sync_route_forwards_scope_filters(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    called: dict[str, object] = {}
+
+    def fake_export_project(**kwargs):
+        called.update(kwargs)
+        output_zip = kwargs["output_zip"]
+        Path(output_zip).write_bytes(b"PK\x03\x04")
+        return {"files_processed": 0, "files_anonymized": 0, "participant_count": 0}
+
+    with patch(
+        "src.web.export_project.export_project", side_effect=fake_export_project
+    ):
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export",
+                json={
+                    "project_path": str(project_dir),
+                    "anonymize": False,
+                    "exclude_subjects": ["sub-003", ""],
+                    "exclude_sessions": ["ses-2", ""],
+                    "exclude_modalities": ["dwi", ""],
+                    "exclude_acq": {"anat": ["T1w", ""]},
+                    "exclude_tasks": {"survey": ["ads", ""]},
+                },
+            )
+
+    assert response.status_code == 200
+    assert called["exclude_subjects"] == {"sub-003"}
+    assert called["exclude_sessions"] == {"ses-2"}
+    assert called["exclude_modalities"] == {"dwi"}
+    assert called["exclude_acq"] == {"anat": {"T1w"}}
+    assert called["exclude_tasks"] == {"survey": {"ads"}}
 
 
 def test_projects_export_start_status_includes_defacing_warning_metadata(tmp_path):

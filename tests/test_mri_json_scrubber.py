@@ -441,6 +441,24 @@ class TestBuildDefacingReportExtra:
         assert "sub-01" in report[0]["file"]
         assert "T1w" in report[0]["file"]
 
+    def test_build_defacing_report_honors_subject_and_session_exclusions(self, tmp_path):
+        anat_a = tmp_path / "sub-01" / "ses-1" / "anat"
+        anat_b = tmp_path / "sub-02" / "ses-2" / "anat"
+        anat_a.mkdir(parents=True)
+        anat_b.mkdir(parents=True)
+        (anat_a / "sub-01_ses-1_T1w.json").write_text("{}", encoding="utf-8")
+        (anat_b / "sub-02_ses-2_T1w.json").write_text("{}", encoding="utf-8")
+
+        report = build_defacing_report(
+            tmp_path,
+            excluded_subjects={"sub-02"},
+            excluded_sessions={"ses-2"},
+        )
+
+        files = {str(entry.get("file") or "") for entry in report}
+        assert "sub-01/ses-1/anat/sub-01_ses-1_T1w.json" in files
+        assert "sub-02/ses-2/anat/sub-02_ses-2_T1w.json" not in files
+
 
 class TestDefaceAnatomicalScans:
     def test_returns_error_when_pydeface_missing(self, tmp_path, monkeypatch):
@@ -717,6 +735,29 @@ class TestDefacingExportCopy:
         target_path = Path(str(result.get("target_path") or ""))
         assert (target_path / "sub-001" / "anat" / "sub-001_acq-mprage_T1w.nii.gz").exists()
         assert not (target_path / "sub-001" / "anat" / "sub-001_T2w.nii.gz").exists()
+
+    def test_prepare_defacing_export_copy_honors_subject_and_session_exclusions(self, tmp_path):
+        project_path = tmp_path / "study"
+        anat_a = project_path / "sub-001" / "ses-1" / "anat"
+        anat_b = project_path / "sub-002" / "ses-2" / "anat"
+        anat_a.mkdir(parents=True)
+        anat_b.mkdir(parents=True)
+
+        (anat_a / "sub-001_ses-1_T1w.nii.gz").write_bytes(b"a")
+        (anat_b / "sub-002_ses-2_T1w.nii.gz").write_bytes(b"b")
+
+        output_root = tmp_path / "exports"
+        result = prepare_defacing_export_copy(
+            project_path,
+            output_root,
+            excluded_subjects={"sub-002"},
+            excluded_sessions={"ses-2"},
+        )
+
+        assert result.get("success") is True
+        target_path = Path(str(result.get("target_path") or ""))
+        assert (target_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_T1w.nii.gz").exists()
+        assert not (target_path / "sub-002" / "ses-2" / "anat" / "sub-002_ses-2_T1w.nii.gz").exists()
 
     def test_prepare_defacing_export_copy_can_clone_datalad_dataset(self, tmp_path, monkeypatch):
         from src import mri_json_scrubber

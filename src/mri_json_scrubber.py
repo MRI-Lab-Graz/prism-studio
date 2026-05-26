@@ -646,13 +646,34 @@ def _has_defacing_sidecar_artifact(nifti_path: Path) -> bool:
 def _iter_anatomical_nifti_files(
     project_path: Path,
     selected_variants: Optional[Set[str]] = None,
+    excluded_subjects: Optional[Set[str]] = None,
+    excluded_sessions: Optional[Set[str]] = None,
 ) -> List[Path]:
     """Return anatomical NIfTI files under sub-*/anat/ that match known suffixes."""
+    normalized_excluded_subjects = {
+        str(label).strip()
+        for label in (excluded_subjects or set())
+        if str(label).strip()
+    }
+    normalized_excluded_sessions = {
+        str(label).strip()
+        for label in (excluded_sessions or set())
+        if str(label).strip()
+    }
+
     results: List[Path] = []
     for sub_dir in project_path.iterdir():
         if not (sub_dir.is_dir() and sub_dir.name.startswith("sub-")):
             continue
+        if sub_dir.name in normalized_excluded_subjects:
+            continue
         for nifti_file in sub_dir.rglob("*.nii*"):
+            relative_parts = nifti_file.relative_to(project_path).parts
+            if normalized_excluded_sessions and any(
+                part.startswith("ses-") and part in normalized_excluded_sessions
+                for part in relative_parts
+            ):
+                continue
             if detect_modality_from_path(nifti_file) != "anat":
                 continue
             filename = nifti_file.name
@@ -716,6 +737,8 @@ def prepare_defacing_export_copy(
     output_root: Path,
     *,
     selected_variants: Optional[Set[str]] = None,
+    excluded_subjects: Optional[Set[str]] = None,
+    excluded_sessions: Optional[Set[str]] = None,
     preserve_datalad_metadata: bool = False,
     datalad_executable: str = "",
 ) -> Dict[str, Any]:
@@ -817,6 +840,8 @@ def prepare_defacing_export_copy(
         selected_nifti_files = _iter_anatomical_nifti_files(
             target_path,
             selected_variants=selected_variants,
+            excluded_subjects=excluded_subjects,
+            excluded_sessions=excluded_sessions,
         )
         if not selected_nifti_files:
             try:
@@ -862,6 +887,8 @@ def prepare_defacing_export_copy(
     selected_nifti_files = _iter_anatomical_nifti_files(
         source_root,
         selected_variants=selected_variants,
+        excluded_subjects=excluded_subjects,
+        excluded_sessions=excluded_sessions,
     )
     if not selected_nifti_files:
         return {
@@ -887,7 +914,7 @@ def prepare_defacing_export_copy(
         shutil.copy2(nifti_file, destination_nifti)
         copied_nifti_files += 1
 
-        sidecar_path: Optional[Path] = None
+        sidecar_path = None
         if nifti_file.name.endswith(".nii.gz"):
             candidate = nifti_file.with_name(nifti_file.name[: -len(".nii.gz")] + ".json")
             if candidate.exists():
@@ -942,6 +969,8 @@ def deface_anatomical_scans(
     force: bool = False,
     timeout_seconds: int = 300,
     selected_variants: Optional[Set[str]] = None,
+    excluded_subjects: Optional[Set[str]] = None,
+    excluded_sessions: Optional[Set[str]] = None,
 ) -> Dict[str, Any]:
     """Run pydeface in-place on anatomical scans and return an operation summary."""
     project_root = Path(project_path)
@@ -961,6 +990,8 @@ def deface_anatomical_scans(
     anatomical_files = _iter_anatomical_nifti_files(
         project_path,
         selected_variants=selected_variants,
+        excluded_subjects=excluded_subjects,
+        excluded_sessions=excluded_sessions,
     )
     if not anatomical_files:
         if selected_variants is None:
@@ -1488,6 +1519,8 @@ def scan_mri_jsons(project_path: Path) -> List[Path]:
 def build_defacing_report(
     project_path: Path,
     selected_variants: Optional[Set[str]] = None,
+    excluded_subjects: Optional[Set[str]] = None,
+    excluded_sessions: Optional[Set[str]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Scan all anatomical JSON sidecars in *project_path* and report defacing status.
@@ -1498,10 +1531,29 @@ def build_defacing_report(
       ``reason``  — human-readable detail
     """
     report: List[Dict[str, Any]] = []
+    normalized_excluded_subjects = {
+        str(label).strip()
+        for label in (excluded_subjects or set())
+        if str(label).strip()
+    }
+    normalized_excluded_sessions = {
+        str(label).strip()
+        for label in (excluded_sessions or set())
+        if str(label).strip()
+    }
+
     for sub_dir in project_path.iterdir():
         if not (sub_dir.is_dir() and sub_dir.name.startswith("sub-")):
             continue
+        if sub_dir.name in normalized_excluded_subjects:
+            continue
         for json_file in sub_dir.rglob("*.json"):
+            relative_parts = json_file.relative_to(project_path).parts
+            if normalized_excluded_sessions and any(
+                part.startswith("ses-") and part in normalized_excluded_sessions
+                for part in relative_parts
+            ):
+                continue
             if detect_modality_from_path(json_file) != "anat":
                 continue
             # Only check files whose stem suggests an anatomical suffix

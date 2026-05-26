@@ -156,6 +156,31 @@ def _normalize_defacing_variant_keys(raw_values: object) -> Optional[Set[str]]:
     return normalized
 
 
+def _normalize_scope_labels(raw_values: object) -> Set[str]:
+    if not isinstance(raw_values, (list, tuple, set)):
+        return set()
+    return {
+        str(value).strip()
+        for value in raw_values
+        if str(value).strip()
+    }
+
+
+def _normalize_scope_grouped_labels(raw_values: object) -> Dict[str, Set[str]]:
+    if not isinstance(raw_values, dict):
+        return {}
+
+    normalized: Dict[str, Set[str]] = {}
+    for group_name, labels in raw_values.items():
+        normalized_name = str(group_name).strip()
+        if not normalized_name:
+            continue
+        normalized_labels = _normalize_scope_labels(labels)
+        if normalized_labels:
+            normalized[normalized_name] = normalized_labels
+    return normalized
+
+
 def _export_validation_flags(validation_mode: str) -> tuple[bool, bool]:
     mode = _normalize_export_validation_mode(validation_mode)
     if mode == "bids":
@@ -469,6 +494,11 @@ def export_project():
         exclude_version_control_metadata = bool(
             data.get("exclude_version_control_metadata", False)
         )
+        exclude_subjects = _normalize_scope_labels(data.get("exclude_subjects"))
+        exclude_sessions = _normalize_scope_labels(data.get("exclude_sessions"))
+        exclude_modalities = _normalize_scope_labels(data.get("exclude_modalities"))
+        exclude_acq = _normalize_scope_grouped_labels(data.get("exclude_acq"))
+        exclude_tasks = _normalize_scope_grouped_labels(data.get("exclude_tasks"))
         scrub_mri_json = bool(data.get("scrub_mri_json", False))
         scrub_mri_json_groups = _normalize_scrub_group_ids(
             data.get("scrub_mri_json_groups")
@@ -498,6 +528,11 @@ def export_project():
                 include_sourcedata=include_sourcedata,
                 include_code=include_code,
                 include_analysis=include_analysis,
+                exclude_subjects=exclude_subjects or None,
+                exclude_sessions=exclude_sessions or None,
+                exclude_modalities=exclude_modalities or None,
+                exclude_acq=exclude_acq or None,
+                exclude_tasks=exclude_tasks or None,
                 exclude_version_control_metadata=exclude_version_control_metadata,
                 scrub_mri_json=scrub_mri_json,
                 scrub_mri_json_groups=scrub_mri_json_groups,
@@ -727,6 +762,8 @@ def export_defacing_report():
         selected_variants = _normalize_defacing_variant_keys(
             data.get("selected_variants")
         )
+        excluded_subjects = _normalize_scope_labels(data.get("exclude_subjects"))
+        excluded_sessions = _normalize_scope_labels(data.get("exclude_sessions"))
         resolved = _resolve_project_root_path(project_path_raw)
         if resolved is None:
             return jsonify({"error": "Invalid project path"}), 400
@@ -734,6 +771,8 @@ def export_defacing_report():
         report = build_defacing_report(
             resolved,
             selected_variants=selected_variants,
+            excluded_subjects=excluded_subjects or None,
+            excluded_sessions=excluded_sessions or None,
         )
         counts = {"defaced": 0, "not_defaced": 0, "unknown": 0}
         for entry in report:
@@ -787,6 +826,8 @@ def export_deface_anatomical_scans():
         selected_variants = _normalize_defacing_variant_keys(
             data.get("selected_variants")
         )
+        excluded_subjects = _normalize_scope_labels(data.get("exclude_subjects"))
+        excluded_sessions = _normalize_scope_labels(data.get("exclude_sessions"))
         repository_mode_raw = str(data.get("repository_mode") or "").strip().lower()
         has_repository_mode = bool(repository_mode_raw)
         repository_mode = (
@@ -821,6 +862,8 @@ def export_deface_anatomical_scans():
             resolved,
             output_root,
             selected_variants=selected_variants,
+            excluded_subjects=excluded_subjects or None,
+            excluded_sessions=excluded_sessions or None,
             preserve_datalad_metadata=use_datalad_preserving_copy,
             datalad_executable=str(datalad_status.get("executable") or ""),
         )
@@ -847,10 +890,14 @@ def export_deface_anatomical_scans():
             target_path,
             force=force,
             selected_variants=selected_variants,
+            excluded_subjects=excluded_subjects or None,
+            excluded_sessions=excluded_sessions or None,
         )
         post_report = build_defacing_report(
             target_path,
             selected_variants=selected_variants,
+            excluded_subjects=excluded_subjects or None,
+            excluded_sessions=excluded_sessions or None,
         )
         counts = {"defaced": 0, "not_defaced": 0, "unknown": 0}
         for entry in post_report:
@@ -926,23 +973,12 @@ def export_project_start():
             include_analysis = False
             exclude_version_control_metadata = True
 
-        # Optional session / modality / sublabel filters
-        exclude_sessions_list = data.get("exclude_sessions") or []
-        exclude_modalities_list = data.get("exclude_modalities") or []
-        # exclude_acq: dict of {modality: [acq_label, ...]} from client
-        exclude_acq_raw = data.get("exclude_acq") or {}
-        exclude_acq = (
-            {mod: set(labels) for mod, labels in exclude_acq_raw.items() if labels}
-            if exclude_acq_raw
-            else None
-        )
-        # exclude_tasks: dict of {modality: [task_label, ...]} from client
-        exclude_tasks_raw = data.get("exclude_tasks") or {}
-        exclude_tasks = (
-            {mod: set(labels) for mod, labels in exclude_tasks_raw.items() if labels}
-            if exclude_tasks_raw
-            else None
-        )
+        # Optional subject/session/modality/sublabel filters
+        exclude_subjects = _normalize_scope_labels(data.get("exclude_subjects"))
+        exclude_sessions = _normalize_scope_labels(data.get("exclude_sessions"))
+        exclude_modalities = _normalize_scope_labels(data.get("exclude_modalities"))
+        exclude_acq = _normalize_scope_grouped_labels(data.get("exclude_acq"))
+        exclude_tasks = _normalize_scope_grouped_labels(data.get("exclude_tasks"))
 
         project_name = resolved.name
         anon_suffix = "_anonymized" if anonymize else ""
@@ -964,14 +1000,15 @@ def export_project_start():
             "scrub_mri_json_groups": scrub_mri_json_groups,
             "clean_nifti_gzip_headers": scrub_mri_json,
             "validation_mode": validation_mode,
+            "exclude_subjects": exclude_subjects or None,
             "exclude_sessions": (
-                set(exclude_sessions_list) if exclude_sessions_list else None
+                exclude_sessions or None
             ),
             "exclude_modalities": (
-                set(exclude_modalities_list) if exclude_modalities_list else None
+                exclude_modalities or None
             ),
-            "exclude_acq": exclude_acq,
-            "exclude_tasks": exclude_tasks,
+            "exclude_acq": exclude_acq or None,
+            "exclude_tasks": exclude_tasks or None,
         }
 
         job_id = str(uuid.uuid4())
