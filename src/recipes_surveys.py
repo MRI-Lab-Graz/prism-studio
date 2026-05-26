@@ -677,11 +677,11 @@ def _build_combined_output_metadata(
             score_name = str(score.get("Name", "")).strip()
             if not score_name:
                 continue
-            candidate_names = [
+            score_candidate_names = [
                 score_name,
                 _prefixed_recipe_column_name(recipe_id, score_name),
             ]
-            for candidate in dict.fromkeys(candidate_names):
+            for candidate in dict.fromkeys(score_candidate_names):
                 if candidate not in columns:
                     continue
 
@@ -3208,7 +3208,7 @@ def compute_survey_recipes(
                 if merge_all:
                     import pandas as pd
 
-                    rows_accum: list[dict[str, Any]] = []
+                    raw_rows_accum: list[dict[str, Any]] = []
                     raw_exclude_columns = _participant_raw_exclude_columns(participants_df)
 
                     for in_path in matching:
@@ -3254,10 +3254,10 @@ def compute_survey_recipes(
                                     include_recipe_prefix=include_recipe_prefix,
                                 )
                                 merged[prefixed_col] = raw_row.get(col, "n/a")
-                            rows_accum.append(merged)
+                            raw_rows_accum.append(merged)
 
-                    if rows_accum:
-                        df = pd.DataFrame(rows_accum)
+                    if raw_rows_accum:
+                        df = pd.DataFrame(raw_rows_accum)
                         merge_all_frames.append((missing_task, df))
                         merge_all_recipe_by_id[missing_task] = raw_only_recipe
                         raw_only_tasks.add(missing_task)

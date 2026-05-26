@@ -90,7 +90,9 @@ jobs:
           pytest tests/ --cov=src --cov-report=xml --cov-report=term-missing -q
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        # Pin to v5.5.0 commit to avoid transient tag-resolution/codeload issues.
+        uses: codecov/codecov-action@fdcc8476540edceab3de004e990f80d881c6cc00
+        continue-on-error: true
         with:
           files: coverage.xml
           fail_ci_if_error: false

@@ -84,6 +84,41 @@ def test_export_includes_root_subject_folders_without_rawdata(tmp_path):
     assert "participants.tsv" in names
 
 
+def test_export_can_exclude_selected_subjects(tmp_path):
+    project_dir = tmp_path / "study"
+    sub001_dir = project_dir / "sub-001" / "survey"
+    sub002_dir = project_dir / "sub-002" / "survey"
+    sub001_dir.mkdir(parents=True)
+    sub002_dir.mkdir(parents=True)
+
+    (sub001_dir / "sub-001_task-test_survey.tsv").write_text(
+        "participant_id\tvalue\nsub-001\t1\n",
+        encoding="utf-8",
+    )
+    (sub002_dir / "sub-002_task-test_survey.tsv").write_text(
+        "participant_id\tvalue\nsub-002\t2\n",
+        encoding="utf-8",
+    )
+
+    output_zip = tmp_path / "export_subject_filtered.zip"
+
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=False,
+        include_derivatives=False,
+        include_code=False,
+        include_analysis=False,
+        exclude_subjects={"sub-002"},
+    )
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        names = set(archive.namelist())
+
+    assert "sub-001/survey/sub-001_task-test_survey.tsv" in names
+    assert "sub-002/survey/sub-002_task-test_survey.tsv" not in names
+
+
 def test_export_includes_root_prism_metadata_files(tmp_path):
     project_dir = tmp_path / "study"
     project_dir.mkdir(parents=True)
