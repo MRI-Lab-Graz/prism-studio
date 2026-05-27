@@ -510,6 +510,8 @@ class TestDefaceAnatomicalScans:
                 return "/usr/bin/pydeface"
             if command == "datalad":
                 return "/usr/bin/datalad"
+            if command == "git-annex":
+                return "/usr/bin/git-annex"
             if command in {"bet", "fsl"}:
                 return "/usr/bin/bet"
             return ""
@@ -560,6 +562,8 @@ class TestDefaceAnatomicalScans:
         assert result["datalad"]["used_run"] is True
         assert any(command[0:2] == ["/usr/bin/datalad", "get"] for command in seen_commands)
         assert any(command[0:2] == ["/usr/bin/datalad", "run"] for command in seen_commands)
+        run_commands = [command for command in seen_commands if command[0:2] == ["/usr/bin/datalad", "run"]]
+        assert any("/usr/bin/git-annex" in command for command in run_commands)
 
     def test_tracked_dataset_defacing_runs_once_per_subject(self, tmp_path, monkeypatch):
         from src import mri_json_scrubber
@@ -577,6 +581,8 @@ class TestDefaceAnatomicalScans:
                 return "/usr/bin/pydeface"
             if command == "datalad":
                 return "/usr/bin/datalad"
+            if command == "git-annex":
+                return "/usr/bin/git-annex"
             if command in {"bet", "fsl"}:
                 return "/usr/bin/bet"
             return ""
@@ -629,6 +635,7 @@ class TestDefaceAnatomicalScans:
         assert len(datalad.get("groups") or []) == 2
         run_commands = [command for command in seen_commands if command[1] == "run"]
         assert len(run_commands) == 2
+        assert all("/usr/bin/git-annex" in command for command in run_commands)
 
 
 class TestDefacingPreflight:

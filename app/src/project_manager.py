@@ -171,6 +171,35 @@ def _matches_excluded_acq_label(filename: str, excluded_labels: set[str]) -> boo
     return False
 
 
+def _resolve_export_subject_scope(
+    rel_parts: tuple[str, ...], *, is_dir: bool
+) -> tuple[str | None, str | None, str | None]:
+    """Resolve subject/session/modality scope from an export-relative path.
+
+    Filters must apply both to top-level raw subject folders and to nested
+    subject trees under folders such as derivatives/ or sourcedata/.
+    """
+    subject_index = next(
+        (index for index, part in enumerate(rel_parts) if str(part).startswith("sub-")),
+        None,
+    )
+    if subject_index is None:
+        return None, None, None
+
+    subject_label = rel_parts[subject_index]
+    part_index = subject_index + 1
+    session_label = None
+    if part_index < len(rel_parts) and rel_parts[part_index].startswith("ses-"):
+        session_label = rel_parts[part_index]
+        part_index += 1
+
+    modality_limit = len(rel_parts) if is_dir else len(rel_parts) - 1
+    if part_index >= modality_limit:
+        return subject_label, session_label, None
+
+    return subject_label, session_label, rel_parts[part_index]
+
+
 class ProjectManager:
     """
     Manages PRISM project creation and validation.
@@ -1683,6 +1712,8 @@ class ProjectManager:
         output_root: Union[str, Path, None] = None,
         scrub_mri_json: bool = False,
         scrub_mri_json_groups: Optional[Set[str]] = None,
+        deface_anatomical_scans: bool = False,
+        defacing_selected_variants: Optional[Set[str]] = None,
         include_derivatives: bool = True,
         include_sourcedata: bool = False,
         include_code: bool = True,
@@ -2487,7 +2518,11 @@ class ProjectManager:
             if not rel_parts:
                 return False
 
-            if rel_parts[0].startswith("sub-") and rel_parts[0] in normalized_exclude_subjects:
+            subject_label, session_label, modality = _resolve_export_subject_scope(
+                rel_parts,
+                is_dir=is_dir,
+            )
+            if subject_label in normalized_exclude_subjects:
                 return True
 
             if len(rel_parts) == 1:
@@ -2504,23 +2539,15 @@ class ProjectManager:
                             return True
                 return False
 
-            if not rel_parts[0].startswith("sub-"):
+            if subject_label is None:
                 return False
 
-            part_index = 1
-            if (
-                part_index < len(rel_parts)
-                and rel_parts[part_index].startswith("ses-")
-            ):
-                session_label = rel_parts[part_index]
-                if session_label in normalized_exclude_sessions:
-                    return True
-                part_index += 1
+            if session_label in normalized_exclude_sessions:
+                return True
 
-            if part_index >= len(rel_parts):
+            if modality is None:
                 return False
 
-            modality = rel_parts[part_index]
             if modality in normalized_exclude_modalities:
                 return True
 
@@ -2697,6 +2724,31 @@ class ProjectManager:
         scrubbed_sidecars = 0
         scrubbed_fields = 0
         scrub_errors: List[str] = []
+        defacing_result: Optional[Dict[str, Any]] = None
+        if deface_anatomical_scans:
+            try:
+                from src.mri_json_scrubber import (
+                    deface_anatomical_scans as run_export_defacing,
+                )
+
+                defacing_result = run_export_defacing(
+                    export_path,
+                    selected_variants=defacing_selected_variants,
+                    excluded_subjects=normalized_exclude_subjects or None,
+                    excluded_sessions=normalized_exclude_sessions or None,
+                )
+            except Exception as exc:
+                result["error"] = f"Could not deface exported anatomical MRI: {exc}"
+                return result
+
+            if not defacing_result.get("success"):
+                result["error"] = str(
+                    defacing_result.get("error")
+                    or defacing_result.get("message")
+                    or "Could not deface exported anatomical MRI."
+                )
+                return result
+
         if scrub_mri_json:
             try:
                 from src.mri_json_scrubber import (
@@ -2811,6 +2863,8 @@ class ProjectManager:
 
         result["success"] = True
         result["output_path"] = str(export_path)
+        if defacing_result is not None:
+            result["defacing"] = defacing_result
         if scrub_mri_json:
             result["scrubbed_mri_json_files"] = scrubbed_sidecars
             result["scrubbed_mri_json_fields"] = scrubbed_fields
@@ -2936,7 +2990,11 @@ class ProjectManager:
             if not rel_parts:
                 return False
 
-            if rel_parts[0].startswith("sub-") and rel_parts[0] in normalized_exclude_subjects:
+            subject_label, session_label, modality = _resolve_export_subject_scope(
+                rel_parts,
+                is_dir=is_dir,
+            )
+            if subject_label in normalized_exclude_subjects:
                 return True
 
             if len(rel_parts) == 1:
@@ -2953,23 +3011,15 @@ class ProjectManager:
                             return True
                 return False
 
-            if not rel_parts[0].startswith("sub-"):
+            if subject_label is None:
                 return False
 
-            part_index = 1
-            if (
-                part_index < len(rel_parts)
-                and rel_parts[part_index].startswith("ses-")
-            ):
-                session_label = rel_parts[part_index]
-                if session_label in normalized_exclude_sessions:
-                    return True
-                part_index += 1
+            if session_label in normalized_exclude_sessions:
+                return True
 
-            if part_index >= len(rel_parts):
+            if modality is None:
                 return False
 
-            modality = rel_parts[part_index]
             if modality in normalized_exclude_modalities:
                 return True
 

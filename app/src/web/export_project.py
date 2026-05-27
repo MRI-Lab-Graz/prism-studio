@@ -10,9 +10,12 @@ import json
 import zipfile
 import gzip
 import io
+import shutil
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional, Set
 
+from src.project_manager import _matches_excluded_acq_label
 from src.survey_scale_inference import get_survey_item_map
 
 
@@ -45,6 +48,37 @@ def _extract_terminal_suffix_label(filename: str) -> str | None:
     if not suffix or "-" in suffix:
         return None
     return suffix
+
+
+def _resolve_export_subject_scope(
+    rel_parts: tuple[str, ...], *, subject_name: str | None, is_dir: bool
+) -> tuple[str | None, str | None, str | None]:
+    """Resolve subject/session/modality scope for raw and nested export trees."""
+    subject_label = None
+    part_index = 0
+
+    if subject_name:
+        subject_label = subject_name
+    else:
+        subject_index = next(
+            (index for index, part in enumerate(rel_parts) if str(part).startswith("sub-")),
+            None,
+        )
+        if subject_index is None:
+            return None, None, None
+        subject_label = rel_parts[subject_index]
+        part_index = subject_index + 1
+
+    session_label = None
+    if part_index < len(rel_parts) and rel_parts[part_index].startswith("ses-"):
+        session_label = rel_parts[part_index]
+        part_index += 1
+
+    modality_limit = len(rel_parts) if is_dir else len(rel_parts) - 1
+    if part_index >= modality_limit:
+        return subject_label, session_label, None
+
+    return subject_label, session_label, rel_parts[part_index]
 
 
 def _is_version_control_metadata_path(path_parts: tuple[str, ...]) -> bool:
@@ -216,6 +250,8 @@ def export_project(
     exclude_version_control_metadata: bool = False,
     scrub_mri_json: bool = False,
     scrub_mri_json_groups: Optional[Set[str]] = None,
+    deface_anatomical_scans: bool = False,
+    defacing_selected_variants: Optional[Set[str]] = None,
     clean_nifti_gzip_headers: bool = False,
     progress_callback=None,
     cancelled_flag=None,
@@ -236,6 +272,10 @@ def export_project(
         include_analysis: Include analysis/ folder
         exclude_subjects: Exclude selected subject directories (for example, {"sub-002"})
         exclude_version_control_metadata: Strip Git/DataLad metadata from ZIP
+        deface_anatomical_scans: Deface selected anatomical scans in an export-only copy
+            before writing them into the ZIP archive.
+        defacing_selected_variants: Optional anatomical variant filter for export-only
+            defacing.
         clean_nifti_gzip_headers: Normalize .nii.gz GZIP headers (mtime/FNAME)
             in exported copies for privacy-safe sharing.
         progress_callback: Optional callable(percent, message) for progress updates
@@ -294,6 +334,87 @@ def export_project(
         if str(label).strip()
     }
 
+    export_tree_root = project_path
+    defacing_overlay_root: Optional[Path] = None
+    defacing_workspace_root: Optional[Path] = None
+    defacing_result: Optional[Dict[str, Any]] = None
+
+    if deface_anatomical_scans:
+        from src.datalad_execution import is_datalad_dataset
+        from src.mri_json_scrubber import (
+            deface_anatomical_scans as run_export_defacing,
+            prepare_defacing_export_copy,
+        )
+
+        _report(12, "Preparing export-only MRI defacing...")
+        _check_cancelled()
+
+        defacing_workspace_root = Path(
+            tempfile.mkdtemp(prefix="prism_export_defacing_")
+        )
+        use_full_export_copy = not exclude_version_control_metadata
+
+        if use_full_export_copy and is_datalad_dataset(project_path):
+            copy_summary = prepare_defacing_export_copy(
+                project_path,
+                defacing_workspace_root,
+                selected_variants=defacing_selected_variants,
+                excluded_subjects=exclude_subjects,
+                excluded_sessions=exclude_sessions,
+                preserve_datalad_metadata=True,
+            )
+            if not copy_summary.get("success"):
+                raise RuntimeError(
+                    str(
+                        copy_summary.get("error")
+                        or "Could not prepare DataLad-preserving export defacing copy."
+                    )
+                )
+            export_tree_root = Path(
+                str(copy_summary.get("target_path") or "")
+            ).resolve(strict=False)
+        elif use_full_export_copy:
+            export_tree_root = defacing_workspace_root / project_path.name
+            shutil.copytree(project_path, export_tree_root, symlinks=False)
+        else:
+            copy_summary = prepare_defacing_export_copy(
+                project_path,
+                defacing_workspace_root,
+                selected_variants=defacing_selected_variants,
+                excluded_subjects=exclude_subjects,
+                excluded_sessions=exclude_sessions,
+                preserve_datalad_metadata=False,
+            )
+            if not copy_summary.get("success"):
+                raise RuntimeError(
+                    str(
+                        copy_summary.get("error")
+                        or "Could not prepare export defacing overlay."
+                    )
+                )
+            defacing_overlay_root = Path(
+                str(copy_summary.get("target_path") or "")
+            ).resolve(strict=False)
+
+        defacing_target_root = export_tree_root if use_full_export_copy else defacing_overlay_root
+        if defacing_target_root is None:
+            raise RuntimeError("Export defacing target could not be prepared.")
+
+        defacing_result = run_export_defacing(
+            defacing_target_root,
+            selected_variants=defacing_selected_variants,
+            excluded_subjects=exclude_subjects,
+            excluded_sessions=exclude_sessions,
+        )
+        if not defacing_result.get("success"):
+            raise RuntimeError(
+                str(
+                    defacing_result.get("error")
+                    or defacing_result.get("message")
+                    or "Export-only MRI defacing failed."
+                )
+            )
+
     def _count_exportable_files(source_root: Path) -> int:
         total = 0
         for root, dirs, files in os.walk(source_root):
@@ -314,13 +435,13 @@ def export_project(
 
     # Pre-count total files for accurate progress
     total_files = sum(
-        _count_exportable_files(project_path / folder_name)
+        _count_exportable_files(export_tree_root / folder_name)
         for folder_name, should_include in folders_to_copy.items()
-        if should_include and (project_path / folder_name).exists()
+        if should_include and (export_tree_root / folder_name).exists()
     )
     total_files += sum(
         _count_exportable_files(item)
-        for item in project_path.iterdir()
+        for item in export_tree_root.iterdir()
         if (
             item.is_dir()
             and item.name.startswith("sub-")
@@ -335,6 +456,20 @@ def export_project(
         "participant_count": len(participant_mapping),
         "mapping_file": str(_saved_mapping_file) if _saved_mapping_file else None,
     }
+    if defacing_result is not None:
+        stats["defacing"] = defacing_result
+
+    def _resolve_export_source_file(source_file: Path) -> Path:
+        if defacing_overlay_root is None:
+            return source_file
+
+        try:
+            rel_path = source_file.relative_to(project_path)
+        except ValueError:
+            return source_file
+
+        overlay_candidate = defacing_overlay_root / rel_path
+        return overlay_candidate if overlay_candidate.exists() else source_file
 
     def _anon_arc_path(rel_parts: list) -> str:
         """Apply participant-ID replacement to every component of an arc path."""
@@ -442,10 +577,12 @@ def export_project(
         zipf: zipfile.ZipFile,
         source_root: Path,
         arc_prefix: str,
+        skip_subjects: Optional[Set[str]] = None,
         skip_sessions: Optional[Set[str]] = None,
         skip_modalities: Optional[Set[str]] = None,
         skip_acq: Optional[Dict[str, Set[str]]] = None,
         skip_tasks: Optional[Dict[str, Set[str]]] = None,
+        subject_name: Optional[str] = None,
     ) -> None:
         """Walk source_root and write every file directly into zipf."""
         for root, _dirs, files in os.walk(source_root):
@@ -453,6 +590,11 @@ def export_project(
             rel_root = Path(root).relative_to(source_root)
             # Check if this path is under an excluded session or modality
             rel_parts = rel_root.parts
+            current_subject, current_session, current_modality = _resolve_export_subject_scope(
+                rel_parts,
+                subject_name=subject_name,
+                is_dir=True,
+            )
             if exclude_version_control_metadata:
                 _dirs[:] = [
                     dirname
@@ -464,46 +606,33 @@ def export_project(
                     for filename in files
                     if not _is_version_control_metadata_path(rel_parts + (filename,))
                 ]
-            if (
-                skip_sessions
-                and rel_parts
-                and rel_parts[0].startswith("ses-")
-                and rel_parts[0] in skip_sessions
-            ):
+            if skip_subjects and current_subject and current_subject in skip_subjects:
+                _dirs[:] = []
+                continue
+            if skip_sessions and current_session and current_session in skip_sessions:
                 _dirs[:] = []  # prune subtree
                 continue
-            if skip_modalities:
-                # modality is first part when no session, or second part when session present
-                modality_part = (
-                    rel_parts[1]
-                    if (len(rel_parts) > 1 and rel_parts[0].startswith("ses-"))
-                    else (rel_parts[0] if rel_parts else None)
-                )
-                if modality_part and modality_part in skip_modalities:
-                    _dirs[:] = []
-                    continue
-            # Determine current modality for acq filtering
-            _cur_modality = None
-            if rel_parts:
-                _cur_modality = (
-                    rel_parts[1]
-                    if (len(rel_parts) > 1 and rel_parts[0].startswith("ses-"))
-                    else rel_parts[0]
-                )
+            if skip_modalities and current_modality and current_modality in skip_modalities:
+                _dirs[:] = []
+                continue
             for filename in files:
                 # Keep participants mapping and anonymization map out of share ZIPs.
                 if filename in ("participants_mapping.json", "anonymization_map.json"):
                     continue
+                _file_subject, _file_session, _cur_modality = _resolve_export_subject_scope(
+                    rel_parts + (filename,),
+                    subject_name=subject_name,
+                    is_dir=False,
+                )
+                if skip_subjects and _file_subject and _file_subject in skip_subjects:
+                    continue
+                if skip_sessions and _file_session and _file_session in skip_sessions:
+                    continue
+                if skip_modalities and _cur_modality and _cur_modality in skip_modalities:
+                    continue
                 # Filter by acq- label if requested
                 if skip_acq and _cur_modality and _cur_modality in skip_acq:
-                    if _cur_modality in MRI_SUFFIX_LABEL_MODALITIES:
-                        suffix_label = _extract_terminal_suffix_label(filename)
-                        if suffix_label and suffix_label in skip_acq[_cur_modality]:
-                            continue
-                    import re as _re
-
-                    acq_m = _re.search(r"_acq-([A-Za-z0-9]+)", filename)
-                    if acq_m and acq_m.group(1) in skip_acq[_cur_modality]:
+                    if _matches_excluded_acq_label(filename, skip_acq[_cur_modality]):
                         continue
                 if skip_tasks and _cur_modality and _cur_modality in skip_tasks:
                     import re as _re
@@ -512,6 +641,7 @@ def export_project(
                     if task_m and task_m.group(1) in skip_tasks[_cur_modality]:
                         continue
                 source_file = Path(root) / filename
+                resolved_source_file = _resolve_export_source_file(source_file)
                 stats["files_processed"] += 1
 
                 # Build archive path with optional anonymisation
@@ -540,105 +670,122 @@ def export_project(
 
                 # Write to ZIP (no staging copy for binary files)
                 if filename.endswith(".json"):
-                    zipf.writestr(arcname, _json_bytes(source_file))
+                    zipf.writestr(arcname, _json_bytes(resolved_source_file))
                     if participant_mapping or mask_questions:
                         stats["files_anonymized"] += 1
                 elif filename.endswith(".tsv") and anonymize and participant_mapping:
-                    zipf.writestr(arcname, _tsv_bytes(source_file))
+                    zipf.writestr(arcname, _tsv_bytes(resolved_source_file))
                     stats["files_anonymized"] += 1
                 elif (
                     filename.lower().endswith(".nii.gz")
                     and clean_nifti_gzip_headers
                 ):
-                    zipf.writestr(arcname, _clean_nifti_gzip_bytes(source_file))
+                    zipf.writestr(
+                        arcname, _clean_nifti_gzip_bytes(resolved_source_file)
+                    )
                     stats["files_anonymized"] += 1
                 else:
-                    zipf.write(source_file, arcname)
+                    zipf.write(resolved_source_file, arcname)
 
-    _report(15, "Building ZIP archive...")
-    _check_cancelled()
-
-    with zipfile.ZipFile(output_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
-
-        # Optional folders (derivatives, code, analysis)
-        for folder_name, should_include in folders_to_copy.items():
-            if not should_include:
-                continue
-            source_folder = project_path / folder_name
-            if not source_folder.exists():
-                continue
-            _report(15, f"Adding {folder_name}/...")
-            _check_cancelled()
-            _add_tree(zipf, source_folder, folder_name)
-
-        # BIDS subject folders
-        for item in sorted(project_path.iterdir()):
-            if not (item.is_dir() and item.name.startswith("sub-")):
-                continue
-            if item.name in normalized_exclude_subjects:
-                continue
-            arc_name = (
-                anonymize_filename(item.name, participant_mapping)
-                if (anonymize and participant_mapping)
-                else item.name
-            )
-            if arc_name != item.name:
-                stats["files_anonymized"] += 1
-            _check_cancelled()
-            _add_tree(
-                zipf,
-                item,
-                arc_name,
-                skip_sessions=exclude_sessions or None,
-                skip_modalities=exclude_modalities or None,
-                skip_acq=exclude_acq or None,
-                skip_tasks=exclude_tasks or None,
-            )
-
-        _report(88, "Adding root files...")
+    try:
+        _report(15, "Building ZIP archive...")
         _check_cancelled()
 
-        # Root-level files: include all files so PRISM metadata/config is complete
-        # (e.g., dataset_description.json, .prismrc.json, task-*_survey.json).
-        for source_file in sorted(project_path.iterdir()):
-            if not source_file.is_file():
-                continue
-            if exclude_version_control_metadata and _is_version_control_metadata_path(
-                (source_file.name,)
-            ):
-                continue
-            if source_file.name == "participants_mapping.json":
-                continue
-            # Avoid embedding the output archive when user writes into project root.
-            if source_file.resolve() == output_zip.resolve():
-                continue
-            filename = source_file.name
-            if exclude_tasks and "survey" in exclude_tasks:
-                import re as _re
+        with zipfile.ZipFile(output_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
 
-                task_m = _re.search(r"^task-([A-Za-z0-9]+)_survey\.json$", filename)
-                if task_m and task_m.group(1) in exclude_tasks["survey"]:
+            # Optional folders (derivatives, code, analysis)
+            for folder_name, should_include in folders_to_copy.items():
+                if not should_include:
                     continue
-            if filename.endswith(".json"):
-                zipf.writestr(filename, _json_bytes(source_file))
-            elif filename.endswith(".tsv") and anonymize and participant_mapping:
-                zipf.writestr(filename, _tsv_bytes(source_file))
-            elif filename.lower().endswith(".nii.gz") and clean_nifti_gzip_headers:
-                zipf.writestr(filename, _clean_nifti_gzip_bytes(source_file))
+                source_folder = export_tree_root / folder_name
+                if not source_folder.exists():
+                    continue
+                _report(15, f"Adding {folder_name}/...")
+                _check_cancelled()
+                _add_tree(
+                    zipf,
+                    source_folder,
+                    folder_name,
+                    skip_subjects=normalized_exclude_subjects or None,
+                    skip_sessions=exclude_sessions or None,
+                    skip_modalities=exclude_modalities or None,
+                    skip_acq=exclude_acq or None,
+                    skip_tasks=exclude_tasks or None,
+                )
+
+            # BIDS subject folders
+            for item in sorted(export_tree_root.iterdir()):
+                if not (item.is_dir() and item.name.startswith("sub-")):
+                    continue
+                if item.name in normalized_exclude_subjects:
+                    continue
+                arc_name = (
+                    anonymize_filename(item.name, participant_mapping)
+                    if (anonymize and participant_mapping)
+                    else item.name
+                )
+                if arc_name != item.name:
+                    stats["files_anonymized"] += 1
+                _check_cancelled()
+                _add_tree(
+                    zipf,
+                    item,
+                    arc_name,
+                    skip_subjects=normalized_exclude_subjects or None,
+                    skip_sessions=exclude_sessions or None,
+                    skip_modalities=exclude_modalities or None,
+                    skip_acq=exclude_acq or None,
+                    skip_tasks=exclude_tasks or None,
+                    subject_name=item.name,
+                )
+
+            _report(88, "Adding root files...")
+            _check_cancelled()
+
+            # Root-level files: include all files so PRISM metadata/config is complete
+            # (e.g., dataset_description.json, .prismrc.json, task-*_survey.json).
+            for source_file in sorted(export_tree_root.iterdir()):
+                if not source_file.is_file():
+                    continue
+                if exclude_version_control_metadata and _is_version_control_metadata_path(
+                    (source_file.name,)
+                ):
+                    continue
+                if source_file.name == "participants_mapping.json":
+                    continue
+                # Avoid embedding the output archive when user writes into project root.
+                if source_file.resolve() == output_zip.resolve():
+                    continue
+                filename = source_file.name
+                if exclude_tasks and "survey" in exclude_tasks:
+                    import re as _re
+
+                    task_m = _re.search(r"^task-([A-Za-z0-9]+)_survey\.json$", filename)
+                    if task_m and task_m.group(1) in exclude_tasks["survey"]:
+                        continue
+                if filename.endswith(".json"):
+                    zipf.writestr(filename, _json_bytes(source_file))
+                elif filename.endswith(".tsv") and anonymize and participant_mapping:
+                    zipf.writestr(filename, _tsv_bytes(source_file))
+                elif filename.lower().endswith(".nii.gz") and clean_nifti_gzip_headers:
+                    zipf.writestr(filename, _clean_nifti_gzip_bytes(source_file))
+                else:
+                    zipf.write(source_file, filename)
+                stats["files_processed"] += 1
+
+        final_size = _fmt_size(output_zip)
+        size_part = f" ({final_size})" if final_size else ""
+        _report(100, f"Export complete{size_part}")
+        print(f"✓ Export complete: {output_zip}")
+        print(f"  Processed {stats['files_processed']} files")
+        if anonymize:
+            print(f"  Anonymized {stats['files_anonymized']} files/folders")
+            if stats["mapping_file"]:
+                print(f"  🔒 Mapping saved to: {stats['mapping_file']} (not in ZIP)")
             else:
-                zipf.write(source_file, filename)
-            stats["files_processed"] += 1
+                print("  🔒 No participants found; no mapping file written")
 
-    final_size = _fmt_size(output_zip)
-    size_part = f" ({final_size})" if final_size else ""
-    _report(100, f"Export complete{size_part}")
-    print(f"✓ Export complete: {output_zip}")
-    print(f"  Processed {stats['files_processed']} files")
-    if anonymize:
-        print(f"  Anonymized {stats['files_anonymized']} files/folders")
-        if stats["mapping_file"]:
-            print(f"  🔒 Mapping saved to: {stats['mapping_file']} (not in ZIP)")
-        else:
-            print("  🔒 No participants found; no mapping file written")
-
-    return stats
+        return stats
+    finally:
+        if defacing_workspace_root is not None:
+            shutil.rmtree(defacing_workspace_root, ignore_errors=True)

@@ -425,6 +425,10 @@
                                 <span class="navbar-flow-item-title"><i class="fas fa-check-circle me-2 text-success"></i>Validator</span>
                                 <span class="navbar-flow-item-hint">Check completeness, consistency, and standard compliance</span>
                             </a></li>
+                            <li><a class="dropdown-item navbar-flow-item{% if not current_project.path %} disabled{% endif %}" href="{% if current_project.path %}{{ url_for('validation.validate_dataset') }}#datasetDefacingCard{% else %}#{% endif %}"{% if not current_project.path %} title="Please load a project first" aria-disabled="true"{% else %} title="Deface anatomical MRI in the active PRISM dataset in place"{% endif %}>
+                                <span class="navbar-flow-item-title"><i class="fas fa-user-shield me-2 text-warning"></i>Deface MRI In PRISM</span>
+                                <span class="navbar-flow-item-hint">Modify the current project in place; DataLad-tracked projects use DataLad run</span>
+                            </a></li>
                             <li><a class="dropdown-item navbar-flow-item{% if not current_project.path or not file_management_available %} disabled{% endif %}" href="{% if current_project.path and file_management_available %}{{ url_for('tools.file_management') }}{% else %}#{% endif %}"{% if file_management_available %} data-file-management-url="{{ url_for('tools.file_management') }}"{% endif %} id="fileManagementLink"{% if not file_management_available %} title="Unavailable in this build" aria-disabled="true"{% elif not current_project.path %} title="Please load a project first"{% else %} title="Restructure, rename, and relocate files inside the active PRISM project"{% endif %}>
                                 <span class="navbar-flow-item-title"><i class="fas fa-file-import me-2 text-warning"></i>File Management</span>
                                 <span class="navbar-flow-item-hint">Move, rename, and align files with project conventions</span>

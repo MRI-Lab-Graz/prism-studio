@@ -509,6 +509,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("materialize_annex_content: true,", content)
         self.assertIn("scrub_mri_json: getById('exportScrubMriJson')?.checked || false,", content)
         self.assertIn("scrub_mri_json_groups: scrubGroups.length ? scrubGroups : null,", content)
+        self.assertIn("deface_anatomical_scans: getById('exportDefaceAnatomicalScans')?.checked || false,", content)
+        self.assertIn("defacing_selected_variants: Array.isArray(variantSelection.selectedVariants)", content)
         self.assertIn("include_sourcedata: getById('exportSourcedata')?.checked || false,", content)
         self.assertIn(
             "exclude_version_control_metadata: getSelectedExportRepositoryMode() === 'datalad_free',",
@@ -612,8 +614,11 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn('id="exportAnnexAvailabilityReport"', content)
         self.assertIn("PRISM now applies this automatically for folder export", content)
         self.assertIn('id="exportRepositoryMode"', content)
+        self.assertIn('id="exportDefaceAnatomicalScans"', content)
         self.assertIn('id="exportDefacingConfirmAlways"', content)
         self.assertIn('id="exportDefacingUseGlobalDefault"', content)
+        self.assertIn("Deface selected anatomical MRI in the exported copy only", content)
+        self.assertIn("Check current defacing status in PRISM dataset", content)
         self.assertIn("Folder Export", content)
         self.assertIn("Upload-Ready ZIP", content)
         self.assertIn("Template Export", content)
@@ -632,10 +637,10 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("ZIP saved to:", content)
         self.assertIn("escapeHtml(savedPath)", content)
 
-    def test_export_submit_prompts_for_defacing_risk_when_scrub_enabled(self):
+    def test_export_submit_prompts_for_defacing_risk_when_mri_privacy_checks_enabled(self):
         content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("if (data.scrub_mri_json) {", content)
+        self.assertIn("if (data.scrub_mri_json || data.deface_anatomical_scans) {", content)
         self.assertIn("const defacingConfirmationMode = getSelectedDefacingConfirmationMode();", content)
         self.assertIn("const defacingSummary = await fetchDefacingSummary(currentProjectPath);", content)
         self.assertIn("if (defacingConfirmationMode === 'always' || defacingSummary.riskCount > 0) {", content)
