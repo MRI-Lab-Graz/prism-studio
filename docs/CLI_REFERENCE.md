@@ -405,6 +405,31 @@ python prism_tools.py survey i18n-migrate --src library/survey --dst library/sur
 python prism_tools.py survey i18n-build --src library/survey_i18n --out library/survey_de --lang de --fallback de
 ```
 
+#### `survey i18n-autotranslate`
+Auto-translate localized survey template strings from one language into another.
+
+```bash
+# DeepL (API key via env var)
+export DEEPL_API_KEY="your_deepl_key"
+python prism_tools.py survey i18n-autotranslate \
+  --src library/survey_i18n \
+  --out library/survey_i18n_de \
+  --provider deepl \
+  --source-lang en \
+  --target-lang de
+```
+
+```bash
+# LibreTranslate
+python prism_tools.py survey i18n-autotranslate \
+  --src library/survey_i18n \
+  --out library/survey_i18n_de \
+  --provider libretranslate \
+  --api-url https://libretranslate.example/translate \
+  --source-lang en \
+  --target-lang de
+```
+
 #### `biometrics import-excel`
 Import biometrics templates from an Excel codebook.
 
