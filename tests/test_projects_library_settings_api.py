@@ -18,6 +18,21 @@ def _build_app_for_blueprint():
     return app
 
 
+def _build_app_for_export_preferences_lifecycle():
+    app_root = Path(__file__).resolve().parents[1] / "app"
+    if str(app_root) not in sys.path:
+        sys.path.insert(0, str(app_root))
+
+    library_module = importlib.import_module("src.web.blueprints.projects_library_blueprint")
+    projects_module = importlib.import_module("src.web.blueprints.projects")
+
+    app = Flask(__name__, root_path=str(app_root))
+    app.config["SECRET_KEY"] = "test-secret-key"
+    app.register_blueprint(library_module.projects_library_bp)
+    app.register_blueprint(projects_module.projects_bp)
+    return app, projects_module
+
+
 def test_dedicated_terminal_setting_roundtrip(tmp_path, monkeypatch):
     app = _build_app_for_blueprint()
 
@@ -207,6 +222,102 @@ def test_global_library_setting_rejects_invalid_export_defacing_mode(
     payload = response.get_json()
     assert payload["success"] is False
     assert "export_defacing_confirmation_mode" in payload["error"]
+
+
+def test_export_defacing_confirmation_mode_lifecycle_across_global_and_project_apis(
+    tmp_path, monkeypatch
+):
+    app, projects_module = _build_app_for_export_preferences_lifecycle()
+
+    from src import config as config_module
+
+    monkeypatch.setattr(config_module, "_get_user_app_settings_dir", lambda: tmp_path)
+    monkeypatch.setattr(
+        projects_module,
+        "get_current_project",
+        lambda: {"path": None, "name": None},
+    )
+
+    project_root = tmp_path / "study"
+    project_root.mkdir(parents=True)
+
+    client = app.test_client()
+
+    initial_response = client.get(
+        "/api/projects/preferences/export",
+        query_string={"project_path": str(project_root)},
+    )
+    assert initial_response.status_code == 200
+    initial_payload = initial_response.get_json()
+    assert initial_payload["success"] is True
+    assert initial_payload["preferences"]["defacing_confirmation_mode"] == "risk"
+    assert initial_payload["inherited_preferences"]["defacing_confirmation_mode"] is True
+
+    global_response = client.post(
+        "/api/settings/global-library",
+        json={"export_defacing_confirmation_mode": "always"},
+    )
+    assert global_response.status_code == 200
+    global_payload = global_response.get_json()
+    assert global_payload["success"] is True
+    assert global_payload["export_defacing_confirmation_mode"] == "always"
+
+    inherited_response = client.get(
+        "/api/projects/preferences/export",
+        query_string={"project_path": str(project_root)},
+    )
+    assert inherited_response.status_code == 200
+    inherited_payload = inherited_response.get_json()
+    assert inherited_payload["success"] is True
+    assert inherited_payload["preferences"]["defacing_confirmation_mode"] == "always"
+    assert inherited_payload["inherited_preferences"]["defacing_confirmation_mode"] is True
+
+    override_response = client.post(
+        "/api/projects/preferences/export",
+        json={
+            "project_path": str(project_root),
+            "preferences": {"defacing_confirmation_mode": "risk"},
+        },
+    )
+    assert override_response.status_code == 200
+    override_payload = override_response.get_json()
+    assert override_payload["success"] is True
+    assert override_payload["preferences"]["defacing_confirmation_mode"] == "risk"
+
+    explicit_response = client.get(
+        "/api/projects/preferences/export",
+        query_string={"project_path": str(project_root)},
+    )
+    assert explicit_response.status_code == 200
+    explicit_payload = explicit_response.get_json()
+    assert explicit_payload["success"] is True
+    assert explicit_payload["preferences"]["defacing_confirmation_mode"] == "risk"
+    assert explicit_payload["inherited_preferences"]["defacing_confirmation_mode"] is False
+
+    reset_response = client.post(
+        "/api/projects/preferences/export",
+        json={
+            "project_path": str(project_root),
+            "preferences": {"defacing_confirmation_mode": None},
+        },
+    )
+    assert reset_response.status_code == 200
+    reset_payload = reset_response.get_json()
+    assert reset_payload["success"] is True
+
+    reset_get_response = client.get(
+        "/api/projects/preferences/export",
+        query_string={"project_path": str(project_root)},
+    )
+    assert reset_get_response.status_code == 200
+    reset_get_payload = reset_get_response.get_json()
+    assert reset_get_payload["success"] is True
+    assert reset_get_payload["preferences"]["defacing_confirmation_mode"] == "always"
+    assert reset_get_payload["inherited_preferences"]["defacing_confirmation_mode"] is True
+
+    saved_config = config_module.load_config(str(project_root))
+    export_preferences = (saved_config.project_preferences or {}).get("export", {})
+    assert "defacing_confirmation_mode" not in export_preferences
 
 
 def test_get_library_path_without_current_project(tmp_path, monkeypatch):
