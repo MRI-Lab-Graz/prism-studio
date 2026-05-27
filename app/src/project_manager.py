@@ -171,6 +171,25 @@ def _matches_excluded_acq_label(filename: str, excluded_labels: set[str]) -> boo
     return False
 
 
+def _extract_export_task_label(filename: str, modality: str | None = None) -> str | None:
+    """Extract the task label used by export-scope filters from a filename."""
+    name = str(filename or "").strip()
+    if not name:
+        return None
+
+    normalized_modality = str(modality or "").strip().lower()
+    if normalized_modality == "survey":
+        survey_match = re.search(r"(?:^|_)task-(.+?)_survey(?:\.[^.]+)?$", name)
+        if survey_match:
+            return survey_match.group(1)
+
+    task_match = re.search(r"(?:^|_)task-([^_]+)", name)
+    if task_match:
+        return task_match.group(1)
+
+    return None
+
+
 def _resolve_export_subject_scope(
     rel_parts: tuple[str, ...], *, is_dir: bool
 ) -> tuple[str | None, str | None, str | None]:
@@ -1895,6 +1914,7 @@ class ProjectManager:
         materialization_warnings: List[str] = []
         materialization_workspace: Optional[Path] = None
         workspace_cleanup_error: Optional[str] = None
+        materialized_selected_targets: Set[str] = set()
 
         materialization_included_top_level_folders = {
             "derivatives": include_derivatives,
@@ -1938,7 +1958,11 @@ class ProjectManager:
             if not rel_parts:
                 return False
 
-            if rel_parts[0].startswith("sub-") and rel_parts[0] in materialization_exclude_subjects:
+            subject_label, session_label, modality = _resolve_export_subject_scope(
+                rel_parts,
+                is_dir=is_dir,
+            )
+            if subject_label in materialization_exclude_subjects:
                 return True
 
             if len(rel_parts) == 1:
@@ -1948,30 +1972,20 @@ class ProjectManager:
                 if not is_dir:
                     survey_task_filters = materialization_exclude_tasks.get("survey", set())
                     if survey_task_filters:
-                        task_match = re.search(
-                            r"^task-([A-Za-z0-9]+)_survey\\.json$", root_name
-                        )
-                        if task_match and task_match.group(1) in survey_task_filters:
+                        task_label = _extract_export_task_label(root_name, "survey")
+                        if task_label and task_label in survey_task_filters:
                             return True
                 return False
 
-            if not rel_parts[0].startswith("sub-"):
+            if subject_label is None:
                 return False
 
-            part_index = 1
-            if (
-                part_index < len(rel_parts)
-                and rel_parts[part_index].startswith("ses-")
-            ):
-                session_label = rel_parts[part_index]
-                if session_label in materialization_exclude_sessions:
-                    return True
-                part_index += 1
+            if session_label in materialization_exclude_sessions:
+                return True
 
-            if part_index >= len(rel_parts):
+            if modality is None:
                 return False
 
-            modality = rel_parts[part_index]
             if modality in materialization_exclude_modalities:
                 return True
 
@@ -1989,8 +2003,8 @@ class ProjectManager:
 
             excluded_task_labels = materialization_exclude_tasks.get(modality, set())
             if excluded_task_labels:
-                task_match = re.search(r"(?:^|_)task-([A-Za-z0-9]+)", filename)
-                if task_match and task_match.group(1) in excluded_task_labels:
+                task_label = _extract_export_task_label(filename, modality)
+                if task_label and task_label in excluded_task_labels:
                     return True
 
             return False
@@ -2303,6 +2317,14 @@ class ProjectManager:
                     clone_source_path
                 )
 
+                def _set_materialized_selected_targets(paths: List[str]) -> None:
+                    nonlocal materialized_selected_targets
+                    materialized_selected_targets = {
+                        str(path).strip() for path in paths if str(path).strip()
+                    }
+
+                _set_materialized_selected_targets(selected_materialization_targets)
+
                 has_subject_scope_dirs = any(
                     str(path).startswith("sub-")
                     for path in selected_recursive_scope_dirs
@@ -2331,6 +2353,7 @@ class ProjectManager:
                     selected_materialization_targets = _collect_materialization_targets(
                         clone_source_path
                     )
+                    _set_materialized_selected_targets(selected_materialization_targets)
 
                 if not selected_materialization_targets:
                     materialization_warnings.append(
@@ -2532,10 +2555,8 @@ class ProjectManager:
                 if not is_dir:
                     survey_task_filters = normalized_exclude_tasks.get("survey", set())
                     if survey_task_filters:
-                        task_match = re.search(
-                            r"^task-([A-Za-z0-9]+)_survey\\.json$", root_name
-                        )
-                        if task_match and task_match.group(1) in survey_task_filters:
+                        task_label = _extract_export_task_label(root_name, "survey")
+                        if task_label and task_label in survey_task_filters:
                             return True
                 return False
 
@@ -2565,8 +2586,8 @@ class ProjectManager:
 
             excluded_task_labels = normalized_exclude_tasks.get(modality, set())
             if excluded_task_labels:
-                task_match = re.search(r"(?:^|_)task-([A-Za-z0-9]+)", filename)
-                if task_match and task_match.group(1) in excluded_task_labels:
+                task_label = _extract_export_task_label(filename, modality)
+                if task_label and task_label in excluded_task_labels:
                     return True
 
             return False
@@ -2589,6 +2610,21 @@ class ProjectManager:
                     rel_parts = candidate.relative_to(copy_source_path).parts
                 except ValueError:
                     continue
+
+                rel_path = Path(*rel_parts).as_posix()
+
+                if materialized_export and copy_source_path != project_path and materialized_selected_targets:
+                    if candidate.is_dir():
+                        dir_prefix = f"{rel_path}/"
+                        if not any(
+                            target == rel_path or target.startswith(dir_prefix)
+                            for target in materialized_selected_targets
+                        ):
+                            filtered_names.append(name)
+                            continue
+                    elif rel_path not in materialized_selected_targets:
+                        filtered_names.append(name)
+                        continue
 
                 if candidate.is_symlink() and not candidate.exists():
                     missing_source_paths.append(str(candidate))
@@ -3004,10 +3040,8 @@ class ProjectManager:
                 if not is_dir:
                     survey_task_filters = normalized_exclude_tasks.get("survey", set())
                     if survey_task_filters:
-                        task_match = re.search(
-                            r"^task-([A-Za-z0-9]+)_survey\\.json$", root_name
-                        )
-                        if task_match and task_match.group(1) in survey_task_filters:
+                        task_label = _extract_export_task_label(root_name, "survey")
+                        if task_label and task_label in survey_task_filters:
                             return True
                 return False
 
@@ -3037,8 +3071,8 @@ class ProjectManager:
 
             excluded_task_labels = normalized_exclude_tasks.get(modality, set())
             if excluded_task_labels:
-                task_match = re.search(r"(?:^|_)task-([A-Za-z0-9]+)", filename)
-                if task_match and task_match.group(1) in excluded_task_labels:
+                task_label = _extract_export_task_label(filename, modality)
+                if task_label and task_label in excluded_task_labels:
                     return True
 
             return False
