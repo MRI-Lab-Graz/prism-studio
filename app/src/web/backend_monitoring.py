@@ -81,6 +81,7 @@ _ENDPOINT_LABELS = {
     "projects_export.export_project_structure": "export project structure",
     "projects_export.export_project_folder": "folder export project",
     "projects_export.export_defacing_report": "check anatomical defacing status",
+    "projects_export.project_deface_anatomical_scans": "deface anatomical scans in project",
     "projects_export.export_deface_anatomical_scans": "deface anatomical scans",
     "projects_export.template_export_project": "template export project",
     "projects_library.set_backend_monitoring_setting": "update backend monitoring setting",
@@ -1766,6 +1767,8 @@ def _build_terminal_command(req) -> str:
         return _build_projects_folder_export_terminal_command(req)
     if endpoint == "projects_export.export_defacing_report":
         return _build_projects_defacing_terminal_command(req, run_defacing=False)
+    if endpoint == "projects_export.project_deface_anatomical_scans":
+        return _build_projects_defacing_terminal_command(req, run_defacing=True)
     if endpoint == "projects_export.export_deface_anatomical_scans":
         return _build_projects_defacing_terminal_command(req, run_defacing=True)
     if endpoint == "projects_export.template_export_project":
