@@ -62,12 +62,15 @@ Current checkpoint:
 - A public DataLad page is now part of the visible docs because DataLad behavior materially affects real project setup and export usage.
 - Projects, Converter, and Validator now have deeper task-oriented workflow pages instead of short placeholder summaries.
 - Examples and Workshop now serve as a real examples layer for short success paths and longer onboarding paths.
+- Survey Import, Tools, Template Editor, Recipe Builder, and Analysis Output now have fuller user-facing workflow guides with examples and clearer output expectations.
+- CLI Workflows, Specifications, and the BIDS quick-reference page are now aligned to the public docs structure instead of reading like internal notes.
+- Error Codes, ANC Export, Recipes reference, Survey Templates reference, Survey Library, and the standalone Web Interface page are now rewritten into the same public-facing docs style.
 - Warnings-as-errors Sphinx validation is green after the first rewrite slice.
 
 Immediate next actions:
-1. Continue with deep workflow rewrites for survey import, tools, template editing, recipe builder, and analysis outputs.
-2. Reduce remaining duplication between overview pages and older detailed pages.
-3. Add more downloadable example references and decision-support content where workflows still rely on jargon.
+1. Reduce any remaining wording overlap between the rewritten public pages and the few older specialist pages that still carry legacy phrasing.
+2. Add more downloadable example references and decision-support content where modality-specific pages still rely on structure more than examples.
+3. Decide whether contributor-facing docs should stay secondary in RTD or get a dedicated public developer section later.
 4. Keep validating each slice with a warnings-as-errors Sphinx build.
 
 Maintenance action:
@@ -237,6 +240,9 @@ Changelog remains canonical for release-facing history:
 
 - For Sphinx plus MyST docs in this repo, hidden Markdown pages must either live in a toctree or carry explicit `orphan: true` front matter, otherwise warnings-as-errors will block the build.
 - The docs rewrite is easier to keep accurate when each page is treated as one of four types: concept, workflow, example, or reference.
+- The fastest way to improve old docs pages in this repo is to convert placeholder summaries into decision-oriented task guides instead of trying to rewrite the whole tree as one monolith.
+- CLI docs should be split between workflow pages and exhaustive reference pages; mixing both into one document makes the automation path harder to scan.
+- Once the core navigation is fixed, the highest-value remaining docs work is usually example density and cross-link cleanup, not inventing more top-level pages.
 - Keep icon assignment in backend metadata (project.json) and only render in frontend adapters to avoid drift between session, recent-project cache, and persisted project state.
 - Export privacy tests should always include both positive MRI scrubbing assertions and non-MRI preservation checks, plus nested/derivative path variants for `.nii.gz` header cleaning.
 - For potentially disruptive privacy checks, shipping warning metadata in async status first is a low-risk way to add guidance without blocking export flows.
