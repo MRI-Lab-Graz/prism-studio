@@ -1,56 +1,74 @@
 # Recipes Reference
 
-This page explains what a recipe is and where PRISM stores recipe definitions and recipe outputs.
+Use this page when you need the reference model for PRISM scoring recipes rather
+than the step-by-step UI workflow.
 
-For the step-by-step Studio workflow, use the Recipe Builder guide instead.
+For the guided editor workflow, use [RECIPE_BUILDER.md](RECIPE_BUILDER.md).
 
 ## What a recipe is
 
-A recipe is a JSON file that tells PRISM how to turn raw items into computed scores.
+A recipe is a JSON definition that tells PRISM how to turn raw survey items into
+derived values and final scores.
 
-Recipes can define:
+Recipes can describe:
 
 - reverse coding
 - intermediate derived values
 - final score columns
+- missing-data behavior
 
-## Current project recipe location
+## Saved recipe vs output data
 
-For survey workflows, saved project-local recipes belong in:
+Keep this distinction clear:
+
+- the **recipe definition** is saved in the project
+- the **computed result** is written later when the recipe is executed
+
+Current survey recipe path:
 
 - `code/recipes/survey/`
 
-Older folders may still exist in legacy projects, but this is the current project location to document and use.
+Current survey output path:
 
-## Two main parts
+- `derivatives/survey/`
 
-The most important sections are:
+## Main structural ideas
+
+The two most important recipe areas are:
 
 - `Transforms`
 - `Scores`
 
-`Transforms` handles preparation steps such as inversion or intermediate calculations.
+### `Transforms`
 
-`Scores` defines the final output columns you want to analyze.
+Use this area for preparation logic such as:
 
-## Derived values and final scores
+- inversion
+- intermediate calculations
+- helper variables that support the final scores
 
-`Transforms.Derived` acts like a scratch area.
+### `Scores`
 
-These values help build the final scores, but they are not the main public result.
+Use this area for the final analysis-facing output columns you want to keep and
+interpret.
 
-`Scores` defines the output variables that should appear in the scored files.
+## Derived values vs final scores
+
+Derived values are useful when you need intermediate logic, but they are not
+automatically the main result you report.
+
+The `Scores` section is what usually becomes the main analysis output.
 
 ## Common methods
 
-Common score methods include:
+Common final-score methods include:
 
 - `sum`
 - `mean`
 - `formula`
 - `map`
 
-Common derived methods include:
+Common transform or derived methods include:
 
 - `sum`
 - `mean`
@@ -59,31 +77,17 @@ Common derived methods include:
 - `formula`
 - `map`
 
-## Missing data handling
+## Missing-data handling
 
-Recipes can define how missing values should be handled.
+Recipes can define how missing values should behave.
 
-Common options include:
+Common choices include:
 
 - `ignore`
 - `require_all`
 
-Use `ignore` when a score may still be meaningful with a small amount of missing data.
-
+Use `ignore` when a score can still be meaningful with limited missing data.
 Use `require_all` when every item must be present.
-
-## Output location
-
-When scoring runs successfully, PRISM writes survey outputs into:
-
-- `derivatives/survey/`
-
-You may see:
-
-- recipe-specific output folders
-- `survey_scores.tsv`
-- derivative metadata such as `dataset_description.json`
-- methods boilerplate files when that option is used
 
 ## Minimal example
 
@@ -104,14 +108,36 @@ You may see:
 }
 ```
 
-## Beginner advice
+This is the right scale of first example because it is easy to test and easy to
+spot-check against the raw item values.
 
-Start with one small, testable score.
+## How to reason about recipe design
 
-Once that works, add subscales, inversion, or more advanced logic.
+Good progression:
+
+1. start with one simple score
+2. confirm the item list is correct
+3. confirm reverse coding if required
+4. add derived values or subscales only after the simple case works
+
+## Typical outputs after execution
+
+When scoring runs successfully, survey outputs may include:
+
+- recipe-specific output folders
+- `survey_scores.tsv`
+- derivative metadata such as `dataset_description.json`
+- methods-related outputs when enabled by the workflow
+
+## Common mistakes
+
+- treating a saved recipe as if it already generated outputs
+- building many scales before one simple score is verified
+- mixing questionnaire versions in one recipe
+- forgetting that missing-data policy changes the meaning of the score
 
 ## Related pages
 
-- Recipe Builder workflow: [RECIPE_BUILDER.md](RECIPE_BUILDER.md)
-- Analysis and export outputs: [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md)
-- Survey templates: [TEMPLATES.md](TEMPLATES.md)
+- [RECIPE_BUILDER.md](RECIPE_BUILDER.md)
+- [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md)
+- [SURVEY_IMPORT.md](SURVEY_IMPORT.md)

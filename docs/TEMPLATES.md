@@ -1,54 +1,42 @@
 # Survey Templates
 
-This page explains what a survey template is and what the main parts of the template mean.
+Use this page when you need the reference model for survey templates rather than
+the step-by-step editing workflow.
 
-For editing steps in PRISM Studio, use the Template Editor guide instead.
+For the interactive editing path, use [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md).
 
-## What a template is
+## What a survey template is
 
-A survey template is a JSON file that describes a questionnaire.
+A survey template is a JSON description of a questionnaire.
 
 It tells PRISM:
 
 - what the instrument is
-- what the items are called
+- how items are named and described
 - which response options belong to each item
-- how the survey was administered in the project
+- how the questionnaire was administered in the project
 
-## Two common contexts
+## Official template vs project copy
 
-The same template structure appears in two places:
+The same conceptual template can appear in two roles:
 
-- official or global template
-- project-local template copy
+- **official or global template**: the canonical reference version
+- **project-local copy**: the version your project actually uses and completes
 
-The global template is the reference version.
-
-The project-local copy is the version your project actually uses.
-
-## Typical locations
-
-Common survey template locations are:
+Common locations:
 
 - `official/library/survey/`
 - `code/library/survey/`
 
-For everyday project work, the important folder is `code/library/survey/`.
+For everyday project work, the important path is the project-local copy.
 
-## The two main blocks
+## The two most important blocks
 
-The two most important parts are:
-
-- `Study`
-- `Technical`
+### `Study`
 
 `Study` describes the instrument itself.
 
-`Technical` describes how the survey was actually collected in your project.
-
-## `Study`
-
-The `Study` block usually contains fields such as:
+Typical fields include:
 
 - `TaskName`
 - `OriginalName`
@@ -58,11 +46,14 @@ The `Study` block usually contains fields such as:
 - `LicenseID`
 - `ItemCount`
 
-For project-local copies, `TaskName` is especially important because it connects the template to filenames and task labels.
+For project-local copies, `TaskName` matters especially because it connects the
+template to filenames and task usage in the dataset.
 
-## `Technical`
+### `Technical`
 
-The `Technical` block records project-level administration details such as:
+`Technical` describes how the survey was actually run in the project.
+
+Common fields include:
 
 - `StimulusType`
 - `FileFormat`
@@ -72,21 +63,21 @@ The `Technical` block records project-level administration details such as:
 - `SoftwarePlatform`
 - `SoftwareVersion`
 
-This is the part most users need to complete after an import.
+This is often the block that still needs project-specific completion after an
+import or template copy.
 
 ## Item definitions
 
-Each item usually appears as a top-level key such as `PSS01` or `ADS03`.
+Each item usually appears as its own key such as `PSS01` or `ADS03`.
 
-An item normally contains:
+An item commonly contains:
 
 - `Description`
-- `Levels` for discrete choices
-- or `MinValue` and `MaxValue` for numeric ranges
+- `Levels` for named response options
+- or `MinValue` and `MaxValue` for numeric scales
 
-Use `Levels` for named answer options.
-
-Use `MinValue` and `MaxValue` for numeric scales.
+Use `Levels` when the answer options need explicit labels.
+Use `MinValue` and `MaxValue` when the item is numeric and bounded.
 
 ## Minimal example
 
@@ -108,14 +99,26 @@ Use `MinValue` and `MaxValue` for numeric scales.
 }
 ```
 
-## Beginner advice
+## How to use this reference page
 
-Keep the first template simple.
+This page is most useful when you need to answer questions such as:
 
-Make sure the task name, item texts, and administration details are correct before you worry about advanced metadata.
+- what belongs in `Study` vs `Technical`
+- what the project-local copy is supposed to hold
+- how item-level metadata is represented
+
+For actual editing, switch back to [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md).
+
+## Common mistakes
+
+- treating the official library file as the normal project editing target
+- leaving `Technical` incomplete after import
+- changing `TaskName` without considering the dataset naming that depends on it
+- assuming item columns are self-explanatory without descriptions or levels
 
 ## Related pages
 
-- Template editing workflow: [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
-- Survey import: [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
-- Survey library overview: [SURVEY_LIBRARY.md](SURVEY_LIBRARY.md)
+- [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
+- [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
+- [SURVEY_LIBRARY.md](SURVEY_LIBRARY.md)
+- [specs/survey](specs/survey)
