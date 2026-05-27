@@ -1,28 +1,45 @@
 # CLI Workflows
 
-This guide is for terminal users who want complete command-driven workflows.
+Use this guide when you want to work from the terminal rather than from the
+Studio web interface.
 
-PRISM is an add-on to BIDS, not a replacement.
+The CLI path is best for:
 
-## 1) Setup and Environment
+- automation
+- CI or batch validation
+- reproducible scripted workflows
+- users who prefer terminal-first work
+
+PRISM remains an add-on to BIDS in the CLI path just as it does in Studio.
+
+## Recommended starting point
+
+If you are new to the terminal workflow, use this order:
+
+1. activate the environment
+2. validate a dataset
+3. inspect or generate templates and recipes only as needed
+4. automate once the manual commands are understood
+
+## 1. Setup and environment
 
 Run setup once from repository root.
 
-macOS/Linux:
+macOS and Linux:
 
 ```bash
 bash setup.sh
 ```
 
-Windows (PowerShell):
+Windows PowerShell:
 
 ```powershell
 .\setup.ps1
 ```
 
-Activate the project virtual environment before running commands.
+Then activate the project virtual environment before running commands.
 
-macOS/Linux:
+macOS and Linux:
 
 ```bash
 source .venv/bin/activate
@@ -34,40 +51,59 @@ Windows:
 .venv\Scripts\activate
 ```
 
-Common issue:
-- Error: "You are not running inside the prism virtual environment"
-- Fix: Activate `.venv` and rerun the command.
+If you see an error about not running inside the PRISM virtual environment,
+activate `.venv` and retry.
 
-## 2) Run PRISM Studio from Terminal
+## 2. Use RTK for the common path
 
-Purpose: launch the web interface while staying terminal-first.
+If the repository is available locally, the RTK wrapper is the cleanest entry
+point for common workflows.
+
+Examples:
+
+```bash
+rtk studio
+rtk validator /path/to/dataset --bids
+rtk tools --help
+rtk test -q
+```
+
+Use direct Python entry points when you need a scriptable or explicit command
+surface, but prefer RTK for day-to-day usage in this repo.
+
+## 3. Launch Studio from the terminal
+
+If you want the web interface while staying terminal-first:
 
 ```bash
 python prism-studio.py
 ```
 
 Expected result:
-- Local server starts.
-- UI opens at `http://localhost:5001`.
 
-## 3) Validate a Dataset (CLI)
+- local server starts
+- Studio becomes available at `http://localhost:5001`
 
-Purpose: validate PRISM extensions and optionally BIDS.
+Equivalent RTK path:
+
+```bash
+rtk studio
+```
+
+## 4. Validate a dataset from the CLI
+
+The validator is the most important command-line entry point.
+
+Basic validation:
 
 ```bash
 python prism-validator /path/to/dataset
 ```
 
-Run PRISM + BIDS validation:
+PRISM plus BIDS validation:
 
 ```bash
 python prism-validator /path/to/dataset --bids
-```
-
-Write a machine-readable report:
-
-```bash
-python prism-validator /path/to/dataset --format sarif -o prism.sarif
 ```
 
 Preview automatic fixes:
@@ -76,72 +112,77 @@ Preview automatic fixes:
 python prism-validator /path/to/dataset --fix --dry-run
 ```
 
-Apply automatic fixes:
+Write a machine-readable report:
 
 ```bash
-python prism-validator /path/to/dataset --fix
+python prism-validator /path/to/dataset --format sarif -o prism.sarif
 ```
 
-Common issue:
-- Error: path not found or empty dataset.
-- Fix: verify dataset root path and required BIDS files (`dataset_description.json`, subject folders).
+Common validation loop:
 
-## 4) Use `prism_tools.py`
+1. run `--bids`
+2. inspect the findings
+3. preview fixes with `--fix --dry-run` when appropriate
+4. re-run until blocking errors are gone
 
-Purpose: conversion, imports, scoring, and utility tasks.
+## 5. Use `prism_tools.py` for conversion and scoring workflows
 
-Show available commands:
+Use `prism_tools.py` when the task is not just validation.
+
+Show top-level help:
 
 ```bash
 python prism_tools.py --help
 ```
 
-Survey import from Excel codebook:
+Typical uses include:
 
-```bash
-python prism_tools.py survey import-excel --excel surveys.xlsx --library-root library
-```
+- survey and biometrics imports
+- participant workflows
+- recipe execution
+- library maintenance
+- dataset helpers
 
-Survey library validation:
+Examples:
 
 ```bash
 python prism_tools.py survey validate --library library/survey
-```
-
-Survey conversion to PRISM dataset:
-
-```bash
-python prism_tools.py survey convert --input survey_export.xlsx --output /tmp/my_prism_dataset
-```
-
-Biometrics import from Excel codebook:
-
-```bash
-python prism_tools.py biometrics import-excel --excel biometrics_codebook.xlsx --sheet 0 --library-root library
-```
-
-Run scoring recipes:
-
-```bash
 python prism_tools.py recipes surveys --prism /path/to/dataset
-python prism_tools.py recipes biometrics --prism /path/to/dataset
+python prism_tools.py participants detect-id --input /absolute/path/to/T1.xlsx --json
 ```
 
-## 5) End-to-End Minimal Terminal Flow
+Use [CLI_REFERENCE.md](CLI_REFERENCE.md) for the fuller command matrix.
+
+## 6. Example terminal workflows
+
+### Minimal validation workflow
 
 ```bash
 source .venv/bin/activate
 python prism-validator /path/to/dataset --bids
-python prism_tools.py survey validate --library library/survey
+```
+
+### Validation plus scoring workflow
+
+```bash
+source .venv/bin/activate
+python prism-validator /path/to/dataset --bids
 python prism_tools.py recipes surveys --prism /path/to/dataset
 ```
 
-Expected artifacts:
-- Validation report in terminal or output file.
-- Updated/fixed sidecars when `--fix` is used.
-- Derivative scoring outputs for recipe runs.
+### Participants merge preview workflow
 
-## 6) Daily Quality Commands
+```bash
+source .venv/bin/activate
+python prism_tools.py participants merge \
+	--input /absolute/path/to/T1.xlsx \
+	--project /absolute/path/to/my-project/project.json \
+	--json
+```
+
+This is the CLI equivalent of the preview-first safe-merge pattern from Studio.
+
+## 7. Daily repo quality commands
 
 Fast smoke check:
 
@@ -155,21 +196,23 @@ Full runtime gate:
 bash scripts/ci/run_runtime_gate.sh
 ```
 
-Python tests:
+Tests:
 
 ```bash
 pytest
 ```
 
-Formatting and linting:
+## 8. Common mistakes
 
-```bash
-black .
-flake8 .
-```
+- forgetting to activate `.venv`
+- validating the wrong dataset path
+- applying fixes without checking the dry run first
+- assuming a saved recipe already produced derivative outputs
+- jumping into a deep `prism_tools.py` subcommand without first checking `--help`
 
-## 7) Where to Go Next
+## Related pages
 
-- Full command reference: [CLI_REFERENCE.md](CLI_REFERENCE.md)
-- Frontend-first workflows: [STUDIO_OVERVIEW.md](STUDIO_OVERVIEW.md)
-- Walk-through example: [WORKSHOP.md](WORKSHOP.md)
+- [CLI_REFERENCE.md](CLI_REFERENCE.md)
+- [VALIDATOR.md](VALIDATOR.md)
+- [STUDIO_OVERVIEW.md](STUDIO_OVERVIEW.md)
+- [WORKSHOP.md](WORKSHOP.md)

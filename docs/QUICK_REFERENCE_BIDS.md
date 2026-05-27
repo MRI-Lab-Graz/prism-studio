@@ -1,263 +1,105 @@
-# BIDS Compliance Quick Reference
+# BIDS Compatibility Quick Reference
 
-**For Developers & Contributors**
+Use this page when you need a short reminder of how PRISM stays compatible with
+BIDS and what that means for day-to-day project metadata.
 
----
+This is a public-facing quick reference, not a deep developer implementation
+note.
 
-## 🎯 At a Glance
+## At a glance
 
-**What**: PRISM Studio now enforces BIDS compliance automatically  
-**Where**: `app/templates/projects.html` (UI) + `app/src/web/blueprints/projects.py` (Backend)  
-**How**: Form → dataset_description.json → CITATION.cff sync → Form reload  
-**Why**: Ensures metadata consistency and BIDS-app compatibility
+PRISM Studio tries to keep project metadata aligned with BIDS expectations while
+adding PRISM-specific structure where psychology workflows need more detail.
 
----
+Core idea:
 
-## 📋 Field Categories
+- BIDS compatibility remains the baseline
+- PRISM-specific metadata should not break standard BIDS-oriented usage
+- project metadata should stay internally consistent across files such as
+    `dataset_description.json` and `CITATION.cff`
 
-### REQUIRED (⚠️ Will fail validation if missing)
-- ✅ `Name`: Dataset name (MUST be provided by user)
-- ✅ `BIDSVersion`: Auto-set to "1.10.1" (no user input)
+## Key metadata groups
 
-### RECOMMENDED (⚠️ Will get auto-defaults)
-- 🟡 `DatasetType`: Auto-set to "raw" if missing
-- 🟡 `License`: Auto-set to "CC0" if missing (unless CITATION.cff exists)
-- 🟡 `HEDVersion`: Only include if you use HED tags
-- 🟡 `GeneratedBy`: API-only (preserved from existing)
-- 🟡 `SourceDatasets`: API-only (preserved from existing)
+### Required baseline fields
 
-### OPTIONAL (No auto-defaults)
-- ⚪ `Authors`: Array of {name, email}
-- ⚪ `Keywords`: Array of strings (≥3 recommended)
-- ⚪ `Acknowledgements`: Free text
-- ⚪ `HowToAcknowledge`: Free text
-- ⚪ `Funding`: Array of strings
-- ⚪ `EthicsApprovals`: Array of {name, reference}
-- ⚪ `ReferencesAndLinks`: Array of URLs
-- ⚪ `DatasetDOI`: DOI URI
-- ⚪ `DatasetLinks`: Array of URLs (API-only)
+These are the fields users should think about first because they matter most for
+basic dataset validity.
 
----
+- `Name`
+- `BIDSVersion`
 
-## 🔄 CITATION.cff Precedence Rules
+### Common recommended fields
 
-### If CITATION.cff EXISTS:
-```
-dataset_description.json will NOT contain:
-  ❌ Authors
-  ❌ HowToAcknowledge
-  ❌ License
-  ❌ ReferencesAndLinks
+These often improve compatibility, interpretability, or reusability.
 
-BUT will still contain:
-  ✅ Name
-  ✅ DatasetDOI
-```
+- `DatasetType`
+- `License`
+- `Keywords`
+- contributor and reference information where applicable
 
-### If CITATION.cff NOT FOUND:
-```
-dataset_description.json will contain all fields:
-  ✅ Authors
-  ✅ License (defaults to CC0)
-  ✅ HowToAcknowledge
-  ✅ ReferencesAndLinks
-```
+### Project-specific or workflow-specific fields
 
-**Why?**: Avoid duplication. BIDS spec says these fields belong in CITATION.cff when it exists.
+These depend on the study and are not equally relevant for every project.
 
----
+- acknowledgements
+- funding
+- ethics approvals
+- dataset DOI and related links
 
-## 🔢 Field Type Conversions
+## `dataset_description.json` and `CITATION.cff`
 
-```text
-// USER INPUT in form (string) → STORAGE in JSON (array)
-"psychology, neuroscience, BIDS"  →  ["psychology", "neuroscience", "BIDS"]
-"NSF #123, Other Grant"           →  ["NSF #123", "Other Grant"]
+One recurring theme in PRISM projects is that metadata may exist in more than one
+place if you are not careful.
 
-// RELOAD from JSON (array) → FORM DISPLAY (string)
-["psychology", "neuroscience"]    →  "psychology, neuroscience"
-```
+The practical rule is simple:
 
-**Fields that convert**: Keywords, Funding, ReferencesAndLinks  
-**Fields that don't**: Name, License, DatasetType, DOI, etc. (stored as strings)
+- avoid duplicating the same citation-oriented information unnecessarily
+- treat `CITATION.cff` as the citation-focused file when present
+- keep `dataset_description.json` aligned with the broader BIDS dataset metadata
 
----
+This reduces drift between files and makes exported metadata easier to trust.
 
-## 🛠️ Code Locations
+## Why this matters for PRISM users
 
-### Frontend Form Fields (HTML)
-**File**: `app/templates/projects.html`
+If study-level metadata drifts, you can end up with:
 
-```html
-<!-- REQUIRED -->
-<label><span class="badge bg-danger">REQUIRED</span> Dataset Name</label>
-<input id="metadataName" required>
+- confusing validation results
+- inconsistent exports
+- harder-to-reuse datasets
+- extra cleanup work before sharing
 
-<!-- RECOMMENDED -->
-<label><span class="badge bg-warning">RECOMMENDED</span> License</label>
-<select id="metadataLicense">...</select>
+## Good user workflow
 
-<!-- OPTIONAL -->
-<label><span class="badge bg-secondary">OPTIONAL</span> Keywords</label>
-<input id="metadataKeywords" placeholder="psychology, experiment, BIDS">
-```
+Recommended order:
 
-**Pattern**: `<input id="metadata{FieldName}">` or `<select id="metadata{FieldName}">`
+1. create or open the project in **Projects**
+2. complete the important dataset metadata there
+3. let PRISM manage the resulting project files
+4. validate the dataset
+5. review the exported or generated metadata before sharing
 
-### Frontend Save Function
-**File**: `app/templates/projects.html` (Line 2541)
+## Good developer workflow
 
-```javascript
-async function saveDatasetDescription() {
-    // 1. Validate REQUIRED fields
-    // 2. Collect form values into description object
-    // 3. Convert strings to arrays (Keywords, Funding, etc.)
-    // 4. POST to /api/projects/description
-    // 5. Display validation issues if any
-}
-```
+If you are changing metadata behavior in the codebase, verify:
 
-### Frontend Load Function
-**File**: `app/templates/projects.html` (Line 2472)
+- save and reload behavior stay consistent
+- `dataset_description.json` remains valid
+- `CITATION.cff` stays in sync when relevant
+- validation and export flows still behave as expected
 
-```javascript
-async function loadDatasetDescriptionFields() {
-    // 1. GET /api/projects/description
-    // 2. Populate form fields from response
-    // 3. Convert arrays to strings for editing
-    // 4. Call field-specific setters (setEthicsApprovals, setAuthorsList)
-    // 5. Display validation issues
-}
-```
+## Common pitfalls
 
-### Backend Save Endpoint
-**File**: `app/src/web/blueprints/projects.py` (Line 707)
+- filling only the minimum required field set and forgetting the recommended fields
+- manually editing multiple metadata files and letting them drift apart
+- assuming citation metadata and dataset metadata are interchangeable
+- validating too late, after multiple metadata edits have accumulated
 
-```python
-@projects_bp.route("/api/projects/description", methods=["POST"])
-def save_dataset_description():
-    # 1. Extract description JSON from request
-    # 2. Validate REQUIRED fields (Name)
-    # 3. Auto-set BIDSVersion = "1.10.1"
-    # 4. Check if CITATION.cff exists
-    # 5. Apply precedence rules (omit/keep fields)
-    # 6. Set auto-defaults for RECOMMENDED fields
-    # 7. Validate against BIDS schema
-    # 8. Write dataset_description.json
-    # 9. Call update_citation_cff()
-    # 10. Return success/issues
-```
+## Related pages
 
-### CITATION.cff Sync
-**File**: `app/src/project_manager.py`
-
-```python
-def update_citation_cff(self, project_path, description):
-    """Generate/update CITATION.cff from dataset_description."""
-    # 1. Extract Name, Authors, DatasetDOI
-    # 2. Generate CITATION.cff content (CFF v1.2.0)
-    # 3. Write to <project_path>/CITATION.cff
-```
-
----
-
-## 📝 Adding a New Metadata Field
-
-To add a new BIDS field (e.g., `NewField`):
-
-### 1. **Add UI Component** (projects.html, line 360-475)
-```html
-<div class="col-md-12">
-    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-        <span class="badge bg-secondary">OPTIONAL</span> New Field
-    </label>
-    <input type="text" class="form-control form-control-sm" id="metadataNewField" 
-           placeholder="Example value">
-    <small class="text-muted">Description of this field.</small>
-</div>
-```
-
-### 2. **Add to Save Function** (projects.html, line 2541-2565)
-```javascript
-const description = {
-    // ... existing fields ...
-    NewField: document.getElementById('metadataNewField').value,
-};
-```
-
-### 3. **Add to Load Function** (projects.html, line 2472-2495)
-```javascript
-document.getElementById('metadataNewField').value = desc.NewField || '';
-```
-
-### 4. **Update Backend** (projects.py, line 707+)
-- If REQUIRED: Add to validation check
-- If RECOMMENDED: Add logic to set default value
-- If OPTIONAL: No backend changes needed (just validate)
-
-### 5. **Test**
-```bash
-python3 scripts/ci/test_bids_compliance.py
-```
-
----
-
-## 🧪 Testing Your Changes
-
-### Unit Test
-```bash
-python3 scripts/ci/test_bids_compliance.py
-```
-
-### Manual Test
-1. Open PRISM Studio
-2. Create/select a project
-3. Fill in the metadata form
-4. Click Save
-5. Verify `dataset_description.json` created correctly
-6. Verify `CITATION.cff` generated correctly
-7. Click form reload
-8. Verify all fields repopulated
-
-### Visual Check
-```bash
-# Check dataset_description.json structure
-cat <project>/dataset_description.json | python3 -m json.tool
-
-# Check CITATION.cff syntax
-cat <project>/CITATION.cff
-```
-
----
-
-## ⚠️ Common Issues & Solutions
-
-### Issue: "REQUIRED FIELD: Dataset Name is mandatory"
-**Cause**: Name field is empty  
-**Fix**: Enter a dataset name in the "Dataset Name" field
-
-### Issue: Authors field in dataset_description.json when CITATION.cff exists
-**Cause**: Backend didn't apply precedence rules  
-**Fix**: Ensure `citation_cff_path.exists()` check in `save_dataset_description()`
-
-### Issue: Keywords not parsing correctly
-**Cause**: User entered "keyword1, keyword2" but it stored as string instead of array  
-**Fix**: Check that `.split(',').map(s => s.trim()).filter(s => s)` is being applied
-
-### Issue: CITATION.cff not updating
-**Cause**: `update_citation_cff()` not called or threw exception  
-**Fix**: Check Flask logs for error; ensure `project_manager` is initialized
-
-### Issue: Backend issues array shows "License is RECOMMENDED"
-**Cause**: This is just a warning, not an error  
-**Fix**: This is expected behavior; you can ignore it or set a License value
-
----
-
-## 🔗 Related Documentation
-
-- **Full Spec**: See `docs/BIDS_COMPLIANCE_IMPLEMENTATION.md` (300+ lines)
-- **Field Audit**: See `docs/METADATA_AUDIT.md` (detailed mappings)
+- [PROJECTS.md](PROJECTS.md)
+- [SPECIFICATIONS.md](SPECIFICATIONS.md)
+- [VALIDATOR.md](VALIDATOR.md)
+- [WHAT_IS_PRISM.md](WHAT_IS_PRISM.md)
 - **Status Summary**: See `docs/BIDS_AUTO_MAPPING_COMPLETE.md` (overview)
 - **Official BIDS**: https://bids-specification.readthedocs.io/
 
