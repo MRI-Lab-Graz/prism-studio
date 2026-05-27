@@ -2,89 +2,111 @@
 
 Use the Projects page to create, open, document, and export a PRISM project.
 
-This page is written for beginners. Use the written guide here for the full workflow. Use the companion videos for quick hands-on examples.
+If you only remember one rule from this page, use this one: start every new
+study in **Projects** before you begin importing or editing data elsewhere.
 
-## What the Projects page is for
+## What the Projects page owns
 
-The Projects page is the home base of PRISM Studio.
+The Projects page is the home base for study-level state.
 
 Use it to:
 
 - create a new project
 - open an existing project
-- fill in study metadata
-- generate methods text
-- prepare exports for sharing
+- maintain study metadata
+- manage project-level preferences and generated text
+- prepare export and sharing workflows
 
-If you are not sure where to start, start here.
+Other pages depend on the active project context created here.
 
-## Before you begin
+## Before you create a project
 
-You only need two things:
+You only need:
 
 - a project name
-- a folder where the project should be created
+- a parent folder where the project should be created
 
-Keep the project name short. Use letters, numbers, underscores, or hyphens. Avoid spaces.
+Recommended naming:
+
+- use letters, numbers, underscores, or hyphens
+- avoid spaces
+- keep the name short and stable
+
+If you expect a DataLad-aware project, read [DATALAD.md](DATALAD.md) before
+manually restructuring anything.
 
 ## Create a new project
 
 1. Open PRISM Studio.
-2. Open the Projects page.
-3. Select Create New Project.
-4. Enter a project name.
+2. Open **Projects**.
+3. Select **Create New Project**.
+4. Enter the project name.
 5. Choose the parent folder.
 6. Confirm creation.
 
-PRISM creates the project folder for you.
+PRISM Studio creates the project structure for you.
 
 ## What PRISM creates
 
-The exact structure is more detailed than older screenshots may suggest.
+A new project is a working area, not a finished dataset.
 
-Typical project structure:
+Typical structure:
 
 ```text
 my_study/
-|-- dataset_description.json
-|-- participants.tsv
-|-- README.md
-|-- CITATION.cff
-|-- CHANGES
-|-- .bidsignore
-|-- .prismrc.json
-|-- project.json
-|-- contributors.json
-|-- sourcedata/
-|-- derivatives/
-`-- code/
-    `-- library/
+├── dataset_description.json
+├── participants.tsv
+├── README.md
+├── CITATION.cff
+├── CHANGES
+├── .bidsignore
+├── .prismrc.json
+├── project.json
+├── contributors.json
+├── sourcedata/
+├── derivatives/
+└── code/
+    └── library/
 ```
 
-You do not need to fill everything immediately. A new project is a starting point, not a finished dataset.
+Why this matters:
+
+- `sourcedata/` holds incoming source material
+- validated dataset files live at the project root
+- `code/` keeps project-local templates, recipes, and scripts
+- `derivatives/` holds processed outputs rather than raw inputs
+
+That separation makes the project easier to validate, understand, and share.
 
 ## Open an existing project
 
-You can open a project in two ways:
+You can open a project by selecting either:
 
-- select the project folder
-- select the `project.json` file inside that folder
+- the project folder
+- the `project.json` file inside it
 
-This is useful when different file pickers behave differently on different systems.
+This dual entry path is useful because file-picker behavior differs across
+operating systems.
 
-After loading, the active project name appears in the Studio interface.
+After loading, confirm that the active project shown in Studio matches the one
+you intended to edit. This matters before any import, template, or export action.
 
-## Recent projects
+## Recommended first-session workflow
 
-PRISM Studio keeps a short recent-project list to make reopening easier.
+For a new study, this order is usually safest:
 
-If an old path no longer exists, it is removed from the recent list instead of staying there forever.
+1. Create or open the project.
+2. Fill in the key study metadata.
+3. Import participants and survey data.
+4. Run validation.
+5. Fix blocking issues.
+6. Add templates or recipes if needed.
+7. Export or share only after the dataset is in good shape.
 
-## Study metadata
+## Metadata sections: what to complete first
 
-After opening a project, stay on the Projects page and move through the metadata sections.
-
-Start with the required fields first. That is enough for a clean first pass.
+Once the project is active, stay on the Projects page and work through the
+metadata sections.
 
 Good beginner order:
 
@@ -96,74 +118,89 @@ Good beginner order:
 6. Procedure
 7. References
 
-Do not try to write everything perfectly in one session. Fill the required parts first, then come back for the richer FAIR-style details.
+Do not try to perfect every field in the first session. The right first goal is
+a complete enough project that other workflows can safely build on it.
 
 ## What belongs in project metadata
 
 Use the Projects forms for study-level information such as:
 
 - dataset title
-- short study description
+- study description
 - authors and contributors
 - recruitment details
 - inclusion and exclusion criteria
 - procedure summary
-- references and funding
+- references, identifiers, and funding
 
-These forms are easier and safer than editing the JSON files by hand.
+This is safer than editing project-level JSON files manually because the form
+workflow helps keep the structure consistent.
 
-## Project files vs data files
+## Example: first project setup
 
-It helps to keep the folders straight:
+Example project: `wellbeing_study`
 
-- `sourcedata/` is for incoming or raw source material
-- `code/` is for project-local templates, recipes, and scripts
-- `derivatives/` is for processed outputs such as scoring results
+1. Create the project in **Projects**.
+2. Enter a short title and study summary.
+3. Add the main contributors.
+4. Save the project metadata.
+5. Move to **Converter** and import `examples/workshop/exercise_1_raw_data/raw_data/wellbeing.xlsx`.
 
-This separation keeps the project easier to understand later.
+Expected outcome after this phase:
 
-## Suggested beginner workflow
+- the project root exists and loads cleanly
+- study-level files such as `project.json` and `dataset_description.json` exist
+- the project is ready for the converter and validator workflows
 
-Use this order for most projects:
+## Methods text generation
 
-1. Create or open the project.
-2. Fill in the most important metadata.
-3. Import sociodemographics and survey data.
-4. Run validation.
-5. Fix blocking issues.
-6. Run recipe-based scoring if needed.
-7. Export or share the project.
+The Projects page can generate draft methods text from project metadata and
+instrument information.
 
-## Generate methods text
+Use this after:
 
-The Projects page can also help you generate methods text from the project metadata and instrument information.
+- the key project metadata is present
+- your templates or instrument metadata are reasonably complete
 
-Use this after your templates and metadata are in reasonable shape. The result is a starting draft, not a final manuscript paragraph.
+Treat the output as a starting draft, not final manuscript text.
 
-## Data Export / Share
+## Export and sharing
 
-The Projects page includes an export area for sharing and downstream use.
+The Projects page also owns project-level export workflows.
 
-Current export options include:
+Current export tasks can include:
 
 - shareable ZIP export
-- anonymized export with randomized participant IDs
-- optional masking of question text in JSON sidecars
+- anonymized export with participant ID remapping
+- optional metadata-masking or privacy-related export controls
 - ANC export
-- openMINDS metadata export
+- openMINDS-related export workflows
 
-Use the detailed written export guide in the analysis/output documentation when you reach this step.
+The safe rule is to export after validation, not before it.
 
-## Beginner advice
+For the deeper output guide, see [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md).
 
-Do not try to solve conversion, metadata, validation, and export all at once.
+## Common mistakes on the Projects page
 
-Finish the Projects page first. A clean project setup makes the later steps much easier.
+### Starting import before a project is active
+
+If you import first and only later realize the wrong project was active, you can
+create confusing results. Confirm the active project name before any save action.
+
+### Treating `sourcedata/` as the final dataset location
+
+`sourcedata/` is for incoming material. Validated project data and export-ready
+data should not stay only there.
+
+### Trying to finish all metadata in one pass
+
+Complete the required and high-value fields first, then come back for the richer
+descriptive metadata.
 
 ## Related pages
 
-- Survey import: [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
-- Sociodemographics import: [PARTICIPANTS_MAPPING.md](PARTICIPANTS_MAPPING.md)
-- Analysis and export outputs: [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md)
-- Template editing: [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
-- Recipe-based scoring: [RECIPE_BUILDER.md](RECIPE_BUILDER.md)
+- [CONVERTER.md](CONVERTER.md)
+- [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
+- [PARTICIPANTS_MAPPING.md](PARTICIPANTS_MAPPING.md)
+- [VALIDATOR.md](VALIDATOR.md)
+- [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md)
