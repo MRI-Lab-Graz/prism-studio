@@ -35,6 +35,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentProjectBadge = document.getElementById('currentProjectBadge');
     const targetCurrentProject = document.getElementById('targetCurrentProject');
     const targetOtherFolder = document.getElementById('targetOtherFolder');
+    const datasetDefacingProjectPathLabel = document.getElementById('datasetDefacingProjectPath');
+    const datasetDefacingPreflightStatus = document.getElementById('datasetDefacingPreflightStatus');
+    const datasetDefacingVariantList = document.getElementById('datasetDefacingVariantList');
+    const datasetDefacingReport = document.getElementById('datasetDefacingReport');
+    const datasetCheckDefacingBtn = document.getElementById('datasetCheckDefacing');
+    const datasetRunDefacingBtn = document.getElementById('datasetRunDefacing');
+    const datasetDefacingCheckAllVariantsBtn = document.getElementById('datasetDefacingCheckAllVariants');
+    const datasetDefacingUncheckAllVariantsBtn = document.getElementById('datasetDefacingUncheckAllVariants');
     
     function updateBidsOptions() {
         const selectedModeRadio = document.querySelector('input[name="validation_mode"]:checked');
@@ -96,6 +104,17 @@ document.addEventListener('DOMContentLoaded', function() {
     let validationPollAbortController = null;
     let validationPollingAbortReason = '';
     let selectedServerFolderPath = '';
+    let datasetDefacingRequestToken = 0;
+    let datasetDefacingBusy = false;
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
 
     function isAbortError(error) {
         return Boolean(error && (error.name === 'AbortError' || /aborted/i.test(error.message || '')));
@@ -911,8 +930,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (targetCurrentProject) {
             targetCurrentProject.dataset.projectPath = currentPath;
         }
+        if (datasetDefacingProjectPathLabel) {
+            datasetDefacingProjectPathLabel.textContent = currentPath
+                ? `${currentName || 'Current project'} · ${currentPath}`
+                : 'Current project not selected';
+        }
 
         if (!currentProjectTargetDetails) {
+            refreshDatasetDefacingPreflight();
             return;
         }
 
@@ -921,12 +946,201 @@ document.addEventListener('DOMContentLoaded', function() {
             currentProjectTargetDetails.textContent = `${labelName} · ${currentPath}`;
             currentProjectTargetDetails.title = currentPath;
             currentProjectTargetDetails.setAttribute('aria-label', currentPath);
+            refreshDatasetDefacingPreflight();
             return;
         }
 
         currentProjectTargetDetails.textContent = 'Current project not selected';
         currentProjectTargetDetails.removeAttribute('title');
         currentProjectTargetDetails.removeAttribute('aria-label');
+        refreshDatasetDefacingPreflight();
+    }
+
+    function setDatasetDefacingBusy(isBusy) {
+        datasetDefacingBusy = Boolean(isBusy);
+        if (datasetCheckDefacingBtn) {
+            datasetCheckDefacingBtn.disabled = datasetDefacingBusy || !resolveCurrentProjectPath();
+        }
+        if (datasetRunDefacingBtn) {
+            datasetRunDefacingBtn.disabled = datasetDefacingBusy || datasetRunDefacingBtn.dataset.defacingReady !== 'true';
+        }
+    }
+
+    function getDatasetDefacingVariantCheckboxes() {
+        return Array.from(document.querySelectorAll('.dataset-defacing-variant-checkbox'));
+    }
+
+    function getSelectedDatasetDefacingVariants() {
+        return getDatasetDefacingVariantCheckboxes()
+            .filter((checkbox) => checkbox.checked)
+            .map((checkbox) => checkbox.value)
+            .filter(Boolean);
+    }
+
+    function renderDatasetDefacingStatus(message, level = 'secondary') {
+        if (!datasetDefacingPreflightStatus) {
+            return;
+        }
+
+        datasetDefacingPreflightStatus.className = `alert alert-${level} mb-3`;
+        datasetDefacingPreflightStatus.style.display = 'block';
+        datasetDefacingPreflightStatus.innerHTML = message;
+    }
+
+    function renderDatasetDefacingVariantList(variants) {
+        if (!datasetDefacingVariantList) {
+            return;
+        }
+
+        if (!Array.isArray(variants) || variants.length === 0) {
+            datasetDefacingVariantList.innerHTML = '<span class="text-muted small">No anatomical scan variants found in the current project.</span>';
+            return;
+        }
+
+        datasetDefacingVariantList.innerHTML = variants.map((variant) => {
+            const key = escapeHtml(variant && variant.key ? variant.key : '');
+            const label = escapeHtml(variant && variant.label ? variant.label : (variant && variant.key ? variant.key : 'Anatomical scan'));
+            const count = Number(variant && variant.count ? variant.count : 0);
+            const countLabel = Number.isFinite(count) && count > 0 ? ` (${count})` : '';
+            return `
+                <div class="form-check">
+                    <input class="form-check-input dataset-defacing-variant-checkbox" type="checkbox" value="${key}" id="datasetDefacingVariant-${key}" checked>
+                    <label class="form-check-label" for="datasetDefacingVariant-${key}">${label}${escapeHtml(countLabel)}</label>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderDatasetDefacingReportEntries(entries, counts) {
+        if (!datasetDefacingReport) {
+            return;
+        }
+
+        const summaryCounts = counts || { defaced: 0, not_defaced: 0, unknown: 0 };
+        const reportEntries = Array.isArray(entries) ? entries : [];
+        const rows = reportEntries.length > 0
+            ? reportEntries.map((entry) => {
+                const status = escapeHtml(entry && entry.status ? entry.status : 'unknown');
+                const file = escapeHtml(entry && entry.file ? entry.file : 'Unknown file');
+                const reason = escapeHtml(entry && entry.reason ? entry.reason : '');
+                return `
+                    <tr>
+                        <td class="small">${file}</td>
+                        <td><span class="badge ${status === 'defaced' ? 'bg-success' : (status === 'not_defaced' ? 'bg-warning text-dark' : 'bg-secondary')}">${status}</span></td>
+                        <td class="small text-muted">${reason}</td>
+                    </tr>
+                `;
+            }).join('')
+            : '<tr><td colspan="3" class="text-muted small">No anatomical scans matched the current selection.</td></tr>';
+
+        datasetDefacingReport.innerHTML = `
+            <div class="card border-0 bg-light">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                        <span class="badge bg-success">Defaced: ${escapeHtml(summaryCounts.defaced)}</span>
+                        <span class="badge bg-warning text-dark">Not defaced: ${escapeHtml(summaryCounts.not_defaced)}</span>
+                        <span class="badge bg-secondary">Unknown: ${escapeHtml(summaryCounts.unknown)}</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>File</th>
+                                    <th>Status</th>
+                                    <th>Detail</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+        datasetDefacingReport.style.display = 'block';
+    }
+
+    async function refreshDatasetDefacingPreflight() {
+        if (!datasetDefacingVariantList) {
+            return;
+        }
+
+        const projectPath = resolveCurrentProjectPath();
+        if (!projectPath) {
+            renderDatasetDefacingStatus('<i class="fas fa-exclamation-triangle me-2"></i>Load a PRISM project first to enable in-place MRI defacing.', 'warning');
+            datasetDefacingVariantList.innerHTML = '<span class="text-muted small">No current project selected.</span>';
+            if (datasetDefacingReport) {
+                datasetDefacingReport.style.display = 'none';
+                datasetDefacingReport.innerHTML = '';
+            }
+            if (datasetRunDefacingBtn) {
+                datasetRunDefacingBtn.dataset.defacingReady = 'false';
+            }
+            setDatasetDefacingBusy(false);
+            return;
+        }
+
+        const requestToken = ++datasetDefacingRequestToken;
+        renderDatasetDefacingStatus('<i class="fas fa-spinner fa-spin me-2"></i>Checking in-place defacing readiness...', 'secondary');
+        datasetDefacingVariantList.innerHTML = '<span class="text-muted small">Loading anatomical scan variants...</span>';
+        setDatasetDefacingBusy(true);
+
+        try {
+            const response = await fetchWithApiFallback('/api/projects/export/defacing-preflight', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ project_path: projectPath })
+            });
+            const payload = await response.json();
+            if (requestToken !== datasetDefacingRequestToken) {
+                return;
+            }
+            if (!response.ok || payload.success === false) {
+                throw new Error(payload.error || 'Could not check defacing prerequisites.');
+            }
+
+            const preflight = payload.preflight || {};
+            renderDatasetDefacingVariantList(preflight.available_scan_variants || []);
+            renderDatasetDefacingStatus(
+                `<i class="fas ${preflight.can_run_defacing ? 'fa-circle-check' : 'fa-circle-info'} me-2"></i>${escapeHtml(preflight.message || 'Defacing readiness updated.')}`,
+                preflight.can_run_defacing ? 'success' : (preflight.has_anatomical_data ? 'warning' : 'secondary')
+            );
+            if (datasetRunDefacingBtn) {
+                datasetRunDefacingBtn.dataset.defacingReady = preflight.can_run_defacing ? 'true' : 'false';
+            }
+            setDatasetDefacingBusy(false);
+        } catch (error) {
+            if (requestToken !== datasetDefacingRequestToken) {
+                return;
+            }
+            renderDatasetDefacingStatus(`<i class="fas fa-exclamation-triangle me-2"></i>${escapeHtml(error.message || 'Could not check defacing prerequisites.')}`, 'danger');
+            datasetDefacingVariantList.innerHTML = '<span class="text-muted small">Could not load anatomical scan variants.</span>';
+            if (datasetRunDefacingBtn) {
+                datasetRunDefacingBtn.dataset.defacingReady = 'false';
+            }
+            setDatasetDefacingBusy(false);
+        }
+    }
+
+    async function loadDatasetDefacingReport() {
+        const projectPath = resolveCurrentProjectPath();
+        if (!projectPath) {
+            throw new Error('No current project is selected.');
+        }
+
+        const response = await fetchWithApiFallback('/api/projects/export/defacing-report', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                project_path: projectPath,
+                selected_variants: getSelectedDatasetDefacingVariants(),
+            })
+        });
+        const payload = await response.json();
+        if (!response.ok || payload.success === false) {
+            throw new Error(payload.error || 'Could not load defacing status.');
+        }
+        renderDatasetDefacingReportEntries(payload.report, payload.report_counts);
+        return payload;
     }
 
     function updateTargetState() {
@@ -1113,6 +1327,83 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (err) {
                 console.error('Failed to browse for library folder:', err);
                 alert('Could not open folder browser. Please type the path manually.');
+            }
+        });
+    }
+
+    if (datasetDefacingCheckAllVariantsBtn) {
+        datasetDefacingCheckAllVariantsBtn.addEventListener('click', function() {
+            getDatasetDefacingVariantCheckboxes().forEach((checkbox) => {
+                checkbox.checked = true;
+            });
+        });
+    }
+
+    if (datasetDefacingUncheckAllVariantsBtn) {
+        datasetDefacingUncheckAllVariantsBtn.addEventListener('click', function() {
+            getDatasetDefacingVariantCheckboxes().forEach((checkbox) => {
+                checkbox.checked = false;
+            });
+        });
+    }
+
+    if (datasetCheckDefacingBtn) {
+        datasetCheckDefacingBtn.addEventListener('click', async function() {
+            setDatasetDefacingBusy(true);
+            try {
+                await loadDatasetDefacingReport();
+                renderDatasetDefacingStatus('<i class="fas fa-circle-info me-2"></i>Current defacing status updated for the selected anatomical scans.', 'info');
+            } catch (error) {
+                renderDatasetDefacingStatus(`<i class="fas fa-exclamation-triangle me-2"></i>${escapeHtml(error.message || 'Could not load defacing status.')}`, 'danger');
+            } finally {
+                setDatasetDefacingBusy(false);
+            }
+        });
+    }
+
+    if (datasetRunDefacingBtn) {
+        datasetRunDefacingBtn.addEventListener('click', async function() {
+            const projectPath = resolveCurrentProjectPath();
+            if (!projectPath) {
+                renderDatasetDefacingStatus('<i class="fas fa-exclamation-triangle me-2"></i>No current project is selected.', 'warning');
+                return;
+            }
+
+            const selectedVariants = getSelectedDatasetDefacingVariants();
+            if (selectedVariants.length === 0) {
+                renderDatasetDefacingStatus('<i class="fas fa-exclamation-triangle me-2"></i>Select at least one anatomical scan variant to deface.', 'warning');
+                return;
+            }
+
+            const confirmed = window.confirm('This will modify the current PRISM dataset in place by defacing the selected anatomical MRI scans. Use Export instead if you only want a defaced sharing copy. Continue?');
+            if (!confirmed) {
+                return;
+            }
+
+            setDatasetDefacingBusy(true);
+            renderDatasetDefacingStatus('<i class="fas fa-spinner fa-spin me-2"></i>Defacing anatomical scans in the current PRISM dataset...', 'warning');
+
+            try {
+                const response = await fetchWithApiFallback('/api/projects/deface', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        project_path: projectPath,
+                        selected_variants: selectedVariants,
+                    })
+                });
+                const payload = await response.json();
+                if (!response.ok || payload.success === false) {
+                    throw new Error(payload.error || payload.message || 'Defacing failed.');
+                }
+
+                renderDatasetDefacingStatus(`<i class="fas fa-circle-check me-2"></i>${escapeHtml(payload.message || 'Defacing finished.')}`, 'success');
+                renderDatasetDefacingReportEntries(payload.report, payload.report_counts);
+                await refreshDatasetDefacingPreflight();
+            } catch (error) {
+                renderDatasetDefacingStatus(`<i class="fas fa-exclamation-triangle me-2"></i>${escapeHtml(error.message || 'Defacing failed.')}`, 'danger');
+            } finally {
+                setDatasetDefacingBusy(false);
             }
         });
     }

@@ -976,6 +976,7 @@ def deface_anatomical_scans(
     project_root = Path(project_path)
     datalad_tracked = is_datalad_dataset(project_root)
     datalad_executable = resolve_datalad_executable() if datalad_tracked else ""
+    git_annex_executable = str(shutil.which("git-annex") or "").strip() if datalad_tracked else ""
     datalad_info: Dict[str, Any] = {
         "tracked": datalad_tracked,
         "available": bool(datalad_executable),
@@ -1176,12 +1177,14 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import os
 from pathlib import Path
 
 manifest = json.loads(Path(sys.argv[1]).read_text(encoding=\"utf-8\"))
 project_root = Path(sys.argv[2])
 pydeface_exe = sys.argv[3]
-timeout = max(1, int(sys.argv[4]))
+git_annex_exe = sys.argv[4]
+timeout = max(1, int(sys.argv[5]))
 
 counts = {\"defaced\": 0, \"failed\": 0}
 items = []
@@ -1193,6 +1196,20 @@ for rel in manifest.get(\"files\", []):
         with tempfile.NamedTemporaryFile(prefix=\"prism_deface_\", suffix=file_path.suffix, delete=False) as tmp:
             backup = Path(tmp.name)
         shutil.copy2(file_path, backup)
+        if file_path.is_symlink() or not os.access(file_path, os.W_OK):
+            if not git_annex_exe:
+                raise PermissionError(f\"git-annex is required to unlock annexed file: {rel}\")
+            unlock_proc = subprocess.run(
+                [git_annex_exe, \"unlock\", rel],
+                cwd=str(project_root),
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                check=False,
+            )
+            if unlock_proc.returncode != 0:
+                unlock_msg = (unlock_proc.stderr or unlock_proc.stdout or \"git annex unlock failed\").strip()
+                raise PermissionError(unlock_msg)
         proc = subprocess.run(
             [pydeface_exe, rel, \"--outfile\", rel, \"--force\"],
             cwd=str(project_root),
@@ -1254,6 +1271,7 @@ print(json.dumps({\"counts\": counts, \"items\": items}, ensure_ascii=False))
                         manifest_path,
                         str(project_root),
                         pydeface_executable,
+                        git_annex_executable,
                         str(max(1, int(timeout_seconds))),
                     ],
                     datalad_executable=datalad_executable,

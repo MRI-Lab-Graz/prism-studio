@@ -153,7 +153,7 @@ function resetDefacingUiState() {
     const preflightStatus = getById('exportDefacingPreflightStatus');
     const report = getById('exportDefacingReport');
     const checkBtn = getById('exportCheckDefacing');
-    const runBtn = getById('exportRunDefacing');
+    const defaceToggle = getById('exportDefaceAnatomicalScans');
     const variantList = getById('exportDefacingVariantList');
     const checkAllBtn = getById('exportDefacingCheckAllVariants');
     const uncheckAllBtn = getById('exportDefacingUncheckAllVariants');
@@ -172,9 +172,10 @@ function resetDefacingUiState() {
     if (checkBtn) {
         checkBtn.disabled = true;
     }
-    if (runBtn) {
-        runBtn.disabled = true;
-        runBtn.title = '';
+    if (defaceToggle) {
+        defaceToggle.checked = false;
+        defaceToggle.disabled = true;
+        defaceToggle.title = '';
     }
     if (variantList) {
         setHtml(variantList, '<span class="text-muted small">Loading anatomical scan variants...</span>');
@@ -229,7 +230,7 @@ async function refreshDefacingPreflight({ projectPath, modalities = [] }) {
     const requestToken = ++defacingPreflightLoadToken;
     const controls = getById('exportDefacingControls');
     const checkBtn = getById('exportCheckDefacing');
-    const runBtn = getById('exportRunDefacing');
+    const defaceToggle = getById('exportDefaceAnatomicalScans');
 
     const hasAnat = hasAnatomicalModality(modalities);
     if (!projectPath || !hasAnat) {
@@ -243,9 +244,9 @@ async function refreshDefacingPreflight({ projectPath, modalities = [] }) {
     if (checkBtn) {
         checkBtn.disabled = false;
     }
-    if (runBtn) {
-        runBtn.disabled = true;
-        runBtn.title = 'Checking defacing prerequisites...';
+    if (defaceToggle) {
+        defaceToggle.disabled = true;
+        defaceToggle.title = 'Checking defacing prerequisites...';
     }
 
     try {
@@ -257,18 +258,22 @@ async function refreshDefacingPreflight({ projectPath, modalities = [] }) {
         renderDefacingVariantFilterList(preflight.available_scan_variants || []);
         renderDefacingPreflightStatus(preflight);
         const canRun = Boolean(preflight.can_run_defacing);
-        if (runBtn) {
-            runBtn.disabled = !canRun;
-            runBtn.title = canRun ? '' : String(preflight.message || 'Defacing prerequisites are not met.');
+        if (defaceToggle) {
+            defaceToggle.disabled = !canRun;
+            defaceToggle.title = canRun ? '' : String(preflight.message || 'Defacing prerequisites are not met.');
+            if (!canRun) {
+                defaceToggle.checked = false;
+            }
         }
     } catch (error) {
         if (requestToken !== defacingPreflightLoadToken) {
             return;
         }
         renderDefacingPreflightStatus({ message: error?.message || 'Could not check defacing prerequisites.', can_run_defacing: false });
-        if (runBtn) {
-            runBtn.disabled = true;
-            runBtn.title = error?.message || 'Could not check defacing prerequisites.';
+        if (defaceToggle) {
+            defaceToggle.disabled = true;
+            defaceToggle.checked = false;
+            defaceToggle.title = error?.message || 'Could not check defacing prerequisites.';
         }
     }
 }
@@ -350,12 +355,17 @@ function syncMriScrubControls() {
 
 function buildExportRequestData(currentProjectPath, overrides = {}) {
     const scrubGroups = getSelectedMriScrubGroups();
+    const variantSelection = getSelectedDefacingVariantPayload();
     return {
         project_path: currentProjectPath,
         anonymize: getById('exportAnonymize')?.checked || false,
         mask_questions: getById('exportMaskQuestions')?.checked || false,
         scrub_mri_json: getById('exportScrubMriJson')?.checked || false,
         scrub_mri_json_groups: scrubGroups.length ? scrubGroups : null,
+        deface_anatomical_scans: getById('exportDefaceAnatomicalScans')?.checked || false,
+        defacing_selected_variants: Array.isArray(variantSelection.selectedVariants)
+            ? variantSelection.selectedVariants
+            : null,
         include_derivatives: getById('exportDerivatives')?.checked || false,
         include_sourcedata: getById('exportSourcedata')?.checked || false,
         include_code: getById('exportCode')?.checked || false,
@@ -406,11 +416,16 @@ function renderDefacingTable(reportDiv, counts, report) {
 
 function buildFolderExportRequestData(currentProjectPath) {
     const scrubGroups = getSelectedMriScrubGroups();
+    const variantSelection = getSelectedDefacingVariantPayload();
     return {
         project_path: currentProjectPath,
         output_folder: (getById('exportOutputFolder')?.value || '').trim() || null,
         scrub_mri_json: getById('exportScrubMriJson')?.checked || false,
         scrub_mri_json_groups: scrubGroups.length ? scrubGroups : null,
+        deface_anatomical_scans: getById('exportDefaceAnatomicalScans')?.checked || false,
+        defacing_selected_variants: Array.isArray(variantSelection.selectedVariants)
+            ? variantSelection.selectedVariants
+            : null,
         include_derivatives: getById('exportDerivatives')?.checked || false,
         include_sourcedata: getById('exportSourcedata')?.checked || false,
         include_code: getById('exportCode')?.checked || false,
@@ -1536,116 +1551,6 @@ export function initExportForm() {
         });
     }
 
-    const runDefacingBtn = getById('exportRunDefacing');
-    if (runDefacingBtn) {
-        runDefacingBtn.addEventListener('click', async () => {
-            const projectPath = resolveCurrentProjectPath();
-            if (!projectPath) {
-                alert('No project is currently loaded');
-                return;
-            }
-
-            const reportDiv = getById('exportDefacingReport');
-            const variantSelection = getSelectedDefacingVariantPayload();
-            if (variantSelection.errorMessage) {
-                if (reportDiv) {
-                    reportDiv.style.display = 'block';
-                    reportDiv.innerHTML = `<div class="alert alert-warning py-1 mb-0">${escapeHtml(variantSelection.errorMessage)}</div>`;
-                }
-                return;
-            }
-
-            try {
-                const preflight = await fetchDefacingPreflight(projectPath);
-                if (!preflight.has_anatomical_data) {
-                    if (reportDiv) {
-                        reportDiv.style.display = 'block';
-                        reportDiv.innerHTML = '<div class="alert alert-info py-1 mb-0">No anatomical scans available in the current dataset.</div>';
-                    }
-                    return;
-                }
-                if (!preflight.can_run_defacing) {
-                    if (reportDiv) {
-                        reportDiv.style.display = 'block';
-                        reportDiv.innerHTML = `<div class="alert alert-warning py-1 mb-0">${escapeHtml(preflight.message || 'Defacing prerequisites are not met.')}</div>`;
-                    }
-                    return;
-                }
-            } catch (preflightError) {
-                if (reportDiv) {
-                    reportDiv.style.display = 'block';
-                    reportDiv.innerHTML = `<div class="alert alert-danger py-1 mb-0">${escapeHtml(preflightError.message || 'Could not check defacing prerequisites.')}</div>`;
-                }
-                return;
-            }
-
-            const selectedRepositoryMode = normalizeExportRepositoryMode(
-                getById('exportRepositoryMode')?.value
-            );
-            const outputFolder = (getById('exportOutputFolder')?.value || '').trim() || null;
-            const preservingMode = selectedRepositoryMode === 'datalad_preserving';
-            const proceed = window.confirm(preservingMode
-                ? 'Run pydeface for export copy now? PRISM will create a DataLad-preserving export copy, run pydeface via DataLad in that copy, and keep the current project unchanged.'
-                : 'Run pydeface for export copy now? PRISM will copy selected anatomical scans to the export target and deface that copy. The current project stays unchanged.');
-            if (!proceed) {
-                return;
-            }
-
-            const originalLabel = runDefacingBtn.innerHTML;
-            runDefacingBtn.disabled = true;
-            runDefacingBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Defacing...';
-
-            try {
-                const resp = await fetchWithApiFallback('/api/projects/export/deface', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        project_path: projectPath,
-                        repository_mode: selectedRepositoryMode,
-                        output_folder: outputFolder,
-                        exclude_subjects: _getUncheckedValues('export-subject-filter'),
-                        exclude_sessions: _getUncheckedValues('export-session-filter'),
-                        selected_variants: Array.isArray(variantSelection.selectedVariants)
-                            ? variantSelection.selectedVariants
-                            : null,
-                    }),
-                });
-                const result = await resp.json().catch(() => ({}));
-                if (!resp.ok || !result.success) {
-                    throw new Error(result.error || result.message || 'Defacing failed.');
-                }
-
-                const afterCounts = result.report_counts || { defaced: 0, not_defaced: 0, unknown: 0 };
-                const afterReport = Array.isArray(result.report) ? result.report : [];
-                renderDefacingTable(reportDiv, afterCounts, afterReport);
-
-                const defacingCounts = result.defacing?.counts || {};
-                const targetMode = String(result.target_mode || '');
-                const targetPath = String(result.target_path || '');
-                const targetSummary = targetMode === 'export_copy'
-                    ? `Target copy: ${escapeHtml(targetPath || 'created in export output folder')}. Source project unchanged.`
-                    : 'Source project unchanged.';
-                const summaryHtml = `
-                    <div class="alert alert-info py-1 mb-2">
-                        ${escapeHtml(result.message || 'Defacing finished.')} Defaced: ${Number(defacingCounts.defaced || 0)}, already defaced: ${Number(defacingCounts.already_defaced || 0)}, failed: ${Number(defacingCounts.failed || 0)}.<br>
-                        ${targetSummary}
-                    </div>`;
-                if (reportDiv) {
-                    reportDiv.innerHTML = summaryHtml + reportDiv.innerHTML;
-                }
-            } catch (error) {
-                if (reportDiv) {
-                    reportDiv.style.display = 'block';
-                    reportDiv.innerHTML = `<div class="alert alert-danger py-1 mb-0">${escapeHtml(error.message || 'Defacing failed.')}</div>`;
-                }
-            } finally {
-                runDefacingBtn.disabled = false;
-                runDefacingBtn.innerHTML = originalLabel;
-                await loadProjectStructure();
-            }
-        });
-    }
-
     syncMriScrubControls();
 }
 
@@ -1863,6 +1768,17 @@ async function handlePlainFolderExport(e) {
                 throw new Error('Select at least one MRI tag group or enable scrub-all mode.');
             }
         }
+        if (data.deface_anatomical_scans) {
+            const variantSelection = getSelectedDefacingVariantPayload();
+            if (variantSelection.errorMessage) {
+                throw new Error(variantSelection.errorMessage);
+            }
+
+            const preflight = await fetchDefacingPreflight(currentProjectPath);
+            if (!preflight.can_run_defacing) {
+                throw new Error(preflight.message || 'Defacing prerequisites are not met.');
+            }
+        }
 
         const response = await fetchWithApiFallback('/api/projects/export/folder', {
             method: 'POST',
@@ -1923,10 +1839,15 @@ async function handlePlainFolderExport(e) {
                     + missingPreviewHtml
                     + `</div>`
                 : '';
+            const defacingCounts = result.defacing?.counts || {};
+            const defacingHtml = data.deface_anatomical_scans
+                ? `<div class="alert alert-info mb-2"><p class="mb-1"><i class="fas fa-user-shield me-2"></i>Export-copy MRI defacing completed.</p><p class="mb-0 small">Defaced: ${Number(defacingCounts.defaced || 0)}, already defaced: ${Number(defacingCounts.already_defaced || 0)}, failed: ${Number(defacingCounts.failed || 0)}.</p></div>`
+                : '';
             setHtml(resultDiv, `
                 <div class="alert alert-success">
                     <h5><i class="fas fa-check-circle me-2"></i>Folder Export Successful!</h5>
                     <p class="mb-2">PRISM created a normal folder copy without Git/DataLad metadata or hidden repository files.</p>
+                    ${defacingHtml}
                     ${materializationHtml}
                     ${excludedMetadataHtml}
                     ${warningHtml}
@@ -2005,6 +1926,40 @@ async function runProjectExport({
             return;
         }
     }
+    if (data.deface_anatomical_scans) {
+        const variantSelection = getSelectedDefacingVariantPayload();
+        if (variantSelection.errorMessage) {
+            if (progressDiv) hide(progressDiv);
+            if (resultDiv) {
+                show(resultDiv);
+                setHtml(resultDiv, `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>${escapeHtml(variantSelection.errorMessage)}</div>`);
+            }
+            setButtonLoading(button, false, null, originalText);
+            return;
+        }
+
+        let preflight;
+        try {
+            preflight = await fetchDefacingPreflight(currentProjectPath);
+        } catch (error) {
+            if (progressDiv) hide(progressDiv);
+            if (resultDiv) {
+                show(resultDiv);
+                setHtml(resultDiv, `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>${escapeHtml(error?.message || 'Could not check defacing prerequisites.')}</div>`);
+            }
+            setButtonLoading(button, false, null, originalText);
+            return;
+        }
+        if (!preflight.can_run_defacing) {
+            if (progressDiv) hide(progressDiv);
+            if (resultDiv) {
+                show(resultDiv);
+                setHtml(resultDiv, `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>${escapeHtml(preflight.message || 'Defacing prerequisites are not met.')}</div>`);
+            }
+            setButtonLoading(button, false, null, originalText);
+            return;
+        }
+    }
     const selectedValidationMode = normalizeExportValidationMode(data.validation_mode);
     const selectedRepositoryMode = normalizeExportRepositoryMode(data.repository_mode);
     const effectiveRepositoryMode = data.export_preset === 'upload_ready'
@@ -2018,7 +1973,7 @@ async function runProjectExport({
     if (progressDiv) show(progressDiv);
     if (resultDiv) hide(resultDiv);
 
-    if (data.scrub_mri_json) {
+    if (data.scrub_mri_json || data.deface_anatomical_scans) {
         const defacingConfirmationMode = getSelectedDefacingConfirmationMode();
         const variantSelection = getSelectedDefacingVariantPayload();
         if (variantSelection.errorMessage) {
@@ -2148,6 +2103,10 @@ async function runProjectExport({
                         const savedPath = status.zip_path || 'unknown location';
                         const repositoryModeNoteHtml = successNoteHtml || getExportRepositoryModeSuccessNote(effectiveRepositoryMode);
                         const defacingWarning = status.defacing_warning || null;
+                        const defacingCounts = status.defacing?.counts || {};
+                        const defacingSuccessHtml = data.deface_anatomical_scans
+                            ? `<div class="alert alert-info mt-2 mb-0"><i class="fas fa-user-shield me-2"></i>Export-copy MRI defacing completed. Defaced: ${Number(defacingCounts.defaced || 0)}, already defaced: ${Number(defacingCounts.already_defaced || 0)}, failed: ${Number(defacingCounts.failed || 0)}.</div>`
+                            : '';
                         const defacingWarningHtml = (defacingWarning && defacingWarning.message)
                             ? `
                                 <div class="alert alert-warning mt-2 mb-0">
@@ -2162,6 +2121,7 @@ async function runProjectExport({
                                 <p class="mb-0">ZIP saved to:<br>
                                 <code class="user-select-all">${escapeHtml(savedPath)}</code></p>
                             </div>
+                            ${defacingSuccessHtml}
                             ${defacingWarningHtml}
                     `);
                 }

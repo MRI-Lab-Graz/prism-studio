@@ -4,6 +4,7 @@ import io
 import sys
 import zipfile
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
 
@@ -117,6 +118,49 @@ def test_export_can_exclude_selected_subjects(tmp_path):
 
     assert "sub-001/survey/sub-001_task-test_survey.tsv" in names
     assert "sub-002/survey/sub-002_task-test_survey.tsv" not in names
+
+
+def test_export_defacing_uses_overlay_copy_for_datalad_free_zip(tmp_path):
+    project_dir = tmp_path / "study"
+    anat_dir = project_dir / "sub-001" / "ses-1" / "anat"
+    anat_dir.mkdir(parents=True)
+    original_nifti = anat_dir / "sub-001_ses-1_acq-mprage_T1w.nii.gz"
+    original_nifti.write_bytes(b"original")
+    output_zip = tmp_path / "export_defaced.zip"
+
+    overlay_root = tmp_path / "overlay" / "study_defacing_export"
+    overlay_nifti = overlay_root / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_acq-mprage_T1w.nii.gz"
+    overlay_nifti.parent.mkdir(parents=True, exist_ok=True)
+    overlay_nifti.write_bytes(b"defaced")
+
+    with patch(
+        "src.mri_json_scrubber.prepare_defacing_export_copy",
+        return_value={"success": True, "target_path": str(overlay_root)},
+    ) as mock_prepare, patch(
+        "src.mri_json_scrubber.deface_anatomical_scans",
+        return_value={"success": True, "counts": {"defaced": 1, "already_defaced": 0, "failed": 0}},
+    ) as mock_deface:
+        stats = export_project(
+            project_path=project_dir,
+            output_zip=output_zip,
+            anonymize=False,
+            include_derivatives=False,
+            include_code=False,
+            include_analysis=False,
+            deface_anatomical_scans=True,
+            defacing_selected_variants={"acq:mprage|suffix:t1w"},
+            exclude_version_control_metadata=True,
+        )
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        assert archive.read("sub-001/ses-1/anat/sub-001_ses-1_acq-mprage_T1w.nii.gz") == b"defaced"
+
+    assert stats["defacing"]["counts"]["defaced"] == 1
+    _prepare_args, prepare_kwargs = mock_prepare.call_args
+    assert prepare_kwargs["preserve_datalad_metadata"] is False
+    deface_args, deface_kwargs = mock_deface.call_args
+    assert deface_args[0] == overlay_root.resolve(strict=False)
+    assert deface_kwargs["selected_variants"] == {"acq:mprage|suffix:t1w"}
 
 
 def test_export_includes_root_prism_metadata_files(tmp_path):
@@ -233,6 +277,35 @@ def test_export_can_exclude_anat_suffix_labels(tmp_path):
 
     assert "sub-001/ses-01/anat/sub-001_ses-01_T1w.nii.gz" not in names
     assert "sub-001/ses-01/anat/sub-001_ses-01_T2w.nii.gz" in names
+
+
+def test_export_can_exclude_nested_derivative_anat_suffix_labels(tmp_path):
+    project_dir = tmp_path / "study"
+    anat_dir = project_dir / "derivatives" / "pipeline" / "sub-001" / "ses-01" / "anat"
+    anat_dir.mkdir(parents=True)
+
+    (anat_dir / "sub-001_ses-01_T1w.nii.gz").write_bytes(b"nifti-t1")
+    (anat_dir / "sub-001_ses-01_T2w.nii.gz").write_bytes(b"nifti-t2")
+    (anat_dir / "sub-001_ses-01_acq-PDw_echo-5_flip-4_mt-off_MPM.nii.gz").write_bytes(b"nifti-mpm")
+
+    output_zip = tmp_path / "export_derivative_anat_suffix_filtered.zip"
+
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=False,
+        include_derivatives=True,
+        include_code=False,
+        include_analysis=False,
+        exclude_acq={"anat": {"T2w", "MPM"}},
+    )
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        names = set(archive.namelist())
+
+    assert "derivatives/pipeline/sub-001/ses-01/anat/sub-001_ses-01_T1w.nii.gz" in names
+    assert "derivatives/pipeline/sub-001/ses-01/anat/sub-001_ses-01_T2w.nii.gz" not in names
+    assert "derivatives/pipeline/sub-001/ses-01/anat/sub-001_ses-01_acq-PDw_echo-5_flip-4_mt-off_MPM.nii.gz" not in names
 
 
 def test_export_can_exclude_dwi_suffix_labels(tmp_path):

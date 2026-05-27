@@ -30,6 +30,10 @@ class TestValidatorWorkflowWiring(unittest.TestCase):
         self.assertIn(
             "data-default-value=\"{{ default_library_path | default('') }}\"", content
         )
+        self.assertIn('id="datasetDefacingCard"', content)
+        self.assertIn('id="datasetCheckDefacing"', content)
+        self.assertIn('id="datasetRunDefacing"', content)
+        self.assertIn('This workflow modifies the active PRISM dataset in place.', content)
         self.assertIn('id="resumeValidationWrap"', content)
         self.assertIn('id="resumeValidationBtn"', content)
         self.assertIn('id="pauseValidationBtn"', content)
@@ -68,6 +72,12 @@ class TestValidatorWorkflowWiring(unittest.TestCase):
             "const response = await fetchWithApiFallback(progressUrl, {", content
         )
         self.assertIn("let validationPollAbortController = null;", content)
+        self.assertIn("let datasetDefacingRequestToken = 0;", content)
+        self.assertIn("async function refreshDatasetDefacingPreflight() {", content)
+        self.assertIn("async function loadDatasetDefacingReport() {", content)
+        self.assertIn("'/api/projects/export/defacing-preflight'", content)
+        self.assertIn("'/api/projects/export/defacing-report'", content)
+        self.assertIn("'/api/projects/deface'", content)
         self.assertIn("function abortValidationPolling(reason = 'manual') {", content)
         self.assertIn("function beginValidationPollingSession() {", content)
         self.assertIn("async function waitForValidationPollInterval(ms, signal) {", content)

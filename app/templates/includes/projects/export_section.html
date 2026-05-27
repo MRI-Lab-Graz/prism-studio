@@ -150,7 +150,16 @@
                                                     </div>
                                                     <div id="exportDefacingControls" style="display:none;">
                                                         <div class="mt-2 ms-4">
-                                                            <label class="form-label fw-semibold mb-1">Anatomical scans to include in defacing checks</label>
+                                                            <div class="form-check mb-2">
+                                                                <input class="form-check-input" type="checkbox" id="exportDefaceAnatomicalScans">
+                                                                <label class="form-check-label fw-bold" for="exportDefaceAnatomicalScans">
+                                                                    Deface selected anatomical MRI in the exported copy only
+                                                                </label>
+                                                            </div>
+                                                            <div class="form-text mt-1">
+                                                                Leaves the PRISM dataset unchanged. PRISM applies pydeface only to the exported copy.
+                                                            </div>
+                                                            <label class="form-label fw-semibold mt-3 mb-1">Anatomical scans to include in export defacing scope</label>
                                                             <div class="d-flex gap-2 mb-2">
                                                                 <button type="button" class="btn btn-sm btn-outline-secondary" id="exportDefacingCheckAllVariants">
                                                                     Check all
@@ -163,15 +172,12 @@
                                                                 <span class="text-muted small">Loading anatomical scan variants...</span>
                                                             </div>
                                                             <div class="form-text mt-1">
-                                                                Leave all selected to check every anatomical scan. Example: keep only <code>acq-mprage T1w</code> selected.
+                                                                Leave all selected to use every anatomical scan. Example: keep only <code>acq-mprage T1w</code> selected.
                                                             </div>
                                                         </div>
                                                         <div class="mt-2 ms-4">
                                                             <button type="button" class="btn btn-sm btn-outline-secondary" id="exportCheckDefacing">
-                                                                <i class="fas fa-search me-1"></i>Check defacing status of anatomical scans
-                                                            </button>
-                                                            <button type="button" class="btn btn-sm btn-outline-warning ms-2" id="exportRunDefacing">
-                                                                <i class="fas fa-user-shield me-1"></i>Deface anatomical scans now
+                                                                <i class="fas fa-search me-1"></i>Check current defacing status in PRISM dataset
                                                             </button>
                                                             <div id="exportDefacingPreflightStatus" class="mt-2" style="display:none;"></div>
                                                             <div id="exportDefacingReport" class="mt-2" style="display:none;"></div>

@@ -1895,6 +1895,43 @@ class TestProjectManager(unittest.TestCase):
                 ).exists()
             )
 
+    def test_export_project_to_plain_folder_excludes_nested_derivative_anat_suffix_labels(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            derivatives_anat = (
+                project_path
+                / "derivatives"
+                / "pipeline"
+                / "sub-001"
+                / "ses-1"
+                / "anat"
+            )
+            derivatives_anat.mkdir(parents=True, exist_ok=True)
+            (derivatives_anat / "sub-001_ses-1_T1w.nii.gz").write_bytes(b"t1")
+            (derivatives_anat / "sub-001_ses-1_T2w.nii.gz").write_bytes(b"t2")
+            (derivatives_anat / "sub-001_ses-1_acq-PDw_echo-5_flip-4_mt-off_MPM.nii.gz").write_bytes(b"mpm")
+
+            export_root = Path(tmp) / "exports"
+            result = manager.export_project_to_plain_folder(
+                project_path,
+                output_root=export_root,
+                exclude_acq={"anat": {"T2w", "MPM"}},
+            )
+
+            self.assertTrue(result.get("success"), result)
+            output_path = Path(result["output_path"])
+            exported_anat = output_path / "derivatives" / "pipeline" / "sub-001" / "ses-1" / "anat"
+            self.assertTrue((exported_anat / "sub-001_ses-1_T1w.nii.gz").exists())
+            self.assertFalse((exported_anat / "sub-001_ses-1_T2w.nii.gz").exists())
+            self.assertFalse(
+                (exported_anat / "sub-001_ses-1_acq-PDw_echo-5_flip-4_mt-off_MPM.nii.gz").exists()
+            )
+
     def test_export_project_to_plain_folder_excludes_dwi_suffix_labels(self):
         manager = ProjectManager()
 
@@ -1987,6 +2024,46 @@ class TestProjectManager(unittest.TestCase):
             self.assertEqual(scrubbed_payload.get("EchoTime"), 0.00206)
             self.assertGreaterEqual(int(result.get("scrubbed_mri_json_files") or 0), 1)
             self.assertGreaterEqual(int(result.get("scrubbed_mri_json_fields") or 0), 1)
+
+    def test_export_project_to_plain_folder_can_deface_export_copy_only(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            nifti_path = (
+                project_path
+                / "sub-003"
+                / "ses-1"
+                / "anat"
+                / "sub-003_ses-1_acq-mprage_T1w.nii.gz"
+            )
+            nifti_path.parent.mkdir(parents=True, exist_ok=True)
+            nifti_path.write_bytes(b"source")
+
+            export_root = Path(tmp) / "exports"
+            with patch(
+                "src.mri_json_scrubber.deface_anatomical_scans",
+                return_value={
+                    "success": True,
+                    "counts": {"defaced": 1, "already_defaced": 0, "failed": 0},
+                    "items": [],
+                },
+            ) as mock_deface:
+                result = manager.export_project_to_plain_folder(
+                    project_path,
+                    output_root=export_root,
+                    deface_anatomical_scans=True,
+                    defacing_selected_variants={"acq:mprage|suffix:t1w"},
+                )
+
+            self.assertTrue(result.get("success"), result)
+            self.assertEqual(result.get("defacing", {}).get("counts", {}).get("defaced"), 1)
+            deface_args, deface_kwargs = mock_deface.call_args
+            self.assertEqual(deface_args[0], Path(result["output_path"]))
+            self.assertEqual(deface_kwargs.get("selected_variants"), {"acq:mprage|suffix:t1w"})
 
     def test_export_project_to_plain_folder_skips_missing_annex_content_with_warning(self):
         manager = ProjectManager()
