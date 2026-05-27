@@ -1,108 +1,126 @@
 # Workshop
 
-Learn PRISM through hands-on exercises with real example data.
+Learn PRISM Studio through one concrete end-to-end example with repository-local
+materials.
 
-## Overview
+The workshop is the best path when you want more than the quick start but do not
+want to jump straight into reference pages.
 
-The PRISM workshop takes you from raw survey data to a fully validated, scored, and exportable dataset. The **core basics track uses 4 folders** and optional extensions can be added if time allows.
+## What the workshop teaches
 
-| Exercise | Topic | Duration | What You'll Learn |
-|----------|-------|----------|-------------------|
-| **0** | Project Setup | 15 min | YODA principles, folder structure |
-| **1** | Data Conversion | 30 min | Excel → PRISM format |
-| **2** | Metadata & Validation | 25 min | Find and fix metadata gaps |
-| **3** | Recipes & Scoring | 20 min | Calculate questionnaire scores |
-| *(Optional)* | Participant Mapping | 30-45 min | Demographic transformations |
-| *(Optional)* | Templates | 20 min | Create reusable item descriptions |
+The workshop takes you from a small source spreadsheet to a validated and scored
+project.
 
-**Total time: ~90 minutes (core) / ~2 hours (with extensions)**
+Core skills covered:
 
-## Getting Started
+- project setup
+- source-data conversion
+- validation and metadata repair
+- recipe-based scoring
 
-### 1. Launch PRISM Studio
+Optional extensions:
 
-```bash
-python prism-studio.py
-```
+- participant mapping
+- template creation
 
-Run the command from repository root.
+## Time and structure
 
-### 2. Open the Workshop Materials
+| Exercise | Topic | Time | Outcome |
+|---|---|---|---|
+| 0 | Project setup | 15 min | A clean project structure |
+| 1 | Data conversion | 30 min | Survey data imported from Excel |
+| 2 | Metadata and validation | 25 min | Validation findings understood and reduced |
+| 3 | Recipes and scoring | 20 min | A simple score and export-ready result |
+| Optional 4 | Templates | 20 min | Reusable survey metadata |
+| Optional 5 | Participant mapping | 30 to 45 min | Standardized participant metadata |
 
-The workshop files are in:
-```
+Total: about 90 minutes for the core path, or about 2 hours with extensions.
+
+## Workshop materials
+
+Repository folder:
+
+```text
 examples/workshop/
 ├── exercise_0_project_setup/
 ├── exercise_1_raw_data/
 ├── exercise_2_hunting_errors/
 ├── exercise_3_using_recipes/
-├── exercise_4_templates/             # optional
-└── exercise_5_participant_mapping/   # optional extension
+├── exercise_4_templates/
+├── exercise_5_participant_mapping/
+├── WORKSHOP_HANDOUT_WELLBEING.md
+└── WORKSHOP_HANDOUT_WELLBEING.pdf
 ```
 
-### 3. Follow the Handout
+Best starting documents:
 
-Open the complete guide: `examples/workshop/WORKSHOP_HANDOUT_WELLBEING.md`
+- `examples/workshop/WORKSHOP_HANDOUT_WELLBEING.md`
+- `examples/workshop/WORKSHOP_README.md`
 
----
+## Before you start
 
-## Exercise Summaries
+1. Make sure PRISM Studio launches correctly.
+2. Open the repository-local workshop materials.
+3. Decide whether you want the core path only or the optional extensions too.
 
-### Exercise 0: Project Setup (YODA)
+Launch Studio from repository root if needed:
 
-**Goal**: Create an organized research project following YODA principles.
+```bash
+source .venv/bin/activate
+python prism-studio.py
+```
 
-**Key Concepts**:
-- Separation of raw data, code, and results
-- Project root contains the validated PRISM dataset
-- `code/` contains analysis scripts
-- `analysis/` contains derived results
+## Core path
 
-**Steps**:
-1. Go to **Projects → Create New Project**
-2. Name your project `wellbeing_study`
-3. Observe the created folder structure
+### Exercise 0: Project setup
 
-### Exercise 1: Data Conversion
+Goal: create a clean project such as `wellbeing_study`.
 
-**Goal**: Convert `wellbeing.xlsx` to PRISM format.
+What to pay attention to:
 
-**Source Data**: `exercise_1_raw_data/raw_data/wellbeing.xlsx`
+- project root structure
+- separation of source data, validated data, code, and derivatives
+- where study-level metadata lives
 
-| participant_id | WB01 | WB02 | WB03 | WB04 | WB05 |
-|---------------|------|------|------|------|------|
-| sub-001 | 3 | 4 | 3 | 4 | 3 |
-| sub-002 | 2 | 2 | 3 | 2 | 2 |
+### Exercise 1: Data conversion
 
-**Steps**:
-1. Go to **Converter**
-2. Load `wellbeing.xlsx`
-3. Map the `participant_id` column
-4. Select all `WB*` columns as survey items
-5. Convert and save to your project
+Goal: convert the example spreadsheet into survey data inside the project.
 
-**Output**: BIDS-structured files in `sub-XXX/survey/` at project root
+Main source file:
 
-### Exercise 2: Metadata & Validation
+- `examples/workshop/exercise_1_raw_data/raw_data/wellbeing.xlsx`
 
-**Goal**: Validate the converted dataset and fix missing survey metadata.
+Key checks during the exercise:
 
-**Expected findings**:
-- Missing study-level survey metadata
-- Missing item descriptions
-- Missing response-level labels
+- confirm the participant ID column
+- confirm the selected item columns
+- preview before saving
 
-**Steps**:
-1. Go to **Validator** (`/validate`)
-2. Select your project folder and run validation
-3. Use `exercise_4_templates/survey-wellbeing.json` as source metadata
-4. Re-run validation until issues are resolved
+Expected output:
 
-### Exercise 3: Recipes & Scoring
+- survey files written into subject-level folders
 
-**Goal**: Calculate dummy wellbeing scores and export to SPSS.
+### Exercise 2: Metadata and validation
 
-**Recipe**: The demo total score is the sum of items (WB01-WB05).
+Goal: understand what the validator catches and how richer metadata improves the
+dataset.
+
+Expected early findings:
+
+- missing or incomplete survey metadata
+- missing item descriptions
+- missing response labels
+
+Typical next step:
+
+- use the provided template material to complete the metadata
+- run validation again until the major issues are resolved
+
+### Exercise 3: Recipes and scoring
+
+Goal: compute one simple wellbeing score.
+
+Conceptual recipe example:
 
 ```json
 {
@@ -116,71 +134,59 @@ Open the complete guide: `examples/workshop/WORKSHOP_HANDOUT_WELLBEING.md`
 }
 ```
 
-**Steps**:
-1. Go to **Tools → Recipes & Scoring**
-2. Select your dataset
-3. Load `recipe-wellbeing.json`
-4. Run and export as SPSS (.save)
+Expected outcome:
 
-### Optional Extension: Templates
+- one derived score
+- a clearer connection between imported raw responses and downstream analysis outputs
 
-**Goal**: Create survey metadata with item descriptions.
+## Optional extension paths
 
-**Why?**: Templates make your data self-documenting. Anyone who opens your `.json` sidecar can understand what each item measures.
+### Templates
 
-**Steps**:
-1. Go to **Tools → Template Editor**
-2. Create a new survey template
-3. Add items with questions in English and German
-4. Add response options with labels
-5. Save to your project
+Use this when you want to practice making the data self-documenting.
 
-### Optional Extension: Participant Mapping
+Focus on:
 
-**Goal**: Transform demographic encodings into standardized values.
+- item wording
+- translated text
+- response options and labels
+- saving templates into the project library
 
-**Example**:
-- Sex codes: `1/2/4` → `M/F/O`
-- Age text: `"25 years"` → `25`
+### Participant mapping
 
-**Steps**:
-1. Add a `participants_mapping.json` in project `code/library/`
-2. Run conversion/validation again
-3. Confirm standardized `participants.tsv` output
+Use this when you want to standardize incoming demographic encodings.
 
----
+Typical transformations:
 
-## Sample Data
+- coded values such as `1/2/4` to readable labels
+- text-based numeric values to canonical numeric form
 
-The workshop uses a **dummy wellbeing questionnaire** for demonstration:
+## What success looks like
 
-| Item | Question |
-|------|----------|
-| WB01 | I felt motivated to start my daily tasks |
-| WB02 | I could focus well during important activities |
-| WB03 | I had enough energy throughout the day |
-| WB04 | I recovered well after work or study periods |
-| WB05 | I made time for activities I personally enjoy |
+By the end of the core path you should have:
 
-**Scale**: 0 (At no time) to 5 (All of the time)
+- a project that loads cleanly
+- survey files imported from the example spreadsheet
+- at least one validation-cleaner iteration completed
+- a simple scoring workflow demonstrated
 
-**Scoring**: Sum of WB01-WB05 (demo score)
+## Instructor notes
 
----
+This workshop works well for onboarding because it gives participants one full
+story instead of isolated feature demos.
 
-## Tips for Instructors
+Recommended teaching pattern:
 
-1. **Allow buffer time** – Participants work at different speeds
-2. **Show the raw data first** – Context helps understanding
-3. **Validate after Exercise 1** – See what's missing before adding metadata
-4. **Demo SPSS export** – This is often the "wow" moment
-5. **Have solutions ready** – Each exercise folder includes a solution
+1. show the raw spreadsheet first
+2. create the project live
+3. import before discussing every schema detail
+4. use validation as the teaching moment for metadata quality
+5. finish with scoring or export as the payoff step
 
----
+## Related pages
 
-## Additional Resources
-
-- [CLI Reference](CLI_REFERENCE.md) – Command-line options
-- [Recipes Guide](RECIPES.md) – Creating custom scoring recipes
-- [Survey Library](SURVEY_LIBRARY.md) – Pre-built survey templates
-- [Error Codes](ERROR_CODES.md) – Understanding validation messages
+- [QUICK_START.md](QUICK_START.md)
+- [PROJECTS.md](PROJECTS.md)
+- [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
+- [VALIDATOR.md](VALIDATOR.md)
+- [RECIPES.md](RECIPES.md)

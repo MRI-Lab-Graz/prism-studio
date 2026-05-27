@@ -1,131 +1,120 @@
 # What is PRISM?
 
-PRISM (Psychological Research Information System Model) is a data-structure and metadata model for psychological experiment datasets. It extends the [BIDS standard](https://bids.neuroimaging.io/) to support modalities common in psychological research-like surveys, biometrics, eyetracking, and environment-while ensuring your data remains fully compatible with existing BIDS tools.
+PRISM stands for **Psychological Research Information System Model**. It is a
+data and metadata model for psychological research datasets.
 
-PRISM Studio is the software that implements PRISM workflows such as conversion, validation runs, scoring execution, and export.
+PRISM extends [BIDS](https://bids.neuroimaging.io/) for workflows that are
+common in psychology, such as questionnaires, biometrics, environment
+descriptions, and richer study metadata, while keeping compatibility with the
+standard BIDS ecosystem.
 
-## PRISM is an Add-On, Not a Replacement
+PRISM Studio is the software that implements these workflows in a web interface
+and command-line tools.
+
+## The short version
+
+- **PRISM** is the model.
+- **PRISM Studio** is the software.
+- **BIDS compatibility remains a core requirement.**
 
 ```{important}
-PRISM does not replace BIDS—it enhances it. Your PRISM-validated datasets will still work with fMRIPrep, MRIQC, and all other BIDS apps.
+PRISM does not replace BIDS. It adds structure for psychological research while
+preserving the ability to use BIDS-oriented tooling.
 ```
 
-| Aspect | BIDS | PRISM |
-|--------|------|-------|
-| **Focus** | Neuroimaging (MRI, EEG, MEG) | Psychological experiments |
-| **Surveys** | Limited support | Full support with item descriptions |
-| **Biometrics** | Not clearly standardized | Sports/performance tests (e.g., VO2max, Y-Balance, CMJ) with rich metadata |
-| **Physio** | Basic support | Primarily EDF+/EDF signal workflows, plus TSV-based recordings with metadata |
-| **Eyetracking** | Emerging support | Complete schema validation |
-| **Environment** | Not standardized in practice | Structured environmental context sidecars |
-| **Scoring execution** | Not included | Implemented in PRISM Studio (recipes/derivatives tools) |
-| **Export workflows** | Raw data focus | Implemented in PRISM Studio (SPSS/CSV/integration exports) |
+## Why PRISM exists
 
-### How PRISM Stays BIDS-Compatible
+Psychological studies often need data structures that are only partially covered
+by standard BIDS practice:
 
-PRISM uses a `.bidsignore` file to tell BIDS validators to skip PRISM-specific files. This means:
+- survey instruments with item-level descriptions and response options
+- sociodemographics and participant harmonization
+- biometrics and performance testing metadata
+- physiology and environment metadata tied to a study workflow
+- recipe-based scoring and reproducible derived outputs
 
-- ✅ Standard BIDS apps (fMRIPrep, MRIQC) work normally
-- ✅ Your MRI data validates against the BIDS standard
-- ✅ PRISM-model files and PRISM Studio outputs are organized alongside your data
-- ✅ One dataset, one folder structure, maximum compatibility
+PRISM gives those areas a documented structure instead of leaving them as
+spreadsheet conventions or lab-specific folder rules.
 
-## Key Benefits
+## How PRISM relates to BIDS
 
-### 1. 🔍 Validation
+PRISM builds on top of BIDS instead of competing with it.
 
-Catch errors before they become problems:
+| Topic | BIDS | PRISM |
+|---|---|---|
+| Primary baseline | Dataset organization for established BIDS modalities | Adds psychology-focused structure and metadata |
+| Surveys | Limited practical support | Rich sidecars, items, response options, and scoring support |
+| Biometrics and performance tests | Not a standard focus | Dedicated schema support |
+| Environment metadata | Not consistently standardized in practice | Structured sidecars and workflows |
+| Validation | BIDS rules | PRISM rules with optional BIDS validation alongside them |
+| Scoring and exports | Not part of BIDS itself | Implemented in PRISM Studio workflows |
 
-- **Structured error codes** (PRISM001–PRISM999) with clear explanations
-- **Auto-fix** for common issues
-- **Severity levels**: Errors, warnings, and suggestions
-- **BIDS validation** can run alongside PRISM validation
+### What BIDS compatibility means in practice
 
-### 2. 📝 Self-Documenting Data
+PRISM Studio keeps BIDS compatibility by organizing PRISM-specific files in a
+way that standard BIDS tooling can coexist with. In practice that means:
 
-Every data file has a sidecar JSON with complete metadata:
+- your dataset still follows BIDS naming where BIDS applies
+- PRISM-specific files are kept explicit instead of hidden in ad-hoc spreadsheets
+- PRISM validation can run alongside BIDS validation
+- downstream BIDS apps can still operate on the parts of the dataset they expect
 
-```json
-{
-  "SurveyName": "Best Inventory Ever",
-  "Items": [
-    {
-      "ItemID": "BIE01",
-      "Question": {
-        "en": "Sadness",
-        "de": "Traurigkeit"
-      },
-      "ResponseOptions": {
-        "0": "I do not feel sad",
-        "1": "I feel sad much of the time",
-        "2": "I am sad all the time",
-        "3": "I am so sad I can't stand it"
-      }
-    }
-  ]
-}
-```
+## What PRISM Studio adds on top of the model
 
-This makes your data:
-- **Understandable** without external documentation
-- **Reusable** by other researchers
-- **FAIR-compliant** (Findable, Accessible, Interoperable, Reusable)
+PRISM Studio turns the model into day-to-day workflows.
 
-### 3. 📊 Questionnaire Scoring in PRISM Studio
+### Guided project setup
 
-Scoring is a **PRISM Studio software feature**, not part of the PRISM model itself.
+Create or open a project, manage study metadata, track project-local templates,
+and prepare export-ready datasets.
 
-Calculate scores automatically with **recipes** in PRISM Studio:
+### Conversion workflows
 
-```json
-{
-  "RecipeName": "BIE Total Score",
-  "Scoring": {
-    "DEMO_total": {
-      "operation": "sum",
-      "items": ["IE01", "BIE02", "BIE03", "..."]
-    }
-  }
-}
-```
+Import source files such as Excel, CSV, SPSS, and LimeSurvey exports and turn
+them into structured PRISM/BIDS-compatible outputs.
 
-### 4. 📤 SPSS-Ready Export in PRISM Studio
+### Validation
 
-PRISM Studio can export scored data directly to SPSS (.save) with:
-- Variable labels
-- Value labels (e.g., 1 = "Male", 2 = "Female")
-- Proper data types
+Run structured checks with severity levels, error codes, optional BIDS checks,
+and selected auto-fix support.
 
-### 5. 🌐 Web Interface
+### Templates and metadata
 
-PRISM Studio provides a user-friendly interface for:
-- Creating and managing projects
-- Converting Excel/CSV/SPSS data
-- Validating datasets
-- Running scoring recipes
-- Browsing the survey library
+Build survey and biometrics templates, edit JSON sidecars safely, and keep the
+dataset self-documenting.
 
-### Model vs Software Boundary
+### Scoring and exports
 
-- **PRISM** defines structure, naming, and metadata expectations.
-- **PRISM Studio** provides operational tooling like conversion, validation runs, scoring execution, and exports.
+Define recipes, compute derived values, and export analysis-ready outputs such
+as CSV, SPSS, and shareable bundles.
 
-## Supported Modalities
+## Supported modalities
 
-| Modality | File Extension | Description |
-|----------|---------------|-------------|
-| **survey** | `.tsv` + `.json` | Questionnaires, assessments |
-| **biometrics** | `.tsv` + `.json` | Sports/performance tests (e.g., VO2max, Y-Balance, CMJ, sit-and-reach) |
-| **eyetracking** | `.tsv` + `.json` | Gaze data, fixations, saccades |
-| **physiological** | `.edf`/`.edf+` or `.tsv`/`.tsv.gz` + `.json` | Continuous physiological signals (ECG, EMG, respiration, EDA) |
-| **environment** | `.tsv` + `.json` | Environmental/contextual derivatives and sidecars |
-| **events** | `.tsv` + `.json` | Stimulus presentation logs |
-| **anat/func/dwi/fmap** | Standard BIDS | MRI data (validated by BIDS) |
-| **eeg** | Standard BIDS-EEG | EEG data (validated by BIDS) |
+The repository currently documents and supports these major modality groups:
 
-## Project Structure (YODA-style layout)
+| Modality | Typical files | Notes |
+|---|---|---|
+| Survey | `.tsv` plus `.json` | Questionnaires, assessments, item metadata, response options |
+| Biometrics | `.tsv` plus `.json` | Performance and testing workflows |
+| Physiological | `.edf`, `.edf+`, or tabular signals plus `.json` | Continuous signals with metadata |
+| Eyetracking | `.tsv` plus `.json` | Structured eye-movement metadata and validation |
+| Environment | `.tsv` plus `.json` | Environmental or contextual metadata |
+| Events | `.tsv` plus `.json` | Task and stimulus timing or event logs |
+| Standard BIDS imaging and EEG modalities | Standard BIDS files | Validated under BIDS expectations where applicable |
 
-PRISM encourages the [YODA principles](https://handbook.datalad.org/en/latest/basics/101-127-yoda.html) for reproducible research:
+See [SPECIFICATIONS.md](SPECIFICATIONS.md) and the pages under `docs/specs/` for
+the detailed schema layer.
+
+## Project vs dataset
+
+One recurring source of confusion is the difference between a project and the
+dataset inside it.
+
+- A **project** is the whole working area: study metadata, `code/`,
+  `derivatives/`, `sourcedata/`, local library assets, and the dataset itself.
+- A **dataset** is the data structure you validate and ultimately share.
+
+Typical project root:
 
 ```text
 my_study/
@@ -137,17 +126,62 @@ my_study/
 ├── CHANGES
 ├── .bidsignore
 ├── .prismrc.json
-├── sourcedata/                 # incoming source material
-├── derivatives/                # processed/scored outputs
-├── code/                       # project-local scripts/templates/recipes
+├── sourcedata/
+├── derivatives/
+├── code/
 └── sub-001/
     └── survey/
         ├── sub-001_task-demo_survey.tsv
         └── sub-001_task-demo_survey.json
 ```
 
-## Next Steps
+PRISM encourages a YODA-style project layout because it keeps incoming source
+material, validated data, code, and derived outputs separate.
 
-- **[Installation](INSTALLATION.md)** – Get PRISM running in 5 minutes
-- **[Quick Start](QUICK_START.md)** – Your first PRISM project
-- **[Workshop](WORKSHOP.md)** – Hands-on exercises with example data
+## DataLad in the PRISM model
+
+DataLad is optional, but important for larger projects and provenance-aware
+workflows. PRISM Studio is designed to work with DataLad-friendly project
+layouts instead of forcing a separate structure.
+
+Use DataLad when you need:
+
+- large-file handling with provenance
+- portable project history
+- reproducible export or mutation workflows
+- project structures that scale beyond small local folders
+
+For the user-facing guidance, see [DATALAD.md](DATALAD.md).
+
+## Example: survey data as self-documenting data
+
+One benefit of PRISM is that tabular data can carry rich metadata in sidecars.
+
+```json
+{
+  "SurveyName": "Wellbeing Demo",
+  "Items": [
+    {
+      "ItemID": "WB01",
+      "Question": {
+        "en": "I felt motivated to start my daily tasks"
+      },
+      "ResponseOptions": {
+        "0": "At no time",
+        "1": "Some of the time",
+        "2": "Most of the time",
+        "3": "All of the time"
+      }
+    }
+  ]
+}
+```
+
+That makes the data easier to understand, validate, reuse, and export.
+
+## Where to go next
+
+- [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) for the repo and feature map
+- [INSTALLATION.md](INSTALLATION.md) for setup
+- [QUICK_START.md](QUICK_START.md) for a first successful workflow
+- [WORKSHOP.md](WORKSHOP.md) for a fuller hands-on example

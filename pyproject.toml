@@ -5,7 +5,7 @@ exclude = '''
 '''
 
 [tool.coverage.run]
-source = ["src"]
+source = ["src", "app/src"]
 omit = [
     "tests/*",
     "scripts/*",

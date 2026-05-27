@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-import re
 import sys
 from pathlib import Path
 from typing import Any
 
+from src.bids_entity_parser import BidsEntityParser
 from src.bids_entity_rewriter import BidsEntityRewriter
 from src.datalad_execution import (
     is_datalad_dataset,
@@ -14,14 +14,9 @@ from src.datalad_execution import (
 from src.datalad_mutation_policy import build_pythonpath_env, run_tracked_mutation
 from src.subject_code_rewriter import SubjectCodeRewriter
 
-_SUBJECT_DIR_PATTERN = re.compile(r"^sub-[A-Za-z0-9]+$")
-
 
 def _extract_subject_from_path(path_text: str) -> str | None:
-    for part in Path(str(path_text or "").strip()).parts:
-        if _SUBJECT_DIR_PATTERN.fullmatch(part):
-            return part
-    return None
+    return BidsEntityParser.extract_subject_from_path(path_text)
 
 
 def _run_wrapped_command_with_mutation_or_raise(
@@ -118,7 +113,7 @@ def apply_subject_rewrite(
             {
                 str(key)
                 for key in dict(preview.get("mapping") or {}).keys()
-                if _SUBJECT_DIR_PATTERN.fullmatch(str(key))
+                if BidsEntityParser.is_subject_dir(str(key))
             }
         )
     if not subject_groups:

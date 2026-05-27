@@ -998,9 +998,7 @@ def deface_anatomical_scans(
         if selected_variants is None:
             empty_message = "No anatomical scans found to deface."
         else:
-            empty_message = (
-                "No anatomical scans matched the selected defacing filters."
-            )
+            empty_message = "No anatomical scans matched the selected defacing filters."
         return {
             "success": True,
             "message": empty_message,

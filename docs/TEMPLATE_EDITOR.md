@@ -1,8 +1,10 @@
 # Template Editor
 
-Use the Template Editor when you need to create, complete, or correct survey and biometrics templates.
+Use the Template Editor when you need to create, complete, or correct survey and
+biometrics templates without editing raw JSON by hand.
 
-This page is written for beginners. Use the written guide here for the full workflow. Use the companion videos for quick hands-on examples.
+This is the main tool for turning imported data into self-documenting project
+metadata.
 
 ## Where to find it
 
@@ -14,113 +16,135 @@ Open:
 
 ## What the Template Editor does
 
-The editor helps you work with PRISM JSON templates without editing raw JSON by hand.
+The editor helps you:
 
-Typical tasks are:
+- load project-local templates
+- inspect official or global reference templates
+- create a new template from a schema-aware structure
+- validate the current template state
+- save the result into the project library
 
-- load a project template
-- load a global reference template
-- create a new template
-- import a template structure into the editor
-- validate the current editor state
-- save the result to the project library
+## When you usually need it
 
-## Project templates and global templates
+Most users reach the Template Editor in one of two situations:
 
-The editor shows two different template sources:
+- after survey import, when a project-local template exists but still needs
+	project-specific administration detail
+- when building a new template for an instrument that is not yet fully defined
+	for the project
 
-- project templates
-- global templates
+## Project templates vs global templates
 
-Use project templates when you want to save changes.
+The editor exposes two important sources:
 
-Use global templates as read-only reference material. They help you start from an approved structure, but the normal save target is still your project library.
+- **project templates**
+- **global templates**
 
-## Where Save goes
+Use project templates when you intend to edit and save.
 
-Save writes into the current project library.
+Use global templates as read-only starting points or reference material. Even if
+you begin there, the normal save target is still your project library.
 
-For survey templates, that means:
+## Where Save writes
 
-- `code/library/survey/`
+Save writes into the current project library, not the official library.
 
-For biometrics templates, that means:
+Typical save locations:
 
-- `code/library/biometrics/`
+- survey templates: `code/library/survey/`
+- biometrics templates: `code/library/biometrics/`
 
-This is important. The Template Editor does not use the official library as your normal save location.
+That distinction matters because the project-local copy is the version tied to
+your actual dataset and workflow.
 
-## Recommended beginner workflow
+## Recommended workflow
 
-1. Load your project first.
-2. Open Template Editor.
+1. Load the correct project.
+2. Open **Template Editor**.
 3. Choose the correct modality.
 4. Load a project template or a global reference template.
-5. Make only the changes you need.
-6. Run Validate.
-7. Save to Project.
-
-## When you usually need the editor
-
-Most users use the editor in two situations:
-
-- after survey import, when a copied project template still needs administration details
-- when building a new project-local template for a custom instrument
+5. Make only the needed changes.
+6. Run **Validate**.
+7. Save to the project.
+8. Re-run dataset validation if the template affects imported data.
 
 ## What to check in a survey template
 
-The most useful beginner checks are:
+For a first pass, focus on the fields that usually matter most:
 
-- `Study` information is present
-- `TaskName` is correct for the project copy
+- `Study` information is present and coherent
+- `TaskName` matches the project-level use of the instrument
 - `Technical` information matches how the survey was actually collected
-- item descriptions and response options look correct
+- item descriptions and response options are understandable
 
-Do not try to fill every optional field in the first pass.
+You do not need to complete every optional field on the first pass.
 
-## Variant and version support
+## Example: finishing a project-local survey template after import
 
-Some survey templates contain more than one version.
+Typical situation:
 
-When that happens, the editor shows the version or variant controls for that template. Use them only if your instrument really has multiple forms.
+- survey data was imported successfully
+- PRISM copied or created a project-local template
+- validation still reports missing or incomplete survey metadata
 
-If you are unsure, keep the simple single-version path.
+Suggested path:
+
+1. Open **Template Editor**.
+2. Choose the survey modality.
+3. Load the project template associated with the imported survey.
+4. Confirm `TaskName`, language, and administration details.
+5. Review item descriptions and response options.
+6. Run **Validate**.
+7. Save to project.
+8. Re-run the main dataset validation.
+
+Expected result:
+
+- a more complete project-local template
+- fewer template-related validation findings
+
+## Variants and versions
+
+Some survey templates have more than one version or variant.
+
+Use the variant controls only when the instrument truly has multiple forms. If
+you are unsure, keep the simpler single-version path until the instrument choice
+is confirmed.
 
 ## Import into the editor
 
-The editor can also import structure into the current editing session.
+Import brings a structure into the editor for review, validation, and
+project-local save. Treat it as an editing entry point, not as proof that the
+template is already publication-ready.
 
-For beginners, the important point is simple: import is a way to bring a structure into the editor for review, validation, and project-local save.
+## Download and export options
 
-## Download and print options
+Depending on the workflow, the editor may let you export the current template as:
 
-The editor can also export the current template for download.
+- JSON
+- questionnaire-related document output such as `.docx`
 
-Depending on the workflow, this may include:
+These are useful for review and sharing, but the authoritative project state is
+still the saved project-local template.
 
-- JSON download
-- questionnaire export as `.docx`
+## Delete behavior
 
-These exports are useful for checking or sharing the template state.
+Delete applies to project-local templates.
 
-## Delete
+Use it carefully. It is not intended as a way to modify the official global
+library.
 
-Delete is for project-local templates.
-
-Use it carefully. It is meant for removing templates from your project library, not from the official global library.
-
-## Common beginner mistakes
+## Common mistakes
 
 - editing the wrong modality
-- forgetting to validate before saving
 - assuming a global template was edited directly
-- forgetting to fill project-specific administration details after import
-- making too many changes at once and losing track of what changed
+- forgetting to validate before saving
+- forgetting the project-specific `Technical` details after import
+- making too many changes at once and losing track of what solved the issue
 
 ## Related pages
 
-- Template structure reference: [TEMPLATES.md](TEMPLATES.md)
-- Survey import: [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
-- Projects: [PROJECTS.md](PROJECTS.md)
-- Recipe-based scoring: [RECIPE_BUILDER.md](RECIPE_BUILDER.md)
-- Analysis and export outputs: [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md)
+- [TEMPLATES.md](TEMPLATES.md)
+- [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
+- [VALIDATOR.md](VALIDATOR.md)
+- [RECIPE_BUILDER.md](RECIPE_BUILDER.md)

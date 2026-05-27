@@ -1,8 +1,10 @@
 # Recipe Builder
 
-Use the Recipe Builder when you want to create or edit scoring rules for survey data.
+Use the Recipe Builder when you want to turn raw questionnaire items into named
+scores or other derived outputs.
 
-This page is written for beginners. Use the written guide here for the full workflow. Use the companion videos for quick hands-on examples.
+This tool defines the scoring logic. It does not itself guarantee that the final
+score files already exist.
 
 ## Where to find it
 
@@ -14,14 +16,12 @@ Open:
 
 ## What the Recipe Builder does
 
-The Recipe Builder helps you define how raw questionnaire items become scores.
+The Recipe Builder helps you:
 
-Typical uses are:
-
-- create a total score
+- create total scores
 - create subscales
-- reverse-code selected items
-- save the scoring recipe into the project
+- define reverse-coded items
+- save reusable scoring definitions into the project
 
 ## Where recipes are saved
 
@@ -29,81 +29,124 @@ Project-local survey recipes are saved in:
 
 - `code/recipes/survey/`
 
-This is the current working location for saved recipes in a project.
+That file is the scoring definition. The scored outputs appear later when the
+recipe is actually run.
 
-## Recommended beginner workflow
+## Recommended first recipe workflow
 
-1. Load your project first.
-2. Open Recipe Builder.
-3. Select the survey template.
+1. Load the correct project.
+2. Open **Recipe Builder**.
+3. Select the survey template that matches the imported data.
 4. Review the available items.
-5. Mark inverted items if needed.
-6. Add one score at a time.
-7. Save the recipe.
+5. Mark reversed items if the instrument requires them.
+6. Add one score only.
+7. Validate and save the recipe.
+8. Run the scoring workflow and inspect the outputs.
 
-Keep the first recipe small. One working total score is better than a large unfinished recipe.
+One working total score is more useful than a large unfinished recipe with many
+uncertain decisions.
 
-## Choose the survey template
+## Choose the correct template first
 
-The builder starts from a survey template.
+The builder starts from the survey template context.
 
-You can work from:
+That means the recipe only makes sense if:
 
-- project templates
-- optionally the official library view
+- the survey import matched the correct instrument
+- the template reflects the correct questionnaire version
+- the item names align with the imported data
 
-For actual project work, save the recipe into the project after you are done.
+If any of those are unclear, solve that first in Template Editor or survey import
+before building scoring logic.
 
-## Inversion
+## Reverse coding
 
-Some questionnaires need reverse-coded items.
+Some instruments need reversed items. The Recipe Builder usually exposes that as
+an inversion step.
 
-The builder includes an inversion area where you can select the items that need to be flipped. Do this before building the score structure if your questionnaire requires it.
+Do this before building the final score structure when the questionnaire requires
+it. A wrong inversion decision can produce technically valid but scientifically
+wrong scores.
 
 ## Add scales
 
-Most users start with a single scale.
+Most first recipes should start with one scale.
 
 Examples:
 
 - one total score
-- one depression score
 - one stress score
+- one depression score
 
-Add a clear scale name and then attach the correct items.
+Only add subscales or multiple score groups after the first single-score recipe
+works correctly.
 
-## Variations
+## Example: first wellbeing recipe
 
-Some recipes support named variations.
+If the imported survey contains items `WB01` to `WB05`, a first beginner recipe
+can be a single total score over those items.
 
-Use this only when your questionnaire really has more than one scoring version. If you do not need it, stay with the default path.
+Conceptual structure:
 
-## Validate before trusting the output
+```json
+{
+	"RecipeVersion": "1.0",
+	"Kind": "survey",
+	"Survey": {
+		"TaskName": "wellbeing"
+	},
+	"Scores": [
+		{
+			"Name": "wellbeing_total",
+			"Method": "sum",
+			"Items": ["WB01", "WB02", "WB03", "WB04", "WB05"]
+		}
+	]
+}
+```
 
-The save workflow validates the recipe structure.
+This is a good first test because it is easy to explain and easy to verify.
 
-If something is missing or malformed, fix it before moving on. This prevents broken recipes from silently staying in the project.
+## Variations and alternate scoring paths
 
-## After saving
+Some recipes support named variations or multiple scoring versions.
 
-Saving the recipe does not mean the score output already exists.
+Use that only when the instrument genuinely has more than one accepted scoring
+path. If not, stay on the simplest path first.
 
-The saved recipe is the scoring definition. The actual score files appear later when you run the scoring workflow.
+## Validation before trust
 
-Those outputs are written into `derivatives/survey/`.
+Recipe validation checks whether the structure is internally coherent. It does
+not replace the scientific judgment that the right items and scoring rules were
+selected.
 
-## Common beginner mistakes
+Good practice:
 
-- saving a recipe before checking item selection carefully
+1. validate the recipe structure
+2. save the recipe
+3. run the scoring workflow
+4. inspect the output columns and spot-check the values
+
+## Saved recipe vs scored output
+
+Keep this distinction clear:
+
+- saved recipe: definition in `code/recipes/survey/`
+- scored output: generated files in `derivatives/survey/`
+
+Saving the recipe is not the same as generating the output.
+
+## Common mistakes
+
+- saving a recipe before verifying item selection
 - confusing saved recipes with scored outputs
 - mixing questionnaire versions in one recipe
-- forgetting reverse coding where it is required
-- building too many scales before testing one simple score first
+- forgetting reverse coding where required
+- trying to model too many scales before one simple score is proven
 
 ## Related pages
 
-- Recipe reference: [RECIPES.md](RECIPES.md)
-- Analysis and export outputs: [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md)
-- Template editing: [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
-- Survey import: [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
-- Projects: [PROJECTS.md](PROJECTS.md)
+- [RECIPES.md](RECIPES.md)
+- [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md)
+- [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
+- [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
