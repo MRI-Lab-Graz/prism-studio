@@ -1,3 +1,7 @@
+---
+orphan: true
+---
+
 # Suggested PR Title
 
 [SCHEMA] Support structured survey data as a BIDS modality

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import os
-import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from src.bids_entity_parser import BidsEntityParser
 from src.system_files import filter_system_files
 
 _IGNORED_DIR_NAMES = {
@@ -26,10 +26,6 @@ _TEXT_SUFFIXES = {
 }
 _TEXT_FILENAMES = {".bidsignore"}
 _DOUBLE_SUFFIXES = (".nii.gz", ".tsv.gz")
-_ENTITY_TOKEN_PATTERN = re.compile(r"^(?P<key>[A-Za-z0-9]+)-(?P<value>[A-Za-z0-9]+)$")
-_LABEL_PATTERN = re.compile(r"^[A-Za-z0-9]+$")
-_SUBJECT_DIR_PATTERN = re.compile(r"^sub-[A-Za-z0-9]+$")
-_SESSION_DIR_PATTERN = re.compile(r"^ses-[A-Za-z0-9]+$")
 _NON_EDITABLE_ENTITIES = {"sub"}
 _ENTITY_ORDER = [
     "sub",
@@ -121,14 +117,13 @@ class BidsEntityRewriter:
 
             tokens, _stem, _ext = parsed
             for token in tokens[:-1]:
-                match = _ENTITY_TOKEN_PATTERN.fullmatch(token)
-                if not match:
+                parsed_token = BidsEntityParser.parse_entity_token(token)
+                if parsed_token is None:
                     continue
 
-                entity_key = match.group("key").lower()
+                entity_key, entity_value = parsed_token
                 if entity_key in _NON_EDITABLE_ENTITIES:
                     continue
-                entity_value = match.group("value")
                 bucket = values_by_entity.setdefault(entity_key, set())
                 if len(bucket) < 200:
                     bucket.add(entity_value)
@@ -308,7 +303,7 @@ class BidsEntityRewriter:
             token = str(subject or "").strip()
             if token.startswith("sub-"):
                 token = token[4:]
-            if token and _LABEL_PATTERN.fullmatch(token):
+            if BidsEntityParser.is_valid_label(token):
                 normalized.add(token)
         return normalized
 
@@ -324,7 +319,7 @@ class BidsEntityRewriter:
         normalized = raw_value.lower()
         if not normalized:
             return ""
-        if not _LABEL_PATTERN.fullmatch(normalized):
+        if not BidsEntityParser.is_valid_label(normalized):
             raise ValueError(
                 "Part labels must contain only letters and numbers (for example: _task, _acq)."
             )
@@ -339,7 +334,7 @@ class BidsEntityRewriter:
         normalized = str(current_value or "").strip()
         if not normalized:
             return None
-        if not _LABEL_PATTERN.fullmatch(normalized):
+        if not BidsEntityParser.is_valid_label(normalized):
             raise ValueError(
                 "Current value must contain only letters and numbers."
             )
@@ -357,7 +352,7 @@ class BidsEntityRewriter:
         normalized = str(replacement or "").strip()
         if not normalized:
             raise ValueError("Enter a new value for the selected part.")
-        if not _LABEL_PATTERN.fullmatch(normalized):
+        if not BidsEntityParser.is_valid_label(normalized):
             raise ValueError(
                 "Replacement values must contain only letters and numbers."
             )
@@ -384,14 +379,14 @@ class BidsEntityRewriter:
         # Modality is only valid when it appears after a subject folder,
         # optionally preceded by a session folder.
         for index, value in enumerate(parts[:-1]):
-            if not _SUBJECT_DIR_PATTERN.fullmatch(value):
+            if not BidsEntityParser.is_subject_dir(value):
                 continue
 
             modality_index = index + 1
             if modality_index >= len(parts) - 1:
                 continue
 
-            if _SESSION_DIR_PATTERN.fullmatch(parts[modality_index]):
+            if BidsEntityParser.is_session_dir(parts[modality_index]):
                 modality_index += 1
                 if modality_index >= len(parts) - 1:
                     continue
@@ -414,10 +409,7 @@ class BidsEntityRewriter:
 
     @staticmethod
     def _extract_entity_key(token: str) -> str | None:
-        match = _ENTITY_TOKEN_PATTERN.fullmatch(token)
-        if not match:
-            return None
-        return match.group("key").lower()
+        return BidsEntityParser.extract_entity_key(token)
 
     def _rewrite_filename_for_entity(
         self,
@@ -438,13 +430,12 @@ class BidsEntityRewriter:
         changed = False
         rewritten_prefix: list[str] = []
         for token in prefix_tokens:
-            match = _ENTITY_TOKEN_PATTERN.fullmatch(token)
-            if match is None:
+            parsed_token = BidsEntityParser.parse_entity_token(token)
+            if parsed_token is None:
                 rewritten_prefix.append(token)
                 continue
 
-            token_entity = match.group("key").lower()
-            token_value = match.group("value")
+            token_entity, token_value = parsed_token
             if token_entity != entity:
                 rewritten_prefix.append(token)
                 continue
@@ -472,8 +463,9 @@ class BidsEntityRewriter:
 
     def _subject_label_from_relative_path(self, rel_path: Path) -> str | None:
         for part in rel_path.parts:
-            if _SUBJECT_DIR_PATTERN.fullmatch(part):
-                return part[4:]
+            subject_label = BidsEntityParser.subject_label_from_dir(part)
+            if subject_label is not None:
+                return subject_label
         return None
 
     def _iter_files_for_modality(self, modality: str, subjects: set[str] | None = None):

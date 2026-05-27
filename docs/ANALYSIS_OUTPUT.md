@@ -1,129 +1,160 @@
 # Analysis Output
 
-Use this page when you want to understand what PRISM produces after conversion, scoring, or export.
+Use this page to understand what PRISM produces after conversion, scoring, and
+export workflows.
 
-This page is written for beginners. Use the written guide here for the full workflow. Use the companion videos for quick hands-on examples.
+The main source of confusion here is usually not that outputs are missing. It is
+that different outputs belong in different places for different reasons.
 
-## The main idea
+## The core principle
 
-PRISM does not put every result into one folder.
+PRISM does not put every result into one folder because not every result serves
+the same purpose.
 
-Different outputs have different purposes:
+Think in three buckets:
 
-- `code/` stores project-local templates, recipes, and scripts
-- `derivatives/` stores processed outputs
-- export workflows create separate shareable outputs
+- `code/` for definitions and project-local assets
+- `derivatives/` for processed outputs that still belong inside the project
+- export outputs for packages intended to leave the project boundary
 
-This is useful because it keeps raw or source material separate from processed results.
+That separation helps keep source material, working definitions, and shareable
+results distinct.
 
-## The outputs most users will see
+## The outputs most users will encounter
 
 The most common outputs are:
 
 - scored survey outputs in `derivatives/`
 - methods boilerplate text
 - shareable project exports
+- anonymized exports
 - ANC export folders
 - openMINDS metadata export files
 
 ## 1. Scored survey outputs
 
-When you run survey recipes, PRISM writes the results into `derivatives/survey/`.
+When you run survey recipes, PRISM writes processed survey results into
+`derivatives/survey/`.
 
 Depending on the workflow, you may see:
 
 - recipe-specific output folders
-- a flat `survey_scores.tsv` output
-- a derivative `dataset_description.json`
+- files such as `survey_scores.tsv`
+- derivative metadata such as a derivative `dataset_description.json`
 
-Think of this as processed analysis-ready data, not raw data.
+Treat these as processed analysis-ready outputs, not as raw inputs.
 
 ## 2. Methods boilerplate
 
-PRISM can also generate methods boilerplate from your project and recipe information.
+PRISM can generate methods text from project and instrument metadata.
 
-This is useful for reports, theses, and early manuscript drafts.
+Use this as:
 
-Treat it as a starting text. You still need to review and polish it.
+- manuscript draft support
+- report boilerplate
+- a metadata completeness checkpoint
 
-## 3. Shareable ZIP export
+Treat it as draft text that still needs human review.
 
-The Projects page includes a general export workflow for sharing a project.
+## 3. Shareable project export
 
-This export can include:
+The Projects page can create a shareable project package.
+
+This may include:
 
 - root project files
 - subject folders
 - `derivatives/`
 - `code/`
-- optionally `analysis/`
+- other configured project content depending on the export choice
 
-This is the easiest way to package a project for teaching, exchange, or archiving.
+This is the general packaging path for exchange, teaching, or archiving.
 
 ## 4. Anonymized export
 
-If you need a shareable version without direct participant identifiers, use the anonymization options in the Projects export area.
+Use anonymized export when you need to share the project beyond the immediate
+study context.
 
-Current options include:
+Current user-facing goals can include:
 
-- randomize participant IDs
-- mask question text in JSON sidecars
+- participant ID remapping
+- privacy-oriented handling of metadata or question text depending on export settings
 
-This is especially useful before sharing work outside the study team.
+Important mental model:
 
-Always review the export before distributing it.
+- the export is the shareable copy
+- the source project should remain the authoritative working dataset
+
+Always review an anonymized export before distributing it.
 
 ## 5. ANC export
 
-PRISM can create a dedicated ANC export folder.
+PRISM can create a dedicated ANC export folder for Austrian NeuroCloud-oriented
+submission workflows.
 
-This export is meant for Austrian NeuroCloud submission workflows. It creates a separate output folder ending in `_anc_export`.
+Typical result:
 
-Typical generated files include:
+- a separate output folder ending in `_anc_export`
+
+Typical files may include:
 
 - `README.md`
 - `CITATION.cff`
 - `.bids-validator-config.json`
 
-Use the separate ANC guide when you need submission details.
+Use [ANC_EXPORT.md](ANC_EXPORT.md) when this is your target workflow.
 
 ## 6. openMINDS export
 
-The Projects page also includes an openMINDS metadata export.
+PRISM also supports openMINDS-oriented metadata export workflows.
 
-This creates metadata output for openMINDS-oriented workflows. It is separate from the main PRISM dataset and separate from ANC export.
+This is separate from:
 
-If you do not need openMINDS, you can ignore this section at the start.
+- the main PRISM dataset
+- ANC export
+- ordinary shareable ZIP export
+
+If your workflow does not require openMINDS, you can ignore this at the start.
 
 ## Which output should I use?
 
-Use this rule of thumb:
+Use this quick rule:
 
-- use `derivatives/` for processed results you still want inside the project
-- use share/export tools when you want to hand results to other people or systems
-- use ANC export only for ANC submission preparation
-- use openMINDS export only when your workflow needs that metadata format
+| Goal | Use |
+|---|---|
+| Keep processed results inside the project | `derivatives/` |
+| Share the project with another person or team | export workflows |
+| Prepare ANC submission | ANC export |
+| Prepare openMINDS-oriented metadata | openMINDS export |
 
-## Beginner workflow
+## Example output flow
 
-For most users, this is enough:
+Typical path after a survey project reaches a stable state:
 
-1. import data
+1. import survey data
 2. validate the dataset
-3. run scoring if needed
-4. check the output in `derivatives/`
-5. export a shareable package only when the project is ready
+3. complete template details
+4. save a scoring recipe
+5. run scoring
+6. inspect `derivatives/survey/`
+7. export a shareable package only when the project is ready
 
-## Common beginner mistakes
+Expected distinction:
 
-- looking in `analysis/` for every result
-- editing derivative files by hand before validating the project
-- sharing a project export without checking anonymization settings
-- confusing saved recipes in `code/recipes/` with scored results in `derivatives/`
+- recipe definitions stay in `code/recipes/`
+- scored files appear in `derivatives/`
+- shareable packages are created by export workflows
+
+## Common mistakes
+
+- looking in `analysis/` for every result regardless of workflow
+- editing derivative files by hand before the project is validated
+- sharing an export without checking anonymization settings
+- confusing saved recipes in `code/recipes/` with scored outputs in `derivatives/`
 
 ## Related pages
 
-- Projects: [PROJECTS.md](PROJECTS.md)
-- Recipe-based scoring: [RECIPE_BUILDER.md](RECIPE_BUILDER.md)
-- ANC export: [ANC_EXPORT.md](ANC_EXPORT.md)
-- Template editing: [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
+- [PROJECTS.md](PROJECTS.md)
+- [RECIPE_BUILDER.md](RECIPE_BUILDER.md)
+- [RECIPES.md](RECIPES.md)
+- [ANC_EXPORT.md](ANC_EXPORT.md)
