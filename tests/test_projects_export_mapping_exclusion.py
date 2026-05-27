@@ -252,6 +252,59 @@ def test_export_can_exclude_survey_tasks_and_matching_root_sidecars(tmp_path):
     assert "task-phq_survey.json" in names
 
 
+def test_export_can_exclude_complex_survey_tasks_and_matching_root_sidecars(tmp_path):
+    project_dir = tmp_path / "study"
+    survey_dir = project_dir / "sub-001" / "ses-01" / "survey"
+    survey_dir.mkdir(parents=True)
+
+    (project_dir / "task-tsdz_acq-7-likert_survey.json").write_text(
+        '{"Study": {"TaskName": "tsdz_acq-7-likert"}}\n',
+        encoding="utf-8",
+    )
+    (project_dir / "task-tsdz_acq-10-likert_survey.json").write_text(
+        '{"Study": {"TaskName": "tsdz_acq-10-likert"}}\n',
+        encoding="utf-8",
+    )
+    (survey_dir / "sub-001_ses-01_task-tsdz_acq-7-likert_survey.tsv").write_text(
+        "participant_id\tvalue\nsub-001\t1\n",
+        encoding="utf-8",
+    )
+    (survey_dir / "sub-001_ses-01_task-tsdz_acq-7-likert_survey.json").write_text(
+        '{"Study": {"TaskName": "tsdz_acq-7-likert"}}\n',
+        encoding="utf-8",
+    )
+    (survey_dir / "sub-001_ses-01_task-tsdz_acq-10-likert_survey.tsv").write_text(
+        "participant_id\tvalue\nsub-001\t2\n",
+        encoding="utf-8",
+    )
+    (survey_dir / "sub-001_ses-01_task-tsdz_acq-10-likert_survey.json").write_text(
+        '{"Study": {"TaskName": "tsdz_acq-10-likert"}}\n',
+        encoding="utf-8",
+    )
+
+    output_zip = tmp_path / "export_complex_survey_task_filtered.zip"
+
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=False,
+        include_derivatives=False,
+        include_code=False,
+        include_analysis=False,
+        exclude_tasks={"survey": {"tsdz_acq-10-likert"}},
+    )
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        names = set(archive.namelist())
+
+    assert "sub-001/ses-01/survey/sub-001_ses-01_task-tsdz_acq-10-likert_survey.tsv" not in names
+    assert "sub-001/ses-01/survey/sub-001_ses-01_task-tsdz_acq-10-likert_survey.json" not in names
+    assert "task-tsdz_acq-10-likert_survey.json" not in names
+    assert "sub-001/ses-01/survey/sub-001_ses-01_task-tsdz_acq-7-likert_survey.tsv" in names
+    assert "sub-001/ses-01/survey/sub-001_ses-01_task-tsdz_acq-7-likert_survey.json" in names
+    assert "task-tsdz_acq-7-likert_survey.json" in names
+
+
 def test_export_can_exclude_anat_suffix_labels(tmp_path):
     project_dir = tmp_path / "study"
     anat_dir = project_dir / "sub-001" / "ses-01" / "anat"

@@ -15,7 +15,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional, Set
 
-from src.project_manager import _matches_excluded_acq_label
+from src.project_manager import _extract_export_task_label, _matches_excluded_acq_label
 from src.survey_scale_inference import get_survey_item_map
 
 
@@ -635,10 +635,8 @@ def export_project(
                     if _matches_excluded_acq_label(filename, skip_acq[_cur_modality]):
                         continue
                 if skip_tasks and _cur_modality and _cur_modality in skip_tasks:
-                    import re as _re
-
-                    task_m = _re.search(r"(?:^|_)task-([A-Za-z0-9]+)", filename)
-                    if task_m and task_m.group(1) in skip_tasks[_cur_modality]:
+                    task_label = _extract_export_task_label(filename, _cur_modality)
+                    if task_label and task_label in skip_tasks[_cur_modality]:
                         continue
                 source_file = Path(root) / filename
                 resolved_source_file = _resolve_export_source_file(source_file)
@@ -758,10 +756,8 @@ def export_project(
                     continue
                 filename = source_file.name
                 if exclude_tasks and "survey" in exclude_tasks:
-                    import re as _re
-
-                    task_m = _re.search(r"^task-([A-Za-z0-9]+)_survey\.json$", filename)
-                    if task_m and task_m.group(1) in exclude_tasks["survey"]:
+                    task_label = _extract_export_task_label(filename, "survey")
+                    if task_label and task_label in exclude_tasks["survey"]:
                         continue
                 if filename.endswith(".json"):
                     zipf.writestr(filename, _json_bytes(source_file))
