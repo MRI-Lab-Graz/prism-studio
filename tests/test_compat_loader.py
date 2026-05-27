@@ -305,3 +305,50 @@ def test_participants_converter_imports_in_app_runtime(monkeypatch) -> None:
     )
 
     assert getattr(loaded, "ParticipantsConverter", None) is not None
+
+
+def test_apps_runner_compat_shim_loads_in_repo_runtime(monkeypatch) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    apps_runner_compat_file = (
+        repo_root / "app" / "src" / "derivatives" / "apps_runner_compat.py"
+    )
+
+    monkeypatch.syspath_prepend(str(repo_root))
+
+    loaded = _load_module_from_path(
+        "apps_runner_compat_shim_repo_runtime_test",
+        apps_runner_compat_file,
+    )
+
+    assert callable(getattr(loaded, "prepare_project_runner_config", None))
+    assert callable(getattr(loaded, "get_remote_profile", None))
+
+
+def test_batch_convert_shim_loads_in_app_runtime(monkeypatch) -> None:
+    app_root = Path(__file__).resolve().parents[1] / "app"
+    batch_convert_file = app_root / "src" / "batch_convert.py"
+
+    monkeypatch.syspath_prepend(str(app_root))
+
+    loaded = _load_module_from_path(
+        "batch_convert_shim_app_runtime_test",
+        batch_convert_file,
+    )
+
+    assert callable(getattr(loaded, "batch_convert_folder", None))
+    assert callable(getattr(loaded, "create_dataset_description", None))
+
+
+def test_batch_convert_shim_loads_in_repo_runtime(monkeypatch) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    batch_convert_file = repo_root / "app" / "src" / "batch_convert.py"
+
+    monkeypatch.syspath_prepend(str(repo_root))
+
+    loaded = _load_module_from_path(
+        "batch_convert_shim_repo_runtime_test",
+        batch_convert_file,
+    )
+
+    assert callable(getattr(loaded, "batch_convert_folder", None))
+    assert callable(getattr(loaded, "create_dataset_description", None))

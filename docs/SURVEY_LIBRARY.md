@@ -1,101 +1,90 @@
 # Survey Library
 
-Use this page to understand what the survey library is for.
-
-This page is written for beginners. Use the written guide here for the full context. Use the companion videos for quick hands-on examples.
+Use this page to understand what the survey library is for and how it relates to
+project-local template work.
 
 ## What the survey library is
 
-The survey library is the collection of survey templates that PRISM can use as reference material.
+The survey library is the collection of questionnaire templates PRISM can use as
+reference material.
 
-These templates help with:
+It helps with:
 
 - consistent questionnaire structure
-- consistent metadata
-- reuse across multiple projects
-- easier template lookup inside PRISM Studio
+- reusable metadata
+- faster lookup of known instruments
+- cleaner project-local template creation
 
-## Where the official library lives
+## Official library vs project copy
 
-The official library is stored in:
+The key distinction is simple:
+
+- the **official library** is the reference source
+- the **project copy** is the editable working version for your dataset
+
+Official library location:
 
 - `official/library/survey/`
 
-This is the reference collection that ships with the project.
+Project-local working location:
 
-## What users usually need to know
+- `code/library/survey/`
 
-For normal project work, the most important idea is simple:
+For most users, the official library is something you select from, not something
+you edit directly.
 
-- the official library is the reference source
-- your project uses project-local copies when you actually edit or complete templates
+## What the library is useful for in practice
 
-That means most users do not need to modify the official library directly.
+Most users need the library for one of these tasks:
 
-## Global template vs project template
+- finding an existing instrument template
+- starting from a trusted structure instead of a blank file
+- copying a template into a project workflow
+- checking item wording, scale labels, or available languages
 
-Use this rule:
+## Bilingual and multi-language templates
 
-- global or official template: reference
-- project template: editable working copy for your own dataset
+Many library templates support more than one language in the same JSON structure.
 
-When PRISM copies a template into your project, you continue working with the project-local version.
+That allows one instrument definition to carry multiple language variants without
+duplicating the whole file for each language.
 
-## Bilingual templates
+## Recommended user workflow
 
-Many survey templates support more than one language in the same JSON structure.
-
-This helps keep the instrument definition in one place instead of duplicating the whole file for each language.
-
-For beginners, the important point is that the template may already contain both German and English text.
-
-## What the library is good for in practice
-
-Most users use the survey library for one of these reasons:
-
-- find an existing questionnaire template
-- start from a structured example
-- copy a known template into a project
-- check item wording or response options
-
-## What this page is not
-
-This page is not the step-by-step editing guide.
-
-For actual editing work, use:
-
-- [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
-
-For import workflows, use:
-
-- [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
-
-## Beginner workflow
-
-For most user projects, the easiest pattern is:
+For most projects, the easiest pattern is:
 
 1. find the matching survey in the library
-2. import or copy it into the project workflow
-3. complete the project-specific template details
+2. copy or load it into the project workflow
+3. complete the project-specific details in the project copy
 4. validate before continuing
 
 ## Multi-version surveys
 
-Some questionnaires have more than one version.
+Some instruments have multiple versions or forms.
 
-PRISM can represent these versions inside one template. If your survey has multiple forms, check the version carefully during import or editing.
+PRISM can represent those inside one template structure, but that means you
+should confirm the correct version during import and editing rather than assuming
+the first matching name is enough.
 
-If your survey has only one form, you can ignore this part at the start.
+## What this page is not
 
-## Maintenance scripts
+This page is not the editing guide.
 
-There are also maintenance tools for updating library metadata at the repository level.
+Use these pages next when you are doing real work rather than orientation:
 
-Most beginners do not need these scripts. They are more relevant for maintaining the shared library itself.
+- [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
+- [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
+- [TEMPLATES.md](TEMPLATES.md)
+
+## Common mistakes
+
+- editing the official library when a project-local copy should be used instead
+- assuming a copied template is already fully project-ready
+- forgetting to validate after changing project-local template details
 
 ## Related pages
 
-- Template editing workflow: [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
-- Template structure reference: [TEMPLATES.md](TEMPLATES.md)
-- Survey import: [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
-- Survey versioning: [SURVEY_VERSION_PLAN.md](SURVEY_VERSION_PLAN.md)
+- [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
+- [TEMPLATES.md](TEMPLATES.md)
+- [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
+- [SURVEY_VERSION_PLAN.md](SURVEY_VERSION_PLAN.md)

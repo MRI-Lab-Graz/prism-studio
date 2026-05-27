@@ -1,0 +1,30 @@
+Run these commands from the repository root:
+/Users/karl/work/github/prism-studio
+
+1. Export the DeepL API key into the current shell session:
+export DEEPL_API_KEY='YOUR_DEEPL_KEY'
+
+2. Verify the key is present:
+echo "${DEEPL_API_KEY:+set}"
+
+3. Preview translation output into a separate folder:
+PYTHONPATH="$PWD/app" .venv/bin/python -m src.cli.entrypoint survey i18n-autotranslate \
+  --src official/library/survey \
+  --out official/library/survey_de_preview \
+  --provider deepl \
+  --source-lang en \
+  --target-lang de
+
+4. Run translation in place:
+PYTHONPATH="$PWD/app" .venv/bin/python -m src.cli.entrypoint survey i18n-autotranslate \
+  --src official/library/survey \
+  --in-place \
+  --provider deepl \
+  --source-lang en \
+  --target-lang de
+
+Alternative one-line preview command with the key passed inline:
+DEEPL_API_KEY='YOUR_DEEPL_KEY' PYTHONPATH="$PWD/app" .venv/bin/python -m src.cli.entrypoint survey i18n-autotranslate --src official/library/survey --out official/library/survey_de_preview --provider deepl --source-lang en --target-lang de
+
+Alternative one-line in-place command with the key passed inline:
+DEEPL_API_KEY='YOUR_DEEPL_KEY' PYTHONPATH="$PWD/app" .venv/bin/python -m src.cli.entrypoint survey i18n-autotranslate --src official/library/survey --in-place --provider deepl --source-lang en --target-lang de

@@ -1,15 +1,32 @@
 # PRISM Studio (Web Interface)
 
-PRISM Studio (`prism-studio.py`) is the web interface for validating datasets and interactively working with metadata.
+Use this page when you want the high-level picture of the web interface itself.
 
-- For installation: see [INSTALLATION.md](INSTALLATION.md).
-- For CLI validation and automation: see [CLI_REFERENCE.md](CLI_REFERENCE.md).
+This page complements [STUDIO_OVERVIEW.md](STUDIO_OVERVIEW.md):
 
----
+- `STUDIO_OVERVIEW.md` is the main learner path through the product
+- this page summarizes what the web interface exposes and where specific helper
+	workflows live
 
-## 1) Start PRISM Studio
+## What PRISM Studio the web interface is
 
-macOS / Linux:
+PRISM Studio is the browser-based interface launched by `prism-studio.py`.
+
+It provides guided access to:
+
+- project setup
+- conversion and import
+- validation
+- metadata editing
+- template and recipe workflows
+- export and reporting
+
+For installation, use [INSTALLATION.md](INSTALLATION.md).
+For terminal automation, use [CLI_REFERENCE.md](CLI_REFERENCE.md).
+
+## Start Studio
+
+macOS and Linux:
 
 ```bash
 source .venv/bin/activate
@@ -23,121 +40,77 @@ Windows:
 python prism-studio.py
 ```
 
-Open:
-- http://localhost:5001
+Open `http://localhost:5001` if it does not open automatically.
 
-Quick health checks (repo root):
+## What the interface is best at
 
-```bash
-# fast entrypoint sanity
-bash scripts/ci/run_local_smoke.sh
+The web interface is strongest when you want:
 
-# full required gate
-bash scripts/ci/run_runtime_gate.sh
-```
+- guided workflows instead of raw commands
+- project-bound editing with visible state
+- preview-first conversion steps
+- easier metadata completion than raw JSON editing
 
----
+## Common web-interface tasks
 
-## 2) Upload and validation workflow
+### Upload and validate a dataset
 
-### What you can upload
-- **Folder** (recommended)
-- **ZIP file**
+The validation-oriented web path supports folder and ZIP-based inputs.
 
-### Large datasets (“structure-only uploads”)
-PRISM Studio supports a "DataLad-style" upload strategy for large datasets:
+For large datasets, Studio can support a structure-focused upload path where
+metadata and structural information are reviewed without moving every large
+binary first.
 
-- Metadata files (e.g., `.json`, `.tsv`) are uploaded.
-- Large binaries (e.g., `.nii`, `.mp4`) may be skipped.
-- The backend creates placeholders so PRISM can validate **structure**, **filenames**, and **sidecar/schema consistency** without transferring large payloads.
+Use this when the goal is to validate structure, filenames, and sidecar logic
+without fully transferring or materializing all payloads.
 
-This is useful when you only need to validate correctness of the dataset layout and metadata.
+### Edit JSON safely
 
----
+The JSON Editor helps with direct sidecar work while still staying within a
+schema-aware workflow.
 
-## 3) Understanding the results
+Typical use:
 
-After validation, PRISM Studio displays:
-- A summary of **Errors** (must fix) and **Warnings** (should fix)
-- Per-issue details including which file is affected and why it failed
+- complete sidecars after validation findings
+- inspect metadata without hand-editing files in an external editor
 
-Typical errors include:
-- Missing required BIDS files (e.g., `dataset_description.json`)
-- Missing sidecar JSON for a TSV/recording
-- Filename not matching expected patterns
-- JSON fields failing schema validation
+### Work with templates
 
-You can typically download a **JSON report** for archiving or CI workflows.
+The Template Editor is the main UI for survey and biometrics template work.
 
----
+It supports:
 
-## 4) JSON editor
+- loading templates from library paths
+- creating new schema-aware templates
+- validating the current editor state
+- saving to the project library
 
-PRISM Studio includes a JSON editor that can:
-- Create/edit sidecars (`*_beh.json`, `*_physio.json`, biometrics JSON sidecars)
-- Validate JSON content against the selected schema version
+### Work with participants metadata
 
-This helps when building metadata iteratively.
+The web interface also includes participant-oriented workflows such as
+annotation-friendly editing and integration-oriented metadata preparation.
 
----
+### Generate methods text
 
-## 5) Template Editor (Survey / Biometrics)
+Studio can generate draft methods text from project and library metadata, which
+is useful for reports and manuscripts.
 
-PRISM Studio includes a **Template Editor** to create or modify PRISM library templates (Survey or Biometrics) without editing raw JSON.
+### Export survey structures or downstream packages
 
-What it supports:
-- **Load** a template from a library folder or create a **new** template from the selected PRISM schema version
-- **Value-only editing**: keys stay fixed/locked; the UI renders fields as form controls
-- **No brackets for typical fields**: arrays/levels/translations are edited via add/remove controls and language rows
-- **Schema help**: hover the ⓘ icons to see descriptions and allowed values
-- **Validate**, **save to the project library**, and **download** the current JSON
+The web interface exposes survey export, shareable project export, anonymized
+export, ANC export, and related output workflows.
 
-Where to find it:
-- From the navbar: **Template Editor**
-- Or open directly: `http://localhost:5001/template-editor`
+## First-time-use advice
 
-Save writes to the current project's `code/library/<modality>/` folder.
+- start with a small example project such as the workshop material
+- validate early rather than waiting until the whole dataset is assembled
+- use the interface to understand the workflow, then move to CLI automation only
+	when the steps are already clear
 
-Tips:
-- Use **Add** in the left “Items (questions/metrics)” panel to add a new item ID (it becomes fixed once created).
-- For translated text fields, language codes (e.g., `de`, `en`) are non-editable; only the text values are editable.
+## Related pages
 
----
-
-## 6) NeuroBagel integration (participants)
-
-PRISM Studio provides a participants annotation workflow compatible with NeuroBagel:
-- Reads `participants.tsv`
-- Helps you annotate with standardized ontology terms
-- Supports categorical level extraction
-
----
-
-## 7) Methods Boilerplate Generator
-
-PRISM Studio can generate a draft of a scientific **Methods section** based on the metadata in your library.
-
-- **How it works**: It scans your `library/survey` and `library/biometrics` folders.
-- **Output**: A Markdown document describing the instruments used, their authors, citations, and constructs.
-- **Languages**: Supports generating text in **English** and **German**.
-- **Metadata**: The generated text now pulls canonical DOIs, licenses, target age ranges, estimated administration/scoring times, item counts, and access classifications from the tightened PRISM schema so each instrument summary reflects the richer metadata you provided.
-
-Access it via the **Tools** menu or at `/methods-generator`.
-
----
-
-## 8) Survey Generator & Export
-
-The Survey Export tool allows you to:
-- Select items from the library.
-- Preview response scales (levels), units, and value ranges.
-- Export a "clean" dataset structure for data collection.
-- Generate codebooks automatically.
-
----
-
-## 8) Tips for first-time use
-
-- Start with a small demo dataset: see [WORKSHOP.md](WORKSHOP.md).
-- Validate first, then iterate on metadata fields.
-- If you want strict automation, use `prism.py` in your terminal.
+- [STUDIO_OVERVIEW.md](STUDIO_OVERVIEW.md)
+- [PROJECTS.md](PROJECTS.md)
+- [VALIDATOR.md](VALIDATOR.md)
+- [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
+- [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md)

@@ -1,12 +1,27 @@
 # CLI & Script Reference
 
-This page is the **detailed reference** for PRISM’s command-line tools and scripts.
+Use this page as the detailed command reference for PRISM’s terminal surfaces.
 
-- For a first-time, step-by-step narrative: see [QUICK_START.md](QUICK_START.md).
-- For specification / schema details: see [SPECIFICATIONS.md](SPECIFICATIONS.md).
-- For derivative scoring recipes: see [RECIPES.md](RECIPES.md).
+This page is intentionally reference-first. If you want a guided narrative, use:
 
-Run-first daily checks (repo root):
+- [CLI_WORKFLOWS.md](CLI_WORKFLOWS.md) for task-oriented terminal paths
+- [QUICK_START.md](QUICK_START.md) for a short first success
+- [SPECIFICATIONS.md](SPECIFICATIONS.md) for schema context
+- [RECIPES.md](RECIPES.md) for scoring-definition details
+
+## Quick command map
+
+| Task | Preferred entry point |
+|---|---|
+| Start Studio from the terminal | `rtk studio` or `python prism-studio.py` |
+| Validate a dataset | `rtk validator ...` or `python prism-validator ...` |
+| Run tools subcommands | `rtk tools ...` or `python prism_tools.py ...` |
+| Run repo-local tests | `rtk test -q` |
+| Run coverage in this repo | `rtk coverage` |
+
+## Daily checks
+
+Useful repo-root checks:
 
 ```bash
 # fast sanity
@@ -15,6 +30,17 @@ bash scripts/ci/run_local_smoke.sh
 # full required gate
 bash scripts/ci/run_runtime_gate.sh
 ```
+
+## How to read this page
+
+The command surfaces are grouped into three layers:
+
+1. environment and wrapper usage
+2. validator commands
+3. `prism_tools.py` subcommands and helper scripts
+
+If you are scanning rather than reading closely, start with the command map and
+then jump to the specific tool section you need.
 
 ---
 
@@ -87,6 +113,11 @@ Available subcommands:
 - `codecov`
 - `git`
 - `gh`
+
+Recommended rule:
+
+- use `rtk` first for normal repo-local work
+- drop to direct Python entry points when you need the explicit underlying command
 
 ---
 
