@@ -2,13 +2,16 @@
 
 Use this page when you want to bring questionnaire data into a PRISM project.
 
-This page is written for beginners. Use the written guide here for the full workflow. Use the companion videos for quick hands-on examples.
+Survey import is one of the core PRISM Studio workflows because it connects raw
+tabular responses to structured files, templates, validation, and later scoring.
 
 ## What this page covers
 
-This page focuses on the normal survey workflow in PRISM Studio.
+This page covers the normal survey workflow in PRISM Studio.
 
-It does not replace the separate LimeSurvey documentation. If you work with LimeSurvey-specific files or export details, use the dedicated LimeSurvey pages for that part.
+It does not replace the dedicated LimeSurvey documentation. If your workflow is
+specifically about LimeSurvey export structure or integration details, use the
+LimeSurvey pages for that part.
 
 ## Where survey import happens
 
@@ -18,156 +21,195 @@ Open:
 - Converter
 - Survey tab
 
-This is the main survey import screen.
+## What you typically need
 
-## What you usually need
+For a straightforward first import, you usually need:
 
-For a typical import, you need:
+- one survey data file
+- one participant ID column
+- one session value
 
-- a survey data file
-- a participant ID column
-- a session value
-
-Sometimes you also need:
+Depending on the dataset, you may also need:
 
 - a run column
-- a language choice
+- a language selection
 - an ID mapping file
-- a specific survey template selection
+- a questionnaire version choice
+- a specific template selection
 
-## Supported starting points
+## Supported input types
 
-The survey converter supports common tabular survey inputs such as:
+Start with common tabular formats unless you have a specific workflow reason not
+to.
 
-- Excel files
-- CSV files
-- TSV files
+Typical starting formats:
 
-The Studio interface may also show other survey file types. For beginner work, start with Excel, CSV, or TSV unless your teaching material tells you otherwise.
+- Excel
+- CSV
+- TSV
 
-## If you need to create a survey template first
+## Recommended workflow
 
-Use the canonical Excel workbook at `official/create_new_survey/survey_import_template.xlsx`.
+Use this sequence for most imports:
 
-Quick workbook flow:
+1. Load the correct project first.
+2. Open **Converter → Survey**.
+3. Select the source file.
+4. Confirm the participant ID column.
+5. Set the session value.
+6. Review any run or version settings if they apply.
+7. Run **Preview**.
+8. Review the summary and warnings.
+9. Run **Convert** only after the preview matches your expectation.
 
-1. Fill `General` (instrument metadata and version context).
-2. Fill `Items` (default item texts and scale definitions).
-3. Use `Variants` only when you need explicit multi-version definitions or per-variant item overrides.
-4. Check the built-in `Help` sheet for column rules and examples.
+Preview first. Convert second. That is the key safety rule of this workflow.
 
-For detailed field semantics, see [specs/survey.md](specs/survey.md).
+## Step-by-step guidance
 
-## Recommended beginner workflow
+### Step 1: Choose the file
 
-1. Load your project first on the Projects page.
-2. Open Converter and switch to Survey.
-3. Choose the survey file.
-4. Check that the participant ID column is correct.
-5. Set the session.
-6. Run Preview.
-7. Review the summary and warnings.
-8. Run Convert.
+Select the survey file from disk or from project-local source material if your
+project already uses `sourcedata/`.
 
-Preview first. Convert second. This is the safest habit.
+Good first example:
 
-## Step 1: Choose the file
+- `examples/workshop/exercise_1_raw_data/raw_data/wellbeing.xlsx`
 
-Select the survey file from your computer.
+### Step 2: Confirm the participant ID column
 
-If a project is already open, PRISM can also help you pick files from `sourcedata/`. That is useful once your project folder is organized.
+PRISM tries to detect the ID column automatically.
 
-## Step 2: Check the participant ID column
+Always verify it. A wrong ID column is the fastest way to create a broken import
+that looks fine at first glance but fails later in validation, participant
+alignment, or scoring.
 
-PRISM tries to detect the participant ID column automatically.
+### Step 3: Set the session value
 
-Always check the selection before converting. A wrong ID column causes the biggest downstream problems.
+The session value becomes part of the project structure and filenames.
 
-If automatic detection is wrong, choose the correct column manually.
-
-## Step 3: Set the session
-
-The session value is required in the survey converter.
-
-This value becomes part of the file naming and project structure. Use a simple, stable label.
-
-Examples:
+Use a stable label such as:
 
 - `1`
 - `2`
 - `baseline`
 - `followup`
 
-## Step 4: Use Preview
+Choose a value that matches the real study design instead of inventing one just
+to get through the form.
 
-Preview is a dry run.
+### Step 4: Review advanced fields only when needed
 
-It lets you check:
+For some datasets you may need to review:
 
-- whether the file was read correctly
-- whether IDs were understood correctly
-- whether the session and run logic look right
-- whether the expected output files make sense
+- run logic
+- language
+- questionnaire version
+- ID mapping
 
-Use Preview every time you work with a new file format or a new dataset.
+If the simple path works, keep the first import simple and come back to advanced
+controls later.
 
-## Step 5: Convert
+### Step 5: Use Preview
 
-After a clean preview, run Convert.
+Preview is the dry run. Use it every time you work with a new dataset or a new
+import shape.
 
-The converter writes PRISM-style survey files into the project structure. It also checks the matching template situation and tells you when more metadata work is still needed.
+Preview should help you confirm:
+
+- the file was read correctly
+- the ID column is correct
+- the session and run logic look right
+- the output file structure makes sense
+- the task or version assignment is what you intended
+
+### Step 6: Convert
+
+Convert only after the preview looks correct.
+
+The converter writes survey files into the project structure and may also trigger
+template follow-up work if PRISM needs more project-local template detail.
+
+## Example workflow
+
+Example source:
+
+- `wellbeing.xlsx` with one participant ID column and several item columns such
+	as `WB01` to `WB05`
+
+Example path:
+
+1. Load the project `wellbeing_study`.
+2. Open **Converter → Survey**.
+3. Select `wellbeing.xlsx`.
+4. Confirm `participant_id` or the detected equivalent.
+5. Set session `baseline`.
+6. Run **Preview**.
+7. Confirm that the subject-level output matches the expected survey structure.
+8. Run **Convert**.
+
+Expected result:
+
+- survey files written into subject folders
+- a project-local template situation that may need review in Template Editor
+- a dataset that is ready for validation
 
 ## Template follow-up after import
 
-Survey import and template editing are connected.
+Survey import and template editing are tightly connected.
 
-If PRISM copies a survey template into your project library, that project-local template may still need administration details such as language or collection context.
+Sometimes the import creates or copies a project-local template that still needs
+administration details such as:
 
-When that happens, open the Template Editor next.
+- language
+- collection method
+- version context
+- technical details of how the questionnaire was administered
 
-## Advanced options
+When that happens, the next step is [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md), not
+manual JSON editing by guesswork.
 
-You do not need the advanced options for every import. Use them only when the simple path is not enough.
+## If you need to create a template first
 
-Common advanced options are:
+Use the canonical workbook at:
 
-- choose a specific survey
-- choose a language
-- provide an ID mapping file
-- override detected session column
-- override detected run column
-- choose a questionnaire version when multiple versions exist
+- `official/create_new_survey/survey_import_template.xlsx`
 
-If you are teaching beginners, it is usually better to keep the first import session simple and introduce these options later.
+Practical workbook flow:
+
+1. Fill `General` for instrument and version context.
+2. Fill `Items` for item texts and scale definitions.
+3. Use `Variants` only when you truly need multi-version behavior.
+4. Check the built-in `Help` sheet when a column meaning is unclear.
+
+For schema semantics, see [specs/survey.md](specs/survey.md).
 
 ## Questionnaire versions
 
-Some templates include more than one questionnaire version.
+Some instruments have more than one explicit version. When PRISM asks you to
+choose a version, stop and confirm it instead of guessing. A wrong version choice
+can produce an internally consistent import that still represents the wrong
+questionnaire form.
 
-In that case, PRISM asks you to choose the version during import. This keeps the output consistent with the correct item set and naming.
-
-If you are unsure which version to choose, stop and confirm it before converting.
-
-## Common beginner mistakes
+## Common mistakes
 
 - converting before checking Preview
 - selecting the wrong ID column
 - forgetting to load the correct project first
-- mixing data from different sessions into one import step
-- assuming the template is finished when PRISM has only copied a project-local draft
+- mixing different sessions into one import without noticing
+- assuming the copied project template is already complete enough for publication
 
-## After survey import
+## What to do after survey import
 
-Once survey import is complete, the usual next steps are:
+The normal next steps are:
 
-1. open the Template Editor if PRISM asks for missing template details
+1. review the template if PRISM indicates missing template detail
 2. run validation
-3. run recipe-based scoring if needed
+3. create scoring recipes if the survey should produce derived scores
 
 ## Related pages
 
-- Projects: [PROJECTS.md](PROJECTS.md)
-- Template editing: [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
-- Sociodemographics import: [PARTICIPANTS_MAPPING.md](PARTICIPANTS_MAPPING.md)
-- Recipe-based scoring: [RECIPE_BUILDER.md](RECIPE_BUILDER.md)
-- Analysis and export outputs: [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md)
+- [CONVERTER.md](CONVERTER.md)
+- [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
+- [VALIDATOR.md](VALIDATOR.md)
+- [RECIPE_BUILDER.md](RECIPE_BUILDER.md)
+- [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md)

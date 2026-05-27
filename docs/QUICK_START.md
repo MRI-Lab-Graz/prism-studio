@@ -1,198 +1,199 @@
 # Quick Start
 
-Create your first PRISM project in 10 minutes using PRISM Studio.
+This guide is the shortest path from install to a first successful PRISM Studio
+workflow.
+
+Goal for this page:
+
+1. launch Studio
+2. create a project
+3. import one small dataset
+4. validate it
+5. inspect the result and know what to do next
+
+If you want a longer exercise with prepared sample material, continue with
+[WORKSHOP.md](WORKSHOP.md) after this page.
 
 ## Step 1: Launch PRISM Studio
 
-### Option A (Main): Prebuilt PRISM Studio
+### Option A: use the pre-built release
 
-1. Open releases: https://github.com/MRI-Lab-Graz/prism-studio/releases
-2. Download the package for your OS.
+1. Open the releases page: https://github.com/MRI-Lab-Graz/prism-studio/releases
+2. Download the package for your operating system.
 3. Extract the archive.
 4. Launch PRISM Studio from the extracted folder.
 
-### Option B: Launch from Source Repository
+This is the recommended path for most users.
+
+### Option B: run from the source repository
+
+From the repository root:
 
 ```bash
-cd prism-studio
+source .venv/bin/activate
 python prism-studio.py
 ```
 
-Your browser opens to `http://localhost:5001`. You will see the home page with quick actions.
+or:
 
-## Step 2: Create a New Project
-
-1. Click **Projects** in the navigation bar
-2. Select **Create New Project**
-3. Enter your project details:
-   - **Project Name**: `my_first_study` (no spaces)
-   - **Project Location**: Choose a folder (e.g., `Documents`)
-4. Click **Create Project**
-
-This creates a [YODA-structured](https://handbook.datalad.org/en/latest/basics/101-127-yoda.html) project:
-
+```bash
+source .venv/bin/activate
+rtk studio
 ```
+
+Studio should open at `http://localhost:5001`.
+
+## Step 2: Create your first project
+
+1. Open **Projects**.
+2. Select **Create New Project**.
+3. Enter a project name such as `my_first_study`.
+4. Choose a parent folder.
+5. Confirm creation.
+
+You now have a project that can hold metadata, source material, validated data,
+recipes, and derivatives in one place.
+
+Typical structure:
+
+```text
 my_first_study/
 ├── dataset_description.json
 ├── participants.tsv
-├── sub-001/
-│   └── ...            ← Your BIDS/PRISM data goes here
-├── code/              ← Analysis scripts
-├── analysis/          ← Results
-├── project.json       ← Project metadata
-└── CITATION.cff       ← Citation information
+├── project.json
+├── CITATION.cff
+├── sourcedata/
+├── derivatives/
+└── code/
 ```
 
-## Step 3: Add Your Data
+If you plan to work with larger datasets or provenance tracking, read
+[DATALAD.md](DATALAD.md) before reshaping the project manually.
 
-### Option A: Use the Converter (Recommended)
+## Step 3: Import a small example dataset
 
-1. Click **Converter** in the navigation
-2. If you are creating participant files, start with **Sociodemographics**
-3. Pick the matching case:
-   - Case 1: import file as source of truth
-   - Case 2: modify existing project files
-   - Case 3: safe merge from imported file
-4. If you are using Case 1 or Case 3, select your source file (Excel, CSV, SPSS)
-5. Review the detected participant ID and variables
-6. Finish with the action that matches the active case
+The simplest first success is to use the workshop sample material.
 
-### Option B: Manual Import
+Recommended sample source:
 
-Copy your data files to `my_first_study/`:
+- `examples/workshop/exercise_1_raw_data/raw_data/wellbeing.xlsx`
 
-```
-my_first_study/
-├── dataset_description.json
-├── participants.tsv
-└── sub-001/
-   └── survey/
-      ├── sub-001_task-questionnaire_survey.tsv
-      └── sub-001_task-questionnaire_survey.json
-```
+### Survey example
 
-## Step 4: Validate Your Dataset
+1. Open **Converter**.
+2. Choose the survey workflow.
+3. Select `wellbeing.xlsx`.
+4. Confirm the participant ID column.
+5. Select the wellbeing item columns.
+6. Preview the output.
+7. Save the converted result into your project.
 
-1. Click **Validator** in the navigation
-2. Your project folder is pre-selected
-3. Click **Validate**
-4. Review results:
-   - ✅ **Green**: Valid files
-   - ⚠️ **Yellow**: Warnings (should fix)
-   - ❌ **Red**: Errors (must fix)
+Expected outcome:
 
-### Understanding Validation Results
+- survey files written into subject folders
+- a project that now contains importable or validatable data
 
-| Error Code | Meaning | How to Fix |
-|------------|---------|------------|
-| PRISM101 | Missing sidecar JSON | Create a `.json` file for your data |
-| PRISM201 | Invalid filename | Rename to `sub-XXX_task-YYY_modality.ext` |
-| PRISM301 | Missing required field | Add the field to your JSON sidecar |
+### Participants example
 
-Click any error to see detailed explanations and auto-fix suggestions.
+If you start with sociodemographics instead, pick the correct case first:
 
-## Step 5: Run Scoring Recipes
+- **Case 1**: the imported file becomes the source of truth
+- **Case 2**: you are editing an existing project file
+- **Case 3**: you want a safe merge
 
-If you have survey data:
+Use [PARTICIPANTS_MAPPING.md](PARTICIPANTS_MAPPING.md) if you are unsure which
+case applies.
 
-1. Go to **Tools → Recipes & Scoring**
-2. Select your dataset
-3. Choose recipes from the library (e.g., DEMO-5 Well-Being)
-4. Click **Run Recipes**
-5. Export results as SPSS or CSV
+## Step 4: Run validation
 
-## What's Next?
+1. Open **Validator**.
+2. Select your project folder if it is not already active.
+3. Enable BIDS validation too if you want the broader check.
+4. Click **Validate**.
 
-### Daily Health Commands (Recommended)
+You will see findings grouped by severity.
 
-Use these in repo root before/after changes:
+| Level | Meaning | What to do |
+|---|---|---|
+| Error | Blocking problem | Fix it before treating the dataset as valid |
+| Warning | Important issue | Fix soon, especially before sharing |
+| Suggestion | Improvement | Use when polishing the dataset |
+
+Common first findings:
+
+| Example code | Meaning | Typical fix |
+|---|---|---|
+| `PRISM101` | Missing sidecar JSON | Add the matching `.json` sidecar |
+| `PRISM201` | Invalid filename | Rename to the expected BIDS/PRISM pattern |
+| `PRISM301` | Missing required metadata field | Complete the required JSON field |
+
+Open the finding details before changing files blindly. The codes are much more
+useful when you read them as workflow feedback instead of just error labels.
+
+## Step 5: Check the result in the project
+
+After a successful first pass, you should have:
+
+- a project root with the usual study-level files
+- at least one imported data slice
+- a validation result you can inspect or re-run
+
+If your validation still shows missing metadata, that is normal for a first run.
+The next common step is to complete survey or biometrics templates and then run
+validation again.
+
+## Step 6: Optional first scoring pass
+
+If your survey data is ready, continue with a simple recipe flow:
+
+1. Open **Tools**.
+2. Open **Recipe Builder**.
+3. Load or create a small scoring recipe.
+4. Run it against your project.
+5. Export the result as CSV or SPSS if needed.
+
+See [RECIPE_BUILDER.md](RECIPE_BUILDER.md) and [RECIPES.md](RECIPES.md) for the
+deeper workflow.
+
+## Equivalent CLI checks
+
+If you prefer to confirm the same project from the terminal:
 
 ```bash
-# fast sanity check (seconds)
-bash scripts/ci/run_local_smoke.sh
-
-# full required gate
-bash scripts/ci/run_runtime_gate.sh
+python prism-validator /path/to/project --bids
 ```
 
-### Hands-On Workshop
+For broader command coverage, see [CLI_REFERENCE.md](CLI_REFERENCE.md).
 
-For a complete learning experience with example data:
+## Common first-time issues
 
-```bash
-# Open the workshop folder
-cd examples/workshop
+### No files found in the dataset
+
+Check that your data ended up in the project dataset structure, not only in a
+source-material folder.
+
+### Missing `dataset_description.json`
+
+Projects normally create this for you. If it is missing, your project creation
+step likely did not complete correctly.
+
+### Invalid filename pattern
+
+The validator expects BIDS-style entities in filenames, for example:
+
+```text
+sub-001_task-wellbeing_survey.tsv
+sub-001_ses-01_task-wellbeing_survey.tsv
 ```
 
-The workshop basics track includes 4 exercises:
-1. **Project Setup** – YODA principles
-2. **Data Conversion** – Excel to PRISM format
-3. **Metadata & Validation** – Find and fix missing metadata
-4. **Recipes & Scoring** – Calculate questionnaire scores and export
+### Studio starts but no page appears
 
-Optional add-ons (if time allows):
-- **Participant Mapping** – Demographic transformations
-- **Templates** – Build reusable survey metadata
+Open `http://localhost:5001` manually and check the terminal output for launch
+errors.
 
-See [Workshop Guide](WORKSHOP.md) for details.
+## What to do next
 
-### Explore the Interface
-
-- **[Projects](PROJECTS.md)** – Manage datasets and metadata
-- **[Converter](CONVERTER.md)** – Import data from various formats
-- **[Validator](VALIDATOR.md)** – Understand validation errors
-- **[Tools](TOOLS.md)** – File management, templates, recipes
-
-### Use the CLI
-
-For batch processing and scripting:
-
-```bash
-# Validate from command line
-python prism-validator /path/to/project
-
-# Run all recipes
-python prism_tools.py recipes survey --prism /path/to/project --format save
-```
-
-See [CLI Reference](CLI_REFERENCE.md) for all commands.
-
----
-
-## Common First-Time Issues
-
-### "No files found in dataset"
-
-Make sure your data is in the project root (next to `project.json`), not in a nested `rawdata/` subfolder.
-
-### "Missing dataset_description.json"
-
-Create this required file in your project root:
-
-```json
-{
-  "Name": "My Study",
-  "BIDSVersion": "1.9.0",
-  "DatasetType": "raw"
-}
-```
-
-### "Invalid filename pattern"
-
-Files must follow BIDS naming:
-```
-sub-<ID>_[ses-<session>_]task-<task>_<modality>.<ext>
-```
-
-Examples:
-- ✅ `sub-001_task-depression_survey.tsv`
-- ✅ `sub-001_ses-01_task-anxiety_survey.tsv`
-- ❌ `participant1_depression.tsv`
-
----
-
-## Getting Help
-
-- **Documentation**: You're reading it! Use the sidebar to navigate.
-- **Workshop**: `examples/workshop/` has step-by-step exercises
-- **Issues**: Report bugs or request features at https://github.com/MRI-Lab-Graz/prism-studio/issues
+- [STUDIO_OVERVIEW.md](STUDIO_OVERVIEW.md) for the full page map
+- [PROJECTS.md](PROJECTS.md) for project and metadata workflows
+- [SURVEY_IMPORT.md](SURVEY_IMPORT.md) for a deeper survey conversion guide
+- [WORKSHOP.md](WORKSHOP.md) for a longer guided exercise

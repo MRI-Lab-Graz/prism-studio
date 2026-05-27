@@ -436,127 +436,6 @@ _DEFACED_FILENAME_RE = re.compile(
     r"(_desc-defaced|_defaced|_skullstripped|_brain)(?=_|\.)",
     re.IGNORECASE,
 )
-_ACQ_ENTITY_RE = re.compile(r"_acq-([A-Za-z0-9]+)", re.IGNORECASE)
-
-
-def _extract_terminal_suffix_label(filename: str) -> Optional[str]:
-    """Return the terminal BIDS suffix token from a filename, or None."""
-    name = str(filename or "").strip()
-    if not name:
-        return None
-
-    lower_name = name.lower()
-    for compound_ext in (".nii.gz", ".tsv.gz"):
-        if lower_name.endswith(compound_ext):
-            name = name[: -len(compound_ext)]
-            break
-    else:
-        if "." in name:
-            name = name.rsplit(".", 1)[0]
-
-    if not name:
-        return None
-
-    suffix = name.rsplit("_", 1)[-1]
-    if not suffix or "-" in suffix:
-        return None
-    return suffix
-
-
-def _extract_acq_label(filename: str) -> Optional[str]:
-    """Return the BIDS acq- label token from a filename, or None."""
-    match = _ACQ_ENTITY_RE.search(str(filename or ""))
-    if not match:
-        return None
-    value = str(match.group(1) or "").strip()
-    return value or None
-
-
-def _build_defacing_variant_metadata(filename: str) -> Dict[str, str]:
-    """Build normalized variant metadata used for defacing selection filters."""
-    suffix = _extract_terminal_suffix_label(filename)
-    acq = _extract_acq_label(filename)
-    suffix_norm = str(suffix or "").strip().lower()
-    acq_norm = str(acq or "").strip().lower()
-
-    key_parts: list[str] = []
-    if acq_norm:
-        key_parts.append(f"acq:{acq_norm}")
-    if suffix_norm:
-        key_parts.append(f"suffix:{suffix_norm}")
-    key = "|".join(key_parts)
-
-    if acq and suffix:
-        label = f"acq-{acq} {suffix}"
-    elif suffix:
-        label = suffix
-    elif acq:
-        label = f"acq-{acq}"
-    else:
-        label = "unlabeled anatomical"
-
-    return {
-        "key": key,
-        "label": label,
-        "suffix": str(suffix or ""),
-        "acq": str(acq or ""),
-    }
-
-
-def _normalize_selected_defacing_variants(
-    selected_variants: Optional[Set[str]],
-) -> Optional[Set[str]]:
-    if selected_variants is None:
-        return None
-    return {
-        str(value).strip().lower()
-        for value in selected_variants
-        if str(value).strip()
-    }
-
-
-def _matches_selected_defacing_variants(
-    filename: str,
-    selected_variants: Optional[Set[str]],
-) -> bool:
-    normalized_selected = _normalize_selected_defacing_variants(selected_variants)
-    if normalized_selected is None:
-        return True
-
-    variant_key = _build_defacing_variant_metadata(filename).get("key", "").strip().lower()
-    if not variant_key:
-        return False
-    return variant_key in normalized_selected
-
-
-def collect_defacing_scan_variants(project_path: Path) -> List[Dict[str, Any]]:
-    """Return available anatomical scan variants (acq/suffix combinations)."""
-    variants: Dict[str, Dict[str, Any]] = {}
-
-    for nifti_file in _iter_anatomical_nifti_files(project_path):
-        metadata = _build_defacing_variant_metadata(nifti_file.name)
-        key = str(metadata.get("key") or "").strip().lower()
-        if not key:
-            continue
-
-        if key not in variants:
-            variants[key] = {
-                "key": key,
-                "label": str(metadata.get("label") or ""),
-                "suffix": str(metadata.get("suffix") or ""),
-                "acq": str(metadata.get("acq") or ""),
-                "count": 0,
-            }
-        variants[key]["count"] = int(variants[key].get("count", 0)) + 1
-
-    return sorted(
-        variants.values(),
-        key=lambda item: (
-            str(item.get("suffix") or "").lower(),
-            str(item.get("acq") or "").lower(),
-            str(item.get("label") or "").lower(),
-        ),
-    )
 
 
 def _has_defaced_filename(nifti_path: Path) -> bool:
@@ -643,37 +522,13 @@ def _has_defacing_sidecar_artifact(nifti_path: Path) -> bool:
     return False
 
 
-def _iter_anatomical_nifti_files(
-    project_path: Path,
-    selected_variants: Optional[Set[str]] = None,
-    excluded_subjects: Optional[Set[str]] = None,
-    excluded_sessions: Optional[Set[str]] = None,
-) -> List[Path]:
+def _iter_anatomical_nifti_files(project_path: Path) -> List[Path]:
     """Return anatomical NIfTI files under sub-*/anat/ that match known suffixes."""
-    normalized_excluded_subjects = {
-        str(label).strip()
-        for label in (excluded_subjects or set())
-        if str(label).strip()
-    }
-    normalized_excluded_sessions = {
-        str(label).strip()
-        for label in (excluded_sessions or set())
-        if str(label).strip()
-    }
-
     results: List[Path] = []
     for sub_dir in project_path.iterdir():
         if not (sub_dir.is_dir() and sub_dir.name.startswith("sub-")):
             continue
-        if sub_dir.name in normalized_excluded_subjects:
-            continue
         for nifti_file in sub_dir.rglob("*.nii*"):
-            relative_parts = nifti_file.relative_to(project_path).parts
-            if normalized_excluded_sessions and any(
-                part.startswith("ses-") and part in normalized_excluded_sessions
-                for part in relative_parts
-            ):
-                continue
             if detect_modality_from_path(nifti_file) != "anat":
                 continue
             filename = nifti_file.name
@@ -681,8 +536,6 @@ def _iter_anatomical_nifti_files(
                 f"_{suffix}.nii" in filename or f"_{suffix}.nii.gz" in filename
                 for suffix in ANAT_SUFFIXES
             ):
-                continue
-            if not _matches_selected_defacing_variants(filename, selected_variants):
                 continue
             results.append(nifti_file)
     return sorted(set(results))
@@ -721,7 +574,6 @@ def get_defacing_preflight(project_path: Path) -> Dict[str, Any]:
 
     return {
         "has_anatomical_data": has_anat,
-        "available_scan_variants": collect_defacing_scan_variants(project_path),
         "pydeface_available": bool(pydeface_executable),
         "pydeface_executable": pydeface_executable,
         "fsl_available": fsl_available,
@@ -732,251 +584,16 @@ def get_defacing_preflight(project_path: Path) -> Dict[str, Any]:
     }
 
 
-def prepare_defacing_export_copy(
-    project_path: Path,
-    output_root: Path,
-    *,
-    selected_variants: Optional[Set[str]] = None,
-    excluded_subjects: Optional[Set[str]] = None,
-    excluded_sessions: Optional[Set[str]] = None,
-    preserve_datalad_metadata: bool = False,
-    datalad_executable: str = "",
-) -> Dict[str, Any]:
-    """Copy anatomical scans into an export target folder without mutating source.
-
-    The copied layout preserves each file's project-relative path (e.g.
-    ``sub-001/ses-1/anat/...``), so downstream defacing operates on a structural
-    mirror of the selected anatomical scope.
-    """
-    source_root = Path(project_path)
-    destination_root = Path(output_root)
-    destination_root.mkdir(parents=True, exist_ok=True)
-
-    target_name = f"{source_root.name}_defacing_export"
-    target_path = destination_root / target_name
-    suffix = 2
-    while target_path.exists():
-        target_path = destination_root / f"{target_name}_{suffix}"
-        suffix += 1
-
-    if preserve_datalad_metadata:
-        if not is_datalad_dataset(source_root):
-            return {
-                "success": False,
-                "error": (
-                    "DataLad-preserving defacing copy requested, but source project "
-                    "is not a DataLad dataset."
-                ),
-                "target_path": str(target_path),
-                "copied_nifti_files": 0,
-                "copied_sidecars": 0,
-            }
-
-        resolved_datalad = str(datalad_executable or resolve_datalad_executable()).strip()
-        if not resolved_datalad:
-            return {
-                "success": False,
-                "error": (
-                    "DataLad-preserving defacing copy requires datalad. "
-                    f"{DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
-                ),
-                "target_path": str(target_path),
-                "copied_nifti_files": 0,
-                "copied_sidecars": 0,
-            }
-
-        clone_command = [resolved_datalad, "clone", str(source_root), str(target_path)]
-        try:
-            clone_process = subprocess.run(
-                clone_command,
-                capture_output=True,
-                text=True,
-                timeout=900,
-                check=False,
-            )
-        except subprocess.TimeoutExpired:
-            return {
-                "success": False,
-                "error": "DataLad clone timed out while preparing export defacing copy.",
-                "target_path": str(target_path),
-                "copied_nifti_files": 0,
-                "copied_sidecars": 0,
-                "datalad_clone": {
-                    "command": " ".join(clone_command),
-                },
-            }
-        except Exception as exc:
-            return {
-                "success": False,
-                "error": f"DataLad clone failed while preparing export defacing copy: {exc}",
-                "target_path": str(target_path),
-                "copied_nifti_files": 0,
-                "copied_sidecars": 0,
-                "datalad_clone": {
-                    "command": " ".join(clone_command),
-                },
-            }
-
-        if clone_process.returncode != 0:
-            detail = (clone_process.stderr or clone_process.stdout or "").strip()
-            try:
-                shutil.rmtree(target_path, ignore_errors=True)
-            except Exception:
-                pass
-            return {
-                "success": False,
-                "error": (
-                    "DataLad clone failed while preparing export defacing copy: "
-                    f"{detail or 'Unknown DataLad error.'}"
-                ),
-                "target_path": str(target_path),
-                "copied_nifti_files": 0,
-                "copied_sidecars": 0,
-                "datalad_clone": {
-                    "command": " ".join(clone_command),
-                },
-            }
-
-        selected_nifti_files = _iter_anatomical_nifti_files(
-            target_path,
-            selected_variants=selected_variants,
-            excluded_subjects=excluded_subjects,
-            excluded_sessions=excluded_sessions,
-        )
-        if not selected_nifti_files:
-            try:
-                shutil.rmtree(target_path, ignore_errors=True)
-            except Exception:
-                pass
-            return {
-                "success": False,
-                "error": "No anatomical scans matched the selected export defacing scope.",
-                "target_path": str(target_path),
-                "copied_nifti_files": 0,
-                "copied_sidecars": 0,
-                "datalad_clone": {
-                    "command": " ".join(clone_command),
-                },
-            }
-
-        copied_sidecars = 0
-        for nifti_file in selected_nifti_files:
-            sidecar_path: Optional[Path] = None
-            if nifti_file.name.endswith(".nii.gz"):
-                candidate = nifti_file.with_name(nifti_file.name[: -len(".nii.gz")] + ".json")
-                if candidate.exists():
-                    sidecar_path = candidate
-            elif nifti_file.suffix.lower() == ".nii":
-                candidate = nifti_file.with_suffix(".json")
-                if candidate.exists():
-                    sidecar_path = candidate
-            if sidecar_path is not None:
-                copied_sidecars += 1
-
-        return {
-            "success": True,
-            "target_path": str(target_path),
-            "copied_nifti_files": len(selected_nifti_files),
-            "copied_sidecars": copied_sidecars,
-            "datalad_clone": {
-                "command": " ".join(clone_command),
-                "success": True,
-            },
-        }
-
-    selected_nifti_files = _iter_anatomical_nifti_files(
-        source_root,
-        selected_variants=selected_variants,
-        excluded_subjects=excluded_subjects,
-        excluded_sessions=excluded_sessions,
-    )
-    if not selected_nifti_files:
-        return {
-            "success": False,
-            "error": "No anatomical scans matched the selected export defacing scope.",
-            "target_path": str(target_path),
-            "copied_nifti_files": 0,
-            "copied_sidecars": 0,
-        }
-
-    copied_nifti_files = 0
-    copied_sidecars = 0
-    seen_sidecars: Set[str] = set()
-
-    for nifti_file in selected_nifti_files:
-        try:
-            rel_nifti = nifti_file.relative_to(source_root)
-        except ValueError:
-            continue
-
-        destination_nifti = target_path / rel_nifti
-        destination_nifti.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(nifti_file, destination_nifti)
-        copied_nifti_files += 1
-
-        sidecar_path = None
-        if nifti_file.name.endswith(".nii.gz"):
-            candidate = nifti_file.with_name(nifti_file.name[: -len(".nii.gz")] + ".json")
-            if candidate.exists():
-                sidecar_path = candidate
-        elif nifti_file.suffix.lower() == ".nii":
-            candidate = nifti_file.with_suffix(".json")
-            if candidate.exists():
-                sidecar_path = candidate
-
-        if sidecar_path is None:
-            continue
-
-        try:
-            rel_sidecar = sidecar_path.relative_to(source_root)
-        except ValueError:
-            continue
-
-        rel_sidecar_text = rel_sidecar.as_posix()
-        if rel_sidecar_text in seen_sidecars:
-            continue
-
-        seen_sidecars.add(rel_sidecar_text)
-        destination_sidecar = target_path / rel_sidecar
-        destination_sidecar.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(sidecar_path, destination_sidecar)
-        copied_sidecars += 1
-
-    if copied_nifti_files == 0:
-        try:
-            shutil.rmtree(target_path, ignore_errors=True)
-        except Exception:
-            pass
-        return {
-            "success": False,
-            "error": "No anatomical scans could be copied to export target.",
-            "target_path": str(target_path),
-            "copied_nifti_files": 0,
-            "copied_sidecars": 0,
-        }
-
-    return {
-        "success": True,
-        "target_path": str(target_path),
-        "copied_nifti_files": copied_nifti_files,
-        "copied_sidecars": copied_sidecars,
-    }
-
-
 def deface_anatomical_scans(
     project_path: Path,
     *,
     force: bool = False,
     timeout_seconds: int = 300,
-    selected_variants: Optional[Set[str]] = None,
-    excluded_subjects: Optional[Set[str]] = None,
-    excluded_sessions: Optional[Set[str]] = None,
 ) -> Dict[str, Any]:
     """Run pydeface in-place on anatomical scans and return an operation summary."""
     project_root = Path(project_path)
     datalad_tracked = is_datalad_dataset(project_root)
     datalad_executable = resolve_datalad_executable() if datalad_tracked else ""
-    git_annex_executable = str(shutil.which("git-annex") or "").strip() if datalad_tracked else ""
     datalad_info: Dict[str, Any] = {
         "tracked": datalad_tracked,
         "available": bool(datalad_executable),
@@ -987,33 +604,6 @@ def deface_anatomical_scans(
         "groups": [],
         "message": "",
     }
-
-    anatomical_files = _iter_anatomical_nifti_files(
-        project_path,
-        selected_variants=selected_variants,
-        excluded_subjects=excluded_subjects,
-        excluded_sessions=excluded_sessions,
-    )
-    if not anatomical_files:
-        if selected_variants is None:
-            empty_message = "No anatomical scans found to deface."
-        else:
-            empty_message = (
-                "No anatomical scans matched the selected defacing filters."
-            )
-        return {
-            "success": True,
-            "message": empty_message,
-            "counts": {
-                "total": 0,
-                "already_defaced": 0,
-                "defaced": 0,
-                "failed": 0,
-                "skipped": 0,
-            },
-            "items": [],
-            "datalad": datalad_info,
-        }
 
     preflight = get_defacing_preflight(project_path)
     pydeface_executable = str(preflight.get("pydeface_executable") or "")
@@ -1039,6 +629,22 @@ def deface_anatomical_scans(
                 preflight.get("message")
                 or "FSL is not available in this environment."
             ),
+            "counts": {
+                "total": 0,
+                "already_defaced": 0,
+                "defaced": 0,
+                "failed": 0,
+                "skipped": 0,
+            },
+            "items": [],
+            "datalad": datalad_info,
+        }
+
+    anatomical_files = _iter_anatomical_nifti_files(project_path)
+    if not anatomical_files:
+        return {
+            "success": True,
+            "message": "No anatomical scans found to deface.",
             "counts": {
                 "total": 0,
                 "already_defaced": 0,
@@ -1177,14 +783,12 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import os
 from pathlib import Path
 
 manifest = json.loads(Path(sys.argv[1]).read_text(encoding=\"utf-8\"))
 project_root = Path(sys.argv[2])
 pydeface_exe = sys.argv[3]
-git_annex_exe = sys.argv[4]
-timeout = max(1, int(sys.argv[5]))
+timeout = max(1, int(sys.argv[4]))
 
 counts = {\"defaced\": 0, \"failed\": 0}
 items = []
@@ -1196,20 +800,6 @@ for rel in manifest.get(\"files\", []):
         with tempfile.NamedTemporaryFile(prefix=\"prism_deface_\", suffix=file_path.suffix, delete=False) as tmp:
             backup = Path(tmp.name)
         shutil.copy2(file_path, backup)
-        if file_path.is_symlink() or not os.access(file_path, os.W_OK):
-            if not git_annex_exe:
-                raise PermissionError(f\"git-annex is required to unlock annexed file: {rel}\")
-            unlock_proc = subprocess.run(
-                [git_annex_exe, \"unlock\", rel],
-                cwd=str(project_root),
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                check=False,
-            )
-            if unlock_proc.returncode != 0:
-                unlock_msg = (unlock_proc.stderr or unlock_proc.stdout or \"git annex unlock failed\").strip()
-                raise PermissionError(unlock_msg)
         proc = subprocess.run(
             [pydeface_exe, rel, \"--outfile\", rel, \"--force\"],
             cwd=str(project_root),
@@ -1271,7 +861,6 @@ print(json.dumps({\"counts\": counts, \"items\": items}, ensure_ascii=False))
                         manifest_path,
                         str(project_root),
                         pydeface_executable,
-                        git_annex_executable,
                         str(max(1, int(timeout_seconds))),
                     ],
                     datalad_executable=datalad_executable,
@@ -1534,12 +1123,7 @@ def scan_mri_jsons(project_path: Path) -> List[Path]:
     return results
 
 
-def build_defacing_report(
-    project_path: Path,
-    selected_variants: Optional[Set[str]] = None,
-    excluded_subjects: Optional[Set[str]] = None,
-    excluded_sessions: Optional[Set[str]] = None,
-) -> List[Dict[str, Any]]:
+def build_defacing_report(project_path: Path) -> List[Dict[str, Any]]:
     """
     Scan all anatomical JSON sidecars in *project_path* and report defacing status.
 
@@ -1549,39 +1133,15 @@ def build_defacing_report(
       ``reason``  — human-readable detail
     """
     report: List[Dict[str, Any]] = []
-    normalized_excluded_subjects = {
-        str(label).strip()
-        for label in (excluded_subjects or set())
-        if str(label).strip()
-    }
-    normalized_excluded_sessions = {
-        str(label).strip()
-        for label in (excluded_sessions or set())
-        if str(label).strip()
-    }
-
     for sub_dir in project_path.iterdir():
         if not (sub_dir.is_dir() and sub_dir.name.startswith("sub-")):
             continue
-        if sub_dir.name in normalized_excluded_subjects:
-            continue
         for json_file in sub_dir.rglob("*.json"):
-            relative_parts = json_file.relative_to(project_path).parts
-            if normalized_excluded_sessions and any(
-                part.startswith("ses-") and part in normalized_excluded_sessions
-                for part in relative_parts
-            ):
-                continue
             if detect_modality_from_path(json_file) != "anat":
                 continue
             # Only check files whose stem suggests an anatomical suffix
             stem_upper = json_file.stem.upper()
             if not any(suf.upper() in stem_upper for suf in ANAT_SUFFIXES):
-                continue
-            if not _matches_selected_defacing_variants(
-                json_file.name,
-                selected_variants,
-            ):
                 continue
             result = is_anatomical_defaced(json_file)
             result["file"] = str(json_file.relative_to(project_path))

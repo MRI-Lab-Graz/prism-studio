@@ -1,6 +1,10 @@
+---
+orphan: true
+---
+
 # Roadmap History (2026)
 
-Historical completion entries moved from [ROADMAP.md](../ROADMAP.md) so the main roadmap stays short and execution-focused.
+Historical completion entries moved from the repository roadmap so the main roadmap stays short and execution-focused.
 
 - 1.34: Added RTK wrapper command for setup, app runs, test and repo workflows.
 - 1.33: Improved survey preview diagnostics and compact version selection UI.
