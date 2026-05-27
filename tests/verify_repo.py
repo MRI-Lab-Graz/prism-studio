@@ -1975,36 +1975,58 @@ def check_issue_codes_consistency(repo_path, fix=False):
 def check_version_consistency(repo_path, fix=False):
     print_header("Checking Version Consistency")
 
-    setup_py = Path(repo_path) / "setup.py"
-    src_init = Path(repo_path) / "src" / "__init__.py"
-    app_prism = Path(repo_path) / "app" / "prism.py"
-
     versions = {}
 
-    if setup_py.exists():
-        text = setup_py.read_text(encoding="utf-8", errors="ignore")
-        match = re.search(r'version\s*=\s*["\']([^"\']+)["\']', text)
-        if match:
-            versions["setup.py"] = match.group(1)
-
-    if src_init.exists():
-        text = src_init.read_text(encoding="utf-8", errors="ignore")
-        match = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', text)
-        if match:
-            versions["src/__init__.py"] = match.group(1)
-
-    if app_prism.exists():
-        text = app_prism.read_text(encoding="utf-8", errors="ignore")
-        match = re.search(
+    version_markers = [
+        (
+            "setup.py",
+            Path(repo_path) / "setup.py",
+            r'version\s*=\s*["\']([^"\']+)["\']',
+        ),
+        (
+            "src/__init__.py",
+            Path(repo_path) / "src" / "__init__.py",
+            r'__version__\s*=\s*["\']([^"\']+)["\']',
+        ),
+        (
+            "app/src/__init__.py",
+            Path(repo_path) / "app" / "src" / "__init__.py",
+            r'__version__\s*=\s*["\']([^"\']+)["\']',
+        ),
+        (
+            "CITATION.cff",
+            Path(repo_path) / "CITATION.cff",
+            r'^version:\s*["\']?([^"\'\n]+)["\']?\s*$',
+        ),
+        (
+            "codemeta.json",
+            Path(repo_path) / "codemeta.json",
+            r'"version"\s*:\s*"([^"]+)"',
+        ),
+        (
+            "docs/conf.py",
+            Path(repo_path) / "docs" / "conf.py",
+            r'^release\s*=\s*["\']([^"\']+)["\']',
+        ),
+        (
+            "app/prism.py",
+            Path(repo_path) / "app" / "prism.py",
             r'--version"\s*,\s*action\s*=\s*"version"\s*,\s*version\s*=\s*["\']PRISM\s+([^"\']+)["\']',
-            text,
-        )
+        ),
+    ]
+
+    for source_name, source_path, pattern in version_markers:
+        if not source_path.exists():
+            continue
+
+        text = source_path.read_text(encoding="utf-8", errors="ignore")
+        match = re.search(pattern, text, re.MULTILINE)
         if match:
-            versions["app/prism.py"] = match.group(1)
+            versions[source_name] = match.group(1).strip()
 
     if not versions:
         print_warning(
-            "Could not extract version markers from setup.py/src/__init__.py/app/prism.py"
+            "Could not extract any version markers from the expected release metadata files."
         )
         return
 
