@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.3] - 2026-05-27
+
+This release consolidates the frontend structural-assessment hardening work,
+expands export privacy protections, and tightens release-readiness validation.
+
 ### Changed
 - **Specifications UI Harmonization**: Migrated the Specifications page to shared page-header/help-panel primitives and retained project-bound derivative-link wiring behavior with focused regression assertions.
 - **Analysis Outputs UI Harmonization**: Migrated the Analysis Outputs (Recipes) page to shared page-header/help-panel primitives and added focused wiring assertions while keeping project-bound API fallback behavior unchanged.
@@ -47,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Phase-Boundary Coverage Closeout**: Restored full-suite green state after Priority 1.36 remediation tranche closeout (`./rtk coverage`: 2206 passed, 3 skipped).
 - **Export Privacy Hardening (Priority 3 Slice A)**: Added export-time MRI sidecar sensitive-tag scrubbing plus `.nii.gz` GZIP header normalization (cleared `MTIME`/`FNAME`) and wired this behavior through the projects export scrub option.
 - **Export Privacy Regression Coverage Expansion**: Added focused export tests for root-level `.nii.gz` header cleaning and explicit no-clean behavior to protect header-preservation defaults.
+- **Defacing Confirmation Lifecycle Coverage**: Added an integration test that validates global default, project override, and reset-to-inherited behavior across the public export settings and project-preferences APIs.
 
 ## [1.15.2] - 2026-04-28
 
