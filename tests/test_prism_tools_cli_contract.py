@@ -166,6 +166,7 @@ def test_survey_help_lists_expected_actions() -> None:
             "import-limesurvey-batch",
             "i18n-migrate",
             "i18n-build",
+            "i18n-autotranslate",
         ],
     )
 
