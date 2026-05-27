@@ -271,13 +271,13 @@ jobs:
         if [ -f "$NOTES_FILE" ]; then
           cp "$NOTES_FILE" release_body.md
         else
-          cat > release_body.md << 'EOF'
-          ## PRISM Studio
-
-          Release notes file not found for this tag.
-
-          Please see CHANGELOG.md for full details.
-          EOF
+          printf '%s\n' \
+            '## PRISM Studio' \
+            '' \
+            'Release notes file not found for this tag.' \
+            '' \
+            'Please see CHANGELOG.md for full details.' \
+            > release_body.md
         fi
         
     - name: Create Release
