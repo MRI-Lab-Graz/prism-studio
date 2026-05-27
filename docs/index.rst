@@ -25,6 +25,7 @@ PRISM Studio Documentation
    :caption: Getting Started
 
    WHAT_IS_PRISM
+   PROJECT_OVERVIEW
    INSTALLATION
    QUICK_START
 
