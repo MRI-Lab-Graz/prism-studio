@@ -1,46 +1,49 @@
 .. PRISM Studio documentation master file
 
 PRISM Studio Documentation
-=============================
+==========================
 
-**PRISM Studio** is the software implementation of the **PRISM** (Psychological Research Information System Model) framework for psychological experiment datasets. It extends BIDS workflows for modalities common in psychological research — surveys, biometrics, eyetracking, and environment — while ensuring your data remains **fully compatible with existing BIDS tools**.
+**PRISM Studio** is the software implementation of the **PRISM**
+(Psychological Research Information System Model) for psychological research
+datasets. It extends BIDS for workflows that are common in psychology, such as
+surveys, biometrics, environment metadata, and scoring, while keeping datasets
+compatible with standard BIDS tooling.
 
 .. important::
-   PRISM (the model) is an **add-on to BIDS**, not a replacement. PRISM Studio datasets still work with fMRIPrep, MRIQC, and other BIDS apps.
+   PRISM is an add-on to BIDS, not a replacement. PRISM Studio datasets should
+   still work with BIDS apps such as fMRIPrep and MRIQC.
 
 .. important::
-   Source installation requires **Python 3.10+**. Python 3.9 is not supported.
+   Source installation requires Python 3.10 or newer.
 
-**Key Features:**
+Start here if you want to understand the project before diving into a specific
+workflow:
 
-- 🔍 **Validation** with structured error codes and auto-fix
-- 📝 **Self-documenting data** with complete metadata in JSON sidecars
-- 📊 **Questionnaire scoring in PRISM Studio** via recipes
-- 📤 **Export workflows in PRISM Studio** (e.g., SPSS/integration formats)
-- 🌐 **Web interface** (PRISM Studio) for easy project management
-- ✨ **100+ survey templates** in the official library
+- **Concepts**: what PRISM is, how PRISM Studio fits, and how projects are organized
+- **Getting started**: install the tool, create a first project, and validate a first dataset
+- **Guided workflows**: projects, conversion, validation, templates, scoring, and export
+- **Reference**: schemas, error codes, CLI commands, and detailed data specifications
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Fundamentals
+
+   WHAT_IS_PRISM
+   PROJECT_OVERVIEW
+   SPECIFICATIONS
 
 .. toctree::
    :maxdepth: 2
    :caption: Getting Started
 
-   WHAT_IS_PRISM
-   PROJECT_OVERVIEW
    INSTALLATION
    QUICK_START
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Examples
-
-   EXAMPLES
-   WORKSHOP
-
-.. toctree::
-   :maxdepth: 2
-   :caption: PRISM Studio Guide
-
    STUDIO_OVERVIEW
+
+.. toctree::
+   :maxdepth: 2
+   :caption: User Workflows
+
    PROJECTS
    CONVERTER
    SURVEY_IMPORT
@@ -53,7 +56,14 @@ PRISM Studio Documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: CLI Workflows
+   :caption: Examples
+
+   EXAMPLES
+   WORKSHOP
+
+.. toctree::
+   :maxdepth: 2
+   :caption: CLI and Automation
 
    CLI_WORKFLOWS
    CLI_REFERENCE
@@ -62,13 +72,12 @@ PRISM Studio Documentation
    :maxdepth: 2
    :caption: Reference
 
-   SPECIFICATIONS
    RECIPES
    ERROR_CODES
    PARTICIPANTS_MAPPING
-   ANC_EXPORT
    QUICK_REFERENCE_BIDS
    TEMPLATE_VALIDATION
+   ANC_EXPORT
 
 .. toctree::
    :maxdepth: 2
@@ -81,7 +90,7 @@ PRISM Studio Documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: Survey Design
+   :caption: Library and Survey Design
 
    TEMPLATES
    SURVEY_VERSION_PLAN
@@ -90,10 +99,17 @@ PRISM Studio Documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: Advanced Topics
+   :caption: Integrations and Advanced
 
+   DATALAD
    SCHEMA_VERSIONING
    FAIR_POLICY
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Project Health
+
+   ASSESSMENT
 
 Indices and tables
 ==================

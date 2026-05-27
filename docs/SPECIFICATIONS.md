@@ -1,183 +1,183 @@
-# Specifications and Schemas (PRISM vs BIDS)
+# Specifications and Schemas
 
-This page explains PRISM’s **specification layer**: how schemas work, where they live, and how they relate to standard BIDS.
+Use this page to understand the specification layer behind PRISM Studio: what
+PRISM adds to BIDS, how schemas are versioned, and what kinds of files and
+metadata the validator expects.
 
-PRISM is an add-on to BIDS:
-- PRISM **does not replace** BIDS.
-- BIDS standards should not be changed in PRISM.
-- PRISM adds additional schemas (e.g., Survey, Biometrics, Environment) that are not fully standardized in BIDS yet.
-- A key design goal is that standard BIDS tools/apps still work on PRISM datasets.
+This page is conceptual and reference-oriented. For step-by-step workflows, use
+the workflow pages instead.
 
----
+## The main idea
 
-## 1) Conceptual model
+PRISM is an add-on to BIDS.
 
-### BIDS (core)
-BIDS defines:
-- dataset structure conventions
-- filename conventions and entities (`sub-`, `ses-`, `task-`, etc.)
-- standard metadata files (e.g., `dataset_description.json`, `participants.tsv`)
+That means:
 
-### PRISM (extensions)
-PRISM adds:
-- additional modality-specific schemas (e.g., `survey`, `biometrics`, `environment`)
-- **Mandatory Extensions to BIDS Core**: For certain standard BIDS modalities (like `events`), PRISM mandates additional metadata blocks (e.g., `StimulusPresentation`) that are optional or unspecified in standard BIDS.
-- stricter sidecar requirements for certain data types
-- optional internationalization (i18n) support for variable-level descriptions
+- PRISM does not replace BIDS
+- BIDS structure and naming stay the baseline where BIDS applies
+- PRISM adds schemas for psychology-focused data and metadata that are not fully
+  covered by standard BIDS practice
+- a core goal is that standard BIDS tools can still operate on PRISM datasets
 
-### PRISM Studio (software)
-PRISM Studio provides operational tooling on top of PRISM, including:
-- conversion/import workflows
-- validation execution (web and CLI)
-- scoring/derivatives execution
-- export workflows (e.g., SPSS or integration-specific exports)
+## Three layers to keep separate
 
----
+### BIDS
 
-## 2) Schema versions
+BIDS provides the baseline for:
 
-PRISM schemas are versioned under the repository folder:
-- `schemas/stable/` (default)
-- `schemas/vX.Y/` (historical / pinned versions)
+- dataset structure
+- filename entities such as `sub-`, `ses-`, and `task-`
+- standard files such as `dataset_description.json`
 
-You can:
+### PRISM
+
+PRISM extends that baseline with additional schemas and stricter metadata rules,
+especially for workflows that are common in psychological research.
+
+Examples:
+
+- surveys
+- biometrics
+- environment metadata
+- richer sidecar expectations
+- some additional requirements for otherwise standard BIDS-style data such as
+  events metadata blocks
+
+### PRISM Studio
+
+PRISM Studio is the software layer that helps you work with those rules through:
+
+- import and conversion workflows
+- validation
+- scoring and derivatives
+- export workflows
+
+## Schema versions
+
+Schemas are versioned in the repository.
+
+Typical locations:
+
+- `schemas/stable/`
+- `schemas/vX.Y/`
+
+Useful commands:
 
 ```bash
 python prism-validator --list-versions
 python prism-validator /path/to/dataset --schema-version stable
 ```
 
-For details, see:
-- [SCHEMA_VERSIONING.md](SCHEMA_VERSIONING.md)
-- [VALIDATOR.md](VALIDATOR.md)
+For version migration details, see [SCHEMA_VERSIONING.md](SCHEMA_VERSIONING.md).
 
----
+## What PRISM usually expects in a dataset
 
-## 3) Files PRISM expects in a dataset
+At the BIDS-core level, the project still needs the usual baseline files such as:
 
-At minimum (BIDS core):
-- `dataset_description.json` (required)
-- `participants.tsv` (commonly required in practice)
+- `dataset_description.json`
+- often `participants.tsv` in practice for participant-oriented datasets
 
-For PRISM extensions, typical additions are:
-- per-subject survey TSVs under `sub-*/ses-*/survey/`
-- per-subject biometrics TSVs under `sub-*/ses-*/biometrics/` for sports/performance tests (e.g., VO2max, Y-Balance, CMJ)
-- per-subject physiological signal files under `sub-*/ses-*/physio/` (primarily EDF+/EDF, with TSV/TSV.GZ where applicable)
-- environment TSV/JSON files in environment-specific paths used by your workflow
-- JSON sidecars for each data file (PRISM requires sidecars for non-JSON data files it validates)
+PRISM-specific extensions commonly add:
 
----
+- survey files under subject and session paths
+- biometrics files under subject and session paths
+- physiology files and sidecars
+- environment-specific data and sidecars
+- JSON sidecars for the non-JSON data files PRISM validates
 
-## 4) Filename conventions (high-level)
+## High-level filename expectations
 
-PRISM follows BIDS-like entity conventions. Examples:
+PRISM follows BIDS-like entity conventions.
 
-Survey TSV:
-- `sub-001_ses-1_task-ads_beh.tsv`
+Examples:
 
-Biometrics TSV:
-- `sub-001_ses-1_biometrics-cmj_biometrics.tsv`
+- survey TSV: `sub-001_ses-1_task-ads_beh.tsv`
+- biometrics TSV: `sub-001_ses-1_biometrics-cmj_biometrics.tsv`
+- physio EDF: `sub-001_ses-1_task-rest_physio.edf`
 
-Physio EDF+:
-- `sub-001_ses-1_task-rest_physio.edf`
+In general, data files should have matching JSON sidecars with the same stem.
 
-Each data file should have a corresponding JSON sidecar with the same stem.
+## Derivatives and processed outputs
 
----
+PRISM can generate derivatives such as scores and subscales from raw data using
+recipes.
 
-## 5) Derivatives
+Typical characteristics:
 
-PRISM Studio supports generating derived variables (scores, subscales) from raw data using PRISM-compatible recipes. These are stored in a BIDS-compliant `derivatives/` folder.
+- derivative outputs live under `derivatives/`
+- derivative datasets need their own `dataset_description.json`
+- recipe definitions live separately from the derivative outputs themselves
 
-- **Location**: `derivatives/surveys/` or `derivatives/biometrics/`
-- **Metadata**: Each derivative dataset must contain its own `dataset_description.json` (BIDS-derivatives requirement). PRISM automatically generates this file, inheriting relevant metadata from the root dataset.
-- **Recipes**: Transformations are defined in JSON recipe files. See [RECIPES.md](RECIPES.md) for the full specification.
+See [RECIPES.md](RECIPES.md) and [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md) for
+the operational side of this.
 
----
-
-## 6) What is inside a PRISM schema?
+## What is inside a PRISM schema?
 
 PRISM uses JSON Schema documents to define:
-- required top-level blocks (commonly `Technical`, `Study`, `Metadata`)
-- required fields and allowed types
-- optional blocks like `I18n` and `Scoring`
 
-The `Study` block now supports comprehensive metadata including:
-- `Authors`, `DOI`, `Citation`
-- `Construct`, `Keywords`
-- `Reliability`, `Validity`
-- `Instructions`
+- required top-level blocks
+- required fields
+- allowed data types and value shapes
+- optional blocks such as i18n or scoring-related metadata
 
-Many of these fields support **i18n objects** (e.g., `{"de": "...", "en": "..."}`) to allow for multi-language documentation.
+Common logical blocks include:
 
-Schemas live in `schemas/<version>/`.
+- `Study`
+- `Technical`
+- sometimes scoring or metadata-related blocks depending on modality
 
----
+## Important schema concepts
 
-## 7) Detailed Schema Keys
+### `Study`
 
-PRISM schemas are organized into logical blocks. Below are the most important keys for `survey` and `biometrics` modalities.
+`Study` is usually instrument-level or scientific metadata.
 
-### Technical Block
-Contains technical metadata about the data collection.
+Typical fields include:
 
-For survey templates, treat these as **project-local administration fields**. The official library stores the canonical instrument, while the copied template in `code/library/survey/` stores how that instrument was actually administered in the project.
+- `OriginalName`
+- `ShortName`
+- `Authors`
+- `DOI` or `Citation`
+- `Construct`
+- `Reliability` and `Validity`
 
-- `SoftwarePlatform`: Software used (e.g., LimeSurvey, REDCap, My Jump Lab).
-- `SoftwareVersion`: Version of the collection software.
-- `Language`: Primary language of the assessment (e.g., `en`, `de-AT`).
-- `Respondent`: Who provided the data (`self`, `clinician`, `parent`, etc.).
-- `AdministrationMethod`: How it was administered (`online`, `paper`, `interview`).
-- `Equipment`: Name of the hardware used (e.g., `Stopwatch`, `Dynamometer`).
-- `Supervisor`: Who supervised the test (`investigator`, `physician`, `self`).
-- `Location`: Where it took place (`laboratory`, `clinic`, `home`).
+For surveys, `TaskName` is especially important because it ties the instrument to
+how it is referenced in the dataset.
 
-### Study Block
-Contains scientific and bibliographic metadata.
+### `Technical`
 
-For surveys, this block is mostly instrument-level metadata. The main project-local exception is `TaskName`, which identifies how the instrument is referenced in the dataset.
+`Technical` describes how the data was actually collected in the project.
 
-- `OriginalName`: Full canonical name of the instrument.
-- `ShortName`: Common abbreviation (e.g., `DEMO-II`).
-- `Authors`: List of authors.
-- `DOI` / `Citation`: Bibliographic references.
-- `License` / `LicenseID` / `CopyrightHolder`: Legal and usage information.
-- `Construct`: Psychological construct measured (e.g., `depression`).
-- `Reliability` / `Validity`: Psychometric properties.
-- `AdministrationTime`: Estimated time to complete.
-- `References`: Structured list of related papers (manuals, validations); each entry includes `Type`, `Citation`, canonical `DOI` (`10.x/...`), optional `URL`, `Year`, and `Notes`.
+Examples:
 
-### Scoring Block
-Defines how the data should be interpreted or scored.
+- software platform and version
+- language
+- respondent type
+- administration method
+- equipment or location details
 
-- `ScoringMethod`: General method (e.g., `sum`, `mean`).
-- `ScoreRange`: Possible min/max scores.
-- `Cutoffs`: Clinical thresholds and their interpretations.
-- `ReverseCodedItems`: List of items that need inversion.
-- `Subscales`: Structured definitions of sub-scores (Name, Items, Method).
+This is often the block that still needs project-specific completion after an
+import or template copy.
 
-### Item-Level Properties (Columns)
-Each column in the TSV can have detailed metadata in the JSON sidecar.
+### Item-level metadata
 
-- `Description`: The exact question text or metric description.
-- `Levels`: Mapping of numeric values to labels (e.g., `{"0": "Never", "1": "Always"}`).
-- `Unit`: Unit of measurement (e.g., `ms`, `cm`, `score`).
-- `MinValue` / `MaxValue`: Hard bounds for validation.
-- `WarnMinValue` / `WarnMaxValue`: Soft bounds (triggers warnings).
-- `Relevance`: Logic for when this item is applicable (e.g., `Q01 == 1`).
-- `DataType`: Expected type (`string`, `integer`, `float`).
-- `SessionHint` / `RunHint`: Used for longitudinal/repeated data mapping.
+Item or column metadata can describe:
 
-Example (Biometrics schema path):
-- `schemas/stable/biometrics.schema.json`
+- question or metric text
+- levels or response labels
+- units
+- hard and soft bounds
+- expected data type
+- relevance logic
 
----
+This is what makes survey and biometrics data self-documenting instead of just a
+set of column names.
 
-## 6) Internationalization (i18n)
+## Internationalization
 
-Some PRISM templates support bilingual/multilingual text fields (e.g., English + German). Depending on the schema, a descriptive field may be either:
-- a plain string, or
-- a language map like:
+Some PRISM templates support multilingual descriptive fields.
+
+Example:
 
 ```json
 {
@@ -186,20 +186,20 @@ Some PRISM templates support bilingual/multilingual text fields (e.g., English +
 }
 ```
 
-This is especially useful for:
-- `Study.Description`
-- variable-level `Description`
+This is especially useful for instrument descriptions and item-level text.
 
----
+## Where to read the detailed modality specs
 
-## 7) Detailed modality specifications
+For modality-specific semantics, use the spec pages under `docs/specs/`:
 
-PRISM’s modality-specific specifications are documented under `docs/specs/`.
-
-Start here:
-- [Biometrics specification](specs/biometrics)
 - [Survey specification](specs/survey)
+- [Biometrics specification](specs/biometrics)
 - [Events specification](specs/events)
 - [Environment specification](specs/environment)
 
-(These pages are intended to play the same role as BIDS specification pages: they describe the expected files, naming, and metadata semantics.)
+## Related pages
+
+- [WHAT_IS_PRISM.md](WHAT_IS_PRISM.md)
+- [VALIDATOR.md](VALIDATOR.md)
+- [SCHEMA_VERSIONING.md](SCHEMA_VERSIONING.md)
+- [RECIPES.md](RECIPES.md)

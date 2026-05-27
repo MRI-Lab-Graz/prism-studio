@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import shlex
 import shutil
 import subprocess
@@ -11,6 +10,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator
 
+from src.bids_entity_parser import BidsEntityParser
 from src.datalad_execution import (
     parse_json_from_output,
 )
@@ -36,10 +36,6 @@ _PROTECTED_ROOT_JSONS = frozenset({
     ".prismrc.json",
     "CITATION.cff",
 })
-_ENTITY_TOKEN_PATTERN = re.compile(r"^(?P<key>[A-Za-z0-9]+)-(?P<value>[A-Za-z0-9]+)$")
-_LABEL_PATTERN = re.compile(r"^[A-Za-z0-9]+$")
-_SUBJECT_DIR_PATTERN = re.compile(r"^sub-[A-Za-z0-9]+$")
-_SESSION_DIR_PATTERN = re.compile(r"^ses-[A-Za-z0-9]+$")
 _DOUBLE_SUFFIXES = (".nii.gz", ".tsv.gz")
 _MAX_FILTER_VALUES = 200
 _DATALAD_SAVE_TIMEOUT_SECONDS = 120
@@ -173,8 +169,9 @@ class BidsFileDeleter:
     def _extract_subject_from_relative_path(self, relative_path: str) -> str | None:
         parts = [part for part in Path(relative_path).parts if part]
         for part in parts:
-            if _SUBJECT_DIR_PATTERN.fullmatch(part):
-                return part[4:]
+            subject_label = BidsEntityParser.subject_label_from_dir(part)
+            if subject_label is not None:
+                return subject_label
         return None
 
     def _run_datalad_apply_for_subjects(
@@ -393,7 +390,7 @@ class BidsFileDeleter:
         # Only touch files under sub-XX directories
         sub_index: int | None = None
         for i, part in enumerate(parts):
-            if _SUBJECT_DIR_PATTERN.fullmatch(part):
+            if BidsEntityParser.is_subject_dir(part):
                 sub_index = i
                 break
         if sub_index is None:
@@ -419,9 +416,10 @@ class BidsFileDeleter:
             tokens, _, _ = parsed
             file_entities: dict[str, str] = {}
             for token in tokens[:-1]:
-                m = _ENTITY_TOKEN_PATTERN.fullmatch(token)
-                if m:
-                    file_entities[m.group("key").lower()] = m.group("value")
+                parsed_token = BidsEntityParser.parse_entity_token(token)
+                if parsed_token is not None:
+                    entity_key, entity_value = parsed_token
+                    file_entities[entity_key] = entity_value
 
             for key, value in entity_filters.items():
                 if key == "ses":
@@ -532,7 +530,7 @@ class BidsFileDeleter:
         subjects: list[str] = []
         try:
             for entry in sorted(self.project_root.iterdir()):
-                if entry.is_dir() and _SUBJECT_DIR_PATTERN.fullmatch(entry.name):
+                if entry.is_dir() and BidsEntityParser.is_subject_dir(entry.name):
                     subjects.append(entry.name)  # keep "sub-XXX" form
         except OSError:
             pass
@@ -549,18 +547,17 @@ class BidsFileDeleter:
                 continue
             tokens, _, _ = parsed
             for token in tokens[:-1]:
-                m = _ENTITY_TOKEN_PATTERN.fullmatch(token)
-                if not m:
+                parsed_token = BidsEntityParser.parse_entity_token(token)
+                if parsed_token is None:
                     continue
-                key = m.group("key").lower()
-                value = m.group("value")
+                key, value = parsed_token
                 bucket = values_by_entity.setdefault(key, set())
                 if len(bucket) < _MAX_FILTER_VALUES:
                     bucket.add(value)
             # Also expose ses from directory path
             for part in rel_path.parts:
-                if _SESSION_DIR_PATTERN.fullmatch(part):
-                    ses_value = part[4:]  # strip "ses-"
+                ses_value = BidsEntityParser.session_label_from_dir(part)
+                if ses_value is not None:
                     bucket = values_by_entity.setdefault("ses", set())
                     if len(bucket) < _MAX_FILTER_VALUES:
                         bucket.add(ses_value)
@@ -572,8 +569,8 @@ class BidsFileDeleter:
             rel_path = file_path.relative_to(self.project_root)
             # Add ses from directory
             for part in rel_path.parts:
-                if _SESSION_DIR_PATTERN.fullmatch(part):
-                    ses_value = part[4:]
+                ses_value = BidsEntityParser.session_label_from_dir(part)
+                if ses_value is not None:
                     bucket = values_by_entity.setdefault("ses", set())
                     if len(bucket) < _MAX_FILTER_VALUES:
                         bucket.add(ses_value)
@@ -582,11 +579,10 @@ class BidsFileDeleter:
                 continue
             tokens, _, _ = parsed
             for token in tokens[:-1]:
-                m = _ENTITY_TOKEN_PATTERN.fullmatch(token)
-                if not m:
+                parsed_token = BidsEntityParser.parse_entity_token(token)
+                if parsed_token is None:
                     continue
-                key = m.group("key").lower()
-                value = m.group("value")
+                key, value = parsed_token
                 bucket = values_by_entity.setdefault(key, set())
                 if len(bucket) < _MAX_FILTER_VALUES:
                     bucket.add(value)
@@ -612,11 +608,11 @@ class BidsFileDeleter:
             k = str(key or "").strip().lower()
             v = str(value or "").strip()
             if k and v:
-                if not _LABEL_PATTERN.fullmatch(k):
+                if not BidsEntityParser.is_valid_label(k):
                     raise ValueError(
                         f"Entity filter key '{k}' must contain only letters and numbers."
                     )
-                if not _LABEL_PATTERN.fullmatch(v):
+                if not BidsEntityParser.is_valid_label(v):
                     raise ValueError(
                         f"Entity filter value '{v}' must contain only letters and numbers."
                     )
@@ -633,7 +629,7 @@ class BidsFileDeleter:
             # Accept "sub-001" or "001"
             if raw.startswith("sub-"):
                 raw = raw[4:]
-            if raw and _LABEL_PATTERN.fullmatch(raw):
+            if BidsEntityParser.is_valid_label(raw):
                 result.append(raw)
         return result
 
@@ -643,12 +639,12 @@ class BidsFileDeleter:
         if len(parts) < 3:
             return None
         for index, value in enumerate(parts[:-1]):
-            if not _SUBJECT_DIR_PATTERN.fullmatch(value):
+            if not BidsEntityParser.is_subject_dir(value):
                 continue
             modality_index = index + 1
             if modality_index >= len(parts) - 1:
                 continue
-            if _SESSION_DIR_PATTERN.fullmatch(parts[modality_index]):
+            if BidsEntityParser.is_session_dir(parts[modality_index]):
                 modality_index += 1
                 if modality_index >= len(parts) - 1:
                     continue
@@ -729,15 +725,16 @@ class BidsFileDeleter:
             return None
         # Last token must be a plain modality label (no dash)
         modality = tokens[-1]
-        if "-" in modality or not _LABEL_PATTERN.fullmatch(modality):
+        if "-" in modality or not BidsEntityParser.is_valid_label(modality):
             return None
         # All preceding tokens must be entity-value pairs
         entities: dict[str, str] = {}
         for token in tokens[:-1]:
-            m = _ENTITY_TOKEN_PATTERN.fullmatch(token)
-            if not m:
+            parsed_token = BidsEntityParser.parse_entity_token(token)
+            if parsed_token is None:
                 return None
-            entities[m.group("key").lower()] = m.group("value")
+            key, value = parsed_token
+            entities[key] = value
         # Must have at least one entity; subject-level files are not root sidecars
         if not entities or "sub" in entities:
             return None
@@ -752,7 +749,7 @@ class BidsFileDeleter:
         """Return True if file_path is a data file described by sidecar_entities/modality."""
         rel_path = file_path.relative_to(self.project_root)
         # Only data files under sub-XXX directories count
-        if not any(_SUBJECT_DIR_PATTERN.fullmatch(p) for p in rel_path.parts):
+        if not any(BidsEntityParser.is_subject_dir(part) for part in rel_path.parts):
             return False
         # Modality folder must match
         if self._extract_modality_from_relative_path(rel_path) != sidecar_modality:
@@ -764,13 +761,15 @@ class BidsFileDeleter:
         tokens, _, _ = parsed
         file_entities: dict[str, str] = {}
         for token in tokens[:-1]:
-            m = _ENTITY_TOKEN_PATTERN.fullmatch(token)
-            if m:
-                file_entities[m.group("key").lower()] = m.group("value")
+            parsed_token = BidsEntityParser.parse_entity_token(token)
+            if parsed_token is not None:
+                key, value = parsed_token
+                file_entities[key] = value
         # Supplement with session from directory path
         for part in rel_path.parts:
-            if _SESSION_DIR_PATTERN.fullmatch(part):
-                file_entities.setdefault("ses", part[4:])
+            session_label = BidsEntityParser.session_label_from_dir(part)
+            if session_label is not None:
+                file_entities.setdefault("ses", session_label)
         # All entities from sidecar must be present in file
         for key, value in sidecar_entities.items():
             if file_entities.get(key) != value:

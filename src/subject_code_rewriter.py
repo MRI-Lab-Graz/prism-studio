@@ -6,10 +6,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from src.anonymizer import replace_participant_ids_in_text
+from src.bids_entity_parser import BidsEntityParser
 from src.system_files import filter_system_files
 
 _SUBJECT_TOKEN_PATTERN = re.compile(r"sub-[A-Za-z0-9]+")
-_SUBJECT_DIR_PATTERN = re.compile(r"^sub-[A-Za-z0-9]+$")
 _IGNORED_DIR_NAMES = {
     ".git",
     ".venv",
@@ -28,7 +28,6 @@ _TEXT_SUFFIXES = {
     ".md",
 }
 _TEXT_FILENAMES = {".bidsignore"}
-_LABEL_PATTERN = re.compile(r"^[A-Za-z0-9]+$")
 
 
 @dataclass(frozen=True)
@@ -76,7 +75,7 @@ class SubjectCodeRewriter:
             if not child.is_dir():
                 continue
             name = child.name
-            if _SUBJECT_DIR_PATTERN.fullmatch(name):
+            if BidsEntityParser.is_subject_dir(name):
                 subject_ids.append(name)
         return sorted(subject_ids)
 
@@ -241,7 +240,7 @@ class SubjectCodeRewriter:
             token = str(subject or "").strip()
             if token.startswith("sub-"):
                 token = token[4:]
-            if token and _LABEL_PATTERN.fullmatch(token):
+            if BidsEntityParser.is_valid_label(token):
                 normalized.add(token)
         return normalized
 
@@ -424,7 +423,7 @@ class SubjectCodeRewriter:
     def _build_directory_rename_ops(self, mapping: dict[str, str]) -> list[_RenameOperation]:
         ops: list[_RenameOperation] = []
         for directory in self._iter_directories():
-            if not _SUBJECT_DIR_PATTERN.fullmatch(directory.name):
+            if not BidsEntityParser.is_subject_dir(directory.name):
                 continue
             replacement = mapping.get(directory.name)
             if not replacement or replacement == directory.name:

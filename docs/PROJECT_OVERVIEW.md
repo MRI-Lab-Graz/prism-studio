@@ -1,81 +1,153 @@
 # Project Overview
 
-This page is the implementation starting point for the full Read the Docs rewrite.
+Use this page as the map of the repository and product surface before you dive
+into a specific workflow.
 
-It gives:
+PRISM Studio has one backend engine and multiple user-facing entry points:
 
-- a compact assessment of the repository's current capabilities
-- a map of where major workflows live
-- practical examples for the most common user paths
+- the Studio web application for guided workflows
+- the validator CLI for direct dataset checks
+- the tools CLI for import, conversion, scoring, and utility commands
 
-## What PRISM Studio currently provides
+## What the project currently covers
 
-PRISM Studio combines a web interface and CLI around one backend engine for PRISM/BIDS-compatible dataset workflows.
+PRISM Studio supports the full lifecycle of a psychological research dataset.
 
 | Area | What you can do |
 |---|---|
-| Project lifecycle | Create/open projects, maintain project metadata, generate README/CITATION/CHANGES, export/share datasets |
-| Conversion/import | Convert survey and table-based inputs (including LimeSurvey and common tabular formats) into PRISM-compatible structures |
-| Validation | Run PRISM validation and optional BIDS validation, with structured error categories and autofix support for selected cases |
-| Tools | Edit templates/JSON metadata, build scoring recipes, and manage files |
-| Analysis outputs | Produce derivatives, anonymized bundles, ANC export, and openMINDS export workflows |
-| Automation path | Use CLI (`prism-*` entry points and `rtk`) for scripted or CI workflows |
+| Projects | Create or open projects, maintain study metadata, manage sessions, and prepare export-ready datasets |
+| Conversion | Convert surveys, sociodemographics, biometrics, physiology, and environment-style tabular inputs into PRISM/BIDS-compatible files |
+| Validation | Run PRISM validation, optional BIDS validation, inspect structured findings, and apply available auto-fixes |
+| Templates and metadata | Build or edit survey and biometrics templates, complete JSON sidecars, and maintain project-local libraries |
+| Scoring and analysis | Run recipes, compute derived scores, and export analysis-ready outputs such as CSV or SPSS |
+| Export and sharing | Create shareable ZIPs, anonymized exports, ANC export, and other downstream packaging workflows |
+| Automation | Use `prism.py`, `prism_tools.py`, `prism-validator`, and `rtk` for scripted and CI-oriented workflows |
 
-## Architecture at a glance
+## Product surfaces
 
-- `src/` = canonical backend logic (validation, conversion, export, scoring workflows)
-- `app/src/` = web adapter layer and route wiring to backend services
-- `docs/` = Read the Docs source pages (Sphinx + MyST Markdown)
+### Studio web interface
 
-This split keeps behavior consistent between web and CLI usage.
+Use Studio when you want a guided workflow and UI help.
 
-## Typical end-to-end workflow
+Typical pages:
 
-1. Create/open a project in **Projects**
-2. Import data in **Converter**
-3. Validate in **Validator**
-4. Fix issues and re-validate
-5. Score/export from **Tools** and project export actions
+- **Projects** for project setup, metadata, and export
+- **Converter** for survey, participants, biometrics, physio, and environment imports
+- **Validator** for project or dataset checks
+- **Tools** for template editing, file management, JSON editing, recipes, and library workflows
 
-Use [STUDIO_OVERVIEW.md](STUDIO_OVERVIEW.md) for guided page-by-page navigation.
-
-## Quick examples
-
-### Example A — Start the web interface
+Start it with:
 
 ```bash
 python prism-studio.py
 ```
 
-Then open `http://localhost:5001`.
+or, after setup:
 
-### Example B — Validate a dataset from CLI
+```bash
+rtk studio
+```
+
+### Validator CLI
+
+Use the validator CLI when you want a fast check, reproducible scripting, or CI.
 
 ```bash
 python prism-validator /path/to/dataset --bids
 ```
 
-### Example C — Common RTK workflow
+Key capabilities include:
+
+- PRISM validation with structured error codes
+- optional BIDS validation alongside PRISM
+- JSON output for machine-readable reports
+- dry-run and fix modes for supported issues
+- schema-version selection and schema inspection
+
+### Tools CLI
+
+Use the tools CLI when you want import and transformation workflows without the web UI.
 
 ```bash
-rtk studio
-rtk validator /path/to/dataset --bids
-rtk test -q
+python prism_tools.py --help
 ```
 
-## Next documentation slices
+It exposes command groups for surveys, participants, biometrics, environment,
+recipes, anonymization, template export, and more.
 
-The next rewrite slices should deepen each workflow page with:
+## How the repository is organized
 
-- one minimal example
-- one realistic example
-- troubleshooting notes per workflow stage
+The repository is intentionally split into a thin web layer and a larger backend
+engine.
 
-For details, continue with:
+| Path | Role |
+|---|---|
+| `src/` | Canonical backend logic for validation, conversion, export, scoring, and schema-aware behavior |
+| `app/src/` | Flask routes and adapter code that wire the UI to backend operations |
+| `app/templates/` and `app/static/` | Studio UI templates, styling, and page scripts |
+| `docs/` | Read the Docs source pages built with Sphinx and MyST |
+| `tests/` | Behavior coverage and example workflows that also help validate documentation accuracy |
 
-- [PROJECTS.md](PROJECTS.md)
-- [CONVERTER.md](CONVERTER.md)
-- [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
-- [VALIDATOR.md](VALIDATOR.md)
-- [TOOLS.md](TOOLS.md)
-- [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md)
+This separation matters for documentation: user-visible behavior belongs in the
+workflow docs, while implementation details should point back to the backend as
+the source of truth.
+
+## Core concepts you should keep separate
+
+### PRISM vs PRISM Studio
+
+- **PRISM** is the data and metadata model.
+- **PRISM Studio** is the software that helps you create, validate, convert, score, and export datasets that follow that model.
+
+### Project vs dataset
+
+- A **project** is the working area that holds study-level files, metadata, code, library assets, derivatives, and source material.
+- A **dataset** is the data structure inside that project that you validate and eventually share.
+
+### BIDS vs PRISM
+
+- BIDS stays the baseline for standard neuroimaging-compatible organization.
+- PRISM adds structure and metadata for psychological research workflows that BIDS does not fully specify.
+
+## Typical user journeys
+
+### Journey 1: First study in Studio
+
+1. Install PRISM Studio.
+2. Create a project in **Projects**.
+3. Import survey or participant data in **Converter**.
+4. Run **Validator** with optional BIDS checks.
+5. Add templates or recipes in **Tools**.
+6. Export a cleaned or anonymized dataset.
+
+### Journey 2: Validate an existing dataset from the terminal
+
+1. Open a terminal in the repo or installed environment.
+2. Run `python prism-validator /path/to/dataset --bids`.
+3. Review the result codes and fix the reported issues.
+4. Re-run until blocking errors are cleared.
+
+### Journey 3: Work with large datasets and provenance
+
+1. Create or open a project that uses DataLad-aware storage.
+2. Keep the project root as the controlling dataset.
+3. Use Studio or CLI workflows without breaking BIDS compatibility.
+4. Export from a copy when you need anonymization or defacing.
+
+See [DATALAD.md](DATALAD.md) for the public DataLad guidance.
+
+## Best example sources in this repository
+
+- [WORKSHOP.md](WORKSHOP.md) for a guided end-to-end exercise
+- [EXAMPLES.md](EXAMPLES.md) for sample-driven learning paths
+- [CLI_REFERENCE.md](CLI_REFERENCE.md) for command surfaces
+- [ERROR_CODES.md](ERROR_CODES.md) for validation interpretation
+- `examples/workshop/` for reusable teaching assets
+- `tests/` for stable behavior examples and edge cases
+
+## Where to go next
+
+- [WHAT_IS_PRISM.md](WHAT_IS_PRISM.md) for the model and compatibility story
+- [INSTALLATION.md](INSTALLATION.md) for setup choices
+- [QUICK_START.md](QUICK_START.md) for a first successful workflow
+- [STUDIO_OVERVIEW.md](STUDIO_OVERVIEW.md) for page-by-page navigation
