@@ -123,22 +123,27 @@ PRISM Studio provides a user-friendly interface for:
 | **anat/func/dwi/fmap** | Standard BIDS | MRI data (validated by BIDS) |
 | **eeg** | Standard BIDS-EEG | EEG data (validated by BIDS) |
 
-## Project Structure (YODA Layout)
+## Project Structure (YODA-style layout)
 
 PRISM encourages the [YODA principles](https://handbook.datalad.org/en/latest/basics/101-127-yoda.html) for reproducible research:
 
-```
+```text
 my_study/
 ├── dataset_description.json
 ├── participants.tsv
 ├── participants.json
-├── sub-001/
-│   └── survey/
-│       ├── sub-001_task-demo_survey.tsv
-│       └── sub-001_task-demo_survey.json
-├── code/                       # Analysis scripts
-├── analysis/                   # Results and derivatives
-└── project.json               # Project metadata
+├── project.json
+├── CITATION.cff
+├── CHANGES
+├── .bidsignore
+├── .prismrc.json
+├── sourcedata/                 # incoming source material
+├── derivatives/                # processed/scored outputs
+├── code/                       # project-local scripts/templates/recipes
+└── sub-001/
+    └── survey/
+        ├── sub-001_task-demo_survey.tsv
+        └── sub-001_task-demo_survey.json
 ```
 
 ## Next Steps
