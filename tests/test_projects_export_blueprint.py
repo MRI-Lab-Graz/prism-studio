@@ -65,7 +65,6 @@ def test_projects_export_uses_fixed_internal_anonymization_settings(tmp_path):
     assert called["mask_questions"] is False
     assert called["scrub_mri_json"] is True
     assert called["scrub_mri_json_groups"] == {"scanner_site", "timestamps"}
-    assert called["deface_anatomical_scans"] is False
     assert called["clean_nifti_gzip_headers"] is True
     assert called["id_length"] == 8
     assert called["deterministic"] is True
@@ -103,8 +102,6 @@ def test_projects_export_start_uses_fixed_internal_anonymization_settings(tmp_pa
                     "mask_questions": False,
                     "scrub_mri_json": True,
                     "scrub_mri_json_groups": ["scanner_site", "timestamps"],
-                    "deface_anatomical_scans": True,
-                    "defacing_selected_variants": ["acq:mprage|suffix:t1w"],
                     "include_derivatives": True,
                     "include_code": False,
                     "include_analysis": False,
@@ -126,8 +123,6 @@ def test_projects_export_start_uses_fixed_internal_anonymization_settings(tmp_pa
     assert export_kwargs["mask_questions"] is False
     assert export_kwargs["scrub_mri_json"] is True
     assert export_kwargs["scrub_mri_json_groups"] == {"scanner_site", "timestamps"}
-    assert export_kwargs["deface_anatomical_scans"] is True
-    assert export_kwargs["defacing_selected_variants"] == {"acq:mprage|suffix:t1w"}
     assert export_kwargs["clean_nifti_gzip_headers"] is True
     assert export_kwargs["id_length"] == 8
     assert export_kwargs["deterministic"] is True
@@ -532,52 +527,6 @@ def test_projects_export_defacing_preflight_route_returns_status(tmp_path):
     assert "pydeface" in payload.get("missing_requirements", [])
 
 
-def test_projects_in_place_deface_route_returns_backend_summary(tmp_path):
-    app = _build_app()
-
-    project_dir = tmp_path / "study"
-    project_dir.mkdir(parents=True, exist_ok=True)
-    (project_dir / "project.json").write_text("{}", encoding="utf-8")
-
-    with patch(
-        "src.mri_json_scrubber.deface_anatomical_scans",
-        return_value={
-            "success": True,
-            "message": "Defacing completed successfully.",
-            "counts": {"total": 1, "defaced": 1, "already_defaced": 0, "failed": 0, "skipped": 0},
-            "items": [{"file": "sub-01/anat/sub-01_T1w.nii.gz", "status": "defaced", "message": "ok"}],
-        },
-    ) as mock_deface, patch(
-        "src.mri_json_scrubber.build_defacing_report",
-        return_value=[
-            {
-                "file": "sub-01/anat/sub-01_T1w.json",
-                "status": "defaced",
-                "reason": "JSON metadata indicates defacing/skull-stripping",
-            }
-        ],
-    ):
-        with app.test_client() as client:
-            response = client.post(
-                "/api/projects/deface",
-                json={
-                    "project_path": str(project_dir),
-                    "selected_variants": ["acq:mprage|suffix:t1w"],
-                },
-            )
-
-    assert response.status_code == 200
-    payload = response.get_json() or {}
-    assert payload.get("success") is True
-    assert payload.get("target_mode") == "project_in_place"
-    assert payload.get("project_path") == str(project_dir.resolve(strict=False))
-    assert payload.get("report_counts", {}).get("defaced") == 1
-
-    args, kwargs = mock_deface.call_args
-    assert args[0] == project_dir.resolve(strict=False)
-    assert kwargs.get("selected_variants") == {"acq:mprage|suffix:t1w"}
-
-
 def test_projects_export_start_upload_ready_preset_forces_safe_export_defaults(tmp_path):
     app = _build_app()
 
@@ -821,33 +770,6 @@ def test_projects_export_start_status_includes_defacing_warning_metadata(tmp_pat
     assert warning.get("counts", {}).get("not_defaced") == 1
     assert warning.get("counts", {}).get("unknown") == 1
     assert "warning-only" in str(warning.get("message", ""))
-
-
-def test_projects_export_folder_route_forwards_export_defacing_options(tmp_path):
-    app = _build_app()
-
-    project_dir = tmp_path / "study"
-    project_dir.mkdir(parents=True, exist_ok=True)
-    (project_dir / "project.json").write_text("{}", encoding="utf-8")
-
-    with patch(
-        "src.project_manager.ProjectManager.export_project_to_plain_folder",
-        return_value={"success": True, "output_path": str(tmp_path / "out")},
-    ) as mock_export:
-        with app.test_client() as client:
-            response = client.post(
-                "/api/projects/export/folder",
-                json={
-                    "project_path": str(project_dir),
-                    "deface_anatomical_scans": True,
-                    "defacing_selected_variants": ["acq:mprage|suffix:t1w"],
-                },
-            )
-
-    assert response.status_code == 200
-    _args, kwargs = mock_export.call_args
-    assert kwargs["deface_anatomical_scans"] is True
-    assert kwargs["defacing_selected_variants"] == {"acq:mprage|suffix:t1w"}
 
 
 def test_export_status_payload_does_not_expose_mapping_metadata(tmp_path):
