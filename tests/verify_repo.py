@@ -1127,9 +1127,13 @@ def check_dependencies(repo_path, fix=False):
     if os.path.exists(package_json):
         print_success("Found package.json")
         if check_tool("npm", "Install Node.js from https://nodejs.org/"):
+            npm_audit_command = "npm audit --package-lock-only"
             if fix:
-                print_info("Running 'npm audit fix'...")
-                result = run_command("npm audit fix", cwd=repo_path)
+                print_info(f"Running '{npm_audit_command} --fix'...")
+                result = run_command(
+                    f"{npm_audit_command} --fix",
+                    cwd=repo_path,
+                )
                 if result and result.returncode == 0:
                     print_success("npm audit fix completed.")
                 else:
@@ -1137,8 +1141,8 @@ def check_dependencies(repo_path, fix=False):
                     if result:
                         print(result.stdout)
             else:
-                print_info("Running 'npm audit'...")
-                result = run_command("npm audit", cwd=repo_path)
+                print_info(f"Running '{npm_audit_command}'...")
+                result = run_command(npm_audit_command, cwd=repo_path)
                 if result and result.returncode == 0:
                     print_success("npm audit passed.")
                 else:
