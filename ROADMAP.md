@@ -1,20 +1,16 @@
 # PRISM Studio - Roadmap
 
-Last updated: 2026-05-27
+Last updated: 2026-05-23
 
 ## Current Mission
 
-Start the Read the Docs rewrite as a user-first documentation program while
-keeping the existing frontend and backend guardrails green.
-Focus on clearer public information architecture, deeper workflow docs with
-examples, and visible DataLad guidance without changing product behavior.
+Sustain completed Priority 1.36 guardrails as the primary frontend baseline.
+Focus on keeping structural assessment remediations, runtime resilience checks, and focused smoke/coverage gates green.
 
 ## Status Board
 
 | Priority | Title | Status | Next Action |
 |---|---|---|---|
-| 1.39 | Repository assessment remediation | IN PROGRESS | Continue the prioritized assessment queue with canonical-backend consolidation and focused regression guards after the completed low-risk fixes |
-| 1.38 | Read the Docs rewrite: user-first information architecture and examples | IN PROGRESS | Complete the docs landing-page rewrite, establish public DataLad guidance, and validate the new navigation with a warnings-as-errors Sphinx build |
 | 1.26 | UI harmonization and beginner-help improvements | COMPLETED | Keep shared-help-panel coverage and wiring regressions in standard frontend gates |
 | 1.36 | Frontend structural assessment (page-by-page) | COMPLETED | Keep remediated workflow wiring and phase-boundary coverage confirmation in standard gates |
 | 1.35 | Survey converter workflow hardening and backend command consolidation | COMPLETED | Keep post-merge stability checks in standard gates |
@@ -23,58 +19,6 @@ examples, and visible DataLad guidance without changing product behavior.
 | 3 | JSON tag stripping and NIfTI GZIP header cleaning | IN PROGRESS | Continue export privacy hardening after slice A (MRI sidecar scrub + .nii.gz header cleanup) |
 
 ## Active Work
-
-### Priority 1.39 - Repository assessment remediation
-
-Goal: resolve the highest-value findings from the repository assessment with
-small, verifiable backend-ownership and CI-hardening slices instead of a broad
-rewrite.
-
-Current checkpoint:
-- Completed recommendation 1: `app/src/batch_convert.py` is now a thin shim over `src/batch_convert.py` instead of a second implementation.
-- Completed recommendation 2: PR and push coverage runs now include `app/src`.
-- Completed recommendation 3: `app/src/derivatives/apps_runner_compat.py` now uses the canonical loader instead of `exec(compile(...), globals())`.
-- Completed recommendation 4: `PrismValidator.spec` now includes the backend bundle and mirrors the optional-package excludes used by `PrismStudio.spec`.
-- Completed recommendation 5: duplicated backend BIDS entity parsing now lives in the canonical `src/bids_entity_parser.py` helper and is reused by the rewrite/delete runners.
-- Recommendation 6 is in progress: `src/recipes_surveys.py` shrank from 3696 LOC to ~2680 LOC by extracting three sub-modules — `src/recipes_formula_engine.py` (formula AST + scoring), `src/recipes_path_utils.py` (filename / participant-ID utilities), and `src/recipes_export_helpers.py` (SPSS / SAV / codebook helpers) — while preserving the existing import surface via re-exports. Remaining inside the file: aggregation/orchestration (`compute_survey_recipes`, `_export_recipe_*`, `_load_*`) and dataset-description/boilerplate generation.
-- Completed recommendation 7: the main CI test-bearing workflow now runs coverage on Python 3.10 and 3.11, with a guard test to prevent matrix regression.
-- Recommendation 8 was rechecked and found to be already satisfied by `.gitignore`; no code change was needed there.
-- Completed recommendation 9: the DeepL translation helper note now lives under `docs/` instead of the repo root.
-- Completed recommendation 10: a minimal Vitest harness now covers `app/static/js/shared/` helpers, starting with `validation.js`.
-- Mainline CI now also includes a warnings-as-errors Sphinx docs build job.
-- Focused regression coverage is in place for the batch-convert shim, compat-loader behavior, validator packaging guards, CI workflow matrix contract, the shared BIDS entity parser extraction, the first recipes formula-engine split, and the new shared-helper JS test harness.
-
-Immediate next actions:
-1. Continue recommendation 6 by extracting the next coherent `recipes_surveys` slice — most likely `_export_recipe_aggregated` / `_export_recipe_legacy` and the surrounding `_find_tsv_files` / `_load_participants_data` aggregation cluster — into a dedicated `src/recipes_survey_aggregation.py` module.
-2. Expand the Vitest harness beyond `validation.js` into the next reusable shared helper modules (`storage.js`, `api.js`, or `job-polling.js`).
-3. Keep using focused contract tests for each remaining assessment slice instead of broad speculative refactors.
-
-### Priority 1.38 - Read the Docs rewrite: user-first information architecture and examples
-
-Goal: rebuild the public documentation around clear learner paths, deep workflow
-guides, and reusable worked examples while keeping the docs aligned with the
-real backend-owned feature surface.
-
-Current checkpoint:
-- Landing information architecture rewrite is complete for the first public slice.
-- The docs root is now organized around Fundamentals, Getting Started, User Workflows, Examples, CLI and Automation, Reference, and Integrations and Advanced.
-- Core overview pages now separate PRISM the model from PRISM Studio the software and map the actual repo feature surface.
-- A public DataLad page is now part of the visible docs because DataLad behavior materially affects real project setup and export usage.
-- Projects, Converter, and Validator now have deeper task-oriented workflow pages instead of short placeholder summaries.
-- Examples and Workshop now serve as a real examples layer for short success paths and longer onboarding paths.
-- Survey Import, Tools, Template Editor, Recipe Builder, and Analysis Output now have fuller user-facing workflow guides with examples and clearer output expectations.
-- CLI Workflows, Specifications, and the BIDS quick-reference page are now aligned to the public docs structure instead of reading like internal notes.
-- Error Codes, ANC Export, Recipes reference, Survey Templates reference, Survey Library, and the standalone Web Interface page are now rewritten into the same public-facing docs style.
-- Warnings-as-errors Sphinx validation is green after the first rewrite slice.
-
-Immediate next actions:
-1. Reduce any remaining wording overlap between the rewritten public pages and the few older specialist pages that still carry legacy phrasing.
-2. Add more downloadable example references and decision-support content where modality-specific pages still rely on structure more than examples.
-3. Decide whether contributor-facing docs should stay secondary in RTD or get a dedicated public developer section later.
-4. Keep validating each slice with a warnings-as-errors Sphinx build.
-
-Maintenance action:
-1. Keep documentation validation in standard release checks once the new navigation stabilizes.
 
 ### Priority 1.26 - UI harmonization and beginner-help improvements
 
@@ -194,12 +138,11 @@ Current checkpoint:
 - Global Settings UI now exposes the backend export defacing confirmation default (risk vs always) and persists it through the settings API.
 - Export card preference snapshot now shows defacing confirmation mode and indicates whether it is inherited from global settings or explicitly saved in project export preferences.
 - Export UI now includes a one-click reset action that removes project defacing confirmation override and reverts behavior to inherited global default.
-- Full defacing confirmation lifecycle coverage is now in place across the public settings and project export-preferences APIs (global default -> project override -> reset to inherited).
 - Export defacing action is now mode-aware and non-mutating: both modes deface an export target copy; DataLad-preserving mode prepares a DataLad clone copy and runs pydeface via DataLad there, while DataLad-free mode defaces a plain structural copy.
 - Export defacing now honors current export scope filters for subjects/sessions, so single-subject exports only run pydeface for that selected subset on the export copy.
 
 Next action:
-1. Keep the export privacy integration slice and adjacent settings/export API tests in standard release gates.
+1. Add an integration test that validates full defacing policy lifecycle (global default -> project override -> reset to inherited) across settings and export preferences APIs.
 
 ## Up Next
 
@@ -233,16 +176,6 @@ Changelog remains canonical for release-facing history:
 
 ## Lessons Learned
 
-- Mirrored `app/src` modules should not keep a full local implementation underneath a late canonical re-export; replace the file with a true shim or drift becomes invisible until runtime.
-- Workflow-only fixes should get a small file-content guard test when possible; otherwise CI regressions can silently revert after unrelated YAML edits.
-- When multiple backend maintenance tools share the same BIDS token and subject/session regex rules, promote those rules into one canonical parser helper before changing behavior in any one caller.
-- Large backend module splits are safer when the new module preserves the old import surface first; keep `recipes_surveys.py` re-exporting extracted helpers until the surrounding tests no longer rely on those names.
-
-- For Sphinx plus MyST docs in this repo, hidden Markdown pages must either live in a toctree or carry explicit `orphan: true` front matter, otherwise warnings-as-errors will block the build.
-- The docs rewrite is easier to keep accurate when each page is treated as one of four types: concept, workflow, example, or reference.
-- The fastest way to improve old docs pages in this repo is to convert placeholder summaries into decision-oriented task guides instead of trying to rewrite the whole tree as one monolith.
-- CLI docs should be split between workflow pages and exhaustive reference pages; mixing both into one document makes the automation path harder to scan.
-- Once the core navigation is fixed, the highest-value remaining docs work is usually example density and cross-link cleanup, not inventing more top-level pages.
 - Keep icon assignment in backend metadata (project.json) and only render in frontend adapters to avoid drift between session, recent-project cache, and persisted project state.
 - Export privacy tests should always include both positive MRI scrubbing assertions and non-MRI preservation checks, plus nested/derivative path variants for `.nii.gz` header cleaning.
 - For potentially disruptive privacy checks, shipping warning metadata in async status first is a low-risk way to add guidance without blocking export flows.
@@ -252,7 +185,6 @@ Changelog remains canonical for release-facing history:
 - Exposing the global policy in Settings keeps team defaults discoverable while preserving project-level opt-in overrides.
 - Showing source attribution (project override vs inherited default) in the export snapshot helps avoid ambiguity in privacy confirmation behavior.
 - Supporting explicit reset-to-inherited in UI reduces misconfiguration risk and keeps global privacy policy enforcement easy to recover.
-- When a policy is split across global settings and project preferences, keep one integration test that spans both public APIs; unit tests on each side are not enough to catch inheritance regressions.
 - For export privacy tooling, keep source rawdata immutable in all export modes: route defacing to an export copy and, when provenance is needed, run pydeface via DataLad on a DataLad-preserving clone target.
 - When export-side processing is user-triggered before export start, always apply the active export scope filters to avoid touching unselected subjects in the temporary/export copy workspace.
 - Subject-grouped DataLad commits require subject-filter support in canonical rewrite engines; orchestration-only grouping is insufficient.

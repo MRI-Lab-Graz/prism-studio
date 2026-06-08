@@ -156,13 +156,6 @@ def _normalize_defacing_variant_keys(raw_values: object) -> Optional[Set[str]]:
     return normalized
 
 
-def _normalize_export_repository_mode(raw_mode: object) -> str:
-    mode = str(raw_mode or "").strip().lower()
-    if mode not in {"datalad_free", "datalad_preserving"}:
-        return "datalad_free"
-    return mode
-
-
 def _normalize_scope_labels(raw_values: object) -> Set[str]:
     if not isinstance(raw_values, (list, tuple, set)):
         return set()
@@ -388,7 +381,7 @@ def _run_export_job(
                 status="running",
             )
 
-        export_result = do_export(
+        do_export(
             **export_kwargs,
             output_zip=output_zip,
             progress_callback=progress_callback,
@@ -409,7 +402,6 @@ def _run_export_job(
                 message="Export complete",
                 zip_path=str(output_zip),
                 filename=filename,
-                defacing=export_result.get("defacing") if isinstance(export_result, dict) else None,
             )
     except InterruptedError:
         _update_export_job(
@@ -511,10 +503,6 @@ def export_project():
         scrub_mri_json_groups = _normalize_scrub_group_ids(
             data.get("scrub_mri_json_groups")
         )
-        deface_export_mri = bool(data.get("deface_anatomical_scans", False))
-        defacing_selected_variants = _normalize_defacing_variant_keys(
-            data.get("defacing_selected_variants")
-        )
 
         if export_preset == "upload_ready":
             include_derivatives = False
@@ -548,8 +536,6 @@ def export_project():
                 exclude_version_control_metadata=exclude_version_control_metadata,
                 scrub_mri_json=scrub_mri_json,
                 scrub_mri_json_groups=scrub_mri_json_groups,
-                deface_anatomical_scans=deface_export_mri,
-                defacing_selected_variants=defacing_selected_variants,
                 clean_nifti_gzip_headers=scrub_mri_json,
             )
 
@@ -628,16 +614,6 @@ def export_project_folder():
             if scrub_mri_json:
                 manager_kwargs["scrub_mri_json_groups"] = _normalize_scrub_group_ids(
                     data.get("scrub_mri_json_groups")
-                )
-        if "deface_anatomical_scans" in data:
-            manager_kwargs["deface_anatomical_scans"] = bool(
-                data.get("deface_anatomical_scans", False)
-            )
-            if manager_kwargs["deface_anatomical_scans"]:
-                manager_kwargs["defacing_selected_variants"] = (
-                    _normalize_defacing_variant_keys(
-                        data.get("defacing_selected_variants")
-                    )
                 )
 
         scope_keys = {
@@ -826,58 +802,6 @@ def export_defacing_preflight():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@projects_export_bp.route("/api/projects/deface", methods=["POST"])
-def project_deface_anatomical_scans():
-    """Run pydeface in-place on the current PRISM project dataset."""
-    try:
-        from src.mri_json_scrubber import build_defacing_report, deface_anatomical_scans
-
-        data = request.get_json() or {}
-        project_path_raw = data.get("project_path")
-        selected_variants = _normalize_defacing_variant_keys(
-            data.get("selected_variants")
-        )
-        resolved = _resolve_project_root_path(project_path_raw)
-        if resolved is None:
-            return jsonify({"success": False, "error": "Invalid project path"}), 400
-
-        force = bool(data.get("force", False))
-        result = deface_anatomical_scans(
-            resolved,
-            force=force,
-            selected_variants=selected_variants,
-        )
-        post_report = build_defacing_report(
-            resolved,
-            selected_variants=selected_variants,
-        )
-        report_counts = {"defaced": 0, "not_defaced": 0, "unknown": 0}
-        for entry in post_report:
-            status = str(entry.get("status") or "unknown")
-            if status not in report_counts:
-                status = "unknown"
-            report_counts[status] += 1
-
-        payload = {
-            "success": bool(result.get("success")),
-            "message": str(result.get("message") or ""),
-            "defacing": result,
-            "report": post_report,
-            "report_counts": report_counts,
-            "target_mode": "project_in_place",
-            "project_path": str(resolved),
-        }
-        if not result.get("success"):
-            payload["error"] = str(
-                result.get("error") or result.get("message") or "Defacing failed."
-            )
-            return jsonify(payload), 400
-
-        return jsonify(payload)
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-
 @projects_export_bp.route("/api/projects/export/deface", methods=["POST"])
 def export_deface_anatomical_scans():
     """Run export-aware defacing on anatomical scans.
@@ -1037,10 +961,6 @@ def export_project_start():
         scrub_mri_json_groups = _normalize_scrub_group_ids(
             data.get("scrub_mri_json_groups")
         )
-        deface_export_mri = bool(data.get("deface_anatomical_scans", False))
-        defacing_selected_variants = _normalize_defacing_variant_keys(
-            data.get("defacing_selected_variants")
-        )
         validation_mode = _normalize_export_validation_mode(
             data.get("validation_mode", "both")
         )
@@ -1052,6 +972,7 @@ def export_project_start():
             include_code = False
             include_analysis = False
             exclude_version_control_metadata = True
+
         # Optional subject/session/modality/sublabel filters
         exclude_subjects = _normalize_scope_labels(data.get("exclude_subjects"))
         exclude_sessions = _normalize_scope_labels(data.get("exclude_sessions"))
@@ -1077,8 +998,6 @@ def export_project_start():
             "exclude_version_control_metadata": exclude_version_control_metadata,
             "scrub_mri_json": scrub_mri_json,
             "scrub_mri_json_groups": scrub_mri_json_groups,
-            "deface_anatomical_scans": deface_export_mri,
-            "defacing_selected_variants": defacing_selected_variants,
             "clean_nifti_gzip_headers": scrub_mri_json,
             "validation_mode": validation_mode,
             "exclude_subjects": exclude_subjects or None,
@@ -1095,10 +1014,7 @@ def export_project_start():
         job_id = str(uuid.uuid4())
         _create_export_job(job_id)
 
-        defacing_warning = _build_export_defacing_warning(
-            resolved,
-            scrub_mri_json and not deface_export_mri,
-        )
+        defacing_warning = _build_export_defacing_warning(resolved, scrub_mri_json)
         if defacing_warning:
             _update_export_job(job_id, defacing_warning=defacing_warning)
 
@@ -1130,7 +1046,6 @@ def export_job_status(job_id: str):
             "error": job.get("error"),
             "zip_path": job.get("zip_path"),
             "defacing_warning": job.get("defacing_warning"),
-            "defacing": job.get("defacing"),
         }
     )
 
