@@ -1841,51 +1841,6 @@ class TestProjectManager(unittest.TestCase):
             self.assertFalse((output_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_T1w.nii.gz").exists())
             self.assertTrue((output_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_T2w.nii.gz").exists())
 
-    def test_export_project_to_plain_folder_excludes_complex_survey_task_labels(self):
-        manager = ProjectManager()
-
-        with tempfile.TemporaryDirectory() as tmp:
-            project_path = Path(tmp) / "demo_project"
-            project_path.mkdir(parents=True, exist_ok=True)
-            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
-            (project_path / "task-tsdz_acq-7-likert_survey.json").write_text(
-                '{"Study": {"TaskName": "tsdz_acq-7-likert"}}\n',
-                encoding="utf-8",
-            )
-            (project_path / "task-tsdz_acq-10-likert_survey.json").write_text(
-                '{"Study": {"TaskName": "tsdz_acq-10-likert"}}\n',
-                encoding="utf-8",
-            )
-
-            survey_dir = project_path / "sub-001" / "ses-1" / "survey"
-            survey_dir.mkdir(parents=True, exist_ok=True)
-            (survey_dir / "sub-001_ses-1_task-tsdz_acq-7-likert_survey.tsv").write_text(
-                "participant_id\tvalue\nsub-001\t1\n",
-                encoding="utf-8",
-            )
-            (survey_dir / "sub-001_ses-1_task-tsdz_acq-10-likert_survey.tsv").write_text(
-                "participant_id\tvalue\nsub-001\t2\n",
-                encoding="utf-8",
-            )
-
-            export_root = Path(tmp) / "exports"
-            result = manager.export_project_to_plain_folder(
-                project_path,
-                output_root=export_root,
-                exclude_tasks={"survey": {"tsdz_acq-10-likert"}},
-            )
-
-            self.assertTrue(result.get("success"), result)
-            output_path = Path(result["output_path"])
-            self.assertTrue((output_path / "task-tsdz_acq-7-likert_survey.json").exists())
-            self.assertFalse((output_path / "task-tsdz_acq-10-likert_survey.json").exists())
-            self.assertTrue(
-                (output_path / "sub-001" / "ses-1" / "survey" / "sub-001_ses-1_task-tsdz_acq-7-likert_survey.tsv").exists()
-            )
-            self.assertFalse(
-                (output_path / "sub-001" / "ses-1" / "survey" / "sub-001_ses-1_task-tsdz_acq-10-likert_survey.tsv").exists()
-            )
-
     def test_export_project_to_plain_folder_excludes_anat_mpm_suffix_with_acq_entities(self):
         manager = ProjectManager()
 
@@ -1938,43 +1893,6 @@ class TestProjectManager(unittest.TestCase):
                     / "anat"
                     / "sub-147_ses-1_acq-PDw_T1w.nii.gz"
                 ).exists()
-            )
-
-    def test_export_project_to_plain_folder_excludes_nested_derivative_anat_suffix_labels(self):
-        manager = ProjectManager()
-
-        with tempfile.TemporaryDirectory() as tmp:
-            project_path = Path(tmp) / "demo_project"
-            project_path.mkdir(parents=True, exist_ok=True)
-            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
-
-            derivatives_anat = (
-                project_path
-                / "derivatives"
-                / "pipeline"
-                / "sub-001"
-                / "ses-1"
-                / "anat"
-            )
-            derivatives_anat.mkdir(parents=True, exist_ok=True)
-            (derivatives_anat / "sub-001_ses-1_T1w.nii.gz").write_bytes(b"t1")
-            (derivatives_anat / "sub-001_ses-1_T2w.nii.gz").write_bytes(b"t2")
-            (derivatives_anat / "sub-001_ses-1_acq-PDw_echo-5_flip-4_mt-off_MPM.nii.gz").write_bytes(b"mpm")
-
-            export_root = Path(tmp) / "exports"
-            result = manager.export_project_to_plain_folder(
-                project_path,
-                output_root=export_root,
-                exclude_acq={"anat": {"T2w", "MPM"}},
-            )
-
-            self.assertTrue(result.get("success"), result)
-            output_path = Path(result["output_path"])
-            exported_anat = output_path / "derivatives" / "pipeline" / "sub-001" / "ses-1" / "anat"
-            self.assertTrue((exported_anat / "sub-001_ses-1_T1w.nii.gz").exists())
-            self.assertFalse((exported_anat / "sub-001_ses-1_T2w.nii.gz").exists())
-            self.assertFalse(
-                (exported_anat / "sub-001_ses-1_acq-PDw_echo-5_flip-4_mt-off_MPM.nii.gz").exists()
             )
 
     def test_export_project_to_plain_folder_excludes_dwi_suffix_labels(self):
@@ -2069,46 +1987,6 @@ class TestProjectManager(unittest.TestCase):
             self.assertEqual(scrubbed_payload.get("EchoTime"), 0.00206)
             self.assertGreaterEqual(int(result.get("scrubbed_mri_json_files") or 0), 1)
             self.assertGreaterEqual(int(result.get("scrubbed_mri_json_fields") or 0), 1)
-
-    def test_export_project_to_plain_folder_can_deface_export_copy_only(self):
-        manager = ProjectManager()
-
-        with tempfile.TemporaryDirectory() as tmp:
-            project_path = Path(tmp) / "demo_project"
-            project_path.mkdir(parents=True, exist_ok=True)
-            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
-
-            nifti_path = (
-                project_path
-                / "sub-003"
-                / "ses-1"
-                / "anat"
-                / "sub-003_ses-1_acq-mprage_T1w.nii.gz"
-            )
-            nifti_path.parent.mkdir(parents=True, exist_ok=True)
-            nifti_path.write_bytes(b"source")
-
-            export_root = Path(tmp) / "exports"
-            with patch(
-                "src.mri_json_scrubber.deface_anatomical_scans",
-                return_value={
-                    "success": True,
-                    "counts": {"defaced": 1, "already_defaced": 0, "failed": 0},
-                    "items": [],
-                },
-            ) as mock_deface:
-                result = manager.export_project_to_plain_folder(
-                    project_path,
-                    output_root=export_root,
-                    deface_anatomical_scans=True,
-                    defacing_selected_variants={"acq:mprage|suffix:t1w"},
-                )
-
-            self.assertTrue(result.get("success"), result)
-            self.assertEqual(result.get("defacing", {}).get("counts", {}).get("defaced"), 1)
-            deface_args, deface_kwargs = mock_deface.call_args
-            self.assertEqual(deface_args[0], Path(result["output_path"]))
-            self.assertEqual(deface_kwargs.get("selected_variants"), {"acq:mprage|suffix:t1w"})
 
     def test_export_project_to_plain_folder_skips_missing_annex_content_with_warning(self):
         manager = ProjectManager()
@@ -2680,83 +2558,6 @@ class TestProjectManager(unittest.TestCase):
             self.assertTrue(any("task-ads_survey.json" in command for command in datalad_get_commands), datalad_get_commands)
             self.assertFalse(any("sub-001_T1w.nii.gz" in command for command in datalad_get_commands), datalad_get_commands)
             self.assertFalse(any("sub-001_task-rest_bold.nii.gz" in command for command in datalad_get_commands), datalad_get_commands)
-
-    def test_export_project_to_plain_folder_materialize_copy_ignores_unselected_local_annex_files(self):
-        manager = ProjectManager()
-
-        with tempfile.TemporaryDirectory() as tmp:
-            project_path = Path(tmp) / "demo_project"
-            project_path.mkdir(parents=True, exist_ok=True)
-            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
-            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
-
-            export_root = Path(tmp) / "exports"
-            materialization_workspace = Path(tmp) / "materialized_workspace"
-
-            def _fake_run(command, **_kwargs):
-                normalized = [str(part) for part in command]
-                if len(normalized) >= 2 and normalized[0] == "/usr/bin/datalad" and normalized[1] == "clone":
-                    clone_path = Path(normalized[-1])
-                    clone_path.mkdir(parents=True, exist_ok=True)
-                    (clone_path / ".datalad").mkdir(parents=True, exist_ok=True)
-                    (clone_path / ".git").mkdir(parents=True, exist_ok=True)
-                    (clone_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
-
-                    anat_dir = clone_path / "sub-011" / "ses-1" / "anat"
-                    anat_dir.mkdir(parents=True, exist_ok=True)
-                    (anat_dir / "sub-011_ses-1_acq-mprage_T1w.nii.gz").write_bytes(b"t1")
-                    (anat_dir / "sub-011_ses-1_acq-tse_T2w.nii.gz").write_bytes(b"t2")
-                    (anat_dir / "sub-011_ses-1_acq-MTw_echo-1_flip-6_mt-on_MPM.nii.gz").write_bytes(b"mpm")
-                    return subprocess.CompletedProcess(command, 0, "", "")
-
-                if normalized[:4] == ["/usr/bin/datalad", "get", "--on-failure", "ignore"]:
-                    return subprocess.CompletedProcess(command, 0, "", "")
-
-                if len(normalized) >= 2 and normalized[0] == "/usr/bin/git-annex" and normalized[1] == "unlock":
-                    return subprocess.CompletedProcess(command, 0, "", "")
-
-                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
-
-            with patch.object(
-                manager,
-                "get_datalad_status",
-                return_value={
-                    "enabled": True,
-                    "available": True,
-                    "executable": "/usr/bin/datalad",
-                    "annex_executable": "/usr/bin/git-annex",
-                    "message": "Current project is tracked by DataLad.",
-                },
-            ):
-                with patch(
-                    "src.project_manager.tempfile.mkdtemp",
-                    return_value=str(materialization_workspace),
-                ):
-                    with patch("src.project_manager.subprocess.run", side_effect=_fake_run) as mock_run:
-                        result = manager.export_project_to_plain_folder(
-                            project_path,
-                            output_root=export_root,
-                            materialize_annex_content=True,
-                            exclude_subjects={"sub-001"},
-                            exclude_acq={"anat": {"T2w", "MPM"}},
-                        )
-
-            self.assertTrue(result.get("success"), result)
-            self.assertTrue(result.get("materialized_export"), result)
-
-            output_path = Path(result["output_path"])
-            exported_anat = output_path / "sub-011" / "ses-1" / "anat"
-            self.assertTrue((exported_anat / "sub-011_ses-1_acq-mprage_T1w.nii.gz").exists())
-            self.assertFalse((exported_anat / "sub-011_ses-1_acq-tse_T2w.nii.gz").exists())
-            self.assertFalse((exported_anat / "sub-011_ses-1_acq-MTw_echo-1_flip-6_mt-on_MPM.nii.gz").exists())
-
-            commands = [" ".join(str(part) for part in call.args[0]) for call in mock_run.call_args_list]
-            datalad_get_commands = [
-                command for command in commands if command.startswith("/usr/bin/datalad get ")
-            ]
-            self.assertTrue(any("sub-011_ses-1_acq-mprage_T1w.nii.gz" in command for command in datalad_get_commands), datalad_get_commands)
-            self.assertFalse(any("sub-011_ses-1_acq-tse_T2w.nii.gz" in command for command in datalad_get_commands), datalad_get_commands)
-            self.assertFalse(any("sub-011_ses-1_acq-MTw_echo-1_flip-6_mt-on_MPM.nii.gz" in command for command in datalad_get_commands), datalad_get_commands)
 
     def test_export_project_to_plain_folder_materialize_recovers_missing_clone_files_from_source(self):
         manager = ProjectManager()
