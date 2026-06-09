@@ -38,6 +38,11 @@ from typing import Dict, List, Any, Optional, Set, Union
 from urllib.parse import urlparse
 
 from src.fixer import DatasetFixer
+from src.project_export_helpers import (
+    _extract_export_task_label,
+    _extract_terminal_suffix_label,
+    _matches_excluded_acq_label,
+)
 from src.constants import DEFAULT_BIDS_VERSION
 from src.cross_platform import CrossPlatformFile
 from src.issues import get_fix_hint, infer_code_from_message
@@ -99,76 +104,6 @@ EXPORT_TEMP_WORKSPACE_LOW_FREE_BYTES = 20 * 1024 * 1024 * 1024
 EXPORT_TEMP_WORKSPACE_LOW_FREE_RATIO = 0.10
 REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS = 60 * 60
 MRI_SUFFIX_LABEL_MODALITIES = {"anat", "dwi", "fmap", "perf"}
-
-
-def _extract_terminal_suffix_label(filename: str) -> str | None:
-    """Return the terminal BIDS suffix token from a filename, or None."""
-    name = str(filename or "").strip()
-    if not name:
-        return None
-
-    lower_name = name.lower()
-    for compound_ext in (".nii.gz", ".tsv.gz"):
-        if lower_name.endswith(compound_ext):
-            name = name[: -len(compound_ext)]
-            break
-    else:
-        if "." in name:
-            name = name.rsplit(".", 1)[0]
-
-    if not name:
-        return None
-
-    suffix = name.rsplit("_", 1)[-1]
-    if not suffix or "-" in suffix:
-        return None
-    return suffix
-
-
-def _matches_excluded_acq_label(filename: str, excluded_labels: set[str]) -> bool:
-    """Return True when a filename matches one of the excluded acq/suffix labels.
-
-    Accepts both plain labels (for example, ``MPM``) and combined labels
-    (for example, ``PDw-MPM``), and compares case-insensitively.
-    """
-    normalized_labels = {
-        str(label).strip().lower() for label in excluded_labels if str(label).strip()
-    }
-    if not normalized_labels:
-        return False
-
-    suffix_label = _extract_terminal_suffix_label(filename)
-    acq_match = re.search(r"_acq-([A-Za-z0-9]+)", filename)
-    acq_label = acq_match.group(1) if acq_match else None
-
-    normalized_suffix = suffix_label.lower() if suffix_label else ""
-    normalized_acq = acq_label.lower() if acq_label else ""
-
-    if normalized_suffix and normalized_suffix in normalized_labels:
-        return True
-    if normalized_acq and normalized_acq in normalized_labels:
-        return True
-    if (
-        normalized_acq
-        and normalized_suffix
-        and (
-            f"{normalized_acq}-{normalized_suffix}" in normalized_labels
-            or f"{normalized_suffix}-{normalized_acq}" in normalized_labels
-        )
-    ):
-        return True
-
-    if normalized_acq and normalized_suffix:
-        # Accept labels that end in the suffix token when they also include the
-        # same acq token, e.g. "PDw-MPM" for files with acq-PDw ... _MPM.
-        for label in normalized_labels:
-            tokens = [token for token in re.split(r"[-_/]", label) if token]
-            if len(tokens) < 2:
-                continue
-            if tokens[-1] == normalized_suffix and normalized_acq in tokens[:-1]:
-                return True
-
-    return False
 
 
 class ProjectManager:
@@ -1958,8 +1893,8 @@ class ProjectManager:
 
             excluded_task_labels = materialization_exclude_tasks.get(modality, set())
             if excluded_task_labels:
-                task_match = re.search(r"(?:^|_)task-([A-Za-z0-9]+)", filename)
-                if task_match and task_match.group(1) in excluded_task_labels:
+                task_label = _extract_export_task_label(filename, modality)
+                if task_label and task_label in excluded_task_labels:
                     return True
 
             return False
@@ -2538,8 +2473,8 @@ class ProjectManager:
 
             excluded_task_labels = normalized_exclude_tasks.get(modality, set())
             if excluded_task_labels:
-                task_match = re.search(r"(?:^|_)task-([A-Za-z0-9]+)", filename)
-                if task_match and task_match.group(1) in excluded_task_labels:
+                task_label = _extract_export_task_label(filename, modality)
+                if task_label and task_label in excluded_task_labels:
                     return True
 
             return False
@@ -2987,8 +2922,8 @@ class ProjectManager:
 
             excluded_task_labels = normalized_exclude_tasks.get(modality, set())
             if excluded_task_labels:
-                task_match = re.search(r"(?:^|_)task-([A-Za-z0-9]+)", filename)
-                if task_match and task_match.group(1) in excluded_task_labels:
+                task_label = _extract_export_task_label(filename, modality)
+                if task_label and task_label in excluded_task_labels:
                     return True
 
             return False

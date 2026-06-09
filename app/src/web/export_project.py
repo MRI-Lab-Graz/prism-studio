@@ -15,7 +15,10 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional, Set
 
-from src.project_manager import _extract_export_task_label, _matches_excluded_acq_label
+from src.project_export_helpers import (
+    _extract_export_task_label,
+    _matches_excluded_acq_label,
+)
 from src.survey_scale_inference import get_survey_item_map
 
 
@@ -24,30 +27,6 @@ VERSION_CONTROL_METADATA_FILES = frozenset(
     {".gitattributes", ".gitignore", ".gitmodules", "CHANGES"}
 )
 MRI_SUFFIX_LABEL_MODALITIES = frozenset({"anat", "dwi", "fmap", "perf"})
-
-
-def _extract_terminal_suffix_label(filename: str) -> str | None:
-    """Return the terminal BIDS suffix token from a filename, or None."""
-    name = str(filename or "").strip()
-    if not name:
-        return None
-
-    lower_name = name.lower()
-    for compound_ext in (".nii.gz", ".tsv.gz"):
-        if lower_name.endswith(compound_ext):
-            name = name[: -len(compound_ext)]
-            break
-    else:
-        if "." in name:
-            name = name.rsplit(".", 1)[0]
-
-    if not name:
-        return None
-
-    suffix = name.rsplit("_", 1)[-1]
-    if not suffix or "-" in suffix:
-        return None
-    return suffix
 
 
 def _resolve_export_subject_scope(
