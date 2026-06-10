@@ -425,7 +425,7 @@ export function initOpenProjectController({
             stateBadge.classList.add('bg-light', 'text-muted', 'border');
             stateBadge.textContent = 'Not tracked';
             hint.textContent = state.canEnable
-                ? 'Enable DataLad version control here for the current project.'
+                ? 'DataLad adds Git-based version control to your project, useful for tracking changes over time. Click Enable DataLad to get started.'
                 : (state.available && !state.annexAvailable
                     ? 'git-annex is missing, so PRISM cannot initialize a new DataLad dataset here.'
                     : 'DataLad is not available in this environment.');
@@ -449,7 +449,7 @@ export function initOpenProjectController({
                 : 'Current project is not a DataLad dataset');
 
         if (!state.enabled && state.setupIntent === 'declined' && !state.askOnOpen) {
-            hint.textContent = 'DataLad setup is currently skipped for this project. Use Enable DataLad any time to opt in.';
+            hint.textContent = 'DataLad version control is not enabled for this project. Use Enable DataLad any time to opt in.';
         }
 
         const operationState = getDataladOperationState();
@@ -1281,9 +1281,10 @@ export function initOpenProjectController({
                             <div class="d-flex align-items-center gap-2 flex-wrap">
                                 <strong><i class="fas fa-code-branch me-1"></i>DataLad Version Control</strong>
                                 <span class="badge rounded-pill bg-light text-muted border" id="projectBoxDataladStateBadge">Not tracked</span>
+                                <a href="${DATALAD_DOCS_URL}" target="_blank" rel="noopener noreferrer" class="small text-muted" title="What is DataLad?">(?)</a>
                             </div>
                             <div class="small text-muted mt-2" id="projectBoxDataladStatus">Checking DataLad status...</div>
-                            <div class="small text-muted mt-1" id="projectBoxDataladHint">Project-scoped DataLad setup and manual saves live here.</div>
+                            <div class="small text-muted mt-1" id="projectBoxDataladHint">DataLad version control is not enabled for this project.</div>
                             <div class="mt-2 d-none" id="projectBoxDataladProgressWrap">
                                 <div class="small text-muted mb-1" id="projectBoxDataladProgressLabel"></div>
                                 <div class="progress" style="height: 0.7rem;">
@@ -1388,7 +1389,6 @@ export function initOpenProjectController({
             bindProjectBoxDataladActions();
             updateCreateProjectButton();
             showAutosaveFailureFeedback(result.autosave_previous);
-            await maybePromptDataladOptIn(loadedPath);
 
             return true;
         } catch (error) {
