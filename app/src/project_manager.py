@@ -4712,23 +4712,6 @@ Subfolders:
             lib_mod_path.mkdir(exist_ok=True)
             created.append(f"code/library/{mod}/")
 
-            if mod == "survey":
-                example_survey = self._create_example_survey_template()
-                lib_example_path = lib_mod_path / "survey-example.json"
-                CrossPlatformFile.write_text(
-                    str(lib_example_path),
-                    json.dumps(example_survey, indent=2, ensure_ascii=False),
-                )
-                created.append(f"code/library/{mod}/survey-example.json")
-            elif mod == "biometrics":
-                example_bio = self._create_example_biometrics_template()
-                lib_example_path = lib_mod_path / "biometrics-example.json"
-                CrossPlatformFile.write_text(
-                    str(lib_example_path),
-                    json.dumps(example_bio, indent=2, ensure_ascii=False),
-                )
-                created.append(f"code/library/{mod}/biometrics-example.json")
-
             # Recipe folders
             rec_mod_path = recipe_root / mod
             rec_mod_path.mkdir(exist_ok=True)
@@ -6771,73 +6754,6 @@ Subfolders:
     def _create_data_dictionary(self) -> str:
         """Create a minimal data dictionary template for sourcedata."""
         return "file\tcolumn\tname\tunit\tlevels\tdescription\n\t\t\t\t\t\n"
-
-    def _create_example_survey_template(self) -> dict:
-        """Create an example survey JSON template."""
-        return {
-            "Technical": {
-                "StimulusType": "Questionnaire",
-                "FileFormat": "tsv",
-                "SoftwarePlatform": "Other",
-                "Language": "en",
-                "Respondent": "self",
-            },
-            "Study": {
-                "TaskName": "example",
-                "OriginalName": "Example Survey",
-                "Version": "1.0",
-                "Description": "Example survey template - replace with your questionnaire",
-            },
-            "Metadata": {
-                "SchemaVersion": "1.1.1",
-                "CreationDate": date.today().isoformat(),
-                "Creator": "PRISM Project Manager",
-            },
-            "Q01": {
-                "Description": "Example question 1 - replace with your items",
-                "Levels": {
-                    "1": "Strongly disagree",
-                    "2": "Disagree",
-                    "3": "Neutral",
-                    "4": "Agree",
-                    "5": "Strongly agree",
-                },
-            },
-            "Q02": {
-                "Description": "Example question 2 - replace with your items",
-                "Levels": {
-                    "1": "Never",
-                    "2": "Rarely",
-                    "3": "Sometimes",
-                    "4": "Often",
-                    "5": "Always",
-                },
-            },
-        }
-
-    def _create_example_biometrics_template(self) -> dict:
-        """Create an example biometrics JSON template."""
-        return {
-            "Technical": {
-                "StimulusType": "Measurement",
-                "FileFormat": "tsv",
-                "SoftwarePlatform": "Other",
-            },
-            "Study": {
-                "TaskName": "example",
-                "OriginalName": "Example Biometrics",
-                "Version": "1.0",
-                "Description": "Example biometrics template - replace with your measures",
-            },
-            "Metadata": {
-                "SchemaVersion": "1.1.1",
-                "CreationDate": date.today().isoformat(),
-                "Creator": "PRISM Project Manager",
-            },
-            "height": {"Description": "Height measurement", "Unit": "cm"},
-            "weight": {"Description": "Weight measurement", "Unit": "kg"},
-            "heart_rate": {"Description": "Resting heart rate", "Unit": "bpm"},
-        }
 
 
 def get_available_modalities() -> List[str]:

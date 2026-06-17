@@ -45,6 +45,7 @@ export function initParticipants() {
     let participantsFileAction = 'replace';
     let participantsSelectedCaseId = '1';
     let participantsServerFilePath = '';
+    let participantsOverwriteWarningRequested = false;
     const runController = createJobRunController();
 
     const participantsSourcedataQuickSelectController = createParticipantsSourcedataQuickSelectController({
@@ -915,6 +916,7 @@ export function initParticipants() {
             successDiv.innerHTML = '';
         }
         if (availabilityInfo) availabilityInfo.classList.add('d-none');
+        participantsOverwriteWarningRequested = false;
         if (warningDiv) warningDiv.classList.add('d-none');
         if (workflowSummary) workflowSummary.classList.add('d-none');
         if (mergeSummary) mergeSummary.classList.add('d-none');
@@ -1310,7 +1312,6 @@ export function initParticipants() {
         const previewBtn = document.getElementById('participantsPreviewBtn');
         const convertBtn = document.getElementById('participantsConvertBtn');
         const saveAnnotBtn = document.getElementById('saveNeurobagelBtn');
-        const warningDiv = document.getElementById('participantsExistingFilesWarning');
 
         if (!hasSelectedCase) {
             participantsExcelSheetCount = null;
@@ -1320,7 +1321,7 @@ export function initParticipants() {
             if (previewBtn) previewBtn.disabled = true;
             if (convertBtn) convertBtn.disabled = true;
             if (saveAnnotBtn) saveAnnotBtn.disabled = true;
-            if (warningDiv) warningDiv.classList.add('d-none');
+            renderParticipantsOverwriteWarning(false);
             updateParticipantsInputVisibility();
             updateParticipantsSelectedFileName();
             updateParticipantsMergeApplyStatusBadge();
@@ -1335,13 +1336,13 @@ export function initParticipants() {
             if (previewBtn) previewBtn.disabled = !canModifyExistingParticipants();
             if (convertBtn) convertBtn.disabled = !canApplyParticipantsConversion();
             if (saveAnnotBtn) saveAnnotBtn.disabled = !participantsPreviewCompleted;
-            if (warningDiv) warningDiv.classList.add('d-none');
+            renderParticipantsOverwriteWarning(false);
             updateParticipantsInputVisibility();
             updateParticipantsSelectedFileName();
             updateParticipantsMergeApplyStatusBadge();
             return;
         }
-        
+
         if (hasFile) {
             if (!skipIdAutoDetect) {
                 participantsExcelSheetCount = null;
@@ -1352,7 +1353,10 @@ export function initParticipants() {
             // Convert is only enabled if preview has been completed
             if (convertBtn) convertBtn.disabled = !canApplyParticipantsConversion();
             if (saveAnnotBtn) saveAnnotBtn.disabled = !participantsPreviewCompleted;
-            if (warningDiv) warningDiv.classList.add('d-none');
+            // Re-apply the last requested show/hide state instead of forcing it closed -
+            // this runs from the convert button's `finally` block too, which previously
+            // clobbered the warning right after it was shown.
+            renderParticipantsOverwriteWarning(participantsOverwriteWarningRequested);
             updateParticipantsInputVisibility();
             if (!skipIdAutoDetect) {
                 autoDetectParticipantsIdColumn();
@@ -1510,6 +1514,8 @@ export function initParticipants() {
     setParticipantsAdditionalVariablesEnabled(false);
 
     function renderParticipantsOverwriteWarning(showWarning = false) {
+        participantsOverwriteWarningRequested = Boolean(showWarning);
+
         const warningDiv = document.getElementById('participantsExistingFilesWarning');
         const messageSpan = document.getElementById('participantsExistingFilesMessage');
         if (!warningDiv || !messageSpan) {
@@ -3273,6 +3279,7 @@ export function initParticipants() {
             }
             
             // Hide warning
+            participantsOverwriteWarningRequested = false;
             warningDiv.classList.add('d-none');
     
             // Auto-refresh preview so users immediately see updated participant columns.
