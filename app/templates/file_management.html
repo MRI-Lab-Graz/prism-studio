@@ -83,6 +83,13 @@
         flex-direction: column;
         justify-content: flex-start;
     }
+
+    .ansi-output .ansi-red { color: #ff5555; }
+    .ansi-output .ansi-yellow { color: #ffff55; }
+    .ansi-output .ansi-green { color: #55ff55; }
+    .ansi-output .ansi-blue { color: #8ecbff; }
+    .ansi-output .ansi-cyan { color: #5ce1e6; }
+    .ansi-output .ansi-reset { color: #f1f1f1; }
 </style>
 {% endblock %}
 
@@ -467,6 +474,21 @@
                                                     </button>
                                                     <div class="form-text w-100 mb-0">Preview is required before Apply.</div>
                                                 </div>
+                                            </div>
+                                            <div id="repoSubjectRewriteProgress" class="progress d-none mt-3" style="height: 25px;">
+                                                <div id="repoSubjectRewriteProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-warning text-dark" style="width: 8%">Previewing...</div>
+                                            </div>
+
+                                            <!-- Log Window -->
+                                            <div id="repoSubjectRewriteLogContainer" class="d-none mt-3">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <label class="form-label mb-0"><i class="fas fa-terminal me-2"></i>Rename Log</label>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="repoSubjectRewriteLogClearBtn">
+                                                        <i class="fas fa-trash-alt me-1"></i>Clear
+                                                    </button>
+                                                </div>
+                                                <div id="repoSubjectRewriteLog" class="bg-dark text-light p-3 rounded font-monospace ansi-output"
+                                                     style="max-height: 240px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap;"></div>
                                             </div>
                                             <div id="repoSubjectRewriteResult" class="mt-3"></div>
                                         </div>

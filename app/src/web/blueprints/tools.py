@@ -26,6 +26,7 @@ from src.system_files import filter_system_files
 from src.bids_entity_rewriter import BidsEntityRewriter
 from src.bids_file_deleter import BidsFileDeleter
 from src.repo_rewrite_datalad_runner import (
+    TrackedRewriteError,
     apply_entity_rewrite as apply_entity_rewrite_with_datalad,
     apply_subject_rewrite as apply_subject_rewrite_with_datalad,
 )
@@ -1087,6 +1088,8 @@ def api_file_management_entity_rewrite():
 
         payload["project_path"] = str(project_root)
         return jsonify(payload), 200
+    except TrackedRewriteError as exc:
+        return jsonify({"error": str(exc), "log": exc.log}), 400
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
     except Exception as exc:
@@ -1187,6 +1190,8 @@ def api_file_management_subject_rewrite():
                 session[preview_session_key] = request_signature
         payload["project_path"] = str(project_root)
         return jsonify(payload), 200
+    except TrackedRewriteError as exc:
+        return jsonify({"error": str(exc), "log": exc.log}), 400
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
     except Exception as exc:

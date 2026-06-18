@@ -11,6 +11,8 @@ from src.datalad_execution import (
     resolve_datalad_executable,
     run_datalad_get_paths,
     run_datalad_run,
+    run_datalad_save,
+    run_datalad_unlock,
 )
 
 
@@ -32,6 +34,7 @@ def run_tracked_mutation(
     run_timeout_seconds: int = 3600,
     get_recursive: bool = False,
     get_no_data: bool = True,
+    content_paths: Sequence[str] = (),
     env: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     root = Path(project_root)
@@ -49,6 +52,23 @@ def run_tracked_mutation(
             f"{DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
         )
 
+    # `datalad run` refuses to execute against a dirty working tree (it needs a
+    # clean baseline to detect what the wrapped command changed), so any
+    # changes left over from earlier actions must be saved first.
+    autosave_result = run_datalad_save(
+        root,
+        message=f'PRISM: autosave pending changes before "{run_message}"',
+        datalad_executable=datalad_executable,
+        timeout_seconds=max(1, int(run_timeout_seconds)),
+    )
+    if not autosave_result.get("success"):
+        raise ValueError(
+            str(
+                autosave_result.get("message")
+                or "DataLad autosave failed before mutation."
+            )
+        )
+
     get_result = run_datalad_get_paths(
         root,
         paths=list(get_paths),
@@ -61,6 +81,81 @@ def run_tracked_mutation(
         raise ValueError(
             str(get_result.get("message") or "DataLad get failed before mutation.")
         )
+
+    # `content_paths` are files the wrapped command will read+rewrite in
+    # place (e.g. updating subject IDs inside a .tsv/.json). Those need full
+    # content present locally (not just `-n` presence) and need to be
+    # unlocked, since annexed files are normally read-only symlinks.
+    content_get_result: dict[str, Any] = {"attempted": False, "success": True, "message": "", "command": ""}
+    unlock_result: dict[str, Any] = {"attempted": False, "success": True, "message": "", "command": ""}
+    normalized_content_paths = list(content_paths)
+    if normalized_content_paths:
+        content_get_result = run_datalad_get_paths(
+            root,
+            paths=normalized_content_paths,
+            datalad_executable=datalad_executable,
+            timeout_seconds=max(1, int(get_timeout_seconds)),
+            recursive=False,
+            no_data=False,
+        )
+        if not content_get_result.get("success"):
+            raise ValueError(
+                str(
+                    content_get_result.get("message")
+                    or "DataLad get (content) failed before mutation."
+                )
+            )
+
+        unlock_result = run_datalad_unlock(
+            root,
+            paths=normalized_content_paths,
+            datalad_executable=datalad_executable,
+            timeout_seconds=max(1, int(get_timeout_seconds)),
+        )
+
+        # `datalad unlock` is treated as best-effort (it's a harmless no-op
+        # for files that aren't annexed), so its own exit code can't be
+        # trusted to tell us whether the file actually became writable.
+        # Check the real, ground-truth condition that caused the original
+        # bug instead of trusting the tool's report.
+        still_locked = [
+            path_text
+            for path_text in normalized_content_paths
+            if (root / path_text).exists() and not os.access(root / path_text, os.W_OK)
+        ]
+        if still_locked:
+            raise ValueError(
+                "These files are still read-only after 'datalad unlock' and "
+                "the wrapped command would fail trying to write to them: "
+                f"{', '.join(still_locked)}. DataLad unlock said: "
+                f"{unlock_result.get('message') or '(no message)'}"
+            )
+
+    # `datalad unlock` itself changes the working tree (a symlink becomes a
+    # regular file), which dirties the dataset again even though we just
+    # autosaved above. `datalad run` needs a clean baseline immediately
+    # before it starts, so autosave once more right before it.
+    pre_run_autosave_result: dict[str, Any] = {
+        "attempted": False,
+        "success": True,
+        "no_changes": True,
+        "message": "",
+        "command": "",
+    }
+    if normalized_content_paths:
+        pre_run_autosave_result = run_datalad_save(
+            root,
+            message=f'PRISM: autosave unlock state before "{run_message}"',
+            datalad_executable=datalad_executable,
+            timeout_seconds=max(1, int(run_timeout_seconds)),
+        )
+        if not pre_run_autosave_result.get("success"):
+            raise ValueError(
+                str(
+                    pre_run_autosave_result.get("message")
+                    or "DataLad autosave (post-unlock) failed before mutation."
+                )
+            )
 
     run_result = run_datalad_run(
         root,
@@ -79,11 +174,37 @@ def run_tracked_mutation(
         "tracked": True,
         "used_run": True,
         "executable": datalad_executable,
+        "autosave": {
+            "attempted": bool(autosave_result.get("attempted")),
+            "success": bool(autosave_result.get("success")),
+            "no_changes": bool(autosave_result.get("no_changes")),
+            "message": str(autosave_result.get("message") or ""),
+            "command": str(autosave_result.get("command") or ""),
+        },
         "get": {
             "attempted": bool(get_result.get("attempted")),
             "success": bool(get_result.get("success")),
             "message": str(get_result.get("message") or ""),
             "command": str(get_result.get("command") or ""),
+        },
+        "content_get": {
+            "attempted": bool(content_get_result.get("attempted")),
+            "success": bool(content_get_result.get("success")),
+            "message": str(content_get_result.get("message") or ""),
+            "command": str(content_get_result.get("command") or ""),
+        },
+        "unlock": {
+            "attempted": bool(unlock_result.get("attempted")),
+            "success": bool(unlock_result.get("success")),
+            "message": str(unlock_result.get("message") or ""),
+            "command": str(unlock_result.get("command") or ""),
+        },
+        "pre_run_autosave": {
+            "attempted": bool(pre_run_autosave_result.get("attempted")),
+            "success": bool(pre_run_autosave_result.get("success")),
+            "no_changes": bool(pre_run_autosave_result.get("no_changes")),
+            "message": str(pre_run_autosave_result.get("message") or ""),
+            "command": str(pre_run_autosave_result.get("command") or ""),
         },
         "run": {
             "attempted": bool(run_result.get("attempted")),
