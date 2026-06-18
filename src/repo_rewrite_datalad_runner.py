@@ -15,6 +15,18 @@ from src.datalad_mutation_policy import build_pythonpath_env, run_tracked_mutati
 from src.subject_code_rewriter import SubjectCodeRewriter
 
 
+class TrackedRewriteError(ValueError):
+    """Raised when a DataLad-tracked rewrite mutation fails partway through.
+
+    Carries the log entries accumulated before the failure so the UI can show
+    exactly which subject group and step (autosave/get/run) failed.
+    """
+
+    def __init__(self, message: str, log: list[dict[str, str]]):
+        super().__init__(message)
+        self.log = log
+
+
 def _extract_subject_from_path(path_text: str) -> str | None:
     return BidsEntityParser.extract_subject_from_path(path_text)
 
@@ -27,6 +39,7 @@ def _run_wrapped_command_with_mutation_or_raise(
     get_paths: list[str],
     get_recursive: bool,
     get_no_data: bool,
+    content_paths: list[str] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     mutation_result = run_tracked_mutation(
         project_root,
@@ -37,6 +50,7 @@ def _run_wrapped_command_with_mutation_or_raise(
         run_timeout_seconds=3600,
         get_recursive=get_recursive,
         get_no_data=get_no_data,
+        content_paths=content_paths or [],
         env=build_pythonpath_env(),
     )
 
@@ -63,6 +77,10 @@ def apply_subject_rewrite(
 ) -> dict[str, Any]:
     root = Path(project_root)
     rewriter = SubjectCodeRewriter(root)
+    log: list[dict[str, str]] = []
+
+    def add_log(message: str, level: str = "info") -> None:
+        log.append({"message": message, "level": level})
 
     preview = rewriter.preview(
         mode=mode,
@@ -79,12 +97,20 @@ def apply_subject_rewrite(
         )
     )
     if not should_use_datalad_run:
-        return rewriter.apply(
+        result = rewriter.apply(
             mode=mode,
             example_subject=example_subject,
             keep_fragment=keep_fragment,
             allow_many_to_one=allow_many_to_one,
         )
+        if isinstance(result, dict):
+            add_log(
+                "Project is not tracked by DataLad (or no renames were needed); "
+                "applied directly.",
+                "info",
+            )
+            result.setdefault("log", log)
+        return result
 
     rename_sources = sorted(
         {
@@ -98,6 +124,19 @@ def apply_subject_rewrite(
             if isinstance(item, dict) and str(item.get("from") or "").strip()
         }
     )
+    text_update_sources = sorted(
+        {
+            str(path_text).strip()
+            for path_text in list(preview.get("text_update_files") or [])
+            if str(path_text or "").strip()
+        }
+    )
+    # Resolved once, against the dataset's pre-rename state, and reused
+    # verbatim by every subject group's subprocess (see explicit_mapping
+    # below) — re-deriving the mapping from example_subject/keep_fragment
+    # inside each subprocess would fail once an earlier subject in the same
+    # batch has already been renamed and the example no longer exists.
+    full_mapping = dict(preview.get("mapping") or {})
     subject_groups = sorted(
         {
             subject
@@ -112,12 +151,19 @@ def apply_subject_rewrite(
         subject_groups = sorted(
             {
                 str(key)
-                for key in dict(preview.get("mapping") or {}).keys()
+                for key in full_mapping.keys()
                 if BidsEntityParser.is_subject_dir(str(key))
             }
         )
     if not subject_groups:
         subject_groups = ["dataset-root"]
+
+    add_log(
+        f"Found {len(subject_groups)} subject group(s) requiring rename. "
+        "Project is tracked by DataLad; each group will run as its own "
+        "tracked DataLad run.",
+        "step",
+    )
 
     aggregate_mapping: dict[str, str] = {}
     aggregate_file_renames: list[dict[str, str]] = []
@@ -135,16 +181,27 @@ def apply_subject_rewrite(
 
     for subject_group in subject_groups:
         subjects_arg = None if subject_group == "dataset-root" else [subject_group]
+        explicit_mapping_for_group = (
+            full_mapping
+            if subject_group == "dataset-root"
+            else (
+                {subject_group: full_mapping[subject_group]}
+                if subject_group in full_mapping
+                else {}
+            )
+        )
+        # Use repr() (not json.dumps()) to embed these as Python source literals —
+        # json.dumps() emits JSON syntax (true/false/null) which is not valid
+        # Python (True/False/None) and breaks the subprocess with a NameError.
         script = (
             "import json;"
             "from pathlib import Path;"
             "from src.subject_code_rewriter import SubjectCodeRewriter;"
-            f"result=SubjectCodeRewriter(Path({json.dumps(str(root))})).apply("
-            f"mode={json.dumps(mode)},"
-            f"example_subject={json.dumps(example_subject)},"
-            f"keep_fragment={json.dumps(keep_fragment)},"
-            f"allow_many_to_one={json.dumps(bool(allow_many_to_one))},"
-            f"subjects={json.dumps(subjects_arg)}"
+            f"result=SubjectCodeRewriter(Path({str(root)!r})).apply("
+            f"mode={mode!r},"
+            f"allow_many_to_one={bool(allow_many_to_one)!r},"
+            f"subjects={subjects_arg!r},"
+            f"explicit_mapping={explicit_mapping_for_group!r}"
             ");"
             "print(json.dumps(result, ensure_ascii=False))"
         )
@@ -160,19 +217,44 @@ def apply_subject_rewrite(
         if not get_paths:
             get_paths = ["."]
 
+        content_paths = sorted(
+            {
+                path_text
+                for path_text in text_update_sources
+                if subject_group == "dataset-root"
+                or _extract_subject_from_path(path_text) == subject_group
+            }
+        )
+
         run_message = (
             f"PRISM: Rewrite subject IDs ({subject_group})"
             if subject_group != "dataset-root"
             else "PRISM: Rewrite subject IDs"
         )
-        payload, mutation_result = _run_wrapped_command_with_mutation_or_raise(
-            project_root=root,
-            message=run_message,
-            command=[sys.executable, "-c", script],
-            get_paths=get_paths,
-            get_recursive=True,
-            get_no_data=True,
-        )
+        add_log(f"[{subject_group}] Autosaving pending changes, fetching content, "
+                f"unlocking annexed text files, and applying rename via DataLad run...", "step")
+        try:
+            payload, mutation_result = _run_wrapped_command_with_mutation_or_raise(
+                project_root=root,
+                message=run_message,
+                command=[sys.executable, "-c", script],
+                get_paths=get_paths,
+                get_recursive=True,
+                get_no_data=True,
+                content_paths=content_paths,
+            )
+        except ValueError as exc:
+            add_log(f"[{subject_group}] {exc}", "error")
+            raise TrackedRewriteError(str(exc), log) from exc
+
+        for step_name in ("autosave", "get", "content_get", "unlock", "pre_run_autosave", "run"):
+            step_info = (
+                mutation_result.get(step_name)
+                if isinstance(mutation_result, dict)
+                else None
+            )
+            if isinstance(step_info, dict) and step_info.get("message"):
+                add_log(f"[{subject_group}] {step_info['message']}", "info")
 
         total_mapping += int(payload.get("mapping_count") or 0)
         total_file_renames += int(payload.get("file_rename_count") or 0)
@@ -223,6 +305,13 @@ def apply_subject_rewrite(
             }
         )
 
+    add_log(
+        f"Rename complete: {total_mapping} subject mapping(s), "
+        f"{total_directory_renames} folder rename(s), {total_file_renames} "
+        f"filename rename(s) across {len(group_details)} DataLad run(s).",
+        "success",
+    )
+
     return {
         "mode": preview.get("mode") or mode,
         "rule": preview.get("rule"),
@@ -240,6 +329,7 @@ def apply_subject_rewrite(
         "file_renames": aggregate_file_renames[:200],
         "text_update_files": aggregate_text_update_files[:200],
         "conflicts": aggregate_conflicts,
+        "log": log,
         "datalad": {
             "used_run": True,
             "tracked": True,
@@ -261,6 +351,10 @@ def apply_entity_rewrite(
 ) -> dict[str, Any]:
     root = Path(project_root)
     rewriter = BidsEntityRewriter(root)
+    log: list[dict[str, str]] = []
+
+    def add_log(message: str, level: str = "info") -> None:
+        log.append({"message": message, "level": level})
 
     preview = rewriter.preview(
         modality=modality,
@@ -275,19 +369,34 @@ def apply_entity_rewrite(
         and int(preview.get("rename_count") or 0) > 0
     )
     if not should_use_datalad_run:
-        return rewriter.apply(
+        result = rewriter.apply(
             modality=modality,
             entity=entity,
             current_value=current_value,
             operation=operation,
             replacement=replacement,
         )
+        if isinstance(result, dict):
+            add_log(
+                "Project is not tracked by DataLad (or no renames were needed); "
+                "applied directly.",
+                "info",
+            )
+            result.setdefault("log", log)
+        return result
 
     rename_sources = sorted(
         {
             str(item.get("from") or "").strip()
             for item in list(preview.get("renames") or [])
             if isinstance(item, dict) and str(item.get("from") or "").strip()
+        }
+    )
+    text_update_sources = sorted(
+        {
+            str(path_text).strip()
+            for path_text in list(preview.get("text_update_files") or [])
+            if str(path_text or "").strip()
         }
     )
     subject_groups = sorted(
@@ -303,6 +412,13 @@ def apply_entity_rewrite(
     if not subject_groups:
         subject_groups = ["dataset-root"]
 
+    add_log(
+        f"Found {len(subject_groups)} subject group(s) requiring rename. "
+        "Project is tracked by DataLad; each group will run as its own "
+        "tracked DataLad run.",
+        "step",
+    )
+
     aggregate_renames: list[dict[str, str]] = []
     aggregate_text_update_files: list[str] = []
     aggregate_conflicts: list[str] = []
@@ -314,17 +430,20 @@ def apply_entity_rewrite(
 
     for subject_group in subject_groups:
         subjects_arg = None if subject_group == "dataset-root" else [subject_group]
+        # Use repr() (not json.dumps()) to embed these as Python source literals —
+        # json.dumps() emits JSON syntax (true/false/null) which is not valid
+        # Python (True/False/None) and breaks the subprocess with a NameError.
         script = (
             "import json;"
             "from pathlib import Path;"
             "from src.bids_entity_rewriter import BidsEntityRewriter;"
-            f"result=BidsEntityRewriter(Path({json.dumps(str(root))})).apply("
-            f"modality={json.dumps(modality)},"
-            f"entity={json.dumps(entity)},"
-            f"operation={json.dumps(operation)},"
-            f"current_value={json.dumps(current_value)},"
-            f"replacement={json.dumps(replacement)},"
-            f"subjects={json.dumps(subjects_arg)}"
+            f"result=BidsEntityRewriter(Path({str(root)!r})).apply("
+            f"modality={modality!r},"
+            f"entity={entity!r},"
+            f"operation={operation!r},"
+            f"current_value={current_value!r},"
+            f"replacement={replacement!r},"
+            f"subjects={subjects_arg!r}"
             ");"
             "print(json.dumps(result, ensure_ascii=False))"
         )
@@ -340,19 +459,44 @@ def apply_entity_rewrite(
         if not get_paths:
             get_paths = ["."]
 
+        content_paths = sorted(
+            {
+                path_text
+                for path_text in text_update_sources
+                if subject_group == "dataset-root"
+                or _extract_subject_from_path(path_text) == subject_group
+            }
+        )
+
         run_message = (
             f"PRISM: Rewrite BIDS filename entity ({subject_group})"
             if subject_group != "dataset-root"
             else "PRISM: Rewrite BIDS filename entity"
         )
-        payload, mutation_result = _run_wrapped_command_with_mutation_or_raise(
-            project_root=root,
-            message=run_message,
-            command=[sys.executable, "-c", script],
-            get_paths=get_paths,
-            get_recursive=False,
-            get_no_data=True,
-        )
+        add_log(f"[{subject_group}] Autosaving pending changes, fetching content, "
+                f"unlocking annexed text files, and applying rename via DataLad run...", "step")
+        try:
+            payload, mutation_result = _run_wrapped_command_with_mutation_or_raise(
+                project_root=root,
+                message=run_message,
+                command=[sys.executable, "-c", script],
+                get_paths=get_paths,
+                get_recursive=False,
+                get_no_data=True,
+                content_paths=content_paths,
+            )
+        except ValueError as exc:
+            add_log(f"[{subject_group}] {exc}", "error")
+            raise TrackedRewriteError(str(exc), log) from exc
+
+        for step_name in ("autosave", "get", "content_get", "unlock", "pre_run_autosave", "run"):
+            step_info = (
+                mutation_result.get(step_name)
+                if isinstance(mutation_result, dict)
+                else None
+            )
+            if isinstance(step_info, dict) and step_info.get("message"):
+                add_log(f"[{subject_group}] {step_info['message']}", "info")
 
         total_rename_count += int(payload.get("rename_count") or 0)
 
@@ -389,6 +533,12 @@ def apply_entity_rewrite(
             }
         )
 
+    add_log(
+        f"Rename complete: {total_rename_count} filename rename(s) across "
+        f"{len(group_details)} DataLad run(s).",
+        "success",
+    )
+
     return {
         "modality": preview.get("modality") or modality,
         "entity": preview.get("entity") or entity,
@@ -404,6 +554,7 @@ def apply_entity_rewrite(
         "renames": aggregate_renames[:200],
         "text_update_files": aggregate_text_update_files[:200],
         "conflicts": aggregate_conflicts,
+        "log": log,
         "datalad": {
             "used_run": True,
             "tracked": True,

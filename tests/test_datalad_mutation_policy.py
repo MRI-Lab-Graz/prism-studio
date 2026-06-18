@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
+import stat
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -42,6 +45,103 @@ def test_run_tracked_mutation_requires_datalad_in_tracked_projects(
             run_message="PRISM: noop",
             command=["echo", "noop"],
         )
+
+
+def _fake_subprocess_run_factory(handlers):
+    def _fake_run(command, cwd=None, capture_output=True, text=True, timeout=None, check=False, env=None):
+        for prefix, handler in handlers.items():
+            if len(command) >= 2 and command[1] == prefix:
+                return handler(command)
+        raise AssertionError(f"Unexpected command: {command}")
+    return _fake_run
+
+
+def test_run_tracked_mutation_proceeds_once_unlock_makes_file_writable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    project_root = tmp_path / "project"
+    (project_root / ".datalad").mkdir(parents=True)
+    text_file = project_root / "sub-001_scans.tsv"
+    text_file.write_text("filename\n")
+    text_file.chmod(stat.S_IREAD)  # simulate a locked, read-only annexed file
+
+    monkeypatch.setattr(
+        "src.datalad_execution.shutil.which",
+        lambda cmd: "/usr/bin/datalad" if cmd == "datalad" else "",
+    )
+
+    def _unlock(command):
+        text_file.chmod(stat.S_IREAD | stat.S_IWRITE)  # actually unlocks it
+        return SimpleNamespace(returncode=0, stdout="unlock ok", stderr="")
+
+    monkeypatch.setattr(
+        "src.datalad_execution.subprocess.run",
+        _fake_subprocess_run_factory({
+            "save": lambda c: SimpleNamespace(returncode=0, stdout="save ok", stderr=""),
+            "get": lambda c: SimpleNamespace(returncode=0, stdout="get ok", stderr=""),
+            "unlock": _unlock,
+            "run": lambda c: SimpleNamespace(returncode=0, stdout="run ok", stderr=""),
+        }),
+    )
+
+    result = run_tracked_mutation(
+        project_root,
+        get_paths=["."],
+        run_message="PRISM: test",
+        command=["echo", "noop"],
+        content_paths=["sub-001_scans.tsv"],
+    )
+
+    assert result.get("used_run") is True
+    assert result.get("unlock", {}).get("attempted") is True
+
+
+def test_run_tracked_mutation_raises_clear_error_when_file_stays_locked(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Regression guard: `datalad unlock` is best-effort and its exit code
+    can't be trusted (it's a no-op for non-annexed files), so a file that's
+    still genuinely locked after unlock must be caught here with a clear,
+    actionable message — not left to fail deep inside the wrapped command
+    with a raw PermissionError."""
+    project_root = tmp_path / "project"
+    (project_root / ".datalad").mkdir(parents=True)
+    text_file = project_root / "sub-001_scans.tsv"
+    text_file.write_text("filename\n")
+    text_file.chmod(stat.S_IREAD)  # stays locked even after "unlock" below
+
+    monkeypatch.setattr(
+        "src.datalad_execution.shutil.which",
+        lambda cmd: "/usr/bin/datalad" if cmd == "datalad" else "",
+    )
+
+    run_was_attempted = False
+
+    def _run(command):
+        nonlocal run_was_attempted
+        run_was_attempted = True
+        return SimpleNamespace(returncode=0, stdout="run ok", stderr="")
+
+    monkeypatch.setattr(
+        "src.datalad_execution.subprocess.run",
+        _fake_subprocess_run_factory({
+            "save": lambda c: SimpleNamespace(returncode=0, stdout="save ok", stderr=""),
+            "get": lambda c: SimpleNamespace(returncode=0, stdout="get ok", stderr=""),
+            "unlock": lambda c: SimpleNamespace(returncode=0, stdout="unlock ok (no-op)", stderr=""),
+            "run": _run,
+        }),
+    )
+
+    with pytest.raises(ValueError, match="still read-only"):
+        run_tracked_mutation(
+            project_root,
+            get_paths=["."],
+            run_message="PRISM: test",
+            command=["echo", "noop"],
+            content_paths=["sub-001_scans.tsv"],
+        )
+
+    assert run_was_attempted is False
 
 
 def test_copy_files_into_project_uses_direct_copy_for_plain_projects(tmp_path: Path):

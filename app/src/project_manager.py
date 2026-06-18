@@ -255,7 +255,7 @@ class ProjectManager:
             created_files.append("code/")
 
             # Create library structure under code/ (YODA-compliant)
-            library_files = self._create_library_structure(project_path, modalities)
+            library_files = self._create_library_structure(project_path)
             created_files.extend(library_files)
 
             if datalad_result is not None:
@@ -309,20 +309,30 @@ class ProjectManager:
 
         project_path = Path(path)
         source_result: Optional[Dict[str, Any]] = None
+        log: List[Dict[str, str]] = []
+
+        def add_log(message: str, level: str = "info") -> None:
+            log.append({"message": message, "level": level})
 
         remote_url = self._normalize_remote_dataset_url(config.get("remote_url"))
         if remote_url:
+            add_log(f"Acquiring remote dataset from {remote_url}...", "step")
             source_result = self._acquire_remote_bids_dataset(
                 project_path,
                 remote_url=remote_url,
             )
             if not source_result.get("success"):
+                source_result["log"] = log + [
+                    {"message": source_result.get("error") or "Remote acquisition failed.", "level": "error"}
+                ]
                 return source_result
+            add_log(source_result.get("message") or "Remote dataset acquired.", "info")
 
         if not project_path.exists() or not project_path.is_dir():
             return {
                 "success": False,
                 "error": f"Path does not exist or is not a directory: {path}",
+                "log": log,
             }
 
         if not (project_path / "dataset_description.json").exists():
@@ -332,7 +342,9 @@ class ProjectManager:
                     "No dataset_description.json found.  "
                     "The selected folder does not look like a BIDS root."
                 ),
+                "log": log,
             }
+        add_log("Validated existing BIDS dataset root.", "step")
 
         name = config.get("name") or project_path.name
         modalities = [
@@ -344,10 +356,13 @@ class ProjectManager:
         datalad_result: Optional[Dict[str, Any]] = None
 
         try:
+            add_log("Initializing DataLad dataset (if enabled)...", "step")
             datalad_result = self._create_datalad_dataset(
                 project_path,
                 enabled=config.get("use_datalad", False),
             )
+            if datalad_result.get("message"):
+                add_log(datalad_result["message"], "info")
             gitattributes_created = self._ensure_datalad_editable_metadata_policy(
                 project_path,
                 datalad_result,
@@ -428,6 +443,9 @@ class ProjectManager:
                     folder_path.mkdir(exist_ok=True)
                     created_files.append(f"{folder}/")
 
+            for created_file in created_files:
+                add_log(f"Added {created_file}", "step")
+
             if datalad_result is not None:
                 datalad_result.update(
                     self._create_nested_subdatasets(
@@ -435,11 +453,18 @@ class ProjectManager:
                         str(datalad_result.get("executable") or ""),
                     )
                 )
+                add_log(
+                    "Saving DataLad changes (this can take a while for "
+                    "datasets with many subjects)...",
+                    "step",
+                )
                 datalad_result = self._save_datalad_changes(
                     project_path,
                     datalad_result,
                     message="Initialize PRISM on existing BIDS dataset",
                 )
+                if datalad_result.get("message"):
+                    add_log(datalad_result["message"], "info")
 
             skipped = (
                 "  (existing files were not modified)" if not created_files else ""
@@ -448,11 +473,13 @@ class ProjectManager:
                 f"PRISM initialised on '{name}': "
                 f"{len(created_files)} file(s) added.{skipped}"
             )
+            add_log(msg, "success")
             result = {
                 "success": True,
                 "path": str(project_path),
                 "created_files": created_files,
                 "message": msg,
+                "log": log,
             }
             if source_result is not None:
                 result["source"] = source_result
@@ -461,7 +488,13 @@ class ProjectManager:
             return result
 
         except Exception as exc:
-            result = {"success": False, "error": str(exc), "created_files": created_files}
+            add_log(str(exc), "error")
+            result = {
+                "success": False,
+                "error": str(exc),
+                "created_files": created_files,
+                "log": log,
+            }
             if source_result is not None:
                 result["source"] = source_result
             if datalad_result is not None:
@@ -4684,10 +4717,15 @@ Subfolders:
 
         return created
 
-    def _create_library_structure(
-        self, project_path: Path, modalities: List[str]
-    ) -> List[str]:
-        """Create library & recipe folder structure under code/ (YODA-compliant)."""
+    def _create_library_structure(self, project_path: Path) -> List[str]:
+        """Create library & recipe folder roots under code/ (YODA-compliant).
+
+        Modality subfolders (code/library/survey, code/library/biometrics, etc.)
+        are intentionally NOT created here. They are created lazily by the
+        conversion/template-saving code the first time that modality is
+        actually used, so a project only ever shows folders for modalities
+        it imports.
+        """
         created = []
 
         # Everything goes under code/ to follow YODA principles
@@ -4703,19 +4741,6 @@ Subfolders:
         recipe_root = code_root / "recipes"
         recipe_root.mkdir(parents=True, exist_ok=True)
         created.append("code/recipes/")
-
-        # Create modality subfolders for both library and recipe
-        core_mods = ["survey", "biometrics"]
-        for mod in core_mods:
-            # Library folders
-            lib_mod_path = library_root / mod
-            lib_mod_path.mkdir(exist_ok=True)
-            created.append(f"code/library/{mod}/")
-
-            # Recipe folders
-            rec_mod_path = recipe_root / mod
-            rec_mod_path.mkdir(exist_ok=True)
-            created.append(f"code/recipes/{mod}/")
 
         return created
 

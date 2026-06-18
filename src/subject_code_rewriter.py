@@ -86,6 +86,7 @@ class SubjectCodeRewriter:
         keep_fragment: str | None = None,
         allow_many_to_one: bool = False,
         subjects: list[str] | None = None,
+        explicit_mapping: dict[str, str] | None = None,
     ) -> dict:
         plan = self._build_plan(
             mode,
@@ -93,6 +94,7 @@ class SubjectCodeRewriter:
             keep_fragment=keep_fragment,
             allow_many_to_one=allow_many_to_one,
             subjects=subjects,
+            explicit_mapping=explicit_mapping,
         )
         return self._plan_to_dict(plan, applied=False)
 
@@ -103,6 +105,7 @@ class SubjectCodeRewriter:
         keep_fragment: str | None = None,
         allow_many_to_one: bool = False,
         subjects: list[str] | None = None,
+        explicit_mapping: dict[str, str] | None = None,
     ) -> dict:
         plan = self._build_plan(
             mode,
@@ -110,6 +113,7 @@ class SubjectCodeRewriter:
             keep_fragment=keep_fragment,
             allow_many_to_one=allow_many_to_one,
             subjects=subjects,
+            explicit_mapping=explicit_mapping,
         )
         if plan.conflicts:
             raise ValueError(
@@ -159,6 +163,7 @@ class SubjectCodeRewriter:
         keep_fragment: str | None,
         allow_many_to_one: bool,
         subjects: list[str] | None,
+        explicit_mapping: dict[str, str] | None = None,
     ) -> _RewritePlan:
         if not self.project_root.exists() or not self.project_root.is_dir():
             raise ValueError(f"Project root does not exist: {self.project_root}")
@@ -166,12 +171,24 @@ class SubjectCodeRewriter:
         normalized_mode = self._normalize_mode(mode)
         normalized_subjects = self._normalize_subjects(subjects)
         subject_tokens, subject_token_sources = self._collect_subject_tokens()
-        mapping, rule = self._build_subject_mapping(
-            normalized_mode,
-            subject_tokens,
-            example_subject=example_subject,
-            keep_fragment=keep_fragment,
-        )
+        if explicit_mapping is not None:
+            # Caller already resolved the old->new subject mapping once
+            # (e.g. against the dataset's pre-rename state) and wants it
+            # applied as-is, bypassing example_subject/keep_fragment
+            # resolution entirely. This matters when this subject's rewrite
+            # runs in its own subprocess after earlier subjects in the same
+            # batch have already been renamed on disk: re-deriving the rule
+            # from a literal example_subject would fail once that example
+            # subject itself no longer exists under its old name.
+            mapping = dict(explicit_mapping)
+            rule = None
+        else:
+            mapping, rule = self._build_subject_mapping(
+                normalized_mode,
+                subject_tokens,
+                example_subject=example_subject,
+                keep_fragment=keep_fragment,
+            )
 
         if normalized_subjects:
             filtered_mapping: dict[str, str] = {}
