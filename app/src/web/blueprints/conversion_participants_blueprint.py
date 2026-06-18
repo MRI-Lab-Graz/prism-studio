@@ -1449,7 +1449,9 @@ def api_participants_check():
     participants_json = project_root / "participants.json"
     has_participants_tsv = participants_tsv.exists()
     has_participants_json = participants_json.exists()
-    exists_root = has_participants_tsv or has_participants_json
+    # A schema-only participants.json (no participants.tsv yet) holds no participant
+    # data, so it shouldn't trigger the "existing files will be overwritten" warning.
+    exists_root = has_participants_tsv
     workflow = describe_participants_workflow(project_root)
 
     return jsonify(
@@ -2192,7 +2194,10 @@ def api_participants_convert():
     if participants_json.exists():
         existing_files.append(str(participants_json))
 
-    if existing_files and not force_overwrite and mode != "existing":
+    # Only block on real participant data (participants.tsv). A schema-only
+    # participants.json saved earlier from the annotation widget has no rows
+    # to lose, so it shouldn't require force_overwrite confirmation.
+    if participants_tsv.exists() and not force_overwrite and mode != "existing":
         return (
             jsonify(
                 {
