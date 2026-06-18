@@ -32,7 +32,7 @@
                                     </div>
                                     <div class="small d-flex align-items-start mb-2">
                                         <i class="fas fa-check-circle text-success me-2 mt-1"></i>
-                                        <span><strong>Step 3:</strong> Use optional advanced settings only when needed (offsets, language, overrides).</span>
+                                        <span><strong>Step 3:</strong> Use optional advanced settings only when needed (offsets, language, ID map).</span>
                                     </div>
                                     <div class="small d-flex align-items-start">
                                         <i class="fas fa-check-circle text-success me-2 mt-1"></i>
@@ -107,6 +107,26 @@
                                 </div>
                             </div>
 
+                            <!-- Row 3b: source Session/Run column overrides (optional, secondary to the required Session ID below) -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label for="convertSessionColumnOverride" class="form-label small text-muted">Session Column (optional)</label>
+                                    <select class="form-select form-select-sm" id="convertSessionColumnOverride">
+                                        <option value="">Auto-detect</option>
+                                    </select>
+                                    <div class="form-text">Source column with session info in the file (not the Session ID below). Auto-detect recognizes session, ses, visit, or timepoint.</div>
+                                    <small id="convertSessionColumnHint" class="text-muted d-none"></small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="convertRunColumnOverride" class="form-label small text-muted">Run Column (optional)</label>
+                                    <select class="form-select form-select-sm" id="convertRunColumnOverride">
+                                        <option value="">Auto-detect</option>
+                                    </select>
+                                    <div class="form-text">Source column with run info in the file. Auto-detect recognizes run, run_id, run_number, or run_nr.</div>
+                                    <small id="convertRunColumnHint" class="text-muted d-none"></small>
+                                </div>
+                            </div>
+
                             <!-- Row 4: Session (required conversion setting) -->
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6" id="convertSessionGroup">
@@ -119,6 +139,7 @@
                                                placeholder="or type: 1, baseline..." style="max-width: 35%;">
                                     </div>
                                     <div class="form-text text-warning" id="convertSessionHint">Creates 'ses-01', 'ses-02', etc.</div>
+                                    <div class="form-text">This is the output session label, not a source column. If Session Column above is set, this picks which session's rows to extract from it; otherwise every row in this file is labeled with this one session.</div>
                                 </div>
                             </div>
 
@@ -134,7 +155,7 @@
                                         <label class="form-check-label small text-muted" for="convertAdvancedToggle">Enable advanced</label>
                                     </div>
                                 </div>
-                                <div class="form-text">Use this only when needed: specific survey/language selection, ID map, manual offsets, or column overrides.</div>
+                                <div class="form-text">Use this only when needed: specific survey/language selection, ID map, or manual offsets.</div>
 
                                 <div class="collapse mt-2" id="surveyAdvancedOptions">
                                     <div class="row g-3 mb-3">
@@ -188,24 +209,6 @@
                                         </div>
                                     </div>
 
-                                    <div class="row g-3 mb-3">
-                                        <div class="col-md-6">
-                                            <label for="convertSessionColumnOverride" class="form-label">Session Column (optional)</label>
-                                            <select class="form-select" id="convertSessionColumnOverride">
-                                                <option value="">Auto-detect</option>
-                                            </select>
-                                            <div class="form-text">Leave on Auto-detect to use the auto-detected session column. Auto-detect recognizes columns named session, ses, visit, or timepoint.</div>
-                                            <small id="convertSessionColumnHint" class="text-muted d-none"></small>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="convertRunColumnOverride" class="form-label">Run Column (optional)</label>
-                                            <select class="form-select" id="convertRunColumnOverride">
-                                                <option value="">Auto-detect</option>
-                                            </select>
-                                            <div class="form-text">Leave on Auto-detect to use the auto-detected run column. Auto-detect recognizes columns named run, run_id, run_number, or run_nr.</div>
-                                            <small id="convertRunColumnHint" class="text-muted d-none"></small>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
 

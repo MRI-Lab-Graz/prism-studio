@@ -177,6 +177,8 @@ def handle_detect_columns():
     """Detect column names from uploaded file for ID column selection."""
     file = request.files.get("file")
     source_file_path = (request.form.get("source_file_path") or "").strip()
+    session_column_override = (request.form.get("session_column_override") or "").strip()
+    run_column_override = (request.form.get("run_column_override") or "").strip()
 
     filename = ""
     local_source_path: Path | None = None
@@ -269,11 +271,19 @@ def handle_detect_columns():
                     session_column = lower_to_col[candidate]
                     break
 
-            if session_column and session_column in df.columns:
+            # A manually chosen Session/Run Column override (e.g. a column not
+            # matching the auto-detect candidates) still lets us read its values
+            # immediately, without requiring a full Preview run first.
+            session_values_column = (
+                session_column_override
+                if session_column_override in df.columns
+                else session_column
+            )
+            if session_values_column and session_values_column in df.columns:
                 detected_sessions = sorted(
                     [
                         str(v).strip()
-                        for v in df[session_column].dropna().unique()
+                        for v in df[session_values_column].dropna().unique()
                         if str(v).strip()
                     ]
                 )
@@ -283,11 +293,16 @@ def handle_detect_columns():
                     run_column = lower_to_col[candidate]
                     break
 
-            if run_column and run_column in df.columns:
+            run_values_column = (
+                run_column_override
+                if run_column_override in df.columns
+                else run_column
+            )
+            if run_values_column and run_values_column in df.columns:
                 detected_runs = sorted(
                     [
                         str(v).strip()
-                        for v in df[run_column].dropna().unique()
+                        for v in df[run_values_column].dropna().unique()
                         if str(v).strip()
                     ]
                 )
