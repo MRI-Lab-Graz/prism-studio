@@ -1,3 +1,5 @@
+import { appendConverterLogBatch, appendConverterLogLine } from '../converter/log-renderer.js';
+
 export function initProjectInitOnBidsController({
     fetchWithApiFallback,
     setButtonLoading,
@@ -17,6 +19,107 @@ export function initProjectInitOnBidsController({
     let remoteStatusRequestToken = 0;
     let remoteStatusDebounceTimer = null;
     let remoteStatusState = null;
+
+    const initBidsProgressContainer = document.getElementById('initBidsProgressContainer');
+    const initBidsProgressBar = document.getElementById('initBidsProgressBar');
+    const initBidsProgressLabel = document.getElementById('initBidsProgressLabel');
+    const initBidsProgressPercent = document.getElementById('initBidsProgressPercent');
+    const initBidsLogContainer = document.getElementById('initBidsLogContainer');
+    const initBidsLogBody = document.getElementById('initBidsLogBody');
+    const initBidsLog = document.getElementById('initBidsLog');
+    const initBidsToggleLogBtn = document.getElementById('initBidsToggleLogBtn');
+
+    let progressTimer = null;
+    let progressPercent = 0;
+    let progressLabel = '';
+
+    if (initBidsToggleLogBtn && initBidsLogBody) {
+        initBidsToggleLogBtn.addEventListener('click', function() {
+            initBidsLogBody.classList.toggle('d-none');
+            const icon = initBidsToggleLogBtn.querySelector('i');
+            if (initBidsLogBody.classList.contains('d-none')) {
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-right');
+            } else {
+                icon.classList.remove('fa-chevron-right');
+                icon.classList.add('fa-chevron-down');
+            }
+        });
+    }
+
+    function stopProgressTimer() {
+        if (progressTimer !== null) {
+            window.clearInterval(progressTimer);
+            progressTimer = null;
+        }
+    }
+
+    function renderProgress(variant, animated) {
+        if (!initBidsProgressContainer || !initBidsProgressBar) {
+            return;
+        }
+        initBidsProgressContainer.classList.remove('d-none', 'alert-info', 'alert-success', 'alert-danger');
+        initBidsProgressContainer.classList.add(`alert-${variant}`);
+        initBidsProgressBar.classList.remove('bg-info', 'bg-success', 'bg-danger', 'progress-bar-striped', 'progress-bar-animated');
+        initBidsProgressBar.classList.add(`bg-${variant}`);
+        if (animated) {
+            initBidsProgressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+        }
+        const rounded = Math.max(0, Math.min(100, Math.round(progressPercent)));
+        initBidsProgressBar.style.width = `${rounded}%`;
+        initBidsProgressBar.setAttribute('aria-valuenow', String(rounded));
+        if (initBidsProgressPercent) {
+            initBidsProgressPercent.textContent = `${rounded}%`;
+        }
+        if (initBidsProgressLabel) {
+            initBidsProgressLabel.textContent = progressLabel;
+        }
+    }
+
+    function setProgress(percent, label, variant = 'info', animated = true) {
+        progressPercent = Math.max(progressPercent, Math.min(100, percent));
+        if (label) {
+            progressLabel = label;
+        }
+        renderProgress(variant, animated);
+    }
+
+    function startProgress(label) {
+        stopProgressTimer();
+        progressPercent = 8;
+        progressLabel = label;
+        renderProgress('info', true);
+        progressTimer = window.setInterval(() => {
+            const increment = progressPercent < 30 ? 6 : (progressPercent < 60 ? 3 : 1);
+            progressPercent = Math.min(90, progressPercent + increment);
+            renderProgress('info', true);
+        }, 700);
+    }
+
+    function hideProgress() {
+        stopProgressTimer();
+        progressPercent = 0;
+        progressLabel = '';
+        if (initBidsProgressContainer) {
+            initBidsProgressContainer.classList.add('d-none');
+        }
+    }
+
+    function appendLog(message, level = 'info') {
+        appendConverterLogLine(message, level, initBidsLog);
+    }
+
+    function resetLog() {
+        if (initBidsLog) {
+            initBidsLog.innerHTML = '';
+        }
+        if (initBidsLogContainer) {
+            initBidsLogContainer.classList.remove('d-none');
+        }
+        if (initBidsLogBody) {
+            initBidsLogBody.classList.remove('d-none');
+        }
+    }
 
     function syncDataladToggleVisibility() {
         const remoteUrl = (document.getElementById('initBidsRemoteUrl')?.value || '').trim();
@@ -194,8 +297,14 @@ export function initProjectInitOnBidsController({
         }
 
         const resultDiv = document.getElementById('initBidsResult');
-        resultDiv.style.display = 'block';
-        resultDiv.innerHTML = '<div class="alert alert-secondary"><i class="fas fa-spinner fa-spin me-2"></i>Initialising…</div>';
+        resultDiv.style.display = 'none';
+        resultDiv.innerHTML = '';
+
+        resetLog();
+        appendLog(`Starting initialization for: ${targetPath}`, 'info');
+        appendLog(hasRemote ? `Source: remote (${remoteUrl})` : 'Source: local BIDS root', 'step');
+        appendLog(hasRemote ? 'DataLad: managed automatically for remote sources' : `DataLad version control: ${useDatalad ? 'enabled' : 'disabled'}`, 'step');
+        startProgress(hasRemote ? 'Cloning remote dataset...' : 'Validating BIDS dataset...');
 
         const originalText = setButtonLoading(initBidsSubmitBtn, true, 'Initialising…');
         initBidsSubmitBtn.disabled = true;
@@ -214,9 +323,19 @@ export function initProjectInitOnBidsController({
                     source_type: hasRemote ? 'remote' : 'local'
                 })
             });
+            setProgress(70, 'Server response received. Applying changes...', 'info', true);
             const result = await response.json();
 
+            if (Array.isArray(result.log)) {
+                appendConverterLogBatch(result.log, 'info', initBidsLog);
+            }
+
+            resultDiv.style.display = 'block';
+
             if (result.success) {
+                stopProgressTimer();
+                setProgress(100, 'Initialization complete.', 'success', false);
+                window.setTimeout(hideProgress, 1800);
                 const fileList = (result.created_files || [])
                     .map(filePath => `<li><code>${escapeHtml(filePath)}</code></li>`)
                     .join('');
@@ -267,6 +386,8 @@ export function initProjectInitOnBidsController({
                 showExportCard();
                 showMethodsCard();
             } else {
+                stopProgressTimer();
+                setProgress(100, 'Initialization failed.', 'danger', false);
                 resultDiv.innerHTML = `
                     <div class="alert alert-danger">
                         <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
@@ -275,6 +396,10 @@ export function initProjectInitOnBidsController({
                 `;
             }
         } catch (error) {
+            stopProgressTimer();
+            setProgress(100, 'Initialization failed.', 'danger', false);
+            appendLog(error.message, 'error');
+            resultDiv.style.display = 'block';
             resultDiv.innerHTML = `
                 <div class="alert alert-danger">
                     <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>

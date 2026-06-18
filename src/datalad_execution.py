@@ -167,6 +167,78 @@ def run_datalad_get_paths(
     return result
 
 
+def run_datalad_unlock(
+    project_root: Path,
+    *,
+    paths: Sequence[str],
+    datalad_executable: str = "",
+    timeout_seconds: int = 900,
+) -> dict[str, Any]:
+    """Best-effort `datalad unlock` so annexed files become writable copies.
+
+    Annexed files are normally read-only symlinks; in-place content edits
+    (e.g. rewriting subject IDs inside a .tsv/.json) fail with
+    PermissionError unless the file is unlocked first. Unlocking a file that
+    isn't annexed is a harmless no-op, so any outcome short of a hard
+    execution failure is treated as success here — the goal is "best effort
+    make writable," not a strict precondition.
+    """
+    root = Path(project_root)
+    resolved = str(datalad_executable or resolve_datalad_executable()).strip()
+    result: dict[str, Any] = {
+        "attempted": False,
+        "success": False,
+        "command": "",
+        "message": "",
+    }
+    if not resolved:
+        result["message"] = (
+            "DataLad executable is not available in this environment. "
+            f"{DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
+        )
+        return result
+
+    normalized_paths = [
+        str(Path(str(path or "").strip()).as_posix())
+        for path in paths
+        if str(path or "").strip()
+    ]
+    if not normalized_paths:
+        result["success"] = True
+        result["message"] = "No DataLad unlock targets were requested."
+        return result
+
+    # Note: unlike `get`/`save`, `datalad unlock` does not accept
+    # `--on-failure` — passing it makes argparse reject the whole command
+    # and print usage text instead of unlocking anything.
+    command = [resolved, "unlock", *normalized_paths]
+    result["attempted"] = True
+    result["command"] = shlex.join(command)
+
+    try:
+        process = subprocess.run(
+            command,
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            timeout=max(1, int(timeout_seconds)),
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        result["message"] = (
+            f"DataLad unlock timed out after {max(1, int(timeout_seconds))} seconds."
+        )
+        return result
+    except Exception as exc:
+        result["message"] = f"DataLad unlock failed ({type(exc).__name__}: {exc})."
+        return result
+
+    result["success"] = True
+    detail = (process.stdout or process.stderr or "").strip()
+    result["message"] = detail or "DataLad unlock completed."
+    return result
+
+
 def run_datalad_run(
     project_root: Path,
     *,
@@ -198,8 +270,18 @@ def run_datalad_run(
         result["message"] = "DataLad run command is empty."
         return result
 
+    # `datalad run` treats the command after `--` as a template supporting
+    # placeholders like {inputs}/{outputs}. Any literal curly brace in the
+    # command (e.g. a Python dict/set literal embedded in a -c script) must
+    # be escaped by doubling, exactly like Python's str.format(), or DataLad
+    # rejects it outright as an "unrecognized placeholder" before running
+    # anything.
+    escaped_command = [
+        part.replace("{", "{{").replace("}", "}}") for part in normalized_command
+    ]
+
     run_message = str(message or "").strip() or "PRISM: tracked edit"
-    datalad_command = [resolved, "run", "-m", run_message, "--", *normalized_command]
+    datalad_command = [resolved, "run", "-m", run_message, "--", *escaped_command]
     result["attempted"] = True
     result["command"] = shlex.join(datalad_command)
 
@@ -236,6 +318,73 @@ def run_datalad_run(
 
     detail = (process.stderr or process.stdout or "").strip()
     result["message"] = f"DataLad run failed: {detail or 'Unknown DataLad error.'}"
+    return result
+
+
+def run_datalad_save(
+    project_root: Path,
+    *,
+    message: str,
+    datalad_executable: str = "",
+    timeout_seconds: int = 900,
+    recursive: bool = True,
+) -> dict[str, Any]:
+    root = Path(project_root)
+    resolved = str(datalad_executable or resolve_datalad_executable()).strip()
+    result: dict[str, Any] = {
+        "attempted": False,
+        "success": False,
+        "no_changes": False,
+        "command": "",
+        "message": "",
+    }
+    if not resolved:
+        result["message"] = (
+            "DataLad executable is not available in this environment. "
+            f"{DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
+        )
+        return result
+
+    save_message = str(message or "").strip() or "PRISM: autosave pending changes"
+    command = [resolved, "save"]
+    if recursive:
+        command.append("-r")
+    command.extend(["-m", save_message])
+
+    result["attempted"] = True
+    result["command"] = shlex.join(command)
+
+    try:
+        process = subprocess.run(
+            command,
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            timeout=max(1, int(timeout_seconds)),
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        result["message"] = (
+            f"DataLad save timed out after {max(1, int(timeout_seconds))} seconds."
+        )
+        return result
+    except Exception as exc:
+        result["message"] = f"DataLad save failed ({type(exc).__name__}: {exc})."
+        return result
+
+    if process.returncode == 0:
+        result["success"] = True
+        result["message"] = "DataLad save completed."
+        return result
+
+    detail = (process.stderr or process.stdout or "").strip()
+    if "nothing to save" in detail.lower():
+        result["success"] = True
+        result["no_changes"] = True
+        result["message"] = "No pending DataLad changes."
+        return result
+
+    result["message"] = f"DataLad save failed: {detail or 'Unknown DataLad error.'}"
     return result
 
 

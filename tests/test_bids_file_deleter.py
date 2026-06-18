@@ -49,6 +49,8 @@ def test_bids_file_deleter_apply_uses_datalad_run_dataset(tmp_path, monkeypatch)
         env=None,
     ):
         observed_commands.append([str(item) for item in command])
+        if len(command) >= 2 and command[1] == "save":
+            return SimpleNamespace(returncode=0, stdout="save ok", stderr="")
         if len(command) >= 2 and command[1] == "get":
             return SimpleNamespace(returncode=0, stdout="get ok", stderr="")
         if len(command) >= 2 and command[1] == "run":
@@ -127,6 +129,8 @@ def test_bids_file_deleter_apply_runs_once_per_subject_group(tmp_path, monkeypat
         env=None,
     ):
         observed_commands.append([str(item) for item in command])
+        if len(command) >= 2 and command[1] == "save":
+            return SimpleNamespace(returncode=0, stdout="save ok", stderr="")
         if len(command) >= 2 and command[1] == "get":
             return SimpleNamespace(returncode=0, stdout="get ok", stderr="")
         if len(command) >= 2 and command[1] == "run":

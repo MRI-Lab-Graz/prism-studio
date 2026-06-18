@@ -847,6 +847,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const repoSubjectRewriteKeep = document.getElementById('repoSubjectRewriteKeep');
     const repoSubjectRewriteAllowMultiple = document.getElementById('repoSubjectRewriteAllowMultiple');
     const repoSubjectRewriteResult = document.getElementById('repoSubjectRewriteResult');
+    const repoSubjectRewriteProgress = document.getElementById('repoSubjectRewriteProgress');
+    const repoSubjectRewriteProgressBar = document.getElementById('repoSubjectRewriteProgressBar');
+    const repoSubjectRewriteLogContainer = document.getElementById('repoSubjectRewriteLogContainer');
+    const repoSubjectRewriteLog = document.getElementById('repoSubjectRewriteLog');
+    const repoSubjectRewriteLogClearBtn = document.getElementById('repoSubjectRewriteLogClearBtn');
     const repoEntityRewriteModality = document.getElementById('repoEntityRewriteModality');
     const repoEntityRewritePart = document.getElementById('repoEntityRewritePart');
     const repoEntityRewriteCurrentValue = document.getElementById('repoEntityRewriteCurrentValue');
@@ -1193,6 +1198,68 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    if (repoSubjectRewriteLogClearBtn) {
+        repoSubjectRewriteLogClearBtn.addEventListener('click', () => {
+            if (repoSubjectRewriteLog) repoSubjectRewriteLog.textContent = '';
+        });
+    }
+
+    function appendRepoRewriteLog(message, level = 'info') {
+        if (!repoSubjectRewriteLog) return;
+        const levelClasses = {
+            info: 'ansi-blue',
+            success: 'ansi-green',
+            warning: 'ansi-yellow',
+            error: 'ansi-red',
+            step: 'ansi-cyan',
+        };
+        const line = document.createElement('div');
+        line.className = levelClasses[level] || 'ansi-reset';
+        line.textContent = message;
+        repoSubjectRewriteLog.appendChild(line);
+        repoSubjectRewriteLog.scrollTop = repoSubjectRewriteLog.scrollHeight;
+    }
+
+    function setRepoRewriteProgress(percent, label, variant = 'warning') {
+        if (!repoSubjectRewriteProgressBar) return;
+        const rounded = Math.max(0, Math.min(100, Math.round(percent)));
+        repoSubjectRewriteProgressBar.style.width = `${rounded}%`;
+        repoSubjectRewriteProgressBar.textContent = label || '';
+        repoSubjectRewriteProgressBar.classList.remove('bg-warning', 'bg-success', 'bg-danger');
+        repoSubjectRewriteProgressBar.classList.add(`bg-${variant}`);
+    }
+
+    let repoRewriteProgressTimer = null;
+
+    function startRepoRewriteProgress(label) {
+        if (repoRewriteProgressTimer !== null) {
+            window.clearInterval(repoRewriteProgressTimer);
+            repoRewriteProgressTimer = null;
+        }
+        if (repoSubjectRewriteProgress) repoSubjectRewriteProgress.classList.remove('d-none');
+        if (repoSubjectRewriteLogContainer) repoSubjectRewriteLogContainer.classList.remove('d-none');
+        let percent = 8;
+        setRepoRewriteProgress(percent, label, 'warning');
+        repoRewriteProgressTimer = window.setInterval(() => {
+            const increment = percent < 30 ? 6 : (percent < 60 ? 3 : 1);
+            percent = Math.min(90, percent + increment);
+            setRepoRewriteProgress(percent, label, 'warning');
+        }, 700);
+    }
+
+    function finishRepoRewriteProgress(success, label) {
+        if (repoRewriteProgressTimer !== null) {
+            window.clearInterval(repoRewriteProgressTimer);
+            repoRewriteProgressTimer = null;
+        }
+        setRepoRewriteProgress(100, label, success ? 'success' : 'danger');
+        if (success) {
+            window.setTimeout(() => {
+                if (repoSubjectRewriteProgress) repoSubjectRewriteProgress.classList.add('d-none');
+            }, 1800);
+        }
+    }
+
     function setRepoSubjectRewriteBusy(isBusy) {
         if (repoSubjectRewritePreviewBtn) {
             repoSubjectRewritePreviewBtn.disabled = isBusy;
@@ -1446,6 +1513,10 @@ document.addEventListener('DOMContentLoaded', () => {
             repoSubjectRewriteResult.innerHTML = `<div class="alert alert-info py-2 mb-0">${action === 'apply' ? 'Applying rewrite...' : 'Previewing rewrite mapping...'}</div>`;
         }
 
+        if (repoSubjectRewriteLog) repoSubjectRewriteLog.textContent = '';
+        startRepoRewriteProgress(action === 'apply' ? 'Applying rename...' : 'Previewing...');
+        appendRepoRewriteLog(`Starting ${action === 'apply' ? 'apply' : 'preview'} for example "${selectedExample}", keep "${keepFragment}"...`, 'step');
+
         try {
             const response = await fetchWithApiFallback('/api/file-management/subject-rewrite', {
                 method: 'POST',
@@ -1461,10 +1532,26 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const payload = await response.json().catch(() => ({}));
-            if (!response.ok) {
-                throw new Error(payload.error || 'Subject rewrite request failed.');
+
+            if (Array.isArray(payload.log)) {
+                payload.log.forEach((entry) => {
+                    const level = entry && entry.level ? entry.level : 'info';
+                    const message = entry && entry.message ? entry.message : '';
+                    if (message) appendRepoRewriteLog(message, level);
+                });
             }
 
+            if (!response.ok) {
+                finishRepoRewriteProgress(false, action === 'apply' ? 'Apply failed.' : 'Preview failed.');
+                appendRepoRewriteLog(payload.error || 'Subject rewrite request failed.', 'error');
+                if (repoSubjectRewriteResult) {
+                    repoSubjectRewriteResult.innerHTML = `<div class="alert alert-danger py-2 mb-0">${escapeHtml(payload.error || 'Subject rewrite request failed.')}</div>`;
+                }
+                repoSubjectPreviewReady = false;
+                return;
+            }
+
+            finishRepoRewriteProgress(true, action === 'apply' ? 'Apply complete.' : 'Preview complete.');
             renderRepoSubjectRewriteResult(payload, action === 'apply' ? 'Applied' : 'Preview');
             if (action === 'preview') {
                 repoSubjectPreviewReady = !Array.isArray(payload.conflicts) || payload.conflicts.length === 0;
@@ -1474,6 +1561,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 await loadRepoSubjectExamples();
             }
         } catch (error) {
+            finishRepoRewriteProgress(false, 'Failed.');
+            appendRepoRewriteLog(error.message || 'Subject rewrite request failed.', 'error');
             if (repoSubjectRewriteResult) {
                 repoSubjectRewriteResult.innerHTML = `<div class="alert alert-danger py-2 mb-0">${escapeHtml(error.message || 'Subject rewrite request failed.')}</div>`;
             }

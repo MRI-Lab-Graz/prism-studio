@@ -82,6 +82,55 @@ def test_subject_code_rewriter_rewrites_existing_names_and_json_links(tmp_path):
     assert "sub-1293167" not in rewritten_participants
 
 
+def test_subject_code_rewriter_explicit_mapping_survives_example_subject_already_renamed(
+    tmp_path,
+):
+    """Regression guard: when a multi-subject batch runs each subject as its
+    own subprocess (one DataLad run per subject), the example subject used
+    to derive the rule may already have been renamed away by an earlier
+    subject's subprocess by the time a later subject's subprocess starts.
+    Re-deriving the rule from a literal example_subject string would then
+    fail with 'example subject was not found'. explicit_mapping must bypass
+    that re-derivation entirely."""
+    project_root = tmp_path / "project"
+    (project_root / "sub-134003").mkdir(parents=True)
+    (project_root / "sub-134004" / "ses-01").mkdir(parents=True)
+    (
+        project_root
+        / "sub-134004"
+        / "ses-01"
+        / "sub-134004_ses-01_task-rest_bold.nii.gz"
+    ).write_bytes(b"nii")
+
+    # Simulate sub-134003 having already been renamed to sub-003 by an
+    # earlier subprocess in the same batch.
+    (project_root / "sub-134003").rename(project_root / "sub-003")
+
+    rewriter = SubjectCodeRewriter(project_root)
+
+    # Re-deriving via the literal (now-stale) example subject fails, exactly
+    # like the bug report.
+    with pytest.raises(ValueError, match="example subject ID was not found"):
+        rewriter.apply(
+            mode="example_keep",
+            example_subject="sub-134003",
+            keep_fragment="003",
+            subjects=["sub-134004"],
+        )
+
+    # The pre-resolved mapping (computed once, before any subject in the
+    # batch was renamed) must apply cleanly regardless.
+    result = rewriter.apply(
+        mode="example_keep",
+        subjects=["sub-134004"],
+        explicit_mapping={"sub-134004": "sub-004"},
+    )
+
+    assert result["directory_rename_count"] >= 1
+    assert (project_root / "sub-004" / "ses-01").exists()
+    assert not (project_root / "sub-134004").exists()
+
+
 def test_subject_code_rewriter_detects_collisions(tmp_path):
     project_root = tmp_path / "project"
     (project_root / "sub-1293167").mkdir(parents=True)
