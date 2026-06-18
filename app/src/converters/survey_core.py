@@ -567,13 +567,42 @@ def _resolve_tasks_with_warnings(
     col_to_mapping: dict,
     selected_tasks: set[str] | None,
     template_warnings_by_task: dict[str, list[str]],
+    templates: dict | None = None,
+    library_dir: str | Path | None = None,
+    unknown_cols: list[str] | None = None,
 ) -> tuple[set[str], list[str]]:
     """Resolve tasks included in conversion and collect relevant warnings."""
     tasks_with_data = {m.task for m in col_to_mapping.values()}
     if selected_tasks is not None:
         tasks_with_data = tasks_with_data.intersection(selected_tasks)
     if not tasks_with_data:
-        raise ValueError("No survey item columns matched the selected templates.")
+        template_count = len(templates) if templates else 0
+        library_hint = f" in {library_dir}" if library_dir else ""
+
+        if template_count == 0:
+            raise ValueError(
+                f"No survey templates were found{library_hint}. PRISM needs a JSON "
+                "template for each questionnaire, with item keys matching this "
+                "file's column names, before it can convert it. Add templates "
+                "there, or use Template Editor to create one, then run Preview "
+                "again."
+            )
+
+        unmatched_hint = ""
+        if unknown_cols:
+            shown = ", ".join(str(c) for c in unknown_cols[:8])
+            more = (
+                f" (+{len(unknown_cols) - 8} more)" if len(unknown_cols) > 8 else ""
+            )
+            unmatched_hint = f" Unmatched column(s): {shown}{more}."
+
+        raise ValueError(
+            f"None of this file's columns matched any of the {template_count} "
+            f"survey template(s) loaded{library_hint}. Make sure a template "
+            "exists for this questionnaire and that its item keys match the "
+            f"column names exactly.{unmatched_hint} Use Template Editor to add "
+            "or fix a template, then run Preview again."
+        )
 
     warnings: list[str] = []
     for task_name in sorted(tasks_with_data):

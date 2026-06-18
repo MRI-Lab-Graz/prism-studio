@@ -1930,6 +1930,9 @@ def _convert_survey_dataframe_to_prism_dataset(
         col_to_mapping=col_to_mapping,
         selected_tasks=selected_tasks,
         template_warnings_by_task=template_warnings_by_task,
+        templates=templates,
+        library_dir=library_dir,
+        unknown_cols=unknown_cols,
     )
     conversion_warnings.extend(task_template_warnings)
 
