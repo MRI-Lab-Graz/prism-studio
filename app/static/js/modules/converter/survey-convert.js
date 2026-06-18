@@ -1672,6 +1672,48 @@ export function initSurveyConvert(elements) {
         }
     }
 
+    // When the user manually picks a Session Column that auto-detect missed
+    // (e.g. a non-standard name), read that column's values immediately so the
+    // Session ID picker fills in without requiring a full Preview run first.
+    async function refreshSessionPickerForColumnOverride() {
+        const currentFile = getSelectedSurveyFile();
+        const currentFilename = getSelectedSurveyFilename();
+        if (!currentFilename) return;
+
+        const lower = currentFilename.toLowerCase();
+        if (!(lower.endsWith('.lsa') || lower.endsWith('.xlsx') || lower.endsWith('.csv') || lower.endsWith('.tsv'))) {
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            if (currentFile) {
+                formData.append('file', currentFile);
+            } else if (convertServerFilePath) {
+                formData.append('source_file_path', convertServerFilePath);
+            }
+            formData.append('separator', getSelectedSeparator(lower));
+            const sessionOverride = String(convertSessionColumnOverride?.value || '').trim();
+            if (sessionOverride) {
+                formData.append('session_column_override', sessionOverride);
+            }
+
+            const response = await fetchWithApiFallback('/api/survey-detect-columns', {
+                method: 'POST',
+                body: formData,
+            });
+            if (!response.ok) return;
+
+            const data = await response.json();
+            const sessionsLoaded = populateSurveySessionPickerFromDetected(data.detected_sessions);
+            if (!sessionsLoaded) {
+                populateSessionPickers();
+            }
+        } catch (e) {
+            console.error('Failed to refresh sessions for column override:', e.message);
+        }
+    }
+
     function updateConvertBtn() {
         const hasFile = hasSelectedSurveyInput();
         const blockedByTemplateGate = Boolean(templateWorkflowGate && templateWorkflowGate.blocked);
@@ -1852,6 +1894,7 @@ export function initSurveyConvert(elements) {
         convertSessionColumnOverride.addEventListener('change', function() {
             scheduleVersionWizardContextSync();
             updateConvertBtn();
+            refreshSessionPickerForColumnOverride();
         });
     }
 
