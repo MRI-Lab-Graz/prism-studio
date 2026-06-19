@@ -71,6 +71,7 @@ PROJECT_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
 VALID_DATASET_TYPES = {"raw", "derivative"}
 DATALAD_REPAIR_STEP_TIMEOUT_SECONDS = 120
 REGISTERED_SUBDATASET_QUERY_TIMEOUT_SECONDS = 30
+DATALAD_CLEAN_STATUS_TIMEOUT_SECONDS = 30
 DATALAD_EXPORT_STEP_TIMEOUT_SECONDS = 60 * 60
 DATALAD_DOCS_URL = "https://www.datalad.org/"
 DATALAD_INSTALL_HINT = "Install with: uv tool install datalad git-annex"
@@ -1273,6 +1274,65 @@ class ProjectManager:
             result["annex_executable"] = git_annex_executable
         return result
 
+    def check_datalad_clean_status(self, path: Union[str, Path, None]) -> Dict[str, Any]:
+        """Return whether the project's working tree (incl. submodules) is clean.
+
+        This is a lightweight `git status` check, separate from `get_datalad_status`,
+        so it can be fetched lazily by the UI instead of on every page render.
+        """
+        status = self.get_datalad_status(path)
+        result: Dict[str, Any] = {
+            "checked": False,
+            "clean": None,
+            "dirty_count": 0,
+            "message": status.get("message", ""),
+        }
+
+        if not status.get("enabled") or not status.get("available"):
+            return result
+
+        project_path = Path(path) if path else None
+        git_executable = shutil.which("git")
+        if not project_path or not git_executable:
+            return result
+
+        try:
+            process = subprocess.run(
+                [
+                    git_executable,
+                    "-C",
+                    str(project_path),
+                    "status",
+                    "--porcelain",
+                    "--ignore-submodules=none",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=DATALAD_CLEAN_STATUS_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            result["message"] = "Checking DataLad working-tree status timed out."
+            return result
+        except Exception as exc:
+            result["message"] = f"Could not check DataLad working-tree status ({type(exc).__name__})."
+            return result
+
+        if process.returncode != 0:
+            result["message"] = (process.stderr or process.stdout or "Could not check DataLad working-tree status.").strip()
+            return result
+
+        dirty_lines = [line for line in process.stdout.splitlines() if line.strip()]
+        result["checked"] = True
+        result["clean"] = not dirty_lines
+        result["dirty_count"] = len(dirty_lines)
+        result["message"] = (
+            "Working tree is clean."
+            if not dirty_lines
+            else f"{len(dirty_lines)} uncommitted change(s) pending."
+        )
+        return result
+
     def save_datalad_snapshot(
         self,
         path: Union[str, Path],
@@ -1327,317 +1387,6 @@ class ProjectManager:
             return result
 
         result["error"] = save_result.get("message") or "DataLad save failed."
-        return result
-
-    def reapply_datalad_text_policy(
-        self,
-        path: Union[str, Path],
-        *,
-        message: str = "Reapply DataLad text-file tracking policy",
-    ) -> Dict[str, Any]:
-        """Reapply .gitattributes text policy recursively and persist changes."""
-        project_path = Path(path)
-        status = self.get_datalad_status(project_path)
-        result: Dict[str, Any] = {
-            "success": False,
-            "path": str(project_path),
-            "datalad": dict(status),
-            "policy_updated": False,
-        }
-
-        if not project_path.exists() or not project_path.is_dir():
-            result["error"] = f"Path does not exist or is not a directory: {project_path}"
-            return result
-
-        if not status.get("enabled"):
-            result["error"] = status.get("message") or "Current project is not a DataLad dataset."
-            return result
-
-        if not status.get("available"):
-            result["error"] = status.get("message") or "DataLad is not available in this environment."
-            return result
-
-        policy_updated = self._ensure_datalad_editable_metadata_policy(
-            project_path,
-        )
-        result["policy_updated"] = bool(policy_updated)
-
-        if not policy_updated:
-            refreshed_status = self.get_datalad_status(project_path)
-            result["datalad"] = refreshed_status
-            result["success"] = True
-            result["message"] = "DataLad text-file tracking policy is already up to date."
-            return result
-
-        save_result = self._run_datalad_save(
-            project_path,
-            message=message,
-            datalad_executable=status.get("executable"),
-            recursive=True,
-        )
-        refreshed_status = self.get_datalad_status(project_path)
-        save_result.update(refreshed_status)
-        save_result["gitattributes_policy_updated"] = True
-        result["datalad"] = save_result
-
-        if save_result.get("saved") or save_result.get("no_changes"):
-            result["success"] = True
-            result["message"] = (
-                save_result.get("message")
-                or "DataLad text-file tracking policy reapplied successfully."
-            )
-            return result
-
-        result["error"] = save_result.get("message") or "Could not persist DataLad policy updates."
-        return result
-
-    def unannex_datalad_text_patterns(
-        self,
-        path: Union[str, Path],
-        *,
-        patterns: List[str],
-        message: str = "Unannex selected text patterns for Git tracking",
-    ) -> Dict[str, Any]:
-        """Unannex selected text patterns across nested datasets and save recursively."""
-        project_path = Path(path)
-        status = self.get_datalad_status(project_path)
-        normalized_patterns = self._normalize_datalad_text_patterns(patterns)
-        result: Dict[str, Any] = {
-            "success": False,
-            "path": str(project_path),
-            "patterns": normalized_patterns,
-            "datalad": dict(status),
-            "dataset_roots_scanned": 0,
-            "matched_files_count": 0,
-            "unannexed_files_count": 0,
-            "failure_count": 0,
-            "failures": [],
-        }
-
-        if not project_path.exists() or not project_path.is_dir():
-            result["error"] = f"Path does not exist or is not a directory: {project_path}"
-            return result
-
-        if not status.get("enabled"):
-            result["error"] = status.get("message") or "Current project is not a DataLad dataset."
-            return result
-
-        if not status.get("available"):
-            result["error"] = status.get("message") or "DataLad is not available in this environment."
-            return result
-
-        if not status.get("annex_available"):
-            result["error"] = (
-                status.get("message")
-                or "git-annex is not available in this environment."
-            )
-            return result
-
-        if not normalized_patterns:
-            result["error"] = "Provide at least one file pattern to unannex."
-            return result
-
-        failures: List[Dict[str, str]] = []
-        matched_files_count = 0
-        unannexed_files_count = 0
-
-        dataset_roots = self._iter_datalad_dataset_roots(project_path)
-        result["dataset_roots_scanned"] = len(dataset_roots)
-
-        for dataset_root in dataset_roots:
-            find_command = ["git", "annex", "find", "--json"]
-            for pattern in normalized_patterns:
-                find_command.extend(["--include", pattern])
-
-            try:
-                find_process = subprocess.run(
-                    find_command,
-                    cwd=str(dataset_root),
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                    timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
-                )
-            except subprocess.TimeoutExpired:
-                failures.append(
-                    {
-                        "dataset": str(dataset_root),
-                        "file": "",
-                        "error": self._format_repair_timeout_message(
-                            f'git annex find for "{dataset_root.name}"'
-                        ),
-                    }
-                )
-                continue
-            except Exception as exc:
-                failures.append(
-                    {
-                        "dataset": str(dataset_root),
-                        "file": "",
-                        "error": f"git annex find failed ({type(exc).__name__}: {exc}).",
-                    }
-                )
-                continue
-
-            if find_process.returncode != 0:
-                detail = (find_process.stderr or find_process.stdout or "Unknown git-annex error.").strip()
-                failures.append(
-                    {
-                        "dataset": str(dataset_root),
-                        "file": "",
-                        "error": f"git annex find failed: {detail}",
-                    }
-                )
-                continue
-
-            annexed_paths: List[str] = []
-            seen_paths: set[str] = set()
-            for line in (find_process.stdout or "").splitlines():
-                record_line = line.strip()
-                if not record_line:
-                    continue
-                try:
-                    payload = json.loads(record_line)
-                except Exception:
-                    continue
-                relative_path = str(payload.get("file") or "").strip()
-                if not relative_path or relative_path in seen_paths:
-                    continue
-                seen_paths.add(relative_path)
-                annexed_paths.append(relative_path)
-
-            if not annexed_paths:
-                continue
-
-            matched_files_count += len(annexed_paths)
-            chunk_size = 200
-            for offset in range(0, len(annexed_paths), chunk_size):
-                chunk = annexed_paths[offset : offset + chunk_size]
-                unannex_command = ["git", "annex", "unannex", "--", *chunk]
-
-                try:
-                    unannex_process = subprocess.run(
-                        unannex_command,
-                        cwd=str(dataset_root),
-                        capture_output=True,
-                        text=True,
-                        check=False,
-                        timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
-                    )
-                except subprocess.TimeoutExpired:
-                    for relative_path in chunk:
-                        failures.append(
-                            {
-                                "dataset": str(dataset_root),
-                                "file": relative_path,
-                                "error": self._format_repair_timeout_message(
-                                    f'git annex unannex for "{relative_path}"'
-                                ),
-                            }
-                        )
-                    continue
-                except Exception as exc:
-                    for relative_path in chunk:
-                        failures.append(
-                            {
-                                "dataset": str(dataset_root),
-                                "file": relative_path,
-                                "error": f"git annex unannex failed ({type(exc).__name__}: {exc}).",
-                            }
-                        )
-                    continue
-
-                if unannex_process.returncode == 0:
-                    unannexed_files_count += len(chunk)
-                    continue
-
-                # Retry single files to maximize successful migrations.
-                for relative_path in chunk:
-                    single_command = ["git", "annex", "unannex", "--", relative_path]
-                    try:
-                        single_process = subprocess.run(
-                            single_command,
-                            cwd=str(dataset_root),
-                            capture_output=True,
-                            text=True,
-                            check=False,
-                            timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
-                        )
-                    except subprocess.TimeoutExpired:
-                        failures.append(
-                            {
-                                "dataset": str(dataset_root),
-                                "file": relative_path,
-                                "error": self._format_repair_timeout_message(
-                                    f'git annex unannex for "{relative_path}"'
-                                ),
-                            }
-                        )
-                        continue
-                    except Exception as exc:
-                        failures.append(
-                            {
-                                "dataset": str(dataset_root),
-                                "file": relative_path,
-                                "error": f"git annex unannex failed ({type(exc).__name__}: {exc}).",
-                            }
-                        )
-                        continue
-
-                    if single_process.returncode == 0:
-                        unannexed_files_count += 1
-                    else:
-                        detail = (
-                            single_process.stderr
-                            or single_process.stdout
-                            or "Unknown git-annex error."
-                        ).strip()
-                        failures.append(
-                            {
-                                "dataset": str(dataset_root),
-                                "file": relative_path,
-                                "error": f"git annex unannex failed: {detail}",
-                            }
-                        )
-
-        result["matched_files_count"] = matched_files_count
-        result["unannexed_files_count"] = unannexed_files_count
-        result["failure_count"] = len(failures)
-        result["failures"] = failures[:25]
-
-        if matched_files_count == 0:
-            refreshed_status = self.get_datalad_status(project_path)
-            result["datalad"] = refreshed_status
-            result["success"] = True
-            result["message"] = "No annexed files matched the selected text patterns."
-            return result
-
-        save_result = self._run_datalad_save(
-            project_path,
-            message=message,
-            datalad_executable=status.get("executable"),
-            recursive=True,
-        )
-        refreshed_status = self.get_datalad_status(project_path)
-        save_result.update(refreshed_status)
-        result["datalad"] = save_result
-
-        if not (save_result.get("saved") or save_result.get("no_changes")):
-            result["error"] = save_result.get("message") or "DataLad save failed after unannex."
-            return result
-
-        result["success"] = True
-        message_parts = [
-            (
-                f"Unannexed {unannexed_files_count} file(s) matching "
-                f"{len(normalized_patterns)} pattern(s) across {len(dataset_roots)} dataset root(s)."
-            )
-        ]
-        if failures:
-            message_parts.append(
-                f"{len(failures)} file(s) could not be unannexed; see failures for details."
-            )
-        result["message"] = " ".join(message_parts)
         return result
 
     def export_project_to_plain_folder(
@@ -4518,24 +4267,6 @@ class ProjectManager:
             updated = True
 
         return updated
-
-    def _normalize_datalad_text_patterns(self, patterns: List[str]) -> List[str]:
-        """Normalize comma/newline separated pattern lists while preserving order."""
-        if not isinstance(patterns, list):
-            return []
-
-        normalized_patterns: List[str] = []
-        seen_patterns: set[str] = set()
-
-        for value in patterns:
-            for raw_part in re.split(r"[,\n]+", str(value or "")):
-                pattern = raw_part.strip()
-                if not pattern or pattern in seen_patterns:
-                    continue
-                seen_patterns.add(pattern)
-                normalized_patterns.append(pattern)
-
-        return normalized_patterns
 
     def _build_auto_datalad_save_message(self, reason: str) -> str:
         """Return a stable commit message for lifecycle-triggered DataLad saves."""

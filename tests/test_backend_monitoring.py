@@ -1705,66 +1705,6 @@ def test_build_terminal_command_for_projects_datalad_enable_migrates_parent_trac
     )
 
 
-def test_build_terminal_command_for_projects_datalad_text_policy_apply():
-    app = Flask(__name__)
-    app.secret_key = "test-secret"  # pragma: allowlist secret
-
-    def _noop_view():
-        return "ok"
-
-    app.add_url_rule(
-        "/api/projects/datalad/text-policy/apply",
-        endpoint="projects.apply_datalad_text_policy",
-        view_func=_noop_view,
-        methods=["POST"],
-    )
-
-    with app.test_request_context(
-        "/api/projects/datalad/text-policy/apply",
-        method="POST",
-        json={"message": "Reapply DataLad text-file tracking policy"},
-    ):
-        session["current_project_path"] = "/tmp/demo_project"
-        cmd = _build_terminal_command(request)
-
-    assert (
-        cmd
-        == "datalad -C /private/tmp/demo_project save -r -m 'Reapply DataLad text-file tracking policy'"
-    )
-
-
-def test_build_terminal_command_for_projects_datalad_unannex_text_patterns():
-    app = Flask(__name__)
-    app.secret_key = "test-secret"  # pragma: allowlist secret
-
-    def _noop_view():
-        return "ok"
-
-    app.add_url_rule(
-        "/api/projects/datalad/unannex-text",
-        endpoint="projects.unannex_datalad_text_patterns",
-        view_func=_noop_view,
-        methods=["POST"],
-    )
-
-    with app.test_request_context(
-        "/api/projects/datalad/unannex-text",
-        method="POST",
-        json={
-            "patterns": ["*.tsv", "*.json"],
-            "message": "Unannex selected text patterns for Git tracking",
-        },
-    ):
-        session["current_project_path"] = "/tmp/demo_project"
-        cmd = _build_terminal_command(request)
-
-    assert (
-        cmd
-        == "git -C /private/tmp/demo_project annex unannex --include '*.tsv' --include '*.json' --all && "
-        "datalad -C /private/tmp/demo_project save -r -m 'Unannex selected text patterns for Git tracking'"
-    )
-
-
 def test_emit_backend_request_action_includes_recipes_surveys_command(capsys):
     app = Flask(__name__)
 
