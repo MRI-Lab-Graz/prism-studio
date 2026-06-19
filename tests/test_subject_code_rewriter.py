@@ -315,3 +315,33 @@ def test_subject_code_rewriter_list_root_subject_ids_only(tmp_path):
 
     rewriter = SubjectCodeRewriter(project_root)
     assert rewriter.list_root_subject_ids() == ["sub-101", "sub-202"]
+
+
+def test_subject_code_rewriter_preview_cap_results_controls_truncation(tmp_path):
+    """Regression guard: the [:200] cap exists for UI display only. A
+    multi-subject batch (each subject run as its own subprocess) uses the
+    *complete* text_update_files/file_renames/directory_renames lists to
+    decide which files need a DataLad unlock before that subject's run —
+    capping them silently dropped subjects past entry #200, leaving their
+    annexed text files locked and the wrapped command crashing with
+    PermissionError."""
+    project_root = tmp_path / "project"
+    subject_count = 205
+    for index in range(subject_count):
+        subject_id = f"sub-{900000 + index}"
+        scans_dir = project_root / subject_id / "ses-1"
+        scans_dir.mkdir(parents=True)
+        (scans_dir / f"{subject_id}_ses-1_scans.tsv").write_text(
+            f"filename\n{subject_id}_ses-1_task-rest_bold.nii.gz\n"
+        )
+
+    rewriter = SubjectCodeRewriter(project_root)
+
+    capped = rewriter.preview(mode="last3")
+    assert len(capped["text_update_files"]) == 200
+    assert capped["text_update_count"] == subject_count  # the count itself was never capped
+
+    uncapped = rewriter.preview(mode="last3", cap_results=False)
+    assert len(uncapped["text_update_files"]) == subject_count
+    assert len(uncapped["file_renames"]) >= subject_count
+    assert len(uncapped["directory_renames"]) == subject_count
