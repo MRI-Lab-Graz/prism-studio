@@ -42,6 +42,7 @@ from werkzeug.utils import secure_filename
 from src.system_files import filter_system_files  # noqa: F401 – available if needed
 from src.bids_integration import check_and_update_bidsignore
 from .conversion_job_store import ConversionJobStore
+from .conversion_environment_mri_scan_helpers import build_mri_acquisition_table
 from .conversion_environment_route_handlers import (
     handle_api_environment_convert_cancel,
     handle_api_environment_convert_metrics,
@@ -1294,6 +1295,55 @@ def api_environment_location_search():
         return jsonify({"results": results})
     except requests.RequestException as exc:
         return jsonify({"error": str(exc)}), 502
+
+
+def api_environment_scan_mri_acquisition():
+    """Scan the current project's rawdata for MRI acquisition timestamps and
+    scanner-site location tags, returning a server-side TSV path that can be
+    fed into the existing preview/convert flow like any uploaded survey file.
+    """
+    project_path = (
+        request.form.get("project_path")
+        or request.args.get("project_path")
+        or session.get("current_project_path")
+    )
+    try:
+        project_root = require_existing_project_root(
+            project_path,
+            missing_message="No active project selected. Open a project before scanning for MRI acquisition data.",
+            missing_path_message="The selected project path no longer exists. Reopen the project and retry.",
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
+
+    df, stats = build_mri_acquisition_table(project_root / "rawdata")
+    if df.empty:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "No MRI acquisition timestamps found in this project's rawdata.",
+                    "stats": stats,
+                }
+            ),
+            400,
+        )
+
+    tmp_file = tempfile.NamedTemporaryFile(
+        mode="w", suffix=".tsv", prefix="prism_env_mri_scan_", delete=False
+    )
+    tmp_file.close()
+    output_path = Path(tmp_file.name)
+    df.to_csv(output_path, sep="\t", index=False)
+
+    return jsonify(
+        {
+            "success": True,
+            "source_file_path": str(output_path),
+            "row_count": int(len(df)),
+            "stats": stats,
+        }
+    )
 
 
 def api_environment_preview():

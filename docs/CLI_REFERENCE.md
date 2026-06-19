@@ -513,24 +513,9 @@ Note: These utilities are currently parked under `scripts/future_feature/`.
 They are planned work and not part of the active web/CLI backend runtime path yet.
 For regular use, prefer `prism_tools.py` / backend modules.
 
-PRISM now provides **two separate scripts** for environmental enrichment:
+PRISM provides one remaining future-feature script for environmental enrichment:
 
-1. **Scanner / DICOM workflow** (site-fixed, scanner-related):
-
-```bash
-python scripts/future_feature/build_environment_from_dicom.py \
-  --dicom /path/to/file.dcm \
-  --dataset-root /path/to/dataset \
-  --subject-id sub-01 \
-  --session-id ses-01
-```
-
-- Extracts acquisition timestamp from DICOM.
-- Uses hardcoded scanner site coordinates.
-- Writes directly to `sub-*/ses-*/environment/*_environment.tsv`.
-- Updates `.bidsignore` in dataset root.
-
-2. **Survey / international workflow** (location provided per run):
+**Survey / international workflow** (location provided per run):
 
 ```bash
 python scripts/future_feature/build_environment_from_survey.py \
@@ -547,8 +532,13 @@ python scripts/future_feature/build_environment_from_survey.py \
 - Designed for multi-country survey studies.
 - Writes one-row environment TSV for the specified context.
 
-Both scripts query Open-Meteo hourly weather/air-quality/pollen APIs and include
+It queries Open-Meteo hourly weather/air-quality/pollen APIs and includes
 moon and sun context variables.
+
+(The earlier scanner/DICOM variant of this script was removed — the web
+Environment Data Import panel now scans the project's own BIDS JSON sidecars
+for acquisition timestamps and scanner-location tags directly, with no
+hardcoded site coordinates.)
 
 Most files under `scripts/` are **implementation details** called by the CLIs.
 

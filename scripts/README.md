@@ -52,7 +52,6 @@ Active files:
 Planned scripts that are intentionally not part of active runtime/CI flows yet.
 
 Files:
-- `scripts/future_feature/build_environment_from_dicom.py`
 - `scripts/future_feature/build_environment_from_survey.py`
 
 ## Archived

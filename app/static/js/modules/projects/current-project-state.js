@@ -74,7 +74,6 @@ export function createProjectsCurrentStateController({
                 subdatasetsRemainingCount: 0,
                 subdatasetsProgressPercent: 0,
                 nextMissingSubdataset: '',
-                textPolicyMissingCount: 0,
             };
         }
 
@@ -102,7 +101,6 @@ export function createProjectsCurrentStateController({
             nextMissingSubdataset: typeof (dataladState.next_missing_subdataset ?? dataladState.nextMissingSubdataset) === 'string'
                 ? String(dataladState.next_missing_subdataset ?? dataladState.nextMissingSubdataset).trim()
                 : '',
-            textPolicyMissingCount: normalizeCount(dataladState.text_policy_missing_count ?? dataladState.textPolicyMissingCount),
         };
     }
 

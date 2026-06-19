@@ -54,6 +54,7 @@ _ENDPOINT_LABELS = {
     "conversion.api_environment_preview": "environment preview",
     "conversion.api_environment_convert": "environment convert",
     "conversion.api_environment_convert_start": "environment convert start",
+    "conversion.api_environment_scan_mri_acquisition": "scan project MRI for acquisition data",
     "validation.validate_folder": "validate folder",
     "conversion_survey.api_survey_convert": "survey convert",
     "conversion_survey.api_survey_convert_preview": "survey convert preview",
@@ -76,8 +77,6 @@ _ENDPOINT_LABELS = {
     "projects.fix_project": "apply project fixes",
     "projects.save_datalad_snapshot": "save DataLad snapshot",
     "projects.enable_datalad_for_project": "repair DataLad structure",
-    "projects.apply_datalad_text_policy": "reapply DataLad text policy",
-    "projects.unannex_datalad_text_patterns": "unannex DataLad text patterns",
     "projects_export.export_project_structure": "export project structure",
     "projects_export.export_project_folder": "folder export project",
     "projects_export.export_defacing_report": "check anatomical defacing status",
@@ -593,74 +592,6 @@ def _build_projects_datalad_enable_terminal_command(req) -> str:
         ]
     )
 
-
-def _build_projects_datalad_text_policy_terminal_command(req) -> str:
-    """Build backend command preview for DataLad text policy reapply endpoint."""
-    payload = req.get_json(silent=True) or {}
-    if not isinstance(payload, dict):
-        payload = {}
-
-    project_root = _session_project_root()
-    if project_root is None:
-        return ""
-
-    message = (
-        str(payload.get("message") or "").strip()
-        or "Reapply DataLad text-file tracking policy"
-    )
-    cmd_parts = ["datalad", "-C", str(project_root), "save", "-r", "-m", message]
-    return " ".join(shlex.quote(part) for part in cmd_parts)
-
-
-def _build_projects_datalad_unannex_text_terminal_command(req) -> str:
-    """Build backend command preview for DataLad text unannex endpoint."""
-    payload = req.get_json(silent=True) or {}
-    if not isinstance(payload, dict):
-        payload = {}
-
-    project_root = _session_project_root()
-    if project_root is None:
-        return ""
-
-    raw_patterns = payload.get("patterns")
-    if isinstance(raw_patterns, str):
-        values = [raw_patterns]
-    elif isinstance(raw_patterns, (list, tuple, set)):
-        values = [str(value or "") for value in raw_patterns]
-    else:
-        values = []
-
-    normalized_patterns: list[str] = []
-    seen_patterns: set[str] = set()
-    for value in values:
-        for part in value.replace(";", ",").replace("\n", ",").split(","):
-            pattern = part.strip()
-            if not pattern or pattern in seen_patterns:
-                continue
-            seen_patterns.add(pattern)
-            normalized_patterns.append(pattern)
-
-    if not normalized_patterns:
-        normalized_patterns = ["*.tsv", "*.json", "*.csv"]
-
-    message = (
-        str(payload.get("message") or "").strip()
-        or "Unannex selected text patterns for Git tracking"
-    )
-
-    unannex_command = ["git", "-C", str(project_root), "annex", "unannex"]
-    for pattern in normalized_patterns:
-        unannex_command.extend(["--include", pattern])
-    unannex_command.append("--all")
-
-    save_command = ["datalad", "-C", str(project_root), "save", "-r", "-m", message]
-
-    return " && ".join(
-        [
-            " ".join(shlex.quote(part) for part in unannex_command),
-            " ".join(shlex.quote(part) for part in save_command),
-        ]
-    )
 
 
 def _build_tools_recipes_surveys_terminal_command(req) -> str:
@@ -1757,10 +1688,6 @@ def _build_terminal_command(req) -> str:
         return _build_projects_datalad_save_terminal_command(req)
     if endpoint == "projects.enable_datalad_for_project":
         return _build_projects_datalad_enable_terminal_command(req)
-    if endpoint == "projects.apply_datalad_text_policy":
-        return _build_projects_datalad_text_policy_terminal_command(req)
-    if endpoint == "projects.unannex_datalad_text_patterns":
-        return _build_projects_datalad_unannex_text_terminal_command(req)
     if endpoint == "projects_export.export_project_structure":
         return _build_projects_export_structure_terminal_command(req)
     if endpoint == "projects_export.export_project_folder":

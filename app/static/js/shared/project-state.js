@@ -62,7 +62,6 @@ function normalizeDataladStateValue(value, fallbackPath = '') {
             subdatasetsRemainingCount: 0,
             subdatasetsProgressPercent: 0,
             nextMissingSubdataset: '',
-            textPolicyMissingCount: 0,
         };
     }
 
@@ -86,7 +85,6 @@ function normalizeDataladStateValue(value, fallbackPath = '') {
         subdatasetsRemainingCount: normalizeCountStateValue(value.subdatasets_remaining_count ?? value.subdatasetsRemainingCount),
         subdatasetsProgressPercent: normalizeCountStateValue(value.subdatasets_progress_percent ?? value.subdatasetsProgressPercent),
         nextMissingSubdataset: normalizeStateValue(value.next_missing_subdataset ?? value.nextMissingSubdataset),
-        textPolicyMissingCount: normalizeCountStateValue(value.text_policy_missing_count ?? value.textPolicyMissingCount),
     };
 }
 
