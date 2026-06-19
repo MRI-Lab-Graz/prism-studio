@@ -162,11 +162,38 @@ class TestProjectManager(unittest.TestCase):
                 str(project_path),
                 {"name": "demo_project", "use_datalad": False},
             )
+            gitattributes_content = (project_path / ".gitattributes").read_text(
+                encoding="utf-8"
+            )
 
         self.assertTrue(result.get("success"), result)
         self.assertFalse(result.get("datalad", {}).get("requested"))
         self.assertFalse(result.get("datalad", {}).get("initialized"))
         mock_run.assert_not_called()
+        self.assertIn("*.json annex.largefiles=nothing", gitattributes_content)
+        self.assertIn("*.tsv annex.largefiles=nothing", gitattributes_content)
+
+    @patch("src.project_manager.subprocess.run")
+    @patch("src.project_manager.shutil.which", return_value=None)
+    def test_create_project_applies_text_policy_without_datalad_requested(
+        self, _mock_which, mock_run
+    ):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            result = manager.create_project(
+                str(project_path),
+                {"name": "demo_project"},
+            )
+            gitattributes_content = (project_path / ".gitattributes").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertTrue(result.get("success"), result)
+        mock_run.assert_not_called()
+        self.assertIn("*.json annex.largefiles=nothing", gitattributes_content)
+        self.assertIn("*.tsv annex.largefiles=nothing", gitattributes_content)
 
     @patch(
         "src.project_manager.subprocess.run",
@@ -872,7 +899,6 @@ class TestProjectManager(unittest.TestCase):
             (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
             manager._ensure_datalad_editable_metadata_policy(
                 project_path,
-                {"initialized": True},
             )
 
             result = manager.reapply_datalad_text_policy(
@@ -1052,7 +1078,6 @@ class TestProjectManager(unittest.TestCase):
 
             updated = manager._ensure_datalad_editable_metadata_policy(
                 project_path,
-                {"initialized": True},
             )
 
             self.assertTrue(updated)
@@ -1069,7 +1094,6 @@ class TestProjectManager(unittest.TestCase):
 
             updated_second = manager._ensure_datalad_editable_metadata_policy(
                 project_path,
-                {"initialized": True},
             )
             self.assertFalse(updated_second)
 
