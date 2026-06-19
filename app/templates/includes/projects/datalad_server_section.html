@@ -1,0 +1,80 @@
+    <!-- Push to DataLad Server Card -->
+    <div class="card shadow-sm mt-4" id="dataladServerCard" style="display: none;">
+        <div class="card-header bg-info bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#dataladServerSection"
+             role="button" tabindex="0" aria-expanded="false" aria-controls="dataladServerSection">
+            <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-server text-info me-2"></i>Push to DataLad Server</span>
+                <i class="fas fa-chevron-down text-muted" id="dataladServerChevron"></i>
+            </h5>
+        </div>
+        <div class="collapse" id="dataladServerSection">
+            <div class="card-body">
+                <div class="alert alert-info border-info mb-4 beginner-help-block">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Connect this project to a central DataLad RIA store and sync to it as often as you like
+                    while the study is ongoing. When you are completely finished preparing this project,
+                    run <strong>Finalize &amp; disconnect</strong> for a last push, a verification step, and
+                    to remove this computer's connection to the server. Local files are always kept.
+                </div>
+
+                <div class="mb-3" id="dataladServerStatusPanel" aria-live="polite">
+                    <span class="badge bg-secondary" id="dataladServerStatusBadge">Status unknown</span>
+                    <small class="text-muted ms-2" id="dataladServerStatusDetail">Load a project to check connection status.</small>
+                </div>
+
+                <form id="dataladServerConfigForm" class="mb-3">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="dataladServerUrl" class="form-label fw-bold">RIA store URL</label>
+                            <input type="text" class="form-control" id="dataladServerUrl"
+                                   placeholder="ria+ssh://user@host/path/to/store">
+                            <div class="form-text">SSH-accessible DataLad RIA store, e.g. <code>ria+ssh://researcher@datalad.example.org/srv/ria-store</code>.</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="dataladServerSiblingName" class="form-label fw-bold">Sibling name</label>
+                            <input type="text" class="form-control" id="dataladServerSiblingName" placeholder="ria-store">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="dataladServerAlias" class="form-label fw-bold">Alias (optional)</label>
+                            <input type="text" class="form-control" id="dataladServerAlias" placeholder="my-study">
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-outline-secondary btn-sm" id="dataladServerSaveConfigBtn">
+                                <i class="fas fa-save me-1"></i>Save server settings
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <button type="button" class="btn btn-info" id="dataladServerSyncBtn">
+                        <i class="fas fa-sync me-2"></i>Sync now
+                    </button>
+                    <button type="button" class="btn btn-danger" id="dataladServerFinalizeBtn">
+                        <i class="fas fa-unlink me-2"></i>Finalize &amp; disconnect
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary d-none" id="dataladServerCancelBtn">
+                        <i class="fas fa-ban me-2"></i>Cancel
+                    </button>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="dataladServerFullVerify">
+                    <label class="form-check-label" for="dataladServerFullVerify">
+                        Full verification on finalize (clone the archived copy and run validation before disconnecting — slower, recommended for large/critical datasets)
+                    </label>
+                </div>
+
+                <div id="dataladServerProgress" style="display:none;" class="mb-3">
+                    <div class="progress mb-2" style="height: 20px;">
+                        <div class="progress-bar bg-info" id="dataladServerProgressBar" role="progressbar" style="width: 0%">
+                            <span id="dataladServerProgressText">0%</span>
+                        </div>
+                    </div>
+                    <small class="text-muted" id="dataladServerStatusText"></small>
+                </div>
+
+                <div id="dataladServerResult"></div>
+            </div>
+        </div>
+    </div>

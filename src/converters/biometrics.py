@@ -11,7 +11,7 @@ Assumptions (kept intentionally simple):
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 import re
@@ -41,6 +41,7 @@ class BiometricsConvertResult:
     session_column: str | None
     tasks_included: list[str]
     unknown_columns: list[str]
+    detected_sessions: list[str] = field(default_factory=list)
 
 
 def _norm_col(s: str) -> str:
@@ -277,6 +278,13 @@ def convert_biometrics_table_to_prism_dataset(
         )
 
     tasks_included: list[str] = []
+    sessions_written: list[str] = []
+
+    # "all" is a sentinel meaning "auto-detect per row" (same convention as the
+    # survey converter), not a literal session label.
+    effective_session = (
+        None if session and str(session).strip().lower() == "all" else session
+    )
 
     # Write inherited sidecars (dataset-level)
     for task, template in task_to_template.items():
@@ -290,12 +298,14 @@ def convert_biometrics_table_to_prism_dataset(
         if not sub_id:
             continue
 
-        if session:
-            ses_id = _normalize_ses_id(session)
+        if effective_session:
+            ses_id = _normalize_ses_id(effective_session)
         else:
             ses_id = _normalize_ses_id(
                 row.get(col_ses) if col_ses else None, default_session=default_session
             )
+        if ses_id not in sessions_written:
+            sessions_written.append(ses_id)
 
         # Map dataframe columns to normalized names for easier lookup
         df_col_map = {_norm_col(c): c for c in df.columns}
@@ -337,4 +347,5 @@ def convert_biometrics_table_to_prism_dataset(
         session_column=col_ses,
         tasks_included=sorted(tasks_included),
         unknown_columns=(unknown_cols if unknown == "warn" else []),
+        detected_sessions=sorted(sessions_written),
     )

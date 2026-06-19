@@ -544,6 +544,11 @@ modular_blueprints = [
         "projects_export_bp",
         "projects_export",
     ),
+    (
+        "src.web.blueprints.projects_datalad_server_blueprint",
+        "projects_datalad_server_bp",
+        "projects_datalad_server",
+    ),
 ]
 
 registered_modular_blueprints: list[str] = []

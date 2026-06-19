@@ -7,6 +7,7 @@ export function initProjectsPageBootstrap({
     loadLibraryInfo,
     showStudyMetadataCard,
     showExportCard,
+    showDataladServerCard,
     showMethodsCard,
     renderRecentProjects,
     loadRecentProjectsFromServer,
@@ -73,6 +74,7 @@ export function initProjectsPageBootstrap({
     loadLibraryInfo();
     showStudyMetadataCard();
     showExportCard();
+    showDataladServerCard();
     showMethodsCard();
     renderRecentProjects();
     loadRecentProjectsFromServer();
