@@ -23,6 +23,7 @@ from src.cli.commands.convert import (
 from src.cli.commands.dataset import (
     cmd_dataset_build_biometrics_smoketest,
     cmd_dataset_cleanup_project_metadata,
+    cmd_dataset_rename_subjects,
 )
 from src.cli.commands.environment import (
     cmd_environment_convert,
@@ -114,6 +115,7 @@ def main() -> None:
             "library_fill": cmd_library_fill,
             "dataset_build_biometrics_smoketest": cmd_dataset_build_biometrics_smoketest,
             "dataset_cleanup_project_metadata": cmd_dataset_cleanup_project_metadata,
+            "dataset_rename_subjects": cmd_dataset_rename_subjects,
             "recipes_surveys": cmd_recipes_surveys,
             "recipes_biometrics": cmd_recipes_biometrics,
         },

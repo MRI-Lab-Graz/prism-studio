@@ -1231,11 +1231,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let repoRewriteProgressTimer = null;
 
-    function startRepoRewriteProgress(label) {
+    function stopRepoRewriteProgressTimer() {
         if (repoRewriteProgressTimer !== null) {
             window.clearInterval(repoRewriteProgressTimer);
             repoRewriteProgressTimer = null;
         }
+    }
+
+    function startRepoRewriteProgress(label) {
+        stopRepoRewriteProgressTimer();
         if (repoSubjectRewriteProgress) repoSubjectRewriteProgress.classList.remove('d-none');
         if (repoSubjectRewriteLogContainer) repoSubjectRewriteLogContainer.classList.remove('d-none');
         let percent = 8;
@@ -1247,11 +1251,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 700);
     }
 
+    // Switches the bar from the optimistic auto-incrementing timer to the
+    // real per-subject percentage reported by the async rewrite job.
+    function setRepoRewriteRealProgress(percent, label) {
+        stopRepoRewriteProgressTimer();
+        setRepoRewriteProgress(percent, label, 'warning');
+    }
+
     function finishRepoRewriteProgress(success, label) {
-        if (repoRewriteProgressTimer !== null) {
-            window.clearInterval(repoRewriteProgressTimer);
-            repoRewriteProgressTimer = null;
-        }
+        stopRepoRewriteProgressTimer();
         setRepoRewriteProgress(100, label, success ? 'success' : 'danger');
         if (success) {
             window.setTimeout(() => {
@@ -1461,6 +1469,56 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    // Subject-ID and entity rewrites can span hundreds of subjects, each
+    // its own DataLad commit — far too slow for one request/response. The
+    // apply action runs as a background job; this polls its real
+    // per-subject progress and log lines instead of staring at an
+    // optimistic bar until the whole batch finishes (or fails) at once.
+    async function runRepoRewriteApplyJob(startUrl, statusUrlBase, requestBody) {
+        const startResponse = await fetchWithApiFallback(startUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody),
+        });
+        const startPayload = await startResponse.json().catch(() => ({}));
+        if (!startResponse.ok) {
+            throw new Error(startPayload.error || 'Could not start rewrite job.');
+        }
+        const jobId = startPayload.job_id;
+
+        let cursor = 0;
+        const POLL_INTERVAL_MS = 700;
+        const MAX_POLLS = 5000;
+        for (let i = 0; i < MAX_POLLS; i += 1) {
+            await new Promise((resolve) => { window.setTimeout(resolve, POLL_INTERVAL_MS); });
+
+            const statusResponse = await fetchWithApiFallback(
+                `${statusUrlBase}/${encodeURIComponent(jobId)}?cursor=${cursor}`
+            );
+            if (!statusResponse.ok) {
+                throw new Error('Lost connection to the rewrite job.');
+            }
+            const status = await statusResponse.json();
+
+            (status.logs || []).forEach((entry) => {
+                const level = entry && entry.level ? entry.level : 'info';
+                const message = entry && entry.message ? entry.message : '';
+                if (message) appendRepoRewriteLog(message, level);
+            });
+            cursor = Number.isFinite(status.next_cursor) ? status.next_cursor : cursor;
+            setRepoRewriteRealProgress(status.progress_pct || 0, 'Applying rename...');
+
+            if (status.done) {
+                if (status.success) {
+                    return status.result;
+                }
+                throw new Error(status.error || 'Rewrite job failed.');
+            }
+        }
+
+        throw new Error('Rewrite job timed out waiting for the job to finish.');
+    }
+
     async function runRepoSubjectRewrite(action) {
         const currentProjectPath = getCurrentProjectPath();
         if (!currentProjectPath) {
@@ -1518,37 +1576,52 @@ document.addEventListener('DOMContentLoaded', () => {
         appendRepoRewriteLog(`Starting ${action === 'apply' ? 'apply' : 'preview'} for example "${selectedExample}", keep "${keepFragment}"...`, 'step');
 
         try {
-            const response = await fetchWithApiFallback('/api/file-management/subject-rewrite', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action,
-                    mode: 'example_keep',
-                    example_subject: selectedExample,
-                    keep_fragment: keepFragment,
-                    allow_multiple_sources: allowMultipleSources,
-                    project_path: currentProjectPath,
-                }),
-            });
+            let payload;
 
-            const payload = await response.json().catch(() => ({}));
-
-            if (Array.isArray(payload.log)) {
-                payload.log.forEach((entry) => {
-                    const level = entry && entry.level ? entry.level : 'info';
-                    const message = entry && entry.message ? entry.message : '';
-                    if (message) appendRepoRewriteLog(message, level);
+            if (action === 'apply') {
+                payload = await runRepoRewriteApplyJob(
+                    '/api/file-management/subject-rewrite/start',
+                    '/api/file-management/subject-rewrite/status',
+                    {
+                        mode: 'example_keep',
+                        example_subject: selectedExample,
+                        keep_fragment: keepFragment,
+                        allow_multiple_sources: allowMultipleSources,
+                        project_path: currentProjectPath,
+                    }
+                );
+            } else {
+                const response = await fetchWithApiFallback('/api/file-management/subject-rewrite', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action,
+                        mode: 'example_keep',
+                        example_subject: selectedExample,
+                        keep_fragment: keepFragment,
+                        allow_multiple_sources: allowMultipleSources,
+                        project_path: currentProjectPath,
+                    }),
                 });
-            }
+                payload = await response.json().catch(() => ({}));
 
-            if (!response.ok) {
-                finishRepoRewriteProgress(false, action === 'apply' ? 'Apply failed.' : 'Preview failed.');
-                appendRepoRewriteLog(payload.error || 'Subject rewrite request failed.', 'error');
-                if (repoSubjectRewriteResult) {
-                    repoSubjectRewriteResult.innerHTML = `<div class="alert alert-danger py-2 mb-0">${escapeHtml(payload.error || 'Subject rewrite request failed.')}</div>`;
+                if (Array.isArray(payload.log)) {
+                    payload.log.forEach((entry) => {
+                        const level = entry && entry.level ? entry.level : 'info';
+                        const message = entry && entry.message ? entry.message : '';
+                        if (message) appendRepoRewriteLog(message, level);
+                    });
                 }
-                repoSubjectPreviewReady = false;
-                return;
+
+                if (!response.ok) {
+                    finishRepoRewriteProgress(false, 'Preview failed.');
+                    appendRepoRewriteLog(payload.error || 'Subject rewrite request failed.', 'error');
+                    if (repoSubjectRewriteResult) {
+                        repoSubjectRewriteResult.innerHTML = `<div class="alert alert-danger py-2 mb-0">${escapeHtml(payload.error || 'Subject rewrite request failed.')}</div>`;
+                    }
+                    repoSubjectPreviewReady = false;
+                    return;
+                }
             }
 
             finishRepoRewriteProgress(true, action === 'apply' ? 'Apply complete.' : 'Preview complete.');

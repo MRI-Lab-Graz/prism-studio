@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-import json
-import sys
+import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from src.bids_entity_parser import BidsEntityParser
 from src.bids_entity_rewriter import BidsEntityRewriter
 from src.datalad_execution import (
     is_datalad_dataset,
-    parse_json_from_output,
+    resolve_datalad_executable,
+    run_datalad_get_paths,
+    run_datalad_save,
+    run_datalad_unlock,
 )
-from src.datalad_mutation_policy import build_pythonpath_env, run_tracked_mutation
 from src.subject_code_rewriter import SubjectCodeRewriter
 
 
@@ -19,7 +20,7 @@ class TrackedRewriteError(ValueError):
     """Raised when a DataLad-tracked rewrite mutation fails partway through.
 
     Carries the log entries accumulated before the failure so the UI can show
-    exactly which subject group and step (autosave/get/run) failed.
+    exactly which subject group and step (get/unlock/save) failed.
     """
 
     def __init__(self, message: str, log: list[dict[str, str]]):
@@ -27,43 +28,142 @@ class TrackedRewriteError(ValueError):
         self.log = log
 
 
+class RewriteCancelledError(RuntimeError):
+    """Raised when a caller-supplied is_cancelled() callback returns True
+    between subject groups, so a long batch can be aborted cleanly between
+    DataLad commits rather than only at the very end."""
+
+
 def _extract_subject_from_path(path_text: str) -> str | None:
     return BidsEntityParser.extract_subject_from_path(path_text)
 
 
-def _run_wrapped_command_with_mutation_or_raise(
+def _apply_mutation_locally_with_datalad_save(
     *,
     project_root: Path,
-    message: str,
-    command: list[str],
+    run_message: str,
     get_paths: list[str],
-    get_recursive: bool,
-    get_no_data: bool,
-    content_paths: list[str] | None = None,
+    content_paths: list[str],
+    apply_fn: Callable[[], dict[str, Any]],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    mutation_result = run_tracked_mutation(
-        project_root,
-        get_paths=get_paths,
-        run_message=message,
-        command=command,
-        get_timeout_seconds=1800,
-        run_timeout_seconds=3600,
-        get_recursive=get_recursive,
-        get_no_data=get_no_data,
-        content_paths=content_paths or [],
-        env=build_pythonpath_env(),
-    )
+    """Apply a mutation directly in-process, backed by DataLad get/unlock
+    beforehand and a plain `datalad save` afterward.
 
-    run_info = mutation_result.get("run") if isinstance(mutation_result, dict) else {}
-    payload = parse_json_from_output(str((run_info or {}).get("stdout") or ""))
-    if not isinstance(payload, dict):
+    This deliberately avoids `datalad run`: its clean-working-tree
+    precondition (which an unlock step itself can violate) and its
+    `{placeholder}`-style command templating (which collides with literal
+    curly braces in any embedded Python dict/set literal) turned out to be
+    repeated, hard-to-diagnose failure points on real multi-subject
+    datasets. `datalad save` has neither constraint — it just commits
+    whatever the in-process mutation actually changed.
+    """
+    root = Path(project_root)
+    if not is_datalad_dataset(root):
+        return apply_fn(), {"tracked": False, "used_run": False}
+
+    datalad_executable = resolve_datalad_executable()
+    if not datalad_executable:
         raise ValueError(
-            "DataLad run finished, but PRISM could not parse rewrite output."
+            "This project is tracked by DataLad and mutation changes require "
+            "DataLad. Install with: uv tool install datalad git-annex."
         )
 
-    if not isinstance(mutation_result, dict):
-        mutation_result = {}
+    autosave_result = run_datalad_save(
+        root,
+        message=f'PRISM: autosave pending changes before "{run_message}"',
+        datalad_executable=datalad_executable,
+    )
+    if not autosave_result.get("success"):
+        raise ValueError(
+            str(
+                autosave_result.get("message")
+                or "DataLad autosave failed before mutation."
+            )
+        )
 
+    get_result: dict[str, Any] = {"attempted": False, "success": True, "message": "", "command": ""}
+    if get_paths:
+        get_result = run_datalad_get_paths(
+            root,
+            paths=get_paths,
+            datalad_executable=datalad_executable,
+            recursive=True,
+            no_data=True,
+        )
+        if not get_result.get("success"):
+            raise ValueError(
+                str(get_result.get("message") or "DataLad get failed before mutation.")
+            )
+
+    # `content_paths` are files the mutation will read+rewrite in place
+    # (e.g. updating subject IDs inside a .tsv/.json). Those need full
+    # content present locally (not just `-n` presence) and need to be
+    # unlocked, since annexed files are normally read-only symlinks.
+    content_get_result: dict[str, Any] = {"attempted": False, "success": True, "message": "", "command": ""}
+    unlock_result: dict[str, Any] = {"attempted": False, "success": True, "message": "", "command": ""}
+    if content_paths:
+        content_get_result = run_datalad_get_paths(
+            root,
+            paths=content_paths,
+            datalad_executable=datalad_executable,
+            recursive=False,
+            no_data=False,
+        )
+        if not content_get_result.get("success"):
+            raise ValueError(
+                str(
+                    content_get_result.get("message")
+                    or "DataLad get (content) failed before mutation."
+                )
+            )
+
+        unlock_result = run_datalad_unlock(
+            root,
+            paths=content_paths,
+            datalad_executable=datalad_executable,
+        )
+
+        # `datalad unlock` is treated as best-effort (it's a harmless no-op
+        # for files that aren't annexed), so its own exit code can't be
+        # trusted to tell us whether the file actually became writable.
+        # Check the real, ground-truth condition instead of trusting the
+        # tool's report.
+        still_locked = [
+            path_text
+            for path_text in content_paths
+            if (root / path_text).exists() and not os.access(root / path_text, os.W_OK)
+        ]
+        if still_locked:
+            raise ValueError(
+                "These files are still read-only after 'datalad unlock' and "
+                "the mutation would fail trying to write to them: "
+                f"{', '.join(still_locked)}. DataLad unlock said: "
+                f"{unlock_result.get('message') or '(no message)'}"
+            )
+
+    payload = apply_fn()
+
+    save_result = run_datalad_save(
+        root,
+        message=run_message,
+        datalad_executable=datalad_executable,
+        recursive=True,
+    )
+    if not save_result.get("success"):
+        raise ValueError(
+            str(save_result.get("message") or "DataLad save failed after mutation.")
+        )
+
+    mutation_result = {
+        "tracked": True,
+        "used_run": False,
+        "executable": datalad_executable,
+        "autosave": autosave_result,
+        "get": get_result,
+        "content_get": content_get_result,
+        "unlock": unlock_result,
+        "save": save_result,
+    }
     return payload, mutation_result
 
 
@@ -74,6 +174,9 @@ def apply_subject_rewrite(
     example_subject: str | None,
     keep_fragment: str | None,
     allow_many_to_one: bool,
+    on_log: Callable[[str, str], None] | None = None,
+    on_subject_progress: Callable[[int, int], None] | None = None,
+    is_cancelled: Callable[[], bool] | None = None,
 ) -> dict[str, Any]:
     root = Path(project_root)
     rewriter = SubjectCodeRewriter(root)
@@ -81,22 +184,31 @@ def apply_subject_rewrite(
 
     def add_log(message: str, level: str = "info") -> None:
         log.append({"message": message, "level": level})
+        if on_log is not None:
+            try:
+                on_log(message, level)
+            except Exception:
+                pass
 
+    # cap_results=False: this preview drives internal orchestration (which
+    # files get a DataLad get/unlock before each subject's mutation), not a
+    # UI display, so it must see the complete lists rather than the first 200.
     preview = rewriter.preview(
         mode=mode,
         example_subject=example_subject,
         keep_fragment=keep_fragment,
         allow_many_to_one=allow_many_to_one,
+        cap_results=False,
     )
 
-    should_use_datalad_run = (
+    should_use_datalad = (
         is_datalad_dataset(root)
         and (
             int(preview.get("file_rename_count") or 0) > 0
             or int(preview.get("directory_rename_count") or 0) > 0
         )
     )
-    if not should_use_datalad_run:
+    if not should_use_datalad:
         result = rewriter.apply(
             mode=mode,
             example_subject=example_subject,
@@ -132,10 +244,10 @@ def apply_subject_rewrite(
         }
     )
     # Resolved once, against the dataset's pre-rename state, and reused
-    # verbatim by every subject group's subprocess (see explicit_mapping
-    # below) — re-deriving the mapping from example_subject/keep_fragment
-    # inside each subprocess would fail once an earlier subject in the same
-    # batch has already been renamed and the example no longer exists.
+    # verbatim for every subject group's mutation — re-deriving the mapping
+    # from example_subject/keep_fragment after an earlier subject in the
+    # same batch has already been renamed would fail because the example
+    # subject no longer exists under its old name.
     full_mapping = dict(preview.get("mapping") or {})
     subject_groups = sorted(
         {
@@ -160,8 +272,8 @@ def apply_subject_rewrite(
 
     add_log(
         f"Found {len(subject_groups)} subject group(s) requiring rename. "
-        "Project is tracked by DataLad; each group will run as its own "
-        "tracked DataLad run.",
+        "Project is tracked by DataLad; each group will be applied and "
+        "saved as its own DataLad commit.",
         "step",
     )
 
@@ -179,7 +291,18 @@ def apply_subject_rewrite(
     total_file_renames = 0
     total_directory_renames = 0
 
-    for subject_group in subject_groups:
+    total_subject_groups = len(subject_groups)
+    for group_index, subject_group in enumerate(subject_groups):
+        if is_cancelled is not None and is_cancelled():
+            add_log(
+                f"Cancelled by user after {group_index} of {total_subject_groups} "
+                "subject group(s).",
+                "warning",
+            )
+            raise RewriteCancelledError(
+                f"Cancelled after {group_index} of {total_subject_groups} subject group(s)."
+            )
+
         subjects_arg = None if subject_group == "dataset-root" else [subject_group]
         explicit_mapping_for_group = (
             full_mapping
@@ -189,21 +312,6 @@ def apply_subject_rewrite(
                 if subject_group in full_mapping
                 else {}
             )
-        )
-        # Use repr() (not json.dumps()) to embed these as Python source literals —
-        # json.dumps() emits JSON syntax (true/false/null) which is not valid
-        # Python (True/False/None) and breaks the subprocess with a NameError.
-        script = (
-            "import json;"
-            "from pathlib import Path;"
-            "from src.subject_code_rewriter import SubjectCodeRewriter;"
-            f"result=SubjectCodeRewriter(Path({str(root)!r})).apply("
-            f"mode={mode!r},"
-            f"allow_many_to_one={bool(allow_many_to_one)!r},"
-            f"subjects={subjects_arg!r},"
-            f"explicit_mapping={explicit_mapping_for_group!r}"
-            ");"
-            "print(json.dumps(result, ensure_ascii=False))"
         )
 
         get_paths = sorted(
@@ -231,23 +339,29 @@ def apply_subject_rewrite(
             if subject_group != "dataset-root"
             else "PRISM: Rewrite subject IDs"
         )
-        add_log(f"[{subject_group}] Autosaving pending changes, fetching content, "
-                f"unlocking annexed text files, and applying rename via DataLad run...", "step")
+        add_log(
+            f"[{subject_group}] Fetching content, unlocking annexed text "
+            "files, applying rename, and saving via DataLad...",
+            "step",
+        )
         try:
-            payload, mutation_result = _run_wrapped_command_with_mutation_or_raise(
+            payload, mutation_result = _apply_mutation_locally_with_datalad_save(
                 project_root=root,
-                message=run_message,
-                command=[sys.executable, "-c", script],
+                run_message=run_message,
                 get_paths=get_paths,
-                get_recursive=True,
-                get_no_data=True,
                 content_paths=content_paths,
+                apply_fn=lambda: rewriter.apply(
+                    mode=mode,
+                    allow_many_to_one=allow_many_to_one,
+                    subjects=subjects_arg,
+                    explicit_mapping=explicit_mapping_for_group,
+                ),
             )
-        except ValueError as exc:
+        except Exception as exc:
             add_log(f"[{subject_group}] {exc}", "error")
             raise TrackedRewriteError(str(exc), log) from exc
 
-        for step_name in ("autosave", "get", "content_get", "unlock", "pre_run_autosave", "run"):
+        for step_name in ("autosave", "get", "content_get", "unlock", "save"):
             step_info = (
                 mutation_result.get(step_name)
                 if isinstance(mutation_result, dict)
@@ -255,6 +369,12 @@ def apply_subject_rewrite(
             )
             if isinstance(step_info, dict) and step_info.get("message"):
                 add_log(f"[{subject_group}] {step_info['message']}", "info")
+
+        if on_subject_progress is not None:
+            try:
+                on_subject_progress(group_index + 1, total_subject_groups)
+            except Exception:
+                pass
 
         total_mapping += int(payload.get("mapping_count") or 0)
         total_file_renames += int(payload.get("file_rename_count") or 0)
@@ -301,14 +421,14 @@ def apply_subject_rewrite(
             {
                 "subject": subject_group,
                 "get": mutation_result.get("get") if isinstance(mutation_result, dict) else None,
-                "run": mutation_result.get("run") if isinstance(mutation_result, dict) else None,
+                "save": mutation_result.get("save") if isinstance(mutation_result, dict) else None,
             }
         )
 
     add_log(
         f"Rename complete: {total_mapping} subject mapping(s), "
         f"{total_directory_renames} folder rename(s), {total_file_renames} "
-        f"filename rename(s) across {len(group_details)} DataLad run(s).",
+        f"filename rename(s) across {len(group_details)} DataLad save(s).",
         "success",
     )
 
@@ -331,10 +451,10 @@ def apply_subject_rewrite(
         "conflicts": aggregate_conflicts,
         "log": log,
         "datalad": {
-            "used_run": True,
+            "used_run": False,
             "tracked": True,
-            "run_per_subject": True,
-            "run_count": len(group_details),
+            "save_per_subject": True,
+            "save_count": len(group_details),
             "groups": group_details,
         },
     }
@@ -348,6 +468,9 @@ def apply_entity_rewrite(
     operation: str,
     current_value: str | None,
     replacement: str | None,
+    on_log: Callable[[str, str], None] | None = None,
+    on_subject_progress: Callable[[int, int], None] | None = None,
+    is_cancelled: Callable[[], bool] | None = None,
 ) -> dict[str, Any]:
     root = Path(project_root)
     rewriter = BidsEntityRewriter(root)
@@ -355,20 +478,29 @@ def apply_entity_rewrite(
 
     def add_log(message: str, level: str = "info") -> None:
         log.append({"message": message, "level": level})
+        if on_log is not None:
+            try:
+                on_log(message, level)
+            except Exception:
+                pass
 
+    # cap_results=False: this preview drives internal orchestration (which
+    # files get a DataLad get/unlock before each subject's mutation), not a
+    # UI display, so it must see the complete lists rather than the first 200.
     preview = rewriter.preview(
         modality=modality,
         entity=entity,
         current_value=current_value,
         operation=operation,
         replacement=replacement,
+        cap_results=False,
     )
 
-    should_use_datalad_run = (
+    should_use_datalad = (
         is_datalad_dataset(root)
         and int(preview.get("rename_count") or 0) > 0
     )
-    if not should_use_datalad_run:
+    if not should_use_datalad:
         result = rewriter.apply(
             modality=modality,
             entity=entity,
@@ -399,6 +531,17 @@ def apply_entity_rewrite(
             if str(path_text or "").strip()
         }
     )
+    # Resolved once, against the dataset's pre-rename state, and reused
+    # verbatim for every subject group's mutation — re-deriving file renames
+    # from modality/entity/current_value after an earlier subject in the
+    # same batch has already been renamed could change the set of distinct
+    # values left for this entity (e.g. ambiguity errors, or the requested
+    # current_value no longer existing).
+    full_renames = [
+        {"from": str(item.get("from") or ""), "to": str(item.get("to") or "")}
+        for item in list(preview.get("renames") or [])
+        if isinstance(item, dict) and item.get("from") and item.get("to")
+    ]
     subject_groups = sorted(
         {
             subject
@@ -414,8 +557,8 @@ def apply_entity_rewrite(
 
     add_log(
         f"Found {len(subject_groups)} subject group(s) requiring rename. "
-        "Project is tracked by DataLad; each group will run as its own "
-        "tracked DataLad run.",
+        "Project is tracked by DataLad; each group will be applied and "
+        "saved as its own DataLad commit.",
         "step",
     )
 
@@ -428,25 +571,25 @@ def apply_entity_rewrite(
     conflict_seen: set[str] = set()
     total_rename_count = 0
 
-    for subject_group in subject_groups:
+    total_subject_groups = len(subject_groups)
+    for group_index, subject_group in enumerate(subject_groups):
+        if is_cancelled is not None and is_cancelled():
+            add_log(
+                f"Cancelled by user after {group_index} of {total_subject_groups} "
+                "subject group(s).",
+                "warning",
+            )
+            raise RewriteCancelledError(
+                f"Cancelled after {group_index} of {total_subject_groups} subject group(s)."
+            )
+
         subjects_arg = None if subject_group == "dataset-root" else [subject_group]
-        # Use repr() (not json.dumps()) to embed these as Python source literals —
-        # json.dumps() emits JSON syntax (true/false/null) which is not valid
-        # Python (True/False/None) and breaks the subprocess with a NameError.
-        script = (
-            "import json;"
-            "from pathlib import Path;"
-            "from src.bids_entity_rewriter import BidsEntityRewriter;"
-            f"result=BidsEntityRewriter(Path({str(root)!r})).apply("
-            f"modality={modality!r},"
-            f"entity={entity!r},"
-            f"operation={operation!r},"
-            f"current_value={current_value!r},"
-            f"replacement={replacement!r},"
-            f"subjects={subjects_arg!r}"
-            ");"
-            "print(json.dumps(result, ensure_ascii=False))"
-        )
+        explicit_renames_for_group = [
+            item
+            for item in full_renames
+            if subject_group == "dataset-root"
+            or _extract_subject_from_path(item["from"]) == subject_group
+        ]
 
         get_paths = sorted(
             {
@@ -473,23 +616,32 @@ def apply_entity_rewrite(
             if subject_group != "dataset-root"
             else "PRISM: Rewrite BIDS filename entity"
         )
-        add_log(f"[{subject_group}] Autosaving pending changes, fetching content, "
-                f"unlocking annexed text files, and applying rename via DataLad run...", "step")
+        add_log(
+            f"[{subject_group}] Fetching content, unlocking annexed text "
+            "files, applying rename, and saving via DataLad...",
+            "step",
+        )
         try:
-            payload, mutation_result = _run_wrapped_command_with_mutation_or_raise(
+            payload, mutation_result = _apply_mutation_locally_with_datalad_save(
                 project_root=root,
-                message=run_message,
-                command=[sys.executable, "-c", script],
+                run_message=run_message,
                 get_paths=get_paths,
-                get_recursive=False,
-                get_no_data=True,
                 content_paths=content_paths,
+                apply_fn=lambda: rewriter.apply(
+                    modality=modality,
+                    entity=entity,
+                    current_value=current_value,
+                    operation=operation,
+                    replacement=replacement,
+                    subjects=subjects_arg,
+                    explicit_renames=explicit_renames_for_group,
+                ),
             )
-        except ValueError as exc:
+        except Exception as exc:
             add_log(f"[{subject_group}] {exc}", "error")
             raise TrackedRewriteError(str(exc), log) from exc
 
-        for step_name in ("autosave", "get", "content_get", "unlock", "pre_run_autosave", "run"):
+        for step_name in ("autosave", "get", "content_get", "unlock", "save"):
             step_info = (
                 mutation_result.get(step_name)
                 if isinstance(mutation_result, dict)
@@ -497,6 +649,12 @@ def apply_entity_rewrite(
             )
             if isinstance(step_info, dict) and step_info.get("message"):
                 add_log(f"[{subject_group}] {step_info['message']}", "info")
+
+        if on_subject_progress is not None:
+            try:
+                on_subject_progress(group_index + 1, total_subject_groups)
+            except Exception:
+                pass
 
         total_rename_count += int(payload.get("rename_count") or 0)
 
@@ -529,13 +687,13 @@ def apply_entity_rewrite(
             {
                 "subject": subject_group,
                 "get": mutation_result.get("get") if isinstance(mutation_result, dict) else None,
-                "run": mutation_result.get("run") if isinstance(mutation_result, dict) else None,
+                "save": mutation_result.get("save") if isinstance(mutation_result, dict) else None,
             }
         )
 
     add_log(
         f"Rename complete: {total_rename_count} filename rename(s) across "
-        f"{len(group_details)} DataLad run(s).",
+        f"{len(group_details)} DataLad save(s).",
         "success",
     )
 
@@ -556,10 +714,10 @@ def apply_entity_rewrite(
         "conflicts": aggregate_conflicts,
         "log": log,
         "datalad": {
-            "used_run": True,
+            "used_run": False,
             "tracked": True,
-            "run_per_subject": True,
-            "run_count": len(group_details),
+            "save_per_subject": True,
+            "save_count": len(group_details),
             "groups": group_details,
         },
     }

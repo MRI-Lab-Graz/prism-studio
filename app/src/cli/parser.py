@@ -937,6 +937,56 @@ def build_prism_tools_parsers(
     parser_dataset_cleanup.add_argument(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
+
+    parser_dataset_rename_subjects = dataset_subparsers.add_parser(
+        "rename-subjects",
+        help="Rename subject IDs across a PRISM/BIDS dataset (DataLad-aware, one commit per subject)",
+    )
+    parser_dataset_rename_subjects.add_argument(
+        "--project",
+        required=True,
+        help="Dataset/project root folder",
+    )
+    parser_dataset_rename_subjects.add_argument(
+        "--mode",
+        default="last3",
+        choices=["last3", "example_keep"],
+        help="Rewrite rule: 'last3' keeps the last 3 characters of each subject ID, "
+        "'example_keep' keeps the part of --example-subject matching --keep-fragment "
+        "(default: last3)",
+    )
+    parser_dataset_rename_subjects.add_argument(
+        "--example-subject",
+        default=None,
+        help="Required for --mode example_keep: one current subject ID to define the rule from "
+        "(e.g. sub-1291003)",
+    )
+    parser_dataset_rename_subjects.add_argument(
+        "--keep-fragment",
+        default=None,
+        help="Required for --mode example_keep: the part of --example-subject that should stay "
+        "(e.g. 003)",
+    )
+    parser_dataset_rename_subjects.add_argument(
+        "--allow-many-to-one",
+        action="store_true",
+        help="Allow multiple source subject IDs to map to one target ID (safe merge only)",
+    )
+    parser_dataset_rename_subjects.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview the mapping and report conflicts without renaming anything",
+    )
+    parser_dataset_rename_subjects.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Apply without an interactive confirmation prompt",
+    )
+    parser_dataset_rename_subjects.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
+    )
+
     parser_ds_bio.add_argument(
         "--supervisor",
         default="investigator",
