@@ -9,6 +9,7 @@ export function initProjectInitOnBidsController({
     addRecentProject,
     showStudyMetadataCard,
     showExportCard,
+    showDataladServerCard,
     showMethodsCard,
 }) {
     const initBidsSubmitBtn = document.getElementById('initBidsSubmitBtn');
@@ -384,6 +385,7 @@ export function initProjectInitOnBidsController({
                 );
                 showStudyMetadataCard();
                 showExportCard();
+                showDataladServerCard();
                 showMethodsCard();
             } else {
                 stopProgressTimer();

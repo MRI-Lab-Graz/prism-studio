@@ -100,6 +100,17 @@ class PrismConfig:
     # }
     project_preferences: Dict[str, Any] = field(default_factory=dict)
 
+    # DataLad RIA server connection (for "Push to DataLad Server" feature)
+    # Example:
+    # {
+    #   "riaStoreUrl": "ria+ssh://researcher@datalad.example.org/srv/ria-store",
+    #   "siblingName": "ria-store",
+    #   "siblingAlias": "my-study"
+    # }
+    datalad_ria_store_url: Optional[str] = None
+    datalad_sibling_name: str = "ria-store"
+    datalad_sibling_alias: Optional[str] = None
+
     # Config file location (set after loading)
     _config_path: Optional[str] = None
 
@@ -173,6 +184,9 @@ def load_config(dataset_path: str) -> PrismConfig:
             template_library_path=data.get("templateLibraryPath"),
             neurobagel_participant_filter=data.get("neurobagelParticipantFilter", {}),
             project_preferences=data.get("projectPreferences", {}),
+            datalad_ria_store_url=data.get("riaStoreUrl"),
+            datalad_sibling_name=data.get("siblingName", "ria-store"),
+            datalad_sibling_alias=data.get("siblingAlias"),
         )
         config._config_path = config_path
         return config
@@ -223,6 +237,13 @@ def save_config(
 
     if config.project_preferences:
         data["projectPreferences"] = config.project_preferences
+
+    if config.datalad_ria_store_url:
+        data["riaStoreUrl"] = config.datalad_ria_store_url
+        data["siblingName"] = config.datalad_sibling_name
+
+    if config.datalad_sibling_alias:
+        data["siblingAlias"] = config.datalad_sibling_alias
 
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)

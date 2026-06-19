@@ -36,10 +36,11 @@ import * as helpers from './helpers.js';
 import * as validation from './validation.js';
 import * as core from './core.js';
 import * as exportModule from './export.js';
+import * as dataladServerModule from './datalad_server.js';
 import * as metadata from './metadata.js?v=20260515-4';
 
 // Re-export project modules for direct access
-export { helpers, validation, core, exportModule, metadata };
+export { helpers, validation, core, exportModule, dataladServerModule, metadata };
 
 // Export individual functions for backward compatibility
 export const { setButtonLoading, showAlert, showToast, showTopFeedback, textToArray } = helpers;
@@ -57,6 +58,7 @@ export const {
     clearGlobalLibrary 
 } = core;
 export const { showExportCard, initExportForm, initAndExport, initOpenMindsExport, loadExportPreferences, initializeProjectsExport } = exportModule;
+export const { showDataladServerCard, initDataladServerSection } = dataladServerModule;
 export const {
     addAuthorRow,
     getAuthorsList,
@@ -82,6 +84,7 @@ export function initializeProjectsPage() {
     initProjectsPage();
     initProjectValidation();
     initializeProjectsExport();
+    initDataladServerSection();
 }
 
 console.log('Projects module loaded with ES6 imports');

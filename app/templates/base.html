@@ -361,6 +361,7 @@
                        data-message="{{ current_project_datalad.message or '' }}">
                         <i class="fas fa-code-branch me-1 {% if current_project_datalad.enabled and current_project_datalad.available %}text-success{% elif current_project.path %}text-warning{% else %}text-muted{% endif %}" data-navbar-datalad-icon aria-hidden="true"></i>
                         <i class="fas fa-circle-check me-1 d-none" id="navbarDataladCleanIcon" aria-hidden="true"></i>
+                        <i class="fas fa-spinner fa-spin me-1 d-none" id="navbarDataladSpinnerIcon" aria-hidden="true"></i>
                         <span data-navbar-datalad-label>DataLad</span>
                         <span class="badge rounded-pill ms-2 {% if current_project_datalad.enabled and current_project_datalad.available %}bg-success text-white{% elif current_project_datalad.enabled %}bg-warning text-dark{% else %}bg-light text-muted{% endif %}" id="navbarDataladStateBadge">{% if current_project_datalad.enabled %}Tracked{% elif current_project.path %}Not tracked{% else %}No project{% endif %}</span>
                         <span class="badge rounded-pill border ms-2 d-none" id="navbarDataladToggleFeedback" aria-live="polite"></span>
@@ -1062,11 +1063,14 @@
         function renderNavbarDataladCleanIcon(clean) {
             const cleanIcon = document.getElementById('navbarDataladCleanIcon');
             if (!cleanIcon) return;
-            cleanIcon.classList.remove('d-none', 'fa-circle-check', 'fa-circle-xmark', 'text-success', 'text-danger');
+            cleanIcon.classList.remove('d-none', 'fa-circle-check', 'fa-circle-xmark', 'fa-pen-to-square', 'text-success', 'text-danger', 'text-warning');
             if (clean === true) {
-                cleanIcon.classList.add('fa-circle-check', 'text-success');
+                // Tree is clean: no separate indicator needed, the "Tracked" pill already says enough.
+                cleanIcon.classList.add('d-none');
             } else if (clean === false) {
-                cleanIcon.classList.add('fa-circle-xmark', 'text-danger');
+                // Uncommitted changes pending — use "pending edit" iconography, not an X/cross,
+                // so it doesn't read as "not tracked" next to the green Tracked pill.
+                cleanIcon.classList.add('fa-pen-to-square', 'text-warning');
             } else {
                 cleanIcon.classList.add('d-none');
             }
@@ -1119,6 +1123,42 @@
             }
         }
 
+        function setNavbarDataladBusy(active, busyLabel = 'Saving…') {
+            const toggle = document.getElementById('navbarDataladToggle');
+            if (!toggle) return;
+            const mainIcon = toggle.querySelector('[data-navbar-datalad-icon]');
+            const cleanIcon = document.getElementById('navbarDataladCleanIcon');
+            const spinnerIcon = document.getElementById('navbarDataladSpinnerIcon');
+            const stateBadge = document.getElementById('navbarDataladStateBadge');
+
+            if (active) {
+                toggle.setAttribute('aria-busy', 'true');
+                toggle.classList.add('disabled');
+                toggle.style.pointerEvents = 'none';
+                mainIcon?.classList.add('d-none');
+                cleanIcon?.classList.add('d-none');
+                spinnerIcon?.classList.remove('d-none');
+                if (stateBadge) {
+                    stateBadge.dataset.prevText = stateBadge.textContent;
+                    stateBadge.textContent = busyLabel;
+                }
+            } else {
+                toggle.removeAttribute('aria-busy');
+                toggle.classList.remove('disabled');
+                toggle.style.pointerEvents = '';
+                spinnerIcon?.classList.add('d-none');
+                mainIcon?.classList.remove('d-none');
+                // On success the state-change listener (renderNavbarDataladState) restores the
+                // badge text/classes for real; this is just a fallback for the error path.
+                if (stateBadge && stateBadge.dataset.prevText !== undefined) {
+                    if (stateBadge.textContent === busyLabel) {
+                        stateBadge.textContent = stateBadge.dataset.prevText;
+                    }
+                    delete stateBadge.dataset.prevText;
+                }
+            }
+        }
+
         async function saveNavbarDataladSnapshot() {
             const currentState = ensureProjectStateStore().getState();
             const currentPath = normalizeProjectStateValue(currentState.path);
@@ -1148,6 +1188,7 @@
             const saveMessage = normalizeProjectStateValue(requestedMessage) || 'Checkpoint PRISM project changes';
             setNavbarDataladFeedback('', 'muted');
             setNavbarDataladOperationState(true, 'navbar_save');
+            setNavbarDataladBusy(true, 'Saving…');
 
             try {
                 const response = await navbarFetchWithApiFallback('/api/projects/datalad/save', {
@@ -1169,6 +1210,7 @@
             } catch (error) {
                 setNavbarDataladFeedback(error.message || 'Could not save DataLad changes.', 'danger', 'Error');
             } finally {
+                setNavbarDataladBusy(false);
                 setNavbarDataladOperationState(false);
             }
         }

@@ -397,6 +397,12 @@ def api_biometrics_convert():
 
         log_msg(f"Included tasks: {', '.join(result.tasks_included)}", "info")
 
+        if session_override and session_override.strip().lower() == "all" and result.detected_sessions:
+            log_msg(
+                f"Sessions auto-detected: {', '.join(result.detected_sessions)}",
+                "success",
+            )
+
         if result.unknown_columns:
             for col in result.unknown_columns:
                 log_msg(f"Unknown column ignored: {col}", "warning")
@@ -444,17 +450,28 @@ def api_biometrics_convert():
 
             log_msg("Project updated successfully!", "success")
 
-            if session_override and result and getattr(result, "tasks_included", None):
-                register_session_in_project(
-                    project_root,
-                    session_override,
-                    result.tasks_included,
-                    "biometrics",
-                    filename,
-                    "biometrics",
+            registration_sessions: list[str] = []
+            if session_override:
+                if session_override.strip().lower() == "all":
+                    registration_sessions = list(result.detected_sessions or [])
+                else:
+                    registration_sessions = [session_override]
+
+            if registration_sessions and result and getattr(result, "tasks_included", None):
+                for reg_session in registration_sessions:
+                    register_session_in_project(
+                        project_root,
+                        reg_session,
+                        result.tasks_included,
+                        "biometrics",
+                        filename,
+                        "biometrics",
+                    )
+                registered_labels = ", ".join(
+                    s if s.startswith("ses-") else f"ses-{s}" for s in registration_sessions
                 )
                 log_msg(
-                    f"Registered in project.json: ses-{session_override} → {', '.join(result.tasks_included)}",
+                    f"Registered in project.json: {registered_labels} → {', '.join(result.tasks_included)}",
                     "info",
                 )
 
@@ -565,6 +582,7 @@ def api_biometrics_convert():
             "project_output_path": None,
             "project_output_count": len(copied_output_paths),
             "datalad": datalad_copy,
+            "detected_sessions": list(result.detected_sessions or []),
         }
 
         if copied_output_paths and project_root is not None:

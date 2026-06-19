@@ -48,6 +48,7 @@ import {
     updateCreateProjectButton
 } from './metadata.js?v=20260515-4';
 import { showExportCard } from './export.js';
+import { showDataladServerCard } from './datalad_server.js';
 import {
     getProjectStateSnapshot,
     setProjectStateSnapshot,
@@ -183,6 +184,7 @@ initProjectInitOnBidsController({
     addRecentProject,
     showStudyMetadataCard,
     showExportCard,
+    showDataladServerCard,
     showMethodsCard,
 });
 
@@ -213,6 +215,7 @@ initCreateProjectController({
     showStudyMetadataCard,
     updateCreateProjectButton,
     showExportCard,
+    showDataladServerCard,
     showMethodsCard,
 });
 
@@ -228,6 +231,7 @@ const openProjectController = initOpenProjectController({
     showStudyMetadataCard,
     updateCreateProjectButton,
     showExportCard,
+    showDataladServerCard,
     showMethodsCard,
     bindProjectBoxActionButtons,
 });
@@ -264,6 +268,7 @@ export function initProjectsPage() {
         loadLibraryInfo,
         showStudyMetadataCard,
         showExportCard,
+        showDataladServerCard,
         showMethodsCard,
         renderRecentProjects,
         loadRecentProjectsFromServer,

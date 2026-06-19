@@ -634,7 +634,13 @@ export function initBiometrics(elements) {
 
             const sessionVal = getBiometricsSessionValue();
             formData.append('session', sessionVal);
-            appendLog(`Forcing session ID: ${sessionVal}`, 'step', biometricsLog);
+            appendLog(
+                sessionVal === 'all'
+                    ? 'Auto-detecting session per row from the file (session/ses/visit column)'
+                    : `Forcing session ID: ${sessionVal}`,
+                'step',
+                biometricsLog
+            );
 
             const currentProjectPath = resolveCurrentProjectPath();
             if (!currentProjectPath) {
@@ -702,7 +708,12 @@ export function initBiometrics(elements) {
                 const bioSessionVal = getBiometricsSessionValue();
                 if (data.project_saved && bioSessionVal && selectedTasks && selectedTasks.length) {
                     const bioFile = getSelectedBiometricsFilename();
-                    registerSessionInProject(bioSessionVal, selectedTasks, 'biometrics', bioFile, 'biometrics');
+                    const sessionsToRegister = bioSessionVal === 'all'
+                        ? (Array.isArray(data.detected_sessions) ? data.detected_sessions : [])
+                        : [bioSessionVal];
+                    sessionsToRegister.forEach((ses) => {
+                        registerSessionInProject(ses, selectedTasks, 'biometrics', bioFile, 'biometrics');
+                    });
                 }
             })
             .catch(err => {
