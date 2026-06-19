@@ -59,6 +59,7 @@ from .conversion_environment_handlers import (
     api_environment_convert_cancel as _api_environment_convert_cancel,
     api_environment_convert_metrics as _api_environment_convert_metrics,
     api_environment_location_search as _api_environment_location_search,
+    api_environment_scan_mri_acquisition as _api_environment_scan_mri_acquisition,
 )
 
 IdColumnNotDetectedError: Any = None
@@ -187,6 +188,12 @@ def api_environment_preview():
 def api_environment_location_search():
     """Search place names and return validated coordinate options."""
     return _api_environment_location_search()
+
+
+@conversion_bp.route("/api/environment-scan-mri", methods=["POST"])
+def api_environment_scan_mri_acquisition():
+    """Scan the current project's rawdata for MRI acquisition timestamps/location."""
+    return _api_environment_scan_mri_acquisition()
 
 
 @conversion_bp.route("/api/environment-convert-start", methods=["POST"])

@@ -140,6 +140,12 @@ class TestConversionBlueprintDelegation(unittest.TestCase):
         self.client.get("/api/environment-convert-metrics")
         mock_handler.assert_called_once()
 
+    @patch.object(conversion_module, "_api_environment_scan_mri_acquisition")
+    def test_api_environment_scan_mri_acquisition_delegation(self, mock_handler):
+        mock_handler.return_value = "mock_response"
+        self.client.post("/api/environment-scan-mri")
+        mock_handler.assert_called_once()
+
 
 class TestTemplateVersionOverrideParsing(unittest.TestCase):
     def test_parse_template_version_overrides_coerces_language_map_versions(self):

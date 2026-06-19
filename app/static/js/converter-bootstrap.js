@@ -212,6 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (envDataFile) {
         initEnvironment({
             envDataFile,
+            envScanMriBtn: document.getElementById('envScanMriBtn'),
             browseServerEnvFileBtn: document.getElementById('browseServerEnvFileBtn'),
             clearEnvDataFileBtn: document.getElementById('clearEnvDataFileBtn'),
             envPreviewBtn: document.getElementById('envPreviewBtn'),

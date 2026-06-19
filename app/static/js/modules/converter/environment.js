@@ -17,6 +17,7 @@ export function initEnvironment(elements) {
 
     const {
         envDataFile,
+        envScanMriBtn,
         browseServerEnvFileBtn,
         clearEnvDataFileBtn,
         envPreviewBtn,
@@ -279,6 +280,55 @@ export function initEnvironment(elements) {
             });
     }
 
+    function parseFirstRecruitmentLocation(recruitment) {
+        const raw = recruitment && recruitment.Location;
+        const entries = Array.isArray(raw)
+            ? raw
+            : String(raw || '').split(';');
+        const first = entries.map((entry) => String(entry || '').trim()).find((entry) => entry);
+        return first || '';
+    }
+
+    function prefillRecruitmentLocationDefaults(projectPath = resolveCurrentProjectPath()) {
+        const hasExistingInput = Boolean(
+            (envLat && envLat.value.trim())
+            || (envLon && envLon.value.trim())
+            || (envLocationLabel && envLocationLabel.value.trim())
+        );
+        if (hasExistingInput) {
+            return;
+        }
+
+        const effectiveProjectPath = String(projectPath || '').trim();
+        const endpoint = effectiveProjectPath
+            ? `/api/projects/study-metadata?project_path=${encodeURIComponent(effectiveProjectPath)}`
+            : '/api/projects/study-metadata';
+
+        fetchWithApiFallback(endpoint)
+            .then((response) => response.json())
+            .then((data) => {
+                if (!data.success) return;
+                const location = parseFirstRecruitmentLocation((data.study_metadata || {}).Recruitment);
+                if (!location) return;
+
+                return fetchWithApiFallback(`/api/environment-location-search?q=${encodeURIComponent(location)}`)
+                    .then((r) => r.json())
+                    .then((searchData) => {
+                        const first = (searchData.results || [])[0];
+                        if (!first) return;
+                        if (envLat && !envLat.value.trim()) envLat.value = String(first.latitude);
+                        if (envLon && !envLon.value.trim()) envLon.value = String(first.longitude);
+                        if (envLocationLabel && !envLocationLabel.value.trim()) {
+                            envLocationLabel.value = first.display_name || first.name || location;
+                        }
+                        updateConvertBtn();
+                    });
+            })
+            .catch(() => {
+                // Best-effort default; the user can still pick a location manually.
+            });
+    }
+
     // ── UI helpers ────────────────────────────────────────────────────────────
 
     function resetUI() {
@@ -492,6 +542,43 @@ export function initEnvironment(elements) {
         updateFileBtn();
     });
 
+    envScanMriBtn?.addEventListener('click', async () => {
+        resetUI();
+        envScanMriBtn.disabled = true;
+
+        try {
+            const fd = new FormData();
+            const projectPath = resolveCurrentProjectPath();
+            if (projectPath) fd.append('project_path', projectPath);
+
+            const response = await fetchWithApiFallback('/api/environment-scan-mri', { method: 'POST', body: fd });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Could not scan project MRI data for acquisition timestamps.');
+            }
+
+            envServerFilePath = data.source_file_path;
+            if (envDataFile) envDataFile.value = '';
+            resetUI();
+            updateFileBtn();
+
+            if (envInfo) {
+                const stats = data.stats || {};
+                const missing = Array.isArray(stats.subjects_missing_timestamp) ? stats.subjects_missing_timestamp.length : 0;
+                const missingNote = missing ? ` (${missing} subject(s) had no parsable acquisition timestamp.)` : '';
+                envInfo.textContent = `Found ${data.row_count} session(s) with MRI acquisition timestamps.${missingNote}`;
+                envInfo.classList.remove('d-none');
+            }
+        } catch (err) {
+            if (envError) {
+                envError.textContent = err.message || 'Could not scan project MRI data.';
+                envError.classList.remove('d-none');
+            }
+        } finally {
+            envScanMriBtn.disabled = false;
+        }
+    });
+
     clearEnvDataFileBtn?.addEventListener('click', () => {
         envServerFilePath = '';
         if (envDataFile) { envDataFile.value = ''; }
@@ -511,6 +598,7 @@ export function initEnvironment(elements) {
         resetUI();
         updateFileBtn();
         refreshEnvironmentSourcedataQuickSelect();
+        prefillRecruitmentLocationDefaults();
     });
 
     if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
@@ -522,6 +610,8 @@ export function initEnvironment(elements) {
     }
 
     applyEnvironmentPickerUiState();
+
+    prefillRecruitmentLocationDefaults();
 
     ensureEnvironmentSourcedataQuickSelectElements();
     if (envSourcedataQuickSelectEl && envSourcedataFileSelectEl) {

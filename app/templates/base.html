@@ -360,7 +360,7 @@
                        data-can-save="{{ 'true' if current_project_datalad.can_save else 'false' }}"
                        data-message="{{ current_project_datalad.message or '' }}">
                         <i class="fas fa-code-branch me-1 {% if current_project_datalad.enabled and current_project_datalad.available %}text-success{% elif current_project.path %}text-warning{% else %}text-muted{% endif %}" data-navbar-datalad-icon aria-hidden="true"></i>
-                        <i class="fas fa-circle-check me-1 {% if current_project_datalad.enabled and current_project_datalad.available %}text-success{% elif current_project_datalad.enabled %}text-warning{% else %}d-none{% endif %}" id="navbarDataladTrackedIcon" aria-hidden="true"></i>
+                        <i class="fas fa-circle-check me-1 d-none" id="navbarDataladCleanIcon" aria-hidden="true"></i>
                         <span data-navbar-datalad-label>DataLad</span>
                         <span class="badge rounded-pill ms-2 {% if current_project_datalad.enabled and current_project_datalad.available %}bg-success text-white{% elif current_project_datalad.enabled %}bg-warning text-dark{% else %}bg-light text-muted{% endif %}" id="navbarDataladStateBadge">{% if current_project_datalad.enabled %}Tracked{% elif current_project.path %}Not tracked{% else %}No project{% endif %}</span>
                         <span class="badge rounded-pill border ms-2 d-none" id="navbarDataladToggleFeedback" aria-live="polite"></span>
@@ -997,6 +997,7 @@
             const toggle = document.getElementById('navbarDataladToggle');
             const stateBadge = document.getElementById('navbarDataladStateBadge');
             const trackedIcon = document.getElementById('navbarDataladTrackedIcon');
+            const cleanIcon = document.getElementById('navbarDataladCleanIcon');
             if (!toggle || !stateBadge) {
                 return;
             }
@@ -1020,6 +1021,7 @@
             icon?.classList.remove('text-success', 'text-warning', 'text-muted');
             trackedIcon?.classList.add('d-none');
             trackedIcon?.classList.remove('text-success', 'text-warning');
+            cleanIcon?.classList.add('d-none');
             stateBadge.className = 'badge rounded-pill ms-2';
 
             if (!nextPath) {
@@ -1037,6 +1039,7 @@
                 trackedIcon?.classList.add('text-success');
                 stateBadge.classList.add('bg-success', 'text-white');
                 stateBadge.textContent = 'Tracked';
+                fetchNavbarDataladCleanStatus(dataladState.path || nextPath);
             } else if (dataladState.enabled) {
                 icon?.classList.add('text-warning');
                 trackedIcon?.classList.remove('d-none');
@@ -1051,6 +1054,69 @@
 
             toggle.title = `${dataladState.message} ${statusTitleSuffix}`;
             toggle.setAttribute('aria-label', `DataLad status: ${stateBadge.textContent}. ${dataladState.message}`);
+        }
+
+        const navbarDataladCleanStatusCacheTtlMs = 30000;
+        let navbarDataladCleanStatusFetchToken = 0;
+
+        function renderNavbarDataladCleanIcon(clean) {
+            const cleanIcon = document.getElementById('navbarDataladCleanIcon');
+            if (!cleanIcon) return;
+            cleanIcon.classList.remove('d-none', 'fa-circle-check', 'fa-circle-xmark', 'text-success', 'text-danger');
+            if (clean === true) {
+                cleanIcon.classList.add('fa-circle-check', 'text-success');
+            } else if (clean === false) {
+                cleanIcon.classList.add('fa-circle-xmark', 'text-danger');
+            } else {
+                cleanIcon.classList.add('d-none');
+            }
+        }
+
+        async function fetchNavbarDataladCleanStatus(path, { force = false } = {}) {
+            const normalizedPath = normalizeProjectStateValue(path);
+            if (!normalizedPath) {
+                renderNavbarDataladCleanIcon(null);
+                return;
+            }
+
+            const cacheKey = `prism-datalad-clean-status:${normalizedPath}`;
+            if (!force) {
+                try {
+                    const cached = JSON.parse(window.sessionStorage.getItem(cacheKey) || 'null');
+                    if (cached && typeof cached === 'object' && Date.now() - cached.fetchedAt < navbarDataladCleanStatusCacheTtlMs) {
+                        renderNavbarDataladCleanIcon(cached.clean);
+                        return;
+                    }
+                } catch (error) {
+                    // ignore unreadable cache entries
+                }
+            }
+
+            const fetchToken = ++navbarDataladCleanStatusFetchToken;
+            try {
+                const response = await navbarFetchWithApiFallback('/api/projects/datalad/clean-status', { method: 'GET' });
+                const data = await response.json().catch(() => ({ success: false }));
+                if (fetchToken !== navbarDataladCleanStatusFetchToken) return;
+
+                const cleanStatus = data && data.success ? data.datalad_clean : null;
+                const clean = cleanStatus && cleanStatus.checked ? Boolean(cleanStatus.clean) : null;
+                renderNavbarDataladCleanIcon(clean);
+
+                const cleanIcon = document.getElementById('navbarDataladCleanIcon');
+                if (cleanIcon && cleanStatus && cleanStatus.message) {
+                    cleanIcon.title = cleanStatus.message;
+                }
+
+                try {
+                    window.sessionStorage.setItem(cacheKey, JSON.stringify({ clean, fetchedAt: Date.now() }));
+                } catch (error) {
+                    // sessionStorage may be unavailable (e.g. private mode); skip caching
+                }
+            } catch (error) {
+                if (fetchToken === navbarDataladCleanStatusFetchToken) {
+                    renderNavbarDataladCleanIcon(null);
+                }
+            }
         }
 
         async function saveNavbarDataladSnapshot() {
@@ -1098,6 +1164,7 @@
                     ? data.current_project
                     : { ...currentState, datalad: data.datalad };
                 ensureProjectStateStore().setState(nextProjectState, { forceEmit: true });
+                fetchNavbarDataladCleanStatus(normalizeProjectStateValue(nextProjectState.path) || currentPath, { force: true });
                 setNavbarDataladFeedback(data.message || (data.datalad && data.datalad.message) || 'DataLad save completed.', 'success', 'Saved');
             } catch (error) {
                 setNavbarDataladFeedback(error.message || 'Could not save DataLad changes.', 'danger', 'Error');
