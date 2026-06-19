@@ -177,7 +177,6 @@ class ProjectManager:
             )
             gitattributes_created = self._ensure_datalad_editable_metadata_policy(
                 project_path,
-                datalad_result,
             )
             if gitattributes_created:
                 created_files.append(".gitattributes")
@@ -365,7 +364,6 @@ class ProjectManager:
                 add_log(datalad_result["message"], "info")
             gitattributes_created = self._ensure_datalad_editable_metadata_policy(
                 project_path,
-                datalad_result,
             )
             if gitattributes_created:
                 created_files.append(".gitattributes")
@@ -1304,7 +1302,6 @@ class ProjectManager:
 
         gitattributes_policy_updated = self._ensure_datalad_editable_metadata_policy(
             project_path,
-            {"initialized": True},
         )
         if gitattributes_policy_updated:
             result["datalad"]["gitattributes_policy_updated"] = True
@@ -1362,7 +1359,6 @@ class ProjectManager:
 
         policy_updated = self._ensure_datalad_editable_metadata_policy(
             project_path,
-            {"initialized": True},
         )
         result["policy_updated"] = bool(policy_updated)
 
@@ -3120,7 +3116,6 @@ class ProjectManager:
                 gitattributes_policy_updated = (
                     self._ensure_datalad_editable_metadata_policy(
                         project_path,
-                        {"initialized": True},
                     )
                 )
                 if gitattributes_policy_updated:
@@ -3252,7 +3247,6 @@ class ProjectManager:
 
         gitattributes_policy_updated = self._ensure_datalad_editable_metadata_policy(
             project_path,
-            datalad_result,
         )
         if gitattributes_policy_updated:
             datalad_result["gitattributes_policy_updated"] = True
@@ -4483,12 +4477,8 @@ class ProjectManager:
     def _ensure_datalad_editable_metadata_policy(
         self,
         project_path: Path,
-        datalad_result: Dict[str, Any],
     ) -> bool:
-        """Keep core project metadata and common text files in Git."""
-        if not datalad_result.get("initialized"):
-            return False
-
+        """Keep core project metadata and common text files in Git, regardless of DataLad state."""
         updated = False
         for dataset_root in self._iter_datalad_dataset_roots(project_path):
             gitattributes_path = dataset_root / ".gitattributes"
@@ -4519,7 +4509,7 @@ class ProjectManager:
                 )
             else:
                 new_content = (
-                    "# Keep PRISM metadata and common text files editable when DataLad is enabled.\n"
+                    "# Keep PRISM metadata and common text files editable in Git, not git-annex.\n"
                     + "\n".join(missing_lines)
                     + "\n"
                 )
