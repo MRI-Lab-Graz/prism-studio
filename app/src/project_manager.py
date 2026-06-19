@@ -4268,6 +4268,317 @@ class ProjectManager:
 
         return updated
 
+    def _resolve_ria_settings(
+        self,
+        project_path: Path,
+        *,
+        ria_url: Optional[str] = None,
+        sibling_name: Optional[str] = None,
+        alias: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Merge request overrides with the project's saved `.prismrc.json` datalad section."""
+        from src.config import load_config
+
+        config = load_config(str(project_path))
+
+        resolved_url = str(ria_url or "").strip() or str(
+            config.datalad_ria_store_url or ""
+        ).strip()
+        if not resolved_url:
+            raise ValueError(
+                "No RIA store URL configured. Pass a ria_url or set it in "
+                "this project's Push to DataLad Server settings."
+            )
+
+        resolved_name = (
+            str(sibling_name or "").strip()
+            or str(config.datalad_sibling_name or "").strip()
+            or "ria-store"
+        )
+        resolved_alias = str(alias or "").strip() or str(
+            config.datalad_sibling_alias or ""
+        ).strip()
+
+        return {
+            "ria_url": resolved_url,
+            "sibling_name": resolved_name,
+            "alias": resolved_alias,
+        }
+
+    def get_ria_status(
+        self,
+        project_path: Path,
+        *,
+        sibling_name: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Cheap, synchronous status check for the "Push to DataLad Server" panel."""
+        from src.config import load_config
+        from src.datalad_execution import (
+            resolve_datalad_executable,
+            run_datalad_sibling_exists,
+        )
+
+        project_path = Path(project_path)
+        config = load_config(str(project_path))
+        name = str(sibling_name or config.datalad_sibling_name or "ria-store").strip() or "ria-store"
+
+        result: Dict[str, Any] = {
+            "datalad_dataset": (project_path / ".datalad").exists(),
+            "ria_url": config.datalad_ria_store_url,
+            "sibling_name": name,
+            "sibling_alias": config.datalad_sibling_alias,
+            "connected": False,
+        }
+
+        datalad_executable = resolve_datalad_executable()
+        if not datalad_executable or not result["datalad_dataset"]:
+            return result
+
+        exists_result = run_datalad_sibling_exists(
+            project_path,
+            sibling_name=name,
+            datalad_executable=datalad_executable,
+        )
+        result["connected"] = bool(exists_result.get("exists"))
+        return result
+
+    def sync_project_to_ria(
+        self,
+        project_path: Path,
+        *,
+        ria_url: Optional[str] = None,
+        sibling_name: Optional[str] = None,
+        alias: Optional[str] = None,
+        progress_callback: Optional[Any] = None,
+        is_cancelled: Optional[Any] = None,
+    ) -> Dict[str, Any]:
+        """Connect (if needed) and push to the RIA store. Never disconnects.
+
+        Safe to call repeatedly throughout a study as an ongoing backup:
+        sibling creation is idempotent (`--existing reconfigure`) and `datalad
+        push` only transfers what's missing.
+        """
+        from src.datalad_execution import (
+            resolve_datalad_executable,
+            run_datalad_create_sibling_ria,
+            run_datalad_push,
+        )
+
+        project_path = Path(project_path)
+        settings = self._resolve_ria_settings(
+            project_path, ria_url=ria_url, sibling_name=sibling_name, alias=alias
+        )
+        datalad_executable = resolve_datalad_executable()
+
+        def _report(percent: int, message: str) -> None:
+            if callable(progress_callback):
+                progress_callback(percent, message)
+
+        _report(10, "Connecting to RIA store...")
+        create_result = run_datalad_create_sibling_ria(
+            project_path,
+            ria_url=settings["ria_url"],
+            sibling_name=settings["sibling_name"],
+            alias=settings["alias"],
+            datalad_executable=datalad_executable,
+        )
+        if not create_result.get("success"):
+            return {
+                "success": False,
+                "message": f"Could not connect to RIA store: {create_result.get('message')}",
+                "create": create_result,
+            }
+
+        if callable(is_cancelled) and is_cancelled():
+            return {"success": False, "message": "Cancelled before push."}
+
+        _report(40, "Syncing dataset to RIA store...")
+        push_result = run_datalad_push(
+            project_path,
+            sibling_name=settings["sibling_name"],
+            datalad_executable=datalad_executable,
+        )
+        if not push_result.get("success"):
+            return {
+                "success": False,
+                "message": f"Sync failed: {push_result.get('message')}",
+                "create": create_result,
+                "push": push_result,
+            }
+
+        _report(100, "Sync complete. Connection to server kept.")
+        return {
+            "success": True,
+            "message": "Synced to RIA store. Connection kept for further syncing.",
+            "create": create_result,
+            "push": push_result,
+        }
+
+    def _verify_ria_copy_full(
+        self,
+        *,
+        ria_url: str,
+        sibling_alias: str,
+    ) -> Dict[str, Any]:
+        """Clone the RIA copy into a temp dir and run PRISM/BIDS validation on it.
+
+        Proves the archived copy is independently retrievable and valid, not
+        just that `datalad push` reported success.
+        """
+        from src.datalad_execution import resolve_datalad_executable
+        from src.web.blueprints.projects_export_blueprint import (
+            _run_pre_export_validation,
+        )
+
+        datalad_executable = resolve_datalad_executable()
+        if not datalad_executable:
+            return {"success": False, "message": "DataLad executable not available."}
+
+        clone_source = ria_url
+        if sibling_alias:
+            clone_source = f"{ria_url.rstrip('/')}#~{sibling_alias}"
+
+        with tempfile.TemporaryDirectory(prefix="prism_ria_verify_") as tmp_dir:
+            clone_dir = Path(tmp_dir) / "verify_clone"
+            clone_process = subprocess.run(
+                [datalad_executable, "clone", clone_source, str(clone_dir)],
+                capture_output=True,
+                text=True,
+                timeout=600,
+                check=False,
+            )
+            if clone_process.returncode != 0:
+                detail = (clone_process.stderr or clone_process.stdout or "").strip()
+                return {
+                    "success": False,
+                    "message": f"Could not clone RIA copy for verification: {detail}",
+                }
+
+            get_process = subprocess.run(
+                [datalad_executable, "get", "-r", "."],
+                cwd=str(clone_dir),
+                capture_output=True,
+                text=True,
+                timeout=3600,
+                check=False,
+            )
+            if get_process.returncode != 0:
+                detail = (get_process.stderr or get_process.stdout or "").strip()
+                return {
+                    "success": False,
+                    "message": f"Could not retrieve content from RIA clone: {detail}",
+                }
+
+            try:
+                validation_error = _run_pre_export_validation(clone_dir, "both")
+            except Exception as exc:
+                return {
+                    "success": False,
+                    "message": f"Validation of RIA clone failed to run: {exc}",
+                }
+
+            if validation_error:
+                return {"success": False, "message": validation_error}
+
+        return {"success": True, "message": "RIA clone retrieved and validated successfully."}
+
+    def finalize_project_upload(
+        self,
+        project_path: Path,
+        *,
+        ria_url: Optional[str] = None,
+        sibling_name: Optional[str] = None,
+        alias: Optional[str] = None,
+        verify_mode: str = "fast",
+        mark_annex_dead: bool = False,
+        progress_callback: Optional[Any] = None,
+        is_cancelled: Optional[Any] = None,
+    ) -> Dict[str, Any]:
+        """Final push, verify, then disconnect the local sibling.
+
+        Local files are kept. Disconnect only happens once verification
+        confirms every annexed key reached the RIA store — any failure leaves
+        the sibling registered so a retry can resume. `verify_mode="full"`
+        additionally clones the RIA copy and validates it before allowing
+        disconnect; this costs extra time on large imaging datasets so it is
+        opt-in.
+        """
+        from src.datalad_execution import (
+            resolve_datalad_executable,
+            run_datalad_remove_sibling,
+            run_datalad_upload_to_ria,
+        )
+
+        project_path = Path(project_path)
+        settings = self._resolve_ria_settings(
+            project_path, ria_url=ria_url, sibling_name=sibling_name, alias=alias
+        )
+        dataset_roots = self._iter_datalad_dataset_roots(project_path)
+        datalad_executable = resolve_datalad_executable()
+        use_full_verify = str(verify_mode or "fast").strip().lower() == "full"
+
+        result = run_datalad_upload_to_ria(
+            project_path,
+            dataset_roots=dataset_roots,
+            ria_url=settings["ria_url"],
+            sibling_name=settings["sibling_name"],
+            alias=settings["alias"],
+            # Disconnect is handled here so the optional full clone+validate
+            # check can run between verification and disconnect.
+            keep_sibling=True,
+            mark_annex_dead=mark_annex_dead,
+            datalad_executable=datalad_executable,
+            progress_callback=progress_callback,
+            is_cancelled=is_cancelled,
+        )
+
+        if not result.get("success") or not result.get("verified"):
+            return result
+
+        if use_full_verify:
+            if callable(progress_callback):
+                progress_callback(92, "Cloning RIA copy to verify it independently...")
+            full_verify_result = self._verify_ria_copy_full(
+                ria_url=settings["ria_url"],
+                sibling_alias=settings["alias"],
+            )
+            result["full_verify"] = full_verify_result
+            if not full_verify_result.get("success"):
+                result["success"] = False
+                result["message"] = (
+                    f"Push verified, but full clone validation failed: "
+                    f"{full_verify_result.get('message')}. Sibling left registered for retry."
+                )
+                return result
+
+        if callable(is_cancelled) and is_cancelled():
+            result["success"] = False
+            result["message"] = "Cancelled before disconnect; sibling left registered."
+            return result
+
+        if callable(progress_callback):
+            progress_callback(95, "Disconnecting local sibling...")
+        disconnect_result = run_datalad_remove_sibling(
+            project_path,
+            sibling_name=settings["sibling_name"],
+            dataset_roots=dataset_roots,
+            mark_annex_dead=mark_annex_dead,
+            datalad_executable=datalad_executable,
+        )
+        result["disconnect"] = disconnect_result
+        result["disconnected"] = bool(disconnect_result.get("success"))
+        result["kept_sibling"] = not result["disconnected"]
+        if not result["disconnected"]:
+            result["success"] = False
+            result["message"] = f"Verified push, but disconnect failed: {disconnect_result.get('message')}"
+            return result
+
+        if callable(progress_callback):
+            progress_callback(100, "Upload verified and sibling disconnected.")
+        result["success"] = True
+        result["message"] = "Push verified and local sibling disconnected."
+        return result
+
     def _build_auto_datalad_save_message(self, reason: str) -> str:
         """Return a stable commit message for lifecycle-triggered DataLad saves."""
         normalized_reason = str(reason or "").strip().lower()

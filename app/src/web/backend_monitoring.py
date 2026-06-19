@@ -911,6 +911,90 @@ def _build_file_management_delete_terminal_command(req) -> str:
     return " ".join(shlex.quote(part) for part in cmd_parts)
 
 
+def _build_file_management_entity_rewrite_terminal_command(req, *, start_async: bool = False) -> str:
+    """Build CLI-style backend command preview for BIDS entity-rewrite endpoint."""
+    payload = req.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+
+    action = "apply" if start_async else str(payload.get("action") or "preview").strip().lower()
+    project_path = _absolute_path_value(payload.get("project_path")) or "<project-path>"
+    modality = str(payload.get("modality") or "").strip().lower()
+    entity = str(payload.get("entity") or payload.get("part") or "").strip()
+    operation = str(payload.get("operation") or "rename").strip().lower()
+    current_value = str(payload.get("current_value") or "").strip()
+    replacement = str(payload.get("replacement") or payload.get("value") or "").strip()
+
+    cmd_parts: list[str] = [
+        "python",
+        "prism.py",
+        "file-management",
+        "entity-rewrite",
+        "--project",
+        project_path,
+    ]
+
+    if modality:
+        cmd_parts.extend(["--modality", modality])
+    if entity:
+        cmd_parts.extend(["--entity", entity])
+    cmd_parts.extend(["--operation", operation])
+    if current_value:
+        cmd_parts.extend(["--current-value", current_value])
+    if replacement:
+        cmd_parts.extend(["--replacement", replacement])
+
+    if action == "apply":
+        cmd_parts.append("--apply")
+    elif action == "options":
+        cmd_parts.append("--list-options")
+    else:
+        cmd_parts.append("--preview")
+
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
+def _build_file_management_subject_rewrite_terminal_command(req, *, start_async: bool = False) -> str:
+    """Build CLI-style backend command preview for subject-ID rewrite endpoint."""
+    payload = req.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+
+    action = "apply" if start_async else str(payload.get("action") or "preview").strip().lower()
+    project_path = _absolute_path_value(payload.get("project_path")) or "<project-path>"
+    mode = str(payload.get("mode") or "last3").strip().lower()
+    example_subject = str(payload.get("example_subject") or "").strip()
+    keep_fragment = str(payload.get("keep_fragment") or "").strip()
+    allow_multiple_sources = bool(payload.get("allow_multiple_sources"))
+
+    cmd_parts: list[str] = [
+        "python",
+        "prism.py",
+        "file-management",
+        "subject-rewrite",
+        "--project",
+        project_path,
+        "--mode",
+        mode,
+    ]
+
+    if example_subject:
+        cmd_parts.extend(["--example-subject", example_subject])
+    if keep_fragment:
+        cmd_parts.extend(["--keep-fragment", keep_fragment])
+    if allow_multiple_sources:
+        cmd_parts.append("--allow-multiple-sources")
+
+    if action == "apply":
+        cmd_parts.append("--apply")
+    elif action == "examples":
+        cmd_parts.append("--list-examples")
+    else:
+        cmd_parts.append("--preview")
+
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
 def _build_survey_check_templates_terminal_command(req) -> str:
     """Build command preview for survey template pre-check endpoint."""
     form = req.form
@@ -1664,6 +1748,14 @@ def _build_terminal_command(req) -> str:
         return _build_wide_to_long_terminal_command(req, inspect_only=False)
     if endpoint == "tools.api_file_management_delete":
         return _build_file_management_delete_terminal_command(req)
+    if endpoint == "tools.api_file_management_entity_rewrite":
+        return _build_file_management_entity_rewrite_terminal_command(req)
+    if endpoint == "tools.api_file_management_entity_rewrite_start":
+        return _build_file_management_entity_rewrite_terminal_command(req, start_async=True)
+    if endpoint == "tools.api_file_management_subject_rewrite":
+        return _build_file_management_subject_rewrite_terminal_command(req)
+    if endpoint == "tools.api_file_management_subject_rewrite_start":
+        return _build_file_management_subject_rewrite_terminal_command(req, start_async=True)
     if endpoint == "conversion.api_environment_preview":
         return _build_environment_preview_terminal_command(req)
     if endpoint == "conversion.api_environment_convert":

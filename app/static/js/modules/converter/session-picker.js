@@ -48,6 +48,15 @@ export function createConverterSessionPickerController({
             selectEl.selectedIndex = 0;
         });
 
+        // Biometrics conversion can auto-detect a session/ses/visit column per row,
+        // so unlike survey it doesn't need a prior file-detection step to offer this.
+        if (biometricsSessionSelect) {
+            const allOpt = document.createElement('option');
+            allOpt.value = 'all';
+            allOpt.textContent = '✓ All sessions (auto-detect from file)';
+            biometricsSessionSelect.appendChild(allOpt);
+        }
+
         if (!projectPath) {
             return;
         }

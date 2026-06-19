@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+# All operations are backend commands
+
+Every action a user triggers in the UI (file rename, entity/subject rewrite, delete, batch convert, DataLad save, etc.) must be executed as a backend command — the frontend only triggers it (via `fetch`/`FormData` to a Flask route) and renders the result/progress. The only exception is the project page itself (selecting/loading a project), which is local UI state, not a mutating operation. There is no case where the frontend performs the actual file or data work itself.
+
 ## Memory Management
 
 Keep each file lean — avoid dumping detailed logs or reference tables into CLAUDE.md or CLAUDE.local.md.
