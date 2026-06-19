@@ -152,6 +152,8 @@ class BidsEntityRewriter:
         current_value: str | None = None,
         replacement: str | None = None,
         subjects: list[str] | None = None,
+        cap_results: bool = True,
+        explicit_renames: list[dict[str, str]] | None = None,
     ) -> dict:
         plan = self._build_plan(
             modality=modality,
@@ -160,8 +162,9 @@ class BidsEntityRewriter:
             operation=operation,
             replacement=replacement,
             subjects=subjects,
+            explicit_renames=explicit_renames,
         )
-        return self._plan_to_dict(plan, applied=False)
+        return self._plan_to_dict(plan, applied=False, cap_results=cap_results)
 
     def apply(
         self,
@@ -171,6 +174,7 @@ class BidsEntityRewriter:
         current_value: str | None = None,
         replacement: str | None = None,
         subjects: list[str] | None = None,
+        explicit_renames: list[dict[str, str]] | None = None,
     ) -> dict:
         plan = self._build_plan(
             modality=modality,
@@ -179,6 +183,7 @@ class BidsEntityRewriter:
             operation=operation,
             replacement=replacement,
             subjects=subjects,
+            explicit_renames=explicit_renames,
         )
         if plan.conflicts:
             raise ValueError(
@@ -213,6 +218,7 @@ class BidsEntityRewriter:
         operation: str,
         replacement: str | None,
         subjects: list[str] | None,
+        explicit_renames: list[dict[str, str]] | None = None,
     ) -> _EntityRewritePlan:
         if not self.project_root.exists() or not self.project_root.is_dir():
             raise ValueError(f"Project root does not exist: {self.project_root}")
@@ -220,61 +226,91 @@ class BidsEntityRewriter:
         available_modalities = self.list_modalities()
         normalized_modality = self._normalize_modality(modality)
         normalized_subjects = self._normalize_subjects(subjects)
-        if not normalized_modality:
-            raise ValueError("Select a modality before previewing this rewrite.")
-
-        if normalized_modality not in available_modalities:
-            raise ValueError(
-                f"Modality '{normalized_modality}' was not found in this project."
-            )
-
-        available_entities = self.list_entities(normalized_modality)
         normalized_entity = self._normalize_entity(entity)
-        if not normalized_entity:
-            raise ValueError("Select a filename part before previewing this rewrite.")
-
-        if normalized_entity not in available_entities:
-            raise ValueError(
-                f"Part _{normalized_entity} was not found for modality '{normalized_modality}'."
-            )
-
-        values_by_entity = self.list_entity_values(normalized_modality)
-        values_for_entity = values_by_entity.get(f"_{normalized_entity}", [])
-
-        normalized_current_value = self._normalize_current_value(current_value)
-        if len(values_for_entity) > 1 and not normalized_current_value:
-            raise ValueError(
-                f"Select the current value for _{normalized_entity} first because this part has multiple values."
-            )
-        if normalized_current_value and normalized_current_value not in values_for_entity:
-            raise ValueError(
-                f"Current value '{normalized_current_value}' was not found for _{normalized_entity} in modality '{normalized_modality}'."
-            )
-
         normalized_operation = self._normalize_operation(operation)
-        replacement_value = None
-        if normalized_operation == "rename":
-            replacement_value = self._normalize_replacement(replacement)
-        elif normalized_entity in _REQUIRED_ENTITIES:
-            raise ValueError(f"Part _{normalized_entity} cannot be removed.")
 
-        file_ops: list[_RenameOperation] = []
-        for file_path in self._iter_files_for_modality(
-            normalized_modality,
-            subjects=normalized_subjects,
-        ):
-            rewritten_name = self._rewrite_filename_for_entity(
-                file_path.name,
-                entity=normalized_entity,
-                current_value=normalized_current_value,
-                operation=normalized_operation,
-                replacement=replacement_value,
+        if explicit_renames is not None:
+            # Caller already resolved the file renames once (e.g. against
+            # the dataset's pre-rename state) and wants them applied as-is,
+            # bypassing modality/entity/current_value re-validation
+            # entirely. This matters when this subject's rewrite runs after
+            # earlier subjects in the same batch have already been renamed:
+            # re-deriving "is current_value still valid / still ambiguous"
+            # from a live scan would fail once an earlier subject's rename
+            # changes the set of distinct values left for this entity.
+            available_entities = (
+                self.list_entities(normalized_modality)
+                if normalized_modality in available_modalities
+                else []
             )
-            if not rewritten_name:
-                continue
-            new_path = file_path.with_name(rewritten_name)
-            if new_path != file_path:
-                file_ops.append(_RenameOperation(old_path=file_path, new_path=new_path))
+            normalized_current_value = self._normalize_current_value(current_value)
+            replacement_value = (
+                self._normalize_replacement(replacement)
+                if normalized_operation == "rename" and replacement
+                else None
+            )
+            file_ops = [
+                _RenameOperation(
+                    old_path=self.project_root / str(item.get("from") or ""),
+                    new_path=self.project_root / str(item.get("to") or ""),
+                )
+                for item in explicit_renames
+                if isinstance(item, dict) and item.get("from") and item.get("to")
+            ]
+        else:
+            if not normalized_modality:
+                raise ValueError("Select a modality before previewing this rewrite.")
+
+            if normalized_modality not in available_modalities:
+                raise ValueError(
+                    f"Modality '{normalized_modality}' was not found in this project."
+                )
+
+            available_entities = self.list_entities(normalized_modality)
+            if not normalized_entity:
+                raise ValueError("Select a filename part before previewing this rewrite.")
+
+            if normalized_entity not in available_entities:
+                raise ValueError(
+                    f"Part _{normalized_entity} was not found for modality '{normalized_modality}'."
+                )
+
+            values_by_entity = self.list_entity_values(normalized_modality)
+            values_for_entity = values_by_entity.get(f"_{normalized_entity}", [])
+
+            normalized_current_value = self._normalize_current_value(current_value)
+            if len(values_for_entity) > 1 and not normalized_current_value:
+                raise ValueError(
+                    f"Select the current value for _{normalized_entity} first because this part has multiple values."
+                )
+            if normalized_current_value and normalized_current_value not in values_for_entity:
+                raise ValueError(
+                    f"Current value '{normalized_current_value}' was not found for _{normalized_entity} in modality '{normalized_modality}'."
+                )
+
+            replacement_value = None
+            if normalized_operation == "rename":
+                replacement_value = self._normalize_replacement(replacement)
+            elif normalized_entity in _REQUIRED_ENTITIES:
+                raise ValueError(f"Part _{normalized_entity} cannot be removed.")
+
+            file_ops = []
+            for file_path in self._iter_files_for_modality(
+                normalized_modality,
+                subjects=normalized_subjects,
+            ):
+                rewritten_name = self._rewrite_filename_for_entity(
+                    file_path.name,
+                    entity=normalized_entity,
+                    current_value=normalized_current_value,
+                    operation=normalized_operation,
+                    replacement=replacement_value,
+                )
+                if not rewritten_name:
+                    continue
+                new_path = file_path.with_name(rewritten_name)
+                if new_path != file_path:
+                    file_ops.append(_RenameOperation(old_path=file_path, new_path=new_path))
 
         replacements = self._build_text_replacements(file_ops)
         preview_text_updates = self._preview_text_updates(replacements)
@@ -653,7 +689,15 @@ class BidsEntityRewriter:
 
         return conflicts
 
-    def _plan_to_dict(self, plan: _EntityRewritePlan, applied: bool) -> dict:
+    def _plan_to_dict(
+        self, plan: _EntityRewritePlan, applied: bool, cap_results: bool = True
+    ) -> dict:
+        # `[:200]` caps exist so the UI preview/result panels don't have to
+        # render thousands of rows. Internal orchestration (deciding which
+        # files need a DataLad get/unlock before each subject's run) must
+        # see the *complete* lists, or files beyond the cap silently never
+        # get unlocked and the wrapped command fails with PermissionError.
+        cap = (lambda items: items[:200]) if cap_results else (lambda items: items)
         return {
             "modality": plan.modality,
             "entity": f"_{plan.entity}",
@@ -671,11 +715,11 @@ class BidsEntityRewriter:
                     "from": self._rel(op.old_path),
                     "to": self._rel(op.new_path),
                 }
-                for op in plan.file_ops[:200]
+                for op in cap(plan.file_ops)
             ],
             "text_update_files": [
                 path.relative_to(self.project_root).as_posix()
-                for path in plan.preview_text_updates[:200]
+                for path in cap(plan.preview_text_updates)
             ],
             "conflicts": plan.conflicts,
         }

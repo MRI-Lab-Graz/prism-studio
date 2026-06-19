@@ -4,6 +4,8 @@ import json
 import re
 import platform
 import tempfile
+import threading
+import uuid
 from pathlib import Path
 from typing import cast
 import pandas as pd
@@ -26,12 +28,14 @@ from src.system_files import filter_system_files
 from src.bids_entity_rewriter import BidsEntityRewriter
 from src.bids_file_deleter import BidsFileDeleter
 from src.repo_rewrite_datalad_runner import (
+    RewriteCancelledError,
     TrackedRewriteError,
     apply_entity_rewrite as apply_entity_rewrite_with_datalad,
     apply_subject_rewrite as apply_subject_rewrite_with_datalad,
 )
 from src.subject_code_rewriter import SubjectCodeRewriter
 from src.web.blueprints.projects import get_current_project
+from .conversion_job_store import ConversionJobStore
 from .tools_helpers import (
     _default_library_root_for_templates,
     _safe_expand_path,
@@ -982,6 +986,299 @@ def api_file_management_wide_to_long():
 
     saved_to = str(dest_path.relative_to(project_root))
     return jsonify({"saved_to": saved_to, "filename": output_name})
+
+
+# Subject-ID and entity rewrites can span hundreds of subjects, each its own
+# DataLad commit — far too slow for one synchronous request/response. These
+# run as background jobs so the UI can poll real per-subject progress
+# instead of staring at an optimistic progress bar until the whole batch
+# finishes (or fails) in one opaque blob.
+_rewrite_job_store = ConversionJobStore(log_level_key="level")
+
+
+def _run_subject_rewrite_job(
+    job_id: str,
+    *,
+    project_root: str,
+    mode: str,
+    example_subject: str | None,
+    keep_fragment: str | None,
+    allow_many_to_one: bool,
+) -> None:
+    try:
+        payload = apply_subject_rewrite_with_datalad(
+            Path(project_root),
+            mode=mode,
+            example_subject=example_subject,
+            keep_fragment=keep_fragment,
+            allow_many_to_one=allow_many_to_one,
+            on_log=lambda message, level: _rewrite_job_store.append_log(
+                job_id, message, level
+            ),
+            on_subject_progress=lambda done, total: _rewrite_job_store.update(
+                job_id,
+                progress_pct=round(100 * done / total) if total else 100,
+            ),
+            is_cancelled=lambda: _rewrite_job_store.is_cancelled(job_id),
+        )
+        _rewrite_job_store.success(job_id, payload)
+    except RewriteCancelledError as exc:
+        _rewrite_job_store.failure(job_id, str(exc), status="cancelled")
+    except TrackedRewriteError as exc:
+        for entry in exc.log:
+            _rewrite_job_store.append_log(
+                job_id, entry.get("message", ""), entry.get("level", "error")
+            )
+        _rewrite_job_store.failure(job_id, str(exc))
+    except Exception as exc:
+        _rewrite_job_store.failure(job_id, f"Subject rewrite failed: {exc}")
+
+
+def _run_entity_rewrite_job(
+    job_id: str,
+    *,
+    project_root: str,
+    modality: str,
+    entity: str,
+    operation: str,
+    current_value: str | None,
+    replacement: str | None,
+) -> None:
+    try:
+        payload = apply_entity_rewrite_with_datalad(
+            Path(project_root),
+            modality=modality,
+            entity=entity,
+            operation=operation,
+            current_value=current_value,
+            replacement=replacement,
+            on_log=lambda message, level: _rewrite_job_store.append_log(
+                job_id, message, level
+            ),
+            on_subject_progress=lambda done, total: _rewrite_job_store.update(
+                job_id,
+                progress_pct=round(100 * done / total) if total else 100,
+            ),
+            is_cancelled=lambda: _rewrite_job_store.is_cancelled(job_id),
+        )
+        _rewrite_job_store.success(job_id, payload)
+    except RewriteCancelledError as exc:
+        _rewrite_job_store.failure(job_id, str(exc), status="cancelled")
+    except TrackedRewriteError as exc:
+        for entry in exc.log:
+            _rewrite_job_store.append_log(
+                job_id, entry.get("message", ""), entry.get("level", "error")
+            )
+        _rewrite_job_store.failure(job_id, str(exc))
+    except Exception as exc:
+        _rewrite_job_store.failure(job_id, f"Entity rewrite failed: {exc}")
+
+
+def _allocate_rewrite_job_id() -> str:
+    for _ in range(5):
+        candidate = uuid.uuid4().hex
+        try:
+            _rewrite_job_store.create(candidate)
+            return candidate
+        except ValueError:
+            continue
+    return ""
+
+
+@tools_bp.route("/api/file-management/subject-rewrite/start", methods=["POST"])
+def api_file_management_subject_rewrite_start():
+    """Start an async subject-ID rewrite apply job and return its job id."""
+    preview_session_key = "subject_rewrite_last_preview"
+    data = request.get_json(silent=True) or {}
+    mode = str(data.get("mode") or "last3").strip().lower()
+    example_subject = str(data.get("example_subject") or "").strip() or None
+    keep_fragment = str(data.get("keep_fragment") or "").strip() or None
+    allow_multiple_raw = data.get("allow_multiple_sources")
+    if isinstance(allow_multiple_raw, bool):
+        allow_multiple_sources = allow_multiple_raw
+    elif isinstance(allow_multiple_raw, (int, float)):
+        allow_multiple_sources = allow_multiple_raw != 0
+    elif isinstance(allow_multiple_raw, str):
+        allow_multiple_sources = allow_multiple_raw.strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
+    else:
+        allow_multiple_sources = False
+
+    explicit_project_path = (
+        request.args.get("project_path")
+        or data.get("project_path")
+        or session.get("current_project_path")
+        or ""
+    )
+    project_path = str(explicit_project_path).strip()
+
+    try:
+        project_root = require_existing_project_root(
+            project_path,
+            missing_message="No active project selected. Open a project before rewriting subject IDs.",
+            missing_path_message="The selected project path no longer exists. Reopen the project and retry.",
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    request_signature = {
+        "project_path": str(project_root),
+        "mode": mode,
+        "example_subject": example_subject or "",
+        "keep_fragment": keep_fragment or "",
+        "allow_multiple_sources": allow_multiple_sources,
+    }
+    last_preview = session.get(preview_session_key) or {}
+    if last_preview != request_signature:
+        return (
+            jsonify(
+                {
+                    "error": "Preview is required before apply. Run Preview with the current example and rule first."
+                }
+            ),
+            400,
+        )
+    session.pop(preview_session_key, None)
+
+    job_id = _allocate_rewrite_job_id()
+    if not job_id:
+        return jsonify({"error": "Could not allocate rewrite job id"}), 500
+
+    thread = threading.Thread(
+        target=_run_subject_rewrite_job,
+        kwargs={
+            "job_id": job_id,
+            "project_root": str(project_root),
+            "mode": mode,
+            "example_subject": example_subject,
+            "keep_fragment": keep_fragment,
+            "allow_many_to_one": allow_multiple_sources,
+        },
+        daemon=True,
+    )
+    thread.start()
+
+    return jsonify({"job_id": job_id, "project_path": str(project_root)}), 200
+
+
+@tools_bp.route("/api/file-management/subject-rewrite/status/<job_id>", methods=["GET"])
+def api_file_management_subject_rewrite_status(job_id: str):
+    """Get incremental status and logs for an async subject-rewrite job."""
+    try:
+        cursor = int(request.args.get("cursor", "0"))
+    except ValueError:
+        cursor = 0
+
+    payload = _rewrite_job_store.snapshot(job_id, cursor)
+    if payload is None:
+        return jsonify({"error": "Job not found"}), 404
+
+    return jsonify(payload), 200
+
+
+@tools_bp.route("/api/file-management/subject-rewrite/cancel/<job_id>", methods=["POST"])
+def api_file_management_subject_rewrite_cancel(job_id: str):
+    """Request cancellation of a running async subject-rewrite job."""
+    cancelled = _rewrite_job_store.cancel(job_id)
+    return jsonify({"cancelled": cancelled}), 200
+
+
+@tools_bp.route("/api/file-management/entity-rewrite/start", methods=["POST"])
+def api_file_management_entity_rewrite_start():
+    """Start an async BIDS entity rewrite apply job and return its job id."""
+    preview_session_key = "entity_rewrite_last_preview"
+    data = request.get_json(silent=True) or {}
+    modality = str(data.get("modality") or "").strip().lower()
+    entity = str(data.get("entity") or data.get("part") or "").strip()
+    current_value = str(data.get("current_value") or "").strip()
+    operation = str(data.get("operation") or "rename").strip().lower()
+    replacement = str(data.get("replacement") or data.get("value") or "").strip()
+    replacement_value = replacement or None
+    current_value_filter = current_value or None
+
+    explicit_project_path = (
+        request.args.get("project_path")
+        or data.get("project_path")
+        or session.get("current_project_path")
+        or ""
+    )
+    project_path = str(explicit_project_path).strip()
+
+    try:
+        project_root = require_existing_project_root(
+            project_path,
+            missing_message="No active project selected. Open a project before rewriting filename parts.",
+            missing_path_message="The selected project path no longer exists. Reopen the project and retry.",
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    request_signature = {
+        "project_path": str(project_root),
+        "modality": modality,
+        "entity": entity,
+        "current_value": current_value,
+        "operation": operation,
+        "replacement": replacement,
+    }
+    last_preview = session.get(preview_session_key) or {}
+    if last_preview != request_signature:
+        return (
+            jsonify(
+                {
+                    "error": "Preview is required before apply. Run Preview with the current settings first."
+                }
+            ),
+            400,
+        )
+    session.pop(preview_session_key, None)
+
+    job_id = _allocate_rewrite_job_id()
+    if not job_id:
+        return jsonify({"error": "Could not allocate rewrite job id"}), 500
+
+    thread = threading.Thread(
+        target=_run_entity_rewrite_job,
+        kwargs={
+            "job_id": job_id,
+            "project_root": str(project_root),
+            "modality": modality,
+            "entity": entity,
+            "operation": operation,
+            "current_value": current_value_filter,
+            "replacement": replacement_value,
+        },
+        daemon=True,
+    )
+    thread.start()
+
+    return jsonify({"job_id": job_id, "project_path": str(project_root)}), 200
+
+
+@tools_bp.route("/api/file-management/entity-rewrite/status/<job_id>", methods=["GET"])
+def api_file_management_entity_rewrite_status(job_id: str):
+    """Get incremental status and logs for an async entity-rewrite job."""
+    try:
+        cursor = int(request.args.get("cursor", "0"))
+    except ValueError:
+        cursor = 0
+
+    payload = _rewrite_job_store.snapshot(job_id, cursor)
+    if payload is None:
+        return jsonify({"error": "Job not found"}), 404
+
+    return jsonify(payload), 200
+
+
+@tools_bp.route("/api/file-management/entity-rewrite/cancel/<job_id>", methods=["POST"])
+def api_file_management_entity_rewrite_cancel(job_id: str):
+    """Request cancellation of a running async entity-rewrite job."""
+    cancelled = _rewrite_job_store.cancel(job_id)
+    return jsonify({"cancelled": cancelled}), 200
 
 
 @tools_bp.route("/api/file-management/entity-rewrite", methods=["POST"])

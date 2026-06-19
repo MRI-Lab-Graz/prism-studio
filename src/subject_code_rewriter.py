@@ -87,6 +87,7 @@ class SubjectCodeRewriter:
         allow_many_to_one: bool = False,
         subjects: list[str] | None = None,
         explicit_mapping: dict[str, str] | None = None,
+        cap_results: bool = True,
     ) -> dict:
         plan = self._build_plan(
             mode,
@@ -96,7 +97,7 @@ class SubjectCodeRewriter:
             subjects=subjects,
             explicit_mapping=explicit_mapping,
         )
-        return self._plan_to_dict(plan, applied=False)
+        return self._plan_to_dict(plan, applied=False, cap_results=cap_results)
 
     def apply(
         self,
@@ -598,14 +599,22 @@ class SubjectCodeRewriter:
             if suffix in _TEXT_SUFFIXES or file_path.name.lower() in _TEXT_FILENAMES:
                 yield file_path
 
-    def _plan_to_dict(self, plan: _RewritePlan, applied: bool) -> dict:
+    def _plan_to_dict(
+        self, plan: _RewritePlan, applied: bool, cap_results: bool = True
+    ) -> dict:
+        # `[:200]` caps exist so the UI preview/result panels don't have to
+        # render thousands of rows. Internal orchestration (deciding which
+        # files need a DataLad get/unlock before each subject's run) must
+        # see the *complete* lists, or files beyond the cap silently never
+        # get unlocked and the wrapped command fails with PermissionError.
+        cap = (lambda items: items[:200]) if cap_results else (lambda items: items)
         return {
             "mode": plan.mode,
             "rule": plan.rule,
             "allow_many_to_one": bool(plan.allow_many_to_one),
             "subjects": plan.subjects,
             "applied": applied,
-            "subject_examples": plan.subject_examples[:200],
+            "subject_examples": cap(plan.subject_examples),
             "subject_token_sources": {
                 key: value[:20]
                 for key, value in sorted(plan.subject_token_sources.items())
@@ -620,18 +629,18 @@ class SubjectCodeRewriter:
                     "from": self._rel(op.old_path),
                     "to": self._rel(op.new_path),
                 }
-                for op in plan.directory_ops[:200]
+                for op in cap(plan.directory_ops)
             ],
             "file_renames": [
                 {
                     "from": self._rel(op.old_path),
                     "to": self._rel(op.new_path),
                 }
-                for op in plan.file_ops[:200]
+                for op in cap(plan.file_ops)
             ],
             "text_update_files": [
                 path.relative_to(self.project_root).as_posix()
-                for path in plan.preview_text_updates[:200]
+                for path in cap(plan.preview_text_updates)
             ],
             "conflicts": plan.conflicts,
         }

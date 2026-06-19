@@ -179,3 +179,57 @@ def test_bids_entity_rewriter_can_target_specific_current_value(tmp_path):
     assert (func_dir / "sub-006_ses-1_task-rest_run-01_bold.nii.gz").exists()
     assert (func_dir / "sub-006_ses-1_task-B_run-01_bold.nii.gz").exists()
     assert not (func_dir / "sub-006_ses-1_task-A_run-01_bold.nii.gz").exists()
+
+
+def test_bids_entity_rewriter_explicit_renames_survive_value_becoming_ambiguous_mid_batch(
+    tmp_path,
+):
+    """Regression guard: when a multi-subject batch applies one subject's
+    rename at a time, re-deriving current_value validity from a live scan
+    breaks once an earlier subject's rename changes the set of distinct
+    values left for this entity (e.g. introduces a second value where there
+    used to be only one, making current_value=None suddenly ambiguous).
+    explicit_renames must bypass that re-derivation entirely."""
+    project_root = tmp_path / "project"
+    func_a = project_root / "sub-006" / "ses-1" / "func"
+    func_b = project_root / "sub-007" / "ses-1" / "func"
+    _touch_file(func_a / "sub-006_ses-1_task-A_run-01_bold.nii.gz")
+    _touch_file(func_b / "sub-007_ses-1_task-A_run-01_bold.nii.gz")
+
+    rewriter = BidsEntityRewriter(project_root)
+
+    # Simulate sub-006 having already been renamed to task-rest by an
+    # earlier subject's mutation in the same batch — now there are two
+    # distinct _task values (A, rest), so re-deriving with current_value
+    # unset fails, exactly like the bug report.
+    (func_a / "sub-006_ses-1_task-A_run-01_bold.nii.gz").rename(
+        func_a / "sub-006_ses-1_task-rest_run-01_bold.nii.gz"
+    )
+    with pytest.raises(ValueError, match="Select the current value"):
+        rewriter.apply(
+            modality="func",
+            entity="_task",
+            operation="rename",
+            replacement="rest",
+            subjects=["sub-007"],
+        )
+
+    # The pre-resolved rename (computed once, before any subject in the
+    # batch was renamed) must apply cleanly regardless.
+    result = rewriter.apply(
+        modality="func",
+        entity="_task",
+        operation="rename",
+        replacement="rest",
+        subjects=["sub-007"],
+        explicit_renames=[
+            {
+                "from": "sub-007/ses-1/func/sub-007_ses-1_task-A_run-01_bold.nii.gz",
+                "to": "sub-007/ses-1/func/sub-007_ses-1_task-rest_run-01_bold.nii.gz",
+            }
+        ],
+    )
+
+    assert result["rename_count"] == 1
+    assert (func_b / "sub-007_ses-1_task-rest_run-01_bold.nii.gz").exists()
+    assert not (func_b / "sub-007_ses-1_task-A_run-01_bold.nii.gz").exists()

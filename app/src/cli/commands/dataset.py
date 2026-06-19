@@ -14,9 +14,133 @@ from src.maintenance.project_metadata_cleanup import (
     cleanup_project_metadata,
     cleanup_project_metadata_tree,
 )
+from src.repo_rewrite_datalad_runner import (
+    RewriteCancelledError,
+    TrackedRewriteError,
+    apply_subject_rewrite,
+)
+from src.subject_code_rewriter import SubjectCodeRewriter
 from src.utils.io import ensure_dir as _ensure_dir
 from src.utils.io import read_json as _read_json
 from src.utils.io import write_json as _write_json
+
+
+_REWRITE_LOG_PREFIXES = {
+    "error": "✗",
+    "warning": "⚠",
+    "success": "✓",
+    "step": "→",
+}
+
+
+def cmd_dataset_rename_subjects(args) -> None:
+    """Rename subject IDs across a dataset: DataLad-aware (one commit per
+    subject when tracked), with live progress instead of one opaque batch."""
+    as_json = bool(getattr(args, "json", False))
+    project_root = Path(args.project).resolve()
+    rewriter = SubjectCodeRewriter(project_root)
+
+    try:
+        preview = rewriter.preview(
+            mode=args.mode,
+            example_subject=args.example_subject,
+            keep_fragment=args.keep_fragment,
+            allow_many_to_one=args.allow_many_to_one,
+        )
+    except ValueError as error:
+        if as_json:
+            print(json.dumps({"success": False, "error": str(error)}, indent=2))
+        else:
+            print(f"Error: {error}")
+        sys.exit(1)
+
+    if preview.get("conflicts"):
+        if as_json:
+            print(json.dumps({"success": False, **preview}, indent=2))
+        else:
+            print("Cannot proceed — conflicts detected:")
+            for conflict in preview["conflicts"]:
+                print(f"  - {conflict}")
+        sys.exit(1)
+
+    mapping_count = int(preview.get("mapping_count") or 0)
+    if mapping_count == 0:
+        if as_json:
+            print(json.dumps({"success": True, "applied": False, **preview}, indent=2))
+        else:
+            print(f"No subject IDs require renaming in {project_root}.")
+        return
+
+    if not as_json:
+        rule = preview.get("rule")
+        if rule:
+            print(f"Rule: {rule}")
+        print(
+            f"{mapping_count} subject mapping(s), "
+            f"{preview.get('directory_rename_count', 0)} folder rename(s), "
+            f"{preview.get('file_rename_count', 0)} filename rename(s), "
+            f"{preview.get('text_update_count', 0)} metadata text update(s)."
+        )
+
+    if getattr(args, "dry_run", False):
+        if as_json:
+            print(json.dumps({"success": True, "applied": False, **preview}, indent=2))
+        else:
+            print("Dry run — no changes applied. Mapping:")
+            for old_subject, new_subject in sorted(preview.get("mapping", {}).items()):
+                print(f"  {old_subject} -> {new_subject}")
+        return
+
+    if not getattr(args, "yes", False) and not as_json:
+        confirmation = input(
+            f"Apply this rename to {mapping_count} subject(s) in {project_root}? [y/N] "
+        ).strip().lower()
+        if confirmation not in {"y", "yes"}:
+            print("Aborted.")
+            return
+
+    def on_log(message: str, level: str) -> None:
+        if as_json:
+            return
+        prefix = _REWRITE_LOG_PREFIXES.get(level, " ")
+        print(f"{prefix} {message}")
+
+    def on_subject_progress(done: int, total: int) -> None:
+        if as_json:
+            return
+        print(f"[{done}/{total}] subject group(s) complete")
+
+    try:
+        result = apply_subject_rewrite(
+            project_root,
+            mode=args.mode,
+            example_subject=args.example_subject,
+            keep_fragment=args.keep_fragment,
+            allow_many_to_one=args.allow_many_to_one,
+            on_log=on_log,
+            on_subject_progress=on_subject_progress,
+        )
+    except RewriteCancelledError as error:
+        if as_json:
+            print(json.dumps({"success": False, "cancelled": True, "error": str(error)}, indent=2))
+        else:
+            print(f"Cancelled: {error}")
+        sys.exit(130)
+    except TrackedRewriteError as error:
+        if as_json:
+            print(json.dumps({"success": False, "error": str(error), "log": error.log}, indent=2))
+        else:
+            print(f"Error: {error}")
+        sys.exit(1)
+
+    if as_json:
+        print(json.dumps({"success": True, **result}, indent=2))
+    else:
+        print(
+            f"Done: {result.get('mapping_count', 0)} subject mapping(s), "
+            f"{result.get('directory_rename_count', 0)} folder rename(s), "
+            f"{result.get('file_rename_count', 0)} filename rename(s) applied."
+        )
 
 
 def cmd_dataset_cleanup_project_metadata(args) -> None:
