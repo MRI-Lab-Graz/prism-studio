@@ -5,8 +5,13 @@ from pathlib import Path
 
 from flask import Flask
 
+from unittest.mock import patch
+
+from src.web.blueprints import conversion_environment_handlers as environment_module
 from src.web.blueprints.conversion_environment_handlers import (
+    api_environment_rescan_mri,
     api_environment_scan_mri_acquisition,
+    trigger_automatic_environment_enrichment,
 )
 from src.web.blueprints.conversion_environment_mri_scan_helpers import (
     build_mri_acquisition_table,
@@ -212,6 +217,88 @@ def test_api_scan_mri_acquisition_errors_when_no_project_selected():
     app = _make_app()
     with app.test_request_context("/api/environment-scan-mri", method="POST"):
         response = api_environment_scan_mri_acquisition()
+
+    status_code = response[1] if isinstance(response, tuple) else 200
+    body = response[0].get_json() if isinstance(response, tuple) else response.get_json()
+    assert status_code == 400
+    assert body["success"] is False
+
+
+def test_trigger_automatic_environment_enrichment_returns_none_without_mri_data(tmp_path):
+    project_root = tmp_path / "demo_project"
+    project_root.mkdir(parents=True, exist_ok=True)
+
+    job_id = trigger_automatic_environment_enrichment(project_root)
+
+    assert job_id is None
+
+
+def test_trigger_automatic_environment_enrichment_starts_background_job(tmp_path):
+    project_root = tmp_path / "demo_project"
+    _write_sidecar(
+        project_root / "rawdata" / "sub-01" / "ses-01" / "anat" / "sub-01_ses-01_T1w.json",
+        {"AcquisitionDateTime": "2026-02-26T14:30:00", "InstitutionName": "Graz"},
+    )
+
+    with patch.object(environment_module.threading, "Thread") as mock_thread:
+        job_id = trigger_automatic_environment_enrichment(project_root)
+
+    assert job_id is not None
+    mock_thread.assert_called_once()
+    _, kwargs = mock_thread.call_args
+    assert kwargs["args"][0] == job_id
+    config = kwargs["args"][1]
+    assert config["timestamp_col"] == "timestamp"
+    assert config["participant_col"] == "participant_id"
+    assert config["session_col"] == "session_id"
+    assert config["location_col"] == "location"
+    assert config["project_path"] == str(project_root)
+
+
+def test_api_rescan_mri_returns_job_id_when_mri_data_found(tmp_path):
+    project_root = tmp_path / "demo_project"
+    _write_sidecar(
+        project_root / "rawdata" / "sub-01" / "ses-01" / "anat" / "sub-01_ses-01_T1w.json",
+        {"AcquisitionDateTime": "2026-02-26T14:30:00", "InstitutionName": "Graz"},
+    )
+
+    app = _make_app()
+    with patch.object(environment_module.threading, "Thread") as mock_thread:
+        with app.test_request_context(
+            "/api/environment-rescan-mri",
+            method="POST",
+            data={"project_path": str(project_root)},
+        ):
+            response = api_environment_rescan_mri()
+
+    body = response.get_json()
+    assert body["success"] is True
+    assert body["job_id"]
+    mock_thread.assert_called_once()
+
+
+def test_api_rescan_mri_errors_when_no_mri_data_found(tmp_path):
+    project_root = tmp_path / "demo_project"
+    project_root.mkdir(parents=True, exist_ok=True)
+
+    app = _make_app()
+    with app.test_request_context(
+        "/api/environment-rescan-mri",
+        method="POST",
+        data={"project_path": str(project_root)},
+    ):
+        response = api_environment_rescan_mri()
+
+    status_code = response[1] if isinstance(response, tuple) else 200
+    body = response[0].get_json() if isinstance(response, tuple) else response.get_json()
+    assert status_code == 400
+    assert body["success"] is False
+
+
+def test_api_rescan_mri_errors_when_no_project_selected():
+    app = _make_app()
+    with app.test_request_context("/api/environment-rescan-mri", method="POST"):
+        response = api_environment_rescan_mri()
 
     status_code = response[1] if isinstance(response, tuple) else 200
     body = response[0].get_json() if isinstance(response, tuple) else response.get_json()

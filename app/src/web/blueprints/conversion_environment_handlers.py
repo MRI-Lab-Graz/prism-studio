@@ -1234,6 +1234,66 @@ def _run_environment_job(job_id: str, config: dict[str, Any]) -> None:
     )
 
 
+def trigger_automatic_environment_enrichment(project_root: Path) -> str | None:
+    """Auto-run environment enrichment from MRI acquisition metadata already in
+    rawdata/, in a background thread. Returns the job id, or None if there was
+    no MRI acquisition data to enrich.
+
+    Reuses the same MRI-scan + conversion pipeline as the manual "Scan Project
+    MRI Data" flow in the Environment converter tab, just without a user
+    driving it through the UI.
+    """
+    df, _stats = build_mri_acquisition_table(project_root / "rawdata")
+    if df.empty:
+        return None
+
+    tmp_dir = tempfile.mkdtemp(prefix="prism_env_auto_")
+    input_path = Path(tmp_dir) / "mri_acquisitions.tsv"
+    df.to_csv(input_path, sep="\t", index=False)
+
+    config: dict[str, Any] = {
+        "tmp_dir": tmp_dir,
+        "input_path": input_path,
+        "filename": input_path.name,
+        "suffix": ".tsv",
+        "separator_option": "auto",
+        "timestamp_col": "timestamp",
+        "participant_col": "participant_id",
+        "participant_override": None,
+        "session_col": "session_id",
+        "session_override": None,
+        "location_col": "location",
+        "lat_col": None,
+        "lon_col": None,
+        "location_label_override": "",
+        "lat_manual": None,
+        "lon_manual": None,
+        "project_path": str(project_root),
+        "pilot_random_subject": False,
+        "convert_in_background": False,
+    }
+
+    job_id = ""
+    for _ in range(5):
+        candidate = uuid.uuid4().hex
+        try:
+            _environment_job_store.create(candidate)
+            job_id = candidate
+            break
+        except ValueError:
+            continue
+    if not job_id:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        return None
+
+    _append_environment_job_log(
+        job_id, "🌍 Auto-enrichment: MRI acquisition data found, starting environment conversion", "info"
+    )
+    thread = threading.Thread(target=_run_environment_job, args=(job_id, config), daemon=True)
+    thread.start()
+    return job_id
+
+
 def _build_environment_conversion_config_from_request() -> (
     tuple[dict[str, Any], tempfile.TemporaryDirectory | None]
 ):
@@ -1344,6 +1404,42 @@ def api_environment_scan_mri_acquisition():
             "stats": stats,
         }
     )
+
+
+def api_environment_rescan_mri():
+    """One-click re-scan: re-run MRI acquisition discovery + environment
+    enrichment for the current project's rawdata in the background, without
+    requiring the user to re-map columns or click through preview/convert.
+    Returns a job id that can be polled with the existing
+    /api/environment-convert-status/<job_id> endpoint.
+    """
+    project_path = (
+        request.form.get("project_path")
+        or request.args.get("project_path")
+        or session.get("current_project_path")
+    )
+    try:
+        project_root = require_existing_project_root(
+            project_path,
+            missing_message="No active project selected. Open a project before rescanning MRI data.",
+            missing_path_message="The selected project path no longer exists. Reopen the project and retry.",
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
+
+    job_id = trigger_automatic_environment_enrichment(project_root)
+    if job_id is None:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "No MRI acquisition timestamps found in this project's rawdata.",
+                }
+            ),
+            400,
+        )
+
+    return jsonify({"success": True, "job_id": job_id})
 
 
 def api_environment_preview():

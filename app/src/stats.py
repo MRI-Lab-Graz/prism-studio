@@ -46,6 +46,7 @@ class DatasetStats:
         self.biometrics = set()
         self.eyetracking = set()
         self.physio = set()
+        self.environment = set()
         self.descriptions = {}  # type -> name -> description
         self.total_files = 0
         self.sidecar_files = 0
@@ -94,6 +95,7 @@ class DatasetStats:
             "eyetracking",
             "physio",
             "physiological",
+            "environment",
             "beh",
             "func",
             "eeg",
@@ -149,6 +151,11 @@ class DatasetStats:
             match = re.search(r"_biometrics-([a-zA-Z0-9]+)", filename)
             if match:
                 self.biometrics.add(match.group(1))
+
+        elif modality == "environment":
+            match = re.search(r"_recording-([a-zA-Z0-9]+)", filename)
+            if match:
+                self.environment.add(match.group(1))
 
         self.total_files += 1
 

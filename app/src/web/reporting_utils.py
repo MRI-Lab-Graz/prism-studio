@@ -330,6 +330,7 @@ def format_validation_results(
                 "physio": sorted(list(getattr(dataset_stats, "physio", []))),
                 "surveys": sorted(list(getattr(dataset_stats, "surveys", []))),
                 "biometrics": sorted(list(getattr(dataset_stats, "biometrics", []))),
+                "environment": sorted(list(getattr(dataset_stats, "environment", []))),
                 "total_files": getattr(dataset_stats, "total_files", 0),
                 "sidecar_files": getattr(dataset_stats, "sidecar_files", 0),
             }

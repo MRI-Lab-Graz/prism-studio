@@ -146,6 +146,12 @@ class TestConversionBlueprintDelegation(unittest.TestCase):
         self.client.post("/api/environment-scan-mri")
         mock_handler.assert_called_once()
 
+    @patch.object(conversion_module, "_api_environment_rescan_mri")
+    def test_api_environment_rescan_mri_delegation(self, mock_handler):
+        mock_handler.return_value = "mock_response"
+        self.client.post("/api/environment-rescan-mri")
+        mock_handler.assert_called_once()
+
 
 class TestTemplateVersionOverrideParsing(unittest.TestCase):
     def test_parse_template_version_overrides_coerces_language_map_versions(self):

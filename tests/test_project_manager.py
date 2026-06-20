@@ -67,6 +67,35 @@ class TestProjectManager(unittest.TestCase):
 
         self.assertNotIn("Sessions", payload)
 
+    def test_create_project_defaults_auto_environment_enrichment_on(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            result = manager.create_project(str(project_path), {"name": "demo_project"})
+
+            self.assertTrue(result.get("success"), result)
+
+            payload = json.loads((project_path / "project.json").read_text(encoding="utf-8"))
+
+        self.assertTrue(payload["app"]["features"]["auto_environment_enrichment"])
+
+    def test_create_project_forwards_auto_environment_enrichment_opt_out(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            result = manager.create_project(
+                str(project_path),
+                {"name": "demo_project", "auto_environment_enrichment": False},
+            )
+
+            self.assertTrue(result.get("success"), result)
+
+            payload = json.loads((project_path / "project.json").read_text(encoding="utf-8"))
+
+        self.assertFalse(payload["app"]["features"]["auto_environment_enrichment"])
+
     def test_create_project_normalizes_invalid_dataset_type(self):
         manager = ProjectManager()
 
@@ -529,6 +558,96 @@ class TestProjectManager(unittest.TestCase):
             commands,
         )
         self.assertNotIn(["/usr/bin/datalad", "create", "--force"], commands)
+
+    @patch("src.project_manager.ProjectManager._run_datalad_save")
+    @patch("src.project_manager.ProjectManager._create_nested_subdatasets")
+    @patch("src.project_manager.shutil.which")
+    @patch("src.project_manager.subprocess.run")
+    def test_init_on_existing_bids_merges_into_preexisting_bidsignore(
+        self,
+        mock_run,
+        mock_which,
+        mock_create_nested,
+        mock_run_datalad_save,
+    ):
+        """An OpenNeuro source that already ships its own .bidsignore (missing
+        project.json/.prismrc.json) must have those PRISM rules merged in,
+        instead of PRISM skipping the file entirely."""
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: {
+            "datalad": "/usr/bin/datalad",
+            "git-annex": "/usr/bin/git-annex",
+        }.get(executable)
+        mock_create_nested.return_value = {
+            "subdatasets_created": [],
+            "subdatasets_existing": [],
+            "subdataset_failures": [],
+            "subdatasets_skipped": [],
+            "subdatasets_total_count": 0,
+            "subdatasets_registered_count": 0,
+            "subdatasets_remaining_count": 0,
+            "subject_datasets_created": [],
+            "subject_datasets_existing": [],
+            "subject_dataset_failures": [],
+        }
+        mock_run_datalad_save.return_value = {
+            "available": True,
+            "saved": True,
+            "message": 'DataLad saved changes with message "Initialize PRISM on existing BIDS dataset".',
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "ds003612"
+
+            def _fake_run(command, **_kwargs):
+                normalized = [str(part) for part in command]
+                if normalized[:3] == ["/usr/bin/datalad", "install", "-s"]:
+                    destination_path = Path(normalized[4])
+                    destination_path.mkdir(parents=True, exist_ok=True)
+                    (destination_path / ".datalad").mkdir(parents=True, exist_ok=True)
+                    (destination_path / ".git").mkdir(parents=True, exist_ok=True)
+                    (destination_path / "dataset_description.json").write_text(
+                        "{}\n",
+                        encoding="utf-8",
+                    )
+                    # Simulate a real OpenNeuro dataset that ships its own
+                    # .bidsignore (without any PRISM-specific rules).
+                    (destination_path / ".bidsignore").write_text(
+                        "derivatives/\n",
+                        encoding="utf-8",
+                    )
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if normalized == [
+                    "/usr/bin/datalad",
+                    "-C",
+                    str(project_path),
+                    "get",
+                    "-n",
+                    "-r",
+                    ".",
+                ]:
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
+
+            mock_run.side_effect = _fake_run
+
+            result = manager.init_on_existing_bids(
+                str(project_path),
+                {
+                    "remote_url": "https://github.com/OpenNeuroDatasets/ds003612.git",
+                    "use_datalad": False,
+                },
+            )
+
+            self.assertTrue(result.get("success"), result)
+            bidsignore_content = (project_path / ".bidsignore").read_text(
+                encoding="utf-8"
+            )
+            self.assertIn("derivatives/", bidsignore_content)
+            self.assertIn("project.json", bidsignore_content)
+            self.assertIn(".prismrc.json", bidsignore_content)
 
     @patch("src.project_manager.subprocess.run")
     def test_init_on_existing_bids_clones_generic_remote_with_git(self, mock_run):

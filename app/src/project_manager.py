@@ -24,6 +24,7 @@ Usage:
     result = pm.apply_fixes("/path/to/project")
 """
 
+import fnmatch
 import json
 import os
 import re
@@ -72,6 +73,8 @@ VALID_DATASET_TYPES = {"raw", "derivative"}
 DATALAD_REPAIR_STEP_TIMEOUT_SECONDS = 120
 REGISTERED_SUBDATASET_QUERY_TIMEOUT_SECONDS = 30
 DATALAD_CLEAN_STATUS_TIMEOUT_SECONDS = 30
+ANNEXED_TEXT_FILE_SCAN_BUDGET_SECONDS = 20
+ANNEXED_TEXT_FILE_SCAN_PER_ROOT_TIMEOUT_SECONDS = 5
 DATALAD_EXPORT_STEP_TIMEOUT_SECONDS = 60 * 60
 DATALAD_DOCS_URL = "https://www.datalad.org/"
 DATALAD_INSTALL_HINT = "Install with: uv tool install datalad git-annex"
@@ -379,6 +382,17 @@ class ProjectManager:
                     str(bidsignore_path), self._create_bidsignore(modalities)
                 )
                 created_files.append(".bidsignore")
+            else:
+                from src.bids_integration import check_and_update_bidsignore
+
+                bidsignore_rules_added = check_and_update_bidsignore(
+                    str(project_path), modalities
+                )
+                if bidsignore_rules_added:
+                    created_files.append(
+                        ".bidsignore (updated: added "
+                        f"{', '.join(sorted(bidsignore_rules_added))})"
+                    )
 
             # --- Sanitize existing dataset_description.json -----------------
             # Strip empty HEDVersion (invalid per BIDS schema — must match hed_version format)
@@ -455,6 +469,15 @@ class ProjectManager:
                         str(datalad_result.get("executable") or ""),
                     )
                 )
+                annexed_text_fix = self._fix_annexed_text_files(project_path)
+                if annexed_text_fix.get("fixed_count"):
+                    datalad_result["annexed_text_files_fixed_count"] = annexed_text_fix["fixed_count"]
+                    datalad_result["annexed_text_files_fixed_examples"] = annexed_text_fix["fixed_examples"]
+                    add_log(
+                        f"Un-annexed {annexed_text_fix['fixed_count']} text-format file(s) "
+                        "that arrived already tracked by git-annex in the source dataset.",
+                        "step",
+                    )
                 add_log(
                     "Saving DataLad changes (this can take a while for "
                     "datasets with many subjects)...",
@@ -1197,6 +1220,10 @@ class ProjectManager:
             "text_policy_dataset_count": 0,
             "text_policy_missing_count": 0,
             "text_policy_missing_examples": [],
+            "annexed_text_files_complete": True,
+            "annexed_text_files_count": 0,
+            "annexed_text_files_examples": [],
+            "annexed_text_files_scan_complete": True,
         }
 
         if not project_path:
@@ -1228,6 +1255,9 @@ class ProjectManager:
         result["enabled"] = True
         result.update(self._summarize_nested_subdatasets(project_path))
         result.update(self._summarize_datalad_text_policy(project_path))
+        if available and annex_available:
+            dataset_roots = self._iter_datalad_dataset_roots(project_path)
+            result.update(self._find_annexed_text_files(project_path, dataset_roots))
 
         missing_text_policy_count = int(result.get("text_policy_missing_count", 0) or 0)
         text_policy_warning = ""
@@ -1238,12 +1268,27 @@ class ProjectManager:
                 "to apply .gitattributes policy across nested datasets."
             )
 
+        annexed_text_files_count = int(result.get("annexed_text_files_count", 0) or 0)
+        annexed_text_files_warning = ""
+        if annexed_text_files_count > 0:
+            annexed_text_files_warning = (
+                f" Found {annexed_text_files_count} text-format file(s) already "
+                "tracked as git-annex symlinks (e.g. "
+                f"{', '.join(result.get('annexed_text_files_examples', [])[:3])}). "
+                "Use Save DataLad Snapshot to un-annex them."
+            )
+        elif not result.get("annexed_text_files_scan_complete", True):
+            annexed_text_files_warning = (
+                " Scan for already-annexed text files did not finish in time; "
+                "reload to retry."
+            )
+
         if not available:
             result["message"] = (
                 "Current project is a DataLad dataset, but the datalad executable "
                 "is not available in this environment. "
                 f"{DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
-            ) + text_policy_warning
+            ) + text_policy_warning + annexed_text_files_warning
             return result
 
         result["can_save"] = True
@@ -1272,6 +1317,8 @@ class ProjectManager:
             )
         if text_policy_warning:
             result["message"] = f"{result['message']}{text_policy_warning}"
+        if annexed_text_files_warning:
+            result["message"] = f"{result['message']}{annexed_text_files_warning}"
         result["executable"] = datalad_executable
         if git_annex_executable:
             result["annex_executable"] = git_annex_executable
@@ -1369,6 +1416,11 @@ class ProjectManager:
         if gitattributes_policy_updated:
             result["datalad"]["gitattributes_policy_updated"] = True
 
+        annexed_text_fix = self._fix_annexed_text_files(project_path)
+        if annexed_text_fix.get("fixed_count"):
+            result["datalad"]["annexed_text_files_fixed_count"] = annexed_text_fix["fixed_count"]
+            result["datalad"]["annexed_text_files_fixed_examples"] = annexed_text_fix["fixed_examples"]
+
         save_result = self._run_datalad_save(
             project_path,
             message=message,
@@ -1382,6 +1434,14 @@ class ProjectManager:
             save_result["message"] = (
                 (save_result.get("message") or "DataLad save completed.")
                 + " Updated DataLad text-file tracking policy across dataset roots."
+            )
+        if annexed_text_fix.get("fixed_count"):
+            save_result["annexed_text_files_fixed_count"] = annexed_text_fix["fixed_count"]
+            save_result["annexed_text_files_fixed_examples"] = annexed_text_fix["fixed_examples"]
+            save_result["message"] = (
+                (save_result.get("message") or "DataLad save completed.")
+                + f" Un-annexed {annexed_text_fix['fixed_count']} text-format file(s) that "
+                "were incorrectly tracked as git-annex symlinks."
             )
         result["datalad"] = save_result
         if save_result.get("saved") or save_result.get("no_changes"):
@@ -4226,6 +4286,75 @@ class ProjectManager:
             "text_policy_missing_examples": missing_roots[:10],
         }
 
+    @staticmethod
+    def _text_policy_glob_patterns() -> List[str]:
+        """Glob patterns (basename match) for files the text-tracking policy covers."""
+        return [line.split(" ", 1)[0] for line in DATALAD_TEXT_POLICY_REQUIRED_LINES]
+
+    def _find_annexed_text_files(
+        self,
+        project_path: Path,
+        dataset_roots: List[Path],
+    ) -> Dict[str, Any]:
+        """Scan dataset roots for text-format files already tracked as annex symlinks.
+
+        Bounded by a wall-clock budget because this shells out `git annex find`
+        per dataset root; projects with many nested datasets stop early rather
+        than risk timing out the project-load status check, and report that the
+        scan was incomplete so the UI doesn't claim a false-clean result.
+        """
+        result: Dict[str, Any] = {
+            "annexed_text_files_complete": True,
+            "annexed_text_files_count": 0,
+            "annexed_text_files_examples": [],
+            "annexed_text_files_scan_complete": True,
+        }
+        git_executable = shutil.which("git")
+        if not git_executable or not shutil.which("git-annex") or not dataset_roots:
+            return result
+
+        patterns = self._text_policy_glob_patterns()
+        found: List[str] = []
+        deadline = time.monotonic() + ANNEXED_TEXT_FILE_SCAN_BUDGET_SECONDS
+        scanned_roots = 0
+
+        for dataset_root in dataset_roots:
+            if time.monotonic() >= deadline:
+                result["annexed_text_files_scan_complete"] = False
+                break
+            scanned_roots += 1
+            try:
+                process = subprocess.run(
+                    [git_executable, "-C", str(dataset_root), "annex", "find", "--anything"],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=ANNEXED_TEXT_FILE_SCAN_PER_ROOT_TIMEOUT_SECONDS,
+                )
+            except (subprocess.TimeoutExpired, OSError):
+                result["annexed_text_files_scan_complete"] = False
+                continue
+            if process.returncode != 0:
+                continue
+
+            for line in process.stdout.splitlines():
+                rel = line.strip()
+                if not rel or not any(fnmatch.fnmatch(Path(rel).name, pattern) for pattern in patterns):
+                    continue
+                try:
+                    full_rel = (dataset_root / rel).relative_to(project_path).as_posix()
+                except ValueError:
+                    full_rel = rel
+                found.append(full_rel)
+
+        if scanned_roots < len(dataset_roots):
+            result["annexed_text_files_scan_complete"] = False
+
+        result["annexed_text_files_count"] = len(found)
+        result["annexed_text_files_complete"] = len(found) == 0
+        result["annexed_text_files_examples"] = found[:10]
+        return result
+
     def _ensure_datalad_editable_metadata_policy(
         self,
         project_path: Path,
@@ -4270,6 +4399,73 @@ class ProjectManager:
             updated = True
 
         return updated
+
+    def _fix_annexed_text_files(self, project_path: Path) -> Dict[str, Any]:
+        """Un-annex text-format files that ended up tracked as annex symlinks.
+
+        Runs an unbounded (no scan budget) pass since this is triggered by an
+        explicit user action (Save DataLad Snapshot), not a page-load status
+        check. Relies on `git annex unannex`, which moves the file's content
+        back into the working tree as a plain file; the caller is expected to
+        have already written the `.gitattributes` policy lines so the
+        subsequent `datalad save` keeps these files in Git instead of
+        re-annexing them.
+        """
+        result: Dict[str, Any] = {"fixed_count": 0, "fixed_examples": [], "errors": []}
+        git_executable = shutil.which("git")
+        if not git_executable or not shutil.which("git-annex"):
+            return result
+
+        patterns = self._text_policy_glob_patterns()
+        for dataset_root in self._iter_datalad_dataset_roots(project_path):
+            try:
+                find_process = subprocess.run(
+                    [git_executable, "-C", str(dataset_root), "annex", "find", "--anything"],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=ANNEXED_TEXT_FILE_SCAN_PER_ROOT_TIMEOUT_SECONDS,
+                )
+            except (subprocess.TimeoutExpired, OSError) as exc:
+                result["errors"].append(f"{dataset_root}: scan failed ({exc})")
+                continue
+            if find_process.returncode != 0:
+                continue
+
+            matched_paths = [
+                rel
+                for rel in (line.strip() for line in find_process.stdout.splitlines())
+                if rel and any(fnmatch.fnmatch(Path(rel).name, pattern) for pattern in patterns)
+            ]
+            if not matched_paths:
+                continue
+
+            try:
+                unannex_process = subprocess.run(
+                    [git_executable, "-C", str(dataset_root), "annex", "unannex", *matched_paths],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
+                )
+            except (subprocess.TimeoutExpired, OSError) as exc:
+                result["errors"].append(f"{dataset_root}: unannex failed ({exc})")
+                continue
+            if unannex_process.returncode != 0:
+                detail = (unannex_process.stderr or unannex_process.stdout or "").strip()
+                result["errors"].append(f"{dataset_root}: {detail or 'git annex unannex failed'}")
+                continue
+
+            for rel in matched_paths:
+                try:
+                    full_rel = (dataset_root / rel).relative_to(project_path).as_posix()
+                except ValueError:
+                    full_rel = rel
+                result["fixed_examples"].append(full_rel)
+            result["fixed_count"] += len(matched_paths)
+
+        result["fixed_examples"] = result["fixed_examples"][:10]
+        return result
 
     def _resolve_ria_settings(
         self,
@@ -4888,7 +5084,15 @@ Subfolders:
             "name": name,
             "icon": project_icon,
             "paths": {"sourcedata": "sourcedata"},
-            "app": {"schema": "1", "last_opened": date.today().isoformat()},
+            "app": {
+                "schema": "1",
+                "last_opened": date.today().isoformat(),
+                "features": {
+                    "auto_environment_enrichment": bool(
+                        config.get("auto_environment_enrichment", True)
+                    ),
+                },
+            },
             "governance": {
                 "funding": config.get("funding", []),
                 "ethics_approvals": config.get("ethics_approvals", []),

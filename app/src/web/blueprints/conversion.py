@@ -60,6 +60,7 @@ from .conversion_environment_handlers import (
     api_environment_convert_metrics as _api_environment_convert_metrics,
     api_environment_location_search as _api_environment_location_search,
     api_environment_scan_mri_acquisition as _api_environment_scan_mri_acquisition,
+    api_environment_rescan_mri as _api_environment_rescan_mri,
 )
 
 IdColumnNotDetectedError: Any = None
@@ -194,6 +195,12 @@ def api_environment_location_search():
 def api_environment_scan_mri_acquisition():
     """Scan the current project's rawdata for MRI acquisition timestamps/location."""
     return _api_environment_scan_mri_acquisition()
+
+
+@conversion_bp.route("/api/environment-rescan-mri", methods=["POST"])
+def api_environment_rescan_mri():
+    """One-click rescan: re-discover MRI acquisitions and re-run environment enrichment."""
+    return _api_environment_rescan_mri()
 
 
 @conversion_bp.route("/api/environment-convert-start", methods=["POST"])

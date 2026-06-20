@@ -447,6 +447,68 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertTrue(body["success"])
         self.assertEqual(manager.init_calls[0][1]["use_datalad"], False)
 
+    def test_init_on_bids_triggers_auto_environment_enrichment_by_default(self):
+        manager = _ProjectManagerStub()
+        target_path = Path(self.tmp_dir.name) / "existing_bids_mri"
+        (target_path / "rawdata" / "sub-01" / "ses-01" / "anat").mkdir(parents=True, exist_ok=True)
+        (target_path / "rawdata" / "sub-01" / "ses-01" / "anat" / "sub-01_ses-01_T1w.json").write_text(
+            json.dumps({"AcquisitionDateTime": "2026-02-26T14:30:00", "InstitutionName": "Graz"}),
+            encoding="utf-8",
+        )
+
+        with patch(
+            "src.web.blueprints.conversion_environment_handlers.threading.Thread"
+        ) as mock_thread:
+            with self.app.test_request_context(
+                "/api/projects/init-on-bids",
+                method="POST",
+                json={"path": str(target_path), "name": "existing_bids_mri"},
+            ):
+                response = self.module.handle_init_on_bids(
+                    project_manager=manager,
+                    set_current_project=lambda *a, **k: None,
+                    save_last_project=lambda *a, **k: None,
+                )
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertTrue(manager.init_calls[0][1]["auto_environment_enrichment"])
+        self.assertIsNotNone(body.get("environment_enrichment_job_id"))
+        mock_thread.assert_called_once()
+
+    def test_init_on_bids_skips_auto_environment_enrichment_when_opted_out(self):
+        manager = _ProjectManagerStub()
+        target_path = Path(self.tmp_dir.name) / "existing_bids_no_enrich"
+        (target_path / "rawdata" / "sub-01" / "ses-01" / "anat").mkdir(parents=True, exist_ok=True)
+        (target_path / "rawdata" / "sub-01" / "ses-01" / "anat" / "sub-01_ses-01_T1w.json").write_text(
+            json.dumps({"AcquisitionDateTime": "2026-02-26T14:30:00", "InstitutionName": "Graz"}),
+            encoding="utf-8",
+        )
+
+        with patch(
+            "src.web.blueprints.conversion_environment_handlers.threading.Thread"
+        ) as mock_thread:
+            with self.app.test_request_context(
+                "/api/projects/init-on-bids",
+                method="POST",
+                json={
+                    "path": str(target_path),
+                    "name": "existing_bids_no_enrich",
+                    "auto_environment_enrichment": False,
+                },
+            ):
+                response = self.module.handle_init_on_bids(
+                    project_manager=manager,
+                    set_current_project=lambda *a, **k: None,
+                    save_last_project=lambda *a, **k: None,
+                )
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertFalse(manager.init_calls[0][1]["auto_environment_enrichment"])
+        self.assertNotIn("environment_enrichment_job_id", body)
+        mock_thread.assert_not_called()
+
     def test_init_on_bids_forwards_remote_clone_config(self):
         manager = _ProjectManagerStub()
 
