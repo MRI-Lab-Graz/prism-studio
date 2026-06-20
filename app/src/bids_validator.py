@@ -91,6 +91,8 @@ def run_bids_validator(
         "survey",
         "biometrics",
         "metadata",
+        "environment",
+        "events",
     }
     standard_bids_folders = {
         "anat",

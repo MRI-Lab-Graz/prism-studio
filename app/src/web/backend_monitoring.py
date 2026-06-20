@@ -55,6 +55,7 @@ _ENDPOINT_LABELS = {
     "conversion.api_environment_convert": "environment convert",
     "conversion.api_environment_convert_start": "environment convert start",
     "conversion.api_environment_scan_mri_acquisition": "scan project MRI for acquisition data",
+    "conversion.api_environment_rescan_mri": "rescan project MRI and re-enrich environment data",
     "validation.validate_folder": "validate folder",
     "conversion_survey.api_survey_convert": "survey convert",
     "conversion_survey.api_survey_convert_preview": "survey convert preview",
@@ -1636,6 +1637,26 @@ def _build_environment_preview_terminal_command(req) -> str:
     return " ".join(shlex.quote(part) for part in cmd_parts)
 
 
+def _build_environment_scan_mri_terminal_command(req, *, rescan: bool = False) -> str:
+    """Build a CLI-style command preview for the MRI acquisition scan endpoint."""
+    project_path = (
+        str(req.form.get("project_path") or "").strip()
+        or str(req.args.get("project_path") or "").strip()
+        or str(session.get("current_project_path", "") or "").strip()
+        or "<project-path>"
+    )
+
+    cmd_parts = [
+        "python",
+        "prism_tools.py",
+        "environment",
+        "rescan-mri" if rescan else "scan-mri",
+        "--project",
+        project_path,
+    ]
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
 def _build_environment_convert_terminal_command(req) -> str:
     """Build a real backend CLI command for environment conversion."""
     uploaded = req.files.get("file")
@@ -1762,6 +1783,10 @@ def _build_terminal_command(req) -> str:
         return _build_environment_convert_terminal_command(req)
     if endpoint == "conversion.api_environment_convert_start":
         return _build_environment_convert_terminal_command(req)
+    if endpoint == "conversion.api_environment_scan_mri_acquisition":
+        return _build_environment_scan_mri_terminal_command(req)
+    if endpoint == "conversion.api_environment_rescan_mri":
+        return _build_environment_scan_mri_terminal_command(req, rescan=True)
     if endpoint == "conversion_participants.api_participants_detect_id":
         return _build_participants_detect_id_terminal_command(req)
     if endpoint == "conversion_participants.api_participants_preview":
