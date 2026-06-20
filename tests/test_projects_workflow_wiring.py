@@ -176,14 +176,14 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn('id="projectBoxDataladProgressWrap"', content)
         self.assertIn('id="projectBoxDataladProgressBar"', content)
         self.assertIn('id="projectBoxDataladProgressLabel"', content)
-        self.assertIn("Repair DataLad Structure", content)
+        self.assertIn("Register Nested Dataset", content)
         self.assertIn("DataLad Structure Complete", content)
         self.assertIn("fetchWithApiFallback('/api/projects/datalad/enable'", content)
         self.assertIn("fetchWithApiFallback('/api/projects/datalad/save'", content)
         self.assertIn("confirmed: true", content)
-        self.assertIn("backfill one missing nested dataset per click", content)
+        self.assertIn("register one per click", content)
         self.assertIn("DataLad structure is complete for this project.", content)
-        self.assertIn("backfilling one missing nested dataset for this click", content)
+        self.assertIn("backfills one missing nested dataset registration", content)
         self.assertIn("Watch the backend terminal for progress.", content)
         self.assertIn("subdatasetsProgressPercent", content)
         self.assertIn("nextMissingSubdataset", content)
@@ -505,8 +505,6 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("materialize_annex_content: true,", content)
         self.assertIn("scrub_mri_json: getById('exportScrubMriJson')?.checked || false,", content)
         self.assertIn("scrub_mri_json_groups: scrubGroups.length ? scrubGroups : null,", content)
-        self.assertIn("deface_anatomical_scans: getById('exportDefaceAnatomicalScans')?.checked || false,", content)
-        self.assertIn("defacing_selected_variants: Array.isArray(variantSelection.selectedVariants)", content)
         self.assertIn("include_sourcedata: getById('exportSourcedata')?.checked || false,", content)
         self.assertIn(
             "exclude_version_control_metadata: getSelectedExportRepositoryMode() === 'datalad_free',",
@@ -636,7 +634,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
     def test_export_submit_prompts_for_defacing_risk_when_mri_privacy_checks_enabled(self):
         content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("if (data.scrub_mri_json || data.deface_anatomical_scans) {", content)
+        self.assertIn("if (data.scrub_mri_json) {", content)
         self.assertIn("const defacingConfirmationMode = getSelectedDefacingConfirmationMode();", content)
         self.assertIn("const defacingSummary = await fetchDefacingSummary(currentProjectPath);", content)
         self.assertIn("if (defacingConfirmationMode === 'always' || defacingSummary.riskCount > 0) {", content)

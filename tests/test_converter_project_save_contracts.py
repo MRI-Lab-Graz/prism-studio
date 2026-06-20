@@ -144,6 +144,7 @@ def test_biometrics_convert_prefers_explicit_project_path(tmp_path, monkeypatch)
             session_column=None,
             tasks_included=["grip"],
             unknown_columns=[],
+            detected_sessions=[],
         )
 
     monkeypatch.setattr(
