@@ -121,6 +121,8 @@ def dispatch_prism_tools(
             handlers["dataset_cleanup_project_metadata"](args)
         elif args.action == "rename-subjects":
             handlers["dataset_rename_subjects"](args)
+        elif args.action == "build-hostile-demo":
+            handlers["dataset_build_hostile_demo"](args)
         else:
             parsers["dataset"].print_help()
     elif args.command == "recipes":

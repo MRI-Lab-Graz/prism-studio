@@ -666,7 +666,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             environment_content,
         )
         self.assertIn(
-            "appendBiometricsLogEntries(data.log);",
+            "appendBiometricsLogEntries(newLogs);",
             biometrics_content,
         )
         self.assertIn(
@@ -733,11 +733,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
     def test_biometrics_handlers_use_run_lock_and_release_on_all_paths(self):
         content = BIOMETRICS_MODULE.read_text(encoding="utf-8")
 
-        preview_start = "biometricsPreviewBtn.addEventListener('click', function() {"
+        preview_start = "biometricsPreviewBtn.addEventListener('click', async function() {"
         preview_end = "// ===== DETECTION & TASK SELECTION HANDLER ====="
         detect_start = "biometricsConvertBtn.addEventListener('click', function() {"
         detect_end = "// ===== SELECT ALL TASKS HANDLER ====="
-        confirm_start = "biometricsConfirmBtn.addEventListener('click', function() {"
+        confirm_start = "biometricsConfirmBtn.addEventListener('click', async function() {"
 
         self.assertIn(preview_start, content)
         self.assertIn(preview_end, content)
@@ -751,8 +751,8 @@ class TestConverterWorkflowWiring(unittest.TestCase):
 
         self.assertIn("if (!runController.tryStartRun()) {", preview_block)
         self.assertIn("setBiometricsActionButtonsDisabled(true);", preview_block)
-        self.assertIn("fetchWithApiFallback('/api/biometrics-convert', {", preview_block)
-        self.assertIn(".finally(() => {", preview_block)
+        self.assertIn("await runBiometricsConvertJob(formData, 'Preview failed');", preview_block)
+        self.assertIn("} finally {", preview_block)
         self.assertIn("runController.finishRun();", preview_block)
         self.assertIn("setBiometricsActionButtonsDisabled(false);", preview_block)
 
@@ -767,9 +767,29 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("setBiometricsActionButtonsDisabled(true);", confirm_block)
         self.assertIn("if (!currentProjectPath) {", confirm_block)
         self.assertIn("runController.finishRun();", confirm_block)
-        self.assertIn("fetchWithApiFallback('/api/biometrics-convert', {", confirm_block)
-        self.assertIn(".finally(() => {", confirm_block)
+        self.assertIn("await runBiometricsConvertJob(formData, 'Conversion failed');", confirm_block)
+        self.assertIn("} finally {", confirm_block)
         self.assertIn("setBiometricsActionButtonsDisabled(false);", confirm_block)
+
+    def test_biometrics_convert_job_helper_polls_start_and_status_endpoints(self):
+        content = BIOMETRICS_MODULE.read_text(encoding="utf-8")
+
+        start_marker = "async function runBiometricsConvertJob(formData, errorMessage) {"
+        end_marker = "// ===== PREVIEW / DRY-RUN HANDLER ====="
+
+        self.assertIn(start_marker, content)
+        self.assertIn(end_marker, content)
+
+        helper_block = content.split(start_marker, 1)[1].split(end_marker, 1)[0]
+
+        self.assertIn("fetchWithApiFallback('/api/biometrics-convert-start', {", helper_block)
+        self.assertIn("runController.setActiveJobId(jobId);", helper_block)
+        self.assertIn(
+            "`/api/biometrics-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`",
+            helper_block,
+        )
+        self.assertIn("onLogs: (newLogs) => {", helper_block)
+        self.assertIn("appendBiometricsLogEntries(newLogs);", helper_block)
 
     def test_physio_and_eyetracking_modules_reset_stale_state_and_send_project_path(
         self,

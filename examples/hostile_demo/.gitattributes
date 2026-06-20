@@ -1,0 +1,25 @@
+# Keep PRISM metadata and common text files editable in Git, not git-annex.
+*.cfg annex.largefiles=nothing
+*.csv annex.largefiles=nothing
+*.ini annex.largefiles=nothing
+*.json annex.largefiles=nothing
+*.jsonl annex.largefiles=nothing
+*.md annex.largefiles=nothing
+*.ndjson annex.largefiles=nothing
+*.ods annex.largefiles=nothing
+*.toml annex.largefiles=nothing
+*.tsv annex.largefiles=nothing
+*.txt annex.largefiles=nothing
+*.xls annex.largefiles=nothing
+*.xlsx annex.largefiles=nothing
+*.xml annex.largefiles=nothing
+*.yaml annex.largefiles=nothing
+*.yml annex.largefiles=nothing
+.gitattributes annex.largefiles=nothing
+.bidsignore annex.largefiles=nothing
+.prismrc.json annex.largefiles=nothing
+CHANGES annex.largefiles=nothing
+CITATION.cff annex.largefiles=nothing
+README.md annex.largefiles=nothing
+dataset_description.json annex.largefiles=nothing
+project.json annex.largefiles=nothing
