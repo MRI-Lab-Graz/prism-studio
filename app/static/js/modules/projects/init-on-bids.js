@@ -259,6 +259,7 @@ export function initProjectInitOnBidsController({
         const remoteUrl = (document.getElementById('initBidsRemoteUrl')?.value || '').trim();
         const displayName = (document.getElementById('initBidsName')?.value || '').trim();
         const useDatalad = document.getElementById('initBidsUseDatalad')?.checked !== false;
+        const autoEnvironmentEnrichment = document.getElementById('initBidsAutoEnvironmentEnrichment')?.checked !== false;
         const hasRemote = remoteUrl.length > 0;
         const targetPath = hasRemote ? clonePath : bidsPath;
 
@@ -321,7 +322,8 @@ export function initProjectInitOnBidsController({
                     name: displayName || undefined,
                     use_datalad: useDatalad,
                     remote_url: hasRemote ? remoteUrl : undefined,
-                    source_type: hasRemote ? 'remote' : 'local'
+                    source_type: hasRemote ? 'remote' : 'local',
+                    auto_environment_enrichment: autoEnvironmentEnrichment
                 })
             });
             setProgress(70, 'Server response received. Applying changes...', 'info', true);
@@ -355,6 +357,13 @@ export function initProjectInitOnBidsController({
                         </div>
                     `
                     : '';
+                const environmentEnrichmentNotice = result.environment_enrichment_job_id
+                    ? `
+                        <div class="alert alert-info mt-3 mb-0">
+                            <i class="fas fa-globe me-2"></i>Scanning MRI acquisitions for environmental enrichment in the background. Check the Environment converter tab for progress.
+                        </div>
+                    `
+                    : '';
                 resultDiv.innerHTML = `
                     <div class="alert alert-success">
                         <h5><i class="fas fa-check-circle me-2"></i>PRISM Initialised Successfully!</h5>
@@ -375,6 +384,7 @@ export function initProjectInitOnBidsController({
                         </div>
                         ${sourceNotice}
                         ${dataladNotice}
+                        ${environmentEnrichmentNotice}
                     </div>
                 `;
                 applyCurrentProject(result.current_project);

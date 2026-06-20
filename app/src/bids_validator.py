@@ -81,6 +81,7 @@ def run_bids_validator(
         "EMPTY_FILE",
         "NIFTI_HEADER_UNREADABLE",
         "QUICK_TEST_FAILED",
+        "FILE_READ",
     }
 
     # PRISM-only modalities that should be ignored by BIDS
@@ -120,6 +121,19 @@ def run_bids_validator(
                 ".tsv.gz",
             )
         )
+
+    def _is_unfetched_annex_content(file_path: Optional[str]) -> bool:
+        """A broken symlink is the on-disk signature of a DataLad/git-annex
+        file whose content hasn't been fetched yet (e.g. `datalad install`
+        without a following `datalad get`). Once fetched, the symlink
+        resolves to real content in .git/annex/objects/ and this is False.
+        """
+        if not file_path:
+            return False
+        try:
+            return os.path.islink(file_path) and not os.path.exists(file_path)
+        except OSError:
+            return False
 
     def _is_placeholder_location(location: str) -> bool:
         if not placeholders or not location:
@@ -249,8 +263,21 @@ def run_bids_validator(
                         silenced_recommended_count += 1
                         continue
 
+                    # Try to extract a specific file path from the location
+                    issue_file: Optional[str] = None
+                    if location:
+                        # Deno location starts with /
+                        if location.startswith("/"):
+                            issue_file = os.path.join(root_dir, location.lstrip("/"))
+                        else:
+                            issue_file = os.path.join(root_dir, location)
+
+                    annex_unfetched = code in content_error_codes and (
+                        _is_unfetched_annex_content(issue_file)
+                    )
+
                     # Suppress content-related errors for placeholders (and for structure-only uploads).
-                    if code in content_error_codes:
+                    if code in content_error_codes and not annex_unfetched:
                         if _is_placeholder_location(location):
                             continue
                         if structure_only and _looks_like_content_file(location):
@@ -293,14 +320,13 @@ def run_bids_validator(
                     if location:
                         msg += f"\n    Location: {location}"
 
-                    # Try to extract a specific file path from the location
-                    issue_file: Optional[str] = None
-                    if location:
-                        # Deno location starts with /
-                        if location.startswith("/"):
-                            issue_file = os.path.join(root_dir, location.lstrip("/"))
-                        else:
-                            issue_file = os.path.join(root_dir, location)
+                    if annex_unfetched:
+                        level = "WARNING"
+                        msg += (
+                            "\n    Note: file content not yet fetched from "
+                            "git-annex/DataLad. Run `datalad get -r .` in the "
+                            "dataset root to download the actual data."
+                        )
 
                     if issue_file:
                         issues.append((level, msg, issue_file))
@@ -391,8 +417,9 @@ def run_bids_validator(
 
                 # Map BIDS issues to our format ("LEVEL", "Message")
                 for issue_type in ["errors", "warnings"]:
-                    level = "ERROR" if issue_type == "errors" else "WARNING"
+                    base_level = "ERROR" if issue_type == "errors" else "WARNING"
                     for issue in bids_report.get("issues", {}).get(issue_type, []):
+                        level = base_level
                         key = issue.get("key", "")
                         issue_locations: list[str] = []
                         for file in issue.get("files", []):
@@ -418,18 +445,30 @@ def run_bids_validator(
 
                         # Filter files for this issue
                         filtered_files = []
+                        any_annex_unfetched = False
                         for file in issue.get("files", []):
                             file_obj = file.get("file")
                             if file_obj:
                                 file_path = file_obj.get("relativePath", "")
+                                abs_file_path = os.path.join(
+                                    root_dir, file_path.lstrip("/")
+                                )
+                                file_annex_unfetched = (
+                                    key in content_error_codes
+                                    and _is_unfetched_annex_content(abs_file_path)
+                                )
+                                if file_annex_unfetched:
+                                    any_annex_unfetched = True
                                 # Suppress content-related errors for placeholders
                                 if (
                                     key in content_error_codes
+                                    and not file_annex_unfetched
                                     and file_path.lstrip("/") in placeholders
                                 ):
                                     continue
                                 if (
                                     structure_only
+                                    and not file_annex_unfetched
                                     and key == "EMPTY_FILE"
                                     and file_path.lower().endswith(
                                         (".nii", ".nii.gz", ".tsv.gz")
@@ -440,6 +479,9 @@ def run_bids_validator(
 
                         if not filtered_files and issue.get("files"):
                             continue
+
+                        if any_annex_unfetched:
+                            level = "WARNING"
 
                         # Filter out NOT_INCLUDED for known PRISM modalities
                         if key == "NOT_INCLUDED":
@@ -464,6 +506,13 @@ def run_bids_validator(
                             msg += f"\n    File: {f_path}"
                             if not first_file:
                                 first_file = os.path.join(root_dir, f_path.lstrip("/"))
+
+                        if any_annex_unfetched:
+                            msg += (
+                                "\n    Note: file content not yet fetched from "
+                                "git-annex/DataLad. Run `datalad get -r .` in the "
+                                "dataset root to download the actual data."
+                            )
 
                         if first_file:
                             issues.append((level, msg, first_file))

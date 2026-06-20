@@ -18,6 +18,7 @@ export function initEnvironment(elements) {
     const {
         envDataFile,
         envScanMriBtn,
+        envRescanMriBtn,
         browseServerEnvFileBtn,
         clearEnvDataFileBtn,
         envPreviewBtn,
@@ -576,6 +577,155 @@ export function initEnvironment(elements) {
             }
         } finally {
             envScanMriBtn.disabled = false;
+        }
+    });
+
+    envRescanMriBtn?.addEventListener('click', async () => {
+        if (!runController.tryStartRun()) {
+            return;
+        }
+
+        resetUI();
+        envRescanMriBtn.disabled = true;
+        if (envConvertBtn) envConvertBtn.disabled = true;
+        if (envPilotRunBtn) envPilotRunBtn.disabled = true;
+        if (envProgressContainer) {
+            envProgressContainer.classList.remove('d-none');
+            updateProgressUI(0);
+        }
+        if (envLogContainer) envLogContainer.classList.remove('d-none');
+        if (envLogBody) envLogBody.classList.remove('d-none');
+        if (envLog) envLog.innerHTML = '';
+        appendLog('🔄 Rescanning MRI acquisitions and re-running environment enrichment…', 'info', envLog);
+
+        let activePollController = null;
+
+        try {
+            const fd = new FormData();
+            const projectPath = resolveCurrentProjectPath();
+            if (projectPath) fd.append('project_path', projectPath);
+
+            const startResponse = await fetchWithApiFallback('/api/environment-rescan-mri', { method: 'POST', body: fd });
+            const startData = await startResponse.json().catch(() => ({}));
+            if (!startResponse.ok || !startData.success) {
+                throw new Error(startData.error || 'Could not rescan project MRI data.');
+            }
+
+            const jobId = startData.job_id;
+            if (!jobId) {
+                throw new Error('MRI rescan did not return a job id');
+            }
+            runController.setActiveJobId(jobId);
+
+            if (envCancelBtn) {
+                envCancelBtn.classList.remove('d-none');
+                envCancelBtn.disabled = false;
+                envCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Running Conversion';
+                envCancelBtn.onclick = () => {
+                    envCancelBtn.disabled = true;
+                    envCancelBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cancelling...';
+                    runController.cancelActiveJob({
+                        buildCancelUrl: (activeJobId) => `/api/environment-convert-cancel/${encodeURIComponent(activeJobId)}`,
+                    }).then(() => {
+                        appendLog('⏹️ Cancellation requested. Waiting for cleanup…', 'warning', envLog);
+                    }).catch((cancelError) => {
+                        envCancelBtn.disabled = false;
+                        envCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Running Conversion';
+                        appendLog(`❌ Error: ${cancelError.message}`, 'error', envLog);
+                    });
+                };
+            }
+
+            activePollController = pollingRunState.start();
+
+            const statusData = await pollJobStatus({
+                fetchStatus: async (cursor) => {
+                    const statusResponse = await fetchWithApiFallback(`/api/environment-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);
+                    const statusPayload = await statusResponse.json().catch(() => ({}));
+                    if (!statusResponse.ok) {
+                        throw new Error(statusPayload.error || 'Failed to retrieve environment conversion status');
+                    }
+                    return statusPayload;
+                },
+                onLogs: (newLogs) => {
+                    if (typeof appendLogBatch === 'function') {
+                        appendLogBatch(newLogs, 'info', envLog);
+                        return;
+                    }
+                    newLogs.forEach((entry) => appendLog(entry.message, entry.type || 'info', envLog));
+                },
+                onPollData: (nextStatusData) => {
+                    if (Number.isFinite(nextStatusData.progress_pct)) {
+                        animateProgressTo(nextStatusData.progress_pct);
+                    }
+                },
+                onRetryWarning: ({ attempt, maxAttempts, error }) => {
+                    appendLog(
+                        `⚠️ Status check failed (${attempt}/${maxAttempts}): ${error.message || error}`,
+                        'warning',
+                        envLog,
+                    );
+                },
+                intervalMs: STATUS_POLL_INTERVAL_MS,
+                timeoutMs: STATUS_POLL_TIMEOUT_MS,
+                maxConsecutiveErrors: MAX_STATUS_POLL_ERRORS,
+                signal: activePollController.signal,
+                abortErrorMessage: 'Environment polling aborted due to project change.',
+                timeoutErrorMessage: 'Environment conversion status timed out after 5 minutes. Please check conversion logs and retry.',
+                statusFailureMessage: 'Failed to retrieve environment conversion status after multiple attempts.',
+                getFailureError: (nextStatusData) => nextStatusData.error || 'Environment conversion failed',
+            });
+
+            updateProgressUI(100);
+
+            const data = statusData.result || {};
+            if (envInfo) {
+                const paths = Array.isArray(data.project_environment_paths) ? data.project_environment_paths : [];
+                const target = data.project_environment_path || paths[0] || 'sub-*/ses-*/environment/*.tsv';
+                const filesNote = paths.length > 1 ? ` Saved ${paths.length} subject/session files.` : '';
+                envInfo.textContent = `Rescan complete. Converted and saved to project: ${target}.${filesNote}`;
+                envInfo.classList.remove('d-none');
+            }
+            renderOutputPreview(data.output_preview || null);
+            const providerFailures = Array.isArray(data.provider_failures) ? data.provider_failures : [];
+            const providerNote = providerFailures.length
+                ? ` ⚠️ Partial enrichment — API failures: ${providerFailures.join(', ')}.`
+                : '';
+            appendLog(
+                `✅ Rescan done — ${data.row_count} row(s) written, ${data.skipped || 0} skipped${providerNote}`,
+                providerFailures.length ? 'warning' : 'success',
+                envLog,
+            );
+        } catch (err) {
+            if (isPollingAbortError(err)) {
+                // Project-change listeners already reset the converter UI.
+            } else if (err.message === 'Cancelled by user' || err.message === 'Conversion cancelled by user') {
+                appendLog('⏹️ Rescan cancelled. Partial project outputs were removed.', 'warning', envLog);
+                if (envInfo) {
+                    envInfo.textContent = 'MRI rescan cancelled. Partial project outputs were removed.';
+                    envInfo.classList.remove('d-none');
+                }
+                if (envProgressContainer) envProgressContainer.classList.add('d-none');
+            } else {
+                appendLog(`❌ Error: ${err.message}`, 'error', envLog);
+                if (envError) {
+                    envError.textContent = err.message || 'MRI rescan failed';
+                    envError.classList.remove('d-none');
+                }
+                if (envProgressContainer) envProgressContainer.classList.add('d-none');
+            }
+        } finally {
+            pollingRunState.clear(activePollController);
+            runController.finishRun();
+            envRescanMriBtn.disabled = false;
+            if (envPilotRunBtn) envPilotRunBtn.disabled = false;
+            if (envCancelBtn) {
+                envCancelBtn.classList.add('d-none');
+                envCancelBtn.disabled = false;
+                envCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Running Conversion';
+                envCancelBtn.onclick = null;
+            }
+            updateConvertBtn();
         }
     });
 
