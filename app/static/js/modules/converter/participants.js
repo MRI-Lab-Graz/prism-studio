@@ -2,6 +2,8 @@ import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
 import { createJobRunController } from './job-run-controller.js';
+import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
+import { pollJobStatus } from '../../shared/job-polling.js';
 import { pickServerFile, prefersServerPicker } from './server-picker.js';
 import { createParticipantsSourcedataQuickSelectController } from './participants-sourcedata-quick-select.js';
 import { createParticipantsMergeConflictDownloadController } from './participants-merge-conflict-download.js';
@@ -47,6 +49,7 @@ export function initParticipants() {
     let participantsServerFilePath = '';
     let participantsOverwriteWarningRequested = false;
     const runController = createJobRunController();
+    const pollingRunState = createPollingRunState();
 
     const participantsSourcedataQuickSelectController = createParticipantsSourcedataQuickSelectController({
         getFileInput: () => document.getElementById('participantsDataFile'),
@@ -1471,6 +1474,7 @@ export function initParticipants() {
 
     if (!window.__participantsProjectChangeListenerBound) {
         window.addEventListener('prism-project-changed', function() {
+            pollingRunState.abortActive('Participants polling aborted due to project change.');
             resetParticipantsPanelState();
             updateParticipantsButtonState();
             participantsSourcedataQuickSelectController.refresh(resolveCurrentProjectPath());
@@ -3088,7 +3092,66 @@ export function initParticipants() {
     
         return annotatedData;
     }
-    
+
+    async function runParticipantsConvertJob(formData, logDiv) {
+        const startResponse = await fetchWithApiFallback('/api/participants-convert-start', {
+            method: 'POST',
+            body: formData,
+        });
+        const startData = await startResponse.json().catch(() => ({}));
+        if (!startResponse.ok) {
+            if (logDiv && Array.isArray(startData.log)) {
+                startData.log.forEach((entry) => {
+                    const line = document.createElement('div');
+                    line.textContent = `[${entry.level}] ${entry.message}`;
+                    line.className = entry.level === 'ERROR' ? 'text-danger' : (entry.level === 'WARNING' ? 'text-warning' : 'text-success');
+                    logDiv.appendChild(line);
+                });
+            }
+            throw new Error(startData.error || 'Conversion failed');
+        }
+        const jobId = startData.job_id;
+        if (!jobId) {
+            throw new Error('Conversion did not return a job id');
+        }
+        runController.setActiveJobId(jobId);
+
+        const activePollController = pollingRunState.start();
+        try {
+            const statusData = await pollJobStatus({
+                fetchStatus: async (cursor) => {
+                    const statusResponse = await fetchWithApiFallback(
+                        `/api/participants-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`
+                    );
+                    if (!statusResponse.ok) {
+                        const statusErr = await statusResponse.json().catch(() => null);
+                        throw new Error(statusErr && statusErr.error ? statusErr.error : 'Failed to retrieve conversion status');
+                    }
+                    return statusResponse.json();
+                },
+                onLogs: (newLogs) => {
+                    if (!logDiv) return;
+                    newLogs.forEach((entry) => {
+                        const line = document.createElement('div');
+                        line.textContent = `[${entry.level}] ${entry.message}`;
+                        line.className = entry.level === 'ERROR' ? 'text-danger' : (entry.level === 'WARNING' ? 'text-warning' : 'text-success');
+                        logDiv.appendChild(line);
+                    });
+                },
+                intervalMs: 700,
+                timeoutMs: 600000,
+                signal: activePollController.signal,
+                abortErrorMessage: 'Participants polling aborted due to project change.',
+                timeoutErrorMessage: 'Participants conversion status timed out. Please review logs and retry.',
+                statusFailureMessage: 'Failed to retrieve conversion status after multiple attempts.',
+                getFailureError: (status) => status.error || 'Conversion failed',
+            });
+            return statusData.result || {};
+        } finally {
+            pollingRunState.clear(activePollController);
+        }
+    }
+
     // Convert button handler
     document.getElementById('participantsConvertBtn')?.addEventListener('click', async function() {
         const errorDiv = document.getElementById('participantsError');
@@ -3184,27 +3247,32 @@ export function initParticipants() {
                 formData.append('neurobagel_schema', JSON.stringify(window.neurobagelSchema));
             }
     
-            const response = await fetchWithApiFallback(useMergeRoute ? '/api/participants-merge' : '/api/participants-convert', {
-                method: 'POST',
-                body: formData
-            });
-            
-            const data = await response.json();
-            
-            // Display log
-            if (data.log) {
-                data.log.forEach(entry => {
-                    const line = document.createElement('div');
-                    line.textContent = `[${entry.level}] ${entry.message}`;
-                    line.className = entry.level === 'ERROR' ? 'text-danger' : (entry.level === 'WARNING' ? 'text-warning' : 'text-success');
-                    logDiv.appendChild(line);
+            let data;
+            if (useMergeRoute) {
+                const response = await fetchWithApiFallback('/api/participants-merge', {
+                    method: 'POST',
+                    body: formData
                 });
+
+                data = await response.json();
+
+                // Display log
+                if (data.log) {
+                    data.log.forEach(entry => {
+                        const line = document.createElement('div');
+                        line.textContent = `[${entry.level}] ${entry.message}`;
+                        line.className = entry.level === 'ERROR' ? 'text-danger' : (entry.level === 'WARNING' ? 'text-warning' : 'text-success');
+                        logDiv.appendChild(line);
+                    });
+                }
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Conversion failed');
+                }
+            } else {
+                data = await runParticipantsConvertJob(formData, logDiv);
             }
-            
-            if (!response.ok) {
-                throw new Error(data.error || 'Conversion failed');
-            }
-            
+
             const writtenFiles = Array.isArray(data.files_created) ? data.files_created : [];
             const outputDirectory = typeof data.output_directory === 'string' ? data.output_directory.trim() : '';
             const backupFiles = Array.isArray(data.backup_files) ? data.backup_files : [];

@@ -1567,7 +1567,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             convert_block,
         )
         self.assertIn(
-            "const response = await fetchWithApiFallback(useMergeRoute ? '/api/participants-merge' : '/api/participants-convert', {",
+            "const response = await fetchWithApiFallback('/api/participants-merge', {",
+            convert_block,
+        )
+        self.assertIn(
+            "data = await runParticipantsConvertJob(formData, logDiv);",
             convert_block,
         )
         self.assertIn("finally {", convert_block)
@@ -1575,6 +1579,24 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn(
             "updateParticipantsButtonState({ skipIdAutoDetect: true });",
             convert_block,
+        )
+
+    def test_participants_convert_job_helper_polls_start_and_status_endpoints(self):
+        participants_content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        start_marker = "async function runParticipantsConvertJob(formData, logDiv) {"
+        end_marker = "// Convert button handler"
+
+        self.assertIn(start_marker, participants_content)
+        self.assertIn(end_marker, participants_content)
+
+        helper_block = participants_content.split(start_marker, 1)[1].split(end_marker, 1)[0]
+
+        self.assertIn("fetchWithApiFallback('/api/participants-convert-start', {", helper_block)
+        self.assertIn("runController.setActiveJobId(jobId);", helper_block)
+        self.assertIn(
+            "`/api/participants-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`",
+            helper_block,
         )
 
     def test_participants_local_picker_uses_native_trigger_path(self):
@@ -2818,8 +2840,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "import { fetchWithApiFallback } from '../../shared/api.js';",
             workflow_convert_content,
         )
-        self.assertIn("fetchWithApiFallback('/api/survey-workflow-command'", workflow_convert_content)
-        self.assertNotIn("fetch('/api/survey-convert-validate'", workflow_convert_content)
+        self.assertIn("fetchWithApiFallback('/api/survey-convert-validate-start'", workflow_convert_content)
+        self.assertIn(
+            "`/api/survey-convert-validate-status/${encodeURIComponent(jobId)}?cursor=${cursor}`",
+            workflow_convert_content,
+        )
         self.assertIn("handleConvertSuccess(data, {", workflow_convert_content)
         self.assertNotIn(
             "appendLog('✓ Validation passed - dataset is valid!', 'success');",
