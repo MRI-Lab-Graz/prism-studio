@@ -36,6 +36,13 @@ _SES_RE = re.compile(r"ses-([^_/\\]+)")
 # instead of "12:18:02.12"), which datetime.fromisoformat rejects outright.
 _TIME_SECONDS_RE = re.compile(r"(\d{2}:\d{2}):(\d)([.:]|$)")
 
+# Enhanced multi-frame DICOM sidecars (heudiconv "dcmmeta" output) can have
+# AcquisitionDate/SeriesDate/etc. scrubbed at the top level while still
+# carrying the full DICOM DT-format timestamp ("YYYYMMDDHHMMSS.ffffff") inside
+# each frame's FrameContentSequence. Used as a last-resort fallback.
+_FRAME_DATETIME_TAGS = ("FrameAcquisitionDateTime", "FrameReferenceDateTime")
+_DICOM_DT_RE = re.compile(r"^(\d{14})(?:\.(\d+))?$")
+
 
 def _pad_seconds(dt_str: str) -> str:
     return _TIME_SECONDS_RE.sub(r"\g<1>:0\2\3", dt_str)
@@ -46,6 +53,56 @@ def _parse_iso(dt_str: str) -> datetime | None:
         return datetime.fromisoformat(_pad_seconds(dt_str.strip()))
     except (ValueError, AttributeError):
         return None
+
+
+def _parse_dicom_dt(value: str) -> datetime | None:
+    """Parse a DICOM DT-format timestamp such as '20260302171428.690000'."""
+    match = _DICOM_DT_RE.match(value.strip())
+    if not match:
+        return None
+    try:
+        dt = datetime.strptime(match.group(1), "%Y%m%d%H%M%S")
+    except ValueError:
+        return None
+    fractional = match.group(2)
+    if fractional:
+        dt = dt.replace(microsecond=int(fractional[:6].ljust(6, "0")))
+    return dt
+
+
+def _extract_frame_datetime(sidecar: dict[str, Any]) -> datetime | None:
+    """Fall back to the first frame's acquisition timestamp in a multi-frame
+    DICOM sidecar's PerFrameFunctionalGroupsSequence, if present."""
+    const = sidecar.get("global", {})
+    if isinstance(const, dict):
+        const = const.get("const", {})
+    if not isinstance(const, dict):
+        return None
+
+    frames = const.get("PerFrameFunctionalGroupsSequence")
+    if not isinstance(frames, list) or not frames:
+        return None
+
+    first_frame = frames[0]
+    if not isinstance(first_frame, dict):
+        return None
+
+    frame_content = first_frame.get("FrameContentSequence")
+    if not isinstance(frame_content, list) or not frame_content:
+        return None
+
+    entry = frame_content[0]
+    if not isinstance(entry, dict):
+        return None
+
+    for tag in _FRAME_DATETIME_TAGS:
+        value = str(entry.get(tag) or "").strip()
+        if value:
+            dt = _parse_dicom_dt(value)
+            if dt is not None:
+                return dt
+
+    return None
 
 
 def parse_sidecar_timestamp(sidecar: dict[str, Any]) -> datetime | None:
@@ -65,7 +122,7 @@ def parse_sidecar_timestamp(sidecar: dict[str, Any]) -> datetime | None:
             if dt is not None:
                 return dt
 
-    return None
+    return _extract_frame_datetime(sidecar)
 
 
 def extract_sidecar_location(sidecar: dict[str, Any]) -> str:
@@ -157,6 +214,24 @@ def discover_mri_acquisition_rows(rawdata_root: Path) -> list[dict[str, Any]]:
             }
         )
     return rows
+
+
+def resolve_bids_rawdata_root(project_root: Path) -> Path:
+    """Return the BIDS root to scan for MRI sidecars.
+
+    Projects created fresh keep subject folders under ``rawdata/``, but
+    projects initialised on top of an *existing* BIDS dataset
+    (``init_on_existing_bids``) keep ``sub-*/`` directly at the project root
+    with no ``rawdata/`` wrapper. Prefer whichever actually holds subject
+    folders, same precedence used elsewhere (e.g. ``_iter_nested_dataset_paths``
+    in ``project_manager.py``).
+    """
+    rawdata_candidate = project_root / "rawdata"
+    if rawdata_candidate.is_dir() and any(rawdata_candidate.glob("sub-*")):
+        return rawdata_candidate
+    if project_root.is_dir() and any(project_root.glob("sub-*")):
+        return project_root
+    return rawdata_candidate
 
 
 def build_mri_acquisition_table(rawdata_root: Path) -> tuple[pd.DataFrame, dict[str, Any]]:

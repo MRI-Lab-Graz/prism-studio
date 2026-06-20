@@ -18,6 +18,7 @@ import io
 import json
 import math
 import random
+import re
 import shutil
 import subprocess
 import sys
@@ -42,7 +43,10 @@ from werkzeug.utils import secure_filename
 from src.system_files import filter_system_files  # noqa: F401 – available if needed
 from src.bids_integration import check_and_update_bidsignore
 from .conversion_job_store import ConversionJobStore
-from .conversion_environment_mri_scan_helpers import build_mri_acquisition_table
+from .conversion_environment_mri_scan_helpers import (
+    build_mri_acquisition_table,
+    resolve_bids_rawdata_root,
+)
 from .conversion_environment_route_handlers import (
     handle_api_environment_convert_cancel,
     handle_api_environment_convert_metrics,
@@ -583,6 +587,54 @@ def _coerce_coord(value: str | None, *, lat: bool) -> float | None:
     return number if -180.0 <= number <= 180.0 else None
 
 
+# DICOM InstitutionAddress is free text but commonly formatted as
+# "Street,City,State,Country,PostalCode" (e.g. heudiconv/dcm2niix output).
+# Open-Meteo's geocoder is a place-name search, not a structured address
+# geocoder: it returns zero results for a full address string, and even for
+# "City, ST"-style 2-letter state qualifiers — only a bare place name (and
+# full country names) work reliably. Strip postal codes / short
+# state-or-country-code tokens and any street-like (digit-containing) part to
+# recover a city name worth searching.
+_ADDRESS_TRAILING_CODE_RE = re.compile(r"^(\d{3,10}|[A-Za-z]{2,3})$")
+
+
+def _address_geocoding_fallback_candidates(label: str) -> list[str]:
+    parts = [p.strip() for p in re.split(r"[,;]", label) if p.strip()]
+    if len(parts) <= 1:
+        return []
+
+    while parts and _ADDRESS_TRAILING_CODE_RE.match(parts[-1]):
+        parts.pop()
+
+    return [part for part in reversed(parts) if not re.search(r"\d", part)]
+
+
+def _geocode_place_name(
+    name: str,
+) -> tuple[float, float] | None:
+    params: dict[str, str | int] = {
+        "name": name,
+        "count": 1,
+        "language": "en",
+        "format": "json",
+    }
+    response = requests.get(
+        GEOCODING_URL,
+        params=params,
+        timeout=GEOCODING_TIMEOUT_SECONDS,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    first = (payload.get("results") or [None])[0]
+    if not first:
+        return None
+    lat = first.get("latitude")
+    lon = first.get("longitude")
+    if lat is None or lon is None:
+        return None
+    return (float(lat), float(lon))
+
+
 def _geocode_location(
     label: str, cache: dict[str, tuple[float, float] | None]
 ) -> tuple[float, float] | None:
@@ -592,30 +644,13 @@ def _geocode_location(
     if key in cache:
         return cache[key]
 
-    params: dict[str, str | int] = {
-        "name": label,
-        "count": 1,
-        "language": "en",
-        "format": "json",
-    }
     try:
-        response = requests.get(
-            GEOCODING_URL,
-            params=params,
-            timeout=GEOCODING_TIMEOUT_SECONDS,
-        )
-        response.raise_for_status()
-        payload = response.json()
-        first = (payload.get("results") or [None])[0]
-        if not first:
-            cache[key] = None
-            return None
-        lat = first.get("latitude")
-        lon = first.get("longitude")
-        if lat is None or lon is None:
-            cache[key] = None
-            return None
-        coords = (float(lat), float(lon))
+        coords = _geocode_place_name(label)
+        if coords is None:
+            for candidate in _address_geocoding_fallback_candidates(label):
+                coords = _geocode_place_name(candidate)
+                if coords is not None:
+                    break
         cache[key] = coords
         return coords
     except requests.RequestException:
@@ -1243,7 +1278,7 @@ def trigger_automatic_environment_enrichment(project_root: Path) -> str | None:
     MRI Data" flow in the Environment converter tab, just without a user
     driving it through the UI.
     """
-    df, _stats = build_mri_acquisition_table(project_root / "rawdata")
+    df, _stats = build_mri_acquisition_table(resolve_bids_rawdata_root(project_root))
     if df.empty:
         return None
 
@@ -1376,7 +1411,7 @@ def api_environment_scan_mri_acquisition():
     except (ValueError, FileNotFoundError) as exc:
         return jsonify({"success": False, "error": str(exc)}), 400
 
-    df, stats = build_mri_acquisition_table(project_root / "rawdata")
+    df, stats = build_mri_acquisition_table(resolve_bids_rawdata_root(project_root))
     if df.empty:
         return (
             jsonify(
