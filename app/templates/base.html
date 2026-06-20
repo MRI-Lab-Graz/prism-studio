@@ -360,6 +360,7 @@
                        data-can-save="{{ 'true' if current_project_datalad.can_save else 'false' }}"
                        data-message="{{ current_project_datalad.message or '' }}">
                         <i class="fas fa-code-branch me-1 {% if current_project_datalad.enabled and current_project_datalad.available %}text-success{% elif current_project.path %}text-warning{% else %}text-muted{% endif %}" data-navbar-datalad-icon aria-hidden="true"></i>
+                        <i class="fas fa-circle-check me-1 d-none" id="navbarDataladTrackedIcon" aria-hidden="true"></i>
                         <i class="fas fa-circle-check me-1 d-none" id="navbarDataladCleanIcon" aria-hidden="true"></i>
                         <i class="fas fa-spinner fa-spin me-1 d-none" id="navbarDataladSpinnerIcon" aria-hidden="true"></i>
                         <span data-navbar-datalad-label>DataLad</span>

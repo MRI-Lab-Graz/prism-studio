@@ -67,6 +67,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const wideLongClearBtn = document.getElementById('wideLongClearBtn');
     const wideLongSessionColumn = null; // fixed to 'session'
     const wideLongIndicators = document.getElementById('wideLongIndicators');
+    const wideLongSessionMismatchWarning = document.getElementById('wideLongSessionMismatchWarning');
+    let wideLongDeclaredSessions = [];
+
+    async function refreshWideLongDeclaredSessions() {
+        const projectPath = getCurrentProjectPath();
+        if (!projectPath) {
+            wideLongDeclaredSessions = [];
+            updateWideLongPreview();
+            return;
+        }
+        try {
+            const response = await fetchWithApiFallback(
+                `/api/projects/sessions/declared?project_path=${encodeURIComponent(projectPath)}`
+            );
+            const data = await response.json();
+            wideLongDeclaredSessions = Array.isArray(data.sessions) ? data.sessions : [];
+        } catch (_error) {
+            wideLongDeclaredSessions = [];
+        }
+        updateWideLongPreview();
+    }
     const wideLongRunColumn = null; // fixed to 'run'
     const wideLongIdColumn = document.getElementById('wideLongIdColumn');
     const wideLongRunIndicators = document.getElementById('wideLongRunIndicators');
@@ -449,6 +470,43 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         wideLongPreview.textContent = lines.join('\n');
+
+        updateWideLongSessionMismatchWarning(sessionPairs);
+    }
+
+    function updateWideLongSessionMismatchWarning(sessionPairs) {
+        if (!wideLongSessionMismatchWarning) return;
+
+        // Sessions are free-form strings (BIDS allows "pre", "1", "01", ... as
+        // distinct labels) — this is an exact string comparison, never a
+        // numeric/zero-pad normalization. See CLAUDE.md.
+        if (!sessionPairs.length || !wideLongDeclaredSessions.length) {
+            wideLongSessionMismatchWarning.classList.add('d-none');
+            wideLongSessionMismatchWarning.innerHTML = '';
+            return;
+        }
+
+        const declaredLabels = wideLongDeclaredSessions.map(
+            (s) => String((s && s.id) || '').replace(/^ses-/, '')
+        );
+        const declaredSet = new Set(declaredLabels);
+
+        const targetLabels = [...new Set(sessionPairs.map(([, tgt]) => tgt))];
+        const unmatched = targetLabels.filter((tgt) => !declaredSet.has(tgt));
+
+        if (!unmatched.length) {
+            wideLongSessionMismatchWarning.classList.add('d-none');
+            wideLongSessionMismatchWarning.innerHTML = '';
+            return;
+        }
+
+        wideLongSessionMismatchWarning.innerHTML = [
+            `<i class="fas fa-triangle-exclamation me-1"></i>`,
+            `No existing session matches: <strong>${unmatched.map(escapeHtml).join(', ')}</strong>. `,
+            `This project already has session(s): <strong>${declaredLabels.map(escapeHtml).join(', ')}</strong>. `,
+            `Double-check this isn't a typo — or ignore this if it's genuinely a new session.`,
+        ].join('');
+        wideLongSessionMismatchWarning.classList.remove('d-none');
     }
 
     function setWideLongIdleState() {
@@ -3684,6 +3742,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadRepoSubjectExamples();
         loadRepoEntityRewriteOptions();
         loadFileDeleteOptions();
+        refreshWideLongDeclaredSessions();
     });
 
     // Initial state
@@ -3696,6 +3755,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadRepoSubjectExamples();
     loadRepoEntityRewriteOptions();
     loadFileDeleteOptions();
+    refreshWideLongDeclaredSessions();
 
     // ----------------------------------------------------------------
     // Delete Files tab
