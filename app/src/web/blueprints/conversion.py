@@ -41,6 +41,8 @@ from .conversion_biometrics_handlers import (
     api_biometrics_check_library as _api_biometrics_check_library,
     api_biometrics_detect as _api_biometrics_detect,
     api_biometrics_convert as _api_biometrics_convert,
+    api_biometrics_convert_start as _api_biometrics_convert_start,
+    api_biometrics_convert_status as _api_biometrics_convert_status,
 )
 from .conversion_physio_handlers import (
     check_sourcedata_physio as _check_sourcedata_physio,
@@ -129,6 +131,18 @@ def api_biometrics_detect():
 def api_biometrics_convert():
     """Convert an uploaded biometrics table (.csv or .xlsx) into a PRISM/BIDS-style dataset ZIP."""
     return _api_biometrics_convert()
+
+
+@conversion_bp.route("/api/biometrics-convert-start", methods=["POST"])
+def api_biometrics_convert_start():
+    """Start an async biometrics conversion job."""
+    return _api_biometrics_convert_start()
+
+
+@conversion_bp.route("/api/biometrics-convert-status/<job_id>", methods=["GET"])
+def api_biometrics_convert_status(job_id: str):
+    """Get async biometrics conversion job status and incremental logs."""
+    return _api_biometrics_convert_status(job_id)
 
 
 @conversion_bp.route("/api/check-sourcedata-physio", methods=["GET"])

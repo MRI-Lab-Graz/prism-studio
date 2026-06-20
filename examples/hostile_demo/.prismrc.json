@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "stable",
+  "strictMode": false,
+  "runBids": false,
+  "ignorePaths": [
+    "library/**",
+    "recipe/**",
+    "sourcedata/**",
+    "derivatives/**",
+    "analysis/**",
+    "paper/**",
+    "code/**"
+  ]
+}
