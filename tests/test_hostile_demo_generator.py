@@ -56,3 +56,28 @@ def test_generated_dataset_preserves_distinct_session_labels(tmp_path: Path) -> 
     subject_dir = result.project_root / "sub-sess01"
     sessions = sorted(p.name for p in subject_dir.iterdir() if p.is_dir())
     assert sessions == ["ses-01", "ses-1", "ses-pre"]
+
+
+def test_generate_hostile_dataset_new_domains_produce_files(tmp_path: Path) -> None:
+    result = generate_hostile_dataset(
+        tmp_path / "demo",
+        seed=1,
+        domains={"entity_rewrite", "recipes", "input_formats"},
+        use_datalad=False,
+    )
+    assert set(result.files_written.keys()) == {
+        "entity_rewrite",
+        "recipes",
+        "input_formats",
+    }
+
+    recipes_dir = result.project_root / "code" / "recipes"
+    assert (recipes_dir / "survey" / "recipe-hostile-missing-taskname.json").exists()
+    assert (
+        recipes_dir / "biometrics" / "recipe-hostile-missing-biometric-name.json"
+    ).exists()
+
+    rawdata_dir = result.project_root / "code" / "rawdata"
+    assert (rawdata_dir / "hostile_biometrics_data_wide.xlsx").exists()
+    assert (rawdata_dir / "hostile_participants_utf16.csv").exists()
+    assert (rawdata_dir / "hostile_participants_latin1.csv").exists()

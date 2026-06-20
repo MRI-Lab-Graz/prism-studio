@@ -1,4 +1,5 @@
 import { fetchWithApiFallback } from '../../shared/api.js';
+import { pollJobStatus } from '../../shared/job-polling.js';
 
 export function createSurveyWorkflowConvertController({
     convertError,
@@ -283,101 +284,125 @@ export function createSurveyWorkflowConvertController({
         advanceSurveyRunProgress('convert', 20, 'Uploading file and starting conversion...');
         appendLog('Uploading file and starting conversion...', 'info');
 
-        fetchWithApiFallback('/api/survey-workflow-command', {
-            method: 'POST',
-            body: formData,
-            signal: convertRunAbortController.signal,
-        })
-            .then(async response => {
-                const contentType = response.headers.get('content-type') || '';
-                let data = null;
-                advanceSurveyRunProgress('convert', 38, 'Server response received. Validating conversion request...');
-
-                if (contentType.includes('application/json')) {
-                    data = await response.json();
-                    if (data.log && Array.isArray(data.log)) {
-                        data.log.forEach(entry => {
-                            appendLog(entry.message, entry.type || entry.level || 'info');
-                        });
-                    }
-
-                    if (!response.ok) {
-                        if (data.error === 'workflow_preparation_stale') {
-                            convertRunOutcome = 'action_required';
-                            surveyWorkflowPrepareController.handleLateSetupBlocker('convert', data, selectedValueOffsets);
-                            return null;
-                        }
-                        if (data.error === 'id_column_required') {
-                            if (convertIdColumn) {
-                                convertIdColumn.classList.add('border-danger');
-                                convertIdColumn.focus();
-                            }
-                            throw new Error('Please select the participant ID column.');
-                        }
-                        if (data.error === 'unmatched_groups') {
-                            convertRunOutcome = 'action_required';
-                            displayUnmatchedGroupsError(data);
-                            return null;
-                        }
-                        setTemplateWorkflowGate(null);
-                        setTemplateEditorErrorCtaVisible(false);
-                        throw new Error(data.error || 'Conversion failed');
-                    }
-
-                    advanceSurveyRunProgress('convert', 68, 'Applying conversion output and validation details...');
-                    return data;
-                }
-
-                if (!response.ok) {
-                    throw new Error('Conversion failed');
-                }
-                await response.blob();
-                advanceSurveyRunProgress('convert', 68, 'Processing conversion output...');
-                return { validation: null };
-            })
-            .then(data => {
-                if (!data) return;
-
-                advanceSurveyRunProgress('convert', 84, 'Finalizing conversion results...');
-                handleConvertSuccess(data, {
-                    sourceFilename: file ? file.name : '',
-                });
-                convertRunOutcome = 'success';
-                advanceSurveyRunProgress('convert', 100, 'Conversion completed.');
-            })
-            .catch(err => {
-                if (isAbortError(err)) {
-                    convertRunOutcome = 'canceled';
-                    appendLog('Conversion canceled by user.', 'warning');
-                    convertError.classList.add('d-none');
-                    convertInfo.textContent = 'Conversion canceled.';
-                    convertInfo.classList.remove('d-none');
-                    return;
-                }
-                convertRunOutcome = 'error';
-                const enrichedMessage = enrichSurveyRunErrorMessage(err.message);
-                appendLog(`Error: ${enrichedMessage}`, 'error');
-                if (enrichedMessage !== err.message) {
-                    appendLog('Tip: Save the spreadsheet in Excel and re-select it before running again.', 'warning');
-                }
-                convertError.textContent = enrichedMessage;
-                convertError.classList.remove('d-none');
-                setTemplateEditorErrorCtaVisible(Boolean(getTemplateWorkflowGate() && getTemplateWorkflowGate().blocked));
-            })
-            .finally(() => {
-                setIsConvertRunning(false);
-                const canceledByUser = getActiveRunMode() === 'convert' && getActiveRunCancelledByUser();
-                clearActiveSurveyRun('convert');
-                const blockedByVersionWizardGate = getVersionWizardRetryGateMode() === 'convert';
-                if (convertRunOutcome === 'running') {
-                    convertRunOutcome = blockedByVersionWizardGate ? 'paused' : 'canceled';
-                }
-                if (canceledByUser && convertRunOutcome !== 'success') {
-                    convertRunOutcome = 'canceled';
-                }
-                finishSurveyRunProgress('convert', convertRunOutcome);
-                updateConvertBtn();
+        let lastStatusData = null;
+        try {
+            const startResponse = await fetchWithApiFallback('/api/survey-convert-validate-start', {
+                method: 'POST',
+                body: formData,
+                signal: convertRunAbortController.signal,
             });
+            const startData = await startResponse.json().catch(() => ({}));
+            if (startData.log && Array.isArray(startData.log)) {
+                startData.log.forEach(entry => {
+                    appendLog(entry.message, entry.type || entry.level || 'info');
+                });
+            }
+            if (!startResponse.ok) {
+                throw new Error(startData.error || 'Conversion failed');
+            }
+            const jobId = startData.job_id;
+            if (!jobId) {
+                throw new Error('Conversion did not return a job id');
+            }
+
+            advanceSurveyRunProgress('convert', 38, 'Server response received. Validating conversion request...');
+
+            const statusData = await pollJobStatus({
+                fetchStatus: async (cursor) => {
+                    const statusResponse = await fetchWithApiFallback(
+                        `/api/survey-convert-validate-status/${encodeURIComponent(jobId)}?cursor=${cursor}`,
+                        { signal: convertRunAbortController.signal }
+                    );
+                    if (!statusResponse.ok) {
+                        const statusErr = await statusResponse.json().catch(() => null);
+                        throw new Error(statusErr && statusErr.error ? statusErr.error : 'Failed to retrieve conversion status');
+                    }
+                    return statusResponse.json();
+                },
+                onLogs: (newLogs) => {
+                    newLogs.forEach(entry => {
+                        appendLog(entry.message, entry.type || entry.level || 'info');
+                    });
+                },
+                onPollData: (status) => { lastStatusData = status; },
+                intervalMs: 700,
+                timeoutMs: 600000,
+                signal: convertRunAbortController.signal,
+                abortErrorMessage: 'Conversion canceled by user.',
+                timeoutErrorMessage: 'Survey conversion status timed out. Please review logs and retry.',
+                statusFailureMessage: 'Failed to retrieve conversion status after multiple attempts.',
+                getFailureError: (status) => status.error || 'Conversion failed',
+            });
+
+            advanceSurveyRunProgress('convert', 68, 'Applying conversion output and validation details...');
+            const data = statusData.result || {};
+
+            advanceSurveyRunProgress('convert', 84, 'Finalizing conversion results...');
+            handleConvertSuccess(data, {
+                sourceFilename: file ? file.name : '',
+            });
+            convertRunOutcome = 'success';
+            advanceSurveyRunProgress('convert', 100, 'Conversion completed.');
+        } catch (err) {
+            if (isAbortError(err)) {
+                convertRunOutcome = 'canceled';
+                appendLog('Conversion canceled by user.', 'warning');
+                convertError.classList.add('d-none');
+                convertInfo.textContent = 'Conversion canceled.';
+                convertInfo.classList.remove('d-none');
+                return;
+            }
+
+            const failurePayload = lastStatusData && lastStatusData.done && !lastStatusData.success
+                ? { error: lastStatusData.error, ...(lastStatusData.result || {}) }
+                : null;
+
+            if (failurePayload && failurePayload.error === 'workflow_preparation_stale') {
+                convertRunOutcome = 'action_required';
+                surveyWorkflowPrepareController.handleLateSetupBlocker('convert', failurePayload, selectedValueOffsets);
+                return;
+            }
+            if (failurePayload && failurePayload.error === 'unmatched_groups') {
+                convertRunOutcome = 'action_required';
+                displayUnmatchedGroupsError(failurePayload);
+                return;
+            }
+
+            let effectiveError = err;
+            if (failurePayload && failurePayload.error === 'id_column_required') {
+                if (convertIdColumn) {
+                    convertIdColumn.classList.add('border-danger');
+                    convertIdColumn.focus();
+                }
+                effectiveError = new Error('Please select the participant ID column.');
+            }
+
+            setTemplateWorkflowGate(null);
+            setTemplateEditorErrorCtaVisible(false);
+
+            convertRunOutcome = 'error';
+            const enrichedMessage = enrichSurveyRunErrorMessage(effectiveError.message);
+            appendLog(`Error: ${enrichedMessage}`, 'error');
+            if (enrichedMessage !== effectiveError.message) {
+                appendLog('Tip: Save the spreadsheet in Excel and re-select it before running again.', 'warning');
+            }
+            convertError.textContent = enrichedMessage;
+            convertError.classList.remove('d-none');
+            setTemplateEditorErrorCtaVisible(Boolean(getTemplateWorkflowGate() && getTemplateWorkflowGate().blocked));
+        } finally {
+            setIsConvertRunning(false);
+            const canceledByUser = getActiveRunMode() === 'convert' && getActiveRunCancelledByUser();
+            clearActiveSurveyRun('convert');
+            const blockedByVersionWizardGate = getVersionWizardRetryGateMode() === 'convert';
+            if (convertRunOutcome === 'running') {
+                convertRunOutcome = blockedByVersionWizardGate ? 'paused' : 'canceled';
+            }
+            if (canceledByUser && convertRunOutcome !== 'success') {
+                convertRunOutcome = 'canceled';
+            }
+            finishSurveyRunProgress('convert', convertRunOutcome);
+            updateConvertBtn();
+        }
     }
 
     return {

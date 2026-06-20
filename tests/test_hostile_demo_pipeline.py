@@ -13,11 +13,14 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from src.bids_entity_rewriter import BidsEntityRewriter
+from src.converters.file_reader import read_tabular_file
 from src.hostile_demo_generator import (
     assert_text_files_never_annexed,
     generate_hostile_dataset,
 )
 from src.participants_converter import ParticipantsConverter
+from src.recipe_validation import validate_recipe
 from src.subject_code_rewriter import SubjectCodeRewriter
 from src.web.blueprints.conversion_environment_mri_scan_helpers import (
     discover_mri_acquisition_rows,
@@ -261,3 +264,139 @@ def test_export_runs_against_hostile_dataset(hostile_dataset: Path, tmp_path: Pa
     )
     assert output_zip.exists()
     assert summary is not None
+
+
+@pytest.mark.parametrize(
+    "export_kwargs",
+    [
+        {"anonymize": False, "include_sourcedata": True, "include_code": True},
+        {"anonymize": True, "deterministic": True, "include_code": False},
+        {"anonymize": True, "exclude_subjects": {"sub-Müller"}},
+        {"anonymize": True, "exclude_version_control_metadata": True},
+    ],
+    ids=[
+        "no_anonymize_with_sourcedata",
+        "deterministic_anonymized_no_code",
+        "exclude_unicode_subject",
+        "strip_vcs_metadata",
+    ],
+)
+def test_export_strategy_variants_survive_hostile_dataset(
+    hostile_dataset: Path, tmp_path: Path, export_kwargs: dict, request
+) -> None:
+    output_zip = tmp_path / f"export_{request.node.callspec.id}.zip"
+    summary = _run_pipeline_stage(
+        f"export_project({export_kwargs})",
+        export_project,
+        hostile_dataset,
+        output_zip,
+        **export_kwargs,
+    )
+    assert output_zip.exists()
+    assert summary is not None
+
+
+def test_entity_rewrite_detects_real_acq_collision(hostile_dataset: Path) -> None:
+    rewriter = BidsEntityRewriter(hostile_dataset)
+    preview = _run_pipeline_stage(
+        "BidsEntityRewriter.preview (acq rename collision)",
+        rewriter.preview,
+        modality="func",
+        entity="acq",
+        operation="rename",
+        current_value="Z",
+        replacement="A",
+    )
+    assert preview["conflicts"], "renaming acq-Z to acq-A should collide with acq-A"
+
+
+def test_entity_rewrite_rejects_ambiguous_bulk_delete(hostile_dataset: Path) -> None:
+    """When an entity has multiple observed values, the API refuses a
+    bulk delete with no current_value rather than guessing which value(s)
+    to remove — this is the product's own guard against an ambiguous
+    many-to-one collision, not a bug."""
+    rewriter = BidsEntityRewriter(hostile_dataset)
+    with pytest.raises(ValueError, match="multiple values"):
+        rewriter.preview(modality="func", entity="run", operation="delete")
+
+
+def test_entity_rewrite_detects_real_run_delete_collision(hostile_dataset: Path) -> None:
+    rewriter = BidsEntityRewriter(hostile_dataset)
+    preview = _run_pipeline_stage(
+        "BidsEntityRewriter.preview (run delete collision)",
+        rewriter.preview,
+        modality="func",
+        entity="run",
+        operation="delete",
+        current_value="01",
+    )
+    assert preview["conflicts"], (
+        "deleting run-01's entity should collide with the pre-existing "
+        "bare task-mem file"
+    )
+
+
+def test_entity_rewrite_rejects_sub_entity_with_clear_error(hostile_dataset: Path) -> None:
+    rewriter = BidsEntityRewriter(hostile_dataset)
+    with pytest.raises(ValueError, match="not editable"):
+        rewriter.preview(
+            modality="func", entity="sub", operation="rename", replacement="x"
+        )
+
+
+def test_hostile_recipes_are_flagged_by_validate_recipe(hostile_dataset: Path) -> None:
+    import json
+
+    recipe_dir = hostile_dataset / "code" / "recipes"
+    expectations = {
+        "survey/recipe-hostile-missing-taskname.json": "TaskName",
+        "survey/recipe-hostile-formula-missing-items.json": "Formula",
+        "survey/recipe-hostile-invalid-kind.json": "Kind must be",
+        "biometrics/recipe-hostile-missing-biometric-name.json": "BiometricName",
+    }
+    for rel_path, expected_substring in expectations.items():
+        recipe = json.loads((recipe_dir / rel_path).read_text(encoding="utf-8"))
+        errors = _run_pipeline_stage(
+            f"validate_recipe({rel_path})", validate_recipe, recipe, recipe_id=rel_path
+        )
+        assert errors, f"{rel_path} should have produced validation errors"
+        assert any(expected_substring in e for e in errors), (
+            f"{rel_path}: expected an error mentioning '{expected_substring}', got {errors}"
+        )
+
+
+def test_xlsx_formula_like_cell_is_not_silently_evaluated_to_a_number(
+    hostile_dataset: Path,
+) -> None:
+    """Documents a real finding, not a designed-safe behavior.
+
+    openpyxl writes a string starting with '=' as a live formula cell with
+    no cached value, so pandas.read_excel reads it back as NaN rather than
+    the literal text '=1+1'. The only thing this test guards against is
+    the *worse* outcome — the formula silently evaluating to the number 2
+    and being treated as legitimate numeric data. Any PRISM xlsx writer
+    that passes raw user strings to to_excel/openpyxl should escape a
+    leading =/+/-/@ before writing; see HostileCase
+    'input_xlsx_with_formula_like_cell' for the open follow-up.
+    """
+    xlsx_path = (
+        hostile_dataset / "code" / "rawdata" / "hostile_biometrics_data_wide.xlsx"
+    )
+    result = _run_pipeline_stage(
+        "read_tabular_file(hostile .xlsx)", read_tabular_file, xlsx_path, kind="xlsx"
+    )
+    first_value = result.df.loc[0, "vo2_max_estimated"]
+    assert first_value != 2, (
+        "the formula must not have been silently evaluated to the number 2"
+    )
+
+
+def test_latin1_csv_is_recovered_by_encoding_fallback(hostile_dataset: Path) -> None:
+    latin1_path = (
+        hostile_dataset / "code" / "rawdata" / "hostile_participants_latin1.csv"
+    )
+    result = _run_pipeline_stage(
+        "read_tabular_file(latin-1 csv)", read_tabular_file, latin1_path, kind="csv"
+    )
+    assert result.encoding_used in {"latin-1", "cp1252"}
+    assert len(result.df) > 0
