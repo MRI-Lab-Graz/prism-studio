@@ -111,6 +111,16 @@ class PrismConfig:
     datalad_sibling_name: str = "ria-store"
     datalad_sibling_alias: Optional[str] = None
 
+    # Plain-copy server connection for users not using DataLad (rsync over
+    # SSH, or a local/mounted destination path), for "Push to Remote Server"
+    # Example:
+    # {
+    #   "rsyncRemoteTarget": "researcher@host.example.org:/srv/backups/study",
+    #   "rsyncRemoteLabel": "lab-server"
+    # }
+    rsync_remote_target: Optional[str] = None
+    rsync_remote_label: Optional[str] = None
+
     # Config file location (set after loading)
     _config_path: Optional[str] = None
 
@@ -187,6 +197,8 @@ def load_config(dataset_path: str) -> PrismConfig:
             datalad_ria_store_url=data.get("riaStoreUrl"),
             datalad_sibling_name=data.get("siblingName", "ria-store"),
             datalad_sibling_alias=data.get("siblingAlias"),
+            rsync_remote_target=data.get("rsyncRemoteTarget"),
+            rsync_remote_label=data.get("rsyncRemoteLabel"),
         )
         config._config_path = config_path
         return config
@@ -244,6 +256,12 @@ def save_config(
 
     if config.datalad_sibling_alias:
         data["siblingAlias"] = config.datalad_sibling_alias
+
+    if config.rsync_remote_target:
+        data["rsyncRemoteTarget"] = config.rsync_remote_target
+
+    if config.rsync_remote_label:
+        data["rsyncRemoteLabel"] = config.rsync_remote_label
 
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)

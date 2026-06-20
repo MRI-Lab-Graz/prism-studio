@@ -83,9 +83,12 @@ DATALAD_TEXT_POLICY_REQUIRED_LINES = (
     "*.jsonl annex.largefiles=nothing",
     "*.md annex.largefiles=nothing",
     "*.ndjson annex.largefiles=nothing",
+    "*.ods annex.largefiles=nothing",
     "*.toml annex.largefiles=nothing",
     "*.tsv annex.largefiles=nothing",
     "*.txt annex.largefiles=nothing",
+    "*.xls annex.largefiles=nothing",
+    "*.xlsx annex.largefiles=nothing",
     "*.xml annex.largefiles=nothing",
     "*.yaml annex.largefiles=nothing",
     "*.yml annex.largefiles=nothing",
@@ -4578,6 +4581,106 @@ class ProjectManager:
         result["success"] = True
         result["message"] = "Push verified and local sibling disconnected."
         return result
+
+    def get_rsync_status(self, project_path: Path) -> Dict[str, Any]:
+        """Cheap, synchronous status check for the "Push to Remote Server" panel."""
+        from src.config import load_config
+        from src.rsync_execution import resolve_rsync_executable
+
+        project_path = Path(project_path)
+        config = load_config(str(project_path))
+
+        return {
+            "remote_target": config.rsync_remote_target,
+            "remote_label": config.rsync_remote_label,
+            "configured": bool(config.rsync_remote_target),
+            "rsync_available": bool(resolve_rsync_executable()),
+        }
+
+    def sync_project_to_remote(
+        self,
+        project_path: Path,
+        *,
+        remote_target: Optional[str] = None,
+        remote_label: Optional[str] = None,
+        verify: bool = False,
+        progress_callback: Optional[Any] = None,
+        is_cancelled: Optional[Any] = None,
+    ) -> Dict[str, Any]:
+        """Plain-copy backup for users not using DataLad: `rsync -a` to a path or SSH target.
+
+        Additive only — files removed locally are left intact on the
+        destination, since this is meant as a growing backup, not a mirror.
+        `verify=True` runs a checksum dry-run afterwards to confirm the
+        destination matches exactly.
+        """
+        from src.config import load_config
+        from src.rsync_execution import resolve_rsync_executable, run_rsync_push, run_rsync_verify
+
+        project_path = Path(project_path)
+        config = load_config(str(project_path))
+
+        target = str(remote_target or "").strip() or str(config.rsync_remote_target or "").strip()
+        if not target:
+            raise ValueError(
+                "No remote destination configured. Pass a remote_target or set it in "
+                "this project's Push to Remote Server settings."
+            )
+        label = str(remote_label or "").strip() or str(config.rsync_remote_label or "").strip()
+
+        rsync_executable = resolve_rsync_executable()
+
+        def _report(percent: int, message: str) -> None:
+            if callable(progress_callback):
+                progress_callback(percent, message)
+
+        _report(5, f"Copying to {label or target}...")
+        push_result = run_rsync_push(
+            project_path,
+            remote_target=target,
+            rsync_executable=rsync_executable,
+            progress_callback=progress_callback,
+            is_cancelled=is_cancelled,
+        )
+        if not push_result.get("success"):
+            return {
+                "success": False,
+                "message": f"Copy failed: {push_result.get('message')}",
+                "push": push_result,
+            }
+
+        if callable(is_cancelled) and is_cancelled():
+            return {"success": False, "message": "Cancelled.", "push": push_result}
+
+        if not verify:
+            _report(100, "Copy complete.")
+            return {
+                "success": True,
+                "message": "Copied to remote destination.",
+                "push": push_result,
+            }
+
+        _report(95, "Verifying destination matches source...")
+        verify_result = run_rsync_verify(
+            project_path,
+            remote_target=target,
+            rsync_executable=rsync_executable,
+        )
+        if not verify_result.get("verified"):
+            return {
+                "success": False,
+                "message": f"Copy ran, but verification found differences: {verify_result.get('message')}",
+                "push": push_result,
+                "verify": verify_result,
+            }
+
+        _report(100, "Copy complete and verified.")
+        return {
+            "success": True,
+            "message": "Copied to remote destination and verified.",
+            "push": push_result,
+            "verify": verify_result,
+        }
 
     def _build_auto_datalad_save_message(self, reason: str) -> str:
         """Return a stable commit message for lifecycle-triggered DataLad saves."""
