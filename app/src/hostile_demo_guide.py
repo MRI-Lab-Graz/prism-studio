@@ -16,6 +16,9 @@ _DOMAIN_TITLES = {
     "biometrics": "Biometrics",
     "environment_mri": "Environment / MRI",
     "subject_session": "Subject / Session IDs + DataLad",
+    "entity_rewrite": "BIDS Entity Rewriting (task/acq/run)",
+    "recipes": "Recipe Definitions (survey + biometrics scoring)",
+    "input_formats": "Input Format Diversity (encodings, spreadsheets)",
 }
 
 

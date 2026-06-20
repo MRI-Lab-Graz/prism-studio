@@ -12,6 +12,8 @@ from .conversion_survey_handlers import (
     api_survey_convert_preview,
     api_survey_convert,
     api_survey_convert_validate,
+    api_survey_convert_validate_start,
+    api_survey_convert_validate_status,
     api_save_unmatched_template,
 )
 
@@ -71,6 +73,16 @@ conversion_survey_bp.add_url_rule(
     "/api/survey-convert-validate",
     view_func=api_survey_convert_validate,
     methods=["POST"],
+)
+conversion_survey_bp.add_url_rule(
+    "/api/survey-convert-validate-start",
+    view_func=api_survey_convert_validate_start,
+    methods=["POST"],
+)
+conversion_survey_bp.add_url_rule(
+    "/api/survey-convert-validate-status/<job_id>",
+    view_func=api_survey_convert_validate_status,
+    methods=["GET"],
 )
 conversion_survey_bp.add_url_rule(
     "/api/save-unmatched-template",

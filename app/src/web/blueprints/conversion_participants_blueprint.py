@@ -2,7 +2,10 @@ import json
 import re
 import shutil
 import tempfile
+import threading
+import uuid
 from pathlib import Path
+from typing import Any
 
 from flask import (
     Blueprint,
@@ -41,9 +44,12 @@ from .conversion_utils import (
     expected_delimiter_for_suffix as _shared_expected_delimiter_for_suffix,
 )
 from .conversion_utils import normalize_separator_option as _shared_normalize_separator
+from .conversion_job_store import ConversionJobStore
 from .projects_helpers import _resolve_project_root_path
 
 conversion_participants_bp = Blueprint("conversion_participants", __name__)
+
+_participants_job_store = ConversionJobStore(log_level_key="level")
 
 _SUPPORTED_PARTICIPANTS_UPLOAD_SUFFIXES = {
     ".xlsx",
@@ -2427,3 +2433,362 @@ def api_participants_convert():
         if has_app_context():
             current_app.logger.exception("Participants conversion failed")
         return jsonify({"error": str(e), "log": logs}), 500
+
+
+@conversion_participants_bp.route("/api/participants-convert-start", methods=["POST"])
+def api_participants_convert_start():
+    """Start an async participants conversion job and return its job id for polling."""
+    try:
+        from src.participants_converter import ParticipantsConverter  # noqa: F401
+    except ImportError as e:
+        return jsonify({"error": f"Required module not available: {str(e)}"}), 500
+
+    mode = request.form.get("mode", "file")
+    force_overwrite = request.form.get("force_overwrite", "false").lower() == "true"
+    neurobagel_schema_json = request.form.get("neurobagel_schema")
+    try:
+        separator_option = _normalize_separator_option(request.form.get("separator"))
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    neurobagel_schema = {}
+    if neurobagel_schema_json:
+        try:
+            neurobagel_schema = json.loads(neurobagel_schema_json)
+        except json.JSONDecodeError:
+            pass
+    excluded_columns = set(
+        _parse_requested_column_list(request.form.get("excluded_columns"))
+    )
+
+    project_root = _get_session_project_root()
+    if not project_root:
+        return jsonify({"error": "No project selected"}), 400
+
+    participants_tsv = project_root / "participants.tsv"
+    participants_json = project_root / "participants.json"
+
+    existing_files = []
+    if participants_tsv.exists():
+        existing_files.append(str(participants_tsv))
+    if participants_json.exists():
+        existing_files.append(str(participants_json))
+
+    if participants_tsv.exists() and not force_overwrite and mode != "existing":
+        return (
+            jsonify(
+                {
+                    "error": "Participant files already exist. Enable 'force overwrite' to replace them.",
+                    "existing_files": existing_files,
+                }
+            ),
+            409,
+        )
+
+    upfront_logs: list[dict[str, str]] = []
+
+    def log_msg(level, message):
+        upfront_logs.append({"level": level, "message": message})
+
+    config: dict[str, Any] = {
+        "mode": mode,
+        "project_root": project_root,
+        "participants_tsv": participants_tsv,
+        "participants_json": participants_json,
+        "existing_files": existing_files,
+        "neurobagel_schema": neurobagel_schema,
+        "excluded_columns": excluded_columns,
+    }
+
+    if mode == "file":
+        try:
+            upload = _save_participants_upload_to_temp(
+                uploaded_file=request.files.get("file"),
+                temp_prefix="prism_participants_convert_job_",
+            )
+        except ValueError as error:
+            return jsonify({"error": str(error)}), 400
+
+        tmp_dir = str(upload["tmp_dir"])
+        try:
+            input_path = Path(str(upload["input_path"]))
+            filename = str(upload["filename"])
+            suffix = str(upload["suffix"])
+
+            sheet_arg = _resolve_participants_sheet_arg(
+                input_path=input_path,
+                suffix=suffix,
+                sheet_value=request.form.get("sheet"),
+            )
+            converter_separator = (
+                _expected_delimiter_for_suffix(suffix, separator_option) or "auto"
+            )
+
+            log_msg("INFO", f"Processing {filename}...")
+
+            explicit_id_col = request.form.get("id_column", "").strip() or None
+            extra_columns = _parse_requested_column_list(
+                request.form.get("extra_columns")
+            )
+            try:
+                context = _resolve_web_participant_import_mapping(
+                    project_root=project_root,
+                    input_path=input_path,
+                    suffix=suffix,
+                    sheet_arg=sheet_arg,
+                    separator_option=separator_option,
+                    explicit_id_column=explicit_id_col,
+                    excluded_columns=excluded_columns,
+                    extra_columns=extra_columns,
+                    log_callback=log_msg,
+                )
+            except ValueError as resolve_error:
+                return jsonify({"error": str(resolve_error), "log": upfront_logs}), 400
+
+            id_resolution = context.get("id_resolution") or {}
+            source_columns = context.get("source_columns") or []
+            if bool(id_resolution.get("id_selection_required")):
+                return _participants_id_required_response(
+                    source_columns=source_columns,
+                    suggested_id_column=id_resolution.get("suggested_id_column"),
+                    logs=upfront_logs,
+                )
+
+            detected_id_col = str(context.get("detected_id_column") or "").strip()
+            if not detected_id_col:
+                return _participants_id_required_response(
+                    source_columns=source_columns,
+                    logs=upfront_logs,
+                )
+
+            mapping = context.get("mapping")
+            if not isinstance(mapping, dict):
+                return (
+                    jsonify(
+                        {
+                            "error": "Could not resolve participant mapping",
+                            "log": upfront_logs,
+                        }
+                    ),
+                    400,
+                )
+
+            config.update(
+                {
+                    "tmp_dir": tmp_dir,
+                    "input_path": input_path,
+                    "filename": filename,
+                    "sheet_arg": sheet_arg,
+                    "converter_separator": converter_separator,
+                    "mapping": mapping,
+                }
+            )
+        except Exception:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+            raise
+
+    elif mode == "existing":
+        pass
+
+    elif mode == "dataset":
+        config["extract_from_survey"] = (
+            request.form.get("extract_from_survey", "true").lower() == "true"
+        )
+        config["extract_from_biometrics"] = (
+            request.form.get("extract_from_biometrics", "true").lower() == "true"
+        )
+
+    else:
+        return jsonify({"error": f"Unknown mode: {mode}"}), 400
+
+    job_id = ""
+    for _ in range(5):
+        candidate = uuid.uuid4().hex
+        try:
+            _participants_job_store.create(candidate)
+            job_id = candidate
+            break
+        except ValueError:
+            continue
+    if not job_id:
+        if mode == "file":
+            shutil.rmtree(config["tmp_dir"], ignore_errors=True)
+        return jsonify({"error": "Could not allocate conversion job id"}), 500
+
+    for entry in upfront_logs:
+        _participants_job_store.append_log(job_id, entry["message"], entry["level"])
+
+    thread = threading.Thread(
+        target=_run_participants_convert_job, args=(job_id, config), daemon=True
+    )
+    thread.start()
+
+    return jsonify({"job_id": job_id}), 200
+
+
+@conversion_participants_bp.route(
+    "/api/participants-convert-status/<job_id>", methods=["GET"]
+)
+def api_participants_convert_status(job_id: str):
+    """Get incremental status and logs for an async participants conversion job."""
+    try:
+        cursor = int(request.args.get("cursor", "0"))
+    except ValueError:
+        cursor = 0
+
+    payload = _participants_job_store.snapshot(job_id, cursor)
+    if payload is None:
+        return jsonify({"error": "Job not found"}), 404
+
+    return jsonify(payload), 200
+
+
+def _run_participants_convert_job(job_id: str, config: dict[str, Any]) -> None:
+    """Worker thread body for an async participants conversion job."""
+
+    def log_msg(level, message):
+        _participants_job_store.append_log(job_id, message, level)
+
+    mode = config["mode"]
+    project_root = config["project_root"]
+    existing_files = config["existing_files"]
+    neurobagel_schema = config["neurobagel_schema"]
+
+    try:
+        if mode == "file":
+            tmp_dir = config["tmp_dir"]
+            try:
+                from src.participants_converter import ParticipantsConverter
+
+                input_path = config["input_path"]
+                participants_tsv = config["participants_tsv"]
+                participants_json = config["participants_json"]
+                mapping = config["mapping"]
+
+                converter = ParticipantsConverter(project_root, log_callback=log_msg)
+                success, df, messages = converter.convert_participant_data(
+                    source_file=str(input_path),
+                    mapping=mapping,
+                    output_file=str(participants_tsv),
+                    separator=config["converter_separator"],
+                    sheet=config["sheet_arg"],
+                )
+
+                for msg in messages:
+                    log_msg("INFO", msg)
+
+                if not success or df is None:
+                    _participants_job_store.failure(job_id, "Conversion failed")
+                    return
+
+                df.to_csv(participants_tsv, sep="\t", index=False)
+                log_msg("INFO", f"✓ Created {participants_tsv.name}")
+
+                participants_json_data = {str(col): {} for col in df.columns}
+
+                if neurobagel_schema:
+                    try:
+                        aligned_neurobagel_schema = (
+                            _rekey_neurobagel_schema_to_output_columns(
+                                neurobagel_schema=neurobagel_schema,
+                                mapping=mapping if isinstance(mapping, dict) else None,
+                                allowed_columns=list(df.columns),
+                            )
+                        )
+                        participants_json_data, merged_count = (
+                            _merge_neurobagel_schema_for_columns(
+                                participants_json_data,
+                                aligned_neurobagel_schema,
+                                list(df.columns),
+                                log_callback=log_msg,
+                            )
+                        )
+                        log_msg(
+                            "INFO",
+                            f"Merged NeuroBagel annotations for {merged_count} participants.tsv column(s)",
+                        )
+                    except Exception as e:
+                        log_msg(
+                            "WARNING", f"Could not merge NeuroBagel schema: {str(e)}"
+                        )
+
+                fallback_descriptions = {
+                    "participant_id": "Participant identifier (sub-<label>)",
+                    "age": "Age of participant",
+                }
+                for col in df.columns:
+                    col_name = str(col)
+                    field = participants_json_data.setdefault(col_name, {})
+                    current_description = str(field.get("Description") or "").strip()
+                    if current_description:
+                        continue
+                    field["Description"] = fallback_descriptions.get(
+                        col_name, f"Participant {col_name}"
+                    )
+
+                with open(participants_json, "w", encoding="utf-8") as f:
+                    json.dump(
+                        participants_json_data,
+                        f,
+                        indent=2,
+                        ensure_ascii=False,
+                    )
+
+                log_msg("INFO", f"✓ Created {participants_json.name}")
+
+                _participants_job_store.success(
+                    job_id,
+                    {
+                        "status": "success",
+                        "files_created": [
+                            str(participants_tsv),
+                            str(participants_json),
+                        ],
+                        "output_directory": str(project_root),
+                        "overwrote_existing": bool(existing_files),
+                        "overwritten_files": existing_files if existing_files else [],
+                    },
+                )
+            finally:
+                shutil.rmtree(tmp_dir, ignore_errors=True)
+
+        elif mode == "existing":
+            log_msg("INFO", "Updating existing participants.tsv/participants.json...")
+            try:
+                result = _convert_existing_participants_files(
+                    project_root=project_root,
+                    neurobagel_schema=neurobagel_schema,
+                    excluded_columns=config["excluded_columns"],
+                    log_callback=log_msg,
+                )
+            except ValueError as e:
+                _participants_job_store.failure(job_id, str(e))
+                return
+
+            _participants_job_store.success(
+                job_id,
+                {
+                    **result,
+                    "overwrote_existing": bool(existing_files),
+                    "overwritten_files": existing_files if existing_files else [],
+                },
+            )
+
+        elif mode == "dataset":
+            log_msg("INFO", "Extracting participant data from dataset...")
+            try:
+                result = convert_dataset_participants(
+                    project_root,
+                    neurobagel_schema=neurobagel_schema,
+                    extract_from_survey=config["extract_from_survey"],
+                    extract_from_biometrics=config["extract_from_biometrics"],
+                    log_callback=log_msg,
+                )
+            except ValueError as e:
+                _participants_job_store.failure(job_id, str(e))
+                return
+
+            _participants_job_store.success(job_id, dict(result))
+
+    except Exception as e:
+        _participants_job_store.failure(job_id, str(e))

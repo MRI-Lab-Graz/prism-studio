@@ -67,6 +67,8 @@ from .conversion_survey_convert_handlers import (
 )
 from .conversion_survey_convert_validate_handlers import (
     handle_api_survey_convert_validate,
+    handle_api_survey_convert_validate_start,
+    handle_api_survey_convert_validate_status,
 )
 from .conversion_survey_official_template_helpers import (
     copy_official_templates_to_project,
@@ -928,6 +930,55 @@ def api_survey_convert_validate():
         sanitize_jsonable=sanitize_jsonable,
         collect_multivariant_tasks_from_library=collect_multivariant_tasks_from_library,
     )
+
+
+def api_survey_convert_validate_start():
+    return handle_api_survey_convert_validate_start(
+        convert_survey_xlsx_to_prism_dataset=convert_survey_xlsx_to_prism_dataset,
+        convert_survey_lsa_to_prism_dataset=convert_survey_lsa_to_prism_dataset,
+        resolve_uploaded_or_source_file=_resolve_uploaded_or_source_file,
+        resolve_requested_project_root=_resolve_requested_project_root,
+        supported_survey_input_suffixes=_SUPPORTED_SURVEY_INPUT_SUFFIXES,
+        supported_survey_input_message=_SUPPORTED_SURVEY_INPUT_MESSAGE,
+        resolve_effective_library_path=_resolve_effective_library_path,
+        survey_workflow_stage_service=_survey_workflow_stage_service,
+        resolve_official_survey_dir=_resolve_official_survey_dir,
+        parse_selected_survey_tasks=parse_selected_survey_tasks,
+        merge_selected_survey_filter=merge_selected_survey_filter,
+        parse_template_version_overrides=parse_template_version_overrides,
+        get_effective_template_version_overrides=_get_effective_template_version_overrides,
+        parse_near_item_match_task_allowlist=parse_near_item_match_task_allowlist,
+        parse_task_value_offsets=parse_task_value_offsets,
+        normalize_separator_option=normalize_separator_option,
+        expected_delimiter_for_suffix=expected_delimiter_for_suffix,
+        survey_workflow_stage_options_cls=SurveyWorkflowStageOptions,
+        run_survey_with_official_fallback=_run_survey_with_official_fallback,
+        validate_project_templates_for_tasks=_validate_project_templates_for_tasks,
+        build_template_completion_gate=_build_template_completion_gate,
+        format_workflow_preparation_stale_response=_format_workflow_preparation_stale_response,
+        format_value_offset_confirmation_response=_format_value_offset_confirmation_response,
+        is_value_offset_confirmation_error=_is_value_offset_confirmation_error,
+        id_column_not_detected_error_cls=IdColumnNotDetectedError,
+        missing_id_mapping_error_cls=MissingIdMappingError,
+        unmatched_groups_error_cls=UnmatchedGroupsError,
+        format_unmatched_groups_response=_format_unmatched_groups_response,
+        participants_mapping_candidates=participants_mapping_candidates,
+        log_file_head=_log_file_head,
+        resolve_validation_library_path=_resolve_validation_library_path,
+        run_validation=run_validation,
+        cleanup_stale_tool_limesurvey_sidecars=_cleanup_stale_tool_limesurvey_sidecars,
+        iter_session_registration_values=_iter_session_registration_values,
+        extract_tasks_from_output=_extract_tasks_from_output,
+        register_session_in_project=_register_session_in_project,
+        sync_project_survey_recipe_offsets=sync_project_survey_recipe_offsets,
+        summarize_project_output_paths=summarize_project_output_paths,
+        sanitize_jsonable=sanitize_jsonable,
+        collect_multivariant_tasks_from_library=collect_multivariant_tasks_from_library,
+    )
+
+
+def api_survey_convert_validate_status(job_id: str):
+    return handle_api_survey_convert_validate_status(job_id)
 
 
 def api_save_unmatched_template():

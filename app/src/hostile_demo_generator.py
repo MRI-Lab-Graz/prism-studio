@@ -24,7 +24,15 @@ import pandas as pd
 from src.project_manager import ProjectManager
 from src.utils.io import ensure_dir, write_json
 
-ALL_DOMAINS = {"sociodemo", "biometrics", "environment_mri", "subject_session"}
+ALL_DOMAINS = {
+    "sociodemo",
+    "biometrics",
+    "environment_mri",
+    "subject_session",
+    "entity_rewrite",
+    "recipes",
+    "input_formats",
+}
 
 
 @dataclass
@@ -844,6 +852,258 @@ def build_hostile_subject_session_layout(root: Path, seed: int) -> list[HostileC
     return cases
 
 
+# ---------------------------------------------------------------------------
+# BIDS entity rewriting (task/acq/run, distinct from subject rewriting)
+# ---------------------------------------------------------------------------
+
+
+def build_hostile_entity_rewrite_targets(root: Path, seed: int) -> list[HostileCase]:
+    cases: list[HostileCase] = []
+
+    def write_func(sub: str, ses: str, stem_suffix: str) -> str:
+        mod_dir = ensure_dir(root / sub / ses / "func")
+        path = mod_dir / f"{sub}_{ses}_{stem_suffix}_bold.json"
+        write_json(path, {"TaskName": stem_suffix.split("_")[0].split("-")[-1]})
+        return path.relative_to(root).as_posix()
+
+    loc_a = write_func("sub-ent01", "ses-01", "task-rest_acq-A")
+    loc_b = write_func("sub-ent01", "ses-01", "task-rest_acq-Z")
+    cases.append(
+        HostileCase(
+            "entity_acq_rename_real_collision",
+            "entity_rewrite",
+            "Two files for the same subject/task differing only in the "
+            "'acq' entity value (acq-A, acq-Z) — distinct values, not a "
+            "case variant, so this is staffable on any filesystem.",
+            "BidsEntityRewriter.preview(entity='acq', operation='rename', "
+            "current_value='Z', replacement='A') must report a conflict: "
+            "renaming acq-Z to acq-A would collide with the existing "
+            "acq-A file.",
+            f"{loc_a}, {loc_b}",
+        )
+    )
+
+    loc_r1 = write_func("sub-ent02", "ses-01", "task-mem_run-01")
+    loc_r2 = write_func("sub-ent02", "ses-01", "task-mem_run-02")
+    loc_r3 = write_func("sub-ent02", "ses-01", "task-mem")
+    cases.append(
+        HostileCase(
+            "entity_run_delete_real_collision",
+            "entity_rewrite",
+            "Two run values (run-01, run-02) for task-mem, plus a third "
+            "file for the same task that already has no 'run' entity at "
+            "all — deleting run-01's entity would collide with the "
+            "pre-existing bare file.",
+            "BidsEntityRewriter has no many-to-one merge option (unlike "
+            "the subject rewriter); preview(entity='run', "
+            "operation='delete', current_value='01') must report a "
+            "conflict against the pre-existing bare task-mem file rather "
+            "than silently overwriting it. Note: deleting 'run' with no "
+            "current_value at all is rejected up front with a clear "
+            "ValueError ('part has multiple values') precisely because "
+            "the entity has more than one observed value — the API "
+            "refuses the ambiguous bulk case outright.",
+            f"{loc_r1}, {loc_r2}, {loc_r3}",
+        )
+    )
+
+    cases.append(
+        HostileCase(
+            "entity_sub_not_editable",
+            "entity_rewrite",
+            "An attempt to rewrite the 'sub' entity through the generic "
+            "BIDS entity rewriter instead of the dedicated subject "
+            "rewriter.",
+            "BidsEntityRewriter.preview(entity='sub', ...) raises a clear "
+            "ValueError ('Part _sub is not editable here...'), not an "
+            "unhandled exception or a silent no-op.",
+            loc_a,
+        )
+    )
+
+    return cases
+
+
+# ---------------------------------------------------------------------------
+# Recipe definitions (survey + biometrics scoring)
+# ---------------------------------------------------------------------------
+
+
+def build_hostile_recipe_definitions(root: Path, seed: int) -> list[HostileCase]:
+    cases: list[HostileCase] = []
+
+    survey_dir = ensure_dir(root / "code" / "recipes" / "survey")
+    biometrics_dir = ensure_dir(root / "code" / "recipes" / "biometrics")
+
+    missing_taskname = {
+        "RecipeVersion": "1.0",
+        "Kind": "survey",
+        "Survey": {"Name": "Missing TaskName recipe"},
+        "Scores": [
+            {"Name": "total", "Items": ["Q1", "Q2"], "Method": "mean"}
+        ],
+    }
+    path = survey_dir / "recipe-hostile-missing-taskname.json"
+    write_json(path, missing_taskname)
+    cases.append(
+        HostileCase(
+            "recipe_missing_survey_taskname",
+            "recipes",
+            "A survey recipe with Kind='survey' but no Survey.TaskName.",
+            "validate_recipe() returns a non-empty error list "
+            "('Survey.TaskName must be a non-empty string'); does not "
+            "raise.",
+            path.relative_to(root).as_posix(),
+        )
+    )
+
+    formula_missing_items = {
+        "RecipeVersion": "1.0",
+        "Kind": "survey",
+        "Survey": {"TaskName": "hostile-formula"},
+        "Scores": [
+            {
+                "Name": "derived_total",
+                "Items": ["Q1", "Q2"],
+                "Method": "formula",
+                "Formula": "{Q1} + {Q2} + {Q3}",
+            }
+        ],
+    }
+    path = survey_dir / "recipe-hostile-formula-missing-items.json"
+    write_json(path, formula_missing_items)
+    cases.append(
+        HostileCase(
+            "recipe_formula_references_missing_item",
+            "recipes",
+            "A formula-based score whose Formula references {Q3}, which "
+            "is not listed in Items.",
+            "validate_recipe() flags the unsubstituted placeholder rather "
+            "than letting it reach scoring (where it would be silently "
+            "left as the literal string '{Q3}').",
+            path.relative_to(root).as_posix(),
+        )
+    )
+
+    invalid_kind = {
+        "RecipeVersion": "1.0",
+        "Kind": "spreadsheet",
+        "Scores": [],
+    }
+    path = survey_dir / "recipe-hostile-invalid-kind.json"
+    write_json(path, invalid_kind)
+    cases.append(
+        HostileCase(
+            "recipe_invalid_kind",
+            "recipes",
+            "A recipe whose Kind is neither 'survey' nor 'biometrics'.",
+            "validate_recipe() reports \"Kind must be 'survey' or "
+            "'biometrics'\".",
+            path.relative_to(root).as_posix(),
+        )
+    )
+
+    biometrics_missing_name = {
+        "RecipeVersion": "1.0",
+        "Kind": "biometrics",
+        "Biometrics": {},
+        "Scores": [{"Name": "fitness_total", "Items": ["resting_hr"], "Method": "mean"}],
+    }
+    path = biometrics_dir / "recipe-hostile-missing-biometric-name.json"
+    write_json(path, biometrics_missing_name)
+    cases.append(
+        HostileCase(
+            "recipe_biometrics_missing_name",
+            "recipes",
+            "A biometrics recipe with an empty Biometrics object (no "
+            "BiometricName).",
+            "validate_recipe() reports the missing BiometricName field.",
+            path.relative_to(root).as_posix(),
+        )
+    )
+
+    return cases
+
+
+# ---------------------------------------------------------------------------
+# Input format diversity (encodings, spreadsheet formats)
+# ---------------------------------------------------------------------------
+
+
+def write_hostile_input_format_variants(root: Path, seed: int) -> list[HostileCase]:
+    cases: list[HostileCase] = []
+    out_dir = ensure_dir(root / "code" / "rawdata")
+
+    df, _ = build_hostile_participants_table(seed)
+    # Rows 0-1 (socio_age_out_of_range) are plain ASCII; later rows carry
+    # the deliberately unicode/RTL free text used for the sociodemo domain,
+    # which can't round-trip through latin-1 — keep this subset ASCII-only
+    # so the encoding stress below is isolated to the encoding itself.
+    df_small = df.head(2)
+
+    utf16_path = out_dir / "hostile_participants_utf16.csv"
+    utf16_path.write_text(df_small.to_csv(index=False), encoding="utf-16")
+    cases.append(
+        HostileCase(
+            "input_utf16_encoded_csv",
+            "input_formats",
+            "A participants CSV encoded as UTF-16 instead of UTF-8.",
+            "read_tabular_file's encoding fallback chain "
+            "(utf-8-sig -> utf-8 -> latin-1 -> cp1252) does not include "
+            "utf-16, so this either fails with a clear, catchable error "
+            "or is misread as a single garbled column — not a silent "
+            "successful-but-wrong parse treated as valid data.",
+            utf16_path.relative_to(root).as_posix(),
+        )
+    )
+
+    latin1_path = out_dir / "hostile_participants_latin1.csv"
+    raw_text = df_small.to_csv(index=False)
+    # Force a genuinely non-UTF-8 byte sequence (e.g. 'Ä' in Latin-1) so the
+    # fallback chain's later candidates are actually exercised.
+    raw_text = raw_text.replace("001", "M\xfcller-001")
+    latin1_path.write_bytes(raw_text.encode("latin-1"))
+    cases.append(
+        HostileCase(
+            "input_latin1_encoded_csv",
+            "input_formats",
+            "A participants CSV containing Latin-1-only byte sequences "
+            "(invalid as UTF-8).",
+            "read_tabular_file falls back to latin-1/cp1252 and parses "
+            "successfully without raising.",
+            latin1_path.relative_to(root).as_posix(),
+        )
+    )
+
+    _, wide_df, _, _ = build_hostile_biometrics_inputs(seed)
+    xlsx_df = wide_df.copy()
+    xlsx_df["vo2_max_estimated"] = xlsx_df["vo2_max_estimated"].astype(object)
+    xlsx_df.loc[0, "vo2_max_estimated"] = "=1+1"  # formula-like cell value
+    xlsx_path = out_dir / "hostile_biometrics_data_wide.xlsx"
+    xlsx_df.to_excel(xlsx_path, index=False, engine="openpyxl")
+    cases.append(
+        HostileCase(
+            "input_xlsx_with_formula_like_cell",
+            "input_formats",
+            "A biometrics .xlsx cell holding a spreadsheet-formula-like "
+            "string ('=1+1'), written via pandas.DataFrame.to_excel "
+            "(openpyxl engine) the same way an end user's exported "
+            "CSV-injection payload would arrive.",
+            "KNOWN RISK, not a safe pass: openpyxl writes a string "
+            "starting with '=' as a live formula cell with no cached "
+            "value, so pandas.read_excel reads it back as NaN, not the "
+            "literal text. Any PRISM code path that writes raw "
+            "user-supplied strings to .xlsx via to_excel/openpyxl "
+            "silently turns CSV-injection payloads into live formulas — "
+            "flag for follow-up (escape leading =/+/-/@ before writing, "
+            "or write via a text-formatted cell).",
+            xlsx_path.relative_to(root).as_posix(),
+        )
+    )
+
+    return cases
+
+
 def assert_text_files_never_annexed(root: Path) -> list[str]:
     """Return a list of relative paths that violate the never-annex policy.
 
@@ -940,5 +1200,26 @@ def generate_hostile_dataset(
         for case in cases:
             if case.location:
                 _record(result.files_written, "subject_session", case.location)
+
+    if "entity_rewrite" in selected:
+        cases = build_hostile_entity_rewrite_targets(output_root, seed)
+        result.cases.extend(cases)
+        for case in cases:
+            if case.location:
+                _record(result.files_written, "entity_rewrite", case.location)
+
+    if "recipes" in selected:
+        cases = build_hostile_recipe_definitions(output_root, seed)
+        result.cases.extend(cases)
+        for case in cases:
+            if case.location:
+                _record(result.files_written, "recipes", case.location)
+
+    if "input_formats" in selected:
+        cases = write_hostile_input_format_variants(output_root, seed)
+        result.cases.extend(cases)
+        for case in cases:
+            if case.location:
+                _record(result.files_written, "input_formats", case.location)
 
     return result
