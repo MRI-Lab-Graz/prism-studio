@@ -384,7 +384,7 @@ class SubjectCodeRewriter:
         else:
             strategy = "slice"
 
-        return {
+        rule: dict[str, str | int] = {
             "type": "example_keep",
             "example_subject": normalized_example,
             "keep_fragment": keep_value,
@@ -393,6 +393,15 @@ class SubjectCodeRewriter:
             "start": start_index,
             "end": end_index,
         }
+        if strategy == "slice":
+            # Anchor on the literal text surrounding the kept fragment
+            # rather than fixed character positions, so subject IDs of
+            # different lengths (e.g. sub-AB12XY and sub-AB123456XY) still
+            # resolve correctly instead of relying on a positional slice
+            # derived from the one example.
+            rule["prefix_anchor"] = example_label[:start_index]
+            rule["suffix_anchor"] = example_label[end_index:]
+        return rule
 
     @staticmethod
     def _rewrite_subject_token(
@@ -421,9 +430,17 @@ class SubjectCodeRewriter:
                     return subject_token
                 rewritten_label = label[:length]
             elif strategy == "slice":
-                if len(label) < end or end <= start:
+                prefix_anchor = str(rule.get("prefix_anchor") or "")
+                suffix_anchor = str(rule.get("suffix_anchor") or "")
+                if not label.startswith(prefix_anchor) or not label.endswith(
+                    suffix_anchor
+                ):
                     return subject_token
-                rewritten_label = label[start:end]
+                if len(label) < len(prefix_anchor) + len(suffix_anchor):
+                    return subject_token
+                rewritten_label = label[
+                    len(prefix_anchor) : len(label) - len(suffix_anchor)
+                ]
             elif strategy == "full":
                 rewritten_label = label
             else:
