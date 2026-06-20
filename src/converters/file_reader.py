@@ -329,12 +329,35 @@ def read_tabular_file(
     except EmptyDataError:
         raise ValueError(f"Input {kind.upper()} file is empty: {path.name}")
     except Exception as exc:
-        friendly = _rewrite_tokenization_error(str(exc), kind)
-        if friendly:
-            raise ValueError(friendly) from exc
-        raise ValueError(
-            f"Failed to read {kind.upper()} file {path.name}: {exc}"
-        ) from exc
+        # The default/explicit separator may simply be wrong (e.g. a
+        # semicolon-delimited European export with comma-decimal numbers,
+        # which makes a comma-delimited parse raise a ragged-row error
+        # rather than collapsing to a single column). Try the sniffed
+        # delimiter before giving up.
+        recovered_df = None
+        if separator is None:
+            sniffed = _sniff_delimiter(text)
+            if sniffed != sep:
+                try:
+                    candidate = _do_read(sniffed)
+                except Exception:
+                    candidate = None
+                if candidate is not None and not candidate.empty and len(candidate.columns) > 1:
+                    recovered_df = candidate
+                    sep = sniffed
+                    warnings.append(
+                        f"{kind.upper()} file appears to use '{sniffed}' as delimiter "
+                        f"instead of the expected '{default_sep}'. Re-read with detected delimiter."
+                    )
+
+        if recovered_df is None:
+            friendly = _rewrite_tokenization_error(str(exc), kind)
+            if friendly:
+                raise ValueError(friendly) from exc
+            raise ValueError(
+                f"Failed to read {kind.upper()} file {path.name}: {exc}"
+            ) from exc
+        df = recovered_df
 
     if df is None or df.empty:
         raise ValueError(f"Input {kind.upper()} file is empty: {path.name}")
