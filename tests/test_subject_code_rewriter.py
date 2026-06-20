@@ -345,3 +345,36 @@ def test_subject_code_rewriter_preview_cap_results_controls_truncation(tmp_path)
     assert len(uncapped["text_update_files"]) == subject_count
     assert len(uncapped["file_renames"]) >= subject_count
     assert len(uncapped["directory_renames"]) == subject_count
+
+
+def test_subject_code_rewriter_case_only_rename_is_not_a_conflict(tmp_path):
+    """Regression guard: on case-insensitive filesystems (macOS/Windows),
+    Path.exists() returns True for a target directory that only differs in
+    case from the source, since they're the same directory on disk. A pure
+    case-change subject rename (sub-ABC -> sub-abc) must not be misreported
+    as a collision, and with allow_many_to_one=True must not be routed into
+    _merge_directories against itself."""
+    project_root = tmp_path / "project"
+    func_dir = project_root / "sub-ABC" / "ses-01" / "func"
+    func_dir.mkdir(parents=True)
+    (func_dir / "sub-ABC_ses-01_task-rest_bold.json").write_text(
+        "{}", encoding="utf-8"
+    )
+
+    rewriter = SubjectCodeRewriter(project_root)
+    preview = rewriter.preview(
+        explicit_mapping={"sub-ABC": "sub-abc"},
+        allow_many_to_one=True,
+    )
+
+    assert preview["conflicts"] == []
+
+    result = rewriter.apply(
+        explicit_mapping={"sub-ABC": "sub-abc"},
+        allow_many_to_one=True,
+    )
+
+    assert result["mapping_count"] == 1
+    assert (
+        project_root / "sub-abc" / "ses-01" / "func" / "sub-abc_ses-01_task-rest_bold.json"
+    ).exists()

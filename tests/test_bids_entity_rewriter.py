@@ -233,3 +233,38 @@ def test_bids_entity_rewriter_explicit_renames_survive_value_becoming_ambiguous_
     assert result["rename_count"] == 1
     assert (func_b / "sub-007_ses-1_task-rest_run-01_bold.nii.gz").exists()
     assert not (func_b / "sub-007_ses-1_task-A_run-01_bold.nii.gz").exists()
+
+
+def test_bids_entity_rewriter_case_only_rename_is_not_a_conflict(tmp_path):
+    """Regression guard: on case-insensitive filesystems (macOS/Windows),
+    Path.exists() returns True for a target that only differs in case from
+    the source, since they're the same file on disk. A pure case-change
+    rename (task-SST -> task-sst) must not be misreported as a collision
+    with itself."""
+    project_root = tmp_path / "project"
+    func_dir = project_root / "sub-006" / "ses-1" / "func"
+    _touch_file(func_dir / "sub-006_ses-1_task-SST_run-01_bold.nii.gz")
+    _touch_file(func_dir / "sub-006_ses-1_task-SST_run-01_bold.json", b"{}")
+
+    rewriter = BidsEntityRewriter(project_root)
+
+    preview = rewriter.preview(
+        modality="func",
+        entity="_task",
+        operation="rename",
+        replacement="sst",
+    )
+
+    assert preview["conflicts"] == []
+    assert preview["rename_count"] == 2
+
+    result = rewriter.apply(
+        modality="func",
+        entity="_task",
+        operation="rename",
+        replacement="sst",
+    )
+
+    assert result["rename_count"] == 2
+    assert (func_dir / "sub-006_ses-1_task-sst_run-01_bold.nii.gz").exists()
+    assert (func_dir / "sub-006_ses-1_task-sst_run-01_bold.json").exists()
