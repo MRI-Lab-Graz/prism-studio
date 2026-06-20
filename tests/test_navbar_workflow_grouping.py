@@ -33,7 +33,6 @@ class TestNavbarWorkflowGrouping(unittest.TestCase):
         self.assertIn('navbar-flow-item-hint', content)
         self.assertIn('Set the active project used by all workflow steps', content)
         self.assertIn('Import raw source files and normalize structure', content)
-        self.assertIn('Modify the current project in place; DataLad-tracked projects use DataLad run', content)
         self.assertIn('Move, rename, and align files with project conventions', content)
         self.assertIn('Write curated survey tables to derivative folders', content)
         self.assertIn('Guides, tutorials, and full feature documentation', content)

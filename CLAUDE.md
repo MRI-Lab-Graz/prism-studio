@@ -23,3 +23,19 @@ a DataLad/git-annex dataset, or otherwise affects what gets annexed
 preserve this invariant. If you ever find a text-format file that ended up as
 an annex symlink, that's a bug to flag/fix, not expected behavior — for any
 extension, anywhere in the project, including `sourcedata/`.
+
+## Session IDs are free-form strings — never normalize them
+
+BIDS session labels (`ses-<label>`) are arbitrary strings, not numbers.
+`"pre"`, `"1"`, and `"01"` are three different, equally valid, independent
+labels — never coerce one into another (e.g. zero-padding `"1"` to `"01"`,
+or treating `"1"` and `"01"` as "the same session"). Doing so silently
+mismatches/duplicates a user's actual session naming.
+
+A prior version of `app/src/web/blueprints/conversion_physio_handlers.py`
+had a `_normalize_session_label()` helper that zero-padded bare numeric
+session labels to two digits. This was wrong and was deleted; session label
+extraction there now uses the same plain `_sanitize_bids_label()` used for
+subject labels (alphanumeric-only, no padding/coercion). Do not reintroduce
+numeric session normalization anywhere in this codebase — any session
+matching/comparison logic must be an exact string comparison.

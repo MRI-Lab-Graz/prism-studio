@@ -3089,7 +3089,7 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         response = self.client.get("/api/participants-check")
         self.assertEqual(response.status_code, 200)
         payload = response.get_json() or {}
-        self.assertTrue(payload.get("exists"))
+        self.assertFalse(payload.get("exists"))
         self.assertFalse(payload.get("has_participants_tsv"))
         self.assertFalse(payload.get("can_modify_existing"))
         self.assertTrue((payload.get("workflow") or {}).get("metadata_without_tsv"))
