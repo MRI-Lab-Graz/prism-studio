@@ -63,6 +63,11 @@
                         <label class="form-check-label fw-semibold" for="initBidsUseDatalad">Use DataLad version control for this dataset</label>
                         <small class="d-block text-muted">Optional. Turn this on only when you want built-in dataset version control. If DataLad or git-annex is unavailable, PRISM keeps working without DataLad.</small>
                     </div>
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" id="initBidsAutoEnvironmentEnrichment" checked>
+                        <label class="form-check-label fw-semibold" for="initBidsAutoEnvironmentEnrichment">Automatically enrich with environmental data from MRI scans</label>
+                        <small class="d-block text-muted">On by default. After initialisation, PRISM scans rawdata/ for MRI acquisition timestamps and scanner-site locations and runs the Environment converter automatically in the background. Turn this off to skip it.</small>
+                    </div>
                 </form>
 
                 <div class="d-flex justify-content-end align-items-center gap-2 mt-3">

@@ -545,7 +545,7 @@
                     <div class="mb-2">
                         <div class="d-flex justify-content-between mb-1">
                             <span>
-                                <i class="fas fa-{{ 'clipboard-list' if modality == 'survey' else 'heartbeat' if modality == 'biometrics' else 'wave-square' if modality in ['physio', 'physiological'] else 'eye' if modality in ['eyetracking', 'eyetrack'] else 'brain' }} me-2 text-secondary modality-icon"></i>
+                                <i class="fas fa-{{ 'clipboard-list' if modality == 'survey' else 'heartbeat' if modality == 'biometrics' else 'wave-square' if modality in ['physio', 'physiological'] else 'eye' if modality in ['eyetracking', 'eyetrack'] else 'cloud-sun' if modality == 'environment' else 'brain' }} me-2 text-secondary modality-icon"></i>
                                 {{ modality|capitalize }}
                             </span>
                             <span class="badge bg-light text-dark border">{{ count }}</span>
@@ -569,6 +569,10 @@
                             {% elif modality == 'biometrics' and dataset_stats.biometrics %}
                                 {% for b in dataset_stats.biometrics %}
                                 <span class="badge bg-dark x-small">{{ b }}</span>
+                                {% endfor %}
+                            {% elif modality == 'environment' and dataset_stats.environment %}
+                                {% for r in dataset_stats.environment %}
+                                <span class="badge bg-success x-small">{{ r }}</span>
                                 {% endfor %}
                             {% elif modality == 'beh' and dataset_stats.beh_tasks %}
                                 {% for t in dataset_stats.beh_tasks %}

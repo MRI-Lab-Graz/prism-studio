@@ -807,6 +807,9 @@ def show_results(result_id):
                 "physio": sorted(getattr(stats_obj, "physio", set()) or set()),
                 "surveys": sorted(getattr(stats_obj, "surveys", set()) or set()),
                 "biometrics": sorted(getattr(stats_obj, "biometrics", set()) or set()),
+                "environment": sorted(
+                    getattr(stats_obj, "environment", set()) or set()
+                ),
                 "total_files": getattr(stats_obj, "total_files", 0),
                 "sidecar_files": getattr(stats_obj, "sidecar_files", 0),
             }
@@ -824,6 +827,7 @@ def show_results(result_id):
             "surveys": [],
             "survey_variants": {},
             "biometrics": [],
+            "environment": [],
             "total_files": 0,
             "sidecar_files": 0,
         }

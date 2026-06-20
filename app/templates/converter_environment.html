@@ -18,8 +18,12 @@
                     <button class="btn btn-outline-warning" type="button" id="envScanMriBtn">
                         <i class="fas fa-magnifying-glass-chart me-2"></i>Scan Project MRI Data
                     </button>
+                    <button class="btn btn-warning ms-2" type="button" id="envRescanMriBtn">
+                        <i class="fas fa-arrows-rotate me-2"></i>Rescan &amp; Re-enrich
+                    </button>
                     <small class="form-text text-muted d-block mt-1">
-                        Looks for acquisition timestamps (and scanner location, if tagged) in this project's existing MRI JSON sidecars — no survey file needed.
+                        "Scan" looks for acquisition timestamps (and scanner location, if tagged) in this project's existing MRI JSON sidecars and loads them into the form below for review.
+                        "Rescan &amp; Re-enrich" does the same scan plus environment conversion in one click — use it after adding new MRI sessions to a project.
                     </small>
                 </div>
             </div>

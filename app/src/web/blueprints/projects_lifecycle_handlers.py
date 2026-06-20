@@ -345,6 +345,7 @@ def handle_init_on_bids(project_manager, set_current_project, save_last_project)
             "references_and_links": data.get("references_and_links"),
             "dataset_type": _normalize_dataset_type(data.get("dataset_type")),
             "description": data.get("description"),
+            "auto_environment_enrichment": bool(data.get("auto_environment_enrichment", True)),
         }
 
         result = project_manager.init_on_existing_bids(path, config)
@@ -363,6 +364,16 @@ def handle_init_on_bids(project_manager, set_current_project, save_last_project)
                 "datalad": project_manager.get_datalad_status(resolved_path),
                 "project_json_path": str(Path(resolved_path) / "project.json"),
             }
+            if config["auto_environment_enrichment"]:
+                try:
+                    from .conversion_environment_handlers import (
+                        trigger_automatic_environment_enrichment,
+                    )
+
+                    job_id = trigger_automatic_environment_enrichment(Path(resolved_path))
+                    result["environment_enrichment_job_id"] = job_id
+                except Exception:
+                    result["environment_enrichment_job_id"] = None
             return jsonify(result)
 
         return jsonify(result), 400
