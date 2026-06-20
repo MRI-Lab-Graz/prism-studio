@@ -378,3 +378,43 @@ def test_subject_code_rewriter_case_only_rename_is_not_a_conflict(tmp_path):
     assert (
         project_root / "sub-abc" / "ses-01" / "func" / "sub-abc_ses-01_task-rest_bold.json"
     ).exists()
+
+
+def test_subject_code_rewriter_example_keep_slice_anchors_on_text_not_position(
+    tmp_path,
+):
+    """Regression guard: the 'slice' strategy (kept fragment is in the
+    middle of the example ID) must anchor on the literal prefix/suffix text
+    surrounding the kept fragment, not on fixed character positions derived
+    from the example's length. Otherwise subject IDs that are shorter or
+    longer than the example resolve to the wrong substring or fail outright."""
+    project_root = tmp_path / "project"
+    (project_root / "sub-AB1234XY" / "ses-01" / "func").mkdir(parents=True)
+    (project_root / "sub-AB12XY" / "ses-01" / "func").mkdir(parents=True)
+    (project_root / "sub-AB123456XY" / "ses-01" / "func").mkdir(parents=True)
+
+    rewriter = SubjectCodeRewriter(project_root)
+    preview = rewriter.preview(
+        mode="example_keep",
+        example_subject="sub-AB1234XY",
+        keep_fragment="1234",
+    )
+
+    assert preview["rule"]["strategy"] == "slice"
+    assert preview["mapping"]["sub-AB1234XY"] == "sub-1234"
+    # Shorter ID: anchors "AB"/"XY" still strip correctly even though the
+    # positional start/end from the example would have been wrong.
+    assert preview["mapping"]["sub-AB12XY"] == "sub-12"
+    # Longer ID: same anchors, longer kept middle fragment.
+    assert preview["mapping"]["sub-AB123456XY"] == "sub-123456"
+    assert preview["conflicts"] == []
+
+    result = rewriter.apply(
+        mode="example_keep",
+        example_subject="sub-AB1234XY",
+        keep_fragment="1234",
+    )
+    assert result["mapping_count"] == 3
+    assert (project_root / "sub-1234").exists()
+    assert (project_root / "sub-12").exists()
+    assert (project_root / "sub-123456").exists()
