@@ -910,6 +910,47 @@ def build_prism_tools_parsers(
         help="Default Technical.Equipment value for generated biometrics templates",
     )
 
+    parser_ds_hostile = dataset_subparsers.add_parser(
+        "build-hostile-demo",
+        help="Build an adversarial PRISM dataset exercising edge cases across "
+        "sociodemographics, biometrics, environment/MRI, and subject/session ids",
+    )
+    parser_ds_hostile.add_argument(
+        "--output",
+        default="examples/hostile_demo",
+        help="Output dataset directory (must be empty or non-existent)",
+    )
+    parser_ds_hostile.add_argument(
+        "--seed",
+        type=int,
+        default=20260620,
+        help="Deterministic RNG seed (default: 20260620)",
+    )
+    parser_ds_hostile.add_argument(
+        "--domains",
+        default="all",
+        help="Comma-separated domains to include: sociodemo,biometrics,"
+        "environment_mri,subject_session,all (default: all)",
+    )
+    parser_ds_hostile.add_argument(
+        "--use-datalad",
+        action="store_true",
+        help="Create the project as a DataLad dataset (default: off)",
+    )
+    parser_ds_hostile.add_argument(
+        "--name",
+        default="hostile_demo",
+        help="Dataset name for dataset_description.json (letters/numbers/_/- only)",
+    )
+    parser_ds_hostile.add_argument(
+        "--guide",
+        action="store_true",
+        help="Also write DEMO_GUIDE.md enumerating injected cases and expected outcomes",
+    )
+    parser_ds_hostile.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
     parser_dataset_cleanup = dataset_subparsers.add_parser(
         "cleanup-project-metadata",
         help="Remove legacy converter-written session metadata from project.json",

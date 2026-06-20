@@ -6,6 +6,8 @@ Extracted from conversion.py to reduce module size.
 import re
 import shutil
 import tempfile
+import threading
+import uuid
 import zipfile
 import logging
 from pathlib import Path
@@ -15,6 +17,7 @@ from werkzeug.utils import secure_filename
 from src.web.validation import run_validation
 
 # Shared utilities
+from .conversion_job_store import ConversionJobStore
 from .conversion_utils import (
     participant_json_candidates,
     log_file_head,
@@ -47,6 +50,8 @@ except ImportError:
 
 
 LOGGER = logging.getLogger(__name__)
+
+_biometrics_job_store = ConversionJobStore(log_level_key="level")
 
 _SUPPORTED_BIOMETRICS_SUFFIXES = {
     ".csv",
@@ -612,5 +617,438 @@ def api_biometrics_convert():
         )
     except Exception as e:
         return jsonify({"error": str(e), "log": log}), 500
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def api_biometrics_convert_start():
+    """Start an async biometrics conversion job and return its job id for polling."""
+    if not convert_biometrics_table_to_prism_dataset:
+        return jsonify({"error": "Biometrics conversion module not available"}), 500
+
+    uploaded_file, upload_error = _resolve_uploaded_or_source_file(
+        field_names=("data", "file")
+    )
+
+    if uploaded_file is None or not getattr(uploaded_file, "filename", ""):
+        return jsonify({"error": upload_error or "Missing input file"}), 400
+
+    filename = secure_filename(uploaded_file.filename)
+    suffix = Path(filename).suffix.lower()
+    if suffix not in _SUPPORTED_BIOMETRICS_SUFFIXES:
+        return jsonify({"error": _SUPPORTED_BIOMETRICS_MESSAGE}), 400
+
+    requested_project_root, error_response = _resolve_requested_project_root_or_error()
+    if error_response is not None:
+        return error_response
+
+    try:
+        library_root = resolve_effective_library_path(
+            project_path_value=(
+                str(requested_project_root)
+                if requested_project_root is not None
+                else None
+            )
+        )
+    except FileNotFoundError as e:
+        return jsonify({"error": str(e)}), 400
+
+    biometrics_dir = library_root / "biometrics"
+    effective_biometrics_dir = (
+        biometrics_dir if biometrics_dir.is_dir() else library_root
+    )
+
+    biometrics_templates = list(effective_biometrics_dir.glob("biometrics-*.json"))
+    if not biometrics_templates:
+        return (
+            jsonify(
+                {
+                    "error": f"No biometrics templates found in: {effective_biometrics_dir}"
+                }
+            ),
+            400,
+        )
+
+    id_column = (request.form.get("id_column") or "").strip() or None
+    session_column = (request.form.get("session_column") or "").strip() or None
+    session_override = (request.form.get("session") or "").strip() or None
+    sheet = (request.form.get("sheet") or "0").strip() or 0
+    unknown = (request.form.get("unknown") or "warn").strip() or "warn"
+    dataset_name = (request.form.get("dataset_name") or "").strip() or None
+    save_to_project = request.form.get("save_to_project", "true") == "true"
+    dry_run = request.form.get("dry_run", "false").lower() == "true"
+    project_root: Path | None = None
+
+    if not dry_run:
+        if not save_to_project:
+            return (
+                jsonify(
+                    {
+                        "error": "Project-only mode is enabled. Set save_to_project=true.",
+                    }
+                ),
+                400,
+            )
+
+        try:
+            project_root = require_existing_project_root(
+                _get_requested_project_path() or session.get("current_project_path"),
+                missing_message="No project selected. Load a project before converting biometrics data.",
+                missing_path_message="The selected project path no longer exists. Reopen the project and retry biometrics conversion.",
+            )
+        except (ValueError, FileNotFoundError) as error:
+            return (
+                jsonify(
+                    {
+                        "error": str(error),
+                    }
+                ),
+                400,
+            )
+
+    tasks_to_export = request.form.getlist("tasks[]")
+    if not tasks_to_export:
+        tasks_to_export = None
+
+    tmp_dir = tempfile.mkdtemp(prefix="prism_biometrics_convert_job_")
+    tmp_dir_path = Path(tmp_dir)
+    input_path = tmp_dir_path / filename
+    uploaded_file.save(str(input_path))
+
+    job_id = ""
+    for _ in range(5):
+        candidate = uuid.uuid4().hex
+        try:
+            _biometrics_job_store.create(candidate)
+            job_id = candidate
+            break
+        except ValueError:
+            continue
+    if not job_id:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        return jsonify({"error": "Could not allocate conversion job id"}), 500
+
+    config = {
+        "tmp_dir": tmp_dir,
+        "input_path": input_path,
+        "filename": filename,
+        "suffix": suffix,
+        "effective_biometrics_dir": effective_biometrics_dir,
+        "library_root": library_root,
+        "requested_project_root": requested_project_root,
+        "id_column": id_column,
+        "session_column": session_column,
+        "session_override": session_override,
+        "sheet": sheet,
+        "unknown": unknown,
+        "dataset_name": dataset_name,
+        "save_to_project": save_to_project,
+        "dry_run": dry_run,
+        "project_root": project_root,
+        "tasks_to_export": tasks_to_export,
+        "validate": request.form.get("validate") == "true",
+    }
+
+    thread = threading.Thread(
+        target=_run_biometrics_convert_job, args=(job_id, config), daemon=True
+    )
+    thread.start()
+
+    return jsonify({"job_id": job_id}), 200
+
+
+def api_biometrics_convert_status(job_id: str):
+    """Get incremental status and logs for an async biometrics conversion job."""
+    try:
+        cursor = int(request.args.get("cursor", "0"))
+    except ValueError:
+        cursor = 0
+
+    payload = _biometrics_job_store.snapshot(job_id, cursor)
+    if payload is None:
+        return jsonify({"error": "Job not found"}), 404
+
+    return jsonify(payload), 200
+
+
+def _run_biometrics_convert_job(job_id: str, config: dict[str, Any]) -> None:
+    """Worker thread body for an async biometrics conversion job."""
+
+    def log_msg(message: str, level: str = "info") -> None:
+        _biometrics_job_store.append_log(job_id, message, level)
+
+    tmp_dir = config["tmp_dir"]
+    input_path = config["input_path"]
+    filename = config["filename"]
+    suffix = config["suffix"]
+    effective_biometrics_dir = config["effective_biometrics_dir"]
+    library_root = config["library_root"]
+    requested_project_root = config["requested_project_root"]
+    session_override = config["session_override"]
+    project_root = config["project_root"]
+    dry_run = config["dry_run"]
+    save_to_project = config["save_to_project"]
+    tasks_to_export = config["tasks_to_export"]
+
+    copied_output_paths: list[Path] = []
+    datalad_copy = None
+    result = None
+
+    try:
+        output_root = Path(tmp_dir) / "prism_dataset"
+
+        if dry_run:
+            log_msg("🔍 DRY-RUN MODE - No files will be created", "info")
+
+        log_msg("", "info")
+        log_msg(f"Starting biometrics conversion for {filename}", "info")
+        log_msg(f"Template library: {effective_biometrics_dir}", "step")
+        log_msg(f"Session: {session_override or 'auto-detect'}", "step")
+        log_msg(f"Sheet: {config['sheet']}", "step")
+        log_msg("", "info")
+
+        # Log the head to help debug delimiter/structure issues
+        log_file_head(input_path, suffix, log_msg)
+
+        log_msg("", "info")
+        log_msg("Backend command:", "step")
+        log_msg("  convert_biometrics_table_to_prism_dataset(", "info")
+        log_msg(f"    input_path='{input_path.name}',", "info")
+        log_msg(f"    library_dir='{effective_biometrics_dir}',", "info")
+        log_msg(f"    session='{session_override}',", "info")
+        log_msg(f"    sheet={config['sheet']},", "info")
+        log_msg(f"    unknown='{config['unknown']}'", "info")
+        log_msg("  )", "info")
+        log_msg("", "info")
+
+        if tasks_to_export:
+            log_msg(f"Exporting tasks: {', '.join(tasks_to_export)}", "step")
+
+        result = convert_biometrics_table_to_prism_dataset(
+            input_path=input_path,
+            library_dir=str(effective_biometrics_dir),
+            output_root=output_root,
+            id_column=config["id_column"],
+            session_column=config["session_column"],
+            session=session_override,
+            sheet=config["sheet"],
+            unknown=config["unknown"],
+            force=True,
+            name=config["dataset_name"],
+            authors=[],
+            tasks_to_export=tasks_to_export,
+        )
+
+        log_msg(f"Detected ID column: {result.id_column}", "success")
+        if result.session_column:
+            log_msg(f"Detected session column: {result.session_column}", "success")
+
+        log_msg(f"Included tasks: {', '.join(result.tasks_included)}", "info")
+
+        if session_override and session_override.strip().lower() == "all" and result.detected_sessions:
+            log_msg(
+                f"Sessions auto-detected: {', '.join(result.detected_sessions)}",
+                "success",
+            )
+
+        if result.unknown_columns:
+            for col in result.unknown_columns:
+                log_msg(f"Unknown column ignored: {col}", "warning")
+
+        # Save to project if requested (but not in dry-run mode)
+        if save_to_project and not dry_run and project_root is not None:
+            log_msg(f"Saving output to project: {project_root.name}", "info")
+            copy_pairs: list[tuple[Path, Path]] = []
+            output_rel_paths: set[str] = set()
+            for item in output_root.rglob("*"):
+                if item.is_file():
+                    rel_path = item.relative_to(output_root)
+                    dest = project_root / rel_path
+                    output_rel_paths.add(dest.relative_to(project_root).as_posix())
+                    copy_pairs.append((item, dest))
+
+            copy_pairs.extend(
+                _copy_biometrics_templates_to_project(
+                    source_dir=Path(effective_biometrics_dir),
+                    tasks=list(result.tasks_included or []),
+                    project_path=str(project_root),
+                    log_fn=log_msg,
+                    plan_only=True,
+                )
+            )
+
+            try:
+                copy_result = copy_files_into_project(
+                    dataset_root=project_root,
+                    copy_pairs=copy_pairs,
+                    run_message="PRISM: Copy converted biometrics files into project",
+                )
+            except ValueError as error:
+                _biometrics_job_store.failure(job_id, str(error))
+                return
+
+            copied_rel_paths = [
+                str(path) for path in list(copy_result.get("copied_paths") or [])
+            ]
+            copied_output_paths = [
+                project_root / rel_path
+                for rel_path in copied_rel_paths
+                if rel_path in output_rel_paths
+            ]
+            datalad_copy = copy_result.get("datalad")
+
+            log_msg("Project updated successfully!", "success")
+
+            registration_sessions: list[str] = []
+            if session_override:
+                if session_override.strip().lower() == "all":
+                    registration_sessions = list(result.detected_sessions or [])
+                else:
+                    registration_sessions = [session_override]
+
+            if registration_sessions and result and getattr(result, "tasks_included", None):
+                for reg_session in registration_sessions:
+                    register_session_in_project(
+                        project_root,
+                        reg_session,
+                        result.tasks_included,
+                        "biometrics",
+                        filename,
+                        "biometrics",
+                    )
+                registered_labels = ", ".join(
+                    s if s.startswith("ses-") else f"ses-{s}" for s in registration_sessions
+                )
+                log_msg(
+                    f"Registered in project.json: {registered_labels} → {', '.join(result.tasks_included)}",
+                    "info",
+                )
+
+        # Run validation if requested
+        validation = None
+        if config["validate"]:
+            log_msg("Running PRISM validation on generated dataset...", "step")
+            validation = {"errors": [], "warnings": [], "summary": {}}
+            try:
+                validation_project_path = (
+                    str(project_root)
+                    if project_root is not None
+                    else (
+                        str(requested_project_root)
+                        if requested_project_root is not None
+                        else None
+                    )
+                )
+                v_res = run_validation(
+                    str(output_root),
+                    schema_version="stable",
+                    library_path=str(
+                        resolve_validation_library_path(
+                            project_path=validation_project_path,
+                            fallback_library_root=library_root,
+                        )
+                    ),
+                )
+                if v_res and isinstance(v_res, tuple):
+                    issues = v_res[0]
+                    stats = v_res[1]
+
+                    from src.web.reporting_utils import format_validation_results
+
+                    formatted = format_validation_results(
+                        issues, stats, str(output_root)
+                    )
+
+                    for group in formatted.get("errors", []):
+                        for f in group.get("files", []):
+                            validation["errors"].append(
+                                f"{group['code']}: {f['message']} ({f['file']})"
+                            )
+
+                    for group in formatted.get("warnings", []):
+                        for f in group.get("files", []):
+                            validation["warnings"].append(
+                                f"{group['code']}: {f['message']} ({f['file']})"
+                            )
+
+                    validation["summary"] = {
+                        "files_created": len(
+                            list(output_root.rglob("*_biometrics.tsv"))
+                        ),
+                        "total_errors": formatted.get("summary", {}).get(
+                            "total_errors", 0
+                        ),
+                        "total_warnings": formatted.get("summary", {}).get(
+                            "total_warnings", 0
+                        ),
+                    }
+
+                    validation["formatted"] = formatted
+
+                    total_err = formatted.get("summary", {}).get("total_errors", 0)
+                    total_warn = formatted.get("summary", {}).get("total_warnings", 0)
+
+                    if total_err > 0:
+                        log_msg(
+                            f"✗ Validation failed with {total_err} error(s)", "error"
+                        )
+                        count = 0
+                        for group in formatted.get("errors", []):
+                            for f in group.get("files", []):
+                                if count < 20:
+                                    msg = f["message"]
+                                    if ": " in msg:
+                                        msg = msg.split(": ", 1)[1]
+                                    log_msg(f"  - {msg}", "error")
+                                    count += 1
+                        if total_err > 20:
+                            log_msg(
+                                f"  ... and {total_err - 20} more errors (see details below)",
+                                "error",
+                            )
+                    else:
+                        log_msg("✓ PRISM validation passed!", "success")
+
+                    if total_warn > 0:
+                        log_msg(f"⚠ {total_warn} warning(s) found", "warning")
+
+            except Exception as val_err:
+                log_msg(f"Validation error: {val_err}", "error")
+
+        response_payload = {
+            "validation": validation,
+            "project_saved": bool(copied_output_paths),
+            "project_output_root": str(project_root) if copied_output_paths else None,
+            "project_output_paths": [],
+            "project_output_path": None,
+            "project_output_count": len(copied_output_paths),
+            "datalad": datalad_copy,
+            "detected_sessions": list(result.detected_sessions or []),
+        }
+
+        if copied_output_paths and project_root is not None:
+            output_paths = summarize_project_output_paths(
+                copied_output_paths,
+                project_root=project_root,
+                limit=50,
+            )
+            response_payload["project_output_paths"] = output_paths
+            response_payload["project_output_path"] = (
+                output_paths[0] if output_paths else None
+            )
+
+        _biometrics_job_store.success(job_id, response_payload)
+
+    except IdColumnNotDetectedError as e:
+        _biometrics_job_store.update(
+            job_id,
+            done=True,
+            success=False,
+            error=str(e),
+            status="id_column_required",
+            result={"columns": list(getattr(e, "available_columns", []) or [])},
+        )
+    except Exception as e:
+        _biometrics_job_store.failure(job_id, str(e))
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)

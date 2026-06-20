@@ -7,6 +7,8 @@
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createJobRunController } from './job-run-controller.js';
+import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
+import { pollJobStatus } from '../../shared/job-polling.js';
 import { pickServerFile, prefersServerPicker } from './server-picker.js';
 
 export function initBiometrics(elements) {
@@ -47,6 +49,7 @@ export function initBiometrics(elements) {
     let biometricsSourcedataQuickSelectEl = null;
     let biometricsSourcedataFileSelectEl = null;
     const runController = createJobRunController();
+    const pollingRunState = createPollingRunState();
 
     function setBiometricsActionButtonsDisabled(disabled) {
         if (biometricsPreviewBtn) {
@@ -362,6 +365,7 @@ export function initBiometrics(elements) {
     });
 
     window.addEventListener('prism-project-changed', function() {
+        pollingRunState.abortActive('Biometrics polling aborted due to project change.');
         resetBiometricsWorkflowState();
         updateBiometricsBtn();
         refreshBiometricsSourcedataQuickSelect();
@@ -417,10 +421,55 @@ export function initBiometrics(elements) {
         });
     }
 
+    async function runBiometricsConvertJob(formData, errorMessage) {
+        const startResponse = await fetchWithApiFallback('/api/biometrics-convert-start', {
+            method: 'POST',
+            body: formData,
+        });
+        const startData = await startResponse.json().catch(() => ({}));
+        if (!startResponse.ok) {
+            throw new Error(startData.error || errorMessage);
+        }
+        const jobId = startData.job_id;
+        if (!jobId) {
+            throw new Error('Conversion did not return a job id');
+        }
+        runController.setActiveJobId(jobId);
+
+        const activePollController = pollingRunState.start();
+        try {
+            const statusData = await pollJobStatus({
+                fetchStatus: async (cursor) => {
+                    const statusResponse = await fetchWithApiFallback(
+                        `/api/biometrics-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`
+                    );
+                    if (!statusResponse.ok) {
+                        const statusErr = await statusResponse.json().catch(() => null);
+                        throw new Error(statusErr && statusErr.error ? statusErr.error : 'Failed to retrieve conversion status');
+                    }
+                    return statusResponse.json();
+                },
+                onLogs: (newLogs) => {
+                    appendBiometricsLogEntries(newLogs);
+                },
+                intervalMs: 700,
+                timeoutMs: 600000,
+                signal: activePollController.signal,
+                abortErrorMessage: 'Biometrics polling aborted due to project change.',
+                timeoutErrorMessage: 'Biometrics conversion status timed out. Please review logs and retry.',
+                statusFailureMessage: 'Failed to retrieve conversion status after multiple attempts.',
+                getFailureError: (status) => status.error || errorMessage,
+            });
+            return statusData.result || {};
+        } finally {
+            pollingRunState.clear(activePollController);
+        }
+    }
+
     // ===== PREVIEW / DRY-RUN HANDLER =====
 
     if (biometricsPreviewBtn) {
-        biometricsPreviewBtn.addEventListener('click', function() {
+        biometricsPreviewBtn.addEventListener('click', async function() {
             resetBiometricsWorkflowState();
 
             const sessionVal = getBiometricsSessionValue();
@@ -464,28 +513,14 @@ export function initBiometrics(elements) {
 
             setBiometricsActionButtonsDisabled(true);
 
-            fetchWithApiFallback('/api/biometrics-convert', {
-                method: 'POST',
-                body: formData,
-            })
-            .then(async response => {
-                const data = await response.json();
+            try {
+                const data = await runBiometricsConvertJob(formData, 'Preview failed');
 
-                if (data.log && Array.isArray(data.log)) {
-                    appendBiometricsLogEntries(data.log);
-                }
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Preview failed');
-                }
-                return data;
-            })
-            .then(data => {
                 if (data.validation) {
                     const v = data.validation;
                     const errorCount = (v.errors || []).length;
                     const warningCount = (v.warnings || []).length;
-                    
+
                     if (errorCount === 0 && warningCount === 0) {
                         appendLog('✓ Validation passed - dataset structure is valid!', 'success', biometricsLog);
                     } else if (errorCount === 0) {
@@ -493,21 +528,23 @@ export function initBiometrics(elements) {
                     } else {
                         appendLog(`✗ Validation failed with ${errorCount} error(s)`, 'error', biometricsLog);
                     }
-                    
+
                     displayValidationResults(data.validation, 'biometrics');
                 }
                 appendLog('', 'info', biometricsLog);
                 appendLog('Preview complete. Check validation results above.', 'info', biometricsLog);
-            })
-            .catch(err => {
-                appendLog(`Error: ${err.message}`, 'error', biometricsLog);
-                biometricsError.textContent = err.message;
-                biometricsError.classList.remove('d-none');
-            })
-            .finally(() => {
+            } catch (err) {
+                if (isPollingAbortError(err)) {
+                    // Project-change listeners already reset converter state.
+                } else {
+                    appendLog(`Error: ${err.message}`, 'error', biometricsLog);
+                    biometricsError.textContent = err.message;
+                    biometricsError.classList.remove('d-none');
+                }
+            } finally {
                 runController.finishRun();
                 setBiometricsActionButtonsDisabled(false);
-            });
+            }
         });
     }
 
@@ -603,7 +640,7 @@ export function initBiometrics(elements) {
     // ===== CONFIRM & CONVERT HANDLER =====
 
     if (biometricsConfirmBtn) {
-        biometricsConfirmBtn.addEventListener('click', function() {
+        biometricsConfirmBtn.addEventListener('click', async function() {
             const selectedTasks = Array.from(document.querySelectorAll('.biometrics-task-check:checked')).map(c => c.value);
             if (selectedTasks.length === 0) {
                 alert('Please select at least one task to export.');
@@ -659,30 +696,14 @@ export function initBiometrics(elements) {
             setBiometricsActionButtonsDisabled(true);
             appendLog('Uploading file and starting conversion...', 'info', biometricsLog);
 
-            fetchWithApiFallback('/api/biometrics-convert', {
-                method: 'POST',
-                body: formData,
-            })
-            .then(async response => {
-                const data = await response.json();
-                
-                // Process logs even if response is not ok
-                if (data.log && Array.isArray(data.log)) {
-                    appendBiometricsLogEntries(data.log);
-                }
+            try {
+                const data = await runBiometricsConvertJob(formData, 'Conversion failed');
 
-                if (!response.ok) {
-                    throw new Error(data.error || 'Conversion failed');
-                }
-                return data;
-            })
-            .then(data => {
-                // Logs already processed above
                 if (data.validation) {
                     const v = data.validation;
                     const errorCount = (v.errors || []).length;
                     const warningCount = (v.warnings || []).length;
-                    
+
                     if (errorCount === 0 && warningCount === 0) {
                         appendLog('✓ Validation passed - dataset is valid!', 'success', biometricsLog);
                     } else if (errorCount === 0) {
@@ -690,7 +711,7 @@ export function initBiometrics(elements) {
                     } else {
                         appendLog(`✗ Validation failed with ${errorCount} error(s)`, 'error', biometricsLog);
                     }
-                    
+
                     displayValidationResults(data.validation, 'biometrics');
                 }
 
@@ -715,16 +736,18 @@ export function initBiometrics(elements) {
                         registerSessionInProject(ses, selectedTasks, 'biometrics', bioFile, 'biometrics');
                     });
                 }
-            })
-            .catch(err => {
-                appendLog(`Error: ${err.message}`, 'error', biometricsLog);
-                biometricsError.textContent = err.message;
-                biometricsError.classList.remove('d-none');
-            })
-            .finally(() => {
+            } catch (err) {
+                if (isPollingAbortError(err)) {
+                    // Project-change listeners already reset converter state.
+                } else {
+                    appendLog(`Error: ${err.message}`, 'error', biometricsLog);
+                    biometricsError.textContent = err.message;
+                    biometricsError.classList.remove('d-none');
+                }
+            } finally {
                 runController.finishRun();
                 setBiometricsActionButtonsDisabled(false);
-            });
+            }
         });
     }
 }

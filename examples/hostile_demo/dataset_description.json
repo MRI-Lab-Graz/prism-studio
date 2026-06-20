@@ -1,0 +1,24 @@
+{
+  "Name": "hostile_demo",
+  "BIDSVersion": "1.10.1",
+  "DatasetType": "raw",
+  "Description": "A PRISM-compatible dataset for psychological research.",
+  "Acknowledgements": "",
+  "Funding": [],
+  "DatasetDOI": "",
+  "EthicsApprovals": [],
+  "Keywords": [
+    "psychology",
+    "experiment",
+    "PRISM"
+  ],
+  "DatasetLinks": {},
+  "GeneratedBy": [
+    {
+      "Name": "PRISM Validator",
+      "Version": "1.1.1",
+      "Description": "Dataset initialized and managed via PRISM Studio"
+    }
+  ],
+  "SourceDatasets": []
+}
