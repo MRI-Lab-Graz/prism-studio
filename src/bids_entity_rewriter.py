@@ -669,6 +669,12 @@ class BidsEntityRewriter:
     def _detect_rename_conflicts(self, ops: list[_RenameOperation]) -> list[str]:
         conflicts: list[str] = []
         old_paths = {op.old_path for op in ops}
+        # Path.exists() is case-insensitive on macOS/Windows filesystems, so a
+        # pure case-change rename (e.g. task-SST -> task-sst) makes new_path
+        # appear to "already exist" even though it's just the file being
+        # renamed. Casefold the source-path comparison too so that case isn't
+        # mistaken for a real collision.
+        old_paths_casefold = {str(p).casefold() for p in old_paths}
         seen_targets: dict[Path, Path] = {}
 
         for op in ops:
@@ -682,7 +688,11 @@ class BidsEntityRewriter:
             else:
                 seen_targets[op.new_path] = op.old_path
 
-            if op.new_path.exists() and op.new_path not in old_paths:
+            if (
+                op.new_path.exists()
+                and op.new_path not in old_paths
+                and str(op.new_path).casefold() not in old_paths_casefold
+            ):
                 conflicts.append(
                     f"Rename target already exists: {self._rel(op.new_path)}"
                 )

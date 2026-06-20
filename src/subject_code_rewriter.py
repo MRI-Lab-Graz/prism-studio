@@ -138,8 +138,16 @@ class SubjectCodeRewriter:
             if not op.old_path.exists():
                 continue
             op.new_path.parent.mkdir(parents=True, exist_ok=True)
+            # On case-insensitive filesystems, a pure case-change rename
+            # (e.g. SUB-01 -> sub-01) makes new_path.exists() true even
+            # though it's the same directory, not a real merge target.
+            is_case_only_change = (
+                op.old_path != op.new_path
+                and str(op.old_path).casefold() == str(op.new_path).casefold()
+            )
             if (
                 allow_many_to_one
+                and not is_case_only_change
                 and op.old_path.is_dir()
                 and op.new_path.exists()
                 and op.new_path.is_dir()
@@ -536,6 +544,12 @@ class SubjectCodeRewriter:
     ) -> list[str]:
         conflicts: list[str] = []
         old_paths = {op.old_path for op in ops}
+        # Path.exists() is case-insensitive on macOS/Windows filesystems, so a
+        # pure case-change rename makes new_path appear to "already exist"
+        # even though it's just the file/dir being renamed. Casefold the
+        # source-path comparison too so that case isn't mistaken for a real
+        # collision.
+        old_paths_casefold = {str(p).casefold() for p in old_paths}
         seen_targets: dict[Path, Path] = {}
 
         for op in ops:
@@ -556,7 +570,11 @@ class SubjectCodeRewriter:
             else:
                 seen_targets[op.new_path] = op.old_path
 
-            if op.new_path.exists() and op.new_path not in old_paths:
+            if (
+                op.new_path.exists()
+                and op.new_path not in old_paths
+                and str(op.new_path).casefold() not in old_paths_casefold
+            ):
                 if allow_many_to_one and op.old_path.is_dir() and op.new_path.is_dir():
                     continue
                 conflicts.append(
