@@ -1137,20 +1137,6 @@ def _sanitize_bids_label(raw: str) -> str | None:
     return cleaned or None
 
 
-def _normalize_session_label(raw: str) -> str | None:
-    """Normalize session labels to match converter conventions.
-
-    Numeric sessions are zero-padded to two digits ("1" -> "01").
-    Non-numeric labels ("post", "baseline", "t1") are preserved.
-    """
-    cleaned = _sanitize_bids_label(raw)
-    if not cleaned:
-        return None
-    if cleaned.isdigit():
-        return f"{int(cleaned):02d}"
-    return cleaned
-
-
 def _extract_subject_session_from_source_path(
     source_path: str,
     subject_level_from_end: int = 2,
@@ -1178,7 +1164,7 @@ def _extract_subject_session_from_source_path(
         if session_label is None:
             ses_match = ses_pattern.match(part)
             if ses_match:
-                session_label = _normalize_session_label(ses_match.group(1))
+                session_label = _sanitize_bids_label(ses_match.group(1))
 
     subject_level = max(1, int(subject_level_from_end or 2))
     session_level = max(1, int(session_level_from_end or 1))
@@ -1211,8 +1197,8 @@ def _extract_subject_session_from_source_path(
         if entity == "session":
             ses_match = re.match(r"^ses[-_]?([A-Za-z0-9]+)$", part_value, re.IGNORECASE)
             if ses_match:
-                return _normalize_session_label(ses_match.group(1))
-            return _normalize_session_label(part_value)
+                return _sanitize_bids_label(ses_match.group(1))
+            return _sanitize_bids_label(part_value)
         return _sanitize_bids_label(part_value)
 
     def _extract_by_example(
@@ -1289,7 +1275,7 @@ def _extract_subject_session_from_source_path(
         elif session_idx < len(parts):
             candidate = _sanitize_bids_label(parts[session_idx])
             if candidate is not None and candidate != subject_label:
-                session_label = _normalize_session_label(candidate)
+                session_label = _sanitize_bids_label(candidate)
 
     return subject_label, session_label
 

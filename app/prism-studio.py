@@ -549,6 +549,11 @@ modular_blueprints = [
         "projects_datalad_server_bp",
         "projects_datalad_server",
     ),
+    (
+        "src.web.blueprints.projects_rsync_server_blueprint",
+        "projects_rsync_server_bp",
+        "projects_rsync_server",
+    ),
 ]
 
 registered_modular_blueprints: list[str] = []

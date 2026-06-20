@@ -414,7 +414,11 @@ def _load_wide_to_long_request():
                 (jsonify({"error": f"Could not parse input file: {exc}"}), 400),
             )
     elif source_file_path:
-        source_path = Path(source_file_path).expanduser().resolve()
+        # Resolve for existence/read checks, but keep the original (unresolved)
+        # path for the display name: resolving follows symlinks, which would
+        # leak the git-annex object hash name for annexed sourcedata files.
+        raw_source_path = Path(source_file_path).expanduser()
+        source_path = raw_source_path.resolve()
         if not source_path.exists() or not source_path.is_file():
             return (
                 None,
@@ -427,7 +431,7 @@ def _load_wide_to_long_request():
                 None,
                 (jsonify({"error": f"File not found: {source_file_path}"}), 400),
             )
-        filtered = filter_system_files([source_path.name])
+        filtered = filter_system_files([raw_source_path.name])
         if not filtered:
             return (
                 None,
@@ -837,10 +841,14 @@ def api_file_management_raw_peek():
         except Exception as exc:
             return jsonify({"error": f"Could not read file: {exc}"}), 400
     elif source_file_path:
-        source_path = Path(source_file_path).expanduser().resolve()
+        # Resolve for existence/read checks, but keep the original (unresolved)
+        # path for the display name: resolving follows symlinks, which would
+        # leak the git-annex object hash name for annexed sourcedata files.
+        raw_source_path = Path(source_file_path).expanduser()
+        source_path = raw_source_path.resolve()
         if not source_path.exists() or not source_path.is_file():
             return jsonify({"error": f"File not found: {source_file_path}"}), 400
-        filtered = filter_system_files([source_path.name])
+        filtered = filter_system_files([raw_source_path.name])
         if not filtered:
             return jsonify({"error": "System files are not accepted."}), 400
         filename = filtered[0]
