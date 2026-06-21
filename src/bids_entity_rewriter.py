@@ -71,6 +71,18 @@ class BidsEntityRewriter:
     def __init__(self, project_root: Path):
         self.project_root = Path(project_root)
 
+    @staticmethod
+    def _path_present(path: Path) -> bool:
+        """True if `path` is a real file/dir OR a symlink (including a
+        broken one pointing at not-yet-fetched git-annex content).
+
+        See SubjectCodeRewriter._path_present for the rationale: plain
+        Path.exists()/is_file() return False for a broken symlink, which
+        would silently exclude unfetched annexed files from rename plans
+        or miss real collisions against them.
+        """
+        return path.is_symlink() or path.exists()
+
     def list_modalities(self) -> list[str]:
         modalities: set[str] = set()
         for file_path in self._iter_files():
@@ -195,7 +207,7 @@ class BidsEntityRewriter:
             plan.file_ops,
             key=lambda item: (-len(item.old_path.parts), str(item.old_path)),
         ):
-            if not op.old_path.exists():
+            if not self._path_present(op.old_path):
                 continue
             op.new_path.parent.mkdir(parents=True, exist_ok=True)
             op.old_path.rename(op.new_path)
@@ -529,7 +541,7 @@ class BidsEntityRewriter:
             root_path = Path(root)
             for filename in filtered_filenames:
                 file_path = root_path / filename
-                if file_path.is_file():
+                if file_path.is_file() or file_path.is_symlink():
                     yield file_path
 
     def _iter_text_files(self):
@@ -689,7 +701,7 @@ class BidsEntityRewriter:
                 seen_targets[op.new_path] = op.old_path
 
             if (
-                op.new_path.exists()
+                self._path_present(op.new_path)
                 and op.new_path not in old_paths
                 and str(op.new_path).casefold() not in old_paths_casefold
             ):

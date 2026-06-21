@@ -1169,3 +1169,46 @@ def test_export_sourcedata_is_excluded_by_default_and_included_when_requested(tm
     with zipfile.ZipFile(with_sourcedata_zip, "r") as archive:
         names = set(archive.namelist())
     assert "sourcedata/survey/demo.csv" in names
+
+
+def test_export_skips_unfetched_datalad_symlinks_instead_of_crashing(tmp_path):
+    """Regression guard: DataLad-tracked .nii.gz/.edf files are normally
+    symlinks into .git/annex/objects/. Before content has been fetched,
+    the symlink is broken — os.stat() (used internally by zipfile) raises
+    an unhandled FileNotFoundError on it. The export must skip such files
+    with a clear record instead of crashing the entire export."""
+    project_dir = tmp_path / "study"
+    anat_dir = project_dir / "sub-001" / "anat"
+    anat_dir.mkdir(parents=True)
+
+    (project_dir / "participants.tsv").write_text(
+        "participant_id\tage\nsub-001\t30\n", encoding="utf-8"
+    )
+    real_file = anat_dir / "sub-001_T1w.json"
+    real_file.write_text("{}", encoding="utf-8")
+
+    broken_symlink = anat_dir / "sub-001_T1w.nii.gz"
+    broken_symlink.symlink_to(
+        project_dir / ".git" / "annex" / "objects" / "missing.nii.gz"
+    )
+    assert not broken_symlink.exists()
+
+    output_zip = tmp_path / "export_with_unfetched_content.zip"
+
+    summary = export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=False,
+        include_derivatives=False,
+        include_code=False,
+        include_analysis=False,
+    )
+
+    assert output_zip.exists()
+    assert summary["files_skipped_unfetched"] == 1
+    assert any("sub-001_T1w.nii.gz" in path for path in summary["unfetched_files"])
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        names = archive.namelist()
+    assert "sub-001/anat/sub-001_T1w.json" in names
+    assert not any(name.endswith("sub-001_T1w.nii.gz") for name in names)

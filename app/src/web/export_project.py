@@ -432,6 +432,8 @@ def export_project(
     stats: Dict[str, Any] = {
         "files_processed": 0,
         "files_anonymized": 0,
+        "files_skipped_unfetched": 0,
+        "unfetched_files": [],
         "participant_count": len(participant_mapping),
         "mapping_file": str(_saved_mapping_file) if _saved_mapping_file else None,
     }
@@ -619,6 +621,20 @@ def export_project(
                         continue
                 source_file = Path(root) / filename
                 resolved_source_file = _resolve_export_source_file(source_file)
+
+                # DataLad-tracked projects can have git-annex symlinks whose
+                # content was never `datalad get`-fetched locally (a broken
+                # symlink). os.stat()/zipf.write() raise an unhandled,
+                # uninformative FileNotFoundError on these — skip with a
+                # clear record instead of crashing the whole export.
+                if not resolved_source_file.exists():
+                    stats["files_skipped_unfetched"] += 1
+                    if len(stats["unfetched_files"]) < 50:
+                        stats["unfetched_files"].append(
+                            str((Path(rel_root) / filename).as_posix())
+                        )
+                    continue
+
                 stats["files_processed"] += 1
 
                 # Build archive path with optional anonymisation

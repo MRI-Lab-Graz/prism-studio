@@ -268,3 +268,63 @@ def test_bids_entity_rewriter_case_only_rename_is_not_a_conflict(tmp_path):
     assert result["rename_count"] == 2
     assert (func_dir / "sub-006_ses-1_task-sst_run-01_bold.nii.gz").exists()
     assert (func_dir / "sub-006_ses-1_task-sst_run-01_bold.json").exists()
+
+
+def test_bids_entity_rewriter_renames_broken_symlink_binary_files(tmp_path):
+    """Regression guard: a DataLad-tracked .nii.gz is normally a symlink
+    into .git/annex/objects/. Before content has been fetched, that
+    symlink is broken — Path.is_file() returns False for it. The entity
+    rewriter must still discover and rename it; renaming a symlink doesn't
+    require its target to be resolvable. Previously this silently left
+    the .nii.gz on its old entity value while a sibling .tsv got renamed,
+    producing a dataset where two files for the same logical run disagree
+    on the run entity, with no error reported."""
+    project_root = tmp_path / "project"
+    func_dir = project_root / "sub-02" / "func"
+    func_dir.mkdir(parents=True)
+
+    _touch_file(func_dir / "sub-02_task-rest_run-01_events.tsv", content=b"onset\n")
+    broken_bold = func_dir / "sub-02_task-rest_run-01_bold.nii.gz"
+    broken_bold.symlink_to(project_root / ".git" / "annex" / "objects" / "missing.nii.gz")
+    assert not broken_bold.exists()
+    assert broken_bold.is_symlink()
+
+    rewriter = BidsEntityRewriter(project_root)
+    result = rewriter.apply(
+        modality="func",
+        entity="run",
+        current_value="01",
+        operation="rename",
+        replacement="A",
+    )
+
+    assert result["conflicts"] == []
+    assert result["rename_count"] == 2
+    renamed_bold = func_dir / "sub-02_task-rest_run-A_bold.nii.gz"
+    assert renamed_bold.is_symlink()
+    assert (func_dir / "sub-02_task-rest_run-A_events.tsv").exists()
+    assert not (func_dir / "sub-02_task-rest_run-01_bold.nii.gz").is_symlink()
+
+
+def test_bids_entity_rewriter_detects_collision_against_broken_symlink_target(tmp_path):
+    """A broken symlink occupying the rename target filename is still a
+    real collision (renaming into it would clobber an unrelated file),
+    even though plain Path.exists() reports the target as absent."""
+    project_root = tmp_path / "project"
+    func_dir = project_root / "sub-03" / "func"
+    func_dir.mkdir(parents=True)
+
+    _touch_file(func_dir / "sub-03_task-rest_run-01_bold.nii.gz")
+    target = func_dir / "sub-03_task-rest_run-02_bold.nii.gz"
+    target.symlink_to(project_root / ".git" / "annex" / "objects" / "missing.nii.gz")
+
+    rewriter = BidsEntityRewriter(project_root)
+    preview = rewriter.preview(
+        modality="func",
+        entity="run",
+        current_value="01",
+        operation="rename",
+        replacement="02",
+    )
+
+    assert preview["conflicts"]

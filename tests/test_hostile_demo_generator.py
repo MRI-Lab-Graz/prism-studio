@@ -81,3 +81,25 @@ def test_generate_hostile_dataset_new_domains_produce_files(tmp_path: Path) -> N
     assert (rawdata_dir / "hostile_biometrics_data_wide.xlsx").exists()
     assert (rawdata_dir / "hostile_participants_utf16.csv").exists()
     assert (rawdata_dir / "hostile_participants_latin1.csv").exists()
+
+
+def test_generate_hostile_dataset_survey_full_run_domain(tmp_path: Path) -> None:
+    result = generate_hostile_dataset(
+        tmp_path / "demo", seed=1, domains={"survey_full_run"}, use_datalad=False
+    )
+    assert set(result.files_written.keys()) == {"survey_full_run"}
+    assert all(case.domain == "survey_full_run" for case in result.cases)
+
+    library_dir = result.project_root / "code" / "library" / "survey"
+    template_files = list(library_dir.glob("survey-*.json"))
+    assert len(template_files) == 1
+
+    rawdata_dir = result.project_root / "code" / "rawdata"
+    assert (rawdata_dir / "survey_clean_baseline.csv").exists()
+    assert (rawdata_dir / "survey_exact_duplicate_rows.csv").exists()
+    assert (rawdata_dir / "survey_conflicting_duplicate_rows.csv").exists()
+    assert (rawdata_dir / "survey_out_of_range_value.csv").exists()
+    assert (rawdata_dir / "survey_mixed_tab_comma_delimiters.csv").exists()
+
+    recipe_files = list((result.project_root / "code" / "recipes" / "survey").glob("recipe-*.json"))
+    assert len(recipe_files) == 1

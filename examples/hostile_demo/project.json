@@ -1,12 +1,12 @@
 {
   "name": "hostile_demo",
-  "icon": "⚗️",
+  "icon": "🧪",
   "paths": {
     "sourcedata": "sourcedata"
   },
   "app": {
     "schema": "1",
-    "last_opened": "2026-06-20",
+    "last_opened": "2026-06-21",
     "features": {
       "auto_environment_enrichment": true
     }

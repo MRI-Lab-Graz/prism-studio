@@ -61,6 +61,20 @@ class SubjectCodeRewriter:
     def __init__(self, project_root: Path):
         self.project_root = Path(project_root)
 
+    @staticmethod
+    def _path_present(path: Path) -> bool:
+        """True if `path` is a real file/dir OR a symlink (including a
+        broken one pointing at not-yet-fetched git-annex content).
+
+        Plain Path.exists()/is_file() return False for a broken symlink, so
+        relying on them anywhere a rename source/target is checked would
+        silently treat unfetched annexed files (e.g. .nii.gz under a
+        DataLad dataset) as absent — excluding them from rename plans, or
+        missing real collisions against them. Renaming a symlink itself
+        never requires its target to be resolvable.
+        """
+        return path.is_symlink() or path.exists()
+
     def list_root_subject_ids(self) -> list[str]:
         """Return subject IDs from top-level project folders only.
 
@@ -126,7 +140,7 @@ class SubjectCodeRewriter:
             plan.file_ops,
             key=lambda item: (-len(item.old_path.parts), str(item.old_path)),
         ):
-            if not op.old_path.exists():
+            if not self._path_present(op.old_path):
                 continue
             op.new_path.parent.mkdir(parents=True, exist_ok=True)
             op.old_path.rename(op.new_path)
@@ -576,7 +590,7 @@ class SubjectCodeRewriter:
                     allow_many_to_one
                     and existing_source.is_dir()
                     and op.old_path.is_dir()
-                    and (not op.new_path.exists() or op.new_path.is_dir())
+                    and (not self._path_present(op.new_path) or op.new_path.is_dir())
                 )
                 if not can_merge_dirs:
                     conflicts.append(
@@ -588,7 +602,7 @@ class SubjectCodeRewriter:
                 seen_targets[op.new_path] = op.old_path
 
             if (
-                op.new_path.exists()
+                self._path_present(op.new_path)
                 and op.new_path not in old_paths
                 and str(op.new_path).casefold() not in old_paths_casefold
             ):
@@ -625,7 +639,7 @@ class SubjectCodeRewriter:
             root_path = Path(root)
             for filename in filtered_filenames:
                 file_path = root_path / filename
-                if file_path.is_file():
+                if file_path.is_file() or file_path.is_symlink():
                     yield file_path
 
     def _iter_text_files(self):
