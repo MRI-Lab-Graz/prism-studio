@@ -9,8 +9,12 @@ import os
 import sys
 import tempfile
 
-# Force UTF-8 encoding for Windows console
-if sys.platform.startswith("win"):
+# Force UTF-8 encoding for Windows console. Skip when stdout isn't a real
+# console (e.g. under pytest, which replaces sys.stdout with its own capture
+# object) - wrapping that object's .buffer in a second TextIOWrapper leaves
+# two wrappers owning the same underlying buffer, and closing/GC'ing either
+# one closes it out from under pytest, crashing its capture teardown.
+if sys.platform.startswith("win") and sys.stdout.isatty():
     import io
 
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
