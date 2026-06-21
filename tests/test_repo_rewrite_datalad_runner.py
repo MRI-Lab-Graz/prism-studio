@@ -278,3 +278,67 @@ def test_apply_subject_rewrite_handles_batch_including_the_example_subject_itsel
     assert not (project_root / "sub-134004").exists()
     assert (project_root / "sub-003" / "ses-01" / "func").exists()
     assert (project_root / "sub-004" / "ses-01" / "func").exists()
+
+
+def test_apply_subject_rewrite_continues_past_one_failing_group(tmp_path, monkeypatch):
+    """Regression guard: a real-world DataLad dataset can have one subject
+    whose `datalad get` presence-check fails for reasons unrelated to the
+    rename itself (e.g. an inconsistently-nested subdataset, as seen on
+    real OpenNeuro datasets where only some subjects are git submodules).
+    Previously this raised on the very first failure and abandoned every
+    remaining subject group untouched, even ones with no relation to the
+    failure. The batch must instead keep going, leaving every renameable
+    subject renamed, then report exactly which subject(s) failed."""
+    project_root = tmp_path / "project"
+    (project_root / ".datalad").mkdir(parents=True)
+    func_a = project_root / "sub-1293001" / "ses-01" / "func"
+    func_b = project_root / "sub-1293002" / "ses-01" / "func"
+    func_c = project_root / "sub-1293003" / "ses-01" / "func"
+    for func_dir, sub in ((func_a, "sub-1293001"), (func_b, "sub-1293002"), (func_c, "sub-1293003")):
+        func_dir.mkdir(parents=True)
+        (func_dir / f"{sub}_ses-01_task-rest_bold.nii.gz").write_bytes(b"nii")
+
+    monkeypatch.setattr(
+        "src.datalad_execution.shutil.which",
+        lambda command: "/usr/bin/datalad" if command == "datalad" else "",
+    )
+
+    def _fake_run(command, cwd=None, capture_output=True, text=True, timeout=None, check=False, env=None):
+        command_as_text = [str(item) for item in command]
+        targets_failing_subject = any("sub-1293002" in item for item in command_as_text)
+        if len(command) >= 2 and command[1] == "get" and targets_failing_subject:
+            return SimpleNamespace(
+                returncode=1,
+                stdout="",
+                stderr="[INFO] Ensuring presence of Dataset(sub-1293002)",
+            )
+        if len(command) >= 2 and command[1] in {"save", "get", "unlock"}:
+            return SimpleNamespace(returncode=0, stdout=f"{command[1]} ok", stderr="")
+        raise AssertionError(f"Unexpected command: {command}")
+
+    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+
+    try:
+        apply_subject_rewrite(
+            project_root,
+            mode="last3",
+            example_subject=None,
+            keep_fragment=None,
+            allow_many_to_one=False,
+        )
+        raised = False
+    except Exception as exc:
+        raised = True
+        assert "sub-1293002" in str(exc)
+
+    assert raised, "expected an aggregated error reporting the failed group"
+
+    # The two unrelated subjects must still have been renamed and saved —
+    # the failure on sub-1293002 must not have aborted the whole batch.
+    assert not (project_root / "sub-1293001").exists()
+    assert (project_root / "sub-001" / "ses-01" / "func").exists()
+    assert not (project_root / "sub-1293003").exists()
+    assert (project_root / "sub-003" / "ses-01" / "func").exists()
+    # sub-1293002 itself must be left exactly as it was (no partial rename).
+    assert (project_root / "sub-1293002" / "ses-01" / "func").exists()
+    assert not (project_root / "sub-002").exists()

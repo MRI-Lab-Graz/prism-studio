@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import csv
 import json
+import random
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,7 @@ ALL_DOMAINS = {
     "entity_rewrite",
     "recipes",
     "input_formats",
+    "survey_full_run",
 }
 
 
@@ -1104,6 +1106,326 @@ def write_hostile_input_format_variants(root: Path, seed: int) -> list[HostileCa
     return cases
 
 
+# ---------------------------------------------------------------------------
+# Full survey run: a freshly-generated random survey template + hostile
+# response-table import variants + a scoring recipe exercised across every
+# output format.
+# ---------------------------------------------------------------------------
+
+
+def build_random_survey_template(seed: int) -> tuple[str, dict[str, Any], list[str]]:
+    """Generate a brand-new (not from official/library) single-variant
+    survey template, purely for stress-testing import/scoring — not a real
+    instrument."""
+    rng = random.Random(seed)
+    task_name = f"rndsurvey{seed % 1000}"
+    item_count = rng.randint(5, 8)
+    item_codes = [f"{task_name.upper()}{i + 1:02d}" for i in range(item_count)]
+
+    template: dict[str, Any] = {
+        "Technical": {
+            "StimulusType": "Questionnaire",
+            "FileFormat": "csv",
+            "Language": "en",
+            "Respondent": "self",
+        },
+        "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": "2026-06-21"},
+        "Study": {
+            "OriginalName": {"en": f"Randomly Generated Test Survey {seed}"},
+            "ShortName": task_name.upper(),
+            "Authors": ["hostile_demo_generator"],
+            "Year": 2026,
+            "ItemCount": item_count,
+            "License": {"en": "Synthetic test fixture, not a real instrument"},
+            "Source": "generated for testing",
+            "Instructions": {"en": "Synthetic test survey — for pipeline testing only."},
+        },
+    }
+    for code in item_codes:
+        template[code] = {
+            "Description": {"en": f"Synthetic test item {code}"},
+            "Reversed": False,
+            "Levels": {
+                "0": {"en": "Never"},
+                "1": {"en": "Rarely"},
+                "2": {"en": "Sometimes"},
+                "3": {"en": "Often"},
+                "4": {"en": "Always"},
+            },
+            "DataType": "integer",
+            "MinValue": 0,
+            "MaxValue": 4,
+            "ScaleType": "likert",
+        }
+    return task_name, template, item_codes
+
+
+def build_hostile_survey_response_variants(
+    task_name: str, item_codes: list[str], seed: int
+) -> list[tuple[str, bytes, HostileCase]]:
+    """Return (filename, raw_bytes, case) tuples — each file isolates one
+    hostile import scenario for the survey response converter
+    (SurveyResponsesConverter.convert_xlsx, which despite the name also
+    reads .csv/.tsv)."""
+    rng = random.Random(seed)
+    variants: list[tuple[str, bytes, HostileCase]] = []
+
+    def likert_row(pid: str, **overrides: Any) -> dict[str, Any]:
+        row = {"participant_id": pid}
+        for code in item_codes:
+            row[code] = overrides.get(code, rng.randint(0, 4))
+        return row
+
+    # Clean baseline — sanity check the template/items round-trip at all.
+    clean_rows = [likert_row(f"sub-{i:02d}") for i in range(1, 6)]
+    clean_csv = pd.DataFrame(clean_rows).to_csv(index=False)
+    variants.append(
+        (
+            "survey_clean_baseline.csv",
+            clean_csv.encode("utf-8"),
+            HostileCase(
+                "survey_clean_baseline",
+                "survey_full_run",
+                "5 clean rows with in-range Likert values, no hostile content.",
+                "Converts successfully with no warnings; sanity baseline for "
+                "the other variants.",
+            ),
+        )
+    )
+
+    # Exact duplicate rows (identical participant_id, identical answers).
+    exact_dup_rows = clean_rows[:3] + [dict(clean_rows[0])]
+    exact_dup_csv = pd.DataFrame(exact_dup_rows).to_csv(index=False)
+    variants.append(
+        (
+            "survey_exact_duplicate_rows.csv",
+            exact_dup_csv.encode("utf-8"),
+            HostileCase(
+                "survey_exact_duplicate_rows",
+                "survey_full_run",
+                "The same participant_id appears twice with identical answers.",
+                "duplicate_handling='error' raises a clear ValueError naming "
+                "the duplicated id; 'keep_first'/'keep_last' silently drop "
+                "the extra row instead of crashing.",
+            ),
+        )
+    )
+
+    # Conflicting duplicate rows (same id, different answers each time).
+    conflict_pid = "sub-conflict"
+    conflicting_dup_rows = [
+        likert_row(conflict_pid, **{item_codes[0]: 1}),
+        likert_row(conflict_pid, **{item_codes[0]: 4}),
+    ]
+    conflicting_dup_csv = pd.DataFrame(conflicting_dup_rows).to_csv(index=False)
+    variants.append(
+        (
+            "survey_conflicting_duplicate_rows.csv",
+            conflicting_dup_csv.encode("utf-8"),
+            HostileCase(
+                "survey_conflicting_duplicate_rows",
+                "survey_full_run",
+                "The same participant_id appears twice with DIFFERENT "
+                "answers for the same item — a genuine data conflict, not "
+                "just a redundant row.",
+                "duplicate_handling='error' raises before either answer set "
+                "is silently chosen; 'keep_first'/'keep_last' deterministically "
+                "pick one without crashing, but discard real information.",
+            ),
+        )
+    )
+
+    # Multi-session rows: same participant_id, different session — must NOT
+    # be treated as a duplicate.
+    session_rows = [
+        {**likert_row("sub-multisession"), "session": "ses-1"},
+        {**likert_row("sub-multisession"), "session": "ses-2"},
+    ]
+    session_csv = pd.DataFrame(session_rows).to_csv(index=False)
+    variants.append(
+        (
+            "survey_multi_session_same_participant.csv",
+            session_csv.encode("utf-8"),
+            HostileCase(
+                "survey_multi_session_same_participant",
+                "survey_full_run",
+                "Same participant_id across two different session values "
+                "(ses-1, ses-2) — a legitimate repeated-measures design.",
+                "Converter's composite duplicate key is (id, session, run), "
+                "so this must NOT raise as a duplicate even under "
+                "duplicate_handling='error'. By design, one convert() call "
+                "processes one session at a time (matching the documented "
+                "wellbeing_multi_demo workflow): a single call without an "
+                "explicit session= auto-filters to the first detected "
+                "session only, silently leaving later sessions unconverted "
+                "with no error — the caller must repeat the call once per "
+                "session (session='ses-1', then session='ses-2') to import "
+                "all of them.",
+            ),
+        )
+    )
+
+    # Out-of-range item value (template levels are 0-4).
+    out_of_range_rows = [likert_row("sub-oor", **{item_codes[0]: 99})]
+    out_of_range_csv = pd.DataFrame(out_of_range_rows).to_csv(index=False)
+    variants.append(
+        (
+            "survey_out_of_range_value.csv",
+            out_of_range_csv.encode("utf-8"),
+            HostileCase(
+                "survey_out_of_range_value",
+                "survey_full_run",
+                f"{item_codes[0]}=99, far outside the template's documented "
+                "0-4 Levels range.",
+                "Raises SurveyValueOutOfBoundsError (a clean, structured "
+                "ValueError) rather than silently accepting an "
+                "uninterpretable response code.",
+            ),
+        )
+    )
+
+    # Missing/empty cell for one item on one row.
+    missing_rows = [likert_row(f"sub-miss{i}") for i in range(1, 3)]
+    missing_rows[0][item_codes[-1]] = ""
+    missing_csv = pd.DataFrame(missing_rows).to_csv(index=False)
+    variants.append(
+        (
+            "survey_missing_cell.csv",
+            missing_csv.encode("utf-8"),
+            HostileCase(
+                "survey_missing_cell",
+                "survey_full_run",
+                f"Empty cell for {item_codes[-1]} on one row.",
+                "Converts successfully; the missing cell is recorded as the "
+                "dataset's missing-value token, not coerced to 0 or dropped "
+                "as a whole row.",
+            ),
+        )
+    )
+
+    # Extra unmapped column the template doesn't define.
+    unmapped_rows = [
+        {**likert_row(f"sub-extra{i}"), "interviewer_comments": "looked tired, asked to repeat Q3"}
+        for i in range(1, 3)
+    ]
+    unmapped_csv = pd.DataFrame(unmapped_rows).to_csv(index=False)
+    variants.append(
+        (
+            "survey_unmapped_extra_column.csv",
+            unmapped_csv.encode("utf-8"),
+            HostileCase(
+                "survey_unmapped_extra_column",
+                "survey_full_run",
+                "An 'interviewer_comments' free-text column with no "
+                "matching template item, including a comma inside the "
+                "free-text value itself (quoted by the CSV writer).",
+                "unknown='warn' (default) surfaces the column in "
+                "unknown_columns rather than silently dropping or crashing "
+                "on the embedded comma — the CSV quoting must round-trip "
+                "correctly through the parser.",
+            ),
+        )
+    )
+
+    # Genuinely malformed delimiters: tab characters mixed into a
+    # comma-delimited file, producing an inconsistent column count per row.
+    header = "participant_id," + ",".join(item_codes)
+    good_row = "sub-malformed1," + ",".join(str(rng.randint(0, 4)) for _ in item_codes)
+    bad_row = "sub-malformed2\t" + "\t".join(str(rng.randint(0, 4)) for _ in item_codes)
+    malformed_text = "\n".join([header, good_row, bad_row]) + "\n"
+    variants.append(
+        (
+            "survey_mixed_tab_comma_delimiters.csv",
+            malformed_text.encode("utf-8"),
+            HostileCase(
+                "survey_mixed_tab_comma_delimiters",
+                "survey_full_run",
+                "A .csv file where one row uses tab characters instead of "
+                "commas, producing a row that doesn't split into the same "
+                "number of columns as the header.",
+                "KNOWN GAP, not a safe pass: the whole-file delimiter is "
+                "sniffed once from the header, so the tab-delimited row "
+                "parses as a single unsplit value in the participant_id "
+                "column. That value is then alphanumeric-sanitized "
+                "(tabs/digits concatenated), producing a garbled but "
+                "plausible-looking id (e.g. 'sub-malformed2410144') with "
+                "every real item answer silently lost — no error, no "
+                "warning, no row dropped. Flag for follow-up: per-row "
+                "column-count validation against the header before "
+                "accepting a row.",
+            ),
+        )
+    )
+
+    return variants
+
+
+def build_hostile_survey_recipe(
+    task_name: str, item_codes: list[str]
+) -> tuple[dict[str, Any], HostileCase]:
+    recipe = {
+        "RecipeVersion": "1.0",
+        "Kind": "survey",
+        "Survey": {
+            "Name": f"Random test survey ({task_name})",
+            "TaskName": task_name,
+            "Description": "Synthetic recipe generated for hostile-demo pipeline testing.",
+        },
+        "Scores": [
+            {
+                "Name": f"{task_name}_total",
+                "Description": "Mean of all items",
+                "Items": list(item_codes),
+                "Method": "mean",
+                "Range": {"min": 0, "max": 4},
+            },
+            {
+                "Name": f"{task_name}_first_minus_last",
+                "Description": "Formula score referencing the first and last item",
+                "Items": [item_codes[0], item_codes[-1]],
+                "Method": "formula",
+                "Formula": f"{{{item_codes[0]}}} - {{{item_codes[-1]}}}",
+            },
+        ],
+    }
+    case = HostileCase(
+        "survey_recipe_mean_and_formula_scores",
+        "survey_full_run",
+        "A recipe combining a plain 'mean' score and a 'formula' score "
+        "over the freshly generated random survey's items.",
+        "validate_recipe() reports no errors; compute_survey_recipes() "
+        "produces correct scores across every supported out_format "
+        "(flat, prism, csv, xlsx, sav).",
+    )
+    return recipe, case
+
+
+def write_hostile_survey_assets(root: Path, seed: int) -> list[HostileCase]:
+    cases: list[HostileCase] = []
+
+    task_name, template, item_codes = build_random_survey_template(seed)
+
+    library_dir = ensure_dir(root / "code" / "library" / "survey")
+    write_json(library_dir / f"survey-{task_name}.json", template)
+
+    rawdata_dir = ensure_dir(root / "code" / "rawdata")
+    for filename, raw_bytes, case in build_hostile_survey_response_variants(
+        task_name, item_codes, seed
+    ):
+        (rawdata_dir / filename).write_bytes(raw_bytes)
+        case.location = f"code/rawdata/{filename}"
+        cases.append(case)
+
+    recipes_dir = ensure_dir(root / "code" / "recipes" / "survey")
+    recipe, recipe_case = build_hostile_survey_recipe(task_name, item_codes)
+    recipe_path = recipes_dir / f"recipe-{task_name}.json"
+    write_json(recipe_path, recipe)
+    recipe_case.location = recipe_path.relative_to(root).as_posix()
+    cases.append(recipe_case)
+
+    return cases
+
+
 def assert_text_files_never_annexed(root: Path) -> list[str]:
     """Return a list of relative paths that violate the never-annex policy.
 
@@ -1221,5 +1543,12 @@ def generate_hostile_dataset(
         for case in cases:
             if case.location:
                 _record(result.files_written, "input_formats", case.location)
+
+    if "survey_full_run" in selected:
+        cases = write_hostile_survey_assets(output_root, seed)
+        result.cases.extend(cases)
+        for case in cases:
+            if case.location:
+                _record(result.files_written, "survey_full_run", case.location)
 
     return result
