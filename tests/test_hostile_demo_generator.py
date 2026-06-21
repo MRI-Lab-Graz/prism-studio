@@ -103,3 +103,23 @@ def test_generate_hostile_dataset_survey_full_run_domain(tmp_path: Path) -> None
 
     recipe_files = list((result.project_root / "code" / "recipes" / "survey").glob("recipe-*.json"))
     assert len(recipe_files) == 1
+
+
+def test_generate_hostile_dataset_participants_merge_domain(tmp_path: Path) -> None:
+    result = generate_hostile_dataset(
+        tmp_path / "demo", seed=1, domains={"participants_merge"}, use_datalad=False
+    )
+    assert set(result.files_written.keys()) == {"participants_merge"}
+    assert all(case.domain == "participants_merge" for case in result.cases)
+
+    rawdata_dir = result.project_root / "code" / "rawdata"
+    assert (rawdata_dir / "participants_merge_initial_source.csv").exists()
+    assert (rawdata_dir / "participants_merge_incoming_source.csv").exists()
+    assert (rawdata_dir / "participants_merge_incoming_conflicting_duplicates.csv").exists()
+
+
+def test_non_mri_domains_excludes_environment_mri() -> None:
+    from src.hostile_demo_generator import ALL_DOMAINS, NON_MRI_DOMAINS
+
+    assert "environment_mri" not in NON_MRI_DOMAINS
+    assert NON_MRI_DOMAINS == ALL_DOMAINS - {"environment_mri"}

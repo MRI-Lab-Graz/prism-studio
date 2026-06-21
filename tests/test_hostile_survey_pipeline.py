@@ -290,3 +290,36 @@ def test_recipe_computes_correct_scores_in_every_export_format(
     item_cols = [c for c in raw.columns if c != "participant_id"]
     expected_mean = raw.loc[raw["participant_id"] == "sub-01", item_cols].iloc[0].mean()
     assert sub01_total.iloc[0] == pytest.approx(expected_mean)
+
+
+def test_survey_conversion_rejects_case_only_differing_ids(
+    tmp_path, library_dir, rawdata_dir
+):
+    """Regression guard for a real, severe finding: on case-insensitive
+    filesystems (default macOS/Windows), 'sub-Ab' and 'sub-ab' resolve to
+    the identical on-disk directory. Before this check existed, the
+    second participant processed silently overwrote the first's survey
+    .tsv with no error — confirmed real data loss, not just a theoretical
+    risk. Same root cause and fix as the biometrics converter."""
+    import json
+
+    template_path = next(library_dir.glob("survey-*.json"))
+    template = json.loads(template_path.read_text(encoding="utf-8"))
+    real_item_codes = [
+        k for k in template if k not in {"Technical", "Metadata", "Study"}
+    ]
+
+    rows = [
+        {"participant_id": "sub-Ab", **{c: 1 for c in real_item_codes}},
+        {"participant_id": "sub-ab", **{c: 4 for c in real_item_codes}},
+    ]
+    collision_csv = tmp_path / "case_collision.csv"
+    pd.DataFrame(rows).to_csv(collision_csv, index=False)
+
+    with pytest.raises(ValueError, match="differ only by case"):
+        convert_survey_xlsx_to_prism_dataset(
+            input_path=collision_csv,
+            library_dir=library_dir,
+            output_root=tmp_path / "out",
+            name="hostile-survey",
+        )

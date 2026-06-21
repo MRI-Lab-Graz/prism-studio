@@ -239,7 +239,9 @@ def export_datacite(metadata_file, output_file=None):
     # Rights
     rights_list = ET.SubElement(root, "rightsList")
     rights = ET.SubElement(rights_list, "rights")
-    license_info = get_nested_value(metadata, "Metadata.License", "All rights reserved")
+    license_info = _as_display_text(
+        get_nested_value(metadata, "Metadata.License", "All rights reserved")
+    )
     rights.text = license_info
 
     if license_info.startswith("CC"):
@@ -253,13 +255,13 @@ def export_datacite(metadata_file, output_file=None):
     description = ET.SubElement(descriptions, "description")
     description.set("descriptionType", "Abstract")
 
-    desc_text = get_nested_value(metadata, "Metadata.Description")
+    desc_text = _as_display_text(get_nested_value(metadata, "Metadata.Description"))
     if not desc_text:
         # Generate description from available metadata
         task_name = get_nested_value(metadata, "Study.TaskName", "unknown task")
         stimulus_type = get_nested_value(metadata, "Technical.StimulusType", "stimulus")
         desc_text = (
-            f"Psychological {stimulus_type.lower()} data from {task_name} experiment"
+            f"Psychological {str(stimulus_type).lower()} data from {task_name} experiment"
         )
 
     description.text = desc_text
@@ -273,6 +275,28 @@ def export_datacite(metadata_file, output_file=None):
     tree.write(output_file, encoding="utf-8", xml_declaration=True)
 
     return output_file
+
+
+def _as_display_text(value):
+    """Coerce a metadata value to a plain display string.
+
+    PRISM's own survey/biometrics templates commonly store
+    License/Description as a multi-language dict (e.g.
+    ``{"en": "...", "de": "..."}``) rather than a plain string. XML
+    .text assignment and string methods like .startswith() require an
+    actual string, so prefer the English entry, then any entry, before
+    falling back to str().
+    """
+    if isinstance(value, dict):
+        if "en" in value and isinstance(value["en"], str):
+            return value["en"]
+        for entry in value.values():
+            if isinstance(entry, str):
+                return entry
+        return ""
+    if value is None:
+        return ""
+    return str(value)
 
 
 def get_nested_value(dictionary, key_path, default=None):
