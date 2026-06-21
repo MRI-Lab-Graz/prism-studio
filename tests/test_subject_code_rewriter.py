@@ -418,3 +418,33 @@ def test_subject_code_rewriter_example_keep_slice_anchors_on_text_not_position(
     assert (project_root / "sub-1234").exists()
     assert (project_root / "sub-12").exists()
     assert (project_root / "sub-123456").exists()
+
+
+def test_subject_rewrite_renames_broken_symlink_binary_files(tmp_path):
+    """Regression guard: DataLad-tracked .nii.gz/.edf files are normally
+    symlinks into .git/annex/objects/. Before content has been fetched
+    (`datalad get`), those symlinks are broken — Path.is_file() and
+    Path.exists() both return False for them. The rewriter must still
+    discover and rename them (renaming a symlink doesn't require its
+    target to exist), not silently skip them and leave a stale subject ID
+    in the filename while the parent directory gets renamed around it."""
+    project_root = tmp_path / "project"
+    anat_dir = project_root / "sub-01" / "anat"
+    anat_dir.mkdir(parents=True)
+
+    real_text_file = anat_dir / "sub-01_T1w.json"
+    real_text_file.write_text("{}", encoding="utf-8")
+
+    broken_symlink = anat_dir / "sub-01_T1w.nii.gz"
+    broken_symlink.symlink_to(project_root / ".git" / "annex" / "objects" / "missing.nii.gz")
+    assert not broken_symlink.exists()  # confirms the symlink is genuinely broken
+    assert broken_symlink.is_symlink()
+
+    rewriter = SubjectCodeRewriter(project_root)
+    result = rewriter.apply(explicit_mapping={"sub-01": "sub-101"})
+
+    assert result["conflicts"] == []
+    renamed_symlink = project_root / "sub-101" / "anat" / "sub-101_T1w.nii.gz"
+    assert renamed_symlink.is_symlink()
+    assert not (project_root / "sub-101" / "anat" / "sub-01_T1w.nii.gz").exists()
+    assert not (project_root / "sub-101" / "anat" / "sub-01_T1w.nii.gz").is_symlink()

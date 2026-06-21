@@ -19,6 +19,7 @@ _DOMAIN_TITLES = {
     "entity_rewrite": "BIDS Entity Rewriting (task/acq/run)",
     "recipes": "Recipe Definitions (survey + biometrics scoring)",
     "input_formats": "Input Format Diversity (encodings, spreadsheets)",
+    "survey_full_run": "Full Survey Run (random template + import + scoring)",
 }
 
 

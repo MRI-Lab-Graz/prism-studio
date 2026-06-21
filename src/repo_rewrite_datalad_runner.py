@@ -283,6 +283,7 @@ def apply_subject_rewrite(
     aggregate_text_update_files: list[str] = []
     aggregate_conflicts: list[str] = []
     group_details: list[dict[str, Any]] = []
+    failed_groups: list[dict[str, str]] = []
     file_rename_seen: set[tuple[str, str]] = set()
     directory_rename_seen: set[tuple[str, str]] = set()
     text_update_seen: set[str] = set()
@@ -358,8 +359,16 @@ def apply_subject_rewrite(
                 ),
             )
         except Exception as exc:
+            # Don't abort the whole batch on one bad subject group (e.g. a
+            # real-world dataset with inconsistently-nested DataLad
+            # subdatasets where one subject's presence check fails for
+            # reasons unrelated to the rename itself). Each group is its
+            # own atomic get/unlock/apply/save cycle, so subjects already
+            # renamed stay renamed; record this one as failed and keep
+            # going so the rest of the batch isn't held hostage by it.
             add_log(f"[{subject_group}] {exc}", "error")
-            raise TrackedRewriteError(str(exc), log) from exc
+            failed_groups.append({"subject": subject_group, "error": str(exc)})
+            continue
 
         for step_name in ("autosave", "get", "content_get", "unlock", "save"):
             step_info = (
@@ -423,6 +432,25 @@ def apply_subject_rewrite(
                 "get": mutation_result.get("get") if isinstance(mutation_result, dict) else None,
                 "save": mutation_result.get("save") if isinstance(mutation_result, dict) else None,
             }
+        )
+
+    if failed_groups:
+        succeeded_subjects = ", ".join(d["subject"] for d in group_details) or "(none)"
+        failed_text = "; ".join(
+            f"{d['subject']} ({d['error']})" for d in failed_groups
+        )
+        add_log(
+            f"Rename partially completed: {len(group_details)} of "
+            f"{total_subject_groups} subject group(s) succeeded "
+            f"({succeeded_subjects}); {len(failed_groups)} failed: {failed_text}",
+            "error",
+        )
+        raise TrackedRewriteError(
+            f"{len(group_details)} of {total_subject_groups} subject "
+            f"group(s) were renamed successfully and saved; "
+            f"{len(failed_groups)} failed and were left unchanged: "
+            f"{failed_text}",
+            log,
         )
 
     add_log(
@@ -566,6 +594,7 @@ def apply_entity_rewrite(
     aggregate_text_update_files: list[str] = []
     aggregate_conflicts: list[str] = []
     group_details: list[dict[str, Any]] = []
+    failed_groups: list[dict[str, str]] = []
     rename_seen: set[tuple[str, str]] = set()
     text_update_seen: set[str] = set()
     conflict_seen: set[str] = set()
@@ -638,8 +667,13 @@ def apply_entity_rewrite(
                 ),
             )
         except Exception as exc:
+            # Same reasoning as apply_subject_rewrite: don't abort the whole
+            # batch on one subject group's failure (e.g. an inconsistently
+            # nested DataLad subdataset). Record it and keep going so the
+            # rest of the batch isn't held hostage by an unrelated subject.
             add_log(f"[{subject_group}] {exc}", "error")
-            raise TrackedRewriteError(str(exc), log) from exc
+            failed_groups.append({"subject": subject_group, "error": str(exc)})
+            continue
 
         for step_name in ("autosave", "get", "content_get", "unlock", "save"):
             step_info = (
@@ -689,6 +723,25 @@ def apply_entity_rewrite(
                 "get": mutation_result.get("get") if isinstance(mutation_result, dict) else None,
                 "save": mutation_result.get("save") if isinstance(mutation_result, dict) else None,
             }
+        )
+
+    if failed_groups:
+        succeeded_subjects = ", ".join(d["subject"] for d in group_details) or "(none)"
+        failed_text = "; ".join(
+            f"{d['subject']} ({d['error']})" for d in failed_groups
+        )
+        add_log(
+            f"Rename partially completed: {len(group_details)} of "
+            f"{total_subject_groups} subject group(s) succeeded "
+            f"({succeeded_subjects}); {len(failed_groups)} failed: {failed_text}",
+            "error",
+        )
+        raise TrackedRewriteError(
+            f"{len(group_details)} of {total_subject_groups} subject "
+            f"group(s) were renamed successfully and saved; "
+            f"{len(failed_groups)} failed and were left unchanged: "
+            f"{failed_text}",
+            log,
         )
 
     add_log(

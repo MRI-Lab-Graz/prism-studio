@@ -337,9 +337,9 @@
                 <div class="navbar-text me-3 d-none d-lg-block" id="currentProjectBadge"
                      data-path="{{ current_project.path or '' }}" data-name="{{ current_project.name or '' }}" data-icon="{{ current_project.icon or '' }}">
                     {% if current_project.path %}
-                    <span class="badge bg-warning text-dark" title="{{ current_project.path }}" aria-label="{{ current_project.path }}">
+                    <a class="badge bg-warning text-dark text-decoration-none" href="{{ url_for('projects.projects_page') }}?preserve_current=1" title="Go to {{ current_project.path }}" aria-label="Go to current project: {{ current_project.path }}">
                         <span class="me-1" aria-hidden="true">{{ current_project.icon or '🧪' }}</span>{{ current_project.name or 'Project' }}
-                    </span>
+                    </a>
                     {% else %}
                     <span class="badge bg-light text-muted" aria-label="No project loaded">
                         <i class="fas fa-circle-info me-1"></i>No project loaded
@@ -380,6 +380,13 @@
                             <i class="fas fa-folder-open me-1 text-primary"></i>Project
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="projectsDropdown">
+                            {% if current_project.path %}
+                            <li><a class="dropdown-item navbar-flow-item" href="{{ url_for('projects.projects_page') }}?preserve_current=1" title="View the currently loaded project without reopening it">
+                                <span class="navbar-flow-item-title"><i class="fas fa-folder-open me-2 text-primary"></i>Go to Project</span>
+                                <span class="navbar-flow-item-hint">{{ current_project.name or 'Current project' }}</span>
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% endif %}
                             <li><a class="dropdown-item navbar-flow-item" href="{{ url_for('projects.projects_page') }}" title="Create, open, and switch the active PRISM project context">
                                 <span class="navbar-flow-item-title"><i class="fas fa-folder-tree me-2 text-primary"></i>Open Project Manager</span>
                                 <span class="navbar-flow-item-hint">Set the active project used by all workflow steps</span>
