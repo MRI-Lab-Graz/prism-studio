@@ -36,6 +36,7 @@ Example participants_mapping.json:
 import json
 import logging
 import re
+import unicodedata
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 import pandas as pd
@@ -109,6 +110,17 @@ class ParticipantsConverter:
         text = str(value).strip()
         if not text or text.lower() == "nan":
             return None
+
+        # Normalize to NFC before stripping non-ASCII characters. Without
+        # this, a visually-identical name like "José" sanitizes
+        # differently depending on which Unicode normalization form the
+        # source system used: NFC's precomposed 'é' is stripped whole
+        # (-> "Jos"), while NFD's decomposed 'e'+accent keeps the base
+        # ASCII 'e' and only strips the combining mark (-> "Jose"). Two
+        # collaborators on different platforms typing the "same" name
+        # would otherwise get silently different, both-plausible-looking
+        # participant ids with no error.
+        text = unicodedata.normalize("NFC", text)
 
         label = text[4:] if text[:4].lower() == "sub-" else text
         label = re.sub(r"[^A-Za-z0-9]+", "", label)

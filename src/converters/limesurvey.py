@@ -3,12 +3,15 @@ import json
 import os
 import re
 import sys
+import unicodedata
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 import defusedxml.ElementTree as ET
 import pandas as pd
+
+from src.cross_platform import describe_case_insensitive_id_collisions
 
 
 def _utc_creation_date() -> str:
@@ -1273,6 +1276,12 @@ def convert_lsa_to_dataset(
         text = str(value).strip()
         if not text or text.lower() == "nan":
             return ""
+        # Normalize to NFC before stripping non-ASCII chars so a name like
+        # "José" sanitizes the same way regardless of which Unicode
+        # normalization form the source system used (see
+        # ParticipantsConverter._normalize_participant_id for the full
+        # rationale).
+        text = unicodedata.normalize("NFC", text)
         label = text[4:] if text[:4].lower() == "sub-" else text
         label = re.sub(r"[^A-Za-z0-9]+", "", label)
         if not label:
@@ -1336,6 +1345,18 @@ def convert_lsa_to_dataset(
         df["participant_id"] = df["participant_id"].apply(lambda x: id_map.get(x, x))
 
     df["participant_id"] = df["participant_id"].apply(_normalize_participant_id)
+
+    # Two participant ids differing only by case (e.g. 'sub-Ab'/'sub-ab')
+    # resolve to the identical on-disk directory on a case-insensitive
+    # filesystem (default macOS/Windows): the second one written would
+    # silently overwrite the first's survey files with no error. Fail
+    # fast, before any output is written, rather than allow that.
+    collision_message = describe_case_insensitive_id_collisions(
+        [pid for pid in df["participant_id"] if pid]
+    )
+    if collision_message:
+        raise ValueError(collision_message)
+
     df["session"] = session_label
 
     # --- Calculate Survey Duration and Start Time ---
