@@ -34,6 +34,18 @@ ALL_DOMAINS = {
     "recipes",
     "input_formats",
     "survey_full_run",
+    "participants_merge",
+}
+
+NON_MRI_DOMAINS = {
+    "sociodemo",
+    "biometrics",
+    "subject_session",
+    "entity_rewrite",
+    "recipes",
+    "input_formats",
+    "survey_full_run",
+    "participants_merge",
 }
 
 
@@ -1426,6 +1438,141 @@ def write_hostile_survey_assets(root: Path, seed: int) -> list[HostileCase]:
     return cases
 
 
+# ---------------------------------------------------------------------------
+# participants.tsv merge: cross-source matching, including subject IDs that
+# differ only by case between independently-uploaded sources.
+# ---------------------------------------------------------------------------
+
+
+def build_hostile_participants_merge_assets(
+    seed: int,
+) -> list[tuple[str, pd.DataFrame, HostileCase]]:
+    """Return (filename, dataframe, case) tuples for the participants-merge
+    domain. The first file becomes the baseline participants.tsv (via a
+    normal participants conversion); the rest are merged into it via
+    preview_participants_merge/apply_participants_merge — the same
+    functions the Participants Merge UI/CLI call."""
+    variants: list[tuple[str, pd.DataFrame, HostileCase]] = []
+
+    initial_df = pd.DataFrame(
+        [
+            {"ID": "sub-100", "age": 25, "sex": "F"},
+            {"ID": "sub-101", "age": 30, "sex": "M"},
+            # Deliberately mixed-case label (not just prefix) to probe
+            # cross-source case sensitivity once a second source arrives.
+            {"ID": "sub-Ab", "age": 22, "sex": "F"},
+        ]
+    )
+    variants.append(
+        (
+            "participants_merge_initial_source.csv",
+            initial_df,
+            HostileCase(
+                "participants_merge_initial_source",
+                "participants_merge",
+                "Baseline participants source (3 rows) converted first to "
+                "create the project's participants.tsv, before any merge.",
+                "Converts cleanly via ParticipantsConverter; becomes the "
+                "'existing' side of every merge scenario below.",
+            ),
+        )
+    )
+
+    incoming_df = pd.DataFrame(
+        [
+            # Exact match on an existing id: age unchanged (no conflict),
+            # adds a brand-new 'group' column.
+            {"ID": "sub-101", "age": 30, "group": "control"},
+            # Brand-new participant not in the initial source.
+            {"ID": "sub-102", "age": 28, "group": "patient"},
+            # Same physical-looking id as the existing 'sub-Ab', but with a
+            # different case in the LABEL itself (not just the 'sub-'
+            # prefix). Independent uploads from two different sources (e.g.
+            # a clinician's spreadsheet vs. a lab's export) commonly drift
+            # like this.
+            {"ID": "sub-ab", "age": 22, "group": "control"},
+        ]
+    )
+    variants.append(
+        (
+            "participants_merge_incoming_source.csv",
+            incoming_df,
+            HostileCase(
+                "participants_merge_cross_source_case_sensitivity",
+                "participants_merge",
+                "A second, independent source merged into the existing "
+                "participants.tsv: sub-101 matches exactly (gets a new "
+                "'group' column merged in), sub-102 is a new participant, "
+                "and sub-ab is offered as if it were the existing sub-Ab "
+                "but differs in label case.",
+                "Merge ID matching is exact-string set intersection on the "
+                "already-normalized id (only the 'sub-'/'SUB-' prefix is "
+                "case-normalized; the label itself is never "
+                "case-folded) — there is no fuzzy or case-insensitive "
+                "matching. sub-101 lands in matched_participants; sub-102 "
+                "and sub-ab BOTH land in new_participants (sub-ab is "
+                "correctly treated as a distinct subject from sub-Ab, "
+                "never silently merged). This is confirmed, correct, "
+                "by-design behavior at the participants.tsv layer. "
+                "IMPORTANT CAVEAT found via this exact scenario: importing "
+                "actual modality data (biometrics/survey) for sub-Ab and "
+                "sub-ab in the SAME run used to silently corrupt data — on "
+                "the case-insensitive filesystems that ship by default on "
+                "macOS and Windows, both ids resolve to the identical "
+                "on-disk directory, so the second participant written "
+                "silently overwrote the first's file with no error. Fixed: "
+                "convert_biometrics_table_to_prism_dataset and "
+                "convert_survey_xlsx_to_prism_dataset now both call "
+                "src.cross_platform.describe_case_insensitive_id_collisions "
+                "before writing anything and raise a clear ValueError "
+                "instead (see tests/test_hostile_demo_pipeline.py::"
+                "test_biometrics_conversion_rejects_case_only_differing_ids "
+                "and the equivalent survey test).",
+            ),
+        )
+    )
+
+    conflicting_df = pd.DataFrame(
+        [
+            {"ID": "sub-103", "age": 40, "group": "control"},
+            # Same id, different age, within the SAME incoming source.
+            {"ID": "sub-103", "age": 41, "group": "control"},
+        ]
+    )
+    variants.append(
+        (
+            "participants_merge_incoming_conflicting_duplicates.csv",
+            conflicting_df,
+            HostileCase(
+                "participants_merge_incoming_internal_conflict",
+                "participants_merge",
+                "The incoming source itself has two rows for sub-103 with "
+                "different ages — a genuine conflict within a single "
+                "upload, before any comparison against the existing table.",
+                "preview_participants_merge()/apply_participants_merge() "
+                "raise a clear ValueError naming the conflicting column "
+                "('non-unique values for the selected ID column... "
+                "Conflicting selected columns: age') rather than silently "
+                "picking one value — stricter than ParticipantsConverter's "
+                "own 'keep first non-empty value' collapsing for the same "
+                "shape of input.",
+            ),
+        )
+    )
+
+    return variants
+
+
+def write_hostile_participants_merge_assets(root: Path, seed: int) -> list[HostileCase]:
+    cases: list[HostileCase] = []
+    rawdata_dir = ensure_dir(root / "code" / "rawdata")
+    for filename, df, case in build_hostile_participants_merge_assets(seed):
+        df.to_csv(rawdata_dir / filename, index=False)
+        case.location = f"code/rawdata/{filename}"
+        cases.append(case)
+    return cases
+
+
 def assert_text_files_never_annexed(root: Path) -> list[str]:
     """Return a list of relative paths that violate the never-annex policy.
 
@@ -1550,5 +1697,12 @@ def generate_hostile_dataset(
         for case in cases:
             if case.location:
                 _record(result.files_written, "survey_full_run", case.location)
+
+    if "participants_merge" in selected:
+        cases = write_hostile_participants_merge_assets(output_root, seed)
+        result.cases.extend(cases)
+        for case in cases:
+            if case.location:
+                _record(result.files_written, "participants_merge", case.location)
 
     return result

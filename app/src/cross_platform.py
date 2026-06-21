@@ -179,3 +179,52 @@ def validate_filename_cross_platform(filename):
         issues.append(f"Filename '{filename}' too long (>255 characters)")
 
     return issues
+
+
+def find_case_insensitive_id_collisions(ids):
+    """Group distinct-but-case-variant ids (e.g. ``sub-Ab`` vs ``sub-ab``).
+
+    Returns ``{lowered_id: [original_variants]}``, including only groups
+    with more than one distinct original spelling.
+
+    PRISM treats participant/session labels as case-sensitive everywhere
+    in its own data model (participants.tsv, the participants-merge logic),
+    but on a case-insensitive filesystem (the default on macOS and
+    Windows) two such ids resolve to the identical on-disk path. Writing
+    per-subject output files for both silently overwrites one with the
+    other's content with no error or warning. This check is always
+    applied regardless of host OS — same philosophy as
+    ``validate_filename_cross_platform`` — because a dataset can be
+    created on one platform and opened on another.
+    """
+    groups: dict[str, list[str]] = {}
+    seen_per_group: dict[str, set[str]] = {}
+    for original in ids:
+        if not original:
+            continue
+        key = str(original).lower()
+        seen = seen_per_group.setdefault(key, set())
+        if original not in seen:
+            seen.add(original)
+            groups.setdefault(key, []).append(original)
+    return {key: variants for key, variants in groups.items() if len(variants) > 1}
+
+
+def describe_case_insensitive_id_collisions(ids, *, label="participant"):
+    """Return a human-readable error message for colliding ids, or None.
+
+    Convenience wrapper around find_case_insensitive_id_collisions for
+    converters that just need a ready-to-raise message.
+    """
+    collisions = find_case_insensitive_id_collisions(ids)
+    if not collisions:
+        return None
+    details = "; ".join(
+        f"{'/'.join(sorted(variants))}" for variants in collisions.values()
+    )
+    return (
+        f"These {label} ids differ only by case and would silently overwrite "
+        f"each other's files on case-insensitive filesystems (default on "
+        f"macOS/Windows): {details}. Rename one of each pair before "
+        f"converting."
+    )
