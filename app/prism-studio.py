@@ -205,6 +205,11 @@ def _print_startup_ready(url: str, *, public: bool, log_file: Path | None = None
     if log_file is not None:
         print(_startup_colorize(f"Startup log: {log_file}", "muted"))
     print(_startup_colorize("Status: ready. Launching the interface now.", "ready"))
+    print(_startup_colorize(
+        "Tip: for best performance use a Chromium-based browser (Chrome, Edge, Brave). "
+        "Safari can be slow here, especially with iCloud Private Relay enabled.",
+        "muted",
+    ))
     print(_startup_colorize("Press Ctrl+C to stop the server", "muted"))
     print()
 
@@ -912,8 +917,17 @@ def inject_utilities():
 
 @app.after_request
 def disable_static_js_css_cache(response):
-    """Prevent stale JS/CSS bundles after updates in desktop/browser sessions."""
+    """Prevent stale JS/CSS bundles after updates in desktop/browser sessions.
+
+    Third-party vendor libraries under /static/vendor/ are version-pinned and
+    never change in place, so they're exempt and get long-lived caching
+    instead - otherwise every page load re-fetches them from disk with no
+    browser cache, which is exactly what CDN-hosted copies never suffered.
+    """
     request_path = str(request.path or "").lower()
+    if request_path.startswith("/static/vendor/"):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
     if request_path.startswith("/static/") and (
         request_path.endswith(".js")
         or request_path.endswith(".mjs")
@@ -1426,7 +1440,10 @@ def main():
 
     ensure_clean_start(host, port, force=args.force_clean_start)
 
-    display_host = "localhost" if host == "127.0.0.1" else host
+    # Use the literal bind address rather than "localhost" - Safari resolves
+    # "localhost" and tries IPv6 (::1) first, which times out (multi-second
+    # delay) since the server only binds IPv4, before falling back to IPv4.
+    display_host = host
     scheme = "http"
     url = f"{scheme}://{display_host}:{port}"
 

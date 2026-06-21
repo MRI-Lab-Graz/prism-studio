@@ -87,7 +87,12 @@ rtk git status
 python prism-studio.py
 ```
 
-Open `http://localhost:5001` if it does not open automatically.
+Open `http://127.0.0.1:5001` if it does not open automatically.
+
+**For best performance, use a Chromium-based browser** (Chrome, Edge, Brave, etc.).
+Safari can be significantly slower for local apps like PRISM Studio, especially
+with iCloud Private Relay or "Hide IP address from trackers" enabled - turn
+those off for this site, or switch browsers, if pages feel slow to load.
 
 ### Run PRISM Validator (CLI)
 
