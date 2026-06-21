@@ -15,6 +15,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional, Set
 
+from src.cross_platform import describe_case_insensitive_id_collisions
 from src.project_export_helpers import (
     _extract_export_task_label,
     _matches_excluded_acq_label,
@@ -275,6 +276,25 @@ def export_project(
 
     _report(5, "Collecting participants...")
     _check_cancelled()
+
+    if not anonymize:
+        # Anonymized ids are always pure uppercase+digits (see
+        # create_participant_mapping/generate_random_id below), so they
+        # can never collide by case — this only matters for real ids
+        # shipped as-is. A zip with real subject directories that differ
+        # only by case (e.g. from a dataset created on a case-sensitive
+        # filesystem, or via an importer that predates this check) is
+        # internally consistent (zip entries are case-sensitive) but is a
+        # time bomb for whoever extracts it on the case-insensitive
+        # filesystem most desktops use by default — one directory would
+        # silently overwrite the other on extraction with no error.
+        normalized_exclusions_for_collision_check = {
+            str(label).strip() for label in (exclude_subjects or set()) if str(label).strip()
+        }
+        ids_after_exclusion = collect_participant_ids(project_path) - normalized_exclusions_for_collision_check
+        collision_message = describe_case_insensitive_id_collisions(ids_after_exclusion)
+        if collision_message:
+            raise ValueError(collision_message)
 
     participant_mapping = {}
     _saved_mapping_file: Optional[Path] = None

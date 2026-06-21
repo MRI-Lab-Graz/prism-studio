@@ -274,7 +274,22 @@ def test_export_runs_against_hostile_dataset(hostile_dataset: Path, tmp_path: Pa
 @pytest.mark.parametrize(
     "export_kwargs",
     [
-        {"anonymize": False, "include_sourcedata": True, "include_code": True},
+        # sub-Ab/sub-ab are deliberately colliding-by-case hostile rows
+        # written into participants.tsv by an earlier test sharing this
+        # same module-scoped fixture (test_participants_conversion_survives_
+        # hostile_input writes participants.tsv as a side effect). Exporting
+        # them unanonymized is correctly refused by export_project's
+        # case-collision guard — see test_export_unanonymized_rejects_real_
+        # case_colliding_ids below for a dedicated test of that exact
+        # behavior. This variant excludes that pair so it can verify the
+        # *other* unrelated export options (sourcedata, no anonymize) still
+        # work.
+        {
+            "anonymize": False,
+            "include_sourcedata": True,
+            "include_code": True,
+            "exclude_subjects": {"sub-Ab", "sub-ab"},
+        },
         {"anonymize": True, "deterministic": True, "include_code": False},
         {"anonymize": True, "exclude_subjects": {"sub-Müller"}},
         {"anonymize": True, "exclude_version_control_metadata": True},

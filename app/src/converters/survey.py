@@ -22,6 +22,7 @@ import csv
 import zipfile
 import defusedxml.ElementTree as ET
 import re
+import unicodedata
 from typing import cast
 
 try:
@@ -1619,6 +1620,12 @@ def _convert_survey_dataframe_to_prism_dataset(
             return s
         if s.lower() == "nan":
             return ""
+        # Normalize to NFC before stripping non-ASCII chars so a name like
+        # "José" sanitizes the same way regardless of which Unicode
+        # normalization form the source system used (see
+        # ParticipantsConverter._normalize_participant_id for the full
+        # rationale).
+        s = unicodedata.normalize("NFC", s)
         label = s[4:] if s[:4].lower() == "sub-" else s
         label = re.sub(r"[^A-Za-z0-9]+", "", label)
         if not label:

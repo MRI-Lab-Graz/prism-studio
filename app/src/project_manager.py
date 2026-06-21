@@ -45,7 +45,7 @@ from src.project_export_helpers import (
     _matches_excluded_acq_label,
 )
 from src.constants import DEFAULT_BIDS_VERSION
-from src.cross_platform import CrossPlatformFile
+from src.cross_platform import CrossPlatformFile, describe_case_insensitive_id_collisions
 from src.issues import get_fix_hint, infer_code_from_message
 from src.schema_manager import load_schema
 from src.readme_generator import ReadmeGenerator
@@ -1481,6 +1481,27 @@ class ProjectManager:
 
         if not project_path.exists() or not project_path.is_dir():
             result["error"] = f"Path does not exist or is not a directory: {project_path}"
+            return result
+
+        # A source dataset can contain subject directories that differ only
+        # by case (e.g. created on a case-sensitive filesystem, or by an
+        # importer that predates the same check at conversion time). Copying
+        # both onto a case-insensitive destination filesystem (default
+        # macOS/Windows) would silently merge one into the other mid-copy
+        # with no error. Fail fast instead, before any copy starts.
+        normalized_exclusions_for_collision_check = {
+            str(label).strip() for label in (exclude_subjects or set()) if str(label).strip()
+        }
+        existing_subject_dirs = [
+            entry.name
+            for entry in project_path.iterdir()
+            if entry.is_dir()
+            and entry.name.startswith("sub-")
+            and entry.name not in normalized_exclusions_for_collision_check
+        ]
+        collision_message = describe_case_insensitive_id_collisions(existing_subject_dirs)
+        if collision_message:
+            result["error"] = collision_message
             return result
 
         destination_root = (
