@@ -15,6 +15,27 @@ _SAFE_FORMULA_BINOPS: dict[type[ast.operator], Any] = {
     ast.Pow: operator.pow,
 }
 
+# Real psychometric/biometric formulas never need exponents beyond a handful
+# (squaring, cubing, BMI-style ratios). Recipe Formula strings are ordinary
+# JSON text that can arrive in a shared/uploaded dataset, and this engine
+# evaluates each one once per participant row — an unbounded exponent like
+# `99999 ** 999999999` is a real, confirmed CPU/memory exhaustion vector
+# (multi-second hang on a single call, multiplied by every row scored),
+# even though the AST whitelist already blocks code-injection escapes.
+_MAX_FORMULA_POW_EXPONENT_MAGNITUDE = 1000
+
+
+def _check_safe_power_operands(exponent: Any) -> None:
+    try:
+        exponent_value = abs(float(exponent))
+    except (TypeError, ValueError, OverflowError):
+        raise ValueError("Unsafe exponent") from None
+    if exponent_value > _MAX_FORMULA_POW_EXPONENT_MAGNITUDE:
+        raise ValueError(
+            "Exponent magnitude exceeds the safe limit "
+            f"({_MAX_FORMULA_POW_EXPONENT_MAGNITUDE})"
+        )
+
 _SAFE_FORMULA_UNARYOPS: dict[type[ast.unaryop], Any] = {
     ast.UAdd: operator.pos,
     ast.USub: operator.neg,
@@ -74,6 +95,8 @@ def _evaluate_formula_ast(node: ast.AST) -> Any:
             raise ValueError("Unsafe binary operator")
         left = _evaluate_formula_ast(node.left)
         right = _evaluate_formula_ast(node.right)
+        if isinstance(node.op, ast.Pow):
+            _check_safe_power_operands(right)
         return op(left, right)
 
     if isinstance(node, ast.UnaryOp):
@@ -155,7 +178,7 @@ def _safe_eval_formula_expression(expression: str) -> float | None:
 
     try:
         numeric = float(result)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return None
 
     if not math.isfinite(numeric):

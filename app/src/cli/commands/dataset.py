@@ -6,10 +6,12 @@ import json
 import shutil
 import sys
 import re
+import unicodedata
 from pathlib import Path
 
 from src.converters.file_reader import read_tabular_file
 from src.converters.excel_to_biometrics import process_excel_biometrics
+from src.cross_platform import describe_case_insensitive_id_collisions
 from src.maintenance.project_metadata_cleanup import (
     cleanup_project_metadata,
     cleanup_project_metadata_tree,
@@ -251,6 +253,10 @@ def cmd_dataset_build_biometrics_smoketest(args) -> None:
             return ""
         if pid.lower() == "nan":
             return ""
+        # Normalize to NFC before stripping non-ASCII chars so a name like
+        # "José" sanitizes the same way regardless of which Unicode
+        # normalization form the source system used.
+        pid = unicodedata.normalize("NFC", pid)
         label = pid[4:] if pid[:4].lower() == "sub-" else pid
         label = re.sub(r"[^A-Za-z0-9]+", "", label)
         if not label:
@@ -341,6 +347,22 @@ def cmd_dataset_build_biometrics_smoketest(args) -> None:
     col_instance = _find_col(df_data, {"instance", "trial", "repeat", "rep", "run"})
 
     is_long = bool(col_item and col_val)
+
+    # Two participant ids differing only by case (e.g. 'sub-Ab'/'sub-ab')
+    # resolve to the identical on-disk directory on a case-insensitive
+    # filesystem (default macOS/Windows): the second one written would
+    # silently overwrite the first's biometrics files with no error. Fail
+    # fast, before any output is written, rather than allow that.
+    collision_message = describe_case_insensitive_id_collisions(
+        [
+            sid
+            for sid in df_data[col_pid].astype(str).map(_normalize_sub_id)
+            if sid
+        ]
+    )
+    if collision_message:
+        print(f"Error: {collision_message}")
+        sys.exit(1)
 
     # 4) Create dataset root files
     _ensure_dir(output_root)

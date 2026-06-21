@@ -6,6 +6,8 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
 
 from src.anonymizer import create_participant_mapping
@@ -1212,3 +1214,63 @@ def test_export_skips_unfetched_datalad_symlinks_instead_of_crashing(tmp_path):
         names = archive.namelist()
     assert "sub-001/anat/sub-001_T1w.json" in names
     assert not any(name.endswith("sub-001_T1w.nii.gz") for name in names)
+
+
+def test_export_unanonymized_rejects_real_case_colliding_ids(tmp_path):
+    """Regression guard: a source dataset can contain subject ids that
+    differ only by case (e.g. created on a case-sensitive filesystem, or
+    via an importer that predates the conversion-time check). Shipping
+    them unanonymized in a zip is internally consistent (zip entries are
+    case-sensitive) but is a time bomb for whoever extracts it on the
+    case-insensitive filesystem most desktops use by default."""
+    project_dir = tmp_path / "study"
+    project_dir.mkdir()
+    (project_dir / "participants.tsv").write_text(
+        "participant_id\tage\nsub-Ab\t30\nsub-ab\t31\n", encoding="utf-8"
+    )
+
+    with pytest.raises(ValueError, match="differ only by case"):
+        export_project(
+            project_path=project_dir,
+            output_zip=tmp_path / "export.zip",
+            anonymize=False,
+        )
+
+
+def test_export_unanonymized_excluding_colliding_subject_succeeds(tmp_path):
+    """exclude_subjects removes a colliding id from consideration before
+    the case-collision guard runs, so excluding one of the pair lets the
+    rest of the export proceed."""
+    project_dir = tmp_path / "study"
+    project_dir.mkdir()
+    (project_dir / "participants.tsv").write_text(
+        "participant_id\tage\nsub-Ab\t30\nsub-ab\t31\nsub-100\t40\n", encoding="utf-8"
+    )
+
+    output_zip = tmp_path / "export.zip"
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=False,
+        exclude_subjects={"sub-ab"},
+    )
+    assert output_zip.exists()
+
+
+def test_export_anonymized_export_unaffected_by_case_colliding_real_ids(tmp_path):
+    """Anonymized output ids are always uppercase+digits (see
+    generate_random_id), so they can never collide by case — the guard
+    must only block the unanonymized path."""
+    project_dir = tmp_path / "study"
+    project_dir.mkdir()
+    (project_dir / "participants.tsv").write_text(
+        "participant_id\tage\nsub-Ab\t30\nsub-ab\t31\n", encoding="utf-8"
+    )
+
+    output_zip = tmp_path / "export.zip"
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=True,
+    )
+    assert output_zip.exists()

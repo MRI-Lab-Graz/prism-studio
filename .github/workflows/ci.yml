@@ -102,6 +102,40 @@ jobs:
           files: coverage.xml
           fail_ci_if_error: false
 
+  cross-platform-tests:
+    name: Pytest (${{ matrix.os }})
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+
+      # GitHub Actions' default shell on windows-latest is PowerShell, not
+      # bash. Force bash (available via the runner's bundled Git Bash) so
+      # the same install/test commands behave identically across all three
+      # OSes instead of silently diverging on Windows.
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+
+      - name: Run tests
+        shell: bash
+        run: |
+          pytest tests/ -q
+
   docs-build:
     name: Docs Build
     if: github.event_name == 'push' || github.event_name == 'pull_request'

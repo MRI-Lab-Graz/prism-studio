@@ -2887,6 +2887,47 @@ class TestProjectManager(unittest.TestCase):
             self.assertTrue(result.get("success"), result)
             self.assertTrue(Path(result["output_path"]).exists())
 
+    def test_export_project_to_plain_folder_rejects_case_only_colliding_subject_dirs(self):
+        """Regression guard: a source dataset can contain subject
+        directories that differ only by case (e.g. created on a
+        case-sensitive filesystem, or by an importer that predates the
+        case-collision check at conversion time). Copying both onto a
+        case-insensitive destination (default macOS/Windows) would
+        silently merge one into the other mid-copy with no error — fail
+        fast instead, before any copy starts.
+
+        True co-existing case-variant directories can't be staged on this
+        host's filesystem (the same reason production code needs this
+        check at all), so this test fakes the directory listing rather
+        than creating the directories for real."""
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            class _FakeDirEntry:
+                def __init__(self, name: str) -> None:
+                    self.name = name
+
+                def is_dir(self) -> bool:
+                    return True
+
+            real_iterdir = Path.iterdir
+
+            def _fake_iterdir(self):
+                if self == project_path:
+                    return iter([_FakeDirEntry("sub-Ab"), _FakeDirEntry("sub-ab")])
+                return real_iterdir(self)
+
+            with patch.object(Path, "iterdir", _fake_iterdir):
+                result = manager.export_project_to_plain_folder(project_path)
+
+            self.assertFalse(result.get("success"))
+            self.assertIn("differ only by case", result.get("error", ""))
+            self.assertFalse((project_path.parent / "demo_project_folder_export").exists())
+
     @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
     def test_export_project_to_plain_folder_exclude_subjects_filters_output(self, _mock_which):
         manager = ProjectManager()

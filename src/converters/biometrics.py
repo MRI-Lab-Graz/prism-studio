@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 import re
+import unicodedata
 
 
 from src.cross_platform import describe_case_insensitive_id_collisions
@@ -63,6 +64,12 @@ def _normalize_sub_id(pid: str) -> str:
         return ""
     if pid.lower() == "nan":
         return ""
+    # Normalize to NFC before stripping non-ASCII chars so a name like
+    # "José" sanitizes the same way regardless of which Unicode
+    # normalization form the source system used (see
+    # ParticipantsConverter._normalize_participant_id for the full
+    # rationale).
+    pid = unicodedata.normalize("NFC", pid)
     label = pid[4:] if pid[:4].lower() == "sub-" else pid
     label = re.sub(r"[^A-Za-z0-9]+", "", label)
     if not label:
