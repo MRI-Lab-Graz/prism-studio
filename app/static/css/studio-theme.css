@@ -1,5 +1,13 @@
+@font-face {
+    font-family: "Inter";
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url("../fonts/inter/inter-latin.woff2") format("woff2");
+}
+
 :root {
-    --studio-font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --studio-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --studio-font-size-base: 1rem;
     --studio-line-height-base: 1.5;
     --studio-control-min-height: 2.5rem;
@@ -37,8 +45,9 @@
     --studio-surface-muted: #f7f7f7;
     --studio-border: #d7dbe0;
     --studio-border-soft: #e5e8ec;
-    --studio-shadow: 0 1px 2px rgba(31, 35, 40, 0.12);
-    --studio-radius: 10px;
+    --studio-shadow: 0 1px 2px rgba(31, 35, 40, 0.06), 0 4px 14px rgba(31, 35, 40, 0.07);
+    --studio-shadow-hover: 0 2px 4px rgba(31, 35, 40, 0.08), 0 10px 24px rgba(31, 35, 40, 0.12);
+    --studio-radius: 14px;
     --studio-content-max-width: 1040px;
 }
 
@@ -93,7 +102,7 @@
     position: sticky;
     top: 0;
     z-index: 1030;
-    box-shadow: 0 10px 22px rgba(31, 35, 40, 0.08);
+    box-shadow: 0 8px 20px rgba(31, 35, 40, 0.06);
 }
 
 @supports ((-webkit-backdrop-filter: blur(10px)) or (backdrop-filter: blur(10px))) {
@@ -117,7 +126,7 @@
 
 .studio-theme .navbar .nav-link {
     color: #2f3844;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .studio-theme .navbar .navbar-nav > .nav-item > .nav-link {
@@ -191,11 +200,11 @@
 }
 
 .studio-theme main .card {
-    border: 1px solid var(--studio-border);
+    border: 1px solid var(--studio-border-soft);
     border-radius: var(--studio-radius);
     box-shadow: var(--studio-shadow);
     background-color: var(--studio-surface);
-    transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -203,7 +212,8 @@
     .studio-theme main .card:not(.no-hover-highlight):not([data-no-hover-highlight="true"]):focus-within {
         background-color: #fffef7;
         border-color: #e7d67d;
-        box-shadow: 0 0 0 2px rgba(255, 213, 0, 0.22), 0 4px 10px rgba(31, 35, 40, 0.14);
+        box-shadow: 0 0 0 2px rgba(255, 213, 0, 0.18), var(--studio-shadow-hover);
+        transform: translateY(-1px);
     }
 }
 
@@ -227,7 +237,7 @@
 .studio-theme main .form-control,
 .studio-theme main .form-select,
 .studio-theme main .input-group-text {
-    border-radius: 8px;
+    border-radius: 9px;
 }
 
 .studio-theme main .btn {
@@ -237,7 +247,20 @@
     justify-content: center;
     gap: 0.45rem;
     font-size: var(--studio-font-size-base);
+    font-weight: 500;
     line-height: 1.2;
+    transition: box-shadow 0.18s ease, transform 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+}
+
+.studio-theme main .btn-primary,
+.studio-theme main .btn-success {
+    box-shadow: 0 1px 2px rgba(31, 35, 40, 0.08), 0 4px 10px rgba(31, 139, 92, 0.18);
+}
+
+.studio-theme main .btn-primary:hover,
+.studio-theme main .btn-success:hover {
+    box-shadow: 0 2px 4px rgba(31, 35, 40, 0.1), 0 6px 14px rgba(31, 139, 92, 0.24);
+    transform: translateY(-1px);
 }
 
 .studio-theme main .btn.btn-sm {
@@ -250,7 +273,7 @@
 
 .studio-theme main .studio-action-btn {
     min-height: var(--studio-action-button-min-height);
-    border-radius: 10px;
+    border-radius: 12px;
     font-weight: 600;
 }
 
@@ -271,7 +294,7 @@
 }
 
 .studio-theme main .alert {
-    border-radius: 8px;
+    border-radius: 10px;
 }
 
 /* Normalize semantic text colors to reduce color noise across pages. */
