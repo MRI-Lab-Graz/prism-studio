@@ -5,10 +5,10 @@
     <link rel="icon" href="/favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}PRISM Studio{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.1.3/dist/litera/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/studio-theme.css', v='20260505-sticky-header') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/bootswatch-litera.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/studio-theme.css', v='20260621-modern-refresh') }}" rel="stylesheet">
     {% set prism_api_origin = prism_api_origin|default('') %}
     <script>
         (() => {
@@ -44,13 +44,14 @@
             background-color: var(--studio-brand-accent-soft);
         }
         .feature-card {
-            border: 1px solid var(--studio-border);
-            border-radius: 10px;
+            border: 1px solid var(--studio-border-soft);
+            border-radius: var(--studio-radius);
             box-shadow: var(--studio-shadow);
-            transition: box-shadow 0.2s ease;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
         }
         .feature-card:hover {
-            box-shadow: 0 2px 5px rgba(31, 35, 40, 0.16);
+            box-shadow: var(--studio-shadow-hover);
+            transform: translateY(-1px);
         }
         .status-badge {
             font-size: 0.9em;
@@ -102,14 +103,14 @@
             max-width: 78ch;
         }
         .studio-help-panel {
-            border-radius: 10px;
+            border-radius: 12px;
         }
         html[data-beginner-help-mode="off"] [data-help-panel][data-help-default-mode="beginner"] {
             display: none;
         }
         .studio-help-panel .card-header {
-            border-top-left-radius: 10px;
-            border-top-right-radius: 10px;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
         }
         .studio-help-panel .card-body {
             font-size: 0.95rem;
@@ -1728,8 +1729,8 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/jszip/jszip.min.js') }}"></script>
     {% set static_token = prism_static_asset_token|default('', true) %}
     <script>
         window.PRISM_STATIC_ASSET_VERSION = {{ static_token | tojson }};
