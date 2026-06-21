@@ -1,9 +1,0 @@
-cff-version: 1.2.0
-title: "hostile_demo"
-type: dataset
-date-released: "2026-06-21"
-message: >-
-  If you use this dataset, please cite it using the metadata from this file.
-authors:
-  - family-names: "prism-studio"
-    given-names: "dataset"
