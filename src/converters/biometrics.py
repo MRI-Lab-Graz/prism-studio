@@ -17,6 +17,7 @@ from typing import Any
 import re
 
 
+from src.cross_platform import describe_case_insensitive_id_collisions
 from src.converters.file_reader import (
     infer_tabular_kind as _infer_tabular_kind,
     read_tabular_file as _read_tabular_file,
@@ -247,6 +248,18 @@ def convert_biometrics_table_to_prism_dataset(
             "Unmapped columns (not found in any biometrics template): "
             + ", ".join(unknown_cols)
         )
+
+    # Two participant ids differing only by case (e.g. 'sub-Ab'/'sub-ab')
+    # would resolve to the identical on-disk directory on a case-insensitive
+    # filesystem (default macOS/Windows): the second one written silently
+    # overwrites the first's biometrics files with no error. Fail fast,
+    # before any output is written, rather than allow that.
+    normalized_ids = df[col_pid].astype(str).map(_normalize_sub_id)
+    collision_message = describe_case_insensitive_id_collisions(
+        [sid for sid in normalized_ids if sid]
+    )
+    if collision_message:
+        raise ValueError(collision_message)
 
     # Root files
     output_root.mkdir(parents=True, exist_ok=True)

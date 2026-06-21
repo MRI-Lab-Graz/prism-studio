@@ -14,13 +14,18 @@ from unittest.mock import Mock, patch
 import pytest
 
 from src.bids_entity_rewriter import BidsEntityRewriter
+from src.converters.biometrics import convert_biometrics_table_to_prism_dataset
 from src.converters.file_reader import read_tabular_file
+from src.converters.survey import convert_survey_xlsx_to_prism_dataset
 from src.hostile_demo_generator import (
+    NON_MRI_DOMAINS,
     assert_text_files_never_annexed,
     generate_hostile_dataset,
 )
+from src.participants_backend import apply_participants_merge
 from src.participants_converter import ParticipantsConverter
 from src.recipe_validation import validate_recipe
+from src.recipes_surveys import compute_survey_recipes
 from src.subject_code_rewriter import SubjectCodeRewriter
 from src.web.blueprints.conversion_environment_mri_scan_helpers import (
     discover_mri_acquisition_rows,
@@ -400,3 +405,231 @@ def test_latin1_csv_is_recovered_by_encoding_fallback(hostile_dataset: Path) -> 
     )
     assert result.encoding_used in {"latin-1", "cp1252"}
     assert len(result.df) > 0
+
+
+_FULL_SWEEP_PARTICIPANTS_MAPPING = {
+    "version": "1.0",
+    "mappings": {
+        "participant_id": {"source_column": "ID", "standard_variable": "participant_id"},
+        "age": {"source_column": "age", "standard_variable": "age"},
+        "sex": {"source_column": "sex", "standard_variable": "sex"},
+    },
+}
+_FULL_SWEEP_MERGE_MAPPING = {
+    "version": "1.0",
+    "mappings": {
+        "participant_id": {"source_column": "ID", "standard_variable": "participant_id"},
+        "age": {"source_column": "age", "standard_variable": "age"},
+        "group": {"source_column": "group", "standard_variable": "group"},
+    },
+}
+
+
+@pytest.mark.parametrize("use_datalad", [False, True])
+def test_full_non_mri_sweep_with_and_without_datalad(tmp_path: Path, use_datalad: bool) -> None:
+    """End-to-end: generate every non-MRI hostile domain, import
+    participants + survey + biometrics into the same project, merge a
+    second participants source in (cross-source case sensitivity), export,
+    and score a recipe — run twice, once per DataLad mode, as two fully
+    separate test invocations (not just project-creation in isolation)."""
+    datalad_patches = []
+    if use_datalad:
+        datalad_patches = [
+            patch(
+                "src.project_manager.subprocess.run",
+                return_value=Mock(returncode=0, stdout="", stderr=""),
+            ),
+            patch(
+                "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
+                return_value=False,
+            ),
+            patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad"),
+        ]
+    for p in datalad_patches:
+        p.start()
+    try:
+        result = _run_pipeline_stage(
+            "generate_hostile_dataset(NON_MRI_DOMAINS)",
+            generate_hostile_dataset,
+            tmp_path / "demo",
+            seed=1,
+            domains=NON_MRI_DOMAINS,
+            use_datalad=use_datalad,
+        )
+    finally:
+        for p in datalad_patches:
+            p.stop()
+
+    project_root = result.project_root
+    assert set(result.files_written.keys()) == NON_MRI_DOMAINS
+    assert assert_text_files_never_annexed(project_root) == []
+
+    rawdata = project_root / "code" / "rawdata"
+
+    # 1) Participants: convert the clean initial source into participants.tsv.
+    converter = ParticipantsConverter(project_root)
+    success, participants_df, _messages = _run_pipeline_stage(
+        "ParticipantsConverter.convert_participant_data",
+        converter.convert_participant_data,
+        rawdata / "participants_merge_initial_source.csv",
+        _FULL_SWEEP_PARTICIPANTS_MAPPING,
+    )
+    assert success is True
+    participants_df.to_csv(project_root / "participants.tsv", sep="\t", index=False)
+
+    # 2) Survey: import the clean baseline response table for the randomly
+    # generated survey, into the same project root.
+    library_dir = project_root / "code" / "library" / "survey"
+    survey_result = _run_pipeline_stage(
+        "convert_survey_xlsx_to_prism_dataset",
+        convert_survey_xlsx_to_prism_dataset,
+        input_path=rawdata / "survey_clean_baseline.csv",
+        library_dir=library_dir,
+        output_root=project_root,
+        name="full-non-mri-sweep",
+        force=True,
+        skip_participants=True,
+    )
+    assert survey_result.tasks_included
+
+    # 3) Biometrics: clean, minimal import using the official fitness
+    # template (the hostile_demo biometrics domain's own raw files are
+    # deliberately adversarial and already covered by dedicated tests —
+    # this sweep exercises a normal, successful biometrics import
+    # alongside the hostile content the other domains generated).
+    official_template = (
+        Path(__file__).resolve().parents[1]
+        / "official"
+        / "library"
+        / "biometrics"
+        / "biometrics-fitness.json"
+    )
+    biometrics_library = project_root / "code" / "library" / "biometrics"
+    biometrics_library.mkdir(parents=True, exist_ok=True)
+    (biometrics_library / "biometrics-fitness.json").write_bytes(
+        official_template.read_bytes()
+    )
+    biometrics_csv = rawdata / "full_sweep_biometrics_clean.csv"
+    import pandas as pd
+
+    pd.DataFrame(
+        [
+            {"participant_id": "sub-100", "resting_hr": 65, "grip_strength_left": 35},
+            {"participant_id": "sub-101", "resting_hr": 70, "grip_strength_left": 38},
+        ]
+    ).to_csv(biometrics_csv, index=False)
+    biometrics_result = _run_pipeline_stage(
+        "convert_biometrics_table_to_prism_dataset",
+        convert_biometrics_table_to_prism_dataset,
+        input_path=biometrics_csv,
+        library_dir=biometrics_library,
+        output_root=project_root,
+        force=True,
+        skip_participants=True,
+    )
+    assert biometrics_result.tasks_included == ["fitness"]
+
+    # 4) Merge a second, independent participants source in — exercises
+    # cross-source subject-id case sensitivity in the same full sweep.
+    merge_result = _run_pipeline_stage(
+        "apply_participants_merge",
+        apply_participants_merge,
+        project_root,
+        rawdata / "participants_merge_incoming_source.csv",
+        _FULL_SWEEP_MERGE_MAPPING,
+    )
+    assert merge_result["merged_participant_count"] == 5
+
+    # 5) Recipe scoring against the survey data just imported.
+    recipes_dir = project_root / "code" / "recipes" / "survey"
+    # NON_MRI_DOMAINS also includes the "recipes" domain, which deliberately
+    # writes invalid recipe-hostile-*.json files into this same folder to
+    # test validate_recipe() in isolation — compute_survey_recipes()
+    # validates every file in its recipe_dir up front and refuses to run
+    # at all if any of them are invalid, so for this step we point it at a
+    # separate directory containing only the real, valid survey_full_run
+    # recipe (copied over), keeping the hostile ones in place for the
+    # structural checks above.
+    recipe_path = next(
+        p for p in recipes_dir.glob("recipe-*.json") if "hostile" not in p.name
+    )
+    assert validate_recipe(__import__("json").loads(recipe_path.read_text())) == []
+    valid_recipe_dir = project_root / "code" / "recipes" / "survey_valid_only"
+    valid_recipe_dir.mkdir(parents=True, exist_ok=True)
+    (valid_recipe_dir / recipe_path.name).write_bytes(recipe_path.read_bytes())
+    recipe_result = _run_pipeline_stage(
+        "compute_survey_recipes",
+        compute_survey_recipes,
+        prism_root=project_root,
+        repo_root=project_root,
+        recipe_dir=str(valid_recipe_dir),
+        out_format="flat",
+        modality="survey",
+    )
+    assert recipe_result.written_files >= 1
+
+    # 6) Export the fully-assembled project.
+    output_zip = tmp_path / "export.zip"
+    _run_pipeline_stage(
+        "export_project",
+        export_project,
+        project_root,
+        output_zip,
+        anonymize=True,
+        include_derivatives=True,
+        include_code=True,
+    )
+    assert output_zip.exists()
+
+    # Parity: identical seed/inputs must produce the identical final
+    # participant set regardless of DataLad mode.
+    participants_final = pd.read_csv(
+        project_root / "participants.tsv", sep="\t", dtype=str, keep_default_na=False
+    )
+    assert set(participants_final["participant_id"]) == {
+        "sub-100",
+        "sub-101",
+        "sub-Ab",
+        "sub-102",
+        "sub-ab",
+    }
+    assert assert_text_files_never_annexed(project_root) == []
+
+
+def test_biometrics_conversion_rejects_case_only_differing_ids(tmp_path: Path) -> None:
+    """Regression guard for a real, severe finding: on case-insensitive
+    filesystems (default macOS/Windows), 'sub-Ab' and 'sub-ab' resolve to
+    the identical on-disk directory. Before this check existed, the
+    second participant processed silently overwrote the first's
+    biometrics .tsv with no error — confirmed real data loss, not just a
+    theoretical risk."""
+    import pandas as pd
+
+    library_dir = tmp_path / "library"
+    library_dir.mkdir()
+    official_template = (
+        Path(__file__).resolve().parents[1]
+        / "official"
+        / "library"
+        / "biometrics"
+        / "biometrics-fitness.json"
+    )
+    (library_dir / "biometrics-fitness.json").write_bytes(official_template.read_bytes())
+
+    data_csv = tmp_path / "data.csv"
+    pd.DataFrame(
+        [
+            {"participant_id": "sub-Ab", "resting_hr": 60},
+            {"participant_id": "sub-ab", "resting_hr": 99},
+        ]
+    ).to_csv(data_csv, index=False)
+
+    from src.converters.biometrics import convert_biometrics_table_to_prism_dataset
+
+    with pytest.raises(ValueError, match="differ only by case"):
+        convert_biometrics_table_to_prism_dataset(
+            input_path=data_csv,
+            library_dir=library_dir,
+            output_root=tmp_path / "out",
+            skip_participants=True,
+        )

@@ -29,6 +29,7 @@ try:
 except ImportError:
     pd = None
 
+from ..cross_platform import describe_case_insensitive_id_collisions
 from ..utils.io import (
     ensure_dir as _ensure_dir,
     read_json as _read_json,
@@ -1888,6 +1889,18 @@ def _convert_survey_dataframe_to_prism_dataset(
     if _res_ses_override:
         res_ses_col = _res_ses_override
     conversion_warnings.extend(duplicate_warnings)
+
+    # Two participant ids differing only by case (e.g. 'sub-Ab'/'sub-ab')
+    # resolve to the identical on-disk directory on a case-insensitive
+    # filesystem (default macOS/Windows): the second one written would
+    # silently overwrite the first's survey files with no error. Fail
+    # fast, before any output is written, rather than allow that.
+    normalized_ids_for_collision_check = df[res_id_col].astype(str).map(_normalize_sub_id)
+    collision_message = describe_case_insensitive_id_collisions(
+        [sid for sid in normalized_ids_for_collision_check if sid]
+    )
+    if collision_message:
+        raise ValueError(collision_message)
 
     participant_registry_warning = None
     if skip_participants:

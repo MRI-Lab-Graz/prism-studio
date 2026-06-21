@@ -308,6 +308,12 @@ export function createSurveyWorkflowPreviewController({
                 const sessionsLoaded = populateSurveySessionPickerFromDetected(data.detected_sessions);
                 if (sessionsLoaded) {
                     appendLog(`✓ Sessions auto-detected: ${data.detected_sessions.join(', ')}`, 'success');
+                    if (Array.isArray(data.detected_sessions) && data.detected_sessions.length > 1) {
+                        appendLog(
+                            `⚠ This file has ${data.detected_sessions.length} sessions. Each Convert run imports ONE selected session — pick a session above, convert, then repeat for the others (${data.detected_sessions.join(', ')}).`,
+                            'warning'
+                        );
+                    }
                 } else if (data.session_column) {
                     appendLog(`⚠ Session column '${data.session_column}' found but no sessions detected. Enter session manually.`, 'warning');
                 }
