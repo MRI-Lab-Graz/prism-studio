@@ -1620,7 +1620,8 @@ def test_build_terminal_command_for_projects_datalad_save_uses_backend_datalad_c
         session["current_project_path"] = "/tmp/demo_project"
         cmd = _build_terminal_command(request)
 
-    assert cmd == "datalad -C /private/tmp/demo_project save -r -m 'Checkpoint metadata updates'"
+    resolved_root = Path("/tmp/demo_project").expanduser().resolve()
+    assert cmd == f"datalad -C {resolved_root} save -r -m 'Checkpoint metadata updates'"
 
 
 def test_build_terminal_command_for_projects_datalad_enable_repairs_next_missing_dataset():

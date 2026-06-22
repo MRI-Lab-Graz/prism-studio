@@ -16,6 +16,8 @@ def _run_prism_tools(*args: str) -> subprocess.CompletedProcess[str]:
         [sys.executable, str(PRISM_TOOLS_APP), *args],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         cwd=str(PROJECT_ROOT),
         timeout=30,
     )
