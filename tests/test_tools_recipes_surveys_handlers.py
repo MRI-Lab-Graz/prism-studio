@@ -391,7 +391,7 @@ def test_handle_api_recipes_surveys_logs_absolute_formatted_backend_command(
 
     assert response.status_code == 200
     logged_message = emit_action.call_args.args[0]
-    assert f'--prism "{dataset_path.resolve()}"' in logged_message
+    assert f'--prism "{dataset_path.resolve().as_posix()}"' in logged_message
     assert '--repo "' in logged_message
     assert "--format sav" in logged_message
     assert "--layout" not in logged_message

@@ -11,6 +11,13 @@ This module has been refactored to use modular components from src/web/:
 
 import os
 import sys
+
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8")
+    except (AttributeError, ValueError):
+        pass
+
 import time
 import webbrowser
 import threading
