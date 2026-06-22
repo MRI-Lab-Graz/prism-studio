@@ -19,6 +19,23 @@ if app_path not in sys.path:
 from src.project_manager import ProjectManager
 
 
+class _FakePopen:
+    """Minimal stand-in for subprocess.Popen's streaming contract (`.stdout`
+    iterable, `.wait()`, `.returncode`, `.kill()`), used to test the
+    line-streamed `datalad get -r .` content fetch without spawning a real
+    process."""
+
+    def __init__(self, returncode: int = 0, stdout_lines: "list[str] | None" = None):
+        self.returncode = returncode
+        self.stdout = iter(stdout_lines or [])
+
+    def wait(self, timeout=None):
+        return self.returncode
+
+    def kill(self):
+        pass
+
+
 def _registered_nested_path_sequence(*path_sets):
     remaining = [set(paths) for paths in path_sets]
     last_paths = set()
@@ -461,10 +478,12 @@ class TestProjectManager(unittest.TestCase):
     @patch("src.project_manager.ProjectManager._run_datalad_save")
     @patch("src.project_manager.ProjectManager._create_nested_subdatasets")
     @patch("src.project_manager.shutil.which")
+    @patch("src.project_manager.subprocess.Popen")
     @patch("src.project_manager.subprocess.run")
     def test_init_on_existing_bids_installs_openneuro_remote_with_datalad(
         self,
         mock_run,
+        mock_popen,
         mock_which,
         mock_create_nested,
         mock_run_datalad_save,
@@ -508,20 +527,24 @@ class TestProjectManager(unittest.TestCase):
                     )
                     return subprocess.CompletedProcess(command, 0, "", "")
 
+                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
+
+            mock_run.side_effect = _fake_run
+
+            def _fake_popen(command, **_kwargs):
+                normalized = [str(part) for part in command]
                 if normalized == [
                     "/usr/bin/datalad",
                     "-C",
                     str(project_path),
                     "get",
-                    "-n",
                     "-r",
                     ".",
                 ]:
-                    return subprocess.CompletedProcess(command, 0, "", "")
+                    return _FakePopen(returncode=0)
+                raise AssertionError(f"Unexpected Popen command: {normalized}")
 
-                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
-
-            mock_run.side_effect = _fake_run
+            mock_popen.side_effect = _fake_popen
 
             result = manager.init_on_existing_bids(
                 str(project_path),
@@ -545,27 +568,29 @@ class TestProjectManager(unittest.TestCase):
             ],
             commands,
         )
+        popen_commands = [call.args[0] for call in mock_popen.call_args_list]
         self.assertIn(
             [
                 "/usr/bin/datalad",
                 "-C",
                 str(project_path),
                 "get",
-                "-n",
                 "-r",
                 ".",
             ],
-            commands,
+            popen_commands,
         )
         self.assertNotIn(["/usr/bin/datalad", "create", "--force"], commands)
 
     @patch("src.project_manager.ProjectManager._run_datalad_save")
     @patch("src.project_manager.ProjectManager._create_nested_subdatasets")
     @patch("src.project_manager.shutil.which")
+    @patch("src.project_manager.subprocess.Popen")
     @patch("src.project_manager.subprocess.run")
     def test_init_on_existing_bids_merges_into_preexisting_bidsignore(
         self,
         mock_run,
+        mock_popen,
         mock_which,
         mock_create_nested,
         mock_run_datalad_save,
@@ -618,20 +643,24 @@ class TestProjectManager(unittest.TestCase):
                     )
                     return subprocess.CompletedProcess(command, 0, "", "")
 
+                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
+
+            mock_run.side_effect = _fake_run
+
+            def _fake_popen(command, **_kwargs):
+                normalized = [str(part) for part in command]
                 if normalized == [
                     "/usr/bin/datalad",
                     "-C",
                     str(project_path),
                     "get",
-                    "-n",
                     "-r",
                     ".",
                 ]:
-                    return subprocess.CompletedProcess(command, 0, "", "")
+                    return _FakePopen(returncode=0)
+                raise AssertionError(f"Unexpected Popen command: {normalized}")
 
-                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
-
-            mock_run.side_effect = _fake_run
+            mock_popen.side_effect = _fake_popen
 
             result = manager.init_on_existing_bids(
                 str(project_path),
@@ -1260,7 +1289,13 @@ class TestProjectManager(unittest.TestCase):
     ):
         manager = ProjectManager()
         mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
-        mock_run.return_value = Mock(returncode=1, stdout="", stderr="boom")
+
+        def _run_side_effect(command, *args, **kwargs):
+            if "get" in command:
+                return Mock(returncode=0, stdout="", stderr="")
+            return Mock(returncode=1, stdout="", stderr="boom")
+
+        mock_run.side_effect = _run_side_effect
 
         with tempfile.TemporaryDirectory() as tmp:
             project_path = Path(tmp) / "rawdata"
@@ -1322,11 +1357,12 @@ class TestProjectManager(unittest.TestCase):
         )
         self.assertIn(
             [
-                "/usr/bin/datalad",
-                "save",
-                "--updated",
+                "git",
+                "commit",
                 "-m",
                 'PRISM: Converting data into nested PRISM-structure (prepare parent untracking "derivatives")',
+                "--",
+                "derivatives",
             ],
             commands,
         )
@@ -1381,16 +1417,6 @@ class TestProjectManager(unittest.TestCase):
         )
         self.assertIn(
             [
-                "/usr/bin/datalad",
-                "save",
-                "--updated",
-                "-m",
-                'PRISM: Converting data into nested PRISM-structure (prepare parent untracking "sub-020")',
-            ],
-            commands,
-        )
-        self.assertIn(
-            [
                 "git",
                 "commit",
                 "-m",
@@ -1416,7 +1442,7 @@ class TestProjectManager(unittest.TestCase):
         def _run_side_effect(command, **_kwargs):
             if command[:4] == ["git", "rm", "--cached", "-r"]:
                 return Mock(returncode=0, stdout="", stderr="")
-            if command[:3] == ["/usr/bin/datalad", "save", "--updated"]:
+            if command[:2] == ["git", "commit"]:
                 return Mock(returncode=0, stdout="", stderr="")
             if command[:2] == ["/usr/bin/datalad", "create"]:
                 return Mock(returncode=1, stdout="", stderr="collision")
@@ -1553,11 +1579,12 @@ class TestProjectManager(unittest.TestCase):
         commands = [call.args[0] for call in mock_run.call_args_list]
         self.assertIn(
             [
-                "/usr/bin/datalad",
-                "save",
-                "--updated",
+                "git",
+                "commit",
                 "-m",
                 'PRISM: Converting data into nested PRISM-structure (prepare parent untracking "sub-035")',
+                "--",
+                "sub-035",
             ],
             commands,
         )
@@ -1614,10 +1641,16 @@ class TestProjectManager(unittest.TestCase):
     ):
         manager = ProjectManager()
         mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
-        mock_run.side_effect = subprocess.TimeoutExpired(
-            cmd=["git", "rm", "--cached", "-r", "--", "derivatives"],
-            timeout=120,
-        )
+
+        def _run_side_effect(command, *args, **kwargs):
+            if "get" in command:
+                return Mock(returncode=0, stdout="", stderr="")
+            raise subprocess.TimeoutExpired(
+                cmd=["git", "rm", "--cached", "-r", "--", "derivatives"],
+                timeout=120,
+            )
+
+        mock_run.side_effect = _run_side_effect
 
         with tempfile.TemporaryDirectory() as tmp:
             project_path = Path(tmp) / "demo_project"
