@@ -219,7 +219,7 @@ def test_check_sourcedata_physio_accepts_project_json_session_value(tmp_path):
     assert response.status_code == 200
     payload = response.get_json()
     assert payload["exists"] is True
-    assert payload["path"] == str(sourcedata_physio)
+    assert payload["path"] == sourcedata_physio.as_posix()
 
 
 def test_physio_rename_rejects_flat_copy_into_prism_root(tmp_path):

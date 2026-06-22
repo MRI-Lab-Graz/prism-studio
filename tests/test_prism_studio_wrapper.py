@@ -37,6 +37,8 @@ def test_prism_studio_wrapper_help_skips_repo_venv_bootstrap_when_requested() ->
             [sys.executable, str(PRISM_STUDIO_WRAPPER), "--help", "--no-browser"],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             cwd=str(PROJECT_ROOT),
             timeout=30,
             env=env,

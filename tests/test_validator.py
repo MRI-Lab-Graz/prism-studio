@@ -24,6 +24,8 @@ def run_validator(dataset_path, verbose=False):
             cmd,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             cwd=os.path.dirname(os.path.abspath(__file__)),
         )
         return result.returncode, result.stdout, result.stderr
