@@ -78,6 +78,8 @@ example_*_metadata.json
 /build/
 dist/
 *.spec
+!/PrismStudio.spec
+!/PrismValidator.spec
 *_version.txt
 PrismValidator.iconset/
 PrismValidator.icns
@@ -101,8 +103,12 @@ recipes/
 derivatives/
 !src/derivatives/
 !src/derivatives/**
+!app/src/derivatives/
+!app/src/derivatives/**
 src/derivatives/**/__pycache__/
 src/derivatives/**/*.pyc
+app/src/derivatives/**/__pycache__/
+app/src/derivatives/**/*.pyc
 
 # Workshop exceptions (must be after global ignores)
 !demo/workshop/library/
