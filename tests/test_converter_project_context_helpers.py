@@ -516,5 +516,5 @@ def test_check_sourcedata_physio_prefers_explicit_project_path(tmp_path):
     assert response.status_code == 200
     payload = response.get_json()
     assert payload["exists"] is True
-    assert payload["path"] == str(other_physio)
+    assert payload["path"] == other_physio.as_posix()
     assert "1 files" in payload["message"]

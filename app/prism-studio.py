@@ -18,6 +18,23 @@ for _stream in (sys.stdout, sys.stderr):
     except (AttributeError, ValueError):
         pass
 
+
+def _safe_print(message: str) -> None:
+    """print() that can't crash shutdown/atexit paths on a non-UTF-8 stdout.
+
+    Module-loading test harnesses (and some embedded/frozen consoles) can
+    leave ``sys.stdout`` on a narrow codec like cp1252 even after the
+    reconfigure above, e.g. when something re-imports this module after
+    swapping stdout out from under it. Losing the cleanup/exit path to a
+    UnicodeEncodeError is worse than dropping a glyph.
+    """
+    try:
+        print(message)
+    except UnicodeEncodeError:
+        encoding = getattr(sys.stdout, "encoding", None) or "ascii"
+        print(message.encode(encoding, errors="replace").decode(encoding))
+
+
 import time
 import webbrowser
 import threading
@@ -426,7 +443,7 @@ _shutdown_project_manager = ProjectManager()
 def cleanup_and_exit(exit_code=0):
     """Cleanup resources and exit the entire process (not just Flask)."""
     try:
-        print("🛑 Cleaning up resources...")
+        _safe_print("🛑 Cleaning up resources...")
         active_project_root = get_active_project_session_root()
         if active_project_root is not None:
             autosave_result = _shutdown_project_manager.autosave_datalad_snapshot(
@@ -449,7 +466,7 @@ def cleanup_and_exit(exit_code=0):
         # Force exit the entire Python process
         # This is necessary for the compiled exe and Waitress server to fully terminate
         # os._exit() immediately terminates all threads and child processes
-        print("🛑 Force exiting process...")
+        _safe_print("🛑 Force exiting process...")
         os._exit(exit_code)
 
 
@@ -1128,7 +1145,7 @@ def shutdown():
         time.sleep(0.3)
 
         try:
-            print("🛑 Shutdown request received, terminating application...")
+            _safe_print("🛑 Shutdown request received, terminating application...")
 
             # Try Werkzeug shutdown first (works in Flask dev server)
             func = request.environ.get("werkzeug.server.shutdown")
