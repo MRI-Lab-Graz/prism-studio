@@ -1566,6 +1566,6 @@ def build_defacing_report(
             ):
                 continue
             result = is_anatomical_defaced(json_file)
-            result["file"] = str(json_file.relative_to(project_path))
+            result["file"] = json_file.relative_to(project_path).as_posix()
             report.append(result)
     return report

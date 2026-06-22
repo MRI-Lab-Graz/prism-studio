@@ -206,7 +206,7 @@ def _find_templates(
 
             try:
                 rel = json_file.relative_to(dataset_root)
-                display = str(rel)
+                display = rel.as_posix()
             except ValueError:
                 display = json_file.name
 

@@ -10,6 +10,12 @@ import sys
 import json
 import argparse
 
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8")
+    except (AttributeError, ValueError):
+        pass
+
 
 def _is_help_mode(argv: list[str]) -> bool:
     """Allow running without venv when only asking for help/version."""

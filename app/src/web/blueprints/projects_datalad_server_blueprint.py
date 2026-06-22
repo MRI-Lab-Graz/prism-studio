@@ -178,7 +178,7 @@ def _start_ria_job(kind: str, runner) -> tuple:
     try:
         data = request.get_json() or {}
         project_path_raw = data.get("project_path")
-        resolved = _resolve_project_root_path(project_path_raw)
+        resolved = _resolve_project_root_path(str(project_path_raw or ""))
         if resolved is None:
             return jsonify({"error": "Invalid project path"}), 400
 

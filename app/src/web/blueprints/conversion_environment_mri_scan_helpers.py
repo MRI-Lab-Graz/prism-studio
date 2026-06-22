@@ -18,6 +18,9 @@ from typing import Any
 
 import pandas as pd
 
+from src.cross_platform import normalize_path
+from src.system_files import should_validate_file
+
 # Same tag set already treated as privacy-sensitive in src/mri_json_scrubber.py,
 # checked in priority order (most precise first).
 _TIMESTAMP_DATETIME_TAGS = ("AcquisitionDateTime",)
@@ -36,6 +39,11 @@ _SES_RE = re.compile(r"ses-([^_/\\]+)")
 # instead of "12:18:02.12"), which datetime.fromisoformat rejects outright.
 _TIME_SECONDS_RE = re.compile(r"(\d{2}:\d{2}):(\d)([.:]|$)")
 
+# Python 3.10's datetime.fromisoformat only accepts fractional seconds that
+# are exactly 3 or 6 digits long (3.11+ relaxed this); pad/truncate so
+# shorter fractions like ".5" or ".12" don't get rejected.
+_FRACTION_RE = re.compile(r"\.(\d{1,6})")
+
 # Enhanced multi-frame DICOM sidecars (heudiconv "dcmmeta" output) can have
 # AcquisitionDate/SeriesDate/etc. scrubbed at the top level while still
 # carrying the full DICOM DT-format timestamp ("YYYYMMDDHHMMSS.ffffff") inside
@@ -45,7 +53,8 @@ _DICOM_DT_RE = re.compile(r"^(\d{14})(?:\.(\d+))?$")
 
 
 def _pad_seconds(dt_str: str) -> str:
-    return _TIME_SECONDS_RE.sub(r"\g<1>:0\2\3", dt_str)
+    padded = _TIME_SECONDS_RE.sub(r"\g<1>:0\2\3", dt_str)
+    return _FRACTION_RE.sub(lambda m: "." + m.group(1).ljust(6, "0"), padded)
 
 
 def _parse_iso(dt_str: str) -> datetime | None:
@@ -151,6 +160,15 @@ def _subject_session_from_path(json_path: Path, rawdata_root: Path) -> tuple[str
     return subject, session
 
 
+def _discover_sidecar_json_paths(rawdata_root: Path) -> list[Path]:
+    """Glob modality JSON sidecars, skipping OS artifacts (e.g. macOS
+    AppleDouble ``._*.json`` shadow files) that would otherwise match."""
+    json_paths = sorted(rawdata_root.glob("sub-*/ses-*/*/*.json")) + sorted(
+        rawdata_root.glob("sub-*/*/*.json")
+    )
+    return [p for p in json_paths if should_validate_file(str(p))]
+
+
 def discover_mri_acquisition_rows(rawdata_root: Path) -> list[dict[str, Any]]:
     """Scan rawdata for one row per (subject, session) with the earliest
     acquisition timestamp and first institution/site tag found among that
@@ -159,9 +177,7 @@ def discover_mri_acquisition_rows(rawdata_root: Path) -> list[dict[str, Any]]:
     if not rawdata_root.exists() or not rawdata_root.is_dir():
         return []
 
-    json_paths = sorted(rawdata_root.glob("sub-*/ses-*/*/*.json")) + sorted(
-        rawdata_root.glob("sub-*/*/*.json")
-    )
+    json_paths = _discover_sidecar_json_paths(rawdata_root)
 
     groups: dict[tuple[str, str], dict[str, Any]] = {}
 
@@ -190,13 +206,13 @@ def discover_mri_acquisition_rows(rawdata_root: Path) -> list[dict[str, Any]]:
                 "session_id": session,
                 "timestamp": dt,
                 "location": location,
-                "filename": json_path.relative_to(rawdata_root).as_posix(),
+                "filename": normalize_path(json_path.relative_to(rawdata_root)),
             }
             continue
 
         if dt is not None and (existing["timestamp"] is None or dt < existing["timestamp"]):
             existing["timestamp"] = dt
-            existing["filename"] = json_path.relative_to(rawdata_root).as_posix()
+            existing["filename"] = normalize_path(json_path.relative_to(rawdata_root))
         if not existing["location"] and location:
             existing["location"] = location
 
@@ -236,9 +252,7 @@ def resolve_bids_rawdata_root(project_root: Path) -> Path:
 
 def build_mri_acquisition_table(rawdata_root: Path) -> tuple[pd.DataFrame, dict[str, Any]]:
     """Build a tabular dataframe of MRI-derived environment rows plus scan stats."""
-    json_paths = sorted(rawdata_root.glob("sub-*/ses-*/*/*.json")) + sorted(
-        rawdata_root.glob("sub-*/*/*.json")
-    )
+    json_paths = _discover_sidecar_json_paths(rawdata_root)
     subjects_found = sorted(
         {subject for subject, _ in (
             _subject_session_from_path(p, rawdata_root) for p in json_paths

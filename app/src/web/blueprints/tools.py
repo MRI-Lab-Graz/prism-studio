@@ -992,7 +992,7 @@ def api_file_management_wide_to_long():
     except Exception as exc:
         return jsonify({"error": f"Could not save file: {exc}"}), 500
 
-    saved_to = str(dest_path.relative_to(project_root))
+    saved_to = dest_path.relative_to(project_root).as_posix()
     return jsonify({"saved_to": saved_to, "filename": output_name})
 
 
@@ -1013,6 +1013,12 @@ def _run_subject_rewrite_job(
     keep_fragment: str | None,
     allow_many_to_one: bool,
 ) -> None:
+    def _report_subject_progress(done: int, total: int) -> None:
+        _rewrite_job_store.update(
+            job_id,
+            progress_pct=round(100 * done / total) if total else 100,
+        )
+
     try:
         payload = apply_subject_rewrite_with_datalad(
             Path(project_root),
@@ -1023,10 +1029,7 @@ def _run_subject_rewrite_job(
             on_log=lambda message, level: _rewrite_job_store.append_log(
                 job_id, message, level
             ),
-            on_subject_progress=lambda done, total: _rewrite_job_store.update(
-                job_id,
-                progress_pct=round(100 * done / total) if total else 100,
-            ),
+            on_subject_progress=_report_subject_progress,
             is_cancelled=lambda: _rewrite_job_store.is_cancelled(job_id),
         )
         _rewrite_job_store.success(job_id, payload)
@@ -1052,6 +1055,12 @@ def _run_entity_rewrite_job(
     current_value: str | None,
     replacement: str | None,
 ) -> None:
+    def _report_subject_progress(done: int, total: int) -> None:
+        _rewrite_job_store.update(
+            job_id,
+            progress_pct=round(100 * done / total) if total else 100,
+        )
+
     try:
         payload = apply_entity_rewrite_with_datalad(
             Path(project_root),
@@ -1063,10 +1072,7 @@ def _run_entity_rewrite_job(
             on_log=lambda message, level: _rewrite_job_store.append_log(
                 job_id, message, level
             ),
-            on_subject_progress=lambda done, total: _rewrite_job_store.update(
-                job_id,
-                progress_pct=round(100 * done / total) if total else 100,
-            ),
+            on_subject_progress=_report_subject_progress,
             is_cancelled=lambda: _rewrite_job_store.is_cancelled(job_id),
         )
         _rewrite_job_store.success(job_id, payload)

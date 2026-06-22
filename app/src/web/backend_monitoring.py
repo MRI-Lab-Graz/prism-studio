@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shlex
 import sys
 import time
@@ -93,6 +94,23 @@ _ENDPOINT_LABELS = {
     "conversion_participants.api_participants_merge": "participants merge",
     "conversion_participants.api_participants_merge_conflicts": "participants merge conflicts",
 }
+
+
+_SHELL_DISPLAY_UNSAFE = re.compile(r"[^\w@%+=:,./\\-]", re.ASCII)
+
+
+def _quote(part: str) -> str:
+    """Quote a command-display argument for human-readable terminal output.
+
+    Behaves like ``shlex.quote`` except backslashes are treated as safe so
+    Windows-style paths (``C:\\Users\\...``) aren't needlessly wrapped in
+    quotes just because of their path separator.
+    """
+    if not part:
+        return "''"
+    if _SHELL_DISPLAY_UNSAFE.search(part) is None:
+        return part
+    return "'" + part.replace("'", "'\"'\"'") + "'"
 
 
 def _coerce_template_version_value(raw_value: object) -> str:
@@ -336,7 +354,7 @@ def _build_validate_folder_terminal_command(req) -> str:
     if library_path:
         cmd_parts.extend(["--library", library_path])
 
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_projects_set_current_terminal_command(req) -> str:
@@ -350,7 +368,7 @@ def _build_projects_set_current_terminal_command(req) -> str:
 
     if not project_path:
         return " ".join(
-            shlex.quote(part)
+            _quote(part)
             for part in [
                 "curl",
                 "-X",
@@ -364,7 +382,7 @@ def _build_projects_set_current_terminal_command(req) -> str:
         )
 
     return " ".join(
-        shlex.quote(part)
+        _quote(part)
         for part in [
             "curl",
             "-X",
@@ -389,7 +407,7 @@ def _build_projects_export_structure_terminal_command(req) -> str:
     body = {"project_path": project_path or "<project-path>"}
 
     return " ".join(
-        shlex.quote(part)
+        _quote(part)
         for part in [
             "curl",
             "-X",
@@ -460,7 +478,7 @@ def _build_projects_folder_export_terminal_command(req) -> str:
                 ["--exclude-modalities", ",".join(normalized_modalities)]
             )
 
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_projects_defacing_terminal_command(req, *, run_defacing: bool) -> str:
@@ -488,7 +506,7 @@ def _build_projects_defacing_terminal_command(req, *, run_defacing: bool) -> str
     if normalized_variants:
         cmd_parts.extend(["--selected-variants", ",".join(normalized_variants)])
 
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_projects_datalad_save_terminal_command(req) -> str:
@@ -503,7 +521,7 @@ def _build_projects_datalad_save_terminal_command(req) -> str:
 
     message = str(payload.get("message") or "").strip() or "Save PRISM project changes"
     cmd_parts = ["datalad", "-C", str(project_root), "save", "-r", "-m", message]
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_projects_datalad_enable_terminal_command(req) -> str:
@@ -511,7 +529,7 @@ def _build_projects_datalad_enable_terminal_command(req) -> str:
     def _render_shell_segments(segments: list[list[str]]) -> str:
         rendered_segments = []
         for segment in segments:
-            rendered_segments.append(" ".join(shlex.quote(part) for part in segment))
+            rendered_segments.append(" ".join(_quote(part) for part in segment))
         return " && ".join(rendered_segments)
 
     payload = req.get_json(silent=True) or {}
@@ -641,7 +659,7 @@ def _build_tools_recipes_surveys_terminal_command(req) -> str:
     if not bool(payload.get("include_recipe_prefix", True)):
         cmd_parts.append("--no-recipe-prefix")
 
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_projects_template_export_terminal_command(req) -> str:
@@ -662,7 +680,7 @@ def _build_projects_template_export_terminal_command(req) -> str:
 
     endpoint_url = _get_request_url(req, "/api/projects/template-export")
     return " ".join(
-        shlex.quote(part)
+        _quote(part)
         for part in [
             "curl",
             "-X",
@@ -793,7 +811,7 @@ def _build_survey_convert_terminal_command(req, *, dry_run: bool = False) -> str
         cmd_parts.append("--dry-run")
 
     cmd_parts.append("--force")
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_detect_columns_terminal_command(req) -> str:
@@ -824,7 +842,7 @@ def _build_detect_columns_terminal_command(req) -> str:
         "--dry-run",
         "--force",
     ]
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_wide_to_long_terminal_command(req, *, inspect_only: bool) -> str:
@@ -863,7 +881,7 @@ def _build_wide_to_long_terminal_command(req, *, inspect_only: bool) -> str:
     else:
         cmd_parts.extend(["--output", "<output-file>"])
 
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_file_management_delete_terminal_command(req) -> str:
@@ -909,7 +927,7 @@ def _build_file_management_delete_terminal_command(req) -> str:
     else:
         cmd_parts.append("--preview")
 
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_file_management_entity_rewrite_terminal_command(req, *, start_async: bool = False) -> str:
@@ -952,7 +970,7 @@ def _build_file_management_entity_rewrite_terminal_command(req, *, start_async: 
     else:
         cmd_parts.append("--preview")
 
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_file_management_subject_rewrite_terminal_command(req, *, start_async: bool = False) -> str:
@@ -993,7 +1011,7 @@ def _build_file_management_subject_rewrite_terminal_command(req, *, start_async:
     else:
         cmd_parts.append("--preview")
 
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_survey_check_templates_terminal_command(req) -> str:
@@ -1037,7 +1055,7 @@ def _build_survey_check_templates_terminal_command(req) -> str:
     if sheet:
         cmd_parts.extend(["--sheet", sheet])
 
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _get_request_url(req, fallback_path: str) -> str:
@@ -1106,7 +1124,7 @@ def _build_biometrics_detect_terminal_command(req) -> str:
     if sheet and sheet != "0":
         cmd_parts.extend(["--sheet", sheet])
 
-    return " ".join(shlex.quote(p) for p in cmd_parts)
+    return " ".join(_quote(p) for p in cmd_parts)
 
 
 def _build_biometrics_convert_terminal_command(req) -> str:
@@ -1167,7 +1185,7 @@ def _build_biometrics_convert_terminal_command(req) -> str:
     if dataset_name:
         cmd_parts.extend(["--name", dataset_name])
 
-    return " ".join(shlex.quote(p) for p in cmd_parts)
+    return " ".join(_quote(p) for p in cmd_parts)
 
 
 def _build_physio_convert_terminal_command(req) -> str:
@@ -1200,7 +1218,7 @@ def _build_physio_convert_terminal_command(req) -> str:
     if sampling_rate:
         cmd_parts.extend(["--sampling-rate", sampling_rate])
 
-    return " ".join(shlex.quote(p) for p in cmd_parts)
+    return " ".join(_quote(p) for p in cmd_parts)
 
 
 def _build_batch_convert_terminal_command(req, *, start_async: bool) -> str:
@@ -1243,7 +1261,7 @@ def _build_batch_convert_terminal_command(req, *, start_async: bool) -> str:
         if _truthy_form_value(form.get("dry_run")):
             cmd_parts.append("--dry-run")
 
-        return " ".join(shlex.quote(p) for p in cmd_parts)
+        return " ".join(_quote(p) for p in cmd_parts)
 
     # Fallback to curl when only uploaded files are available (no local path).
     endpoint_url = _get_request_url(
@@ -1268,7 +1286,7 @@ def _build_batch_convert_terminal_command(req, *, start_async: bool) -> str:
     ):
         _append_curl_form_field(cmd_parts, key, form.get(key))
 
-    return " ".join(shlex.quote(p) for p in cmd_parts)
+    return " ".join(_quote(p) for p in cmd_parts)
 
 
 def _build_physio_rename_terminal_command(req) -> str:
@@ -1308,7 +1326,7 @@ def _build_physio_rename_terminal_command(req) -> str:
         filename = str(getattr(uploaded, "filename", "") or "").strip()
         _append_curl_form_file(cmd_parts, "files", filename)
 
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_save_participant_mapping_terminal_command(req) -> str:
@@ -1336,7 +1354,7 @@ def _build_save_participant_mapping_terminal_command(req) -> str:
     else:
         cmd_parts.extend(["--project", "<project-path>"])
     cmd_parts.append("--json")
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_participants_preview_terminal_command(req) -> str:
@@ -1397,7 +1415,7 @@ def _build_participants_preview_terminal_command(req) -> str:
             cmd_parts.append("--no-extract-from-biometrics")
         cmd_parts.append("--json")
 
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_participants_detect_id_terminal_command(req) -> str:
@@ -1431,7 +1449,7 @@ def _build_participants_detect_id_terminal_command(req) -> str:
         cmd_parts.extend(["--separator", separator])
 
     cmd_parts.append("--json")
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_participants_convert_terminal_command(req) -> str:
@@ -1536,7 +1554,7 @@ def _build_participants_convert_terminal_command(req) -> str:
     if mode in {"file", "dataset"}:
         cmd_parts.append("--json")
 
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_participants_merge_terminal_command(
@@ -1600,7 +1618,7 @@ def _build_participants_merge_terminal_command(
 
     if not conflicts_csv:
         cmd_parts.append("--json")
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_environment_preview_terminal_command(req) -> str:
@@ -1634,7 +1652,7 @@ def _build_environment_preview_terminal_command(req) -> str:
         separator,
         "--json",
     ]
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_environment_scan_mri_terminal_command(req, *, rescan: bool = False) -> str:
@@ -1654,7 +1672,7 @@ def _build_environment_scan_mri_terminal_command(req, *, rescan: bool = False) -
         "--project",
         project_path,
     ]
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_environment_convert_terminal_command(req) -> str:
@@ -1714,7 +1732,7 @@ def _build_environment_convert_terminal_command(req) -> str:
         cmd_parts.append("--pilot-random-subject")
 
     cmd_parts.append("--json")
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _build_terminal_command(req) -> str:
@@ -1829,7 +1847,7 @@ def _build_generic_request_terminal_command(req) -> str:
     payload = req.get_json(silent=True)
     if isinstance(payload, dict) and payload:
         cmd_parts.extend(["-H", "Content-Type: application/json", "-d", json.dumps(payload)])
-        return " ".join(shlex.quote(part) for part in cmd_parts)
+        return " ".join(_quote(part) for part in cmd_parts)
 
     if getattr(req, "form", None):
         for key in sorted(req.form.keys()):
@@ -1844,7 +1862,7 @@ def _build_generic_request_terminal_command(req) -> str:
                 filename = str(getattr(upload, "filename", "") or "").strip()
                 _append_curl_form_file(cmd_parts, key, filename)
 
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(_quote(part) for part in cmd_parts)
 
 
 def _get_backend_monitoring_state(app_root: str) -> tuple[bool, bool]:

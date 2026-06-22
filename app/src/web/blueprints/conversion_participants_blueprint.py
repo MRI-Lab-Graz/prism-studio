@@ -2313,7 +2313,7 @@ def api_participants_convert():
 
                 import json as json_module
 
-                participants_json_data = {str(col): {} for col in df.columns}
+                participants_json_data: dict[str, Any] = {str(col): {} for col in df.columns}
 
                 if neurobagel_schema:
                     try:
@@ -2684,7 +2684,7 @@ def _run_participants_convert_job(job_id: str, config: dict[str, Any]) -> None:
                 df.to_csv(participants_tsv, sep="\t", index=False)
                 log_msg("INFO", f"✓ Created {participants_tsv.name}")
 
-                participants_json_data = {str(col): {} for col in df.columns}
+                participants_json_data: dict[str, Any] = {str(col): {} for col in df.columns}
 
                 if neurobagel_schema:
                     try:

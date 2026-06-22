@@ -481,7 +481,7 @@ def api_biometrics_convert():
                 )
 
         # Run validation if requested
-        validation = None
+        validation: dict[str, Any] | None = None
         if request.form.get("validate") == "true":
             log_msg("Running PRISM validation on generated dataset...", "step")
             validation = {"errors": [], "warnings": [], "summary": {}}
@@ -925,7 +925,7 @@ def _run_biometrics_convert_job(job_id: str, config: dict[str, Any]) -> None:
                 )
 
         # Run validation if requested
-        validation = None
+        validation: dict[str, Any] | None = None
         if config["validate"]:
             log_msg("Running PRISM validation on generated dataset...", "step")
             validation = {"errors": [], "warnings": [], "summary": {}}
