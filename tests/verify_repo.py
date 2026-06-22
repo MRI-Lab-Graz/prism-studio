@@ -792,7 +792,7 @@ def check_unsafe_patterns(repo_path, fix=False):
                                         continue
 
                                 print_warning(
-                                    f"Potential unsafe pattern in {file_path.relative_to(repo_path)}:{i}"
+                                    f"Potential unsafe pattern in {rel_file}:{i}"
                                 )
                                 print(f"  Pattern: {pattern} ({reason})")
                                 print(f"  Line: {line.strip()}")

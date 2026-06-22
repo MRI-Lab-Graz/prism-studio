@@ -1127,7 +1127,7 @@ def test_export_clean_nifti_gzip_headers_handles_nested_and_derivative_paths(tmp
 
     with zipfile.ZipFile(output_zip, "r") as archive:
         for source_path, expected_payload in nested_sources.items():
-            arcname = str(source_path.relative_to(project_dir))
+            arcname = source_path.relative_to(project_dir).as_posix()
             exported_nifti = archive.read(arcname)
 
             assert int.from_bytes(exported_nifti[4:8], "little") == 0

@@ -321,7 +321,10 @@ class BidsEntityRewriter:
                 if not rewritten_name:
                     continue
                 new_path = file_path.with_name(rewritten_name)
-                if new_path != file_path:
+                # Compare names as strings, not Path objects: WindowsPath
+                # equality is case-insensitive, which would silently drop
+                # pure case-change renames (task-SST -> task-sst).
+                if rewritten_name != file_path.name:
                     file_ops.append(_RenameOperation(old_path=file_path, new_path=new_path))
 
         replacements = self._build_text_replacements(file_ops)

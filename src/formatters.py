@@ -92,11 +92,14 @@ def to_sarif(
 
         # Add location if file_path is available
         if issue.file_path:
-            rel_path = (
-                os.path.relpath(issue.file_path, dataset_path)
-                if os.path.isabs(issue.file_path)
-                else issue.file_path
-            )
+            if os.path.isabs(issue.file_path):
+                try:
+                    rel_path = os.path.relpath(issue.file_path, dataset_path)
+                except ValueError:
+                    # Paths on different drives (Windows) can't be made relative.
+                    rel_path = issue.file_path
+            else:
+                rel_path = issue.file_path
             result["locations"] = [
                 {
                     "physicalLocation": {

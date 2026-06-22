@@ -495,7 +495,7 @@ def handle_api_survey_convert_validate(
             conversion_warnings.extend(convert_result.conversion_warnings)
 
         add_log("Running validation...", "info")
-        validation_result = {"errors": [], "warnings": [], "summary": {}}
+        validation_result: dict[str, Any] = {"errors": [], "warnings": [], "summary": {}}
         if request.form.get("validate") == "true":
             try:
                 validation_library_root = resolve_validation_library_path(
@@ -1477,7 +1477,7 @@ def _run_survey_convert_validate_job(
             conversion_warnings.extend(convert_result.conversion_warnings)
 
         add_log("Running validation...", "info")
-        validation_result = {"errors": [], "warnings": [], "summary": {}}
+        validation_result: dict[str, Any] = {"errors": [], "warnings": [], "summary": {}}
         if config["validate_requested"]:
             try:
                 validation_library_root = resolve_validation_library_path(
@@ -1720,7 +1720,7 @@ def _run_survey_convert_validate_job(
         else:
             copied_output_paths = []
 
-        response_payload = {
+        response_payload: dict[str, Any] = {
             "success": True,
             "validation": validation_result,
             "project_saved": bool(copied_output_paths),

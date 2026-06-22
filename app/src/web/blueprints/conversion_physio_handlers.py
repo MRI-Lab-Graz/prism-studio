@@ -582,7 +582,7 @@ def check_sourcedata_physio():
             jsonify(
                 {
                     "exists": exists,
-                    "path": str(sourcedata_physio) if exists else None,
+                    "path": sourcedata_physio.as_posix() if exists else None,
                     "message": (
                         f"Found sourcedata/physio folder with {file_count} files"
                         if exists

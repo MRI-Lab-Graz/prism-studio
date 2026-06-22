@@ -234,11 +234,11 @@ def shorten_path(file_path: str, max_parts: int = 3) -> str:
     if not file_path:
         return "General"
 
-    parts = file_path.replace("\\", os.sep).split(os.sep)
+    parts = file_path.replace("\\", "/").split("/")
     if len(parts) <= max_parts:
-        return os.sep.join(parts)
+        return "/".join(parts)
 
-    return "..." + os.sep + os.sep.join(parts[-max_parts:])
+    return ".../" + "/".join(parts[-max_parts:])
 
 
 def get_filename_from_path(file_path: str) -> str:
