@@ -1291,7 +1291,7 @@ class TestProjectManager(unittest.TestCase):
         mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
 
         def _run_side_effect(command, *args, **kwargs):
-            if "get" in command:
+            if "get" in command or "unlock" in command:
                 return Mock(returncode=0, stdout="", stderr="")
             return Mock(returncode=1, stdout="", stderr="boom")
 
