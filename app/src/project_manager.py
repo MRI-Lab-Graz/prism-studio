@@ -730,32 +730,42 @@ class ProjectManager:
             }
 
         if clone_method == "datalad_install":
-            resolve_nested_step_label = "DataLad nested dataset structure sync"
+            # Fetch every file's real content now, recursively, right after
+            # install - not just `-n` (presence-only/no-data). Every later
+            # step (nested-structure conversion, subject/entity rewrites)
+            # assumes the data it's about to move/rename is actually here;
+            # deferring the real fetch to those later steps is what let
+            # subjects' content get silently orphaned (no local copy, no
+            # known remote) when a subject's data hadn't been fetched yet
+            # by the time its directory was torn down and recreated.
+            resolve_nested_step_label = "DataLad recursive content fetch"
             resolve_nested_command = [
                 datalad_executable_text,
                 "-C",
                 str(destination_path),
                 "get",
-                "-n",
                 "-r",
                 ".",
             ]
+            self._emit_backend_progress(
+                "Downloading all dataset content recursively (this can take "
+                "a while for large datasets)...",
+                command=" ".join(resolve_nested_command),
+            )
             try:
-                resolve_nested_process = subprocess.run(
+                # A full recursive content fetch on a real dataset can run
+                # for many minutes; `capture_output=True` would buffer all
+                # of that silently and only reveal it once the whole thing
+                # finishes, leaving the UI/terminal looking dead the entire
+                # time. Stream it line-by-line instead so progress is
+                # actually visible while it runs.
+                resolve_nested_pipe = subprocess.Popen(
                     resolve_nested_command,
-                    capture_output=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
                     text=True,
-                    check=False,
-                    timeout=REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS,
+                    bufsize=1,
                 )
-            except subprocess.TimeoutExpired:
-                return {
-                    "success": False,
-                    "error": (
-                        f"{resolve_nested_step_label} timed out after "
-                        f"{REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS} seconds."
-                    ),
-                }
             except Exception as exc:
                 return {
                     "success": False,
@@ -765,25 +775,46 @@ class ProjectManager:
                     ),
                 }
 
-            if resolve_nested_process.returncode != 0:
-                detail = (
-                    resolve_nested_process.stderr
-                    or resolve_nested_process.stdout
-                    or f"Unknown {resolve_nested_step_label} error."
-                ).strip()
+            resolve_nested_output_lines: List[str] = []
+            try:
+                assert resolve_nested_pipe.stdout is not None
+                for line in resolve_nested_pipe.stdout:
+                    resolve_nested_output_lines.append(line)
+                    stripped_line = line.rstrip()
+                    if stripped_line:
+                        self._emit_backend_progress(stripped_line)
+                resolve_nested_pipe.wait(timeout=REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS)
+            except subprocess.TimeoutExpired:
+                resolve_nested_pipe.kill()
                 return {
                     "success": False,
                     "error": (
-                        f"{resolve_nested_step_label} failed: "
-                        f"{self._summarize_datalad_error(detail)}"
+                        f"{resolve_nested_step_label} timed out after "
+                        f"{REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS} seconds."
                     ),
                 }
+
+            content_fetch_warning = ""
+            if resolve_nested_pipe.returncode != 0:
+                # Some files being genuinely unfetchable from the remote
+                # (e.g. a real upstream data gap) shouldn't fail the whole
+                # install - report it but keep whatever content DID
+                # download.
+                detail = "".join(resolve_nested_output_lines).strip() or (
+                    f"Unknown {resolve_nested_step_label} error."
+                )
+                content_fetch_warning = (
+                    f"{resolve_nested_step_label} could not fetch all content: "
+                    f"{self._summarize_datalad_error(detail)}"
+                )
 
         if clone_method == "datalad_install":
             message = (
                 f'Installed OpenNeuro/DataLad dataset from "{normalized_remote_url}" '
-                "and resolved nested dataset structure locally."
+                "and fetched its content locally."
             )
+            if content_fetch_warning:
+                message = f"{message} Warning: {content_fetch_warning}"
         else:
             message = f'Cloned remote dataset from "{normalized_remote_url}".'
 
@@ -3243,6 +3274,19 @@ class ProjectManager:
         ]
         remaining_budget = max_to_create if max_to_create is not None else None
 
+        convertible_paths = [
+            dataset_path
+            for dataset_path in missing_dataset_paths
+            if not self._is_datalad_dataset(dataset_path)
+        ]
+        if remaining_budget is not None:
+            convertible_paths = convertible_paths[:remaining_budget]
+        self._prefetch_nested_dataset_content_in_parallel(
+            project_path,
+            convertible_paths,
+            datalad_executable,
+        )
+
         for dataset_path in nested_dataset_paths:
             relative_dataset_path = dataset_path.relative_to(project_path)
             relative_dataset_text = relative_dataset_path.as_posix()
@@ -3263,6 +3307,17 @@ class ProjectManager:
 
             if remaining_budget is not None and remaining_budget <= 0:
                 skipped_paths.append(relative_dataset_text)
+                continue
+
+            fetch_result = self._ensure_nested_dataset_content_fetched(
+                project_path,
+                dataset_path,
+                datalad_executable,
+            )
+            if not fetch_result.get("success"):
+                failed_paths.append(
+                    f"{relative_dataset_text} ({fetch_result.get('message') or 'Could not fetch content before nested conversion.'})"
+                )
                 continue
 
             if self._parent_tracks_nested_dataset_path(
@@ -3480,6 +3535,98 @@ class ProjectManager:
             )
         )
         return relative_dataset_text in resolved_registered_paths
+
+    def _prefetch_nested_dataset_content_in_parallel(
+        self,
+        project_path: Path,
+        dataset_paths: List[Path],
+        datalad_executable: str,
+    ) -> None:
+        """Best-effort warm-up: fetch every subject about to be converted in
+        one `datalad get` call instead of the per-subject loop fetching one
+        subject at a time, sequentially, over and over.
+
+        Plain sequential fetch (no `-J`/parallel-jobs) - the dataset's
+        content should already be local from the recursive `datalad get -r .`
+        run right after install (see `_acquire_remote_bids_dataset`); this is
+        just a cheap, single-call confirmation rather than the thing actually
+        responsible for getting the data. Each subject still gets its own
+        authoritative fetch-and-verify via `_ensure_nested_dataset_content_fetched`
+        in the main loop below, so any failure here is still caught and
+        reported per-subject exactly as before.
+        """
+        if not dataset_paths or not self._is_datalad_dataset(project_path):
+            return
+
+        from src.datalad_execution import run_datalad_get_paths
+
+        relative_paths = [
+            dataset_path.relative_to(project_path).as_posix()
+            for dataset_path in dataset_paths
+        ]
+        self._emit_backend_progress(
+            f"Confirming content for {len(relative_paths)} subject(s) is "
+            "downloaded before converting them into nested DataLad datasets.",
+            command=f"{datalad_executable} get -r " + " ".join(relative_paths),
+        )
+        run_datalad_get_paths(
+            project_path,
+            paths=relative_paths,
+            datalad_executable=datalad_executable,
+            recursive=True,
+            no_data=False,
+            timeout_seconds=REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS,
+        )
+
+    def _ensure_nested_dataset_content_fetched(
+        self,
+        project_path: Path,
+        dataset_path: Path,
+        datalad_executable: str,
+    ) -> Dict[str, Any]:
+        """Fetch a subject directory's actual annexed content while it's
+        still part of the parent dataset, before converting it into its own
+        nested DataLad subdataset.
+
+        Conversion stages the directory aside and recreates it as a brand
+        new, empty `datalad create` dataset, then moves the files back in.
+        That severs the link to the parent's git-annex object store and any
+        registered remote (e.g. an OpenNeuro S3 bucket) entirely. Any
+        annexed file whose content wasn't already downloaded at that point
+        becomes permanently orphaned - not present locally and not known to
+        any remote - because the new dataset never learns where to find it.
+        Refusing to convert until the real content is present (rather than
+        racing to fetch it after the dataset has already been torn down)
+        avoids creating that orphaned state.
+        """
+        relative_dataset_text = dataset_path.relative_to(project_path).as_posix()
+        if not self._is_datalad_dataset(project_path):
+            return {"success": True, "message": "Parent is not a DataLad dataset."}
+
+        from src.datalad_execution import run_datalad_get_paths
+
+        self._emit_backend_progress(
+            f'Ensuring all content under "{relative_dataset_text}" is downloaded '
+            "before converting it into a nested DataLad dataset.",
+            command=f"{datalad_executable} get -r {relative_dataset_text}",
+        )
+        result = run_datalad_get_paths(
+            project_path,
+            paths=[relative_dataset_text],
+            datalad_executable=datalad_executable,
+            recursive=True,
+            no_data=False,
+            timeout_seconds=REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS,
+        )
+        if not result.get("success"):
+            return {
+                "success": False,
+                "message": self._build_nested_step_failure(
+                    "fetch content before nested conversion",
+                    result.get("message") or "Unknown DataLad error.",
+                ),
+            }
+        return {"success": True, "message": "Content fetched."}
 
     def _migrate_parent_tracked_directory_to_subdataset(
         self,
