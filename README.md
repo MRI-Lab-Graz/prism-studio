@@ -100,6 +100,29 @@ those off for this site, or switch browsers, if pages feel slow to load.
 python prism-validator /path/to/dataset
 ```
 
+### Run PRISM Validator (Docker)
+
+A slim, standalone validator image (just the CLI validation engine - no Flask, pandas, or
+datalad) is published automatically to GHCR on every release:
+
+```bash
+docker pull ghcr.io/mri-lab-graz/prism-validator:latest
+docker run --rm -v "$(pwd)":/data:ro ghcr.io/mri-lab-graz/prism-validator:latest /data
+```
+
+Or build it locally from this repo:
+
+```bash
+docker build -t prism-validator .
+docker run --rm -v "$(pwd)":/data:ro prism-validator /data
+```
+
+For CI, add `--json` or `--format junit|sarif|markdown|csv` for machine-readable output
+(printed to stdout by default - exit code is `0` when the dataset is valid, `1` otherwise).
+Avoid the `-o FILE` flag with a bind-mounted dataset: the container writes as `root`, so any
+file it creates inside the mount ends up `root`-owned on the host. Redirect from your shell
+instead, e.g. `docker run ... --format junit > report.xml`.
+
 ### Run PRISM Tools (CLI)
 
 ```bash
