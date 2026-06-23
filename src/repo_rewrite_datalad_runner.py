@@ -16,6 +16,76 @@ from src.datalad_execution import (
 from src.subject_code_rewriter import SubjectCodeRewriter
 
 
+def _fetch_all_content_before_rewrite(
+    root: Path,
+    *,
+    subject_groups: list[str],
+    rename_sources: list[str],
+    text_update_sources: list[str],
+    datalad_executable: str,
+    add_log: Callable[[str, str], None],
+) -> set[str]:
+    """Fetch every subject's content *before* any subject's rename/save
+    begins, instead of discovering one at a time (mid-batch) that some
+    subject's data was never actually downloaded. Returns the set of subject
+    groups whose content could not be fetched from any known remote, so the
+    caller can skip them up front rather than leaving a partially-renamed
+    dataset behind.
+
+    Checked one subject group at a time (mirroring the main loop's own
+    per-group get) rather than batched into one big `datalad get` call, so
+    one subject's unfetchable content can never cause an unrelated subject
+    to be skipped.
+    """
+    unavailable_subjects: set[str] = set()
+
+    for subject_group in subject_groups:
+        group_get_paths = [
+            path_text
+            for path_text in rename_sources
+            if subject_group == "dataset-root"
+            or _extract_subject_from_path(path_text) == subject_group
+        ]
+        group_content_paths = [
+            path_text
+            for path_text in text_update_sources
+            if subject_group == "dataset-root"
+            or _extract_subject_from_path(path_text) == subject_group
+        ]
+
+        for paths, recursive, no_data in (
+            (group_get_paths, True, True),
+            (group_content_paths, False, False),
+        ):
+            if not paths:
+                continue
+            result = run_datalad_get_paths(
+                root,
+                paths=paths,
+                datalad_executable=datalad_executable,
+                recursive=recursive,
+                no_data=no_data,
+            )
+            if not result.get("success"):
+                unavailable_subjects.add(subject_group)
+                add_log(
+                    f"[{subject_group}] Pre-flight fetch failed; this subject "
+                    f"will be skipped: {result.get('message') or 'Unknown DataLad error.'}",
+                    "warning",
+                )
+                break
+
+    if unavailable_subjects:
+        add_log(
+            f"{len(unavailable_subjects)} subject group(s) will be skipped "
+            "because their content is not available from any known remote "
+            f"(not even the original source): {', '.join(sorted(unavailable_subjects))}.",
+            "error",
+        )
+
+    return unavailable_subjects
+
+
 class TrackedRewriteError(ValueError):
     """Raised when a DataLad-tracked rewrite mutation fails partway through.
 
@@ -277,13 +347,41 @@ def apply_subject_rewrite(
         "step",
     )
 
+    failed_groups: list[dict[str, str]] = []
+    datalad_executable = resolve_datalad_executable()
+    if datalad_executable:
+        add_log(
+            "Verifying all affected content is actually downloaded before "
+            "renaming anything...",
+            "step",
+        )
+        unavailable_subjects = _fetch_all_content_before_rewrite(
+            root,
+            subject_groups=subject_groups,
+            rename_sources=rename_sources,
+            text_update_sources=text_update_sources,
+            datalad_executable=datalad_executable,
+            add_log=add_log,
+        )
+        if unavailable_subjects:
+            subject_groups = [
+                subject for subject in subject_groups if subject not in unavailable_subjects
+            ]
+            for subject in sorted(unavailable_subjects):
+                failed_groups.append({
+                    "subject": subject,
+                    "error": (
+                        "Content is not available from any known remote; "
+                        "skipped before any rename was attempted."
+                    ),
+                })
+
     aggregate_mapping: dict[str, str] = {}
     aggregate_file_renames: list[dict[str, str]] = []
     aggregate_directory_renames: list[dict[str, str]] = []
     aggregate_text_update_files: list[str] = []
     aggregate_conflicts: list[str] = []
     group_details: list[dict[str, Any]] = []
-    failed_groups: list[dict[str, str]] = []
     file_rename_seen: set[tuple[str, str]] = set()
     directory_rename_seen: set[tuple[str, str]] = set()
     text_update_seen: set[str] = set()
@@ -590,11 +688,39 @@ def apply_entity_rewrite(
         "step",
     )
 
+    failed_groups: list[dict[str, str]] = []
+    datalad_executable = resolve_datalad_executable()
+    if datalad_executable:
+        add_log(
+            "Verifying all affected content is actually downloaded before "
+            "renaming anything...",
+            "step",
+        )
+        unavailable_subjects = _fetch_all_content_before_rewrite(
+            root,
+            subject_groups=subject_groups,
+            rename_sources=rename_sources,
+            text_update_sources=text_update_sources,
+            datalad_executable=datalad_executable,
+            add_log=add_log,
+        )
+        if unavailable_subjects:
+            subject_groups = [
+                subject for subject in subject_groups if subject not in unavailable_subjects
+            ]
+            for subject in sorted(unavailable_subjects):
+                failed_groups.append({
+                    "subject": subject,
+                    "error": (
+                        "Content is not available from any known remote; "
+                        "skipped before any rename was attempted."
+                    ),
+                })
+
     aggregate_renames: list[dict[str, str]] = []
     aggregate_text_update_files: list[str] = []
     aggregate_conflicts: list[str] = []
     group_details: list[dict[str, Any]] = []
-    failed_groups: list[dict[str, str]] = []
     rename_seen: set[tuple[str, str]] = set()
     text_update_seen: set[str] = set()
     conflict_seen: set[str] = set()
