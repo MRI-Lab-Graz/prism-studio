@@ -2,11 +2,21 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
 from pathlib import Path
 from typing import Any, Mapping, Sequence
+
+_GET_ERROR_PATH_RE = re.compile(r"^(?:get|install)\(error\):\s*(\S+)", re.MULTILINE)
+
+
+def _extract_get_error_paths(detail: str) -> list[str]:
+    """Pull the specific target paths DataLad reported as failed out of a
+    `get`/`install` failure's combined stdout+stderr, e.g.
+    "get(error): sub-01/foo.nii.gz (file) [not available]"."""
+    return _GET_ERROR_PATH_RE.findall(detail)
 
 DATALAD_INSTALL_HINT = "Install with: uv tool install datalad git-annex"
 DATALAD_DOCS_URL = "https://www.datalad.org/"
@@ -45,6 +55,7 @@ def run_datalad_get_paths(
     timeout_seconds: int = 900,
     recursive: bool = False,
     no_data: bool = False,
+    jobs: int = 0,
 ) -> dict[str, Any]:
     root = Path(project_root)
     resolved = str(datalad_executable or resolve_datalad_executable()).strip()
@@ -76,6 +87,11 @@ def run_datalad_get_paths(
         base_command.append("-r")
     if no_data:
         base_command.append("-n")
+    if jobs and int(jobs) > 1:
+        # Lets git-annex fetch multiple files concurrently within this one
+        # `get` invocation (e.g. multiple subjects' content from the same
+        # remote at once), instead of one file/dataset at a time.
+        base_command.extend(["-J", str(int(jobs))])
 
     # Keep command lengths stable for many target paths.
     target_chunks = [
@@ -111,7 +127,13 @@ def run_datalad_get_paths(
         if process.returncode == 0:
             return (True, "")
 
-        detail = (process.stderr or process.stdout or "").strip()
+        # DataLad routinely logs routine `[INFO]` lines to stderr even on
+        # failure, while the actual per-file `get(error): ... [not
+        # available]` reasons land on stdout — combine both so a non-empty
+        # stderr never hides the real error on stdout.
+        detail = "\n".join(
+            part.strip() for part in (process.stdout, process.stderr) if part and part.strip()
+        )
         return (False, detail or "Unknown DataLad error.")
 
     for chunk in target_chunks:
@@ -163,7 +185,9 @@ def run_datalad_get_paths(
         result["message"] = "DataLad get completed for requested targets."
         return result
 
-    result["message"] = f"DataLad get failed: {error_messages[-1]}"
+    combined_detail = "\n".join(error_messages)
+    result["message"] = f"DataLad get failed: {combined_detail}"
+    result["failed_paths"] = sorted(set(_extract_get_error_paths(combined_detail)))
     return result
 
 
