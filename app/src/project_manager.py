@@ -615,6 +615,61 @@ class ProjectManager:
             "prefer_datalad": is_openneuro_remote,
         }
 
+    def _stream_datalad_get_command(
+        self,
+        command: List[str],
+        *,
+        step_label: str,
+        timeout_seconds: int,
+    ) -> Dict[str, Any]:
+        """Run a `datalad get` command, streaming output live via `_emit_backend_progress`.
+
+        A multi-minute `get` would otherwise buffer all its output until the
+        process exits, leaving the UI/terminal looking dead for the entire
+        duration.
+        """
+        try:
+            pipe = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+            )
+        except Exception as exc:
+            return {
+                "success": False,
+                "message": f"{step_label} failed ({type(exc).__name__}: {exc}).",
+            }
+
+        output_lines: List[str] = []
+        try:
+            assert pipe.stdout is not None
+            for line in pipe.stdout:
+                output_lines.append(line)
+                stripped_line = line.rstrip()
+                if stripped_line:
+                    self._emit_backend_progress(stripped_line)
+            pipe.wait(timeout=timeout_seconds)
+        except subprocess.TimeoutExpired:
+            pipe.kill()
+            return {
+                "success": False,
+                "message": f"{step_label} timed out after {timeout_seconds} seconds.",
+            }
+
+        if pipe.returncode == 0:
+            return {"success": True, "message": ""}
+
+        detail = "".join(output_lines).strip() or f"Unknown {step_label} error."
+        return {
+            "success": False,
+            "message": (
+                f"{step_label} could not fetch all content: "
+                f"{self._summarize_datalad_error(detail)}"
+            ),
+        }
+
     def _acquire_remote_bids_dataset(
         self,
         destination_path: Path,
@@ -730,83 +785,103 @@ class ProjectManager:
             }
 
         if clone_method == "datalad_install":
-            # Fetch every file's real content now, recursively, right after
-            # install - not just `-n` (presence-only/no-data). Every later
-            # step (nested-structure conversion, subject/entity rewrites)
-            # assumes the data it's about to move/rename is actually here;
-            # deferring the real fetch to those later steps is what let
-            # subjects' content get silently orphaned (no local copy, no
-            # known remote) when a subject's data hadn't been fetched yet
-            # by the time its directory was torn down and recreated.
-            resolve_nested_step_label = "DataLad recursive content fetch"
-            resolve_nested_command = [
-                datalad_executable_text,
-                "-C",
-                str(destination_path),
-                "get",
-                "-r",
-                ".",
-            ]
-            self._emit_backend_progress(
-                "Downloading all dataset content recursively (this can take "
-                "a while for large datasets)...",
-                command=" ".join(resolve_nested_command),
-            )
-            try:
-                # A full recursive content fetch on a real dataset can run
-                # for many minutes; `capture_output=True` would buffer all
-                # of that silently and only reveal it once the whole thing
-                # finishes, leaving the UI/terminal looking dead the entire
-                # time. Stream it line-by-line instead so progress is
-                # actually visible while it runs.
-                resolve_nested_pipe = subprocess.Popen(
-                    resolve_nested_command,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                    bufsize=1,
-                )
-            except Exception as exc:
-                return {
-                    "success": False,
-                    "error": (
-                        f"{resolve_nested_step_label} failed "
-                        f"({type(exc).__name__}: {exc})."
-                    ),
-                }
-
-            resolve_nested_output_lines: List[str] = []
-            try:
-                assert resolve_nested_pipe.stdout is not None
-                for line in resolve_nested_pipe.stdout:
-                    resolve_nested_output_lines.append(line)
-                    stripped_line = line.rstrip()
-                    if stripped_line:
-                        self._emit_backend_progress(stripped_line)
-                resolve_nested_pipe.wait(timeout=REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS)
-            except subprocess.TimeoutExpired:
-                resolve_nested_pipe.kill()
-                return {
-                    "success": False,
-                    "error": (
-                        f"{resolve_nested_step_label} timed out after "
-                        f"{REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS} seconds."
-                    ),
-                }
-
+            # Fetch every file's real content now, right after install - not
+            # just `-n` (presence-only/no-data). Every later step (nested-
+            # structure conversion, subject/entity rewrites) assumes the data
+            # it's about to move/rename is actually here; deferring the real
+            # fetch to those later steps is what let subjects' content get
+            # silently orphaned (no local copy, no known remote) when a
+            # subject's data hadn't been fetched yet by the time its
+            # directory was torn down and recreated.
+            #
+            # Fetched one subject at a time (rather than a single opaque
+            # `datalad get -r .` for the whole dataset) so the terminal/UI
+            # shows a heartbeat per subject instead of going silent for the
+            # entire multi-minute-to-multi-hour download of a real dataset -
+            # with no progress line, that silence is indistinguishable from
+            # a hang.
+            subject_paths = self._iter_nested_dataset_paths(destination_path)
             content_fetch_warning = ""
-            if resolve_nested_pipe.returncode != 0:
-                # Some files being genuinely unfetchable from the remote
-                # (e.g. a real upstream data gap) shouldn't fail the whole
-                # install - report it but keep whatever content DID
-                # download.
-                detail = "".join(resolve_nested_output_lines).strip() or (
-                    f"Unknown {resolve_nested_step_label} error."
+
+            if subject_paths:
+                total_subjects = len(subject_paths)
+                self._emit_backend_progress(
+                    f"Downloading content for {total_subjects} subject(s) "
+                    "(this can take a while for large datasets)..."
                 )
-                content_fetch_warning = (
-                    f"{resolve_nested_step_label} could not fetch all content: "
-                    f"{self._summarize_datalad_error(detail)}"
+                for subject_index, subject_path in enumerate(subject_paths, start=1):
+                    relative_subject_text = subject_path.relative_to(
+                        destination_path
+                    ).as_posix()
+                    subject_get_command = [
+                        datalad_executable_text,
+                        "-C",
+                        str(destination_path),
+                        "get",
+                        "-r",
+                        relative_subject_text,
+                    ]
+                    self._emit_backend_progress(
+                        f'Fetching content for subject {subject_index}/{total_subjects}: '
+                        f'"{relative_subject_text}"...',
+                        command=" ".join(subject_get_command),
+                    )
+                    subject_get_result = self._stream_datalad_get_command(
+                        subject_get_command,
+                        step_label=f'DataLad content fetch for "{relative_subject_text}"',
+                        timeout_seconds=REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS,
+                    )
+                    if not subject_get_result.get("success"):
+                        # Some files being genuinely unfetchable from the
+                        # remote (e.g. a real upstream data gap) shouldn't
+                        # fail the whole install - report it but keep
+                        # whatever content DID download, and keep going
+                        # with the remaining subjects.
+                        content_fetch_warning = (
+                            subject_get_result.get("message") or content_fetch_warning
+                        )
+
+                # Catch any loose root-level files outside subject/derivatives
+                # directories (dataset_description.json, participants.tsv,
+                # etc.). Already-fetched subject content is skipped quickly
+                # by git-annex, so re-touching it here is cheap.
+                self._emit_backend_progress("Fetching remaining top-level dataset files...")
+                root_get_result = self._stream_datalad_get_command(
+                    [datalad_executable_text, "-C", str(destination_path), "get", "."],
+                    step_label="DataLad root content fetch",
+                    timeout_seconds=REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS,
                 )
+                if not root_get_result.get("success"):
+                    content_fetch_warning = (
+                        root_get_result.get("message") or content_fetch_warning
+                    )
+            else:
+                # Unusual/non-standard layout with no top-level sub-*
+                # directories (or rawdata/sub-*) - fall back to one
+                # whole-dataset recursive fetch rather than silently
+                # skipping content.
+                whole_dataset_command = [
+                    datalad_executable_text,
+                    "-C",
+                    str(destination_path),
+                    "get",
+                    "-r",
+                    ".",
+                ]
+                self._emit_backend_progress(
+                    "Downloading all dataset content recursively (this can take "
+                    "a while for large datasets)...",
+                    command=" ".join(whole_dataset_command),
+                )
+                whole_dataset_result = self._stream_datalad_get_command(
+                    whole_dataset_command,
+                    step_label="DataLad recursive content fetch",
+                    timeout_seconds=REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS,
+                )
+                if not whole_dataset_result.get("success"):
+                    content_fetch_warning = (
+                        whole_dataset_result.get("message") or content_fetch_warning
+                    )
 
         if clone_method == "datalad_install":
             message = (
@@ -3591,13 +3666,18 @@ class ProjectManager:
         Conversion stages the directory aside and recreates it as a brand
         new, empty `datalad create` dataset, then moves the files back in.
         That severs the link to the parent's git-annex object store and any
-        registered remote (e.g. an OpenNeuro S3 bucket) entirely. Any
-        annexed file whose content wasn't already downloaded at that point
-        becomes permanently orphaned - not present locally and not known to
-        any remote - because the new dataset never learns where to find it.
-        Refusing to convert until the real content is present (rather than
-        racing to fetch it after the dataset has already been torn down)
-        avoids creating that orphaned state.
+        registered remote (e.g. an OpenNeuro S3 bucket) entirely. Fetching
+        the content first is not enough on its own to avoid orphaning it:
+        the files staying as symlinks into the *parent's* object store means
+        that when the new dataset's own `datalad save` re-annexes them, it
+        preserves their content key but never copies the actual bytes into
+        the new dataset's object store, and reports "0 copies" - the new
+        dataset has no remote that knows where the content lives, even
+        though it's sitting right there in the old parent location. Locking
+        in real bytes here (`git annex unlock`, turning the symlink into an
+        ordinary file with the content inline) means the content travels
+        with the file through the stage/move/recreate steps as actual data,
+        so the new dataset's `save` registers it as genuinely present.
         """
         relative_dataset_text = dataset_path.relative_to(project_path).as_posix()
         if not self._is_datalad_dataset(project_path):
@@ -3626,7 +3706,48 @@ class ProjectManager:
                     result.get("message") or "Unknown DataLad error.",
                 ),
             }
-        return {"success": True, "message": "Content fetched."}
+
+        unlock_command = [
+            "git",
+            "-C",
+            str(project_path),
+            "annex",
+            "unlock",
+            "--",
+            relative_dataset_text,
+        ]
+        self._emit_backend_progress(
+            f'Materializing content under "{relative_dataset_text}" as real files '
+            "(not annex symlinks) before nested conversion.",
+            command=" ".join(unlock_command),
+        )
+        try:
+            unlock_process = subprocess.run(
+                unlock_command,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            return {
+                "success": False,
+                "message": self._format_repair_timeout_message(
+                    f'Unlocking content under "{relative_dataset_text}"'
+                ),
+            }
+        if unlock_process.returncode != 0:
+            detail = (
+                unlock_process.stderr or unlock_process.stdout or "Unknown git-annex error."
+            ).strip()
+            return {
+                "success": False,
+                "message": self._build_nested_step_failure(
+                    "unlock content before nested conversion",
+                    detail,
+                ),
+            }
+        return {"success": True, "message": "Content fetched and unlocked."}
 
     def _migrate_parent_tracked_directory_to_subdataset(
         self,
