@@ -1,0 +1,93 @@
+name: Build and Publish Validator Image
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+    paths: &validator_paths
+      - 'Dockerfile'
+      - 'requirements-validator.txt'
+      - '.dockerignore'
+      - 'src/**'
+      - 'app/prism.py'
+      - 'app/src/**'
+      - 'app/schemas/**'
+  pull_request:
+    paths: *validator_paths
+  workflow_dispatch: {}
+
+concurrency:
+  group: docker-validator-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    name: Build and Push Validator Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Compute lowercase image repository
+        id: image
+        run: echo "repo=ghcr.io/${OWNER,,}/prism-validator" >> "$GITHUB_OUTPUT"
+        env:
+          OWNER: ${{ github.repository_owner }}
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image.outputs.repo }}
+          tags: |
+            type=semver,pattern=v{{version}},value=${{ github.ref_name }}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,format=short,enable=${{ github.event_name != 'pull_request' }}
+
+      - name: Build image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test built image
+        run: |
+          IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          docker run --rm "$IMAGE_TAG" --version
+          docker run --rm "$IMAGE_TAG" --help
+          docker run --rm "$IMAGE_TAG" /tmp --json | python3 -c "import json,sys; json.load(sys.stdin)"
+
+      - name: Push image
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
