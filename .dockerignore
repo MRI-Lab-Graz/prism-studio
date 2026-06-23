@@ -1,0 +1,31 @@
+# Keep Docker build context transfer small. The validator image only needs
+# requirements-validator.txt, src/, app/prism.py, app/src/, app/schemas/
+# (see Dockerfile.validator) but Docker still transfers the whole context
+# before applying COPY filters, so exclude the heavy/irrelevant stuff here.
+.git/
+.venv/
+.venv_intel/
+venv/
+env/
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+docs/_build/
+docs/build/
+build/
+dist/
+*.egg-info/
+demo/
+examples/
+reports/
+paper/
+archive/
+backup/
+.idea/
+.vscode/
+.claude/
