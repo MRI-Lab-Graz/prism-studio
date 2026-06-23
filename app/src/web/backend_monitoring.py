@@ -566,16 +566,17 @@ def _build_projects_datalad_enable_terminal_command(req) -> str:
             [
                 ["git", "-C", str(project_root), "rm", "--cached", "-r", "--", next_missing],
                 [
-                    "datalad",
+                    "git",
                     "-C",
                     str(project_root),
-                    "save",
-                    "--updated",
+                    "commit",
                     "-m",
                     (
                         "PRISM: Converting data into nested PRISM-structure "
                         f'(prepare parent untracking "{next_missing}")'
                     ),
+                    "--",
+                    next_missing,
                 ],
                 ["datalad", "-C", str(project_root), "create", "-d", ".", "--force", next_missing],
                 [

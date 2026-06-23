@@ -1322,11 +1322,12 @@ class TestProjectManager(unittest.TestCase):
         )
         self.assertIn(
             [
-                "/usr/bin/datalad",
-                "save",
-                "--updated",
+                "git",
+                "commit",
                 "-m",
                 'PRISM: Converting data into nested PRISM-structure (prepare parent untracking "derivatives")',
+                "--",
+                "derivatives",
             ],
             commands,
         )
@@ -1377,16 +1378,6 @@ class TestProjectManager(unittest.TestCase):
         commands = [call.args[0] for call in mock_run.call_args_list]
         self.assertIn(
             ["git", "rm", "--cached", "-r", "--", "sub-020"],
-            commands,
-        )
-        self.assertIn(
-            [
-                "/usr/bin/datalad",
-                "save",
-                "--updated",
-                "-m",
-                'PRISM: Converting data into nested PRISM-structure (prepare parent untracking "sub-020")',
-            ],
             commands,
         )
         self.assertIn(
@@ -1553,11 +1544,12 @@ class TestProjectManager(unittest.TestCase):
         commands = [call.args[0] for call in mock_run.call_args_list]
         self.assertIn(
             [
-                "/usr/bin/datalad",
-                "save",
-                "--updated",
+                "git",
+                "commit",
                 "-m",
                 'PRISM: Converting data into nested PRISM-structure (prepare parent untracking "sub-035")',
+                "--",
+                "sub-035",
             ],
             commands,
         )
