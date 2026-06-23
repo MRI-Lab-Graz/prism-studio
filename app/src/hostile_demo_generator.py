@@ -136,8 +136,8 @@ def build_hostile_participants_table(
             "ID": "004",
             "age": 25,
             "sex": "F",
-            "ethnicity_other": "Ŧëśt 测试 \U0001f9ec ‮reversed",
-            "medication_details": "Sertraline 50mg ‮لا",
+            "ethnicity_other": "Ŧëśt 测试 \U0001f9ec \u202ereversed",
+            "medication_details": "Sertraline 50mg \u202eلا",
         },
     )
 

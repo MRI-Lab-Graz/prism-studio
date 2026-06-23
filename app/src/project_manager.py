@@ -3553,18 +3553,20 @@ class ProjectManager:
                 ),
             }
 
+        # A dataset-wide `datalad save --updated` re-walks the whole working tree
+        # and can re-discover the just-`git rm --cached`-ed files as "new" annex
+        # content to re-add (their unmodified content is still on disk), silently
+        # undoing the untracking when other pending changes (e.g. a sibling
+        # subdataset awaiting commit) are present. Scoping the commit to this
+        # path avoids that rediscovery.
         self._emit_backend_progress(
             f'Checkpointing parent dataset before creating nested dataset "{relative_dataset_text}".',
-            command=(
-                f'{datalad_executable} save --updated -m '
-                f'"{stage_parent_message}"'
-            ),
+            command=f'git commit -m "{stage_parent_message}" -- {relative_dataset_text}',
         )
-        prep_save_result = self._run_datalad_save(
+        prep_save_result = self._run_git_commit_for_path(
             project_path,
+            relative_dataset_text=relative_dataset_text,
             message=stage_parent_message,
-            datalad_executable=datalad_executable,
-            updated_only=True,
         )
         if not (prep_save_result.get("saved") or prep_save_result.get("no_changes")):
             detail = prep_save_result.get("message") or "Could not save parent dataset state."

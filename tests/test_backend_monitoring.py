@@ -1699,7 +1699,7 @@ def test_build_terminal_command_for_projects_datalad_enable_migrates_parent_trac
 
     assert cmd == (
         f"git -C {resolved_project_path} rm --cached -r -- derivatives && "
-        f"datalad -C {resolved_project_path} save --updated -m 'PRISM: Converting data into nested PRISM-structure (prepare parent untracking \"derivatives\")' && "
+        f"git -C {resolved_project_path} commit -m 'PRISM: Converting data into nested PRISM-structure (prepare parent untracking \"derivatives\")' -- derivatives && "
         f"datalad -C {resolved_project_path} create -d . --force derivatives && "
         f"datalad -C {resolved_project_path / 'derivatives'} save -m 'PRISM: Nested structure conversion (initialize \"derivatives\")' && "
         f"datalad -C {resolved_project_path} save -m 'Enable DataLad for PRISM project'"
