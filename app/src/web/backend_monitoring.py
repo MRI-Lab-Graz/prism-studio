@@ -867,14 +867,48 @@ def _build_wide_to_long_terminal_command(req, *, inspect_only: bool) -> str:
     if id_column:
         cmd_parts.extend(["--id-column", id_column])
 
-    session_indicators = str(
+    # The web form's "session_indicators" field accepts a combined
+    # `indicator:label` DSL (e.g. "pre_:1;mid_:2"), parsed server-side by
+    # `_parse_combined_indicators`. The real CLI parser does not understand
+    # that combined syntax -- it needs bare indicators on --session-indicators
+    # and the label mapping on a separate --session-map flag. Split it the
+    # same way here so the printed command is actually copy-paste runnable.
+    # A separate "session_value_map" field (plain indicator + explicit
+    # mapping, no embedded labels) is also still supported and merged in.
+    indicators: list[str] = []
+    label_map: dict[str, str] = {}
+
+    session_indicators_raw = str(
         form.get("session_indicators", "") or form.get("session_prefixes", "")
     ).strip()
-    if session_indicators:
-        cmd_parts.extend(["--session-indicators", session_indicators])
+    for entry in session_indicators_raw.replace(";", ",").split(","):
+        entry = entry.strip()
+        if not entry:
+            continue
+        if ":" in entry:
+            left, right = entry.split(":", 1)
+            left, right = left.strip(), right.strip()
+            if left:
+                indicators.append(left)
+                if right:
+                    label_map[left] = right
+        else:
+            indicators.append(entry)
 
-    session_map = str(form.get("session_value_map", "") or "").strip()
-    if session_map:
+    session_value_map_raw = str(form.get("session_value_map", "") or "").strip()
+    for entry in session_value_map_raw.replace(";", ",").split(","):
+        entry = entry.strip()
+        if not entry or ":" not in entry:
+            continue
+        left, right = entry.split(":", 1)
+        left, right = left.strip(), right.strip()
+        if left and right:
+            label_map[left] = right
+
+    if indicators:
+        cmd_parts.extend(["--session-indicators", ",".join(indicators)])
+    if label_map:
+        session_map = ",".join(f"{k}:{v}" for k, v in label_map.items())
         cmd_parts.extend(["--session-map", session_map])
 
     if inspect_only:

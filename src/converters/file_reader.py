@@ -176,6 +176,71 @@ def infer_tabular_kind(path: str | Path) -> str | None:
     return _SUPPORTED_SUFFIX_TO_KIND.get(Path(path).suffix.lower())
 
 
+def list_excel_sheets(path: str | Path) -> dict[str, Any]:
+    """Return sheet names for an Excel workbook, flagging which ones have data.
+
+    A multi-tab export (data + codebook + notes tabs, etc.) would otherwise
+    silently convert whichever sheet happens to be first; callers use this to
+    offer an explicit sheet picker instead.
+    """
+    result: dict[str, Any] = {
+        "sheet_names": [],
+        "non_empty_sheet_names": [],
+        "non_empty_sheet_indexes": [],
+    }
+    try:
+        import pandas as pd
+    except Exception:
+        return result
+
+    try:
+        with pd.ExcelFile(path) as workbook:
+            sheet_names = [str(name) for name in workbook.sheet_names]
+            non_empty_sheet_names: list[str] = []
+            non_empty_sheet_indexes: list[int] = []
+
+            for index, sheet_name in enumerate(sheet_names):
+                try:
+                    sheet_df = workbook.parse(sheet_name=sheet_name, dtype=str)
+                except Exception:
+                    continue
+                if sheet_df is not None and not sheet_df.empty:
+                    non_empty_sheet_names.append(sheet_name)
+                    non_empty_sheet_indexes.append(index)
+
+        result["sheet_names"] = sheet_names
+        result["non_empty_sheet_names"] = non_empty_sheet_names
+        result["non_empty_sheet_indexes"] = non_empty_sheet_indexes
+    except Exception:
+        pass
+
+    return result
+
+
+def resolve_sheet_selection(
+    sheet_value: str | None,
+    sheet_metadata: dict[str, Any] | None,
+) -> str | int:
+    """Resolve an explicit sheet choice, else fall back to the first non-empty sheet.
+
+    An explicit name/index always wins. Otherwise, prefer the first sheet
+    that actually has data over a blind index 0 (a cover/instructions tab is
+    a common first sheet in real-world exports).
+    """
+    sheet_text = str(sheet_value or "").strip()
+    if sheet_text:
+        return int(sheet_text) if sheet_text.isdigit() else sheet_text
+
+    if isinstance(sheet_metadata, dict):
+        non_empty_indexes = sheet_metadata.get("non_empty_sheet_indexes")
+        if isinstance(non_empty_indexes, list) and non_empty_indexes:
+            first_non_empty = non_empty_indexes[0]
+            if isinstance(first_non_empty, int):
+                return first_non_empty
+
+    return 0
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------

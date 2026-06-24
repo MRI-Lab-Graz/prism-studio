@@ -19,6 +19,7 @@ from flask import (
 )
 from src.config import load_config
 from src.constants import DEFAULT_BIDS_VERSION
+from src.converters.file_reader import list_excel_sheets, resolve_sheet_selection
 from src.cross_platform import normalize_path
 from src.runtime_dependencies import (
     inspect_pandas_support,
@@ -678,6 +679,8 @@ def _wide_to_long_json_payload(
     id_uniqueness: dict[str, object] | None = None,
     empty_data_rows: list[dict[str, object]] | None = None,
     empty_data_rows_dropped: bool = False,
+    sheet_metadata: dict[str, object] | None = None,
+    resolved_sheet: str | int | None = None,
 ) -> dict[str, object]:
     matched_columns = list(cast(list, plan.get("matched_columns") or []))
     ambiguous_columns = list(cast(list, plan.get("ambiguous_columns") or []))
@@ -702,6 +705,11 @@ def _wide_to_long_json_payload(
         "id_uniqueness": id_uniqueness or {},
         "empty_data_rows": empty_data_rows or [],
         "empty_data_rows_dropped": empty_data_rows_dropped,
+        "sheet_names": list(cast(list, (sheet_metadata or {}).get("sheet_names") or [])),
+        "non_empty_sheet_names": list(
+            cast(list, (sheet_metadata or {}).get("non_empty_sheet_names") or [])
+        ),
+        "resolved_sheet": resolved_sheet,
     }
 
     if long_df is not None:
@@ -737,6 +745,7 @@ def _run_wide_to_long_backend_command(
     inspect_only: bool,
     explicit_id_column: str | None = None,
     drop_empty_rows: bool = False,
+    sheet: str | None = None,
 ):
     """Execute wide-to-long backend logic in-process and return JSON plus output bytes."""
 
@@ -746,7 +755,11 @@ def _run_wide_to_long_backend_command(
         input_path.write_bytes(payload)
 
         try:
-            df = _read_wide_to_long_input(input_path, sheet=0)
+            sheet_metadata = (
+                list_excel_sheets(input_path) if suffix == ".xlsx" else None
+            )
+            resolved_sheet = resolve_sheet_selection(sheet, sheet_metadata)
+            df = _read_wide_to_long_input(input_path, sheet=resolved_sheet)
             id_check = resolve_wide_to_long_id_uniqueness(
                 df,
                 source_format=suffix,
@@ -829,6 +842,8 @@ def _run_wide_to_long_backend_command(
                 id_uniqueness=id_uniqueness,
                 empty_data_rows=empty_data_rows,
                 empty_data_rows_dropped=drop_empty_rows,
+                sheet_metadata=sheet_metadata,
+                resolved_sheet=resolved_sheet,
             )
             response_payload["filename"] = filename
             output_bytes = output_path.read_bytes() if output_path is not None else None
@@ -887,11 +902,14 @@ def api_file_management_raw_peek():
     if payload is None:
         return jsonify({"error": "Could not read file."}), 400
 
+    requested_sheet = (request.form.get("sheet") or "").strip()
     with tempfile.TemporaryDirectory(prefix="prism_peek_") as tmpdir:
         input_path = Path(tmpdir) / f"input{suffix}"
         input_path.write_bytes(payload)
+        sheet_metadata = list_excel_sheets(input_path) if suffix == ".xlsx" else None
+        resolved_sheet = resolve_sheet_selection(requested_sheet, sheet_metadata)
         try:
-            df = _read_wide_to_long_input(input_path, sheet=0)
+            df = _read_wide_to_long_input(input_path, sheet=resolved_sheet)
         except Exception as exc:
             return jsonify({"error": f"Could not parse file: {exc}"}), 400
 
@@ -911,6 +929,11 @@ def api_file_management_raw_peek():
             "suggested_id_column": id_resolution.get("suggested_id_column"),
             "participant_id_found": bool(id_resolution.get("participant_id_found")),
             "id_selection_required": bool(id_resolution.get("id_selection_required")),
+            "sheet_names": list((sheet_metadata or {}).get("sheet_names") or []),
+            "non_empty_sheet_names": list(
+                (sheet_metadata or {}).get("non_empty_sheet_names") or []
+            ),
+            "resolved_sheet": resolved_sheet,
         }
     )
 
@@ -944,6 +967,7 @@ def api_file_management_wide_to_long_preview():
         preview_limit=preview_limit,
         inspect_only=True,
         drop_empty_rows=_parse_bool_flag(request.form.get("drop_empty_rows")),
+        sheet=(request.form.get("sheet") or "").strip() or None,
     )
     if command_error is not None:
         return command_error
@@ -996,6 +1020,7 @@ def api_file_management_wide_to_long():
         preview_limit=preview_limit,
         inspect_only=False,
         drop_empty_rows=_parse_bool_flag(request.form.get("drop_empty_rows")),
+        sheet=(request.form.get("sheet") or "").strip() or None,
     )
     if command_error is not None:
         return command_error
