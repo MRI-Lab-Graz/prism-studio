@@ -19,4 +19,4 @@ pyedflib
 bids2openminds
 
 # Questionnaire preview export as Word document
-python-docx>=1.1.0
+python-docx>=1.2.0
