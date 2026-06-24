@@ -49,7 +49,7 @@ jobs:
             bundle_executable: dist/PrismStudio/PrismStudio
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v7
 
     - name: Prepare Intel macOS runtime dependencies
       if: runner.os == 'macOS' && matrix.target_arch == 'x86_64'
@@ -242,7 +242,7 @@ jobs:
       contents: write
     
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v7
 
     - name: Download Windows Artifact
       uses: actions/download-artifact@v7
