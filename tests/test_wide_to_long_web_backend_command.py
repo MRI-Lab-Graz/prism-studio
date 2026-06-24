@@ -252,3 +252,87 @@ def test_wide_to_long_convert_rejects_stale_explicit_project_path(tmp_path):
     assert response.status_code == 400
     payload = response.get_json()
     assert "no longer exists" in payload["error"].lower()
+
+
+def _build_multi_sheet_xlsx_bytes() -> bytes:
+    """Two-sheet workbook: a wide-format Data sheet plus an unrelated Notes sheet."""
+    import openpyxl
+
+    wb = openpyxl.Workbook()
+    data_sheet = wb.active
+    data_sheet.title = "Data"
+    data_sheet.append(["participant_id", "T1_score", "T2_score"])
+    data_sheet.append(["sub-01", 1, 2])
+
+    notes_sheet = wb.create_sheet("Notes")
+    notes_sheet.append(["participant_id", "comment"])
+    notes_sheet.append(["sub-01", "no issues"])
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    return buffer.getvalue()
+
+
+def test_raw_peek_reports_sheet_names_for_multi_sheet_workbook():
+    app = _build_app()
+    client = app.test_client()
+
+    response = client.post(
+        "/api/file-management/raw-peek",
+        data={"data": (io.BytesIO(_build_multi_sheet_xlsx_bytes()), "survey.xlsx")},
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["sheet_names"] == ["Data", "Notes"]
+    assert body["non_empty_sheet_names"] == ["Data", "Notes"]
+    # No explicit sheet requested -> defaults to the first (non-empty) sheet.
+    assert body["resolved_sheet"] == 0
+    assert body["columns"] == ["participant_id", "T1_score", "T2_score"]
+
+
+def test_raw_peek_honors_explicit_sheet_selection():
+    app = _build_app()
+    client = app.test_client()
+
+    response = client.post(
+        "/api/file-management/raw-peek",
+        data={
+            "data": (io.BytesIO(_build_multi_sheet_xlsx_bytes()), "survey.xlsx"),
+            "sheet": "Notes",
+        },
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["resolved_sheet"] == "Notes"
+    assert body["columns"] == ["participant_id", "comment"]
+
+
+def test_wide_to_long_preview_converts_the_explicitly_selected_sheet():
+    app = _build_app()
+    client = app.test_client()
+
+    # Sheet 0 ("Data" here) has no T1_/T2_ columns at all in this case, so
+    # picking the wrong sheet would fail outright rather than silently
+    # converting the wrong data -- a stronger signal than a quiet mismatch.
+    wb_bytes = _build_multi_sheet_xlsx_bytes()
+
+    response = client.post(
+        "/api/file-management/wide-to-long-preview",
+        data={
+            "data": (io.BytesIO(wb_bytes), "survey.xlsx"),
+            "session_column": "session",
+            "session_indicators": "T1_,T2_",
+            "sheet": "Data",
+        },
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["can_convert"] is True
+    assert body["resolved_sheet"] == "Data"
+    assert body["column_rename_preview"][0]["output_column"] == "score"

@@ -241,6 +241,25 @@ def test_find_empty_data_rows_returns_empty_list_when_all_rows_have_data() -> No
     assert empty_rows == []
 
 
+def test_find_empty_data_rows_handles_duplicate_column_names() -> None:
+    """Real-world exports can have duplicate-named columns.
+
+    `row[col]` / `df[col]` lookups on a duplicate label return a Series
+    instead of a scalar, which raises "truth value of a Series is
+    ambiguous" deep inside the scan. Verify a duplicate-named data column no
+    longer crashes the scan, and that a value in any duplicate occurrence
+    still counts as "has data" rather than losing it to a last-wins pick.
+    """
+    df = pd.DataFrame(
+        [["1", "x", None], ["2", None, None]],
+        columns=["ID", "pre_x_1", "pre_x_1"],
+    )
+
+    empty_rows = find_empty_data_rows(df, id_column="ID", data_columns=["pre_x_1"])
+
+    assert empty_rows == [{"row_index": 1, "id_value": "2"}]
+
+
 def test_find_empty_data_rows_raises_for_missing_id_column() -> None:
     df = pd.DataFrame({"pre_score": ["5"]})
 

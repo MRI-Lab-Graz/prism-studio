@@ -65,6 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const wideLongBrowseServerFileBtn = document.getElementById('wideLongBrowseServerFileBtn');
     const wideLongFileName = document.getElementById('wideLongFileName');
     const wideLongClearBtn = document.getElementById('wideLongClearBtn');
+    const wideLongSheetGroup = document.getElementById('wideLongSheetGroup');
+    const wideLongSheetSelect = document.getElementById('wideLongSheetSelect');
     const wideLongSessionColumn = null; // fixed to 'session'
     const wideLongIndicators = document.getElementById('wideLongIndicators');
     const wideLongSessionMismatchWarning = document.getElementById('wideLongSessionMismatchWarning');
@@ -339,7 +341,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (wideLongRawMeta) wideLongRawMeta.textContent = '';
     }
 
-    async function fetchRawPeek(file, sourcePath = '') {
+    function updateWideLongSheetOptions(sheetNames, resolvedSheet) {
+        if (!wideLongSheetGroup || !wideLongSheetSelect) return;
+
+        const names = Array.isArray(sheetNames) ? sheetNames.filter(Boolean) : [];
+        if (names.length < 2) {
+            wideLongSheetGroup.classList.add('d-none');
+            wideLongSheetSelect.innerHTML = '';
+            return;
+        }
+
+        const resolvedText = String(resolvedSheet ?? '').trim();
+        wideLongSheetSelect.innerHTML = names.map((name, index) => {
+            const isSelected = resolvedText === name || resolvedText === String(index);
+            return `<option value="${escapeHtml(name)}" ${isSelected ? 'selected' : ''}>${escapeHtml(name)}</option>`;
+        }).join('');
+        wideLongSheetGroup.classList.remove('d-none');
+    }
+
+    async function fetchRawPeek(file, sourcePath = '', sheet = '') {
         hideRawPeek();
         const formData = new FormData();
         if (file) {
@@ -347,11 +367,21 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (sourcePath) {
             formData.append('source_file_path', sourcePath);
         }
+        if (sheet) {
+            formData.append('sheet', sheet);
+        }
         try {
             const response = await fetchWithApiFallback('/api/file-management/raw-peek', { method: 'POST', body: formData });
             if (!response.ok) return;
             const data = await response.json();
             if (!data.columns || !data.columns.length) return;
+
+            updateWideLongSheetOptions(
+                data.non_empty_sheet_names && data.non_empty_sheet_names.length
+                    ? data.non_empty_sheet_names
+                    : data.sheet_names,
+                data.resolved_sheet
+            );
 
             updateWideLongIdColumnOptions(
                 data.columns,
@@ -660,6 +690,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (wideLongDropEmptyRows) {
             wideLongDropEmptyRows.checked = false;
         }
+        if (wideLongSheetSelect) {
+            wideLongSheetSelect.innerHTML = '';
+        }
+        if (wideLongSheetGroup) {
+            wideLongSheetGroup.classList.add('d-none');
+        }
         hideRawPeek();
         if (wideLongError) {
             wideLongError.classList.add('d-none');
@@ -732,6 +768,20 @@ document.addEventListener('DOMContentLoaded', () => {
         setWideLongIdleState();
     }
 
+    if (wideLongSheetSelect) {
+        wideLongSheetSelect.addEventListener('change', () => {
+            const selectedSheet = wideLongSheetSelect.value;
+            const selectedFile = (wideLongFile && wideLongFile.files && wideLongFile.files[0]) || null;
+            if (!selectedFile && !wideLongServerFilePath) {
+                return;
+            }
+            hideWideLongTablePreview();
+            setWideLongIdleState();
+            updateWideLongPreview();
+            fetchRawPeek(selectedFile, wideLongServerFilePath, selectedSheet);
+        });
+    }
+
     if (wideLongRawPeekToggle && wideLongRawPeekBody) {
         wideLongRawPeekToggle.addEventListener('click', () => {
             const hidden = wideLongRawPeekBody.classList.toggle('d-none');
@@ -797,6 +847,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('run_indicators', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim());
             formData.append('preview_limit', '8');
             formData.append('drop_empty_rows', (wideLongDropEmptyRows && wideLongDropEmptyRows.checked) ? '1' : '0');
+            formData.append('sheet', (wideLongSheetSelect && wideLongSheetSelect.value) || '');
 
             try {
                 const response = await fetchWithApiFallback('/api/file-management/wide-to-long-preview', {
@@ -865,6 +916,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('run_column', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim() ? 'run' : '');
             formData.append('run_indicators', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim());
             formData.append('drop_empty_rows', (wideLongDropEmptyRows && wideLongDropEmptyRows.checked) ? '1' : '0');
+            formData.append('sheet', (wideLongSheetSelect && wideLongSheetSelect.value) || '');
             formData.append('project_path', currentProjectPath);
 
             try {
@@ -3782,7 +3834,6 @@ document.addEventListener('DOMContentLoaded', () => {
     applyRemotePickerUiState();
     loadRepoSubjectExamples();
     loadRepoEntityRewriteOptions();
-    loadFileDeleteOptions();
     refreshWideLongDeclaredSessions();
 
     // ----------------------------------------------------------------
@@ -3803,6 +3854,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let fileDeleteOptions = {};
     let fileDeletePreviewReady = false;
     let fileDeleteFilterRowCounter = 0;
+
+    // Initial state (must run after the const declarations above: this calls
+    // loadFileDeleteOptions(), whose loading-state helper reads
+    // fileDeleteModalityEl, which would otherwise throw a temporal-dead-zone
+    // ReferenceError if invoked before this point).
+    loadFileDeleteOptions();
 
     function resetFileDeletePreviewState() {
         fileDeletePreviewReady = false;
