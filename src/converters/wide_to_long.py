@@ -366,6 +366,55 @@ def resolve_wide_to_long_id_uniqueness(
     }
 
 
+def find_empty_data_rows(
+    df: Any,
+    *,
+    id_column: str,
+    data_columns: list[str],
+) -> list[dict[str, Any]]:
+    """Return participants whose session-coded data columns are all empty.
+
+    A participant who dropped out before any measurement may still have an
+    ID (and admin columns like a group code) while every wide-format
+    session-coded column is blank. Converting such a row would otherwise
+    silently emit "empty" long-format rows with no visible signal that
+    anything is missing. Callers use this to warn about or exclude those
+    rows before calling :func:`convert_wide_to_long_dataframe`.
+    """
+    import pandas as pd
+
+    column_name = str(id_column or "").strip()
+    if not column_name:
+        raise ValueError("ID column must be provided to check for empty data rows")
+    if column_name not in df.columns:
+        raise ValueError(f"ID column '{column_name}' not found in input")
+
+    present_data_columns = [str(c) for c in data_columns if c in df.columns]
+    if not present_data_columns:
+        return []
+
+    empty_rows: list[dict[str, Any]] = []
+    for idx, row in df.iterrows():
+        has_any_value = False
+        for col in present_data_columns:
+            value = row[col]
+            if pd.isna(value):
+                continue
+            if str(value).strip():
+                has_any_value = True
+                break
+        if not has_any_value:
+            id_value = row[column_name]
+            empty_rows.append(
+                {
+                    "row_index": int(idx),
+                    "id_value": None if pd.isna(id_value) else str(id_value).strip(),
+                }
+            )
+
+    return empty_rows
+
+
 def convert_wide_to_long_dataframe(
     df: Any,
     *,

@@ -1300,8 +1300,18 @@ class ProjectManager:
                 return True
         return bool(value)
 
-    def get_datalad_status(self, path: Union[str, Path, None]) -> Dict[str, Any]:
-        """Return lightweight DataLad status for a project path."""
+    def get_datalad_status(
+        self, path: Union[str, Path, None], *, fast: bool = False
+    ) -> Dict[str, Any]:
+        """Return DataLad status for a project path.
+
+        ``fast=True`` skips the per-dataset-root ``git annex find --anything``
+        scan (:meth:`_find_annexed_text_files`), which is the dominant cost on
+        datasets with many nested subdatasets (seconds-to-tens-of-seconds on a
+        project with 100+ subject subdatasets) and would otherwise block every
+        project load/page render. Use the default (``fast=False``) only for an
+        explicit, on-demand deep status check.
+        """
         project_path = Path(path) if path else None
         datalad_executable = shutil.which("datalad")
         git_annex_executable = shutil.which("git-annex")
@@ -1330,6 +1340,7 @@ class ProjectManager:
             "annexed_text_files_count": 0,
             "annexed_text_files_examples": [],
             "annexed_text_files_scan_complete": True,
+            "annexed_text_files_scan_skipped": False,
         }
 
         if not project_path:
@@ -1361,9 +1372,14 @@ class ProjectManager:
         result["enabled"] = True
         result.update(self._summarize_nested_subdatasets(project_path))
         result.update(self._summarize_datalad_text_policy(project_path))
+        result["annexed_text_files_scan_skipped"] = False
         if available and annex_available:
-            dataset_roots = self._iter_datalad_dataset_roots(project_path)
-            result.update(self._find_annexed_text_files(project_path, dataset_roots))
+            if fast:
+                result["annexed_text_files_scan_complete"] = False
+                result["annexed_text_files_scan_skipped"] = True
+            else:
+                dataset_roots = self._iter_datalad_dataset_roots(project_path)
+                result.update(self._find_annexed_text_files(project_path, dataset_roots))
 
         missing_text_policy_count = int(result.get("text_policy_missing_count", 0) or 0)
         text_policy_warning = ""
@@ -1382,6 +1398,11 @@ class ProjectManager:
                 "tracked as git-annex symlinks (e.g. "
                 f"{', '.join(result.get('annexed_text_files_examples', [])[:3])}). "
                 "Use Save DataLad Snapshot to un-annex them."
+            )
+        elif result.get("annexed_text_files_scan_skipped"):
+            annexed_text_files_warning = (
+                " Scan for already-annexed text files was skipped for a fast "
+                "project load; run the deep DataLad status check to see it."
             )
         elif not result.get("annexed_text_files_scan_complete", True):
             annexed_text_files_warning = (
@@ -2979,7 +3000,11 @@ class ProjectManager:
         """Best-effort DataLad autosave used when PRISM changes project context."""
         project_path = Path(path)
         normalized_reason = str(reason or "").strip() or "session_closed"
-        status = self.get_datalad_status(project_path)
+        # fast=True: this runs synchronously on every project switch and only
+        # needs enabled/available to decide whether to save; the deep
+        # per-subdataset annexed-text-file scan adds no value here and is the
+        # dominant cost on datasets with many nested subdatasets.
+        status = self.get_datalad_status(project_path, fast=True)
         result: Dict[str, Any] = {
             "success": False,
             "attempted": False,
@@ -3009,7 +3034,7 @@ class ProjectManager:
             message=self._build_auto_datalad_save_message(normalized_reason),
             datalad_executable=status.get("executable"),
         )
-        refreshed_status = self.get_datalad_status(project_path)
+        refreshed_status = self.get_datalad_status(project_path, fast=True)
         save_result.update(refreshed_status)
         result["attempted"] = True
         result["datalad"] = save_result

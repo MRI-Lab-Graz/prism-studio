@@ -913,7 +913,13 @@ def inject_utilities():
     current_version = get_prism_studio_version()
     latest_version, latest_release_url = get_latest_prism_studio_version()
     project_path = session.get("current_project_path")
-    current_project_datalad = ProjectManager().get_datalad_status(project_path)
+    # This context processor runs on every template render across the whole
+    # app (every navbar page, not just the Projects page), so it must use the
+    # fast path: the full scan does a `git annex find` per nested subdataset
+    # and can take 5-10+ seconds on a project with 100+ subjects/subdatasets.
+    current_project_datalad = ProjectManager().get_datalad_status(
+        project_path, fast=True
+    )
 
     return {
         "get_filename_from_path": get_filename_from_path,

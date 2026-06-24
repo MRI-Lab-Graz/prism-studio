@@ -89,6 +89,62 @@ def test_wide_to_long_preview_accepts_dotted_session_indicators_with_labels():
     assert {row["session"] for row in body["rows"]} == {"1", "2"}
 
 
+def test_wide_to_long_preview_reports_empty_data_rows():
+    app = _build_app()
+    client = app.test_client()
+
+    csv_bytes = (
+        b"participant_id,Group,T1_score,T2_score\n"
+        b"sub-01,1,1,2\n"
+        b"sub-02,2,,\n"
+    )
+
+    response = client.post(
+        "/api/file-management/wide-to-long-preview",
+        data={
+            "data": (io.BytesIO(csv_bytes), "survey.csv"),
+            "session_column": "session",
+            "session_indicators": "T1_,T2_",
+        },
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["empty_data_rows"] == [{"row_index": 1, "id_value": "sub-02"}]
+    assert body["empty_data_rows_dropped"] is False
+    # Default behavior keeps the empty row in the preview output.
+    assert body["rows_total"] == 4
+
+
+def test_wide_to_long_convert_drop_empty_rows_excludes_them():
+    app = _build_app()
+    client = app.test_client()
+
+    csv_bytes = (
+        b"participant_id,Group,T1_score,T2_score\n"
+        b"sub-01,1,1,2\n"
+        b"sub-02,2,,\n"
+    )
+
+    response = client.post(
+        "/api/file-management/wide-to-long",
+        data={
+            "data": (io.BytesIO(csv_bytes), "survey.csv"),
+            "session_column": "session",
+            "session_indicators": "T1_,T2_",
+            "drop_empty_rows": "1",
+        },
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 200
+    decoded = response.data.decode("utf-8")
+    assert "sub-02" not in decoded
+    assert "sub-01,1,1,T1_" in decoded
+    assert "sub-01,1,2,T2_" in decoded
+
+
 def test_wide_to_long_preview_rejects_non_unique_selected_id_column():
     app = _build_app()
     client = app.test_client()

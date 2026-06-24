@@ -847,6 +847,62 @@ class TestProjectManager(unittest.TestCase):
         self.assertEqual(result.get("next_missing_subdataset"), "sub-002")
 
     @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_get_datalad_status_fast_skips_annexed_text_file_scan(self, _mock_which):
+        """fast=True must not run the per-subdataset git-annex-find scan.
+
+        That scan is the dominant cost on projects with many nested
+        subdatasets (seconds-to-tens-of-seconds); the fast path used for
+        every page load/project switch must skip it entirely.
+        """
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+
+            with patch(
+                "src.project_manager.ProjectManager._get_registered_nested_dataset_paths",
+                return_value=set(),
+            ), patch.object(
+                ProjectManager, "_find_annexed_text_files"
+            ) as mock_find_annexed:
+                result = manager.get_datalad_status(project_path, fast=True)
+
+        mock_find_annexed.assert_not_called()
+        self.assertTrue(result.get("enabled"))
+        self.assertFalse(result.get("annexed_text_files_scan_complete"))
+        self.assertTrue(result.get("annexed_text_files_scan_skipped"))
+
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_get_datalad_status_default_still_runs_annexed_text_file_scan(
+        self, _mock_which
+    ):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+
+            with patch(
+                "src.project_manager.ProjectManager._get_registered_nested_dataset_paths",
+                return_value=set(),
+            ), patch.object(
+                ProjectManager,
+                "_find_annexed_text_files",
+                return_value={
+                    "annexed_text_files_complete": True,
+                    "annexed_text_files_count": 0,
+                    "annexed_text_files_examples": [],
+                    "annexed_text_files_scan_complete": True,
+                },
+            ) as mock_find_annexed:
+                result = manager.get_datalad_status(project_path, fast=False)
+
+        mock_find_annexed.assert_called_once()
+        self.assertFalse(result.get("annexed_text_files_scan_skipped"))
+        self.assertTrue(result.get("annexed_text_files_scan_complete"))
+
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
     def test_get_datalad_status_does_not_count_unregistered_local_dataset_metadata(
         self, _mock_which
     ):
@@ -1026,6 +1082,37 @@ class TestProjectManager(unittest.TestCase):
             ["/usr/bin/datalad", "save", "-m", "PRISM auto-save before project switch"],
             commands,
         )
+
+    @patch(
+        "src.project_manager.subprocess.run",
+        return_value=Mock(returncode=0, stdout="", stderr=""),
+    )
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_autosave_datalad_snapshot_uses_fast_datalad_status(
+        self, _mock_which, _mock_run
+    ):
+        """Autosave-on-project-switch must not run the slow annexed-text scan.
+
+        It only needs enabled/available to decide whether to save, and this
+        runs synchronously on every project switch.
+        """
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            with patch(
+                "src.project_manager.ProjectManager._get_registered_nested_dataset_paths",
+                return_value=set(),
+            ), patch.object(
+                ProjectManager, "_find_annexed_text_files"
+            ) as mock_find_annexed:
+                manager.autosave_datalad_snapshot(
+                    project_path,
+                    reason="project_switch next_project=/tmp/other",
+                )
+
+        mock_find_annexed.assert_not_called()
 
     @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
     def test_autosave_datalad_snapshot_skips_non_datalad_project(self, _mock_which):

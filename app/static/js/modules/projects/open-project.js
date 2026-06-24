@@ -428,6 +428,30 @@ export function initOpenProjectController({
         }
     }
 
+    function refreshDataladStatusDeep(expectedPath) {
+        // The fast project-load path skips the per-subdataset `git annex find`
+        // scan (slow on datasets with many nested subdatasets). Fetch the full
+        // scan afterwards, non-blocking, so the DataLad card fills in without
+        // delaying the initial page render.
+        fetchWithApiFallback('/api/projects/datalad/status-deep')
+            .then((response) => response.json().catch(() => null))
+            .then((data) => {
+                if (!data || !data.success) {
+                    return;
+                }
+                const currentState = getCurrentProjectState();
+                if (String(currentState.path || '').trim() !== String(expectedPath || '').trim()) {
+                    // The user already switched projects; discard this stale result.
+                    return;
+                }
+                applyCurrentProject({ ...currentState, datalad: data.datalad });
+                renderProjectBoxDataladState(data.datalad, expectedPath);
+            })
+            .catch(() => {
+                // Best-effort enhancement only; the fast status already rendered.
+            });
+    }
+
     function applyProjectDataladResponse(data) {
         const currentState = getCurrentProjectState();
         const nextProjectState = data.current_project && typeof data.current_project === 'object'
@@ -1134,6 +1158,10 @@ export function initOpenProjectController({
             bindProjectBoxDataladActions();
             updateCreateProjectButton();
             showAutosaveFailureFeedback(result.autosave_previous);
+
+            if (currentState.datalad && currentState.datalad.enabled) {
+                refreshDataladStatusDeep(loadedPath);
+            }
 
             return true;
         } catch (error) {

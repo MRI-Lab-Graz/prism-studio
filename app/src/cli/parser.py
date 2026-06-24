@@ -111,6 +111,15 @@ def build_prism_tools_parsers(
         action="store_true",
         help="Overwrite an existing output file",
     )
+    parser_wide_to_long.add_argument(
+        "--drop-empty-rows",
+        action="store_true",
+        help=(
+            "Exclude participants whose session-coded columns are all empty "
+            "(e.g. a dropout row with only an ID/group) from the long output. "
+            "Without this flag, such rows are kept but reported as a warning."
+        ),
+    )
 
     parser_participants = subparsers.add_parser(
         "participants",
