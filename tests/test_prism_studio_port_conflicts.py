@@ -154,10 +154,16 @@ def test_inject_utilities_exposes_request_api_origin(
 
     import src.project_manager as project_manager_module
 
+    fast_flags_seen = []
+
+    def fake_get_datalad_status(self, project_path, *, fast=False):
+        fast_flags_seen.append(fast)
+        return {"path": project_path, "enabled": False}
+
     monkeypatch.setattr(
         project_manager_module.ProjectManager,
         "get_datalad_status",
-        lambda self, project_path: {"path": project_path, "enabled": False},
+        fake_get_datalad_status,
     )
 
     with prism_studio_module.app.test_request_context(
@@ -167,3 +173,7 @@ def test_inject_utilities_exposes_request_api_origin(
         injected = prism_studio_module.inject_utilities()
 
     assert injected["prism_api_origin"] == "http://127.0.0.1:5002"
+    # This context processor runs on every template render across the whole
+    # app, so it must use the fast DataLad status path; the full per-
+    # subdataset scan would otherwise slow down every navbar page load.
+    assert fast_flags_seen == [True]

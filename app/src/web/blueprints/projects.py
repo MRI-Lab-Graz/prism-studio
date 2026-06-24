@@ -143,9 +143,16 @@ def _get_datalad_setup_preferences(project_path: str | None) -> dict[str, Any]:
 
 
 def get_current_project() -> dict:
-    """Get the current working project from session."""
+    """Get the current working project from session.
+
+    Uses the fast DataLad status path (skips the per-subdataset
+    ``git annex find`` scan) since this is called on every page load and
+    project switch; the full scan can take many seconds on datasets with
+    100+ nested subdatasets. See ``/api/projects/datalad/status-deep`` for
+    the on-demand full scan.
+    """
     project_path = session.get("current_project_path")
-    datalad_status = _project_manager.get_datalad_status(project_path)
+    datalad_status = _project_manager.get_datalad_status(project_path, fast=True)
     datalad_status = datalad_status if isinstance(datalad_status, dict) else {}
     datalad_status = {
         **datalad_status,
@@ -288,6 +295,28 @@ def projects_page():
 def get_current():
     """Get the current working project."""
     return jsonify(get_current_project())
+
+
+@projects_bp.route("/api/projects/datalad/status-deep", methods=["GET"])
+def get_datalad_status_deep():
+    """Run the full DataLad status scan for the current project.
+
+    Includes the per-subdataset ``git annex find`` scan for already-annexed
+    text files, which `get_current_project` skips for speed. Intended to be
+    called lazily by the frontend after the initial (fast) project load has
+    rendered, so loading a project with many nested subdatasets stays quick.
+    """
+    project_path = session.get("current_project_path")
+    if not project_path:
+        return jsonify({"success": False, "error": "No current project loaded."}), 400
+
+    datalad_status = _project_manager.get_datalad_status(project_path, fast=False)
+    datalad_status = datalad_status if isinstance(datalad_status, dict) else {}
+    datalad_status = {
+        **datalad_status,
+        **_get_datalad_setup_preferences(project_path),
+    }
+    return jsonify({"success": True, "datalad": datalad_status})
 
 
 @projects_bp.route("/api/projects/current", methods=["POST"])

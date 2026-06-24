@@ -149,6 +149,95 @@ def test_wide_to_long_cli_json_inspect_output(tmp_path: Path) -> None:
     assert payload["column_rename_preview"][0]["output_column"] == "score"
 
 
+def test_wide_to_long_cli_warns_about_empty_data_rows_by_default(
+    tmp_path: Path,
+) -> None:
+    input_path = tmp_path / "wide.csv"
+    pd.DataFrame(
+        {
+            "participant_id": ["sub-01", "sub-02"],
+            "Group": ["1", "2"],
+            "T1_score": ["1", ""],
+            "T2_score": ["2", ""],
+        }
+    ).to_csv(input_path, index=False)
+
+    result = _run_prism_tools(
+        "wide-to-long",
+        "--input",
+        str(input_path),
+        "--session-indicators",
+        "T1_,T2_",
+        "--inspect-only",
+    )
+
+    output = (result.stdout or "") + (result.stderr or "")
+    assert result.returncode == 0, output
+    assert "Found 1 participant(s) with no session-coded data" in output
+    assert "sub-02" in output
+    assert "--drop-empty-rows" in output
+
+
+def test_wide_to_long_cli_json_reports_empty_data_rows(tmp_path: Path) -> None:
+    input_path = tmp_path / "wide.csv"
+    pd.DataFrame(
+        {
+            "participant_id": ["sub-01", "sub-02"],
+            "T1_score": ["1", ""],
+            "T2_score": ["2", ""],
+        }
+    ).to_csv(input_path, index=False)
+
+    result = _run_prism_tools(
+        "wide-to-long",
+        "--input",
+        str(input_path),
+        "--session-indicators",
+        "T1_,T2_",
+        "--inspect-only",
+        "--json",
+    )
+
+    output = (result.stdout or "") + (result.stderr or "")
+    assert result.returncode == 0, output
+    payload = json.loads(result.stdout)
+    assert payload["empty_data_rows"] == [{"row_index": 1, "id_value": "sub-02"}]
+    assert payload["empty_data_rows_dropped"] is False
+
+
+def test_wide_to_long_cli_drop_empty_rows_excludes_them_from_output(
+    tmp_path: Path,
+) -> None:
+    input_path = tmp_path / "wide.csv"
+    output_path = tmp_path / "long.csv"
+    pd.DataFrame(
+        {
+            "participant_id": ["sub-01", "sub-02"],
+            "T1_score": ["1", ""],
+            "T2_score": ["2", ""],
+        }
+    ).to_csv(input_path, index=False)
+
+    result = _run_prism_tools(
+        "wide-to-long",
+        "--input",
+        str(input_path),
+        "--output",
+        str(output_path),
+        "--session-indicators",
+        "T1_,T2_",
+        "--drop-empty-rows",
+    )
+
+    output = (result.stdout or "") + (result.stderr or "")
+    assert result.returncode == 0, output
+    assert "Dropped 1 participant(s) with no session-coded data" in output
+    assert "sub-02" in output
+
+    long_df = pd.read_csv(output_path, dtype=str)
+    assert long_df["participant_id"].tolist() == ["sub-01", "sub-01"]
+
+
 def test_wide_to_long_cli_rejects_non_unique_selected_id_column(
     tmp_path: Path,
 ) -> None:

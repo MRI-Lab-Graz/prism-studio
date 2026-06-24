@@ -5,6 +5,7 @@ import pandas as pd
 from src.converters.wide_to_long import (
     convert_wide_to_long_dataframe,
     detect_wide_session_prefixes,
+    find_empty_data_rows,
     inspect_wide_to_long_columns,
 )
 
@@ -201,6 +202,54 @@ def test_strip_indicator_with_dash_joiner() -> None:
     )
     assert "ses" in result.columns
     assert len(result) == 2
+
+
+def test_find_empty_data_rows_flags_dropout_with_only_id_and_group() -> None:
+    """A participant who only has ID/Group filled in (no session data) is flagged."""
+    df = pd.DataFrame(
+        {
+            "ID": ["001", "002"],
+            "Group": ["1", "2"],
+            "pre_score_1": ["5", None],
+            "pre_score_2": ["6", None],
+            "post_score_1": ["7", ""],
+            "post_score_2": ["8", " "],
+        }
+    )
+
+    empty_rows = find_empty_data_rows(
+        df,
+        id_column="ID",
+        data_columns=["pre_score_1", "pre_score_2", "post_score_1", "post_score_2"],
+    )
+
+    assert empty_rows == [{"row_index": 1, "id_value": "002"}]
+
+
+def test_find_empty_data_rows_returns_empty_list_when_all_rows_have_data() -> None:
+    df = pd.DataFrame(
+        {
+            "ID": ["001", "002"],
+            "pre_score": ["5", "6"],
+        }
+    )
+
+    empty_rows = find_empty_data_rows(
+        df, id_column="ID", data_columns=["pre_score"]
+    )
+
+    assert empty_rows == []
+
+
+def test_find_empty_data_rows_raises_for_missing_id_column() -> None:
+    df = pd.DataFrame({"pre_score": ["5"]})
+
+    try:
+        find_empty_data_rows(df, id_column="ID", data_columns=["pre_score"])
+    except ValueError as exc:
+        assert "ID column 'ID' not found" in str(exc)
+    else:
+        raise AssertionError("Expected ValueError for missing ID column")
 
 
 def test_no_matched_cols_for_indicator_skipped() -> None:
