@@ -1,0 +1,10 @@
+# Minimal runtime dependencies for the standalone PRISM dataset validator
+# (app/prism.py). This is a strict subset of requirements-runtime.txt -
+# only what the validation engine itself imports (see app/src/core/validation.py,
+# validator.py, schema_manager.py, runner.py, template_validator.py, fixer.py,
+# plugins.py, formatters.py, reporting.py, environment/builder.py).
+# No Flask, pandas, datalad, or other Studio app/converter dependencies
+# are required to validate a dataset.
+jsonschema
+bids-validator
+defusedxml
