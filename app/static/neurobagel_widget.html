@@ -571,10 +571,24 @@ window.applyNeurobagelEnrichment = function(colName) {
   
   const mapping = window.neurobagelCommonMappings[concept];
   if (!mapping) return;
-  
+
   const colData = window.getNeurobagelColumnState(colName);
   if (!colData) return;
-  
+
+  // Block mapping to a standardized variable that's already claimed by another column.
+  const allColumns = window.neurobagelWidgetState?.allColumns || {};
+  const conflictCol = Object.entries(allColumns).find(([otherName, otherData]) =>
+    otherName !== colName &&
+    otherData &&
+    otherData.standardized_variable &&
+    String(otherData.standardized_variable).toLowerCase() === String(mapping.standardized_variable).toLowerCase()
+  );
+  if (conflictCol) {
+    alert(`"${conflictCol[0]}" is already mapped to "${concept}". Remove that mapping first, or choose a different column for "${concept}".`);
+    document.getElementById(`nb-map-${colName}`).value = colData.label || '';
+    return;
+  }
+
   // Apply the enrichment
   colData.standardized_variable = mapping.standardized_variable;
   colData.term_url = mapping.term_url;
@@ -1318,22 +1332,39 @@ window.renderNeurobagelEditor = function(colName, colData) {
         <i class="fas fa-magic me-2"></i>Semantic Enrichment
       </label>
       <div style="display: flex; gap: 8px; margin-top: 8px;">
+        ${(() => {
+          const allColumns = window.neurobagelWidgetState?.allColumns || {};
+          const usedBy = {};
+          for (const [otherName, otherData] of Object.entries(allColumns)) {
+            if (otherName !== colName && otherData && otherData.standardized_variable) {
+              usedBy[String(otherData.standardized_variable).toLowerCase()] = otherName;
+            }
+          }
+          const opt = (value, standardizedVar, label) => {
+            const takenBy = standardizedVar ? usedBy[standardizedVar.toLowerCase()] : null;
+            const selected = colData.standardized_variable === standardizedVar ? 'selected' : '';
+            const disabled = takenBy ? 'disabled' : '';
+            const text = takenBy ? `${label} (used by ${takenBy})` : label;
+            return `<option value="${value}" ${selected} ${disabled}>${text}</option>`;
+          };
+          return `
         <select class="nb-field-input" id="nb-map-${colName}" style="flex: 1; min-width: 0; padding: 6px; font-size: 13px;">
           <option value="">-- Map to NeuroBagel Concept --</option>
           <optgroup label="Demographics">
-            <option value="Sex" ${colData.standardized_variable === 'biological_sex' ? 'selected' : ''}>Sex / Gender</option>
-            <option value="Age" ${colData.standardized_variable === 'age' ? 'selected' : ''}>Age</option>
-            <option value="Handedness" ${colData.standardized_variable === 'handedness' ? 'selected' : ''}>Handedness</option>
-            <option value="Education" ${colData.standardized_variable === 'education' || colData.standardized_variable === 'education_level' ? 'selected' : ''}>Education Level</option>
+            ${opt('Sex', 'biological_sex', 'Sex / Gender')}
+            ${opt('Age', 'age', 'Age')}
+            ${opt('Handedness', 'handedness', 'Handedness')}
+            ${opt('Education', colData.standardized_variable === 'education_level' ? 'education_level' : 'education', 'Education Level')}
           </optgroup>
           <optgroup label="Clinical">
-            <option value="Diagnosis" ${colData.standardized_variable === 'participant_group' || colData.standardized_variable === 'diagnosis' ? 'selected' : ''}>Diagnosis / Group</option>
-            <option value="Assessment" ${colData.standardized_variable === 'assessment' ? 'selected' : ''}>Assessment / Score</option>
+            ${opt('Diagnosis', colData.standardized_variable === 'diagnosis' ? 'diagnosis' : 'participant_group', 'Diagnosis / Group')}
+            ${opt('Assessment', 'assessment', 'Assessment / Score')}
           </optgroup>
           <optgroup label="Identifiers">
-            <option value="ParticipantID" ${colData.standardized_variable === 'participant_id' ? 'selected' : ''}>Participant ID</option>
+            ${opt('ParticipantID', 'participant_id', 'Participant ID')}
           </optgroup>
-        </select>
+        </select>`;
+        })()}
         <button class="nb-btn nb-btn-primary" onclick="window.applyNeurobagelEnrichment('${colName}')" style="padding: 4px 10px;">
           Map
         </button>
