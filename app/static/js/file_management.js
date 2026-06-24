@@ -102,6 +102,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const wideLongColumnPreviewSection = document.getElementById('wideLongColumnPreviewSection');
     const wideLongColumnPreviewList = document.getElementById('wideLongColumnPreviewList');
     const wideLongAmbiguityWarning = document.getElementById('wideLongAmbiguityWarning');
+    const wideLongEmptyRowsWarning = document.getElementById('wideLongEmptyRowsWarning');
+    const wideLongDropEmptyRows = document.getElementById('wideLongDropEmptyRows');
     const wideLongTableHead = document.getElementById('wideLongTableHead');
     const wideLongTableBody = document.getElementById('wideLongTableBody');
     const wideLongRawPeek = document.getElementById('wideLongRawPeek');
@@ -529,6 +531,10 @@ document.addEventListener('DOMContentLoaded', () => {
             wideLongAmbiguityWarning.classList.add('d-none');
             wideLongAmbiguityWarning.innerHTML = '';
         }
+        if (wideLongEmptyRowsWarning) {
+            wideLongEmptyRowsWarning.classList.add('d-none');
+            wideLongEmptyRowsWarning.innerHTML = '';
+        }
         if (wideLongTableHead) wideLongTableHead.innerHTML = '';
         if (wideLongTableBody) wideLongTableBody.innerHTML = '';
     }
@@ -562,6 +568,8 @@ document.addEventListener('DOMContentLoaded', () => {
             : (Array.isArray(payload.detected_prefixes) ? payload.detected_prefixes : []);
         const renamePreview = Array.isArray(payload.column_rename_preview) ? payload.column_rename_preview : [];
         const ambiguousColumns = Array.isArray(payload.ambiguous_columns) ? payload.ambiguous_columns : [];
+        const emptyDataRows = Array.isArray(payload.empty_data_rows) ? payload.empty_data_rows : [];
+        const emptyDataRowsDropped = payload.empty_data_rows_dropped === true;
         const canConvert = payload.can_convert !== false;
 
         if (wideLongColumnPreviewSection && wideLongColumnPreviewList) {
@@ -591,6 +599,21 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 wideLongAmbiguityWarning.classList.add('d-none');
                 wideLongAmbiguityWarning.innerHTML = '';
+            }
+        }
+
+        if (wideLongEmptyRowsWarning) {
+            if (emptyDataRows.length) {
+                const ids = emptyDataRows.map((row) => escapeHtml(row.id_value || `row ${row.row_index}`)).join(', ');
+                const verb = emptyDataRowsDropped ? 'Dropped' : 'Found (kept in the output)';
+                const hint = emptyDataRowsDropped
+                    ? ''
+                    : ' Check "Drop participants with no session-coded data" above to exclude them instead.';
+                wideLongEmptyRowsWarning.innerHTML = `<div class="fw-bold mb-1">${verb} ${emptyDataRows.length} participant(s) with no session-coded data (only ID/shared columns filled in):</div><div>${ids}</div><div class="small mt-1">${hint}</div>`;
+                wideLongEmptyRowsWarning.classList.remove('d-none');
+            } else {
+                wideLongEmptyRowsWarning.classList.add('d-none');
+                wideLongEmptyRowsWarning.innerHTML = '';
             }
         }
 
@@ -633,6 +656,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // run column is fixed to 'run'
         if (wideLongRunIndicators) {
             wideLongRunIndicators.value = '';
+        }
+        if (wideLongDropEmptyRows) {
+            wideLongDropEmptyRows.checked = false;
         }
         hideRawPeek();
         if (wideLongError) {
@@ -770,6 +796,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('run_column', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim() ? 'run' : '');
             formData.append('run_indicators', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim());
             formData.append('preview_limit', '8');
+            formData.append('drop_empty_rows', (wideLongDropEmptyRows && wideLongDropEmptyRows.checked) ? '1' : '0');
 
             try {
                 const response = await fetchWithApiFallback('/api/file-management/wide-to-long-preview', {
@@ -837,6 +864,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('session_indicators', (wideLongIndicators && wideLongIndicators.value || '').trim());
             formData.append('run_column', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim() ? 'run' : '');
             formData.append('run_indicators', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim());
+            formData.append('drop_empty_rows', (wideLongDropEmptyRows && wideLongDropEmptyRows.checked) ? '1' : '0');
             formData.append('project_path', currentProjectPath);
 
             try {

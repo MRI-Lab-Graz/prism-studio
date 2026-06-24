@@ -89,6 +89,7 @@ from .tools_recipe_builder_handlers import (
 )
 from src.converters.wide_to_long import (
     detect_wide_session_prefixes,
+    find_empty_data_rows,
     inspect_wide_to_long_columns,
     convert_wide_to_long_dataframe,
     resolve_wide_to_long_id_uniqueness,
@@ -575,6 +576,10 @@ def _parse_session_indicators(raw_value: str | None) -> list[str]:
     return [item.strip() for item in str(raw_value or "").split(",") if item.strip()]
 
 
+def _parse_bool_flag(raw_value: str | None) -> bool:
+    return str(raw_value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
 def _parse_combined_indicators(
     raw: str | None,
 ) -> tuple[list[str], dict[str, str]]:
@@ -671,6 +676,8 @@ def _wide_to_long_json_payload(
     error: str | None = None,
     id_column_checked: str | None = None,
     id_uniqueness: dict[str, object] | None = None,
+    empty_data_rows: list[dict[str, object]] | None = None,
+    empty_data_rows_dropped: bool = False,
 ) -> dict[str, object]:
     matched_columns = list(cast(list, plan.get("matched_columns") or []))
     ambiguous_columns = list(cast(list, plan.get("ambiguous_columns") or []))
@@ -693,6 +700,8 @@ def _wide_to_long_json_payload(
         "rows": [],
         "id_column_checked": id_column_checked,
         "id_uniqueness": id_uniqueness or {},
+        "empty_data_rows": empty_data_rows or [],
+        "empty_data_rows_dropped": empty_data_rows_dropped,
     }
 
     if long_df is not None:
@@ -727,6 +736,7 @@ def _run_wide_to_long_backend_command(
     preview_limit: int,
     inspect_only: bool,
     explicit_id_column: str | None = None,
+    drop_empty_rows: bool = False,
 ):
     """Execute wide-to-long backend logic in-process and return JSON plus output bytes."""
 
@@ -768,6 +778,16 @@ def _run_wide_to_long_backend_command(
             )
             can_convert = not bool(plan.get("ambiguous_columns"))
 
+            data_columns = list(cast(dict, plan.get("rename_map") or {}))
+            empty_data_rows = find_empty_data_rows(
+                df, id_column=id_column_checked, data_columns=data_columns
+            )
+            if drop_empty_rows and empty_data_rows:
+                df = df.drop(
+                    index=[row["row_index"] for row in empty_data_rows],
+                    errors="ignore",
+                )
+
             output_path = None
             long_df = None
             if inspect_only:
@@ -807,6 +827,8 @@ def _run_wide_to_long_backend_command(
                 output_path=output_path,
                 id_column_checked=id_column_checked,
                 id_uniqueness=id_uniqueness,
+                empty_data_rows=empty_data_rows,
+                empty_data_rows_dropped=drop_empty_rows,
             )
             response_payload["filename"] = filename
             output_bytes = output_path.read_bytes() if output_path is not None else None
@@ -921,6 +943,7 @@ def api_file_management_wide_to_long_preview():
         explicit_id_column=(request.form.get("id_column") or "").strip() or None,
         preview_limit=preview_limit,
         inspect_only=True,
+        drop_empty_rows=_parse_bool_flag(request.form.get("drop_empty_rows")),
     )
     if command_error is not None:
         return command_error
@@ -972,6 +995,7 @@ def api_file_management_wide_to_long():
         explicit_id_column=(request.form.get("id_column") or "").strip() or None,
         preview_limit=preview_limit,
         inspect_only=False,
+        drop_empty_rows=_parse_bool_flag(request.form.get("drop_empty_rows")),
     )
     if command_error is not None:
         return command_error

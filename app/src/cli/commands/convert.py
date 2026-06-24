@@ -15,6 +15,7 @@ from helpers.physio.convert_varioport import convert_varioport
 from src.converters.wide_to_long import (
     convert_wide_to_long_dataframe,
     detect_wide_session_prefixes,
+    find_empty_data_rows,
     inspect_wide_to_long_columns,
     resolve_wide_to_long_id_uniqueness,
 )
@@ -372,6 +373,8 @@ def _wide_to_long_json_payload(
     error: str | None = None,
     id_column_checked: str | None = None,
     id_uniqueness: dict[str, Any] | None = None,
+    empty_data_rows: list[dict[str, Any]] | None = None,
+    empty_data_rows_dropped: bool = False,
 ) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "filename": input_path.name,
@@ -392,6 +395,8 @@ def _wide_to_long_json_payload(
         "rows": [],
         "id_column_checked": id_column_checked,
         "id_uniqueness": id_uniqueness or {},
+        "empty_data_rows": empty_data_rows or [],
+        "empty_data_rows_dropped": empty_data_rows_dropped,
     }
 
     if long_df is not None:
@@ -461,6 +466,24 @@ def _print_wide_to_long_plan(plan: dict[str, Any], preview_limit: int) -> None:
             print(f"  {item.get('column')}: {detail_text}")
 
 
+def _print_empty_data_rows(
+    empty_data_rows: list[dict[str, Any]], *, dropped: bool
+) -> None:
+    if not empty_data_rows:
+        return
+    ids = [
+        str(row.get("id_value") or f"row {row.get('row_index')}")
+        for row in empty_data_rows
+    ]
+    action = "Dropped" if dropped else "Found"
+    print(
+        f"\n{action} {len(empty_data_rows)} participant(s) with no session-coded "
+        f"data (only ID/shared columns filled in): {', '.join(ids)}"
+    )
+    if not dropped:
+        print("Pass --drop-empty-rows to exclude them from the long output.")
+
+
 def cmd_convert_wide_to_long(args) -> None:
     """Handle the 'wide-to-long' command."""
     input_path = Path(args.input)
@@ -497,6 +520,16 @@ def cmd_convert_wide_to_long(args) -> None:
         )
         can_convert = not bool(plan["ambiguous_columns"])
 
+        data_columns = list(plan.get("rename_map") or {})
+        empty_data_rows = find_empty_data_rows(
+            df, id_column=id_column_checked, data_columns=data_columns
+        )
+        drop_empty_rows = bool(getattr(args, "drop_empty_rows", False))
+        if drop_empty_rows and empty_data_rows:
+            df = df.drop(
+                index=[row["row_index"] for row in empty_data_rows], errors="ignore"
+            )
+
         if args.inspect_only:
             long_df = None
             if can_convert:
@@ -518,6 +551,8 @@ def cmd_convert_wide_to_long(args) -> None:
                             long_df=long_df,
                             id_column_checked=id_column_checked,
                             id_uniqueness=id_uniqueness,
+                            empty_data_rows=empty_data_rows,
+                            empty_data_rows_dropped=drop_empty_rows,
                         ),
                         ensure_ascii=True,
                     )
@@ -526,6 +561,7 @@ def cmd_convert_wide_to_long(args) -> None:
 
             _print_wide_to_long_plan(plan, preview_limit=preview_limit)
             print(f"ID uniqueness check passed for column: {id_column_checked}")
+            _print_empty_data_rows(empty_data_rows, dropped=drop_empty_rows)
             if not can_convert:
                 sys.exit(2)
             print("\nInspect-only mode: no output file written.")
@@ -604,6 +640,8 @@ def cmd_convert_wide_to_long(args) -> None:
                         output_path=output_path,
                         id_column_checked=id_column_checked,
                         id_uniqueness=id_uniqueness,
+                        empty_data_rows=empty_data_rows,
+                        empty_data_rows_dropped=drop_empty_rows,
                     ),
                     ensure_ascii=True,
                 )
@@ -612,6 +650,7 @@ def cmd_convert_wide_to_long(args) -> None:
 
         _print_wide_to_long_plan(plan, preview_limit=preview_limit)
         print(f"ID uniqueness check passed for column: {id_column_checked}")
+        _print_empty_data_rows(empty_data_rows, dropped=drop_empty_rows)
 
         print("\nConversion complete")
         print("=" * 50)

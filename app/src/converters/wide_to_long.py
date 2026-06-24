@@ -32,6 +32,13 @@ if TYPE_CHECKING:
         session_prefixes: list[str] | None = None,
     ) -> dict[str, Any]: ...
 
+    def find_empty_data_rows(
+        df: Any,
+        *,
+        id_column: str,
+        data_columns: list[str],
+    ) -> list[dict[str, Any]]: ...
+
 else:
     _src_wide_to_long = load_canonical_module(
         current_file=__file__,
