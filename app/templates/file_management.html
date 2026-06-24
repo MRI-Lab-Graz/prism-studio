@@ -737,6 +737,15 @@
                                     </div>
                                 </div>
 
+                                <!-- Sheet picker (auto-shown only for .xlsx files with more than one sheet) -->
+                                <div id="wideLongSheetGroup" class="row g-3 mb-3 d-none">
+                                    <div class="col-md-4">
+                                        <label for="wideLongSheetSelect" class="form-label fw-bold">Sheet</label>
+                                        <select class="form-select" id="wideLongSheetSelect"></select>
+                                        <small class="text-muted">This workbook has multiple sheets. Pick the one with your wide-format data.</small>
+                                    </div>
+                                </div>
+
                                 <!-- Raw data peek panel (auto-shown on file pick) -->
                                 <div id="wideLongRawPeek" class="d-none mb-3">
                                     <div class="d-flex align-items-center justify-content-between mb-1">

@@ -19,7 +19,12 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from app.src.converters.file_reader import ReadResult, read_tabular_file
+from app.src.converters.file_reader import (
+    ReadResult,
+    list_excel_sheets,
+    read_tabular_file,
+    resolve_sheet_selection,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -355,3 +360,78 @@ class TestFileReaderEdgeCases:
             # If it doesn't raise, that's also acceptable behavior
         except ValueError:
             pass  # Expected behavior
+
+
+# ---------------------------------------------------------------------------
+# Multi-sheet Excel workbooks: list_excel_sheets / resolve_sheet_selection
+# ---------------------------------------------------------------------------
+
+
+class TestExcelSheetSelection:
+    """A multi-tab export (data + codebook + notes) shouldn't silently
+    convert whichever sheet happens to be first."""
+
+    def _write_multi_sheet_workbook(self, path: Path) -> None:
+        import openpyxl
+
+        wb = openpyxl.Workbook()
+        data_sheet = wb.active
+        data_sheet.title = "Data"
+        data_sheet.append(["ID", "score"])
+        data_sheet.append([1, 10])
+
+        notes_sheet = wb.create_sheet("Notes")
+        notes_sheet.append(["CODE", "comment"])
+        notes_sheet.append([1, "looks fine"])
+
+        # An empty sheet (header-only, common for unused template tabs).
+        wb.create_sheet("Unused")
+
+        wb.save(str(path))
+
+    def test_list_excel_sheets_reports_names_and_non_empty_ones(self, tmp_path):
+        f = tmp_path / "multi.xlsx"
+        self._write_multi_sheet_workbook(f)
+
+        metadata = list_excel_sheets(f)
+
+        assert metadata["sheet_names"] == ["Data", "Notes", "Unused"]
+        assert metadata["non_empty_sheet_names"] == ["Data", "Notes"]
+        assert metadata["non_empty_sheet_indexes"] == [0, 1]
+
+    def test_list_excel_sheets_returns_empty_metadata_for_non_excel_path(
+        self, tmp_path
+    ):
+        f = tmp_path / "plain.csv"
+        f.write_text("a,b\n1,2\n", encoding="utf-8")
+
+        metadata = list_excel_sheets(f)
+
+        assert metadata == {
+            "sheet_names": [],
+            "non_empty_sheet_names": [],
+            "non_empty_sheet_indexes": [],
+        }
+
+    def test_resolve_sheet_selection_explicit_name_wins(self):
+        metadata = {"non_empty_sheet_indexes": [1]}
+        assert resolve_sheet_selection("Notes", metadata) == "Notes"
+
+    def test_resolve_sheet_selection_explicit_numeric_string_becomes_int(self):
+        assert resolve_sheet_selection("2", {}) == 2
+
+    def test_resolve_sheet_selection_defaults_to_first_non_empty_sheet(self):
+        metadata = {"non_empty_sheet_indexes": [1, 2]}
+        assert resolve_sheet_selection(None, metadata) == 1
+
+    def test_resolve_sheet_selection_falls_back_to_zero_without_metadata(self):
+        assert resolve_sheet_selection(None, None) == 0
+        assert resolve_sheet_selection("", {"non_empty_sheet_indexes": []}) == 0
+
+    def test_read_tabular_file_reads_the_resolved_sheet(self, tmp_path):
+        f = tmp_path / "multi.xlsx"
+        self._write_multi_sheet_workbook(f)
+
+        result = read_tabular_file(f, kind="xlsx", sheet="Notes")
+
+        assert list(result.df.columns) == ["CODE", "comment"]

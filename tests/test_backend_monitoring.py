@@ -15,6 +15,7 @@ if str(APP_PATH) not in sys.path:
 from src.web.backend_monitoring import (  # noqa: E402
     _build_terminal_command,
     _build_validate_folder_terminal_command,
+    _build_wide_to_long_terminal_command,
     emit_backend_request_action,
 )
 from src.config import AppSettings  # noqa: E402
@@ -1807,3 +1808,50 @@ def test_emit_backend_request_action_does_not_record_frontend_command_to_session
             emit_backend_request_action(request, app_root=str(APP_PATH))
 
     mock_record_command.assert_not_called()
+
+
+def test_build_wide_to_long_terminal_command_splits_combined_indicator_dsl():
+    """The web form's combined `indicator:label` syntax isn't valid CLI input.
+
+    --session-indicators on the real CLI only accepts bare, comma-separated
+    indicators; the indicator:label mapping needs a separate --session-map
+    flag. The printed "terminal preview" command must reflect that, or a
+    user copy-pasting it gets "No columns found for the selected session
+    indicators" for a string the UI itself produced.
+    """
+    app = Flask(__name__)
+    with app.test_request_context(
+        "/api/file-management/wide-to-long-preview",
+        method="POST",
+        data={
+            "data": (io.BytesIO(b"ID,pre_x\n1,2\n"), "Auswertungen (2).xlsx"),
+            "id_column": "ID",
+            "session_indicators": "pre_:1;mid_:2;post_:3",
+        },
+        content_type="multipart/form-data",
+    ):
+        cmd = _build_wide_to_long_terminal_command(request, inspect_only=True)
+
+    assert "--session-indicators pre_,mid_,post_" in cmd
+    assert "--session-map pre_:1,mid_:2,post_:3" in cmd
+    # The combined DSL string must never appear verbatim in the printed
+    # command -- that's exactly the string the real CLI parser rejects.
+    assert "pre_:1;mid_:2;post_:3" not in cmd
+
+
+def test_build_wide_to_long_terminal_command_handles_plain_indicators():
+    app = Flask(__name__)
+    with app.test_request_context(
+        "/api/file-management/wide-to-long-preview",
+        method="POST",
+        data={
+            "data": (io.BytesIO(b"participant_id,T1_score\nsub-01,1\n"), "wide.csv"),
+            "session_indicators": "T1_,T2_",
+        },
+        content_type="multipart/form-data",
+    ):
+        cmd = _build_wide_to_long_terminal_command(request, inspect_only=False)
+
+    assert "--session-indicators T1_,T2_" in cmd
+    assert "--session-map" not in cmd
+    assert "--output" in cmd and "<output-file>" in cmd

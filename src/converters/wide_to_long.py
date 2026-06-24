@@ -386,25 +386,42 @@ def find_empty_data_rows(
     column_name = str(id_column or "").strip()
     if not column_name:
         raise ValueError("ID column must be provided to check for empty data rows")
-    if column_name not in df.columns:
-        raise ValueError(f"ID column '{column_name}' not found in input")
 
-    present_data_columns = [str(c) for c in data_columns if c in df.columns]
-    if not present_data_columns:
+    # Look up columns by position rather than by label (`row[col]` /
+    # `df[col]`) so a duplicate-named column elsewhere in a real-world export
+    # can't turn a single-cell lookup into a multi-column Series and raise
+    # "truth value of a Series is ambiguous" deep inside this scan. Keep every
+    # position per name (not just the first/last) so a value in any duplicate
+    # occurrence of a data column still counts as "has data".
+    positions_by_name: dict[str, list[int]] = {}
+    for i, c in enumerate(df.columns):
+        positions_by_name.setdefault(str(c), []).append(i)
+
+    if column_name not in positions_by_name:
+        raise ValueError(f"ID column '{column_name}' not found in input")
+    id_position = positions_by_name[column_name][0]
+
+    present_positions = [
+        pos
+        for c in data_columns
+        for pos in positions_by_name.get(str(c), [])
+    ]
+    if not present_positions:
         return []
 
     empty_rows: list[dict[str, Any]] = []
-    for idx, row in df.iterrows():
+    for row_pos in range(len(df)):
         has_any_value = False
-        for col in present_data_columns:
-            value = row[col]
+        for col_pos in present_positions:
+            value = df.iat[row_pos, col_pos]
             if pd.isna(value):
                 continue
             if str(value).strip():
                 has_any_value = True
                 break
         if not has_any_value:
-            id_value = row[column_name]
+            idx = df.index[row_pos]
+            id_value = df.iat[row_pos, id_position]
             empty_rows.append(
                 {
                     "row_index": int(idx),
