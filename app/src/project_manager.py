@@ -104,6 +104,31 @@ DATALAD_TEXT_POLICY_REQUIRED_LINES = (
     "dataset_description.json annex.largefiles=nothing",
     "project.json annex.largefiles=nothing",
 )
+# Binary/bulk recording formats routed through Git LFS by the Git LFS export
+# option. Deliberately disjoint from DATALAD_TEXT_POLICY_REQUIRED_LINES above —
+# text/codebook files are always kept as plain Git blobs, never LFS pointers.
+GIT_LFS_EXPORT_GITATTRIBUTES_LINES = (
+    "*.nii filter=lfs diff=lfs merge=lfs -text",
+    "*.nii.gz filter=lfs diff=lfs merge=lfs -text",
+    "*.gz filter=lfs diff=lfs merge=lfs -text",
+    "*.h5 filter=lfs diff=lfs merge=lfs -text",
+    "*.mat filter=lfs diff=lfs merge=lfs -text",
+    "*.fif filter=lfs diff=lfs merge=lfs -text",
+    "*.edf filter=lfs diff=lfs merge=lfs -text",
+    "*.eeg filter=lfs diff=lfs merge=lfs -text",
+    "*.vhdr filter=lfs diff=lfs merge=lfs -text",
+    "*.vmrk filter=lfs diff=lfs merge=lfs -text",
+    "*.set filter=lfs diff=lfs merge=lfs -text",
+    "*.fdt filter=lfs diff=lfs merge=lfs -text",
+    "*.bdf filter=lfs diff=lfs merge=lfs -text",
+    "*.sav filter=lfs diff=lfs merge=lfs -text",
+    "*.pdf filter=lfs diff=lfs merge=lfs -text",
+    "*.mp4 filter=lfs diff=lfs merge=lfs -text",
+    "*.wav filter=lfs diff=lfs merge=lfs -text",
+    "*.png filter=lfs diff=lfs merge=lfs -text",
+    "*.svg filter=lfs diff=lfs merge=lfs -text",
+)
+GIT_LFS_INIT_STEP_TIMEOUT_SECONDS = 600
 EXPORT_TEMP_WORKSPACE_PREFIX = ".prism-folder-export-"
 EXPORT_TEMP_WORKSPACE_LOCKFILE = ".prism-export-active.json"
 EXPORT_TEMP_WORKSPACE_STALE_SECONDS = 15 * 60
@@ -2781,6 +2806,170 @@ class ProjectManager:
         )
         return result
 
+    def export_project_to_git_lfs_folder(
+        self,
+        path: Union[str, Path],
+        *,
+        output_root: Union[str, Path, None] = None,
+        scrub_mri_json: bool = False,
+        scrub_mri_json_groups: Optional[Set[str]] = None,
+        include_derivatives: bool = True,
+        include_sourcedata: bool = False,
+        include_code: bool = True,
+        include_analysis: bool = True,
+        exclude_subjects: Optional[set[str]] = None,
+        exclude_sessions: Optional[set[str]] = None,
+        exclude_modalities: Optional[set[str]] = None,
+        exclude_acq: Optional[Dict[str, set[str]]] = None,
+        exclude_tasks: Optional[Dict[str, set[str]]] = None,
+        init_git_lfs_repo: bool = True,
+    ) -> Dict[str, Any]:
+        """Export a project to a Git LFS-ready folder copy.
+
+        This is a one-way export snapshot for handing data to collaborators who
+        use Git LFS instead of DataLad/git-annex: it has no ongoing relationship
+        to the source project, and re-running it produces a brand-new snapshot —
+        nothing here syncs back into PRISM or DataLad. Works for DataLad-tracked,
+        plain-git, and untracked PRISM projects alike, since it always starts
+        from a materialized plain-folder copy.
+        """
+        result = self.export_project_to_plain_folder(
+            path,
+            output_root=output_root,
+            scrub_mri_json=scrub_mri_json,
+            scrub_mri_json_groups=scrub_mri_json_groups,
+            include_derivatives=include_derivatives,
+            include_sourcedata=include_sourcedata,
+            include_code=include_code,
+            include_analysis=include_analysis,
+            exclude_subjects=exclude_subjects,
+            exclude_sessions=exclude_sessions,
+            exclude_modalities=exclude_modalities,
+            exclude_acq=exclude_acq,
+            exclude_tasks=exclude_tasks,
+            materialize_annex_content=True,
+        )
+        if not result.get("success"):
+            return result
+
+        export_path = Path(result["output_path"])
+        git_lfs_info: Dict[str, Any] = {
+            "requested_init_repo": init_git_lfs_repo,
+            "repo_initialized": False,
+            "git_available": bool(shutil.which("git")),
+            "git_lfs_available": bool(shutil.which("git-lfs")),
+            "tracked_patterns": list(GIT_LFS_EXPORT_GITATTRIBUTES_LINES),
+        }
+
+        (export_path / ".gitattributes").write_text(
+            "\n".join(GIT_LFS_EXPORT_GITATTRIBUTES_LINES) + "\n", encoding="utf-8"
+        )
+
+        if init_git_lfs_repo:
+            if not git_lfs_info["git_available"] or not git_lfs_info["git_lfs_available"]:
+                missing = [
+                    name
+                    for name, available in (
+                        ("git", git_lfs_info["git_available"]),
+                        ("git-lfs", git_lfs_info["git_lfs_available"]),
+                    )
+                    if not available
+                ]
+                git_lfs_info["warning"] = (
+                    f"Could not initialize a Git LFS repository: {', '.join(missing)} "
+                    "not found on this machine. Wrote .gitattributes and "
+                    "GIT_LFS_EXPORT_NOTES.md so the export can be finished manually "
+                    "on a machine with Git and Git LFS installed."
+                )
+            else:
+                init_ok, init_error = self._run_git_lfs_init_commands(export_path)
+                git_lfs_info["repo_initialized"] = init_ok
+                if not init_ok:
+                    git_lfs_info["warning"] = init_error
+
+        (export_path / "GIT_LFS_EXPORT_NOTES.md").write_text(
+            self._git_lfs_export_notes_text(git_lfs_info), encoding="utf-8"
+        )
+
+        result["git_lfs"] = git_lfs_info
+        result["message"] = (
+            f"{result.get('message', '')} Prepared as a one-way Git LFS export snapshot."
+        ).strip()
+        self._emit_backend_progress(
+            f'Finished Git LFS export for "{Path(path).name}".',
+            command=f'open "{export_path}"',
+        )
+        return result
+
+    def _run_git_lfs_init_commands(self, export_path: Path) -> tuple[bool, str]:
+        commands = [
+            ["git", "init"],
+            ["git", "lfs", "install", "--local"],
+            ["git", "add", ".gitattributes"],
+            ["git", "add", "."],
+            ["git", "commit", "-m", "Initial commit (Git LFS export)"],
+        ]
+        for command in commands:
+            try:
+                process = subprocess.run(
+                    command,
+                    cwd=str(export_path),
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=GIT_LFS_INIT_STEP_TIMEOUT_SECONDS,
+                )
+            except subprocess.TimeoutExpired:
+                return False, f"`{' '.join(command)}` timed out."
+            except Exception as exc:
+                return False, f"`{' '.join(command)}` failed ({type(exc).__name__}: {exc})."
+            if process.returncode != 0:
+                detail = (process.stderr or process.stdout or "").strip()
+                return False, f"`{' '.join(command)}` failed: {detail[:500]}"
+        return True, ""
+
+    def _git_lfs_export_notes_text(self, git_lfs_info: Dict[str, Any]) -> str:
+        tracked = "\n".join(git_lfs_info["tracked_patterns"])
+        repo_status = (
+            "This folder is already an initialized Git LFS repository with an initial commit."
+            if git_lfs_info.get("repo_initialized")
+            else (
+                "This folder is NOT yet a Git repository. Run the steps below manually "
+                "on a machine with Git and Git LFS installed."
+            )
+        )
+        return f"""# Git LFS Export Notes
+
+This is a **one-way export snapshot** out of PRISM. It has no ongoing connection
+to the source project — re-exporting later produces a brand-new snapshot, and
+nothing here syncs back into PRISM or DataLad.
+
+{repo_status}
+
+## Tracked Git LFS patterns
+
+```
+{tracked}
+```
+
+Text and codebook files (.csv, .tsv, .json, .md, etc.) are intentionally left
+out of Git LFS and are tracked as normal Git blobs, consistent with PRISM's
+DataLad text-tracking policy.
+
+## Manual setup (if not already initialized)
+
+```bash
+cd <this folder>
+git init
+git lfs install
+git add .gitattributes
+git add .
+git commit -m "Initial commit (Git LFS export)"
+git remote add origin <YOUR_REMOTE_URL>
+git push -u origin main
+```
+"""
+
     def preview_plain_folder_export_availability(
         self,
         path: Union[str, Path],
@@ -3116,7 +3305,8 @@ class ProjectManager:
                                 f'Current project is already tracked by DataLad. Added '
                                 f'{len(created_subdatasets)} nested subdataset(s) and saved '
                                 f'with message "{message}". {remaining_subdatasets} '
-                                f'nested subdataset(s) remain; run repair again to continue.'
+                                f'nested subdataset(s) remain; click Register Nested Dataset '
+                                f'again to continue.'
                             )
                         else:
                             datalad_result["message"] = (
@@ -3129,8 +3319,8 @@ class ProjectManager:
                             datalad_result["message"] = (
                                 f"Current project is already tracked by DataLad. Added "
                                 f"{len(created_subdatasets)} nested subdataset(s). "
-                                f"{remaining_subdatasets} nested subdataset(s) remain; run "
-                                f"repair again to continue."
+                                f"{remaining_subdatasets} nested subdataset(s) remain; click "
+                                f"Register Nested Dataset again to continue."
                             )
                         else:
                             datalad_result["message"] = (
@@ -3400,8 +3590,24 @@ class ProjectManager:
                 continue
 
             if self._is_datalad_dataset(dataset_path):
+                if remaining_budget is not None and remaining_budget <= 0:
+                    skipped_paths.append(relative_dataset_text)
+                    continue
+
+                registration_result = self._register_existing_nested_dataset(
+                    project_path,
+                    dataset_path,
+                    datalad_executable,
+                )
+                if registration_result.get("success"):
+                    registered_paths.add(relative_dataset_text)
+                    created_paths.append(relative_dataset_text)
+                    if remaining_budget is not None:
+                        remaining_budget -= 1
+                    continue
+
                 failed_paths.append(
-                    f"{relative_dataset_text} ({self._build_nested_step_failure('verify nested dataset registration', 'local DataLad metadata exists but the parent dataset does not list this path as a registered subdataset')})"
+                    f"{relative_dataset_text} ({registration_result.get('message') or self._build_nested_step_failure('verify nested dataset registration', 'local DataLad metadata exists but the parent dataset does not list this path as a registered subdataset')})"
                 )
                 continue
 
@@ -4136,6 +4342,14 @@ class ProjectManager:
                     ),
                 }
 
+        # Write the text-tracking policy into this new nested dataset's own
+        # .gitattributes before its first save. Each nested dataset is a
+        # separate git-annex repo with its own largefiles config, so without
+        # this, any text-format files restored above would be annexed by
+        # git-annex's default heuristics on this very save -- requiring a
+        # later repair pass to un-annex them instead of never annexing them.
+        self._ensure_datalad_editable_metadata_policy_for_root(dataset_path)
+
         self._emit_backend_progress(
             f'Saving nested DataLad dataset "{dataset_path.name}".',
             command=(
@@ -4178,6 +4392,86 @@ class ProjectManager:
         return {
             "success": True,
             "message": "Created nested DataLad dataset.",
+        }
+
+    def _register_existing_nested_dataset(
+        self,
+        project_path: Path,
+        dataset_path: Path,
+        datalad_executable: str,
+    ) -> Dict[str, Any]:
+        """Register an already-initialized nested DataLad dataset that the
+        parent does not yet track.
+
+        This is the recovery path for a dataset left behind by an interrupted
+        or transient failure during _create_registered_nested_dataset (e.g. a
+        one-off git index error after `datalad create` had already
+        initialized the nested repo). The nested dataset itself is already
+        valid, so it must only be registered into the parent -- it must not
+        be routed through _create_registered_nested_dataset's
+        stage-aside-and-recreate logic, which assumes any existing content is
+        foreign data to park, not a real .git/.datalad tree, and would nest a
+        stale .git directory inside the freshly recreated one.
+        """
+        relative_dataset_text = dataset_path.relative_to(project_path).as_posix()
+        create_command = [
+            datalad_executable,
+            "create",
+            "-d",
+            ".",
+            "--force",
+            relative_dataset_text,
+        ]
+        self._emit_backend_progress(
+            f'Registering existing nested DataLad dataset "{relative_dataset_text}" into the project.',
+            command=" ".join(create_command),
+        )
+        try:
+            create_process = subprocess.run(
+                create_command,
+                cwd=str(project_path),
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            return {
+                "success": False,
+                "message": self._format_repair_timeout_message(
+                    f'Registering existing nested DataLad dataset "{relative_dataset_text}"'
+                ),
+            }
+        if create_process.returncode != 0:
+            detail = (
+                create_process.stderr
+                or create_process.stdout
+                or "Unknown DataLad error"
+            ).strip()
+            return {
+                "success": False,
+                "message": self._build_nested_step_failure(
+                    "register existing nested dataset",
+                    detail,
+                ),
+            }
+
+        if not self._is_registered_nested_dataset(
+            project_path,
+            dataset_path,
+            datalad_executable=datalad_executable,
+        ):
+            return {
+                "success": False,
+                "message": self._build_nested_step_failure(
+                    "verify nested dataset registration",
+                    "parent dataset still does not list this path as a registered subdataset after registration retry",
+                ),
+            }
+
+        return {
+            "success": True,
+            "message": "Registered existing nested DataLad dataset.",
         }
 
     def _build_nested_dataset_staging_path(
@@ -4671,6 +4965,47 @@ class ProjectManager:
         result["annexed_text_files_examples"] = found[:10]
         return result
 
+    def _ensure_datalad_editable_metadata_policy_for_root(
+        self,
+        dataset_root: Path,
+    ) -> bool:
+        """Write the text-tracking policy lines into a single dataset root's .gitattributes."""
+        gitattributes_path = dataset_root / ".gitattributes"
+        existing_content = ""
+        existing_lines = set()
+        if gitattributes_path.exists():
+            try:
+                existing_content = CrossPlatformFile.read_text(str(gitattributes_path))
+            except Exception:
+                existing_content = ""
+            existing_lines = {
+                line.strip()
+                for line in existing_content.splitlines()
+                if line.strip()
+            }
+
+        missing_lines = [
+            line
+            for line in DATALAD_TEXT_POLICY_REQUIRED_LINES
+            if line not in existing_lines
+        ]
+        if not missing_lines:
+            return False
+
+        if existing_content.strip():
+            new_content = (
+                existing_content.rstrip() + "\n" + "\n".join(missing_lines) + "\n"
+            )
+        else:
+            new_content = (
+                "# Keep PRISM metadata and common text files editable in Git, not git-annex.\n"
+                + "\n".join(missing_lines)
+                + "\n"
+            )
+
+        CrossPlatformFile.write_text(str(gitattributes_path), new_content)
+        return True
+
     def _ensure_datalad_editable_metadata_policy(
         self,
         project_path: Path,
@@ -4678,41 +5013,8 @@ class ProjectManager:
         """Keep core project metadata and common text files in Git, regardless of DataLad state."""
         updated = False
         for dataset_root in self._iter_datalad_dataset_roots(project_path):
-            gitattributes_path = dataset_root / ".gitattributes"
-            existing_content = ""
-            existing_lines = set()
-            if gitattributes_path.exists():
-                try:
-                    existing_content = CrossPlatformFile.read_text(str(gitattributes_path))
-                except Exception:
-                    existing_content = ""
-                existing_lines = {
-                    line.strip()
-                    for line in existing_content.splitlines()
-                    if line.strip()
-                }
-
-            missing_lines = [
-                line
-                for line in DATALAD_TEXT_POLICY_REQUIRED_LINES
-                if line not in existing_lines
-            ]
-            if not missing_lines:
-                continue
-
-            if existing_content.strip():
-                new_content = (
-                    existing_content.rstrip() + "\n" + "\n".join(missing_lines) + "\n"
-                )
-            else:
-                new_content = (
-                    "# Keep PRISM metadata and common text files editable in Git, not git-annex.\n"
-                    + "\n".join(missing_lines)
-                    + "\n"
-                )
-
-            CrossPlatformFile.write_text(str(gitattributes_path), new_content)
-            updated = True
+            if self._ensure_datalad_editable_metadata_policy_for_root(dataset_root):
+                updated = True
 
         return updated
 

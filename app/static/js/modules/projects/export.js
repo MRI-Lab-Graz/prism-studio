@@ -9,7 +9,7 @@ import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 
 const EXPORT_VALIDATION_MODES = new Set(['both', 'bids', 'prism', 'ignore']);
-const EXPORT_REPOSITORY_MODES = new Set(['datalad_free', 'datalad_preserving']);
+const EXPORT_REPOSITORY_MODES = new Set(['datalad_free', 'datalad_preserving', 'git_lfs']);
 const ANNEX_AVAILABILITY_CACHE_TTL_MS = 15000;
 
 let projectStructureLoadToken = 0;
@@ -363,7 +363,9 @@ function buildExportRequestData(currentProjectPath, overrides = {}) {
         output_folder: (getById('exportOutputFolder')?.value || '').trim() || null,
         validation_mode: getSelectedExportValidationMode(),
         repository_mode: getSelectedExportRepositoryMode(),
-        exclude_version_control_metadata: getSelectedExportRepositoryMode() === 'datalad_free',
+        // Git LFS conversion only happens via the Folder Export button; ZIP export
+        // just falls back to a DataLad-free package when "git_lfs" is selected.
+        exclude_version_control_metadata: getSelectedExportRepositoryMode() !== 'datalad_preserving',
         exclude_subjects: _getUncheckedValues('export-subject-filter'),
         exclude_sessions: _getUncheckedValues('export-session-filter'),
         exclude_modalities: _getUncheckedValues('export-modality-filter'),
@@ -503,9 +505,13 @@ function getExportValidationStatusText(validationMode) {
 
 function getExportRepositoryModeStatusSuffix(repositoryMode) {
     const mode = normalizeExportRepositoryMode(repositoryMode);
-    return mode === 'datalad_preserving'
-        ? 'Repository metadata will be preserved.'
-        : 'Repository metadata will be removed.';
+    if (mode === 'datalad_preserving') {
+        return 'Repository metadata will be preserved.';
+    }
+    if (mode === 'git_lfs') {
+        return 'Repository metadata will be removed (use Folder Export below for the Git LFS conversion).';
+    }
+    return 'Repository metadata will be removed.';
 }
 
 function getExportRepositoryModeSuccessNote(repositoryMode) {
@@ -513,7 +519,24 @@ function getExportRepositoryModeSuccessNote(repositoryMode) {
     if (mode === 'datalad_preserving') {
         return '<p class="mb-2">This ZIP keeps hidden Git/DataLad repository metadata for reproducible DataLad workflows.</p>';
     }
+    if (mode === 'git_lfs') {
+        return '<p class="mb-2">This ZIP excludes hidden Git/DataLad repository metadata. Git LFS conversion is not applied to ZIP exports — use the Folder Export button for a Git LFS-ready snapshot.</p>';
+    }
     return '<p class="mb-2">This ZIP excludes hidden Git/DataLad repository metadata for a DataLad-free sharing package.</p>';
+}
+
+function isGitLfsExportModeSelected() {
+    return getSelectedExportRepositoryMode() === 'git_lfs';
+}
+
+function updatePlainFolderExportButtonLabel() {
+    const button = getById('plainFolderExportButton');
+    if (!button) {
+        return;
+    }
+    button.innerHTML = isGitLfsExportModeSelected()
+        ? '<i class="fas fa-code-branch me-2"></i>Git LFS Export'
+        : '<i class="fas fa-folder-open me-2"></i>Folder Export';
 }
 
 function normalizePreferenceStringArray(values) {
@@ -911,6 +934,7 @@ function applyExportPreferencesToFilters(preferences = lastLoadedExportPreferenc
     if (repositoryModeSelect) {
         repositoryModeSelect.value = normalized.repository_mode;
     }
+    updatePlainFolderExportButtonLabel();
 
     const defacingConfirmAlwaysToggle = getById('exportDefacingConfirmAlways');
     if (defacingConfirmAlwaysToggle) {
@@ -1379,6 +1403,7 @@ export function initExportForm() {
     if (repositoryModeSelect) {
         repositoryModeSelect.addEventListener('change', () => {
             saveExportPreferencesPatch({ repository_mode: getSelectedExportRepositoryMode() });
+            updatePlainFolderExportButtonLabel();
         });
     }
 
@@ -1429,6 +1454,7 @@ export function initExportForm() {
     const plainFolderExportButton = getById('plainFolderExportButton');
     if (plainFolderExportButton) {
         plainFolderExportButton.addEventListener('click', handlePlainFolderExport);
+        updatePlainFolderExportButtonLabel();
     }
 
     const uncheckAllFiltersBtn = getById('exportUncheckAllFilters');
@@ -1771,8 +1797,10 @@ async function handlePlainFolderExport(e) {
         return;
     }
 
+    const gitLfsMode = isGitLfsExportModeSelected();
+
     const btn = this;
-    const originalText = setButtonLoading(btn, true, 'Exporting Folder...');
+    const originalText = setButtonLoading(btn, true, gitLfsMode ? 'Exporting Git LFS Snapshot...' : 'Exporting Folder...');
     const progressDiv = getById('exportProgress');
     const progressBar = getById('exportProgressBar');
     const progressText = getById('exportProgressText');
@@ -1812,6 +1840,9 @@ async function handlePlainFolderExport(e) {
             ? 'Checking annex availability for selected scope...'
             : 'Creating plain folder export without Git/DataLad metadata...';
     }
+    if (gitLfsMode && statusText) {
+        statusText.textContent = 'Checking annex availability for selected scope (Git LFS export)...';
+    }
 
     if (materializeAnnex) {
         try {
@@ -1828,7 +1859,9 @@ async function handlePlainFolderExport(e) {
             }
         }
         if (statusText) {
-            statusText.textContent = 'Materializing DataLad content and creating plain folder export...';
+            statusText.textContent = gitLfsMode
+                ? 'Materializing content and preparing Git LFS export...'
+                : 'Materializing DataLad content and creating plain folder export...';
         }
     }
 
@@ -1864,15 +1897,19 @@ async function handlePlainFolderExport(e) {
             }
         }
 
-        const response = await fetchWithApiFallback('/api/projects/export/folder', {
+        const endpoint = gitLfsMode ? '/api/projects/export/git-lfs' : '/api/projects/export/folder';
+        const requestBody = gitLfsMode
+            ? { ...data, init_git_lfs_repo: true }
+            : data;
+        const response = await fetchWithApiFallback(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
+            body: JSON.stringify(requestBody),
         });
         const result = await response.json().catch(() => ({ success: false, error: 'Invalid server response.' }));
 
         if (statusText) {
-            statusText.textContent = 'Finalizing folder export...';
+            statusText.textContent = gitLfsMode ? 'Finalizing Git LFS export...' : 'Finalizing folder export...';
         }
         setFolderProgress(97);
 
@@ -1923,12 +1960,25 @@ async function handlePlainFolderExport(e) {
                     + missingPreviewHtml
                     + `</div>`
                 : '';
+            const gitLfsResult = result.git_lfs && typeof result.git_lfs === 'object' ? result.git_lfs : null;
+            const gitLfsHtml = gitLfsResult
+                ? `<div class="alert ${gitLfsResult.warning ? 'alert-warning' : 'alert-info'} mb-2">`
+                    + `<p class="mb-1"><i class="fas fa-code-branch me-2"></i>${gitLfsResult.repo_initialized
+                        ? 'Initialized a Git LFS repository with an initial commit in this folder.'
+                        : 'Wrote .gitattributes and GIT_LFS_EXPORT_NOTES.md; the repository was not auto-initialized.'}</p>`
+                    + (gitLfsResult.warning ? `<p class="mb-1">${escapeHtml(gitLfsResult.warning)}</p>` : '')
+                    + `<p class="mb-0 small text-muted">This is a one-way export snapshot — it has no ongoing connection back to this project.</p>`
+                    + `</div>`
+                : '';
             setHtml(resultDiv, `
                 <div class="alert alert-success">
-                    <h5><i class="fas fa-check-circle me-2"></i>Folder Export Successful!</h5>
-                    <p class="mb-2">PRISM created a normal folder copy without Git/DataLad metadata or hidden repository files.</p>
+                    <h5><i class="fas fa-check-circle me-2"></i>${gitLfsResult ? 'Git LFS Export Successful!' : 'Folder Export Successful!'}</h5>
+                    <p class="mb-2">${gitLfsResult
+                        ? 'PRISM created a folder copy prepared for Git LFS, without Git/DataLad metadata from the source project.'
+                        : 'PRISM created a normal folder copy without Git/DataLad metadata or hidden repository files.'}</p>
                     ${materializationHtml}
                     ${excludedMetadataHtml}
+                    ${gitLfsHtml}
                     ${warningHtml}
                     <p class="mb-0">Folder saved to:<br>
                     <code class="user-select-all">${escapeHtml(savedPath)}</code></p>

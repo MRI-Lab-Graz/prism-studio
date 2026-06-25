@@ -199,15 +199,13 @@
             return pickFile(options);
         }
 
+        let response;
+        let data;
         try {
             const projectJsonOnly = options.projectJsonOnly !== false;
             const query = projectJsonOnly ? '' : '?project_json_only=0';
-            const response = await fetchWithApiFallback(`/api/browse-file${query}`);
-            const data = await response.json();
-            if (!response.ok || data.error) {
-                throw new Error(data.error || 'File picker unavailable.');
-            }
-            return (data.path || '').trim();
+            response = await fetchWithApiFallback(`/api/browse-file${query}`);
+            data = await response.json();
         } catch (error) {
             console.warn('Native file picker failed, falling back to in-app browser:', error);
             return runInAppFallback({
@@ -218,6 +216,28 @@
                 mode: 'file'
             }, options.fallback);
         }
+
+        if (response.status === 400 && data.error) {
+            // User picked a file via the native dialog that failed validation (e.g. wrong
+            // filename). That's not a picker failure, so don't silently fall back to the
+            // in-app browser -- surface the message and let them re-open the dialog.
+            const validationError = new Error(data.error);
+            validationError.isPickerValidationError = true;
+            throw validationError;
+        }
+
+        if (!response.ok || data.error) {
+            console.warn('Native file picker unavailable, falling back to in-app browser:', data.error);
+            return runInAppFallback({
+                title: options.title || 'Select File',
+                confirmLabel: options.confirmLabel || 'Use This File',
+                startPath: options.startPath || '',
+                extensions: options.extensions || '',
+                mode: 'file'
+            }, options.fallback);
+        }
+
+        return (data.path || '').trim();
     }
 
     window.PrismFileSystemMode = {

@@ -127,7 +127,11 @@ export function initProjectFileBrowser({ fetchWithApiFallback }) {
             }
         } catch (error) {
             console.error('Project file picker error:', error);
-            alert('Failed to open project picker. Please enter path manually.');
+            if (error && error.isPickerValidationError) {
+                alert(error.message);
+            } else {
+                alert('Failed to open project picker. Please enter path manually.');
+            }
         }
     });
 

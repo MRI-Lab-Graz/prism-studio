@@ -21,6 +21,7 @@ from typing import Any, Callable, cast
 import pandas as pd
 
 from src.participants_converter import ParticipantsConverter
+from src.subject_id_matching import build_subject_id_matcher
 
 
 def _import_read_tabular_file():
@@ -1462,6 +1463,42 @@ def _plan_participants_merge(
         session_resolution_decisions=session_resolution_decisions,
         log_callback=log_callback,
     )
+
+    # participants.tsv is the ground truth for participant identity. A merge
+    # source using e.g. bare "1" where the project already has "sub-001" must
+    # be treated as that same existing participant, not as a brand-new one --
+    # otherwise it lands in new_participant_ids and the merge silently adds a
+    # duplicate row instead of updating the existing one. Remap before any of
+    # the matched/new/existing-only set comparisons below run.
+    if "participant_id" in incoming_df.columns and "participant_id" in existing_df.columns:
+        existing_participant_ids_for_matching = {
+            str(value).strip()
+            for value in existing_df["participant_id"]
+            if str(value).strip()
+        }
+        subject_id_match = build_subject_id_matcher(existing_participant_ids_for_matching)
+        remapped_count = 0
+
+        def _match_incoming_participant_id(value: Any) -> Any:
+            nonlocal remapped_count
+            candidate = str(value).strip()
+            if not candidate:
+                return value
+            matched = subject_id_match(candidate)
+            if matched and matched != candidate:
+                remapped_count += 1
+                return matched
+            return value
+
+        incoming_df["participant_id"] = incoming_df["participant_id"].map(
+            _match_incoming_participant_id
+        )
+        if remapped_count and log_callback:
+            log_callback(
+                "INFO",
+                f"Matched {remapped_count} incoming participant id(s) to existing "
+                "project participants (e.g. '1' -> 'sub-001')",
+            )
 
     existing_columns = [str(col) for col in existing_df.columns]
     incoming_columns = [str(col) for col in incoming_df.columns]

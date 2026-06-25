@@ -40,6 +40,43 @@ def _write_basic_survey_template(library_root: Path, task: str = "pss") -> None:
     )
 
 
+def test_survey_converter_matches_unpadded_ids_to_existing_project_participants(tmp_path):
+    """An incoming survey export using bare numeric ids must land in the
+    target project's already-established zero-padded subject folders
+    (sub-001) instead of creating a duplicate sub-1, mirroring the matching
+    fix applied to the biometrics converter."""
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    (project_root / "participants.tsv").write_text(
+        "participant_id\nsub-001\nsub-002\n", encoding="utf-8"
+    )
+
+    input_path = tmp_path / "survey.csv"
+    input_path.write_text("ID,PSS01\n1,2\n2,3\n", encoding="utf-8")
+
+    library_root = tmp_path / "library"
+    _write_basic_survey_template(library_root, task="pss")
+
+    output_root = tmp_path / "out"
+    SurveyResponsesConverter().convert_xlsx(
+        input_path=input_path,
+        library_dir=library_root,
+        output_root=output_root,
+        id_column="ID",
+        session="all",
+        dry_run=False,
+        force=True,
+        skip_participants=False,
+        separator=",",
+        project_path=project_root,
+    )
+
+    assert (output_root / "sub-001").exists()
+    assert (output_root / "sub-002").exists()
+    assert not (output_root / "sub-1").exists()
+    assert not (output_root / "sub-2").exists()
+
+
 def test_survey_converter_raises_structured_error_for_out_of_bounds_value(tmp_path):
     input_path = tmp_path / "survey.csv"
     input_path.write_text("ID,PSS01\nsub-001,5\n", encoding="utf-8")

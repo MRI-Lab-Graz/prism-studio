@@ -415,6 +415,49 @@ class TestConvertBiometricsTable:
                 output_root=tmp_path / "output",
             )
 
+    def test_unpadded_ids_match_existing_zero_padded_participants(self, tmp_path):
+        """An incoming source file using bare numeric ids (e.g. "1", "2") must
+        land in the project's already-established zero-padded subject
+        folders (sub-001, sub-002) when given that project's existing
+        participant_id set, instead of creating duplicate sub-1/sub-2
+        folders for the same people."""
+        try:
+            import pandas as pd
+        except ImportError:
+            pytest.skip("pandas not available")
+
+        library_dir = tmp_path / "library"
+        library_dir.mkdir()
+        self._make_library(library_dir)
+
+        input_file = tmp_path / "data.csv"
+        pd.DataFrame({
+            "participant_id": ["1", "2", "99"],
+            "grip_left": [40.0, 45.0, 50.0],
+            "grip_right": [42.0, 47.0, 52.0],
+        }).to_csv(input_file, index=False)
+
+        output_root = tmp_path / "output"
+        result = convert_biometrics_table_to_prism_dataset(
+            input_path=input_file,
+            library_dir=library_dir,
+            output_root=output_root,
+            existing_participant_ids={"sub-001", "sub-002"},
+        )
+
+        assert (output_root / "sub-001").is_dir()
+        assert (output_root / "sub-002").is_dir()
+        assert not (output_root / "sub-1").exists()
+        assert not (output_root / "sub-2").exists()
+        # "99" has no existing match, so it must fall back to the normal
+        # (uncoerced) id-building behavior rather than inventing padding.
+        assert (output_root / "sub-99").is_dir()
+
+        participants = (output_root / "participants.tsv").read_text(encoding="utf-8")
+        assert "sub-001" in participants
+        assert "sub-002" in participants
+        assert "sub-1\t" not in participants and not participants.startswith("sub-1\n")
+
 
 # ---------------------------------------------------------------------------
 # Edge cases for pure utility functions
