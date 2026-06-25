@@ -132,6 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
             biometricsConvertBtn: document.getElementById('biometricsConvertBtn'),
             biometricsError: document.getElementById('biometricsError'),
             biometricsInfo: document.getElementById('biometricsInfo'),
+            biometricsProgress: document.getElementById('biometricsProgress'),
             biometricsLogContainer: document.getElementById('biometricsLogContainer'),
             biometricsLog: document.getElementById('biometricsLog'),
             biometricsLogBody: document.getElementById('biometricsLogBody'),
@@ -148,6 +149,9 @@ document.addEventListener('DOMContentLoaded', function() {
             biometricsSelectAll: document.getElementById('biometricsSelectAll'),
             biometricsSessionSelect: document.getElementById('biometricsSessionSelect'),
             biometricsSessionCustom: document.getElementById('biometricsSessionCustom'),
+            biometricsIdColumn: document.getElementById('biometricsIdColumn'),
+            biometricsIdColumnStatus: document.getElementById('biometricsIdColumnStatus'),
+            biometricsIdColumnHelp: document.getElementById('biometricsIdColumnHelp'),
             appendLog,
             appendLogBatch,
             displayValidationResults: (validation, prefix = '') => {

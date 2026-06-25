@@ -65,6 +65,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const wideLongBrowseServerFileBtn = document.getElementById('wideLongBrowseServerFileBtn');
     const wideLongFileName = document.getElementById('wideLongFileName');
     const wideLongClearBtn = document.getElementById('wideLongClearBtn');
+    const wideLongSourcedataQuickSelect = document.getElementById('wideLongSourcedataQuickSelect');
+    const wideLongSourcedataFileSelect = document.getElementById('wideLongSourcedataFileSelect');
+    let wideLongSourcedataRequestToken = 0;
     const wideLongSheetGroup = document.getElementById('wideLongSheetGroup');
     const wideLongSheetSelect = document.getElementById('wideLongSheetSelect');
     const wideLongSessionColumn = null; // fixed to 'session'
@@ -709,6 +712,110 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setWideLongIdleState();
         updateWideLongPreview();
+    }
+
+    function setWideLongSourcedataPlaceholder(label, { disabled = true } = {}) {
+        if (!wideLongSourcedataQuickSelect || !wideLongSourcedataFileSelect) {
+            return;
+        }
+        wideLongSourcedataQuickSelect.classList.remove('d-none');
+        wideLongSourcedataFileSelect.value = '';
+        while (wideLongSourcedataFileSelect.options.length > 1) {
+            wideLongSourcedataFileSelect.remove(1);
+        }
+        const placeholderOption = wideLongSourcedataFileSelect.options[0];
+        if (placeholderOption) {
+            placeholderOption.textContent = label;
+            placeholderOption.disabled = disabled;
+        }
+        wideLongSourcedataFileSelect.selectedIndex = 0;
+        wideLongSourcedataFileSelect.disabled = disabled;
+    }
+
+    function refreshWideLongSourcedataQuickSelect() {
+        if (!wideLongSourcedataQuickSelect || !wideLongSourcedataFileSelect) {
+            return;
+        }
+
+        const previousValue = wideLongSourcedataFileSelect.value;
+        const activeRequestToken = ++wideLongSourcedataRequestToken;
+        setWideLongSourcedataPlaceholder('Loading sourcedata files...', { disabled: true });
+
+        const projectPath = getCurrentProjectPath();
+        const endpoint = projectPath
+            ? `/api/projects/sourcedata-files?kind=wide_to_long&project_path=${encodeURIComponent(projectPath)}`
+            : '/api/projects/sourcedata-files?kind=wide_to_long';
+
+        fetchWithApiFallback(endpoint)
+            .then((response) => response.json())
+            .then((data) => {
+                if (activeRequestToken !== wideLongSourcedataRequestToken) {
+                    return;
+                }
+
+                if (data.sourcedata_exists && Array.isArray(data.files) && data.files.length > 0) {
+                    setWideLongSourcedataPlaceholder('Load from sourcedata/...', { disabled: false });
+                    data.files.forEach((entry) => {
+                        const option = document.createElement('option');
+                        option.value = entry.name;
+                        const sizeKB = (entry.size / 1024).toFixed(1);
+                        option.textContent = `${entry.name} (${sizeKB} KB)`;
+                        wideLongSourcedataFileSelect.appendChild(option);
+                    });
+                    if (previousValue && Array.from(wideLongSourcedataFileSelect.options).some((option) => option.value === previousValue)) {
+                        wideLongSourcedataFileSelect.value = previousValue;
+                    }
+                } else if (data.sourcedata_exists) {
+                    setWideLongSourcedataPlaceholder('No wide-table files found in sourcedata/', { disabled: true });
+                } else {
+                    setWideLongSourcedataPlaceholder('No sourcedata folder found for the current project', { disabled: true });
+                }
+            })
+            .catch(() => {
+                if (activeRequestToken !== wideLongSourcedataRequestToken) {
+                    return;
+                }
+                setWideLongSourcedataPlaceholder('Could not load sourcedata files', { disabled: true });
+            });
+    }
+
+    if (wideLongSourcedataFileSelect) {
+        wideLongSourcedataFileSelect.addEventListener('change', async () => {
+            const filename = String(wideLongSourcedataFileSelect.value || '').trim();
+            if (!filename) {
+                return;
+            }
+
+            try {
+                const projectPath = getCurrentProjectPath();
+                if (!projectPath) {
+                    throw new Error('No project selected');
+                }
+
+                const response = await fetchWithApiFallback(
+                    `/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(projectPath)}`
+                );
+                if (!response.ok) {
+                    throw new Error('Failed to load file');
+                }
+
+                const blob = await response.blob();
+                const file = new File([blob], filename, { type: blob.type });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+
+                wideLongServerFilePath = '';
+                if (wideLongFile) {
+                    wideLongFile.files = dataTransfer.files;
+                    wideLongFile.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            } catch (_error) {
+                if (wideLongError) {
+                    wideLongError.textContent = `Failed to load ${filename} from sourcedata.`;
+                    wideLongError.classList.remove('d-none');
+                }
+            }
+        });
     }
 
     if (wideLongPickFileBtn && wideLongFile) {
@@ -3823,6 +3930,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadRepoEntityRewriteOptions();
         loadFileDeleteOptions();
         refreshWideLongDeclaredSessions();
+        refreshWideLongSourcedataQuickSelect();
     });
 
     // Initial state
@@ -3835,6 +3943,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadRepoSubjectExamples();
     loadRepoEntityRewriteOptions();
     refreshWideLongDeclaredSessions();
+    refreshWideLongSourcedataQuickSelect();
 
     // ----------------------------------------------------------------
     // Delete Files tab

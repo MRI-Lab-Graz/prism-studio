@@ -210,6 +210,51 @@ def test_preview_before_merge_reports_matched_new_and_existing_only(
     assert preview["can_apply"] is True
 
 
+def test_bare_numeric_ids_from_a_later_source_match_existing_zero_padded_participants(
+    three_source_project: Path,
+) -> None:
+    """A 4th source spelling participant ids as bare numbers ("1", "9")
+    instead of the project's established "sub-001" convention must still be
+    recognized as those same existing participants (and the genuinely new
+    one correctly added as sub-9, not silently zero-padded) -- not create
+    duplicate sub-1/sub-9 rows alongside the real ones."""
+    source4 = three_source_project / "source4_contact.csv"
+    pd.DataFrame(
+        [
+            {"ID": "1", "contact_email": "p001@example.org"},
+            {"ID": "9", "contact_email": "p009@example.org"},
+        ]
+    ).to_csv(source4, index=False)
+
+    preview = _run_pipeline_stage(
+        "preview source4 (bare numeric ids)",
+        preview_participants_merge,
+        three_source_project,
+        source4,
+        _mapping(contact_email="contact_email"),
+    )
+    assert preview["matched_participants"] == ["sub-001"]
+    assert preview["new_participants"] == ["sub-9"]
+
+    apply_payload = _run_pipeline_stage(
+        "apply source4 (bare numeric ids)",
+        apply_participants_merge,
+        three_source_project,
+        source4,
+        _mapping(contact_email="contact_email"),
+    )
+    assert apply_payload["action"] == "apply"
+
+    df = _read_participants(three_source_project)
+    ids = set(df["participant_id"])
+    assert "sub-001" in ids
+    assert "sub-1" not in ids
+    assert "sub-9" in ids
+
+    row_001 = df.loc[df["participant_id"] == "sub-001"].iloc[0]
+    assert row_001["contact_email"] == "p001@example.org"
+
+
 def test_conflicting_value_from_a_later_source_blocks_apply_until_resolved(
     three_source_project: Path,
 ) -> None:

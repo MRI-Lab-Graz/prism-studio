@@ -718,8 +718,16 @@
                                 </div>
 
                                 <div class="row g-3 mb-3">
-                                    <div class="col-md-12">
+                                    <div class="col-md-12 studio-file-picker">
                                         <label for="wideLongFile" class="form-label fw-bold">1. Upload Wide Table</label>
+                                        <div id="wideLongSourcedataQuickSelect" class="d-none mb-2">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text bg-light"><i class="fas fa-folder-open text-muted"></i></span>
+                                                <select class="form-select form-select-sm" id="wideLongSourcedataFileSelect">
+                                                    <option value="">Load from sourcedata/...</option>
+                                                </select>
+                                            </div>
+                                        </div>
                                         <input class="d-none" type="file" id="wideLongFile" accept=".csv,.tsv,.xlsx" data-help-key="wideLongFile">
                                         <div class="input-group studio-picker-group">
                                             <button class="btn btn-outline-secondary" type="button" id="wideLongPickFileBtn">

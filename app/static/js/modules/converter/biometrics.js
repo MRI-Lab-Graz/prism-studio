@@ -21,6 +21,7 @@ export function initBiometrics(elements) {
         biometricsConvertBtn,
         biometricsError,
         biometricsInfo,
+        biometricsProgress,
         biometricsLogContainer,
         biometricsLog,
         biometricsLogBody,
@@ -37,6 +38,9 @@ export function initBiometrics(elements) {
         biometricsSelectAll,
         biometricsSessionSelect,
         biometricsSessionCustom,
+        biometricsIdColumn,
+        biometricsIdColumnStatus,
+        biometricsIdColumnHelp,
         appendLog,
         appendLogBatch,
         displayValidationResults,
@@ -48,6 +52,7 @@ export function initBiometrics(elements) {
     let biometricsSourcedataRequestToken = 0;
     let biometricsSourcedataQuickSelectEl = null;
     let biometricsSourcedataFileSelectEl = null;
+    let biometricsIdColumnRequestToken = 0;
     const runController = createJobRunController();
     const pollingRunState = createPollingRunState();
 
@@ -97,6 +102,111 @@ export function initBiometrics(elements) {
         return null;
     }
 
+    function resetBiometricsIdColumnOptions(placeholderLabel = 'Auto-detect from file columns') {
+        if (!biometricsIdColumn) {
+            return;
+        }
+        biometricsIdColumn.innerHTML = `<option value="" selected>${placeholderLabel}</option>`;
+        if (biometricsIdColumnStatus) {
+            biometricsIdColumnStatus.innerHTML = '';
+        }
+        if (biometricsIdColumnHelp) {
+            biometricsIdColumnHelp.innerHTML = '<i class="fas fa-info-circle me-1"></i>Upload a file to detect available columns';
+        }
+    }
+
+    async function detectBiometricsIdColumn() {
+        if (!biometricsIdColumn) {
+            return;
+        }
+
+        const selectedFile = getSelectedBiometricsFile();
+        if (!selectedFile && !biometricsServerFilePath) {
+            resetBiometricsIdColumnOptions();
+            return;
+        }
+
+        const previousSelection = String(biometricsIdColumn.value || '').trim();
+        const activeRequestToken = ++biometricsIdColumnRequestToken;
+
+        if (biometricsIdColumnStatus) {
+            biometricsIdColumnStatus.innerHTML = '<span class="text-info"><i class="fas fa-spinner fa-spin me-1"></i>Loading...</span>';
+        }
+
+        try {
+            const formData = new FormData();
+            if (selectedFile) {
+                formData.append('file', selectedFile);
+            } else {
+                formData.append('source_file_path', biometricsServerFilePath);
+            }
+
+            const response = await fetchWithApiFallback('/api/participants-detect-id', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (activeRequestToken !== biometricsIdColumnRequestToken) {
+                return;
+            }
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => null);
+                throw new Error(data && data.error ? data.error : 'Could not detect columns');
+            }
+
+            const data = await response.json();
+            const columns = Array.isArray(data.columns) ? data.columns : [];
+            const suggested = String(data.suggested_id_column || data.id_column || '').trim();
+
+            const options = ['<option value="">Auto-detect from file columns</option>'];
+            columns.forEach((column) => {
+                options.push(`<option value="${escapeHtmlForOption(column)}">${escapeHtmlForOption(column)}</option>`);
+            });
+            biometricsIdColumn.innerHTML = options.join('');
+
+            if (previousSelection && columns.includes(previousSelection)) {
+                biometricsIdColumn.value = previousSelection;
+            } else if (suggested && columns.includes(suggested)) {
+                biometricsIdColumn.value = suggested;
+            }
+
+            if (biometricsIdColumnStatus) {
+                biometricsIdColumnStatus.textContent = columns.length ? `${columns.length} columns` : '';
+                biometricsIdColumnStatus.className = suggested ? 'ms-2 small text-success' : 'ms-2 small text-warning';
+            }
+            if (biometricsIdColumnHelp) {
+                biometricsIdColumnHelp.innerHTML = suggested
+                    ? `<i class="fas fa-check-circle me-1 text-success"></i>Suggested: <strong>${escapeHtmlForOption(suggested)}</strong>`
+                    : '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>No participant ID column found. Please select it manually.';
+            }
+        } catch (error) {
+            if (activeRequestToken !== biometricsIdColumnRequestToken) {
+                return;
+            }
+            resetBiometricsIdColumnOptions();
+            if (biometricsIdColumnStatus) {
+                biometricsIdColumnStatus.textContent = 'Error';
+                biometricsIdColumnStatus.className = 'ms-2 small text-danger';
+            }
+            if (biometricsIdColumnHelp) {
+                biometricsIdColumnHelp.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-danger"></i>${escapeHtmlForOption(error.message || 'Failed to detect columns')}`;
+            }
+        }
+    }
+
+    function escapeHtmlForOption(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function getBiometricsIdColumnValue() {
+        return biometricsIdColumn ? String(biometricsIdColumn.value || '').trim() : '';
+    }
+
     async function pickServerBiometricsFile() {
         return pickServerFile({
             title: 'Select Biometrics File on Server',
@@ -116,9 +226,6 @@ export function initBiometrics(elements) {
         if (biometricsDataFile) {
             biometricsDataFile.disabled = connectedToServer;
             biometricsDataFile.title = connectedToServer ? 'Connected-to-server mode: use Server picker.' : '';
-            if (connectedToServer && biometricsDataFile.files && biometricsDataFile.files.length > 0) {
-                biometricsDataFile.value = '';
-            }
         }
 
         if (!connectedToServer && biometricsServerFilePath) {
@@ -272,6 +379,7 @@ export function initBiometrics(elements) {
     // ===== UI RESET FUNCTIONS =====
 
     function resetBiometricsUI() {
+        hideBiometricsProgress();
         biometricsLogContainer.classList.add('d-none');
         biometricsValidationResultsContainer.classList.add('d-none');
         biometricsDetectedContainer.classList.add('d-none');
@@ -293,6 +401,40 @@ export function initBiometrics(elements) {
         resetBiometricsUI();
         if (biometricsSelectAll) {
             biometricsSelectAll.checked = true;
+        }
+    }
+
+    let biometricsProgressTimer = null;
+
+    function showBiometricsProgress(label = 'Working') {
+        if (!biometricsProgress) {
+            return;
+        }
+        const progressBar = biometricsProgress.querySelector('.progress-bar');
+        biometricsProgress.classList.remove('d-none');
+        const startedAt = Date.now();
+        if (progressBar) {
+            progressBar.textContent = `${label}... 0s`;
+        }
+        if (biometricsProgressTimer) {
+            window.clearInterval(biometricsProgressTimer);
+        }
+        biometricsProgressTimer = window.setInterval(() => {
+            if (!progressBar) {
+                return;
+            }
+            const elapsedSec = Math.floor((Date.now() - startedAt) / 1000);
+            progressBar.textContent = `${label}... ${elapsedSec}s`;
+        }, 1000);
+    }
+
+    function hideBiometricsProgress() {
+        if (biometricsProgressTimer) {
+            window.clearInterval(biometricsProgressTimer);
+            biometricsProgressTimer = null;
+        }
+        if (biometricsProgress) {
+            biometricsProgress.classList.add('d-none');
         }
     }
 
@@ -336,6 +478,7 @@ export function initBiometrics(elements) {
             biometricsServerFilePath = '';
             resetBiometricsWorkflowState();
             updateBiometricsBtn();
+            detectBiometricsIdColumn();
         });
         updateBiometricsBtn();
     }
@@ -352,6 +495,7 @@ export function initBiometrics(elements) {
 
             resetBiometricsWorkflowState();
             updateBiometricsBtn();
+            detectBiometricsIdColumn();
         });
     }
 
@@ -453,10 +597,15 @@ export function initBiometrics(elements) {
                     appendBiometricsLogEntries(newLogs);
                 },
                 intervalMs: 700,
-                timeoutMs: 600000,
+                // The save-to-project step commits each subject's converted files as a
+                // separate `datalad save` call (see src/datalad_project_copy.py), so wall
+                // time scales with subject count. A 150+ subject project on a slow/external
+                // drive can take well over the old 10-minute limit even though the backend
+                // job (a daemon thread) is healthy and still making steady progress.
+                timeoutMs: 7200000,
                 signal: activePollController.signal,
                 abortErrorMessage: 'Biometrics polling aborted due to project change.',
-                timeoutErrorMessage: 'Biometrics conversion status timed out. Please review logs and retry.',
+                timeoutErrorMessage: 'Biometrics conversion status timed out after 2 hours. The conversion may still be running in the background -- check the project for partial results before retrying.',
                 statusFailureMessage: 'Failed to retrieve conversion status after multiple attempts.',
                 getFailureError: (status) => status.error || errorMessage,
             });
@@ -503,6 +652,7 @@ export function initBiometrics(elements) {
             const formData = new FormData();
             appendBiometricsInputToFormData(formData);
             formData.append('sheet', '0');
+            formData.append('id_column', getBiometricsIdColumnValue());
             formData.append('session', sessionVal);
             formData.append('dry_run', 'true');
             formData.append('validate', 'true');
@@ -512,6 +662,7 @@ export function initBiometrics(elements) {
             }
 
             setBiometricsActionButtonsDisabled(true);
+            showBiometricsProgress('Previewing');
 
             try {
                 const data = await runBiometricsConvertJob(formData, 'Preview failed');
@@ -542,6 +693,7 @@ export function initBiometrics(elements) {
                     biometricsError.classList.remove('d-none');
                 }
             } finally {
+                hideBiometricsProgress();
                 runController.finishRun();
                 setBiometricsActionButtonsDisabled(false);
             }
@@ -668,6 +820,7 @@ export function initBiometrics(elements) {
             const formData = new FormData();
             appendBiometricsInputToFormData(formData);
             // Library path is now resolved automatically (project first, then global)
+            formData.append('id_column', getBiometricsIdColumnValue());
 
             const sessionVal = getBiometricsSessionValue();
             formData.append('session', sessionVal);
@@ -695,6 +848,7 @@ export function initBiometrics(elements) {
 
             setBiometricsActionButtonsDisabled(true);
             appendLog('Uploading file and starting conversion...', 'info', biometricsLog);
+            showBiometricsProgress('Converting');
 
             try {
                 const data = await runBiometricsConvertJob(formData, 'Conversion failed');
@@ -745,6 +899,7 @@ export function initBiometrics(elements) {
                     biometricsError.classList.remove('d-none');
                 }
             } finally {
+                hideBiometricsProgress();
                 runController.finishRun();
                 setBiometricsActionButtonsDisabled(false);
             }

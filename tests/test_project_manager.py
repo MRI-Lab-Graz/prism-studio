@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import stat
 import sys
 import tempfile
@@ -16,7 +17,7 @@ app_path = os.path.join(project_root, "app")
 if app_path not in sys.path:
     sys.path.insert(0, app_path)
 
-from src.project_manager import ProjectManager
+from src.project_manager import DATALAD_TEXT_POLICY_REQUIRED_LINES, ProjectManager
 
 
 class _FakePopen:
@@ -803,6 +804,67 @@ class TestProjectManager(unittest.TestCase):
             commands,
         )
 
+    @patch("src.project_manager.subprocess.run")
+    @patch(
+        "src.project_manager.ProjectManager._parent_has_staged_nested_dataset_deletions",
+        return_value=False,
+    )
+    @patch(
+        "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
+        return_value=False,
+    )
+    @patch("src.project_manager.shutil.which")
+    def test_create_nested_subdatasets_registers_orphaned_dataset_without_staging(
+        self,
+        mock_which,
+        _mock_parent_tracks,
+        _mock_parent_has_staged_deletions,
+        mock_run,
+    ):
+        """A nested dataset that already has real .git/.datalad metadata on disk
+        (e.g. left behind by a transient failure during a prior registration
+        attempt) but is not yet registered in the parent must be registered
+        in place -- never staged aside and recreated, which would nest the
+        real .git directory inside a fresh one."""
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
+        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "rawdata"
+            sub_path = project_path / "sub-053"
+            sub_path.mkdir(parents=True, exist_ok=True)
+            (sub_path / ".git").mkdir()
+            (sub_path / ".datalad").mkdir()
+            (sub_path / "data.tsv").write_text("value\n1\n", encoding="utf-8")
+
+            with patch(
+                "src.project_manager.ProjectManager._get_registered_nested_dataset_paths"
+            ) as mock_registered_paths:
+                mock_registered_paths.side_effect = _registered_nested_path_sequence(
+                    set(),
+                    {"sub-053"},
+                )
+                result = manager._create_nested_subdatasets(
+                    project_path,
+                    "/usr/bin/datalad",
+                    max_to_create=1,
+                )
+
+            # The real .git/.datalad metadata and data file must be untouched --
+            # no staging directory created, no content moved.
+            self.assertTrue((sub_path / ".git").is_dir())
+            self.assertTrue((sub_path / ".datalad").is_dir())
+            self.assertTrue((sub_path / "data.tsv").exists())
+            self.assertFalse((project_path / ".prism-datalad-stage-sub-053").exists())
+
+        self.assertEqual(result.get("subdatasets_created"), ["sub-053"])
+        self.assertEqual(result.get("subdataset_failures"), [])
+        self.assertEqual(
+            mock_run.call_args_list[0].args[0],
+            ["/usr/bin/datalad", "create", "-d", ".", "--force", "sub-053"],
+        )
+
     def test_iter_nested_dataset_paths_includes_rawdata_subjects_for_parent_project(self):
         manager = ProjectManager()
 
@@ -1206,6 +1268,139 @@ class TestProjectManager(unittest.TestCase):
             )
             self.assertFalse(updated_second)
 
+    @unittest.skipUnless(
+        shutil.which("git") and shutil.which("git-annex"),
+        "git-annex is required to verify real annex resolution",
+    )
+    def test_text_policy_extensions_cover_files_nested_under_sourcedata_and_derivatives(
+        self,
+    ):
+        """Extension-based .gitattributes rules have no leading slash, so they
+        apply gitignore-style at any depth — confirm sourcedata/ and
+        derivatives/ files resolve to regular git blobs, not annex symlinks,
+        without needing a dedicated folder-level rule."""
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True)
+
+            subprocess.run(["git", "init", "-q"], cwd=project_path, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.com"],
+                cwd=project_path,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=project_path, check=True
+            )
+
+            manager._ensure_datalad_editable_metadata_policy(project_path)
+            gitattributes_content = (project_path / ".gitattributes").read_text(
+                encoding="utf-8"
+            )
+            for line in DATALAD_TEXT_POLICY_REQUIRED_LINES:
+                self.assertIn(line, gitattributes_content)
+
+            subprocess.run(
+                ["git", "annex", "init", "-q"], cwd=project_path, check=True
+            )
+
+            nested_files = {
+                "sourcedata/foo.csv": "a,b\n1,2\n",
+                "derivatives/sub-01/bar.json": "{}\n",
+                "baz.tsv": "a\tb\n1\t2\n",
+            }
+            for relative_path, content in nested_files.items():
+                file_path = project_path / relative_path
+                file_path.parent.mkdir(parents=True, exist_ok=True)
+                file_path.write_text(content, encoding="utf-8")
+
+            subprocess.run(
+                ["git", "annex", "add", "."], cwd=project_path, check=True
+            )
+
+            ls_files = subprocess.run(
+                ["git", "ls-files", "-s", *nested_files.keys()],
+                cwd=project_path,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout
+
+            for relative_path in nested_files:
+                modes = [
+                    line.split()[0]
+                    for line in ls_files.splitlines()
+                    if relative_path in line
+                ]
+                self.assertIn(
+                    "100644",
+                    modes,
+                    f"{relative_path} should be a regular git blob (100644), not an annex symlink",
+                )
+                self.assertNotIn(
+                    "120000",
+                    modes,
+                    f"{relative_path} should not be annexed as a symlink (120000)",
+                )
+
+    @unittest.skipUnless(
+        shutil.which("git") and shutil.which("git-annex") and shutil.which("datalad"),
+        "datalad and git-annex are required to verify real nested-dataset annex resolution",
+    )
+    def test_create_registered_nested_dataset_never_annexes_text_files_on_first_save(
+        self,
+    ):
+        """A brand-new nested dataset's first save must not git-annex text-format
+        content that was parked aside and restored during creation -- the text
+        policy has to land in the nested dataset's own .gitattributes before
+        that save runs, not as a later repair pass."""
+        manager = ProjectManager()
+        datalad_executable = shutil.which("datalad")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True)
+
+            subprocess.run(
+                [datalad_executable, "create", "-f", "."],
+                cwd=project_path,
+                check=True,
+                capture_output=True,
+            )
+
+            sub_path = project_path / "sub-001"
+            sub_path.mkdir()
+            (sub_path / "data.tsv").write_text("a\tb\n1\t2\n", encoding="utf-8")
+
+            result = manager._create_registered_nested_dataset(
+                project_path,
+                sub_path,
+                datalad_executable,
+            )
+            self.assertTrue(result.get("success"), result)
+
+            ls_files = subprocess.run(
+                ["git", "ls-files", "-s", "data.tsv"],
+                cwd=sub_path,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout
+
+            modes = [line.split()[0] for line in ls_files.splitlines()]
+            self.assertIn(
+                "100644",
+                modes,
+                "data.tsv should be a regular git blob (100644), not an annex symlink",
+            )
+            self.assertNotIn(
+                "120000",
+                modes,
+                "data.tsv should not be annexed as a symlink (120000) on its first save",
+            )
+
     def test_iter_datalad_dataset_roots_uses_gitmodules_paths(self):
         manager = ProjectManager()
 
@@ -1280,7 +1475,7 @@ class TestProjectManager(unittest.TestCase):
 
         self.assertTrue(result.get("success"), result)
         self.assertIn("Added 1 nested subdataset", result.get("message", ""))
-        self.assertIn("run repair again to continue", result.get("message", ""))
+        self.assertIn("click Register Nested Dataset again to continue", result.get("message", ""))
         self.assertEqual(
             result.get("datalad", {}).get("subdatasets_created"),
             ["sub-172"],

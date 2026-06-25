@@ -49,6 +49,11 @@ _SOURCEDATA_KIND_EXTENSIONS: dict[str, set[str]] = {
         ".raw",
         ".vpd",
     },
+    "wide_to_long": {
+        ".xlsx",
+        ".csv",
+        ".tsv",
+    },
     "eyetracking": {
         ".edf",
         ".asc",

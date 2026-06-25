@@ -31,6 +31,7 @@ from .conversion_request_helpers import (
     resolve_uploaded_or_source_file as _resolve_uploaded_or_source_file,
 )
 from src.datalad_project_copy import copy_files_into_project
+from src.subject_id_matching import load_existing_participant_ids
 from src.web.services.project_registration import register_session_in_project
 
 # Safe imports for optional dependencies
@@ -381,6 +382,19 @@ def api_biometrics_convert():
         if tasks_to_export:
             log_msg(f"Exporting tasks: {', '.join(tasks_to_export)}", "step")
 
+        participants_source_root = project_root or requested_project_root
+        existing_participant_ids = (
+            load_existing_participant_ids(participants_source_root)
+            if participants_source_root is not None
+            else set()
+        )
+        if existing_participant_ids:
+            log_msg(
+                f"Matching participant ids against {len(existing_participant_ids)} "
+                "existing project participant(s)",
+                "step",
+            )
+
         result = convert_biometrics_table_to_prism_dataset(
             input_path=input_path,
             library_dir=str(effective_biometrics_dir),
@@ -394,6 +408,7 @@ def api_biometrics_convert():
             name=dataset_name,
             authors=[],
             tasks_to_export=tasks_to_export,
+            existing_participant_ids=existing_participant_ids,
         )
 
         log_msg(f"Detected ID column: {result.id_column}", "success")
@@ -824,6 +839,19 @@ def _run_biometrics_convert_job(job_id: str, config: dict[str, Any]) -> None:
         if tasks_to_export:
             log_msg(f"Exporting tasks: {', '.join(tasks_to_export)}", "step")
 
+        participants_source_root = project_root or requested_project_root
+        existing_participant_ids = (
+            load_existing_participant_ids(participants_source_root)
+            if participants_source_root is not None
+            else set()
+        )
+        if existing_participant_ids:
+            log_msg(
+                f"Matching participant ids against {len(existing_participant_ids)} "
+                "existing project participant(s)",
+                "step",
+            )
+
         result = convert_biometrics_table_to_prism_dataset(
             input_path=input_path,
             library_dir=str(effective_biometrics_dir),
@@ -836,6 +864,7 @@ def _run_biometrics_convert_job(job_id: str, config: dict[str, Any]) -> None:
             force=True,
             name=config["dataset_name"],
             authors=[],
+            existing_participant_ids=existing_participant_ids,
             tasks_to_export=tasks_to_export,
         )
 

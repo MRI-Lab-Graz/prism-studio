@@ -31,6 +31,7 @@ except ImportError:
     pd = None
 
 from ..cross_platform import describe_case_insensitive_id_collisions
+from ..subject_id_matching import build_subject_id_matcher, load_existing_participant_ids
 from ..utils.io import (
     ensure_dir as _ensure_dir,
     read_json as _read_json,
@@ -1614,7 +1615,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         ) from e
 
     # Determine normalization logic
-    def _normalize_sub_id(val) -> str:
+    def _normalize_sub_id_raw(val) -> str:
         s = str(val).strip()
         if not s:
             return s
@@ -1631,6 +1632,25 @@ def _convert_survey_dataframe_to_prism_dataset(
         if not label:
             return ""
         return f"sub-{label}"
+
+    # The project's own participants.tsv is the ground truth for participant
+    # identity. A survey export using e.g. bare "1" where the project already
+    # has "sub-001" must land in that existing subject's folder rather than
+    # creating a duplicate "sub-1" -- match against it whenever an unambiguous
+    # numeric correspondence exists; unmatched ids keep falling back to the
+    # uncoerced label above (see src/subject_id_matching.py for the policy).
+    _existing_project_root_for_matching = _resolve_existing_project_root(project_path)
+    _subject_id_match = build_subject_id_matcher(
+        load_existing_participant_ids(_existing_project_root_for_matching)
+        if _existing_project_root_for_matching is not None
+        else set()
+    )
+
+    def _normalize_sub_id(val) -> str:
+        normalized = _normalize_sub_id_raw(val)
+        if not normalized:
+            return normalized
+        return _subject_id_match(normalized) or normalized
 
     def _normalize_ses_id(val) -> str:
         s = sanitize_id(str(val).strip())

@@ -45,6 +45,22 @@
                 </div>
             </div>
 
+            <!-- Row 1b: Participant ID Column -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label for="biometricsIdColumn" class="form-label">
+                        Participant ID Column
+                        <span id="biometricsIdColumnStatus" class="ms-2 small"></span>
+                    </label>
+                    <select class="form-select" id="biometricsIdColumn">
+                        <option value="" selected>Auto-detect from file columns</option>
+                    </select>
+                    <div class="form-text" id="biometricsIdColumnHelp">
+                        <i class="fas fa-info-circle me-1"></i>Upload a file to detect available columns
+                    </div>
+                </div>
+            </div>
+
             <!-- Row 2: Preview and Convert buttons -->
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
@@ -61,6 +77,9 @@
 
             <div id="biometricsError" class="alert alert-danger d-none"></div>
             <div id="biometricsInfo" class="alert alert-info d-none"></div>
+            <div id="biometricsProgress" class="progress d-none mt-3" style="height: 25px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning text-dark">Working...</div>
+            </div>
 
             <!-- Detected Biometrics List -->
             <div id="biometricsDetectedContainer" class="d-none mt-3">

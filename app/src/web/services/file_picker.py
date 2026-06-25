@@ -180,6 +180,18 @@ def _browse_folder_tk(topmost: bool) -> str:
         root.destroy()
 
 
+def _wrong_file_error(file_path: str) -> PickerOutcome:
+    picked_name = os.path.basename(file_path) or file_path
+    return PickerOutcome(
+        error=(
+            f"You selected '{picked_name}', but PRISM projects must be opened by "
+            "selecting the 'project.json' file inside the project folder. "
+            "Please click Browse again and choose that file."
+        ),
+        status_code=400,
+    )
+
+
 def pick_file(project_json_only: bool = True) -> PickerOutcome:
     try:
         if sys.platform == "darwin":
@@ -190,10 +202,7 @@ def pick_file(project_json_only: bool = True) -> PickerOutcome:
                     and file_path
                     and not file_path.endswith("project.json")
                 ):
-                    return PickerOutcome(
-                        error="Please select a file named 'project.json'",
-                        status_code=400,
-                    )
+                    return _wrong_file_error(file_path)
                 return PickerOutcome(path=file_path)
             except subprocess.CalledProcessError:
                 return PickerOutcome(path="")
@@ -209,10 +218,7 @@ def pick_file(project_json_only: bool = True) -> PickerOutcome:
                         and file_path
                         and not file_path.endswith("project.json")
                     ):
-                        return PickerOutcome(
-                            error="Please select a file named 'project.json'",
-                            status_code=400,
-                        )
+                        return _wrong_file_error(file_path)
                     return PickerOutcome(path=file_path)
                 except Exception as powershell_err:
                     print(f"Windows PowerShell file picker failed: {powershell_err}")
@@ -226,10 +232,7 @@ def pick_file(project_json_only: bool = True) -> PickerOutcome:
                     and file_path
                     and not file_path.endswith("project.json")
                 ):
-                    return PickerOutcome(
-                        error="Please select a file named 'project.json'",
-                        status_code=400,
-                    )
+                    return _wrong_file_error(file_path)
                 return PickerOutcome(path=file_path)
             except Exception as tk_err:
                 print(f"Windows tkinter file picker failed: {tk_err}")
@@ -241,10 +244,7 @@ def pick_file(project_json_only: bool = True) -> PickerOutcome:
                             and file_path
                             and not file_path.endswith("project.json")
                         ):
-                            return PickerOutcome(
-                                error="Please select a file named 'project.json'",
-                                status_code=400,
-                            )
+                            return _wrong_file_error(file_path)
                         return PickerOutcome(path=file_path)
                     except Exception as powershell_err:
                         print(
