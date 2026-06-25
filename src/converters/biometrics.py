@@ -23,6 +23,7 @@ from src.converters.file_reader import (
     infer_tabular_kind as _infer_tabular_kind,
     read_tabular_file as _read_tabular_file,
 )
+from src.subject_id_matching import build_subject_id_matcher
 from src.utils.io import read_json as _read_json, write_json as _write_json
 from src.utils.naming import norm_key as _norm_key
 
@@ -170,6 +171,7 @@ def convert_biometrics_table_to_prism_dataset(
     default_session: str = "ses-1",
     tasks_to_export: list[str] | None = None,
     skip_participants: bool = False,
+    existing_participant_ids: set[str] | None = None,
 ) -> BiometricsConvertResult:
     """Convert biometrics CSV/XLSX (wide format) into a PRISM/BIDS-style dataset.
 
@@ -181,6 +183,15 @@ def convert_biometrics_table_to_prism_dataset(
 
     Args:
         skip_participants: If True, skip creating participants.tsv (default: False)
+        existing_participant_ids: Canonical participant_id values already
+            present in the target project's own participants.tsv (the
+            ground truth). When a raw incoming id numerically matches
+            exactly one of these after stripping leading zeros, the
+            existing canonical id is used instead of building a new,
+            differently-formatted subject folder for the same person.
+            Unmatched ids fall back to the normal (uncoerced) id-building
+            behavior -- this never invents padding for a participant that
+            isn't already known to the project.
 
     unknown:
       - 'ignore': ignore unmapped columns
@@ -256,12 +267,20 @@ def convert_biometrics_table_to_prism_dataset(
             + ", ".join(unknown_cols)
         )
 
+    subject_id_match = build_subject_id_matcher(existing_participant_ids or set())
+
+    def _resolve_sub_id(raw_value) -> str:
+        normalized = _normalize_sub_id(raw_value)
+        if not normalized:
+            return normalized
+        return subject_id_match(normalized) or normalized
+
     # Two participant ids differing only by case (e.g. 'sub-Ab'/'sub-ab')
     # would resolve to the identical on-disk directory on a case-insensitive
     # filesystem (default macOS/Windows): the second one written silently
     # overwrites the first's biometrics files with no error. Fail fast,
     # before any output is written, rather than allow that.
-    normalized_ids = df[col_pid].astype(str).map(_normalize_sub_id)
+    normalized_ids = df[col_pid].astype(str).map(_resolve_sub_id)
     collision_message = describe_case_insensitive_id_collisions(
         [sid for sid in normalized_ids if sid]
     )
@@ -275,6 +294,12 @@ def convert_biometrics_table_to_prism_dataset(
         "BIDSVersion": "1.8.0",
         "DatasetType": "raw",
         "Authors": authors or ["prism-studio"],
+        "Keywords": ["psychology", "biometrics", "PRISM"],
+        "GeneratedBy": [
+            {
+                "Name": "PRISM Biometrics Converter",
+            }
+        ],
     }
     _write_json(output_root / "dataset_description.json", dataset_description)
 
@@ -288,7 +313,7 @@ def convert_biometrics_table_to_prism_dataset(
         participants = (
             df[col_pid]
             .astype(str)
-            .map(_normalize_sub_id)
+            .map(_resolve_sub_id)
             .loc[lambda s: s.astype(str).str.len() > 0]
             .drop_duplicates()
             .sort_values()
@@ -314,7 +339,7 @@ def convert_biometrics_table_to_prism_dataset(
     # Write per-row TSVs
     for _, row in df.iterrows():
         pid_raw = row.get(col_pid)
-        sub_id = _normalize_sub_id(pid_raw)
+        sub_id = _resolve_sub_id(pid_raw)
         if not sub_id:
             continue
 

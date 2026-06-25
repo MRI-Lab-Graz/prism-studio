@@ -97,14 +97,17 @@ def copy_files_into_project(
                 json.dump(manifest, handle)
 
             script = (
-                "import json, shutil, sys; "
-                "from pathlib import Path; "
-                "manifest = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8')); "
-                "copied = []; "
-                "for item in manifest.get('copies', []): "
-                " src = Path(item['src']); dst = Path(item['dst']); "
-                " dst.parent.mkdir(parents=True, exist_ok=True); shutil.copy2(src, dst); copied.append(item['rel']); "
-                "print(json.dumps({'copied_count': len(copied), 'copied_paths': copied}, ensure_ascii=False))"
+                "import json, shutil, sys\n"
+                "from pathlib import Path\n"
+                "manifest = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))\n"
+                "copied = []\n"
+                "for item in manifest.get('copies', []):\n"
+                "    src = Path(item['src'])\n"
+                "    dst = Path(item['dst'])\n"
+                "    dst.parent.mkdir(parents=True, exist_ok=True)\n"
+                "    shutil.copy2(src, dst)\n"
+                "    copied.append(item['rel'])\n"
+                "print(json.dumps({'copied_count': len(copied), 'copied_paths': copied}, ensure_ascii=False))\n"
             )
 
             subject_message = (

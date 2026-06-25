@@ -466,9 +466,10 @@
                             <select class="form-select" id="exportRepositoryMode">
                                 <option value="datalad_free" selected>DataLad-free (recommended for sharing)</option>
                                 <option value="datalad_preserving">DataLad-preserving (keep Git/DataLad metadata)</option>
+                                <option value="git_lfs">Git LFS (one-way folder export for non-DataLad collaborators)</option>
                             </select>
                             <div class="form-text">
-                                DataLad-free removes hidden Git/DataLad repository metadata from ZIP exports. DataLad-preserving keeps repository metadata for reproducible DataLad workflows.
+                                DataLad-free removes hidden Git/DataLad repository metadata from ZIP exports. DataLad-preserving keeps repository metadata for reproducible DataLad workflows. Git LFS prepares a one-way folder snapshot — converted via the Folder Export button below — for collaborators who use Git LFS instead of DataLad; it has no ongoing link back to this project. Standard ZIP export does not apply Git LFS conversion.
                             </div>
                         </div>
 

@@ -686,6 +686,73 @@ def export_project_folder():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@projects_export_bp.route("/api/projects/export/git-lfs", methods=["POST"])
+def export_project_git_lfs():
+    """Create a one-way Git LFS export snapshot (folder + optionally initialized repo)."""
+    try:
+        from src.project_manager import ProjectManager
+
+        data = request.get_json() or {}
+        project_path_raw = data.get("project_path")
+        resolved = _resolve_project_root_path(project_path_raw)
+        if resolved is None:
+            return jsonify({"success": False, "error": "Invalid project path"}), 400
+
+        output_folder = data.get("output_folder") or None
+
+        manager_kwargs: Dict[str, object] = {
+            "output_root": output_folder,
+            "init_git_lfs_repo": bool(data.get("init_git_lfs_repo", True)),
+        }
+
+        if "scrub_mri_json" in data:
+            scrub_mri_json = bool(data.get("scrub_mri_json", False))
+            manager_kwargs["scrub_mri_json"] = scrub_mri_json
+            if scrub_mri_json:
+                manager_kwargs["scrub_mri_json_groups"] = _normalize_scrub_group_ids(
+                    data.get("scrub_mri_json_groups")
+                )
+
+        scope_keys = {
+            "include_derivatives",
+            "include_sourcedata",
+            "include_code",
+            "include_analysis",
+            "exclude_subjects",
+            "exclude_sessions",
+            "exclude_modalities",
+            "exclude_acq",
+            "exclude_tasks",
+        }
+        if any(key in data for key in scope_keys):
+            exclude_subjects = _normalize_scope_labels(data.get("exclude_subjects"))
+            manager_kwargs.update(
+                {
+                    "include_derivatives": bool(data.get("include_derivatives", True)),
+                    "include_sourcedata": bool(data.get("include_sourcedata", False)),
+                    "include_code": bool(data.get("include_code", True)),
+                    "include_analysis": bool(data.get("include_analysis", True)),
+                    "exclude_sessions": _normalize_scope_labels(data.get("exclude_sessions")) or None,
+                    "exclude_modalities": _normalize_scope_labels(data.get("exclude_modalities")) or None,
+                    "exclude_acq": _normalize_scope_grouped_labels(data.get("exclude_acq")) or None,
+                    "exclude_tasks": _normalize_scope_grouped_labels(data.get("exclude_tasks")) or None,
+                }
+            )
+            if "exclude_subjects" in data:
+                manager_kwargs["exclude_subjects"] = exclude_subjects or None
+
+        manager = ProjectManager()
+        result = manager.export_project_to_git_lfs_folder(
+            resolved,
+            **manager_kwargs,
+        )
+        if result.get("success"):
+            return jsonify(result)
+        return jsonify(result), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @projects_export_bp.route("/api/projects/export/annex-availability", methods=["POST"])
 def export_project_annex_availability():
     """Preview missing local files for current folder export scope."""

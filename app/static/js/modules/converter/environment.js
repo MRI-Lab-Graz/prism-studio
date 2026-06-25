@@ -128,9 +128,6 @@ export function initEnvironment(elements) {
         if (envDataFile) {
             envDataFile.disabled = connectedToServer;
             envDataFile.title = connectedToServer ? 'Connected-to-server mode: use Server picker.' : '';
-            if (connectedToServer && envDataFile.files && envDataFile.files.length > 0) {
-                envDataFile.value = '';
-            }
         }
 
         if (!connectedToServer && envServerFilePath) {
