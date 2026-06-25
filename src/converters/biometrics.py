@@ -131,6 +131,42 @@ def _load_biometrics_library(
     return task_to_items, task_to_template
 
 
+def extract_raw_identities(
+    *,
+    input_path: str | Path,
+    id_column: str | None = None,
+    session_column: str | None = None,
+    sheet: str | int | None = None,
+) -> tuple[list[str], list[str], str, str | None]:
+    """Read a biometrics table just far enough to return the distinct raw
+    participant ids and raw session labels it contains, without performing a
+    full conversion. Used to validate ids/sessions against a project's
+    ground truth (participants.tsv, existing session directories) before
+    committing to a conversion.
+
+    Returns (raw_ids, raw_sessions, id_column_used, session_column_used).
+    """
+    input_path = Path(input_path).resolve()
+    df = _read_table_as_dataframe(input_path=input_path, sheet=sheet)
+
+    col_pid = id_column or _find_col(
+        df, {"participant_id", "participant", "subject", "sub"}
+    )
+    if not col_pid:
+        raise ValueError(
+            "Missing participant id column. Provide --id-column or include 'participant_id'."
+        )
+    col_ses = session_column or _find_col(df, {"session", "ses", "visit", "timepoint"})
+
+    raw_ids = sorted({rid for rid in df[col_pid].astype(str).map(_normalize_sub_id) if rid})
+    raw_sessions = (
+        sorted({sid for sid in df[col_ses].astype(str).map(_normalize_ses_id) if sid})
+        if col_ses
+        else []
+    )
+    return raw_ids, raw_sessions, col_pid, col_ses
+
+
 def detect_biometrics_in_table(
     *,
     input_path: str | Path,
@@ -172,6 +208,7 @@ def convert_biometrics_table_to_prism_dataset(
     tasks_to_export: list[str] | None = None,
     skip_participants: bool = False,
     existing_participant_ids: set[str] | None = None,
+    id_overrides: dict[str, str] | None = None,
 ) -> BiometricsConvertResult:
     """Convert biometrics CSV/XLSX (wide format) into a PRISM/BIDS-style dataset.
 
