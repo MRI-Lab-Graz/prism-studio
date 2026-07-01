@@ -188,8 +188,20 @@ def test_apply_subject_rewrite_runs_once_per_subject_group(tmp_path, monkeypatch
     assert result.get("datalad", {}).get("save_per_subject") is True
     assert result.get("datalad", {}).get("save_count") == 2
     save_commands = [command for command in seen_commands if command[1] == "save"]
-    # One autosave-before-mutation + one save-after-mutation per subject group.
-    assert len(save_commands) == 4
+    # One dataset-wide autosave for the whole batch (not repeated per
+    # subject) + one scoped save per subject group.
+    assert len(save_commands) == 3
+    autosave_commands = [command for command in save_commands if "--" not in command]
+    assert len(autosave_commands) == 1
+    scoped_save_commands = [command for command in save_commands if "--" in command]
+    assert len(scoped_save_commands) == 2
+    for command in scoped_save_commands:
+        scoped_paths = command[command.index("--") + 1 :]
+        # Each subject's save must only touch that subject's own paths, not
+        # the whole dataset (which would re-walk every other subject).
+        assert all("1293001" in path or "sub-001" in path for path in scoped_paths) or all(
+            "1293002" in path or "sub-002" in path for path in scoped_paths
+        )
 
     assert (project_root / "sub-001" / "ses-01" / "func").exists()
     assert (project_root / "sub-002" / "ses-01" / "func").exists()
@@ -229,7 +241,18 @@ def test_apply_entity_rewrite_runs_once_per_subject_group(tmp_path, monkeypatch)
     assert result.get("datalad", {}).get("save_per_subject") is True
     assert result.get("datalad", {}).get("save_count") == 2
     save_commands = [command for command in seen_commands if command[1] == "save"]
-    assert len(save_commands) == 4
+    # One dataset-wide autosave for the whole batch (not repeated per
+    # subject) + one scoped save per subject group.
+    assert len(save_commands) == 3
+    autosave_commands = [command for command in save_commands if "--" not in command]
+    assert len(autosave_commands) == 1
+    scoped_save_commands = [command for command in save_commands if "--" in command]
+    assert len(scoped_save_commands) == 2
+    for command in scoped_save_commands:
+        scoped_paths = command[command.index("--") + 1 :]
+        assert all("006" in path for path in scoped_paths) or all(
+            "007" in path for path in scoped_paths
+        )
 
     assert (func_a / "sub-006_ses-1_task-rest_run-01_bold.nii.gz").exists()
     assert (func_b / "sub-007_ses-1_task-rest_run-01_bold.nii.gz").exists()

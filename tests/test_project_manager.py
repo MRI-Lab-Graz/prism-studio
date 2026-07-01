@@ -1465,13 +1465,33 @@ class TestProjectManager(unittest.TestCase):
                     "src.project_manager.ProjectManager._parent_has_staged_nested_dataset_deletions",
                     return_value=False,
                 ):
-                    mock_registered_paths.side_effect = _registered_nested_path_sequence(
-                        {"sub-171"},
-                        {"sub-171"},
-                        {"sub-171", "sub-172"},
-                        {"sub-171", "sub-172"},
-                    )
-                    result = manager.enable_datalad_for_project(project_path)
+                    # Nested-subdataset conversion is now bounded by wall-clock time
+                    # rather than a fixed count (see
+                    # NESTED_SUBDATASET_ENABLE_CLICK_MAX_SECONDS). _monotonic_clock
+                    # is the isolated clock _create_nested_subdatasets uses for this
+                    # budget, so faking "no time has passed yet" for the first
+                    # check (sub-172) and "budget exhausted" for the next (sub-173)
+                    # reproduces the same "one subject converted, one left over"
+                    # scenario this test exercises, without touching unrelated
+                    # time.monotonic() usage elsewhere (e.g. the annexed-text-file
+                    # scan budget in get_datalad_status).
+                    clock_calls = {"n": 0}
+
+                    def _fake_clock():
+                        clock_calls["n"] += 1
+                        return 0.0 if clock_calls["n"] <= 2 else 1_000.0
+
+                    with patch(
+                        "src.project_manager.ProjectManager._monotonic_clock",
+                        side_effect=_fake_clock,
+                    ):
+                        mock_registered_paths.side_effect = _registered_nested_path_sequence(
+                            {"sub-171"},
+                            {"sub-171"},
+                            {"sub-171", "sub-172"},
+                            {"sub-171", "sub-172"},
+                        )
+                        result = manager.enable_datalad_for_project(project_path)
 
         self.assertTrue(result.get("success"), result)
         self.assertIn("Added 1 nested subdataset", result.get("message", ""))
@@ -1559,6 +1579,145 @@ class TestProjectManager(unittest.TestCase):
             ],
             commands,
         )
+
+    @patch("src.datalad_execution.run_datalad_get_paths")
+    @patch("src.project_manager.subprocess.run")
+    def test_ensure_nested_dataset_content_fetched_skips_unlock_for_untracked_path(
+        self, mock_run, mock_get_paths
+    ):
+        """git annex unlock errors with "pathspec did not match any file(s)"
+        when nothing is tracked under the path yet (e.g. an empty derivatives/
+        directory) -- that's not a real failure, just nothing to unlock.
+        """
+        manager = ProjectManager()
+        mock_get_paths.return_value = {"success": True}
+
+        def _run_side_effect(command, *args, **kwargs):
+            if "ls-files" in command:
+                return Mock(returncode=0, stdout="", stderr="")
+            raise AssertionError(f"Unexpected subprocess call when nothing is tracked: {command}")
+
+        mock_run.side_effect = _run_side_effect
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            derivatives_path = project_path / "derivatives"
+            derivatives_path.mkdir(parents=True, exist_ok=True)
+
+            result = manager._ensure_nested_dataset_content_fetched(
+                project_path, derivatives_path, "/usr/bin/datalad"
+            )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertIn("nothing to unlock", result.get("message", "").lower())
+
+    @patch("src.project_manager.ProjectManager._create_registered_nested_dataset")
+    @patch(
+        "src.project_manager.ProjectManager._parent_has_staged_nested_dataset_deletions",
+        return_value=False,
+    )
+    @patch(
+        "src.project_manager.ProjectManager._parent_tracks_nested_dataset_path",
+        return_value=False,
+    )
+    def test_migrate_parent_tracked_directory_retries_creation_when_already_untracked(
+        self, _mock_parent_tracks, _mock_staged_deletions, mock_create_registered
+    ):
+        """A directory can be untracked+committed by a prior attempt that then
+        failed at the final dataset-creation step. On retry, parent tracking
+        is already gone and nothing is staged -- that must resume with
+        dataset creation, not be treated as an inconsistent/error state.
+        """
+        manager = ProjectManager()
+        mock_create_registered.return_value = {"success": True}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            dataset_path = project_path / "sub-001"
+            dataset_path.mkdir(parents=True, exist_ok=True)
+
+            result = manager._migrate_parent_tracked_directory_to_subdataset(
+                project_path, dataset_path, "/usr/bin/datalad"
+            )
+
+        self.assertTrue(result.get("success"), result)
+        mock_create_registered.assert_called_once_with(
+            project_path, dataset_path, "/usr/bin/datalad"
+        )
+
+    @patch("src.project_manager.time.sleep")
+    @patch("src.project_manager.subprocess.run")
+    def test_run_datalad_create_with_lock_retry_recovers_from_transient_index_lock(
+        self, mock_run, mock_sleep
+    ):
+        """`datalad create --force` on an existing nested repo runs `git
+        update-index --add -- .gitmodules` against the parent's index. If
+        another process (e.g. a separate DataLad GUI) touches that index at
+        the same moment, git fails fast with a '.git/index.lock' error --
+        transient contention that a short retry should recover from.
+        """
+        manager = ProjectManager()
+        lock_error = Mock(
+            returncode=128,
+            stdout="",
+            stderr="fatal: Unable to create '.git/index.lock': File exists.",
+        )
+        success = Mock(returncode=0, stdout="", stderr="")
+        mock_run.side_effect = [lock_error, success]
+
+        process = manager._run_datalad_create_with_lock_retry(
+            ["datalad", "create", "-d", ".", "--force", "sub-001"],
+            cwd="/tmp/demo_project",
+            timeout=120,
+        )
+
+        self.assertEqual(process.returncode, 0)
+        self.assertEqual(mock_run.call_count, 2)
+        mock_sleep.assert_called_once()
+
+    @patch("src.project_manager.time.sleep")
+    @patch("src.project_manager.subprocess.run")
+    def test_run_datalad_create_with_lock_retry_gives_up_after_max_attempts(
+        self, mock_run, mock_sleep
+    ):
+        manager = ProjectManager()
+        lock_error = Mock(
+            returncode=128,
+            stdout="",
+            stderr="fatal: Unable to create '.git/index.lock': File exists.",
+        )
+        mock_run.return_value = lock_error
+
+        process = manager._run_datalad_create_with_lock_retry(
+            ["datalad", "create", "-d", ".", "--force", "sub-001"],
+            cwd="/tmp/demo_project",
+            timeout=120,
+            max_attempts=3,
+            retry_delay_seconds=0,
+        )
+
+        self.assertEqual(process.returncode, 128)
+        self.assertEqual(mock_run.call_count, 3)
+
+    @patch("src.project_manager.time.sleep")
+    @patch("src.project_manager.subprocess.run")
+    def test_run_datalad_create_with_lock_retry_does_not_retry_unrelated_errors(
+        self, mock_run, mock_sleep
+    ):
+        manager = ProjectManager()
+        other_error = Mock(returncode=1, stdout="", stderr="fatal: some unrelated error")
+        mock_run.return_value = other_error
+
+        process = manager._run_datalad_create_with_lock_retry(
+            ["datalad", "create", "-d", ".", "--force", "sub-001"],
+            cwd="/tmp/demo_project",
+            timeout=120,
+        )
+
+        self.assertEqual(process.returncode, 1)
+        self.assertEqual(mock_run.call_count, 1)
+        mock_sleep.assert_not_called()
 
     @patch("src.project_manager.subprocess.run")
     @patch(
@@ -1925,12 +2084,16 @@ class TestProjectManager(unittest.TestCase):
         mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
 
         def _run_side_effect(command, *args, **kwargs):
-            if "get" in command:
-                return Mock(returncode=0, stdout="", stderr="")
-            raise subprocess.TimeoutExpired(
-                cmd=["git", "rm", "--cached", "-r", "--", "derivatives"],
-                timeout=120,
-            )
+            # Only the untrack ("rm --cached") step should time out here; the
+            # earlier fetch/unlock steps (which now use the larger
+            # DATALAD_SAVE_STEP_TIMEOUT_SECONDS budget) must succeed so this
+            # test exercises the untrack step specifically.
+            if "rm" in command:
+                raise subprocess.TimeoutExpired(
+                    cmd=["git", "rm", "--cached", "-r", "--", "derivatives"],
+                    timeout=120,
+                )
+            return Mock(returncode=0, stdout="", stderr="")
 
         mock_run.side_effect = _run_side_effect
 

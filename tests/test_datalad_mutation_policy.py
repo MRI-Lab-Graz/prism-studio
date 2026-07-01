@@ -96,6 +96,59 @@ def test_run_tracked_mutation_proceeds_once_unlock_makes_file_writable(
     assert result.get("unlock", {}).get("attempted") is True
 
 
+def test_run_tracked_mutation_scopes_autosaves_to_mutation_paths(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Both autosave-before-mutation calls must be scoped to this mutation's
+    own paths, not the whole dataset: an unscoped `datalad save -r` re-walks
+    every registered subdataset, which is ruinous when a caller (e.g.
+    bids_file_deleter.py, datalad_project_copy.py) calls this once per
+    subject/item over a dataset with many nested subdatasets.
+    """
+    project_root = tmp_path / "project"
+    (project_root / ".datalad").mkdir(parents=True)
+    text_file = project_root / "sub-001" / "sub-001_scans.tsv"
+    text_file.parent.mkdir(parents=True)
+    text_file.write_text("filename\n")
+
+    monkeypatch.setattr(
+        "src.datalad_execution.shutil.which",
+        lambda cmd: "/usr/bin/datalad" if cmd == "datalad" else "",
+    )
+
+    seen_commands: list[list[str]] = []
+
+    def _record(command):
+        seen_commands.append([str(part) for part in command])
+        return SimpleNamespace(returncode=0, stdout="ok", stderr="")
+
+    monkeypatch.setattr(
+        "src.datalad_execution.subprocess.run",
+        _fake_subprocess_run_factory({
+            "save": _record,
+            "get": _record,
+            "unlock": _record,
+            "run": _record,
+        }),
+    )
+
+    run_tracked_mutation(
+        project_root,
+        get_paths=["sub-001"],
+        run_message="PRISM: test",
+        command=["echo", "noop"],
+        content_paths=["sub-001/sub-001_scans.tsv"],
+    )
+
+    save_commands = [command for command in seen_commands if command[1] == "save"]
+    assert len(save_commands) == 2, "Expected one pre-mutation autosave and one pre-run autosave."
+    for command in save_commands:
+        assert "--" in command, f"Save command was not scoped to specific paths: {command}"
+        scoped_paths = command[command.index("--") + 1 :]
+        assert scoped_paths, f"Save command had an empty path scope: {command}"
+        assert all("sub-001" in path for path in scoped_paths)
+
+
 def test_run_tracked_mutation_raises_clear_error_when_file_stays_locked(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
