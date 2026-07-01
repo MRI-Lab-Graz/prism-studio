@@ -4682,9 +4682,10 @@
       templateSourceCardEl.classList.add('border-primary');
       setTimeout(() => templateSourceCardEl.classList.remove('border-primary'), 1200);
     }, 120);
-    if (modalityEl && typeof modalityEl.focus === 'function') {
-      modalityEl.focus();
-    }
+    // Note: deliberately not calling modalityEl.focus() here — programmatically
+    // focusing a <select> causes the very next click anywhere on the page to be
+    // silently swallowed in Chromium, which broke the first click on the
+    // "Import Template Source" button right after opening this panel.
   }
 
     function buildTemplateEditorSourceWorkflowContext() {

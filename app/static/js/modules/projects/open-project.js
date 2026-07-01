@@ -730,17 +730,39 @@ export function initOpenProjectController({
         });
 
         try {
-            const response = await fetchWithApiFallback('/api/projects/datalad/enable', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ confirmed: true }),
-            });
-            const data = await response.json().catch(() => ({ success: false, error: 'Invalid server response.' }));
-            if (!response.ok || !data.success) {
-                throw new Error(data.error || data.message || 'Could not enable DataLad.');
+            // Each backend call converts as many nested subdatasets as fit in its
+            // own time budget (see NESTED_SUBDATASET_ENABLE_CLICK_MAX_SECONDS) and
+            // reports how many are still missing. Loop here instead of requiring
+            // one manual click per subject -- a dataset with 100+ subjects would
+            // otherwise need 100+ clicks to finish.
+            let data = null;
+            let iterations = 0;
+            const MAX_ITERATIONS = 500;
+            for (;;) {
+                iterations += 1;
+                const response = await fetchWithApiFallback('/api/projects/datalad/enable', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ confirmed: true }),
+                });
+                data = await response.json().catch(() => ({ success: false, error: 'Invalid server response.' }));
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || data.message || 'Could not enable DataLad.');
+                }
+
+                applyProjectDataladResponse(data);
+
+                const remaining = Number.parseInt(String(data.datalad?.subdatasets_remaining_count ?? 0), 10) || 0;
+                if (remaining <= 0 || iterations >= MAX_ITERATIONS) {
+                    break;
+                }
+
+                const nextTarget = data.datalad?.next_missing_subdataset || 'the next nested dataset';
+                const continueMessage = `${remaining} nested dataset(s) remaining. Continuing with ${nextTarget}...`;
+                setProjectBoxDataladFeedback(continueMessage, 'muted');
+                window.setNavbarDataladFeedback?.(continueMessage, 'muted', 'Running');
             }
 
-            applyProjectDataladResponse(data);
             const successMessage = data.message || (data.datalad && data.datalad.message) || 'DataLad enabled.';
             setProjectBoxDataladFeedback(successMessage, 'success');
             window.setNavbarDataladFeedback?.(successMessage, 'success', 'Enabled');

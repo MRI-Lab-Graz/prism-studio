@@ -352,7 +352,17 @@ def run_datalad_save(
     datalad_executable: str = "",
     timeout_seconds: int = 900,
     recursive: bool = True,
+    paths: list[str] | None = None,
 ) -> dict[str, Any]:
+    """Run `datalad save`.
+
+    paths: when given, scopes the save (and its recursion, if `recursive`) to
+    just those paths instead of the whole dataset. With no paths, `-r` walks
+    *every* registered subdataset on *every* call -- fine for a one-off save,
+    but ruinous when called once per subject/item in a loop over a dataset
+    with many nested subdatasets (each call re-scans all of them, not just
+    the one that actually changed).
+    """
     root = Path(project_root)
     resolved = str(datalad_executable or resolve_datalad_executable()).strip()
     result: dict[str, Any] = {
@@ -374,6 +384,10 @@ def run_datalad_save(
     if recursive:
         command.append("-r")
     command.extend(["-m", save_message])
+    normalized_paths = sorted({str(p).strip() for p in (paths or []) if str(p).strip()})
+    if normalized_paths:
+        command.append("--")
+        command.extend(normalized_paths)
 
     result["attempted"] = True
     result["command"] = shlex.join(command)
