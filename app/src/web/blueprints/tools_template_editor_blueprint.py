@@ -746,3 +746,83 @@ def api_template_editor_import_lsq_lsg():
 
     except Exception as e:
         return jsonify({"error": f"Import failed: {str(e)}"}), 500
+
+
+@tools_template_editor_bp.route("/api/template-editor/import-excel", methods=["POST"])
+def api_template_editor_import_excel():
+    """Import an Excel/CSV/TSV codebook and return a PRISM template for the editor.
+
+    Two-phase, stateless: without a 'group' field, returns a summary of the
+    instrument groups detected in the file (grouped by variable-name prefix)
+    so the caller can let the user pick one. With 'group' set, re-parses the
+    file and returns a full template for just that group.
+    """
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    file = request.files["file"]
+    if not file.filename:
+        return jsonify({"error": "No file selected"}), 400
+
+    filename_lower = file.filename.lower()
+    if not any(filename_lower.endswith(ext) for ext in (".xlsx", ".csv", ".tsv")):
+        return jsonify({"error": "Unsupported file type. Use .xlsx, .csv, or .tsv"}), 400
+
+    group = (request.form.get("group") or "").strip()
+
+    try:
+        from src.converters.excel_template_import import (
+            RESERVED_TOPLEVEL,
+            parse_excel_groups,
+            summarize_groups,
+        )
+        from src.utils.naming import sanitize_task_name
+
+        file_bytes = file.read()
+        groups = parse_excel_groups(file_bytes, file.filename)
+        if not groups:
+            return jsonify({"error": "No variables found in the file"}), 400
+
+        if not group:
+            return (
+                jsonify(
+                    {
+                        "groups": summarize_groups(groups),
+                        "group_count": len(groups),
+                    }
+                ),
+                200,
+            )
+
+        template = groups.get(group)
+        if template is None:
+            return jsonify({"error": f"Group '{group}' not found in file"}), 400
+
+        template = _strip_template_editor_internal_keys(template)
+        item_keys = [k for k in template if k not in RESERVED_TOPLEVEL]
+
+        languages = []
+        i18n = template.get("I18n")
+        if isinstance(i18n, dict):
+            languages = i18n.get("Languages", [])
+        if not languages:
+            languages = [template.get("Technical", {}).get("Language", "en")]
+
+        safe_name = sanitize_task_name(group)
+        suggested_filename = f"survey-{safe_name}.json"
+        return (
+            jsonify(
+                {
+                    "template": template,
+                    "suggested_filename": suggested_filename,
+                    "item_count": len(item_keys),
+                    "languages": languages,
+                }
+            ),
+            200,
+        )
+
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"Import failed: {str(e)}"}), 500
