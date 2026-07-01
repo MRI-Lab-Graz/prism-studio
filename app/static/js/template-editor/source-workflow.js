@@ -362,6 +362,120 @@ export async function downloadCurrent(context) {
   window.URL.revokeObjectURL(url);
 }
 
+function applyImportedTemplate(context, data, file) {
+  context.currentTemplate = context.stripInternalTemplateKeys(data.template);
+  context.stripScoreAnnotationsInTemplate(context.currentTemplate);
+  context.originalTemplate = null;
+  context.currentTemplateFilename = context.normalizeTemplateFilename(data.suggested_filename, context.modalityEl.value, context.currentTemplate);
+  context.loadedFromReadonly = false;
+  context.loadedFromProjectLibrary = false;
+  context.loadedTemplateProjectPath = '';
+  context.hasUserInteracted = true;
+  context.hasExplicitTemplate = true;
+  context.clearTemplateSelections();
+  context.checkedItemIds = new Set();
+  context.selectedItemId = context.itemKeysFromTemplate(context.currentTemplate)[0] || null;
+  if (context.btnDelete) {
+    context.btnDelete.classList.add('d-none');
+  }
+  context.renderAll();
+
+  const source = (file.name.split('.').pop() || '').toLowerCase().toUpperCase();
+  const itemCount = data.item_count || data.question_count || context.itemKeysFromTemplate(context.currentTemplate).length;
+  return `<strong>Imported ${context.escapeHtml(file.name)}</strong> (${context.escapeHtml(source)})<br>${context.escapeHtml(String(itemCount))} item(s) extracted.`;
+}
+
+async function finishImport(context, importSummaryMessage) {
+  context.showAlert('success', importSummaryMessage);
+  try {
+    await validateCurrent(context);
+  } catch (error) {
+    context.btnDownload.disabled = false;
+    context.btnSave.disabled = true;
+    context.showAlert('warning', `${importSummaryMessage}<br><small>Validation could not be completed: ${context.escapeHtml(error.message)}</small>`);
+  }
+}
+
+function hideExcelGroupPicker(context) {
+  if (context.excelGroupPickerRowEl) {
+    context.excelGroupPickerRowEl.classList.add('d-none');
+  }
+  if (context.excelGroupPickerSelectEl) {
+    context.excelGroupPickerSelectEl.innerHTML = '';
+  }
+}
+
+async function loadExcelGroup(context, file, group, previousEditorState) {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('modality', context.modalityEl.value);
+    formData.append('schema_version', context.schemaEl.value || 'stable');
+    formData.append('group', group);
+
+    const res = await context.fetchWithApiFallback('/api/template-editor/import-excel', {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || `Import failed (${res.status})`);
+    }
+
+    hideExcelGroupPicker(context);
+    const importSummaryMessage = applyImportedTemplate(context, data, file);
+    await finishImport(context, importSummaryMessage);
+  } catch (error) {
+    context.restoreEditorState(previousEditorState);
+    context.showAlert('danger', `Template import failed: ${context.escapeHtml(error.message)}`);
+  }
+}
+
+async function importExcelCodebook(context, file, previousEditorState) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('modality', context.modalityEl.value);
+  formData.append('schema_version', context.schemaEl.value || 'stable');
+
+  const res = await context.fetchWithApiFallback('/api/template-editor/import-excel', {
+    method: 'POST',
+    body: formData,
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || `Template import failed (${res.status})`);
+  }
+
+  const groups = data.groups || [];
+  if (groups.length === 0) {
+    throw new Error('No instrument groups detected in the file.');
+  }
+
+  if (groups.length === 1) {
+    await loadExcelGroup(context, file, groups[0].prefix, previousEditorState);
+    return;
+  }
+
+  if (!context.excelGroupPickerRowEl || !context.excelGroupPickerSelectEl || !context.btnLoadExcelGroup) {
+    throw new Error(`Detected ${groups.length} instrument groups, but this editor build has no group picker UI to choose one.`);
+  }
+
+  context.excelGroupPickerSelectEl.innerHTML = groups
+    .map((g) => `<option value="${context.escapeHtml(g.prefix)}">${context.escapeHtml(g.prefix)} (${g.item_count} item${g.item_count === 1 ? '' : 's'})</option>`)
+    .join('');
+  context.excelGroupPickerRowEl.classList.remove('d-none');
+
+  context.btnLoadExcelGroup.onclick = () => {
+    const selected = context.excelGroupPickerSelectEl.value;
+    if (!selected) {
+      return;
+    }
+    loadExcelGroup(context, file, selected, previousEditorState);
+  };
+
+  context.showAlert('info', `Detected ${groups.length} instrument groups in ${context.escapeHtml(file.name)}. Choose one above to load it into the editor.`);
+}
+
 export async function importTemplateSource(context) {
   const file = context.templateImportInput.files[0];
   if (!file) {
@@ -377,6 +491,7 @@ export async function importTemplateSource(context) {
   context.clearAlert();
   context.btnDownload.disabled = true;
   context.btnSave.disabled = true;
+  hideExcelGroupPicker(context);
 
   let importSummaryMessage = '';
 
@@ -385,6 +500,15 @@ export async function importTemplateSource(context) {
 
     const lowerName = (file.name || '').toLowerCase();
     const isLsqOrLsg = lowerName.endsWith('.lsq') || lowerName.endsWith('.lsg');
+    const isExcelCodebook = lowerName.endsWith('.xlsx') || lowerName.endsWith('.csv') || lowerName.endsWith('.tsv');
+
+    if (isExcelCodebook) {
+      // The Excel/CSV/TSV codebook path may pause for the user to pick an
+      // instrument group; it handles its own success/validate/error flow.
+      await importExcelCodebook(context, file, previousEditorState);
+      return;
+    }
+
     const formData = new FormData();
     formData.append('file', file);
 
@@ -398,8 +522,7 @@ export async function importTemplateSource(context) {
       if (!res.ok) {
         throw new Error(data.error || `Import failed (${res.status})`);
       }
-      context.currentTemplate = context.stripInternalTemplateKeys(data.template);
-      context.stripScoreAnnotationsInTemplate(context.currentTemplate);
+      importSummaryMessage = applyImportedTemplate(context, data, file);
     } else {
       const nameWithoutExt = (file.name || 'imported').replace(/\.[^.]+$/, '').trim();
       formData.append('mode', 'combined');
@@ -419,42 +542,15 @@ export async function importTemplateSource(context) {
       if (!data.prism_json || typeof data.prism_json !== 'object') {
         throw new Error('No PRISM template returned by generator.');
       }
-      context.currentTemplate = context.stripInternalTemplateKeys(data.prism_json);
-      context.stripScoreAnnotationsInTemplate(context.currentTemplate);
+      importSummaryMessage = applyImportedTemplate(context, { ...data, template: data.prism_json }, file);
     }
-
-    context.originalTemplate = null;
-    context.currentTemplateFilename = context.normalizeTemplateFilename(data.suggested_filename, context.modalityEl.value, context.currentTemplate);
-    context.loadedFromReadonly = false;
-    context.loadedFromProjectLibrary = false;
-    context.loadedTemplateProjectPath = '';
-    context.hasUserInteracted = true;
-    context.hasExplicitTemplate = true;
-    context.clearTemplateSelections();
-    context.checkedItemIds = new Set();
-    context.selectedItemId = context.itemKeysFromTemplate(context.currentTemplate)[0] || null;
-    if (context.btnDelete) {
-      context.btnDelete.classList.add('d-none');
-    }
-    context.renderAll();
-
-    const source = (file.name.split('.').pop() || '').toLowerCase().toUpperCase();
-    const itemCount = data.item_count || data.question_count || context.itemKeysFromTemplate(context.currentTemplate).length;
-    importSummaryMessage = `<strong>Imported ${context.escapeHtml(file.name)}</strong> (${context.escapeHtml(source)})<br>${context.escapeHtml(String(itemCount))} item(s) extracted.`;
-    context.showAlert('success', importSummaryMessage);
   } catch (error) {
     context.restoreEditorState(previousEditorState);
     context.showAlert('danger', `Template import failed: ${context.escapeHtml(error.message)}`);
     return;
   }
 
-  try {
-    await validateCurrent(context);
-  } catch (error) {
-    context.btnDownload.disabled = false;
-    context.btnSave.disabled = true;
-    context.showAlert('warning', `${importSummaryMessage}<br><small>Validation could not be completed: ${context.escapeHtml(error.message)}</small>`);
-  }
+  await finishImport(context, importSummaryMessage);
 }
 
 export async function deleteCurrentTemplate(context) {

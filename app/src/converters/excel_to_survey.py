@@ -328,6 +328,26 @@ def _clean_cell(x):
     return s if s else None
 
 
+def _strip_trailing_bracket_tags(text):
+    """Remove trailing '[...]' annotation tags (e.g. "Text [reverse-scored]").
+
+    Only strips bracket groups anchored at the end of the string, and only if
+    text remains outside them. A description that is itself fully wrapped in
+    brackets (e.g. "[Ich bin eher zurückhaltend]") is left untouched, since the
+    brackets are part of the item text rather than a trailing annotation.
+    """
+    result = text.strip()
+    while True:
+        match = re.search(r"\s*\[[^\[\]]*\]\s*$", result)
+        if not match:
+            break
+        candidate = result[: match.start()].strip()
+        if not candidate:
+            break
+        result = candidate
+    return result
+
+
 def _parse_float(x):
     if x is None or (isinstance(x, float) and pd.isna(x)):
         return None
@@ -1520,8 +1540,8 @@ def extract_excel_templates(
 
         q_en = _clean_cell(question_en)
         q_de = _clean_cell(question_de)
-        q_en = re.sub(r"\[.*?\]", "", q_en).strip() if q_en else None
-        q_de = re.sub(r"\[.*?\]", "", q_de).strip() if q_de else None
+        q_en = _strip_trailing_bracket_tags(q_en) if q_en else None
+        q_de = _strip_trailing_bracket_tags(q_de) if q_de else None
 
         description_map = {}
         if q_de:
@@ -1531,7 +1551,7 @@ def extract_excel_templates(
         for lang, raw_value in question_lang_values.items():
             cleaned = _clean_cell(raw_value)
             if cleaned:
-                cleaned = re.sub(r"\[.*?\]", "", cleaned).strip()
+                cleaned = _strip_trailing_bracket_tags(cleaned)
                 if cleaned:
                     description_map[lang] = cleaned
 
