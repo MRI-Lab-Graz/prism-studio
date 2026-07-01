@@ -13,6 +13,9 @@
   const toolPropertiesFormEl = document.getElementById('toolPropertiesForm');
   const btnImportTemplateSource = document.getElementById('btnImportTemplateSource');
   const templateImportInput = document.getElementById('templateImportInput');
+  const excelGroupPickerRowEl = document.getElementById('excelGroupPickerRow');
+  const excelGroupPickerSelectEl = document.getElementById('excelGroupPickerSelect');
+  const btnLoadExcelGroup = document.getElementById('btnLoadExcelGroup');
   const itemListEl = document.getElementById('itemList');
   const selectAllItemsEl = document.getElementById('selectAllItems');
   const newItemIdEl = document.getElementById('newItemId');
@@ -4699,6 +4702,9 @@
         btnNew,
         btnValidate,
         templateImportInput,
+        excelGroupPickerRowEl,
+        excelGroupPickerSelectEl,
+        btnLoadExcelGroup,
         btnDownload,
         btnSave,
         btnDelete,
