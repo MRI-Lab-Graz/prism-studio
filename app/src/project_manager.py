@@ -71,6 +71,19 @@ BIDS_PASSTHROUGH_MODALITIES = {"eyetracking"}
 PROJECT_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
 VALID_DATASET_TYPES = {"raw", "derivative"}
 DATALAD_REPAIR_STEP_TIMEOUT_SECONDS = 120
+# Separate, much larger budget for DataLad/git-annex steps whose duration scales
+# with tracked data size (a `datalad save` that checksums newly-annexed large
+# files, or unlocking/materializing annex symlinks into real files) rather than
+# with the number of small metadata edits. Big MRI/BIDS datasets can take well
+# over DATALAD_REPAIR_STEP_TIMEOUT_SECONDS just to hash their content.
+DATALAD_SAVE_STEP_TIMEOUT_SECONDS = 60 * 60
+# Wall-clock budgets for converting subject directories into nested DataLad
+# subdatasets (see _create_nested_subdatasets). Bounded by time rather than by
+# subject count so that a dataset with many (or very large) subjects can't
+# turn a single request into an unbounded hang -- any subjects left over are
+# reported as remaining/skipped for a later call to continue.
+NESTED_SUBDATASET_INIT_MAX_SECONDS = 5 * 60
+NESTED_SUBDATASET_ENABLE_CLICK_MAX_SECONDS = 90
 REGISTERED_SUBDATASET_QUERY_TIMEOUT_SECONDS = 30
 DATALAD_CLEAN_STATUS_TIMEOUT_SECONDS = 30
 ANNEXED_TEXT_FILE_SCAN_BUDGET_SECONDS = 20
@@ -206,6 +219,7 @@ class ProjectManager:
             datalad_result = self._create_datalad_dataset(
                 project_path,
                 enabled=config.get("use_datalad", False),
+                create_nested_subdatasets=False,
             )
             gitattributes_created = self._ensure_datalad_editable_metadata_policy(
                 project_path,
@@ -294,6 +308,7 @@ class ProjectManager:
                     self._create_nested_subdatasets(
                         project_path,
                         str(datalad_result.get("executable") or ""),
+                        max_seconds=NESTED_SUBDATASET_INIT_MAX_SECONDS,
                     )
                 )
                 datalad_result = self._save_datalad_changes(
@@ -301,6 +316,7 @@ class ProjectManager:
                     datalad_result,
                     message="Initialize PRISM dataset structure",
                 )
+                self._append_remaining_subdatasets_notice(datalad_result)
 
             result = {
                 "success": True,
@@ -391,6 +407,7 @@ class ProjectManager:
             datalad_result = self._create_datalad_dataset(
                 project_path,
                 enabled=config.get("use_datalad", False),
+                create_nested_subdatasets=False,
             )
             if datalad_result.get("message"):
                 add_log(datalad_result["message"], "info")
@@ -492,6 +509,7 @@ class ProjectManager:
                     self._create_nested_subdatasets(
                         project_path,
                         str(datalad_result.get("executable") or ""),
+                        max_seconds=NESTED_SUBDATASET_INIT_MAX_SECONDS,
                     )
                 )
                 annexed_text_fix = self._fix_annexed_text_files(project_path)
@@ -513,6 +531,7 @@ class ProjectManager:
                     datalad_result,
                     message="Initialize PRISM on existing BIDS dataset",
                 )
+                self._append_remaining_subdatasets_notice(datalad_result)
                 if datalad_result.get("message"):
                     add_log(datalad_result["message"], "info")
 
@@ -3277,7 +3296,7 @@ git push -u origin main
                     self._create_nested_subdatasets(
                         project_path,
                         str(datalad_executable),
-                        max_to_create=1,
+                        max_seconds=NESTED_SUBDATASET_ENABLE_CLICK_MAX_SECONDS,
                     )
                 )
 
@@ -3390,7 +3409,11 @@ git push -u origin main
             result["datalad"] = status
             return result
 
-        datalad_result = self._create_datalad_dataset(project_path, enabled=True)
+        datalad_result = self._create_datalad_dataset(
+            project_path,
+            enabled=True,
+            nested_subdatasets_max_seconds=NESTED_SUBDATASET_ENABLE_CLICK_MAX_SECONDS,
+        )
         refreshed_status = self.get_datalad_status(project_path)
 
         if not datalad_result.get("initialized"):
@@ -3440,8 +3463,17 @@ git push -u origin main
         self,
         project_path: Path,
         enabled: Union[bool, str, None] = True,
+        *,
+        create_nested_subdatasets: bool = True,
+        nested_subdatasets_max_seconds: Optional[float] = None,
     ) -> Dict[str, Any]:
-        """Initialise a DataLad dataset when requested and available."""
+        """Initialise a DataLad dataset when requested and available.
+
+        create_nested_subdatasets=False lets a caller that's about to run its
+        own (time-bounded) nested-subdataset pass skip the one this method
+        would otherwise run internally, so large datasets don't pay for two
+        unbounded/duplicate attempts back to back.
+        """
         requested = self._normalize_feature_toggle(enabled, default=True)
         result: Dict[str, Any] = {
             "requested": requested,
@@ -3512,14 +3544,84 @@ git push -u origin main
             )
             return result
 
-        nested_result = self._create_nested_subdatasets(
-            project_path,
-            datalad_executable,
-        )
-        result.update(nested_result)
+        if create_nested_subdatasets:
+            nested_result = self._create_nested_subdatasets(
+                project_path,
+                datalad_executable,
+                max_seconds=nested_subdatasets_max_seconds,
+            )
+            result.update(nested_result)
         result["initialized"] = True
         result["message"] = "DataLad dataset initialized."
         return result
+
+    def _append_remaining_subdatasets_notice(self, datalad_result: Dict[str, Any]) -> None:
+        """Append a note to datalad_result['message'] when the time-bounded
+        nested-subdataset pass (see NESTED_SUBDATASET_INIT_MAX_SECONDS)
+        didn't finish converting every subject in one call, so the user
+        knows to use "Enable DataLad" to convert the rest instead of assuming
+        the dataset is fully nested already.
+        """
+        remaining = int(datalad_result.get("subdatasets_remaining_count", 0) or 0)
+        if remaining <= 0:
+            return
+        notice = (
+            f"{remaining} nested subject dataset(s) still need to be converted "
+            '(large datasets are converted incrementally). Use "Enable DataLad" '
+            "in the project menu to continue."
+        )
+        existing_message = str(datalad_result.get("message") or "").strip()
+        datalad_result["message"] = f"{existing_message} {notice}".strip() if existing_message else notice
+
+    def _run_datalad_create_with_lock_retry(
+        self,
+        create_command: List[str],
+        *,
+        cwd: str,
+        timeout: float,
+        max_attempts: int = 3,
+        retry_delay_seconds: float = 1.5,
+    ) -> "subprocess.CompletedProcess":
+        """Run a `datalad create` command, retrying a few times if it fails
+        due to a transient git index-lock collision.
+
+        `datalad create --force` on an existing nested repo internally runs
+        `git update-index --add -- .gitmodules` against the *parent*
+        dataset's index. If anything else touches that same index at the
+        same moment -- another PRISM operation, or a separate DataLad GUI
+        (e.g. DataLad Desktop) refreshing its view of the same dataset -- git
+        fails fast with "fatal: Unable to create '.git/index.lock': File
+        exists" (exit code 128). That's transient contention, not a real
+        error, and normally clears within a second or two, so a short retry
+        resolves it instead of failing the whole subject/subdataset outright.
+        """
+        process = None
+        for attempt in range(1, max_attempts + 1):
+            process = subprocess.run(
+                create_command,
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=timeout,
+            )
+            if process.returncode == 0:
+                return process
+
+            stderr_text = (process.stderr or "") + (process.stdout or "")
+            is_lock_contention = "index.lock" in stderr_text or "Unable to create" in stderr_text
+            if not is_lock_contention or attempt == max_attempts:
+                return process
+            time.sleep(retry_delay_seconds * attempt)
+        return process
+
+    def _monotonic_clock(self) -> float:
+        """Thin wrapper around time.monotonic() used for nested-subdataset
+        conversion budgeting, kept separate from other time.monotonic() call
+        sites in this module (e.g. _find_annexed_text_files's scan budget) so
+        tests can control this specific clock without affecting those.
+        """
+        return time.monotonic()
 
     def _create_nested_subdatasets(
         self,
@@ -3527,12 +3629,30 @@ git push -u origin main
         datalad_executable: str,
         *,
         max_to_create: Optional[int] = None,
+        max_seconds: Optional[float] = None,
     ) -> Dict[str, Any]:
-        """Create nested DataLad subdatasets under an existing project dataset."""
+        """Create nested DataLad subdatasets under an existing project dataset.
+
+        max_to_create bounds the *count* converted in this call; max_seconds
+        bounds the *wall-clock time* spent. Datasets with many subjects (each
+        potentially large, e.g. MRI data) need the time bound regardless of
+        how many subjects that happens to be, so a single call can't run long
+        enough to hit an HTTP/proxy timeout. Either or both may be set; the
+        first one reached stops further conversion for this call, with the
+        rest reported as skipped/remaining for a subsequent call to pick up.
+        """
         created_paths: List[str] = []
         existing_paths: List[str] = []
         failed_paths: List[str] = []
         skipped_paths: List[str] = []
+        start_time = self._monotonic_clock()
+
+        def _budget_exhausted() -> bool:
+            if max_to_create is not None and remaining_budget <= 0:
+                return True
+            if max_seconds is not None and (self._monotonic_clock() - start_time) >= max_seconds:
+                return True
+            return False
 
         if not datalad_executable:
             return {
@@ -3590,7 +3710,7 @@ git push -u origin main
                 continue
 
             if self._is_datalad_dataset(dataset_path):
-                if remaining_budget is not None and remaining_budget <= 0:
+                if _budget_exhausted():
                     skipped_paths.append(relative_dataset_text)
                     continue
 
@@ -3611,7 +3731,7 @@ git push -u origin main
                 )
                 continue
 
-            if remaining_budget is not None and remaining_budget <= 0:
+            if _budget_exhausted():
                 skipped_paths.append(relative_dataset_text)
                 continue
 
@@ -3757,9 +3877,11 @@ git push -u origin main
         except Exception:
             pass
 
-    def _format_repair_timeout_message(self, step_label: str) -> str:
+    def _format_repair_timeout_message(
+        self, step_label: str, timeout_seconds: int = DATALAD_REPAIR_STEP_TIMEOUT_SECONDS
+    ) -> str:
         return (
-            f"{step_label} timed out after {DATALAD_REPAIR_STEP_TIMEOUT_SECONDS} seconds. "
+            f"{step_label} timed out after {timeout_seconds} seconds. "
             "Large tracked directories can take a while; please review the backend terminal output and retry."
         )
 
@@ -3938,6 +4060,42 @@ git push -u origin main
                 ),
             }
 
+        # An empty directory (e.g. a freshly created `derivatives/` that hasn't
+        # been populated yet) has nothing tracked by git at all, so `git annex
+        # unlock` has no pathspec to match and fails outright -- that's not a
+        # real error, there's simply nothing to unlock. Check first so this
+        # case is a no-op instead of a hard failure blocking nested conversion.
+        ls_files_command = [
+            "git",
+            "-C",
+            str(project_path),
+            "ls-files",
+            "--",
+            relative_dataset_text,
+        ]
+        try:
+            ls_files_process = subprocess.run(
+                ls_files_command,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            return {
+                "success": False,
+                "message": self._format_repair_timeout_message(
+                    f'Checking tracked content under "{relative_dataset_text}"'
+                ),
+            }
+        has_tracked_content = bool((ls_files_process.stdout or "").strip())
+
+        if not has_tracked_content:
+            return {
+                "success": True,
+                "message": "No tracked content under this path yet; nothing to unlock.",
+            }
+
         unlock_command = [
             "git",
             "-C",
@@ -3958,13 +4116,14 @@ git push -u origin main
                 capture_output=True,
                 text=True,
                 check=False,
-                timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
+                timeout=DATALAD_SAVE_STEP_TIMEOUT_SECONDS,
             )
         except subprocess.TimeoutExpired:
             return {
                 "success": False,
                 "message": self._format_repair_timeout_message(
-                    f'Unlocking content under "{relative_dataset_text}"'
+                    f'Unlocking content under "{relative_dataset_text}"',
+                    DATALAD_SAVE_STEP_TIMEOUT_SECONDS,
                 ),
             }
         if unlock_process.returncode != 0:
@@ -4044,13 +4203,25 @@ git push -u origin main
                 stage_parent_message=stage_parent_message,
             )
         else:
-            return {
-                "success": False,
-                "message": self._build_nested_step_failure(
-                    "verify parent tracking state",
-                    "parent dataset no longer tracks this path and no staged parent deletions were found",
-                ),
-            }
+            # Parent no longer tracks this path and nothing is staged: this is
+            # the expected state after a PRIOR attempt already ran the
+            # untrack+commit steps below but failed at the final
+            # _create_registered_nested_dataset step (e.g. a transient
+            # datalad/git-annex error). Re-running the untrack here would be a
+            # no-op (nothing left to remove), so just retry dataset creation
+            # directly instead of treating an already-prepared directory as an
+            # inconsistent/error state.
+            create_result = self._create_registered_nested_dataset(
+                project_path,
+                dataset_path,
+                datalad_executable,
+            )
+            if create_result.get("success"):
+                return {
+                    "success": True,
+                    "message": "Created nested DataLad dataset for a previously-untracked directory.",
+                }
+            return create_result
 
         # A dataset-wide `datalad save --updated` re-walks the whole working tree
         # and can re-discover the just-`git rm --cached`-ed files as "new" annex
@@ -4286,12 +4457,9 @@ git push -u origin main
             command=" ".join(create_command),
         )
         try:
-            create_process = subprocess.run(
+            create_process = self._run_datalad_create_with_lock_retry(
                 create_command,
                 cwd=str(project_path),
-                capture_output=True,
-                text=True,
-                check=False,
                 timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
             )
         except subprocess.TimeoutExpired:
@@ -4427,12 +4595,9 @@ git push -u origin main
             command=" ".join(create_command),
         )
         try:
-            create_process = subprocess.run(
+            create_process = self._run_datalad_create_with_lock_retry(
                 create_command,
                 cwd=str(project_path),
-                capture_output=True,
-                text=True,
-                check=False,
                 timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
             )
         except subprocess.TimeoutExpired:
@@ -4722,11 +4887,12 @@ git push -u origin main
                 capture_output=True,
                 text=True,
                 check=False,
-                timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
+                timeout=DATALAD_SAVE_STEP_TIMEOUT_SECONDS,
             )
         except subprocess.TimeoutExpired:
             result["message"] = self._format_repair_timeout_message(
-                f'DataLad save for "{project_path.name}"'
+                f'DataLad save for "{project_path.name}"',
+                DATALAD_SAVE_STEP_TIMEOUT_SECONDS,
             )
             return result
         except Exception as exc:

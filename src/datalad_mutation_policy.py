@@ -54,12 +54,18 @@ def run_tracked_mutation(
 
     # `datalad run` refuses to execute against a dirty working tree (it needs a
     # clean baseline to detect what the wrapped command changed), so any
-    # changes left over from earlier actions must be saved first.
+    # changes left over from earlier actions must be saved first. Scoped to
+    # this mutation's own paths: an unscoped `datalad save -r` re-walks every
+    # registered subdataset, which turns a per-subject/per-item caller loop
+    # (bids_file_deleter.py, datalad_project_copy.py) into O(n^2) work once
+    # the dataset has many nested subdatasets.
+    autosave_scope_paths = [*get_paths, *content_paths]
     autosave_result = run_datalad_save(
         root,
         message=f'PRISM: autosave pending changes before "{run_message}"',
         datalad_executable=datalad_executable,
         timeout_seconds=max(1, int(run_timeout_seconds)),
+        paths=autosave_scope_paths,
     )
     if not autosave_result.get("success"):
         raise ValueError(
@@ -148,6 +154,7 @@ def run_tracked_mutation(
             message=f'PRISM: autosave unlock state before "{run_message}"',
             datalad_executable=datalad_executable,
             timeout_seconds=max(1, int(run_timeout_seconds)),
+            paths=normalized_content_paths,
         )
         if not pre_run_autosave_result.get("success"):
             raise ValueError(

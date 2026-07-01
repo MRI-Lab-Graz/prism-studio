@@ -114,6 +114,7 @@ def _apply_mutation_locally_with_datalad_save(
     run_message: str,
     get_paths: list[str],
     content_paths: list[str],
+    save_paths: list[str] | None,
     apply_fn: Callable[[], dict[str, Any]],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Apply a mutation directly in-process, backed by DataLad get/unlock
@@ -126,6 +127,16 @@ def _apply_mutation_locally_with_datalad_save(
     repeated, hard-to-diagnose failure points on real multi-subject
     datasets. `datalad save` has neither constraint — it just commits
     whatever the in-process mutation actually changed.
+
+    save_paths scopes the final save to the paths this mutation actually
+    touches (its rename sources/destinations and any rewritten text files).
+    Callers looping over many subjects/items must pass this: an unscoped
+    `datalad save -r` walks *every* registered subdataset on *every* call,
+    which turns an O(n) batch into O(n^2) once the dataset has many nested
+    subdatasets (each subject's save re-scanning every other subject).
+    Pending changes from *before* this mutation are the caller's
+    responsibility (a one-time autosave before the whole batch, not
+    repeated per mutation).
     """
     root = Path(project_root)
     if not is_datalad_dataset(root):
@@ -136,19 +147,6 @@ def _apply_mutation_locally_with_datalad_save(
         raise ValueError(
             "This project is tracked by DataLad and mutation changes require "
             "DataLad. Install with: uv tool install datalad git-annex."
-        )
-
-    autosave_result = run_datalad_save(
-        root,
-        message=f'PRISM: autosave pending changes before "{run_message}"',
-        datalad_executable=datalad_executable,
-    )
-    if not autosave_result.get("success"):
-        raise ValueError(
-            str(
-                autosave_result.get("message")
-                or "DataLad autosave failed before mutation."
-            )
         )
 
     get_result: dict[str, Any] = {"attempted": False, "success": True, "message": "", "command": ""}
@@ -218,6 +216,7 @@ def _apply_mutation_locally_with_datalad_save(
         message=run_message,
         datalad_executable=datalad_executable,
         recursive=True,
+        paths=save_paths,
     )
     if not save_result.get("success"):
         raise ValueError(
@@ -228,7 +227,6 @@ def _apply_mutation_locally_with_datalad_save(
         "tracked": True,
         "used_run": False,
         "executable": datalad_executable,
-        "autosave": autosave_result,
         "get": get_result,
         "content_get": content_get_result,
         "unlock": unlock_result,
@@ -350,6 +348,23 @@ def apply_subject_rewrite(
     failed_groups: list[dict[str, str]] = []
     datalad_executable = resolve_datalad_executable()
     if datalad_executable:
+        # One-time, dataset-wide save of whatever was already pending before
+        # this batch started. Deliberately *not* repeated per subject below:
+        # each subject's own scoped save only commits paths under that
+        # subject, so any truly stray pre-existing change elsewhere needs
+        # exactly one full-dataset save to catch it, not 133.
+        autosave_result = run_datalad_save(
+            root,
+            message="PRISM: autosave pending changes before subject ID rewrite",
+            datalad_executable=datalad_executable,
+        )
+        if not autosave_result.get("success"):
+            raise ValueError(
+                str(
+                    autosave_result.get("message")
+                    or "DataLad autosave failed before subject rewrite."
+                )
+            )
         add_log(
             "Verifying all affected content is actually downloaded before "
             "renaming anything...",
@@ -432,6 +447,19 @@ def apply_subject_rewrite(
                 or _extract_subject_from_path(path_text) == subject_group
             }
         )
+        # Scope the save to this subject's own paths (old + new name, plus
+        # any rewritten text files) so it doesn't re-walk every other
+        # subject's already-nested subdataset -- see
+        # _apply_mutation_locally_with_datalad_save's save_paths docstring.
+        save_paths = sorted(
+            set(get_paths)
+            | set(content_paths)
+            | (
+                {full_mapping[subject_group]}
+                if subject_group != "dataset-root" and subject_group in full_mapping
+                else set()
+            )
+        )
 
         run_message = (
             f"PRISM: Rewrite subject IDs ({subject_group})"
@@ -449,6 +477,7 @@ def apply_subject_rewrite(
                 run_message=run_message,
                 get_paths=get_paths,
                 content_paths=content_paths,
+                save_paths=save_paths,
                 apply_fn=lambda: rewriter.apply(
                     mode=mode,
                     allow_many_to_one=allow_many_to_one,
@@ -468,7 +497,7 @@ def apply_subject_rewrite(
             failed_groups.append({"subject": subject_group, "error": str(exc)})
             continue
 
-        for step_name in ("autosave", "get", "content_get", "unlock", "save"):
+        for step_name in ("get", "content_get", "unlock", "save"):
             step_info = (
                 mutation_result.get(step_name)
                 if isinstance(mutation_result, dict)
@@ -691,6 +720,21 @@ def apply_entity_rewrite(
     failed_groups: list[dict[str, str]] = []
     datalad_executable = resolve_datalad_executable()
     if datalad_executable:
+        # One-time, dataset-wide save of whatever was already pending before
+        # this batch started -- see apply_subject_rewrite's identical step
+        # for why this isn't repeated per subject group below.
+        autosave_result = run_datalad_save(
+            root,
+            message="PRISM: autosave pending changes before entity rewrite",
+            datalad_executable=datalad_executable,
+        )
+        if not autosave_result.get("success"):
+            raise ValueError(
+                str(
+                    autosave_result.get("message")
+                    or "DataLad autosave failed before entity rewrite."
+                )
+            )
         add_log(
             "Verifying all affected content is actually downloaded before "
             "renaming anything...",
@@ -765,6 +809,19 @@ def apply_entity_rewrite(
                 or _extract_subject_from_path(path_text) == subject_group
             }
         )
+        # Scope the save to this group's own paths (rename sources +
+        # destinations, plus any rewritten text files) so it doesn't re-walk
+        # every other subject's already-nested subdataset -- see
+        # _apply_mutation_locally_with_datalad_save's save_paths docstring.
+        save_paths = sorted(
+            set(get_paths)
+            | set(content_paths)
+            | {
+                str(item.get("to") or "").strip()
+                for item in explicit_renames_for_group
+                if str(item.get("to") or "").strip()
+            }
+        )
 
         run_message = (
             f"PRISM: Rewrite BIDS filename entity ({subject_group})"
@@ -782,6 +839,7 @@ def apply_entity_rewrite(
                 run_message=run_message,
                 get_paths=get_paths,
                 content_paths=content_paths,
+                save_paths=save_paths,
                 apply_fn=lambda: rewriter.apply(
                     modality=modality,
                     entity=entity,
@@ -801,7 +859,7 @@ def apply_entity_rewrite(
             failed_groups.append({"subject": subject_group, "error": str(exc)})
             continue
 
-        for step_name in ("autosave", "get", "content_get", "unlock", "save"):
+        for step_name in ("get", "content_get", "unlock", "save"):
             step_info = (
                 mutation_result.get(step_name)
                 if isinstance(mutation_result, dict)
