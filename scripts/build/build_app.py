@@ -289,6 +289,7 @@ def main() -> int:
         "--hidden-import=pandas",
         "--hidden-import=pyreadstat",
         "--hidden-import=pyreadr",
+        "--hidden-import=webview",
         # pandas can otherwise be bundled as an incomplete top-level package on
         # some platforms, which breaks both frozen imports and the bundle smoke test.
         "--collect-submodules=pandas",

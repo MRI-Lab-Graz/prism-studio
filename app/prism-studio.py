@@ -1428,7 +1428,24 @@ def main():
     parser.add_argument(
         "--no-browser",
         action="store_true",
-        help="Do not automatically open browser",
+        help="Do not automatically open a browser or native window",
+    )
+    launch_mode_group = parser.add_mutually_exclusive_group()
+    launch_mode_group.add_argument(
+        "--window",
+        action="store_true",
+        help=(
+            "Open PRISM Studio in a native app window instead of a browser tab "
+            "(default when running as a packaged/frozen app)"
+        ),
+    )
+    launch_mode_group.add_argument(
+        "--browser",
+        action="store_true",
+        help=(
+            "Open PRISM Studio in the default web browser "
+            "(default when running from source)"
+        ),
     )
     parser.add_argument(
         "--force-clean-start",
@@ -1480,78 +1497,123 @@ def main():
     startup_log_file = Path.home() / "prism_studio.log" if getattr(sys, "frozen", False) else None
     _print_startup_welcome(url, public=bool(args.public), log_file=startup_log_file)
 
+    # Decide how the UI should be presented: a native app window, the default
+    # browser, or neither. Packaged/frozen builds default to a native window
+    # (pywebview) for an app-like feel; source/dev runs keep opening the
+    # browser by default so hot-reload-style dev workflows are unaffected.
+    if args.no_browser:
+        launch_mode = "none"
+    elif args.window:
+        launch_mode = "window"
+    elif args.browser:
+        launch_mode = "browser"
+    else:
+        launch_mode = "window" if getattr(sys, "frozen", False) else "browser"
+
     # On Windows compiled version, show a startup notification
     if (
         getattr(sys, "frozen", False)
         and sys.platform.startswith("win")
-        and not args.no_browser
+        and launch_mode != "none"
     ):
         threading.Thread(target=lambda: _show_startup_dialog(url), daemon=True).start()
 
-    # Open browser in a separate thread to avoid blocking the Flask server
-    if not args.no_browser:
+    def open_browser():
+        import time
+        import subprocess
 
-        def open_browser():
-            import time
-            import subprocess
-
-            time.sleep(1.5)  # Wait for server to start (increased for compiled version)
-            try:
-                # Try standard webbrowser module first
-                if webbrowser.open(url):
-                    print("✅ Browser opened automatically")
-                else:
-                    # If webbrowser.open() returns False, try platform-specific fallback
-                    raise Exception("webbrowser.open() returned False")
-            except Exception as e:
-                print(f"[INFO]  Standard browser open failed: {e}")
-
-                # Platform-specific fallback
-                try:
-                    if sys.platform.startswith("win"):
-                        # Windows fallback: use start command
-                        subprocess.Popen(["cmd", "/c", "start", "", url])
-                        print("✅ Browser opened via Windows fallback")
-                    elif sys.platform == "darwin":
-                        # macOS fallback
-                        subprocess.Popen(["open", url])
-                        print("✅ Browser opened via macOS fallback")
-                    else:
-                        # Linux fallback
-                        subprocess.Popen(["xdg-open", url])
-                        print("✅ Browser opened via Linux fallback")
-                except Exception as fallback_err:
-                    print(
-                        f"[WARN]  Could not open browser automatically: {fallback_err}"
-                    )
-                    print(f"   Please visit {url} manually")
-
-        browser_thread = threading.Thread(target=open_browser, daemon=True)
-        browser_thread.start()
-
-    if args.debug:
-        configure_debug_logging()
-        print("[DEBUG] Debug mode enabled (verbose logging, Flask debugger active)")
-        app.run(
-            host=host,
-            port=port,
-            debug=args.debug,
-            use_reloader=False,
-            use_evalex=False,
-        )
-    else:
+        time.sleep(1.5)  # Wait for server to start (increased for compiled version)
         try:
-            from waitress import serve
+            # Try standard webbrowser module first
+            if webbrowser.open(url):
+                print("✅ Browser opened automatically")
+            else:
+                # If webbrowser.open() returns False, try platform-specific fallback
+                raise Exception("webbrowser.open() returned False")
+        except Exception as e:
+            print(f"[INFO]  Standard browser open failed: {e}")
 
-            print(f"Running with Waitress server on {host}:{port}")
-            # Use 8 threads so that a blocking OS file-picker dialog on one thread
-            # does not starve the rest of the UI.
-            serve(app, host=host, port=port, threads=8)
-        except ImportError:
-            print(
-                "[WARN]  Waitress not installed, falling back to Flask development server"
+            # Platform-specific fallback
+            try:
+                if sys.platform.startswith("win"):
+                    # Windows fallback: use start command
+                    subprocess.Popen(["cmd", "/c", "start", "", url])
+                    print("✅ Browser opened via Windows fallback")
+                elif sys.platform == "darwin":
+                    # macOS fallback
+                    subprocess.Popen(["open", url])
+                    print("✅ Browser opened via macOS fallback")
+                else:
+                    # Linux fallback
+                    subprocess.Popen(["xdg-open", url])
+                    print("✅ Browser opened via Linux fallback")
+            except Exception as fallback_err:
+                print(
+                    f"[WARN]  Could not open browser automatically: {fallback_err}"
+                )
+                print(f"   Please visit {url} manually")
+
+    def run_server():
+        if args.debug:
+            configure_debug_logging()
+            print("[DEBUG] Debug mode enabled (verbose logging, Flask debugger active)")
+            app.run(
+                host=host,
+                port=port,
+                debug=args.debug,
+                use_reloader=False,
+                use_evalex=False,
             )
-            app.run(host=host, port=port, debug=False)
+        else:
+            try:
+                from waitress import serve
+
+                print(f"Running with Waitress server on {host}:{port}")
+                # Use 8 threads so that a blocking OS file-picker dialog on one
+                # thread does not starve the rest of the UI.
+                serve(app, host=host, port=port, threads=8)
+            except ImportError:
+                print(
+                    "[WARN]  Waitress not installed, falling back to Flask development server"
+                )
+                app.run(host=host, port=port, debug=False)
+
+    if launch_mode == "window":
+        # pywebview's event loop must run on the main thread (required by
+        # Cocoa on macOS), so the Flask/Waitress server runs on a background
+        # daemon thread instead of blocking here as it does in browser mode.
+        server_thread = threading.Thread(target=run_server, daemon=True)
+        server_thread.start()
+
+        # Wait for the server to actually be listening before opening the
+        # window, otherwise the window would briefly show a connection error.
+        for _ in range(100):  # up to ~10s
+            if is_port_in_use(host, port):
+                break
+            time.sleep(0.1)
+
+        try:
+            import webview
+
+            webview.create_window(
+                "PRISM Studio",
+                url,
+                width=1280,
+                height=860,
+                min_size=(960, 640),
+            )
+            webview.start()
+        except Exception as e:
+            print(f"[WARN]  Could not open native window ({e}); falling back to browser.")
+            open_browser()
+            server_thread.join()
+    else:
+        if launch_mode == "browser":
+            # Open browser in a separate thread to avoid blocking the Flask server
+            browser_thread = threading.Thread(target=open_browser, daemon=True)
+            browser_thread.start()
+
+        run_server()
 
 
 if __name__ == "__main__":
