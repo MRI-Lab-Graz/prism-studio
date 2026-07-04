@@ -94,6 +94,11 @@ Safari can be significantly slower for local apps like PRISM Studio, especially
 with iCloud Private Relay or "Hide IP address from trackers" enabled - turn
 those off for this site, or switch browsers, if pages feel slow to load.
 
+Pre-built binaries open PRISM Studio in its own native app window by default
+(via `pywebview`) instead of a browser tab. Pass `--browser` to open it in
+your default browser instead, `--window` to force the native window when
+running from source, or `--no-browser` to skip auto-opening either.
+
 ### Run PRISM Validator (CLI)
 
 ```bash
