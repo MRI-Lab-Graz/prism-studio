@@ -356,6 +356,27 @@ def main() -> int:
             pyinstaller_args.append(f"--target-architecture={args.target_arch}")
             print(f"[BUILD] Setting target architecture to: {args.target_arch}")
 
+    if sys.platform == "win32":
+        # pywebview's Windows (edgechromium/winforms) backend loads the .NET
+        # Framework through pythonnet/clr_loader. pythonnet ships its own
+        # PyInstaller hook, but clr_loader does not: its native ClrLoader.dll
+        # shim (clr_loader/ffi/dlls/<arch>/ClrLoader.dll), loaded manually via
+        # ctypes at runtime, is invisible to PyInstaller's default binary
+        # scan and is silently left out of the bundle. That produces a
+        # confusing runtime failure ("Failed to resolve
+        # Python.Runtime.Loader.Initialize from ...Python.Runtime.dll")
+        # instead of a clear "file not found". Same story for webview's own
+        # WebView2 loader DLLs under webview/lib/. Collect all of them
+        # explicitly rather than relying on hook auto-discovery.
+        pyinstaller_args.extend(
+            [
+                "--collect-all=pythonnet",
+                "--collect-all=clr_loader",
+                "--collect-data=webview",
+                "--collect-binaries=webview",
+            ]
+        )
+
     if icon_file:
         pyinstaller_args.append(f"--icon={icon_file}")
 
