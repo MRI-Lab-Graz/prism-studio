@@ -1393,6 +1393,96 @@ def ensure_clean_start(host: str, port: int, force: bool = False) -> None:
     print(f"[INFO]  Previous process stopped, reusing port {port}")
 
 
+def _find_chromium_browser() -> Optional[str]:
+    """Locate a Chromium-based browser executable for app-mode windows.
+
+    On Windows and Linux, pywebview's native backends (pythonnet/.NET on
+    Windows, GTK/WebKit on Linux) do not survive PyInstaller freezing
+    reliably. Instead we open the local server in a Chromium browser's "app
+    mode" (``--app=URL``): a borderless, tab-less window that looks like a
+    native app. On Windows, Edge ships with every supported version and uses
+    the same WebView2 engine; on Linux we look for Chrome/Chromium/Edge/Brave.
+    Chrome/Chromium are accepted as fallbacks everywhere.
+
+    Returns the executable path, or None if no suitable browser was found.
+    """
+    if sys.platform.startswith("win"):
+        pf = os.environ.get("PROGRAMFILES", r"C:\Program Files")
+        pf_x86 = os.environ.get("PROGRAMFILES(X86)", r"C:\Program Files (x86)")
+        candidates = [
+            os.path.join(pf_x86, "Microsoft", "Edge", "Application", "msedge.exe"),
+            os.path.join(pf, "Microsoft", "Edge", "Application", "msedge.exe"),
+            os.path.join(pf, "Google", "Chrome", "Application", "chrome.exe"),
+            os.path.join(pf_x86, "Google", "Chrome", "Application", "chrome.exe"),
+        ]
+        for path in candidates:
+            if path and os.path.isfile(path):
+                return path
+        path_names = ("msedge", "chrome", "chromium")
+    else:
+        # Linux (and any other non-macOS platform).
+        path_names = (
+            "google-chrome-stable",
+            "google-chrome",
+            "chromium-browser",
+            "chromium",
+            "microsoft-edge-stable",
+            "microsoft-edge",
+            "brave-browser",
+        )
+
+    for name in path_names:
+        found = shutil.which(name)
+        if found:
+            return found
+    return None
+
+
+def _launch_app_mode_window(url: str) -> Optional[subprocess.Popen]:
+    """Open ``url`` in a Chromium app-mode window (Windows/Linux).
+
+    A dedicated ``--user-data-dir`` profile is used so the window opens as its
+    own standalone process (rather than attaching a tab to an already-running
+    browser instance, which would make the returned handle exit immediately)
+    and so PRISM Studio never touches the user's real browsing profile. The
+    caller can ``wait()`` on the returned process to block until the window is
+    closed.
+
+    Returns the running process, or None if no browser could be launched.
+    """
+    browser = _find_chromium_browser()
+    if not browser:
+        return None
+
+    profile_dir = Path.home() / ".prism_studio" / "app_window_profile"
+    try:
+        profile_dir.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        # A non-writable home is unusual, but fall back to a temp profile
+        # rather than failing the launch outright.
+        import tempfile
+
+        profile_dir = Path(tempfile.gettempdir()) / "prism_studio_app_window_profile"
+        profile_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        proc = subprocess.Popen(
+            [
+                browser,
+                f"--app={url}",
+                f"--user-data-dir={profile_dir}",
+                "--no-first-run",
+                "--no-default-browser-check",
+                "--window-size=1280,860",
+            ]
+        )
+        print(f"✅ Opened PRISM Studio in an app window via {Path(browser).name}")
+        return proc
+    except Exception as e:
+        print(f"[WARN]  Could not launch app-mode browser window: {e}")
+        return None
+
+
 def main():
     """Run the web application"""
     import argparse
@@ -1579,9 +1669,11 @@ def main():
                 app.run(host=host, port=port, debug=False)
 
     if launch_mode == "window":
-        # pywebview's event loop must run on the main thread (required by
-        # Cocoa on macOS), so the Flask/Waitress server runs on a background
-        # daemon thread instead of blocking here as it does in browser mode.
+        # In window mode the server runs on a background daemon thread so the
+        # main thread is free to own the native window's event loop (required
+        # by Cocoa/pywebview on macOS) or to wait on the app-window process
+        # (Windows). When the window closes, main() returns and the daemon
+        # server thread is torn down with the interpreter.
         server_thread = threading.Thread(target=run_server, daemon=True)
         server_thread.start()
 
@@ -1592,21 +1684,41 @@ def main():
                 break
             time.sleep(0.1)
 
-        try:
-            import webview
+        if sys.platform == "darwin":
+            # macOS: pywebview's Cocoa/WebKit backend (pyobjc) freezes cleanly
+            # and needs no external browser, so it gives the best native window.
+            try:
+                import webview
 
-            webview.create_window(
-                "PRISM Studio",
-                url,
-                width=1280,
-                height=860,
-                min_size=(960, 640),
-            )
-            webview.start()
-        except Exception as e:
-            print(f"[WARN]  Could not open native window ({e}); falling back to browser.")
-            open_browser()
-            server_thread.join()
+                webview.create_window(
+                    "PRISM Studio",
+                    url,
+                    width=1280,
+                    height=860,
+                    min_size=(960, 640),
+                )
+                webview.start()
+            except Exception as e:
+                print(
+                    f"[WARN]  Could not open native window ({e}); falling back to browser."
+                )
+                open_browser()
+                server_thread.join()
+        else:
+            # Windows/Linux: pywebview's native backends are unreliable once
+            # frozen with PyInstaller, so use a Chromium app-mode window
+            # instead. Same app-like result (no tabs/address bar), nothing
+            # extra to bundle — Edge/WebView2 already ship with Windows.
+            app_proc = _launch_app_mode_window(url)
+            if app_proc is not None:
+                app_proc.wait()  # block until the user closes the window
+            else:
+                print(
+                    "[WARN]  No Chromium browser found for app-mode window; "
+                    "falling back to the default browser."
+                )
+                open_browser()
+                server_thread.join()
     else:
         if launch_mode == "browser":
             # Open browser in a separate thread to avoid blocking the Flask server
