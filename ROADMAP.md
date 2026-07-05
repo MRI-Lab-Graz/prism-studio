@@ -1,20 +1,152 @@
 # PRISM Studio - Roadmap
 
-Last updated: 2026-05-23
+Last updated: 2026-07-05
+
+## Vision
+
+PRISM brings BIDS discipline to the modalities BIDS forgot — surveys,
+biometrics, environment, physio — and enforces it from collection time
+onward. The instrument codebook is the single source of truth for the whole
+loop: design instrument → collect (LimeSurvey) → convert → validate →
+version (DataLad) → export/share. PRISM's per-session `survey/` layout stays
+the primary format; standard BIDS remains a first-class import/export
+target, never a fork we drift away from.
+
+## Strategic Roadmap
+
+Release-mapped phases. Each phase lists its goal, key work items, affected
+areas, and an explicit done-when. The tactical board below this section
+remains the day-to-day execution layer.
+
+### Phase 0 — Ship pending work (v1.16.0, immediate)
+
+Goal: release the native-window work and the security hardening already on
+`feature/pywebview-native-window` before starting strategic work.
+
+- [ ] Commit security hardening (per-launch session secret, DNS-rebinding
+      Host-header guard, loopback-only filesystem browse endpoints,
+      `/editor` prefix fix, crash exit codes via excepthook, force-kill
+      warning) — currently uncommitted in `app/prism-studio.py`
+- [ ] Commit CI change: lint/ruff/mypy job now runs on push/PR
+      (`.github/workflows/ci.yml`)
+- [ ] Add `[Unreleased]` CHANGELOG entries for native window + security fixes
+- [ ] Bump version markers (`app/src/__init__.py`, `setup.py`,
+      `CITATION.cff`), write `docs/RELEASE_NOTES_v1.16.0.md` from template
+- [ ] PR → main, tag `v1.16.0`
+
+Done when: `v1.16.0` is tagged and the release workflow has produced
+artifacts for all three platforms.
+
+### Phase 1 — BIDS `phenotype/` bridge (v1.17)
+
+Goal: bidirectional interop with vanilla BIDS phenotypic data — import
+existing `phenotype/` directories into PRISM's per-session `survey/` layout,
+and export PRISM surveys to a valid BIDS `phenotype/` aggregation — so any
+PRISM dataset has a lossless exit ramp and any BIDS dataset has an entry
+ramp. There is no phenotype support today (greenfield).
+
+- [ ] Export: aggregate `sub-*/ses-*/survey/*_survey.tsv` →
+      `phenotype/<instrument>.tsv` + JSON sidecar, sessions encoded per BIDS
+      phenotype conventions; round-trip metadata preserved in the sidecar
+      (new `src/converters/phenotype_export.py`)
+- [ ] Import: parse `phenotype/` (+ `participants.tsv` session columns) →
+      per-session `survey/` layout, matching instruments against
+      `official/library/survey/` (new `src/converters/phenotype_import.py`)
+- [ ] Wire both into the Converter page blueprints and `prism_tools.py` CLI;
+      offer phenotype export in project export flows
+      (`app/src/web/blueprints/projects_export_blueprint.py`)
+- [ ] Round-trip regression test: survey → phenotype → survey is
+      content-identical
+- [ ] Ongoing: engage the BIDS phenotype BEP process; keep
+      `docs/BIDS_SURVEY_MODALITY_PR_DRAFT.md` aligned
+
+Done when: the wellbeing demo dataset round-trips losslessly and the
+exported `phenotype/` passes the official bids-validator.
+
+### Phase 2 — Recipe & derivative provenance (v1.18)
+
+Goal: make every computed derivative auditable. Extends completed Priority
+1.37 (tracked mutations already run under grouped `datalad run`) to recipe
+scoring, which today writes a hardcoded `GeneratedBy.Version: "1.0.0"`, no
+input hashes, and bypasses `datalad run`.
+
+- [ ] Real `GeneratedBy` metadata (version from `src/__init__.py`) in
+      derivative `dataset_description.json` (`src/recipes_surveys.py`,
+      `src/recipes_export_helpers.py`)
+- [ ] Provenance sidecar per recipe output: recipe id + version, input file
+      list + hashes, PRISM version, timestamp
+- [ ] Route recipe scoring through existing `run_datalad_run()`
+      (`src/datalad_execution.py`) when the project is a DataLad dataset
+
+Done when: a scored derivative can be traced to exact inputs and recipe
+version from its sidecars alone, and DataLad projects show a `datalad run`
+commit for scoring.
+
+### Phase 3 — Declarative entity/filename rules (v1.19)
+
+Goal: express filename/entity rules as data, the way sidecar validation
+already is (JSON Schema in `app/schemas/`). Today entity conventions live
+only in code (`src/bids_entity_parser.py`, `src/bids_entity_rewriter.py`)
+and prose. This is the prerequisite for third-party implementations and the
+v2.0 spec.
+
+- [ ] Machine-readable rules file (e.g. `app/schemas/stable/entities.json`):
+      datatypes, suffixes, allowed/required entities, entity ordering
+- [ ] `bids_entity_parser`/validator consume the rules file; hand-coded
+      checks become data-driven
+- [ ] Version the rules with the existing schema channels
+      (`stable`/`v0.x`, `app/src/schema_manager.py`)
+
+Done when: adding a new suffix or entity requires only a rules-file edit
+plus tests — no parser code changes.
+
+### Phase 4 — Instrument registry & variable semantics (v1.20)
+
+Goal: make cross-study pooling trustworthy. Instrument files already carry
+rich metadata (DOI, citation, version, i18n) — expose it as a registry with
+stable IDs and stamp identity into converted data.
+
+- [ ] Central registry index over `official/library/survey/` (105
+      instruments): stable instrument ID + version + DOI per entry
+- [ ] Stamp instrument ID/version into conversion output sidecars
+- [ ] Optional external vocabulary URIs per item (NIH CDEs, SNOMED, or
+      instrument DOIs); feeds Neurobagel annotations
+
+Done when: two datasets converted from the same instrument are
+machine-identifiable as such via sidecar metadata alone.
+
+### Phase 5 — Formal spec, scope tiers, CI action (v2.0)
+
+Goal: give the PRISM format an existence independent of the app, and narrow
+the supported product surface.
+
+- [ ] Unified, versioned "PRISM Specification" document assembled from
+      `docs/specs/*`, the JSON Schemas, and the entity rules; Zenodo DOI per
+      spec version (complements the JOSS paper in `paper/`)
+- [ ] Scope-narrowing audit: feature-tier table (Core loop | Supported |
+      Experimental) in README/docs; peripheral features labeled in the UI
+- [ ] Package the existing Docker validator as a one-line GitHub Action
+      (`action.yml` wrapping `ghcr.io/mri-lab-graz/prism-validator`);
+      promote the downstream CI examples
+      (`official/anc_templates/example-{github-actions,gitlab-ci}.yml`)
+      into the docs
+
+Done when: a third party can cite the spec, validate a dataset in CI with
+one workflow line, and tell at a glance which features are core-supported.
 
 ## Current Mission
 
 Sustain completed Priority 1.36 guardrails as the primary frontend baseline.
 Focus on keeping structural assessment remediations, runtime resilience checks, and focused smoke/coverage gates green.
 
-## Status Board
+## Status Board (tactical execution layer)
 
 | Priority | Title | Status | Next Action |
 |---|---|---|---|
 | 1.26 | UI harmonization and beginner-help improvements | COMPLETED | Keep shared-help-panel coverage and wiring regressions in standard frontend gates |
 | 1.36 | Frontend structural assessment (page-by-page) | COMPLETED | Keep remediated workflow wiring and phase-boundary coverage confirmation in standard gates |
 | 1.35 | Survey converter workflow hardening and backend command consolidation | COMPLETED | Keep post-merge stability checks in standard gates |
-| 1.37 | DataLad mutation centralization and per-subject provenance runs | COMPLETED | Keep grouped DataLad-run rewrite/copy/delete/deface suites in standard backend regression gates |
+| 1.37 | DataLad mutation centralization and per-subject provenance runs | COMPLETED | Follow-up work continues as Strategic Phase 2 (recipe/derivative provenance) |
 | 2 | Export anonymization: participant ID renaming | COMPLETED | Keep export anonymization checks in standard gates |
 | 3 | JSON tag stripping and NIfTI GZIP header cleaning | IN PROGRESS | Continue export privacy hardening after slice A (MRI sidecar scrub + .nii.gz header cleanup) |
 
@@ -109,7 +241,9 @@ Reference:
 
 ### Priority 1.37 - DataLad mutation centralization and per-subject provenance runs
 
-Status: completed and merged.
+Status: completed and merged. Remaining provenance gap (recipe scoring does
+not yet run under `datalad run` and derivative metadata lacks input hashes)
+is absorbed into Strategic Phase 2 above.
 
 Current checkpoint:
 - Tracked mutation policy is centralized in `src/datalad_mutation_policy.py` and shared by rewrite/copy/delete/deface mutation flows.
