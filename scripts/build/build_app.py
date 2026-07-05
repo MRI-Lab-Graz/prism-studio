@@ -355,6 +355,11 @@ def main() -> int:
             pyinstaller_args.append(f"--target-architecture={args.target_arch}")
             print(f"[BUILD] Setting target architecture to: {args.target_arch}")
 
+        # pywebview provides the native window on macOS only; bundle it and its
+        # WebKit/pyobjc backend here. Windows/Linux use a Chromium app-mode
+        # window at runtime and don't ship pywebview at all.
+        pyinstaller_args.append("--hidden-import=webview")
+
     if icon_file:
         pyinstaller_args.append(f"--icon={icon_file}")
 

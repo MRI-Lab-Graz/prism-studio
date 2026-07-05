@@ -46,6 +46,7 @@ import json
 import re
 import ipaddress
 import http.client
+import secrets
 import shlex
 import shutil
 import subprocess
@@ -473,11 +474,30 @@ def cleanup_and_exit(exit_code=0):
 # Register cleanup on normal exit
 atexit.register(lambda: cleanup_and_exit(0))
 
-# Secret key for session management
-# In production, set PRISM_SECRET_KEY environment variable
-app.secret_key = os.environ.get(
-    "PRISM_SECRET_KEY", "prism-dev-key-change-in-production"
-)
+
+def _handle_uncaught_exception(exc_type, exc_value, exc_traceback):
+    """Exit non-zero on crashes instead of letting atexit mask them as a clean exit.
+
+    cleanup_and_exit() always calls os._exit(), which bypasses any exit code
+    the interpreter would otherwise have produced for an unhandled exception -
+    without this hook every crash looked like a normal exit(0) in logs/launchers.
+    """
+    if issubclass(exc_type, KeyboardInterrupt):
+        cleanup_and_exit(0)
+        return
+    logging.getLogger().error(
+        "Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback)
+    )
+    cleanup_and_exit(1)
+
+
+sys.excepthook = _handle_uncaught_exception
+
+# Secret key for session management.
+# Set PRISM_SECRET_KEY to pin sessions across restarts (e.g. reverse-proxy
+# deployments); otherwise fall back to a fresh random key per launch so
+# session cookies can never be forged by anyone who has read the source.
+app.secret_key = os.environ.get("PRISM_SECRET_KEY") or secrets.token_hex(32)
 app.config["MAX_CONTENT_LENGTH"] = (
     1024 * 1024 * 1024
 )  # 1GB max file size (metadata only)
@@ -486,6 +506,11 @@ app.config["BASE_DIR"] = BASE_DIR  # Make BASE_DIR available to blueprints
 
 # Track app startup for session management
 app.config["PRISM_STARTUP_ID"] = uuid.uuid4().hex
+
+# Populated by main() once args are parsed; used to reject DNS-rebinding /
+# cross-origin requests before a server is actually listening publicly.
+app.config["PRISM_PUBLIC"] = False
+app.config["PRISM_BIND_PORT"] = None
 
 # Load app settings and clear last project on startup (no autoload)
 from src.config import load_app_settings, save_app_settings
@@ -969,6 +994,54 @@ def disable_static_js_css_cache(response):
     return response
 
 
+_LOOPBACK_ONLY_PATHS = {
+    "/api/fs/browse",
+    "/api/browse-file",
+    "/api/browse-folder",
+}
+
+
+def _is_loopback_remote_addr(remote_addr: Optional[str]) -> bool:
+    if not remote_addr:
+        return False
+    try:
+        return ipaddress.ip_address(remote_addr).is_loopback
+    except ValueError:
+        return False
+
+
+@app.before_request
+def guard_against_remote_requests():
+    """Reject DNS-rebinding requests and keep filesystem browsing local-only.
+
+    A malicious external webpage cannot spoof the Host header a real browser
+    tab sends, so validating it against the actual bind address defeats DNS
+    rebinding against the default 127.0.0.1 deployment. Filesystem-listing
+    endpoints expose the host machine's directory tree to any client that can
+    reach them, so they stay loopback-only even when ``--public`` is used to
+    share the UI on a LAN.
+    """
+    if request.path in _LOOPBACK_ONLY_PATHS and not _is_loopback_remote_addr(
+        request.remote_addr
+    ):
+        return jsonify({"error": "Forbidden"}), 403
+
+    if app.config.get("PRISM_PUBLIC"):
+        return None
+
+    bind_port = app.config.get("PRISM_BIND_PORT")
+    if bind_port is None:
+        return None
+
+    host_header = (request.host or "").split(",")[0].strip().lower()
+    allowed_hosts = {f"127.0.0.1:{bind_port}", f"localhost:{bind_port}"}
+    if bind_port == 80:
+        allowed_hosts |= {"127.0.0.1", "localhost"}
+    if host_header not in allowed_hosts:
+        return jsonify({"error": "Forbidden"}), 403
+    return None
+
+
 @app.before_request
 def ensure_project_selected_first():
     """Force users to pick a project first in Prism Studio.
@@ -1015,7 +1088,7 @@ def ensure_project_selected_first():
         return None
     if path.startswith("/api/v1/"):
         return None
-    if path.startswith("/editor"):
+    if path == "/editor" or path.startswith("/editor/"):
         return None
     if path.startswith("/api/template-editor/"):
         return None
@@ -1375,6 +1448,13 @@ def ensure_clean_start(host: str, port: int, force: bool = False) -> None:
         )
         sys.exit(1)
 
+    if not is_prism_studio_instance(host, port):
+        print(
+            f"[WARN]  --force-clean-start will kill whatever process is bound to "
+            f"port {port}, which is not identifiable as PRISM Studio. If this is "
+            f"an unrelated process, use --port to pick a different one instead."
+        )
+
     print("[INFO]  Graceful shutdown unavailable; forcing clean start...")
     if not try_kill_existing_process(port):
         print(
@@ -1391,6 +1471,96 @@ def ensure_clean_start(host: str, port: int, force: bool = False) -> None:
         sys.exit(1)
 
     print(f"[INFO]  Previous process stopped, reusing port {port}")
+
+
+def _find_chromium_browser() -> Optional[str]:
+    """Locate a Chromium-based browser executable for app-mode windows.
+
+    On Windows and Linux, pywebview's native backends (pythonnet/.NET on
+    Windows, GTK/WebKit on Linux) do not survive PyInstaller freezing
+    reliably. Instead we open the local server in a Chromium browser's "app
+    mode" (``--app=URL``): a borderless, tab-less window that looks like a
+    native app. On Windows, Edge ships with every supported version and uses
+    the same WebView2 engine; on Linux we look for Chrome/Chromium/Edge/Brave.
+    Chrome/Chromium are accepted as fallbacks everywhere.
+
+    Returns the executable path, or None if no suitable browser was found.
+    """
+    if sys.platform.startswith("win"):
+        pf = os.environ.get("PROGRAMFILES", r"C:\Program Files")
+        pf_x86 = os.environ.get("PROGRAMFILES(X86)", r"C:\Program Files (x86)")
+        candidates = [
+            os.path.join(pf_x86, "Microsoft", "Edge", "Application", "msedge.exe"),
+            os.path.join(pf, "Microsoft", "Edge", "Application", "msedge.exe"),
+            os.path.join(pf, "Google", "Chrome", "Application", "chrome.exe"),
+            os.path.join(pf_x86, "Google", "Chrome", "Application", "chrome.exe"),
+        ]
+        for path in candidates:
+            if path and os.path.isfile(path):
+                return path
+        path_names = ("msedge", "chrome", "chromium")
+    else:
+        # Linux (and any other non-macOS platform).
+        path_names = (
+            "google-chrome-stable",
+            "google-chrome",
+            "chromium-browser",
+            "chromium",
+            "microsoft-edge-stable",
+            "microsoft-edge",
+            "brave-browser",
+        )
+
+    for name in path_names:
+        found = shutil.which(name)
+        if found:
+            return found
+    return None
+
+
+def _launch_app_mode_window(url: str) -> Optional[subprocess.Popen]:
+    """Open ``url`` in a Chromium app-mode window (Windows/Linux).
+
+    A dedicated ``--user-data-dir`` profile is used so the window opens as its
+    own standalone process (rather than attaching a tab to an already-running
+    browser instance, which would make the returned handle exit immediately)
+    and so PRISM Studio never touches the user's real browsing profile. The
+    caller can ``wait()`` on the returned process to block until the window is
+    closed.
+
+    Returns the running process, or None if no browser could be launched.
+    """
+    browser = _find_chromium_browser()
+    if not browser:
+        return None
+
+    profile_dir = Path.home() / ".prism_studio" / "app_window_profile"
+    try:
+        profile_dir.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        # A non-writable home is unusual, but fall back to a temp profile
+        # rather than failing the launch outright.
+        import tempfile
+
+        profile_dir = Path(tempfile.gettempdir()) / "prism_studio_app_window_profile"
+        profile_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        proc = subprocess.Popen(
+            [
+                browser,
+                f"--app={url}",
+                f"--user-data-dir={profile_dir}",
+                "--no-first-run",
+                "--no-default-browser-check",
+                "--window-size=1280,860",
+            ]
+        )
+        print(f"✅ Opened PRISM Studio in an app window via {Path(browser).name}")
+        return proc
+    except Exception as e:
+        print(f"[WARN]  Could not launch app-mode browser window: {e}")
+        return None
 
 
 def main():
@@ -1428,7 +1598,24 @@ def main():
     parser.add_argument(
         "--no-browser",
         action="store_true",
-        help="Do not automatically open browser",
+        help="Do not automatically open a browser or native window",
+    )
+    launch_mode_group = parser.add_mutually_exclusive_group()
+    launch_mode_group.add_argument(
+        "--window",
+        action="store_true",
+        help=(
+            "Open PRISM Studio in a native app window instead of a browser tab "
+            "(default when running as a packaged/frozen app)"
+        ),
+    )
+    launch_mode_group.add_argument(
+        "--browser",
+        action="store_true",
+        help=(
+            "Open PRISM Studio in the default web browser "
+            "(default when running from source)"
+        ),
     )
     parser.add_argument(
         "--force-clean-start",
@@ -1470,6 +1657,9 @@ def main():
 
     ensure_clean_start(host, port, force=args.force_clean_start)
 
+    app.config["PRISM_PUBLIC"] = bool(args.public)
+    app.config["PRISM_BIND_PORT"] = port
+
     # Use the literal bind address rather than "localhost" - Safari resolves
     # "localhost" and tries IPv6 (::1) first, which times out (multi-second
     # delay) since the server only binds IPv4, before falling back to IPv4.
@@ -1480,78 +1670,145 @@ def main():
     startup_log_file = Path.home() / "prism_studio.log" if getattr(sys, "frozen", False) else None
     _print_startup_welcome(url, public=bool(args.public), log_file=startup_log_file)
 
+    # Decide how the UI should be presented: a native app window, the default
+    # browser, or neither. Packaged/frozen builds default to a native window
+    # (pywebview) for an app-like feel; source/dev runs keep opening the
+    # browser by default so hot-reload-style dev workflows are unaffected.
+    if args.no_browser:
+        launch_mode = "none"
+    elif args.window:
+        launch_mode = "window"
+    elif args.browser:
+        launch_mode = "browser"
+    else:
+        launch_mode = "window" if getattr(sys, "frozen", False) else "browser"
+
     # On Windows compiled version, show a startup notification
     if (
         getattr(sys, "frozen", False)
         and sys.platform.startswith("win")
-        and not args.no_browser
+        and launch_mode != "none"
     ):
         threading.Thread(target=lambda: _show_startup_dialog(url), daemon=True).start()
 
-    # Open browser in a separate thread to avoid blocking the Flask server
-    if not args.no_browser:
+    def open_browser():
+        import time
+        import subprocess
 
-        def open_browser():
-            import time
-            import subprocess
-
-            time.sleep(1.5)  # Wait for server to start (increased for compiled version)
-            try:
-                # Try standard webbrowser module first
-                if webbrowser.open(url):
-                    print("✅ Browser opened automatically")
-                else:
-                    # If webbrowser.open() returns False, try platform-specific fallback
-                    raise Exception("webbrowser.open() returned False")
-            except Exception as e:
-                print(f"[INFO]  Standard browser open failed: {e}")
-
-                # Platform-specific fallback
-                try:
-                    if sys.platform.startswith("win"):
-                        # Windows fallback: use start command
-                        subprocess.Popen(["cmd", "/c", "start", "", url])
-                        print("✅ Browser opened via Windows fallback")
-                    elif sys.platform == "darwin":
-                        # macOS fallback
-                        subprocess.Popen(["open", url])
-                        print("✅ Browser opened via macOS fallback")
-                    else:
-                        # Linux fallback
-                        subprocess.Popen(["xdg-open", url])
-                        print("✅ Browser opened via Linux fallback")
-                except Exception as fallback_err:
-                    print(
-                        f"[WARN]  Could not open browser automatically: {fallback_err}"
-                    )
-                    print(f"   Please visit {url} manually")
-
-        browser_thread = threading.Thread(target=open_browser, daemon=True)
-        browser_thread.start()
-
-    if args.debug:
-        configure_debug_logging()
-        print("[DEBUG] Debug mode enabled (verbose logging, Flask debugger active)")
-        app.run(
-            host=host,
-            port=port,
-            debug=args.debug,
-            use_reloader=False,
-            use_evalex=False,
-        )
-    else:
+        time.sleep(1.5)  # Wait for server to start (increased for compiled version)
         try:
-            from waitress import serve
+            # Try standard webbrowser module first
+            if webbrowser.open(url):
+                print("✅ Browser opened automatically")
+            else:
+                # If webbrowser.open() returns False, try platform-specific fallback
+                raise Exception("webbrowser.open() returned False")
+        except Exception as e:
+            print(f"[INFO]  Standard browser open failed: {e}")
 
-            print(f"Running with Waitress server on {host}:{port}")
-            # Use 8 threads so that a blocking OS file-picker dialog on one thread
-            # does not starve the rest of the UI.
-            serve(app, host=host, port=port, threads=8)
-        except ImportError:
-            print(
-                "[WARN]  Waitress not installed, falling back to Flask development server"
+            # Platform-specific fallback
+            try:
+                if sys.platform.startswith("win"):
+                    # Windows fallback: use start command
+                    subprocess.Popen(["cmd", "/c", "start", "", url])
+                    print("✅ Browser opened via Windows fallback")
+                elif sys.platform == "darwin":
+                    # macOS fallback
+                    subprocess.Popen(["open", url])
+                    print("✅ Browser opened via macOS fallback")
+                else:
+                    # Linux fallback
+                    subprocess.Popen(["xdg-open", url])
+                    print("✅ Browser opened via Linux fallback")
+            except Exception as fallback_err:
+                print(
+                    f"[WARN]  Could not open browser automatically: {fallback_err}"
+                )
+                print(f"   Please visit {url} manually")
+
+    def run_server():
+        if args.debug:
+            configure_debug_logging()
+            print("[DEBUG] Debug mode enabled (verbose logging, Flask debugger active)")
+            app.run(
+                host=host,
+                port=port,
+                debug=args.debug,
+                use_reloader=False,
+                use_evalex=False,
             )
-            app.run(host=host, port=port, debug=False)
+        else:
+            try:
+                from waitress import serve
+
+                print(f"Running with Waitress server on {host}:{port}")
+                # Use 8 threads so that a blocking OS file-picker dialog on one
+                # thread does not starve the rest of the UI.
+                serve(app, host=host, port=port, threads=8)
+            except ImportError:
+                print(
+                    "[WARN]  Waitress not installed, falling back to Flask development server"
+                )
+                app.run(host=host, port=port, debug=False)
+
+    if launch_mode == "window":
+        # In window mode the server runs on a background daemon thread so the
+        # main thread is free to own the native window's event loop (required
+        # by Cocoa/pywebview on macOS) or to wait on the app-window process
+        # (Windows). When the window closes, main() returns and the daemon
+        # server thread is torn down with the interpreter.
+        server_thread = threading.Thread(target=run_server, daemon=True)
+        server_thread.start()
+
+        # Wait for the server to actually be listening before opening the
+        # window, otherwise the window would briefly show a connection error.
+        for _ in range(100):  # up to ~10s
+            if is_port_in_use(host, port):
+                break
+            time.sleep(0.1)
+
+        if sys.platform == "darwin":
+            # macOS: pywebview's Cocoa/WebKit backend (pyobjc) freezes cleanly
+            # and needs no external browser, so it gives the best native window.
+            try:
+                import webview
+
+                webview.create_window(
+                    "PRISM Studio",
+                    url,
+                    width=1280,
+                    height=860,
+                    min_size=(960, 640),
+                )
+                webview.start()
+            except Exception as e:
+                print(
+                    f"[WARN]  Could not open native window ({e}); falling back to browser."
+                )
+                open_browser()
+                server_thread.join()
+        else:
+            # Windows/Linux: pywebview's native backends are unreliable once
+            # frozen with PyInstaller, so use a Chromium app-mode window
+            # instead. Same app-like result (no tabs/address bar), nothing
+            # extra to bundle — Edge/WebView2 already ship with Windows.
+            app_proc = _launch_app_mode_window(url)
+            if app_proc is not None:
+                app_proc.wait()  # block until the user closes the window
+            else:
+                print(
+                    "[WARN]  No Chromium browser found for app-mode window; "
+                    "falling back to the default browser."
+                )
+                open_browser()
+                server_thread.join()
+    else:
+        if launch_mode == "browser":
+            # Open browser in a separate thread to avoid blocking the Flask server
+            browser_thread = threading.Thread(target=open_browser, daemon=True)
+            browser_thread.start()
+
+        run_server()
 
 
 if __name__ == "__main__":
