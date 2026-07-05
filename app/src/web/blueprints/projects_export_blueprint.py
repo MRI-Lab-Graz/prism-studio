@@ -618,6 +618,11 @@ def export_project_folder():
                     data.get("scrub_mri_json_groups")
                 )
 
+        if "export_phenotype_bridge" in data:
+            manager_kwargs["export_phenotype_bridge"] = bool(
+                data.get("export_phenotype_bridge", False)
+            )
+
         scope_keys = {
             "include_derivatives",
             "include_sourcedata",
@@ -714,6 +719,11 @@ def export_project_git_lfs():
                 manager_kwargs["scrub_mri_json_groups"] = _normalize_scrub_group_ids(
                     data.get("scrub_mri_json_groups")
                 )
+
+        if "export_phenotype_bridge" in data:
+            manager_kwargs["export_phenotype_bridge"] = bool(
+                data.get("export_phenotype_bridge", False)
+            )
 
         scope_keys = {
             "include_derivatives",
