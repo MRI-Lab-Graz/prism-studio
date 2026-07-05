@@ -46,6 +46,7 @@ import json
 import re
 import ipaddress
 import http.client
+import secrets
 import shlex
 import shutil
 import subprocess
@@ -473,11 +474,30 @@ def cleanup_and_exit(exit_code=0):
 # Register cleanup on normal exit
 atexit.register(lambda: cleanup_and_exit(0))
 
-# Secret key for session management
-# In production, set PRISM_SECRET_KEY environment variable
-app.secret_key = os.environ.get(
-    "PRISM_SECRET_KEY", "prism-dev-key-change-in-production"
-)
+
+def _handle_uncaught_exception(exc_type, exc_value, exc_traceback):
+    """Exit non-zero on crashes instead of letting atexit mask them as a clean exit.
+
+    cleanup_and_exit() always calls os._exit(), which bypasses any exit code
+    the interpreter would otherwise have produced for an unhandled exception -
+    without this hook every crash looked like a normal exit(0) in logs/launchers.
+    """
+    if issubclass(exc_type, KeyboardInterrupt):
+        cleanup_and_exit(0)
+        return
+    logging.getLogger().error(
+        "Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback)
+    )
+    cleanup_and_exit(1)
+
+
+sys.excepthook = _handle_uncaught_exception
+
+# Secret key for session management.
+# Set PRISM_SECRET_KEY to pin sessions across restarts (e.g. reverse-proxy
+# deployments); otherwise fall back to a fresh random key per launch so
+# session cookies can never be forged by anyone who has read the source.
+app.secret_key = os.environ.get("PRISM_SECRET_KEY") or secrets.token_hex(32)
 app.config["MAX_CONTENT_LENGTH"] = (
     1024 * 1024 * 1024
 )  # 1GB max file size (metadata only)
@@ -486,6 +506,11 @@ app.config["BASE_DIR"] = BASE_DIR  # Make BASE_DIR available to blueprints
 
 # Track app startup for session management
 app.config["PRISM_STARTUP_ID"] = uuid.uuid4().hex
+
+# Populated by main() once args are parsed; used to reject DNS-rebinding /
+# cross-origin requests before a server is actually listening publicly.
+app.config["PRISM_PUBLIC"] = False
+app.config["PRISM_BIND_PORT"] = None
 
 # Load app settings and clear last project on startup (no autoload)
 from src.config import load_app_settings, save_app_settings
@@ -969,6 +994,54 @@ def disable_static_js_css_cache(response):
     return response
 
 
+_LOOPBACK_ONLY_PATHS = {
+    "/api/fs/browse",
+    "/api/browse-file",
+    "/api/browse-folder",
+}
+
+
+def _is_loopback_remote_addr(remote_addr: Optional[str]) -> bool:
+    if not remote_addr:
+        return False
+    try:
+        return ipaddress.ip_address(remote_addr).is_loopback
+    except ValueError:
+        return False
+
+
+@app.before_request
+def guard_against_remote_requests():
+    """Reject DNS-rebinding requests and keep filesystem browsing local-only.
+
+    A malicious external webpage cannot spoof the Host header a real browser
+    tab sends, so validating it against the actual bind address defeats DNS
+    rebinding against the default 127.0.0.1 deployment. Filesystem-listing
+    endpoints expose the host machine's directory tree to any client that can
+    reach them, so they stay loopback-only even when ``--public`` is used to
+    share the UI on a LAN.
+    """
+    if request.path in _LOOPBACK_ONLY_PATHS and not _is_loopback_remote_addr(
+        request.remote_addr
+    ):
+        return jsonify({"error": "Forbidden"}), 403
+
+    if app.config.get("PRISM_PUBLIC"):
+        return None
+
+    bind_port = app.config.get("PRISM_BIND_PORT")
+    if bind_port is None:
+        return None
+
+    host_header = (request.host or "").split(",")[0].strip().lower()
+    allowed_hosts = {f"127.0.0.1:{bind_port}", f"localhost:{bind_port}"}
+    if bind_port == 80:
+        allowed_hosts |= {"127.0.0.1", "localhost"}
+    if host_header not in allowed_hosts:
+        return jsonify({"error": "Forbidden"}), 403
+    return None
+
+
 @app.before_request
 def ensure_project_selected_first():
     """Force users to pick a project first in Prism Studio.
@@ -1015,7 +1088,7 @@ def ensure_project_selected_first():
         return None
     if path.startswith("/api/v1/"):
         return None
-    if path.startswith("/editor"):
+    if path == "/editor" or path.startswith("/editor/"):
         return None
     if path.startswith("/api/template-editor/"):
         return None
@@ -1375,6 +1448,13 @@ def ensure_clean_start(host: str, port: int, force: bool = False) -> None:
         )
         sys.exit(1)
 
+    if not is_prism_studio_instance(host, port):
+        print(
+            f"[WARN]  --force-clean-start will kill whatever process is bound to "
+            f"port {port}, which is not identifiable as PRISM Studio. If this is "
+            f"an unrelated process, use --port to pick a different one instead."
+        )
+
     print("[INFO]  Graceful shutdown unavailable; forcing clean start...")
     if not try_kill_existing_process(port):
         print(
@@ -1576,6 +1656,9 @@ def main():
             port = fallback_port
 
     ensure_clean_start(host, port, force=args.force_clean_start)
+
+    app.config["PRISM_PUBLIC"] = bool(args.public)
+    app.config["PRISM_BIND_PORT"] = port
 
     # Use the literal bind address rather than "localhost" - Safari resolves
     # "localhost" and tries IPv6 (::1) first, which times out (multi-second
