@@ -364,6 +364,23 @@ export function initProjectInitOnBidsController({
                         </div>
                     `
                     : '';
+                const phenotypeImport = result.phenotype_import || null;
+                const phenotypeNotice = (phenotypeImport && phenotypeImport.imported_task_count)
+                    ? `
+                        <div class="alert alert-warning mt-3 mb-0">
+                            <i class="fas fa-triangle-exclamation me-2"></i>
+                            Detected a BIDS <code>phenotype/</code> directory and imported
+                            ${phenotypeImport.imported_task_count} task(s) into PRISM's native
+                            <code>survey/</code> layout as a one-way compatibility bridge.
+                            ${(phenotypeImport.flagged_columns && phenotypeImport.flagged_columns.length)
+                                ? `Column(s) that may belong in <code>participants.tsv</code> instead: ${escapeHtml(phenotypeImport.flagged_columns.join(', '))}.`
+                                : ''}
+                            Review the generated sidecars &mdash; instrument metadata (scale
+                            definitions, reverse-coding) could not be recovered from
+                            <code>phenotype/</code> and was left minimal.
+                        </div>
+                    `
+                    : '';
                 resultDiv.innerHTML = `
                     <div class="alert alert-success">
                         <h5><i class="fas fa-check-circle me-2"></i>PRISM Initialised Successfully!</h5>
@@ -385,6 +402,7 @@ export function initProjectInitOnBidsController({
                         ${sourceNotice}
                         ${dataladNotice}
                         ${environmentEnrichmentNotice}
+                        ${phenotypeNotice}
                     </div>
                 `;
                 applyCurrentProject(result.current_project);

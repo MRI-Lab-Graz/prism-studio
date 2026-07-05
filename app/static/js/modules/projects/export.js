@@ -356,6 +356,7 @@ function buildExportRequestData(currentProjectPath, overrides = {}) {
         mask_questions: getById('exportMaskQuestions')?.checked || false,
         scrub_mri_json: getById('exportScrubMriJson')?.checked || false,
         scrub_mri_json_groups: scrubGroups.length ? scrubGroups : null,
+        export_phenotype_bridge: getById('exportPhenotypeBridge')?.checked || false,
         include_derivatives: getById('exportDerivatives')?.checked || false,
         include_sourcedata: getById('exportSourcedata')?.checked || false,
         include_code: getById('exportCode')?.checked || false,

@@ -503,6 +503,7 @@ def export_project():
         scrub_mri_json_groups = _normalize_scrub_group_ids(
             data.get("scrub_mri_json_groups")
         )
+        export_phenotype_bridge = bool(data.get("export_phenotype_bridge", False))
 
         if export_preset == "upload_ready":
             include_derivatives = False
@@ -537,6 +538,7 @@ def export_project():
                 scrub_mri_json=scrub_mri_json,
                 scrub_mri_json_groups=scrub_mri_json_groups,
                 clean_nifti_gzip_headers=scrub_mri_json,
+                export_phenotype_bridge=export_phenotype_bridge,
             )
 
             # Generate filename
@@ -1028,6 +1030,7 @@ def export_project_start():
         scrub_mri_json_groups = _normalize_scrub_group_ids(
             data.get("scrub_mri_json_groups")
         )
+        export_phenotype_bridge = bool(data.get("export_phenotype_bridge", False))
         validation_mode = _normalize_export_validation_mode(
             data.get("validation_mode", "both")
         )
@@ -1066,6 +1069,7 @@ def export_project_start():
             "scrub_mri_json": scrub_mri_json,
             "scrub_mri_json_groups": scrub_mri_json_groups,
             "clean_nifti_gzip_headers": scrub_mri_json,
+            "export_phenotype_bridge": export_phenotype_bridge,
             "validation_mode": validation_mode,
             "exclude_subjects": exclude_subjects or None,
             "exclude_sessions": (

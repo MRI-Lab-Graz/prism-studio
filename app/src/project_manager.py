@@ -401,6 +401,7 @@ class ProjectManager:
         ]
         created_files: List[str] = []
         datalad_result: Optional[Dict[str, Any]] = None
+        phenotype_import_result: Optional[Dict[str, Any]] = None
 
         try:
             add_log("Initializing DataLad dataset (if enabled)...", "step")
@@ -501,6 +502,25 @@ class ProjectManager:
                     folder_path.mkdir(exist_ok=True)
                     created_files.append(f"{folder}/")
 
+            # --- BIDS phenotype/ compatibility bridge (auto-import) ---------
+            # PRISM doesn't use phenotype/ natively (see src/converters/
+            # phenotype_import.py), but a dataset initialised from existing
+            # BIDS content may have one. Import it automatically so the data
+            # isn't silently ignored; this is intentionally a "don't like but
+            # allow" bridge with no confirmation prompt, only a post-hoc log.
+            phenotype_dir = project_path / "phenotype"
+            if phenotype_dir.is_dir():
+                from src.converters.phenotype_import import import_phenotype_directory
+
+                phenotype_summary = import_phenotype_directory(phenotype_dir, project_path)
+                created_files.extend(phenotype_summary.created_files)
+                for entry in phenotype_summary.log:
+                    add_log(entry["message"], entry.get("level", "info"))
+                phenotype_import_result = {
+                    "imported_task_count": phenotype_summary.imported_task_count,
+                    "flagged_columns": sorted(set(phenotype_summary.flagged_columns)),
+                }
+
             for created_file in created_files:
                 add_log(f"Added {created_file}", "step")
 
@@ -554,6 +574,8 @@ class ProjectManager:
                 result["source"] = source_result
             if datalad_result is not None:
                 result["datalad"] = datalad_result
+            if phenotype_import_result is not None:
+                result["phenotype_import"] = phenotype_import_result
             return result
 
         except Exception as exc:
@@ -568,6 +590,8 @@ class ProjectManager:
                 result["source"] = source_result
             if datalad_result is not None:
                 result["datalad"] = datalad_result
+            if phenotype_import_result is not None:
+                result["phenotype_import"] = phenotype_import_result
             return result
 
     def _normalize_remote_dataset_url(self, remote_url: Any) -> str:
