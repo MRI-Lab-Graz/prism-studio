@@ -401,6 +401,7 @@ class ProjectManager:
         ]
         created_files: List[str] = []
         datalad_result: Optional[Dict[str, Any]] = None
+        phenotype_import_result: Optional[Dict[str, Any]] = None
 
         try:
             add_log("Initializing DataLad dataset (if enabled)...", "step")
@@ -501,6 +502,25 @@ class ProjectManager:
                     folder_path.mkdir(exist_ok=True)
                     created_files.append(f"{folder}/")
 
+            # --- BIDS phenotype/ compatibility bridge (auto-import) ---------
+            # PRISM doesn't use phenotype/ natively (see src/converters/
+            # phenotype_import.py), but a dataset initialised from existing
+            # BIDS content may have one. Import it automatically so the data
+            # isn't silently ignored; this is intentionally a "don't like but
+            # allow" bridge with no confirmation prompt, only a post-hoc log.
+            phenotype_dir = project_path / "phenotype"
+            if phenotype_dir.is_dir():
+                from src.converters.phenotype_import import import_phenotype_directory
+
+                phenotype_summary = import_phenotype_directory(phenotype_dir, project_path)
+                created_files.extend(phenotype_summary.created_files)
+                for entry in phenotype_summary.log:
+                    add_log(entry["message"], entry.get("level", "info"))
+                phenotype_import_result = {
+                    "imported_task_count": phenotype_summary.imported_task_count,
+                    "flagged_columns": sorted(set(phenotype_summary.flagged_columns)),
+                }
+
             for created_file in created_files:
                 add_log(f"Added {created_file}", "step")
 
@@ -554,6 +574,8 @@ class ProjectManager:
                 result["source"] = source_result
             if datalad_result is not None:
                 result["datalad"] = datalad_result
+            if phenotype_import_result is not None:
+                result["phenotype_import"] = phenotype_import_result
             return result
 
         except Exception as exc:
@@ -568,6 +590,8 @@ class ProjectManager:
                 result["source"] = source_result
             if datalad_result is not None:
                 result["datalad"] = datalad_result
+            if phenotype_import_result is not None:
+                result["phenotype_import"] = phenotype_import_result
             return result
 
     def _normalize_remote_dataset_url(self, remote_url: Any) -> str:
@@ -1640,6 +1664,7 @@ class ProjectManager:
         exclude_acq: Optional[Dict[str, set[str]]] = None,
         exclude_tasks: Optional[Dict[str, set[str]]] = None,
         materialize_annex_content: bool = False,
+        export_phenotype_bridge: bool = False,
     ) -> Dict[str, Any]:
         """Export a project to a plain folder copy without Git/DataLad metadata."""
         project_path = Path(path)
@@ -2723,6 +2748,47 @@ class ProjectManager:
                     "MRI JSON scrub skipped some files: " + "; ".join(scrub_errors[:5])
                 )
 
+        phenotype_bridge_file_count = 0
+        if export_phenotype_bridge:
+            try:
+                from src.converters.phenotype_export import collect_phenotype_bridge_files
+
+                phenotype_result = collect_phenotype_bridge_files(export_path)
+                phenotype_bridge_file_count = len(phenotype_result.files)
+                for warning in phenotype_result.warnings:
+                    materialization_warnings.append(f"phenotype export: {warning}")
+                if phenotype_result.files:
+                    phenotype_dir = export_path / "phenotype"
+                    phenotype_dir.mkdir(exist_ok=True)
+                    for phenotype_file in phenotype_result.files:
+                        phenotype_file.dataframe.to_csv(
+                            phenotype_dir / f"{phenotype_file.name}.tsv",
+                            sep="\t",
+                            index=False,
+                            lineterminator="\n",
+                        )
+                        with open(
+                            phenotype_dir / f"{phenotype_file.name}.json",
+                            "w",
+                            encoding="utf-8",
+                        ) as sidecar_file:
+                            json.dump(
+                                phenotype_file.sidecar,
+                                sidecar_file,
+                                indent=2,
+                                ensure_ascii=False,
+                            )
+                    self._emit_backend_progress(
+                        f"Added BIDS phenotype/ compatibility bridge "
+                        f"({len(phenotype_result.files)} file(s)) to plain folder export.",
+                        command=f'python prism.py projects export-folder --project "{project_path}" '
+                        f'--output "{export_path}" --export-phenotype-bridge',
+                    )
+            except Exception as exc:
+                materialization_warnings.append(
+                    f"Could not build phenotype/ compatibility bridge: {exc}"
+                )
+
         if materialized_export and missing_source_paths:
             # A temporary clone can miss locally present annex payloads; recover from source project.
             unresolved_source_paths: List[str] = []
@@ -2782,6 +2848,8 @@ class ProjectManager:
         if scrub_mri_json:
             result["scrubbed_mri_json_files"] = scrubbed_sidecars
             result["scrubbed_mri_json_fields"] = scrubbed_fields
+        if export_phenotype_bridge:
+            result["phenotype_bridge_files"] = phenotype_bridge_file_count
         result["excluded_repository_metadata"] = sorted(ignored_names)
         result["message"] = f"Project folder export created at {export_path} without Git/DataLad metadata."
         if bidsignore_rules_added:
@@ -2842,6 +2910,7 @@ class ProjectManager:
         exclude_acq: Optional[Dict[str, set[str]]] = None,
         exclude_tasks: Optional[Dict[str, set[str]]] = None,
         init_git_lfs_repo: bool = True,
+        export_phenotype_bridge: bool = False,
     ) -> Dict[str, Any]:
         """Export a project to a Git LFS-ready folder copy.
 
@@ -2867,6 +2936,7 @@ class ProjectManager:
             exclude_acq=exclude_acq,
             exclude_tasks=exclude_tasks,
             materialize_annex_content=True,
+            export_phenotype_bridge=export_phenotype_bridge,
         )
         if not result.get("success"):
             return result
