@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath(".."))
 project = "PRISM Studio"
 copyright = "2025-2026, MRI-Lab-Graz"
 author = "MRI-Lab-Graz"
-release = "1.15.3"
+release = "1.16.0"
 
 # -- General configuration ---------------------------------------------------
 extensions = [
@@ -41,6 +41,7 @@ exclude_patterns = [
     "RELEASE_NOTES_v1.15.1.md",
     "RELEASE_NOTES_v1.15.2.md",
     "RELEASE_NOTES_v1.15.3.md",
+    "RELEASE_NOTES_v1.16.0.md",
     # Advanced pages intentionally hidden from public RTD navigation.
     "BIDS_AUTO_MAPPING_COMPLETE.md",
     "BIDS_COMPLIANCE_IMPLEMENTATION.md",
