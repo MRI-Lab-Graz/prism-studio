@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.16.0] - 2026-07-05
+
+This release moves the desktop app to a native-feeling window on every
+platform and closes out a round of localhost-server hardening surfaced by a
+full repo security assessment.
+
+### Added
+- **Native app window on Windows/Linux**: packaged builds now open PRISM
+  Studio in a Chromium app-mode window (`--app=`) instead of relying on
+  pywebview's native backends, which do not survive PyInstaller freezing
+  reliably on those platforms. macOS keeps the pywebview/Cocoa native window.
+- **Bundled pythonnet/clr_loader shims** for Windows pywebview builds.
+
+### Security
+- Session secret key is now a random value generated per launch instead of
+  falling back to a hardcoded development key.
+- Added a Host-header validation guard to reject DNS-rebinding requests
+  against the local server when not running with `--public`.
+- Filesystem-browsing endpoints (`/api/fs/browse`, `/api/browse-file`,
+  `/api/browse-folder`) are now restricted to loopback requests regardless
+  of `--public`, so remote clients can no longer enumerate the host's
+  directory tree.
+- Fixed a path-prefix bug where `/editor*` (not just `/editor` and
+  `/editor/...`) bypassed the project-selection guard.
+- Uncaught exceptions now exit with a non-zero status instead of always
+  being reported as a clean exit via the `atexit` shutdown handler.
+- `--force-clean-start` now warns explicitly before killing a process on the
+  target port that isn't identifiable as a PRISM Studio instance.
+
+### Changed
+- CI now runs lint/ruff/mypy checks on every push and pull request, not only
+  on manual workflow dispatch.
+
 ## [1.15.3] - 2026-05-27
 
 This release consolidates the frontend structural-assessment hardening work,
