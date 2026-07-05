@@ -233,6 +233,7 @@ def export_project(
     deface_anatomical_scans: bool = False,
     defacing_selected_variants: Optional[Set[str]] = None,
     clean_nifti_gzip_headers: bool = False,
+    export_phenotype_bridge: bool = False,
     progress_callback=None,
     cancelled_flag=None,
 ) -> Dict[str, Any]:
@@ -258,6 +259,10 @@ def export_project(
             defacing.
         clean_nifti_gzip_headers: Normalize .nii.gz GZIP headers (mtime/FNAME)
             in exported copies for privacy-safe sharing.
+        export_phenotype_bridge: Additionally aggregate survey/ data into a
+            vanilla BIDS phenotype/ directory in the export. This is a
+            compatibility escape hatch, not PRISM's native format - it is
+            lossy (instrument metadata like scale definitions is dropped).
         progress_callback: Optional callable(percent, message) for progress updates
         cancelled_flag: Optional threading.Event; set it to request cancellation
 
@@ -751,6 +756,46 @@ def export_project(
                     skip_tasks=exclude_tasks or None,
                     subject_name=item.name,
                 )
+
+            if export_phenotype_bridge:
+                _report(87, "Building phenotype/ compatibility bridge...")
+                _check_cancelled()
+                from src.converters.phenotype_export import collect_phenotype_bridge_files
+
+                phenotype_result = collect_phenotype_bridge_files(
+                    export_tree_root,
+                    exclude_subjects=normalized_exclude_subjects or None,
+                    exclude_sessions=exclude_sessions or None,
+                )
+                for warning in phenotype_result.warnings:
+                    print(f"  [phenotype export] {warning}")
+                for phenotype_file in phenotype_result.files:
+                    out_df = phenotype_file.dataframe.copy()
+                    if anonymize and participant_mapping and "participant_id" in out_df.columns:
+                        out_df["participant_id"] = out_df["participant_id"].map(
+                            lambda v: participant_mapping.get(v, v)
+                        )
+                    tsv_bytes = out_df.to_csv(
+                        sep="\t", index=False, lineterminator="\n"
+                    ).encode("utf-8")
+                    zipf.writestr(f"phenotype/{phenotype_file.name}.tsv", tsv_bytes)
+
+                    sidecar = phenotype_file.sidecar
+                    if mask_questions:
+                        sidecar = json.loads(json.dumps(sidecar))
+                        for column_name, item in sidecar.items():
+                            if column_name in ("participant_id", "session_id"):
+                                continue
+                            if not isinstance(item, dict) or "Description" not in item:
+                                continue
+                            item["Description"] = _masked_like(
+                                item.get("Description"), f"Question ({column_name})"
+                            )
+                    zipf.writestr(
+                        f"phenotype/{phenotype_file.name}.json",
+                        json.dumps(sidecar, indent=2, ensure_ascii=False).encode("utf-8"),
+                    )
+                    stats["files_processed"] += 2
 
             _report(88, "Adding root files...")
             _check_cancelled()

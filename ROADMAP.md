@@ -20,22 +20,28 @@ remains the day-to-day execution layer.
 
 ### Phase 0 — Ship pending work (v1.16.0, immediate)
 
-Goal: release the native-window work and the security hardening already on
-`feature/pywebview-native-window` before starting strategic work.
+Goal: land the native-window work and the security hardening from
+`feature/pywebview-native-window` on `main` before starting strategic work.
 
-- [ ] Commit security hardening (per-launch session secret, DNS-rebinding
+- [x] Commit security hardening (per-launch session secret, DNS-rebinding
       Host-header guard, loopback-only filesystem browse endpoints,
       `/editor` prefix fix, crash exit codes via excepthook, force-kill
-      warning) — currently uncommitted in `app/prism-studio.py`
-- [ ] Commit CI change: lint/ruff/mypy job now runs on push/PR
+      warning)
+- [x] Commit CI change: lint/ruff/mypy job now runs on push/PR
       (`.github/workflows/ci.yml`)
-- [ ] Add `[Unreleased]` CHANGELOG entries for native window + security fixes
-- [ ] Bump version markers (`app/src/__init__.py`, `setup.py`,
-      `CITATION.cff`), write `docs/RELEASE_NOTES_v1.16.0.md` from template
-- [ ] PR → main, tag `v1.16.0`
+- [x] Add `[1.16.0]` CHANGELOG entry for native window + security fixes
+- [x] Bump version markers (`app/src/__init__.py`, `src/__init__.py`,
+      `setup.py`, `CITATION.cff`, `codemeta.json`, `docs/conf.py`), write
+      `docs/RELEASE_NOTES_v1.16.0.md` from template
+- [x] Open PR → main ([#77](https://github.com/MRI-Lab-Graz/prism-studio/pull/77))
+- [ ] **Tag deliberately held**: `v1.16.0` will not be tagged/released on its
+      own. Per-phase decision (2026-07-05): merges land on `main`
+      incrementally, but the next git tag is cut only once Phases 1-5 are
+      also complete, bundling this security/native-window work into that
+      later release. Revisit if security-fix urgency changes.
 
-Done when: `v1.16.0` is tagged and the release workflow has produced
-artifacts for all three platforms.
+Done when: PR #77 is merged to `main`. (Tag/release deferred — see note
+above.)
 
 ### Phase 1 — BIDS `phenotype/` bridge (v1.17)
 
