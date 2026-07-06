@@ -11,6 +11,7 @@ from pathlib import Path
 from datetime import datetime
 from jsonschema import validate, ValidationError
 from src.schema_manager import validate_schema_version, apply_schema_validation_profile
+from src.entity_rules import load_entity_rules
 from src.cross_platform import (
     normalize_path,
     safe_path_join,
@@ -18,33 +19,26 @@ from src.cross_platform import (
     validate_filename_cross_platform,
 )
 
+_ENTITY_RULES = load_entity_rules()
+
 # PRISM-specific modalities that we validate with our schemas
 # Standard BIDS modalities are passed through and should be validated by
 # the optional BIDS validator instead.
-PRISM_MODALITIES = {
-    "survey",
-    "biometrics",
-    "environment",
-    "events",
-    "physio",
-    "physiological",
-}
+# Sourced from app/schemas/stable/entities.schema.json (see src/entity_rules.py)
+# rather than hardcoded here, so adding/changing a modality's suffix grammar
+# only requires a rules-file edit.
+PRISM_MODALITIES = _ENTITY_RULES.prism_modalities
 
 # Standard BIDS modalities - we only do minimal checks (subject/session consistency)
 # Full validation is delegated to the BIDS validator
-BIDS_MODALITIES = {"anat", "func", "fmap", "dwi", "eeg", "beh", "eyetracking"}
+BIDS_MODALITIES = _ENTITY_RULES.bids_modalities
 
 # Modality patterns used for discovery and PRISM checks.
 # Strict pattern enforcement is applied only to PRISM modalities.
 MODALITY_PATTERNS = {
-    # PRISM survey/biometrics must carry explicit suffixes
-    "survey": r".+_survey\.(tsv|json)$",
-    "biometrics": r".+_biometrics\.(tsv|json)$",
-    "environment": r".+_recording-[a-zA-Z0-9]+_environment\.(tsv|tsv\.gz|json)$",
-    "events": r".+_events\.tsv$",
-    "physio": r".+(_recording-(ecg|cardiac|puls|resp|eda|ppg|emg|temp|bp|spo2|trigger|[a-zA-Z0-9]+))?_physio\.(tsv|tsv\.gz|json|edf)$",
-    "physiological": r".+(_recording-(ecg|cardiac|puls|resp|eda|ppg|emg|temp|bp|spo2|trigger|[a-zA-Z0-9]+))?_physio\.(tsv|tsv\.gz|json|edf)$",
-    "eyetracking": r".+(_trackedEye-(left|right|both))?_(eyetrack|eye|gaze)\.(tsv|tsv\.gz|json|edf|asc)$",
+    modality: _ENTITY_RULES.pattern_for(modality)
+    for modality, rule in _ENTITY_RULES.modalities.items()
+    if rule.suffixes
 }
 
 # BIDS naming patterns

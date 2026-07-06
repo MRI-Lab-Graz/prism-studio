@@ -329,17 +329,20 @@ def get_fix_hint(code: str, message: str = "") -> str:
             modality_match = re.search(r"modality '([^']+)'", message)
             if modality_match:
                 modality = modality_match.group(1)
-                modality_hints = {
-                    "survey": "Ensure the filename ends with '_survey.tsv' or '_survey.json' (e.g., sub-001_task-panas_survey.tsv)",
-                    "biometrics": "Ensure the filename ends with '_biometrics.tsv' or '_biometrics.json' (e.g., sub-001_task-rest_biometrics.tsv)",
-                    "physio": "Ensure the filename ends with '_physio.<ext>' where <ext> is tsv, tsv.gz, json, or edf (e.g., sub-001_task-rest_recording-ecg_physio.tsv)",
-                    "physiological": "Ensure the filename ends with '_physio.<ext>' where <ext> is tsv, tsv.gz, json, or edf (e.g., sub-001_task-rest_recording-ecg_physio.tsv)",
-                    "eyetracking": "Ensure the filename ends with '_eyetrack.<ext>' or '_eye.<ext>' or '_gaze.<ext>' where <ext> is tsv, tsv.gz, json, edf, or asc (e.g., sub-001_task-rest_trackedEye-left_eyetrack.tsv)",
-                    "events": "Ensure the filename ends with '_events.tsv' (e.g., sub-001_task-rest_events.tsv)",
+                from src.entity_rules import describe_modality_pattern, load_entity_rules
+
+                # Only the modalities with a hand-authored hint historically
+                # get one here; others fall through to the generic message
+                # below (matches the pre-entity_rules.py hardcoded dict).
+                hinted_modalities = {
+                    "survey", "biometrics", "physio", "physiological", "eyetracking", "events",
                 }
-                return modality_hints.get(
-                    modality,
-                    f"Ensure the filename ends with '_{modality}.<ext>' appropriate for this modality",
+                rules = load_entity_rules()
+                rule = rules.modalities.get(modality)
+                if modality in hinted_modalities and rule is not None:
+                    return describe_modality_pattern(rule)
+                return (
+                    f"Ensure the filename ends with '_{modality}.<ext>' appropriate for this modality"
                 )
 
         # Schema validation errors (PRISM301)
