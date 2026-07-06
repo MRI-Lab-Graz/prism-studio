@@ -1382,8 +1382,6 @@ def check_schema_sync(repo_path, fix=False):
 
     schema_dir = os.path.join(repo_path, "app", "schemas", "stable")
     schema_manager_file = os.path.join(repo_path, "app", "src", "schema_manager.py")
-    validator_file = os.path.join(repo_path, "app", "src", "validator.py")
-    project_manager_file = os.path.join(repo_path, "app", "src", "project_manager.py")
     index_html_file = os.path.join(repo_path, "app", "templates", "index.html")
 
     if not os.path.isdir(schema_dir):
@@ -1395,6 +1393,7 @@ def check_schema_sync(repo_path, fix=False):
         "project",
         "recipe.survey",
         "tool-limesurvey",
+        "entities",  # filename/entity rules file, not a per-modality content schema
     }
     schema_modalities = set()
     for path in Path(schema_dir).glob("*.schema.json"):
@@ -1406,21 +1405,8 @@ def check_schema_sync(repo_path, fix=False):
     manager_modalities_raw = _extract_assignment_values(
         schema_manager_file, "modalities"
     )
-    validator_modalities_raw = _extract_assignment_values(
-        validator_file, "MODALITY_PATTERNS"
-    )
-    project_modalities_raw = _extract_assignment_values(
-        project_manager_file, "PRISM_MODALITIES"
-    )
-
     if manager_modalities_raw is None:
         print_error("Could not parse modalities list in app/src/schema_manager.py")
-        return
-    if validator_modalities_raw is None:
-        print_error("Could not parse MODALITY_PATTERNS in app/src/validator.py")
-        return
-    if project_modalities_raw is None:
-        print_error("Could not parse PRISM_MODALITIES in app/src/project_manager.py")
         return
 
     aliases = {"physiological": "physio"}
@@ -1434,8 +1420,6 @@ def check_schema_sync(repo_path, fix=False):
         return normalized
 
     manager_modalities = normalize_modalities(manager_modalities_raw)
-    validator_modalities = normalize_modalities(validator_modalities_raw)
-    project_modalities = normalize_modalities(project_modalities_raw)
 
     if schema_modalities != manager_modalities:
         missing = sorted(schema_modalities - manager_modalities)
@@ -1448,23 +1432,37 @@ def check_schema_sync(repo_path, fix=False):
         if extra:
             print(f"  Extra in schema_manager: {', '.join(extra)}")
 
-    if schema_modalities != validator_modalities:
-        missing = sorted(schema_modalities - validator_modalities)
-        extra = sorted(validator_modalities - schema_modalities)
-        print_error("validator MODALITY_PATTERNS are out of sync with schemas.")
-        if missing:
-            print(f"  Missing in MODALITY_PATTERNS: {', '.join(missing)}")
-        if extra:
-            print(f"  Extra in MODALITY_PATTERNS: {', '.join(extra)}")
+    # validator.py's MODALITY_PATTERNS/PRISM_MODALITIES and
+    # project_manager.py's PRISM_MODALITIES are no longer hardcoded literals
+    # - both are derived at import time from src/entity_rules.py (see that
+    # module's docstring). A static ast-literal extractor can't see through
+    # that derivation anymore, so import the real, resolved value instead.
+    # entity_rules.py + schema_manager.py have zero third-party dependencies
+    # (stdlib only), so this stays consistent with this script's fast,
+    # dependency-light design.
+    repo_root = str(Path(repo_path).resolve())
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
+    try:
+        from src.entity_rules import load_entity_rules
 
-    if schema_modalities != project_modalities:
-        missing = sorted(schema_modalities - project_modalities)
-        extra = sorted(project_modalities - schema_modalities)
-        print_error("project_manager PRISM_MODALITIES are out of sync with schemas.")
+        rules = load_entity_rules(schema_dir=os.path.join(repo_path, "app", "schemas"))
+        entity_rules_modalities = set(rules.project_modalities)
+    except Exception as e:
+        print_error(f"Could not load src/entity_rules.py: {e}")
+        return
+
+    if schema_modalities != entity_rules_modalities:
+        missing = sorted(schema_modalities - entity_rules_modalities)
+        extra = sorted(entity_rules_modalities - schema_modalities)
+        print_error(
+            "entities.schema.json modalities (validator.py/project_manager.py's "
+            "derived modality lists) are out of sync with app/schemas/stable."
+        )
         if missing:
-            print(f"  Missing in PRISM_MODALITIES: {', '.join(missing)}")
+            print(f"  Missing in entities.schema.json: {', '.join(missing)}")
         if extra:
-            print(f"  Extra in PRISM_MODALITIES: {', '.join(extra)}")
+            print(f"  Extra in entities.schema.json: {', '.join(extra)}")
 
     if os.path.exists(index_html_file):
         try:

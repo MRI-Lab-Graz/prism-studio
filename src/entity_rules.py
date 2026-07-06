@@ -89,6 +89,20 @@ class EntityRules:
             name for name, rule in self.modalities.items() if rule.kind == "bidsPassthrough"
         }
 
+    @property
+    def project_modalities(self) -> list[str]:
+        """Modality identities with their own filename-suffix grammar (i.e.
+        excludes alias names like "physiological" and pure-BIDS-passthrough
+        entries with no PRISM suffix data like anat/func). This is the set
+        PRISM offers/manages a folder for at the project level - it includes
+        eyetracking, which has suffix data even though it's validated as
+        BIDS-passthrough (see bids_modalities)."""
+        return [
+            name
+            for name, rule in self.modalities.items()
+            if rule.suffixes and name not in self.aliases
+        ]
+
     def pattern_for(self, modality: str) -> str:
         rule = self.modalities.get(modality)
         if rule is None or not rule.suffixes or not rule.extensions:
