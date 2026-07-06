@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from src.bids_entity_parser import BidsEntityParser
+from src.entity_rules import load_entity_rules
 from src.system_files import filter_system_files
 
 _IGNORED_DIR_NAMES = {
@@ -27,21 +28,11 @@ _TEXT_SUFFIXES = {
 _TEXT_FILENAMES = {".bidsignore"}
 _DOUBLE_SUFFIXES = (".nii.gz", ".tsv.gz")
 _NON_EDITABLE_ENTITIES = {"sub"}
-_ENTITY_ORDER = [
-    "sub",
-    "ses",
-    "task",
-    "acq",
-    "run",
-    "rec",
-    "dir",
-    "echo",
-    "ce",
-    "part",
-    "space",
-    "desc",
-]
-_REQUIRED_ENTITIES = {"sub", "task"}
+# Sourced from app/schemas/stable/entities.schema.json (see src/entity_rules.py)
+# rather than hardcoded here, so adding/reordering an entity only requires a
+# rules-file edit.
+_ENTITY_ORDER = list(load_entity_rules().entity_order)
+_REQUIRED_ENTITIES = set(load_entity_rules().default_required_entities)
 
 
 @dataclass(frozen=True)
