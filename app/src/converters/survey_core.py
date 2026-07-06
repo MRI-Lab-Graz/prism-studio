@@ -25,10 +25,16 @@ try:
 except ImportError:
     from src.survey_scale_inference import apply_implicit_numeric_level_ranges
 
+from src.entity_rules import load_entity_rules
+
 try:
     import pandas as pd
 except ImportError:
     pd = None
+
+# Sourced from app/schemas/stable/entities.schema.json (see src/entity_rules.py)
+# rather than hardcoded here.
+_SURVEY_SUFFIX = load_entity_rules().primary_suffix("survey")
 
 
 # =============================================================================
@@ -129,7 +135,7 @@ def _build_bids_survey_filename(
     normalized_run = _normalize_run_entity(run)
     if normalized_run is not None:
         parts.append(normalized_run)
-    parts.append("survey")  # Add suffix without extension
+    parts.append(_SURVEY_SUFFIX)  # Add suffix without extension
     return "_".join(parts) + f".{extension}"
 
 

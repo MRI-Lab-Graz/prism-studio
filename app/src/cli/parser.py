@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from src.entity_rules import load_entity_rules
+
 
 def build_parser() -> argparse.ArgumentParser:
     """Create a base parser for prism_tools."""
@@ -27,6 +29,12 @@ def build_prism_tools_parsers(
         dest="modality", help="Modality to convert"
     )
 
+    _rules = load_entity_rules()
+    _physio_suffix = _rules.primary_suffix("physio")
+    _default_recording = dict(_rules.modalities["physio"].optional_entity_values)[
+        "recording"
+    ].enum[0]
+
     parser_physio = convert_subparsers.add_parser(
         "physio", help="Convert physiological data (Varioport)"
     )
@@ -43,8 +51,11 @@ def build_prism_tools_parsers(
     )
     parser_physio.add_argument(
         "--suffix",
-        default="physio",
-        help="Output suffix. 'physio' is normalized to 'recording-ecg_physio' for BIDS-like naming.",
+        default=_physio_suffix,
+        help=(
+            f"Output suffix. '{_physio_suffix}' is normalized to "
+            f"'recording-{_default_recording}_{_physio_suffix}' for BIDS-like naming."
+        ),
     )
     parser_physio.add_argument(
         "--sampling-rate", type=float, help="Override sampling rate (e.g. 256)"
