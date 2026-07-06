@@ -19,10 +19,16 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 import csv
+import hashlib
 import re
 import json
 from typing import Any, Dict, Optional
 
+from src.datalad_execution import (
+    is_datalad_dataset,
+    resolve_datalad_executable,
+    run_datalad_save,
+)
 from src.recipes_formula_engine import (
     _calculate_derived_variables,
     _calculate_scores,
@@ -784,11 +790,23 @@ def _apply_survey_derivative_recipe_to_rows(
 def _write_recipes_dataset_description(
     *, out_root: Path, modality: str, prism_root: Path
 ) -> None:
-    """Create a dataset_description.json under derivatives/<modality>/."""
+    """Create or refresh dataset_description.json under derivatives/<modality>/.
+
+    Provenance fields (GeneratedBy, SourceDatasets, GeneratedOn) are always
+    recomputed so re-runs reflect the actual PRISM version and timestamp.
+    Everything else (Name, Description, BIDSVersion, DatasetType, Authors,
+    License, HowToAcknowledge, Funding) is only filled in when absent, so a
+    user's hand-edit to this file survives subsequent recipe runs.
+    """
+    from src import __version__ as prism_version
 
     desc_path = out_root / "dataset_description.json"
+    existing: dict = {}
     if desc_path.exists():
-        return
+        try:
+            existing = _read_json(desc_path)
+        except Exception:
+            existing = {}
 
     # Try to inherit some metadata from the root dataset_description.json
     root_desc_path = prism_root / "dataset_description.json"
@@ -801,15 +819,12 @@ def _write_recipes_dataset_description(
             pass
 
     modality_label = modality.capitalize()
-    obj = {
-        "Name": f"{root_meta.get('Name', 'PRISM')} {modality_label} Recipes",
-        "BIDSVersion": "1.8.0",
-        "DatasetType": "derivative",
+    provenance_fields = {
         "GeneratedBy": [
             {
                 "Name": "prism-tools",
                 "Description": f"{modality_label} recipe scoring (reverse coding, subscales, formulas)",
-                "Version": "1.0.0",
+                "Version": prism_version,
                 "CodeURL": "https://github.com/MRI-Lab-Graz/prism-studio",
             }
         ],
@@ -822,12 +837,85 @@ def _write_recipes_dataset_description(
         "GeneratedOn": datetime.now().isoformat(timespec="seconds"),
     }
 
-    # Copy relevant fields from root
+    default_fields = {
+        "Name": f"{root_meta.get('Name', 'PRISM')} {modality_label} Recipes",
+        "BIDSVersion": "1.8.0",
+        "DatasetType": "derivative",
+    }
     for field in ["Authors", "License", "HowToAcknowledge", "Funding"]:
         if field in root_meta:
-            obj[field] = root_meta[field]
+            default_fields[field] = root_meta[field]
+
+    obj = {**default_fields, **existing, **provenance_fields}
 
     _write_json(desc_path, obj)
+
+
+def _hash_file_sha256(
+    path: Path, *, cache: dict[Path, str] | None = None, chunk_size: int = 1 << 20
+) -> str:
+    """Streaming sha256 hex digest of a file.
+
+    ``cache`` should be a dict created fresh per compute_survey_recipes()
+    call (never a module-level dict): a file consumed by multiple recipes
+    within the same run (e.g. participants.tsv) is then hashed once instead
+    of once per recipe, without risking a stale hash across separate calls
+    in a long-running process if the file's content changes between runs.
+    """
+    resolved = path.resolve()
+    if cache is not None and resolved in cache:
+        return cache[resolved]
+
+    digest = hashlib.sha256()
+    with open(resolved, "rb") as f:
+        for chunk in iter(lambda: f.read(chunk_size), b""):
+            digest.update(chunk)
+    hex_digest = digest.hexdigest()
+    if cache is not None:
+        cache[resolved] = hex_digest
+    return hex_digest
+
+
+def _write_recipe_provenance_sidecar(
+    *,
+    out_root: Path,
+    recipe_id: str,
+    recipe: dict,
+    prism_root: Path,
+    input_files: list[Path],
+    participants_files: list[Path],
+    hash_cache: dict[Path, str],
+) -> None:
+    """Write a per-recipe provenance sidecar recording exact inputs and versions.
+
+    Written directly under out_root (not co-located with each format's own
+    output layout, which varies: a subfolder per recipe for "prism" format,
+    a flat per-recipe file for csv/xlsx/sav, a single dataset-wide file for
+    "flat") so there is one predictable location regardless of out_format.
+    """
+    from src import __version__ as prism_version
+
+    def _describe(paths: list[Path]) -> list[dict[str, str]]:
+        described = []
+        for p in paths:
+            try:
+                rel_path = p.resolve().relative_to(prism_root.resolve()).as_posix()
+            except ValueError:
+                rel_path = str(p)
+            described.append(
+                {"Path": rel_path, "SHA256": _hash_file_sha256(p, cache=hash_cache)}
+            )
+        return described
+
+    provenance = {
+        "RecipeId": recipe_id,
+        "RecipeVersion": recipe.get("RecipeVersion"),
+        "GeneratedBy": {"Name": "prism-tools", "Version": prism_version},
+        "GeneratedOn": datetime.now().isoformat(timespec="seconds"),
+        "InputFiles": _describe(input_files),
+        "ParticipantsFiles": _describe(participants_files),
+    }
+    _write_json(out_root / f"{recipe_id}_provenance.json", provenance)
 
 
 def _generate_recipes_boilerplate_sections(
@@ -2002,6 +2090,7 @@ def compute_survey_recipes(
     written_recipe_ids: set[str] = set()
     raw_only_tasks: set[str] = set()
     matched_task_ids: set[str] = set()
+    recipe_inputs: dict[str, list[Path]] = {}
 
     flat_out_path: Path | None = None
     fallback_note: str | None = None
@@ -2038,6 +2127,7 @@ def compute_survey_recipes(
 
         applied_recipe_ids.add(recipe_id)
         applied_recipes_list.append(recipe)
+        recipe_inputs[recipe_id] = list(matching)
 
         if out_format in ("csv", "xlsx", "sav"):
             if merge_all:
@@ -2591,6 +2681,30 @@ def compute_survey_recipes(
     _write_recipes_dataset_description(
         out_root=out_root, modality=modality, prism_root=output_prism_root
     )
+
+    participants_files = [
+        p
+        for p in (
+            output_prism_root / "participants.tsv",
+            output_prism_root / "participants.json",
+        )
+        if p.is_file()
+    ]
+    hash_cache: dict[Path, str] = {}
+    for recipe_id in sorted(written_recipe_ids):
+        input_files = recipe_inputs.get(recipe_id)
+        if not input_files:
+            continue
+        _write_recipe_provenance_sidecar(
+            out_root=out_root,
+            recipe_id=recipe_id,
+            recipe=recipes[recipe_id]["json"],
+            prism_root=output_prism_root,
+            input_files=input_files,
+            participants_files=participants_files,
+            hash_cache=hash_cache,
+        )
+
     _ensure_bidsignore_prism_rules(output_prism_root, modality)
 
     if boilerplate and applied_recipes_list:
@@ -2599,6 +2713,33 @@ def compute_survey_recipes(
             applied_recipes=applied_recipes_list, out_path=boilerplate_path, lang=lang
         )
         boilerplate_html_path = boilerplate_path.with_suffix(".html")
+
+    if is_datalad_dataset(output_prism_root):
+        datalad_executable = resolve_datalad_executable()
+        if not datalad_executable:
+            raise ValueError(
+                "This project is tracked by DataLad and recipe scoring changes "
+                "require DataLad. Install with: uv tool install datalad git-annex."
+            )
+        # Scope the save to everything this run actually touched: the
+        # derivative output tree, the seeded recipe copies under code/, and
+        # .bidsignore (all written above) - not an unscoped `-r` save, which
+        # would walk every registered subdataset on every recipe run.
+        save_paths = [str(out_root.relative_to(output_prism_root))]
+        if recipes_seeded:
+            save_paths.append(str(Path("code") / "recipes" / modality))
+        if (output_prism_root / ".bidsignore").exists():
+            save_paths.append(".bidsignore")
+        save_result = run_datalad_save(
+            output_prism_root,
+            message=f"PRISM: compute {modality} recipes ({out_format})",
+            datalad_executable=datalad_executable,
+            paths=save_paths,
+        )
+        if not save_result.get("success"):
+            raise ValueError(
+                str(save_result.get("message") or "DataLad save failed after recipe scoring.")
+            )
 
     return SurveyRecipesResult(
         processed_files=processed_files,
