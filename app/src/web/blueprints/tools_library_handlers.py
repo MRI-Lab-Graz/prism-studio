@@ -3,6 +3,8 @@ from pathlib import Path
 
 from flask import current_app, jsonify, request, session
 
+from src.constants import SUPPORTED_MODALITIES
+
 from .conversion_utils import resolve_existing_project_root
 
 
@@ -50,7 +52,7 @@ def handle_list_library_files_merged(extract_template_info, global_survey_librar
                     )
                 break
 
-        for folder in ["survey", "biometrics"]:
+        for folder in SUPPORTED_MODALITIES:
             folder_path = lib_p / folder
             if folder_path.exists() and folder_path.is_dir():
                 for filepath in sorted(folder_path.glob("*.json")):
@@ -173,7 +175,7 @@ def handle_list_library_files(extract_template_info):
                 extract_template_info(participants_path, "participants.json")
             )
 
-        for folder in ["survey", "biometrics"]:
+        for folder in SUPPORTED_MODALITIES:
             folder_path = os.path.join(library_path, folder)
             if os.path.exists(folder_path) and os.path.isdir(folder_path):
                 for filename in os.listdir(folder_path):

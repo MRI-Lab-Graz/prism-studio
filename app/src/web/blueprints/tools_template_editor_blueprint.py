@@ -14,6 +14,7 @@ from flask import (
 )
 
 from src.config import load_config
+from src.constants import SUPPORTED_MODALITIES
 from src.converters.survey_io import normalize_paper_software_platform
 from src.survey_scale_inference import apply_implicit_numeric_level_ranges
 from src.utils.io import dump_json_text
@@ -236,7 +237,7 @@ def api_template_editor_list_merged():
     """List templates from both global and project libraries with source indicators."""
     modality = (request.args.get("modality") or "").strip().lower()
     schema_version = (request.args.get("schema_version") or "stable").strip()
-    if modality not in {"survey", "biometrics"}:
+    if modality not in SUPPORTED_MODALITIES:
         return jsonify({"error": "Invalid modality"}), 400
 
     requested_project_path = request.args.get("project_path")
@@ -369,7 +370,7 @@ def api_template_editor_list_merged():
 def api_template_editor_new():
     modality = (request.args.get("modality") or "").strip().lower()
     schema_version = (request.args.get("schema_version") or "stable").strip()
-    if modality not in {"survey", "biometrics"}:
+    if modality not in SUPPORTED_MODALITIES:
         return jsonify({"error": "Invalid modality"}), 400
 
     try:
@@ -390,7 +391,7 @@ def api_template_editor_load():
     filename = (request.args.get("filename") or "").strip()
     library_path = (request.args.get("library_path") or "").strip() or None
     absolute_path = (request.args.get("absolute_path") or "").strip() or None
-    if modality not in {"survey", "biometrics"}:
+    if modality not in SUPPORTED_MODALITIES:
         return jsonify({"error": "Invalid modality"}), 400
     if not filename or "/" in filename or "\\" in filename:
         return jsonify({"error": "Invalid filename"}), 400
@@ -435,7 +436,7 @@ def api_template_editor_validate():
     template = payload.get("template")
     is_global = bool(payload.get("is_global", False))
 
-    if modality not in {"survey", "biometrics"}:
+    if modality not in SUPPORTED_MODALITIES:
         return jsonify({"error": "Invalid modality"}), 400
     if not isinstance(template, dict):
         return jsonify({"error": "Template must be a JSON object"}), 400
@@ -476,7 +477,7 @@ def api_template_editor_validate():
 def api_template_editor_schema():
     modality = (request.args.get("modality") or "").strip().lower()
     schema_version = (request.args.get("schema_version") or "stable").strip()
-    if modality not in {"survey", "biometrics"}:
+    if modality not in SUPPORTED_MODALITIES:
         return jsonify({"error": "Invalid modality"}), 400
 
     try:
@@ -501,7 +502,7 @@ def api_template_editor_download():
         return jsonify({"error": "Template must be a JSON object"}), 400
 
     template = _strip_template_editor_internal_keys(template)
-    if modality in {"survey", "biometrics"}:
+    if modality in SUPPORTED_MODALITIES:
         template = _normalize_template_for_validation(
             modality=modality, template=template
         )
@@ -575,7 +576,7 @@ def api_template_editor_save():
     is_global = bool(payload.get("is_global", False))
     allow_overwrite = bool(payload.get("allow_overwrite", False))
 
-    if modality not in {"survey", "biometrics"}:
+    if modality not in SUPPORTED_MODALITIES:
         return jsonify({"error": "Invalid modality"}), 400
     if not filename or "/" in filename or "\\" in filename:
         return jsonify({"error": "Invalid filename"}), 400
@@ -637,7 +638,7 @@ def api_template_editor_delete():
     modality = (payload.get("modality") or "").strip().lower()
     filename = (payload.get("filename") or "").strip()
 
-    if modality not in {"survey", "biometrics"}:
+    if modality not in SUPPORTED_MODALITIES:
         return jsonify({"error": "Invalid modality"}), 400
     if not filename or "/" in filename or "\\" in filename:
         return jsonify({"error": "Invalid filename"}), 400
