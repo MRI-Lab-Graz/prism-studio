@@ -43,31 +43,38 @@ Goal: land the native-window work and the security hardening from
 Done when: PR #77 is merged to `main`. (Tag/release deferred — see note
 above.)
 
-### Phase 1 — BIDS `phenotype/` bridge (v1.17)
+### Phase 1 — BIDS `phenotype/` bridge (v1.17) — DONE (merged, unreleased)
 
-Goal: bidirectional interop with vanilla BIDS phenotypic data — import
-existing `phenotype/` directories into PRISM's per-session `survey/` layout,
-and export PRISM surveys to a valid BIDS `phenotype/` aggregation — so any
-PRISM dataset has a lossless exit ramp and any BIDS dataset has an entry
-ramp. There is no phenotype support today (greenfield).
+Goal: a deliberately lossy compatibility bridge to vanilla BIDS
+`phenotype/`, not a first-class conversion path — PRISM's per-session
+`survey/` layout stays primary, and the bridge exists only so data isn't
+silently stranded in either direction. Scope was narrowed from the original
+plan during implementation (see PR #78, merged to `main`):
 
-- [ ] Export: aggregate `sub-*/ses-*/survey/*_survey.tsv` →
-      `phenotype/<instrument>.tsv` + JSON sidecar, sessions encoded per BIDS
-      phenotype conventions; round-trip metadata preserved in the sidecar
-      (new `src/converters/phenotype_export.py`)
-- [ ] Import: parse `phenotype/` (+ `participants.tsv` session columns) →
-      per-session `survey/` layout, matching instruments against
-      `official/library/survey/` (new `src/converters/phenotype_import.py`)
-- [ ] Wire both into the Converter page blueprints and `prism_tools.py` CLI;
-      offer phenotype export in project export flows
-      (`app/src/web/blueprints/projects_export_blueprint.py`)
-- [ ] Round-trip regression test: survey → phenotype → survey is
-      content-identical
+- [x] Export: aggregate `sub-*/ses-*/survey/*_survey.tsv` grouped by
+      (TaskName, VariantID) → `phenotype/<name>.tsv` + flat column-keyed
+      JSON sidecar; opt-in flag (`export_phenotype_bridge`) in all four
+      existing export routes (sync/async ZIP, folder, Git LFS) — **not**
+      a new export mode (`src/converters/phenotype_export.py`)
+- [x] Import: parse `phenotype/*.tsv` → PRISM `survey/` layout with a
+      minimal, honest sidecar (no fuzzy-matching against
+      `official/library/survey/` — deliberately out of scope to keep
+      engineering investment low); fires **automatically** (no
+      confirmation prompt) when a project is initialized from an existing
+      BIDS dataset containing `phenotype/`, with a post-hoc non-blocking
+      banner (`src/converters/phenotype_import.py`,
+      `app/src/project_manager.py`)
+- [x] **Not** wired into the Converter page or `conversion_survey_*`
+      blueprints — kept visibly separate from PRISM's native survey
+      conversion paths by design
+- [x] Round-trip regression test asserting data fidelity *and* explicit
+      metadata loss (`tests/test_phenotype_roundtrip.py`)
 - [ ] Ongoing: engage the BIDS phenotype BEP process; keep
       `docs/BIDS_SURVEY_MODALITY_PR_DRAFT.md` aligned
 
-Done when: the wellbeing demo dataset round-trips losslessly and the
-exported `phenotype/` passes the official bids-validator.
+Done when: merged to `main` and exercised end-to-end against the
+wellbeing-multi-demo example (done — see PR #78). Formal BEP engagement
+remains open-ended, not a release blocker.
 
 ### Phase 2 — Recipe & derivative provenance (v1.18)
 
