@@ -3,6 +3,8 @@ from pathlib import Path
 
 from flask import jsonify, render_template
 
+from src.constants import SUPPORTED_MODALITIES
+
 from .tools_helpers import _default_library_root_for_templates, _global_recipes_root
 
 
@@ -53,7 +55,7 @@ def _detect_available_recipe_modalities(project_root: Path) -> tuple[list[dict],
     }
 
     available: list[dict] = []
-    for modality in ("survey", "biometrics"):
+    for modality in SUPPORTED_MODALITIES:
         if _has_data(modality) and _has_recipes(modality):
             available.append({"value": modality, "label": modality_labels[modality]})
 
