@@ -95,23 +95,46 @@ Done when: a scored derivative can be traced to exact inputs and recipe
 version from its sidecars alone, and DataLad projects show a `datalad run`
 commit for scoring.
 
-### Phase 3 — Declarative entity/filename rules (v1.19)
+### Phase 3 — Declarative entity/filename rules (v1.19) — DONE (merged, unreleased)
 
 Goal: express filename/entity rules as data, the way sidecar validation
-already is (JSON Schema in `app/schemas/`). Today entity conventions live
-only in code (`src/bids_entity_parser.py`, `src/bids_entity_rewriter.py`)
+already is (JSON Schema in `app/schemas/`). Entity conventions previously
+lived only in code (`src/bids_entity_parser.py`, `src/bids_entity_rewriter.py`)
 and prose. This is the prerequisite for third-party implementations and the
 v2.0 spec.
 
-- [ ] Machine-readable rules file (e.g. `app/schemas/stable/entities.json`):
-      datatypes, suffixes, allowed/required entities, entity ordering
-- [ ] `bids_entity_parser`/validator consume the rules file; hand-coded
-      checks become data-driven
-- [ ] Version the rules with the existing schema channels
-      (`stable`/`v0.x`, `app/src/schema_manager.py`)
+- [x] Machine-readable rules file: `app/schemas/stable/entities.schema.json`
+      — datatypes, suffixes, allowed/required entities, entity ordering
+      (`.schema.json` extension to match every other file in
+      `app/schemas/`, not the `.json` originally sketched here)
+- [x] `validator`/rewriter/fix-hints/modality-inference consume the rules
+      file via new `src/entity_rules.py`; hand-coded checks became
+      data-driven for both the read path (`app/src/validator.py`,
+      `src/bids_entity_rewriter.py`, `app/src/issues.py`,
+      `app/src/fixer.py` — PR #81) and the write path (filename
+      construction in `app/src/converters/survey_core.py`,
+      `src/converters/biometrics.py`,
+      `app/src/cli/commands/convert.py` — PR #82)
+- [x] Versioned with the existing schema channels: lives in
+      `app/schemas/stable/`, loads through `schema_manager.load_schema()`'s
+      normal version-aware path resolution like every other schema file.
+      Deliberately *not* added to `schema_manager.py`'s `load_all_schemas()`
+      modality registry — that list feeds `jsonschema.validate()` against
+      sidecar content, and `entities.schema.json` isn't a JSON-Schema
+      document, so mixing it in would be a category error.
 
 Done when: adding a new suffix or entity requires only a rules-file edit
-plus tests — no parser code changes.
+plus tests — no parser code changes (true for both validating and writing
+filenames as of PRs #81/#82).
+
+Explicitly deferred, not silently dropped: `app/src/project_manager.py`'s
+default-modality lists and `app/src/bids_integration.py`'s `.bidsignore`
+generation still hardcode their own modality lists independently — left
+alone given the DataLad text-file policy risk in `CLAUDE.md`. A handful of
+UI-only datatype guards in `app/src/web/blueprints/*.py` were also out of
+scope for the entity-rules work itself (they encode a different concept —
+which modalities the Template Editor/Recipe Builder *feature* supports,
+not filename grammar).
 
 ### Phase 4 — Instrument registry & variable semantics (v1.20)
 
