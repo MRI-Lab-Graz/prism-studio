@@ -12,6 +12,7 @@ from typing import Any
 
 from flask import current_app, jsonify
 
+from src.constants import SUPPORTED_MODALITIES as _SUPPORTED_MODALITIES
 from src.recipe_validation import validate_recipe
 from src.survey_scale_inference import (
     apply_implicit_numeric_level_ranges,
@@ -45,8 +46,6 @@ _RESERVED_KEYS = {
     "Normative",
     "Questions",
 }
-
-_SUPPORTED_MODALITIES = {"survey", "biometrics"}
 
 # ---------------------------------------------------------------------------
 # Helpers
