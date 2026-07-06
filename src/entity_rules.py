@@ -95,6 +95,17 @@ class EntityRules:
             return r".*"
         return compile_modality_regex(rule)
 
+    def primary_suffix(self, modality: str) -> str:
+        """The canonical suffix to use when *writing* a file for this
+        modality (the first entry in its suffixes list). Modalities with
+        multiple accepted suffixes (e.g. eyetracking's eyetrack/eye/gaze)
+        are for validation only here - writers always emit the primary
+        one."""
+        rule = self.modalities.get(modality)
+        if rule is None or not rule.suffixes:
+            raise KeyError(f"No suffix defined for modality '{modality}'")
+        return rule.suffixes[0]
+
 
 def compile_modality_regex(rule: ModalityRule) -> str:
     """Rebuild the MODALITY_PATTERNS-style regex source for a modality rule."""
