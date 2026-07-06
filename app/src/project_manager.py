@@ -46,6 +46,7 @@ from src.project_export_helpers import (
 )
 from src.constants import DEFAULT_BIDS_VERSION
 from src.cross_platform import CrossPlatformFile, describe_case_insensitive_id_collisions
+from src.entity_rules import load_entity_rules
 from src.issues import get_fix_hint, infer_code_from_message
 from src.schema_manager import load_schema
 from src.readme_generator import ReadmeGenerator
@@ -53,15 +54,9 @@ from src.project_icons import choose_random_project_icon, normalize_project_icon
 from src.system_files import filter_system_files
 from jsonschema import Draft7Validator
 
-# Available PRISM modalities
-PRISM_MODALITIES = [
-    "survey",
-    "biometrics",
-    "environment",
-    "physio",
-    "eyetracking",
-    "events",
-]
+# Available PRISM modalities. Sourced from app/schemas/stable/entities.schema.json
+# (see src/entity_rules.py) rather than hardcoded here.
+PRISM_MODALITIES = load_entity_rules().project_modalities
 
 # Modalities that remain available in PRISM tooling but are validated as BIDS
 # pass-through instead of PRISM-specific extensions.

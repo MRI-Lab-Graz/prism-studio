@@ -102,3 +102,28 @@ def test_modalities_with_suffixes_matches_original_pattern_dict_keys():
         name for name, rule in rules.modalities.items() if rule.suffixes
     }
     assert modalities_with_suffixes == set(_EXPECTED_PATTERNS.keys())
+
+
+def test_project_modalities_matches_project_manager_hardcoded_list():
+    """project_manager.py's PRISM_MODALITIES used to hardcode exactly these
+    6 names (order differs, which is harmless - nothing depends on it)."""
+    rules = load_entity_rules()
+    assert set(rules.project_modalities) == {
+        "survey", "biometrics", "environment", "physio", "eyetracking", "events",
+    }
+
+
+def test_project_modalities_excludes_alias_and_bare_bids_passthrough():
+    rules = load_entity_rules()
+    assert "physiological" not in rules.project_modalities
+    assert "anat" not in rules.project_modalities
+    assert "func" not in rules.project_modalities
+
+
+def test_prism_modalities_matches_bids_integration_prism_folders_intent():
+    """bids_integration.py's prism_folders used to hardcode these 6 names
+    (plus dead "eeg" and vestigial "metadata" entries, since removed)."""
+    rules = load_entity_rules()
+    assert rules.prism_modalities == {
+        "survey", "biometrics", "environment", "physio", "physiological", "events",
+    }
