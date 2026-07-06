@@ -36,7 +36,9 @@ BIDS_MODALITIES = _ENTITY_RULES.bids_modalities
 # Modality patterns used for discovery and PRISM checks.
 # Strict pattern enforcement is applied only to PRISM modalities.
 MODALITY_PATTERNS = {
-    modality: _ENTITY_RULES.pattern_for(modality) for modality in _ENTITY_RULES.modalities
+    modality: _ENTITY_RULES.pattern_for(modality)
+    for modality, rule in _ENTITY_RULES.modalities.items()
+    if rule.suffixes
 }
 
 # BIDS naming patterns
