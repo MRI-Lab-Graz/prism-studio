@@ -20,10 +20,22 @@ from datetime import date
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 from src.constants import DEFAULT_BIDS_VERSION
+from src.entity_rules import load_entity_rules
 from src.validator import (
     BIDS_MODALITIES,
     PRISM_MODALITIES,
     resolve_inherited_sidecar,
+)
+
+# Filename substrings that identify an eyetracking file by suffix, e.g.
+# "_eyetrack"/"_eye"/"_gaze". Sourced from entities.schema.json (via
+# src/entity_rules.py) instead of hardcoded here, so a suffix added there
+# (the entities.schema.json eyetracking suffix list previously had "gaze"
+# with no matching check here - files ending "_gaze.tsv" were silently
+# inferred as "unknown") is automatically picked up by modality inference
+# too.
+_EYETRACKING_NAME_HINTS = tuple(
+    f"_{suffix}" for suffix in load_entity_rules().modalities["eyetracking"].suffixes
 )
 
 
@@ -435,10 +447,8 @@ class DatasetFixer:
             return "biometrics"
         elif "/physio/" in path_lower or "_physio" in name_lower:
             return "physio"
-        elif (
-            "/eyetrack" in path_lower
-            or "_eyetrack" in name_lower
-            or "_eye" in name_lower
+        elif "/eyetrack" in path_lower or any(
+            hint in name_lower for hint in _EYETRACKING_NAME_HINTS
         ):
             return "eyetracking"
         elif (
