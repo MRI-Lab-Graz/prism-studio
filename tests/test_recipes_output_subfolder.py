@@ -8,6 +8,8 @@ The output subfolder is determined by layout, language, and anonymization settin
 from pathlib import Path
 from typing import Any
 import csv
+import hashlib
+import json
 
 import pytest
 
@@ -636,6 +638,104 @@ class TestOutputFilesInSubfolder:
 
         desc_file = result.out_root / "dataset_description.json"
         assert desc_file.exists()
+
+    def test_dataset_description_generated_by_uses_real_version(
+        self, tmp_path: Path
+    ) -> None:
+        """GeneratedBy.Version reflects the actual PRISM version, not a hardcoded one."""
+        from src import __version__ as prism_version
+
+        project_root, recipe_dir = _setup_minimal_project(tmp_path)
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+        )
+
+        desc_file = result.out_root / "dataset_description.json"
+        desc = json.loads(desc_file.read_text(encoding="utf-8"))
+        assert desc["GeneratedBy"][0]["Version"] == prism_version
+
+    def test_dataset_description_updates_but_preserves_hand_edits_on_rerun(
+        self, tmp_path: Path
+    ) -> None:
+        """Re-running recipes refreshes provenance fields but keeps user edits."""
+        project_root, recipe_dir = _setup_minimal_project(tmp_path)
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+        )
+        desc_file = result.out_root / "dataset_description.json"
+        desc = json.loads(desc_file.read_text(encoding="utf-8"))
+        # Stale sentinel values, not a real prior timestamp/version: proves the
+        # re-run actually recomputes these fields rather than keeping whatever
+        # was already on disk (a real-clock comparison would be flaky if both
+        # runs land in the same second).
+        desc["Name"] = "My Custom Derivative Name"
+        desc["GeneratedOn"] = "2000-01-01T00:00:00"
+        desc["GeneratedBy"][0]["Version"] = "0.0.0-stale"
+        desc_file.write_text(json.dumps(desc), encoding="utf-8")
+
+        compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+        )
+        updated = json.loads(desc_file.read_text(encoding="utf-8"))
+
+        assert updated["Name"] == "My Custom Derivative Name"
+        assert updated["GeneratedOn"] != "2000-01-01T00:00:00"
+        assert updated["GeneratedBy"][0]["Version"] != "0.0.0-stale"
+
+    def test_recipe_provenance_sidecar_written(self, tmp_path: Path) -> None:
+        """A per-recipe provenance sidecar records exact input file hashes."""
+        project_root, recipe_dir = _setup_minimal_project(tmp_path)
+        survey_tsv = (
+            project_root
+            / "sub-001"
+            / "ses-1"
+            / "survey"
+            / "sub-001_ses-1_task-test_survey.tsv"
+        )
+
+        (project_root / "participants.tsv").write_text(
+            "participant_id\tage\nsub-001\t30\n", encoding="utf-8"
+        )
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+        )
+
+        provenance_file = result.out_root / "test_provenance.json"
+        assert provenance_file.exists()
+        provenance = json.loads(provenance_file.read_text(encoding="utf-8"))
+
+        assert provenance["RecipeId"] == "test"
+        assert provenance["RecipeVersion"] == "1.0"
+        assert provenance["GeneratedBy"]["Name"] == "prism-tools"
+
+        expected_hash = hashlib.sha256(survey_tsv.read_bytes()).hexdigest()
+        assert provenance["InputFiles"] == [
+            {
+                "Path": "sub-001/ses-1/survey/sub-001_ses-1_task-test_survey.tsv",
+                "SHA256": expected_hash,
+            }
+        ]
+        assert len(provenance["ParticipantsFiles"]) == 1
+        assert provenance["ParticipantsFiles"][0]["Path"] == "participants.tsv"
 
 
 class TestBiometricsModality:
