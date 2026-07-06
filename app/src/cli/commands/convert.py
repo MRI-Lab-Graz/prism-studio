@@ -20,6 +20,7 @@ from src.converters.wide_to_long import (
     resolve_wide_to_long_id_uniqueness,
 )
 from src.cross_platform import normalize_path
+from src.entity_rules import load_entity_rules
 
 
 def sanitize_id(id_str):
@@ -42,16 +43,21 @@ def sanitize_id(id_str):
 
 def _normalize_physio_suffix(raw_suffix: str | None) -> str:
     """Normalize CLI physio suffixes to canonical recording-<label>_physio."""
+    rules = load_entity_rules()
+    physio_suffix = rules.primary_suffix("physio")
+    recording_rule = dict(rules.modalities["physio"].optional_entity_values)["recording"]
+    default_recording = recording_rule.enum[0]
+
     suffix = str(raw_suffix or "").strip()
     if not suffix:
-        return "recording-ecg_physio"
-    if suffix == "physio":
-        return "recording-ecg_physio"
+        return f"recording-{default_recording}_{physio_suffix}"
+    if suffix == physio_suffix:
+        return f"recording-{default_recording}_{physio_suffix}"
     if suffix.startswith("recording-"):
-        return suffix if suffix.endswith("_physio") else f"{suffix}_physio"
-    if suffix.endswith("_physio"):
+        return suffix if suffix.endswith(f"_{physio_suffix}") else f"{suffix}_{physio_suffix}"
+    if suffix.endswith(f"_{physio_suffix}"):
         return suffix
-    return f"recording-{suffix}_physio"
+    return f"recording-{suffix}_{physio_suffix}"
 
 
 def get_json_hash(json_path):

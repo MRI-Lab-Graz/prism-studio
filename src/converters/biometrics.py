@@ -23,9 +23,14 @@ from src.converters.file_reader import (
     infer_tabular_kind as _infer_tabular_kind,
     read_tabular_file as _read_tabular_file,
 )
+from src.entity_rules import load_entity_rules
 from src.subject_id_matching import build_subject_id_matcher
 from src.utils.io import read_json as _read_json, write_json as _write_json
 from src.utils.naming import norm_key as _norm_key
+
+# Sourced from app/schemas/stable/entities.schema.json (see src/entity_rules.py)
+# rather than hardcoded here.
+_BIOMETRICS_SUFFIX = load_entity_rules().primary_suffix("biometrics")
 
 _NON_ITEM_TOPLEVEL_KEYS: set[str] = {
     "Technical",
@@ -370,7 +375,7 @@ def convert_biometrics_table_to_prism_dataset(
 
     # Write inherited sidecars (dataset-level)
     for task, template in task_to_template.items():
-        sidecar_path = output_root / f"task-{task}_biometrics.json"
+        sidecar_path = output_root / f"task-{task}_{_BIOMETRICS_SUFFIX}.json"
         _write_json(sidecar_path, template)
 
     # Write per-row TSVs
@@ -417,7 +422,7 @@ def convert_biometrics_table_to_prism_dataset(
 
             modality_dir = output_root / sub_id / ses_id / "biometrics"
             modality_dir.mkdir(parents=True, exist_ok=True)
-            stem = f"{sub_id}_{ses_id}_task-{task}_biometrics"
+            stem = f"{sub_id}_{ses_id}_task-{task}_{_BIOMETRICS_SUFFIX}"
             out_tsv = modality_dir / f"{stem}.tsv"
             pd.DataFrame([values], columns=items).to_csv(out_tsv, sep="\t", index=False)
 
