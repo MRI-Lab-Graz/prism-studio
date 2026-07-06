@@ -88,3 +88,17 @@ def test_pattern_for_unlisted_modality_falls_back_to_catch_all():
 
 def test_load_entity_rules_is_cached():
     assert load_entity_rules() is load_entity_rules()
+
+
+def test_modalities_with_suffixes_matches_original_pattern_dict_keys():
+    """validator.py's MODALITY_PATTERNS must only carry the 7 modalities the
+    hardcoded dict used to have - not every entities.schema.json entry (e.g.
+    bidsPassthrough modalities like anat/func with no suffix grammar of
+    their own). Consumers like app/src/runner.py iterate this dict's keys
+    directly, so an inflated key set would be a real behavior change even
+    though nothing in this repo currently trips over it."""
+    rules = load_entity_rules()
+    modalities_with_suffixes = {
+        name for name, rule in rules.modalities.items() if rule.suffixes
+    }
+    assert modalities_with_suffixes == set(_EXPECTED_PATTERNS.keys())
