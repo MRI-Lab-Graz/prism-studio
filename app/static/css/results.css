@@ -57,7 +57,7 @@
         transform: rotate(180deg);
     }
     .revalidate-form {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
     }
     .revalidate-mode-select {
         min-width: 230px;
@@ -73,6 +73,7 @@
     @media (max-width: 768px) {
         .revalidate-form {
             width: 100%;
+            flex-wrap: wrap;
         }
 
         .revalidate-mode-select {

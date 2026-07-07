@@ -12,12 +12,14 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
             <div>
                 {% set results_dataset_label = results.dataset_name if results and results.dataset_name else filename %}
-                {% set results_header_note = 'Schema Version: ' ~ results.schema_version if results and results.get('schema_version') else '' %}
+                {% set results_header_subtitle = 'Dataset: ' ~ results_dataset_label %}
+                {% if results and results.get('schema_version') %}
+                {% set results_header_subtitle = results_header_subtitle ~ ' • Schema Version: ' ~ results.schema_version %}
+                {% endif %}
                 {{ page_header(
                     'fas fa-chart-line',
                     'Validation Results',
-                    'Dataset: ' ~ results_dataset_label,
-                    results_header_note
+                    results_header_subtitle
                 ) }}
             </div>
             <div class="d-flex flex-wrap align-items-center justify-content-end gap-2">
