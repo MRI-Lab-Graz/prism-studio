@@ -320,6 +320,7 @@ function updateBadgeColor(badge, isFilled) {
         removeClass(badge, 'bg-danger');
         removeClass(badge, 'bg-warning');
         removeClass(badge, 'bg-secondary');
+        removeClass(badge, 'bg-primary');
         removeClass(badge, 'text-dark');
         addClass(badge, 'bg-success');
         debugLog(`Badge "${badgeText}" turned GREEN`);
@@ -329,6 +330,9 @@ function updateBadgeColor(badge, isFilled) {
         if (text === 'REQUIRED') {
             addClass(badge, 'bg-danger');
             debugLog(`Badge "${badgeText}" turned RED`);
+        } else if (text === 'CORE') {
+            addClass(badge, 'bg-primary');
+            debugLog(`Badge "${badgeText}" turned BLUE (readiness-tier, not creation-blocking)`);
         } else if (text === 'RECOMMENDED') {
             addClass(badge, 'bg-warning');
             addClass(badge, 'text-dark');
@@ -613,11 +617,14 @@ export function resetAllBadges() {
         removeClass(badge, 'bg-warning');
         removeClass(badge, 'bg-secondary');
         removeClass(badge, 'bg-success');
+        removeClass(badge, 'bg-primary');
         removeClass(badge, 'text-dark');
-        
+
         // Re-apply original color based on badge type
         if (badgeText === 'REQUIRED') {
             addClass(badge, 'bg-danger');
+        } else if (badgeText === 'CORE') {
+            addClass(badge, 'bg-primary');
         } else if (badgeText === 'RECOMMENDED') {
             addClass(badge, 'bg-warning');
             addClass(badge, 'text-dark');
