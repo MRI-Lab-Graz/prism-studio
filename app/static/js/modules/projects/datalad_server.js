@@ -288,7 +288,10 @@ async function onSaveConfigSubmit(e) {
 }
 
 export function initDataladServerSection() {
-    if (dataladServerModuleInitialized) return;
+    if (dataladServerModuleInitialized) {
+        showDataladServerCard();
+        return;
+    }
     dataladServerModuleInitialized = true;
 
     const syncBtn = getById('dataladServerSyncBtn');
@@ -299,4 +302,6 @@ export function initDataladServerSection() {
 
     const configForm = getById('dataladServerConfigForm');
     if (configForm) configForm.addEventListener('submit', onSaveConfigSubmit);
+
+    showDataladServerCard();
 }

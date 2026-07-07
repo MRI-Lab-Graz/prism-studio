@@ -24,3 +24,12 @@ if (document.getElementById('projectsRoot')) {
         ProjectsModule.initializeProjectsPage();
     }
 }
+
+// Initialize the Share & Archive page (export, DataLad server, rsync).
+if (document.getElementById('shareRoot')) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => ProjectsModule.initializeSharePage());
+    } else {
+        ProjectsModule.initializeSharePage();
+    }
+}
