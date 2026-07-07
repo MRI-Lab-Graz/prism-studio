@@ -47,9 +47,6 @@ import {
     showMethodsCard,
     updateCreateProjectButton
 } from './metadata.js?v=20260515-4';
-import { showExportCard } from './export.js';
-import { showDataladServerCard } from './datalad_server.js';
-import { showRsyncServerCard } from './rsync_server.js';
 import {
     getProjectStateSnapshot,
     setProjectStateSnapshot,
@@ -184,9 +181,6 @@ initProjectInitOnBidsController({
     applyCurrentProject,
     addRecentProject,
     showStudyMetadataCard,
-    showExportCard,
-    showDataladServerCard,
-    showRsyncServerCard,
     showMethodsCard,
 });
 
@@ -216,9 +210,6 @@ initCreateProjectController({
     addRecentProject,
     showStudyMetadataCard,
     updateCreateProjectButton,
-    showExportCard,
-    showDataladServerCard,
-    showRsyncServerCard,
     showMethodsCard,
 });
 
@@ -233,9 +224,6 @@ const openProjectController = initOpenProjectController({
     addRecentProject,
     showStudyMetadataCard,
     updateCreateProjectButton,
-    showExportCard,
-    showDataladServerCard,
-    showRsyncServerCard,
     showMethodsCard,
     bindProjectBoxActionButtons,
 });
@@ -271,9 +259,6 @@ export function initProjectsPage() {
         loadGlobalSettings,
         loadLibraryInfo,
         showStudyMetadataCard,
-        showExportCard,
-        showDataladServerCard,
-        showRsyncServerCard,
         showMethodsCard,
         renderRecentProjects,
         loadRecentProjectsFromServer,

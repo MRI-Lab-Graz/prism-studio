@@ -4654,5 +4654,356 @@ class TestProjectManager(unittest.TestCase):
             self.assertNotIn("warning", git_lfs_info)
 
 
+def _make_fake_ria_subprocess(*, outstanding_files=None, remove_sibling_ok=True, seen_commands=None):
+    """Fake `subprocess.run` covering the full create-sibling -> push ->
+    annex-find-verify -> remove-sibling chain used by finalize_project_upload.
+
+    Dispatches purely on command content so the real orchestration logic in
+    run_datalad_upload_to_ria / finalize_project_upload runs unmodified --
+    only the process boundary is faked, same as the A1/A2 tests.
+    """
+    outstanding = outstanding_files or []
+    log = seen_commands if seen_commands is not None else []
+
+    def _fake_run(command, cwd=None, **kwargs):
+        cmd = [str(c) for c in command]
+        log.append(cmd)
+        if "create-sibling-ria" in cmd:
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+        if "push" in cmd and "--to" in cmd:
+            return SimpleNamespace(returncode=0, stdout="publish ok", stderr="")
+        if "annex" in cmd and "find" in cmd:
+            return SimpleNamespace(returncode=0, stdout="\n".join(outstanding), stderr="")
+        if "siblings" in cmd and "remove" in cmd:
+            return (
+                SimpleNamespace(returncode=0, stdout="", stderr="")
+                if remove_sibling_ok
+                else SimpleNamespace(returncode=1, stdout="", stderr="could not remove sibling")
+            )
+        if "remote" in cmd and "remove" in cmd:
+            return (
+                SimpleNamespace(returncode=0, stdout="", stderr="")
+                if remove_sibling_ok
+                else SimpleNamespace(returncode=1, stdout="", stderr="fatal: no such remote")
+            )
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    return _fake_run
+
+
+class TestFinalizeProjectUpload(unittest.TestCase):
+    """A3: finalize_project_upload orchestration -- the gate that decides
+    whether it's safe to remove the local sibling after 'Finalize &
+    disconnect'. Every case here either proves disconnect happened only
+    after a confirmed-good push, or proves it was correctly withheld."""
+
+    def _project_dir(self, tmp: str) -> Path:
+        project_path = Path(tmp) / "demo_project"
+        project_path.mkdir(parents=True, exist_ok=True)
+        (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+        (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+        return project_path
+
+    @patch("src.datalad_execution.resolve_datalad_executable", return_value="/usr/bin/datalad")
+    def test_never_disconnects_when_push_is_not_verified(self, _mock_resolve):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            seen_commands: list[list[str]] = []
+            fake_run = _make_fake_ria_subprocess(
+                outstanding_files=["sub-001/anat/sub-001_T1w.nii.gz"],
+                seen_commands=seen_commands,
+            )
+
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run):
+                result = manager.finalize_project_upload(
+                    project_path,
+                    ria_url="ria+ssh://user@host/store",
+                )
+
+        self.assertFalse(result.get("success"))
+        self.assertFalse(result.get("verified"))
+        remove_attempts = [c for c in seen_commands if "remove" in c]
+        self.assertEqual(
+            remove_attempts, [],
+            "disconnect must never be attempted when the push could not be verified",
+        )
+
+    @patch("src.datalad_execution.resolve_datalad_executable", return_value="/usr/bin/datalad")
+    def test_disconnects_only_after_verified_push(self, _mock_resolve):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            seen_commands: list[list[str]] = []
+            fake_run = _make_fake_ria_subprocess(
+                outstanding_files=[], seen_commands=seen_commands
+            )
+
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run):
+                result = manager.finalize_project_upload(
+                    project_path,
+                    ria_url="ria+ssh://user@host/store",
+                )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertTrue(result.get("verified"))
+        self.assertTrue(result.get("disconnected"))
+        self.assertFalse(result.get("kept_sibling"))
+        remove_attempts = [c for c in seen_commands if "remove" in c]
+        self.assertTrue(remove_attempts, "disconnect should have been attempted after a verified push")
+
+    @patch("src.datalad_execution.resolve_datalad_executable", return_value="/usr/bin/datalad")
+    def test_full_verify_failure_blocks_disconnect(self, _mock_resolve):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            seen_commands: list[list[str]] = []
+            fake_run = _make_fake_ria_subprocess(
+                outstanding_files=[], seen_commands=seen_commands
+            )
+
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run), patch.object(
+                ProjectManager,
+                "_verify_ria_copy_full",
+                return_value={"success": False, "message": "clone validation failed"},
+            ):
+                result = manager.finalize_project_upload(
+                    project_path,
+                    ria_url="ria+ssh://user@host/store",
+                    verify_mode="full",
+                )
+
+        self.assertFalse(result.get("success"))
+        self.assertIn("full_verify", result)
+        self.assertFalse(result["full_verify"].get("success"))
+        remove_attempts = [c for c in seen_commands if "remove" in c]
+        self.assertEqual(
+            remove_attempts, [],
+            "disconnect must never be attempted when full clone verification fails",
+        )
+
+    @patch("src.datalad_execution.resolve_datalad_executable", return_value="/usr/bin/datalad")
+    def test_cancellation_before_disconnect_leaves_sibling_registered(self, _mock_resolve):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            seen_commands: list[list[str]] = []
+            fake_run = _make_fake_ria_subprocess(
+                outstanding_files=[], seen_commands=seen_commands
+            )
+
+            # False for the 3 internal is_cancelled() checks inside
+            # run_datalad_upload_to_ria (before start, after sibling
+            # creation, after push) so the push actually completes and gets
+            # verified; True for finalize's own check right before disconnect.
+            call_count = {"n": 0}
+
+            def is_cancelled() -> bool:
+                call_count["n"] += 1
+                return call_count["n"] > 3
+
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run):
+                result = manager.finalize_project_upload(
+                    project_path,
+                    ria_url="ria+ssh://user@host/store",
+                    is_cancelled=is_cancelled,
+                )
+
+        self.assertFalse(result.get("success"))
+        self.assertTrue(result.get("verified"))
+        self.assertIn("Cancelled", result.get("message", ""))
+        remove_attempts = [c for c in seen_commands if "remove" in c]
+        self.assertEqual(
+            remove_attempts, [],
+            "disconnect must never be attempted after a cancellation signal",
+        )
+
+    @patch("src.datalad_execution.resolve_datalad_executable", return_value="/usr/bin/datalad")
+    def test_disconnect_failure_keeps_sibling_registered_for_retry(self, _mock_resolve):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            fake_run = _make_fake_ria_subprocess(outstanding_files=[], remove_sibling_ok=False)
+
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run):
+                result = manager.finalize_project_upload(
+                    project_path,
+                    ria_url="ria+ssh://user@host/store",
+                )
+
+        self.assertFalse(result.get("success"))
+        self.assertTrue(result.get("verified"))
+        self.assertFalse(result.get("disconnected"))
+        self.assertTrue(
+            result.get("kept_sibling"),
+            "sibling must remain registered when disconnect itself fails, so a retry can resume",
+        )
+
+
+class _FakeRsyncPopen:
+    """Minimal subprocess.Popen stand-in for run_rsync_push's streaming
+    contract, mirroring tests/test_rsync_execution.py's helper."""
+
+    def __init__(self, returncode: int = 0, stdout_lines=None):
+        self.returncode = returncode
+        self.stdout = iter(stdout_lines or [])
+
+    def wait(self, timeout=None):
+        return self.returncode
+
+    def terminate(self):
+        pass
+
+    def kill(self):
+        pass
+
+
+class TestSyncProjectToRemote(unittest.TestCase):
+    """A4: sync_project_to_remote orchestration -- the rsync-based backup
+    path for researchers not using DataLad. Additive-only push, gated verify,
+    and cancellation must behave the same way the RIA path's do."""
+
+    def _project_dir(self, tmp: str) -> Path:
+        project_path = Path(tmp) / "demo_project"
+        project_path.mkdir(parents=True, exist_ok=True)
+        (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+        return project_path
+
+    @patch("src.rsync_execution.resolve_rsync_executable", return_value="/usr/bin/rsync")
+    def test_get_rsync_status_reports_availability_and_configured_target(self, _mock_resolve):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            status = manager.get_rsync_status(project_path)
+
+        self.assertFalse(status["configured"])
+        self.assertTrue(status["rsync_available"])
+
+    def test_sync_project_to_remote_requires_a_configured_target(self):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            with self.assertRaises(ValueError):
+                manager.sync_project_to_remote(project_path)
+
+    @patch("src.rsync_execution.resolve_rsync_executable", return_value="/usr/bin/rsync")
+    def test_stops_and_skips_verify_when_push_fails(self, _mock_resolve):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            dest = Path(tmp) / "dest"
+
+            with patch(
+                "src.rsync_execution.subprocess.Popen",
+                return_value=_FakeRsyncPopen(returncode=23, stdout_lines=["rsync: vanished\n"]),
+            ), patch("src.rsync_execution.subprocess.run") as mock_verify_run:
+                result = manager.sync_project_to_remote(
+                    project_path, remote_target=str(dest), verify=True
+                )
+
+        self.assertFalse(result.get("success"))
+        self.assertNotIn("verify", result)
+        mock_verify_run.assert_not_called()
+
+    @patch("src.rsync_execution.resolve_rsync_executable", return_value="/usr/bin/rsync")
+    def test_cancellation_after_push_skips_verify(self, _mock_resolve):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            dest = Path(tmp) / "dest"
+
+            # False for run_rsync_push's own post-transfer cancellation check
+            # (so the push itself is reported as successful); True for
+            # sync_project_to_remote's separate check before verification.
+            call_count = {"n": 0}
+
+            def is_cancelled() -> bool:
+                call_count["n"] += 1
+                return call_count["n"] > 1
+
+            with patch(
+                "src.rsync_execution.subprocess.Popen",
+                return_value=_FakeRsyncPopen(returncode=0, stdout_lines=[]),
+            ), patch("src.rsync_execution.subprocess.run") as mock_verify_run:
+                result = manager.sync_project_to_remote(
+                    project_path,
+                    remote_target=str(dest),
+                    verify=True,
+                    is_cancelled=is_cancelled,
+                )
+
+        self.assertFalse(result.get("success"))
+        self.assertIn("Cancelled", result.get("message", ""))
+        mock_verify_run.assert_not_called()
+
+    @patch("src.rsync_execution.resolve_rsync_executable", return_value="/usr/bin/rsync")
+    def test_succeeds_without_verify_step_when_not_requested(self, _mock_resolve):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            dest = Path(tmp) / "dest"
+
+            with patch(
+                "src.rsync_execution.subprocess.Popen",
+                return_value=_FakeRsyncPopen(returncode=0, stdout_lines=[]),
+            ), patch("src.rsync_execution.subprocess.run") as mock_verify_run:
+                result = manager.sync_project_to_remote(
+                    project_path, remote_target=str(dest), verify=False
+                )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertNotIn("verify", result)
+        mock_verify_run.assert_not_called()
+
+    @patch("src.rsync_execution.resolve_rsync_executable", return_value="/usr/bin/rsync")
+    def test_verify_true_fails_when_destination_differs_from_source(self, _mock_resolve):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            dest = Path(tmp) / "dest"
+
+            with patch(
+                "src.rsync_execution.subprocess.Popen",
+                return_value=_FakeRsyncPopen(returncode=0, stdout_lines=[]),
+            ), patch(
+                "src.rsync_execution.subprocess.run",
+                return_value=SimpleNamespace(
+                    returncode=0,
+                    stdout="sending incremental file list\n>fcst...... sub-001/anat/sub-001_T1w.nii.gz\n",
+                    stderr="",
+                ),
+            ):
+                result = manager.sync_project_to_remote(
+                    project_path, remote_target=str(dest), verify=True
+                )
+
+        self.assertFalse(result.get("success"))
+        self.assertIn("differences", result.get("message", ""))
+        self.assertFalse(result["verify"]["verified"])
+
+    @patch("src.rsync_execution.resolve_rsync_executable", return_value="/usr/bin/rsync")
+    def test_verify_true_succeeds_when_destination_matches_source(self, _mock_resolve):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            dest = Path(tmp) / "dest"
+
+            with patch(
+                "src.rsync_execution.subprocess.Popen",
+                return_value=_FakeRsyncPopen(returncode=0, stdout_lines=[]),
+            ), patch(
+                "src.rsync_execution.subprocess.run",
+                return_value=SimpleNamespace(
+                    returncode=0, stdout="sending incremental file list\n", stderr=""
+                ),
+            ):
+                result = manager.sync_project_to_remote(
+                    project_path, remote_target=str(dest), verify=True
+                )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertTrue(result["verify"]["verified"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -106,6 +106,29 @@ def test_home_page_renders_shared_section_cards() -> None:
     assert b"One Structure For Multimodal Studies" in response.data
 
 
+def test_home_page_has_one_prominent_primary_cta() -> None:
+    """The landing page's job is to inform and hand off to a single next
+    step, not to accumulate operational controls -- there must be exactly
+    one clear call-to-action into the Projects page."""
+    app = _build_template_app()
+
+    with app.test_client() as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    content = response.data.decode("utf-8")
+    assert content.count("Create or Open a Project") == 1
+    assert 'href="/projects"' in content
+
+    # The concrete before/after demo is the strongest reassurance for a new
+    # visitor and should come before the feature-list bullets, not after.
+    before_after_index = content.find("A Concrete Before And After")
+    highlights_index = content.find("Why Researchers Use PRISM Studio")
+    assert before_after_index != -1
+    assert highlights_index != -1
+    assert before_after_index < highlights_index
+
+
 def test_validator_page_renders_shared_section_card_shell() -> None:
     app = _build_template_app()
 

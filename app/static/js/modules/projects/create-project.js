@@ -22,8 +22,6 @@ export function initCreateProjectController({
     addRecentProject,
     showStudyMetadataCard,
     updateCreateProjectButton,
-    showExportCard,
-    showDataladServerCard,
     showMethodsCard,
 }) {
     function showIncompleteMetadataModal(missingItems) {
@@ -275,8 +273,6 @@ export function initCreateProjectController({
                 addRecentProject(currentState.name, currentState.path, currentState.icon);
                 showStudyMetadataCard();
                 updateCreateProjectButton();
-                showExportCard();
-                showDataladServerCard();
                 showMethodsCard();
             } else {
                 setCreateResultHtml(`

@@ -1682,6 +1682,7 @@ export function initExportForm() {
 export function initializeProjectsExport() {
     if (exportModuleInitialized) {
         updateExportSnapshotUi();
+        showExportCard();
         return;
     }
 
@@ -1691,6 +1692,7 @@ export function initializeProjectsExport() {
     initOpenMindsExport();
     loadExportPreferences();
     updateExportSnapshotUi();
+    showExportCard();
 }
 
 /**
