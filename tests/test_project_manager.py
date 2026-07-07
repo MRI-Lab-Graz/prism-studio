@@ -4044,6 +4044,34 @@ class TestProjectManager(unittest.TestCase):
         self.assertEqual(basics.get("EthicsApprovals"), ["EK-2026-001"])
         self.assertEqual(basics.get("Authors"), ["Jane Doe"])
 
+    def test_sync_dataset_metadata_to_project_json_drops_undecided_license_sentinel(
+        self,
+    ):
+        """The 'Not decided yet' placeholder must never be persisted as a License value."""
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp)
+            (project_path / "project.json").write_text(
+                json.dumps({"name": "old-name", "Basics": {}}),
+                encoding="utf-8",
+            )
+
+            manager.sync_dataset_metadata_to_project_json(
+                project_path,
+                {
+                    "Name": "new-name",
+                    "License": "Not decided yet",
+                },
+            )
+
+            payload = json.loads(
+                (project_path / "project.json").read_text(encoding="utf-8")
+            )
+
+        basics = payload.get("Basics") or {}
+        self.assertEqual(basics.get("License"), "")
+
     def test_build_citation_config_prefers_project_json_dataset_links(self):
         manager = ProjectManager()
 

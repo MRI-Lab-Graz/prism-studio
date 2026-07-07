@@ -6127,7 +6127,7 @@ Subfolders:
         if upper in mapping:
             return mapping[upper]
 
-        if upper == "OTHER":
+        if upper in ("OTHER", "NOT DECIDED YET"):
             return ""
 
         if re.match(r"^[A-Za-z0-9][A-Za-z0-9+\.-]*$", normalized):
@@ -7725,7 +7725,7 @@ Subfolders:
             "DatasetDOI": self._clean_citation_source_text(
                 description.get("DatasetDOI")
             ),
-            "License": self._clean_citation_source_text(description.get("License")),
+            "License": self._normalize_license_value(description.get("License")),
             "HowToAcknowledge": self._clean_citation_source_text(
                 description.get("HowToAcknowledge")
             ),
