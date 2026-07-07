@@ -254,14 +254,14 @@
             'Build BIDS-compatible, analysis-ready datasets without leaving your local machine.'
         ) }}
 
+        {% include 'includes/home/hero.html' %}
+
         {% call help_panel('Quick Start', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3', 'beginner') %}
-        <p class="mb-1 small">Start with Project Manager to create or open a dataset workspace.</p>
         <p class="mb-0 small">Run validation early, then convert and export from the same project context.</p>
         {% endcall %}
 
-        {% include 'includes/home/hero.html' %}
-        {% include 'includes/home/highlights.html' %}
         {% include 'includes/home/before_after.html' %}
+        {% include 'includes/home/highlights.html' %}
         {% include 'includes/home/structure.html' %}
 </div>
 {% endblock %}

@@ -254,7 +254,10 @@ async function onSaveConfigSubmit(e) {
 }
 
 export function initRsyncServerSection() {
-    if (rsyncServerModuleInitialized) return;
+    if (rsyncServerModuleInitialized) {
+        showRsyncServerCard();
+        return;
+    }
     rsyncServerModuleInitialized = true;
 
     const syncBtn = getById('rsyncServerSyncBtn');
@@ -262,4 +265,6 @@ export function initRsyncServerSection() {
 
     const configForm = getById('rsyncServerConfigForm');
     if (configForm) configForm.addEventListener('submit', onSaveConfigSubmit);
+
+    showRsyncServerCard();
 }

@@ -10,8 +10,6 @@ export function initOpenProjectController({
     addRecentProject,
     showStudyMetadataCard,
     updateCreateProjectButton,
-    showExportCard,
-    showDataladServerCard,
     showMethodsCard,
     bindProjectBoxActionButtons,
 }) {
@@ -1170,8 +1168,6 @@ export function initOpenProjectController({
             addRecentProject(loadedName, loadedPath, currentState.icon);
             showStudyMetadataCard();
             updateCreateProjectButton();
-            showExportCard();
-            showDataladServerCard();
             showMethodsCard();
 
             renderLoadedProjectState(loadedName, loadedPath, projectSummary);
