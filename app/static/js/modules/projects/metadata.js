@@ -165,8 +165,8 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
 
         const missingData = sm.MissingData || {};
         document.getElementById('smMissingDesc').value = missingData.Description || '';
-        document.getElementById('smMissingFiles').value = missingData.MissingFiles || '';
-        document.getElementById('smKnownIssues').value = missingData.KnownIssues || '';
+        setTwoFieldList('smMissingFiles', missingData.MissingFiles || '');
+        setTwoFieldList('smKnownIssues', missingData.KnownIssues || '');
 
         document.getElementById('smReferencesText').value = Array.isArray(sm.References)
             ? sm.References.join('\n')
@@ -1440,6 +1440,144 @@ function initOverviewListFields() {
     });
 }
 
+// ===== TWO-FIELD TABLE ROWS (Missing Files / Known Issues) =====
+// Each row combines two short text values (e.g. "SubjectID | What's missing")
+// into a single "field1 | field2" line. Rows are joined with newlines into
+// the same hidden textarea format the backend already stores as plain text,
+// so no backend changes are needed for this UI-only structuring.
+
+const TWO_FIELD_LIST_FIELDS = {
+    smMissingFiles: {
+        listId: 'smMissingFilesList',
+        addId: 'smMissingFilesAddRow',
+        field1Placeholder: 'Subject/session ID (e.g. sub-002, ses-2)',
+        field2Placeholder: "What's missing (e.g. T1w, task-rest)",
+    },
+    smKnownIssues: {
+        listId: 'smKnownIssuesList',
+        addId: 'smKnownIssuesAddRow',
+        field1Placeholder: 'Filename (e.g. sub-002_task-nback_bold.nii)',
+        field2Placeholder: 'Issue description (e.g. Shorter scan)',
+    },
+};
+
+function _combineTwoFieldRow(field1, field2) {
+    const clean1 = _cleanMetadataText(field1);
+    const clean2 = _cleanMetadataText(field2);
+    if (clean1 && clean2) return `${clean1} | ${clean2}`;
+    return clean1 || clean2;
+}
+
+function _parseTwoFieldListValue(rawValue) {
+    const text = String(rawValue || '').trim();
+    if (!text) return [];
+    return text.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
+        const pipeIndex = line.indexOf('|');
+        if (pipeIndex === -1) return { field1: line, field2: '' };
+        return {
+            field1: line.slice(0, pipeIndex).trim(),
+            field2: line.slice(pipeIndex + 1).trim(),
+        };
+    });
+}
+
+function _syncTwoFieldListField(fieldId) {
+    const config = TWO_FIELD_LIST_FIELDS[fieldId];
+    const hiddenField = document.getElementById(fieldId);
+    const list = document.getElementById(config?.listId || '');
+    if (!config || !hiddenField || !list) return;
+
+    const values = Array.from(list.querySelectorAll('.two-field-row'))
+        .map(row => _combineTwoFieldRow(
+            row.querySelector('.two-field-input-1')?.value || '',
+            row.querySelector('.two-field-input-2')?.value || ''
+        ))
+        .filter(Boolean);
+    hiddenField.value = values.join('\n');
+    updateCreateProjectButton();
+}
+
+function addTwoFieldRow(fieldId, field1 = '', field2 = '') {
+    const config = TWO_FIELD_LIST_FIELDS[fieldId];
+    const list = document.getElementById(config?.listId || '');
+    if (!config || !list) return;
+
+    const row = document.createElement('div');
+    row.className = 'input-group input-group-sm two-field-row';
+
+    const input1 = document.createElement('input');
+    input1.type = 'text';
+    input1.className = 'form-control two-field-input-1';
+    input1.placeholder = config.field1Placeholder;
+    input1.value = String(field1 || '');
+
+    const input2 = document.createElement('input');
+    input2.type = 'text';
+    input2.className = 'form-control two-field-input-2';
+    input2.placeholder = config.field2Placeholder;
+    input2.value = String(field2 || '');
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'btn btn-outline-danger two-field-row-remove';
+    removeButton.setAttribute('aria-label', 'Remove entry');
+    removeButton.innerHTML = '<i class="fas fa-times"></i>';
+
+    const onInput = () => _syncTwoFieldListField(fieldId);
+    input1.addEventListener('input', onInput);
+    input2.addEventListener('input', onInput);
+
+    removeButton.addEventListener('click', () => {
+        row.remove();
+        if (!list.querySelector('.two-field-row')) {
+            addTwoFieldRow(fieldId);
+        }
+        _syncTwoFieldListField(fieldId);
+    });
+
+    row.appendChild(input1);
+    row.appendChild(input2);
+    row.appendChild(removeButton);
+    list.appendChild(row);
+    _syncTwoFieldListField(fieldId);
+}
+
+function setTwoFieldList(fieldId, rawValue) {
+    const config = TWO_FIELD_LIST_FIELDS[fieldId];
+    const list = document.getElementById(config?.listId || '');
+    if (!config || !list) return;
+
+    list.innerHTML = '';
+    const entries = _parseTwoFieldListValue(rawValue);
+    if (!entries.length) {
+        addTwoFieldRow(fieldId);
+        return;
+    }
+
+    entries.forEach(entry => addTwoFieldRow(fieldId, entry.field1, entry.field2));
+    _syncTwoFieldListField(fieldId);
+}
+
+function initTwoFieldListFields() {
+    Object.entries(TWO_FIELD_LIST_FIELDS).forEach(([fieldId, config]) => {
+        const addButton = document.getElementById(config.addId);
+        if (addButton && !addButton.dataset.bound) {
+            addButton.dataset.bound = '1';
+            addButton.addEventListener('click', () => {
+                addTwoFieldRow(fieldId);
+                const list = document.getElementById(config.listId);
+                const lastInput = list?.querySelector('.two-field-row:last-child .two-field-input-1');
+                lastInput?.focus();
+            });
+        }
+
+        const list = document.getElementById(config.listId);
+        if (list && !list.querySelector('.two-field-row')) {
+            addTwoFieldRow(fieldId);
+        }
+    });
+}
+
 // ===== RECRUITMENT LOCATIONS =====
 
 export function toggleRecLocationInputs() {
@@ -1757,48 +1895,26 @@ export function validateAllMandatoryFields() {
     const requiredInvalidFields = [];
     const optionalInvalidFields = [];
 
+    // Only fields in creationBlockingFields (see computeLocalCompleteness) ever
+    // reach the emptyFields loop below, so this only needs to label those.
     const labels = {
         Basics: {
-            Name: 'Dataset Name (min. 3 characters)',
-            Authors: 'Authors (at least 1)',
-            Keywords: 'Keywords (at least 3)',
-            EthicsApprovals: 'Ethics Approvals (select Yes or No)',
-            Funding: 'Funding (select Yes or No)'
-        },
-        Overview: {
-            Main: 'Dataset Overview'
-        },
-        StudyDesign: {
-            Type: 'Study Design Type'
-        },
-        Recruitment: {
-            Method: 'Recruitment Method',
-            Location: 'Recruitment Location',
-            'Period.Start': 'Recruitment Period Start',
-            'Period.End': 'Recruitment Period End',
-            Compensation: 'Financial Compensation'
-        },
-        Eligibility: {
-            InclusionCriteria: 'Eligibility Criteria (at least 2 total across inclusion and exclusion)'
-        },
-        Procedure: {
-            Overview: 'Procedure Overview'
+            Name: 'Dataset Name (min. 3 characters)'
         }
     };
 
+    // Only fields that gate project creation land in emptyFields. Everything
+    // else marked `required` is readiness-only (see creationBlockingFields in
+    // computeLocalCompleteness) and is surfaced through the FAIR/methods
+    // readiness score instead of blocking creation.
     Object.entries(completeness.sections || {}).forEach(([sectionName, section]) => {
         (section.fields || []).forEach(field => {
-            if (!field.required || field.filled) return;
+            if (!field.blocksCreation || field.filled) return;
             if (sectionName === 'Basics' && field.name === 'Authors') return;
             const friendlyLabel = labels[sectionName]?.[field.name] || `${sectionName}: ${field.name}`;
             emptyFields.push(friendlyLabel);
         });
     });
-
-    const periodError = getRecPeriodRangeError();
-    if (periodError) {
-        requiredInvalidFields.push(periodError);
-    }
 
     const datasetName = _cleanMetadataText(document.getElementById('metadataName')?.value || '');
     if (datasetName.length > 0 && datasetName.length < 3) {
@@ -1821,22 +1937,22 @@ export function validateAllMandatoryFields() {
         }
     }
 
-    if (!hasEthicsChoice()) {
-        requiredInvalidFields.push('Please select Ethics Approvals: Yes or No.');
-    } else if (!hasValidEthicsResponse()) {
-        requiredInvalidFields.push('Ethics details are required when Ethics Approvals is set to Yes.');
+    // Recruitment period, ethics, and funding are readiness-tier: an unmade
+    // choice never blocks creation. An inconsistent *made* choice (e.g. an
+    // invalid date range, or "Yes" with no supporting details) is a genuine
+    // data error and is still flagged, just as a non-blocking-until-wrong
+    // optional issue rather than a missing-field issue.
+    const periodError = getRecPeriodRangeError();
+    if (periodError) {
+        optionalInvalidFields.push(periodError);
     }
 
-    if (!hasFundingChoice()) {
-        requiredInvalidFields.push('Please select Funding: Yes or No.');
-    } else if (!hasValidFundingResponse()) {
-        requiredInvalidFields.push('Funding details are required when Funding is set to Yes.');
+    if (hasEthicsChoice() && !hasValidEthicsResponse()) {
+        optionalInvalidFields.push('Ethics details are required when Ethics Approvals is set to Yes.');
     }
 
-    const keywords = (document.getElementById('metadataKeywords')?.value || '')
-        .split(',').map(s => _cleanMetadataText(s)).filter(Boolean);
-    if (keywords.length < 3) {
-        requiredInvalidFields.push('At least 3 Keywords are required (comma-separated).');
+    if (hasFundingChoice() && !hasValidFundingResponse()) {
+        optionalInvalidFields.push('Funding details are required when Funding is set to Yes.');
     }
 
     const doiValue = _cleanMetadataText(document.getElementById('metadataDOI')?.value || '');
@@ -2301,6 +2417,7 @@ export function updateCreateProjectButton() {
 const mandatoryFieldIds = [
     'metadataName',
     'metadataKeywords',
+    'metadataLicense',
     'smOverviewMain', 'smSDType', 'smRecMethod',
     'smRecPeriodStartYear', 'smRecPeriodStartMonth',
     'smRecPeriodEndYear', 'smRecPeriodEndMonth',
@@ -2890,7 +3007,6 @@ export function setFundingChoice(choice) {
     const yesBtn = document.getElementById('metadataFundingYes');
     const noBtn = document.getElementById('metadataFundingNo');
     const declaredInput = document.getElementById('metadataFundingDeclared');
-    const fundingField = document.getElementById('metadataFunding');
 
     if (!yesBtn || !noBtn || !declaredInput) return;
 
@@ -2911,8 +3027,8 @@ export function setFundingChoice(choice) {
         group.classList.toggle('sm-choice-missing', normalized === '');
     }
 
-    if (normalized !== 'yes' && fundingField) {
-        fundingField.value = '';
+    if (normalized !== 'yes') {
+        setFundingRows([]);
     }
 
     toggleFundingFields();
@@ -2926,17 +3042,149 @@ function hasFundingChoice() {
     return declaredInput.value === 'yes' || declaredInput.value === 'no';
 }
 
+// ===== FUNDING SOURCE ROWS =====
+// One row per funding source (agency + grant number), combined into a single
+// opaque string per BIDS Funding array entry. Rows are joined with newlines
+// (never commas) in the #metadataFunding mirror field so an agency/grant
+// pair like "NSF, Award 12345" is never mis-split into two entries.
+
+function _combineFundingRow(agency, grant) {
+    const cleanAgency = _cleanMetadataText(agency);
+    const cleanGrant = _cleanMetadataText(grant);
+    if (cleanAgency && cleanGrant) return `${cleanAgency}, ${cleanGrant}`;
+    return cleanAgency || cleanGrant;
+}
+
+function _syncFundingListField() {
+    const hiddenField = document.getElementById('metadataFunding');
+    const list = document.getElementById('metadataFundingList');
+    if (!hiddenField || !list) return;
+
+    const values = Array.from(list.querySelectorAll('.funding-row'))
+        .map(row => _combineFundingRow(
+            row.querySelector('.funding-agency-input')?.value || '',
+            row.querySelector('.funding-grant-input')?.value || ''
+        ))
+        .filter(Boolean);
+    hiddenField.value = values.join('\n');
+
+    try {
+        validateFundingBadge();
+    } catch (_) {
+        // no-op: validator may not be wired in all contexts
+    }
+}
+
+export function addFundingRow(agency = '', grant = '') {
+    const list = document.getElementById('metadataFundingList');
+    if (!list) return;
+
+    const row = document.createElement('div');
+    row.className = 'input-group input-group-sm funding-row';
+
+    const agencyInput = document.createElement('input');
+    agencyInput.type = 'text';
+    agencyInput.className = 'form-control funding-agency-input';
+    agencyInput.placeholder = 'Funding agency (e.g. NSF, FWF)';
+    agencyInput.value = String(agency || '');
+
+    const grantInput = document.createElement('input');
+    grantInput.type = 'text';
+    grantInput.className = 'form-control funding-grant-input';
+    grantInput.placeholder = 'Grant / award number (optional)';
+    grantInput.value = String(grant || '');
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'btn btn-outline-danger funding-row-remove';
+    removeButton.setAttribute('aria-label', 'Remove funding source');
+    removeButton.innerHTML = '<i class="fas fa-times"></i>';
+
+    const onInput = () => {
+        _syncFundingListField();
+        updateCreateProjectButton();
+    };
+    agencyInput.addEventListener('input', onInput);
+    grantInput.addEventListener('input', onInput);
+
+    removeButton.addEventListener('click', () => {
+        row.remove();
+        if (!list.querySelector('.funding-row')) {
+            addFundingRow();
+        }
+        _syncFundingListField();
+        updateCreateProjectButton();
+    });
+
+    row.appendChild(agencyInput);
+    row.appendChild(grantInput);
+    row.appendChild(removeButton);
+    list.appendChild(row);
+    _syncFundingListField();
+}
+
+function setFundingRows(entries) {
+    const list = document.getElementById('metadataFundingList');
+    if (!list) return;
+
+    list.innerHTML = '';
+    if (!entries.length) {
+        addFundingRow();
+        return;
+    }
+
+    entries.forEach(entry => {
+        const text = _cleanMetadataText(entry);
+        if (!text) return;
+        // Legacy/loaded entries are opaque "Agency, Grant" strings; split on
+        // the first comma only, for a cosmetic agency/grant split in the UI.
+        const commaIndex = text.indexOf(',');
+        if (commaIndex === -1) {
+            addFundingRow(text, '');
+        } else {
+            addFundingRow(text.slice(0, commaIndex).trim(), text.slice(commaIndex + 1).trim());
+        }
+    });
+    if (!list.querySelector('.funding-row')) {
+        addFundingRow();
+    }
+    _syncFundingListField();
+}
+
+function initFundingRows() {
+    const addButton = document.getElementById('metadataFundingAddRow');
+    if (addButton && !addButton.dataset.bound) {
+        addButton.dataset.bound = '1';
+        addButton.addEventListener('click', () => {
+            addFundingRow();
+            const list = document.getElementById('metadataFundingList');
+            const lastInput = list?.querySelector('.funding-row:last-child .funding-agency-input');
+            lastInput?.focus();
+            updateCreateProjectButton();
+        });
+    }
+
+    const list = document.getElementById('metadataFundingList');
+    if (list && !list.querySelector('.funding-row')) {
+        addFundingRow();
+    }
+}
+
 export function getFundingList() {
     const declaredInput = document.getElementById('metadataFundingDeclared');
-    const fundingField = document.getElementById('metadataFunding');
     if (!declaredInput) return [];
-
     if (declaredInput.value !== 'yes') return [];
 
-    return (fundingField?.value || '')
-        .split(',')
-        .map(s => _cleanMetadataText(s))
-        .filter(Boolean);
+    const rows = document.querySelectorAll('#metadataFundingList .funding-row');
+    const entries = [];
+    rows.forEach(row => {
+        const combined = _combineFundingRow(
+            row.querySelector('.funding-agency-input')?.value || '',
+            row.querySelector('.funding-grant-input')?.value || ''
+        );
+        if (combined) entries.push(combined);
+    });
+    return entries;
 }
 
 function hasValidFundingResponse() {
@@ -2949,19 +3197,16 @@ function hasValidFundingResponse() {
 }
 
 function setFundingFromDescription(fundingValues) {
-    const fundingField = document.getElementById('metadataFunding');
-    if (!fundingField) return;
-
     const values = Array.isArray(fundingValues)
         ? fundingValues
         : (fundingValues ? [fundingValues] : []);
     const cleaned = values.map(v => _cleanMetadataText(v)).filter(Boolean);
 
     if (cleaned.length > 0) {
-        fundingField.value = cleaned.join(', ');
+        setFundingRows(cleaned);
         setFundingChoice('yes');
     } else {
-        fundingField.value = '';
+        setFundingRows([]);
         setFundingChoice('no');
     }
 }
@@ -3004,8 +3249,10 @@ export function computeLocalCompleteness() {
     let filledFields = 0;
     let totalFields = 0;
 
+    // Fields scored toward FAIR/methods readiness. Missing these lowers the
+    // readiness score and shows a CORE badge, but does not block project creation.
     const requiredFields = {
-        Basics: new Set(['Name', 'Authors', 'Keywords', 'EthicsApprovals', 'Funding']),
+        Basics: new Set(['Name', 'Authors', 'Keywords', 'EthicsApprovals', 'Funding', 'License']),
         Overview: new Set(['Main']),
         StudyDesign: new Set(['Type']),
         Recruitment: new Set(['Method', 'Location', 'Period.Start', 'Period.End', 'Compensation']),
@@ -3013,8 +3260,18 @@ export function computeLocalCompleteness() {
         Procedure: new Set(['Overview'])
     };
 
+    // Minimal subset that actually gates project creation (triggers the
+    // incomplete-metadata confirmation). Everything else in requiredFields is
+    // readiness-only: researchers often cannot know it yet at creation time
+    // (e.g. recruitment period, compensation) or should not be forced to
+    // decide it immediately (e.g. ethics/funding/keywords).
+    const creationBlockingFields = {
+        Basics: new Set(['Name', 'Authors'])
+    };
+
     const addField = (section, name, isFilled) => {
         const isRequired = requiredFields[section]?.has(name) || false;
+        const blocksCreation = creationBlockingFields[section]?.has(name) || false;
         if (!sections[section]) {
             sections[section] = {
                 fields: [],
@@ -3029,7 +3286,7 @@ export function computeLocalCompleteness() {
                 read_only: false
             };
         }
-        sections[section].fields.push({ name, filled: isFilled, priority: 1, hint: '', required: isRequired });
+        sections[section].fields.push({ name, filled: isFilled, priority: 1, hint: '', required: isRequired, blocksCreation });
         sections[section].total += 1;
         sections[section].weight_total += 1;
         if (isRequired) {
@@ -3184,10 +3441,12 @@ export function updateCompletenessUI(completeness) {
         Eligibility: 'Eligibility',
         Procedure: 'Procedure',
         MissingData: 'Missing Data & Issues',
-        References: 'References'
+        References: 'Background Literature'
     };
 
     let html = '';
+    let nextActionKey = null;
+    let nextActionRatio = 1;
     for (const key of sectionOrder) {
         const sec = sections[key];
         if (!sec) continue;
@@ -3195,6 +3454,17 @@ export function updateCompletenessUI(completeness) {
         const reqFilled = sec.required_filled || 0;
         const optTotal = sec.optional_total || 0;
         const optFilled = sec.optional_filled || 0;
+
+        // Track the least-complete CORE-tier section as the "next best step"
+        // toward a higher readiness score. Ties keep the earliest section in
+        // sectionOrder, which already runs in the order researchers fill it in.
+        if (!sec.read_only && reqTotal > 0 && reqFilled < reqTotal) {
+            const ratio = reqFilled / reqTotal;
+            if (nextActionKey === null || ratio < nextActionRatio) {
+                nextActionKey = key;
+                nextActionRatio = ratio;
+            }
+        }
         const baseTotal = reqTotal > 0 ? reqTotal : sec.total;
         const baseFilled = reqTotal > 0 ? reqFilled : sec.filled;
         const pct = baseTotal > 0 ? Math.round(baseFilled / baseTotal * 100) : 0;
@@ -3207,11 +3477,12 @@ export function updateCompletenessUI(completeness) {
         else if (pct > 0) dotClass = 'partial';
 
         const autoLabel = sec.read_only ? ' <span class="text-muted small">(auto)</span>' : '';
-        html += `<div class="section-completeness-row">
+        const rowClickable = !sec.read_only;
+        html += `<div class="section-completeness-row${rowClickable ? ' section-completeness-row--clickable' : ''}"${rowClickable ? ` data-section-key="${key}" role="button" tabindex="0"` : ''}>
             <span class="section-label">${sectionLabels[key] || key}${autoLabel}</span>
             <span class="completeness-dot ${dotClass}" title="${pct}%"></span>
             <span class="section-badge">
-                <span class="${reqTextClass}">Required ${reqFilled}/${reqTotal}</span>
+                <span class="${reqTextClass}">Core ${reqFilled}/${reqTotal}</span>
                 <span class="text-muted"> • </span>
                 <span class="${fairTextClass}">FAIR ${optFilled}/${optTotal}</span>
             </span>
@@ -3222,7 +3493,7 @@ export function updateCompletenessUI(completeness) {
             const reqClass = reqDone ? 'bg-success' : 'bg-danger';
             const fairClass = fairDone ? 'bg-success' : 'bg-warning text-dark';
             badgeEl.innerHTML = `
-                <span class="badge ${reqClass} bg-opacity-75">Required ${reqFilled}/${reqTotal}</span>
+                <span class="badge ${reqClass} bg-opacity-75">Core ${reqFilled}/${reqTotal}</span>
                 <span class="badge ${fairClass} bg-opacity-75">FAIR ${optFilled}/${optTotal}</span>
             `;
         }
@@ -3287,6 +3558,41 @@ export function updateCompletenessUI(completeness) {
     html += renderMetadataRepairHint();
 
     dotsDiv.innerHTML = html;
+    _updateFairNextActionHint(nextActionKey, sectionLabels);
+}
+
+function _updateFairNextActionHint(sectionKey, sectionLabels) {
+    const button = document.getElementById('smFairNextAction');
+    if (!button) return;
+
+    if (!sectionKey) {
+        button.classList.add('d-none');
+        button.onclick = null;
+        return;
+    }
+
+    button.classList.remove('d-none');
+    button.innerHTML = `<i class="fas fa-arrow-right me-1"></i>Next best step: complete ${sectionLabels[sectionKey] || sectionKey}`;
+    button.onclick = () => _jumpToSection(sectionKey);
+}
+
+function _jumpToSection(sectionKey) {
+    const collapseId = 'sm' + sectionKey;
+    const collapseEl = document.getElementById(collapseId);
+    const toggleButton = document.querySelector(`[data-bs-target="#${collapseId}"]`);
+
+    if (collapseEl && window.bootstrap?.Collapse) {
+        window.bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false }).show();
+    }
+
+    const scrollTarget = toggleButton || collapseEl;
+    scrollTarget?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Focus the first empty field inside the section once it has expanded.
+    setTimeout(() => {
+        const firstEmptyField = collapseEl?.querySelector('.required-field-empty, .funding-row .funding-agency-input:placeholder-shown');
+        firstEmptyField?.focus();
+    }, 250);
 }
 
 const studyMetadataForm = document.getElementById('studyMetadataForm');
@@ -3314,7 +3620,21 @@ if (smSectionDots) {
         if (regenerateCitationBtn) {
             event.preventDefault();
             regenerateCitationCff();
+            return;
         }
+
+        const sectionRow = event.target.closest('[data-section-key]');
+        if (sectionRow) {
+            _jumpToSection(sectionRow.dataset.sectionKey);
+        }
+    });
+
+    smSectionDots.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const sectionRow = event.target.closest('[data-section-key]');
+        if (!sectionRow) return;
+        event.preventDefault();
+        _jumpToSection(sectionRow.dataset.sectionKey);
     });
 }
 
@@ -3547,6 +3867,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     initOverviewListFields();
+    initFundingRows();
+    initTwoFieldListFields();
     initRecMethodPicker();
     toggleRecLocationInputs();
     initYearMonthSelect('smRecPeriodStartYear', 'smRecPeriodStartMonth');

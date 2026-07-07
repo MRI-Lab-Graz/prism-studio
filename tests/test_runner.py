@@ -314,6 +314,22 @@ class TestValidateDataset:
                 for msg in warning_messages
             )
 
+    def test_datalad_metadata_dir_in_derivatives_is_ignored(self, tmp_path):
+        """DataLad's internal .datalad dir under derivatives/ must not be treated as a pipeline."""
+        (tmp_path / "dataset_description.json").write_text(
+            '{"Name": "Root dataset", "BIDSVersion": "1.8.0"}',
+            encoding="utf-8",
+        )
+        (tmp_path / "derivatives" / ".datalad").mkdir(parents=True)
+
+        issues, _stats = validate_dataset(str(tmp_path), verbose=False)
+
+        warning_messages = [issue[1] for issue in issues if issue[0] == "WARNING"]
+        assert not any(
+            "Derivatives dataset '.datalad' is missing dataset_description.json" in msg
+            for msg in warning_messages
+        )
+
     def test_bids_only_mode_skips_prism_specific_checks(self, monkeypatch, tmp_path):
         """BIDS-only runs must not include PRISM-only consistency/derivative checks."""
         (tmp_path / "derivatives" / "pipeline").mkdir(parents=True)
