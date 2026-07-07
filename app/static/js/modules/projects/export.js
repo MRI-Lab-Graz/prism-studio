@@ -363,10 +363,12 @@ function buildExportRequestData(currentProjectPath, overrides = {}) {
         include_analysis: getById('exportAnalysis')?.checked || false,
         output_folder: (getById('exportOutputFolder')?.value || '').trim() || null,
         validation_mode: getSelectedExportValidationMode(),
-        repository_mode: getSelectedExportRepositoryMode(),
         // Git LFS conversion only happens via the Folder Export button; ZIP export
         // just falls back to a DataLad-free package when "git_lfs" is selected.
-        exclude_version_control_metadata: getSelectedExportRepositoryMode() !== 'datalad_preserving',
+        // The backend derives exclude_version_control_metadata from this mode
+        // (see _resolve_exclude_version_control_metadata) so that rule lives
+        // in exactly one place.
+        repository_mode: getSelectedExportRepositoryMode(),
         exclude_subjects: _getUncheckedValues('export-subject-filter'),
         exclude_sessions: _getUncheckedValues('export-session-filter'),
         exclude_modalities: _getUncheckedValues('export-modality-filter'),
@@ -1783,7 +1785,6 @@ async function handleUploadReadyExport(e) {
         requestOverrides: {
             export_preset: 'upload_ready',
             repository_mode: 'datalad_free',
-            exclude_version_control_metadata: true,
         },
         successHeading: 'Upload-Ready Export Successful!',
         successNoteHtml: '<p class="mb-2">PRISM excluded <code>code/</code>, <code>derivatives/</code>, <code>analysis/</code>, and version-control metadata such as DataLad traces.</p>',
@@ -2063,7 +2064,6 @@ async function runProjectExport({
         ? 'datalad_free'
         : selectedRepositoryMode;
     data.repository_mode = effectiveRepositoryMode;
-    data.exclude_version_control_metadata = effectiveRepositoryMode === 'datalad_free';
     if (statusText) {
         statusText.textContent = `${getExportValidationStatusText(selectedValidationMode)} ${getExportRepositoryModeStatusSuffix(effectiveRepositoryMode)}`;
     }
