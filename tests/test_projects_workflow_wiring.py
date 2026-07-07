@@ -506,10 +506,11 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("scrub_mri_json: getById('exportScrubMriJson')?.checked || false,", content)
         self.assertIn("scrub_mri_json_groups: scrubGroups.length ? scrubGroups : null,", content)
         self.assertIn("include_sourcedata: getById('exportSourcedata')?.checked || false,", content)
-        self.assertIn(
-            "exclude_version_control_metadata: getSelectedExportRepositoryMode() === 'datalad_free',",
-            content,
-        )
+        # exclude_version_control_metadata is derived server-side from
+        # repository_mode (see _resolve_exclude_version_control_metadata in
+        # projects_export_blueprint.py) rather than duplicated in the frontend.
+        self.assertIn("repository_mode: getSelectedExportRepositoryMode(),", content)
+        self.assertNotIn("exclude_version_control_metadata:", content)
         self.assertIn("function getExportRepositoryModeStatusSuffix(repositoryMode) {", content)
         self.assertIn("function getExportRepositoryModeSuccessNote(repositoryMode) {", content)
         self.assertIn("async function fetchDefacingSummary(projectPath) {", content)
@@ -537,8 +538,14 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "const response = await fetchWithApiFallback('/api/projects/template-export', {",
             content,
         )
+        # Folder export dynamically targets /export/folder or /export/git-lfs
+        # depending on the selected repository mode, rather than a fixed path.
         self.assertIn(
-            "const response = await fetchWithApiFallback('/api/projects/export/folder', {",
+            "const endpoint = gitLfsMode ? '/api/projects/export/git-lfs' : '/api/projects/export/folder';",
+            content,
+        )
+        self.assertIn(
+            "const response = await fetchWithApiFallback(endpoint, {",
             content,
         )
         self.assertIn("const data = buildFolderExportRequestData(currentProjectPath);", content)
