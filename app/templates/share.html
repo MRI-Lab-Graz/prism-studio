@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% from "includes/ui/macros.html" import page_header %}
+
+{% block title %}PRISM Studio - Share & Archive{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/projects.css', v='20260423-overflow') }}">
+{% endblock %}
+
+{% block content %}
+<div class="studio-page-shell" id="shareRoot" data-current-project-path="{{ current_project.path or '' }}" data-current-project-name="{{ current_project.name or '' }}" data-current-project-icon="{{ current_project.icon or '' }}">
+    {{ page_header(
+        'fas fa-cloud-upload-alt',
+        'Share & Archive',
+        'Export, push to a DataLad server, or back up the active project once it is ready to leave this computer.'
+    ) }}
+
+    {% if not current_project.path %}
+    <div class="alert alert-warning border-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        No project is currently loaded. <a href="{{ url_for('projects.projects_page') }}">Open or create a project</a> first.
+    </div>
+    {% endif %}
+
+    {% include 'includes/projects/export_section.html' %}
+    {% include 'includes/projects/datalad_server_section.html' %}
+    {% include 'includes/projects/rsync_server_section.html' %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- ES6 Module aggregator (new modular architecture) -->
+<script type="module" src="{{ url_for('static', filename='js/main.js', v=prism_static_asset_token) }}"></script>
+
+<script>
+    // Template variables - must be rendered server-side
+    window.currentProjectPath = "{{ current_project.path or '' }}";
+    window.currentProjectName = "{{ current_project.name or '' }}";
+    window.currentProjectIcon = "{{ current_project.icon or '' }}";
+</script>
+{% endblock %}

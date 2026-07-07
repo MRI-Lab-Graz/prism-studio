@@ -313,6 +313,9 @@
     {% set prepare_active = request_path.startswith('/converter') or request_path.startswith('/template-editor') or request.endpoint in ['tools.converter', 'tools_template_editor.template_editor'] %}
     {% set modify_active = request_path.startswith('/validate') or request_path.startswith('/file-management') or request_path.startswith('/editor') or request.blueprint in ['validation', 'json_editor'] or request.endpoint in ['tools.file_management'] %}
     {% set export_active = request_path.startswith('/survey-generator') or request_path.startswith('/recipes') or request_path.startswith('/recipe-builder') or request_path.startswith('/prism-app-runner') or request.endpoint in ['tools.survey_generator', 'tools.recipes', 'tools.recipe_builder', 'tools.prism_app_runner'] %}
+    {% set share_available = endpoint_exists('projects.share_page') %}
+    {% set share_enabled = current_project.path and share_available %}
+    {% set share_active = request_path.startswith('/projects/share') %}
     {% set docs_active = request_path.startswith('/specifications') or request.endpoint in ['specifications'] %}
     {% set current_project_datalad = current_project.datalad if current_project is defined and current_project.datalad is defined else {
         'enabled': false,
@@ -499,6 +502,12 @@
                             </span></li>
                             {% endif %}
                         </ul>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link{% if share_active %} active{% endif %}{% if not share_enabled %} disabled{% endif %}" href="{% if share_enabled %}{{ url_for('projects.share_page') }}{% else %}#{% endif %}"{% if not share_enabled %} aria-disabled="true" title="{% if not share_available %}Unavailable in this build{% else %}Please load a project first{% endif %}"{% else %} title="Export, push to a DataLad server, or back up the active project"{% endif %}>
+                            <i class="fas fa-cloud-upload-alt me-1 text-info"></i>Share &amp; Archive
+                        </a>
                     </li>
 
                     <li class="nav-item dropdown">
