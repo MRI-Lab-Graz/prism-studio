@@ -85,6 +85,12 @@ export const {
 export function initializeProjectsPage() {
     initProjectsPage();
     initProjectValidation();
+}
+
+// Share & Archive is its own page (export, DataLad server push, rsync
+// backup) so these don't compete with project creation/metadata authoring
+// on the same scroll. See templates/share.html.
+export function initializeSharePage() {
     initializeProjectsExport();
     initDataladServerSection();
     initRsyncServerSection();

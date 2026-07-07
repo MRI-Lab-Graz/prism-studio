@@ -29,6 +29,7 @@ _EXPORT_DONE_STATUSES = {"complete", "error", "cancelled"}
 _last_export_prune_at = 0.0
 _EXPORT_VALIDATION_MODES = {"both", "bids", "prism", "ignore", "none"}
 _EXPORT_PRESETS = {"standard", "upload_ready"}
+_EXPORT_REPOSITORY_MODES = {"datalad_free", "datalad_preserving", "git_lfs"}
 
 
 def _export_now() -> float:
@@ -134,6 +135,30 @@ def _normalize_export_preset(raw_preset: object) -> str:
     if preset not in _EXPORT_PRESETS:
         return "standard"
     return preset
+
+
+def _resolve_exclude_version_control_metadata(
+    data: dict, *, export_preset: str
+) -> bool:
+    """Decide whether a ZIP export should strip Git/DataLad metadata.
+
+    ``repository_mode`` (datalad_free / datalad_preserving / git_lfs) is the
+    authoritative signal when present: only ``datalad_preserving`` keeps
+    repository metadata. This mirrors the same rule the export UI uses to
+    build its success/status copy, so the decision lives in one place rather
+    than being duplicated (and potentially drifting) between frontend and
+    backend. Falls back to the legacy ``exclude_version_control_metadata``
+    boolean for older callers that don't send ``repository_mode``.
+    """
+    repository_mode_raw = str(data.get("repository_mode") or "").strip().lower()
+    if repository_mode_raw in _EXPORT_REPOSITORY_MODES:
+        exclude = repository_mode_raw != "datalad_preserving"
+    else:
+        exclude = bool(data.get("exclude_version_control_metadata", False))
+
+    if export_preset == "upload_ready":
+        return True
+    return exclude
 
 
 def _normalize_scrub_group_ids(raw_groups: object) -> Optional[Set[str]]:
@@ -491,9 +516,6 @@ def export_project():
         include_sourcedata = bool(data.get("include_sourcedata", False))
         include_code = bool(data.get("include_code", True))
         include_analysis = bool(data.get("include_analysis", False))
-        exclude_version_control_metadata = bool(
-            data.get("exclude_version_control_metadata", False)
-        )
         exclude_subjects = _normalize_scope_labels(data.get("exclude_subjects"))
         exclude_sessions = _normalize_scope_labels(data.get("exclude_sessions"))
         exclude_modalities = _normalize_scope_labels(data.get("exclude_modalities"))
@@ -510,7 +532,10 @@ def export_project():
             include_sourcedata = False
             include_code = False
             include_analysis = False
-            exclude_version_control_metadata = True
+
+        exclude_version_control_metadata = _resolve_exclude_version_control_metadata(
+            data, export_preset=export_preset
+        )
 
         # Create temporary file for ZIP
         temp_fd, temp_path = tempfile.mkstemp(suffix=".zip")
@@ -1033,9 +1058,6 @@ def export_project_start():
         include_sourcedata = bool(data.get("include_sourcedata", False))
         include_code = bool(data.get("include_code", True))
         include_analysis = bool(data.get("include_analysis", False))
-        exclude_version_control_metadata = bool(
-            data.get("exclude_version_control_metadata", False)
-        )
         scrub_mri_json = bool(data.get("scrub_mri_json", False))
         scrub_mri_json_groups = _normalize_scrub_group_ids(
             data.get("scrub_mri_json_groups")
@@ -1051,7 +1073,10 @@ def export_project_start():
             include_sourcedata = False
             include_code = False
             include_analysis = False
-            exclude_version_control_metadata = True
+
+        exclude_version_control_metadata = _resolve_exclude_version_control_metadata(
+            data, export_preset=export_preset
+        )
 
         # Optional subject/session/modality/sublabel filters
         exclude_subjects = _normalize_scope_labels(data.get("exclude_subjects"))

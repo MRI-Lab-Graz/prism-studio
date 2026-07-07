@@ -37,7 +37,9 @@
     <div class="small">
         <p class="mb-2"><strong>Choose your starting point:</strong> create new, initialize PRISM on existing BIDS, or open an existing PRISM project.</p>
         <p class="mb-2"><strong>Save flow:</strong> preliminary saves keep progress when required metadata is still incomplete.</p>
-        <p class="mb-0"><strong>Single source of truth:</strong> project metadata writes through backend project handlers; this page orchestrates UX and state only.</p>
+        <p class="mb-0"><strong>Ready to export or archive?</strong> Once a project is loaded, use
+            {% if endpoint_exists('projects.share_page') %}<a href="{{ url_for('projects.share_page') }}">Share &amp; Archive</a>{% else %}Share &amp; Archive{% endif %}
+            in the top navigation for exports, DataLad server push, and remote backups.</p>
     </div>
     {% endcall %}
 
