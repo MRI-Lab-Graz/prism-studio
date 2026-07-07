@@ -57,7 +57,7 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
 
         self.assertIn('class="sm-basics-intro mb-3"', content)
         self.assertIn('class="sm-basics-secondary-panel mt-3 pt-3 border-top"', content)
-        self.assertIn('Citation and sharing details', content)
+        self.assertIn('Discovery and citation details', content)
 
     def test_projects_header_has_preliminary_badge_placeholder(self):
         content = PROJECTS_TEMPLATE.read_text(encoding="utf-8")

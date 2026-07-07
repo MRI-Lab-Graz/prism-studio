@@ -29,6 +29,7 @@ SYSTEM_FILES = {
     ".gitignore",  # Git ignore file
     ".svn",  # Subversion
     ".hg",  # Mercurial
+    ".datalad",  # DataLad internal metadata directory
     ".idea",  # IntelliJ IDEA
     ".vscode",  # Visual Studio Code
     "__pycache__",  # Python cache
