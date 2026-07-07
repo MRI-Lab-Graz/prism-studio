@@ -21,6 +21,16 @@
     border-top: 1px dashed #d7dce1;
 }
 
+.section-completeness-row--clickable {
+    cursor: pointer;
+    border-radius: 4px;
+}
+.section-completeness-row--clickable:hover,
+.section-completeness-row--clickable:focus-visible {
+    background-color: rgba(13, 110, 253, 0.08);
+    outline: none;
+}
+
 .section-completeness-row-citation .section-label {
     font-weight: 600;
 }

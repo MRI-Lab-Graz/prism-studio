@@ -23,20 +23,23 @@
                         <div class="progress-bar" role="progressbar" id="smMainProgressBar" style="width: 0%"></div>
                     </div>
                     <span class="fw-bold" id="smMainScore">0%</span>
-                    <div class="sm-fair-motivation" id="smFairMotivation" aria-label="FAIR readiness 0%" data-score="0">
+                    <div class="sm-fair-motivation" id="smFairMotivation" aria-label="FAIR readiness 0%" data-score="0"
+                         data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
+                         title="<strong>Methods Readiness / FAIR score</strong><br>Share of CORE and optional fields you've filled in across all sections below. It does not block project creation &mdash; it tracks how reusable and FAIR-compliant your documentation is.">
                         <div class="sm-fair-ring" id="smFairRing" style="--fair-progress: 0;">
                             <span class="sm-fair-label">FAIR</span>
                         </div>
                         <small class="sm-fair-percent" id="smFairPercent">0%</small>
                     </div>
                 </div>
+                <button type="button" class="btn btn-link btn-sm p-0 mb-2 d-none" id="smFairNextAction"></button>
                 <div id="smSectionDots"></div>
             </div>
 
             <div class="alert alert-primary border-0 bg-primary bg-opacity-10 py-2 mb-3 beginner-help-block" id="smNewProjectInfo" style="display: none;">
                 <i class="fas fa-lightbulb me-2"></i>
-                For a new project, fill out all fields marked <span class="badge bg-danger">REQUIRED</span> first.
-                Once required fields are complete, project creation is enabled.
+                For a new project, fill out <span class="badge bg-danger">REQUIRED</span> fields to enable project creation.
+                <span class="badge bg-primary">CORE</span> fields are not required to create the project, but they drive your Methods Readiness / FAIR score below — fill them in as soon as you can.
             </div>
 
             <form id="studyMetadataForm" novalidate>
@@ -61,7 +64,7 @@
                             <div id="metadataValidationFeedback" class="mb-3" style="display: none;"></div>
                             <div class="sm-basics-intro mb-3">
                                 <div class="sm-basics-intro__eyebrow">Start here</div>
-                                <p class="sm-basics-intro__copy mb-0">Complete the identity and compliance fields first. The citation and sharing details below can be filled in once the project scaffold is stable.</p>
+                                <p class="sm-basics-intro__copy mb-0">Complete the identity, ethics, keywords, and funding fields first. The DOI, HED, and other discovery details below can be filled in once the project scaffold is stable.</p>
                             </div>
                             <div class="row g-3">
                                 <div class="col-md-12 col-lg-6">
@@ -84,7 +87,7 @@
                                 </div>
                                 <div class="col-md-12 col-lg-6">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                        <span class="badge bg-warning text-dark">RECOMMENDED</span> License
+                                        <span class="badge bg-primary" id="metadataLicenseRequiredBadge">CORE</span> License
                                         <i class="fas fa-info-circle text-muted ms-1"
                                            data-bs-toggle="tooltip"
                                            data-bs-placement="right"
@@ -98,6 +101,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                     </label>
                                     <select class="form-select form-select-sm" id="metadataLicense">
                                         <option value="">Select a license...</option>
+                                        <option value="Not decided yet">Not decided yet</option>
                                         <option value="CC0">CC0 (Public Domain)</option>
                                         <option value="CC BY 4.0">CC BY 4.0</option>
                                         <option value="CC BY-SA 4.0">CC BY-SA 4.0</option>
@@ -108,6 +112,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                         <option value="Other">Other/Proprietary</option>
                                     </select>
                                     <small class="text-muted">
+                                        A missing license is the most common reason shared data cannot legally be reused. Pick "Not decided yet" if you are not ready to choose &mdash; that still counts as an explicit answer.
                                         Synced to dataset_description.json and CITATION.cff. &nbsp;
                                         <a href="https://creativecommons.org/choose/" target="_blank" rel="noopener" class="text-muted">
                                             <i class="fas fa-external-link-alt me-1" style="font-size:0.7em;"></i>Help me choose
@@ -131,8 +136,58 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                     <textarea class="form-control form-control-sm" id="metadataAcknowledgements" rows="2" placeholder="Funding, grants, people to thank..."></textarea>
                                 </div>
                                 <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-primary" id="metadataEthicsRequiredBadge">CORE</span> Ethics Approvals
+                                    </label>
+                                    <div class="mb-2">
+                                        <input type="hidden" id="metadataEthicsApproved" value="">
+                                        <div class="btn-group btn-group-sm sm-choice-group" id="metadataEthicsChoiceGroup" role="group" aria-label="Ethics approvals">
+                                            <button type="button" class="btn btn-outline-primary" id="metadataEthicsYes">Yes</button>
+                                            <button type="button" class="btn btn-outline-primary" id="metadataEthicsNo">No</button>
+                                        </div>
+                                    </div>
+                                    <div id="ethicsDetailsSection" style="display: none; margin-top: 12px;">
+                                        <div class="row g-2">
+                                            <div class="col-md-6">
+                                                <input type="text" class="form-control form-control-sm" id="metadataEthicsCommittee" placeholder="Example: Ethics Committee Name" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input type="text" class="form-control form-control-sm" id="metadataEthicsVotum" placeholder="Example: EK-2026-014" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">If approved, add the committee name and reference number. Placeholder text is never saved.</small>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-primary">CORE</span> Keywords (comma-separated)
+                                    </label>
+                                    <input type="text" class="form-control form-control-sm" id="metadataKeywords" placeholder="psychology, experiment, PRISM">
+                                    <small class="text-muted">Enter at least three keywords so the dataset is schema-complete and easier to find later.</small>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-primary" id="metadataFundingRequiredBadge">CORE</span> Funding
+                                    </label>
+                                    <div class="mb-2">
+                                        <input type="hidden" id="metadataFundingDeclared" value="">
+                                        <div class="btn-group btn-group-sm sm-choice-group" id="metadataFundingChoiceGroup" role="group" aria-label="Funding declared">
+                                            <button type="button" class="btn btn-outline-primary" id="metadataFundingYes">Yes</button>
+                                            <button type="button" class="btn btn-outline-primary" id="metadataFundingNo">No</button>
+                                        </div>
+                                    </div>
+                                    <div id="fundingDetailsSection" style="display: none; margin-top: 12px;">
+                                        <div id="metadataFundingList" class="d-flex flex-column gap-2 mb-2"></div>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="metadataFundingAddRow">
+                                            <i class="fas fa-plus me-1"></i>Add Funding Source
+                                        </button>
+                                        <input type="hidden" id="metadataFunding" value="">
+                                    </div>
+                                    <small class="text-muted">If funding exists, add one row per funding source with its agency and grant number.</small>
+                                </div>
+                                <div class="col-md-12">
                                     <div class="sm-basics-secondary-panel mt-3 pt-3 border-top">
-                                        <div class="sm-basics-secondary-panel__eyebrow">Citation and sharing details</div>
+                                        <div class="sm-basics-secondary-panel__eyebrow">Discovery and citation details</div>
                                         <p class="sm-basics-secondary-panel__copy mb-3">These fields refine discovery, reuse, and formal citation. They are useful, but they do not have to block the first save.</p>
                                         <div class="row g-3">
                                             <div class="col-md-6">
@@ -152,58 +207,12 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                                     <option value="derivative">derivative</option>
                                                 </select>
                                             </div>
-                                            <div class="col-md-12">
-                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                                    <span class="badge bg-danger" id="metadataEthicsRequiredBadge">REQUIRED</span> Ethics Approvals
-                                                </label>
-                                                <div class="mb-2">
-                                                    <input type="hidden" id="metadataEthicsApproved" value="">
-                                                    <div class="btn-group btn-group-sm sm-choice-group" id="metadataEthicsChoiceGroup" role="group" aria-label="Ethics approvals">
-                                                        <button type="button" class="btn btn-outline-primary" id="metadataEthicsYes">Yes</button>
-                                                        <button type="button" class="btn btn-outline-primary" id="metadataEthicsNo">No</button>
-                                                    </div>
-                                                </div>
-                                                <div id="ethicsDetailsSection" style="display: none; margin-top: 12px;">
-                                                    <div class="row g-2">
-                                                        <div class="col-md-6">
-                                                            <input type="text" class="form-control form-control-sm" id="metadataEthicsCommittee" placeholder="Example: Ethics Committee Name" required>
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <input type="text" class="form-control form-control-sm" id="metadataEthicsVotum" placeholder="Example: EK-2026-014" required>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <small class="text-muted">If approved, add the committee name and reference number. Placeholder text is never saved.</small>
-                                            </div>
                                             <div class="col-md-6">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                                     <span class="badge bg-secondary">OPTIONAL</span> HED Version
                                                 </label>
                                                 <input type="text" class="form-control form-control-sm" id="metadataHED" placeholder="Example: 8.2.0">
                                                 <small class="text-muted">Leave empty unless the dataset uses HED tags. <a href="https://www.hedtags.org" target="_blank" rel="noopener noreferrer">What is HED?</a></small>
-                                            </div>
-                                            <div class="col-md-12">
-                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                                    <span class="badge bg-danger">REQUIRED</span> Keywords (comma-separated)
-                                                </label>
-                                                <input type="text" class="form-control form-control-sm" id="metadataKeywords" placeholder="psychology, experiment, PRISM">
-                                                <small class="text-muted">Enter at least three keywords so the dataset is schema-complete and easier to find later.</small>
-                                            </div>
-                                            <div class="col-md-12">
-                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                                    <span class="badge bg-danger" id="metadataFundingRequiredBadge">REQUIRED</span> Funding
-                                                </label>
-                                                <div class="mb-2">
-                                                    <input type="hidden" id="metadataFundingDeclared" value="">
-                                                    <div class="btn-group btn-group-sm sm-choice-group" id="metadataFundingChoiceGroup" role="group" aria-label="Funding declared">
-                                                        <button type="button" class="btn btn-outline-primary" id="metadataFundingYes">Yes</button>
-                                                        <button type="button" class="btn btn-outline-primary" id="metadataFundingNo">No</button>
-                                                    </div>
-                                                </div>
-                                                <div id="fundingDetailsSection" style="display: none; margin-top: 12px;">
-                                                    <input type="text" class="form-control form-control-sm" id="metadataFunding" placeholder="National Science Foundation (NSF) Grant #1234567, Other funding sources">
-                                                </div>
-                                                <small class="text-muted">If funding exists, list the agency and grant numbers separated by commas.</small>
                                             </div>
                                             <div class="col-md-12">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">
@@ -214,10 +223,10 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                             </div>
                                             <div class="col-md-12">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                                    <span class="badge bg-secondary">OPTIONAL</span> References &amp; Links
+                                                    <span class="badge bg-secondary">OPTIONAL</span> Citation Links
                                                 </label>
                                                 <textarea class="form-control form-control-sm" id="metadataReferences" rows="2" placeholder="https://doi.org/..., https://example.com/..." ></textarea>
-                                                <small class="text-muted">Add URLs or citations separated by commas. They sync into the citation metadata automatically.</small>
+                                                <small class="text-muted">Add URLs or citations separated by commas. They sync into CITATION.cff and dataset_description.json.</small>
                                             </div>
                                         </div>
                                     </div>
@@ -242,7 +251,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                             <div class="row g-3">
                                 <div class="col-12">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-danger">REQUIRED</span> Dataset Overview
+                                        <span class="badge bg-primary">CORE</span> Dataset Overview
                                     </label>
                                     <textarea class="form-control form-control-sm" id="smOverviewMain" rows="4"
                                               placeholder="A brief paragraph describing the goals, purpose, and unique value of this dataset..."></textarea>
@@ -308,7 +317,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-danger">REQUIRED</span> Study Design Type
+                                        <span class="badge bg-primary">CORE</span> Study Design Type
                                     </label>
                                     <select class="form-select form-select-sm" id="smSDType">
                                         <option value="">-- Select --</option>
@@ -386,7 +395,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-danger" id="smRecMethodRequiredBadge">REQUIRED</span> Method
+                                        <span class="badge bg-primary" id="smRecMethodRequiredBadge">CORE</span> Method
                                     </label>
                                     <!-- Hidden backing select (existing API surface) -->
                                     <select class="d-none" id="smRecMethod" multiple aria-hidden="true" tabindex="-1">
@@ -425,7 +434,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-danger" id="smRecLocationRequiredBadge">REQUIRED</span> Location
+                                        <span class="badge bg-primary" id="smRecLocationRequiredBadge">CORE</span> Location
                                     </label>
                                     <!-- Location search picker -->
                                     <div class="input-group input-group-sm flex-nowrap mb-1" id="recLocationPickerGroup">
@@ -454,7 +463,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-danger" id="smRecPeriodStartRequiredBadge">REQUIRED</span> Period Start
+                                        <span class="badge bg-primary" id="smRecPeriodStartRequiredBadge">CORE</span> Period Start
                                     </label>
                                     <div class="d-flex gap-2">
                                         <select class="form-select form-select-sm" id="smRecPeriodStartYear" required></select>
@@ -463,7 +472,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-danger" id="smRecPeriodEndRequiredBadge">REQUIRED</span> Period End
+                                        <span class="badge bg-primary" id="smRecPeriodEndRequiredBadge">CORE</span> Period End
                                     </label>
                                     <div class="d-flex gap-2">
                                         <select class="form-select form-select-sm" id="smRecPeriodEndYear" required></select>
@@ -472,7 +481,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-danger">REQUIRED</span> Financial Compensation
+                                        <span class="badge bg-primary">CORE</span> Financial Compensation
                                     </label>
                                     <select class="form-select form-select-sm" id="smRecCompensation" required>
                                         <option value="">-- Select --</option>
@@ -500,7 +509,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-danger" id="smEligCriteriaRequiredBadge">REQUIRED</span> Inclusion Criteria
+                                        <span class="badge bg-primary" id="smEligCriteriaRequiredBadge">CORE</span> Inclusion Criteria
                                     </label>
                                     <textarea class="form-control form-control-sm d-none" id="smEligInclusion" rows="3"
                                               placeholder="One criterion per line" aria-hidden="true" tabindex="-1"></textarea>
@@ -555,7 +564,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                             <div class="row g-3">
                                 <div class="col-12">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-danger">REQUIRED</span> Overview
+                                        <span class="badge bg-primary">CORE</span> Overview
                                     </label>
                                     <textarea class="form-control form-control-sm" id="smProcOverview" rows="3"
                                               placeholder="Narrative overview of the study procedure..."></textarea>
@@ -641,15 +650,21 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label fw-bold small">Missing Files (Table)</label>
-                                    <textarea class="form-control form-control-sm" id="smMissingFiles" rows="3"
-                                              placeholder="Format: sub-001 | T1w, task-rest&#10;sub-002 | ses-2 functional scans"></textarea>
-                                    <small class="text-muted">One entry per line: SubjectID | What's missing</small>
+                                    <textarea class="form-control form-control-sm d-none" id="smMissingFiles" rows="3" aria-hidden="true" tabindex="-1"></textarea>
+                                    <div id="smMissingFilesList" class="d-flex flex-column gap-2 mb-2"></div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="smMissingFilesAddRow">
+                                        <i class="fas fa-plus me-1"></i>Add Entry
+                                    </button>
+                                    <small class="text-muted d-block mt-1">One row per subject: SubjectID, then what's missing.</small>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label fw-bold small">Known Issues (Table)</label>
-                                    <textarea class="form-control form-control-sm" id="smKnownIssues" rows="3"
-                                              placeholder="Format: sub-001_task-nback_bold.nii | Shorter scan&#10;sub-002_T1w.nii | Resolution differs"></textarea>
-                                    <small class="text-muted">One entry per line: Filename | Issue description</small>
+                                    <textarea class="form-control form-control-sm d-none" id="smKnownIssues" rows="3" aria-hidden="true" tabindex="-1"></textarea>
+                                    <div id="smKnownIssuesList" class="d-flex flex-column gap-2 mb-2"></div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="smKnownIssuesAddRow">
+                                        <i class="fas fa-plus me-1"></i>Add Entry
+                                    </button>
+                                    <small class="text-muted d-block mt-1">One row per file: Filename, then the issue description.</small>
                                 </div>
                             </div>
                         </div>
@@ -661,19 +676,19 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                     <button class="btn btn-sm btn-outline-secondary w-100 text-start sm-section-toggle" type="button"
                             data-bs-toggle="collapse" data-bs-target="#smReferences" aria-expanded="false" aria-controls="smReferences">
                         <span class="sm-section-toggle__titleline">
-                            <span class="sm-section-toggle__title"><i class="fas fa-book me-1"></i> References</span>
+                            <span class="sm-section-toggle__title"><i class="fas fa-book me-1"></i> Background Literature</span>
                             <span class="sm-section-toggle__badge" id="smReferencesBadge"></span>
                         </span>
-                        <span class="sm-section-toggle__summary">Store citations and supporting references that should feed into the README and reporting outputs.</span>
+                        <span class="sm-section-toggle__summary">Cite related papers, prior work, or supporting literature to include in the README. Not the same as the Citation Links field under Basics, which feeds CITATION.cff.</span>
                     </button>
                     <div class="collapse" id="smReferences">
                         <div class="card card-body border-0 bg-light mt-1">
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <label class="form-label fw-bold small">References</label>
+                                    <label class="form-label fw-bold small">Background Literature</label>
                                     <textarea class="form-control form-control-sm" id="smReferencesText" rows="4"
                                               placeholder="One reference per line or formatted citations..."></textarea>
-                                    <small class="text-muted">References used within the README</small>
+                                    <small class="text-muted">Included in the README, separate from the Citation Links field above (which feeds CITATION.cff).</small>
                                 </div>
                             </div>
                         </div>
