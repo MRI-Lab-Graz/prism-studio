@@ -58,6 +58,13 @@ def _build_template_app() -> Flask:
             default_schema_version="stable",
         )
 
+    @projects_bp.route("/projects/share")
+    def share_page():
+        return render_template(
+            "share.html",
+            current_project={"path": None, "name": None},
+        )
+
     @validation_bp.route("/validate")
     def validate_dataset():
         return "validation"
@@ -96,6 +103,19 @@ def test_projects_page_renders_without_tools_blueprint() -> None:
 
     assert response.status_code == 200
     assert b"Project Manager" in response.data
+
+
+def test_share_page_renders_without_tools_blueprint() -> None:
+    app = _build_template_app()
+
+    with app.test_client() as client:
+        response = client.get("/projects/share")
+
+    assert response.status_code == 200
+    assert b"Share &amp; Archive" in response.data
+    # No project loaded in this stub context, so the page must guide the
+    # user back to Projects rather than show a broken/empty archive panel.
+    assert b"No project is currently loaded" in response.data
 
 
 def test_specifications_page_renders_without_tools_blueprint() -> None:

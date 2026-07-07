@@ -72,6 +72,12 @@ PROJECTS_OPEN_PROJECT_MODULE = (
 PROJECTS_EXPORT_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "export.js"
 )
+PROJECTS_DATALAD_SERVER_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "datalad_server.js"
+)
+PROJECTS_RSYNC_SERVER_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "rsync_server.js"
+)
 PROJECTS_METADATA_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "metadata.js"
 )
@@ -90,6 +96,15 @@ OPEN_FORM_TEMPLATE = (
     REPO_ROOT / "app" / "templates" / "includes" / "projects" / "open_form.html"
 )
 PROJECTS_PAGE_TEMPLATE = REPO_ROOT / "app" / "templates" / "projects.html"
+SHARE_PAGE_TEMPLATE = REPO_ROOT / "app" / "templates" / "share.html"
+PAGE_SECTIONS_TEMPLATE = (
+    REPO_ROOT
+    / "app"
+    / "templates"
+    / "includes"
+    / "projects"
+    / "page_sections.html"
+)
 STUDY_METADATA_TEMPLATE = (
     REPO_ROOT / "app" / "templates" / "includes" / "projects" / "study_metadata.html"
 )
@@ -240,7 +255,6 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("export function initializeProjectsPage() {", index_content)
         self.assertIn("initProjectsPage();", index_content)
         self.assertIn("initProjectValidation();", index_content)
-        self.assertIn("initializeProjectsExport();", index_content)
         self.assertIn("let projectsPageInitialized = false;", core_content)
         self.assertIn("export function initProjectsPage() {", core_content)
         self.assertIn("import { initProjectsPageBootstrap } from './page-bootstrap.js';", core_content)
@@ -256,6 +270,91 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertFalse(LEGACY_PROJECTS_EXPORT.exists())
         self.assertFalse(LEGACY_PROJECTS_HELPERS.exists())
         self.assertFalse(LEGACY_PROJECTS_METADATA.exists())
+
+    def test_share_and_archive_split_into_its_own_page(self):
+        """Export, DataLad server push, and rsync backup were split out of
+        the Projects page into their own Share & Archive page/entrypoint so
+        they don't compete with project creation/metadata authoring on the
+        same scroll (see share.html / initializeSharePage)."""
+        index_content = PROJECTS_INDEX_MODULE.read_text(encoding="utf-8")
+        main_content = MAIN_MODULE.read_text(encoding="utf-8")
+        projects_template_content = PROJECTS_PAGE_TEMPLATE.read_text(encoding="utf-8")
+        share_template_content = SHARE_PAGE_TEMPLATE.read_text(encoding="utf-8")
+        page_sections_content = PAGE_SECTIONS_TEMPLATE.read_text(encoding="utf-8")
+
+        # initializeProjectsPage() no longer touches the archival modules.
+        self.assertIn(
+            "export function initializeProjectsPage() {\n"
+            "    initProjectsPage();\n"
+            "    initProjectValidation();\n"
+            "}",
+            index_content,
+        )
+        # They're grouped under their own entrypoint instead.
+        self.assertIn(
+            "export function initializeSharePage() {\n"
+            "    initializeProjectsExport();\n"
+            "    initDataladServerSection();\n"
+            "    initRsyncServerSection();\n"
+            "}",
+            index_content,
+        )
+
+        # main.js boots the Share page from its own root element, mirroring
+        # the existing #projectsRoot -> initializeProjectsPage() pattern.
+        self.assertIn("document.getElementById('shareRoot')", main_content)
+        self.assertIn("ProjectsModule.initializeSharePage()", main_content)
+
+        # The three archival sections live on share.html now, not projects.html.
+        self.assertNotIn("export_section.html", page_sections_content)
+        self.assertNotIn("datalad_server_section.html", page_sections_content)
+        self.assertNotIn("rsync_server_section.html", page_sections_content)
+        self.assertIn("includes/projects/export_section.html", share_template_content)
+        self.assertIn(
+            "includes/projects/datalad_server_section.html", share_template_content
+        )
+        self.assertIn(
+            "includes/projects/rsync_server_section.html", share_template_content
+        )
+        self.assertIn('id="shareRoot"', share_template_content)
+
+        # Projects page points users at the new page instead of scrolling to it.
+        self.assertIn("url_for('projects.share_page')", projects_template_content)
+
+        # Each card starts hidden (style="display: none;") and used to be
+        # revealed only by the Projects-page create/open/init lifecycle
+        # hooks. Those hooks were removed (dead code once the sections moved
+        # to their own page), so each module must now reveal its own card as
+        # part of its own init -- otherwise Share & Archive renders blank.
+        export_content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
+        datalad_server_content = PROJECTS_DATALAD_SERVER_MODULE.read_text(encoding="utf-8")
+        rsync_server_content = PROJECTS_RSYNC_SERVER_MODULE.read_text(encoding="utf-8")
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        create_content = PROJECTS_CREATE_MODULE.read_text(encoding="utf-8")
+        init_content = PROJECTS_INIT_ON_BIDS_MODULE.read_text(encoding="utf-8")
+        open_content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
+        bootstrap_content = PROJECTS_BOOTSTRAP_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("showExportCard();", export_content)
+        self.assertIn("showDataladServerCard();", datalad_server_content)
+        self.assertIn("showRsyncServerCard();", rsync_server_content)
+
+        for module_name, content in (
+            ("core.js", core_content),
+            ("create-project.js", create_content),
+            ("init-on-bids.js", init_content),
+            ("open-project.js", open_content),
+            ("page-bootstrap.js", bootstrap_content),
+        ):
+            self.assertNotIn(
+                "showExportCard", content, f"dead reference left in {module_name}"
+            )
+            self.assertNotIn(
+                "showDataladServerCard", content, f"dead reference left in {module_name}"
+            )
+            self.assertNotIn(
+                "showRsyncServerCard", content, f"dead reference left in {module_name}"
+            )
 
     def test_backend_monitoring_verbose_toggle_is_wired(self):
         settings_content = PROJECTS_SETTINGS_MODULE.read_text(encoding="utf-8")
@@ -664,10 +763,14 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             create_content,
         )
         self.assertIn("showStudyMetadataCard();", create_content)
-        self.assertIn("showExportCard();", create_content)
         self.assertIn("showMethodsCard();", create_content)
         self.assertIn("import { initCreateProjectController } from './create-project.js';", core_content)
         self.assertIn("initCreateProjectController({", core_content)
+        # Export/DataLad-server/rsync cards moved to the Share & Archive page
+        # (see test_share_and_archive_split_into_its_own_page) and are no
+        # longer wired through the create-project flow at all.
+        self.assertNotIn("showExportCard", create_content)
+        self.assertNotIn("showDataladServerCard", create_content)
 
     def test_create_flow_checks_target_path_before_submitting(self):
         content = PROJECTS_CREATE_PREFLIGHT_MODULE.read_text(encoding="utf-8")

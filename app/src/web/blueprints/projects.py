@@ -291,6 +291,18 @@ def projects_page():
     )
 
 
+@projects_bp.route("/projects/share")
+def share_page():
+    """Render the Share & Archive page: export, DataLad server push, and
+    rsync backup for the active project.
+
+    Split out from the main Projects page so distribution/archival tasks
+    (export presets, RIA store push, remote backup) don't compete with
+    project creation and study metadata authoring on the same scroll.
+    """
+    return render_template("share.html", current_project=get_current_project())
+
+
 @projects_bp.route("/api/projects/current", methods=["GET"])
 def get_current():
     """Get the current working project."""
