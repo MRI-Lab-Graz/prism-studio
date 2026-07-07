@@ -578,6 +578,120 @@ def test_projects_export_start_upload_ready_preset_forces_safe_export_defaults(t
     assert args[2] == "study_anonymized_upload_ready_export.zip"
 
 
+def test_projects_export_start_derives_exclude_metadata_from_repository_mode(tmp_path):
+    """repository_mode is authoritative: only datalad_preserving keeps VC metadata."""
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    cases = {
+        "datalad_free": True,
+        "git_lfs": True,
+        "datalad_preserving": False,
+    }
+
+    for repository_mode, expected_exclude in cases.items():
+        captured: dict[str, object] = {}
+
+        class _FakeThread:
+            def __init__(self, target=None, args=(), daemon=None):
+                captured["args"] = args
+
+            def start(self):
+                captured["started"] = True
+
+        with patch(
+            "src.web.blueprints.projects_export_blueprint.threading.Thread",
+            side_effect=lambda *args, **kwargs: _FakeThread(*args, **kwargs),
+        ):
+            with app.test_client() as client:
+                response = client.post(
+                    "/api/projects/export/start",
+                    json={
+                        "project_path": str(project_dir),
+                        "repository_mode": repository_mode,
+                    },
+                )
+
+        assert response.status_code == 200
+        export_kwargs = captured["args"][1]
+        assert export_kwargs["exclude_version_control_metadata"] is expected_exclude, (
+            f"repository_mode={repository_mode!r}"
+        )
+
+
+def test_projects_export_start_falls_back_to_legacy_exclude_flag_without_repository_mode(
+    tmp_path,
+):
+    """Callers that don't send repository_mode keep working via the legacy flag."""
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    captured: dict[str, object] = {}
+
+    class _FakeThread:
+        def __init__(self, target=None, args=(), daemon=None):
+            captured["args"] = args
+
+        def start(self):
+            captured["started"] = True
+
+    with patch(
+        "src.web.blueprints.projects_export_blueprint.threading.Thread",
+        side_effect=lambda *args, **kwargs: _FakeThread(*args, **kwargs),
+    ):
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/start",
+                json={
+                    "project_path": str(project_dir),
+                    "exclude_version_control_metadata": True,
+                },
+            )
+
+    assert response.status_code == 200
+    export_kwargs = captured["args"][1]
+    assert export_kwargs["exclude_version_control_metadata"] is True
+
+
+def test_projects_export_sync_route_derives_exclude_metadata_from_repository_mode(
+    tmp_path,
+):
+    """The synchronous /api/projects/export ZIP route applies the same rule."""
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    called: dict[str, object] = {}
+
+    def fake_export_project(**kwargs):
+        called.update(kwargs)
+        Path(kwargs["output_zip"]).write_bytes(b"PK\x03\x04")
+        return {"files_processed": 0, "files_anonymized": 0, "participant_count": 0}
+
+    with patch(
+        "src.web.export_project.export_project", side_effect=fake_export_project
+    ):
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export",
+                json={
+                    "project_path": str(project_dir),
+                    "repository_mode": "git_lfs",
+                },
+            )
+
+    assert response.status_code == 200
+    assert called["exclude_version_control_metadata"] is True
+
+
 def test_projects_export_start_passes_survey_task_filters_to_export_job(tmp_path):
     app = _build_app()
 
@@ -1192,6 +1306,74 @@ def test_project_folder_export_route_uses_project_manager_and_output_folder(tmp_
     )
 
 
+def test_project_git_lfs_export_route_uses_project_manager_and_output_folder(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    out_dir = tmp_path / "exports"
+
+    with patch(
+        "src.project_manager.ProjectManager.export_project_to_git_lfs_folder",
+        return_value={
+            "success": True,
+            "output_path": str(out_dir / "study_folder_export"),
+            "excluded_repository_metadata": [".datalad", ".git"],
+            "git_lfs": {"repo_initialized": True},
+            "message": "ok",
+        },
+    ) as mock_export:
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/git-lfs",
+                json={
+                    "project_path": str(project_dir),
+                    "output_folder": str(out_dir),
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("success") is True
+    assert payload.get("output_path", "").endswith("study_folder_export")
+    assert payload.get("git_lfs", {}).get("repo_initialized") is True
+    mock_export.assert_called_once_with(
+        project_dir,
+        output_root=str(out_dir),
+        init_git_lfs_repo=True,
+    )
+
+
+def test_project_git_lfs_export_route_forwards_init_repo_false(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    with patch(
+        "src.project_manager.ProjectManager.export_project_to_git_lfs_folder",
+        return_value={"success": True, "output_path": str(project_dir), "git_lfs": {}},
+    ) as mock_export:
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/export/git-lfs",
+                json={
+                    "project_path": str(project_dir),
+                    "init_git_lfs_repo": False,
+                },
+            )
+
+    assert response.status_code == 200
+    mock_export.assert_called_once_with(
+        project_dir,
+        output_root=None,
+        init_git_lfs_repo=False,
+    )
+
+
 def test_project_folder_export_route_forwards_scope_filters(tmp_path):
     app = _build_app()
 
@@ -1452,3 +1634,148 @@ def test_project_annex_availability_route_forwards_subject_scope_filter(tmp_path
         exclude_acq=None,
         exclude_tasks=None,
     )
+
+
+def test_openminds_get_tasks_returns_sorted_task_names(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text(
+        '{"TaskDefinitions": {"rest": {}, "nback": {}}}', encoding="utf-8"
+    )
+
+    with app.test_client() as client:
+        response = client.get(
+            "/api/projects/openminds-tasks",
+            query_string={"project_path": str(project_dir)},
+        )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("success") is True
+    assert payload.get("tasks") == ["nback", "rest"]
+
+
+def test_openminds_get_tasks_returns_empty_list_without_project_json(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+
+    with app.test_client() as client:
+        response = client.get(
+            "/api/projects/openminds-tasks",
+            query_string={"project_path": str(project_dir)},
+        )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("success") is True
+    assert payload.get("tasks") == []
+
+
+def test_openminds_get_tasks_rejects_invalid_project_path():
+    app = _build_app()
+
+    with app.test_client() as client:
+        response = client.get(
+            "/api/projects/openminds-tasks",
+            query_string={"project_path": "/does/not/exist"},
+        )
+
+    assert response.status_code == 400
+    payload = response.get_json() or {}
+    assert payload.get("success") is False
+
+
+def test_openminds_export_reports_missing_cli_with_actionable_error(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    # Force both the direct venv-bin-dir lookup and the PATH fallback to miss,
+    # regardless of whether bids2openminds happens to be installed in the
+    # environment running this test suite.
+    with patch("pathlib.Path.is_file", return_value=False), patch(
+        "shutil.which",
+        return_value=None,
+    ):
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/openminds-export",
+                json={"project_path": str(project_dir)},
+            )
+
+    assert response.status_code == 500
+    payload = response.get_json() or {}
+    assert payload.get("success") is False
+    assert "bids2openminds" in payload.get("error", "")
+    assert "pip install" in payload.get("error", "")
+
+
+def test_openminds_export_runs_bids2openminds_and_reports_success(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    def fake_run(cmd, **kwargs):
+        # bids2openminds writes its output file as a side effect of running.
+        output_path = Path(cmd[cmd.index("-o") + 1])
+        output_path.write_text("{}", encoding="utf-8")
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    with patch(
+        "shutil.which",
+        return_value="/usr/bin/bids2openminds",
+    ), patch(
+        "src.web.blueprints.projects_export_blueprint.subprocess.run",
+        side_effect=fake_run,
+    ):
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/openminds-export",
+                json={
+                    "project_path": str(project_dir),
+                    "single_file": True,
+                    "include_empty": False,
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    assert payload.get("success") is True
+    assert payload.get("output_path", "").endswith("_openminds.jsonld")
+    assert Path(payload["output_path"]).exists()
+
+
+def test_openminds_export_reports_bids2openminds_failure(tmp_path):
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    with patch(
+        "shutil.which",
+        return_value="/usr/bin/bids2openminds",
+    ), patch(
+        "src.web.blueprints.projects_export_blueprint.subprocess.run",
+        return_value=SimpleNamespace(
+            returncode=1, stdout="", stderr="conversion failed: unsupported BIDS layout"
+        ),
+    ):
+        with app.test_client() as client:
+            response = client.post(
+                "/api/projects/openminds-export",
+                json={"project_path": str(project_dir)},
+            )
+
+    assert response.status_code == 500
+    payload = response.get_json() or {}
+    assert payload.get("success") is False
+    assert "conversion failed" in payload.get("error", "")

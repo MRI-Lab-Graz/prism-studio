@@ -8,6 +8,7 @@ import time
 import unittest
 import subprocess
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -17,7 +18,11 @@ app_path = os.path.join(project_root, "app")
 if app_path not in sys.path:
     sys.path.insert(0, app_path)
 
-from src.project_manager import DATALAD_TEXT_POLICY_REQUIRED_LINES, ProjectManager
+from src.project_manager import (
+    DATALAD_TEXT_POLICY_REQUIRED_LINES,
+    GIT_LFS_EXPORT_GITATTRIBUTES_LINES,
+    ProjectManager,
+)
 
 
 class _FakePopen:
@@ -4495,6 +4500,158 @@ class TestProjectManager(unittest.TestCase):
 
         issue_codes = {issue.get("code") for issue in result.get("issues", [])}
         self.assertNotIn("PRISM201", issue_codes)
+
+    def test_git_lfs_export_gitattributes_never_overlaps_datalad_text_policy(self):
+        """Binary formats routed to Git LFS must never include a text/codebook extension.
+
+        Text/codebook files (.csv/.tsv/.json/etc.) must stay as plain Git blobs
+        so they remain diffable and reviewable directly on GitHub/GitLab,
+        consistent with the project's DataLad annex.largefiles=nothing policy
+        for the same extensions (see CLAUDE.md).
+        """
+
+        def _pattern(line: str) -> str:
+            return line.split()[0]
+
+        text_patterns = {_pattern(line) for line in DATALAD_TEXT_POLICY_REQUIRED_LINES}
+        lfs_patterns = {_pattern(line) for line in GIT_LFS_EXPORT_GITATTRIBUTES_LINES}
+
+        overlap = text_patterns & lfs_patterns
+        self.assertEqual(
+            overlap,
+            set(),
+            f"Text/codebook patterns must never be routed to Git LFS: {overlap}",
+        )
+
+    @patch("src.project_manager.shutil.which", return_value=None)
+    def test_export_project_to_git_lfs_folder_degrades_gracefully_without_git_tools(
+        self, _mock_which
+    ):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text(
+                "{}\n", encoding="utf-8"
+            )
+
+            export_root = Path(tmp) / "exports"
+            result = manager.export_project_to_git_lfs_folder(
+                project_path,
+                output_root=export_root,
+            )
+
+            self.assertTrue(result.get("success"), result)
+            output_path = Path(result["output_path"])
+
+            gitattributes_text = (output_path / ".gitattributes").read_text(
+                encoding="utf-8"
+            )
+            self.assertIn(
+                "*.nii.gz filter=lfs diff=lfs merge=lfs -text", gitattributes_text
+            )
+            self.assertTrue((output_path / "GIT_LFS_EXPORT_NOTES.md").exists())
+
+            git_lfs_info = result.get("git_lfs") or {}
+            self.assertFalse(git_lfs_info.get("repo_initialized"))
+            self.assertFalse(git_lfs_info.get("git_available"))
+            self.assertFalse(git_lfs_info.get("git_lfs_available"))
+            self.assertIn("git", git_lfs_info.get("warning", ""))
+
+    @patch("src.project_manager.subprocess.run")
+    @patch("src.project_manager.shutil.which")
+    def test_export_project_to_git_lfs_folder_initializes_repo_when_tools_available(
+        self, mock_which, mock_run
+    ):
+        mock_which.side_effect = lambda name: (
+            f"/usr/bin/{name}" if name in ("git", "git-lfs") else None
+        )
+        mock_run.return_value = SimpleNamespace(returncode=0, stdout="", stderr="")
+
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text(
+                "{}\n", encoding="utf-8"
+            )
+
+            export_root = Path(tmp) / "exports"
+            result = manager.export_project_to_git_lfs_folder(
+                project_path,
+                output_root=export_root,
+            )
+
+            self.assertTrue(result.get("success"), result)
+            git_lfs_info = result.get("git_lfs") or {}
+            self.assertTrue(git_lfs_info.get("git_available"))
+            self.assertTrue(git_lfs_info.get("git_lfs_available"))
+            self.assertTrue(git_lfs_info.get("repo_initialized"))
+            self.assertNotIn("warning", git_lfs_info)
+            # git init, lfs install, add .gitattributes, add ., commit
+            self.assertEqual(mock_run.call_count, 5)
+
+    @patch("src.project_manager.subprocess.run")
+    @patch("src.project_manager.shutil.which")
+    def test_export_project_to_git_lfs_folder_reports_warning_on_init_failure(
+        self, mock_which, mock_run
+    ):
+        mock_which.side_effect = lambda name: (
+            f"/usr/bin/{name}" if name in ("git", "git-lfs") else None
+        )
+        mock_run.return_value = SimpleNamespace(
+            returncode=1, stdout="", stderr="fatal: could not initialize repo"
+        )
+
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text(
+                "{}\n", encoding="utf-8"
+            )
+
+            export_root = Path(tmp) / "exports"
+            result = manager.export_project_to_git_lfs_folder(
+                project_path,
+                output_root=export_root,
+            )
+
+            self.assertTrue(result.get("success"), result)
+            git_lfs_info = result.get("git_lfs") or {}
+            self.assertFalse(git_lfs_info.get("repo_initialized"))
+            self.assertIn(
+                "could not initialize repo", git_lfs_info.get("warning", "")
+            )
+
+    @patch("src.project_manager.shutil.which", return_value=None)
+    def test_export_project_to_git_lfs_folder_respects_init_git_lfs_repo_false(
+        self, _mock_which
+    ):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text(
+                "{}\n", encoding="utf-8"
+            )
+
+            export_root = Path(tmp) / "exports"
+            result = manager.export_project_to_git_lfs_folder(
+                project_path,
+                output_root=export_root,
+                init_git_lfs_repo=False,
+            )
+
+            self.assertTrue(result.get("success"), result)
+            git_lfs_info = result.get("git_lfs") or {}
+            self.assertFalse(git_lfs_info.get("repo_initialized"))
+            self.assertFalse(git_lfs_info.get("requested_init_repo"))
+            self.assertNotIn("warning", git_lfs_info)
 
 
 if __name__ == "__main__":
