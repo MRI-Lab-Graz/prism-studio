@@ -11,7 +11,7 @@ score files already exist.
 Open:
 
 - PRISM Studio
-- Tools
+- Prepare Data
 - Recipe Builder
 
 ## What the Recipe Builder does

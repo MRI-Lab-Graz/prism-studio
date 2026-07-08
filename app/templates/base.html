@@ -307,12 +307,12 @@
     {% set recipes_available = endpoint_exists('tools.recipes') %}
     {% set recipe_builder_available = endpoint_exists('tools.recipe_builder') %}
     {% set prism_app_runner_available = endpoint_exists('tools.prism_app_runner') %}
-    {% set derivatives_available = survey_generator_available or recipes_available or recipe_builder_available or prism_app_runner_available %}
+    {% set derivatives_available = survey_generator_available or recipes_available or prism_app_runner_available %}
     {% set derivatives_enabled = current_project.path and derivatives_available %}
     {% set request_path = request.path or '' %}
-    {% set prepare_active = request_path.startswith('/converter') or request_path.startswith('/template-editor') or request.endpoint in ['tools.converter', 'tools_template_editor.template_editor'] %}
+    {% set prepare_active = request_path.startswith('/converter') or request_path.startswith('/template-editor') or request_path.startswith('/recipe-builder') or request.endpoint in ['tools.converter', 'tools_template_editor.template_editor', 'tools.recipe_builder'] %}
     {% set modify_active = request_path.startswith('/validate') or request_path.startswith('/file-management') or request_path.startswith('/editor') or request.blueprint in ['validation', 'json_editor'] or request.endpoint in ['tools.file_management'] %}
-    {% set export_active = request_path.startswith('/survey-generator') or request_path.startswith('/recipes') or request_path.startswith('/recipe-builder') or request_path.startswith('/prism-app-runner') or request.endpoint in ['tools.survey_generator', 'tools.recipes', 'tools.recipe_builder', 'tools.prism_app_runner'] %}
+    {% set export_active = request_path.startswith('/survey-generator') or request_path.startswith('/recipes') or request_path.startswith('/prism-app-runner') or request.endpoint in ['tools.survey_generator', 'tools.recipes', 'tools.prism_app_runner'] %}
     {% set share_available = endpoint_exists('projects.share_page') %}
     {% set share_enabled = current_project.path and share_available %}
     {% set share_active = request_path.startswith('/projects/share') %}
@@ -423,6 +423,17 @@
                                 <span class="navbar-flow-item-title"><i class="fas fa-file-code me-2 text-primary"></i>Template Editor</span>
                                 <span class="navbar-flow-item-hint">Edit mapping templates used during preparation</span>
                             </a></li>
+                            {% if recipe_builder_available %}
+                            <li><a class="dropdown-item navbar-flow-item" href="{{ url_for('tools.recipe_builder') }}" title="Design and maintain reusable scoring recipes for survey and biometrics templates">
+                                <span class="navbar-flow-item-title"><i class="fas fa-flask me-2 text-success"></i>Recipe Builder</span>
+                                <span class="navbar-flow-item-hint">Define reusable scoring recipes ahead of export</span>
+                            </a></li>
+                            {% else %}
+                            <li><span class="dropdown-item disabled navbar-flow-item" title="Unavailable in this build" aria-disabled="true">
+                                <span class="navbar-flow-item-title"><i class="fas fa-flask me-2 text-success"></i>Recipe Builder</span>
+                                <span class="navbar-flow-item-hint">Unavailable in this build</span>
+                            </span></li>
+                            {% endif %}
                             <li><hr class="dropdown-divider"></li>
                             <li><span class="dropdown-item-text text-muted small">Next: Modify in PRISM</span></li>
                         </ul>
@@ -476,17 +487,6 @@
                             {% else %}
                             <li><span class="dropdown-item disabled navbar-flow-item" title="Unavailable in this build" aria-disabled="true">
                                 <span class="navbar-flow-item-title"><i class="fas fa-chart-line me-2 text-primary"></i>Analysis Outputs</span>
-                                <span class="navbar-flow-item-hint">Unavailable in this build</span>
-                            </span></li>
-                            {% endif %}
-                            {% if recipe_builder_available %}
-                            <li><a class="dropdown-item navbar-flow-item" href="{{ url_for('tools.recipe_builder') }}" title="Design and maintain reusable export recipes for derivative outputs">
-                                <span class="navbar-flow-item-title"><i class="fas fa-flask me-2 text-success"></i>Recipe Builder</span>
-                                <span class="navbar-flow-item-hint">Configure reusable processing and export recipes</span>
-                            </a></li>
-                            {% else %}
-                            <li><span class="dropdown-item disabled navbar-flow-item" title="Unavailable in this build" aria-disabled="true">
-                                <span class="navbar-flow-item-title"><i class="fas fa-flask me-2 text-success"></i>Recipe Builder</span>
                                 <span class="navbar-flow-item-hint">Unavailable in this build</span>
                             </span></li>
                             {% endif %}
@@ -1609,7 +1609,7 @@
             {% endif %}
         {% endwith %}
 
-        {% set no_project_hint_paths = ['/converter', '/recipes', '/survey-generator', '/survey-customizer', '/template-editor', '/library-editor', '/neurobagel'] %}
+        {% set no_project_hint_paths = ['/converter', '/recipes', '/recipe-builder', '/survey-generator', '/survey-customizer', '/template-editor', '/library-editor', '/neurobagel'] %}
         {% if not current_project.path and request.path in no_project_hint_paths %}
             <div class="alert alert-info d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3" role="alert">
                 <div>
