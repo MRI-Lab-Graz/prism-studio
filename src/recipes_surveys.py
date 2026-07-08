@@ -29,6 +29,7 @@ from src.datalad_execution import (
     resolve_datalad_executable,
     run_datalad_save,
 )
+from src.recipe_validation import validate_recipe
 from src.recipes_formula_engine import (
     _calculate_derived_variables,
     _calculate_scores,
@@ -166,6 +167,63 @@ def _get_sidecar_for_task(dataset_path: Path, prefix: str, name: str) -> dict:
             except Exception:
                 continue
     return {}
+
+
+# Structural metadata keys in a survey/biometrics template, never item IDs.
+_TEMPLATE_RESERVED_KEYS = {
+    "@context",
+    "Technical",
+    "Study",
+    "Metadata",
+    "Categories",
+    "TaskName",
+    "Name",
+    "BIDSVersion",
+    "Description",
+    "URL",
+    "License",
+    "Authors",
+    "Acknowledgements",
+    "References",
+    "Funding",
+    "I18n",
+    "Scoring",
+    "Normative",
+    "Questions",
+}
+
+
+def _known_item_ids_for_recipe_task(
+    dataset_path: Path | None, *, modality: str, task: str
+) -> set[str] | None:
+    """Return the item IDs declared in the template matched to a recipe's task.
+
+    Returns ``None`` (meaning "can't check") when no template can be located, or
+    when a located template yields no recognizable item definitions — the latter
+    more likely reflects an unusual/unparsed template shape than a genuinely
+    empty instrument, so callers should skip item-existence validation rather
+    than flag every referenced item as unknown.
+    """
+    if not dataset_path or not task:
+        return None
+    sidecar = _get_sidecar_for_task(dataset_path, modality, task)
+    if not isinstance(sidecar, dict) or (
+        "Technical" not in sidecar and "Study" not in sidecar
+    ):
+        return None
+
+    source = sidecar
+    if modality == "survey" and isinstance(sidecar.get("Questions"), dict):
+        source = sidecar["Questions"]
+
+    known_items = {
+        k
+        for k, v in source.items()
+        if k not in _TEMPLATE_RESERVED_KEYS
+        and isinstance(v, dict)
+        and "Description" in v
+    }
+    return known_items or None
 
 
 def _normalize_output_format(out_format: str | None) -> str:
@@ -1247,27 +1305,29 @@ def _load_and_validate_recipes(
     if not all_recipes:
         raise ValueError("No valid recipes could be loaded.")
 
-    # Validate recipe structure before executing.
-    try:
-        from .recipe_validation import validate_recipe
-    except (ImportError, ValueError):
-        try:
-            from recipe_validation import validate_recipe
-        except ImportError:
-            validate_recipe = None
+    # Validate recipe structure (including item references) before executing.
+    template_dataset_path = prism_root if prism_root else repo_root
+    info_key = "Survey" if modality == "survey" else "Biometrics"
+    task_key = "TaskName" if modality == "survey" else "BiometricName"
 
-    if validate_recipe is not None:
-        recipe_errors: list[str] = []
-        for recipe_id, rec in sorted(all_recipes.items()):
-            errs = validate_recipe(rec.get("json") or {}, recipe_id=recipe_id)
-            rec_path = rec.get("path")
-            rec_name = rec_path.name if isinstance(rec_path, Path) else str(recipe_id)
-            recipe_errors.extend([f"{rec_name}: {e}" for e in errs])
+    recipe_errors: list[str] = []
+    for recipe_id, rec in sorted(all_recipes.items()):
+        recipe_json = rec.get("json") or {}
+        task = str((recipe_json.get(info_key) or {}).get(task_key) or "").strip()
+        known_items = _known_item_ids_for_recipe_task(
+            template_dataset_path, modality=modality, task=task
+        )
+        errs = validate_recipe(
+            recipe_json, recipe_id=recipe_id, known_items=known_items
+        )
+        rec_path = rec.get("path")
+        rec_name = rec_path.name if isinstance(rec_path, Path) else str(recipe_id)
+        recipe_errors.extend([f"{rec_name}: {e}" for e in errs])
 
-        if recipe_errors:
-            raise ValueError(
-                "Invalid derivative recipe(s):\n- " + "\n- ".join(recipe_errors)
-            )
+    if recipe_errors:
+        raise ValueError(
+            "Invalid derivative recipe(s):\n- " + "\n- ".join(recipe_errors)
+        )
 
     if not survey_ids:
         return all_recipes, recipes_dir
