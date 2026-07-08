@@ -57,13 +57,25 @@ def _validate_score_entries(
     errors: list[str],
     prefix: str,
     known_items_lower: set[str] | None = None,
+    extra_known_lower: set[str] | None = None,
 ) -> set[str]:
-    """Validate one score list and return its declared output names."""
+    """Validate one score list and return its declared output names.
+
+    ``extra_known_lower`` are names that are always resolvable regardless of
+    position (e.g. ``Transforms.Derived`` outputs, which are computed before
+    any score). In addition, at runtime each score is computed in list order
+    and its result is written back into the row before the next score runs
+    (see ``_calculate_scores``), so a later score's ``Items`` may legitimately
+    reference an *earlier* score's ``Name`` in the same list — that
+    availability is tracked here as the list is walked.
+    """
 
     score_names: set[str] = set()
     if not isinstance(scores, list):
         errors.append(prefix + f"{list_label} must be a list")
         return score_names
+
+    available_lower: set[str] = set(extra_known_lower or set())
 
     for idx, score in enumerate(scores):
         if not isinstance(score, dict):
@@ -82,6 +94,10 @@ def _validate_score_entries(
             errors.append(prefix + f"duplicate score Name '{score_name}'")
         score_names.add(score_name)
 
+        combined_known = (
+            None if known_items_lower is None else (known_items_lower | available_lower)
+        )
+
         method = str(score.get("Method", "sum")).strip().lower()
         if method not in ALLOWED_SCORE_METHODS:
             errors.append(
@@ -98,7 +114,7 @@ def _validate_score_entries(
                     + f"{list_label}[{idx}] uses Method='map' but has no non-empty Source"
                 )
             else:
-                unknown_source = _unknown_items([str(source).strip()], known_items_lower)
+                unknown_source = _unknown_items([str(source).strip()], combined_known)
                 if unknown_source:
                     errors.append(
                         prefix
@@ -118,7 +134,7 @@ def _validate_score_entries(
             )
 
         if items:
-            unknown = _unknown_items(items, known_items_lower)
+            unknown = _unknown_items(items, combined_known)
             if unknown:
                 errors.append(
                     prefix
@@ -173,6 +189,10 @@ def _validate_score_entries(
                         prefix
                         + f"{list_label}[{idx}].Formula references {missing_refs} but they are not listed in Items (they would not be substituted)"
                     )
+
+        # Available to *later* entries in this same list only (matches the
+        # sequential, row-mutating order _calculate_scores runs in).
+        available_lower.add(score_name.lower())
 
     return score_names
 
@@ -294,6 +314,10 @@ def validate_recipe(
     # Derived
     derived_cfg = (transforms or {}).get("Derived")
     derived_names: set[str] = set()
+    # Names available to *later* Derived entries only: _calculate_derived_variables
+    # runs the list in order and writes each result back into the row before the
+    # next entry runs, so a later Derived can legitimately reference an earlier one.
+    available_derived_lower: set[str] = set()
     if derived_cfg is not None:
         if not isinstance(derived_cfg, list):
             errors.append(prefix + "Transforms.Derived must be a list")
@@ -324,9 +348,14 @@ def validate_recipe(
                     )
 
                 items = _as_list_of_str(d.get("Items"))
+                combined_known = (
+                    None
+                    if known_items_lower is None
+                    else (known_items_lower | available_derived_lower)
+                )
 
                 if items:
-                    unknown = _unknown_items(items, known_items_lower)
+                    unknown = _unknown_items(items, combined_known)
                     if unknown:
                         errors.append(
                             prefix
@@ -343,7 +372,7 @@ def validate_recipe(
                             + f"Transforms.Derived[{idx}] uses Method='map' but has no non-empty Source and no Items"
                         )
                     elif _is_nonempty_str(source):
-                        unknown = _unknown_items([str(source).strip()], known_items_lower)
+                        unknown = _unknown_items([str(source).strip()], combined_known)
                         if unknown:
                             errors.append(
                                 prefix
@@ -389,6 +418,9 @@ def validate_recipe(
                             + f"Transforms.Derived[{idx}].Items must be a non-empty list of strings"
                         )
 
+                if _is_nonempty_str(name):
+                    available_derived_lower.add(str(name).strip().lower())
+
     # Scores
     score_names_for_collision: set[str] = set()
     scores = recipe.get("Scores")
@@ -405,6 +437,7 @@ def validate_recipe(
                 errors=errors,
                 prefix=prefix,
                 known_items_lower=known_items_lower,
+                extra_known_lower=available_derived_lower,
             )
         )
 
@@ -425,6 +458,7 @@ def validate_recipe(
                         errors=errors,
                         prefix=prefix,
                         known_items_lower=known_items_lower,
+                        extra_known_lower=available_derived_lower,
                     )
                 )
 

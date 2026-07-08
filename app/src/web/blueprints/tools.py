@@ -81,7 +81,10 @@ from .tools_generation_handlers import (
 from .tools_post_conversion_handlers import (
     handle_fix_participants_bids,
 )
-from .tools_recipes_surveys_handlers import handle_api_recipes_surveys
+from .tools_recipes_surveys_handlers import (
+    handle_api_recipes_surveys,
+    handle_download_recipes_output_file,
+)
 from .tools_recipe_builder_handlers import (
     handle_api_recipe_builder_surveys,
     handle_api_recipe_builder_items,
@@ -1618,6 +1621,17 @@ def prism_app_runner():
 def api_recipes_surveys():
     """Run survey-recipes generation inside an existing PRISM dataset."""
     return handle_api_recipes_surveys(data=request.get_json(silent=True) or {})
+
+
+@tools_bp.route("/api/recipes-surveys/download", methods=["GET"])
+def api_recipes_surveys_download():
+    """Download a single file from a project's derivatives/ folder.
+
+    Query params:
+        dataset_path: the PRISM project root
+        path: absolute path to the file (must resolve inside dataset_path/derivatives)
+    """
+    return handle_download_recipes_output_file()
 
 
 @tools_bp.route("/api/runtime-capabilities", methods=["GET"])

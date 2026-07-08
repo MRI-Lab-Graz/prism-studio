@@ -74,6 +74,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const derivRecipesUsed = document.getElementById('derivRecipesUsed');
   const derivBoilerplateInfo = document.getElementById('derivBoilerplateInfo');
   const derivBoilerplateLink = document.getElementById('derivBoilerplateLink');
+  const derivDownloadInfo = document.getElementById('derivDownloadInfo');
+  const derivDownloadLink = document.getElementById('derivDownloadLink');
   const derivProgressContainer = document.getElementById('derivProgressContainer');
   const derivProgressBar = document.getElementById('derivProgressBar');
 
@@ -83,7 +85,8 @@ document.addEventListener('DOMContentLoaded', function() {
     || !derivAnonymize || !derivMaskQuestions || !derivIdLength || !derivRandomIds
     || !derivSummaryContainer || !derivSummaryBody || !derivToggleSummary || !derivProcessedCount
     || !derivWrittenCount || !derivOutputFormat || !derivOutputPath || !derivRecipesUsed
-    || !derivBoilerplateInfo || !derivBoilerplateLink || !derivProgressContainer || !derivProgressBar) {
+    || !derivBoilerplateInfo || !derivBoilerplateLink || !derivDownloadInfo || !derivDownloadLink
+    || !derivProgressContainer || !derivProgressBar) {
     console.error('Recipes UI initialization failed: required DOM elements are missing.');
     return;
   }
@@ -201,6 +204,8 @@ document.addEventListener('DOMContentLoaded', function() {
     derivRecipesUsed.textContent = '-';
     derivBoilerplateInfo.classList.add('d-none');
     derivBoilerplateLink.removeAttribute('href');
+    derivDownloadInfo.classList.add('d-none');
+    derivDownloadLink.removeAttribute('href');
     derivProgressContainer.classList.add('d-none');
     derivProgressBar.style.width = '0%';
     derivProgressBar.textContent = 'Initializing...';
@@ -464,6 +469,7 @@ document.addEventListener('DOMContentLoaded', function() {
     derivInfo.textContent = '';
     derivSummaryContainer.classList.add('d-none');
     derivBoilerplateInfo.classList.add('d-none');
+    derivDownloadInfo.classList.add('d-none');
 
     const requestProjectPath = resolveProjectPath();
     datasetPath = requestProjectPath;
@@ -574,6 +580,18 @@ document.addEventListener('DOMContentLoaded', function() {
           derivBoilerplateInfo.classList.remove('d-none');
         } else {
           derivBoilerplateInfo.classList.add('d-none');
+        }
+
+        if (data.flat_out_path) {
+          const downloadParams = new URLSearchParams({
+            dataset_path: requestProjectPath,
+            path: data.flat_out_path,
+          });
+          derivDownloadLink.href = `/api/recipes-surveys/download?${downloadParams.toString()}`;
+          derivDownloadLink.setAttribute('download', '');
+          derivDownloadInfo.classList.remove('d-none');
+        } else {
+          derivDownloadInfo.classList.add('d-none');
         }
 
         derivSummaryContainer.classList.remove('d-none');
