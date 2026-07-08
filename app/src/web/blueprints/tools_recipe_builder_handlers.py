@@ -551,19 +551,6 @@ def _recipe_output_path(dataset_path: str, *, modality: str) -> Path:
     return Path(dataset_path) / "code" / "recipes" / modality
 
 
-def _task_exists_for_recipe_builder(dataset_path: str, task: str, *, modality: str) -> bool:
-    """Return True when the task exists in the project or official library."""
-    if not dataset_path or not task:
-        return False
-
-    templates = _find_templates(
-        dataset_path,
-        modality=modality,
-        include_global=True,
-    )
-    return any(template["task"] == task for template in templates)
-
-
 # ---------------------------------------------------------------------------
 # Public handlers
 # ---------------------------------------------------------------------------
@@ -743,19 +730,9 @@ def handle_api_recipe_builder_save(data: dict):
     if not re.fullmatch(r"[a-zA-Z0-9_-]+", task_name):
         return jsonify({"error": f"{task_key} contains invalid characters"}), 400
 
-    validation_errors = validate_recipe(recipe)
-    if validation_errors:
-        return (
-            jsonify(
-                {
-                    "error": "Recipe validation failed",
-                    "validation_errors": validation_errors,
-                }
-            ),
-            400,
-        )
-
-    if not _task_exists_for_recipe_builder(dataset_path, task_name, modality=modality):
+    templates = _find_templates(dataset_path, modality=modality, include_global=True)
+    matched_template = next((t for t in templates if t["task"] == task_name), None)
+    if matched_template is None:
         return (
             jsonify(
                 {
@@ -764,6 +741,23 @@ def handle_api_recipe_builder_save(data: dict):
                         if modality == "survey"
                         else "Biometrics template not found in the target project or official library"
                     )
+                }
+            ),
+            400,
+        )
+
+    known_items = (
+        set(_extract_items_from_template(matched_template["full_path"], modality=modality))
+        or None
+    )
+
+    validation_errors = validate_recipe(recipe, known_items=known_items)
+    if validation_errors:
+        return (
+            jsonify(
+                {
+                    "error": "Recipe validation failed",
+                    "validation_errors": validation_errors,
                 }
             ),
             400,
