@@ -1,0 +1,76 @@
+{
+  "version": "1.0.0",
+  "description": "Declarative BIDS/PRISM filename and entity rules: which entities are required/optional per modality, entity ordering for rewrites, and the suffix/extension grammar used to validate filenames. Consumed by src/entity_rules.py; do not hand-edit MODALITY_PATTERNS-style regexes in Python instead of this file.",
+  "entityOrder": [
+    "sub",
+    "ses",
+    "task",
+    "acq",
+    "run",
+    "rec",
+    "dir",
+    "echo",
+    "ce",
+    "part",
+    "space",
+    "desc"
+  ],
+  "defaultRequiredEntities": ["sub", "task"],
+  "aliases": {
+    "physiological": "physio"
+  },
+  "modalities": {
+    "survey": {
+      "kind": "prism",
+      "suffixes": ["survey"],
+      "extensions": ["tsv", "json"],
+      "example": {"task": "panas"}
+    },
+    "biometrics": {
+      "kind": "prism",
+      "suffixes": ["biometrics"],
+      "extensions": ["tsv", "json"]
+    },
+    "environment": {
+      "kind": "prism",
+      "suffixes": ["environment"],
+      "extensions": ["tsv", "tsv.gz", "json"],
+      "requiredEntityValues": {
+        "recording": {"pattern": "[a-zA-Z0-9]+"}
+      }
+    },
+    "events": {
+      "kind": "prism",
+      "suffixes": ["events"],
+      "extensions": ["tsv"]
+    },
+    "physio": {
+      "kind": "prism",
+      "suffixes": ["physio"],
+      "extensions": ["tsv", "tsv.gz", "json", "edf"],
+      "optionalEntityValues": {
+        "recording": {
+          "enum": ["ecg", "cardiac", "puls", "resp", "eda", "ppg", "emg", "temp", "bp", "spo2", "trigger"],
+          "allowOther": true,
+          "otherPattern": "[a-zA-Z0-9]+"
+        }
+      }
+    },
+    "eyetracking": {
+      "kind": "bidsPassthrough",
+      "suffixes": ["eyetrack", "eye", "gaze"],
+      "extensions": ["tsv", "tsv.gz", "json", "edf", "asc"],
+      "optionalEntityValues": {
+        "trackedEye": {
+          "enum": ["left", "right", "both"]
+        }
+      }
+    },
+    "anat": {"kind": "bidsPassthrough"},
+    "func": {"kind": "bidsPassthrough"},
+    "fmap": {"kind": "bidsPassthrough"},
+    "dwi": {"kind": "bidsPassthrough"},
+    "eeg": {"kind": "bidsPassthrough"},
+    "beh": {"kind": "bidsPassthrough"}
+  }
+}

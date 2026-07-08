@@ -85,6 +85,9 @@ black . && flake8 .              # Format and lint
 When modifying modalities:
 1. `schemas/` - JSON schema definitions
 2. `src/schema_manager.py` - modalities list
-3. `src/validator.py` - MODALITY_PATTERNS
+3. `app/schemas/stable/entities.schema.json` - suffix/extension/entity grammar
+   per modality (`src/entity_rules.py` compiles this into `validator.py`'s
+   `MODALITY_PATTERNS`/`PRISM_MODALITIES`/`BIDS_MODALITIES` and `issues.py`'s
+   fix hints — don't hand-edit those, edit the rules file instead)
 4. `prism-studio.py` - restricted_names
 5. `templates/index.html` - UI list
