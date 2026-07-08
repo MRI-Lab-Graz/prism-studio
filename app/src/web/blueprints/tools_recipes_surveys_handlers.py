@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from flask import current_app, jsonify
+from flask import current_app, jsonify, request, send_file
 
 from src.cross_platform import normalize_path
 from src.runtime_dependencies import has_pyreadstat_write_support
@@ -728,3 +728,39 @@ def handle_api_recipes_surveys(data: dict):
             },
         }
     )
+
+
+def handle_download_recipes_output_file():
+    """Serve a single file out of a project's derivatives/ folder for download.
+
+    Reading through a git-annex symlink works fine (only *writing* to one hits
+    the read-only annex object, which is what broke recipe re-runs before the
+    `.gitattributes` text policy covered these output formats) -- this lets
+    users pull out one derivative file (e.g. a `.sav`) without cloning or
+    exporting the whole DataLad-tracked project.
+    """
+    dataset_path_param = str(request.args.get("dataset_path") or "").strip()
+    if not dataset_path_param or not os.path.isdir(dataset_path_param):
+        return jsonify({"error": "Invalid dataset path"}), 400
+    project_path = Path(dataset_path_param).resolve()
+
+    requested = str(request.args.get("path") or "").strip()
+    if not requested:
+        return jsonify({"error": "path is required"}), 400
+
+    try:
+        file_path = Path(requested).resolve()
+    except OSError:
+        return jsonify({"error": "Invalid path"}), 400
+
+    derivatives_dir = (project_path / "derivatives").resolve()
+    if file_path != derivatives_dir and not file_path.is_relative_to(derivatives_dir):
+        return (
+            jsonify({"error": "Requested file is outside the project's derivatives folder"}),
+            400,
+        )
+
+    if not file_path.is_file():
+        return jsonify({"error": f"File not found: {requested}"}), 404
+
+    return send_file(str(file_path), as_attachment=True, download_name=file_path.name)
