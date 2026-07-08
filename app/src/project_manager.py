@@ -95,6 +95,7 @@ DATALAD_TEXT_POLICY_REQUIRED_LINES = (
     "*.md annex.largefiles=nothing",
     "*.ndjson annex.largefiles=nothing",
     "*.ods annex.largefiles=nothing",
+    "*.R annex.largefiles=nothing",
     "*.toml annex.largefiles=nothing",
     "*.tsv annex.largefiles=nothing",
     "*.txt annex.largefiles=nothing",
@@ -111,6 +112,19 @@ DATALAD_TEXT_POLICY_REQUIRED_LINES = (
     "README.md annex.largefiles=nothing",
     "dataset_description.json annex.largefiles=nothing",
     "project.json annex.largefiles=nothing",
+)
+# Statistics-package export formats produced by PRISM's own recipe/derivative
+# pipeline (e.g. `.sav` from `recipes survey --format sav`). These are small,
+# tabular, human-shareable outputs -- the same size/shareability class as the
+# formats above -- but only *within derivatives/*: a `.sav` dropped into
+# sourcedata/ could be a large imported legacy dataset, so it stays subject to
+# git-annex's normal large-file handling there.
+DATALAD_DERIVATIVES_ONLY_TEXT_POLICY_EXTENSIONS = (
+    ".dta",
+    ".RData",
+    ".rds",
+    ".sav",
+    ".zsav",
 )
 # Binary/bulk recording formats routed through Git LFS by the Git LFS export
 # option. Deliberately disjoint from DATALAD_TEXT_POLICY_REQUIRED_LINES above —
@@ -4581,7 +4595,12 @@ git push -u origin main
         # this, any text-format files restored above would be annexed by
         # git-annex's default heuristics on this very save -- requiring a
         # later repair pass to un-annex them instead of never annexing them.
-        self._ensure_datalad_editable_metadata_policy_for_root(dataset_path)
+        self._ensure_datalad_editable_metadata_policy_for_root(
+            dataset_path,
+            extra_lines=self._derivatives_text_policy_extra_lines(
+                project_path, dataset_path
+            ),
+        )
 
         self._emit_backend_progress(
             f'Saving nested DataLad dataset "{dataset_path.name}".',
@@ -5087,6 +5106,44 @@ git push -u origin main
 
         return sorted(dataset_roots)
 
+    @staticmethod
+    def _is_derivatives_dataset_root(project_path: Path, dataset_root: Path) -> bool:
+        """True when ``dataset_root`` *is* the project's top-level derivatives/ folder.
+
+        Used to decide whether a dataset root's own .gitattributes should get the
+        unscoped derivatives-only rules (everything in this repo already lives
+        under derivatives/) versus the project root, which needs the rules
+        path-scoped to ``derivatives/**`` so they don't leak into sourcedata/.
+        """
+        try:
+            return dataset_root.resolve() == (project_path / "derivatives").resolve()
+        except OSError:
+            return False
+
+    def _derivatives_text_policy_extra_lines(
+        self, project_path: Path, dataset_root: Path
+    ) -> tuple[str, ...]:
+        """Extra .gitattributes lines for stats-package export formats.
+
+        Only applies within derivatives/: written path-scoped
+        (``derivatives/**/*.ext``) when ``dataset_root`` is the project root
+        itself (derivatives/ is a plain subfolder there), or unscoped when
+        ``dataset_root`` is derivatives/ itself as its own nested dataset --
+        never at any other dataset root, so a large legacy `.sav` imported
+        into sourcedata/ is unaffected.
+        """
+        if dataset_root == project_path:
+            return tuple(
+                f"derivatives/**/*{ext} annex.largefiles=nothing"
+                for ext in DATALAD_DERIVATIVES_ONLY_TEXT_POLICY_EXTENSIONS
+            )
+        if self._is_derivatives_dataset_root(project_path, dataset_root):
+            return tuple(
+                f"*{ext} annex.largefiles=nothing"
+                for ext in DATALAD_DERIVATIVES_ONLY_TEXT_POLICY_EXTENSIONS
+            )
+        return ()
+
     def _summarize_datalad_text_policy(self, project_path: Path) -> Dict[str, Any]:
         """Report whether text-file Git tracking policy is present in dataset roots."""
         dataset_roots = self._iter_datalad_dataset_roots(project_path)
@@ -5095,6 +5152,9 @@ git push -u origin main
         for dataset_root in dataset_roots:
             gitattributes_path = dataset_root / ".gitattributes"
             has_rule = False
+            required_lines = DATALAD_TEXT_POLICY_REQUIRED_LINES + (
+                self._derivatives_text_policy_extra_lines(project_path, dataset_root)
+            )
             if gitattributes_path.is_file():
                 try:
                     content = CrossPlatformFile.read_text(str(gitattributes_path))
@@ -5105,7 +5165,7 @@ git push -u origin main
                     }
                     has_rule = all(
                         policy_line in existing_lines
-                        for policy_line in DATALAD_TEXT_POLICY_REQUIRED_LINES
+                        for policy_line in required_lines
                     )
                 except Exception:
                     has_rule = False
@@ -5132,6 +5192,39 @@ git push -u origin main
         """Glob patterns (basename match) for files the text-tracking policy covers."""
         return [line.split(" ", 1)[0] for line in DATALAD_TEXT_POLICY_REQUIRED_LINES]
 
+    @staticmethod
+    def _derivatives_only_glob_patterns() -> List[str]:
+        """Glob patterns (basename match) for derivatives-only stats export formats."""
+        return [f"*{ext}" for ext in DATALAD_DERIVATIVES_ONLY_TEXT_POLICY_EXTENSIONS]
+
+    def _matches_text_policy(
+        self,
+        project_path: Path,
+        dataset_root: Path,
+        rel: str,
+        *,
+        universal_patterns: List[str],
+        derivatives_patterns: List[str],
+    ) -> bool:
+        """Whether a path (relative to ``dataset_root``) is covered by the text policy.
+
+        Derivatives-only extensions (``.sav`` etc.) only count when ``rel`` is
+        actually under derivatives/ -- either because ``dataset_root`` itself
+        *is* the derivatives/ nested dataset, or because ``rel`` starts with
+        ``derivatives/`` within a root that contains it as a plain subfolder.
+        """
+        name = Path(rel).name
+        if any(fnmatch.fnmatch(name, pattern) for pattern in universal_patterns):
+            return True
+
+        rel_posix = rel.replace(os.sep, "/")
+        under_derivatives = self._is_derivatives_dataset_root(
+            project_path, dataset_root
+        ) or (rel_posix == "derivatives" or rel_posix.startswith("derivatives/"))
+        if not under_derivatives:
+            return False
+        return any(fnmatch.fnmatch(name, pattern) for pattern in derivatives_patterns)
+
     def _find_annexed_text_files(
         self,
         project_path: Path,
@@ -5155,6 +5248,7 @@ git push -u origin main
             return result
 
         patterns = self._text_policy_glob_patterns()
+        derivatives_patterns = self._derivatives_only_glob_patterns()
         found: List[str] = []
         deadline = time.monotonic() + ANNEXED_TEXT_FILE_SCAN_BUDGET_SECONDS
         scanned_roots = 0
@@ -5180,7 +5274,13 @@ git push -u origin main
 
             for line in process.stdout.splitlines():
                 rel = line.strip()
-                if not rel or not any(fnmatch.fnmatch(Path(rel).name, pattern) for pattern in patterns):
+                if not rel or not self._matches_text_policy(
+                    project_path,
+                    dataset_root,
+                    rel,
+                    universal_patterns=patterns,
+                    derivatives_patterns=derivatives_patterns,
+                ):
                     continue
                 try:
                     full_rel = (dataset_root / rel).relative_to(project_path).as_posix()
@@ -5199,6 +5299,8 @@ git push -u origin main
     def _ensure_datalad_editable_metadata_policy_for_root(
         self,
         dataset_root: Path,
+        *,
+        extra_lines: tuple[str, ...] = (),
     ) -> bool:
         """Write the text-tracking policy lines into a single dataset root's .gitattributes."""
         gitattributes_path = dataset_root / ".gitattributes"
@@ -5217,7 +5319,7 @@ git push -u origin main
 
         missing_lines = [
             line
-            for line in DATALAD_TEXT_POLICY_REQUIRED_LINES
+            for line in DATALAD_TEXT_POLICY_REQUIRED_LINES + extra_lines
             if line not in existing_lines
         ]
         if not missing_lines:
@@ -5244,7 +5346,12 @@ git push -u origin main
         """Keep core project metadata and common text files in Git, regardless of DataLad state."""
         updated = False
         for dataset_root in self._iter_datalad_dataset_roots(project_path):
-            if self._ensure_datalad_editable_metadata_policy_for_root(dataset_root):
+            extra_lines = self._derivatives_text_policy_extra_lines(
+                project_path, dataset_root
+            )
+            if self._ensure_datalad_editable_metadata_policy_for_root(
+                dataset_root, extra_lines=extra_lines
+            ):
                 updated = True
 
         return updated
@@ -5266,6 +5373,7 @@ git push -u origin main
             return result
 
         patterns = self._text_policy_glob_patterns()
+        derivatives_patterns = self._derivatives_only_glob_patterns()
         for dataset_root in self._iter_datalad_dataset_roots(project_path):
             try:
                 find_process = subprocess.run(
@@ -5284,7 +5392,14 @@ git push -u origin main
             matched_paths = [
                 rel
                 for rel in (line.strip() for line in find_process.stdout.splitlines())
-                if rel and any(fnmatch.fnmatch(Path(rel).name, pattern) for pattern in patterns)
+                if rel
+                and self._matches_text_policy(
+                    project_path,
+                    dataset_root,
+                    rel,
+                    universal_patterns=patterns,
+                    derivatives_patterns=derivatives_patterns,
+                )
             ]
             if not matched_paths:
                 continue

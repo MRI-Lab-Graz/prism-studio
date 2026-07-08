@@ -4,11 +4,12 @@
 
 Text-format and small-codebook files must **never** be tracked by git-annex
 (DataLad) in any PRISM project — this includes `sourcedata/`, not just the
-BIDS dataset proper. Affected extensions: `.csv`, `.tsv`, `.json`, `.jsonl`,
-`.ndjson`, `.txt`, `.xml`, `.yaml`/`.yml`, `.toml`, `.cfg`, `.md`, `.xlsx`,
-`.xls`, `.ods`, plus key root files (`.gitattributes`, `.bidsignore`,
-`.prismrc.json`, `dataset_description.json`, `project.json`, `README.md`,
-`CHANGES`, `CITATION.cff`).
+BIDS dataset proper, and derivatives (e.g. auto-generated `.R` helper
+scripts). Affected extensions: `.csv`, `.tsv`, `.json`, `.jsonl`,
+`.ndjson`, `.txt`, `.xml`, `.yaml`/`.yml`, `.toml`, `.cfg`, `.ini`, `.md`,
+`.xlsx`, `.xls`, `.ods`, `.R`, plus key root files (`.gitattributes`,
+`.bidsignore`, `.prismrc.json`, `dataset_description.json`, `project.json`,
+`README.md`, `CHANGES`, `CITATION.cff`).
 
 This is implemented via `annex.largefiles=nothing` rules written into each
 project's `.gitattributes` by `DATALAD_TEXT_POLICY_REQUIRED_LINES` in
