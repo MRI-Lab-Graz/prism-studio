@@ -33,12 +33,16 @@ def _resolve_participants_mapping():
 
 def _apply_participants_mapping(
     dataset_path: str, progress_callback: Optional[Callable] = None
-):
-    """Delegate participants mapping to derivatives workflow layer."""
+) -> Optional[dict]:
+    """Delegate participants mapping to derivatives workflow layer.
+
+    Returns the mapping result dict (or None if the feature is unavailable)
+    so callers can surface this dataset-mutating side effect to the user.
+    """
     apply_participants_mapping = _resolve_participants_mapping()
     if apply_participants_mapping is None:
-        return
-    apply_participants_mapping(dataset_path, progress_callback)
+        return None
+    return apply_participants_mapping(dataset_path, progress_callback)
 
 
 # Progress tracking for validation jobs
@@ -280,9 +284,22 @@ def run_validation(
     # Canonical PRISM location: BIDS root is the provided project folder.
     dataset_path = os.path.abspath(dataset_path)
 
-    # Auto-apply participants mapping only when PRISM checks are enabled
+    # Auto-apply participants mapping only when PRISM checks are enabled.
+    # This mutates participants.tsv in the dataset, so the result is attached
+    # to `stats` below and surfaced on the results page rather than left silent.
+    participants_mapping_result = None
     if run_prism:
-        _apply_participants_mapping(dataset_path, progress_callback)
+        participants_mapping_result = _apply_participants_mapping(
+            dataset_path, progress_callback
+        )
+
+    def _attach_mapping_result(stats_obj):
+        if participants_mapping_result is not None:
+            try:
+                stats_obj.participants_mapping_result = participants_mapping_result
+            except Exception:
+                pass
+        return stats_obj
 
     core_validate = _get_core_validator()
 
@@ -346,7 +363,7 @@ def run_validation(
                 else:
                     web_issues.append(issue)
 
-            return web_issues, stats
+            return web_issues, _attach_mapping_result(stats)
         except Exception as e:
             if isinstance(e, ValidationCancelledError):
                 raise
@@ -354,9 +371,10 @@ def run_validation(
             # Fall through to subprocess
 
     # Fallback to subprocess
-    return _run_validator_subprocess(
+    issues, stats = _run_validator_subprocess(
         dataset_path, verbose=verbose, schema_version=schema_version, run_bids=run_bids
     )
+    return issues, _attach_mapping_result(stats)
 
 
 def _run_validator_subprocess(

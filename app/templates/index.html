@@ -163,7 +163,8 @@
                                     </label>
                                     <div>
                                         <div class="form-check mb-2">
-                {% endcall %}
+                                            <input class="form-check-input advanced-option" type="radio" name="validation_mode" id="mode_both" value="both" checked disabled>
+                                            <label class="form-check-label fw-bold" for="mode_both">Full Validation (PRISM + BIDS)</label>
                                         </div>
                                         <div class="form-check mb-2">
                                             <input class="form-check-input advanced-option" type="radio" name="validation_mode" id="mode_prism" value="prism" disabled>
@@ -273,6 +274,7 @@
                 </div>
             </div>
         </div>
+        {% endcall %}
 
         <!-- Local validation note -->
         <div class="text-center text-muted">
