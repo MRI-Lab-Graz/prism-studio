@@ -1,84 +1,83 @@
-    .status-badge {
-        font-size: 1rem;
-        padding: 0.5rem 1.5rem;
-        border-radius: 50px;
-    }
-    .summary-card {
-        transition: all 0.3s ease;
-    }
-    .summary-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
-    }
-    .error-group-header {
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }
-    .error-group-header:hover {
-        background-color: #fff5f5;
-    }
-    .file-path {
-        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-        font-size: 0.85rem;
-    }
-    .modality-icon {
-        width: 24px;
-        text-align: center;
-    }
-    .progress-thin {
-        height: 6px;
-    }
-    .bg-danger-soft {
-        background-color: rgba(220, 53, 69, 0.1);
-    }
-    .bg-success-soft {
-        background-color: rgba(25, 135, 84, 0.1);
-    }
-    .bg-warning-soft {
-        background-color: rgba(255, 193, 7, 0.1);
-    }
-    .bg-info-soft {
-        background-color: rgba(13, 202, 240, 0.1);
-    }
-    .x-small {
-        font-size: 0.75rem;
-    }
-    .group-toggle {
-        cursor: pointer;
-        transition: background-color 0.15s;
-    }
-    .group-toggle:hover {
-        background-color: rgba(0, 0, 0, 0.03) !important;
-    }
-    .group-chevron {
-        transition: transform 0.2s ease;
-    }
-    .group-toggle[aria-expanded="true"] .group-chevron {
-        transform: rotate(180deg);
-    }
+.status-badge {
+    font-size: 1rem;
+    padding: 0.5rem 1.5rem;
+    border-radius: 50px;
+}
+.summary-card {
+    transition: all 0.3s ease;
+}
+.summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+}
+.error-group-header {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.error-group-header:hover {
+    background-color: #fff5f5;
+}
+.file-path {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.85rem;
+}
+.modality-icon {
+    width: 24px;
+    text-align: center;
+}
+.progress-thin {
+    height: 6px;
+}
+.bg-danger-soft {
+    background-color: rgba(220, 53, 69, 0.1);
+}
+.bg-success-soft {
+    background-color: rgba(25, 135, 84, 0.1);
+}
+.bg-warning-soft {
+    background-color: rgba(255, 193, 7, 0.1);
+}
+.bg-info-soft {
+    background-color: rgba(13, 202, 240, 0.1);
+}
+.x-small {
+    font-size: 0.75rem;
+}
+.group-toggle {
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+.group-toggle:hover {
+    background-color: rgba(0, 0, 0, 0.03) !important;
+}
+.group-chevron {
+    transition: transform 0.2s ease;
+}
+.group-toggle[aria-expanded="true"] .group-chevron {
+    transform: rotate(180deg);
+}
+.revalidate-form {
+    flex-wrap: nowrap;
+}
+.revalidate-mode-select {
+    min-width: 230px;
+}
+.revalidate-progress-panel {
+    border: 1px solid #d1e7dd;
+}
+.result-action-disabled {
+    opacity: 0.65;
+    pointer-events: none;
+}
+
+@media (max-width: 768px) {
     .revalidate-form {
-        flex-wrap: nowrap;
+        width: 100%;
+        flex-wrap: wrap;
     }
+
     .revalidate-mode-select {
-        min-width: 230px;
+        min-width: 0;
+        width: 100%;
     }
-    .revalidate-progress-panel {
-        border: 1px solid #d1e7dd;
-    }
-    .result-action-disabled {
-        opacity: 0.65;
-        pointer-events: none;
-    }
-
-    @media (max-width: 768px) {
-        .revalidate-form {
-            width: 100%;
-            flex-wrap: wrap;
-        }
-
-        .revalidate-mode-select {
-            min-width: 0;
-            width: 100%;
-        }
-    }
-</style>
+}
