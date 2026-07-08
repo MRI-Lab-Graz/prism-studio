@@ -13,6 +13,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from src.constants import SUPPORTED_MODALITIES
+
 ALLOWED_DERIVED_METHODS = {"max", "min", "mean", "avg", "sum", "map", "formula"}
 ALLOWED_SCORE_METHODS = {"sum", "mean", "formula", "map"}
 ALLOWED_MISSING = {"ignore", "require_all", "all", "strict"}
@@ -156,7 +158,7 @@ def validate_recipe(
         return [prefix + "recipe must be a JSON object"]
 
     kind = str(recipe.get("Kind", "")).strip().lower()
-    if kind not in {"survey", "biometrics"}:
+    if kind not in SUPPORTED_MODALITIES:
         errors.append(prefix + "Kind must be 'survey' or 'biometrics'")
 
     if not _is_nonempty_str(recipe.get("RecipeVersion")):

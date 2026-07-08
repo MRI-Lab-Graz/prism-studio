@@ -43,31 +43,38 @@ Goal: land the native-window work and the security hardening from
 Done when: PR #77 is merged to `main`. (Tag/release deferred — see note
 above.)
 
-### Phase 1 — BIDS `phenotype/` bridge (v1.17)
+### Phase 1 — BIDS `phenotype/` bridge (v1.17) — DONE (merged, unreleased)
 
-Goal: bidirectional interop with vanilla BIDS phenotypic data — import
-existing `phenotype/` directories into PRISM's per-session `survey/` layout,
-and export PRISM surveys to a valid BIDS `phenotype/` aggregation — so any
-PRISM dataset has a lossless exit ramp and any BIDS dataset has an entry
-ramp. There is no phenotype support today (greenfield).
+Goal: a deliberately lossy compatibility bridge to vanilla BIDS
+`phenotype/`, not a first-class conversion path — PRISM's per-session
+`survey/` layout stays primary, and the bridge exists only so data isn't
+silently stranded in either direction. Scope was narrowed from the original
+plan during implementation (see PR #78, merged to `main`):
 
-- [ ] Export: aggregate `sub-*/ses-*/survey/*_survey.tsv` →
-      `phenotype/<instrument>.tsv` + JSON sidecar, sessions encoded per BIDS
-      phenotype conventions; round-trip metadata preserved in the sidecar
-      (new `src/converters/phenotype_export.py`)
-- [ ] Import: parse `phenotype/` (+ `participants.tsv` session columns) →
-      per-session `survey/` layout, matching instruments against
-      `official/library/survey/` (new `src/converters/phenotype_import.py`)
-- [ ] Wire both into the Converter page blueprints and `prism_tools.py` CLI;
-      offer phenotype export in project export flows
-      (`app/src/web/blueprints/projects_export_blueprint.py`)
-- [ ] Round-trip regression test: survey → phenotype → survey is
-      content-identical
+- [x] Export: aggregate `sub-*/ses-*/survey/*_survey.tsv` grouped by
+      (TaskName, VariantID) → `phenotype/<name>.tsv` + flat column-keyed
+      JSON sidecar; opt-in flag (`export_phenotype_bridge`) in all four
+      existing export routes (sync/async ZIP, folder, Git LFS) — **not**
+      a new export mode (`src/converters/phenotype_export.py`)
+- [x] Import: parse `phenotype/*.tsv` → PRISM `survey/` layout with a
+      minimal, honest sidecar (no fuzzy-matching against
+      `official/library/survey/` — deliberately out of scope to keep
+      engineering investment low); fires **automatically** (no
+      confirmation prompt) when a project is initialized from an existing
+      BIDS dataset containing `phenotype/`, with a post-hoc non-blocking
+      banner (`src/converters/phenotype_import.py`,
+      `app/src/project_manager.py`)
+- [x] **Not** wired into the Converter page or `conversion_survey_*`
+      blueprints — kept visibly separate from PRISM's native survey
+      conversion paths by design
+- [x] Round-trip regression test asserting data fidelity *and* explicit
+      metadata loss (`tests/test_phenotype_roundtrip.py`)
 - [ ] Ongoing: engage the BIDS phenotype BEP process; keep
       `docs/BIDS_SURVEY_MODALITY_PR_DRAFT.md` aligned
 
-Done when: the wellbeing demo dataset round-trips losslessly and the
-exported `phenotype/` passes the official bids-validator.
+Done when: merged to `main` and exercised end-to-end against the
+wellbeing-multi-demo example (done — see PR #78). Formal BEP engagement
+remains open-ended, not a release blocker.
 
 ### Phase 2 — Recipe & derivative provenance (v1.18)
 
@@ -88,23 +95,46 @@ Done when: a scored derivative can be traced to exact inputs and recipe
 version from its sidecars alone, and DataLad projects show a `datalad run`
 commit for scoring.
 
-### Phase 3 — Declarative entity/filename rules (v1.19)
+### Phase 3 — Declarative entity/filename rules (v1.19) — DONE (merged, unreleased)
 
 Goal: express filename/entity rules as data, the way sidecar validation
-already is (JSON Schema in `app/schemas/`). Today entity conventions live
-only in code (`src/bids_entity_parser.py`, `src/bids_entity_rewriter.py`)
+already is (JSON Schema in `app/schemas/`). Entity conventions previously
+lived only in code (`src/bids_entity_parser.py`, `src/bids_entity_rewriter.py`)
 and prose. This is the prerequisite for third-party implementations and the
 v2.0 spec.
 
-- [ ] Machine-readable rules file (e.g. `app/schemas/stable/entities.json`):
-      datatypes, suffixes, allowed/required entities, entity ordering
-- [ ] `bids_entity_parser`/validator consume the rules file; hand-coded
-      checks become data-driven
-- [ ] Version the rules with the existing schema channels
-      (`stable`/`v0.x`, `app/src/schema_manager.py`)
+- [x] Machine-readable rules file: `app/schemas/stable/entities.schema.json`
+      — datatypes, suffixes, allowed/required entities, entity ordering
+      (`.schema.json` extension to match every other file in
+      `app/schemas/`, not the `.json` originally sketched here)
+- [x] `validator`/rewriter/fix-hints/modality-inference consume the rules
+      file via new `src/entity_rules.py`; hand-coded checks became
+      data-driven for both the read path (`app/src/validator.py`,
+      `src/bids_entity_rewriter.py`, `app/src/issues.py`,
+      `app/src/fixer.py` — PR #81) and the write path (filename
+      construction in `app/src/converters/survey_core.py`,
+      `src/converters/biometrics.py`,
+      `app/src/cli/commands/convert.py` — PR #82)
+- [x] Versioned with the existing schema channels: lives in
+      `app/schemas/stable/`, loads through `schema_manager.load_schema()`'s
+      normal version-aware path resolution like every other schema file.
+      Deliberately *not* added to `schema_manager.py`'s `load_all_schemas()`
+      modality registry — that list feeds `jsonschema.validate()` against
+      sidecar content, and `entities.schema.json` isn't a JSON-Schema
+      document, so mixing it in would be a category error.
 
 Done when: adding a new suffix or entity requires only a rules-file edit
-plus tests — no parser code changes.
+plus tests — no parser code changes (true for both validating and writing
+filenames as of PRs #81/#82).
+
+Explicitly deferred, not silently dropped: `app/src/project_manager.py`'s
+default-modality lists and `app/src/bids_integration.py`'s `.bidsignore`
+generation still hardcode their own modality lists independently — left
+alone given the DataLad text-file policy risk in `CLAUDE.md`. A handful of
+UI-only datatype guards in `app/src/web/blueprints/*.py` were also out of
+scope for the entity-rules work itself (they encode a different concept —
+which modalities the Template Editor/Recipe Builder *feature* supports,
+not filename grammar).
 
 ### Phase 4 — Instrument registry & variable semantics (v1.20)
 
