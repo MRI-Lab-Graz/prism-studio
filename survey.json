@@ -1,0 +1,475 @@
+{
+  "title": "MRI-Lab Graz Study Application",
+  "description": "Application to conduct a study at the MRI-Lab Graz ( Kopernikusgasse 24, 8010 Graz, Austria). \nUniversity Graz",
+  "logo": "data:image/jpeg;base64,/9j/PLACEHOLDER_LOGO_BASE64==",
+  "logoPosition": "right",
+  "pages": [
+    {
+      "name": "Welcome Page",
+      "title": "Information about the application",
+      "description": "Before you enter the survey, be sure to have the following information available",
+      "elements": [
+        {
+          "type": "html",
+          "name": "general_info",
+          "visible": false,
+          "title": "Needed information",
+          "validators": [
+            {
+              "type": "expression"
+            }
+          ],
+          "html": "For a study application at the <a href=\"https://psychologie.uni-graz.at/de/mri-lab/\">MRI-Lab Graz</a> we need the following information, which will be asked in detail in this online survey:\n\n<ul>\n\t<li><b>Contact information</b> about the principal investigator and the executive staff</li>\n\t<li>Information about <b>ethical approval</b></li>\n\t<li><b>Funding</b> information</li>\n\t<li><b>Detailed</b> study information (start/end time, participants)</li>\n\n  </ul>"
+        },
+        {
+          "type": "html",
+          "name": "MR_data_info",
+          "html": "<b>Some words about your MR-data:</b>\n<br>\n \nThe MRI-Lab fully (and only) supports the Brain Imaging Data Structure (<a href=\"https://bids-specification.readthedocs.io/en/stable/\">BIDS</a>) format.\nThat offers the great advantage of easily sharing your data (e.g. <a href=\"https://openneuro.org\">OpenNeuro</a>) and using all available BIDS-Apps. \n <be>\n<br>\nThat also means that you <b>will not</b> receive any DICOM-data. Further, structural image data will undergo \"<b>defacing</b>\" (removal of facial structures from MRI images) and participant meta-data is reduced to BIDS standard. This is necessary to be in line with the General Data Protection Regulation."
+        },
+        {
+          "type": "html",
+          "name": "service",
+          "visible": false,
+          "html": "<b>Our service:</b>\n\n<ul>\n\t<li>Complete acquisition for your study is taken care of. You don't (and are not allowed) to use the Scanner.</li>\n\t<li>Data management, including BIDS-conversion and optional preprocessing (fmriprep) is taken care of. </li>\n\t<li>Sequencens and MR-protocols will be provided unless you have specific ideas, wishes or knowledge. </li>\n  </ul>"
+        },
+        {
+          "type": "html",
+          "name": "responsibilities",
+          "visible": false,
+          "html": "<b>Your responsibilities:</b>\n\n<ul>\n\t<li>Participant managment</li>\n\t<li>Preparation of fmri-paradigma (if applicable). We strongly advise using psychopy with our BIDS-extension.</li>\n\t<li>Logfile-management (if applicable): Additional storage of logfiles, quality assessment (is everything in the file ) </li>\n  </ul>"
+        },
+        {
+          "type": "checkbox",
+          "name": "agree2start",
+          "title": "Start application",
+          "description": "I am sure that I have all the required inforamtion",
+          "isRequired": true,
+          "requiredErrorText": "You have to consent.",
+          "choices": [
+            {
+              "value": "item1",
+              "text": "I am sure that I have all the required information for my study and understand the data-handling procedure. "
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Personell",
+      "title": "Personell",
+      "description": "Information about principal investigator and contact person.",
+      "elements": [
+        {
+          "type": "radiogroup",
+          "name": "project_type",
+          "title": "Is this an internal or external project?",
+          "description": "Internal: you are affiliated with the University of Graz. External: you are not a University of Graz member.",
+          "isRequired": true,
+          "choices": [
+            {
+              "value": "internal",
+              "text": "Internal (University of Graz)"
+            },
+            {
+              "value": "external",
+              "text": "External"
+            }
+          ]
+        },
+        {
+          "type": "dropdown",
+          "name": "arbeitsbereich",
+          "visibleIf": "{project_type} = 'internal'",
+          "title": "Arbeitsbereich (work area)",
+          "description": "Your work area within the Institute of Psychology, University of Graz. See https://psychologie.uni-graz.at/de/ueber-das-institut/arbeitsbereiche/",
+          "isRequired": true,
+          "choices": [
+            "Allgemeine Psychologie",
+            "Arbeits- und Organisationspsychologie",
+            "Begabungsforschung",
+            "Biologische Psychologie",
+            "Cognitive Science Section",
+            "Differentielle Psychologie",
+            "Digitale Technologien und Psychologie",
+            "Entwicklungspsychologie",
+            "Gesundheitspsychologie",
+            "Klinische Psychologie",
+            "Kreativität und Innovation",
+            "Musikpsychologie & Gehirnforschung",
+            "Neuropsychologie",
+            "Pädagogische Psychologie",
+            "Psychologische Diagnostik & Methodik",
+            "Sozialpsychologie",
+            "Visuelle Neurowissenschaft"
+          ],
+          "showOtherItem": true,
+          "otherPlaceholder": "Provide your work area"
+        },
+        {
+          "type": "text",
+          "name": "organization",
+          "visibleIf": "{project_type} = 'external'",
+          "title": "Institution / Organization",
+          "description": "Name of the institution or organization you are affiliated with.",
+          "isRequired": true
+        },
+        {
+          "type": "html",
+          "name": "external_application_info",
+          "visibleIf": "{project_type} = 'external'",
+          "html": "If you are not a member of the University of Graz, you must pay for each scanner hour. You can complete this survey, but we will contact you for further information about scanner costs."
+        },
+        {
+          "type": "multipletext",
+          "name": "PI - contact",
+          "title": "Information about the Principal Investigator (PI)",
+          "validators": [
+            {
+              "type": "expression"
+            }
+          ],
+          "items": [
+            {
+              "name": "PI_Name",
+              "isRequired": true,
+              "placeholder": "Firstname, Surname",
+              "title": "Name"
+            },
+            {
+              "name": "PI_tel",
+              "isRequired": true,
+              "placeholder": "0043316800800 (no plus or spaces)",
+              "inputType": "number",
+              "title": "Phone"
+            },
+            {
+              "name": "PI_email",
+              "isRequired": true,
+              "inputType": "email",
+              "title": "Email",
+              "requiredErrorText": "You have to provide the email address of the principal investigator!"
+            },
+            {
+              "name": "PI_orcid",
+              "isRequired": false,
+              "placeholder": "0000-0002-1825-0097",
+              "title": "ORCID (optional)"
+            }
+          ]
+        },
+        {
+          "type": "paneldynamic",
+          "name": "additional_authors",
+          "title": "Additional authors / collaborators",
+          "description": "Optional: add any co-authors or collaborators who should be listed as dataset authors besides the PI.",
+          "isRequired": false,
+          "panelCount": 0,
+          "minPanelCount": 0,
+          "templateElements": [
+            {
+              "type": "text",
+              "name": "author_name",
+              "title": "Name",
+              "isRequired": true
+            },
+            {
+              "type": "text",
+              "name": "author_email",
+              "title": "Email",
+              "inputType": "email"
+            },
+            {
+              "type": "text",
+              "name": "author_affiliation",
+              "title": "Affiliation"
+            },
+            {
+              "type": "text",
+              "name": "author_orcid",
+              "title": "ORCID (optional)",
+              "placeholder": "0000-0002-1825-0097"
+            }
+          ],
+          "panelAddText": "Add author",
+          "panelRemoveText": "Remove"
+        },
+        {
+          "type": "dropdown",
+          "name": "University Status",
+          "title": "University Status",
+          "isRequired": true,
+          "choices": [
+            "Faculty",
+            "Staff",
+            "Postdoc",
+            "Student"
+          ],
+          "showOtherItem": true,
+          "otherPlaceholder": "Provide information about your status",
+          "otherText": "Other"
+        },
+        {
+          "type": "text",
+          "name": "Department",
+          "visibleIf": "{University Status} <> 'other'",
+          "title": "Department",
+          "isRequired": true,
+          "placeholder": "Example: NAWI/Psychology/MRI-Lab"
+        },
+        {
+          "type": "multipletext",
+          "name": "Primary Contact",
+          "title": "Choose one person to be the primary contact for this project.",
+          "description": "This person will be called about any subject running issues that need immediate attention (e.g. last-minute cancellation due to problems with scanner/equipment).",
+          "isRequired": true,
+          "items": [
+            {
+              "name": "Name",
+              "isRequired": true
+            },
+            {
+              "name": "eMail",
+              "isRequired": true,
+              "inputType": "email"
+            },
+            {
+              "name": "Phone",
+              "isRequired": true,
+              "placeholder": "0043316800800 (no plus or spaces)",
+              "inputType": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Ethics_info",
+      "title": "Ethics",
+      "description": "If you don't have the approval at the moment, you can finish this application BUT a valid authorisation is mandatory for the study-start-",
+      "elements": [
+        {
+          "type": "boolean",
+          "name": "Ethics",
+          "title": "Do you have valid approval from the ethical board of the University of Graz?"
+        },
+        {
+          "type": "text",
+          "name": "ethics_committee",
+          "visibleIf": "{Ethics} = true",
+          "title": "Name of the ethics committee",
+          "description": "The committee that issued the approval.",
+          "defaultValue": "Ethikkommission der Universität Graz",
+          "isRequired": true
+        },
+        {
+          "type": "text",
+          "name": "code_ethic",
+          "visibleIf": "{Ethics} = true",
+          "title": "Please provide the code from the ethical board",
+          "description": "For example: GZ. xx/xx/xx ex 2019/20"
+        },
+        {
+          "type": "text",
+          "name": "date_ethic",
+          "visibleIf": "{Ethics} = true",
+          "title": "Please specifiy the date of ethical approval.",
+          "inputType": "date"
+        }
+      ]
+    },
+    {
+      "name": "Study Information",
+      "title": "Study Information",
+      "description": "Basic inforamtion about your study.",
+      "elements": [
+        {
+          "type": "text",
+          "name": "bids_title",
+          "title": "Running title of your study",
+          "description": "REQUIRED for bids - dataset description. ",
+          "isRequired": true
+        },
+        {
+          "type": "comment",
+          "name": "study_description",
+          "title": "Short description of your study",
+          "description": "REQUIRED for bids - dataset description. Please provide at least a few sentences (minimum 50 characters) describing the aim/background of the study.",
+          "isRequired": true,
+          "validators": [
+            {
+              "type": "text",
+              "minLength": 50,
+              "text": "Please provide at least 50 characters."
+            }
+          ]
+        },
+        {
+          "type": "tagbox",
+          "name": "keywords",
+          "title": "Keywords",
+          "description": "REQUIRED for bids - dataset description. Add at least 3 keywords describing your study (press enter after each one).",
+          "isRequired": true,
+          "choices": [],
+          "allowCustomChoices": true,
+          "validators": [
+            {
+              "type": "answercount",
+              "minCount": 3,
+              "text": "Please provide at least 3 keywords."
+            }
+          ]
+        },
+        {
+          "type": "multipletext",
+          "name": "timespan",
+          "title": "Anticipated timespan ",
+          "description": "Proposed start of the study (not pilot measurements or any preparations) and end.",
+          "items": [
+            {
+              "name": "text1",
+              "isRequired": true,
+              "inputType": "date",
+              "title": "Start date"
+            },
+            {
+              "name": "text2",
+              "isRequired": true,
+              "inputType": "date",
+              "title": "End date"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "name": "nr_participants",
+          "title": "Number of expected participants:Â ",
+          "isRequired": true,
+          "inputType": "number",
+          "min": 1,
+          "max": 200
+        },
+        {
+          "type": "dropdown",
+          "name": "study_design",
+          "title": "Study desing",
+          "description": "Cross-sectional or longitudinal",
+          "isRequired": true,
+          "choices": [
+            {
+              "value": "item1",
+              "text": "Cross sectional (only one timepoints for each participant)"
+            },
+            {
+              "value": "item2",
+              "text": "Longitudinal (multiple timepoints)"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "name": "timepoints",
+          "visibleIf": "{study_design} = 'item2'",
+          "title": "How many timepoints",
+          "isRequired": true,
+          "inputType": "number"
+        }
+      ]
+    },
+    {
+      "name": "Funding_info",
+      "title": "Funding",
+      "description": "for scanner use",
+      "elements": [
+        {
+          "type": "boolean",
+          "name": "funding",
+          "title": "Do you have funding for scanner use (typically 300â¬ per hour)?"
+        },
+        {
+          "type": "multipletext",
+          "name": "funding_details",
+          "visibleIf": "{funding} = true",
+          "title": "Please provide information about your funding",
+          "items": [
+            {
+              "name": "agency",
+              "title": "Funding Agency",
+              "isRequired": true
+            },
+            {
+              "name": "grant_number",
+              "title": "Grant / Reference Number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Data handling",
+      "title": "Data handling and preprocessing",
+      "elements": [
+        {
+          "type": "html",
+          "name": "mriqc",
+          "html": "Your data will be converted into the <b>BIDS-format</b> and automatically uploaded to a predefined location.</br></br>\n\nQuality control is realized with <a href=\"https://mriqc.readthedocs.io/en/latest/\">MRIQC</a>.\nThis enables state-of-the-art quality indices for structural and functional imaging data. "
+        },
+        {
+          "type": "boolean",
+          "name": "fmriprep",
+          "title": "Should we run fMRIprep for you?",
+          "description": "If your study includes functional data, we offer to run fmriprep on your dataset. "
+        },
+        {
+          "type": "checkbox",
+          "name": "events_file",
+          "visibleIf": "{fmriprep} = true",
+          "title": "Provide BIDS-events file",
+          "description": "YOU must provide a bids-valid events file if you want your data to be preprocessed! We strongly advise you to use psychopy and the in-house developed BIDS-extension. Not applicable if you have resting-state data!",
+          "commentText": "Not applicable if you have resting-state data!",
+          "choices": [
+            {
+              "value": "item1",
+              "text": "I understand that I have to provide a BIDS-valid events-file."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Agreement_info",
+      "title": "Agreement",
+      "description": "Agreement from principle investigator.",
+      "elements": [
+        {
+          "type": "checkbox",
+          "name": "agreement",
+          "title": "I understand and agree to the following next steps:",
+          "choices": [
+            {
+              "value": "item1",
+              "text": "We will arrange one or more pilot measurement(s) to try and define different sequences and or paradigms."
+            },
+            {
+              "value": "item2",
+              "text": "The PI has to analyse and check the data from the pilot measurement(s)"
+            },
+            {
+              "value": "item3",
+              "text": "After the PI has approved the data from the pilot session(s), we will book all your MR-slots (available at the webcalender). You have to double-check every single MR-slot and give your OK."
+            }
+          ]
+        },
+        {
+          "type": "signaturepad",
+          "name": "signature",
+          "visibleIf": "{agreement} allof ['item1', 'item2', 'item3']",
+          "title": "Signature",
+          "description": "Signature of principle investigator"
+        }
+      ]
+    }
+  ],
+  "showPageTitles": false,
+  "showProgressBar": "top",
+  "firstPageIsStarted": true
+}
