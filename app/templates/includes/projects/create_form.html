@@ -13,6 +13,14 @@
                     ('PRISM adds', '<code>project.json</code>, <code>.prismrc.json</code>, and starter folders'),
                     ('Metadata', 'You can save preliminary state now and finish details later')
                 ]) }}
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-3 p-2 border rounded bg-light">
+                    <label for="surveyImportInput" class="btn btn-outline-secondary btn-sm mb-0" role="button">
+                        <i class="fas fa-file-import me-1"></i>Import from study application (survey.json)
+                    </label>
+                    <input type="file" id="surveyImportInput" accept="application/json,.json" class="visually-hidden">
+                    <small class="text-muted">Prefills PI/author, ethics, funding and study fields from a Pavlovia survey response export.</small>
+                    <div id="surveyImportStatus" class="small w-100" role="status" aria-live="polite"></div>
+                </div>
                 <form id="createProjectForm">
                     <div class="row g-3">
                         <div class="col-md-6">
