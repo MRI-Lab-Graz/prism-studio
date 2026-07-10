@@ -5,6 +5,7 @@
 
 import { setButtonLoading, textToArray as _textToArray } from './helpers.js';
 import { initCreateProjectController } from './create-project.js';
+import { initSurveyImportController } from './import-survey.js';
 import { initCreatePreflightController } from './create-preflight.js';
 import { createProjectsCurrentStateController } from './current-project-state.js';
 import { initProjectInitOnBidsController } from './init-on-bids.js';
@@ -41,6 +42,11 @@ import {
     getRecMethodList,
     getRecLocationList,
     getYearMonthValue,
+    setYearMonthValue,
+    setAuthorsList,
+    setEthicsApprovals,
+    setFundingChoice,
+    addFundingRow,
     resetStudyMetadataForm,
     saveProjectSchemaConfig,
     showStudyMetadataCard,
@@ -211,6 +217,16 @@ initCreateProjectController({
     showStudyMetadataCard,
     updateCreateProjectButton,
     showMethodsCard,
+});
+
+initSurveyImportController({
+    setAuthorsList,
+    setEthicsApprovals,
+    setFundingChoice,
+    addFundingRow,
+    setYearMonthValue,
+    updateCreateProjectButton,
+    escapeHtml,
 });
 
 const openProjectController = initOpenProjectController({
