@@ -22,5 +22,5 @@ defusedxml
 pywebview; sys_platform == "darwin"
 # cryptography 49+ dropped Intel/universal2 macOS wheels (arm64-only); pin below 49
 # so the Intel macOS PyInstaller build doesn't fall back to a Rosetta source build.
-cryptography>=46.0.7,<49
+cryptography>=49.0.0,<50
 pydeface
