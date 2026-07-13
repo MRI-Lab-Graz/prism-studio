@@ -15,13 +15,6 @@ function splitPersonName(fullName) {
     return { first: tokens[0], last: tokens.slice(1).join(' ') };
 }
 
-function sanitizeProjectName(title) {
-    return String(title || '')
-        .trim()
-        .replace(/[^a-zA-Z0-9_-]+/g, '_')
-        .replace(/^_+|_+$/g, '');
-}
-
 /**
  * Pure mapping from a survey.json response object to a normalized,
  * form-agnostic shape. No DOM access here.
@@ -83,7 +76,7 @@ export function mapSurveyResponseToFormFields(response) {
     const timespan = r.timespan && typeof r.timespan === 'object' ? r.timespan : {};
 
     return {
-        projectName: sanitizeProjectName(r.bids_title),
+        title: String(r.bids_title || '').trim(),
         studyDescription: String(r.study_description || '').trim(),
         keywords,
         authors,
@@ -108,9 +101,17 @@ function applyMappedFields(mapped, deps) {
         updateCreateProjectButton,
     } = deps;
 
-    if (mapped.projectName) {
-        const nameField = document.getElementById('projectName');
-        if (nameField) nameField.value = mapped.projectName;
+    if (mapped.title) {
+        // #metadataName is the actual required BIDS "Basics.Name" field.
+        // Its own input listener auto-derives the sanitized #projectName
+        // (folder name) from it when that field is still empty, so setting
+        // it here and dispatching 'input' keeps both fields consistent with
+        // the app's normal typing flow instead of duplicating the sanitizer.
+        const nameField = document.getElementById('metadataName');
+        if (nameField) {
+            nameField.value = mapped.title;
+            nameField.dispatchEvent(new Event('input', { bubbles: true }));
+        }
     }
 
     if (mapped.studyDescription) {
