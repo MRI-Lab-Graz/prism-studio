@@ -337,6 +337,10 @@ def format_validation_results(
         elif isinstance(dataset_stats, dict):
             serializable_stats = dataset_stats
 
+    participants_mapping_result = getattr(
+        dataset_stats, "participants_mapping_result", None
+    )
+
     # Prepare grouped results for the UI (BIDS-validator style)
     errors_list = []
     for group in error_groups.values():
@@ -372,4 +376,5 @@ def format_validation_results(
         "dataset_path": dataset_path,
         "dataset_name": dataset_name,
         "dataset_stats": serializable_stats,
+        "participants_mapping": participants_mapping_result,
     }

@@ -1157,14 +1157,18 @@ export function initOpenProjectController({
                 return false;
             }
 
-            applyCurrentProject(result.current);
+            const projectSummary = result.project_summary && typeof result.project_summary === 'object' && !Array.isArray(result.project_summary)
+                ? result.project_summary
+                : null;
+
+            applyCurrentProject({
+                ...result.current,
+                hasData: Boolean(projectSummary && Number(projectSummary.subjects) > 0)
+            });
 
             const currentState = getCurrentProjectState();
             const loadedPath = String(result.current.path || '').trim();
             const loadedName = String(result.current.name || currentState.name || '').trim();
-            const projectSummary = result.project_summary && typeof result.project_summary === 'object' && !Array.isArray(result.project_summary)
-                ? result.project_summary
-                : null;
             addRecentProject(loadedName, loadedPath, currentState.icon);
             showStudyMetadataCard();
             updateCreateProjectButton();
