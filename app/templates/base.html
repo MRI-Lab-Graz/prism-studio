@@ -314,7 +314,7 @@
     {% set modify_active = request_path.startswith('/validate') or request_path.startswith('/file-management') or request_path.startswith('/editor') or request.blueprint in ['validation', 'json_editor'] or request.endpoint in ['tools.file_management'] %}
     {% set export_active = request_path.startswith('/survey-generator') or request_path.startswith('/recipes') or request_path.startswith('/prism-app-runner') or request.endpoint in ['tools.survey_generator', 'tools.recipes', 'tools.prism_app_runner'] %}
     {% set share_available = endpoint_exists('projects.share_page') %}
-    {% set share_enabled = current_project.path and share_available %}
+    {% set share_enabled = current_project.path and current_project.has_data and share_available %}
     {% set share_active = request_path.startswith('/projects/share') %}
     {% set docs_active = request_path.startswith('/specifications') or request.endpoint in ['specifications'] %}
     {% set current_project_datalad = current_project.datalad if current_project is defined and current_project.datalad is defined else {
@@ -339,7 +339,7 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <div class="navbar-text me-3 d-none d-lg-block" id="currentProjectBadge"
-                     data-path="{{ current_project.path or '' }}" data-name="{{ current_project.name or '' }}" data-icon="{{ current_project.icon or '' }}">
+                     data-path="{{ current_project.path or '' }}" data-name="{{ current_project.name or '' }}" data-icon="{{ current_project.icon or '' }}" data-has-data="{{ 'true' if current_project.has_data else 'false' }}">
                     {% if current_project.path %}
                     <a class="badge bg-warning text-dark text-decoration-none" href="{{ url_for('projects.projects_page') }}?preserve_current=1" title="Go to {{ current_project.path }}" aria-label="Go to current project: {{ current_project.path }}">
                         <span class="me-1" aria-hidden="true">{{ current_project.icon or '🧪' }}</span>{{ current_project.name or 'Project' }}
@@ -505,7 +505,7 @@
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link{% if share_active %} active{% endif %}{% if not share_enabled %} disabled{% endif %}" href="{% if share_enabled %}{{ url_for('projects.share_page') }}{% else %}#{% endif %}"{% if not share_enabled %} aria-disabled="true" title="{% if not share_available %}Unavailable in this build{% else %}Please load a project first{% endif %}"{% else %} title="Export, push to a DataLad server, or back up the active project"{% endif %}>
+                        <a class="nav-link{% if share_active %} active{% endif %}{% if not share_enabled %} disabled{% endif %}" href="{% if share_enabled %}{{ url_for('projects.share_page') }}{% else %}#{% endif %}" id="shareArchiveLink"{% if share_available %} data-share-archive-url="{{ url_for('projects.share_page') }}"{% endif %}{% if not share_enabled %} aria-disabled="true" title="{% if not share_available %}Unavailable in this build{% elif not current_project.path %}Please load a project first{% else %}No subjects found — add data before sharing{% endif %}"{% else %} title="Export, push to a DataLad server, or back up the active project"{% endif %}>
                             <i class="fas fa-cloud-upload-alt me-1 text-info"></i>Share &amp; Archive
                         </a>
                     </li>
@@ -793,15 +793,18 @@
                 throw new Error(data.error || 'Could not set project');
             }
 
+            const hasData = Boolean(data.project_summary && Number(data.project_summary.subjects) > 0);
+
             if (data.current && data.current.path) {
                 updateNavbarProject(
                     data.current.name || payload.name,
                     data.current.path,
                     data.current.icon || payload.icon,
-                    data.current.datalad
+                    data.current.datalad,
+                    hasData
                 );
             } else {
-                updateNavbarProject(payload.name, payload.path, payload.icon, readNavbarDataladStateFromDom());
+                updateNavbarProject(payload.name, payload.path, payload.icon, readNavbarDataladStateFromDom(), hasData);
             }
 
             const autosaveMessage = buildNavbarAutosaveFailureMessage(data.autosave_previous);
@@ -844,6 +847,26 @@
                 derivativesToggle.removeAttribute('data-bs-toggle');
                 derivativesToggle.setAttribute('aria-disabled', 'true');
                 derivativesToggle.setAttribute('title', 'Please load a project first');
+            }
+        }
+
+        function setShareArchiveState(enabled) {
+            const shareArchiveLink = document.getElementById('shareArchiveLink');
+            if (!shareArchiveLink) return;
+
+            const targetHref = shareArchiveLink.dataset.shareArchiveUrl || shareArchiveLink.getAttribute('href');
+            if (enabled) {
+                shareArchiveLink.classList.remove('disabled');
+                shareArchiveLink.removeAttribute('aria-disabled');
+                shareArchiveLink.setAttribute('title', 'Export, push to a DataLad server, or back up the active project');
+                if (targetHref) {
+                    shareArchiveLink.setAttribute('href', targetHref);
+                }
+            } else {
+                shareArchiveLink.classList.add('disabled');
+                shareArchiveLink.setAttribute('href', '#');
+                shareArchiveLink.setAttribute('aria-disabled', 'true');
+                shareArchiveLink.setAttribute('title', 'Please load a project first');
             }
         }
 
@@ -1328,7 +1351,7 @@
             return store;
         }
 
-        function updateNavbarProject(name, path, icon, datalad) {
+        function updateNavbarProject(name, path, icon, datalad, hasData) {
             const badgeContainer = document.getElementById('currentProjectBadge');
             if (!badgeContainer) return;
 
@@ -1336,10 +1359,24 @@
             const requestedIcon = normalizeProjectIconValue(icon);
             const resolvedIcon = requestedIcon || previousIcon;
 
+            const previousPath = badgeContainer.dataset.path || '';
+            const previousHasData = badgeContainer.dataset.hasData === 'true';
+            // hasData is only known when the caller just fetched a fresh project
+            // summary (e.g. after an open/switch). Callers that merely tweak
+            // metadata (e.g. rename) omit it - in that case keep the last known
+            // value for the same project, but default to "no" for a different
+            // project rather than carry over a stale value.
+            const resolvedHasData = !path
+                ? false
+                : hasData !== undefined
+                    ? Boolean(hasData)
+                    : (path === previousPath && previousHasData);
+
             badgeContainer.innerHTML = '';
             badgeContainer.dataset.path = path || '';
             badgeContainer.dataset.name = name || '';
             badgeContainer.dataset.icon = '';
+            badgeContainer.dataset.hasData = resolvedHasData ? 'true' : 'false';
             badgeContainer.title = path || '';
 
             if (name && path) {
@@ -1377,6 +1414,7 @@
 
             setFileManagementState(Boolean(path));
             setDerivativesState(Boolean(path));
+            setShareArchiveState(resolvedHasData);
             renderNavbarDataladState(nextState);
             renderNavbarRecentProjects();
 
@@ -1389,12 +1427,18 @@
             const nextIcon = normalizeProjectIconValue(projectState && projectState.icon);
             const nextDatalad = normalizeDataladState(projectState && projectState.datalad, { path: nextPath });
             const badgeContainer = document.getElementById('currentProjectBadge');
+            let resolvedHasData = false;
 
             if (badgeContainer) {
+                const previousPath = badgeContainer.dataset.path || '';
+                const previousHasData = badgeContainer.dataset.hasData === 'true';
+                resolvedHasData = Boolean(nextPath) && nextPath === previousPath && previousHasData;
+
                 badgeContainer.innerHTML = '';
                 badgeContainer.dataset.path = nextPath;
                 badgeContainer.dataset.name = nextName;
                 badgeContainer.dataset.icon = '';
+                badgeContainer.dataset.hasData = resolvedHasData ? 'true' : 'false';
                 badgeContainer.title = nextPath || '';
 
                 if (nextName && nextPath) {
@@ -1425,6 +1469,7 @@
 
             setFileManagementState(Boolean(nextPath));
             setDerivativesState(Boolean(nextPath));
+            setShareArchiveState(resolvedHasData);
             renderNavbarDataladState({ path: nextPath, datalad: nextDatalad });
             renderNavbarRecentProjects();
         }
@@ -1486,11 +1531,13 @@
                     badgeContainer.dataset.name,
                     badgeContainer.dataset.path,
                     badgeContainer.dataset.icon,
-                    readNavbarDataladStateFromDom()
+                    readNavbarDataladStateFromDom(),
+                    badgeContainer.dataset.hasData === 'true'
                 );
             } else {
                 setFileManagementState(false);
                 setDerivativesState(false);
+                setShareArchiveState(false);
                 renderNavbarDataladState({ path: '', datalad: readNavbarDataladStateFromDom() });
             }
 
@@ -1505,6 +1552,14 @@
             const derivativesDropdown = document.getElementById('derivativesDropdown');
             derivativesDropdown?.addEventListener('click', function(e) {
                 if (derivativesDropdown.classList.contains('disabled')) {
+                    e.preventDefault();
+                    alert('Please load a project first');
+                }
+            });
+
+            const shareArchiveLink = document.getElementById('shareArchiveLink');
+            shareArchiveLink?.addEventListener('click', function(e) {
+                if (shareArchiveLink.classList.contains('disabled')) {
                     e.preventDefault();
                     alert('Please load a project first');
                 }
