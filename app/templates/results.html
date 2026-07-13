@@ -104,6 +104,18 @@
         </div>
         {% endif %}
 
+        {% if results and results.get('participants_mapping') and results.participants_mapping.get('applied') %}
+        <div class="alert alert-info border-0 shadow-sm mb-4">
+            <i class="fas fa-file-import me-2"></i>
+            <strong>participants.tsv was auto-regenerated</strong> from
+            <code>{{ results.participants_mapping.get('mapping_file') }}</code>
+            before validation ran
+            {% if results.participants_mapping.get('rows') is not none %}
+            ({{ results.participants_mapping.get('rows') }} rows transformed).
+            {% else %}.{% endif %}
+        </div>
+        {% endif %}
+
         <!-- Summary Dashboard -->
         <div class="card mb-4 border-0 shadow-sm overflow-hidden">
             <div class="card-body p-0">
@@ -232,7 +244,7 @@
                         data-bs-target="#err-{{ loop.index }}"
                         aria-expanded="false"
                         aria-controls="err-{{ loop.index }}">
-                        <h6 class="{% if error_code.startswith('BIDS') %}text-info{% else %}text-danger{% endif %} fw-bold mb-0 me-2">
+                        <h6 class="text-danger fw-bold mb-0 me-2">
                             {% if error_code.startswith('BIDS') %}
                             <i class="fas fa-brain me-2"></i>
                             <span class="badge bg-info me-2">BIDS</span>
@@ -243,7 +255,7 @@
                             {{ error_code }}
                         </h6>
                         <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                            <span class="badge {% if error_code.startswith('BIDS') %}bg-info-soft text-info border-info{% else %}bg-danger-soft text-danger border-danger{% endif %} border">{{ error_group.count }} occurrences</span>
+                            <span class="badge bg-danger-soft text-danger border-danger border">{{ error_group.count }} occurrences</span>
                             <i class="fas fa-chevron-down small text-muted group-chevron"></i>
                         </div>
                     </button>
@@ -270,7 +282,7 @@
                                     {% for message, files in error_group.messages.items() %}
                                     <div class="mb-3 {% if not loop.last %}border-bottom pb-2{% endif %}">
                                         <div class="small fw-bold mb-2 text-dark">
-                                            <i class="fas fa-exclamation-triangle {% if error_code.startswith('BIDS') %}text-info{% else %}text-danger{% endif %} me-1"></i>
+                                            <i class="fas fa-exclamation-triangle text-danger me-1"></i>
                                             {{ message }}
                                         </div>
                                         <div class="ms-3 ps-2 border-start border-2">
@@ -353,7 +365,7 @@
             <div class="card-header bg-warning text-dark py-3">
                 <h5 class="mb-0 fw-bold">
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    Warnings ({{ results.warnings|length }})
+                    Warnings ({{ results.summary.total_warnings if results.summary else results.warnings|length }})
                 </h5>
             </div>
             <div class="card-body p-0">
@@ -365,7 +377,7 @@
                         data-bs-target="#warn-{{ loop.index }}"
                         aria-expanded="false"
                         aria-controls="warn-{{ loop.index }}">
-                        <h6 class="{% if warning_code.startswith('BIDS') %}text-info{% else %}text-warning{% endif %} fw-bold mb-0 me-2">
+                        <h6 class="text-warning fw-bold mb-0 me-2">
                             {% if warning_code.startswith('BIDS') %}
                             <i class="fas fa-brain me-2"></i>
                             <span class="badge bg-info me-2">BIDS</span>

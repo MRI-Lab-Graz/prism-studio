@@ -9,6 +9,7 @@ import csv
 import gzip
 from pathlib import Path
 from datetime import datetime
+from typing import Callable
 from jsonschema import validate, ValidationError
 from src.schema_manager import validate_schema_version, apply_schema_validation_profile
 from src.entity_rules import load_entity_rules
@@ -44,7 +45,7 @@ MODALITY_PATTERNS = {
 # BIDS naming patterns
 BIDS_REGEX = re.compile(
     r"^sub-[a-zA-Z0-9]+"  # subject
-    r"(_ses-[a-zA-Z0-9]{2,})?"  # optional session (min 2 chars, e.g., ses-01 not ses-1)
+    r"(_ses-[a-zA-Z0-9]+)?"  # optional session; labels are free-form strings, no length/format coercion (e.g. ses-1, ses-01, ses-pre are all valid and distinct)
     r"(_[a-zA-Z0-9]+-[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*)*"  # key-value pairs; values may contain hyphens (e.g., task-bfi-s)
     r"(_[a-zA-Z0-9]+)?$"  # generic suffix (e.g., _dwi, _T1w, _bold, _physio, _events)
 )
@@ -373,8 +374,23 @@ def _find_inherited_root_sidecar(file_path: str, root_dir: str) -> str | None:
     return None
 
 
-def resolve_inherited_sidecar(
-    file_path: str, root_dir: str, library_path: str | None = None
+def _default_load_sidecar_json(sidecar_path: str | None) -> dict | None:
+    """Uncached read+parse of a sidecar JSON file; None if absent or unparseable."""
+    if not sidecar_path or not os.path.exists(sidecar_path):
+        return None
+    try:
+        content = CrossPlatformFile.read_text(sidecar_path)
+        return json.loads(content)
+    except (json.JSONDecodeError, Exception):
+        return None
+
+
+def _resolve_inherited_sidecar_core(
+    file_path: str,
+    root_dir: str,
+    library_path: str | None,
+    load_json: Callable[[str | None], "dict | None"],
+    resolve_library_sidecar_path: Callable[[], "str | None"] | None = None,
 ) -> tuple[dict | None, str | None]:
     """
     Build inherited sidecar content following BIDS inheritance principle.
@@ -387,41 +403,21 @@ def resolve_inherited_sidecar(
     The subject-level sidecar is OPTIONAL. If only root-level exists, it's used.
     If both exist, they are deep-merged with subject-level values taking precedence.
 
-    Args:
-        file_path: Path to the data file
-        root_dir: Dataset root directory
-        library_path: Optional path to template library
+    `load_json` is injected so callers can choose whether reads are cached
+    (DatasetValidator, across a whole validation run) or not (one-off callers
+    like the fixer). `resolve_library_sidecar_path`, if given, replaces the
+    default (uncached) library sidecar path lookup with a cached one.
 
     Returns:
         Tuple of (merged_sidecar_data, primary_sidecar_path)
         - merged_sidecar_data: The merged sidecar content (or None if not found)
         - primary_sidecar_path: Path to report errors against (subject-level if exists, else root)
     """
-    # Find subject-level sidecar (directly alongside data file)
     subject_sidecar_path = derive_sidecar_path(file_path)
-    subject_sidecar_exists = os.path.exists(subject_sidecar_path)
-
-    # Find root-level sidecar
     root_sidecar_path = _find_inherited_root_sidecar(file_path, root_dir)
-    root_sidecar_exists = root_sidecar_path and os.path.exists(root_sidecar_path)
 
-    # Load sidecars
-    root_data = None
-    subject_data = None
-
-    if root_sidecar_exists:
-        try:
-            content = CrossPlatformFile.read_text(root_sidecar_path)
-            root_data = json.loads(content)
-        except (json.JSONDecodeError, Exception):
-            root_data = None
-
-    if subject_sidecar_exists:
-        try:
-            content = CrossPlatformFile.read_text(subject_sidecar_path)
-            subject_data = json.loads(content)
-        except (json.JSONDecodeError, Exception):
-            subject_data = None
+    root_data = load_json(root_sidecar_path)
+    subject_data = load_json(subject_sidecar_path)
 
     # Merge according to BIDS inheritance
     if root_data and subject_data:
@@ -436,16 +432,30 @@ def resolve_inherited_sidecar(
         return root_data, root_sidecar_path
 
     # Neither exists locally - try library fallback via existing resolution
-    library_sidecar = resolve_sidecar_path(file_path, root_dir, library_path)
-    if library_sidecar and os.path.exists(library_sidecar):
-        try:
-            content = CrossPlatformFile.read_text(library_sidecar)
-            library_data = json.loads(content)
-            return library_data, library_sidecar
-        except (json.JSONDecodeError, Exception):
-            pass
+    if resolve_library_sidecar_path is not None:
+        library_sidecar = resolve_library_sidecar_path()
+    else:
+        library_sidecar = resolve_sidecar_path(file_path, root_dir, library_path)
+    library_data = load_json(library_sidecar)
+    if library_data:
+        return library_data, library_sidecar
 
     return None, None
+
+
+def resolve_inherited_sidecar(
+    file_path: str, root_dir: str, library_path: str | None = None
+) -> tuple[dict | None, str | None]:
+    """One-off (uncached) BIDS-inheritance sidecar resolution.
+
+    See `_resolve_inherited_sidecar_core` for the resolution algorithm. For
+    validation runs that resolve many files against a shared dataset, use
+    `DatasetValidator._resolve_inherited_sidecar_cached` instead so repeated
+    reads of the same root-level sidecar are not re-parsed per file.
+    """
+    return _resolve_inherited_sidecar_core(
+        file_path, root_dir, library_path, _default_load_sidecar_json
+    )
 
 
 class DatasetValidator:
@@ -457,6 +467,7 @@ class DatasetValidator:
         self._sidecar_path_cache = {}
         self._inherited_sidecar_cache = {}
         self._sidecar_json_cache = {}
+        self._sidecar_json_error_cache = {}
         self._original_name_cache = {}
 
     def _sidecar_cache_key(self, file_path: str, root_dir: str) -> tuple:
@@ -494,42 +505,48 @@ class DatasetValidator:
         try:
             content = CrossPlatformFile.read_text(sidecar_path)
             parsed = json.loads(content)
-        except (json.JSONDecodeError, Exception):
+        except json.JSONDecodeError as e:
+            # Record the parse failure distinctly from "file not found" so
+            # validate_sidecar() can report a precise error instead of
+            # masking it as a missing sidecar.
+            self._sidecar_json_error_cache[normalized_path] = str(e)
+            parsed = None
+        except Exception:
             parsed = None
 
         self._sidecar_json_cache[normalized_path] = parsed
         return parsed
 
+    def _sidecar_json_error(self, sidecar_path: str | None) -> str | None:
+        """Return the recorded JSON parse error for a sidecar path, if any."""
+        if not sidecar_path:
+            return None
+        return self._sidecar_json_error_cache.get(normalize_path(sidecar_path))
+
     def _resolve_inherited_sidecar_cached(
         self, file_path: str, root_dir: str
     ) -> tuple[dict | None, str | None]:
-        """Resolve inherited sidecars once per file/root combination."""
+        """Resolve inherited sidecars once per file/root combination.
+
+        Delegates the actual BIDS-inheritance algorithm to
+        `_resolve_inherited_sidecar_core`, injecting this validator's
+        per-run JSON/path caches so repeated reads of a shared root-level
+        sidecar across many files only hit disk once.
+        """
         cache_key = self._sidecar_cache_key(file_path, root_dir)
         cached_result = self._inherited_sidecar_cache.get(cache_key)
         if cached_result is not None:
             return cached_result
 
-        subject_sidecar_path = derive_sidecar_path(file_path)
-        root_sidecar_path = _find_inherited_root_sidecar(file_path, root_dir)
-
-        root_data = self._load_sidecar_json_cached(root_sidecar_path)
-        subject_data = self._load_sidecar_json_cached(subject_sidecar_path)
-
-        result: tuple[dict | None, str | None]
-
-        if root_data and subject_data:
-            result = (_deep_merge(root_data, subject_data), subject_sidecar_path)
-        elif subject_data:
-            result = (subject_data, subject_sidecar_path)
-        elif root_data:
-            result = (root_data, root_sidecar_path)
-        else:
-            library_sidecar = self._resolve_sidecar_path_cached(file_path, root_dir)
-            library_data = self._load_sidecar_json_cached(library_sidecar)
-            if library_data:
-                result = (library_data, library_sidecar)
-            else:
-                result = (None, None)
+        result = _resolve_inherited_sidecar_core(
+            file_path,
+            root_dir,
+            self.library_path,
+            load_json=self._load_sidecar_json_cached,
+            resolve_library_sidecar_path=lambda: self._resolve_sidecar_path_cached(
+                file_path, root_dir
+            ),
+        )
 
         self._inherited_sidecar_cache[cache_key] = result
         return result
@@ -1337,6 +1354,22 @@ class DatasetValidator:
         )
 
         if sidecar_data is None:
+            # A missing sidecar and a malformed-JSON sidecar look the same from
+            # _resolve_inherited_sidecar_cached (both yield None). Check whether
+            # a candidate sidecar exists but failed to parse, so users get a
+            # precise "invalid JSON" error instead of a misleading "missing"
+            # one that sends them looking for a file that's actually right there.
+            subject_sidecar_path = derive_sidecar_path(file_path)
+            root_sidecar_path = _find_inherited_root_sidecar(file_path, root_dir)
+            for candidate_path in (subject_sidecar_path, root_sidecar_path):
+                parse_error = self._sidecar_json_error(candidate_path)
+                if parse_error:
+                    return [
+                        (
+                            "ERROR",
+                            f"{normalize_path(candidate_path)} is not valid JSON: {parse_error}",
+                        )
+                    ]
             return [("ERROR", f"Missing sidecar for {normalize_path(file_path)}")]
 
         try:

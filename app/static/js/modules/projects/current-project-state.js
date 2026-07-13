@@ -152,6 +152,8 @@ export function createProjectsCurrentStateController({
             ? resolveProjectIconClass(incomingIcon || currentProjectIcon)
             : '';
         currentProjectDatalad = normalizeDataladState(project && project.datalad, currentProjectPath);
+        const hasDataProvided = project && typeof project === 'object' && Object.prototype.hasOwnProperty.call(project, 'hasData');
+        const currentProjectHasData = hasDataProvided ? Boolean(project.hasData) : undefined;
 
         const existingPathInput = document.getElementById('existingPath');
         if (existingPathInput && currentProjectPath) {
@@ -161,7 +163,7 @@ export function createProjectsCurrentStateController({
         updateProjectTypeSelectionVisibility();
 
         if (window.updateNavbarProject) {
-            window.updateNavbarProject(currentProjectName, currentProjectPath, currentProjectIcon, currentProjectDatalad);
+            window.updateNavbarProject(currentProjectName, currentProjectPath, currentProjectIcon, currentProjectDatalad, currentProjectHasData);
             return;
         }
 

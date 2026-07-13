@@ -929,6 +929,25 @@ def get_latest_prism_studio_version() -> tuple[str, str]:
     )
 
 
+def _project_has_subjects(project_path: str | None) -> bool:
+    """Cheap, early-exit check for at least one sub-* directory.
+
+    Only lists the project root (no recursion into subject/session
+    contents), so this stays fast even on projects with many subjects -
+    unlike a full project summary scan.
+    """
+    if not project_path:
+        return False
+    try:
+        with os.scandir(project_path) as entries:
+            for entry in entries:
+                if entry.name.startswith("sub-") and entry.is_dir():
+                    return True
+    except OSError:
+        return False
+    return False
+
+
 @app.context_processor
 def inject_utilities():
     """Inject utility functions into all templates"""
@@ -957,6 +976,7 @@ def inject_utilities():
             "name": session.get("current_project_name"),
             "icon": session.get("current_project_icon"),
             "datalad": current_project_datalad,
+            "has_data": _project_has_subjects(project_path),
         },
         "prism_studio_version": current_version,
         "latest_prism_studio_version": latest_version,
