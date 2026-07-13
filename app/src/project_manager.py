@@ -25,6 +25,7 @@ Usage:
 """
 
 import fnmatch
+import functools
 import json
 import os
 import re
@@ -33,6 +34,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+import yaml
 from pathlib import Path
 from datetime import date
 from typing import Dict, List, Any, Optional, Set, Union
@@ -61,6 +63,23 @@ PRISM_MODALITIES = load_entity_rules().project_modalities
 # Modalities that remain available in PRISM tooling but are validated as BIDS
 # pass-through instead of PRISM-specific extensions.
 BIDS_PASSTHROUGH_MODALITIES = {"eyetracking"}
+
+@functools.lru_cache(maxsize=1)
+def _load_citation_cff_schema() -> Optional[Dict[str, Any]]:
+    """Load the vendored official Citation File Format JSON Schema.
+
+    Sourced from https://github.com/citation-file-format/citation-file-format
+    (schema.json, CFF 1.2.0, draft-07). Update
+    app/schemas/citation_cff/schema.json from that upstream file when a newer
+    CFF version needs to be supported.
+    """
+    schema_path = Path(__file__).parent.parent / "schemas" / "citation_cff" / "schema.json"
+    try:
+        with open(schema_path, "r", encoding="utf-8") as handle:
+            return json.load(handle)
+    except Exception:
+        return None
+
 
 # Valid project name pattern (no spaces, filesystem-safe)
 PROJECT_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
@@ -7606,7 +7625,7 @@ Subfolders:
                 '    given-names: "dataset"',
             ]
 
-        title = config.get("name", name)
+        title = config.get("name") or name or "Untitled Dataset"
         doi = self._normalize_doi(config.get("doi", ""))
         license_value = self._normalize_license_value(config.get("license", ""))
         license_url = str(config.get("license_url", "") or "").strip()
@@ -7712,7 +7731,7 @@ Subfolders:
         self, project_path: Path, description: Dict[str, Any]
     ) -> None:
         """Update CITATION.cff based on dataset_description.json metadata."""
-        name = description.get("Name", "Untitled Dataset")
+        name = description.get("Name") or "Untitled Dataset"
         config = self._build_citation_config(name, description, Path(project_path))
         content = self._create_citation_cff(name, config)
         citation_path = Path(project_path) / "CITATION.cff"
@@ -8001,54 +8020,39 @@ Subfolders:
 
         issues: List[str] = []
 
-        required_root_keys = ("cff-version", "title", "message", "authors")
-        for key in required_root_keys:
-            if not re.search(rf"(?m)^{re.escape(key)}:\s*", content):
-                issues.append(f"Missing required key: {key}.")
+        try:
+            parsed = yaml.safe_load(content)
+        except yaml.YAMLError as exc:
+            return {
+                "exists": True,
+                "valid": False,
+                "issues": [f"CITATION.cff is not valid YAML: {exc}"],
+                "consistent": False,
+                "consistency_issues": [],
+            }
 
-        version_match = re.search(r"(?m)^cff-version:\s*['\"]?([^'\"\n]+)", content)
-        if version_match and version_match.group(1).strip() != "1.2.0":
-            issues.append("cff-version must be 1.2.0.")
+        if not isinstance(parsed, dict):
+            return {
+                "exists": True,
+                "valid": False,
+                "issues": ["CITATION.cff must contain a YAML mapping at its root."],
+                "consistent": False,
+                "consistency_issues": [],
+            }
 
-        author_entry_present = re.search(
-            r"(?ms)^authors:\s*\n(?:\s{2,}[^\n]*\n)*\s{2,}-\s+(?:given-names:|family-names:|name:)",
-            content,
-        )
-        if not author_entry_present:
-            issues.append("Authors section must include at least one author entry.")
-
-        references_match = re.search(
-            r"(?ms)^references:\s*\n((?:\s{2,}[^\n]*\n?)*)", content
-        )
-        if references_match:
-            ref_block = references_match.group(1)
-            entries = list(
-                re.finditer(r"(?ms)^\s{2}-\s*\n((?:\s{4,}[^\n]*\n?)*)", ref_block)
+        schema = _load_citation_cff_schema()
+        if schema is None:
+            issues.append(
+                "Could not load the Citation File Format schema for validation."
             )
-            if not entries:
+        else:
+            validator = Draft7Validator(schema)
+            errors = sorted(validator.iter_errors(parsed), key=lambda e: e.path)
+            for error in errors:
+                field_path = " -> ".join(str(part) for part in error.path)
                 issues.append(
-                    "References section is present but contains no valid reference entries."
+                    f"{field_path}: {error.message}" if field_path else error.message
                 )
-            for index, match in enumerate(entries, start=1):
-                entry_text = match.group(1)
-                has_type = re.search(r"(?m)^\s{4}type:\s*", entry_text) is not None
-                has_title = re.search(r"(?m)^\s{4}title:\s*", entry_text) is not None
-                has_authors = (
-                    re.search(
-                        r"(?ms)^\s{4}authors:\s*\n(?:\s{6,}[^\n]*\n)*\s{6}-\s+",
-                        entry_text,
-                    )
-                    is not None
-                )
-
-                if not has_type:
-                    issues.append(f"Reference #{index} is missing required key: type.")
-                if not has_title:
-                    issues.append(f"Reference #{index} is missing required key: title.")
-                if not has_authors:
-                    issues.append(
-                        f"Reference #{index} is missing required key: authors."
-                    )
 
         consistency_issues: List[str] = []
         has_canonical_metadata = any(
