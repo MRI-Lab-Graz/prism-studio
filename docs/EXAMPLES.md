@@ -60,9 +60,9 @@ If you are new to the project, use this sequence:
 
 1. [QUICK_START.md](QUICK_START.md)
 2. [WORKSHOP.md](WORKSHOP.md)
-3. [PROJECTS.md](PROJECTS.md)
-4. [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
-5. [VALIDATOR.md](VALIDATOR.md)
+3. [PROJECTS.md](studio/projects.md)
+4. [SURVEY_IMPORT.md](studio/converter_survey.md)
+5. [VALIDATOR.md](studio/validator.md)
 
 That gives you one short success path first, then one fuller end-to-end example,
 then the deeper workflow pages.

@@ -118,7 +118,14 @@ equivalent and needs no separate page.
 - `GITHUB_SIGNING.md`
 - `WINDOWS_BUILD.md`, `WINDOWS_SETUP.md`, `WINDOWS_TESTING.md`, `WINDOWS_TEST_QUICKREF.md`, `WINDOWS_TEST_SUMMARY.md`, `WINDOWS_VM_BUILD_TESTING.md`, `COMPLETE_WINDOWS_SUMMARY.md` (six overlapping Windows files — collapse to at most one archived internal runbook, the rest are redundant snapshots)
 - `BIDS_AUTO_MAPPING_COMPLETE.md`, `BIDS_COMPLIANCE_IMPLEMENTATION.md` (implementation-history, not user docs)
-- `EYETRACKING_TSV_NORMALIZATION.md` (verify still accurate; if kept, moves to a `studio/converter_eyetracking.md` cross-link, not archive)
+**Correction (2026-07-14):** `EYETRACKING_TSV_NORMALIZATION.md` was deleted, not
+cross-linked. It described a column-renaming/normalization pipeline
+(`_process_eyetracking_tsv()`) that no longer exists in the codebase — eyetracking is
+now a pure BIDS-passthrough modality (confirmed via `tests/test_eyetracking_bids_passthrough.py`).
+`studio/converter_eyetracking.md` documents current, correct behavior instead. While
+researching this, also found and fixed a real bug it had exposed: the eyetracking
+batch converter's file discovery only matched `.edf`, silently dropping the `.tsv`/
+`.tsv.gz` files the UI explicitly advertises and accepts — fixed in `src/batch_convert.py`.
 - `ASSESSMENT.md`, `ROADMAP_HISTORY_2026.md`
 
 **Correction (2026-07-14, caught during Phase 1 execution):** `SURVEY_VERSION_PLAN.md`

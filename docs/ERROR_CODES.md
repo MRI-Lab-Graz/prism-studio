@@ -273,6 +273,6 @@ Use the dry run first whenever the dataset is not disposable.
 ## If you are still stuck
 
 1. Re-run validation after each repair instead of making many unrelated changes at once.
-2. Check [VALIDATOR.md](VALIDATOR.md) for the broader validation workflow.
+2. Check [VALIDATOR.md](studio/validator.md) for the broader validation workflow.
 3. Check [SPECIFICATIONS.md](SPECIFICATIONS.md) or the modality spec pages for schema context.
 4. Use [QUICK_START.md](QUICK_START.md) or [WORKSHOP.md](WORKSHOP.md) if the issue is really a workflow misunderstanding rather than a code-level problem.

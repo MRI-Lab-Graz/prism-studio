@@ -215,7 +215,8 @@ def create_json_editor_blueprint(bids_folder=None):
 
             # Validate after save
             if validator:
-                errors = validator.validate(data, json_type)
+                schema = schema_loader.get_schema_for_type(json_type) if schema_loader else None
+                _is_valid, errors = validator.validate(json_type, data, schema)
                 return jsonify(
                     {
                         "success": True,
@@ -244,11 +245,12 @@ def create_json_editor_blueprint(bids_folder=None):
                     400,
                 )
 
-            errors = validator.validate(data, json_type)
+            schema = schema_loader.get_schema_for_type(json_type) if schema_loader else None
+            is_valid, errors = validator.validate(json_type, data, schema)
             return jsonify(
                 {
                     "success": True,
-                    "valid": len(errors) == 0,
+                    "valid": is_valid,
                     "errors": errors if errors else [],
                 }
             )
