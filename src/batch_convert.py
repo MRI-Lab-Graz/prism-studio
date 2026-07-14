@@ -43,6 +43,12 @@ BIDS_FILENAME_PATTERN = re.compile(
 # Modality detection by extension
 PHYSIO_EXTENSIONS = {".raw", ".vpd", ".edf"}
 EYETRACKING_EXTENSIONS = {".edf"}
+# Pre-processed eyetracking trial-summary tables (e.g. exported from EyeLink Data
+# Viewer). Kept separate from EYETRACKING_EXTENSIONS/detect_modality() because
+# .tsv/.tsv.gz are ambiguous in general (they're also GENERIC_EXTENSIONS) — these
+# are only treated as eyetracking when a batch job is explicitly scoped to the
+# eyetracking modality (modality_filter == "eyetracking"), not in "all" mode.
+EYETRACKING_TABULAR_EXTENSIONS = {".tsv", ".tsv.gz"}
 GENERIC_EXTENSIONS = {
     ".tsv",
     ".tsv.gz",
@@ -1048,14 +1054,28 @@ def convert_eyetracking_file(
     *,
     parsed: dict,
 ) -> ConvertedFile:
-    """Convert a single eyetracking file (.edf) to PRISM format.
+    """Convert a single eyetracking file to PRISM format.
 
-    For EyeLink .edf files, we copy the file (it's already a standard format)
-    and create a JSON sidecar with metadata.
+    Two input kinds are supported:
+    - EyeLink `.edf` recordings: copied as-is, with EDF header metadata
+      (sampling frequency, duration) extracted into the sidecar when pyedflib
+      is available.
+    - Pre-processed trial-summary tables (`.tsv`/`.tsv.gz`, e.g. exported from
+      EyeLink Data Viewer): copied as-is with a plain sidecar; EDF-specific
+      metadata extraction is skipped since there is no EDF header to read.
+
+    In both cases the source file's own extension is preserved on output —
+    a `.tsv` input never gets written out as a `.edf` file.
     """
     sub = parsed["sub"]
     ses = parsed["ses"]
     task = parsed["task"]
+
+    source_name_lower = source_path.name.lower()
+    if source_name_lower.endswith(".tsv.gz"):
+        out_ext = ".tsv.gz"
+    else:
+        out_ext = source_path.suffix.lower()
 
     # Build output path: output_dir/sub-XXX/[ses-YYY/]eyetracking/
     if ses:
@@ -1072,45 +1092,46 @@ def convert_eyetracking_file(
     parts.append("eyetrack")
     base_name = "_".join(parts)
 
-    out_edf = out_folder / f"{base_name}.edf"
+    out_data = out_folder / f"{base_name}{out_ext}"
     out_json = out_folder / f"{base_name}.json"
 
     output_files = []
 
     try:
-        # Copy the EDF file
-        shutil.copy2(source_path, out_edf)
-        output_files.append(out_edf)
+        # Copy the data file, preserving its original extension/format
+        shutil.copy2(source_path, out_data)
+        output_files.append(out_data)
 
-        # Create sidecar
-        edf_meta = _extract_edf_metadata(source_path)
+        # EDF header metadata only applies to actual .edf recordings
+        edf_meta = _extract_edf_metadata(source_path) if out_ext == ".edf" else {}
         _create_eyetracking_sidecar(
             source_path, out_json, task_name=task, extra_meta=edf_meta
         )
         output_files.append(out_json)
 
         # Try to enrich sidecar with EDF header info if pyedflib is available
-        try:
-            import pyedflib
+        if out_ext == ".edf":
+            try:
+                import pyedflib
 
-            with pyedflib.EdfReader(str(source_path)) as f:
-                with open(out_json, "r", encoding="utf-8") as jf:
-                    sidecar = json.load(jf)
+                with pyedflib.EdfReader(str(source_path)) as f:
+                    with open(out_json, "r", encoding="utf-8") as jf:
+                        sidecar = json.load(jf)
 
-                if "Technical" not in sidecar:
-                    sidecar["Technical"] = {}
+                    if "Technical" not in sidecar:
+                        sidecar["Technical"] = {}
 
-                # Extract sampling rate (from first signal)
-                if f.signals_in_file > 0:
-                    sidecar["Technical"]["SamplingFrequency"] = f.getSampleFrequency(0)
+                    # Extract sampling rate (from first signal)
+                    if f.signals_in_file > 0:
+                        sidecar["Technical"]["SamplingFrequency"] = f.getSampleFrequency(0)
 
-                # Extract duration
-                sidecar["Technical"]["Duration"] = f.getFileDuration()
+                    # Extract duration
+                    sidecar["Technical"]["Duration"] = f.getFileDuration()
 
-                with open(out_json, "w", encoding="utf-8") as jf:
-                    json.dump(sidecar, jf, indent=2)
-        except (ImportError, Exception):
-            pass
+                    with open(out_json, "w", encoding="utf-8") as jf:
+                        json.dump(sidecar, jf, indent=2)
+            except (ImportError, Exception):
+                pass
 
         return ConvertedFile(
             source_path=source_path,
@@ -1283,6 +1304,10 @@ def batch_convert_folder(
         all_extensions.update(PHYSIO_EXTENSIONS)
     if modality_filter in ("all", "eyetracking"):
         all_extensions.update(EYETRACKING_EXTENSIONS)
+    if modality_filter == "eyetracking":
+        # Only when eyetracking is explicitly selected -- in "all" mode these
+        # extensions stay ambiguous/generic.
+        all_extensions.update(EYETRACKING_TABULAR_EXTENSIONS)
     if modality_filter not in ("all", "physio", "eyetracking"):
         # If a specific modality is requested that isn't physio/eyetracking,
         # we assume it's a generic copy operation
@@ -1296,9 +1321,11 @@ def batch_convert_folder(
         if not file_path.is_file():
             continue
         ext = file_path.suffix.lower()
-        # Handle .nii.gz
+        # Handle double extensions that Path.suffix can't see on its own
         if file_path.name.lower().endswith(".nii.gz"):
             ext = ".nii.gz"
+        elif file_path.name.lower().endswith(".tsv.gz"):
+            ext = ".tsv.gz"
 
         if modality_filter == "all":
             if (
@@ -1320,6 +1347,8 @@ def batch_convert_folder(
         ext = file_path.suffix.lower()
         if file_path.name.lower().endswith(".nii.gz"):
             ext = ".nii.gz"
+        elif file_path.name.lower().endswith(".tsv.gz"):
+            ext = ".tsv.gz"
 
         # Parse filename
         parsed = parse_bids_filename(file_path.name)
@@ -1348,6 +1377,12 @@ def batch_convert_folder(
         if modality_filter not in ("all", "physio", "eyetracking"):
             modality = "generic"
             target_modality = modality_filter
+        elif modality_filter == "eyetracking" and ext in EYETRACKING_TABULAR_EXTENSIONS:
+            # .tsv/.tsv.gz are generic-by-default (see detect_modality), but an
+            # eyetracking-scoped batch job should route them to the eyetracking
+            # converter, not the generic-copy path.
+            modality = "eyetracking"
+            target_modality = "eyetracking"
         else:
             target_modality = modality if modality is not None else "generic"
 

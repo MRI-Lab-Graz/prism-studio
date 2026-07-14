@@ -186,7 +186,7 @@ Recommended teaching pattern:
 ## Related pages
 
 - [QUICK_START.md](QUICK_START.md)
-- [PROJECTS.md](PROJECTS.md)
-- [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
-- [VALIDATOR.md](VALIDATOR.md)
+- [PROJECTS.md](studio/projects.md)
+- [SURVEY_IMPORT.md](studio/converter_survey.md)
+- [VALIDATOR.md](studio/validator.md)
 - [RECIPES.md](RECIPES.md)

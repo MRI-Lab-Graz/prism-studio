@@ -27,7 +27,6 @@ exclude_patterns = [
     "README.md",
     "archive/**",
     # Advanced pages intentionally hidden from public RTD navigation.
-    "EYETRACKING_TSV_NORMALIZATION.md",
     "LIMESURVEY_VERSION_DIFFERENCES.md",
     "PAVLOVIA_EXPORT.md",
 ]

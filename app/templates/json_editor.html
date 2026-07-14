@@ -45,10 +45,14 @@
             </div>
         </div>
         <div class="card-body p-4">
-            <div class="mb-3">
-                <button id="saveBtn" class="btn btn-success">
-                    <i class="fas fa-download me-1"></i>Save / Download
+            <div class="mb-3 d-flex gap-2 flex-wrap align-items-center">
+                <button id="saveToProjectBtn" class="btn btn-success">
+                    <i class="fas fa-save me-1"></i>Save to Project
                 </button>
+                <button id="saveBtn" class="btn btn-outline-secondary">
+                    <i class="fas fa-download me-1"></i>Download Copy
+                </button>
+                <small class="text-muted" id="saveToProjectHint"></small>
             </div>
             <div id="alertContainer" class="mb-3"></div>
             <div id="formContainer">

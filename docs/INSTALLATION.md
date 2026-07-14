@@ -190,6 +190,6 @@ After installation, the normal order is:
 
 ## Related pages
 
-- Projects: [PROJECTS.md](PROJECTS.md)
-- Studio overview: [STUDIO_OVERVIEW.md](STUDIO_OVERVIEW.md)
+- Projects: [PROJECTS.md](studio/projects.md)
+- Studio overview: [STUDIO_OVERVIEW.md](studio/index.md)
 - CLI reference: [CLI_REFERENCE.md](CLI_REFERENCE.md)

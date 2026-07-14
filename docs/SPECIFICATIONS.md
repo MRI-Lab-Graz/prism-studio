@@ -108,7 +108,7 @@ Typical characteristics:
 - derivative datasets need their own `dataset_description.json`
 - recipe definitions live separately from the derivative outputs themselves
 
-See [RECIPES.md](RECIPES.md) and [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md) for
+See [RECIPES.md](RECIPES.md) and [ANALYSIS_OUTPUT.md](studio/export.md) for
 the operational side of this.
 
 ## What is inside a PRISM schema?
@@ -200,6 +200,6 @@ For modality-specific semantics, use the spec pages under `docs/specs/`:
 ## Related pages
 
 - [WHAT_IS_PRISM.md](WHAT_IS_PRISM.md)
-- [VALIDATOR.md](VALIDATOR.md)
+- [VALIDATOR.md](studio/validator.md)
 - [SCHEMA_VERSIONING.md](SCHEMA_VERSIONING.md)
 - [RECIPES.md](RECIPES.md)

@@ -128,6 +128,6 @@ You can start without it if:
 ## Related pages
 
 - [WHAT_IS_PRISM.md](WHAT_IS_PRISM.md)
-- [PROJECTS.md](PROJECTS.md)
-- [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md)
+- [PROJECTS.md](studio/projects.md)
+- [ANALYSIS_OUTPUT.md](studio/export.md)
 - [CLI_WORKFLOWS.md](CLI_WORKFLOWS.md)

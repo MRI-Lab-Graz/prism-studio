@@ -426,4 +426,4 @@ python app/prism.py /code/my-study --library /code/library
 
 - [BIDS Specification](https://bids-standard.github.io/)
 - PRISM Schemas: `app/schemas/`
-- [Dataset Validation](VALIDATOR.md)
+- [Dataset Validation](studio/validator.md)

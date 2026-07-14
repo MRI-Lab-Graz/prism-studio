@@ -19,71 +19,62 @@ compatible with standard BIDS tooling.
 Start here if you want to understand the project before diving into a specific
 workflow:
 
-- **Concepts**: what PRISM is, how PRISM Studio fits, and how projects are organized
-- **Getting started**: install the tool, create a first project, and validate a first dataset
-- **Guided workflows**: projects, conversion, validation, templates, scoring, and export
-- **Reference**: schemas, error codes, CLI commands, and detailed data specifications
+- **Installation**: get PRISM Studio running, prebuilt or from source
+- **Quick Start**: shortest path from install to a first validated dataset
+- **Studio Guide**: every Studio screen explained in detail
+- **CLI**: terminal/automation workflows
+- **Tutorial**: a guided walkthrough with demo data
+- **Reference**: concepts, schemas, error codes, and detailed data specifications
 
 .. toctree::
    :maxdepth: 2
-   :caption: Fundamentals
-
-   WHAT_IS_PRISM
-   PROJECT_OVERVIEW
-   SPECIFICATIONS
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Getting Started
+   :caption: Installation
 
    INSTALLATION
-   QUICK_START
-   STUDIO_OVERVIEW
 
 .. toctree::
    :maxdepth: 2
-   :caption: Studio Guide (New)
+   :caption: Quick Start
+
+   QUICK_START
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Studio Guide
 
    studio/index
 
 .. toctree::
    :maxdepth: 2
-   :caption: User Workflows (Legacy — being replaced by Studio Guide)
+   :caption: CLI
 
-   PROJECTS
-   CONVERTER
-   SURVEY_IMPORT
-   VALIDATOR
-   TOOLS
-   TEMPLATE_EDITOR
-   RECIPE_BUILDER
-   ANALYSIS_OUTPUT
-   WEB_INTERFACE
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Examples
-
-   EXAMPLES
-   WORKSHOP
-
-.. toctree::
-   :maxdepth: 2
-   :caption: CLI and Automation
-
-   CLI_WORKFLOWS
    CLI_REFERENCE
+   CLI_WORKFLOWS
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Tutorial
+
+   WORKSHOP
+   EXAMPLES
 
 .. toctree::
    :maxdepth: 2
    :caption: Reference
 
+   WHAT_IS_PRISM
+   PROJECT_OVERVIEW
+   SPECIFICATIONS
    RECIPES
    ERROR_CODES
-   PARTICIPANTS_MAPPING
    QUICK_REFERENCE_BIDS
    TEMPLATE_VALIDATION
-   ANC_EXPORT
+   TEMPLATES
+   SURVEY_VERSION_PLAN
+   SCHEMA_VERSIONING
+   DATALAD
+   FAIR_POLICY
+   LIMESURVEY_INTEGRATION
 
 .. toctree::
    :maxdepth: 2
@@ -93,22 +84,6 @@ workflow:
    specs/biometrics
    specs/events
    specs/environment
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Library and Survey Design
-
-   TEMPLATES
-   SURVEY_VERSION_PLAN
-   LIMESURVEY_INTEGRATION
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Integrations and Advanced
-
-   DATALAD
-   SCHEMA_VERSIONING
-   FAIR_POLICY
 
 Indices and tables
 ==================

@@ -3,7 +3,7 @@
 Use this page when you need the reference model for survey templates rather than
 the step-by-step editing workflow.
 
-For the interactive editing path, use [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md).
+For the interactive editing path, use [TEMPLATE_EDITOR.md](studio/template_editor.md).
 
 ## What a survey template is
 
@@ -107,7 +107,7 @@ This page is most useful when you need to answer questions such as:
 - what the project-local copy is supposed to hold
 - how item-level metadata is represented
 
-For actual editing, switch back to [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md).
+For actual editing, switch back to [TEMPLATE_EDITOR.md](studio/template_editor.md).
 
 ## Common mistakes
 
@@ -118,6 +118,6 @@ For actual editing, switch back to [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md).
 
 ## Related pages
 
-- [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
-- [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
+- [TEMPLATE_EDITOR.md](studio/template_editor.md)
+- [SURVEY_IMPORT.md](studio/converter_survey.md)
 - [specs/survey](specs/survey)

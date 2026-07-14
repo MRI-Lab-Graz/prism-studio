@@ -213,6 +213,6 @@ pytest
 ## Related pages
 
 - [CLI_REFERENCE.md](CLI_REFERENCE.md)
-- [VALIDATOR.md](VALIDATOR.md)
-- [STUDIO_OVERVIEW.md](STUDIO_OVERVIEW.md)
+- [VALIDATOR.md](studio/validator.md)
+- [STUDIO_OVERVIEW.md](studio/index.md)
 - [WORKSHOP.md](WORKSHOP.md)
