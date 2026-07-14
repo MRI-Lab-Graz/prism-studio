@@ -5,6 +5,8 @@ files) into a PRISM project as BIDS-style survey files. This page covers the gen
 non-LimeSurvey-specific workflow; see [LimeSurvey Integration](../LIMESURVEY_INTEGRATION.md)
 for LimeSurvey-specific export steps upstream of this screen.
 
+![PRISM Studio Survey converter tab](../_static/screenshots/prism-studio-converter-survey.png)
+
 ## Step 1 — Choose source file
 
 - **Survey File (.xlsx, .csv, .tsv, .sav, .rds, .rdata, .lsa)** — the file to import,

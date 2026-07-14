@@ -3,6 +3,8 @@
 Create, edit, validate, and export the JSON templates that describe survey and
 biometrics instruments.
 
+![PRISM Studio Template Editor screen](../_static/screenshots/prism-studio-template-editor.png)
+
 ## Choosing a template
 
 Pick a **Modality** (`survey` or `biometrics`) and **Schema version**, then choose a

@@ -1,49 +1,52 @@
 # Home
 
-The landing page at `/`. It's static/marketing-style content, not a dashboard — there
-is no current-project summary or dynamic quick-links list here. Home works whether or
-not a project is currently loaded.
+PRISM Studio turns raw psychology and neuroscience study data into clean,
+BIDS-compatible datasets — without your data ever leaving your own computer. The
+Home screen is where every session starts: it makes the case for the tool in one
+glance and gets you to your project in one click.
 
-## What's on it
+![PRISM Studio Home screen](../_static/screenshots/prism-studio-home.png)
 
-- A hero section with a one-line pitch and a single call to action: **Create or Open a
-  Project**, linking to [Projects](projects.md).
-- A dismissible "Quick Start" help panel (only shown in beginner-help mode): *"Run
-  validation early, then convert and export from the same project context."*
-- A "Raw study files → analysis-ready PRISM project" before/after comparison.
-- A "Why Researchers Use PRISM Studio" feature list.
-- A static directory-tree example showing the multimodal project layout.
+## Create or open a project
 
-The only dynamic, project-aware element on screen is in the persistent top navbar
-(current project name/icon, or "No project loaded", plus a DataLad status pill) — not
-inside the Home page content itself.
+Everything in Studio flows from an active project. **Create or Open a Project**
+takes you straight to [Projects](projects.md), whether you're starting a new study
+or picking up one you already have on disk. You don't need a project loaded to
+browse Home itself — but every other screen either needs one or works better with
+one.
 
-## Navigation
+## What PRISM Studio is for
 
-This is the real navigation structure (`app/templates/base.html`), in order:
+Home makes the pitch concretely, with a before/after: a raw questionnaire
+spreadsheet — mixed survey items, coded demographics, ad hoc participant IDs, no
+reusable metadata, no scoring logic — becomes one analysis-ready PRISM project:
+standardized participant mappings, survey sidecars and scoring recipes stored with
+the data, a BIDS-compatible structure, and export targets like SPSS, TSV, CSV,
+labels, and codebooks. Convert, score, validate, export — less spreadsheet surgery,
+more reproducible research data.
 
-1. **Home** — this page.
-2. **Project** — "Go to Project" (only shown once a project is loaded), "Open Project
-   Manager", and a "Recent Projects" list.
-3. **Prepare Data** — Converter, Template Editor, Recipe Builder.
-4. **Modify in PRISM** — Validator, File Management (needs a loaded project), JSON
-   Editor.
-5. **Export Derivatives** — Survey Export, Analysis Outputs, PRISM App Runner. The
-   whole dropdown is disabled unless a project with a path is loaded and at least one
-   derivative tool is available.
-6. **Share & Archive** — a single link, disabled unless the loaded project has data.
-7. **Docs** — Online Docs (external, this site) and Specs (the in-app
-   [Specifications](specifications.md) screen).
+That promise breaks down into what researchers actually use day to day: converting
+messy source data (Excel, CSV, TSV, LimeSurvey) into a structured dataset without
+hand-building folders or filenames; scoring questionnaires with recipes instead of
+fragile spreadsheet formulas; privacy-safe export with anonymization and MRI
+metadata safeguards; staying compatible with standard BIDS validators and
+downstream tools; handling multi-version survey studies with version- and
+run-aware conversion; full DataLad provenance — tracked projects, snapshots,
+mutation runs; bulk subject renaming/de-identification with collision checks; and
+syncing a tracked project to a remote DataLad server in one click.
 
-There is no "Tools" menu and no "Results" nav item — if you've seen either mentioned
-in older docs, that's stale; this is the current structure.
+## Where to go from here
 
-## Beginner help mode
+The top navigation is where you spend most of your time: **Project** (open/switch,
+recent projects), **Prepare Data** (Converter, Template Editor, Recipe Builder),
+**Modify in PRISM** (Validator, File Management, JSON Editor), **Export
+Derivatives** (Survey Export, Analysis Outputs, PRISM App Runner — enabled once a
+project has a path and at least one derivative tool is available), **Share &
+Archive** (once the project has data), and **Docs** (this site, plus the in-app
+[Specifications](specifications.md) screen).
 
-A global toggle (persisted in the browser) shows or hides beginner-oriented help
-panels and highlights required form inputs across Studio. It's on by default. Home's
-only beginner-mode element is the Quick Start panel described above — there's no
-guided tour or walkthrough.
+A beginner-help toggle (on by default) shows contextual guidance and highlights
+required fields throughout Studio — turn it off once you know your way around.
 
 ## What's next
 
