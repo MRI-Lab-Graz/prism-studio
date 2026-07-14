@@ -42,7 +42,13 @@ workflow:
 
 .. toctree::
    :maxdepth: 2
-   :caption: User Workflows
+   :caption: Studio Guide (New)
+
+   studio/index
+
+.. toctree::
+   :maxdepth: 2
+   :caption: User Workflows (Legacy — being replaced by Studio Guide)
 
    PROJECTS
    CONVERTER
@@ -104,12 +110,6 @@ workflow:
    DATALAD
    SCHEMA_VERSIONING
    FAIR_POLICY
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Project Health
-
-   ASSESSMENT
 
 Indices and tables
 ==================

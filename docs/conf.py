@@ -26,31 +26,10 @@ exclude_patterns = [
     ".DS_Store",
     "README.md",
     "archive/**",
-    # Development/internal docs intentionally hidden from RTD public nav.
-    "CHANGELOG.md",
-    "RELEASE_GUIDE.md",
-    "WINDOWS_TESTING.md",
-    "WINDOWS_TEST_QUICKREF.md",
-    "WINDOWS_TEST_SUMMARY.md",
-    "WINDOWS_VM_BUILD_TESTING.md",
-    "COMPLETE_WINDOWS_SUMMARY.md",
-    # Internal planning and release notes not in toctree
-    "RELEASE_NOTES_TEMPLATE.md",
-    "RELEASE_NOTES_v1.14.0.md",
-    "RELEASE_NOTES_v1.15.0.md",
-    "RELEASE_NOTES_v1.15.1.md",
-    "RELEASE_NOTES_v1.15.2.md",
-    "RELEASE_NOTES_v1.15.3.md",
-    "RELEASE_NOTES_v1.16.0.md",
     # Advanced pages intentionally hidden from public RTD navigation.
-    "BIDS_AUTO_MAPPING_COMPLETE.md",
-    "BIDS_COMPLIANCE_IMPLEMENTATION.md",
     "EYETRACKING_TSV_NORMALIZATION.md",
-    "GITHUB_SIGNING.md",
     "LIMESURVEY_VERSION_DIFFERENCES.md",
     "PAVLOVIA_EXPORT.md",
-    "WINDOWS_BUILD.md",
-    "WINDOWS_SETUP.md",
 ]
 
 # -- Options for HTML output -------------------------------------------------

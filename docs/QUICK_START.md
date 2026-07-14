@@ -59,13 +59,19 @@ Typical structure:
 ```text
 my_first_study/
 ├── dataset_description.json
-├── participants.tsv
 ├── project.json
 ├── CITATION.cff
+├── CHANGES
+├── README.md
+├── .bidsignore
+├── .prismrc.json
 ├── sourcedata/
 ├── derivatives/
 └── code/
 ```
+
+`participants.tsv` is not created yet at this point — it is written once you run the
+sociodemographics/participants import step.
 
 If you plan to work with larger datasets or provenance tracking, read
 [DATALAD.md](DATALAD.md) before reshaping the project manually.
@@ -160,7 +166,7 @@ deeper workflow.
 If you prefer to confirm the same project from the terminal:
 
 ```bash
-python prism-validator /path/to/project --bids
+prism-validator /path/to/project --bids
 ```
 
 For broader command coverage, see [CLI_REFERENCE.md](CLI_REFERENCE.md).

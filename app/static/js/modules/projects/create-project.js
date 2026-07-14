@@ -260,6 +260,12 @@ export function initCreateProjectController({
                             </small>
                         </div>
                         ${dataladNotice}
+                        <div class="d-flex justify-content-end mt-3 pt-2 border-top">
+                            <button type="button" class="btn btn-sm btn-outline-danger" id="projectBoxDeleteBtn"
+                                    data-project-path="${escapeHtml(result.path)}" data-project-name="${escapeHtml(projectName)}">
+                                <i class="fas fa-trash me-1"></i>Delete This Project
+                            </button>
+                        </div>
                     </div>
                 `);
 

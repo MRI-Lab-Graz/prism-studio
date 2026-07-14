@@ -127,9 +127,13 @@ After the source install is working, you can also use the CLI tools.
 Common examples:
 
 ```bash
-python prism-validator /path/to/dataset
+prism-validator /path/to/dataset
 python prism_tools.py recipes surveys --prism /path/to/dataset
 ```
+
+`prism-validator` is a console script installed into `.venv/bin` by setup — once the
+virtual environment is activated it runs directly (no `python` prefix). It is an alias
+for `python prism.py`; both invocations are equivalent.
 
 Use the CLI reference when you need more commands.
 
