@@ -96,9 +96,9 @@ If you are changing metadata behavior in the codebase, verify:
 
 ## Related pages
 
-- [PROJECTS.md](PROJECTS.md)
+- [PROJECTS.md](studio/projects.md)
 - [SPECIFICATIONS.md](SPECIFICATIONS.md)
-- [VALIDATOR.md](VALIDATOR.md)
+- [VALIDATOR.md](studio/validator.md)
 - [WHAT_IS_PRISM.md](WHAT_IS_PRISM.md)
 - **Status Summary**: See `docs/BIDS_AUTO_MAPPING_COMPLETE.md` (overview)
 - **Official BIDS**: https://bids-specification.readthedocs.io/

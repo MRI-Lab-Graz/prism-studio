@@ -7,16 +7,28 @@ and where, and common failures.
 ```{toctree}
 :maxdepth: 1
 
+home
 projects
+file_management
+converter
 converter_survey
 converter_participants
+converter_biometrics
+converter_environment
+converter_eyetracking
+converter_physio
+validator
+json_editor
 template_editor
+survey_generator
+survey_customizer
 recipe_builder
 export
+specifications
+app_runner
 ```
 
-```{note}
-This section is being rebuilt page by page. Screens not yet listed above are still
-documented in the older top-level pages (e.g. `CONVERTER.md`, `WEB_INTERFACE.md`)
-until their rewritten replacements land here.
-```
+All PRISM Studio screens are covered here now. The older top-level pages this section
+replaces (`CONVERTER.md`, `STUDIO_OVERVIEW.md`, `TOOLS.md`, `WEB_INTERFACE.md`,
+`SPECIFICATIONS.md`) are being retired — see the main navigation for what's still
+live.

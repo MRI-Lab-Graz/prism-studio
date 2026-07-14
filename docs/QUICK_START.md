@@ -107,7 +107,7 @@ If you start with sociodemographics instead, pick the correct case first:
 - **Case 2**: you are editing an existing project file
 - **Case 3**: you want a safe merge
 
-Use [PARTICIPANTS_MAPPING.md](PARTICIPANTS_MAPPING.md) if you are unsure which
+Use [PARTICIPANTS_MAPPING.md](studio/converter_participants.md) if you are unsure which
 case applies.
 
 ## Step 4: Run validation
@@ -152,13 +152,13 @@ validation again.
 
 If your survey data is ready, continue with a simple recipe flow:
 
-1. Open **Tools**.
+1. Open **Prepare Data**.
 2. Open **Recipe Builder**.
 3. Load or create a small scoring recipe.
 4. Run it against your project.
 5. Export the result as CSV or SPSS if needed.
 
-See [RECIPE_BUILDER.md](RECIPE_BUILDER.md) and [RECIPES.md](RECIPES.md) for the
+See [RECIPE_BUILDER.md](studio/recipe_builder.md) and [RECIPES.md](RECIPES.md) for the
 deeper workflow.
 
 ## Equivalent CLI checks
@@ -199,7 +199,7 @@ errors.
 
 ## What to do next
 
-- [STUDIO_OVERVIEW.md](STUDIO_OVERVIEW.md) for the full page map
-- [PROJECTS.md](PROJECTS.md) for project and metadata workflows
-- [SURVEY_IMPORT.md](SURVEY_IMPORT.md) for a deeper survey conversion guide
+- [STUDIO_OVERVIEW.md](studio/index.md) for the full page map
+- [PROJECTS.md](studio/projects.md) for project and metadata workflows
+- [SURVEY_IMPORT.md](studio/converter_survey.md) for a deeper survey conversion guide
 - [WORKSHOP.md](WORKSHOP.md) for a longer guided exercise

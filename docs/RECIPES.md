@@ -3,7 +3,7 @@
 Use this page when you need the reference model for PRISM scoring recipes rather
 than the step-by-step UI workflow.
 
-For the guided editor workflow, use [RECIPE_BUILDER.md](RECIPE_BUILDER.md).
+For the guided editor workflow, use [RECIPE_BUILDER.md](studio/recipe_builder.md).
 
 ## What a recipe is
 
@@ -138,6 +138,6 @@ When scoring runs successfully, survey outputs may include:
 
 ## Related pages
 
-- [RECIPE_BUILDER.md](RECIPE_BUILDER.md)
-- [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md)
-- [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
+- [RECIPE_BUILDER.md](studio/recipe_builder.md)
+- [ANALYSIS_OUTPUT.md](studio/export.md)
+- [SURVEY_IMPORT.md](studio/converter_survey.md)

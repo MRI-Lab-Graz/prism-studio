@@ -150,4 +150,4 @@ See [DATALAD.md](DATALAD.md) for the public DataLad guidance.
 - [WHAT_IS_PRISM.md](WHAT_IS_PRISM.md) for the model and compatibility story
 - [INSTALLATION.md](INSTALLATION.md) for setup choices
 - [QUICK_START.md](QUICK_START.md) for a first successful workflow
-- [STUDIO_OVERVIEW.md](STUDIO_OVERVIEW.md) for page-by-page navigation
+- [STUDIO_OVERVIEW.md](studio/index.md) for page-by-page navigation

@@ -109,50 +109,106 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Save / Download the edited JSON
-    document.getElementById('saveBtn').addEventListener('click', async function() {
-        try {
-            let updatedJson;
-            const fileName = (window.currentFilePath || 'file.json').split('/').pop();
-            const fileType = fileName.replace('.json', '');
+    // Collect the current form's edits back into a plain JSON object.
+    // Shared by both "Save to Project" and "Download Copy".
+    function collectFormJson(fileType) {
+        let updatedJson;
 
-            if (fileType === 'participants') {
-                updatedJson = {};
-                document.querySelectorAll('[data-json-path]').forEach(textarea => {
-                    const path = textarea.dataset.jsonPath;
-                    const raw = textarea.value;
-                    try {
-                        let parsed;
-                        if (raw.trim().startsWith('{') || raw.trim().startsWith('[')) parsed = JSON.parse(raw);
-                        else if (raw === 'true' || raw === 'false') parsed = JSON.parse(raw);
-                        else if (raw === 'null') parsed = null;
-                        else if (!isNaN(raw) && raw !== '') parsed = Number(raw);
-                        else parsed = raw;
-                        const parts = path.split('.');
-                        let cur = updatedJson;
-                        for (let i = 0; i < parts.length - 1; i++) {
-                            if (!cur[parts[i]]) cur[parts[i]] = {};
-                            cur = cur[parts[i]];
-                        }
-                        cur[parts[parts.length - 1]] = parsed;
-                    } catch (e) {
-                        showAlert(`Invalid value for "${path}": ${e.message}`, 'warning');
+        if (fileType === 'participants') {
+            updatedJson = {};
+            document.querySelectorAll('[data-json-path]').forEach(textarea => {
+                const path = textarea.dataset.jsonPath;
+                const raw = textarea.value;
+                try {
+                    let parsed;
+                    if (raw.trim().startsWith('{') || raw.trim().startsWith('[')) parsed = JSON.parse(raw);
+                    else if (raw === 'true' || raw === 'false') parsed = JSON.parse(raw);
+                    else if (raw === 'null') parsed = null;
+                    else if (!isNaN(raw) && raw !== '') parsed = Number(raw);
+                    else parsed = raw;
+                    const parts = path.split('.');
+                    let cur = updatedJson;
+                    for (let i = 0; i < parts.length - 1; i++) {
+                        if (!cur[parts[i]]) cur[parts[i]] = {};
+                        cur = cur[parts[i]];
                     }
-                });
+                    cur[parts[parts.length - 1]] = parsed;
+                } catch (e) {
+                    showAlert(`Invalid value for "${path}": ${e.message}`, 'warning');
+                }
+            });
+        } else {
+            const form = document.querySelector('.bids-form');
+            if (form && typeof BIDSFormGenerator !== 'undefined') {
+                updatedJson = BIDSFormGenerator.getFormData(form);
             } else {
-                const form = document.querySelector('.bids-form');
-                if (form && typeof BIDSFormGenerator !== 'undefined') {
-                    updatedJson = BIDSFormGenerator.getFormData(form);
+                const editor = document.getElementById('jsonEditor');
+                if (editor) {
+                    updatedJson = JSON.parse(editor.value);
                 } else {
-                    const editor = document.getElementById('jsonEditor');
-                    if (editor) {
-                        updatedJson = JSON.parse(editor.value);
-                    } else {
-                        showAlert('No data to save', 'warning');
-                        return;
-                    }
+                    showAlert('No data to save', 'warning');
+                    return null;
                 }
             }
+        }
+
+        return updatedJson;
+    }
+
+    // Save to Project: writes the edited JSON back into the current
+    // project's matching file on disk (POST /editor/api/file/<type>).
+    document.getElementById('saveToProjectBtn').addEventListener('click', async function() {
+        const btn = this;
+        try {
+            const fileName = (window.currentFilePath || 'file.json').split('/').pop();
+            const fileType = fileName.replace('.json', '');
+            const updatedJson = collectFormJson(fileType);
+            if (updatedJson === null) return;
+
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+
+            try {
+                const response = await fetchWithApiFallback(`/editor/api/file/${fileType}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedJson),
+                });
+                const result = await response.json().catch(() => ({
+                    success: false,
+                    error: 'Server returned an invalid response.',
+                }));
+
+                if (!response.ok || !result.success) {
+                    showAlert(result.error || `Could not save ${fileName} to the project.`, 'danger');
+                    return;
+                }
+
+                showAlert(`Saved ${fileName} to the current project.`, 'success');
+                if (Array.isArray(result.validation_errors) && result.validation_errors.length) {
+                    showAlert(
+                        `Saved, but validation found issues: ${result.validation_errors.join('; ')}`,
+                        'warning'
+                    );
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        } catch (error) {
+            showAlert('Error: ' + error.message, 'danger');
+        }
+    });
+
+    // Download Copy: exports the edited JSON as a local file download only
+    // (does not touch the project on disk).
+    document.getElementById('saveBtn').addEventListener('click', async function() {
+        try {
+            const fileName = (window.currentFilePath || 'file.json').split('/').pop();
+            const fileType = fileName.replace('.json', '');
+            const updatedJson = collectFormJson(fileType);
+            if (updatedJson === null) return;
 
             const blob = new Blob([JSON.stringify(updatedJson, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -177,6 +233,15 @@ document.addEventListener('DOMContentLoaded', async function() {
             window.currentFileData = jsonData;
             const fileName = filePath.split('/').pop();
             const fileType = fileName.replace('.json', '');
+
+            const saveHint = document.getElementById('saveToProjectHint');
+            if (saveHint) {
+                const isKnownProjectType = ['dataset_description', 'participants', 'samples'].includes(fileType)
+                    || fileType.startsWith('task-');
+                saveHint.textContent = isKnownProjectType
+                    ? `"Save to Project" overwrites ${fileName} in the current project.`
+                    : `"Save to Project" only works for dataset_description.json, participants.json, samples.json, or task-*.json.`;
+            }
 
             // Try to get a BIDS schema for this file type
             const response = await fetchWithApiFallback(`/editor/api/schema/${fileType}`);
