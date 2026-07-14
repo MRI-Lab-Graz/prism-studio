@@ -62,7 +62,7 @@ prism-validator /path/to/dataset
 | `--bids-warnings` | Include BIDS validator warnings (default hidden) |
 | `--library PATH` | Override the template library path for schema/template lookups |
 | `--no-prism` | Skip PRISM-specific checks (only BIDS if `--bids` is set) |
-| `--validate-templates PATH` | Validate all survey/biometrics JSON templates in a library directory ([details](TEMPLATE_VALIDATION.md)) |
+| `--validate-templates PATH` | Validate all survey/biometrics JSON templates in a library directory ([details](TEMPLATES.md)) |
 | `--build-environment` | Build a privacy-safe `*_environment.tsv` from `scans.tsv` anchors (no dataset validation run) |
 | `--scans-tsv` / `--environment-tsv` / `--lat` / `--lon` | Required with `--build-environment` |
 | `--environment-providers ...` | Provider list for enrichment (default: `weather pollen air_quality`) |

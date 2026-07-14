@@ -36,8 +36,31 @@ and `VariantScales` (per-variant scale overrides — `VariantID`, `ScaleType`,
 ```
 
 Items not listed in `ApplicableVersions` for the resolved variant are expected to be
-absent from data files for that variant. See [Survey Versioning](SURVEY_VERSION_PLAN.md)
-for how `Study.Version` and `acq-<version>` determine the active variant.
+absent from data files for that variant.
+
+## How the active variant is selected
+
+There is no project-level version-selection UI or mapping file — the active variant
+is derived entirely from the template and the filename:
+
+1. **Template metadata**: `Study.Versions` (all allowed variant IDs) and
+   `Study.Version` (the active variant used during conversion).
+2. **BIDS filename entity**: `acq-<version>` on multi-variant outputs.
+
+```json
+{ "Study": { "TaskName": "wellbeing-multi", "Versions": ["10-likert", "7-likert", "10-vas"], "Version": "10-likert" } }
+```
+
+produces `sub-001_ses-01_task-wellbeing-multi_acq-10-likert_survey.tsv`. A
+single-version template gets no `acq` entity at all.
+
+At validation and scoring time, the version resolves from the filename's `acq`
+entity first when present; if `acq` is absent, PRISM falls back to the template's
+`Study.Version`. Recipe `VersionedScores` are selected using that resolved version.
+
+Older projects may still have a `survey_version_mapping` key — it's tolerated but no
+longer required. New conversions don't need it; just keep `Study.Version` accurate
+in the template and rely on the generated `acq` labels.
 
 ## Using a version
 
