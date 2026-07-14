@@ -56,13 +56,21 @@ Typical root structure:
 ```text
 project_name/
 ├── dataset_description.json
-├── participants.tsv
 ├── project.json
 ├── CITATION.cff
+├── CHANGES
+├── README.md
+├── .bidsignore
+├── .prismrc.json
 ├── sourcedata/
 ├── derivatives/
 └── code/
+    ├── library/
+    └── recipes/
 ```
+
+`participants.tsv`/`participants.json` are not part of this creation-time tree —
+they're written once you run the participants/sociodemographics import step.
 
 The exact contents will grow with the study, but the basic split stays the same:
 
