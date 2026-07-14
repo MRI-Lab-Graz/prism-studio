@@ -106,24 +106,28 @@ Why researchers use PRISM Studio
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
    :caption: Installation
 
    INSTALLATION
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
    :caption: Quick Start
 
    QUICK_START
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
    :caption: Studio Guide
 
    studio/index
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
    :caption: CLI
 
    CLI_REFERENCE
@@ -131,6 +135,7 @@ Why researchers use PRISM Studio
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
    :caption: Tutorial
 
    WORKSHOP
@@ -138,24 +143,34 @@ Why researchers use PRISM Studio
 
 .. toctree::
    :maxdepth: 2
-   :caption: Reference
+   :hidden:
+   :caption: Concepts
 
    WHAT_IS_PRISM
    PROJECT_OVERVIEW
    SPECIFICATIONS
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Data Reference
+
    RECIPES
    ERROR_CODES
-   QUICK_REFERENCE_BIDS
-   TEMPLATE_VALIDATION
    TEMPLATES
-   SURVEY_VERSION_PLAN
    SCHEMA_VERSIONING
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Integrations
+
    DATALAD
-   FAIR_POLICY
    LIMESURVEY_INTEGRATION
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
    :caption: Schema Specifications
 
    specs/survey
