@@ -10,6 +10,10 @@ This page works best as a triage guide:
 3. decide whether auto-fix is appropriate
 4. re-run validation after the repair
 
+This reference is generated from the canonical error-code registry in
+`app/src/issues.py` — if it ever looks out of sync with what the validator actually
+reports, that file is the source of truth.
+
 ## How PRISM codes are organized
 
 All validation issues use structured codes in the form `PRISMxxx`.
@@ -20,9 +24,11 @@ All validation issues use structured codes in the form `PRISMxxx`.
 | `PRISM1xx` | File naming | Filenames or path entities do not match expectations |
 | `PRISM2xx` | Sidecar and metadata files | Required JSON sidecars are missing, empty, or malformed |
 | `PRISM3xx` | Schema validation | Metadata exists, but it does not satisfy schema rules |
-| `PRISM4xx` | Content validation | The content itself is problematic beyond simple schema shape |
+| `PRISM4xx` | Content validation | TSV content values don't satisfy Levels/range rules from the sidecar |
 | `PRISM5xx` | BIDS compatibility | BIDS-oriented compatibility issues or warnings |
-| `PRISM9xx` | Plugin or system errors | Internal failures or plugin-related problems |
+| `PRISM6xx` | Consistency | Cross-subject/cross-session consistency warnings |
+| `PRISM7xx` | Procedure/session declaration | On-disk data vs. `project.json`'s declared Sessions/Tasks |
+| `PRISM9xx` | Internal/system errors | Internal validation failures |
 
 ## Recommended fix order
 
@@ -32,7 +38,8 @@ When you see multiple codes at once, this order is usually fastest:
 2. fix filename problems (`PRISM1xx`)
 3. fix missing sidecars (`PRISM2xx`)
 4. fix schema-required metadata (`PRISM3xx`)
-5. review BIDS warnings and plugin issues afterward
+5. fix content/value issues (`PRISM4xx`)
+6. review BIDS, consistency, and procedure warnings afterward (`PRISM5xx`–`PRISM7xx`)
 
 This prevents you from polishing metadata on a file that still needs to be moved
 or renamed.
@@ -41,15 +48,7 @@ or renamed.
 
 ### `PRISM001` — Missing `dataset_description.json`
 
-Meaning: the required `dataset_description.json` file is missing from the dataset root.
-
-Typical fix:
-
-- create the file at dataset root with at least `Name` and `BIDSVersion`
-
-Auto-fixable: yes
-
-Example:
+Create the file at the dataset root with at least `Name` and `BIDSVersion`. Auto-fixable.
 
 ```json
 {
@@ -59,134 +58,95 @@ Example:
 }
 ```
 
-### `PRISM002` — No subjects found
+### `PRISM002` — No subjects found in dataset
 
-Meaning: no `sub-*` subject directories were detected.
-
-Typical fix:
-
-- check that subject folders are present
-- ensure they use `sub-<label>` naming
-- ensure they are located where the validator expects them
-
-Auto-fixable: no
+Ensure subject folders are named `sub-<label>` and located at the project dataset root.
 
 ### `PRISM003` — Invalid `dataset_description.json`
 
-Meaning: the file exists, but its JSON syntax or required metadata is invalid.
-
-Typical fix:
-
-- validate the JSON syntax
-- repair missing required fields
+The file exists but its JSON syntax or required BIDS fields are invalid — validate
+the syntax and repair missing fields.
 
 ### `PRISM004` — Missing `participants.tsv`
 
-Meaning: the participant table expected for the dataset is missing.
+Create `participants.tsv` listing every subject, with at least a `participant_id`
+column. In Studio, run the participants/sociodemographics import step instead of
+hand-writing it.
 
-Typical fix:
+### `PRISM005` — Schema version mismatch
 
-- create `participants.tsv`
-- include at least a `participant_id` column and the expected participant rows
+The metadata uses an older or newer schema version than the validator. Update
+`SchemaVersion` in your metadata files, or pass `--schema-version` to match.
+
+### `PRISM006` — FAIR compliance issue in `dataset_description.json`
+
+Add recommended metadata for FAIR compliance: `Description` (min 50 chars),
+`License`, `EthicsApprovals`, `Funding`, `Keywords` (min 3), `Authors` with
+ORCID/affiliation.
+
+### `PRISM007` — Incomplete survey template metadata
+
+Add recommended fields to the survey template: `References`, `Description`,
+`Reliability`, `AdministrationTime`.
+
+### `PRISM008` — Template consistency error
+
+Check that `ItemCount` matches the actual questions, that `Subscale` items exist,
+that `ReverseCodedItems` exist, and that `Levels` keys are within the
+`MinValue`/`MaxValue` range.
 
 ## File naming errors (`PRISM1xx`)
 
-### `PRISM101` — Invalid filename pattern
+### `PRISM101` — Invalid BIDS filename format
 
-Meaning: the filename does not follow expected BIDS or PRISM entity conventions.
+Ensure the filename follows `sub-<label>[_ses-<label>]_task-<label>_<suffix>.<ext>`.
 
-Typical fix:
+Valid: `sub-01_task-faces_bold.nii.gz`, `sub-01_ses-01_task-nback_eeg.edf`.
+Invalid: `subject01_task-faces.nii.gz`, `sub-01-task-faces.nii.gz`.
 
-- rename the file using entity-based structure such as
-  `sub-<label>[_ses-<label>][_task-<label>]_<suffix>.<ext>`
+### `PRISM102` — Filename doesn't match expected pattern for modality
 
-Valid examples:
+Use the correct suffix for the modality: `_survey`, `_physio`, `_eyetrack`,
+`_biometrics`, or `_events`.
 
-- `sub-01_task-faces_bold.nii.gz`
-- `sub-01_ses-01_task-nback_eeg.edf`
-- `sub-02_task-rest_physio.tsv`
+### `PRISM103` — Subject ID mismatch
 
-Invalid examples:
+The `sub-<label>` in the filename must match the parent directory.
 
-- `subject01_task-faces.nii.gz`
-- `sub-01-task-faces.nii.gz`
+### `PRISM104` — Session ID mismatch
 
-### `PRISM102` — Subject ID mismatch
-
-Meaning: the subject entity in the filename does not match the parent directory.
-
-Typical fix:
-
-- align the filename with the `sub-*` directory name
-
-### `PRISM103` — Session ID mismatch
-
-Meaning: the session entity in the filename does not match the parent directory.
-
-Typical fix:
-
-- align the filename with the `ses-*` directory name
-
-### `PRISM104` — Invalid characters
-
-Meaning: the filename contains disallowed characters.
-
-Typical fix:
-
-- keep names to letters, numbers, hyphens, and underscores
+The `ses-<label>` in the filename must match the parent directory.
 
 ## Sidecar and metadata-file errors (`PRISM2xx`)
 
-### `PRISM201` — Missing sidecar
+### `PRISM201` — Missing JSON sidecar
 
-Meaning: a non-JSON data file is missing its required JSON sidecar.
-
-Typical fix:
-
-- create the JSON file with the same stem as the data file
-
-Auto-fixable: yes
-
-Example:
+Provide metadata via a matching sidecar, or a BIDS-inherited root sidecar (e.g.
+`task-<name>_<suffix>.json`) to avoid redundant per-file copies. Auto-fixable.
 
 ```text
 sub-01/survey/sub-01_task-demo_survey.tsv
 sub-01/survey/sub-01_task-demo_survey.json
 ```
 
-### `PRISM202` — Invalid JSON syntax
+### `PRISM202` — Invalid JSON syntax in sidecar
 
-Meaning: the JSON exists, but the syntax is malformed.
+Repair missing quotes, commas, or brackets in the `.json` file.
 
-Typical fix:
+### `PRISM203` — Empty sidecar file
 
-- repair missing quotes, commas, brackets, or other JSON syntax issues
+The `.json` sidecar exists but contains no data.
 
-### `PRISM203` — Empty sidecar
+### `PRISM204` — Empty data file
 
-Meaning: the JSON file is empty or effectively empty.
-
-Typical fix:
-
-- add the required metadata fields instead of leaving `{}` in place
+The data file exists but contains no content.
 
 ## Schema validation errors (`PRISM3xx`)
 
-### `PRISM301` — Missing required field
+### `PRISM301` — Metadata schema validation failed
 
-Meaning: a required field is missing according to the loaded PRISM schema.
-
-This can include:
-
-- standard BIDS-related required metadata
-- PRISM-specific required extensions such as event-sidecar metadata blocks
-
-Typical fix:
-
-- add the missing field to the JSON sidecar or template
-- use the schema docs to confirm the required structure
-
-Example for event-sidecar metadata:
+A required field for this modality is missing from the JSON sidecar. This can
+include standard BIDS-required metadata or PRISM-specific extensions.
 
 ```json
 {
@@ -197,101 +157,116 @@ Example for event-sidecar metadata:
 }
 ```
 
-### `PRISM302` — Invalid field type
+### `PRISM302` — Invalid field type in sidecar
 
-Meaning: a field exists, but its type is wrong.
+A field exists but its type doesn't match the schema (string, number, object,
+array, ...).
 
-Typical fix:
+### `PRISM303` — CITATION.cff validation failed
 
-- change the value to the schema-expected type such as string, integer, float,
-  object, or array
+Fix `CITATION.cff` formatting/required fields — `cff-version`, `title`, `message`,
+`authors`, and reference keys — so citation metadata is valid.
 
-### `PRISM303` — Invalid field value
+## Content validation errors (`PRISM4xx`)
 
-Meaning: the field type is acceptable, but the actual value is outside the
-allowed range or set.
+### `PRISM401` — TSV file is empty or missing header
 
-Typical fix:
+Ensure the TSV file has a tab-separated header row.
 
-- use a value permitted by the schema or the modality rules
+### `PRISM402` — Value not in allowed levels
 
-## BIDS compatibility warnings (`PRISM5xx`)
+The value in the TSV doesn't match one of the `Levels` defined in the sidecar.
+
+### `PRISM403` — Value out of range
+
+The value falls outside the `MinValue`/`MaxValue` range defined in the sidecar.
+
+### `PRISM404` — Value out of warning range
+
+The value is within absolute limits but outside the typical warning range —
+worth a second look, not necessarily wrong.
+
+## BIDS compatibility (`PRISM5xx`)
 
 ### `PRISM501` — `.bidsignore` needs update
 
-Meaning: the dataset should ignore PRISM-specific files for standard BIDS tools.
-
-Typical fix:
-
-- update `.bidsignore` to reflect the PRISM-specific paths that should not be
-  treated as ordinary BIDS data files
-
-Auto-fixable: yes
+Add PRISM-specific modalities to `.bidsignore` to avoid standard BIDS validator
+errors. Auto-fixable.
 
 ### `PRISM502` — BIDS validator warning
 
-Meaning: the standard BIDS validator reported a warning.
+The standard BIDS validator reported a warning. Only surfaces when `--bids` (or
+its equivalent Studio option) is enabled.
 
-Typical fix:
+### `PRISM503` — BIDS validator error
 
-- inspect the BIDS-side warning and decide whether it is blocking for your target
-  downstream tooling
+The standard BIDS validator reported an error.
 
-## Plugin and system errors (`PRISM9xx`)
+## Consistency errors (`PRISM6xx`)
 
-### `PRISM900` — Plugin issue
+### `PRISM601` — Dataset consistency warning
 
-Meaning: a custom validator plugin reported a validation issue.
+Check for missing sessions or modalities across subjects — e.g. one subject is
+missing a session everyone else has.
 
-Typical fix:
+## Procedure/session declaration errors (`PRISM7xx`)
 
-- read the plugin-specific message and repair the condition it describes
+These compare what's actually on disk against what `project.json`'s `Sessions`
+and `TaskDefinitions` declare.
 
-### `PRISM901` — Plugin failure
+### `PRISM701` — Session on disk not declared in `project.json`
 
-Meaning: a plugin failed during execution.
+Add the session to the `Sessions` array in `project.json`, or use the session
+picker in the Converter.
 
-Typical fix:
+### `PRISM702` — Deprecated
 
-- inspect the plugin code and its expected `validate()` behavior
+Session presence is now inferred from the on-disk `sub-*/ses-*` structure. Kept
+for backward compatibility only — not emitted by current validation.
 
-### `PRISM999` — Internal error
+### `PRISM703` — Task on disk not declared in session
 
-Meaning: an unexpected internal failure occurred.
+Register the task in the session's `tasks` array in `project.json`.
 
-Typical fix:
+### `PRISM704` — Declared non-optional task has no data on disk
 
-- capture the context and report it as a bug if it is reproducible
+Convert data for the task, mark it optional, or remove it from the session.
 
-## Legacy name mapping
+### `PRISM705` — Task references undefined `TaskDefinition`
 
-Some older names map to the structured code system.
+Add the task to the `TaskDefinitions` object in `project.json` with at least a
+`modality`.
 
-| Legacy name | PRISM code |
-|---|---|
-| `INVALID_BIDS_FILENAME` | `PRISM101` |
-| `MISSING_SIDECAR` | `PRISM201` |
-| `SCHEMA_VALIDATION_ERROR` | `PRISM301` to `PRISM303` |
-| `INVALID_JSON` | `PRISM202` |
-| `FILENAME_PATTERN_MISMATCH` | `PRISM101` |
+### `PRISM706` — Sessions array is empty — no procedure defined yet
+
+Define your study procedure in the `Sessions` array, or convert data with
+save-to-project to auto-register it.
+
+### `PRISM707` — `participants.tsv` does not cover all subject folders on disk
+
+Open the participants/sociodemographics import step and import or add the missing
+participants so `participants.tsv` lists every subject already saved in the dataset.
+
+## Internal/system errors (`PRISM9xx`)
+
+### `PRISM901` — Internal validation error
+
+An unexpected error occurred during validation.
+
+### `PRISM999` — General validation error
+
+Check the error message for details; this is a catch-all.
 
 ## Auto-fix support
 
-Some issues can be handled mechanically with `--fix`.
-
-Recommended use:
+Some issues can be handled mechanically with `--fix`. Currently: `PRISM001`,
+`PRISM201`, `PRISM501`.
 
 ```bash
-python prism-validator /path/to/dataset --fix --dry-run
-python prism-validator /path/to/dataset --fix
-python prism-validator --list-fixes
+prism-validator /path/to/dataset --fix --dry-run
+prism-validator /path/to/dataset --fix
+prism-validator --list-fixes
 ```
-
-Commonly fixable issues include:
-
-- `PRISM001`
-- `PRISM201`
-- `PRISM501`
 
 Use the dry run first whenever the dataset is not disposable.
 

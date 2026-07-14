@@ -4,7 +4,7 @@ PRISM supports schema versioning so datasets can be validated against a specific
 
 ## Available Versions
 
-Schema versions are stored under `schemas/`.
+Schema versions are stored under `app/schemas/`.
 
 | Version | Status | Notes |
 |---------|--------|-------|
@@ -105,6 +105,6 @@ Validation outputs include the schema version used, so reports remain traceable.
 
 If a schema version is not found:
 
-- Check that the corresponding folder exists in `schemas/`.
+- Check that the corresponding folder exists in `app/schemas/`.
 - Verify spelling (`stable`, `v0.1`, `v0.2`, etc.).
 - Run `python prism.py --list-versions` to confirm available options.

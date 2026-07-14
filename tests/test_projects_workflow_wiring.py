@@ -112,8 +112,6 @@ EXPORT_SECTION_TEMPLATE = (
     REPO_ROOT / "app" / "templates" / "includes" / "projects" / "export_section.html"
 )
 BASE_TEMPLATE = REPO_ROOT / "app" / "templates" / "base.html"
-LIBRARY_EDITOR_TEMPLATE = REPO_ROOT / "app" / "templates" / "library_editor.html"
-LIBRARY_EDITOR_SCRIPT = REPO_ROOT / "app" / "static" / "js" / "library_editor.js"
 
 
 class TestProjectsWorkflowWiring(unittest.TestCase):
@@ -1310,40 +1308,6 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn('id="exportRepositoryMode"', content)
         self.assertIn('value="datalad_free"', content)
         self.assertIn('value="datalad_preserving"', content)
-
-    def test_library_editor_uses_shared_header_and_help_macros(self):
-        content = LIBRARY_EDITOR_TEMPLATE.read_text(encoding="utf-8")
-        script_content = LIBRARY_EDITOR_SCRIPT.read_text(encoding="utf-8")
-
-        self.assertIn(
-            '{% from "includes/ui/macros.html" import page_header, help_panel %}',
-            content,
-        )
-        self.assertIn("{{ page_header(", content)
-        self.assertIn("{% call help_panel(", content)
-        self.assertIn('id="saveSurveyBtn"', content)
-        self.assertIn('id="libraryAdvancedUnavailableNotice"', content)
-        self.assertIn(
-            '<script type="module" src="{{ url_for(\'static\', filename=\'js/library_editor.js\', v=prism_static_asset_token) }}"></script>',
-            content,
-        )
-        self.assertIn(
-            "import { fetchWithRelativePathFallback } from './shared/api.js';",
-            script_content,
-        )
-        self.assertIn(
-            "const advancedUnavailableNotice = document.getElementById('libraryAdvancedUnavailableNotice');",
-            script_content,
-        )
-        self.assertIn("jsonTab.disabled = true;", script_content)
-        self.assertIn(
-            "advancedUnavailableNotice.classList.remove('d-none');",
-            script_content,
-        )
-        self.assertIn(
-            "await fetchWithRelativePathFallback(`/library/api/save/${encodeURIComponent(filename)}`, {",
-            script_content,
-        )
 
 
 if __name__ == "__main__":

@@ -89,8 +89,16 @@ pages (keep that convention, it's good).
 - `TEMPLATE_EDITOR.md`, `TEMPLATES.md` (non-LimeSurvey parts) → `studio/template_editor.md`
 - `RECIPE_BUILDER.md` (workflow parts) → `studio/recipe_builder.md`
 - `ANALYSIS_OUTPUT.md`, `ANC_EXPORT.md` → `studio/export.md`
-- `SURVEY_LIBRARY.md` (current project-local model only, drop `drafts/merge_requests` language per 2026-04-14 audit) → `studio/survey_library.md`
-- `WEB_INTERFACE.md`, `STUDIO_OVERVIEW.md`, `TOOLS.md` → dissolve; content redistributed across `studio/*.md` pages, then delete these three umbrella files (this is the "under-explain by hiding behind umbrella pages" problem the 2026-04-14 audit already flagged twice)
+- `WEB_INTERFACE.md`, `STUDIO_OVERVIEW.md`, `TOOLS.md` → dissolve; content redistributed across `studio/*.md` pages, then delete these three umbrella files (this is the "under-explain by hiding behind umbrella pages" problem the 2026-04-14 audit already flagged twice). `TOOLS.md`'s entire premise — a unified "Tools" menu — turned out not to exist at all; real nav is three stage-based dropdowns (Prepare Data / Modify in PRISM / Export Derivatives), confirmed 2026-07-14.
+
+**Correction (2026-07-14):** `SURVEY_LIBRARY.md` was not merged into the Studio Guide.
+A follow-up audit found the `/library` route it documents (checkout → edit →
+"Submit" a draft into `merge_requests/`) has no receiving end — nothing in the app
+ever reads that folder — and is unreachable from any nav link. Removed outright
+(route, blueprint, `SurveyManager` class, templates, JS, tests, doc — 7 files) rather
+than migrated. The Template Editor's read-only global-template-picker-with-fork-to-
+project model, documented in `studio/template_editor.md`, is the real, actively-used
+equivalent and needs no separate page.
 
 ### Keep as linked reference (not top-level nav), under an "Appendix" or cross-link from the relevant Studio page
 

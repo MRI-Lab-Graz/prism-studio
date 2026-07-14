@@ -120,5 +120,4 @@ For actual editing, switch back to [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md).
 
 - [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
 - [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
-- [SURVEY_LIBRARY.md](SURVEY_LIBRARY.md)
 - [specs/survey](specs/survey)

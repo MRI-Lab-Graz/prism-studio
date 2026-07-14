@@ -119,21 +119,25 @@ Typical project root:
 ```text
 my_study/
 ├── dataset_description.json
-├── participants.tsv
-├── participants.json
 ├── project.json
 ├── CITATION.cff
 ├── CHANGES
+├── README.md
 ├── .bidsignore
 ├── .prismrc.json
 ├── sourcedata/
 ├── derivatives/
 ├── code/
+│   ├── library/
+│   └── recipes/
 └── sub-001/
     └── survey/
         ├── sub-001_task-demo_survey.tsv
         └── sub-001_task-demo_survey.json
 ```
+
+`participants.tsv` and `participants.json` aren't part of this "at creation" tree —
+they're written once you run the participants/sociodemographics import step.
 
 PRISM encourages a YODA-style project layout because it keeps incoming source
 material, validated data, code, and derived outputs separate.

@@ -406,14 +406,6 @@ else:
     run_main_validator = None
 
 # Import core components
-try:
-    from src.survey_manager import SurveyManager
-
-    _print_startup_step("Survey manager")
-except ImportError as e:
-    SurveyManager = None
-    print(f"[WARN]  Could not import SurveyManager: {e}")
-
 compute_survey_recipes: Any = None
 try:
     from src.recipes_surveys import compute_survey_recipes as _compute_survey_recipes
@@ -523,23 +515,6 @@ save_app_settings(_app_settings, app_root=str(BASE_DIR))
 app.config["LAST_PROJECT_PATH"] = None
 app.config["LAST_PROJECT_NAME"] = None
 
-# Initialize Survey Manager with global library paths
-from src.config import get_effective_library_paths
-
-lib_paths = get_effective_library_paths(app_root=str(BASE_DIR))
-if lib_paths["global_library_path"]:
-    survey_library_path = Path(lib_paths["global_library_path"])
-else:
-    # Fallback to legacy survey_library folder
-    survey_library_path = BASE_DIR / "survey_library"
-    _print_startup_step("Survey library", "info", "using built-in library")
-
-survey_manager = None
-if SurveyManager:
-    survey_manager = SurveyManager(survey_library_path)
-    app.config["SURVEY_MANAGER"] = survey_manager
-    _print_startup_step("Survey library")
-
 # Register JSON Editor blueprint if available
 try:
     from src.json_editor_blueprint import create_json_editor_blueprint
@@ -579,7 +554,6 @@ modular_blueprints = [
         "conversion_participants_bp",
         "conversion_participants",
     ),
-    ("src.web.blueprints.library", "library_bp", "library"),
     ("src.web.blueprints.validation", "validation_bp", "validation"),
     ("src.web.blueprints.tools", "tools_bp", "tools"),
     (
@@ -1124,7 +1098,6 @@ def ensure_project_selected_first():
         "/survey-generator",
         "/survey-customizer",
         "/template-editor",
-        "/library-editor",
         "/neurobagel",
     ):
         return None

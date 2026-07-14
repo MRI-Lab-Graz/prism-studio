@@ -35,31 +35,38 @@ Validation should be a loop, not a final one-time button press.
 ## Run validation in Studio
 
 1. Open **Validator**.
-2. Confirm the intended project or dataset path.
-3. Enable BIDS validation too if you want both checks.
-4. Start the validation run.
-5. Review findings by severity and file.
+2. Choose the current project or an alternative folder.
+3. Start the validation run.
+4. Review findings by severity and file.
+
+Full validation (PRISM + BIDS) runs by default — you don't need to opt in to BIDS
+checks. Open **Advanced Options** if you want to narrow the scope: validation-mode
+radios let you switch to PRISM Only or BIDS Only, there's a `bids_warnings` checkbox
+to surface BIDS warnings (hidden by default), and a schema-version selector and
+library-path field for less common setups.
 
 If a project is already active, the correct path is often pre-filled, but you
-should still verify it before starting.
+should still verify it before starting. After a run, the results page also offers a
+re-validate mode selector, a download-report option, and cleanup — not just the
+severity list.
 
 ## Run validation from the CLI
 
 Basic examples:
 
 ```bash
-python prism-validator /path/to/project
-python prism-validator /path/to/project --bids
-python prism-validator /path/to/project --fix
-python prism-validator /path/to/project --fix --dry-run
-python prism-validator /path/to/project --json-pretty
+prism-validator /path/to/project
+prism-validator /path/to/project --bids
+prism-validator /path/to/project --fix
+prism-validator /path/to/project --fix --dry-run
+prism-validator /path/to/project --json-pretty
 ```
 
 Machine-readable output formats are also available, for example:
 
 ```bash
-python prism-validator /path/to/project --format sarif > results.sarif
-python prism-validator /path/to/project --format markdown > results.md
+prism-validator /path/to/project --format sarif > results.sarif
+prism-validator /path/to/project --format markdown > results.md
 ```
 
 Use [CLI_REFERENCE.md](CLI_REFERENCE.md) for the fuller command surface.
@@ -145,8 +152,8 @@ metadata or structural decision.
 CLI examples:
 
 ```bash
-python prism-validator /path/to/project --fix
-python prism-validator /path/to/project --fix --dry-run
+prism-validator /path/to/project --fix
+prism-validator /path/to/project --fix --dry-run
 ```
 
 The `--dry-run` form is the safer first check when you want to see what would
@@ -159,11 +166,11 @@ Use machine-readable or report-style outputs when you need validation artifacts.
 Examples:
 
 ```bash
-python prism-validator /path/to/project --json-pretty > results.json
-python prism-validator /path/to/project --format sarif > results.sarif
-python prism-validator /path/to/project --format junit > results.xml
-python prism-validator /path/to/project --format markdown > results.md
-python prism-validator /path/to/project --format csv > results.csv
+prism-validator /path/to/project --json-pretty > results.json
+prism-validator /path/to/project --format sarif > results.sarif
+prism-validator /path/to/project --format junit > results.xml
+prism-validator /path/to/project --format markdown > results.md
+prism-validator /path/to/project --format csv > results.csv
 ```
 
 ## Common mistakes

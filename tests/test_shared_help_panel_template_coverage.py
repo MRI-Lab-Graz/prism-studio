@@ -18,7 +18,6 @@ TOP_LEVEL_TEMPLATES_WITH_SHARED_HELP = [
     "prism_app_runner.html",
     "results.html",
     "home.html",
-    "library.html",
 ]
 
 

@@ -61,9 +61,15 @@ Examples:
 
 Survey data files MUST follow this naming convention:
 
-`sub-<label>[_ses-<label>]_survey-<label>.tsv`
+`sub-<label>[_ses-<label>]_task-<label>_survey.tsv`
 
-*Note: The legacy format `_task-<label>_beh.tsv` is also supported but deprecated.*
+For example: `sub-002_ses-02_task-wellbeing-multi_survey.tsv`. The `task-<label>`
+entity identifies the instrument (per `app/schemas/stable/entities.schema.json`,
+the `survey` modality uses suffix `survey` with `task` as its example/required
+entity) — it is not a `survey-<label>` suffix.
+
+*Note: Legacy formats `_task-<label>_beh.tsv` and `_survey-<label>_beh.tsv` are
+also recognized for backward compatibility but are not the current convention.*
 
 ## Sidecar JSON (`*_survey.json`)
 
@@ -108,11 +114,11 @@ When templates are copied from the official library into a project, these projec
 | --- | --- | --- | --- |
 | `StimulusType` | **REQUIRED** | `string` | MUST be `"Questionnaire"`. |
 | `FileFormat` | **REQUIRED** | `string` | MUST be `"tsv"`. |
-| `SoftwarePlatform` | OPTIONAL | `string` | Project-local platform used for administration (e.g., `"LimeSurvey"`, `"Paper and Pencil"`). |
+| `SoftwarePlatform` | **REQUIRED** | `string` | Project-local platform used for administration (e.g., `"LimeSurvey"`, `"Paper and Pencil"`). |
 | `SoftwareVersion` | OPTIONAL | `string` | Project-local version of the software platform. |
 | `Language` | **REQUIRED** | `string` | Project-local language code actually administered (e.g., `"en"`, `"de-AT"`). |
 | `Respondent` | **REQUIRED** | `string` | Project-local respondent type (e.g., `"self"`, `"parent"`). |
-| `AdministrationMethod` | OPTIONAL | `string` | Project-local administration mode (`online`, `paper`, `interview`, `phone`, `mixed`). |
+| `AdministrationMethod` | **REQUIRED** | `string` | Project-local administration mode (`online`, `paper`, `interview`, `phone`, `mixed`). |
 | `ResponseType` | RECOMMENDED | `array` | Input method (e.g., `["button"]`, `["slider"]`). |
 | `Equipment` | OPTIONAL | `string` | Hardware used (e.g., `Stopwatch`, `Dynamometer`). |
 | `Supervisor` | OPTIONAL | `string` | Who supervised the test (`investigator`, `physician`, `self`). |

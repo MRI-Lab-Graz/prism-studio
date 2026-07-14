@@ -196,7 +196,7 @@ Use PRISM groups with randomization:
 ### Typical Workflow
 
 1. **Design in LimeSurvey or JSON Editor**
-2. **Convert to PRISM**: `python helpers/surveys/limesurvey_to_prism.py`
+2. **Convert to PRISM**: `python app/helpers/surveys/limesurvey_to_prism.py`
 3. **Validate**: `python prism-validator --validate task-demo_beh.json`
 4. **Export to Pavlovia**: `python src/converters/pavlovia.py task-demo_beh.json`
 5. **Upload to Pavlovia**: Via PsychoPy or git
@@ -213,6 +213,5 @@ PRISM TSV/JSON → Pavlovia → Online Data → CSV Download → PRISM TSV/JSON
 ## See Also
 
 - [LimeSurvey Integration](LIMESURVEY_INTEGRATION.md)
-- [Survey Library](SURVEY_LIBRARY.md)
 - [PsychoPy Documentation](https://psychopy.org/builder/)
 - [Pavlovia Documentation](https://pavlovia.org/docs)
