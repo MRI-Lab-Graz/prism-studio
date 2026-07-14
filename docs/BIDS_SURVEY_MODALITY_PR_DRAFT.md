@@ -48,7 +48,7 @@ This proposal is grounded in an existing toolchain rather than a purely abstract
 - [PRISM Studio documentation](https://prism-studio.readthedocs.io)
 - [Survey import template](https://github.com/MRI-Lab-Graz/prism-studio/blob/main/official/create_new_survey/survey_import_template.xlsx)
 - [Survey schema and modality schemas](https://github.com/MRI-Lab-Graz/prism-studio/tree/main/app/schemas)
-- [Template validation documentation](https://github.com/MRI-Lab-Graz/prism-studio/blob/main/docs/TEMPLATE_VALIDATION.md)
+- [Template validation documentation](https://github.com/MRI-Lab-Graz/prism-studio/blob/main/docs/TEMPLATES.md)
 - [Dataset validation documentation](https://github.com/MRI-Lab-Graz/prism-studio/blob/main/docs/VALIDATOR.md)
 
 These references show that the proposed structure is already practical for curation, metadata authoring, template-based reuse, and validation.

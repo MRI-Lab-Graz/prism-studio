@@ -69,6 +69,51 @@ For modality-specific semantics, see the spec pages:
 [Survey](specs/survey), [Biometrics](specs/biometrics), [Events](specs/events),
 [Environment](specs/environment).
 
+## BIDS compatibility field reference
+
+Keeping `dataset_description.json` and `CITATION.cff` in sync matters day to day:
+avoid duplicating citation-oriented information across both, treat `CITATION.cff`
+as the citation-focused file when present, and keep `dataset_description.json`
+aligned with the broader BIDS dataset metadata. Drifted metadata leads to confusing
+validation results, inconsistent exports, and extra cleanup before sharing.
+
+| Field | Type | Required | Default | Array | CITATION.cff | Notes |
+|-------|------|----------|---------|-------|-------------|-------|
+| Name | string | ✅ | - | ❌ | ✅ Synced | BIDS core identifier |
+| BIDSVersion | string | ✅ | "1.10.1" | ❌ | ❌ | Auto-set by backend |
+| DatasetType | string | ⚠️ | "raw" | ❌ | ❌ | raw, derivative, study |
+| License | string | ⚠️ | "CC0" | ❌ | Omitted if CITATION.cff | SPDX identifier |
+| Authors | array | ❌ | [] | ✅ | Omitted if CITATION.cff | {name, email} format |
+| Keywords | array | ❌ | [] | ✅ | ❌ | ≥3 for FAIR |
+| Acknowledgements | string | ❌ | "" | ❌ | ❌ | Free text |
+| HowToAcknowledge | string | ❌ | "" | ❌ | Omitted if CITATION.cff | Citation instructions |
+| Funding | array | ❌ | [] | ✅ | ❌ | Free text |
+| EthicsApprovals | array | ❌ | [] | ✅ | ❌ | {name, reference} |
+| ReferencesAndLinks | array | ❌ | [] | ✅ | Omitted if CITATION.cff | URLs |
+| DatasetDOI | string | ❌ | "" | ❌ | ✅ Synced | DOI URI |
+| HEDVersion | string | ❌ | "" | ❌ | ❌ | If HED tags used |
+
+Common pitfalls: filling only the minimum required fields and forgetting the
+recommended ones; manually editing multiple metadata files and letting them drift
+apart; assuming citation metadata and dataset metadata are interchangeable;
+validating too late, after multiple metadata edits have accumulated.
+
+```bash
+cat <project_path>/dataset_description.json | python3 -m json.tool
+cat <project_path>/CITATION.cff
+```
+
+## FAIR compliance
+
+PRISM's schema-driven design maps directly onto the FAIR principles:
+
+| Principle | What PRISM implements |
+|---|---|
+| **F — Findable** | Rich metadata (hierarchical JSON schemas), unique identifiers (schema versioning with persistent `$id` URLs), standardized BIDS-inspired naming, keyword metadata |
+| **A — Accessible** | Open source (AGPL-3.0), standard formats (JSON, TSV, CSV), comprehensive documentation, multiple export formats |
+| **I — Interoperable** | JSON Schema validation, BIDS alignment, semantic schema versioning, modular architecture for new modalities |
+| **R — Reusable** | Clear licensing, Git-based version control, comprehensive documentation, community contribution guidelines |
+
 ## What's next
 
 - [What is PRISM](WHAT_IS_PRISM.md)

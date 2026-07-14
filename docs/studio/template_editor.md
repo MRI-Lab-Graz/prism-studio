@@ -76,5 +76,5 @@ available.
 
 - [Survey Import](converter_survey.md) — templates copied during import land here
 - [Recipe Builder](recipe_builder.md) — scoring recipes reference template items
-- [Survey Versioning](../SURVEY_VERSION_PLAN.md) for how `Study.Versions` drives
+- [Schema Versioning](../SCHEMA_VERSIONING.md) for how `Study.Versions` drives
   multi-variant templates
