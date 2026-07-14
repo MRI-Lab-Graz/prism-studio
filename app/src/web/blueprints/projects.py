@@ -58,6 +58,7 @@ from .projects_methods_handlers import handle_generate_methods_section
 from .projects_lifecycle_handlers import (
     handle_create_project,
     handle_datalad_preflight_status,
+    handle_delete_project,
     handle_fix_project,
     handle_get_fixable_issues,
     handle_get_recent_projects,
@@ -197,6 +198,17 @@ def set_current_project(path: str, name: str | None = None, icon: str | None = N
         pass
 
     return autosave_previous
+
+
+def clear_current_project():
+    """Clear the current working project from session (e.g. after deletion)."""
+    try:
+        close_project_session(reason="project_deleted")
+    except Exception:
+        pass
+    session.pop("current_project_path", None)
+    session.pop("current_project_name", None)
+    session.pop("current_project_icon", None)
 
 
 def get_bids_file_path(project_path: Path, filename: str) -> Path:
@@ -471,6 +483,24 @@ def validate_project():
 def project_path_status():
     """Return lightweight availability info for a project.json path."""
     return handle_project_path_status()
+
+
+@projects_bp.route("/api/projects/delete", methods=["POST"])
+def delete_project():
+    """
+    Permanently delete a project from disk. Destructive and irreversible.
+
+    Expected JSON body:
+    {
+        "path": "/path/to/project",
+        "confirm_name": "exact-project-name"  // must match, or the request is rejected
+    }
+    """
+    return handle_delete_project(
+        project_manager=_project_manager,
+        get_current_project=get_current_project,
+        clear_current_project=clear_current_project,
+    )
 
 
 @projects_bp.route("/api/projects/datalad/preflight", methods=["GET"])

@@ -1105,6 +1105,10 @@ export function initOpenProjectController({
                 </div>
                 <div class="d-flex flex-column align-items-end mt-2">
                     <div class="d-flex gap-2 flex-wrap justify-content-end">
+                        <button type="button" class="btn btn-outline-danger" id="projectBoxDeleteBtn"
+                                data-project-path="${escapeHtml(loadedPath)}" data-project-name="${escapeHtml(loadedName || '')}">
+                            <i class="fas fa-trash me-2"></i>Delete Project
+                        </button>
                         <button type="button" class="btn btn-outline-warning" id="projectBoxPreliminarySaveBtn">
                             <i class="fas fa-save me-2"></i>Save Preliminary Project State
                         </button>

@@ -5930,46 +5930,45 @@ PRISM/BIDS-compatible dataset (YODA layout) created on {today}.
 
 ## Structure
 
-This project follows the YODA principles for data management, keeping raw data, code, and papers together.
+This project follows the YODA principles for data management, keeping raw data, code, and derived outputs together.
 
 ### Project Layout
 
 ```
 project/
-├── rawdata/                # PRISM/BIDS compatible dataset (Validated)
-│   ├── dataset_description.json
-│   ├── participants.tsv
-│   └── sub-<label>/
+├── dataset_description.json  # BIDS dataset metadata
+├── project.json               # Study-level metadata (funding, ethics, links)
+├── CITATION.cff                # Dataset citation metadata (authors, DOI, license)
+├── CHANGES                     # BIDS changelog
+├── .bidsignore                 # Files/patterns excluded from BIDS validation
+├── .prismrc.json               # PRISM validation settings
+├── README.md                   # This file
 │
-├── sourcedata/             # Raw source files (LimeSurvey exports, etc.)
+├── sourcedata/                 # Raw source files (LimeSurvey exports, etc.)
+│                                # before conversion
 │
-├── derivatives/            # Processed/derived outputs (scored surveys)
-│   └── qc/                 # Quality control reports
+├── sub-<label>/                # Validated PRISM/BIDS subject data, created as
+│   └── ses-<label>/            # you import data via the Converter
 │
-├── analysis/               # Analysis scripts and results
+├── derivatives/                # Processed/derived outputs (e.g. scored surveys)
 │
-├── paper/                  # Manuscripts and figures
-│
-├── stimuli/                # Stimulus files (images, audio, etc.)
-│
-├── library/                # JSON templates for conversion (Survey/Biometrics)
-│
-├── recipe/                 # Transformation recipes
-│
-├── code/                   # Project-specific scripts and tools
-│
-├── project.json            # Study-level metadata (funding, ethics, links)
-├── CITATION.cff            # Dataset citation metadata (authors, DOI, license)
-├── .prismrc.json           # PRISM validation settings
-└── README.md               # This file
+└── code/                       # Project-specific scripts and library (YODA-compliant)
+    ├── library/                # Project-local templates (survey/biometrics JSON)
+    └── recipes/                # Project-local scoring recipes
 ```
+
+`participants.tsv` and `participants.json` are created once you run the
+participants/sociodemographics import step, not at project creation.
 
 ## Getting Started
 
-1. **Populate rawdata**: Use the PRISM Converter to move data from `sourcedata/` to `rawdata/`.
-2. **Use the Library**: Store your `.json` templates in `library/survey/` or `library/biometrics/`.
-3. **Define Recipes**: Use `recipe/` to store scoring logic and data transformations.
-4. **Validate**: Point the PRISM Validator to the `rawdata/` folder to check compliance.
+1. **Bring in raw data**: Place source files in `sourcedata/`, then use the PRISM
+   Converter to convert them into validated `sub-<label>/` data at the project root.
+2. **Use the Library**: Project-local `.json` templates live under
+   `code/library/survey/` or `code/library/biometrics/`.
+3. **Define Recipes**: Use `code/recipes/<modality>/` to store scoring logic and data
+   transformations, or build them in the Studio Recipe Builder.
+4. **Validate**: Point the PRISM Validator at this project folder to check compliance.
 
 ## Resources
 
