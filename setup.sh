@@ -121,6 +121,84 @@ is_python_executable_usable() {
     "$candidate" -c "import sys" >/dev/null 2>&1
 }
 
+detect_package_manager() {
+    if command -v apt-get >/dev/null 2>&1; then
+        printf "apt"
+    elif command -v dnf >/dev/null 2>&1; then
+        printf "dnf"
+    elif command -v pacman >/dev/null 2>&1; then
+        printf "pacman"
+    elif command -v zypper >/dev/null 2>&1; then
+        printf "zypper"
+    else
+        printf "unknown"
+    fi
+}
+
+suggest_install_venv_package() {
+    local pyver="$1"
+    local pm
+    pm=$(detect_package_manager)
+    case "$pm" in
+        apt)
+            if [ -n "$pyver" ]; then
+                echo_info "On Debian/Ubuntu: sudo apt-get install python${pyver}-venv"
+                echo_info "Or try: sudo apt-get install python3-venv"
+            else
+                echo_info "On Debian/Ubuntu: sudo apt-get install python3-venv"
+            fi
+            ;;
+        dnf)
+            echo_info "On Fedora/RHEL: sudo dnf install python3"
+            echo_info "If that doesn't help, install the distro package that provides ensurepip/venv."
+            ;;
+        pacman)
+            echo_info "On Arch Linux: sudo pacman -Syu python"
+            ;;
+        zypper)
+            echo_info "On openSUSE: sudo zypper install python3-virtualenv"
+            ;;
+        *)
+            echo_info "Install your distribution's 'python3-venv' or ensurepip support for the selected Python."
+            ;;
+    esac
+    echo_info "After installing, rerun: bash setup.sh"
+}
+
+create_virtualenv() {
+    echo_info "Creating virtual environment in '$VENV_DIR'..."
+    if [ ! -x "$VENV_CREATOR_PYTHON" ]; then
+        echo_error "Python interpreter not executable: $VENV_CREATOR_PYTHON"
+        exit 1
+    fi
+
+    if ! "$VENV_CREATOR_PYTHON" -c "import ensurepip" >/dev/null 2>&1; then
+        pyver="$($VENV_CREATOR_PYTHON -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")' 2>/dev/null || true)"
+        echo_error "The selected Python ($VENV_CREATOR_PYTHON) does not provide 'ensurepip', which venv needs to bootstrap pip."
+        suggest_install_venv_package "$pyver"
+        exit 1
+    fi
+
+    "$VENV_CREATOR_PYTHON" -m venv --copies "$VENV_DIR"
+    if [ $? -ne 0 ]; then
+        echo_error "Failed to create virtual environment."
+        if ! "$VENV_CREATOR_PYTHON" -c "import ensurepip" >/dev/null 2>&1; then
+            pyver="$($VENV_CREATOR_PYTHON -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")' 2>/dev/null || true)"
+            echo_info "It appears ensurepip is missing from this Python build."
+            suggest_install_venv_package "$pyver"
+        fi
+        exit 1
+    fi
+
+    if [ -L "$VENV_PYTHON_UNIX" ]; then
+        echo_error "Virtual environment creation produced a symlinked Python ($VENV_PYTHON_UNIX)."
+        echo_info "This setup requires a local venv Python binary."
+        exit 1
+    fi
+
+    echo_success "Virtual environment created."
+}
+
 select_venv_creator_python() {
     local candidate=""
     local active_venv_abs=""
@@ -232,6 +310,9 @@ if [ -d "$VENV_DIR" ]; then
     if [ -L "$VENV_PYTHON_UNIX" ]; then
         echo_info "Existing '$VENV_DIR' uses a symlinked Python interpreter; recreating strict local venv."
         rm -rf "$VENV_DIR"
+    elif [ ! -f "$VENV_DIR/bin/activate" ]; then
+        echo_info "Existing '$VENV_DIR' is missing activation files; recreating strict local venv."
+        rm -rf "$VENV_DIR"
     elif ! is_python_executable_usable "$VENV_PYTHON_UNIX"; then
         echo_info "Existing '$VENV_DIR' has an unusable Python interpreter; recreating strict local venv."
         rm -rf "$VENV_DIR"
@@ -241,31 +322,21 @@ if [ -d "$VENV_DIR" ]; then
 fi
 
 if [ ! -d "$VENV_DIR" ]; then
-    echo_info "Creating virtual environment in '$VENV_DIR'..."
-    if [ ! -x "$VENV_CREATOR_PYTHON" ]; then
-        echo_error "Python interpreter not executable: $VENV_CREATOR_PYTHON"
-        exit 1
-    fi
-
-    "$VENV_CREATOR_PYTHON" -m venv --copies "$VENV_DIR"
-    if [ $? -ne 0 ]; then
-        echo_error "Failed to create virtual environment."
-        exit 1
-    fi
-
-    if [ -L "$VENV_PYTHON_UNIX" ]; then
-        echo_error "Virtual environment creation produced a symlinked Python ($VENV_PYTHON_UNIX)."
-        echo_info "This setup requires a local venv Python binary."
-        exit 1
-    fi
-
-    echo_success "Virtual environment created."
+    create_virtualenv
 fi
 
 # 4. Install dependencies
 echo_info "Installing dependencies from '$REQUIREMENTS_FILE'..."
 # Activate the venv to install packages into it
-source $VENV_DIR/bin/activate
+if ! source "$VENV_DIR/bin/activate" >/dev/null 2>&1; then
+    echo_info "Failed to activate virtual environment; attempting to recreate it..."
+    rm -rf "$VENV_DIR"
+    create_virtualenv
+    if ! source "$VENV_DIR/bin/activate" >/dev/null 2>&1; then
+        echo_error "Could not activate virtual environment after recreation. Please inspect the Python installation or remove '$VENV_DIR' manually and retry."
+        exit 1
+    fi
+fi
 
 # Install core dependencies
 uv pip install -r $REQUIREMENTS_FILE
@@ -317,7 +388,9 @@ if [ $? -ne 0 ]; then
     # Continue anyway as this is optional for direct script usage
 fi
 
-deactivate
+if [ -n "${VIRTUAL_ENV:-}" ]; then
+    deactivate
+fi
 echo_success "Dependencies installed successfully."
 
 # --- Final Instructions ---
