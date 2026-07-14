@@ -144,6 +144,7 @@ python prism-validator /path/to/dataset
 | `--list-versions` | List schema versions available in `schemas/`. |
 | `--bids` | Run the standard BIDS validator in addition to PRISM validation. |
 | `--bids-warnings` | Include warnings from BIDS validator output (default hidden). |
+| `--library PATH` | Override the template library path used for schema/template lookups during validation. |
 | `--no-prism` | Skip PRISM-specific checks (only BIDS if `--bids` is set). |
 | `--validate-templates PATH` | Validate all survey/biometrics JSON templates in a library directory. See [Template Validation](TEMPLATE_VALIDATION.md) for details. |
 | `--build-environment` | Build a privacy-safe `*_environment.tsv` from `scans.tsv` anchors (no dataset validation run). |
@@ -263,7 +264,7 @@ Import data from external formats.
 python prism_tools.py survey import-limesurvey --input survey.lsa --output library/survey/
 
 # Import from Excel
-python prism_tools.py survey import-excel --input data.xlsx --output library/survey/
+python prism_tools.py survey import-excel --excel data.xlsx --output library/survey/
 ```
 
 #### `convert physio`
@@ -305,6 +306,22 @@ Key options:
 Notes:
 - If the same indicator appears multiple times in a column name, the backend treats that as ambiguous and refuses conversion until the indicator is made more specific.
 - Output format is inferred from the output file extension: `.csv`, `.tsv`, or `.xlsx`.
+
+#### `merge-versions`
+Merge a new version of a survey instrument into an existing template, producing a
+single multi-variant template for version-aware validation and recipe scoring.
+Dispatched from `prism.py` the same way `wide-to-long` is.
+
+```bash
+# Auto-detects version names
+python prism.py merge-versions survey-bdi.json bdi_long.xlsx
+
+# Explicit version names
+python prism.py merge-versions survey-bdi.json bdi_long.json --new-version long --existing-version short
+
+# Preview without saving
+python prism.py merge-versions survey-bdi.json bdi_long.xlsx --dry-run
+```
 
 #### `participants`
 Participants helper commands used by the web converter backend and terminal workflows.
@@ -372,6 +389,72 @@ python prism_tools.py participants merge \
   --separator auto \
   --project /absolute/path/to/my-project/project.json \
   --conflicts-csv
+
+# Save a reusable participants_mapping.json (preferred target: <project>/code/library)
+python prism_tools.py participants save-mapping \
+  --mapping-json '{"participant_id": {"source_column": "ID"}}' \
+  --project /absolute/path/to/my-project/project.json
+```
+
+#### `environment`
+Preview or convert environment/sociodemographic-adjacent source tables.
+
+```bash
+# Preview detected columns and sample rows
+python prism_tools.py environment preview --input /absolute/path/to/environment.xlsx --json
+
+# Convert into project environment outputs (--timestamp-col is required)
+python prism_tools.py environment convert \
+  --input /absolute/path/to/environment.xlsx \
+  --project /absolute/path/to/my-project \
+  --timestamp-col collected_at
+```
+
+#### `physio batch-convert`
+Batch-convert physio/eyetracking files sitting in a flat source folder (distinct
+from `convert physio`, which operates against a `sourcedata` directory or a single
+file — see above).
+
+```bash
+python prism_tools.py physio batch-convert --input ./flat_source_folder --output ./converted
+```
+
+#### `dataset build-hostile-demo` / `cleanup-project-metadata` / `rename-subjects`
+Additional `dataset` actions beyond `build-biometrics-smoketest`:
+
+- `build-hostile-demo` — builds an adversarial PRISM dataset exercising edge cases
+  across sociodemographics, biometrics, environment/MRI, and subject/session IDs.
+- `cleanup-project-metadata` — removes legacy converter-written session metadata
+  from `project.json`.
+- `rename-subjects` — renames subject IDs across a PRISM/BIDS dataset (DataLad-aware,
+  one commit per subject).
+
+```bash
+python prism_tools.py dataset build-hostile-demo --output /tmp/prism_hostile_demo
+python prism_tools.py dataset cleanup-project-metadata --project /path/to/project
+python prism_tools.py dataset rename-subjects --project /path/to/project --mode last3 --dry-run
+```
+
+Run `python prism_tools.py dataset <action> --help` for each action's full flag set —
+these are less common maintenance operations, not part of the everyday workflow.
+
+#### `anonymize`
+Anonymize a dataset for sharing: randomize participant IDs and/or mask copyrighted
+question text. This is the CLI equivalent of Studio's Standard Export anonymization
+options (see [export.md](studio/export.md)), and is distinct from the `--anonymized`
+flag on `recipes surveys`/`recipes biometrics`, which only affects the output
+subfolder name.
+
+```bash
+python prism_tools.py anonymize --dataset /path/to/project --output /path/to/project_anonymized --random --mask-questions
+```
+
+#### `template-export`
+Export a reusable project template ZIP without subject folders — keeps project
+metadata/structure, drops participant-specific content.
+
+```bash
+python prism_tools.py template-export --project /path/to/project --output /path/to/project_template.zip
 ```
 
 #### `demo create`
@@ -472,8 +555,8 @@ python prism_tools.py biometrics import-excel \
 ```
 
 Key options:
-- `--equipment`: default `Technical.Equipment`
-- `--supervisor`: default `Technical.Supervisor`
+- `--equipment`: default `Technical.Equipment` value written to the biometrics JSON, default `"Legacy/Imported"`
+- `--supervisor`: one of `investigator` (default), `physician`, `trainer`, `self`
 
 #### `dataset build-biometrics-smoketest`
 Generate a small biometrics dataset (templates + dummy data) for testing.
@@ -482,15 +565,19 @@ Generate a small biometrics dataset (templates + dummy data) for testing.
 python prism_tools.py dataset build-biometrics-smoketest --output /tmp/prism_biometrics_smoketest
 ```
 
-#### `derivatives surveys` / `derivatives biometrics`
-Compute derived scores from TSVs in an already valid PRISM dataset.
+#### `recipes surveys` / `recipes biometrics`
+Compute derived scores from TSVs in an already valid PRISM dataset. There is no
+separate `derivatives` command — this is the only way to compute scored output from
+the CLI (see the `recipes` (Derivatives) section above for the full flag list;
+`--format` accepts `prism`, `flat` (default), `csv`, `xlsx`, or `sav` for SPSS —
+there is no `r` format).
 
 ```bash
 # Survey derivatives
-python prism_tools.py derivatives surveys --prism /path/to/dataset --format prism
+python prism_tools.py recipes surveys --prism /path/to/dataset --format prism
 
-# Biometric derivatives (supports xlsx, csv, save, r)
-python prism_tools.py derivatives biometrics --prism /path/to/dataset --format xlsx
+# Biometric derivatives
+python prism_tools.py recipes biometrics --prism /path/to/dataset --format xlsx
 ```
 
 See [RECIPES.md](RECIPES.md) for details on how to write scoring recipes.

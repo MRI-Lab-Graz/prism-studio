@@ -11,7 +11,7 @@ metadata.
 Open:
 
 - PRISM Studio
-- Tools
+- Prepare Data
 - Template Editor
 
 ## What the Template Editor does

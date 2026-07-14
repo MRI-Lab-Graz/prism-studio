@@ -51,4 +51,3 @@ If a template has only one version, PRISM does not add an `acq` entity.
 
 - [Schema Versioning](SCHEMA_VERSIONING.md)
 - [Survey Templates](TEMPLATES.md)
-- [Survey Library](SURVEY_LIBRARY.md)
