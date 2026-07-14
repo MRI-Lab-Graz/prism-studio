@@ -10,6 +10,7 @@ import { initCreatePreflightController } from './create-preflight.js';
 import { createProjectsCurrentStateController } from './current-project-state.js';
 import { initProjectInitOnBidsController } from './init-on-bids.js';
 import { initOpenProjectController } from './open-project.js';
+import { initDeleteProjectController } from './delete-project.js';
 import { initProjectsPageBootstrap } from './page-bootstrap.js';
 import {
     initBeginnerHelpMode,
@@ -246,6 +247,8 @@ const openProjectController = initOpenProjectController({
 
 const getOpenProjectActionPath = openProjectController.getOpenProjectActionPath;
 const loadProjectWithoutValidation = openProjectController.loadProjectWithoutValidation;
+
+initDeleteProjectController({ fetchWithApiFallback, escapeHtml });
 
 const projectMaintenanceActions = createProjectMaintenanceActions({
     fetchWithApiFallback,
