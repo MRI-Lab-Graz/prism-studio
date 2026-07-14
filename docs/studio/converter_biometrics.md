@@ -3,6 +3,8 @@
 Imports biometric measurement data (grip strength, balance tests, physiological
 performance measures, etc.) into a PRISM project.
 
+![PRISM Studio Biometrics converter tab](../_static/screenshots/prism-studio-converter-biometrics.png)
+
 ## Step 1 — Select file and session
 
 - **Biometrics File** — accepts `.xlsx`, `.csv`, `.tsv`, `.sav`, `.rds`, `.rdata`, or

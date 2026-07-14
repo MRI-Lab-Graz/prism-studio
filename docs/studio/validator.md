@@ -3,6 +3,8 @@
 The web equivalent of `prism-validator` on the CLI — checks a project or dataset
 against PRISM and/or BIDS rules and shows the results grouped by severity.
 
+![PRISM Studio Validator start screen](../_static/screenshots/prism-studio-validator.png)
+
 ## Step 1 — Select a dataset
 
 - **Default: Validate current project** — pre-selected if you have a project loaded,
@@ -30,6 +32,8 @@ Click **Start Validation**. A progress panel (with Pause/Resume/Cancel) appears,
 you're taken to the results page automatically.
 
 ## Reading the results
+
+![PRISM Studio Validator results screen](../_static/screenshots/prism-studio-validator-results.png)
 
 - A summary dashboard: Total Files / Valid / Errors (split BIDS vs. PRISM) / Warnings
   (split BIDS vs. PRISM, noting when BIDS warnings are hidden).

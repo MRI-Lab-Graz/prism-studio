@@ -1,8 +1,11 @@
 # JSON Editor
 
-A direct editor for a small set of known project-level JSON files. It is not a
-general sidecar browser — you either open a file manually or arrive here via a link
-from another page that already knows which file it wants you to edit.
+Edit a small set of known project-level JSON files directly — `dataset_description.json`,
+`participants.json`, `samples.json`, or a `task-*.json` sidecar. You open a file
+manually, or arrive here via a link from another Studio page that already knows
+which file to load.
+
+![PRISM Studio JSON Editor screen](../_static/screenshots/prism-studio-json-editor.png)
 
 ## Opening a file
 

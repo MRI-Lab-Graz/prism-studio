@@ -4,6 +4,8 @@ Imports timestamped data (a survey export, a scan log, anything with a timestamp
 column) and enriches it into privacy-safe environment metadata: season, sun phase,
 moon phase, and location — without exporting raw addresses or coordinates.
 
+![PRISM Studio Environment converter tab](../_static/screenshots/prism-studio-converter-environment.png)
+
 ## Optional: pull timestamps from MRI data
 
 If your project has MRI JSON sidecars, **Scan Project MRI Data** reads acquisition

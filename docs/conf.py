@@ -34,6 +34,7 @@ exclude_patterns = [
 # -- Options for HTML output -------------------------------------------------
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static", "img"]
+html_css_files = ["custom.css"]
 html_title = "PRISM Studio Documentation (Draft)"
 html_short_title = "PRISM Docs (Draft)"
 

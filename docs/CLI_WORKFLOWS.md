@@ -1,65 +1,23 @@
 # CLI Workflows
 
-Use this guide when you want to work from the terminal rather than from the
-Studio web interface.
+For working from the terminal rather than the Studio web interface — best for
+automation, CI/batch validation, reproducible scripted workflows, and terminal-first
+users. PRISM remains an add-on to BIDS in the CLI path just as it does in Studio.
 
-The CLI path is best for:
+If you're new to this: activate the environment → validate a dataset → inspect or
+generate templates/recipes only as needed → automate once the manual commands are
+understood.
 
-- automation
-- CI or batch validation
-- reproducible scripted workflows
-- users who prefer terminal-first work
+## Setup and daily entry points
 
-PRISM remains an add-on to BIDS in the CLI path just as it does in Studio.
+Run setup once from the repository root (`bash setup.sh` on macOS/Linux,
+`.\setup.ps1` on Windows PowerShell), then activate the virtual environment before
+running any commands (`source .venv/bin/activate` / `.venv\Scripts\activate`). If you
+see an error about not running inside the PRISM virtual environment, activate
+`.venv` and retry.
 
-## Recommended starting point
-
-If you are new to the terminal workflow, use this order:
-
-1. activate the environment
-2. validate a dataset
-3. inspect or generate templates and recipes only as needed
-4. automate once the manual commands are understood
-
-## 1. Setup and environment
-
-Run setup once from repository root.
-
-macOS and Linux:
-
-```bash
-bash setup.sh
-```
-
-Windows PowerShell:
-
-```powershell
-.\setup.ps1
-```
-
-Then activate the project virtual environment before running commands.
-
-macOS and Linux:
-
-```bash
-source .venv/bin/activate
-```
-
-Windows:
-
-```bat
-.venv\Scripts\activate
-```
-
-If you see an error about not running inside the PRISM virtual environment,
-activate `.venv` and retry.
-
-## 2. Use RTK for the common path
-
-If the repository is available locally, the RTK wrapper is the cleanest entry
-point for common workflows.
-
-Examples:
+If the repository is available locally, **RTK** is the cleanest entry point for
+common workflows:
 
 ```bash
 rtk studio
@@ -68,82 +26,30 @@ rtk tools --help
 rtk test -q
 ```
 
-Use direct Python entry points when you need a scriptable or explicit command
-surface, but prefer RTK for day-to-day usage in this repo.
+Use direct Python entry points when you need a scriptable/explicit command surface;
+prefer RTK for day-to-day use in this repo. Launching the web interface directly:
+`python prism-studio.py` (starts a local server at `http://localhost:5001`).
 
-## 3. Launch Studio from the terminal
+## Validate a dataset
 
-If you want the web interface while staying terminal-first:
-
-```bash
-python prism-studio.py
-```
-
-Expected result:
-
-- local server starts
-- Studio becomes available at `http://localhost:5001`
-
-Equivalent RTK path:
+The validator is the most important CLI entry point:
 
 ```bash
-rtk studio
+prism-validator /path/to/dataset              # basic validation
+prism-validator /path/to/dataset --bids       # PRISM + BIDS
+prism-validator /path/to/dataset --fix --dry-run   # preview automatic fixes
+prism-validator /path/to/dataset --format sarif -o prism.sarif   # machine-readable report
 ```
 
-## 4. Validate a dataset from the CLI
+Common loop: run `--bids` → inspect findings → preview fixes with `--fix --dry-run`
+when appropriate → re-run until blocking errors are gone.
 
-The validator is the most important command-line entry point.
+## Conversion and scoring with `prism_tools.py`
 
-Basic validation:
-
-```bash
-python prism-validator /path/to/dataset
-```
-
-PRISM plus BIDS validation:
-
-```bash
-python prism-validator /path/to/dataset --bids
-```
-
-Preview automatic fixes:
-
-```bash
-python prism-validator /path/to/dataset --fix --dry-run
-```
-
-Write a machine-readable report:
-
-```bash
-python prism-validator /path/to/dataset --format sarif -o prism.sarif
-```
-
-Common validation loop:
-
-1. run `--bids`
-2. inspect the findings
-3. preview fixes with `--fix --dry-run` when appropriate
-4. re-run until blocking errors are gone
-
-## 5. Use `prism_tools.py` for conversion and scoring workflows
-
-Use `prism_tools.py` when the task is not just validation.
-
-Show top-level help:
-
-```bash
-python prism_tools.py --help
-```
-
-Typical uses include:
-
-- survey and biometrics imports
-- participant workflows
-- recipe execution
-- library maintenance
-- dataset helpers
-
-Examples:
+Use `prism_tools.py` for anything beyond validation — survey/biometrics imports,
+participant workflows, recipe execution, library maintenance, dataset helpers. Show
+the full command matrix with `python prism_tools.py --help`, or see
+[CLI Reference](CLI_REFERENCE.md).
 
 ```bash
 python prism_tools.py survey validate --library library/survey
@@ -151,68 +57,41 @@ python prism_tools.py recipes surveys --prism /path/to/dataset
 python prism_tools.py participants detect-id --input /absolute/path/to/T1.xlsx --json
 ```
 
-Use [CLI_REFERENCE.md](CLI_REFERENCE.md) for the fuller command matrix.
-
-## 6. Example terminal workflows
-
-### Minimal validation workflow
+**Example: validation + scoring**
 
 ```bash
 source .venv/bin/activate
-python prism-validator /path/to/dataset --bids
-```
-
-### Validation plus scoring workflow
-
-```bash
-source .venv/bin/activate
-python prism-validator /path/to/dataset --bids
+prism-validator /path/to/dataset --bids
 python prism_tools.py recipes surveys --prism /path/to/dataset
 ```
 
-### Participants merge preview workflow
+**Example: participants merge preview** — the CLI equivalent of Studio's
+preview-first safe-merge pattern:
 
 ```bash
-source .venv/bin/activate
 python prism_tools.py participants merge \
 	--input /absolute/path/to/T1.xlsx \
 	--project /absolute/path/to/my-project/project.json \
 	--json
 ```
 
-This is the CLI equivalent of the preview-first safe-merge pattern from Studio.
-
-## 7. Daily repo quality commands
-
-Fast smoke check:
+## Daily repo quality commands
 
 ```bash
-bash scripts/ci/run_local_smoke.sh
+bash scripts/ci/run_local_smoke.sh     # fast smoke check
+bash scripts/ci/run_runtime_gate.sh    # full runtime gate
+pytest                                 # tests
 ```
 
-Full runtime gate:
+## Common mistakes
 
-```bash
-bash scripts/ci/run_runtime_gate.sh
-```
+Forgetting to activate `.venv`; validating the wrong dataset path; applying fixes
+without checking the dry run first; assuming a saved recipe already produced
+derivative outputs; jumping into a deep `prism_tools.py` subcommand without first
+checking `--help`.
 
-Tests:
+## What's next
 
-```bash
-pytest
-```
-
-## 8. Common mistakes
-
-- forgetting to activate `.venv`
-- validating the wrong dataset path
-- applying fixes without checking the dry run first
-- assuming a saved recipe already produced derivative outputs
-- jumping into a deep `prism_tools.py` subcommand without first checking `--help`
-
-## Related pages
-
-- [CLI_REFERENCE.md](CLI_REFERENCE.md)
-- [VALIDATOR.md](studio/validator.md)
-- [STUDIO_OVERVIEW.md](studio/index.md)
-- [WORKSHOP.md](WORKSHOP.md)
+- [CLI Reference](CLI_REFERENCE.md)
+- [Validator](studio/validator.md) · [Studio Guide](studio/index.md)
+- [Workshop](WORKSHOP.md)

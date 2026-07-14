@@ -5,6 +5,8 @@ BIDS-style physio outputs. Under the hood this drives the same batch-conversion 
 as the CLI's `prism_tools.py physio batch-convert` — not `convert physio` (a separate,
 older single-file/sourcedata-folder path that this tab does not use).
 
+![PRISM Studio Physio converter tab](../_static/screenshots/prism-studio-converter-physio.png)
+
 ## Required naming
 
 ```text

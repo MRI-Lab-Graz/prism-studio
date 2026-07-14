@@ -4,6 +4,8 @@ Build scoring recipes (reverse-coding, subscales, composite scores) against a su
 or biometrics template. Recipe Builder only *creates and saves* recipes — running them
 against your data happens on the separate [Export / Analysis Output](export.md) page.
 
+![PRISM Studio Recipe Builder screen](../_static/screenshots/prism-studio-recipe-builder.png)
+
 ## Step 1 — Pick modality and template
 
 Choose **Modality** (`survey`/`biometrics`), then a **Template** from the dropdown,
@@ -50,6 +52,8 @@ code/recipes/biometrics/recipe-<name>.json
 server round-trip.
 
 ## Running a saved recipe
+
+![PRISM Studio Analysis Output screen](../_static/screenshots/prism-studio-analysis-output.png)
 
 Go to the **Analysis Output** page, pick modality, sessions, and optionally filter to
 one recipe, choose merge/layout and output format (`sav`/`csv`/`xlsx`), and click

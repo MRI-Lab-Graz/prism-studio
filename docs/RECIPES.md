@@ -1,143 +1,67 @@
 # Recipes Reference
 
-Use this page when you need the reference model for PRISM scoring recipes rather
-than the step-by-step UI workflow.
+The reference model for PRISM scoring recipes, rather than the step-by-step UI
+workflow — for the guided editor, use [Recipe Builder](studio/recipe_builder.md).
 
-For the guided editor workflow, use [RECIPE_BUILDER.md](studio/recipe_builder.md).
+## Concepts
 
-## What a recipe is
+A recipe is a JSON definition telling PRISM how to turn raw survey items into
+derived values and final scores: reverse coding, intermediate derived values, final
+score columns, missing-data behavior.
 
-A recipe is a JSON definition that tells PRISM how to turn raw survey items into
-derived values and final scores.
+Keep the **recipe definition** (saved in the project, `code/recipes/survey/`)
+distinct from the **computed result** (written when the recipe is executed,
+`derivatives/survey/`).
 
-Recipes can describe:
+## Structure: Transforms and Scores
 
-- reverse coding
-- intermediate derived values
-- final score columns
-- missing-data behavior
+Two main areas:
 
-## Saved recipe vs output data
+- **`Transforms`** — preparation logic: inversion, intermediate calculations, helper
+  variables supporting the final scores. Common methods: `sum`, `mean`, `min`,
+  `max`, `formula`, `map`.
+- **`Scores`** — the final, analysis-facing output columns you want to keep and
+  interpret; this is usually what becomes the main analysis output. Common methods:
+  `sum`, `mean`, `formula`, `map`.
 
-Keep this distinction clear:
-
-- the **recipe definition** is saved in the project
-- the **computed result** is written later when the recipe is executed
-
-Current survey recipe path:
-
-- `code/recipes/survey/`
-
-Current survey output path:
-
-- `derivatives/survey/`
-
-## Main structural ideas
-
-The two most important recipe areas are:
-
-- `Transforms`
-- `Scores`
-
-### `Transforms`
-
-Use this area for preparation logic such as:
-
-- inversion
-- intermediate calculations
-- helper variables that support the final scores
-
-### `Scores`
-
-Use this area for the final analysis-facing output columns you want to keep and
-interpret.
-
-## Derived values vs final scores
-
-Derived values are useful when you need intermediate logic, but they are not
-automatically the main result you report.
-
-The `Scores` section is what usually becomes the main analysis output.
-
-## Common methods
-
-Common final-score methods include:
-
-- `sum`
-- `mean`
-- `formula`
-- `map`
-
-Common transform or derived methods include:
-
-- `sum`
-- `mean`
-- `min`
-- `max`
-- `formula`
-- `map`
+Derived values are useful for intermediate logic but aren't automatically the main
+result you report — that's what `Scores` is for.
 
 ## Missing-data handling
 
-Recipes can define how missing values should behave.
+Common choices: `ignore` (a score can still be meaningful with limited missing data)
+or `require_all` (every item must be present).
 
-Common choices include:
-
-- `ignore`
-- `require_all`
-
-Use `ignore` when a score can still be meaningful with limited missing data.
-Use `require_all` when every item must be present.
-
-## Minimal example
+## Example and design process
 
 ```json
 {
   "RecipeVersion": "1.0",
   "Kind": "survey",
-  "Survey": {
-    "TaskName": "pss"
-  },
+  "Survey": { "TaskName": "pss" },
   "Scores": [
-    {
-      "Name": "pss_total",
-      "Method": "sum",
-      "Items": ["PSS01", "PSS02", "PSS03"]
-    }
+    { "Name": "pss_total", "Method": "sum", "Items": ["PSS01", "PSS02", "PSS03"] }
   ]
 }
 ```
 
-This is the right scale of first example because it is easy to test and easy to
-spot-check against the raw item values.
+This is the right scale for a first example — easy to test and spot-check against
+raw item values. Good progression: start with one simple score → confirm the item
+list is correct → confirm reverse coding if required → add derived values/subscales
+only after the simple case works.
 
-## How to reason about recipe design
-
-Good progression:
-
-1. start with one simple score
-2. confirm the item list is correct
-3. confirm reverse coding if required
-4. add derived values or subscales only after the simple case works
-
-## Typical outputs after execution
-
-When scoring runs successfully, survey outputs may include:
-
-- recipe-specific output folders
-- `survey_scores.tsv`
-- derivative metadata such as `dataset_description.json`
-- methods-related outputs when enabled by the workflow
+When scoring runs successfully, outputs may include recipe-specific output folders,
+`survey_scores.tsv`, derivative metadata (`dataset_description.json`), and
+methods-related outputs when enabled.
 
 ## Common mistakes
 
-- treating a saved recipe as if it already generated outputs
-- building many scales before one simple score is verified
-- mixing questionnaire versions in one recipe
-- forgetting that missing-data policy changes the meaning of the score
+Treating a saved recipe as if it already generated outputs; building many scales
+before one simple score is verified; mixing questionnaire versions in one recipe;
+forgetting that missing-data policy changes the meaning of the score.
 
-## Related pages
+## What's next
 
-- [RECIPE_BUILDER.md](studio/recipe_builder.md)
-- [ANALYSIS_OUTPUT.md](studio/export.md)
-- [SURVEY_IMPORT.md](studio/converter_survey.md)
+- [Recipe Builder](studio/recipe_builder.md)
+- [Export](studio/export.md)
+- [Survey Import](studio/converter_survey.md)

@@ -1,9 +1,11 @@
 # Share / Export
 
-The **Share & Archive** page (`Data Export / Share` card) is where a project leaves
-Studio — as an anonymized ZIP, a plain folder copy, an ANC upload package, or
-openMINDS metadata. It's distinct from scored derivatives, which stay inside the
-project (see [Recipe Builder](recipe_builder.md)).
+Share & Archive is where a project leaves Studio — as an anonymized ZIP, a plain
+folder copy, an ANC upload package, or openMINDS metadata. It's distinct from
+scored derivatives, which stay inside the project (see
+[Recipe Builder](recipe_builder.md)).
+
+![PRISM Studio Share & Archive screen](../_static/screenshots/prism-studio-export.png)
 
 ## Standard Export & Save
 
