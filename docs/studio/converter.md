@@ -1,22 +1,19 @@
 # Converter
 
-The Converter hub at `/converter` is a single page with six tabs — not six separate
-pages. Each tab is documented on its own page (linked below); this page just covers
-the layout.
+The Converter is where external data enters a PRISM project — spreadsheets,
+LimeSurvey exports, biometric measurements, physio recordings, eyetracking files,
+and environment/timestamp tables all get mapped into BIDS-compatible outputs here.
+One page, six tabs, one per data type; each is covered in detail on its own page:
 
-## Tabs, in the order they appear
+1. [Participants / Sociodemographics](converter_participants.md) — the natural first
+   step for a new project.
+2. [Survey Import](converter_survey.md)
+3. [Biometrics](converter_biometrics.md)
+4. [Physio](converter_physio.md)
+5. [Eyetracking](converter_eyetracking.md)
+6. [Environment](converter_environment.md)
 
-1. **Sociodemographics** — the default/active tab. See
-   [Converter — Participants](converter_participants.md).
-2. **Survey** — see [Converter — Survey Import](converter_survey.md).
-3. **Biometrics** — see [Converter — Biometrics](converter_biometrics.md).
-4. **Physiology** — see [Converter — Physio](converter_physio.md).
-5. **Eye-tracking** — see [Converter — Eyetracking](converter_eyetracking.md).
-6. **Environment** — see [Converter — Environment](converter_environment.md).
-
-A visual divider labeled "Conversion Inputs" separates Sociodemographics from the
-other five — sociodemographics/participants is treated as a distinct first step,
-while the remaining five are all "bring in one modality's data" tabs.
+![PRISM Studio Converter hub](../_static/screenshots/prism-studio-converter.png)
 
 ## What's next
 

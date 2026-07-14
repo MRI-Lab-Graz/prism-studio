@@ -6,6 +6,8 @@ PRISM-specific content processing, column renaming, or sidecar-field normalizati
 applied to your data. This screen only renames files into BIDS naming and generates a
 minimal sidecar; it does not touch the file's internal content.
 
+![PRISM Studio Eyetracking converter tab](../_static/screenshots/prism-studio-converter-eyetracking.png)
+
 ## Supported input
 
 - `.edf` — raw EyeLink recordings. Sampling frequency and duration are read from the

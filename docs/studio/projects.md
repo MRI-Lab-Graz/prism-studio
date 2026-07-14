@@ -3,6 +3,8 @@
 The Projects page is the entry point for creating, opening, and re-opening PRISM
 Studio projects.
 
+![PRISM Studio Projects screen](../_static/screenshots/prism-studio-projects.png)
+
 ## Goal
 
 Get a project created or loaded so the rest of Studio (Converter, Validator,

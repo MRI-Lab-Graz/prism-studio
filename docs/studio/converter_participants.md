@@ -3,6 +3,8 @@
 Imports a sociodemographics/participants source file and produces `participants.tsv`
 + `participants.json` together for your project.
 
+![PRISM Studio Participants converter tab](../_static/screenshots/prism-studio-converter-participants.png)
+
 ## Step 1 — Select file and ID column
 
 - File input accepts `.xlsx`, `.csv`, `.tsv`, `.sav`, `.rds`, `.rdata`, `.rda`, `.lsa`.

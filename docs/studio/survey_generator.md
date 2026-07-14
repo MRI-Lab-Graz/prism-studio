@@ -1,9 +1,13 @@
-# Survey Export (Survey Generator)
+# Survey Export
 
-Reached at `/survey-generator`, but the page itself is titled **"Survey Export"** —
-its job is selecting templates from your PRISM library and exporting them, not
-generating new templates from scratch. If you want to create or edit a template, use
-the [Template Editor](template_editor.md) instead.
+Select templates from your PRISM library and export them as a ready-to-run
+LimeSurvey questionnaire, or generate manuscript-ready Methods text from their
+metadata. This page doesn't create or edit templates — for that, use the
+[Template Editor](template_editor.md). (In the app's URL this page is still called
+`/survey-generator`, a naming holdover; the screen itself is labeled "Survey
+Export.")
+
+![PRISM Studio Survey Export screen](../_static/screenshots/prism-studio-survey-export.png)
 
 ## Step 1 — Toolbar
 

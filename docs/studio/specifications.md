@@ -1,28 +1,38 @@
 # Specifications
 
-The in-app Specifications screen (`/specifications`) is a **navigation hub**, not a
-schema reference viewer — if you want the actual schema documentation (required
-fields, filename patterns, schema versions), that's a separate ReadTheDocs page this
-screen links out to; nothing on this screen itself defines the schema.
+PRISM Studio organizes a project around two tiers: **Core** — the validated PRISM/
+BIDS dataset itself (Projects, Validator, Converter, Template Editor, File
+Management, JSON Editor) — and **Derivatives** — outputs computed from that dataset
+(Survey Export, Recipes), which only become available once a project with data is
+loaded. The Specifications screen is where Studio explains that split and points you
+at both the tools and the underlying schema.
 
-## What's on it
+![PRISM Studio Specifications screen](../_static/screenshots/prism-studio-specifications.png)
 
-- **PRISM Studio: 2-Tab Model** card, with two columns of shortcut buttons:
-  - **Core**: [Projects](projects.md), [Validator](validator.md), Converter (disabled
-    if unavailable), [Template Editor](template_editor.md), [File
-    Management](file_management.md), [JSON Editor](json_editor.md).
-  - **Derivatives**: [Survey Export](survey_generator.md), Recipes — both greyed out
-    with a tooltip until a project is loaded.
-- **The Core Concept** card explaining BIDS-compatible vs. PRISM-enhanced data.
-- **Key Principles** — three generic cards: Standardized Structure, Rich Metadata,
-  Validation First.
-- **Detailed Schema Documentation** card — a single button, **Open PRISM Schema
-  Docs**, linking out to this ReadTheDocs site's schema specs
-  (`specs/survey`, `specs/biometrics`, `specs/events`, `specs/environment`).
+## Core vs. Derivatives
+
+Every workflow in Studio belongs to one tier or the other. Core tools work with your
+project's actual BIDS-compatible data and are always reachable. Derivatives tools —
+Survey Export and Recipes — compute new outputs *from* that data, so they need a
+project with real content loaded first; until then they show disabled with a
+tooltip explaining why.
+
+Underneath that split is PRISM's core relationship to BIDS: your dataset stays
+BIDS-compatible at its core, with PRISM's schema-driven additions layered on top for
+survey, biometrics, and other psychology-specific modalities — standardized
+structure, rich metadata, and validation are the three principles that hold the
+whole model together.
+
+## Finding the schema itself
+
+This screen doesn't define the schema — it links out to it. For the actual field-
+by-field reference (required fields, filename patterns, schema versions), go to
+[specs/survey](../specs/survey.md), [specs/biometrics](../specs/biometrics.md),
+[specs/events](../specs/events.md), and [specs/environment](../specs/environment.md),
+or start from [Specifications and Schemas](../SPECIFICATIONS.md) for the conceptual
+overview.
 
 ## What's next
 
-- The schema reference itself: [specs/survey](../specs/survey.md),
-  [specs/biometrics](../specs/biometrics.md), [specs/events](../specs/events.md),
-  [specs/environment](../specs/environment.md)
-- [Home](home.md) for the full navigation map
+- [Projects](projects.md) · [Validator](validator.md) · [Template Editor](template_editor.md)
+- [Recipe Builder](recipe_builder.md) · [Survey Export](survey_generator.md)

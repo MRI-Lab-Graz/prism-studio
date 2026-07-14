@@ -5,6 +5,8 @@ Requires an active project. Every action here follows a **preview-first** patter
 you run a dry preview, then a separate, explicit apply step; nothing mutates on the
 first click.
 
+![PRISM Studio File Management screen](../_static/screenshots/prism-studio-file-management.png)
+
 Four tabs:
 
 ## Rename Filenames

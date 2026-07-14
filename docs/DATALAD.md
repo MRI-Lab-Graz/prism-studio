@@ -1,62 +1,42 @@
 # DataLad Workflows
 
-DataLad is optional in PRISM Studio, but it matters for projects that need large
-file handling, provenance-aware operations, and reproducible dataset changes.
+DataLad is optional in PRISM Studio, but matters for projects needing large-file
+handling, provenance-aware operations, and reproducible dataset changes. This page
+covers the public usage model, not internal implementation details.
 
-This page explains the public usage model rather than every internal
-implementation detail.
+## When to use it
 
-## When to use DataLad
+Use DataLad when: your project has large files that shouldn't behave like ordinary
+Git text files; you need provenance for dataset-changing operations; you want a
+layout that scales to larger/longer-lived studies; you expect to exchange datasets
+through DataLad-aware workflows (OpenNeuro-style installs, nested datasets).
 
-Use DataLad when one or more of these are true:
+You can skip it if: the dataset is small, you're just learning PRISM Studio, you
+don't need dataset-level provenance yet, or the project is a local, short-lived
+exercise/workshop. Don't make DataLad the first thing a beginner has to learn unless
+the project actually needs it.
 
-- your project contains large files that should not behave like ordinary Git text files
-- you need provenance for dataset-changing operations
-- you want a project layout that scales to larger or longer-lived studies
-- you expect to exchange datasets through DataLad-aware workflows such as OpenNeuro-style installs or nested datasets
+## How PRISM Studio uses it
 
-If you only need a small local project, you can use PRISM Studio without
-thinking about DataLad first.
+PRISM Studio works with DataLad-friendly projects instead of forcing a separate
+structure: the project root stays the controlling dataset; each `sub-*` folder is
+treated as a nested dataset when DataLad is in use; PRISM stays an add-on to BIDS
+rather than introducing a parallel layout; export-side processing happens on export
+targets or copies, not by mutating source raw data in place.
 
-## PRISM Studio and DataLad
-
-PRISM Studio is designed to work with DataLad-friendly projects instead of
-forcing a separate structure.
-
-Important principles:
-
-- the project root should remain the controlling dataset
-- each `sub-*` folder should be treated as a nested dataset when DataLad is in use
-- PRISM stays an add-on to BIDS rather than introducing a parallel layout
-- export-side processing should happen on export targets or copies, not by mutating source raw data in place
-
-## What DataLad changes for a user
-
-For most user workflows, the visible effect is not a different UI. The practical
-change is in how the project should be organized and how large-file or
-provenance-aware operations behave.
-
-Typical impacts:
-
-- project creation and repair flows need to preserve the dataset topology
-- some file-management operations should keep provenance instead of behaving like ordinary file moves
-- export or anonymization workflows should preserve the source dataset and operate on copies or export targets
-- large remote datasets may be validated or prepared incrementally instead of forcing full local materialization first
-
-## Recommended project topology
-
-A DataLad-aware PRISM project should keep the project root as the superdataset.
-When subject folders are managed as nested datasets, treat each `sub-*` folder as
-part of that controlled structure.
-
-Conceptually:
+For most workflows the visible effect isn't a different UI — the practical change is
+in how the project is organized and how large-file/provenance-aware operations
+behave: project creation/repair flows preserve dataset topology; file-management
+operations keep provenance instead of behaving like ordinary file moves;
+export/anonymization workflows preserve the source dataset and operate on copies;
+large remote datasets may be validated/prepared incrementally instead of forcing
+full local materialization first.
 
 ```text
 my_study/
 ├── .git/
 ├── .datalad/
 ├── dataset_description.json
-├── participants.tsv
 ├── project.json
 ├── code/
 ├── derivatives/
@@ -66,68 +46,34 @@ my_study/
 ```
 
 The exact internal state depends on how the dataset was created, but the public
-rule is simple: do not flatten or manually rearrange the project into a separate
+rule is simple: don't flatten or manually rearrange the project into a
 non-BIDS structure just because DataLad is enabled.
 
 ## Common use cases
 
-### Local project with large files
+**Local project with large files**: create/open the project → keep the root
+structure intact → use normal PRISM workflows for conversion, validation, export →
+prefer PRISM-managed actions over manual ad-hoc file moves.
 
-Use DataLad when your project contains large binaries and you still want a clean
-project history.
+**OpenNeuro or remote DataLad install**: when the source comes from a DataLad-aware
+remote, check that the project root is present locally, the expected `sub-*`
+dataset structure resolves locally, and PRISM Studio sees the project as one
+coherent working tree.
 
-Typical path:
-
-1. Create or open the project in PRISM Studio.
-2. Keep the root project structure intact.
-3. Use normal PRISM workflows for conversion, validation, and export.
-4. Prefer PRISM-managed actions over manual ad-hoc file moves.
-
-### OpenNeuro or remote DataLad install
-
-When the source comes from a DataLad-aware remote, the important requirement is
-that the nested dataset structure resolves correctly locally.
-
-What to check:
-
-- the project root is present locally
-- the expected `sub-*` dataset structure exists locally
-- PRISM Studio sees the project as one coherent working tree
-
-### Export and anonymization
-
-When export workflows include anonymization or defacing, the safe mental model is
-that PRISM should prepare an export target rather than changing the source
-project in place.
-
-That matters because:
-
-- your source project stays reusable
-- provenance is easier to reason about
-- accidental mutation of raw data is avoided
-
-## When not to use DataLad first
-
-Do not make DataLad the first thing a beginner has to learn unless the project
-actually needs it.
-
-You can start without it if:
-
-- the dataset is small
-- you are just learning PRISM Studio
-- you do not need dataset-level provenance yet
-- the project is a local, short-lived exercise or workshop
+**Export and anonymization**: PRISM prepares an export target rather than changing
+the source project in place — your source project stays reusable, provenance is
+easier to reason about, and accidental mutation of raw data is avoided.
 
 ## Practical advice
 
-- Keep BIDS naming and structure intact even when DataLad is enabled.
-- Let PRISM Studio manage project-aware workflows instead of manually editing the layout.
-- Treat `sourcedata/`, validated dataset files, `code/`, and `derivatives/` as separate responsibilities.
-- Use validation after structural changes so DataLad-aware project edits do not silently drift from PRISM expectations.
+Keep BIDS naming and structure intact even when DataLad is enabled. Let PRISM
+Studio manage project-aware workflows instead of manually editing the layout. Treat
+`sourcedata/`, validated dataset files, `code/`, and `derivatives/` as separate
+responsibilities. Validate after structural changes so DataLad-aware edits don't
+silently drift from PRISM expectations.
 
-## Related pages
+## What's next
 
-- [WHAT_IS_PRISM.md](WHAT_IS_PRISM.md)
-- [PROJECTS.md](studio/projects.md)
-- [ANALYSIS_OUTPUT.md](studio/export.md)
-- [CLI_WORKFLOWS.md](CLI_WORKFLOWS.md)
+- [What is PRISM](WHAT_IS_PRISM.md)
+- [Projects](studio/projects.md) · [Export](studio/export.md)
+- [CLI Workflows](CLI_WORKFLOWS.md)

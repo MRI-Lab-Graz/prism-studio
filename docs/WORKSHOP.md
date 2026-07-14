@@ -1,29 +1,11 @@
 # Workshop
 
 Learn PRISM Studio through one concrete end-to-end example with repository-local
-materials.
-
-The workshop is the best path when you want more than the quick start but do not
-want to jump straight into reference pages.
-
-## What the workshop teaches
-
-The workshop takes you from a small source spreadsheet to a validated and scored
-project.
-
-Core skills covered:
-
-- project setup
-- source-data conversion
-- validation and metadata repair
-- recipe-based scoring
-
-Optional extensions:
-
-- participant mapping
-- template creation
-
-## Time and structure
+materials — the best path when you want more than Quick Start but don't want to jump
+straight into reference pages. Takes you from a small source spreadsheet to a
+validated and scored project: project setup, source-data conversion, validation and
+metadata repair, and recipe-based scoring, with optional extensions for participant
+mapping and template creation.
 
 | Exercise | Topic | Time | Outcome |
 |---|---|---|---|
@@ -32,95 +14,36 @@ Optional extensions:
 | 2 | Metadata and validation | 25 min | Validation findings understood and reduced |
 | 3 | Recipes and scoring | 20 min | A simple score and export-ready result |
 | Optional 4 | Templates | 20 min | Reusable survey metadata |
-| Optional 5 | Participant mapping | 30 to 45 min | Standardized participant metadata |
+| Optional 5 | Participant mapping | 30–45 min | Standardized participant metadata |
 
-Total: about 90 minutes for the core path, or about 2 hours with extensions.
+Total: ~90 minutes for the core path, ~2 hours with extensions.
 
-## Workshop materials
+## Getting started
 
-Repository folder:
-
-```text
-examples/workshop/
-├── exercise_0_project_setup/
-├── exercise_1_raw_data/
-├── exercise_2_hunting_errors/
-├── exercise_3_using_recipes/
-├── exercise_4_templates/
-├── exercise_5_participant_mapping/
-├── WORKSHOP_HANDOUT_WELLBEING.md
-└── WORKSHOP_HANDOUT_WELLBEING.pdf
-```
-
-Best starting documents:
-
-- `examples/workshop/WORKSHOP_HANDOUT_WELLBEING.md`
-- `examples/workshop/WORKSHOP_README.md`
-
-## Before you start
-
-1. Make sure PRISM Studio launches correctly.
-2. Open the repository-local workshop materials.
-3. Decide whether you want the core path only or the optional extensions too.
-
-Launch Studio from repository root if needed:
-
-```bash
-source .venv/bin/activate
-python prism-studio.py
-```
+Materials live under `examples/workshop/` (`exercise_0_project_setup/` through
+`exercise_5_participant_mapping/`, plus `WORKSHOP_HANDOUT_WELLBEING.md`/`.pdf` and
+`WORKSHOP_README.md` as the best starting documents). Before you start: make sure
+PRISM Studio launches (`source .venv/bin/activate && python prism-studio.py`), open
+the workshop materials, and decide whether you want the core path only or the
+extensions too.
 
 ## Core path
 
-### Exercise 0: Project setup
+**Exercise 0 — Project setup**: create a clean project (e.g. `wellbeing_study`). Pay
+attention to the project root structure and the separation of source data, validated
+data, code, and derivatives.
 
-Goal: create a clean project such as `wellbeing_study`.
+**Exercise 1 — Data conversion**: convert
+`examples/workshop/exercise_1_raw_data/raw_data/wellbeing.xlsx` into survey data
+inside the project. Confirm the participant ID column and selected item columns,
+preview before saving. Expect survey files written into subject-level folders.
 
-What to pay attention to:
+**Exercise 2 — Metadata and validation**: see what the validator catches and how
+richer metadata improves the dataset. Expect early findings like missing/incomplete
+survey metadata, item descriptions, or response labels — use the provided template
+material to complete metadata, then re-validate until major issues clear.
 
-- project root structure
-- separation of source data, validated data, code, and derivatives
-- where study-level metadata lives
-
-### Exercise 1: Data conversion
-
-Goal: convert the example spreadsheet into survey data inside the project.
-
-Main source file:
-
-- `examples/workshop/exercise_1_raw_data/raw_data/wellbeing.xlsx`
-
-Key checks during the exercise:
-
-- confirm the participant ID column
-- confirm the selected item columns
-- preview before saving
-
-Expected output:
-
-- survey files written into subject-level folders
-
-### Exercise 2: Metadata and validation
-
-Goal: understand what the validator catches and how richer metadata improves the
-dataset.
-
-Expected early findings:
-
-- missing or incomplete survey metadata
-- missing item descriptions
-- missing response labels
-
-Typical next step:
-
-- use the provided template material to complete the metadata
-- run validation again until the major issues are resolved
-
-### Exercise 3: Recipes and scoring
-
-Goal: compute one simple wellbeing score.
-
-Conceptual recipe example:
+**Exercise 3 — Recipes and scoring**: compute one simple wellbeing score, e.g.:
 
 ```json
 {
@@ -134,59 +57,32 @@ Conceptual recipe example:
 }
 ```
 
-Expected outcome:
+Expect one derived score and a clearer connection between imported raw responses
+and downstream analysis outputs.
 
-- one derived score
-- a clearer connection between imported raw responses and downstream analysis outputs
+## Optional extensions
 
-## Optional extension paths
+**Templates** — practice making the data self-documenting: item wording, translated
+text, response options/labels, saving templates into the project library.
 
-### Templates
+**Participant mapping** — standardize incoming demographic encodings: coded values
+(`1/2/4`) to readable labels, text-based numeric values to canonical numeric form.
 
-Use this when you want to practice making the data self-documenting.
+## Wrap-up
 
-Focus on:
+By the end of the core path you should have a project that loads cleanly, survey
+files imported from the example spreadsheet, at least one validation-cleanup
+iteration completed, and a simple scoring workflow demonstrated.
 
-- item wording
-- translated text
-- response options and labels
-- saving templates into the project library
+**For instructors**: this workshop works well for onboarding because it tells one
+full story instead of isolated feature demos. Suggested pattern: show the raw
+spreadsheet first → create the project live → import before discussing every schema
+detail → use validation as the teaching moment for metadata quality → finish with
+scoring or export as the payoff.
 
-### Participant mapping
+## What's next
 
-Use this when you want to standardize incoming demographic encodings.
-
-Typical transformations:
-
-- coded values such as `1/2/4` to readable labels
-- text-based numeric values to canonical numeric form
-
-## What success looks like
-
-By the end of the core path you should have:
-
-- a project that loads cleanly
-- survey files imported from the example spreadsheet
-- at least one validation-cleaner iteration completed
-- a simple scoring workflow demonstrated
-
-## Instructor notes
-
-This workshop works well for onboarding because it gives participants one full
-story instead of isolated feature demos.
-
-Recommended teaching pattern:
-
-1. show the raw spreadsheet first
-2. create the project live
-3. import before discussing every schema detail
-4. use validation as the teaching moment for metadata quality
-5. finish with scoring or export as the payoff step
-
-## Related pages
-
-- [QUICK_START.md](QUICK_START.md)
-- [PROJECTS.md](studio/projects.md)
-- [SURVEY_IMPORT.md](studio/converter_survey.md)
-- [VALIDATOR.md](studio/validator.md)
-- [RECIPES.md](RECIPES.md)
+- [Quick Start](QUICK_START.md)
+- [Projects](studio/projects.md) · [Survey Import](studio/converter_survey.md) ·
+  [Validator](studio/validator.md)
+- [Recipes](RECIPES.md)

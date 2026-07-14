@@ -1,38 +1,11 @@
 # FAIR Data Principles Compliance
 
-## PRISM FAIR Data Policy
+How PRISM implements the FAIR (Findable, Accessible, Interoperable, Reusable) data
+principles for psychological research data management.
 
-This document outlines how the prism project implements the FAIR (Findable, Accessible, Interoperable, Reusable) data principles for psychological research data management.
-
-### F - FINDABLE
-
-#### Implemented
-- Rich Metadata: Hierarchical JSON schemas with comprehensive descriptive fields
-- Unique Identifiers: Schema versioning with persistent URLs (`$id` fields)
-- Standardized Naming: BIDS-inspired file naming conventions
-- Searchable Categories: Taxonomized content tags and classifications
-- Keywords Support: Metadata fields for enhanced discoverability
-
-### A - ACCESSIBLE
-
-#### Implemented
-- Open Source: GNU Affero General Public License v3.0 (AGPL-3.0)
-- Standard Formats: JSON, TSV, CSV for broad tool compatibility
-- Clear Documentation: Comprehensive README and schema documentation
-- Multiple Export Formats: Support for various output formats
-
-### I - INTEROPERABLE
-
-#### Implemented
-- JSON Schema Standards: Industry-standard validation framework
-- BIDS Inspiration: Alignment with neuroimaging data standards
-- Semantic Versioning: Predictable schema evolution
-- Modular Design: Extensible architecture for new modalities
-
-### R - REUSABLE
-
-#### Implemented
-- Clear Licensing: Explicit CC and proprietary license support
-- Version Control: Git-based development with semantic versioning
-- Comprehensive Documentation: Schema details, examples, best practices
-- Community Guidelines: Contribution and governance frameworks
+| Principle | What PRISM implements |
+|---|---|
+| **F — Findable** | Rich metadata (hierarchical JSON schemas with comprehensive descriptive fields); unique identifiers (schema versioning with persistent `$id` URLs); standardized BIDS-inspired file naming; searchable/taxonomized content tags; keyword metadata fields |
+| **A — Accessible** | Open source (AGPL-3.0); standard formats (JSON, TSV, CSV) for broad tool compatibility; comprehensive README and schema documentation; multiple export formats |
+| **I — Interoperable** | JSON Schema (industry-standard validation framework); BIDS alignment with neuroimaging data standards; semantic versioning for predictable schema evolution; modular, extensible architecture for new modalities |
+| **R — Reusable** | Clear licensing (CC and proprietary license support); Git-based version control with semantic versioning; comprehensive documentation (schema details, examples, best practices); community contribution and governance guidelines |
