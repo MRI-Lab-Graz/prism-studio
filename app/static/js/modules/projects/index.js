@@ -38,6 +38,7 @@ import * as core from './core.js';
 import * as exportModule from './export.js';
 import * as dataladServerModule from './datalad_server.js';
 import * as rsyncServerModule from './rsync_server.js';
+import * as pushServerToggleModule from './push_server_toggle.js';
 import * as metadata from './metadata.js?v=20260515-4';
 
 // Re-export project modules for direct access
@@ -61,6 +62,7 @@ export const {
 export const { showExportCard, initExportForm, initAndExport, initOpenMindsExport, loadExportPreferences, initializeProjectsExport } = exportModule;
 export const { showDataladServerCard, initDataladServerSection } = dataladServerModule;
 export const { showRsyncServerCard, initRsyncServerSection } = rsyncServerModule;
+export const { initPushServerToggle } = pushServerToggleModule;
 export const {
     addAuthorRow,
     getAuthorsList,
@@ -94,6 +96,9 @@ export function initializeSharePage() {
     initializeProjectsExport();
     initDataladServerSection();
     initRsyncServerSection();
+    // Runs after both destination sections so its show/hide of the merged
+    // "Push to Server" card and its DataLad-vs-rsync toggle win last.
+    initPushServerToggle();
 }
 
 console.log('Projects module loaded with ES6 imports');
