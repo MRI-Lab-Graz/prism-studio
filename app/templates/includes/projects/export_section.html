@@ -6,37 +6,49 @@
                 <span><i class="fas fa-share-alt text-warning me-2"></i>Data Export / Share</span>
                 <i class="fas fa-chevron-down text-muted" id="exportChevron"></i>
             </h5>
+            <small class="text-muted d-block mt-1 fw-normal">
+                Click to configure anonymization, content filters, ANC/openMINDS export, and destination — the summary below always shows what's currently set.
+            </small>
         </div>
+
+        <!-- Always-visible summary: stays readable even while the section above is collapsed -->
+        <div class="card-body pb-0 pt-3" id="exportSummaryPanel">
+            <div class="export-snapshot mb-3" id="exportSnapshot" aria-live="polite">
+                <div class="export-snapshot__item">
+                    <span class="export-snapshot__label">Export scope</span>
+                    <strong class="export-snapshot__value" id="exportScopeSummary">Preparing export scope</strong>
+                    <small class="export-snapshot__detail" id="exportScopeDetail">Load a project to populate sessions, modalities, and task/acquisition filters.</small>
+                </div>
+                <div class="export-snapshot__item">
+                    <span class="export-snapshot__label">Anonymization</span>
+                    <strong class="export-snapshot__value" id="exportAnonymizationSummary">Randomize Participant IDs only</strong>
+                    <small class="export-snapshot__detail" id="exportAnonymizationDetail">Open the Anonymization section below to change what gets scrubbed or masked.</small>
+                </div>
+                <div class="export-snapshot__item">
+                    <span class="export-snapshot__label">Save destination</span>
+                    <strong class="export-snapshot__value" id="exportDestinationSummary">Use the project parent folder</strong>
+                    <small class="export-snapshot__detail" id="exportDestinationDetail">Choose a custom folder below if you want a fixed export location.</small>
+                </div>
+                <div class="export-snapshot__item">
+                    <span class="export-snapshot__label">Preference state</span>
+                    <strong class="export-snapshot__value" id="exportPreferenceSummary">Saved per project</strong>
+                    <small class="export-snapshot__detail" id="exportPreferenceDetail">Output folder and export filters are remembered automatically.</small>
+                </div>
+            </div>
+
+            <div class="export-filter-chips mb-3" id="exportFilterChips" aria-live="polite">
+                <span class="export-filter-chip export-filter-chip--neutral" id="exportSessionsChip">Sessions: waiting for project structure</span>
+                <span class="export-filter-chip export-filter-chip--neutral" id="exportModalitiesChip">Modalities: waiting for project structure</span>
+                <span class="export-filter-chip export-filter-chip--neutral" id="exportAcqChip">Task/acquisition labels: waiting for project structure</span>
+            </div>
+        </div>
+
         <div class="collapse" id="exportSection">
-            <div class="card-body">
+            <div class="card-body pt-0">
                 <div class="alert alert-warning border-warning mb-4 beginner-help-block">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     <strong>Important:</strong> Before sharing data publicly, consider copyright (survey questions) and anonymity (participant IDs).
                     This tool helps you create a shareable, anonymized version of your dataset.
-                </div>
-
-                <div class="export-snapshot mb-4" id="exportSnapshot" aria-live="polite">
-                    <div class="export-snapshot__item">
-                        <span class="export-snapshot__label">Export scope</span>
-                        <strong class="export-snapshot__value" id="exportScopeSummary">Preparing export scope</strong>
-                        <small class="export-snapshot__detail" id="exportScopeDetail">Load a project to populate sessions, modalities, and task/acquisition filters.</small>
-                    </div>
-                    <div class="export-snapshot__item">
-                        <span class="export-snapshot__label">Save destination</span>
-                        <strong class="export-snapshot__value" id="exportDestinationSummary">Use the project parent folder</strong>
-                        <small class="export-snapshot__detail" id="exportDestinationDetail">Choose a custom folder below if you want a fixed export location.</small>
-                    </div>
-                    <div class="export-snapshot__item">
-                        <span class="export-snapshot__label">Preference state</span>
-                        <strong class="export-snapshot__value" id="exportPreferenceSummary">Saved per project</strong>
-                        <small class="export-snapshot__detail" id="exportPreferenceDetail">Output folder and export filters are remembered automatically.</small>
-                    </div>
-                </div>
-
-                <div class="export-filter-chips mb-4" id="exportFilterChips" aria-live="polite">
-                    <span class="export-filter-chip export-filter-chip--neutral" id="exportSessionsChip">Sessions: waiting for project structure</span>
-                    <span class="export-filter-chip export-filter-chip--neutral" id="exportModalitiesChip">Modalities: waiting for project structure</span>
-                    <span class="export-filter-chip export-filter-chip--neutral" id="exportAcqChip">Task/acquisition labels: waiting for project structure</span>
                 </div>
 
                 <form id="exportProjectForm">
@@ -49,6 +61,7 @@
                                                 data-bs-target="#exportAnonymizationCollapse" aria-expanded="false"
                                                 aria-controls="exportAnonymizationCollapse">
                                             <i class="fas fa-user-secret me-2"></i>Anonymization
+                                            <span class="badge bg-secondary ms-2" id="exportAnonymizationHeaderBadge">Randomize IDs only</span>
                                         </button>
                                     </h2>
                                     <div id="exportAnonymizationCollapse" class="accordion-collapse collapse"
@@ -227,6 +240,7 @@
                                                 data-bs-target="#exportContentCollapse" aria-expanded="false"
                                                 aria-controls="exportContentCollapse">
                                             <i class="fas fa-archive me-2"></i>Export Content &amp; Filters
+                                            <span class="badge bg-secondary ms-2" id="exportContentHeaderBadge">Default scope</span>
                                         </button>
                                     </h2>
                                     <div id="exportContentCollapse" class="accordion-collapse collapse"
@@ -339,6 +353,7 @@
                                                 aria-controls="openmindsExportCollapse">
                                             <i class="fas fa-project-diagram me-2"></i>openMINDS Metadata Export
                                             <span class="badge bg-secondary ms-2">Optional</span>
+                                            <span class="badge bg-secondary ms-2" id="exportOpenmindsHeaderBadge">Off</span>
                                         </button>
                                     </h2>
                                     <div id="openmindsExportCollapse" class="accordion-collapse collapse"

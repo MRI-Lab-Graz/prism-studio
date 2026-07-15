@@ -619,6 +619,104 @@ function setExportChipState(chipId, text, tone = 'neutral') {
     chip.className = `export-filter-chip export-filter-chip--${tone}`;
 }
 
+function setBadge(id, text, tone = 'secondary') {
+    const badge = getById(id);
+    if (!badge) return;
+    badge.textContent = text;
+    badge.className = `badge bg-${tone} ms-2`;
+}
+
+/**
+ * Reflect the Anonymization accordion's checkbox state in the always-visible
+ * export snapshot and in a badge on the accordion header itself, so a user
+ * who never opens that section still knows whether it's on.
+ */
+function updateAnonymizationStatus() {
+    const summaryEl = getById('exportAnonymizationSummary');
+    const detailEl = getById('exportAnonymizationDetail');
+    if (!summaryEl && !detailEl && !getById('exportAnonymizationHeaderBadge')) return;
+
+    const anonymize = getById('exportAnonymize')?.checked || false;
+    const maskQuestions = getById('exportMaskQuestions')?.checked || false;
+    const scrubMri = getById('exportScrubMriJson')?.checked || false;
+    const defaceScans = getById('exportDefaceAnatomicalScans')?.checked || false;
+    const phenotypeBridge = getById('exportPhenotypeBridge')?.checked || false;
+
+    const activeLabels = [];
+    if (maskQuestions) activeLabels.push('question text masked');
+    if (scrubMri) activeLabels.push('MRI JSON scrubbed');
+    if (defaceScans) activeLabels.push('anatomical scans defaced');
+    if (phenotypeBridge) activeLabels.push('phenotype bridge added');
+
+    let summaryText;
+    let detailText;
+    let badgeText;
+    let badgeTone;
+
+    if (!anonymize) {
+        summaryText = activeLabels.length
+            ? `IDs NOT randomized (${activeLabels.join(', ')})`
+            : 'No anonymization applied';
+        detailText = 'Participant IDs will be exported as-is. Enable "Randomize Participant IDs" below before sharing publicly.';
+        badgeText = 'IDs not randomized';
+        badgeTone = 'danger';
+    } else if (!activeLabels.length) {
+        summaryText = 'Randomize Participant IDs only';
+        detailText = 'Question text, MRI sidecars, and scan defacing are exported unchanged. Open Anonymization below to enable more protections.';
+        badgeText = 'Randomize IDs only';
+        badgeTone = 'secondary';
+    } else {
+        const allLabels = ['IDs randomized', ...activeLabels];
+        summaryText = allLabels.join(', ');
+        detailText = `${allLabels.length} anonymization protections are active. Open Anonymization below to review.`;
+        badgeText = `${allLabels.length} protections on`;
+        badgeTone = 'info';
+    }
+
+    if (summaryEl) summaryEl.textContent = summaryText;
+    if (detailEl) detailEl.textContent = detailText;
+    setBadge('exportAnonymizationHeaderBadge', badgeText, badgeTone);
+}
+
+/**
+ * Badge on the "Export Content & Filters" accordion header summarizing
+ * whether extra top-level folders are included and whether any
+ * subject/session/modality/task filters are narrowing the export.
+ */
+function updateContentFiltersStatusBadge() {
+    if (!getById('exportContentHeaderBadge')) return;
+
+    const extraFolders = [
+        getById('exportDerivatives')?.checked && 'derivatives',
+        getById('exportSourcedata')?.checked && 'sourcedata',
+        getById('exportCode')?.checked && 'code',
+        getById('exportAnalysis')?.checked && 'analysis',
+    ].filter(Boolean);
+
+    const hasExclusions = Boolean(
+        _getUncheckedValues('export-subject-filter').length
+        || _getUncheckedValues('export-session-filter').length
+        || _getUncheckedValues('export-modality-filter').length
+        || countExcludedSubfilterLabels(_getUncheckedAcqByModality(), _getUncheckedTaskByModality())
+    );
+
+    if (!extraFolders.length && !hasExclusions) {
+        setBadge('exportContentHeaderBadge', 'Default scope', 'secondary');
+        return;
+    }
+
+    const parts = [];
+    if (extraFolders.length) parts.push(`+${extraFolders.join(', ')}`);
+    if (hasExclusions) parts.push('filters active');
+    setBadge('exportContentHeaderBadge', parts.join(' · '), 'info');
+}
+
+function updateOpenmindsStatusBadge() {
+    if (!getById('exportOpenmindsHeaderBadge')) return;
+    const enabled = getById('openmindsEnableExport')?.checked || false;
+    setBadge('exportOpenmindsHeaderBadge', enabled ? 'Enabled' : 'Off', enabled ? 'success' : 'secondary');
+}
+
 function updateExportSnapshotUi() {
     const currentProjectPath = resolveCurrentProjectPath();
     const scopeSummary = getById('exportScopeSummary');
@@ -727,6 +825,10 @@ function updateExportSnapshotUi() {
             ? 'This folder is remembered for the current project and reused automatically.'
             : 'Leave blank to use the project parent folder. Any folder you choose here is remembered for this project.';
     }
+
+    updateAnonymizationStatus();
+    updateContentFiltersStatusBadge();
+    updateOpenmindsStatusBadge();
 
     if (!currentProjectPath) {
         setExportChipState('exportSessionsChip', 'Sessions: waiting for active project', 'warning');
@@ -1344,6 +1446,7 @@ export function initExportForm() {
             }
 
             resetAnnexAvailabilityReport();
+            updateExportSnapshotUi();
 
             if (
                 target.classList.contains('export-subject-filter')
