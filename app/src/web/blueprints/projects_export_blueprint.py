@@ -303,20 +303,26 @@ def _run_pre_export_validation(project_path: Path, validation_mode: str) -> str 
 
 
 def _build_export_defacing_warning(
-    project_path: Path, scrub_mri_json: bool
+    project_path: Path,
+    exclude_subjects: Optional[list] = None,
+    exclude_sessions: Optional[list] = None,
 ) -> Optional[dict]:
     """Build warning-only defacing metadata for async export status payloads.
 
-    This never blocks export. It only surfaces a summary when MRI JSON scrub is
-    enabled and anatomical scans appear not defaced or unknown.
+    This never blocks export. It surfaces a summary whenever the dataset
+    being exported (honoring the export's own subject/session scope filters)
+    has anatomical scans that are not defaced or unknown - independent of
+    whether MRI JSON sidecar scrubbing is enabled, since an un-defaced scan
+    means the export isn't ready for public sharing either way.
     """
-    if not scrub_mri_json:
-        return None
-
     try:
         from src.mri_json_scrubber import build_defacing_report
 
-        report = build_defacing_report(project_path)
+        report = build_defacing_report(
+            project_path,
+            excluded_subjects=set(exclude_subjects or []),
+            excluded_sessions=set(exclude_sessions or []),
+        )
     except Exception:
         return None
 
@@ -331,10 +337,13 @@ def _build_export_defacing_warning(
     if risk_count <= 0:
         return None
 
+    scan_label = "scan" if risk_count == 1 else "scans"
     return {
         "message": (
-            "Defacing check: some anatomical scans are not defaced or unknown. "
-            "Export continued because this is warning-only."
+            f"This export includes {risk_count} anatomical {scan_label} that "
+            "are not defaced. This dataset is not ready for public sharing "
+            "until defacing is completed. Export continued because this is "
+            "warning-only."
         ),
         "counts": counts,
         "risk_count": risk_count,
@@ -1120,7 +1129,11 @@ def export_project_start():
         job_id = str(uuid.uuid4())
         _create_export_job(job_id)
 
-        defacing_warning = _build_export_defacing_warning(resolved, scrub_mri_json)
+        defacing_warning = _build_export_defacing_warning(
+            resolved,
+            exclude_subjects=exclude_subjects,
+            exclude_sessions=exclude_sessions,
+        )
         if defacing_warning:
             _update_export_job(job_id, defacing_warning=defacing_warning)
 

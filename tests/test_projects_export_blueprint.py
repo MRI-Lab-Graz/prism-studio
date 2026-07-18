@@ -884,6 +884,119 @@ def test_projects_export_start_status_includes_defacing_warning_metadata(tmp_pat
     assert warning.get("counts", {}).get("not_defaced") == 1
     assert warning.get("counts", {}).get("unknown") == 1
     assert "warning-only" in str(warning.get("message", ""))
+    assert "not ready for public sharing" in str(warning.get("message", ""))
+
+
+def test_projects_export_defacing_warning_fires_without_scrub_mri_json(tmp_path):
+    """The 'not ready for public sharing' warning must not depend on the
+    unrelated scrub_mri_json flag - un-defaced anatomical scans are a
+    sharing risk regardless of whether JSON sidecar scrubbing is enabled."""
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    class _FakeThread:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def start(self):
+            pass
+
+    with patch(
+        "src.web.blueprints.projects_export_blueprint.threading.Thread",
+        side_effect=lambda *args, **kwargs: _FakeThread(*args, **kwargs),
+    ):
+        with patch(
+            "src.mri_json_scrubber.build_defacing_report",
+            return_value=[
+                {"status": "not_defaced", "file": "sub-002/anat/sub-002_T1w.json"},
+            ],
+        ):
+            with app.test_client() as client:
+                start_resp = client.post(
+                    "/api/projects/export/start",
+                    json={
+                        "project_path": str(project_dir),
+                        "anonymize": False,
+                        "mask_questions": False,
+                        "scrub_mri_json": False,
+                        "include_derivatives": False,
+                        "include_code": False,
+                        "include_analysis": False,
+                    },
+                )
+
+                assert start_resp.status_code == 200
+                job_id = (start_resp.get_json() or {}).get("job_id")
+                assert job_id
+
+                status_resp = client.get(f"/api/projects/export/{job_id}/status")
+
+    assert status_resp.status_code == 200
+    warning = (status_resp.get_json() or {}).get("defacing_warning") or {}
+    assert warning.get("risk_count") == 1
+    assert "not ready for public sharing" in str(warning.get("message", ""))
+
+
+def test_projects_export_defacing_warning_honors_scope_filters(tmp_path):
+    """An excluded subject's un-defaced scans must not trigger the warning
+    for an export that doesn't actually include them."""
+    app = _build_app()
+
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "project.json").write_text("{}", encoding="utf-8")
+
+    class _FakeThread:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def start(self):
+            pass
+
+    captured_kwargs = {}
+
+    def _fake_build_defacing_report(project_path, **kwargs):
+        captured_kwargs.update(kwargs)
+        if "sub-002" in kwargs.get("excluded_subjects", set()):
+            return []
+        return [{"status": "not_defaced", "file": "sub-002/anat/sub-002_T1w.json"}]
+
+    with patch(
+        "src.web.blueprints.projects_export_blueprint.threading.Thread",
+        side_effect=lambda *args, **kwargs: _FakeThread(*args, **kwargs),
+    ):
+        with patch(
+            "src.mri_json_scrubber.build_defacing_report",
+            side_effect=_fake_build_defacing_report,
+        ):
+            with app.test_client() as client:
+                start_resp = client.post(
+                    "/api/projects/export/start",
+                    json={
+                        "project_path": str(project_dir),
+                        "anonymize": False,
+                        "mask_questions": False,
+                        "scrub_mri_json": False,
+                        "include_derivatives": False,
+                        "include_code": False,
+                        "include_analysis": False,
+                        "exclude_subjects": ["sub-002"],
+                    },
+                )
+
+                assert start_resp.status_code == 200
+                job_id = (start_resp.get_json() or {}).get("job_id")
+                assert job_id
+
+                status_resp = client.get(f"/api/projects/export/{job_id}/status")
+
+    assert status_resp.status_code == 200
+    assert "sub-002" in captured_kwargs.get("excluded_subjects", set())
+    warning = (status_resp.get_json() or {}).get("defacing_warning")
+    assert warning is None
 
 
 def test_export_status_payload_does_not_expose_mapping_metadata(tmp_path):

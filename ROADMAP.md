@@ -147,45 +147,31 @@ still pending, same as the JOSS paper's software DOI).
 
 ## Current Mission
 
-Sustain completed Priority 1.36 guardrails as the primary frontend baseline.
-Focus on keeping structural assessment remediations, runtime resilience checks, and focused smoke/coverage gates green.
+All six strategic phases (0-5) and all tactical priorities are DONE — there
+is no open roadmap item as of 2026-07-18. Focus is on sustaining the
+standing regression gates accumulated across those phases (frontend
+structural-assessment guardrails, `./rtk coverage`, grouped-run DataLad
+tests, export anonymization/privacy/defacing suites) rather than new
+feature work, until a new strategic initiative is picked.
 
 ## Status Board (tactical execution layer)
 
-| Priority | Title | Status | Next Action |
-|---|---|---|---|
-| 3 | JSON tag stripping and NIfTI GZIP header cleaning | IN PROGRESS | Continue export privacy hardening after slice A (MRI sidecar scrub + .nii.gz header cleanup) |
+No open tactical priorities. Priority 3 (JSON tag stripping and NIfTI GZIP
+header cleaning) is now COMPLETED — its "next action" (full defacing
+confirmation-mode lifecycle test across the global settings and export
+preferences APIs) turned out to already exist and pass
+(`tests/test_projects_library_settings_api.py::test_export_defacing_confirmation_mode_lifecycle_across_global_and_project_apis`,
+landed 2026-05-27) — this roadmap just hadn't been updated to reflect it.
 
-Completed priorities (1.26, 1.35, 1.36, 1.37, 2) are archived in
+Completed priorities (1.26, 1.35, 1.36, 1.37, 2, 3) are archived in
 [docs/ROADMAP_HISTORY_2026.md](docs/ROADMAP_HISTORY_2026.md); their standing
 maintenance gates (shared help-panel coverage, `./rtk coverage`, grouped-run
-rewrite tests, export anonymization checks) stay part of standard release
-validation.
+rewrite tests, export anonymization checks, export privacy/defacing
+regression suites) stay part of standard release validation.
 
 ## Active Work
 
-### Priority 3 - JSON tag stripping and NIfTI GZIP header cleaning
-
-Goal: remove export-time metadata leakage from MRI sidecars and compressed NIfTI headers while preserving dataset usability.
-
-Current checkpoint:
-- Slice A completed in backend export pipeline: optional MRI sidecar sensitive-field scrubbing plus .nii.gz GZIP header normalization (mtime/FNAME).
-- Route wiring updated so export privacy option (`scrub_mri_json`) enables both sidecar scrubbing and NIfTI header cleanup.
-- Focused validation expanded (26 passed across export backend and blueprint contract suites), including root-level `.nii.gz` and cleaning-disabled header-preservation cases.
-- Additional Priority 3 coverage slice completed: mixed-modality MRI sidecar scrubbing checks plus nested/derivative long-path `.nii.gz` header-cleaning checks.
-- Focused export privacy suite is green after the expansion (`tests/test_projects_export_mapping_exclusion.py`: 15 passed).
-- Defacing warning-only metadata is now surfaced in async export status payloads (non-blocking) and rendered in export success UI when risk is detected.
-- Export submit UX now adds an explicit pre-export confirmation step when MRI scrub mode is enabled and defacing risk is detected.
-- Export preferences now support configurable defacing confirmation mode (always ask vs ask only on detected risk), persisted per project in UI preferences.
-- Backend app settings now provide a team-level default for export defacing confirmation mode, and export preference reads inherit this default when project preference is unset.
-- Global Settings UI now exposes the backend export defacing confirmation default (risk vs always) and persists it through the settings API.
-- Export card preference snapshot now shows defacing confirmation mode and indicates whether it is inherited from global settings or explicitly saved in project export preferences.
-- Export UI now includes a one-click reset action that removes project defacing confirmation override and reverts behavior to inherited global default.
-- Export defacing action is now mode-aware and non-mutating: both modes deface an export target copy; DataLad-preserving mode prepares a DataLad clone copy and runs pydeface via DataLad there, while DataLad-free mode defaces a plain structural copy.
-- Export defacing now honors current export scope filters for subjects/sessions, so single-subject exports only run pydeface for that selected subset on the export copy.
-
-Next action:
-1. Add an integration test that validates full defacing policy lifecycle (global default -> project override -> reset to inherited) across settings and export preferences APIs.
+No active tactical work. See Deferred/Done below for what's tracked next.
 
 ## Deferred
 
