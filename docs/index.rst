@@ -177,6 +177,7 @@ Why researchers use PRISM Studio
    specs/biometrics
    specs/events
    specs/environment
+   specs/entities
 
 Indices and tables
 ==================
