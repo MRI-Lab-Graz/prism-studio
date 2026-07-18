@@ -1394,6 +1394,7 @@ def check_schema_sync(repo_path, fix=False):
         "recipe.survey",
         "tool-limesurvey",
         "entities",  # filename/entity rules file, not a per-modality content schema
+        "instrument-registry",  # generated data index, not a per-modality content schema
     }
     schema_modalities = set()
     for path in Path(schema_dir).glob("*.schema.json"):
