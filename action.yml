@@ -1,0 +1,77 @@
+name: 'PRISM Validator'
+description: 'Validate a PRISM/BIDS dataset with the ghcr.io/mri-lab-graz/prism-validator Docker image.'
+author: 'MRI-Lab-Graz'
+branding:
+  icon: 'check-circle'
+  color: 'blue'
+
+inputs:
+  dataset-path:
+    description: 'Path to the dataset to validate, relative to the repo root.'
+    required: false
+    default: '.'
+  format:
+    description: 'Output format: "" for human-readable, or json, junit, sarif, markdown, csv.'
+    required: false
+    default: ''
+  image-tag:
+    description: 'Tag of ghcr.io/mri-lab-graz/prism-validator to use (e.g. latest, main, a semver tag).'
+    required: false
+    default: 'latest'
+  fail-on-invalid:
+    description: 'Fail this step when the dataset is invalid (validator exit code 1).'
+    required: false
+    default: 'true'
+
+outputs:
+  report-path:
+    description: 'Path to the written report file when "format" is set; empty when using the default human-readable output.'
+    value: ${{ steps.validate.outputs.report-path }}
+  valid:
+    description: '"true" or "false", based on the validator exit code.'
+    value: ${{ steps.validate.outputs.valid }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run PRISM validator
+      id: validate
+      shell: bash
+      run: |
+        set -uo pipefail
+
+        image="ghcr.io/mri-lab-graz/prism-validator:${{ inputs.image-tag }}"
+        dataset_path="$(cd "${{ inputs.dataset-path }}" && pwd)"
+        format="${{ inputs.format }}"
+
+        args=("/data")
+        report_path=""
+        if [ -n "$format" ]; then
+          case "$format" in
+            junit) ext="xml" ;;
+            markdown) ext="md" ;;
+            *) ext="$format" ;;
+          esac
+          report_path="prism_validation_report.${ext}"
+          args+=("--format" "$format")
+        fi
+
+        echo "Running: docker run --rm -v \"$dataset_path\":/data:ro \"$image\" ${args[*]}"
+        if [ -n "$report_path" ]; then
+          docker run --rm -v "$dataset_path":/data:ro "$image" "${args[@]}" > "$report_path"
+        else
+          docker run --rm -v "$dataset_path":/data:ro "$image" "${args[@]}"
+        fi
+        exit_code=$?
+
+        echo "report-path=${report_path}" >> "$GITHUB_OUTPUT"
+        if [ "$exit_code" -eq 0 ]; then
+          echo "valid=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "valid=false" >> "$GITHUB_OUTPUT"
+        fi
+
+        if [ "$exit_code" -ne 0 ] && [ "${{ inputs.fail-on-invalid }}" = "true" ]; then
+          exit "$exit_code"
+        fi
+        exit 0

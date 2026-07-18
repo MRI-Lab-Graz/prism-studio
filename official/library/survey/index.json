@@ -1,0 +1,1585 @@
+{
+  "GeneratedOn": "2026-07-18T18:48:09+00:00",
+  "SourceLibrary": "official/library/survey",
+  "Instruments": {
+    "aai": {
+      "TaskName": "aai",
+      "SourceFile": "survey-aai.json",
+      "ShortName": "AAI",
+      "OriginalName": {
+        "en": "Appearance Anxiety Inventory (AAI)",
+        "de": "Inventar zur Angst vor dem Aussehen (AAI)"
+      },
+      "DOI": "",
+      "Citation": "Veale, D., Eshkevaria, E., Kanakama, N., Ellisona, N., Costa, A., and\nWerner, T. (2014). The Appearance Anxiety Inventory: Validation of a\nProcess Measure in the Treatment of Body Dysmorphic\nDisorder. Behavioural and Cognitive Psychotherapy, 42, 605-616. Link to publisher",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "agg-a": {
+      "TaskName": "agg-a",
+      "SourceFile": "survey-agg-a.json",
+      "ShortName": "AGG-A",
+      "OriginalName": {
+        "en": "Aggressive behavior scale (for adolescents)",
+        "de": "Skala für aggressives Verhalten (für Heranwachsende)"
+      },
+      "DOI": "",
+      "Citation": "Orpinas, P., and Frankowski, R. (2001). The Aggression Scale: A\nSelf-Report Measure of Aggressive Behavior for Young\nAdolescents. Journal of Early Adolescence, 21, 50-67.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "aiss": {
+      "TaskName": "aiss",
+      "SourceFile": "survey-aiss.json",
+      "ShortName": "AISS",
+      "OriginalName": {
+        "en": "Sensation seeking (AISS)",
+        "de": "Sensation seeking (AISS)"
+      },
+      "DOI": "",
+      "Citation": "Arnett, J. (1994). Sensation seeking: A new conceptualization and a new\nscale. Personality and Individual Differences, 16, 289-296.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "amas": {
+      "TaskName": "amas",
+      "SourceFile": "survey-amas.json",
+      "ShortName": "AMAS",
+      "OriginalName": {
+        "en": "Abbreviated Math Anxiety Scale (AMAS)",
+        "de": "Abgekürzte Skala für Mathematik-Angst (AMAS)"
+      },
+      "DOI": "",
+      "Citation": "D.R. Hopko, R. Mahadevan, R.L. Bare, & Melassa K. Hunt. (2003). The\nAbbreviated Math Anxiety Scale (AMAS): Construction, Validity, and\nReliability. Assessment, 10, 178-182.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "aq10": {
+      "TaskName": "aq10",
+      "SourceFile": "survey-aq10.json",
+      "ShortName": "AQ10",
+      "OriginalName": {
+        "en": "Short Autism Spectrum Quotient",
+        "de": "Kurzer Autismus-Spektrum-Quotient"
+      },
+      "DOI": "",
+      "Citation": "Allison, C., Auyeung, B., & Baron-Cohen, S. (2012). Toward Brief\n\"Red Flags\" for Autism Screening: The Short Autism Spectrum Quotient\nand the Short Quantitative Checklist in 1,000 Cases and 3,000 Controls.\nJournal of the American Acad of Child & Adolescent Psychiatry, 51(2), 202-212.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "ard": {
+      "TaskName": "ard",
+      "SourceFile": "survey-ard.json",
+      "ShortName": "ARD",
+      "OriginalName": {
+        "en": "Dominance Scale (for relationship research)",
+        "de": "Dominanzskala (für die Beziehungsforschung)"
+      },
+      "DOI": "",
+      "Citation": "Hamby, S. L., (1996). The dominance scale: Preliminary Psychometric Properties. Violence and Victims, 11, 199-212. Link to paper online.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "bes-alt": {
+      "TaskName": "bes-alt",
+      "SourceFile": "survey-bes-alt.json",
+      "ShortName": "BES-ALT",
+      "OriginalName": {
+        "en": "Belonging, engagement, and self-confidence in higher education (BES)",
+        "de": "Zugehörigkeit, Engagement und Selbstvertrauen in der Hochschulbildung (BES)"
+      },
+      "DOI": "",
+      "Citation": "Yorke, M. (2016). The development and initial use of a survey of student 'belongingness', engagement and self-confidence in UK higher education. Assessment & Evaluation in Higher Education, 41(1), 154-166, DOI: 10.1080/02602938.2014.990415. Open access link.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "bes": {
+      "TaskName": "bes",
+      "SourceFile": "survey-bes.json",
+      "ShortName": "BES",
+      "OriginalName": {
+        "en": "Body Esteem Scale (BES)",
+        "de": "Skala des Körperbewusstseins (BES)"
+      },
+      "DOI": "",
+      "Citation": "Franzoi, S.L. (1994). Further evidence of the reliability and validity of the body esteem scale.\nJournal of Clinical Psychology, 50, 237-239.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "bfas": {
+      "TaskName": "bfas",
+      "SourceFile": "survey-bfas.json",
+      "ShortName": "BFAS",
+      "OriginalName": {
+        "en": "Facebook Addition Scale (BFAS)",
+        "de": "Facebook-Additionsskala (BFAS)"
+      },
+      "DOI": "",
+      "Citation": "Andreassen, C.S., Torsheim, T., Brunborg, G.S., & Pallesen, S. (2010). Development of a Facebook addiction scale. Psychological Reports, 110, 2, 501-517.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "bfi-s": {
+      "TaskName": "bfi-s",
+      "SourceFile": "survey-bfi-s.json",
+      "ShortName": "BFI-S",
+      "OriginalName": {
+        "en": "Short 15-item Big Five Inventory (BFI-S)",
+        "de": "Kurzes 15-teiliges Big Five Inventar (BFI-S)"
+      },
+      "DOI": "",
+      "Citation": "Lang, F. R., John, D., Ludtke, O., Schupp, J., & Wagner, G. G. (2011). Short assessment of the Big Five: robust accros survey methods except telephone interviewing. Behavior Research Methods, 43, 548-567.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "bhps": {
+      "TaskName": "bhps",
+      "SourceFile": "survey-bhps.json",
+      "ShortName": "BHPS",
+      "OriginalName": {
+        "en": "Brief Histrionic Personality Scale (BHPS)"
+      },
+      "DOI": "",
+      "Citation": "Ferguson & Negy (2014). Development of a brief screening questionnaire for histrionic personality symptoms. Personality & Individual Differences, 66, 124-127.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "bis": {
+      "TaskName": "bis",
+      "SourceFile": "survey-bis.json",
+      "ShortName": "BIS",
+      "OriginalName": {
+        "en": "Barratt’s Impulsiveness scale (BIS)",
+        "de": "Barratts Skala der Impulsivität (BIS)"
+      },
+      "DOI": "",
+      "Citation": "E. S. Barratt (1965). Factor analysis of some psychometric measures\nof impulsiveness and anxiety. Psychological Reports, 16, 547-554.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "bite": {
+      "TaskName": "bite",
+      "SourceFile": "survey-bite.json",
+      "ShortName": "BITE",
+      "OriginalName": {
+        "en": "The Brief Irritability Test (BITe)",
+        "de": "Der Kurztest zur Erregbarkeit (BITe)"
+      },
+      "DOI": "",
+      "Citation": "Holtzman, S., O'Connor, B.P., Barata, P.C., and Stewart,\nD.E. (2015). The Brief Irritability Test (BITe): A Measure of\nIrritability for Use Among Men and Women. Assessment, 22, 101-115. Read it for free via the US National Library of Medicine.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "bpaq": {
+      "TaskName": "bpaq",
+      "SourceFile": "survey-bpaq.json",
+      "ShortName": "BPAQ",
+      "OriginalName": {
+        "en": "Buss-Perry Aggression Questionnaire (BPAQ)",
+        "de": "Buss-Perry-Fragebogen zur Aggression (BPAQ)"
+      },
+      "DOI": "",
+      "Citation": "Buss, A.H. and Perry, M.P. (1992). The Aggression\nQuestionnaire. Journal of Personality and Social Psychology, 63,\n452-459.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "brcs": {
+      "TaskName": "brcs",
+      "SourceFile": "survey-brcs.json",
+      "ShortName": "BRCS",
+      "OriginalName": {
+        "en": "Resilience (BRCS)",
+        "de": "Widerstandsfähigkeit (BRCS)"
+      },
+      "DOI": "",
+      "Citation": "Sinclair, V. G., & Wallston, K.A. (2004). The development and psychometric evaluation of the\nBrief Resilient Coping Scale. Assessment, 11 (1), 94-101.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "brs": {
+      "TaskName": "brs",
+      "SourceFile": "survey-brs.json",
+      "ShortName": "BRS",
+      "OriginalName": {
+        "en": "Resilience (BRS)",
+        "de": "Widerstandsfähigkeit (BRS)"
+      },
+      "DOI": "",
+      "Citation": "Smith, B.W., Dalen, J., Wiggins, K., Tooley, E., Christopher, P. and\nBernard, J. (2008). The Brief Resilience Scale: Assessing the\nAbility to Bounce Back. International Journal of Behavioral\nMedicine,15, 194-200.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "bsas": {
+      "TaskName": "bsas",
+      "SourceFile": "survey-bsas.json",
+      "ShortName": "BSAS",
+      "OriginalName": {
+        "en": "The brief sexual attitudes scale (BSAS)",
+        "de": "Die kurze Skala der sexuellen Einstellungen (BSAS)"
+      },
+      "DOI": "",
+      "Citation": "Hendrick, C., Hendrick, S. S., & Reich, D. A. (2006). The Journal of Sex Research, 43, 76-86.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "bsri": {
+      "TaskName": "bsri",
+      "SourceFile": "survey-bsri.json",
+      "ShortName": "BSRI",
+      "OriginalName": {
+        "en": "Bem sex role inventory (BSRI)",
+        "de": "Bem Geschlechtsrolleninventar (BSRI)"
+      },
+      "DOI": "",
+      "Citation": "Bem, S. L. (1974) The measurement of psychological\nandrogyny. Journal of Consulting and Clinical Psychology, 42,\n155-162.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "burnout": {
+      "TaskName": "burnout",
+      "SourceFile": "survey-burnout.json",
+      "ShortName": "BURNOUT",
+      "OriginalName": {
+        "en": "Teacher burnout",
+        "de": "Burnout bei Lehrern"
+      },
+      "DOI": "",
+      "Citation": "Campbell, L.P. (1983). Teacher burnout: Description and\nprescription. The Clearing House, 57, pp. 111-113",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "cabs": {
+      "TaskName": "cabs",
+      "SourceFile": "survey-cabs.json",
+      "ShortName": "CABS",
+      "OriginalName": {
+        "en": "Child Adolescent Bullying Scale (CABS)",
+        "de": "Skala für Mobbing unter Kindern und Jugendlichen (CABS)"
+      },
+      "DOI": "",
+      "Citation": "Strout, T.D., Vessey, J.A., Difazio, R.L., Ludlow, L.H. (2018). The\nChild Adolescent Bullying Scale (CABS): Psychometric evaluation of a\nnew measure. Research in Nursing and Health, 41, 1-13.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "ccms": {
+      "TaskName": "ccms",
+      "SourceFile": "survey-ccms.json",
+      "ShortName": "CCMS",
+      "OriginalName": {
+        "en": "Concise Conscientiousness Measure (CCM-S)",
+        "de": "Kurzes Maß der Gewissenhaftigkeit (CCM-S)"
+      },
+      "DOI": "",
+      "Citation": "Franzen, P., Arens, A. K., Greiff, S., van der Westhuizen, L., Fischbach, A., WollschlÃ¤ger, R., & Niepel, C. (2021). Developing and Validating a Short-Form Questionnaire for the Assessment of Seven Facets of Conscientiousness in Large-Scale Assessments. Journal of Personality Assessment, 1-15. Advance online publication. Link to journal",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "ccss": {
+      "TaskName": "ccss",
+      "SourceFile": "survey-ccss.json",
+      "ShortName": "CCSS",
+      "OriginalName": {
+        "en": "Cooperative/Competitive Strategy Scale (CCSS)",
+        "de": "Skala der kooperativen/kompetitiven Strategien (CCSS)"
+      },
+      "DOI": "",
+      "Citation": "Tang, S. (1999). Cooperation or competition: A comparison of U.S. and Chinese College students. The Journal of Psychology, 133, 413-423.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "cfs": {
+      "TaskName": "cfs",
+      "SourceFile": "survey-cfs.json",
+      "ShortName": "CFS",
+      "OriginalName": {
+        "en": "Cognitive Flexibility Scale (CFS)",
+        "de": "Skala der kognitiven Flexibilität (CFS)"
+      },
+      "DOI": "",
+      "Citation": "Martin, M. M. & Rubin, R.B. (1995). A new measure of cognitive flexibility. Psychological Reports, 76, 623-626. (Download here).",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "cia": {
+      "TaskName": "cia",
+      "SourceFile": "survey-cia.json",
+      "ShortName": "CIA",
+      "OriginalName": {
+        "en": "Clinical Impairment Assessment Questionnaire (CIA 3.0)",
+        "de": "Fragebogen zur Bewertung klinischer Beeinträchtigungen (CIA 3.0)"
+      },
+      "DOI": "",
+      "Citation": "Bohn, K., Doll, H. A., Cooper, Z., O’Connor, M., Palmer, R. L., & Fairburn, C. G. (2008). The measurement of impairment due to eating disorder psychopathology. Behaviour research and therapy, 46, 1105-1110. This is an open-access paper, click here to download.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "cirens": {
+      "TaskName": "cirens",
+      "SourceFile": "survey-cirens.json",
+      "ShortName": "CIRENS",
+      "OriginalName": {
+        "en": "Chronotype: Circadian Energy Scale (CIRENS)",
+        "de": "Chronotyp: Zirkadiane Energieskala (CIRENS)"
+      },
+      "DOI": "",
+      "Citation": "Reference to the original MEQ: Horne and Ostberg (1976). A\nself-assessment questionnaire to determine morningness-eveningness in\nhuman circadian rhythms.  International Journal of Chronobiology, 4,\n97-110.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "cns": {
+      "TaskName": "cns",
+      "SourceFile": "survey-cns.json",
+      "ShortName": "CNS",
+      "OriginalName": {
+        "en": "Connectedness to Nature Scale (CNS)",
+        "de": "Skala zur Naturverbundenheit (CNS)"
+      },
+      "DOI": "",
+      "Citation": "Mayer, F.S. & McPherson Frantz, C. (2004). The connectedness to nature scale: A measure of individuals' feeling in community with nature. Journal of Environmental Psychology, 24, 503-515.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "csjas": {
+      "TaskName": "csjas",
+      "SourceFile": "survey-csjas.json",
+      "ShortName": "CSJAS",
+      "OriginalName": {
+        "en": "Critical Social Justice Scale (CSJAS)",
+        "de": "Skala für kritische soziale Gerechtigkeit (CSJAS)"
+      },
+      "DOI": "https://doi.org/10.1111/sjop.13018.",
+      "Citation": "Lahtinen, O. (2024). Construction and validation of a scale for assessing critical social justice\nattitudes. Scandinavian Journal of Psychology, 2024, 65, 693-705. https://doi.org/10.1111/sjop.13018. Link to study",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "cudos": {
+      "TaskName": "cudos",
+      "SourceFile": "survey-cudos.json",
+      "ShortName": "CUDOS",
+      "OriginalName": {
+        "en": "A clinically useful depression outcome scale (CUDOS)",
+        "de": "Eine klinisch nützliche Depressionsergebnis-Skala (CUDOS)"
+      },
+      "DOI": "",
+      "Citation": "Zimmerman, M., Chelminski, I, McGlinchey, J. B. and Posternak, M. A.\n(2008). A clinically useful depression outcome scale. Comprehensive\nPsychiatry, 49, 131-140.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "cudq": {
+      "TaskName": "cudq",
+      "SourceFile": "survey-cudq.json",
+      "ShortName": "CUDQ",
+      "OriginalName": {
+        "en": "Caffeine Use Disorder Questionnaire (CUDQ)",
+        "de": "Fragebogen zur Störung des Koffeinkonsums (CUDQ)"
+      },
+      "DOI": "https://doi.org/10.1007/s40429-014-0024-9",
+      "Citation": "Addicott M. A. (2014). Caffeine Use Disorder: A Review of the\nEvidence and Future Implications. Current addiction reports, 1(3),\n186-192. https://doi.org/10.1007/s40429-014-0024-9",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "dass": {
+      "TaskName": "dass",
+      "SourceFile": "survey-dass.json",
+      "ShortName": "DASS",
+      "OriginalName": {
+        "en": "Depression Anxiety Stress Scales (DASS)",
+        "de": "Depressions-Angst-Stress-Skalen (DASS)"
+      },
+      "DOI": "",
+      "Citation": "Official webpage",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "dass21": {
+      "TaskName": "dass21",
+      "SourceFile": "survey-dass21.json",
+      "ShortName": "DASS21",
+      "OriginalName": {
+        "en": "The Depression, Anxiety, and Stress Scales with 21 items (DASS-21)",
+        "de": "Die Depressions-, Angst- und Stress-Skala mit 21 Items (DASS-21)"
+      },
+      "DOI": "",
+      "Citation": "Official webpage",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "dmq-r": {
+      "TaskName": "dmq-r",
+      "SourceFile": "survey-dmq-r.json",
+      "ShortName": "DMQ-R",
+      "OriginalName": {
+        "en": "Drinking Motives Questionnaire, Revised (DMQ-R)",
+        "de": "Fragebogen zu den Trinkmotiven, revidiert (DMQ-R)"
+      },
+      "DOI": "",
+      "Citation": "Cooper, M. L. (1994). Motivations for Alcohol Use Among Adolescents: Development and Validation of a Four-Factor Model. Psychological Assessment, 6(2), 117-128.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "ehi": {
+      "TaskName": "ehi",
+      "SourceFile": "survey-ehi.json",
+      "ShortName": "EHI",
+      "OriginalName": {
+        "en": "The Edinburgh Handedness Inventory (short form)",
+        "de": "Das Edinburgh Handedness Inventory (Kurzform)"
+      },
+      "DOI": "",
+      "Citation": "Oldfield, R.C. (1971). The assessment and analysis of handedness: The Edinburgh inventory. Neuropsychologia, 9, 97-113.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "ei": {
+      "TaskName": "ei",
+      "SourceFile": "survey-ei.json",
+      "ShortName": "EI",
+      "OriginalName": {
+        "en": "Emotional Intelligence",
+        "de": "Emotionale Intelligenz"
+      },
+      "DOI": "",
+      "Citation": "Schutte, N. S., Malouff, J. M., Hall, L. E., Haggerty, D. J.,\nCooper, J. T., Golden, C. J., & Dornheim, L. (1998). Development and\nvalidation of a measure of emotional intelligence. Personality and\nIndividual Differences, 25, 167-177.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "erq": {
+      "TaskName": "erq",
+      "SourceFile": "survey-erq.json",
+      "ShortName": "ERQ",
+      "OriginalName": {
+        "en": "Emotional regulation questionnaire (ERQ)",
+        "de": "Fragebogen zur Emotionsregulierung (ERQ)"
+      },
+      "DOI": "",
+      "Citation": "Gross, J.J., & John, O.P. (2003). Individual differences in two\nemotion regulation processes: Implications for affect, relationships,\nand well-being. Journal of Personality and Social Psychology, 85,\n348-362.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "fs": {
+      "TaskName": "fs",
+      "SourceFile": "survey-fs.json",
+      "ShortName": "FS",
+      "OriginalName": {
+        "en": "Flourishing Scale (FS)",
+        "de": "Blühende Skala (FS)"
+      },
+      "DOI": "",
+      "Citation": "Diener, E., Wirtz, D., Tov, W., Kim-Prieto, C., Choi. D., Oishi, S.,\n& Biswas-Diener, R. (2009). New measures of well-being: Flourishing\nand positive and negative feelings. Social Indicators Research,\n39,\n247-266. Online\navailable here.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "gad7": {
+      "TaskName": "gad7",
+      "SourceFile": "survey-gad7.json",
+      "ShortName": "GAD7",
+      "OriginalName": {
+        "en": "Generalized Anxiety Disorder (GAD-7)",
+        "de": "Generalisierte Angststörung (GAD-7)"
+      },
+      "DOI": "",
+      "Citation": "Spitzer, R. L., Kroenke, K., Williams, J. B. W., & Lowe, B. (2006). A brief measure for assessing generalized anxiety disorder - The GAD-7. Archives of Internal Medicine, 166, 1092-1097.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "gaene": {
+      "TaskName": "gaene",
+      "SourceFile": "survey-gaene.json",
+      "ShortName": "GAENE",
+      "OriginalName": {
+        "en": "Generalized Acceptance of EvolutioN Evaluation (GAENE)",
+        "de": "Generalisierte Akzeptanz der EvolutioNsbewertung (GAENE)"
+      },
+      "DOI": "",
+      "Citation": "Smith, M.U., Snyder, S.W., and Devereaux, R.S. (2016). The\nGAENE-Generalized Acceptance of EvolutioN Evaluation: Development of a\nNew Measure of Evolution Acceptance. Journal of Research in Science\nTeaching, 53(9), 1289-1315.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "gas": {
+      "TaskName": "gas",
+      "SourceFile": "survey-gas.json",
+      "ShortName": "GAS",
+      "OriginalName": {
+        "en": "Gaming Addiction Scale",
+        "de": "Spielsucht-Skala"
+      },
+      "DOI": "",
+      "Citation": "Lemmens, J.S., Valkenburg, P.M. & Peter, J. (2009). Development and validation of a game addiction scale for adolescents. Media Psychology, 12(1), 77-95.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "gp": {
+      "TaskName": "gp",
+      "SourceFile": "survey-gp.json",
+      "ShortName": "GP",
+      "OriginalName": {
+        "en": "General Procrastination Scale",
+        "de": "Allgemeine Prokrastinationsskala"
+      },
+      "DOI": "",
+      "Citation": "Lay, C.H. (1986). At Last, My Research Article on\nProcrastination. Journal of Research in Personality, 20, 474-495.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "gq6": {
+      "TaskName": "gq6",
+      "SourceFile": "survey-gq6.json",
+      "ShortName": "GQ6",
+      "OriginalName": {
+        "en": "Gratitude (GQ-6)",
+        "de": "Dankbarkeit (GQ-6)"
+      },
+      "DOI": "",
+      "Citation": "McCullough, M. E., Emmons, R. A., & Tsang, J. (2002). The grateful\ndisposition: A conceptual and empirical topography. Journal of\nPersonality and Social Psychology, 82, 112- 127.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "grit-s": {
+      "TaskName": "grit-s",
+      "SourceFile": "survey-grit-s.json",
+      "ShortName": "GRIT-S",
+      "OriginalName": {
+        "en": "Short Grit Scale (Grit-S)",
+        "de": "Kurze Körnungsskala (Grit-S)"
+      },
+      "DOI": "",
+      "Citation": "Duckworth, A.L., Peterson, C., Matthews, M.D., & Kelly, D.R. (2007). Grit: Perseverance and\npassion for long-term goals. Journal of Personality and Social Psychology, 9, 1087-1101.\nFree download via Research Gate",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "gse": {
+      "TaskName": "gse",
+      "SourceFile": "survey-gse.json",
+      "ShortName": "GSE",
+      "OriginalName": {
+        "en": "Generalized Self Efficacy scale (GSE)",
+        "de": "Generalisierte Selbstwirksamkeitsskala (GSE)"
+      },
+      "DOI": "",
+      "Citation": "Bandura, A. (1986). Social foundations of thought and action: A social cognitive theory.\nEnglewood Cliffs, NJ: Prentice Hall.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "gsqs": {
+      "TaskName": "gsqs",
+      "SourceFile": "survey-gsqs.json",
+      "ShortName": "GSQS",
+      "OriginalName": {
+        "en": "Groningen Sleep Quality Questionnaire",
+        "de": "Groninger Fragebogen zur Schlafqualität"
+      },
+      "DOI": "",
+      "Citation": "Meijman, T. F., de Vries-Griever, A. H., de Vries, G. (1988): The\nevaluation of the Groningen Sleep Quality Scale. Groningen: Heymans\nBulletin (HB 88-13-EX).",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "gtps": {
+      "TaskName": "gtps",
+      "SourceFile": "survey-gtps.json",
+      "ShortName": "GTPS",
+      "OriginalName": {
+        "en": "Green et al. Paranoid Thought Scales (GPTS)",
+        "de": "Green et al. Paranoid Thought Scales (GPTS)"
+      },
+      "DOI": "",
+      "Citation": "Green, C. E. L., Freeman, D., Kuipers, E., Bebbington, P., Fowler, D., Dunn, G., & Garety, P. A. (2008). Measuring ideas of persecution and social reference: the Green et al. Paranoid Thought Scales (GPTS). Psychological medicine, 38, 101-111.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "hs": {
+      "TaskName": "hs",
+      "SourceFile": "survey-hs.json",
+      "ShortName": "HS",
+      "OriginalName": {
+        "en": "Healthy Selfishness (HS)",
+        "de": "Gesunder Egoismus (HS)"
+      },
+      "DOI": "",
+      "Citation": "Kaufman, S.B. & Jauk, E. (2020). Healthy Selfishness and Pathological Altruism: Measuring Two Paradoxical Forms of Selfishness. Frontiers in Psychology, 11. Open Access",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "hsc7": {
+      "TaskName": "hsc7",
+      "SourceFile": "survey-hsc7.json",
+      "ShortName": "HSC7",
+      "OriginalName": {
+        "en": "Hypoglycemia Symptoms Checklist (HSC-7)",
+        "de": "Checkliste für Hypoglykämie-Symptome (HSC-7)"
+      },
+      "DOI": "",
+      "Citation": "Barry, J.A., Bouloux, P. & Hardiman, P.J. (2011). The impact of\neating behavior on psychological symptoms typical of reactive\nhypoglycemia. A pilot study comparing women with polycystic ovary\nsyndrome to controls. Appetite, 57, 73-76.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "hsns": {
+      "TaskName": "hsns",
+      "SourceFile": "survey-hsns.json",
+      "ShortName": "HSNS",
+      "OriginalName": {
+        "en": "Hypersensitive Narcissism Scale (HSNS)",
+        "de": "Skala für hypersensiblen Narzissmus (HSNS)"
+      },
+      "DOI": "",
+      "Citation": "Hendin, H.M., & Cheek, J.M. (1997). Assessing Hypersensitive Narcissism: A Re-examination of Murray’s Narcissism Scale. Journal of Research in Personality, 31, 588-599.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "hsq": {
+      "TaskName": "hsq",
+      "SourceFile": "survey-hsq.json",
+      "ShortName": "HSQ",
+      "OriginalName": {
+        "en": "Humor Styles Questionnaire (HSQ)",
+        "de": "Fragebogen zu Humorstilen (HSQ)"
+      },
+      "DOI": "",
+      "Citation": "Martin, R.A., Puhlik-Doris, P., Larsen, G., Gray, J., and Weir, K. (2003). Individual differences in uses of humor and their relation to psychological well-being: Development of the Humor Styles Questionnaire. Journal of Research in Personality, 37, 48-75.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "isc": {
+      "TaskName": "isc",
+      "SourceFile": "survey-isc.json",
+      "ShortName": "ISC",
+      "OriginalName": {
+        "en": "Impulsivity Scale for Children (ISC)",
+        "de": "Impulsivitätsskala für Kinder (ISC)"
+      },
+      "DOI": "",
+      "Citation": "Tsukayama, E., Duckworth, A.L. & Kim, B. (2013). Domain-specific impulsivity in school-age children. Developmental Science, 16, 879-893.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "las": {
+      "TaskName": "las",
+      "SourceFile": "survey-las.json",
+      "ShortName": "LAS",
+      "OriginalName": {
+        "en": "Love Attitudes Scale (Short Form)",
+        "de": "Skala der Liebeseinstellungen (Kurzform)"
+      },
+      "DOI": "",
+      "Citation": "Hendrick, C. & Hendrick, S. (1986). A theory and method of\nlove. Journal of Personality and Social Psychology, 50, 392-402.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "lies": {
+      "TaskName": "lies",
+      "SourceFile": "survey-lies.json",
+      "ShortName": "LIES",
+      "OriginalName": {
+        "en": "Lying in Everyday Situations Scale (LiES)",
+        "de": "Skala zum Lügen in Alltagssituationen (LiES)"
+      },
+      "DOI": "https://doi.org/10.5406/amerjpsyc.132.3.0343.",
+      "Citation": "Christian L. Hart, Jelisa M. Jones, John A. Terrizzi, Drew A. Curtis. (2019). Development of the Lying in Everyday Situations Scale. The American Journal of Psychology, 132 (3), 343-352. doi: https://doi.org/10.5406/amerjpsyc.132.3.0343. Download for free",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "loneliness-3": {
+      "TaskName": "loneliness-3",
+      "SourceFile": "survey-loneliness-3.json",
+      "ShortName": "LONELINESS-3",
+      "OriginalName": {
+        "en": "Loneliness (TILS)",
+        "de": "Einsamkeit (TILS)"
+      },
+      "DOI": "",
+      "Citation": "Ernst, J.M. & Cacioppo, J.T. (1999). Lonely hearts: Psychological perspectives on loneliness. Applied & Preventative Psychology, 8 (1), 1-22.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "lot-r": {
+      "TaskName": "lot-r",
+      "SourceFile": "survey-lot-r.json",
+      "ShortName": "LOT-R",
+      "OriginalName": {
+        "en": "Optimism (LOT-R)",
+        "de": "Optimismus (LOT-R)"
+      },
+      "DOI": "",
+      "Citation": "Scheier, M. F., & Carver, C. S. (1992). Effects of optimism on psychological and physical well-being:\nTheoretical overview and empirical update. Cognitive Therapy and Research, 16, 201-228.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "lsrp": {
+      "TaskName": "lsrp",
+      "SourceFile": "survey-lsrp.json",
+      "ShortName": "LSRP",
+      "OriginalName": {
+        "en": "Psychopathy (LSRP)",
+        "de": "Psychopathie (LSRP)"
+      },
+      "DOI": "",
+      "Citation": "Levenson, M.R., Kiehl, K.A, Fitzpatrick, C.M. (1995). Assessing\npsychopathic attributes in a noninstitutionalized population. Journal\nof Personality and Social Psychology, 68, 151-158.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "masi": {
+      "TaskName": "masi",
+      "SourceFile": "survey-masi.json",
+      "ShortName": "MASI",
+      "OriginalName": {
+        "en": "Measure of Anxiety in Selection Interviews (MASI)",
+        "de": "Messung der Ängstlichkeit bei Auswahlgesprächen (MASI)"
+      },
+      "DOI": "",
+      "Citation": "McCarthy, J. and Goffin, R. (2004), Measuring Job Interview Anxiety: Beyond Weak Knees and Sweaty Palms. Personnel Psychology, 57, 607-637. LINK",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "maslow": {
+      "TaskName": "maslow",
+      "SourceFile": "survey-maslow.json",
+      "ShortName": "MASLOW",
+      "OriginalName": {
+        "en": "Maslow’s Hierarchy of Needs",
+        "de": "Maslowsche Bedürfnishierarchie"
+      },
+      "DOI": "",
+      "Citation": "Maslow, A. H. (1943). A theory of human motivation. Psychological Review, 50, 370-396.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "mate": {
+      "TaskName": "mate",
+      "SourceFile": "survey-mate.json",
+      "ShortName": "MATE",
+      "OriginalName": {
+        "en": "Measure of Acceptance of the Theory of Evolution (MATE)",
+        "de": "Maß für die Akzeptanz der Evolutionstheorie (MATE - Measure of Acceptance of the Theory of Evolution)"
+      },
+      "DOI": "",
+      "Citation": "Rutledge, M .L . & Warden, M .A . (1999). The development and validation of the Measure of Acceptance of the Theory of Evolution Instrument. School Science and Mathematics, 99(1), 13-18.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "mhc-sf": {
+      "TaskName": "mhc-sf",
+      "SourceFile": "survey-mhc-sf.json",
+      "ShortName": "MHC-SF",
+      "OriginalName": {
+        "en": "Mental Health Continuum Short Form (MHC-SF)",
+        "de": "Mental Health Continuum Short Form (MHC-SF)"
+      },
+      "DOI": "",
+      "Citation": "Keyes, C.L.M. (2006). Mental health in adolescence: Is America's youth flourishing? American Journal of Orthopsychiatry, 76, 395-402.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "ncs-6": {
+      "TaskName": "ncs-6",
+      "SourceFile": "survey-ncs-6.json",
+      "ShortName": "NCS-6",
+      "OriginalName": {
+        "en": "Need for Cognition (NCS-6)",
+        "de": "Bedürfnis nach Kognition (NCS-6)"
+      },
+      "DOI": "",
+      "Citation": "Coelho, G.L.D.H., Hanel, P.H.P, & Wolf, L.J. (2018). The\nVery Efficient Assessment of Need for Cognition: Developing a Six-Item\nVersion. Assessment, online first, 1-16. Download here.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "nmp-q": {
+      "TaskName": "nmp-q",
+      "SourceFile": "survey-nmp-q.json",
+      "ShortName": "NMP-Q",
+      "OriginalName": {
+        "en": "Nomophobia Questionnaire (NMP-Q)",
+        "de": "Fragebogen zur Nomophobie (NMP-Q)"
+      },
+      "DOI": "",
+      "Citation": "Yildirim, C. & Correia, A. (2015). Exploring the dimensions of nomophobia: Development and validation\nof a self-reported questionnaire. Computers in Human Behavior, 49, 130-137.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "o-life": {
+      "TaskName": "o-life",
+      "SourceFile": "survey-o-life.json",
+      "ShortName": "O-LIFE",
+      "OriginalName": {
+        "en": "Short Oxford-Liverpool Inventory of Feelings and Experiences (O-LIFE).",
+        "de": "Kurzes Oxford-Liverpool Inventory of Feelings and Experiences (O-LIFE)."
+      },
+      "DOI": "",
+      "Citation": "Mason, O., Linney, Y., & Claridge, G. (2005). Short scales for\nmeasuring schizotypy. Schizophrenia Research, 78, 293-296.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "oci-r": {
+      "TaskName": "oci-r",
+      "SourceFile": "survey-oci-r.json",
+      "ShortName": "OCI-R",
+      "OriginalName": {
+        "en": "The Obsessive-Compulsive Inventory (short version, OCI-R)",
+        "de": "Das ObsessiveâCompulsive Inventory (Kurzversion, OCI-R)"
+      },
+      "DOI": "",
+      "Citation": "Foa, E.B., Huppert, J.D., Leiberg, S. Langner, R., Kichic, R., Hajcak,\nG., and Salkovskis, P.M. (2002). The obsessive-compulsive inventory:\nDevelopment and validation of a short version. Psychological\nAssessment, 14, 485-496.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "ohq": {
+      "TaskName": "ohq",
+      "SourceFile": "survey-ohq.json",
+      "ShortName": "OHQ",
+      "OriginalName": {
+        "en": "Oxford Happiness Scale",
+        "de": "Oxford-Glücksskala"
+      },
+      "DOI": "",
+      "Citation": "Hills, P. & Argyle, M. (2002). The Oxford Happiness Questionnaire: a compact scale for the measurement of psychological well-being. Personality and Individual Differences, 33, 1073-1082.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "pci": {
+      "TaskName": "pci",
+      "SourceFile": "survey-pci.json",
+      "ShortName": "PCI",
+      "OriginalName": {
+        "en": "Procrastinatory Cognitions Inventory (PCI)",
+        "de": "Inventar der prokrastinierenden Kognitionen (PCI)"
+      },
+      "DOI": "",
+      "Citation": "Stainton, M., Lay, C. H., & Flett, G. L. (2000). Trait procrastinators and behavior/trait-specific cognitions. Journal of social behavior and personality, 15, 297-312.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "phq9": {
+      "TaskName": "phq9",
+      "SourceFile": "survey-phq9.json",
+      "ShortName": "PHQ9",
+      "OriginalName": {
+        "en": "Patient Health Questionnaire (PHQ-9)",
+        "de": "Fragebogen zur Patientengesundheit (PHQ-9)"
+      },
+      "DOI": "",
+      "Citation": "Kroenke, K., Spitzer, R. L., & Williams, J. B. W. (2001). The PHQ-9 - Validity of a brief depression severity measure. Journal of General Internal Medicine, 16, 606-613.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "pios": {
+      "TaskName": "pios",
+      "SourceFile": "survey-pios.json",
+      "ShortName": "PIOS",
+      "OriginalName": {
+        "en": "The Penn Inventory of Scrupulosity (PIOS)",
+        "de": "Das Penn-Inventar der Skrupellosigkeit (PIOS)"
+      },
+      "DOI": "",
+      "Citation": "Abramowitz, J.S., Hupper, J.D., Cohen, A.B., Tolin, D.F. & Cahill,\nS.P. (2002). Religious obsessions and compulsions in a non-clinical\nsample: the Penn Inventory of Scrupulosity (PIOS). Behaviour Research\nand Therapy, 40, 825-838.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "piu": {
+      "TaskName": "piu",
+      "SourceFile": "survey-piu.json",
+      "ShortName": "PIU",
+      "OriginalName": {
+        "en": "Pathological Internet Use (PIU)",
+        "de": "Pathologischer Internetgebrauch (PIU)"
+      },
+      "DOI": "",
+      "Citation": "Morahan-Martin, J. and Schumacher, P. (2000). Incidence and\ncorrelates of pathological Internet use among college\nstudents. Computers in Human Behavior, 16, 13-29.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "piuq": {
+      "TaskName": "piuq",
+      "SourceFile": "survey-piuq.json",
+      "ShortName": "PIUQ",
+      "OriginalName": {
+        "en": "Problematic Internet Use Questionnaire (PIUQ)",
+        "de": "Fragebogen zur problematischen Internetnutzung (PIUQ)"
+      },
+      "DOI": "",
+      "Citation": "Demetrovics, Z., Szeredi, B., & RÃ³zsa, S. (2008). The three-factor model of Internet addiction: The development of the Problematic Internet Use Questionnaire. Behavior Research Methods, 40, 563-574.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "pnsmd": {
+      "TaskName": "pnsmd",
+      "SourceFile": "survey-pnsmd.json",
+      "ShortName": "PNSMD",
+      "OriginalName": {
+        "en": "Relationship satisfaction (PN-SMD)",
+        "de": "Beziehungszufriedenheit (PN-SMD)"
+      },
+      "DOI": "",
+      "Citation": "Mattson, R. E., Rogge, R. D., Johnson, M. D., Davidson, E. K. B., & Fincham, F. D. (2013). The positive and negative semantic dimensions of relationship satisfaction. Personal Relationships, 20, 328-355.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "pss": {
+      "TaskName": "pss",
+      "SourceFile": "survey-pss.json",
+      "ShortName": "PSS",
+      "OriginalName": {
+        "en": "Perceived Stress Scale (PSS)",
+        "de": "Skala der wahrgenommenen Belastung (PSS)"
+      },
+      "DOI": "",
+      "Citation": "Cohen, S., Kamarck, T., Mermelstein, R. (1983). A global measure of perceived stress. Journal of Health and Social Behavior, 24, 385-396.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "pts": {
+      "TaskName": "pts",
+      "SourceFile": "survey-pts.json",
+      "ShortName": "PTS",
+      "OriginalName": {
+        "en": "Positive Thinking Scale",
+        "de": "Skala des positiven Denkens"
+      },
+      "DOI": "",
+      "Citation": "Diener, E., Wirtz, D., Tov, W., Kim-Prieto, C., Choi. D., Oishi, S.,\n& Biswas-Diener, R. (2009). New measures of well-being: Flourishing\nand positive and negative feelings. Social Indicators Research,\n39,\n247-266. Online\navailable here.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "rei": {
+      "TaskName": "rei",
+      "SourceFile": "survey-rei.json",
+      "ShortName": "REI",
+      "OriginalName": {
+        "en": "Rational Experiental Inventory (REI)",
+        "de": "Rationales Erlebensinventar (REI)"
+      },
+      "DOI": "",
+      "Citation": "Pacini, R. and Epstein, S. (1999). The Relation of Rational and\nExperiential Information Processing Styles to Personality, Basic\nBeliefs, and the Ratio-Bias Phenomenon. Personality and Individual\nDifferences, 76, 972-987.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "rosenberg": {
+      "TaskName": "rosenberg",
+      "SourceFile": "survey-rosenberg.json",
+      "ShortName": "ROSENBERG",
+      "OriginalName": {
+        "en": "Rosenberg Self-Esteem Scale (RSES)",
+        "de": "Rosenberg-Selbstwertgefühl-Skala (RSES)"
+      },
+      "DOI": "",
+      "Citation": "http://www.socy.umd.edu/quick-links/rosenberg-self-esteem-scale[Detailed\ndescription of scale at the University of Maryland, where Professor\nRosenberg worked.[",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "rrs": {
+      "TaskName": "rrs",
+      "SourceFile": "survey-rrs.json",
+      "ShortName": "RRS",
+      "OriginalName": {
+        "en": "Rumination Response Scale (RRS)",
+        "de": "Rumination Response Scale (RRS)"
+      },
+      "DOI": "",
+      "Citation": "Nolen-Hoeksema, S. (2000). The role of rumination in depressive\ndisorders and mixed anxiety/depressive Symptoms. Journal of Abnormal\nPsychology, 109, 504-511.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "saam": {
+      "TaskName": "saam",
+      "SourceFile": "survey-saam.json",
+      "ShortName": "SAAM",
+      "OriginalName": {
+        "en": "State Adult Attachment Measure (SAAM)",
+        "de": "State Adult Attachment Measure (SAAM)"
+      },
+      "DOI": "",
+      "Citation": "Gillath, O., Hart, J., Noftle, E. E., & Stockdale, G. D. (2009). Development and validation of a state adult attachment measure (SAAM). Journal of Research in Personality, 43, 362-373. See also this link to Gillath’s web page.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "saps": {
+      "TaskName": "saps",
+      "SourceFile": "survey-saps.json",
+      "ShortName": "SAPS",
+      "OriginalName": {
+        "en": "Short revised almost perfect scale (SAPS)",
+        "de": "Kurze überarbeitete nahezu perfekte Skala (SAPS)"
+      },
+      "DOI": "",
+      "Citation": "K. G. Rice, C. M. E. Richardson, & S. Tueller. (2014). The Short Form of the Revised\nAlmost Perfect Scale. Journal of Personality Assessment, 96(3), 368-379.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "sbs-10": {
+      "TaskName": "sbs-10",
+      "SourceFile": "survey-sbs-10.json",
+      "ShortName": "SBS-10",
+      "OriginalName": {
+        "en": "Supernatural Belief Scale",
+        "de": "Skala \"Übernatürlicher Glaube"
+      },
+      "DOI": "",
+      "Citation": "Jong, J., Bluemke, M., & Halberstadt, J. (2013). Fear of death and supernatural beliefs: Developing a new supernatural belief scale to test the relationship. European Journal of Personality, 27, 495-506.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "scsr": {
+      "TaskName": "scsr",
+      "SourceFile": "survey-scsr.json",
+      "ShortName": "SCSR",
+      "OriginalName": {
+        "en": "Self-consciousness scale (revised version)",
+        "de": "Skala des Selbstbewusstseins (überarbeitete Version)"
+      },
+      "DOI": "",
+      "Citation": "Scheier, M. F. & Carver, C. S. (1985). The self-consciousnes scale -\na revised version for use with general populations. Journal of\nApplied Social Psychology, 15, 687-699.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "sd3": {
+      "TaskName": "sd3",
+      "SourceFile": "survey-sd3.json",
+      "ShortName": "SD3",
+      "OriginalName": {
+        "en": "A brief measure of dark personality traits (SD3)",
+        "de": "Eine kurze Messung der dunklen Persönlichkeitsmerkmale (SD3)"
+      },
+      "DOI": "",
+      "Citation": "Jones, D. N., & Paulhus, D. L. (2014).  Introducing the Short Dark Triad (SD3): A brief measure of dark personality traits.  Assessment, 21,  28-41.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "sf-mjs": {
+      "TaskName": "sf-mjs",
+      "SourceFile": "survey-sf-mjs.json",
+      "ShortName": "SF-MJS",
+      "OriginalName": {
+        "en": "Multi-dimensional (romantic) jealousy scale",
+        "de": "Mehrdimensionale (romantische) Eifersuchtsskala"
+      },
+      "DOI": "",
+      "Citation": "Elphinston, R.A., Feeney, J.A., and Noller, P. (2011). Measuring\nromantic jealousy: Validation of the multidimensional jealousy scale\nin Australian samples. Australian Journal of Psychology, 63, 243-251. Open access link",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "shyness": {
+      "TaskName": "shyness",
+      "SourceFile": "survey-shyness.json",
+      "ShortName": "SHYNESS",
+      "OriginalName": {
+        "en": "Shyness Scale (McCroskey)",
+        "de": "Schüchternheitsskala (McCroskey)"
+      },
+      "DOI": "",
+      "Citation": "McCroskey, J. C., & Richmond, V. P. (1982). Communication apprehension\nand shyness: Conceptual and operational distinctions. Central States\nSpeech Journal, 33, 458-468.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "skep": {
+      "TaskName": "skep",
+      "SourceFile": "survey-skep.json",
+      "ShortName": "SKEP",
+      "OriginalName": {
+        "en": "Skepticism towards advertisements (SKEP)",
+        "de": "Skepsis gegenüber Werbung (SKEP)"
+      },
+      "DOI": "",
+      "Citation": "Obermiller, C. & Spangenberg, E.R. (1998). Development of a scale to\nmeasure consumer skepticism toward advertising. Journal of Consumer\nPsychology, 7, 159-186.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "smd": {
+      "TaskName": "smd",
+      "SourceFile": "survey-smd.json",
+      "ShortName": "SMD",
+      "OriginalName": {
+        "en": "Social Media Disorder Scale (SMD)",
+        "de": "Skala zur Störung durch soziale Medien (SMD)"
+      },
+      "DOI": "",
+      "Citation": "van der Eijnden, R.J.J.M, Lemmens, J.S., & Valkenburg, P.M. (2016). The Social Media Disorder Scale. Computers in Human Behavior, 61, 478-487.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "soc-3": {
+      "TaskName": "soc-3",
+      "SourceFile": "survey-soc-3.json",
+      "ShortName": "SOC-3",
+      "OriginalName": {
+        "en": "Spheres of Control Scale (SOC-3)",
+        "de": "Skala der Kontrollbereiche (SOC-3)"
+      },
+      "DOI": "",
+      "Citation": "Paulhus, D.L., & Van Selst, M. (1990). The Spheres of Control scale: Ten years of research. Personality and Individual Differences, 11, 1029-1036.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "sos": {
+      "TaskName": "sos",
+      "SourceFile": "survey-sos.json",
+      "ShortName": "SOS",
+      "OriginalName": {
+        "en": "Service to Others in Sobriety (SOS) questionnaire",
+        "de": "Fragebogen zum Dienst an anderen in Nüchternheit (SOS)"
+      },
+      "DOI": "",
+      "Citation": "Pagano, M.E., Krentzman, A.R., Onder, C.C., Baryak, J.L., Murphy, J.L., Zywiak, W.H.,  & Stout, R. L. (2010). Service to Others in Sobriety (SOS). Alcohol Treatment Quarterly, 28, 111-127.  Read this paper online for free.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "spane": {
+      "TaskName": "spane",
+      "SourceFile": "survey-spane.json",
+      "ShortName": "SPANE",
+      "OriginalName": {
+        "en": "Scale of Positive and Negative Experience (SPANE)",
+        "de": "Skala der positiven und negativen Erfahrungen (SPANE)"
+      },
+      "DOI": "",
+      "Citation": "Diener, E., Wirtz, D., Tov, W., Kim-Prieto, C., Choi. D., Oishi, S.,\n& Biswas-Diener, R. (2009). New measures of well-being: Flourishing\nand positive and negative feelings. Social Indicators Research,\n39,\n247-266. Online\navailable here.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "spq": {
+      "TaskName": "spq",
+      "SourceFile": "survey-spq.json",
+      "ShortName": "SPQ",
+      "OriginalName": {
+        "en": "Spider Fear Questionnaire (SPQ)",
+        "de": "Fragebogen zur Spinnenangst (SPQ)"
+      },
+      "DOI": "",
+      "Citation": "Klorman, R., Weerts, T. C., Hastings, J. E., Melamed, B. G., Lang, P. J. (1974). Psychometric descriptions of some specific fear questionnaires. Behavior Therapy, 5, 401-409.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "sqs": {
+      "TaskName": "sqs",
+      "SourceFile": "survey-sqs.json",
+      "ShortName": "SQS",
+      "OriginalName": {
+        "en": "Single-Item Sleep Quality Scale (SQS)",
+        "de": "Single-Item-Skala zur Schlafqualität (SQS)"
+      },
+      "DOI": "",
+      "Citation": "Snyder, E., Cai, B., DeMuro, C., Morrison, M. F., & Ball, W. (2018). A new single-item sleep quality scale: results of psychometric evaluation in patients with chronic primary insomnia and depression. Journal of Clinical Sleep Medicine, 14(11), 1849-1857. Read full article for free here",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "sses": {
+      "TaskName": "sses",
+      "SourceFile": "survey-sses.json",
+      "ShortName": "SSES",
+      "OriginalName": {
+        "en": "The State Self Esteem Scale (SSES)",
+        "de": "Die State Self Esteem Scale (SSES)"
+      },
+      "DOI": "",
+      "Citation": "Heatherton, T.F. and Polivy, J. Development and Validation of a Scale\nfor Measuring State Self-Esteem. Journal of Personality and Social\nPsychology, 60,\n895-910. Retrieved\nfrom here.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "swlls": {
+      "TaskName": "swlls",
+      "SourceFile": "survey-swlls.json",
+      "ShortName": "SWLLS",
+      "OriginalName": {
+        "en": "Satisfaction with love life scale (SWLLS)",
+        "de": "Skala zur Zufriedenheit mit dem Liebesleben (SWLLS)"
+      },
+      "DOI": "",
+      "Citation": "Neto, F. (2005). The Satisfaction With Love Life Scale. Measurement and evaluation in counseling and development, 38, 2-13.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "swls": {
+      "TaskName": "swls",
+      "SourceFile": "survey-swls.json",
+      "ShortName": "SWLS",
+      "OriginalName": {
+        "en": "Satisfaction with life scale (SWLS)",
+        "de": "Skala zur Lebenszufriedenheit (SWLS)"
+      },
+      "DOI": "",
+      "Citation": "Diener, E., Emmons, R. A., Larsen, R. J., & Griffin, S. (1985). The\nSatisfaction with Life Scale. Journal of Personality Assessment, 49,\n71-75.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "tai5": {
+      "TaskName": "tai5",
+      "SourceFile": "survey-tai5.json",
+      "ShortName": "TAI5",
+      "OriginalName": {
+        "en": "Test Anxiety Inventory (TAI-5)",
+        "de": "Inventar der Prüfungsangst (TAI-5)"
+      },
+      "DOI": "",
+      "Citation": "Joanne Taylor & Frank P. Deane (2002) Development of a Short Form of the Test Anxiety Inventory (TAI), The Journal of General Psychology, 129:2, 127-136, DOI: 10.1080/00221300209603133",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "tipi": {
+      "TaskName": "tipi",
+      "SourceFile": "survey-tipi.json",
+      "ShortName": "TIPI",
+      "OriginalName": {
+        "en": "BIG5 Ten Item Personality Inventory (TIPI)",
+        "de": "BIG5 Zehn-Item-Persönlichkeitsinventar (TIPI)"
+      },
+      "DOI": "",
+      "Citation": "S. D. Gosling, P. J. Rentfrow, and W. B. Swann Jr. (2003). A very\nbrief measure of the Big-Five personality domains. Journal of Research\nin Personality, 37, 504-528.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "trust": {
+      "TaskName": "trust",
+      "SourceFile": "survey-trust.json",
+      "ShortName": "TRUST",
+      "OriginalName": {
+        "en": "Trust in close relationships",
+        "de": "Vertrauen in enge Beziehungen"
+      },
+      "DOI": "",
+      "Citation": "Rempel, J.K., Holmes, J.G. & Zanna, M.P. (1985). Trust in close relationships. Journal of\nPersonality and Social Psychology, 49, 95-112.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "tsis": {
+      "TaskName": "tsis",
+      "SourceFile": "survey-tsis.json",
+      "ShortName": "TSIS",
+      "OriginalName": {
+        "en": "Social Intelligence (TromsÃ¸ Social Intelligence Scale, TSIS)",
+        "de": "Soziale Intelligenz (TromsÃ¸ Social Intelligence Scale, TSIS)"
+      },
+      "DOI": "",
+      "Citation": "D.H. Silvera, M. Martinussen, & T. I. Dahl. (2001). The TromsÃ¸\nSocial Intelligence Scale, a self-report measure of social\nintelligence. Scandinavian Journal of Psychology, 42, 313-319.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "type-d": {
+      "TaskName": "type-d",
+      "SourceFile": "survey-type-d.json",
+      "ShortName": "TYPE-D",
+      "OriginalName": {
+        "en": "Type D Personality (DS14)",
+        "de": "Typ-D-Persönlichkeit (DS14)"
+      },
+      "DOI": "",
+      "Citation": "Denollet, J., Sys, S.U., Stroobant, N., Rombouts, H., Gillebert,\nT.C., & Brutsaert, D.L. (1996). Personality as independent predictor\nof long-term mortality in patients with coronary heart disease. The\nLancet, 347, 417-421. Free link to full text",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "uplas": {
+      "TaskName": "uplas",
+      "SourceFile": "survey-uplas.json",
+      "ShortName": "UPLAS",
+      "OriginalName": {
+        "en": "Loneliness (UPLAS)",
+        "de": "Einsamkeit (UPLAS)"
+      },
+      "DOI": "",
+      "Citation": "Tharayil, D.P. (2012). Developing the University of the Philippines\nLoneliness Assessment Scale: A Cross-Cultural Measurement. Social\nIndicators Research, 106 (2), 307-321.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "vast": {
+      "TaskName": "vast",
+      "SourceFile": "survey-vast.json",
+      "ShortName": "VAST",
+      "OriginalName": {
+        "en": "Varieties of Sadistic Tendencies (VAST)",
+        "de": "Verschiedene sadistische Tendenzen (VAST)"
+      },
+      "DOI": "",
+      "Citation": "D. L. Paulhus & D. N. Jones (2015).  Measuring dark personalities via questionnaire.  In G. J. Boyle, D. H. Saklofske & G. Matthews (Eds.), Measures of personality and social psychological constructs (pp.562-594).  San Diego, CA: Academic Press.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "webexec": {
+      "TaskName": "webexec",
+      "SourceFile": "survey-webexec.json",
+      "ShortName": "WEBEXEC",
+      "OriginalName": {
+        "en": "Problems with executive control (webexec)",
+        "de": "Probleme mit der exekutiven Kontrolle (webexec)"
+      },
+      "DOI": "",
+      "Citation": "Buchanan, T., Heffernan, T. M., Parrott, A. C., Ling, J., Rodgers, J., & Scholey, A. B. (2010). A short self-report measure of problems with executive function suitable for administration via the Internet. Behavior Research Methods, 42, 709-714.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "wellbeing-multi": {
+      "TaskName": "wellbeing-multi",
+      "SourceFile": "survey-wellbeing-multi.json",
+      "ShortName": "WB-MULTI",
+      "OriginalName": {
+        "en": "Wellbeing Survey (multi-variant demo)",
+        "de": "Wohlbefinden Fragebogen (Multi-Varianten Demo)"
+      },
+      "DOI": "",
+      "Citation": "Demo template for variant-specific item sets and per-question scale types.",
+      "Version": "10-likert",
+      "Versions": [
+        "10-likert",
+        "7-likert",
+        "10-vas"
+      ],
+      "Variants": [
+        {
+          "VariantID": "10-likert",
+          "ItemCount": 10,
+          "ScaleType": "likert"
+        },
+        {
+          "VariantID": "7-likert",
+          "ItemCount": 7,
+          "ScaleType": "likert"
+        },
+        {
+          "VariantID": "10-vas",
+          "ItemCount": 10,
+          "ScaleType": "vas"
+        }
+      ],
+      "Vocabulary": null
+    },
+    "wellbeing": {
+      "TaskName": "wellbeing",
+      "SourceFile": "survey-wellbeing.json",
+      "ShortName": "WB",
+      "OriginalName": {
+        "en": "Wellbeing Survey (WHO-5 adapted)",
+        "de": "Wohlbefindens-Fragebogen (WHO-5 adaptiert)"
+      },
+      "DOI": "10.1159/000376585",
+      "Citation": "Topp, C.W., Østergaard, S.D., Søndergaard, S., & Bech, P. (2015). The WHO-5 Well-Being Index: A Systematic Review of the Literature. Psychotherapy and Psychosomatics, 84, 167-176.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "who5": {
+      "TaskName": "who5",
+      "SourceFile": "survey-who5.json",
+      "ShortName": "WHO5",
+      "OriginalName": {
+        "en": "The WHO-5 Well-Being Index",
+        "de": "Der WHO-5-Wohlfühl-Index"
+      },
+      "DOI": "",
+      "Citation": "Topp, C.W., Ãstergaard, S.D., SÃ¸ndergaard, S., & Bech, P. (2015). The WHO-5 Well-Being Index: A Systematic Review of the Literature. Psychotherapy and Psychosomatics, 84, 167-176. Open access link",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    },
+    "zkpq": {
+      "TaskName": "zkpq",
+      "SourceFile": "survey-zkpq.json",
+      "ShortName": "ZKPQ",
+      "OriginalName": {
+        "en": "Zuckerman-Kuhlman Personality Questionnaire (Shortened, ZKPQ-50-CC)",
+        "de": "ZuckermanâKuhlman Persönlichkeitsfragebogen (verkürzt, ZKPQ-50-CC)"
+      },
+      "DOI": "",
+      "Citation": "Aluja, A., Rossier, J., GarcÃ­a, L. F., Angleitner, A., Kuhlman, M., & Zuckerman, M. (2006). A cros-cultural shortened form of the ZKPQ (ZKPQ-50-c) adapted to English, French, German, and Spanish languages. Personality and Individual Differences, 41, 619-628.",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null
+    }
+  }
+}

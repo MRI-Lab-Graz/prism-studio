@@ -24,6 +24,19 @@ PRISM (Psychological Research Information System Model) extends BIDS for modalit
 - Survey and biometrics metadata support
 - Local-first operation (data stays on your machine)
 
+## Feature Scope
+
+To help third parties know what to rely on, PRISM's features fall into three
+tiers:
+
+| Tier | Meaning | Examples |
+|------|---------|----------|
+| **Core loop** | The primary supported workflow; breaking changes here get release notes and migration guidance. | Survey conversion, dataset validation, DataLad-tracked provenance for mutations and recipe scoring, entity/filename rules ([`entities.schema.json`](docs/specs/entities.md)) |
+| **Supported** | Deliberately-scoped bridges and integrations; stable, but intentionally narrower than the core loop. | BIDS `phenotype/` export/import bridge (lossy by design — see [ROADMAP.md](ROADMAP.md) Phase 1), recipe/derivative scoring |
+| **Experimental** | Works, but has known rough edges or limited validation; use with care and report issues. | The Type-7 multiplexed decoder in the Varioport physio converter (flagged "QC required" in code) |
+
+See [ROADMAP.md](ROADMAP.md) for the reasoning behind each scope decision.
+
 ## Pre-built Binaries
 
 Download the latest release from the [Releases page](https://github.com/MRI-Lab-Graz/prism-studio/releases).
@@ -129,6 +142,13 @@ For CI, add `--json` or `--format junit|sarif|markdown|csv` for machine-readable
 Avoid the `-o FILE` flag with a bind-mounted dataset: the container writes as `root`, so any
 file it creates inside the mount ends up `root`-owned on the host. Redirect from your shell
 instead, e.g. `docker run ... --format junit > report.xml`.
+
+For GitHub Actions, [`action.yml`](action.yml) wraps the same image as a one-step
+Action (`uses: MRI-Lab-Graz/prism-studio@main`) — see
+[`official/anc_templates/example-github-actions.yml`](official/anc_templates/example-github-actions.yml)
+for a full workflow. For GitLab CI (which can't consume a GitHub Action), see
+[`official/anc_templates/example-gitlab-ci.yml`](official/anc_templates/example-gitlab-ci.yml)
+for the equivalent direct Docker invocation.
 
 ### Run PRISM Tools (CLI)
 
