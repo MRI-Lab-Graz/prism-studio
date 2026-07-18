@@ -8,7 +8,7 @@ ruff
 detect-secrets
 bandit
 mypy
-semgrep>=1.169.0
+semgrep>=1.170.0
 PyJWT>=2.12.1
 codespell
 safety
