@@ -132,3 +132,30 @@ Filename/entity rules expressed as data (`app/schemas/stable/entities.schema.jso
 Done when: adding a new suffix or entity requires only a rules-file edit
 plus tests — no parser code changes (true for both validating and writing
 filenames as of PRs #81/#82).
+
+## Priority 3 - JSON tag stripping and NIfTI GZIP header cleaning
+
+Status: COMPLETED.
+
+Goal: remove export-time metadata leakage from MRI sidecars and compressed NIfTI headers while preserving dataset usability.
+
+Checkpoint:
+- Slice A completed in backend export pipeline: optional MRI sidecar sensitive-field scrubbing plus .nii.gz GZIP header normalization (mtime/FNAME).
+- Route wiring updated so export privacy option (`scrub_mri_json`) enables both sidecar scrubbing and NIfTI header cleanup.
+- Focused validation expanded (26 passed across export backend and blueprint contract suites), including root-level `.nii.gz` and cleaning-disabled header-preservation cases.
+- Additional coverage slice: mixed-modality MRI sidecar scrubbing checks plus nested/derivative long-path `.nii.gz` header-cleaning checks.
+- Focused export privacy suite green after the expansion (`tests/test_projects_export_mapping_exclusion.py`: 15 passed).
+- Defacing warning-only metadata surfaced in async export status payloads (non-blocking) and rendered in export success UI when risk is detected.
+- Export submit UX adds an explicit pre-export confirmation step when MRI scrub mode is enabled and defacing risk is detected.
+- Export preferences support configurable defacing confirmation mode (always ask vs ask only on detected risk), persisted per project in UI preferences.
+- Backend app settings provide a team-level default for export defacing confirmation mode; export preference reads inherit this default when project preference is unset.
+- Global Settings UI exposes the backend export defacing confirmation default (risk vs always) and persists it through the settings API.
+- Export card preference snapshot shows defacing confirmation mode and indicates whether it is inherited from global settings or explicitly saved in project export preferences.
+- Export UI includes a one-click reset action that removes project defacing confirmation override and reverts behavior to inherited global default.
+- Export defacing action is mode-aware and non-mutating: both modes deface an export target copy; DataLad-preserving mode prepares a DataLad clone copy and runs pydeface via DataLad there, while DataLad-free mode defaces a plain structural copy.
+- Export defacing honors current export scope filters for subjects/sessions, so single-subject exports only run pydeface for that selected subset on the export copy.
+- The "not ready for public sharing" defacing-risk warning no longer depends on the unrelated `scrub_mri_json` flag - it fires whenever the export (honoring its own `exclude_subjects`/`exclude_sessions` scope) includes un-defaced anatomical scans, with wording stating the sharing implication explicitly (`app/src/web/blueprints/projects_export_blueprint.py:_build_export_defacing_warning`).
+- Fixed a bug found while touching this area: the "Run pydeface for export copy now" button (`exportRunDefacing`) had a fully-wired click handler in `export.js` but the `<button>` element itself was missing from `export_section.html`, so the action was unreachable from the UI. Added the button plus a time-cost note (near the button and in its confirm dialog) warning that defacing can take a long time across many scans.
+- Full defacing-confirmation-mode lifecycle (global default → project override → reset to inherited) across both the global settings API and export preferences API is covered end-to-end via real HTTP routes: `tests/test_projects_library_settings_api.py::test_export_defacing_confirmation_mode_lifecycle_across_global_and_project_apis` (landed 2026-05-27, commit `8f851fb5`).
+
+Done when: export-time MRI sidecar/NIfTI metadata leakage is scrubbed on request, defacing stays an explicit export-only opt-in with clear time-cost and non-sharing-readiness warnings, and the confirmation-mode preference lifecycle is regression-tested end-to-end — true today.
