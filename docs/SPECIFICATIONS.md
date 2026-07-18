@@ -5,6 +5,15 @@ are versioned, and what files/metadata the validator expects. This page is
 conceptual and reference-oriented — for step-by-step workflows, use the
 [Studio Guide](studio/index.md) instead.
 
+**Specification version:** tracks the `stable` schema version (see
+[Schema versions](#schema-versions) below) — currently the schemas under
+`app/schemas/stable/`. This document, the JSON Schemas it describes, and
+`app/schemas/stable/entities.schema.json` together form the PRISM
+Specification; it is intended to get its own archival Zenodo DOI per spec
+version, complementing (not duplicating) the software-release DOI cited by
+the JOSS paper in `paper/paper.md` — that DOI has not been minted yet, so
+this note is a placeholder until the first spec snapshot is archived.
+
 ## PRISM, BIDS, and PRISM Studio
 
 **PRISM is an add-on to BIDS, not a replacement.** BIDS stays the baseline where it
@@ -67,7 +76,14 @@ fields, allowed types/value shapes, and optional blocks (i18n, scoring metadata)
 
 For modality-specific semantics, see the spec pages:
 [Survey](specs/survey), [Biometrics](specs/biometrics), [Events](specs/events),
-[Environment](specs/environment).
+[Environment](specs/environment), [Entities & filename grammar](specs/entities).
+
+A few schemas under `app/schemas/stable/` don't have their own spec page yet,
+since they're either simple or narrowly scoped: `dataset_description.schema.json`
+(covered above under BIDS compatibility), `project.schema.json` (PRISM project
+metadata, not dataset content), `recipe.survey.schema.json` (recipe
+definitions — see [Recipes](RECIPES.md)), and `tool-limesurvey.schema.json`
+(LimeSurvey import mapping).
 
 ## BIDS compatibility field reference
 

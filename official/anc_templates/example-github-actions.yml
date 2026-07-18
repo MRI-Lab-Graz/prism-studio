@@ -54,27 +54,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      
-      - name: Install PRISM Studio
-        run: pip install git+https://github.com/MRI-Lab-Graz/prism-studio.git@main
-      
+
       - name: Run PRISM Validator
-        run: |
-          python -m prism . --output prism_validation_report.txt
-          cat prism_validation_report.txt
+        id: prism
+        uses: MRI-Lab-Graz/prism-studio@main
+        with:
+          dataset-path: .
+          format: markdown
         continue-on-error: true
-      
+
       - name: Upload report
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: prism-validation-report
-          path: prism_validation_report.txt
+          path: ${{ steps.prism.outputs.report-path }}
           retention-days: 30
 
   structure-check:

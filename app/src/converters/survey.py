@@ -2101,6 +2101,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         apply_technical_overrides_fn=_apply_technical_overrides,
         strip_internal_keys_fn=_strip_internal_keys,
         write_json_fn=_write_json,
+        load_global_library_path_fn=_load_global_library_path,
     )
 
     # --- Process and Write Responses ---
@@ -2673,6 +2674,8 @@ def _write_survey_description(
     if ds_desc.exists():
         return
 
+    from src import __version__ as prism_version
+
     dataset_description = {
         "Name": name or "PRISM Survey Dataset",
         "BIDSVersion": DEFAULT_BIDS_VERSION,
@@ -2684,7 +2687,7 @@ def _write_survey_description(
         "GeneratedBy": [
             {
                 "Name": "PRISM Survey Converter",
-                "Version": "1.1.1",
+                "Version": prism_version,
                 "Description": "Manual survey template mapping and TSV conversion.",
             }
         ],
