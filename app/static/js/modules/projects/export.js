@@ -1717,9 +1717,10 @@ export function initExportForm() {
             );
             const outputFolder = (getById('exportOutputFolder')?.value || '').trim() || null;
             const preservingMode = selectedRepositoryMode === 'datalad_preserving';
-            const proceed = window.confirm(preservingMode
+            const timeCostNote = ' This can take a long time (several minutes per scan) depending on how many scans are selected - the page will show progress until it finishes.';
+            const proceed = window.confirm((preservingMode
                 ? 'Run pydeface for export copy now? PRISM will create a DataLad-preserving export copy, run pydeface via DataLad in that copy, and keep the current project unchanged.'
-                : 'Run pydeface for export copy now? PRISM will copy selected anatomical scans to the export target and deface that copy. The current project stays unchanged.');
+                : 'Run pydeface for export copy now? PRISM will copy selected anatomical scans to the export target and deface that copy. The current project stays unchanged.') + timeCostNote);
             if (!proceed) {
                 return;
             }

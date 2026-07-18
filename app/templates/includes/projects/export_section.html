@@ -210,6 +210,15 @@
                                                             <button type="button" class="btn btn-sm btn-outline-secondary" id="exportCheckDefacing">
                                                                 <i class="fas fa-search me-1"></i>Check current defacing status in PRISM dataset
                                                             </button>
+                                                            <button type="button" class="btn btn-sm btn-outline-primary ms-2" id="exportRunDefacing">
+                                                                <i class="fas fa-user-secret me-1"></i>Run pydeface for export copy now
+                                                            </button>
+                                                            <div class="form-text mt-1">
+                                                                Defacing runs pydeface on each selected anatomical scan and can take
+                                                                several minutes per scan &mdash; across many subjects this may take a
+                                                                long time. Only the export copy is affected; the PRISM dataset itself
+                                                                is never modified.
+                                                            </div>
                                                             <div id="exportDefacingPreflightStatus" class="mt-2" style="display:none;"></div>
                                                             <div id="exportDefacingReport" class="mt-2" style="display:none;"></div>
                                                         </div>
