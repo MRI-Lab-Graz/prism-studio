@@ -344,6 +344,32 @@ def _build_tolerance_warnings(
 # -----------------------------------------------------------------------------
 
 
+def _load_instrument_identity(
+    *, task: str, variant_id: str | None, load_global_library_path_fn
+) -> dict[str, Any]:
+    """Best-effort lookup of registry-stamped Version/DOI for a (task, variant).
+
+    Returns {} when there's no registry index available (custom/local
+    templates, packaged builds without the official library, etc.) - this
+    must never block conversion.
+    """
+    if load_global_library_path_fn is None:
+        return {}
+    try:
+        library_path = load_global_library_path_fn()
+        if not library_path:
+            return {}
+        index_path = Path(library_path) / "index.json"
+        if not index_path.exists():
+            return {}
+        from src.instrument_registry import get_instrument_identity, load_registry_index
+
+        index = load_registry_index(index_path)
+        return get_instrument_identity(index, task, variant_id)
+    except Exception:
+        return {}
+
+
 def _write_task_sidecars(
     *,
     dataset_root,
@@ -365,6 +391,7 @@ def _write_task_sidecars(
     apply_technical_overrides_fn,
     strip_internal_keys_fn,
     write_json_fn,
+    load_global_library_path_fn=None,
 ) -> None:
     """Write task-level survey sidecars with required PRISM fields."""
     if task_context_templates is None:
@@ -442,6 +469,20 @@ def _write_task_sidecars(
                 study["LicenseID"] = "Other"
             if "License" not in study:
                 study["License"] = ""
+
+            # Backfill Version/DOI from the instrument registry when the
+            # template being converted didn't already carry them, so
+            # sidecars stay identifiable even from older/local template
+            # copies (roadmap Phase 4: stamp instrument identity+version).
+            identity = _load_instrument_identity(
+                task=task,
+                variant_id=acq_value,
+                load_global_library_path_fn=load_global_library_path_fn,
+            )
+            if identity.get("Version") and not study.get("Version"):
+                study["Version"] = identity["Version"]
+            if identity.get("DOI") and not study.get("DOI"):
+                study["DOI"] = identity["DOI"]
 
             normalized_localized = normalize_paper_software_platform(localized)
             if isinstance(normalized_localized, dict):

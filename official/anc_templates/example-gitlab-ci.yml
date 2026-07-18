@@ -13,9 +13,11 @@ stages:
   - publish
 
 variables:
-  PRISM_VERSION: "1.9.1"
+  # Tag of ghcr.io/mri-lab-graz/prism-validator to pin (a released version,
+  # "latest", or "main"). Used directly below - keep this in sync if you
+  # bump it.
+  PRISM_VALIDATOR_IMAGE_TAG: "latest"
   BIDS_VALIDATOR_VERSION: "1.14.13"
-  PYTHON_VERSION: "3.11"
 
 # ============================================================================
 # BIDS Validation
@@ -41,18 +43,21 @@ validate_bids:
 
 validate_prism:
   stage: validate
-  image: python:${PYTHON_VERSION}
-  before_script:
-    - pip install --upgrade pip
-    - pip install git+https://github.com/MRI-Lab-Graz/prism-studio.git@main
+  # GitLab CI can't consume a GitHub composite Action (see action.yml in
+  # https://github.com/MRI-Lab-Graz/prism-studio), so this runs the same
+  # published Docker image directly instead.
+  image: docker:27
+  services:
+    - docker:27-dind
   script:
     - echo "Running PRISM validator..."
-    - python -m prism . --output prism_validation_report.txt
-    - cat prism_validation_report.txt
+    - docker pull "ghcr.io/mri-lab-graz/prism-validator:${PRISM_VALIDATOR_IMAGE_TAG}"
+    - docker run --rm -v "$(pwd)":/data:ro "ghcr.io/mri-lab-graz/prism-validator:${PRISM_VALIDATOR_IMAGE_TAG}" /data --format markdown > prism_validation_report.md
+    - cat prism_validation_report.md
   artifacts:
     when: always
     paths:
-      - prism_validation_report.txt
+      - prism_validation_report.md
     expire_in: 1 week
   only:
     - merge_requests
