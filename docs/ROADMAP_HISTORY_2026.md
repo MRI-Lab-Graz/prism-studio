@@ -1,3 +1,7 @@
+---
+orphan: true
+---
+
 # Roadmap History 2026
 
 Archived detail for completed roadmap priorities, trimmed from `ROADMAP.md`
@@ -52,7 +56,7 @@ its own `docs/FRONTEND_ASSESSMENT_<PAGE>_2026-05.md` checkpoint file.
 - Focused cross-page smoke confirmation complete (33 passed across remediated workflow suites).
 - Phase-boundary full-suite coverage confirmation complete (`./rtk coverage`: 2206 passed, 3 skipped).
 - Coverage blocker remediation complete: recipe merge-all score-prefix policy, participant-column export propagation, and SAV participant metadata/measure handling repaired in backend recipe export logic.
-- Detailed assessment plan: [FRONTEND_STRUCTURAL_ASSESSMENT_2026-05.md](FRONTEND_STRUCTURAL_ASSESSMENT_2026-05.md).
+- Detailed assessment plan previously lived at `docs/FRONTEND_STRUCTURAL_ASSESSMENT_2026-05.md`; removed as obsolete once this checkpoint was complete (see commit `71ebb706`).
 
 Closeout: high-risk remediation tranche closed; phase-boundary full-suite coverage confirmation green.
 
@@ -62,7 +66,8 @@ Maintenance action: keep the focused cross-page remediation smoke suite and `./r
 
 Status: completed and merged.
 
-Reference: [_archive/SURVEY_WORKFLOW_HARDENING_2026.md](_archive/SURVEY_WORKFLOW_HARDENING_2026.md)
+Reference: `docs/_archive/SURVEY_WORKFLOW_HARDENING_2026.md` (excluded from the
+public docs build; browse it directly in the repo)
 
 ## Priority 1.37 - DataLad mutation centralization and per-subject provenance runs
 
@@ -85,7 +90,8 @@ Status: complete and validated.
 
 Goal: fully anonymize participant identities in exported datasets while keeping source datasets untouched.
 
-Reference: [_archive/PRIORITY_2_EXPORT_ANONYMIZATION_2026-05.md](_archive/PRIORITY_2_EXPORT_ANONYMIZATION_2026-05.md)
+Reference: `docs/_archive/PRIORITY_2_EXPORT_ANONYMIZATION_2026-05.md` (excluded
+from the public docs build; browse it directly in the repo)
 
 Completed:
 1. Deterministic participant mapping wiring in project export adapters (sync + async routes).
