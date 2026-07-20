@@ -8,12 +8,28 @@ from src.datalad_execution import (
     DATALAD_DOCS_URL,
     DATALAD_INSTALL_HINT,
     is_datalad_dataset,
+    paths_have_uncommitted_changes,
     resolve_datalad_executable,
     run_datalad_get_paths,
     run_datalad_run,
     run_datalad_save,
     run_datalad_unlock,
 )
+
+
+class MutationNotFullySavedError(ValueError):
+    """Raised when the wrapped command errored partway through but may have
+    already mutated files on disk before failing.
+
+    `datalad run` does not save anything when the wrapped command exits
+    non-zero ("no modifications will be saved" per its own docs) -- but a
+    command that partially completes (e.g. deletes/copies several files
+    before crashing on one) still leaves those changes sitting in the
+    working tree, uncommitted. Callers must not treat this the same as "the
+    command failed and nothing happened": an emergency save was attempted to
+    capture whatever partial state exists, and the caller needs to surface
+    that distinctly rather than silently continuing as if the tree is clean.
+    """
 
 
 def build_pythonpath_env() -> dict[str, str]:
@@ -173,9 +189,36 @@ def run_tracked_mutation(
         env=env,
     )
     if not run_result.get("success"):
-        raise ValueError(
-            str(run_result.get("message") or "DataLad run failed for mutation.")
+        run_message_detail = str(run_result.get("message") or "DataLad run failed for mutation.")
+        # The wrapped command may have partially deleted/copied/renamed files
+        # before erroring; `datalad run` itself won't have saved any of that
+        # ("no modifications will be saved" on error, per its own docs).
+        # Checked *before* the emergency save below, since a successful save
+        # would make the tree clean again and hide the very thing we're
+        # trying to detect.
+        mutated = paths_have_uncommitted_changes(root, paths=autosave_scope_paths)
+        emergency_save = run_datalad_save(
+            root,
+            message=f'{run_message} (partial run failure -- emergency save)',
+            datalad_executable=datalad_executable,
+            timeout_seconds=max(1, int(run_timeout_seconds)),
+            paths=autosave_scope_paths,
         )
+        if mutated:
+            saved_note = (
+                "Partial on-disk changes were captured via an emergency "
+                "'datalad save'."
+                if emergency_save.get("success")
+                else "An emergency 'datalad save' ALSO failed "
+                f"({emergency_save.get('message') or 'unknown error'}) -- "
+                "these changes are still uncommitted."
+            )
+            raise MutationNotFullySavedError(
+                f"DataLad run failed partway through ({run_message_detail}). "
+                f"{saved_note} This operation is INCOMPLETE and needs manual "
+                "review."
+            )
+        raise ValueError(run_message_detail)
 
     return {
         "tracked": True,
