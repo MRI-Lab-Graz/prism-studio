@@ -8,17 +8,31 @@ Download the latest release, extract it, and start PRISM Studio from the extract
 folder — no Python or repository setup needed.
 
 1. Open the [latest release page](https://github.com/MRI-Lab-Graz/prism-studio/releases/latest).
-2. Download the ZIP matching your computer:
+2. Pick your OS and download the matching ZIP:
 
-   | Platform | File |
-   |---|---|
-   | macOS (M1/M2/M3/M4) | `prism-studio-macOS-AppleSilicon.zip` |
-   | macOS (Intel) | `prism-studio-macOS-AppleIntel.zip` |
-   | Windows | `prism-studio-Windows.zip` |
-   | Linux | `prism-studio-Linux.zip` |
+  <details>
+  <summary><strong>macOS</strong></summary>
 
-   Not sure which Mac you have? Apple menu → **About This Mac** → check the chip:
-   anything with "Apple M..." is Apple Silicon, "Intel" is Intel.
+  Choose your Mac chip and download the matching ZIP:
+  - Apple Silicon (M1/M2/M3/M4): `prism-studio-macOS-AppleSilicon.zip`
+  - Intel: `prism-studio-macOS-AppleIntel.zip`
+
+  Not sure which Mac you have? Apple menu → **About This Mac** → check the chip:
+  anything with "Apple M..." is Apple Silicon, "Intel" is Intel.
+  </details>
+
+  <details>
+  <summary><strong>Windows</strong></summary>
+
+  Download: `prism-studio-Windows.zip`
+  </details>
+
+  <details>
+  <summary><strong>Linux</strong></summary>
+
+  Download: `prism-studio-Linux.zip`
+  </details>
+
 3. Extract the ZIP and start PRISM Studio from the extracted folder.
    - **macOS first launch**: if the OS blocks the app, use
      `Prism Studio Installer.app` or `Open Prism Studio.command` from the extracted
@@ -31,7 +45,10 @@ folder — no Python or repository setup needed.
 Use this only if you need local code changes, development work, or CLI usage from
 the source tree. Requires **Python 3.10+** (3.9 is not supported).
 
-**macOS / Linux:**
+Pick your OS:
+
+<details>
+<summary><strong>macOS / Linux</strong></summary>
 
 ```bash
 git clone https://github.com/MRI-Lab-Graz/prism-studio.git
@@ -40,8 +57,10 @@ cd prism-studio
 source .venv/bin/activate
 python prism-studio.py
 ```
+</details>
 
-**Windows:**
+<details>
+<summary><strong>Windows</strong></summary>
 
 ```powershell
 git clone https://github.com/MRI-Lab-Graz/prism-studio.git
@@ -50,6 +69,7 @@ cd prism-studio
 .venv\Scripts\activate
 python prism-studio.py
 ```
+</details>
 
 Always activate the repo-local virtual environment first
 (`source .venv/bin/activate` / `.venv\Scripts\activate`) — command-line tools run
@@ -70,8 +90,6 @@ environment is active it runs directly (no `python` prefix), and is equivalent t
 
 ## Troubleshooting
 
-- **Don't know which macOS build you need** — Apple menu → About This Mac → check
-  for "Apple M..." vs "Intel".
 - **App starts but no browser page appears** — open `http://localhost:5001` manually
   and check the terminal output for launch errors.
 - **Python or package errors during source install** — use the prebuilt release
