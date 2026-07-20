@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import stat
+import subprocess
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
-from src.datalad_mutation_policy import run_tracked_mutation
+from src.datalad_mutation_policy import MutationNotFullySavedError, run_tracked_mutation
 from src.datalad_project_copy import copy_files_into_project
 
 
@@ -195,6 +197,135 @@ def test_run_tracked_mutation_raises_clear_error_when_file_stays_locked(
         )
 
     assert run_was_attempted is False
+
+
+def _init_real_git_repo(project_root: Path, real_git: str) -> None:
+    """DataLad datasets are real git repos; the dirty-tree detection this
+    module relies on (`git status --porcelain`) needs a real repo underneath
+    to behave meaningfully, not just a bare `.datalad` marker directory.
+    Commits whatever is already on disk (e.g. the `.datalad` marker) so the
+    tree starts genuinely clean rather than showing it as untracked."""
+    subprocess.run([real_git, "init", "-q"], cwd=project_root, check=True)
+    subprocess.run([real_git, "add", "-A"], cwd=project_root, check=True)
+    subprocess.run(
+        [real_git, "-c", "user.email=test@example.com", "-c", "user.name=test", "commit", "--allow-empty", "-m", "init"],
+        cwd=project_root, check=True,
+    )
+
+
+def test_run_tracked_mutation_emergency_saves_partial_run_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Regression guard: `datalad run` never saves anything when the wrapped
+    command errors ("no modifications will be saved" per its own docs), even
+    if that command already deleted/copied/renamed files before crashing.
+    run_tracked_mutation must detect and capture that partial state via an
+    emergency `datalad save`, and raise a distinct, honest error instead of
+    a generic failure indistinguishable from "nothing happened"."""
+    real_git = shutil.which("git")
+    assert real_git, "git must be installed to run this test"
+
+    project_root = tmp_path / "project"
+    (project_root / ".datalad").mkdir(parents=True)
+    _init_real_git_repo(project_root, real_git)
+
+    target_file = project_root / "sub-001" / "sub-001_task-rest_bold.nii.gz"
+    target_file.parent.mkdir(parents=True)
+    target_file.write_bytes(b"nii")
+    subprocess.run([real_git, "add", "-A"], cwd=project_root, check=True)
+    subprocess.run(
+        [real_git, "-c", "user.email=test@example.com", "-c", "user.name=test", "commit", "-m", "seed"],
+        cwd=project_root, check=True,
+    )
+
+    monkeypatch.setattr(
+        "src.datalad_execution.shutil.which",
+        lambda cmd: "/usr/bin/datalad" if cmd == "datalad" else (real_git if cmd == "git" else ""),
+    )
+
+    # `monkeypatch.setattr("src.datalad_execution.subprocess.run", ...)`
+    # mutates the actual shared `subprocess` module (there's no
+    # module-local copy), so any plain `subprocess.run(...)` call made from
+    # *inside* the fake -- including this test file's own -- would
+    # recursively hit the fake again. Capture the real function first.
+    real_subprocess_run = subprocess.run
+
+    def _fake_run(command, cwd=None, capture_output=True, text=True, timeout=None, check=False, env=None):
+        if command and command[0] == real_git:
+            # Let real `git status` run against the actual working tree so
+            # the dirty-check under test observes genuine on-disk state.
+            return real_subprocess_run(
+                command, cwd=cwd, capture_output=capture_output, text=text, timeout=timeout, check=False,
+            )
+        if len(command) >= 2 and command[1] == "run":
+            # Simulate the wrapped command partially completing (deleting
+            # the target file) before it crashes.
+            target_file.unlink(missing_ok=True)
+            return SimpleNamespace(returncode=1, stdout="", stderr="boom: crashed midway")
+        if len(command) >= 2 and command[1] in {"save", "get", "unlock"}:
+            return SimpleNamespace(returncode=0, stdout=f"{command[1]} ok", stderr="")
+        raise AssertionError(f"Unexpected command: {command}")
+
+    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+
+    with pytest.raises(MutationNotFullySavedError, match="INCOMPLETE"):
+        run_tracked_mutation(
+            project_root,
+            get_paths=["sub-001"],
+            run_message="PRISM: delete files",
+            command=["echo", "noop"],
+        )
+
+    # The partial deletion actually happened on disk and must not be
+    # reported as though nothing changed.
+    assert not target_file.exists()
+
+
+def test_run_tracked_mutation_raises_plain_error_when_run_fails_with_no_side_effects(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A `datalad run` failure that truly touched nothing (e.g. the wrapped
+    command errored before writing anything) must not be misreported as a
+    dirty, partially-applied mutation."""
+    real_git = shutil.which("git")
+    assert real_git, "git must be installed to run this test"
+
+    project_root = tmp_path / "project"
+    (project_root / ".datalad").mkdir(parents=True)
+    _init_real_git_repo(project_root, real_git)
+
+    monkeypatch.setattr(
+        "src.datalad_execution.shutil.which",
+        lambda cmd: "/usr/bin/datalad" if cmd == "datalad" else (real_git if cmd == "git" else ""),
+    )
+
+    # See the sibling test above: capture the real subprocess.run before
+    # patching, since the patch target is the shared module, not a
+    # module-local copy.
+    real_subprocess_run = subprocess.run
+
+    def _fake_run(command, cwd=None, capture_output=True, text=True, timeout=None, check=False, env=None):
+        if command and command[0] == real_git:
+            return real_subprocess_run(
+                command, cwd=cwd, capture_output=capture_output, text=text, timeout=timeout, check=False,
+            )
+        if len(command) >= 2 and command[1] == "run":
+            return SimpleNamespace(returncode=1, stdout="", stderr="command not found")
+        if len(command) >= 2 and command[1] in {"save", "get", "unlock"}:
+            return SimpleNamespace(returncode=0, stdout=f"{command[1]} ok", stderr="")
+        raise AssertionError(f"Unexpected command: {command}")
+
+    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+
+    with pytest.raises(ValueError) as exc_info:
+        run_tracked_mutation(
+            project_root,
+            get_paths=["."],
+            run_message="PRISM: noop",
+            command=["definitely-not-a-real-command"],
+        )
+
+    assert not isinstance(exc_info.value, MutationNotFullySavedError)
 
 
 def test_copy_files_into_project_uses_direct_copy_for_plain_projects(tmp_path: Path):

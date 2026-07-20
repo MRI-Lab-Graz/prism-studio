@@ -365,3 +365,61 @@ def test_apply_subject_rewrite_continues_past_one_failing_group(tmp_path, monkey
     # sub-1293002 itself must be left exactly as it was (no partial rename).
     assert (project_root / "sub-1293002" / "ses-01" / "func").exists()
     assert not (project_root / "sub-002").exists()
+
+
+def test_apply_subject_rewrite_stops_batch_when_save_fails_after_rename(tmp_path, monkeypatch):
+    """Regression guard: if `datalad save` fails *after* a group's files were
+    already renamed on disk (e.g. a git-annex lock), the batch must not
+    report that group as "left unchanged" (it wasn't) nor keep renaming
+    further subjects on top of an already-dirty, unsaved worktree."""
+    project_root = tmp_path / "project"
+    (project_root / ".datalad").mkdir(parents=True)
+    func_a = project_root / "sub-1293001" / "ses-01" / "func"
+    func_b = project_root / "sub-1293002" / "ses-01" / "func"
+    for func_dir, sub in ((func_a, "sub-1293001"), (func_b, "sub-1293002")):
+        func_dir.mkdir(parents=True)
+        (func_dir / f"{sub}_ses-01_task-rest_bold.nii.gz").write_bytes(b"nii")
+
+    monkeypatch.setattr(
+        "src.datalad_execution.shutil.which",
+        lambda command: "/usr/bin/datalad" if command == "datalad" else "",
+    )
+
+    def _fake_run(command, cwd=None, capture_output=True, text=True, timeout=None, check=False, env=None):
+        command_as_text = [str(item) for item in command]
+        targets_first_group = any("sub-1293001" in item for item in command_as_text)
+        if len(command) >= 2 and command[1] == "save" and targets_first_group:
+            return SimpleNamespace(returncode=1, stdout="", stderr="git-annex lock held")
+        if len(command) >= 2 and command[1] in {"save", "get", "unlock"}:
+            return SimpleNamespace(returncode=0, stdout=f"{command[1]} ok", stderr="")
+        raise AssertionError(f"Unexpected command: {command}")
+
+    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+
+    try:
+        apply_subject_rewrite(
+            project_root,
+            mode="last3",
+            example_subject=None,
+            keep_fragment=None,
+            allow_many_to_one=False,
+        )
+        raised = False
+        exc = None
+    except Exception as caught:
+        raised = True
+        exc = caught
+
+    assert raised, "expected an error reporting the unsaved group"
+    message = str(exc)
+    assert "NOT committed" in message and "worktree is dirty" in message
+    assert "left unchanged" not in message.lower()
+
+    # The rename actually happened on disk for the first group even though
+    # its save failed -- this must not be reported as "unchanged".
+    assert not (project_root / "sub-1293001").exists()
+    assert (project_root / "sub-001" / "ses-01" / "func").exists()
+
+    # The batch must have stopped before touching the second group.
+    assert (project_root / "sub-1293002" / "ses-01" / "func").exists()
+    assert not (project_root / "sub-002").exists()

@@ -12,7 +12,7 @@ or from a source checkout: `source .venv/bin/activate && python prism-studio.py`
 `rtk studio`). Studio opens at `http://localhost:5001`.
 
 ### Create a project
-![PRISM Studio Home screen](../_static/screenshots/prism-studio-landing-create.png)
+![PRISM Studio Home screen](_static/screenshots/prism-studio-landing-create.png)
 
  → **Create New Project** → enter a name (e.g.
 `my_first_study`) and a parent folder → confirm. This creates
