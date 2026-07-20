@@ -33,6 +33,7 @@ import stat
 import shutil
 import subprocess
 import tempfile
+import threading
 import time
 import yaml
 from pathlib import Path
@@ -184,10 +185,66 @@ class ProjectManager:
     Manages PRISM project creation and validation.
     """
 
+    # --- DataLad concurrency control -------------------------------------
+    # A per-project reentrant lock serializes every git-index-touching
+    # DataLad operation (enable/register, save) against the read-only status
+    # queries the UI polls while those run. Without it, the frontend's
+    # ~1.5s status poll runs git reads (which refresh and lock the index)
+    # against the very repo a registration is mid-writing, colliding as
+    # "fatal: Unable to create '.git/index.lock': File exists". A concurrent
+    # status read can't get the lock, so it returns the last cached snapshot
+    # (kept live by the mutation via _publish_nested_progress) instead of
+    # touching git at all.
+    #
+    # Class-level (not per-instance): the contention is over an on-disk git
+    # index shared regardless of which ProjectManager instance touches it,
+    # and several blueprints construct their own instances. Keyed by
+    # resolved project path so distinct projects never block each other. The
+    # lock is reentrant so the mutation thread's own internal status calls
+    # (which it makes while holding the lock) don't deadlock.
+    _datalad_locks: Dict[str, "threading.RLock"] = {}
+    _datalad_locks_guard = threading.Lock()
+    _datalad_status_cache: Dict[str, Dict[str, Any]] = {}
+    _datalad_cache_guard = threading.Lock()
+
     def __init__(self):
         """Initialize the project manager."""
         # Path to template files
         self.template_dir = Path(__file__).parent.parent / "demo"
+
+    @classmethod
+    def _datalad_lock_key(cls, project_path: Union[str, Path, None]) -> str:
+        try:
+            return str(Path(project_path).resolve()) if project_path else ""
+        except Exception:
+            return str(project_path or "")
+
+    @classmethod
+    def _datalad_lock_for(cls, project_path: Union[str, Path]) -> "threading.RLock":
+        key = cls._datalad_lock_key(project_path)
+        with cls._datalad_locks_guard:
+            lock = cls._datalad_locks.get(key)
+            if lock is None:
+                lock = threading.RLock()
+                cls._datalad_locks[key] = lock
+            return lock
+
+    @classmethod
+    def _cache_datalad_status(cls, project_path: Union[str, Path], snapshot: Dict[str, Any]) -> None:
+        key = cls._datalad_lock_key(project_path)
+        if not key:
+            return
+        with cls._datalad_cache_guard:
+            cls._datalad_status_cache[key] = dict(snapshot)
+
+    @classmethod
+    def _get_cached_datalad_status(cls, project_path: Union[str, Path]) -> Optional[Dict[str, Any]]:
+        key = cls._datalad_lock_key(project_path)
+        if not key:
+            return None
+        with cls._datalad_cache_guard:
+            cached = cls._datalad_status_cache.get(key)
+            return dict(cached) if cached is not None else None
 
     def create_project(self, path: str, config: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -1399,7 +1456,66 @@ class ProjectManager:
     def get_datalad_status(
         self, path: Union[str, Path, None], *, fast: bool = False
     ) -> Dict[str, Any]:
-        """Return DataLad status for a project path.
+        """Return DataLad status for a project path, without colliding with a mutation.
+
+        Wraps :meth:`_compute_datalad_status` (which runs git) in the
+        per-project DataLad lock. If a registration/save is in progress on
+        another thread, the lock can't be taken, so this returns the last
+        cached snapshot — kept current by the running mutation — with
+        ``mutation_in_progress`` set, rather than running git against a repo
+        whose index is being written (which is what caused the
+        ``index.lock`` collisions). The mutation thread itself re-enters the
+        lock freely (it's reentrant), so its own internal status calls still
+        run real git.
+        """
+        if not path:
+            return self._compute_datalad_status(None, fast=fast)
+
+        lock = self._datalad_lock_for(path)
+        if lock.acquire(blocking=False):
+            try:
+                status = self._compute_datalad_status(path, fast=fast)
+                self._cache_datalad_status(path, status)
+                return status
+            finally:
+                lock.release()
+
+        # A mutation holds the lock on another thread: serve the cached
+        # snapshot instead of running git concurrently against its index.
+        cached = self._get_cached_datalad_status(path)
+        if cached is not None:
+            cached["mutation_in_progress"] = True
+            return cached
+        return self._busy_datalad_status_placeholder(path)
+
+    def _busy_datalad_status_placeholder(
+        self, path: Union[str, Path, None]
+    ) -> Dict[str, Any]:
+        """Minimal, git-free status used when a mutation is running and no
+        snapshot has been cached yet (rare: the UI reads status before it can
+        trigger a mutation, so a cache almost always exists)."""
+        project_path = Path(path) if path else None
+        return {
+            "enabled": (project_path / ".datalad").exists() if project_path else False,
+            "available": bool(shutil.which("datalad")),
+            "annex_available": bool(shutil.which("git-annex")),
+            "can_save": False,
+            "can_enable": False,
+            "mutation_in_progress": True,
+            "message": "A DataLad operation is in progress on this project…",
+            "path": str(project_path) if project_path else "",
+            "subdatasets_total_count": 0,
+            "subdatasets_registered_count": 0,
+            "subdatasets_remaining_count": 0,
+            "subdatasets_progress_percent": 0,
+            "next_missing_subdataset": "",
+            "subdatasets_topology_mode": "",
+        }
+
+    def _compute_datalad_status(
+        self, path: Union[str, Path, None], *, fast: bool = False
+    ) -> Dict[str, Any]:
+        """Return DataLad status for a project path (runs git; see caller).
 
         ``fast=True`` skips the per-dataset-root ``git annex find --anything``
         scan (:meth:`_find_annexed_text_files`), which is the dominant cost on
@@ -1569,6 +1685,15 @@ class ProjectManager:
         if not project_path or not git_executable:
             return result
 
+        # `git status --ignore-submodules=none` refreshes (and briefly locks)
+        # the index of the project and every submodule -- if a registration is
+        # writing those same indexes, that collides. Skip the check while a
+        # mutation holds the lock rather than risk the collision; the UI just
+        # shows "unknown" until the mutation finishes.
+        lock = self._datalad_lock_for(project_path)
+        if not lock.acquire(blocking=False):
+            result["message"] = "A DataLad operation is in progress; working-tree status is unavailable until it finishes."
+            return result
         try:
             process = subprocess.run(
                 [
@@ -1590,6 +1715,8 @@ class ProjectManager:
         except Exception as exc:
             result["message"] = f"Could not check DataLad working-tree status ({type(exc).__name__})."
             return result
+        finally:
+            lock.release()
 
         if process.returncode != 0:
             result["message"] = (process.stderr or process.stdout or "Could not check DataLad working-tree status.").strip()
@@ -1612,8 +1739,22 @@ class ProjectManager:
         *,
         message: str,
     ) -> Dict[str, Any]:
-        """Persist current project changes into DataLad with a user-supplied message."""
+        """Persist current project changes into DataLad with a user-supplied message.
+
+        Holds the per-project DataLad lock so a concurrent status poll can't
+        run git against the index being written (see
+        :meth:`get_datalad_status`).
+        """
         project_path = Path(path)
+        with self._datalad_lock_for(project_path):
+            return self._save_datalad_snapshot_locked(project_path, message=message)
+
+    def _save_datalad_snapshot_locked(
+        self,
+        project_path: Path,
+        *,
+        message: str,
+    ) -> Dict[str, Any]:
         status = self.get_datalad_status(project_path)
         result: Dict[str, Any] = {
             "success": False,
@@ -3360,8 +3501,24 @@ git push -u origin main
         *,
         message: str = "Enable DataLad for PRISM project",
     ) -> Dict[str, Any]:
-        """Initialize DataLad for an existing project and save an initial snapshot."""
+        """Initialize DataLad for an existing project and save an initial snapshot.
+
+        Holds the per-project DataLad lock for the whole operation so a
+        concurrent status poll can't run git against the index this is
+        writing (see :meth:`get_datalad_status`). The lock is reentrant, so
+        this method's own internal ``get_datalad_status`` calls still run
+        real git.
+        """
         project_path = Path(path)
+        with self._datalad_lock_for(project_path):
+            return self._enable_datalad_for_project_locked(project_path, message=message)
+
+    def _enable_datalad_for_project_locked(
+        self,
+        project_path: Path,
+        *,
+        message: str,
+    ) -> Dict[str, Any]:
         result: Dict[str, Any] = {
             "success": False,
             "path": str(project_path),
@@ -3671,32 +3828,33 @@ git push -u origin main
         existing_message = str(datalad_result.get("message") or "").strip()
         datalad_result["message"] = f"{existing_message} {notice}".strip() if existing_message else notice
 
-    def _run_datalad_create_with_lock_retry(
+    def _run_command_with_index_lock_retry(
         self,
-        create_command: List[str],
+        command: List[str],
         *,
         cwd: str,
         timeout: float,
         max_attempts: int = 3,
         retry_delay_seconds: float = 1.5,
     ) -> "subprocess.CompletedProcess":
-        """Run a `datalad create` command, retrying a few times if it fails
-        due to a transient git index-lock collision.
+        """Run a git/DataLad command, retrying on a transient git index-lock collision.
 
-        `datalad create --force` on an existing nested repo internally runs
-        `git update-index --add -- .gitmodules` against the *parent*
-        dataset's index. If anything else touches that same index at the
-        same moment -- another PRISM operation, or a separate DataLad GUI
-        (e.g. DataLad Desktop) refreshing its view of the same dataset -- git
-        fails fast with "fatal: Unable to create '.git/index.lock': File
-        exists" (exit code 128). That's transient contention, not a real
-        error, and normally clears within a second or two, so a short retry
-        resolves it instead of failing the whole subject/subdataset outright.
+        Any command that writes a dataset's git index (`datalad create`,
+        `git rm --cached`, `git commit`, ...) fails fast with "fatal: Unable
+        to create '.git/index.lock': File exists" (exit code 128) if anything
+        else touches that same index at the same moment -- another PRISM
+        operation, the frontend's periodic status poll refreshing the same
+        repo, or a separate DataLad GUI. That's transient contention, not a
+        real error, and normally clears within a second or two, so a short
+        backoff-retry resolves it instead of failing the whole
+        subject/subdataset outright. A non-lock failure (e.g. a genuine git
+        error, or `git commit`'s benign "nothing to commit") is returned
+        immediately without retry.
         """
         process = None
         for attempt in range(1, max_attempts + 1):
             process = subprocess.run(
-                create_command,
+                command,
                 cwd=cwd,
                 capture_output=True,
                 text=True,
@@ -3713,6 +3871,29 @@ git push -u origin main
             time.sleep(retry_delay_seconds * attempt)
         return process
 
+    def _run_datalad_create_with_lock_retry(
+        self,
+        create_command: List[str],
+        *,
+        cwd: str,
+        timeout: float,
+        max_attempts: int = 3,
+        retry_delay_seconds: float = 1.5,
+    ) -> "subprocess.CompletedProcess":
+        """Run a `datalad create` command with index-lock retry.
+
+        Thin wrapper over `_run_command_with_index_lock_retry` kept as a named
+        entry point for the nested-subdataset `datalad create` step (and its
+        regression tests). See that method for why the retry is needed.
+        """
+        return self._run_command_with_index_lock_retry(
+            create_command,
+            cwd=cwd,
+            timeout=timeout,
+            max_attempts=max_attempts,
+            retry_delay_seconds=retry_delay_seconds,
+        )
+
     def _monotonic_clock(self) -> float:
         """Thin wrapper around time.monotonic() used for nested-subdataset
         conversion budgeting, kept separate from other time.monotonic() call
@@ -3720,6 +3901,48 @@ git push -u origin main
         tests can control this specific clock without affecting those.
         """
         return time.monotonic()
+
+    def _publish_nested_progress(
+        self,
+        project_path: Path,
+        *,
+        nested_dataset_paths: List[Path],
+        done_relative_texts: List[str],
+    ) -> None:
+        """Push live nested-registration counts into the cached DataLad status.
+
+        During a registration the frontend's status poll is served from the
+        cache (the mutation holds the git lock — see
+        :meth:`get_datalad_status`), so without this the GUI counter would sit
+        frozen at its pre-mutation value for up to a full 90s call. Merging
+        the running counts here keeps the panel's "N/M registered" and "next"
+        in step with the per-subject work streaming to the terminal. No-op
+        until a full status snapshot has been cached (nothing to merge into).
+        """
+        cached = self._get_cached_datalad_status(project_path)
+        if cached is None:
+            return
+        done = set(done_relative_texts)
+        total = len(nested_dataset_paths)
+        registered = 0
+        next_missing = ""
+        for candidate in nested_dataset_paths:
+            rel = candidate.relative_to(project_path).as_posix()
+            if rel in done:
+                registered += 1
+            elif not next_missing:
+                next_missing = rel
+        cached.update(
+            {
+                "subdatasets_total_count": total,
+                "subdatasets_registered_count": registered,
+                "subdatasets_remaining_count": max(total - registered, 0),
+                "subdatasets_progress_percent": 100 if total == 0 else int(registered * 100 / total),
+                "next_missing_subdataset": next_missing,
+                "mutation_in_progress": True,
+            }
+        )
+        self._cache_datalad_status(project_path, cached)
 
     def _create_nested_subdatasets(
         self,
@@ -3822,6 +4045,11 @@ git push -u origin main
                     created_paths.append(relative_dataset_text)
                     if remaining_budget is not None:
                         remaining_budget -= 1
+                    self._publish_nested_progress(
+                        project_path,
+                        nested_dataset_paths=nested_dataset_paths,
+                        done_relative_texts=existing_paths + created_paths,
+                    )
                     continue
 
                 failed_paths.append(
@@ -3861,6 +4089,11 @@ git push -u origin main
                     created_paths.append(relative_dataset_text)
                     if remaining_budget is not None:
                         remaining_budget -= 1
+                    self._publish_nested_progress(
+                        project_path,
+                        nested_dataset_paths=nested_dataset_paths,
+                        done_relative_texts=existing_paths + created_paths,
+                    )
                     continue
 
                 failed_paths.append(
@@ -3887,6 +4120,11 @@ git push -u origin main
             created_paths.append(relative_dataset_text)
             if remaining_budget is not None:
                 remaining_budget -= 1
+            self._publish_nested_progress(
+                project_path,
+                nested_dataset_paths=nested_dataset_paths,
+                done_relative_texts=existing_paths + created_paths,
+            )
 
         return {
             "subdatasets_created": created_paths,
@@ -4265,12 +4503,13 @@ git push -u origin main
                 command=" ".join(remove_command),
             )
             try:
-                remove_process = subprocess.run(
+                # Retry on transient index.lock contention: the frontend's
+                # periodic status poll (and any concurrent DataLad tooling)
+                # touches this same parent index, and a bare failure here
+                # aborts the whole subdataset registration.
+                remove_process = self._run_command_with_index_lock_retry(
                     remove_command,
                     cwd=str(project_path),
-                    capture_output=True,
-                    text=True,
-                    check=False,
                     timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
                 )
             except subprocess.TimeoutExpired:
@@ -5054,12 +5293,13 @@ git push -u origin main
         ]
 
         try:
-            process = subprocess.run(
+            # Retry on transient index.lock contention (see
+            # _run_command_with_index_lock_retry). A genuine failure or the
+            # benign "nothing to commit" is returned immediately without
+            # retry and handled below.
+            process = self._run_command_with_index_lock_retry(
                 commit_command,
                 cwd=str(project_path),
-                capture_output=True,
-                text=True,
-                check=False,
                 timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
             )
         except subprocess.TimeoutExpired:
