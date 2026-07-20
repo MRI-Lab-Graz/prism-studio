@@ -28,7 +28,7 @@
                 <div id="dataladServerCard">
                     <div class="alert alert-info border-info mb-4 beginner-help-block">
                         <i class="fas fa-info-circle me-2"></i>
-                        Connect this project to a central DataLad RIA store and sync to it as often as you like
+                        Connect this project to a central DataLad server and sync to it as often as you like
                         while the study is ongoing. When you are completely finished preparing this project,
                         run <strong>Finalize &amp; disconnect</strong> for a last push, a verification step, and
                         to remove this computer's connection to the server. Local files are always kept.
@@ -42,10 +42,16 @@
                     <form id="dataladServerConfigForm" class="mb-3">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label for="dataladServerUrl" class="form-label fw-bold">RIA store URL</label>
+                                <label for="dataladServerUrl" class="form-label fw-bold">DataLad server URL</label>
                                 <input type="text" class="form-control" id="dataladServerUrl"
-                                       placeholder="ria+ssh://user@host/path/to/store">
-                                <div class="form-text">SSH-accessible DataLad RIA store, e.g. <code>ria+ssh://researcher@datalad.example.org/srv/ria-store</code>.</div>
+                                       placeholder="ria+ssh://user@host/path/to/store or user@host:/path">
+                                <div class="form-text">
+                                    A <code>ria+ssh://researcher@datalad.example.org/srv/ria-store</code> URL connects to
+                                    a DataLad RIA store. Any other SSH target (e.g.
+                                    <code>researcher@host.example.org:/srv/backups/study</code>) or local path creates a
+                                    plain DataLad sibling instead — for a server that was never set up with a RIA
+                                    layout, e.g. one only ever used for plain file backups.
+                                </div>
                             </div>
                             <div class="col-md-3">
                                 <label for="dataladServerSiblingName" class="form-label fw-bold">Sibling name</label>
@@ -54,6 +60,7 @@
                             <div class="col-md-3">
                                 <label for="dataladServerAlias" class="form-label fw-bold">Alias (optional)</label>
                                 <input type="text" class="form-control" id="dataladServerAlias" placeholder="my-study">
+                                <div class="form-text">RIA stores only — ignored for a plain SSH/local sibling.</div>
                             </div>
                             <div class="col-12">
                                 <button type="submit" class="btn btn-outline-secondary btn-sm" id="dataladServerSaveConfigBtn">
@@ -119,6 +126,12 @@
                             <div class="col-md-4">
                                 <label for="rsyncServerLabel" class="form-label fw-bold">Label (optional)</label>
                                 <input type="text" class="form-control" id="rsyncServerLabel" placeholder="lab-server">
+                            </div>
+                            <div class="col-12">
+                                <label for="rsyncServerExclude" class="form-label fw-bold">Exclude files/folders (optional)</label>
+                                <textarea class="form-control" id="rsyncServerExclude" rows="3"
+                                          placeholder="derivatives/&#10;sourcedata/raw/*&#10;*.tmp"></textarea>
+                                <div class="form-text">One rsync <code>--exclude</code> pattern per line, relative to the project root (e.g. <code>derivatives/</code>, <code>*.tmp</code>).</div>
                             </div>
                             <div class="col-12">
                                 <button type="submit" class="btn btn-outline-secondary btn-sm" id="rsyncServerSaveConfigBtn">

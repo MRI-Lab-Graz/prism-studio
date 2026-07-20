@@ -65,8 +65,10 @@ async function refreshRsyncServerStatus(projectPath) {
 
         const targetInput = getById('rsyncServerTarget');
         const labelInput = getById('rsyncServerLabel');
+        const excludeInput = getById('rsyncServerExclude');
         if (targetInput && !targetInput.value) targetInput.value = status.remote_target || '';
         if (labelInput && !labelInput.value) labelInput.value = status.remote_label || '';
+        if (excludeInput && !excludeInput.value) excludeInput.value = (status.exclude_patterns || []).join('\n');
 
         if (!status.rsync_available) {
             setStatusBadge('rsync not found', 'secondary');
@@ -84,11 +86,20 @@ async function refreshRsyncServerStatus(projectPath) {
     }
 }
 
+function getExcludePatterns() {
+    const raw = getById('rsyncServerExclude')?.value || '';
+    return raw
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+}
+
 function getRsyncRequestData(projectPath) {
     return {
         project_path: projectPath,
         remote_target: (getById('rsyncServerTarget')?.value || '').trim() || null,
         remote_label: (getById('rsyncServerLabel')?.value || '').trim() || null,
+        exclude_patterns: getExcludePatterns(),
     };
 }
 
