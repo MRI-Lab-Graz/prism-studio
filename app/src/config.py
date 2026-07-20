@@ -116,10 +116,12 @@ class PrismConfig:
     # Example:
     # {
     #   "rsyncRemoteTarget": "researcher@host.example.org:/srv/backups/study",
-    #   "rsyncRemoteLabel": "lab-server"
+    #   "rsyncRemoteLabel": "lab-server",
+    #   "rsyncExcludePatterns": ["derivatives/**", "*.tmp"]
     # }
     rsync_remote_target: Optional[str] = None
     rsync_remote_label: Optional[str] = None
+    rsync_exclude_patterns: List[str] = field(default_factory=list)
 
     # Config file location (set after loading)
     _config_path: Optional[str] = None
@@ -199,6 +201,7 @@ def load_config(dataset_path: str) -> PrismConfig:
             datalad_sibling_alias=data.get("siblingAlias"),
             rsync_remote_target=data.get("rsyncRemoteTarget"),
             rsync_remote_label=data.get("rsyncRemoteLabel"),
+            rsync_exclude_patterns=data.get("rsyncExcludePatterns", []),
         )
         config._config_path = config_path
         return config
@@ -262,6 +265,9 @@ def save_config(
 
     if config.rsync_remote_label:
         data["rsyncRemoteLabel"] = config.rsync_remote_label
+
+    if config.rsync_exclude_patterns:
+        data["rsyncExcludePatterns"] = config.rsync_exclude_patterns
 
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)

@@ -4753,6 +4753,34 @@ class TestFinalizeProjectUpload(unittest.TestCase):
         self.assertTrue(remove_attempts, "disconnect should have been attempted after a verified push")
 
     @patch("src.datalad_execution.resolve_datalad_executable", return_value="/usr/bin/datalad")
+    def test_disconnects_only_after_verified_push_for_plain_non_ria_sibling(self, _mock_resolve):
+        """A server that was never initialized as a RIA store (e.g. one only
+        ever used for plain rsync backups) should go through plain
+        `create-sibling`, and never touch a `<name>-storage` remote that
+        only a RIA sibling pair would have."""
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            seen_commands: list[list[str]] = []
+            fake_run = _make_fake_ria_subprocess(
+                outstanding_files=[], seen_commands=seen_commands
+            )
+
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run):
+                result = manager.finalize_project_upload(
+                    project_path,
+                    ria_url="user@host:/srv/backups/study",
+                    sibling_name="server",
+                )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertTrue(result.get("verified"))
+        self.assertTrue(result.get("disconnected"))
+        self.assertFalse(any("create-sibling-ria" in c for c in seen_commands))
+        self.assertTrue(any("create-sibling" in c for c in seen_commands))
+        self.assertFalse(any("server-storage" in c for c in seen_commands))
+
+    @patch("src.datalad_execution.resolve_datalad_executable", return_value="/usr/bin/datalad")
     def test_full_verify_failure_blocks_disconnect(self, _mock_resolve):
         manager = ProjectManager()
         with tempfile.TemporaryDirectory() as tmp:
@@ -4980,6 +5008,52 @@ class TestSyncProjectToRemote(unittest.TestCase):
         self.assertFalse(result.get("success"))
         self.assertIn("differences", result.get("message", ""))
         self.assertFalse(result["verify"]["verified"])
+
+    @patch("src.rsync_execution.resolve_rsync_executable", return_value="/usr/bin/rsync")
+    def test_exclude_patterns_are_forwarded_to_rsync_command(self, _mock_resolve):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            dest = Path(tmp) / "dest"
+
+            with patch(
+                "src.rsync_execution.subprocess.Popen",
+                return_value=_FakeRsyncPopen(returncode=0, stdout_lines=[]),
+            ) as mock_popen:
+                result = manager.sync_project_to_remote(
+                    project_path,
+                    remote_target=str(dest),
+                    exclude_patterns=["derivatives/", "*.tmp"],
+                )
+
+        self.assertTrue(result.get("success"), result)
+        command = mock_popen.call_args[0][0]
+        self.assertIn("--exclude", command)
+        self.assertIn("derivatives/", command)
+        self.assertIn("*.tmp", command)
+
+    @patch("src.rsync_execution.resolve_rsync_executable", return_value="/usr/bin/rsync")
+    def test_falls_back_to_saved_exclude_patterns_when_not_passed(self, _mock_resolve):
+        from src.config import PrismConfig, save_config
+
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            dest = Path(tmp) / "dest"
+
+            config = PrismConfig()
+            config.rsync_exclude_patterns = ["sourcedata/raw/*"]
+            save_config(config, str(project_path))
+
+            with patch(
+                "src.rsync_execution.subprocess.Popen",
+                return_value=_FakeRsyncPopen(returncode=0, stdout_lines=[]),
+            ) as mock_popen:
+                result = manager.sync_project_to_remote(project_path, remote_target=str(dest))
+
+        self.assertTrue(result.get("success"), result)
+        command = mock_popen.call_args[0][0]
+        self.assertIn("sourcedata/raw/*", command)
 
     @patch("src.rsync_execution.resolve_rsync_executable", return_value="/usr/bin/rsync")
     def test_verify_true_succeeds_when_destination_matches_source(self, _mock_resolve):

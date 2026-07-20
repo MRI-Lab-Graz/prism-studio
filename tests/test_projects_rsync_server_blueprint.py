@@ -181,6 +181,101 @@ def test_rsync_server_sync_job_reaches_error_status_when_verification_finds_mism
     assert "differ" in status_payload["error"]
 
 
+def test_rsync_server_save_config_persists_exclude_patterns(tmp_path):
+    app = _build_app()
+    project_dir = _project_dir(tmp_path)
+
+    with app.test_client() as client:
+        response = client.post(
+            "/api/projects/rsync-server/config",
+            json={
+                "project_path": str(project_dir),
+                "remote_target": "researcher@host:/srv/backups/study1",
+                "exclude_patterns": ["derivatives/", " ", "*.tmp", "derivatives/"],
+            },
+        )
+
+    assert response.status_code == 200
+    payload = response.get_json() or {}
+    # blanks dropped, duplicates collapsed, order preserved
+    assert payload.get("exclude_patterns") == ["derivatives/", "*.tmp"]
+
+    saved = json.loads(Path(payload["config_path"]).read_text(encoding="utf-8"))
+    assert saved.get("rsyncExcludePatterns") == ["derivatives/", "*.tmp"]
+
+
+def test_rsync_server_sync_forwards_exclude_patterns(tmp_path):
+    app = _build_app()
+    project_dir = _project_dir(tmp_path)
+
+    with patch(
+        "src.web.blueprints.projects_rsync_server_blueprint.threading.Thread"
+    ) as mock_thread_cls, patch(
+        "src.project_manager.ProjectManager.sync_project_to_remote",
+        return_value={"success": True, "message": "ok"},
+    ) as mock_sync:
+        captured = {}
+
+        def _capture(target=None, args=(), daemon=None):
+            captured["target"] = target
+            captured["args"] = args
+            return _FakeThread(target=target, args=args, daemon=daemon)
+
+        mock_thread_cls.side_effect = _capture
+
+        with app.test_client() as client:
+            start_response = client.post(
+                "/api/projects/rsync-server/sync/start",
+                json={
+                    "project_path": str(project_dir),
+                    "remote_target": "researcher@host:/srv/backups/study1",
+                    "exclude_patterns": ["derivatives/", "", "*.tmp"],
+                },
+            )
+            job_id = start_response.get_json()["job_id"]
+            captured["target"](*captured["args"])
+
+    mock_sync.assert_called_once()
+    _, call_kwargs = mock_sync.call_args
+    assert call_kwargs["exclude_patterns"] == ["derivatives/", "*.tmp"]
+
+
+def test_rsync_server_sync_omits_exclude_patterns_when_not_provided(tmp_path):
+    """No exclude_patterns in the request falls back to the project's saved patterns."""
+    app = _build_app()
+    project_dir = _project_dir(tmp_path)
+
+    with patch(
+        "src.web.blueprints.projects_rsync_server_blueprint.threading.Thread"
+    ) as mock_thread_cls, patch(
+        "src.project_manager.ProjectManager.sync_project_to_remote",
+        return_value={"success": True, "message": "ok"},
+    ) as mock_sync:
+        captured = {}
+
+        def _capture(target=None, args=(), daemon=None):
+            captured["target"] = target
+            captured["args"] = args
+            return _FakeThread(target=target, args=args, daemon=daemon)
+
+        mock_thread_cls.side_effect = _capture
+
+        with app.test_client() as client:
+            start_response = client.post(
+                "/api/projects/rsync-server/sync/start",
+                json={
+                    "project_path": str(project_dir),
+                    "remote_target": "researcher@host:/srv/backups/study1",
+                },
+            )
+            job_id = start_response.get_json()["job_id"]
+            captured["target"](*captured["args"])
+
+    mock_sync.assert_called_once()
+    _, call_kwargs = mock_sync.call_args
+    assert call_kwargs["exclude_patterns"] is None
+
+
 def test_rsync_server_sync_forwards_verify_flag(tmp_path):
     app = _build_app()
     project_dir = _project_dir(tmp_path)

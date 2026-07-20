@@ -154,6 +154,7 @@ def run_rsync_push(
         return result
 
     output_lines: list[str] = []
+    highest_percent = 10
     try:
         assert process.stdout is not None
         for line in process.stdout:
@@ -161,10 +162,14 @@ def run_rsync_push(
             match = _PROGRESS_PERCENT_RE.search(line)
             if match:
                 # rsync's own percent only covers the file currently in
-                # flight; clamp into a [10, 95] band so it reads as progress
-                # without claiming completion before the process exits.
-                percent = 10 + int(int(match.group(1)) * 0.85)
-                _report(min(percent, 95), "Copying files...")
+                # flight and resets to 0 for each new file; clamp into a
+                # [10, 95] band and never report backwards, so the bar reads
+                # as steady progress across the whole transfer instead of
+                # sawtoothing between files.
+                percent = min(10 + int(int(match.group(1)) * 0.85), 95)
+                if percent > highest_percent:
+                    highest_percent = percent
+                    _report(highest_percent, "Copying files...")
             if _cancelled():
                 process.terminate()
                 break

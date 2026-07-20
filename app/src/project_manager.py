@@ -5468,8 +5468,9 @@ git push -u origin main
         ).strip()
         if not resolved_url:
             raise ValueError(
-                "No RIA store URL configured. Pass a ria_url or set it in "
-                "this project's Push to DataLad Server settings."
+                "No DataLad server URL configured. Pass a ria_url (a RIA store "
+                "URL or a plain SSH/local sibling URL) or set it in this "
+                "project's Push to DataLad Server settings."
             )
 
         resolved_name = (
@@ -5542,7 +5543,7 @@ git push -u origin main
         """
         from src.datalad_execution import (
             resolve_datalad_executable,
-            run_datalad_create_sibling_ria,
+            run_datalad_create_sibling,
             run_datalad_push,
         )
 
@@ -5556,10 +5557,10 @@ git push -u origin main
             if callable(progress_callback):
                 progress_callback(percent, message)
 
-        _report(10, "Connecting to RIA store...")
-        create_result = run_datalad_create_sibling_ria(
+        _report(10, "Connecting to server...")
+        create_result = run_datalad_create_sibling(
             project_path,
-            ria_url=settings["ria_url"],
+            remote_url=settings["ria_url"],
             sibling_name=settings["sibling_name"],
             alias=settings["alias"],
             datalad_executable=datalad_executable,
@@ -5567,14 +5568,14 @@ git push -u origin main
         if not create_result.get("success"):
             return {
                 "success": False,
-                "message": f"Could not connect to RIA store: {create_result.get('message')}",
+                "message": f"Could not connect to server: {create_result.get('message')}",
                 "create": create_result,
             }
 
         if callable(is_cancelled) and is_cancelled():
             return {"success": False, "message": "Cancelled before push."}
 
-        _report(40, "Syncing dataset to RIA store...")
+        _report(40, "Syncing dataset to server...")
         push_result = run_datalad_push(
             project_path,
             sibling_name=settings["sibling_name"],
@@ -5591,7 +5592,7 @@ git push -u origin main
         _report(100, "Sync complete. Connection to server kept.")
         return {
             "success": True,
-            "message": "Synced to RIA store. Connection kept for further syncing.",
+            "message": "Synced to server. Connection kept for further syncing.",
             "create": create_result,
             "push": push_result,
         }
@@ -5607,7 +5608,7 @@ git push -u origin main
         Proves the archived copy is independently retrievable and valid, not
         just that `datalad push` reported success.
         """
-        from src.datalad_execution import resolve_datalad_executable
+        from src.datalad_execution import is_ria_url, resolve_datalad_executable
         from src.web.blueprints.projects_export_blueprint import (
             _run_pre_export_validation,
         )
@@ -5616,8 +5617,10 @@ git push -u origin main
         if not datalad_executable:
             return {"success": False, "message": "DataLad executable not available."}
 
+        # `#~alias` is RIA-specific dataset-lookup syntax; a plain sibling is
+        # just an ordinary git remote, cloned by URL alone.
         clone_source = ria_url
-        if sibling_alias:
+        if sibling_alias and is_ria_url(ria_url):
             clone_source = f"{ria_url.rstrip('/')}#~{sibling_alias}"
 
         with tempfile.TemporaryDirectory(prefix="prism_ria_verify_") as tmp_dir:
@@ -5686,9 +5689,10 @@ git push -u origin main
         opt-in.
         """
         from src.datalad_execution import (
+            is_ria_url,
             resolve_datalad_executable,
             run_datalad_remove_sibling,
-            run_datalad_upload_to_ria,
+            run_datalad_upload_to_sibling,
         )
 
         project_path = Path(project_path)
@@ -5699,10 +5703,10 @@ git push -u origin main
         datalad_executable = resolve_datalad_executable()
         use_full_verify = str(verify_mode or "fast").strip().lower() == "full"
 
-        result = run_datalad_upload_to_ria(
+        result = run_datalad_upload_to_sibling(
             project_path,
             dataset_roots=dataset_roots,
-            ria_url=settings["ria_url"],
+            remote_url=settings["ria_url"],
             sibling_name=settings["sibling_name"],
             alias=settings["alias"],
             # Disconnect is handled here so the optional full clone+validate
@@ -5744,6 +5748,7 @@ git push -u origin main
             project_path,
             sibling_name=settings["sibling_name"],
             dataset_roots=dataset_roots,
+            is_ria=is_ria_url(settings["ria_url"]),
             mark_annex_dead=mark_annex_dead,
             datalad_executable=datalad_executable,
         )
@@ -5772,6 +5777,7 @@ git push -u origin main
         return {
             "remote_target": config.rsync_remote_target,
             "remote_label": config.rsync_remote_label,
+            "exclude_patterns": config.rsync_exclude_patterns,
             "configured": bool(config.rsync_remote_target),
             "rsync_available": bool(resolve_rsync_executable()),
         }
@@ -5782,6 +5788,7 @@ git push -u origin main
         *,
         remote_target: Optional[str] = None,
         remote_label: Optional[str] = None,
+        exclude_patterns: Optional[List[str]] = None,
         verify: bool = False,
         progress_callback: Optional[Any] = None,
         is_cancelled: Optional[Any] = None,
@@ -5791,7 +5798,9 @@ git push -u origin main
         Additive only — files removed locally are left intact on the
         destination, since this is meant as a growing backup, not a mirror.
         `verify=True` runs a checksum dry-run afterwards to confirm the
-        destination matches exactly.
+        destination matches exactly. `exclude_patterns` are rsync `--exclude`
+        patterns (e.g. `derivatives/**`, `*.tmp`); falls back to the saved
+        per-project patterns when not passed explicitly.
         """
         from src.config import load_config
         from src.rsync_execution import resolve_rsync_executable, run_rsync_push, run_rsync_verify
@@ -5806,6 +5815,9 @@ git push -u origin main
                 "this project's Push to Remote Server settings."
             )
         label = str(remote_label or "").strip() or str(config.rsync_remote_label or "").strip()
+        patterns = (
+            exclude_patterns if exclude_patterns is not None else config.rsync_exclude_patterns
+        )
 
         rsync_executable = resolve_rsync_executable()
 
@@ -5818,6 +5830,7 @@ git push -u origin main
             project_path,
             remote_target=target,
             rsync_executable=rsync_executable,
+            exclude_patterns=patterns,
             progress_callback=progress_callback,
             is_cancelled=is_cancelled,
         )
@@ -5844,6 +5857,7 @@ git push -u origin main
             project_path,
             remote_target=target,
             rsync_executable=rsync_executable,
+            exclude_patterns=patterns,
         )
         if not verify_result.get("verified"):
             return {

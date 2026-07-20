@@ -20,6 +20,29 @@ from .projects_helpers import _resolve_project_root_path
 
 projects_rsync_server_bp = Blueprint("projects_rsync_server", __name__)
 
+
+def _sanitize_exclude_patterns(raw) -> list[str]:
+    """Normalize a client-supplied exclude-pattern list into rsync `--exclude` patterns.
+
+    Accepts a list of strings (from the UI) or a single newline-separated
+    string; drops blanks and duplicates while preserving order.
+    """
+    if isinstance(raw, str):
+        candidates = raw.splitlines()
+    elif isinstance(raw, list):
+        candidates = raw
+    else:
+        candidates = []
+
+    seen: set[str] = set()
+    patterns: list[str] = []
+    for item in candidates:
+        pattern = str(item or "").strip()
+        if pattern and pattern not in seen:
+            seen.add(pattern)
+            patterns.append(pattern)
+    return patterns
+
 # ---------------------------------------------------------------------------
 # Async job store (same shape as the RIA sync/finalize job store)
 # ---------------------------------------------------------------------------
@@ -158,6 +181,7 @@ def rsync_server_save_config():
     config = load_config(str(resolved))
     config.rsync_remote_target = str(data.get("remote_target") or "").strip() or None
     config.rsync_remote_label = str(data.get("remote_label") or "").strip() or None
+    config.rsync_exclude_patterns = _sanitize_exclude_patterns(data.get("exclude_patterns"))
 
     filename = Path(config._config_path).name if config._config_path else ".prismrc.json"
     saved_path = save_config(config, str(resolved), filename=filename)
@@ -167,6 +191,7 @@ def rsync_server_save_config():
             "success": True,
             "remote_target": config.rsync_remote_target,
             "remote_label": config.rsync_remote_label,
+            "exclude_patterns": config.rsync_exclude_patterns,
             "config_path": saved_path,
         }
     )
@@ -184,6 +209,9 @@ def rsync_server_sync_start():
         sync_kwargs = {
             "remote_target": (data.get("remote_target") or None),
             "remote_label": (data.get("remote_label") or None),
+            # Falls back to the project's saved exclude patterns when omitted/empty,
+            # matching remote_target/remote_label's fallback-to-saved-config behavior.
+            "exclude_patterns": _sanitize_exclude_patterns(data.get("exclude_patterns")) or None,
             "verify": bool(data.get("verify", False)),
         }
 
