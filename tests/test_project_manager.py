@@ -4691,6 +4691,94 @@ def _make_fake_ria_subprocess(*, outstanding_files=None, remove_sibling_ok=True,
     return _fake_run
 
 
+class TestSyncProjectToRiaVerify(unittest.TestCase):
+    """sync_project_to_ria's optional `verify` flag: an independent
+    completeness check (same `git annex find --not --in` used by
+    finalize_project_upload) available on the repeatable "Sync now" path,
+    without requiring a full finalize/disconnect."""
+
+    def _project_dir(self, tmp: str) -> Path:
+        project_path = Path(tmp) / "demo_project"
+        project_path.mkdir(parents=True, exist_ok=True)
+        (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+        (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+        return project_path
+
+    @patch("src.datalad_execution.resolve_datalad_executable", return_value="/usr/bin/datalad")
+    def test_verify_false_by_default_skips_the_completeness_check(self, _mock_resolve):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            seen_commands: list[list[str]] = []
+            fake_run = _make_fake_ria_subprocess(seen_commands=seen_commands)
+
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run):
+                result = manager.sync_project_to_ria(
+                    project_path, ria_url="ria+ssh://user@host/store"
+                )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertNotIn("verify", result)
+        find_attempts = [c for c in seen_commands if "annex" in c and "find" in c]
+        self.assertEqual(find_attempts, [])
+
+    @patch("src.datalad_execution.resolve_datalad_executable", return_value="/usr/bin/datalad")
+    def test_verify_true_succeeds_when_all_content_reached_the_sibling(self, _mock_resolve):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            fake_run = _make_fake_ria_subprocess(outstanding_files=[])
+
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run):
+                result = manager.sync_project_to_ria(
+                    project_path, ria_url="ria+ssh://user@host/store", verify=True
+                )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertTrue(result["verify"]["verified"])
+
+    @patch("src.datalad_execution.resolve_datalad_executable", return_value="/usr/bin/datalad")
+    def test_verify_true_fails_when_content_is_missing_on_the_sibling(self, _mock_resolve):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            fake_run = _make_fake_ria_subprocess(
+                outstanding_files=["sub-001/anat/sub-001_T1w.nii.gz"]
+            )
+
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run):
+                result = manager.sync_project_to_ria(
+                    project_path, ria_url="ria+ssh://user@host/store", verify=True
+                )
+
+        self.assertFalse(result.get("success"))
+        self.assertIn("missing content", result.get("message", ""))
+        self.assertFalse(result["verify"]["verified"])
+
+    @patch("src.datalad_execution.resolve_datalad_executable", return_value="/usr/bin/datalad")
+    def test_verify_true_checks_plain_sibling_name_directly_for_non_ria_url(self, _mock_resolve):
+        """A plain (non-RIA) sibling has no `<name>-storage` companion --
+        verification must check the sibling name itself."""
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            seen_commands: list[list[str]] = []
+            fake_run = _make_fake_ria_subprocess(outstanding_files=[], seen_commands=seen_commands)
+
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run):
+                result = manager.sync_project_to_ria(
+                    project_path,
+                    ria_url="user@host:/srv/backups/study",
+                    sibling_name="server",
+                    verify=True,
+                )
+
+        self.assertTrue(result.get("success"), result)
+        find_commands = [c for c in seen_commands if "annex" in c and "find" in c]
+        self.assertTrue(find_commands)
+        self.assertEqual(find_commands[0][-1], "server")
+
+
 class TestFinalizeProjectUpload(unittest.TestCase):
     """A3: finalize_project_upload orchestration -- the gate that decides
     whether it's safe to remove the local sibling after 'Finalize &

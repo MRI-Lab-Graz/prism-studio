@@ -7,7 +7,10 @@ Two distinct operations, mirroring the async job pattern used by the Export
 feature (`/start` -> background thread -> `/status` polling -> `/cancel`):
 
 - "Sync now": connect (idempotent) + push. Safe to run repeatedly throughout
-  a study; the sibling stays registered as an ongoing backup.
+  a study; the sibling stays registered as an ongoing backup. An optional
+  `verify` flag additionally confirms every annexed key actually reached
+  the sibling before reporting success -- useful before treating the local
+  copy as safe to delete, without going through a full finalize/disconnect.
 - "Finalize & disconnect": one last push, a verification step, then removes
   the local sibling registration. Local files are kept. Disconnect only
   happens if verification passes, so a failed/partial run can be retried.
@@ -190,6 +193,8 @@ def _start_ria_job(kind: str, runner) -> tuple:
             "sibling_name": (data.get("sibling_name") or None),
             "alias": (data.get("alias") or None),
         }
+        if kind == "sync":
+            ria_kwargs["verify"] = bool(data.get("verify", False))
         if kind == "finalize":
             ria_kwargs["verify_mode"] = str(data.get("verify_mode") or "fast").strip().lower()
             ria_kwargs["mark_annex_dead"] = bool(data.get("mark_annex_dead", False))

@@ -11,6 +11,7 @@ import { setButtonLoading } from './helpers.js';
 import { getById, setHtml, hide, show, escapeHtml } from '../../shared/dom.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
+import { openRemoteFolderPicker } from './remote_folder_picker.js';
 
 let rsyncServerModuleInitialized = false;
 let activeJobId = null;
@@ -237,6 +238,12 @@ async function onSyncClick() {
     }
 }
 
+async function onBrowseDestinationClick() {
+    const input = getById('rsyncServerTarget');
+    const picked = await openRemoteFolderPicker(input?.value || '');
+    if (picked && input) input.value = picked;
+}
+
 async function onSaveConfigSubmit(e) {
     e.preventDefault();
     const projectPath = resolveCurrentProjectPath();
@@ -273,6 +280,9 @@ export function initRsyncServerSection() {
 
     const syncBtn = getById('rsyncServerSyncBtn');
     if (syncBtn) syncBtn.addEventListener('click', onSyncClick);
+
+    const browseBtn = getById('rsyncServerBrowseBtn');
+    if (browseBtn) browseBtn.addEventListener('click', onBrowseDestinationClick);
 
     const configForm = getById('rsyncServerConfigForm');
     if (configForm) configForm.addEventListener('submit', onSaveConfigSubmit);
