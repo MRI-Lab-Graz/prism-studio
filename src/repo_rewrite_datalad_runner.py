@@ -8,6 +8,7 @@ from src.bids_entity_parser import BidsEntityParser
 from src.bids_entity_rewriter import BidsEntityRewriter
 from src.datalad_execution import (
     is_datalad_dataset,
+    paths_have_uncommitted_changes,
     resolve_datalad_executable,
     run_datalad_get_paths,
     run_datalad_save,
@@ -102,6 +103,18 @@ class RewriteCancelledError(RuntimeError):
     """Raised when a caller-supplied is_cancelled() callback returns True
     between subject groups, so a long batch can be aborted cleanly between
     DataLad commits rather than only at the very end."""
+
+
+class MutationNotFullySavedError(ValueError):
+    """Raised when a group's files were actually renamed on disk but the
+    result could not be fully committed via DataLad -- as opposed to a
+    precondition failure (get/unlock) where nothing was touched yet.
+
+    Callers must not treat this the same as a plain "left unchanged"
+    failure: the worktree is now dirty for this group and needs explicit
+    attention (retry the save, or run `datalad save` manually) rather than
+    being silently folded into the batch's generic failure list.
+    """
 
 
 def _extract_subject_from_path(path_text: str) -> str | None:
@@ -209,7 +222,37 @@ def _apply_mutation_locally_with_datalad_save(
                 f"{unlock_result.get('message') or '(no message)'}"
             )
 
-    payload = apply_fn()
+    try:
+        payload = apply_fn()
+    except Exception as exc:
+        # apply_fn() renames files one at a time (see
+        # SubjectCodeRewriter.apply / BidsEntityRewriter.apply); a failure
+        # partway through can leave some files already renamed on disk.
+        # Checked *before* the emergency save (below), since a successful
+        # save would make the tree clean again and hide the very thing
+        # we're trying to detect.
+        mutated = paths_have_uncommitted_changes(root, paths=save_paths)
+        emergency_save = run_datalad_save(
+            root,
+            message=f"{run_message} (partial apply -- emergency save)",
+            datalad_executable=datalad_executable,
+            recursive=True,
+            paths=save_paths,
+        )
+        if mutated:
+            saved_note = (
+                "Partial on-disk changes were captured via an emergency "
+                "'datalad save'."
+                if emergency_save.get("success")
+                else "An emergency 'datalad save' ALSO failed "
+                f"({emergency_save.get('message') or 'unknown error'}) -- "
+                "these changes are still uncommitted."
+            )
+            raise MutationNotFullySavedError(
+                f"Mutation raised partway through ({exc}). {saved_note} "
+                "This group's rename is INCOMPLETE and needs manual review."
+            ) from exc
+        raise ValueError(str(exc)) from exc
 
     save_result = run_datalad_save(
         root,
@@ -219,8 +262,11 @@ def _apply_mutation_locally_with_datalad_save(
         paths=save_paths,
     )
     if not save_result.get("success"):
-        raise ValueError(
-            str(save_result.get("message") or "DataLad save failed after mutation.")
+        raise MutationNotFullySavedError(
+            "Rename was applied on disk but 'datalad save' failed "
+            "afterward, so these changes are NOT committed and the "
+            "worktree is dirty: "
+            f"{save_result.get('message') or 'Unknown DataLad error.'}"
         )
 
     mutation_result = {
@@ -485,14 +531,32 @@ def apply_subject_rewrite(
                     explicit_mapping=explicit_mapping_for_group,
                 ),
             )
+        except MutationNotFullySavedError as exc:
+            # Unlike a precondition failure (get/unlock), this group's files
+            # were actually renamed on disk and are now uncommitted. Don't
+            # keep going and pile more unsaved renames on top of an already
+            # dirty worktree -- stop the batch here so the user sees exactly
+            # which group needs manual attention.
+            add_log(f"[{subject_group}] {exc}", "error")
+            succeeded_subjects = ", ".join(d["subject"] for d in group_details) or "(none)"
+            remaining = total_subject_groups - group_index - 1
+            add_log(
+                f"Stopping batch: {len(group_details)} of {total_subject_groups} "
+                f"subject group(s) succeeded and were saved ({succeeded_subjects}); "
+                f"[{subject_group}] was renamed on disk but NOT fully saved and "
+                f"needs manual 'datalad save'; {remaining} remaining group(s) "
+                "were not attempted.",
+                "error",
+            )
+            raise TrackedRewriteError(str(exc), log) from exc
         except Exception as exc:
             # Don't abort the whole batch on one bad subject group (e.g. a
             # real-world dataset with inconsistently-nested DataLad
             # subdatasets where one subject's presence check fails for
-            # reasons unrelated to the rename itself). Each group is its
-            # own atomic get/unlock/apply/save cycle, so subjects already
-            # renamed stay renamed; record this one as failed and keep
-            # going so the rest of the batch isn't held hostage by it.
+            # reasons unrelated to the rename itself). These failures happen
+            # before any on-disk mutation, so subjects already renamed stay
+            # renamed; record this one as failed and keep going so the rest
+            # of the batch isn't held hostage by it.
             add_log(f"[{subject_group}] {exc}", "error")
             failed_groups.append({"subject": subject_group, "error": str(exc)})
             continue
@@ -850,11 +914,29 @@ def apply_entity_rewrite(
                     explicit_renames=explicit_renames_for_group,
                 ),
             )
+        except MutationNotFullySavedError as exc:
+            # Same reasoning as apply_subject_rewrite: this group's files
+            # were actually renamed on disk and are now uncommitted, so
+            # continuing would only pile more unsaved renames on top of an
+            # already dirty worktree. Stop the batch here instead.
+            add_log(f"[{subject_group}] {exc}", "error")
+            succeeded_subjects = ", ".join(d["subject"] for d in group_details) or "(none)"
+            remaining = total_subject_groups - group_index - 1
+            add_log(
+                f"Stopping batch: {len(group_details)} of {total_subject_groups} "
+                f"subject group(s) succeeded and were saved ({succeeded_subjects}); "
+                f"[{subject_group}] was renamed on disk but NOT fully saved and "
+                f"needs manual 'datalad save'; {remaining} remaining group(s) "
+                "were not attempted.",
+                "error",
+            )
+            raise TrackedRewriteError(str(exc), log) from exc
         except Exception as exc:
             # Same reasoning as apply_subject_rewrite: don't abort the whole
             # batch on one subject group's failure (e.g. an inconsistently
-            # nested DataLad subdataset). Record it and keep going so the
-            # rest of the batch isn't held hostage by an unrelated subject.
+            # nested DataLad subdataset). These failures happen before any
+            # on-disk mutation. Record it and keep going so the rest of the
+            # batch isn't held hostage by an unrelated subject.
             add_log(f"[{subject_group}] {exc}", "error")
             failed_groups.append({"subject": subject_group, "error": str(exc)})
             continue

@@ -31,6 +31,48 @@ def resolve_datalad_executable() -> str:
     return str(shutil.which("datalad") or "").strip()
 
 
+def paths_have_uncommitted_changes(
+    project_root: Path,
+    *,
+    paths: Sequence[str] | None = None,
+    timeout_seconds: int = 120,
+) -> bool:
+    """Return True if `git status --porcelain` reports anything under paths
+    (the whole tree, if paths is empty/None).
+
+    `datalad save` always exits 0 whether or not there was anything to save
+    (confirmed empirically -- it never reliably signals "no changes" via
+    exit code or a message), so it cannot be used to tell "a mutation
+    partially happened before failing" apart from "nothing happened at all".
+    This checks the actual working tree instead. Fails safe (returns True)
+    on any error, so an undetermined state is never mistaken for "clean".
+    """
+    root = Path(project_root)
+    git_executable = str(shutil.which("git") or "git")
+    normalized_paths = [
+        str(Path(str(path or "").strip()).as_posix())
+        for path in (paths or [])
+        if str(path or "").strip()
+    ]
+    command = [git_executable, "status", "--porcelain"]
+    if normalized_paths:
+        command.extend(["--", *normalized_paths])
+    try:
+        process = subprocess.run(
+            command,
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            timeout=max(1, int(timeout_seconds)),
+            check=False,
+        )
+    except Exception:
+        return True
+    if process.returncode != 0:
+        return True
+    return bool((process.stdout or "").strip())
+
+
 def run_datalad_get_recursive(
     project_root: Path,
     *,
