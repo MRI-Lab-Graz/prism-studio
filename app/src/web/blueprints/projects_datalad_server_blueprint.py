@@ -1,4 +1,7 @@
-"""Push a finished PRISM/DataLad project to a central RIA store.
+"""Push a finished PRISM/DataLad project to a central DataLad sibling
+(a RIA store, or a plain SSH/local sibling for a server that was never set
+up with a RIA layout -- see `run_datalad_create_sibling` in
+datalad_execution.py).
 
 Two distinct operations, mirroring the async job pattern used by the Export
 feature (`/start` -> background thread -> `/status` polling -> `/cancel`):

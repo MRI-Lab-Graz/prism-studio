@@ -6,6 +6,9 @@ from types import SimpleNamespace
 import pytest
 
 from src.datalad_execution import (
+    is_ria_url,
+    run_datalad_create_sibling,
+    run_datalad_create_sibling_plain,
     run_datalad_create_sibling_ria,
     run_datalad_push,
     run_datalad_push_verify,
@@ -13,6 +16,7 @@ from src.datalad_execution import (
     run_datalad_run,
     run_datalad_sibling_exists,
     run_datalad_unlock,
+    run_datalad_upload_to_sibling,
 )
 
 
@@ -185,6 +189,129 @@ def test_run_datalad_create_sibling_ria_reports_failure_detail(
     assert "ssh: connect to host failed" in result["message"]
 
 
+# ===== Plain (non-RIA) sibling support: for servers not initialized as a =====
+# ===== RIA store, e.g. one only ever used for rsync backups              =====
+
+
+@pytest.mark.parametrize(
+    "url,expected",
+    [
+        ("ria+ssh://user@host/store", True),
+        ("ria+file:///srv/store", True),
+        ("RIA+SSH://user@host/store", True),
+        ("ssh://user@host/path", False),
+        ("user@host:/srv/backups/study", False),
+        ("/local/backup/path", False),
+        ("", False),
+    ],
+)
+def test_is_ria_url_detects_ria_scheme_only(url, expected):
+    assert is_ria_url(url) is expected
+
+
+def test_run_datalad_create_sibling_plain_requires_url(tmp_path: Path):
+    result = run_datalad_create_sibling_plain(
+        tmp_path, remote_url="", datalad_executable="/usr/bin/datalad"
+    )
+
+    assert result["success"] is False
+    assert result["attempted"] is False
+    assert "No remote sibling URL" in result["message"]
+
+
+def test_run_datalad_create_sibling_plain_builds_reconfigure_command(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    seen_commands: list[list[str]] = []
+
+    def _fake_run(command, **kwargs):
+        seen_commands.append([str(item) for item in command])
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+
+    result = run_datalad_create_sibling_plain(
+        tmp_path,
+        remote_url="user@host:/srv/backups/study",
+        sibling_name="server",
+        datalad_executable="/usr/bin/datalad",
+    )
+
+    assert result["success"] is True
+    command = seen_commands[0]
+    assert command[0:3] == ["/usr/bin/datalad", "create-sibling", "user@host:/srv/backups/study"]
+    assert "--existing" in command
+    assert command[command.index("--existing") + 1] == "reconfigure"
+    assert "-r" in command
+    # Unlike the RIA variant, a plain sibling has no `--alias`/`--new-store-ok`.
+    assert "--alias" not in command
+    assert "--new-store-ok" not in command
+
+
+def test_run_datalad_create_sibling_plain_reports_failure_detail(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(
+        "src.datalad_execution.subprocess.run",
+        lambda *a, **k: SimpleNamespace(
+            returncode=1, stdout="", stderr="ssh: connect to host failed"
+        ),
+    )
+
+    result = run_datalad_create_sibling_plain(
+        tmp_path, remote_url="user@host:/srv/backups/study", datalad_executable="/usr/bin/datalad"
+    )
+
+    assert result["success"] is False
+    assert "ssh: connect to host failed" in result["message"]
+
+
+def test_run_datalad_create_sibling_dispatches_ria_url_to_create_sibling_ria(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    seen_commands: list[list[str]] = []
+
+    def _fake_run(command, **kwargs):
+        seen_commands.append([str(item) for item in command])
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+
+    result = run_datalad_create_sibling(
+        tmp_path,
+        remote_url="ria+ssh://user@host/store",
+        sibling_name="ria-store",
+        datalad_executable="/usr/bin/datalad",
+    )
+
+    assert result["success"] is True
+    assert "create-sibling-ria" in seen_commands[0]
+
+
+def test_run_datalad_create_sibling_dispatches_plain_url_to_create_sibling(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    seen_commands: list[list[str]] = []
+
+    def _fake_run(command, **kwargs):
+        seen_commands.append([str(item) for item in command])
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+
+    result = run_datalad_create_sibling(
+        tmp_path,
+        remote_url="user@host:/srv/backups/study",
+        sibling_name="server",
+        datalad_executable="/usr/bin/datalad",
+    )
+
+    assert result["success"] is True
+    command = seen_commands[0]
+    assert "create-sibling" in command
+    assert "create-sibling-ria" not in command
+
+
 def test_run_datalad_push_uses_sibling_name_and_recursive_flag(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
@@ -302,6 +429,33 @@ def test_run_datalad_remove_sibling_fails_if_any_dataset_root_fails(
     assert str(other_root) in result["message"]
 
 
+def test_run_datalad_remove_sibling_skips_storage_remote_for_plain_sibling(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A plain (non-RIA) sibling has no `<name>-storage` companion remote --
+    only the RIA path should ever attempt to remove one."""
+    seen_commands: list[list[str]] = []
+
+    def _fake_run(command, **kwargs):
+        seen_commands.append([str(item) for item in command])
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+
+    result = run_datalad_remove_sibling(
+        tmp_path,
+        sibling_name="server",
+        dataset_roots=[tmp_path],
+        is_ria=False,
+        datalad_executable="/usr/bin/datalad",
+    )
+
+    assert result["success"] is True
+    removed_sibling_args = [cmd[-1] for cmd in seen_commands if "siblings" in cmd]
+    assert removed_sibling_args == ["server"]
+    assert "server-storage" not in removed_sibling_args
+
+
 @pytest.mark.parametrize(
     "func,kwargs",
     [
@@ -386,6 +540,31 @@ def test_push_verify_uses_storage_sibling_name_not_git_sibling_name(
     command = seen_commands[0]
     assert command[-1] == "ria-store-storage"
     assert "--not" in command and "--in" in command
+
+
+def test_push_verify_checks_plain_sibling_name_directly_when_not_ria(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A plain sibling has no `-storage` companion -- annexed content is
+    pushed straight to `<name>`, so that's what must be checked."""
+    seen_commands: list[list[str]] = []
+
+    def _fake_run(command, **kwargs):
+        seen_commands.append([str(item) for item in command])
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+
+    run_datalad_push_verify(
+        tmp_path,
+        sibling_name="server",
+        dataset_roots=[tmp_path],
+        is_ria=False,
+        datalad_executable="/usr/bin/datalad",
+    )
+
+    command = seen_commands[0]
+    assert command[-1] == "server"
 
 
 def test_push_verify_false_when_a_file_is_outstanding_on_the_sibling(
@@ -506,3 +685,41 @@ def test_push_verify_reports_missing_executable_without_marking_verified(
     assert result["attempted"] is False
     assert result["verified"] is False
     assert result["success"] is False
+
+
+def test_upload_to_sibling_uses_plain_create_sibling_and_no_storage_remote_for_non_ria_url(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """End-to-end create -> push -> verify -> disconnect for a plain (non-RIA)
+    sibling: no `create-sibling-ria`, and no `<name>-storage` companion
+    remote checked or removed."""
+    seen_commands: list[list[str]] = []
+
+    def _fake_run(command, cwd=None, **kwargs):
+        cmd = [str(c) for c in command]
+        seen_commands.append(cmd)
+        if "create-sibling" in cmd:
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+        if "push" in cmd and "--to" in cmd:
+            return SimpleNamespace(returncode=0, stdout="publish ok", stderr="")
+        if "annex" in cmd and "find" in cmd:
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+        if ("siblings" in cmd or "remote" in cmd) and "remove" in cmd:
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+
+    result = run_datalad_upload_to_sibling(
+        tmp_path,
+        dataset_roots=[tmp_path],
+        remote_url="user@host:/srv/backups/study",
+        sibling_name="server",
+        datalad_executable="/usr/bin/datalad",
+    )
+
+    assert result["success"] is True, result
+    assert result["verified"] is True
+    assert result["disconnected"] is True
+    assert not any("create-sibling-ria" in cmd for cmd in seen_commands)
+    assert not any("server-storage" in cmd for cmd in seen_commands)

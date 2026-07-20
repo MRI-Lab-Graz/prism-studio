@@ -1,8 +1,9 @@
 /**
  * Projects Module - Push to DataLad Server
  *
- * Two distinct, repeatable-vs-terminal actions against a central DataLad RIA
- * store:
+ * Two distinct, repeatable-vs-terminal actions against a central DataLad
+ * sibling -- a RIA store (`ria+...` URL) or a plain SSH/local sibling (any
+ * other URL), see `run_datalad_create_sibling` in datalad_execution.py:
  * - "Sync now": connect (idempotent) + push. Safe to click any number of
  *   times while a study is ongoing; the sibling stays registered.
  * - "Finalize & disconnect": one last push, verification, then removes the
