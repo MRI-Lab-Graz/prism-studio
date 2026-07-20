@@ -11,7 +11,10 @@ next. For a longer guided exercise with prepared sample material, see
 or from a source checkout: `source .venv/bin/activate && python prism-studio.py` (or
 `rtk studio`). Studio opens at `http://localhost:5001`.
 
-**Create a project**: open **Projects** → **Create New Project** → enter a name (e.g.
+### Create a project
+![PRISM Studio Home screen](../_static/screenshots/prism-studio-landing-create.png)
+
+ → **Create New Project** → enter a name (e.g.
 `my_first_study`) and a parent folder → confirm. This creates
 `dataset_description.json`, `project.json`, `CITATION.cff`, `CHANGES`, `README.md`,
 `.bidsignore`, `.prismrc.json`, `sourcedata/`, `derivatives/`, and `code/`.

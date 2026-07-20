@@ -3,7 +3,7 @@
 PRISM stands for **Psychological Research Information System Model** — a data and
 metadata model for psychological research datasets. PRISM extends
 [BIDS](https://bids.neuroimaging.io/) for workflows common in psychology
-(questionnaires, biometrics, environment descriptions, richer study metadata) while
+(questionnaires, sport-science biometrics/performance assessments, environment descriptions, richer study metadata) while
 keeping compatibility with the standard BIDS ecosystem. **PRISM Studio** is the
 software that implements these workflows as a web interface and command-line tools.
 
@@ -15,7 +15,7 @@ preserving the ability to use BIDS-oriented tooling.
 **Why PRISM exists**: psychological studies need data structures only partially
 covered by standard BIDS practice — survey instruments with item-level descriptions
 and response options, sociodemographics/participant harmonization, biometrics and
-performance-testing metadata, physiology/environment metadata tied to a study
+sport-science performance-testing metadata, physiology/environment metadata tied to a study
 workflow, and recipe-based scoring with reproducible derived outputs. PRISM gives
 those areas a documented structure instead of leaving them as spreadsheet
 conventions or lab-specific folder rules.
@@ -25,8 +25,8 @@ conventions or lab-specific folder rules.
 | Topic | BIDS | PRISM |
 |---|---|---|
 | Primary baseline | Dataset organization for established BIDS modalities | Adds psychology-focused structure and metadata |
-| Surveys | Limited practical support | Rich sidecars, items, response options, and scoring support |
-| Biometrics and performance tests | Not a standard focus | Dedicated schema support |
+| Surveys | Limited practical support (phenotype) | Rich sidecars, items, response options, and scoring support |
+| Biometrics and sport-science performance tests | Not a standard focus | Dedicated schema support for sport-science-oriented assessments and biometrics |
 | Environment metadata | Not consistently standardized in practice | Structured sidecars and workflows |
 | Validation | BIDS rules | PRISM rules with optional BIDS validation alongside them |
 | Scoring and exports | Not part of BIDS itself | Implemented in PRISM Studio workflows |
@@ -51,11 +51,9 @@ survey/biometrics templates, edit JSON sidecars safely); **scoring and exports**
 | Modality | Typical files | Notes |
 |---|---|---|
 | Survey | `.tsv` plus `.json` | Questionnaires, assessments, item metadata, response options |
-| Biometrics | `.tsv` plus `.json` | Performance and testing workflows |
+| Biometrics | `.tsv` plus `.json` | Sport-science and performance-testing workflows |
 | Physiological | `.edf`, `.edf+`, or tabular signals plus `.json` | Continuous signals with metadata |
-| Eyetracking | `.tsv` plus `.json` | BIDS passthrough — no PRISM-specific content processing |
 | Environment | `.tsv` plus `.json` | Environmental or contextual metadata |
-| Events | `.tsv` plus `.json` | Task and stimulus timing or event logs |
 | Standard BIDS imaging and EEG modalities | Standard BIDS files | Validated under BIDS expectations where applicable |
 
 See [Specifications](SPECIFICATIONS.md) and the pages under `docs/specs/` for the
@@ -95,28 +93,6 @@ separate.
 DataLad is optional but useful for larger projects: large-file handling with
 provenance, portable project history, reproducible export/mutation workflows,
 project structures that scale beyond small local folders. See [DataLad](DATALAD.md).
-
-## Example: self-documenting survey data
-
-```json
-{
-  "SurveyName": "Wellbeing Demo",
-  "Items": [
-    {
-      "ItemID": "WB01",
-      "Question": { "en": "I felt motivated to start my daily tasks" },
-      "ResponseOptions": {
-        "0": "At no time",
-        "1": "Some of the time",
-        "2": "Most of the time",
-        "3": "All of the time"
-      }
-    }
-  ]
-}
-```
-
-That makes the data easier to understand, validate, reuse, and export.
 
 ## What's next
 
