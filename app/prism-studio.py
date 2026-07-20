@@ -582,6 +582,11 @@ modular_blueprints = [
         "projects_rsync_server_bp",
         "projects_rsync_server",
     ),
+    (
+        "src.web.blueprints.projects_remote_browse_blueprint",
+        "projects_remote_browse_bp",
+        "projects_remote_browse",
+    ),
 ]
 
 registered_modular_blueprints: list[str] = []

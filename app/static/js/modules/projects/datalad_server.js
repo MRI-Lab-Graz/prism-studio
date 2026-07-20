@@ -14,6 +14,8 @@ import { setButtonLoading } from './helpers.js';
 import { getById, setHtml, hide, show, escapeHtml } from '../../shared/dom.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
+import { openRemoteFolderPicker } from './remote_folder_picker.js';
+import { isRiaUrl } from '../../shared/ssh-target.js';
 
 let dataladServerModuleInitialized = false;
 let activeJobId = null;
@@ -225,12 +227,14 @@ async function onSyncClick() {
     }
     const btn = getById('dataladServerSyncBtn');
     const originalText = setButtonLoading(btn, true, 'Syncing...');
+    const requestData = getRiaRequestData(projectPath);
+    requestData.verify = !!getById('dataladServerSyncVerify')?.checked;
     await runRiaJob({
         startEndpoint: '/api/projects/datalad-server/sync/start',
         statusEndpointBase: '/api/projects/datalad-server/sync',
         button: btn,
         originalText,
-        requestData: getRiaRequestData(projectPath),
+        requestData,
         successHeading: 'Synced to server',
     });
 }
@@ -259,6 +263,21 @@ async function onFinalizeClick() {
         requestData,
         successHeading: 'Finalized and disconnected',
     });
+}
+
+async function onBrowseUrlClick() {
+    const input = getById('dataladServerUrl');
+    const raw = input?.value || '';
+    if (isRiaUrl(raw)) {
+        alert(
+            'Browsing isn\'t available for RIA store URLs — a RIA store\'s path is created ' +
+            'automatically, so it doesn\'t need to already exist. Browsing only applies to a ' +
+            'plain SSH sibling (a destination not starting with "ria+").'
+        );
+        return;
+    }
+    const picked = await openRemoteFolderPicker(raw);
+    if (picked && input) input.value = picked;
 }
 
 async function onSaveConfigSubmit(e) {
@@ -300,6 +319,9 @@ export function initDataladServerSection() {
 
     const finalizeBtn = getById('dataladServerFinalizeBtn');
     if (finalizeBtn) finalizeBtn.addEventListener('click', onFinalizeClick);
+
+    const browseBtn = getById('dataladServerBrowseBtn');
+    if (browseBtn) browseBtn.addEventListener('click', onBrowseUrlClick);
 
     const configForm = getById('dataladServerConfigForm');
     if (configForm) configForm.addEventListener('submit', onSaveConfigSubmit);

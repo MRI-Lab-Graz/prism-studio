@@ -28,7 +28,8 @@ def is_remote_target(target: str) -> bool:
     return len(head) > 1
 
 
-def _split_remote_target(target: str) -> tuple[str, str]:
+def split_remote_target(target: str) -> tuple[str, str]:
+    """Split a `[user@]host:/path` SSH spec into its `(host, path)` parts."""
     host_part, _, remote_path = str(target).partition(":")
     return host_part, remote_path
 
@@ -50,7 +51,7 @@ def ensure_remote_directory(target: str, *, timeout_seconds: int = 30) -> dict[s
         result["message"] = "ssh executable is not available in this environment."
         return result
 
-    host, remote_path = _split_remote_target(target)
+    host, remote_path = split_remote_target(target)
     if not remote_path:
         return result
 
