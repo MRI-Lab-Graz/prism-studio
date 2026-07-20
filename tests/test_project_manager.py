@@ -4,6 +4,7 @@ import shutil
 import stat
 import sys
 import tempfile
+import threading
 import time
 import unittest
 import subprocess
@@ -1723,6 +1724,86 @@ class TestProjectManager(unittest.TestCase):
         self.assertEqual(process.returncode, 1)
         self.assertEqual(mock_run.call_count, 1)
         mock_sleep.assert_not_called()
+
+    @patch("src.project_manager.time.sleep")
+    @patch("src.project_manager.subprocess.run")
+    def test_run_git_commit_for_path_recovers_from_transient_index_lock(
+        self, mock_run, mock_sleep
+    ):
+        """The parent-checkpoint `git commit` step in the nested-dataset
+        migration must retry on transient index.lock contention (e.g. the
+        frontend status poll touching the same index), not fail the whole
+        registration on the first collision."""
+        manager = ProjectManager()
+        lock_error = Mock(
+            returncode=128,
+            stdout="",
+            stderr="fatal: Unable to create '.git/index.lock': File exists.",
+        )
+        success = Mock(returncode=0, stdout="", stderr="")
+        mock_run.side_effect = [lock_error, success]
+
+        result = manager._run_git_commit_for_path(
+            Path("/tmp/demo_project"),
+            relative_dataset_text="derivatives",
+            message="PRISM checkpoint",
+        )
+
+        self.assertTrue(result.get("saved"), result)
+        self.assertEqual(mock_run.call_count, 2)
+        mock_sleep.assert_called_once()
+
+    @patch("src.project_manager.time.sleep")
+    @patch("src.project_manager.subprocess.run")
+    def test_migrate_untrack_step_recovers_from_transient_index_lock(
+        self, mock_run, mock_sleep
+    ):
+        """The `git rm --cached` untrack step must retry on a transient
+        index.lock collision rather than aborting the subdataset
+        registration -- this is the exact failure seen on `derivatives`
+        (untrack parent content failed: '.git/index.lock' File exists)."""
+        manager = ProjectManager()
+        lock_error = Mock(
+            returncode=128,
+            stdout="",
+            stderr="fatal: Unable to create '/x/rawdata/.git/index.lock': File exists.",
+        )
+        success = Mock(returncode=0, stdout="", stderr="")
+        # First call (git rm --cached) hits the lock then succeeds on retry.
+        mock_run.side_effect = [lock_error, success]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "rawdata"
+            dataset_path = project_path / "derivatives"
+            dataset_path.mkdir(parents=True, exist_ok=True)
+
+            # True on the initial check (so we enter the untrack branch),
+            # then False afterwards (parent no longer tracks it -> passes the
+            # post-untrack verification).
+            with patch.object(
+                ProjectManager,
+                "_parent_tracks_nested_dataset_path",
+                side_effect=[True, False],
+            ), patch.object(
+                ProjectManager, "_run_git_commit_for_path", return_value={"saved": True}
+            ), patch.object(
+                ProjectManager,
+                "_parent_has_staged_nested_dataset_deletions",
+                return_value=False,
+            ), patch.object(
+                ProjectManager,
+                "_create_registered_nested_dataset",
+                return_value={"success": True},
+            ):
+                result = manager._migrate_parent_tracked_directory_to_subdataset(
+                    project_path, dataset_path, "/usr/bin/datalad"
+                )
+
+        self.assertTrue(result.get("success"), result)
+        # The two subprocess.run calls are the lock-error + retry of `git rm
+        # --cached`; the commit/create steps are patched out above.
+        self.assertEqual(mock_run.call_count, 2)
+        mock_sleep.assert_called_once()
 
     @patch("src.project_manager.subprocess.run")
     @patch(
@@ -5165,6 +5246,198 @@ class TestSyncProjectToRemote(unittest.TestCase):
 
         self.assertTrue(result.get("success"), result)
         self.assertTrue(result["verify"]["verified"])
+
+
+class TestDataladStatusConcurrency(unittest.TestCase):
+    """The per-project DataLad lock: a status read must never run git while a
+    mutation holds the lock -- it serves the cached snapshot instead. This is
+    the root-cause fix for the '.git/index.lock: File exists' collisions
+    (concurrent status poll vs. registration writing the same index)."""
+
+    def setUp(self):
+        # Class-level lock/cache registries are shared process-wide; isolate
+        # each test so priming/holding in one doesn't leak into the next.
+        ProjectManager._datalad_locks.clear()
+        ProjectManager._datalad_status_cache.clear()
+
+    def tearDown(self):
+        ProjectManager._datalad_locks.clear()
+        ProjectManager._datalad_status_cache.clear()
+
+    def test_status_serves_cache_without_git_when_lock_held_by_other_thread(self):
+        manager = ProjectManager()
+        project_path = Path("/tmp/demo_project")
+
+        fresh = {"enabled": True, "subdatasets_registered_count": 1, "message": "fresh"}
+        with patch.object(
+            ProjectManager, "_compute_datalad_status", return_value=fresh
+        ) as mock_compute:
+            # First call caches a full snapshot (lock free -> runs git).
+            manager.get_datalad_status(project_path)
+            self.assertEqual(mock_compute.call_count, 1)
+
+            # Hold the project lock in another thread, then read status: it
+            # must NOT run git again, and must flag the in-progress mutation.
+            lock = ProjectManager._datalad_lock_for(project_path)
+            holding = threading.Event()
+            release = threading.Event()
+
+            def _holder():
+                with lock:
+                    holding.set()
+                    release.wait(timeout=5)
+
+            t = threading.Thread(target=_holder)
+            t.start()
+            self.assertTrue(holding.wait(timeout=5))
+
+            busy = manager.get_datalad_status(project_path)
+
+            release.set()
+            t.join(timeout=5)
+
+        self.assertEqual(mock_compute.call_count, 1, "git status must not run while lock held")
+        self.assertTrue(busy.get("mutation_in_progress"))
+        self.assertEqual(busy.get("subdatasets_registered_count"), 1)
+
+    def test_status_is_reentrant_for_the_mutation_thread_itself(self):
+        """The thread holding the lock (the mutation) must still be able to run
+        real git status via its own internal get_datalad_status calls."""
+        manager = ProjectManager()
+        project_path = Path("/tmp/demo_project")
+
+        with patch.object(
+            ProjectManager,
+            "_compute_datalad_status",
+            return_value={"enabled": True, "message": "fresh"},
+        ) as mock_compute:
+            lock = ProjectManager._datalad_lock_for(project_path)
+            with lock:  # same thread holds it, as a mutation would
+                result = manager.get_datalad_status(project_path)
+
+        self.assertEqual(mock_compute.call_count, 1)
+        self.assertFalse(result.get("mutation_in_progress"))
+
+    def test_busy_placeholder_when_no_snapshot_cached_yet(self):
+        manager = ProjectManager()
+        project_path = Path("/tmp/demo_project")
+
+        lock = ProjectManager._datalad_lock_for(project_path)
+        holding = threading.Event()
+        release = threading.Event()
+
+        def _holder():
+            with lock:
+                holding.set()
+                release.wait(timeout=5)
+
+        t = threading.Thread(target=_holder)
+        t.start()
+        self.assertTrue(holding.wait(timeout=5))
+
+        # No prior cache: must still return a git-free busy placeholder rather
+        # than blocking or touching the index.
+        with patch.object(ProjectManager, "_compute_datalad_status") as mock_compute:
+            result = manager.get_datalad_status(project_path)
+
+        release.set()
+        t.join(timeout=5)
+
+        mock_compute.assert_not_called()
+        self.assertTrue(result.get("mutation_in_progress"))
+
+    def test_publish_nested_progress_updates_cached_counts(self):
+        manager = ProjectManager()
+        project_path = Path("/tmp/demo_project")
+
+        # Prime a cached snapshot as a completed status read would.
+        ProjectManager._cache_datalad_status(
+            project_path,
+            {"enabled": True, "subdatasets_registered_count": 0, "subdatasets_total_count": 3},
+        )
+
+        nested = [project_path / "derivatives", project_path / "sub-001", project_path / "sub-002"]
+        manager._publish_nested_progress(
+            project_path,
+            nested_dataset_paths=nested,
+            done_relative_texts=["derivatives"],
+        )
+
+        cached = ProjectManager._get_cached_datalad_status(project_path)
+        self.assertEqual(cached["subdatasets_total_count"], 3)
+        self.assertEqual(cached["subdatasets_registered_count"], 1)
+        self.assertEqual(cached["subdatasets_remaining_count"], 2)
+        self.assertEqual(cached["next_missing_subdataset"], "sub-001")
+        self.assertTrue(cached["mutation_in_progress"])
+
+    def test_publish_nested_progress_is_noop_without_a_cached_snapshot(self):
+        manager = ProjectManager()
+        project_path = Path("/tmp/demo_project")
+        # No cache primed -> nothing to merge into, must not raise or create one.
+        manager._publish_nested_progress(
+            project_path,
+            nested_dataset_paths=[project_path / "sub-001"],
+            done_relative_texts=[],
+        )
+        self.assertIsNone(ProjectManager._get_cached_datalad_status(project_path))
+
+    @patch("src.project_manager.subprocess.run")
+    def test_clean_status_runs_git_when_lock_is_free(self, mock_run):
+        manager = ProjectManager()
+        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+
+            with patch.object(
+                ProjectManager,
+                "get_datalad_status",
+                return_value={"enabled": True, "available": True},
+            ):
+                result = manager.check_datalad_clean_status(project_path)
+
+        self.assertTrue(result.get("checked"))
+        self.assertTrue(result.get("clean"))
+        mock_run.assert_called_once()
+
+    @patch("src.project_manager.subprocess.run")
+    def test_clean_status_skips_git_while_mutation_holds_the_lock(self, mock_run):
+        """`git status --ignore-submodules=none` refreshes every submodule's
+        index too -- running it while a registration writes those same
+        indexes is exactly the collision this lock exists to prevent."""
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+
+            lock = ProjectManager._datalad_lock_for(project_path)
+            holding = threading.Event()
+            release = threading.Event()
+
+            def _holder():
+                with lock:
+                    holding.set()
+                    release.wait(timeout=5)
+
+            t = threading.Thread(target=_holder)
+            t.start()
+            self.assertTrue(holding.wait(timeout=5))
+
+            with patch.object(
+                ProjectManager,
+                "get_datalad_status",
+                return_value={"enabled": True, "available": True},
+            ):
+                result = manager.check_datalad_clean_status(project_path)
+
+            release.set()
+            t.join(timeout=5)
+
+        mock_run.assert_not_called()
+        self.assertFalse(result.get("checked"))
+        self.assertIn("in progress", result.get("message", ""))
 
 
 if __name__ == "__main__":
