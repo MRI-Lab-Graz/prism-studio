@@ -140,6 +140,72 @@ def test_datalad_server_sync_job_reaches_complete_status_on_success(tmp_path):
     assert status_payload["result"]["success"] is True
 
 
+def test_datalad_server_sync_forwards_verify_flag(tmp_path):
+    app = _build_app()
+    project_dir = _project_dir(tmp_path)
+
+    with patch(
+        "src.web.blueprints.projects_datalad_server_blueprint.threading.Thread"
+    ) as mock_thread_cls, patch(
+        "src.project_manager.ProjectManager.sync_project_to_ria",
+        return_value={"success": True, "message": "ok"},
+    ) as mock_sync:
+        captured = {}
+
+        def _capture(target=None, args=(), daemon=None):
+            captured["target"] = target
+            captured["args"] = args
+            return _FakeThread(target=target, args=args, daemon=daemon)
+
+        mock_thread_cls.side_effect = _capture
+
+        with app.test_client() as client:
+            start_response = client.post(
+                "/api/projects/datalad-server/sync/start",
+                json={
+                    "project_path": str(project_dir),
+                    "ria_url": "ria+ssh://user@host/store",
+                    "verify": True,
+                },
+            )
+            job_id = start_response.get_json()["job_id"]
+            captured["target"](*captured["args"])
+
+    mock_sync.assert_called_once()
+    _, call_kwargs = mock_sync.call_args
+    assert call_kwargs["verify"] is True
+
+
+def test_datalad_server_sync_defaults_verify_flag_to_false(tmp_path):
+    app = _build_app()
+    project_dir = _project_dir(tmp_path)
+
+    with patch(
+        "src.web.blueprints.projects_datalad_server_blueprint.threading.Thread"
+    ) as mock_thread_cls, patch(
+        "src.project_manager.ProjectManager.sync_project_to_ria",
+        return_value={"success": True, "message": "ok"},
+    ) as mock_sync:
+        captured = {}
+
+        def _capture(target=None, args=(), daemon=None):
+            captured["target"] = target
+            captured["args"] = args
+            return _FakeThread(target=target, args=args, daemon=daemon)
+
+        mock_thread_cls.side_effect = _capture
+
+        with app.test_client() as client:
+            start_response = client.post(
+                "/api/projects/datalad-server/sync/start",
+                json={"project_path": str(project_dir), "ria_url": "ria+ssh://user@host/store"},
+            )
+            captured["target"](*captured["args"])
+
+    _, call_kwargs = mock_sync.call_args
+    assert call_kwargs["verify"] is False
+
+
 def test_datalad_server_sync_job_reaches_error_status_on_failure(tmp_path):
     app = _build_app()
     project_dir = _project_dir(tmp_path)

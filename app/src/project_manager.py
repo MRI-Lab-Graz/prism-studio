@@ -5532,6 +5532,7 @@ git push -u origin main
         ria_url: Optional[str] = None,
         sibling_name: Optional[str] = None,
         alias: Optional[str] = None,
+        verify: bool = False,
         progress_callback: Optional[Any] = None,
         is_cancelled: Optional[Any] = None,
     ) -> Dict[str, Any]:
@@ -5539,12 +5540,19 @@ git push -u origin main
 
         Safe to call repeatedly throughout a study as an ongoing backup:
         sibling creation is idempotent (`--existing reconfigure`) and `datalad
-        push` only transfers what's missing.
+        push` only transfers what's missing. `datalad push`'s own report is
+        trusted by default; `verify=True` additionally confirms every
+        annexed key actually reached the sibling (`git annex find --not
+        --in`, the same independent check "Finalize & disconnect" gates
+        disconnect on) -- use this before treating the local copy as safe to
+        delete without going through a full finalize/disconnect.
         """
         from src.datalad_execution import (
+            is_ria_url,
             resolve_datalad_executable,
             run_datalad_create_sibling,
             run_datalad_push,
+            run_datalad_push_verify,
         )
 
         project_path = Path(project_path)
@@ -5589,12 +5597,48 @@ git push -u origin main
                 "push": push_result,
             }
 
-        _report(100, "Sync complete. Connection to server kept.")
+        if not verify:
+            _report(100, "Sync complete. Connection to server kept.")
+            return {
+                "success": True,
+                "message": "Synced to server. Connection kept for further syncing.",
+                "create": create_result,
+                "push": push_result,
+            }
+
+        if callable(is_cancelled) and is_cancelled():
+            return {
+                "success": False,
+                "message": "Cancelled before verification.",
+                "create": create_result,
+                "push": push_result,
+            }
+
+        _report(70, "Verifying all content reached the server...")
+        dataset_roots = self._iter_datalad_dataset_roots(project_path)
+        verify_result = run_datalad_push_verify(
+            project_path,
+            sibling_name=settings["sibling_name"],
+            dataset_roots=dataset_roots,
+            is_ria=is_ria_url(settings["ria_url"]),
+            datalad_executable=datalad_executable,
+        )
+        if not verify_result.get("verified"):
+            return {
+                "success": False,
+                "message": f"Sync ran, but verification found missing content: {verify_result.get('message')}",
+                "create": create_result,
+                "push": push_result,
+                "verify": verify_result,
+            }
+
+        _report(100, "Sync complete and verified. Connection to server kept.")
         return {
             "success": True,
-            "message": "Synced to server. Connection kept for further syncing.",
+            "message": "Synced to server and verified. Connection kept for further syncing.",
             "create": create_result,
             "push": push_result,
+            "verify": verify_result,
         }
 
     def _verify_ria_copy_full(
