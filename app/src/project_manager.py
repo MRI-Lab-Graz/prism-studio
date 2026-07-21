@@ -5610,6 +5610,137 @@ git push -u origin main
 
         return sorted(dataset_roots)
 
+    def remove_scans_tsv_files(self, project_path: Path) -> Dict[str, Any]:
+        """Delete every `*_scans.tsv` file across the project (superdataset
+        plus nested subject/derivatives subdatasets), committing the removal
+        inside each affected subdataset and then, in one final commit,
+        bumping every updated submodule pointer in the superdataset.
+        """
+        project_path = Path(project_path)
+        with self._datalad_lock_for(project_path):
+            return self._remove_scans_tsv_files_locked(project_path)
+
+    def _remove_scans_tsv_files_locked(self, project_path: Path) -> Dict[str, Any]:
+        """See `remove_scans_tsv_files`.
+
+        Every commit here (per-subdataset removal, and the final
+        superdataset submodule-pointer bump) goes through
+        `_run_git_commit_for_path`'s unscoped-commit-and-verify approach --
+        a pathspec-scoped `git commit` has been observed to silently no-op
+        on this app's git version (see that method's docstring), which is
+        exactly the bug class this reuses proven machinery to avoid.
+        """
+        all_files = sorted(
+            path for path in project_path.rglob("*_scans.tsv") if ".git" not in path.parts
+        )
+        result: Dict[str, Any] = {
+            "success": True,
+            "removed": 0,
+            "dataset_roots_touched": [],
+            "errors": [],
+            "message": "",
+        }
+        if not all_files:
+            result["message"] = "No scans.tsv files found."
+            return result
+
+        dataset_roots = self._iter_datalad_dataset_roots(project_path)
+        roots_by_depth = sorted(dataset_roots, key=lambda root: len(root.parts), reverse=True)
+
+        by_root: Dict[Path, List[Path]] = {}
+        for file_path in all_files:
+            owner = project_path
+            for root in roots_by_depth:
+                if root == project_path:
+                    continue
+                try:
+                    file_path.relative_to(root)
+                except ValueError:
+                    continue
+                owner = root
+                break
+            by_root.setdefault(owner, []).append(file_path)
+
+        self._emit_backend_progress(
+            f"Removing {len(all_files)} scans.tsv file(s) across {len(by_root)} dataset root(s)."
+        )
+
+        touched_roots: List[Path] = []
+        errors: List[str] = []
+        for index, (root, files) in enumerate(sorted(by_root.items()), start=1):
+            rel_paths = [str(f.relative_to(root)) for f in files]
+            label = root.name or str(root)
+            self._emit_backend_progress(
+                f"Removing {len(rel_paths)} scans.tsv file(s) in {label} ({index}/{len(by_root)}).",
+                command=f"git rm -- {' '.join(rel_paths)}",
+            )
+            rm_process = self._run_command_with_index_lock_retry(
+                ["git", "rm", "--quiet", "--"] + rel_paths,
+                cwd=str(root),
+                timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
+            )
+            if rm_process.returncode != 0:
+                detail = (rm_process.stderr or rm_process.stdout or "").strip()
+                errors.append(f"{label}: git rm failed: {detail or 'Unknown git error.'}")
+                continue
+
+            commit_result = self._run_git_commit_for_path(
+                root,
+                relative_dataset_text=".",
+                message=f"Remove {len(rel_paths)} scans.tsv file(s)",
+            )
+            if not commit_result.get("saved") and not commit_result.get("no_changes"):
+                errors.append(f"{label}: {commit_result.get('message', 'commit did not take effect')}")
+                continue
+
+            result["removed"] += len(rel_paths)
+            touched_roots.append(root)
+
+        subject_roots_touched = [root for root in touched_roots if root != project_path]
+        if subject_roots_touched:
+            self._emit_backend_progress(
+                f"Updating submodule pointers for {len(subject_roots_touched)} "
+                "dataset root(s) in the superdataset."
+            )
+            rel_names = [str(root.relative_to(project_path)) for root in subject_roots_touched]
+            add_process = self._run_command_with_index_lock_retry(
+                ["git", "add", "--"] + rel_names,
+                cwd=str(project_path),
+                timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
+            )
+            if add_process.returncode != 0:
+                detail = (add_process.stderr or add_process.stdout or "").strip()
+                errors.append(f"superdataset: git add failed: {detail or 'Unknown git error.'}")
+            else:
+                commit_result = self._run_git_commit_for_path(
+                    project_path,
+                    relative_dataset_text=".",
+                    message=(
+                        "Update submodule pointers after removing scans.tsv files "
+                        f"({len(rel_names)} dataset root(s))"
+                    ),
+                )
+                if not commit_result.get("saved") and not commit_result.get("no_changes"):
+                    errors.append(
+                        f"superdataset: {commit_result.get('message', 'commit did not take effect')}"
+                    )
+
+        result["dataset_roots_touched"] = [str(root) for root in touched_roots]
+        result["errors"] = errors
+        result["success"] = not errors and result["removed"] == len(all_files)
+        if result["success"]:
+            result["message"] = (
+                f"Removed {result['removed']} scans.tsv file(s) across "
+                f"{len(touched_roots)} dataset root(s)."
+            )
+        else:
+            result["message"] = (
+                f"Removed {result['removed']}/{len(all_files)} scans.tsv file(s); "
+                f"{len(errors)} error(s): {'; '.join(errors[:5])}"
+            )
+        self._emit_backend_progress(result["message"])
+        return result
+
     @staticmethod
     def _is_derivatives_dataset_root(project_path: Path, dataset_root: Path) -> bool:
         """True when ``dataset_root`` *is* the project's top-level derivatives/ folder.
@@ -6051,12 +6182,17 @@ git push -u origin main
                 progress_callback(percent, message)
 
         _report(10, "Connecting to server...")
+        self._emit_backend_progress(
+            f'Connecting to DataLad server sibling "{settings["sibling_name"]}".',
+            command=f'datalad create-sibling(-ria) {settings["ria_url"]} -s {settings["sibling_name"]} -r',
+        )
         create_result = run_datalad_create_sibling(
             project_path,
             remote_url=settings["ria_url"],
             sibling_name=settings["sibling_name"],
             alias=settings["alias"],
             datalad_executable=datalad_executable,
+            line_callback=self._emit_backend_progress,
         )
         if not create_result.get("success"):
             return {
@@ -6069,17 +6205,75 @@ git push -u origin main
             return {"success": False, "message": "Cancelled before push."}
 
         _report(40, "Syncing dataset to server...")
+        self._emit_backend_progress(
+            f'Pushing dataset to "{settings["sibling_name"]}".',
+            command=f'datalad push --to {settings["sibling_name"]} -r',
+        )
         push_result = run_datalad_push(
             project_path,
             sibling_name=settings["sibling_name"],
             datalad_executable=datalad_executable,
+            line_callback=self._emit_backend_progress,
         )
         if not push_result.get("success"):
+            # `datalad push`'s own exit code/output is not trusted at face
+            # value: on a large recursive multi-dataset push it can report a
+            # non-zero exit with no actual error text anywhere in its log
+            # (observed live on a 150+ subdataset project -- every "Finished
+            # push of Dataset(...)" line succeeded, yet the process still
+            # exited non-zero). Before alarming the user with a false "Sync
+            # failed", independently confirm content is actually missing --
+            # same check `verify=True` already runs, but run unconditionally
+            # here since this is specifically to catch a false failure.
+            self._emit_backend_progress(
+                f'Push reported failure; independently checking content on "{settings["sibling_name"]}" before giving up...'
+            )
+            recheck_roots = self._iter_datalad_dataset_roots(project_path)
+            recheck_result = run_datalad_push_verify(
+                project_path,
+                sibling_name=settings["sibling_name"],
+                dataset_roots=recheck_roots,
+                is_ria=is_ria_url(settings["ria_url"]),
+                datalad_executable=datalad_executable,
+                line_callback=self._emit_backend_progress,
+            )
+            if recheck_result.get("verified"):
+                if not verify:
+                    _report(100, "Sync complete. Connection to server kept.")
+                    return {
+                        "success": True,
+                        "message": (
+                            "Synced to server. Connection kept for further syncing. "
+                            "(Note: datalad push reported a failure, but independent "
+                            "verification confirmed all content actually reached the server.)"
+                        ),
+                        "create": create_result,
+                        "push": push_result,
+                        "verify": recheck_result,
+                    }
+                _report(100, "Sync complete and verified. Connection to server kept.")
+                return {
+                    "success": True,
+                    "message": (
+                        "Synced to server and verified. Connection kept for further "
+                        "syncing. (Note: datalad push reported a failure, but "
+                        "independent verification confirmed all content actually "
+                        "reached the server.)"
+                    ),
+                    "create": create_result,
+                    "push": push_result,
+                    "verify": recheck_result,
+                }
             return {
                 "success": False,
-                "message": f"Sync failed: {push_result.get('message')}",
+                "message": (
+                    f"Sync failed: {push_result.get('message')} "
+                    f"Independent verification also found missing content: "
+                    f"{recheck_result.get('message')}"
+                ),
                 "create": create_result,
                 "push": push_result,
+                "verify": recheck_result,
             }
 
         if not verify:
@@ -6100,6 +6294,9 @@ git push -u origin main
             }
 
         _report(70, "Verifying all content reached the server...")
+        self._emit_backend_progress(
+            f'Verifying all content reached "{settings["sibling_name"]}".'
+        )
         dataset_roots = self._iter_datalad_dataset_roots(project_path)
         verify_result = run_datalad_push_verify(
             project_path,
@@ -6107,6 +6304,7 @@ git push -u origin main
             dataset_roots=dataset_roots,
             is_ria=is_ria_url(settings["ria_url"]),
             datalad_executable=datalad_executable,
+            line_callback=self._emit_backend_progress,
         )
         if not verify_result.get("verified"):
             return {
@@ -6125,6 +6323,24 @@ git push -u origin main
             "push": push_result,
             "verify": verify_result,
         }
+
+    def _reword_finalize_validation_message(
+        self, validation_error: str, *, push_already_succeeded: bool
+    ) -> str:
+        """`_run_pre_export_validation`'s message is worded for the Export
+        dialog ("choose 'Ignore validation' in the export options"), which
+        doesn't exist on the DataLad Server finalize panel -- reword the
+        actionable part so it points at a real control there instead."""
+        skip_hint = (
+            "Fix the validation errors, or uncheck 'Full verification on "
+            "finalize' to skip this check"
+        )
+        if push_already_succeeded:
+            skip_hint += " (the push itself already succeeded and was verified)"
+        return validation_error.replace(
+            "Fix the validation errors or choose 'Ignore validation' in the export options.",
+            skip_hint + ".",
+        )
 
     def _verify_ria_copy_full(
         self,
@@ -6154,6 +6370,10 @@ git push -u origin main
 
         with tempfile.TemporaryDirectory(prefix="prism_ria_verify_") as tmp_dir:
             clone_dir = Path(tmp_dir) / "verify_clone"
+            self._emit_backend_progress(
+                f"Cloning archived copy from {clone_source} for independent verification.",
+                command=f"{datalad_executable} clone {clone_source} {clone_dir}",
+            )
             clone_process = subprocess.run(
                 [datalad_executable, "clone", clone_source, str(clone_dir)],
                 capture_output=True,
@@ -6168,19 +6388,20 @@ git push -u origin main
                     "message": f"Could not clone RIA copy for verification: {detail}",
                 }
 
-            get_process = subprocess.run(
-                [datalad_executable, "get", "-r", "."],
-                cwd=str(clone_dir),
-                capture_output=True,
-                text=True,
-                timeout=3600,
-                check=False,
+            self._emit_backend_progress(
+                "Retrieving all content into the verification clone.",
+                command=f"{datalad_executable} -C {clone_dir} get -r .",
             )
-            if get_process.returncode != 0:
-                detail = (get_process.stderr or get_process.stdout or "").strip()
+            get_result = self._stream_datalad_get_command(
+                [datalad_executable, "-C", str(clone_dir), "get", "-r", "."],
+                step_label="Verification clone content retrieval",
+                timeout_seconds=3600,
+            )
+            if not get_result.get("success"):
                 return {
                     "success": False,
-                    "message": f"Could not retrieve content from RIA clone: {detail}",
+                    "message": get_result.get("message")
+                    or "Could not retrieve content from RIA clone.",
                 }
 
             try:
@@ -6192,7 +6413,12 @@ git push -u origin main
                 }
 
             if validation_error:
-                return {"success": False, "message": validation_error}
+                return {
+                    "success": False,
+                    "message": self._reword_finalize_validation_message(
+                        validation_error, push_already_succeeded=True
+                    ),
+                }
 
         return {"success": True, "message": "RIA clone retrieved and validated successfully."}
 
@@ -6232,6 +6458,43 @@ git push -u origin main
         datalad_executable = resolve_datalad_executable()
         use_full_verify = str(verify_mode or "fast").strip().lower() == "full"
 
+        if use_full_verify:
+            # Run the same PRISM+BIDS check the post-push full-verify clone
+            # would run, but on the local dataset first -- no point pushing
+            # (potentially hours on a large imaging dataset) only to find out
+            # afterward that validation was always going to fail.
+            if callable(progress_callback):
+                progress_callback(2, "Validating dataset before starting push...")
+            self._emit_backend_progress(
+                "Running PRISM + BIDS validation on the local dataset before pushing."
+            )
+            from src.web.blueprints.projects_export_blueprint import (
+                _run_pre_export_validation,
+            )
+
+            local_validation_error = _run_pre_export_validation(project_path, "both")
+            if local_validation_error:
+                return {
+                    "success": False,
+                    "sibling_created": False,
+                    "pushed": False,
+                    "verified": False,
+                    "disconnected": False,
+                    "kept_sibling": True,
+                    "message": self._reword_finalize_validation_message(
+                        local_validation_error, push_already_succeeded=False
+                    ),
+                    "create": None,
+                    "push": None,
+                    "verify": None,
+                    "disconnect": None,
+                    "full_verify": {"success": False, "message": local_validation_error},
+                }
+
+        self._emit_backend_progress(
+            f'Finalizing DataLad server sibling "{settings["sibling_name"]}" '
+            f'({len(dataset_roots)} dataset root(s)).'
+        )
         result = run_datalad_upload_to_sibling(
             project_path,
             dataset_roots=dataset_roots,
@@ -6244,6 +6507,7 @@ git push -u origin main
             mark_annex_dead=mark_annex_dead,
             datalad_executable=datalad_executable,
             progress_callback=progress_callback,
+            line_callback=self._emit_backend_progress,
             is_cancelled=is_cancelled,
         )
 
@@ -6273,6 +6537,7 @@ git push -u origin main
 
         if callable(progress_callback):
             progress_callback(95, "Disconnecting local sibling...")
+        self._emit_backend_progress("Disconnecting local sibling from all dataset roots.")
         disconnect_result = run_datalad_remove_sibling(
             project_path,
             sibling_name=settings["sibling_name"],
@@ -6280,6 +6545,7 @@ git push -u origin main
             is_ria=is_ria_url(settings["ria_url"]),
             mark_annex_dead=mark_annex_dead,
             datalad_executable=datalad_executable,
+            line_callback=self._emit_backend_progress,
         )
         result["disconnect"] = disconnect_result
         result["disconnected"] = bool(disconnect_result.get("success"))
