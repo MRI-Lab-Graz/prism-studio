@@ -202,8 +202,22 @@ def _start_ria_job(kind: str, runner) -> tuple:
         job_id = str(uuid.uuid4())
         _create_ria_job(job_id, kind=kind)
 
+        # The job body runs on a separate thread, which does NOT inherit
+        # Flask's request-local app context -- without explicitly pushing
+        # one here, ProjectManager._emit_backend_progress's has_app_context()
+        # check silently no-ops for the whole sync/finalize run, so none of
+        # its terminal progress lines (the same live "ACTION/COMMAND" output
+        # nested-subdataset registration produces) would ever be printed.
+        from flask import current_app
+
+        app_obj = current_app._get_current_object()
+
+        def _run_with_app_context(*args, **kwargs):
+            with app_obj.app_context():
+                runner(*args, **kwargs)
+
         t = threading.Thread(
-            target=runner,
+            target=_run_with_app_context,
             args=(job_id, resolved, ria_kwargs),
             daemon=True,
         )

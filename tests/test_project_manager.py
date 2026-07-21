@@ -4864,12 +4864,15 @@ class TestProjectManager(unittest.TestCase):
 
 
 def _make_fake_ria_subprocess(*, outstanding_files=None, remove_sibling_ok=True, seen_commands=None):
-    """Fake `subprocess.run` covering the full create-sibling -> push ->
-    annex-find-verify -> remove-sibling chain used by finalize_project_upload.
+    """Fake `subprocess.run` covering the annex-find-verify -> remove-sibling
+    half of the create-sibling -> push -> verify -> remove-sibling chain used
+    by finalize_project_upload (create/push now stream via subprocess.Popen
+    -- see `_make_fake_ria_popen` for those, which must be patched alongside
+    this one in every test below).
 
     Dispatches purely on command content so the real orchestration logic in
-    run_datalad_upload_to_ria / finalize_project_upload runs unmodified --
-    only the process boundary is faked, same as the A1/A2 tests.
+    run_datalad_upload_to_sibling / finalize_project_upload runs unmodified
+    -- only the process boundary is faked, same as the A1/A2 tests.
     """
     outstanding = outstanding_files or []
     log = seen_commands if seen_commands is not None else []
@@ -4877,10 +4880,6 @@ def _make_fake_ria_subprocess(*, outstanding_files=None, remove_sibling_ok=True,
     def _fake_run(command, cwd=None, **kwargs):
         cmd = [str(c) for c in command]
         log.append(cmd)
-        if "create-sibling-ria" in cmd:
-            return SimpleNamespace(returncode=0, stdout="", stderr="")
-        if "push" in cmd and "--to" in cmd:
-            return SimpleNamespace(returncode=0, stdout="publish ok", stderr="")
         if "annex" in cmd and "find" in cmd:
             return SimpleNamespace(returncode=0, stdout="\n".join(outstanding), stderr="")
         if "siblings" in cmd and "remove" in cmd:
@@ -4898,6 +4897,137 @@ def _make_fake_ria_subprocess(*, outstanding_files=None, remove_sibling_ok=True,
         return SimpleNamespace(returncode=0, stdout="", stderr="")
 
     return _fake_run
+
+
+def _make_fake_ria_popen(*, seen_commands=None):
+    """Fake `subprocess.Popen` covering the create-sibling(-ria) -> push half
+    of the chain (see `_make_fake_ria_subprocess` for the other half). Both
+    must be patched together for `finalize_project_upload`/
+    `run_datalad_upload_to_sibling` tests, since one call now uses Popen
+    (streamed, for live terminal progress) and the other still uses run."""
+    log = seen_commands if seen_commands is not None else []
+
+    def _fake_popen(command, **kwargs):
+        cmd = [str(c) for c in command]
+        log.append(cmd)
+        if "push" in cmd and "--to" in cmd:
+            return _FakePopen(returncode=0, stdout_lines=["publish ok\n"])
+        return _FakePopen(returncode=0, stdout_lines=[])
+
+    return _fake_popen
+
+
+def _init_git_repo(path: Path) -> None:
+    subprocess.run(["git", "init", "--quiet"], cwd=path, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=path, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=path, check=True)
+
+
+def _build_nested_project_with_scans_tsv(tmp: str) -> Path:
+    """A superdataset with two subject subdatasets (real git submodules, not
+    mocked), each containing a scans.tsv, mirroring the sub-XXX/*_scans.tsv
+    layout on the live 129_PK01 project this feature was built for."""
+    project_path = Path(tmp) / "demo_project"
+    project_path.mkdir(parents=True, exist_ok=True)
+    _init_git_repo(project_path)
+    (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+    subprocess.run(["git", "add", "."], cwd=project_path, check=True)
+    subprocess.run(["git", "commit", "-m", "init"], cwd=project_path, check=True, capture_output=True)
+
+    for subject in ("sub-001", "sub-002"):
+        source_dir = Path(tmp) / f"{subject}-src"
+        source_dir.mkdir(parents=True, exist_ok=True)
+        _init_git_repo(source_dir)
+        (source_dir / f"{subject}_scans.tsv").write_text(
+            "filename\tacq_time\nanat/x.nii.gz\tn/a\n", encoding="utf-8"
+        )
+        (source_dir / "keep.txt").write_text("keep me\n", encoding="utf-8")
+        subprocess.run(["git", "add", "."], cwd=source_dir, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "init subject"], cwd=source_dir, check=True, capture_output=True
+        )
+
+        subprocess.run(
+            [
+                "git",
+                "-c",
+                "protocol.file.allow=always",
+                "submodule",
+                "add",
+                str(source_dir),
+                subject,
+            ],
+            cwd=project_path,
+            check=True,
+            capture_output=True,
+        )
+    subprocess.run(
+        ["git", "commit", "-m", "add subjects"], cwd=project_path, check=True, capture_output=True
+    )
+    return project_path
+
+
+class TestRemoveScansTsvFiles(unittest.TestCase):
+    """Batch removal of every *_scans.tsv file across the project, requested
+    directly by the user after "Full verification on finalize" surfaced
+    hundreds of SCANS_FILENAME_NOT_MATCH_DATASET BIDS errors on the live
+    129_PK01 project -- see the false-failure/validation-ordering work in
+    finalize_project_upload just above."""
+
+    def test_removes_scans_tsv_from_every_subdataset_and_updates_superdataset_pointers(self):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = _build_nested_project_with_scans_tsv(tmp)
+
+            result = manager.remove_scans_tsv_files(project_path)
+
+            self.assertTrue(result.get("success"), result)
+            self.assertEqual(result.get("removed"), 2)
+            self.assertEqual(result.get("errors"), [])
+
+            self.assertFalse((project_path / "sub-001" / "sub-001_scans.tsv").exists())
+            self.assertFalse((project_path / "sub-002" / "sub-002_scans.tsv").exists())
+            self.assertTrue((project_path / "sub-001" / "keep.txt").exists())
+
+            for subject in ("sub-001", "sub-002"):
+                log = subprocess.run(
+                    ["git", "log", "--oneline"],
+                    cwd=project_path / subject,
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+                self.assertIn("scans.tsv", log.stdout)
+
+            super_status = subprocess.run(
+                ["git", "status", "--short"],
+                cwd=project_path,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            self.assertEqual(super_status.stdout.strip(), "", super_status.stdout)
+
+            super_log = subprocess.run(
+                ["git", "log", "--oneline", "-1"],
+                cwd=project_path,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            self.assertIn("submodule pointer", super_log.stdout)
+
+    def test_no_scans_tsv_files_is_a_clean_no_op(self):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            result = manager.remove_scans_tsv_files(project_path)
+
+            self.assertTrue(result.get("success"), result)
+            self.assertEqual(result.get("removed"), 0)
 
 
 class TestDataladHealthChecks(unittest.TestCase):
@@ -5056,7 +5186,10 @@ class TestSyncProjectToRiaVerify(unittest.TestCase):
             seen_commands: list[list[str]] = []
             fake_run = _make_fake_ria_subprocess(seen_commands=seen_commands)
 
-            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run):
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run), patch(
+                "src.datalad_execution.subprocess.Popen",
+                side_effect=_make_fake_ria_popen(seen_commands=seen_commands),
+            ):
                 result = manager.sync_project_to_ria(
                     project_path, ria_url="ria+ssh://user@host/store"
                 )
@@ -5073,7 +5206,10 @@ class TestSyncProjectToRiaVerify(unittest.TestCase):
             project_path = self._project_dir(tmp)
             fake_run = _make_fake_ria_subprocess(outstanding_files=[])
 
-            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run):
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run), patch(
+                "src.datalad_execution.subprocess.Popen",
+                side_effect=_make_fake_ria_popen(),
+            ):
                 result = manager.sync_project_to_ria(
                     project_path, ria_url="ria+ssh://user@host/store", verify=True
                 )
@@ -5090,7 +5226,10 @@ class TestSyncProjectToRiaVerify(unittest.TestCase):
                 outstanding_files=["sub-001/anat/sub-001_T1w.nii.gz"]
             )
 
-            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run):
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run), patch(
+                "src.datalad_execution.subprocess.Popen",
+                side_effect=_make_fake_ria_popen(),
+            ):
                 result = manager.sync_project_to_ria(
                     project_path, ria_url="ria+ssh://user@host/store", verify=True
                 )
@@ -5109,7 +5248,10 @@ class TestSyncProjectToRiaVerify(unittest.TestCase):
             seen_commands: list[list[str]] = []
             fake_run = _make_fake_ria_subprocess(outstanding_files=[], seen_commands=seen_commands)
 
-            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run):
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run), patch(
+                "src.datalad_execution.subprocess.Popen",
+                side_effect=_make_fake_ria_popen(seen_commands=seen_commands),
+            ):
                 result = manager.sync_project_to_ria(
                     project_path,
                     ria_url="user@host:/srv/backups/study",
@@ -5121,6 +5263,77 @@ class TestSyncProjectToRiaVerify(unittest.TestCase):
         find_commands = [c for c in seen_commands if "annex" in c and "find" in c]
         self.assertTrue(find_commands)
         self.assertEqual(find_commands[0][-1], "server")
+
+    @patch("src.datalad_execution.resolve_datalad_executable", return_value="/usr/bin/datalad")
+    def test_recovers_when_push_reports_failure_but_content_is_actually_present(
+        self, _mock_resolve
+    ):
+        """Regression guard for a live incident (129_PK01, 2026-07-21): a
+        recursive `datalad push -r` across 150+ subdatasets exited non-zero
+        with a log containing nothing but successful "[INFO] Finished push
+        of Dataset(...)" lines -- no error text anywhere -- while `git annex
+        find --not --in` (run unconditionally as a sanity recheck, not
+        gated on the `verify` flag) confirmed every dataset's content had
+        actually reached the sibling. "Sync now" must not report a false
+        "Sync failed" in that case, even without the user opting into
+        `verify=True`."""
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            seen_commands: list[list[str]] = []
+
+            def _fake_popen(command, **kwargs):
+                cmd = [str(c) for c in command]
+                seen_commands.append(cmd)
+                if "push" in cmd and "--to" in cmd:
+                    return _FakePopen(
+                        returncode=1,
+                        stdout_lines=["[INFO] Finished push of Dataset(/data/proj)\n"],
+                    )
+                return _FakePopen(returncode=0, stdout_lines=[])
+
+            fake_run = _make_fake_ria_subprocess(outstanding_files=[], seen_commands=seen_commands)
+
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run), patch(
+                "src.datalad_execution.subprocess.Popen", side_effect=_fake_popen
+            ):
+                result = manager.sync_project_to_ria(
+                    project_path, ria_url="ria+ssh://user@host/store"
+                )
+
+        self.assertTrue(result.get("success"), result)
+        find_commands = [c for c in seen_commands if "annex" in c and "find" in c]
+        self.assertTrue(find_commands, "push failure must trigger an independent recheck")
+
+    @patch("src.datalad_execution.resolve_datalad_executable", return_value="/usr/bin/datalad")
+    def test_still_fails_when_push_fails_and_content_is_actually_missing(self, _mock_resolve):
+        """Companion to the false-failure regression guard above: when push
+        fails AND the independent recheck also finds content genuinely
+        missing, the failure must still be reported."""
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+
+            def _fake_popen(command, **kwargs):
+                cmd = [str(c) for c in command]
+                if "push" in cmd and "--to" in cmd:
+                    return _FakePopen(returncode=1, stdout_lines=["connection refused\n"])
+                return _FakePopen(returncode=0, stdout_lines=[])
+
+            fake_run = _make_fake_ria_subprocess(
+                outstanding_files=["sub-001/anat/sub-001_T1w.nii.gz"]
+            )
+
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run), patch(
+                "src.datalad_execution.subprocess.Popen", side_effect=_fake_popen
+            ):
+                result = manager.sync_project_to_ria(
+                    project_path, ria_url="ria+ssh://user@host/store"
+                )
+
+        self.assertFalse(result.get("success"))
+        self.assertIn("connection refused", result.get("message", ""))
+        self.assertIn("missing content", result.get("message", ""))
 
 
 class TestFinalizeProjectUpload(unittest.TestCase):
@@ -5147,7 +5360,10 @@ class TestFinalizeProjectUpload(unittest.TestCase):
                 seen_commands=seen_commands,
             )
 
-            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run):
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run), patch(
+                "src.datalad_execution.subprocess.Popen",
+                side_effect=_make_fake_ria_popen(seen_commands=seen_commands),
+            ):
                 result = manager.finalize_project_upload(
                     project_path,
                     ria_url="ria+ssh://user@host/store",
@@ -5171,7 +5387,10 @@ class TestFinalizeProjectUpload(unittest.TestCase):
                 outstanding_files=[], seen_commands=seen_commands
             )
 
-            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run):
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run), patch(
+                "src.datalad_execution.subprocess.Popen",
+                side_effect=_make_fake_ria_popen(seen_commands=seen_commands),
+            ):
                 result = manager.finalize_project_upload(
                     project_path,
                     ria_url="ria+ssh://user@host/store",
@@ -5198,7 +5417,10 @@ class TestFinalizeProjectUpload(unittest.TestCase):
                 outstanding_files=[], seen_commands=seen_commands
             )
 
-            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run):
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run), patch(
+                "src.datalad_execution.subprocess.Popen",
+                side_effect=_make_fake_ria_popen(seen_commands=seen_commands),
+            ):
                 result = manager.finalize_project_upload(
                     project_path,
                     ria_url="user@host:/srv/backups/study",
@@ -5222,7 +5444,13 @@ class TestFinalizeProjectUpload(unittest.TestCase):
                 outstanding_files=[], seen_commands=seen_commands
             )
 
-            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run), patch.object(
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run), patch(
+                "src.datalad_execution.subprocess.Popen",
+                side_effect=_make_fake_ria_popen(seen_commands=seen_commands),
+            ), patch(
+                "src.web.blueprints.projects_export_blueprint._run_pre_export_validation",
+                return_value=None,
+            ), patch.object(
                 ProjectManager,
                 "_verify_ria_copy_full",
                 return_value={"success": False, "message": "clone validation failed"},
@@ -5241,6 +5469,51 @@ class TestFinalizeProjectUpload(unittest.TestCase):
             remove_attempts, [],
             "disconnect must never be attempted when full clone verification fails",
         )
+
+    @patch("src.datalad_execution.resolve_datalad_executable", return_value="/usr/bin/datalad")
+    def test_full_verify_validates_locally_before_pushing_and_skips_push_entirely_on_failure(
+        self, _mock_resolve
+    ):
+        """When `verify_mode="full"`, validation must run against the local
+        dataset *before* any push is attempted -- there's no point spending
+        potentially hours pushing a large imaging dataset only to find out
+        afterward (via the post-push clone-and-validate step) that
+        validation was always going to fail. A local validation failure
+        must skip create/push entirely and leave the sibling untouched."""
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+
+            def _unexpected_popen(*args, **kwargs):
+                raise AssertionError("push must not be attempted when local validation fails")
+
+            def _unexpected_run(*args, **kwargs):
+                raise AssertionError("no datalad command must run when local validation fails")
+
+            with patch("src.datalad_execution.subprocess.Popen", side_effect=_unexpected_popen), patch(
+                "src.datalad_execution.subprocess.run", side_effect=_unexpected_run
+            ), patch(
+                "src.web.blueprints.projects_export_blueprint._run_pre_export_validation",
+                return_value=(
+                    "Export blocked: validation found 411 errors in PRISM + BIDS checks. "
+                    "Fix the validation errors or choose 'Ignore validation' in the export options."
+                ),
+            ):
+                result = manager.finalize_project_upload(
+                    project_path,
+                    ria_url="ria+ssh://user@host/store",
+                    verify_mode="full",
+                )
+
+        self.assertFalse(result.get("success"))
+        self.assertFalse(result.get("pushed"))
+        self.assertFalse(result.get("disconnected"))
+        self.assertTrue(result.get("kept_sibling"))
+        self.assertIn("full_verify", result)
+        self.assertFalse(result["full_verify"].get("success"))
+        self.assertIn("411 errors", result.get("message", ""))
+        self.assertNotIn("export options", result.get("message", ""))
+        self.assertIn("Full verification on finalize", result.get("message", ""))
 
     @patch("src.datalad_execution.resolve_datalad_executable", return_value="/usr/bin/datalad")
     def test_cancellation_before_disconnect_leaves_sibling_registered(self, _mock_resolve):
@@ -5262,7 +5535,10 @@ class TestFinalizeProjectUpload(unittest.TestCase):
                 call_count["n"] += 1
                 return call_count["n"] > 3
 
-            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run):
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run), patch(
+                "src.datalad_execution.subprocess.Popen",
+                side_effect=_make_fake_ria_popen(seen_commands=seen_commands),
+            ):
                 result = manager.finalize_project_upload(
                     project_path,
                     ria_url="ria+ssh://user@host/store",
@@ -5285,7 +5561,10 @@ class TestFinalizeProjectUpload(unittest.TestCase):
             project_path = self._project_dir(tmp)
             fake_run = _make_fake_ria_subprocess(outstanding_files=[], remove_sibling_ok=False)
 
-            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run):
+            with patch("src.datalad_execution.subprocess.run", side_effect=fake_run), patch(
+                "src.datalad_execution.subprocess.Popen",
+                side_effect=_make_fake_ria_popen(),
+            ):
                 result = manager.finalize_project_upload(
                     project_path,
                     ria_url="ria+ssh://user@host/store",
