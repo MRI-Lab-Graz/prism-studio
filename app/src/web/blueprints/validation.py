@@ -468,16 +468,28 @@ def _execute_validation_job(
         progress_mode="determinate",
     )
 
-    issues, dataset_stats = run_validation(
-        dataset_path,
-        verbose=True,
-        schema_version=schema_version,
-        run_bids=run_bids,
-        run_prism=run_prism,
-        library_path=library_path,
-        project_path=project_path,
-        progress_callback=progress_callback,
-    )
+    # The BIDS validator does its own raw filesystem walk (list dir, then
+    # readlink each entry separately -- not an atomic git operation), which
+    # can crash with ENOENT if a concurrent DataLad-mutating operation on
+    # the same project (Sync/Finalize/Delete-scans.tsv/Enable-DataLad/Save
+    # snapshot) deletes `.git/index.lock` out from under it mid-walk
+    # (observed live: a validation run raced a scans.tsv-deletion run). Hold
+    # the same per-project lock those mutations already hold so the two
+    # can't overlap -- a plain temp-upload extraction dir has no contention
+    # on its own dedicated lock, so this is a no-op cost for that case.
+    from src.project_manager import ProjectManager
+
+    with ProjectManager._datalad_lock_for(Path(dataset_path)):
+        issues, dataset_stats = run_validation(
+            dataset_path,
+            verbose=True,
+            schema_version=schema_version,
+            run_bids=run_bids,
+            run_prism=run_prism,
+            library_path=library_path,
+            project_path=project_path,
+            progress_callback=progress_callback,
+        )
 
     _raise_if_cancelled()
 
@@ -1009,10 +1021,14 @@ def api_validate():
                 400,
             )
 
-        # Use unified validation function
-        issues, stats = run_validation(
-            dataset_path, verbose=False, library_path=library_path
-        )
+        # Use unified validation function. Holds the same per-project lock
+        # as _execute_validation_job -- see the comment there for why.
+        from src.project_manager import ProjectManager
+
+        with ProjectManager._datalad_lock_for(Path(dataset_path)):
+            issues, stats = run_validation(
+                dataset_path, verbose=False, library_path=library_path
+            )
         results = format_validation_results(issues, stats, dataset_path)
 
         return jsonify(results)
