@@ -102,6 +102,21 @@ NESTED_SUBDATASET_ENABLE_CLICK_MAX_SECONDS = 90
 REGISTERED_SUBDATASET_QUERY_TIMEOUT_SECONDS = 30
 DATALAD_CLEAN_STATUS_TIMEOUT_SECONDS = 30
 ANNEXED_TEXT_FILE_SCAN_BUDGET_SECONDS = 20
+# A `.git/index.lock` normally exists only for the few milliseconds-to-seconds
+# a git command needs to write the index; anything still present after this
+# long is almost certainly orphaned by a process that was killed or crashed
+# mid-write, not a real, still-running operation.
+STALE_GIT_LOCK_AGE_SECONDS = 5 * 60
+# Nested-subdataset conversion unlocks (materializes as real files) a
+# directory's annexed content before attempting to convert it; if that
+# attempt then fails partway (e.g. the index.lock above), the unlocked files
+# are left behind uncommitted. A handful of unlocked files can be normal
+# (someone editing with `datalad unlock`), but a pile this large only comes
+# from repeated failed conversion attempts, and makes every subsequent git
+# operation on the repo drastically slower (git must invoke git-annex's
+# smudge/clean filter per unlocked file to check it against the index).
+UNLOCKED_ANNEX_BACKLOG_WARNING_THRESHOLD = 25
+UNLOCKED_ANNEX_QUERY_TIMEOUT_SECONDS = 60
 ANNEXED_TEXT_FILE_SCAN_PER_ROOT_TIMEOUT_SECONDS = 5
 DATALAD_EXPORT_STEP_TIMEOUT_SECONDS = 60 * 60
 DATALAD_DOCS_URL = "https://www.datalad.org/"
@@ -1585,13 +1600,30 @@ class ProjectManager:
         result.update(self._summarize_nested_subdatasets(project_path))
         result.update(self._summarize_datalad_text_policy(project_path))
         result["annexed_text_files_scan_skipped"] = False
+
+        # Stale-lock detection is just an mtime check per dataset root -- cheap
+        # enough to run on every status read, including the fast page-load
+        # path, so a stuck lock surfaces immediately rather than only when a
+        # deep check happens to be triggered.
+        dataset_roots = self._iter_datalad_dataset_roots(project_path)
+        stale_locks = self._detect_stale_git_locks(dataset_roots)
+        result["stale_git_locks"] = stale_locks
+        unlocked_backlog: List[Dict[str, Any]] = []
+
         if available and annex_available:
             if fast:
                 result["annexed_text_files_scan_complete"] = False
                 result["annexed_text_files_scan_skipped"] = True
             else:
-                dataset_roots = self._iter_datalad_dataset_roots(project_path)
                 result.update(self._find_annexed_text_files(project_path, dataset_roots))
+                # The unlocked-annex backlog check shells out to `git annex
+                # find` per dataset root, so -- like the annexed-text-file
+                # scan above -- it only runs on the explicit deep check, not
+                # on every fast page-load poll.
+                unlocked_backlog = self._detect_unlocked_annex_backlog(
+                    dataset_roots, datalad_executable=str(datalad_executable)
+                )
+                result["unlocked_annex_backlog"] = unlocked_backlog
 
         missing_text_policy_count = int(result.get("text_policy_missing_count", 0) or 0)
         text_policy_warning = ""
@@ -1622,12 +1654,18 @@ class ProjectManager:
                 "reload to retry."
             )
 
+        health_warning = ""
+        if stale_locks or unlocked_backlog:
+            health_warning = " " + self._build_datalad_health_warning(
+                stale_locks=stale_locks, unlocked_backlog=unlocked_backlog
+            )
+
         if not available:
             result["message"] = (
                 "Current project is a DataLad dataset, but the datalad executable "
                 "is not available in this environment. "
                 f"{DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
-            ) + text_policy_warning + annexed_text_files_warning
+            ) + text_policy_warning + annexed_text_files_warning + health_warning
             return result
 
         result["can_save"] = True
@@ -1658,6 +1696,8 @@ class ProjectManager:
             result["message"] = f"{result['message']}{text_policy_warning}"
         if annexed_text_files_warning:
             result["message"] = f"{result['message']}{annexed_text_files_warning}"
+        if health_warning:
+            result["message"] = f"{result['message']}{health_warning}"
         result["executable"] = datalad_executable
         if git_annex_executable:
             result["annex_executable"] = git_annex_executable
@@ -3533,6 +3573,28 @@ git push -u origin main
         if status.get("enabled"):
             datalad_executable = status.get("executable") or shutil.which("datalad")
             if datalad_executable:
+                dataset_roots = self._iter_datalad_dataset_roots(project_path)
+
+                # Fail fast on a known-bad repo state rather than silently
+                # attempting (and failing) every remaining subject: a stale
+                # lock or a large unlocked-annex backlog from a previous
+                # interrupted attempt will make every step below fail or
+                # crawl anyway, and burying that in per-subject failure
+                # messages is much harder to diagnose than surfacing it once,
+                # up front, with the specific fix.
+                stale_locks = self._detect_stale_git_locks(dataset_roots)
+                unlocked_backlog = self._detect_unlocked_annex_backlog(
+                    dataset_roots, datalad_executable=str(datalad_executable)
+                )
+                if stale_locks or unlocked_backlog:
+                    result["error"] = self._build_datalad_health_warning(
+                        stale_locks=stale_locks, unlocked_backlog=unlocked_backlog
+                    )
+                    result["stale_git_locks"] = stale_locks
+                    result["unlocked_annex_backlog"] = unlocked_backlog
+                    result["datalad"] = status
+                    return result
+
                 datalad_result: Dict[str, Any] = {
                     "requested": True,
                     "available": True,
@@ -3850,17 +3912,35 @@ git push -u origin main
         subject/subdataset outright. A non-lock failure (e.g. a genuine git
         error, or `git commit`'s benign "nothing to commit") is returned
         immediately without retry.
+
+        If the command itself times out, `subprocess.run` force-kills it --
+        git never gets a chance to remove its own `.git/index.lock`, leaving
+        one behind. Unlike a lock found via other means, this specific one is
+        unambiguously orphaned (this call just killed the only process that
+        could have held it), so it's cleaned up here before the
+        `TimeoutExpired` propagates -- otherwise every subsequent attempt on
+        this path would immediately fail on "index.lock: File exists" with no
+        way to recover short of a human noticing and deleting it (as
+        happened in production on 2026-07-21: a 300GB `derivatives/`
+        directory's `git rm --cached` genuinely needed longer than the old
+        120s budget, and each timeout left a fresh stale lock for the next
+        attempt to trip over).
         """
         process = None
         for attempt in range(1, max_attempts + 1):
-            process = subprocess.run(
-                command,
-                cwd=cwd,
-                capture_output=True,
-                text=True,
-                check=False,
-                timeout=timeout,
-            )
+            try:
+                process = subprocess.run(
+                    command,
+                    cwd=cwd,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=timeout,
+                )
+            except subprocess.TimeoutExpired:
+                self._remove_self_orphaned_index_lock(cwd)
+                raise
+
             if process.returncode == 0:
                 return process
 
@@ -3870,6 +3950,23 @@ git push -u origin main
                 return process
             time.sleep(retry_delay_seconds * attempt)
         return process
+
+    def _remove_self_orphaned_index_lock(self, cwd: str) -> None:
+        """Best-effort removal of a `.git/index.lock` this process just orphaned
+        by force-killing the command that held it (via a subprocess timeout).
+
+        Safe specifically because of that causality -- we know the lock has no
+        live owner since we are the reason its owner no longer exists. Never
+        call this for a lock discovered any other way (e.g. proactive health
+        checks use age-based heuristics instead, precisely because they
+        cannot have this same certainty).
+        """
+        try:
+            lock_path = Path(cwd) / ".git" / "index.lock"
+            if lock_path.is_file():
+                lock_path.unlink()
+        except OSError:
+            pass
 
     def _run_datalad_create_with_lock_retry(
         self,
@@ -4507,16 +4604,26 @@ git push -u origin main
                 # periodic status poll (and any concurrent DataLad tooling)
                 # touches this same parent index, and a bare failure here
                 # aborts the whole subdataset registration.
+                #
+                # Uses DATALAD_SAVE_STEP_TIMEOUT_SECONDS (not the shorter
+                # DATALAD_REPAIR_STEP_TIMEOUT_SECONDS other metadata-only
+                # steps use): unlike those, this walks and stages a removal
+                # entry for every tracked file under the path, so its cost
+                # scales with how much content the directory holds -- for a
+                # multi-hundred-GB directory like a `derivatives/` full of
+                # imaging data, that legitimately exceeds a couple of
+                # minutes.
                 remove_process = self._run_command_with_index_lock_retry(
                     remove_command,
                     cwd=str(project_path),
-                    timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
+                    timeout=DATALAD_SAVE_STEP_TIMEOUT_SECONDS,
                 )
             except subprocess.TimeoutExpired:
                 return {
                     "success": False,
                     "message": self._format_repair_timeout_message(
-                        f'Untracking parent content under "{relative_dataset_text}"'
+                        f'Untracking parent content under "{relative_dataset_text}"',
+                        DATALAD_SAVE_STEP_TIMEOUT_SECONDS,
                     ),
                 }
             if remove_process.returncode != 0:
@@ -4564,11 +4671,14 @@ git push -u origin main
         # and can re-discover the just-`git rm --cached`-ed files as "new" annex
         # content to re-add (their unmodified content is still on disk), silently
         # undoing the untracking when other pending changes (e.g. a sibling
-        # subdataset awaiting commit) are present. Scoping the commit to this
-        # path avoids that rediscovery.
+        # subdataset awaiting commit) are present. A plain `git commit` (used
+        # here, not `datalad save`) has no such rediscovery step -- it only
+        # ever commits what's already staged -- so this is safe without a
+        # pathspec. See `_run_git_commit_for_path`'s docstring for why a
+        # pathspec-scoped commit is used nowhere in this codebase.
         self._emit_backend_progress(
             f'Checkpointing parent dataset before creating nested dataset "{relative_dataset_text}".',
-            command=f'git commit -m "{stage_parent_message}" -- {relative_dataset_text}',
+            command=f'git commit -m "{stage_parent_message}"',
         )
         prep_save_result = self._run_git_commit_for_path(
             project_path,
@@ -4673,10 +4783,7 @@ git push -u origin main
 
         self._emit_backend_progress(
             f'Checkpointing staged parent deletions before creating nested dataset "{relative_dataset_text}".',
-            command=(
-                f'git commit -m "{stage_parent_message}" -- '
-                f'{relative_dataset_text}'
-            ),
+            command=f'git commit -m "{stage_parent_message}"',
         )
         prep_save_result = self._run_git_commit_for_path(
             project_path,
@@ -5266,6 +5373,33 @@ git push -u origin main
         result["message"] = f"DataLad save failed: {detail or 'Unknown DataLad error.'}"
         return result
 
+    def _has_staged_changes_for_path(
+        self, project_path: Path, relative_dataset_text: str, *, timeout: float
+    ) -> Optional[bool]:
+        """Return True/False for whether `relative_dataset_text` has staged
+        changes relative to HEAD, or None if the check itself failed.
+
+        Uses `git diff-index --cached --quiet` rather than trusting `git
+        commit`'s own report of what it did/didn't commit -- see
+        `_run_git_commit_for_path`'s docstring for why.
+        """
+        try:
+            process = subprocess.run(
+                ["git", "diff-index", "--cached", "--quiet", "HEAD", "--", relative_dataset_text],
+                cwd=str(project_path),
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=timeout,
+            )
+        except Exception:
+            return None
+        if process.returncode == 0:
+            return False
+        if process.returncode == 1:
+            return True
+        return None
+
     def _run_git_commit_for_path(
         self,
         project_path: Path,
@@ -5273,7 +5407,26 @@ git push -u origin main
         relative_dataset_text: str,
         message: str,
     ) -> Dict[str, Any]:
-        """Commit staged parent changes for one nested path after working-tree content is parked aside."""
+        """Commit staged parent changes for one nested path after working-tree content is parked aside.
+
+        Uses an UNSCOPED `git commit` (no pathspec), not `git commit --
+        <path>`: on this app's target git version (2.54.0), a pathspec-scoped
+        commit has been observed to silently report "nothing to commit" and
+        no-op even though `git diff-index --cached HEAD -- <path>` shows real
+        staged changes for that exact path (2026-07-21 production incident --
+        every subject after the first hit this, since the caller then
+        proceeds to `datalad create --force` on content that was never
+        actually untracked, which fails with "collision with content in
+        parent dataset"). This function is only ever called with the current
+        item's untrack staged (see caller's sequential per-item flow), plus
+        possibly a stale submodule pointer left by an earlier item's own
+        `datalad save` -- an unscoped commit correctly picks up and commits
+        that too, which is desired, not a risk.
+
+        The outcome is verified independently via `git diff-index` rather
+        than trusted from `git commit`'s own return code/text, as a safety
+        net against this or any future git-version quirk recurring silently.
+        """
         normalized_message = str(message or "").strip() or "Checkpoint parent dataset changes"
         result: Dict[str, Any] = {
             "available": True,
@@ -5283,48 +5436,140 @@ git push -u origin main
             "message": "",
         }
 
-        commit_command = [
-            "git",
-            "commit",
-            "-m",
-            normalized_message,
-            "--",
-            relative_dataset_text,
-        ]
+        has_staged = self._has_staged_changes_for_path(
+            project_path, relative_dataset_text, timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS
+        )
+        if has_staged is False:
+            result["no_changes"] = True
+            result["message"] = "No staged parent changes were pending."
+            return result
+
+        commit_command = ["git", "commit", "-m", normalized_message]
 
         try:
             # Retry on transient index.lock contention (see
-            # _run_command_with_index_lock_retry). A genuine failure or the
-            # benign "nothing to commit" is returned immediately without
-            # retry and handled below.
+            # _run_command_with_index_lock_retry).
             process = self._run_command_with_index_lock_retry(
                 commit_command,
                 cwd=str(project_path),
-                timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS,
+                timeout=DATALAD_SAVE_STEP_TIMEOUT_SECONDS,
             )
         except subprocess.TimeoutExpired:
             result["message"] = self._format_repair_timeout_message(
-                f'Git commit for "{relative_dataset_text}"'
+                f'Git commit for "{relative_dataset_text}"', DATALAD_SAVE_STEP_TIMEOUT_SECONDS
             )
             return result
         except Exception as exc:
             result["message"] = f"Git commit failed ({type(exc).__name__}: {exc})."
             return result
 
-        if process.returncode == 0:
+        still_staged = self._has_staged_changes_for_path(
+            project_path, relative_dataset_text, timeout=DATALAD_REPAIR_STEP_TIMEOUT_SECONDS
+        )
+        if still_staged is False:
             result["saved"] = True
             result["message"] = f'Git committed staged parent changes for "{relative_dataset_text}".'
             return result
 
         detail = (process.stderr or process.stdout or "").strip()
-        lowered_detail = detail.lower()
-        if "nothing to commit" in lowered_detail or "no changes added to commit" in lowered_detail:
-            result["no_changes"] = True
-            result["message"] = "No staged parent changes were pending."
-            return result
-
-        result["message"] = f"Git commit failed: {detail or 'Unknown Git error.'}"
+        if process.returncode != 0:
+            result["message"] = f"Git commit failed: {detail or 'Unknown Git error.'}"
+        else:
+            result["message"] = (
+                f'Git commit for "{relative_dataset_text}" reported success but did not '
+                f"actually take effect (staged changes for this path are still present "
+                f"relative to HEAD after committing)."
+            )
         return result
+
+    def _detect_stale_git_locks(self, dataset_roots: List[Path]) -> List[Dict[str, Any]]:
+        """Return info about any `.git/index.lock` old enough to be orphaned.
+
+        Never deletes anything -- a false positive (a real, just-unusually-slow
+        operation) would be destructive to report as safe-to-remove, so this
+        only flags candidates by age for a human (or a future explicit
+        cleanup action) to confirm. See `STALE_GIT_LOCK_AGE_SECONDS`.
+        """
+        stale: List[Dict[str, Any]] = []
+        now = time.time()
+        for root in dataset_roots:
+            lock_path = root / ".git" / "index.lock"
+            try:
+                if not lock_path.is_file():
+                    continue
+                age_seconds = now - lock_path.stat().st_mtime
+            except OSError:
+                continue
+            if age_seconds >= STALE_GIT_LOCK_AGE_SECONDS:
+                stale.append({"path": str(lock_path), "age_seconds": int(age_seconds)})
+        return stale
+
+    def _detect_unlocked_annex_backlog(
+        self,
+        dataset_roots: List[Path],
+        *,
+        datalad_executable: str,
+    ) -> List[Dict[str, Any]]:
+        """Return per-root counts of annexed files left "unlocked" (materialized
+        as real files instead of symlinks) above `UNLOCKED_ANNEX_BACKLOG_WARNING_THRESHOLD`.
+
+        A handful of unlocked files is normal (someone using `datalad unlock`
+        to edit directly); a large pile only comes from a nested-subdataset
+        conversion that unlocked a directory's content and then failed partway
+        through, leaving it behind. Beyond being uncommitted, a large backlog
+        makes every subsequent git operation on that repo drastically slower,
+        since git must invoke git-annex's smudge/clean filter per unlocked
+        file to compare it against the index -- so this is worth surfacing
+        even before it blocks anything outright.
+        """
+        git_executable = shutil.which("git") or "git"
+        backlog: List[Dict[str, Any]] = []
+        for root in dataset_roots:
+            try:
+                process = subprocess.run(
+                    [git_executable, "-C", str(root), "annex", "find", "--in=here", "--unlocked"],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=UNLOCKED_ANNEX_QUERY_TIMEOUT_SECONDS,
+                )
+            except Exception:
+                continue
+            if process.returncode != 0:
+                continue
+            count = len([line for line in (process.stdout or "").splitlines() if line.strip()])
+            if count >= UNLOCKED_ANNEX_BACKLOG_WARNING_THRESHOLD:
+                backlog.append({"path": str(root), "unlocked_count": count})
+        return backlog
+
+    def _build_datalad_health_warning(
+        self,
+        *,
+        stale_locks: List[Dict[str, Any]],
+        unlocked_backlog: List[Dict[str, Any]],
+    ) -> str:
+        """Build one human-readable warning covering both health checks, if any fired."""
+        parts: List[str] = []
+        if stale_locks:
+            lock_list = "; ".join(
+                f"{item['path']} (age: {item['age_seconds'] // 60}m)" for item in stale_locks
+            )
+            parts.append(
+                f"Stale git lock file(s) detected, left behind by a crashed/killed process: "
+                f"{lock_list}. These block all git operations on that repo until removed. "
+                f"If nothing is currently running, it is safe to delete them manually."
+            )
+        if unlocked_backlog:
+            backlog_list = "; ".join(
+                f"{item['path']} ({item['unlocked_count']} files)" for item in unlocked_backlog
+            )
+            parts.append(
+                f"A large number of annexed files are left \"unlocked\" (materialized as real "
+                f"files) from an earlier interrupted conversion attempt: {backlog_list}. This "
+                f"makes git operations on that repo much slower. Run `git annex lock -- <path>` "
+                f"on the affected path(s) to restore normal speed."
+            )
+        return " ".join(parts)
 
     def _iter_datalad_dataset_roots(self, project_path: Path) -> List[Path]:
         """Return likely dataset roots without full recursive filesystem scans.
