@@ -6472,7 +6472,20 @@ git push -u origin main
                 _run_pre_export_validation,
             )
 
-            local_validation_error = _run_pre_export_validation(project_path, "both")
+            # Hold the per-project DataLad lock for the validation scan: the
+            # BIDS validator does its own raw filesystem walk (list dir, then
+            # readlink each entry separately, not an atomic git operation),
+            # and a concurrent git-mutating call elsewhere (e.g. "Delete all
+            # scans.tsv files", or another save/enable) can delete
+            # `.git/index.lock` between the walker listing it and reading it,
+            # crashing the validator with ENOENT on that readlink (observed
+            # live: a validation run raced a scans.tsv-deletion run). Every
+            # other DataLad-mutating method already holds this same lock for
+            # its whole duration (see enable_datalad_for_project,
+            # save_datalad_snapshot, remove_scans_tsv_files) -- validation
+            # reading the live tree needs the same protection.
+            with self._datalad_lock_for(project_path):
+                local_validation_error = _run_pre_export_validation(project_path, "both")
             if local_validation_error:
                 return {
                     "success": False,

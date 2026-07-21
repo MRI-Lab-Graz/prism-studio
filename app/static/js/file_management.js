@@ -4459,6 +4459,61 @@ document.addEventListener('DOMContentLoaded', () => {
         fileDeleteApplyBtn.addEventListener('click', () => runFileDelete('apply'));
     }
 
+    // ----------------------------------------------------------------
+    // Delete scans.tsv files (separate from the modality/entity-based
+    // deleter above: scans.tsv lives directly under sub-XX/ses-YY, not
+    // inside a modality folder, so it doesn't fit that tool's filters)
+    // ----------------------------------------------------------------
+
+    const fileDeleteScansTsvBtn = document.getElementById('fileDeleteScansTsvBtn');
+    const fileDeleteScansTsvResult = document.getElementById('fileDeleteScansTsvResult');
+
+    if (fileDeleteScansTsvBtn) {
+        fileDeleteScansTsvBtn.addEventListener('click', async () => {
+            const currentProjectPath = getCurrentProjectPath();
+            if (!currentProjectPath) {
+                if (fileDeleteScansTsvResult) {
+                    fileDeleteScansTsvResult.innerHTML = '<div class="alert alert-danger py-2 mb-0">No active project selected. Open a project first.</div>';
+                }
+                return;
+            }
+            const confirmed = window.confirm(
+                'This permanently deletes every *_scans.tsv file across the dataset (superdataset and ' +
+                'nested subject/derivatives subdatasets), committing the removal in each. Continue?'
+            );
+            if (!confirmed) return;
+
+            fileDeleteScansTsvBtn.disabled = true;
+            const originalHtml = fileDeleteScansTsvBtn.innerHTML;
+            fileDeleteScansTsvBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...';
+            if (fileDeleteScansTsvResult) {
+                fileDeleteScansTsvResult.innerHTML = '<div class="alert alert-info py-2 mb-0">Deleting scans.tsv files…</div>';
+            }
+
+            try {
+                const response = await fetchWithApiFallback('/api/projects/datalad/remove-scans-tsv', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ confirmed: true }),
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok || !payload.success) {
+                    throw new Error(payload.error || payload.message || 'Failed to delete scans.tsv files');
+                }
+                if (fileDeleteScansTsvResult) {
+                    fileDeleteScansTsvResult.innerHTML = `<div class="alert alert-success py-2 mb-0">${escapeHtml(payload.message || 'Deleted.')}</div>`;
+                }
+            } catch (err) {
+                if (fileDeleteScansTsvResult) {
+                    fileDeleteScansTsvResult.innerHTML = `<div class="alert alert-danger py-2 mb-0">${escapeHtml(err.message || 'Failed to delete scans.tsv files')}</div>`;
+                }
+            } finally {
+                fileDeleteScansTsvBtn.disabled = false;
+                fileDeleteScansTsvBtn.innerHTML = originalHtml;
+            }
+        });
+    }
+
     // Load options when delete tab is shown
     const fmDeleteTab = document.getElementById('fm-delete-tab');
     if (fmDeleteTab) {
