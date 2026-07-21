@@ -372,6 +372,35 @@ def save_datalad_snapshot():
     return jsonify(result), 400
 
 
+@projects_bp.route("/api/projects/datalad/remove-scans-tsv", methods=["POST"])
+def remove_scans_tsv_files():
+    """Delete every `*_scans.tsv` file across the current project."""
+    current_project = get_current_project()
+    project_path = str(current_project.get("path") or "").strip()
+    if not project_path:
+        return jsonify({"success": False, "error": "No current project loaded."}), 400
+
+    data = request.get_json(silent=True) or {}
+    if not bool(data.get("confirmed")):
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": (
+                        "Deleting scans.tsv files requires explicit confirmation "
+                        "because it modifies the current project in place."
+                    ),
+                }
+            ),
+            400,
+        )
+
+    result = _project_manager.remove_scans_tsv_files(Path(project_path))
+    if result.get("success"):
+        return jsonify(result)
+    return jsonify(result), 400
+
+
 @projects_bp.route("/api/projects/datalad/enable", methods=["POST"])
 def enable_datalad_for_project():
     """Enable DataLad for the current project."""

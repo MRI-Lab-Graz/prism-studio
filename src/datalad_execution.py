@@ -526,6 +526,49 @@ def is_ria_url(url: str) -> bool:
     return str(url or "").strip().lower().startswith("ria+")
 
 
+def _run_streaming_command(
+    command: list[str],
+    *,
+    cwd: str,
+    timeout_seconds: int,
+    line_callback: Any = None,
+) -> dict[str, Any]:
+    """Run a command with merged stdout+stderr, streaming each line to
+    `line_callback` (if given) as it's produced.
+
+    Recursive DataLad operations (`create-sibling -r`, `push -r`) across a
+    project with 100+ nested subdatasets can run for many minutes; without
+    this, a caller using `subprocess.run` only sees output after the whole
+    thing exits, leaving the UI/terminal looking dead the entire time.
+
+    Returns `{"returncode": int, "output": str}` on completion. Raises
+    `subprocess.TimeoutExpired` on timeout (mirroring `subprocess.run`'s own
+    contract) so callers can build their own timeout message; raises the
+    original exception for any other failure to start the process.
+    """
+    process = subprocess.Popen(
+        command,
+        cwd=cwd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
+    output_lines: list[str] = []
+    try:
+        assert process.stdout is not None
+        for line in process.stdout:
+            output_lines.append(line)
+            stripped = line.rstrip()
+            if stripped and callable(line_callback):
+                line_callback(stripped)
+        process.wait(timeout=max(1, int(timeout_seconds)))
+    except subprocess.TimeoutExpired:
+        process.kill()
+        raise
+    return {"returncode": process.returncode, "output": "".join(output_lines)}
+
+
 def run_datalad_create_sibling(
     project_root: Path,
     *,
@@ -537,6 +580,7 @@ def run_datalad_create_sibling(
     new_store_ok: bool = True,
     datalad_executable: str = "",
     timeout_seconds: int = 600,
+    line_callback: Any = None,
 ) -> dict[str, Any]:
     """Create/reconfigure a DataLad sibling, dispatching on URL scheme.
 
@@ -557,6 +601,7 @@ def run_datalad_create_sibling(
             new_store_ok=new_store_ok,
             datalad_executable=datalad_executable,
             timeout_seconds=timeout_seconds,
+            line_callback=line_callback,
         )
     return run_datalad_create_sibling_plain(
         project_root,
@@ -566,6 +611,7 @@ def run_datalad_create_sibling(
         existing=existing,
         datalad_executable=datalad_executable,
         timeout_seconds=timeout_seconds,
+        line_callback=line_callback,
     )
 
 
@@ -578,6 +624,7 @@ def run_datalad_create_sibling_plain(
     existing: str = "reconfigure",
     datalad_executable: str = "",
     timeout_seconds: int = 600,
+    line_callback: Any = None,
 ) -> dict[str, Any]:
     """Create/reconfigure a plain (non-RIA) DataLad sibling over SSH or a local path.
 
@@ -586,6 +633,12 @@ def run_datalad_create_sibling_plain(
     per-dataset UUID subdirectory tree, and no separate `<name>-storage`
     special remote. Use this for a server that was never initialized as a
     RIA store (e.g. one that's only ever been used for plain file copies).
+
+    With `recursive=True` this recurses into every nested subdataset
+    internally (a single DataLad invocation, not one per subdataset), which
+    can take minutes on a project with 100+ subjects -- `line_callback`, if
+    given, receives each output line as DataLad produces it, e.g. for live
+    terminal progress instead of the process looking dead until it exits.
     """
     root = Path(project_root)
     resolved = str(datalad_executable or resolve_datalad_executable()).strip()
@@ -624,13 +677,11 @@ def run_datalad_create_sibling_plain(
     result["command"] = shlex.join(command)
 
     try:
-        process = subprocess.run(
+        run_result = _run_streaming_command(
             command,
             cwd=str(root),
-            capture_output=True,
-            text=True,
-            timeout=max(1, int(timeout_seconds)),
-            check=False,
+            timeout_seconds=timeout_seconds,
+            line_callback=line_callback,
         )
     except subprocess.TimeoutExpired:
         result["message"] = (
@@ -641,15 +692,15 @@ def run_datalad_create_sibling_plain(
         result["message"] = f"DataLad create-sibling failed ({type(exc).__name__}: {exc})."
         return result
 
-    result["stdout"] = process.stdout or ""
-    result["stderr"] = process.stderr or ""
+    result["stdout"] = run_result["output"]
+    result["stderr"] = ""
 
-    if process.returncode == 0:
+    if run_result["returncode"] == 0:
         result["success"] = True
         result["message"] = "DataLad sibling created/reconfigured."
         return result
 
-    detail = (process.stderr or process.stdout or "").strip()
+    detail = run_result["output"].strip()
     result["message"] = f"DataLad create-sibling failed: {detail or 'Unknown DataLad error.'}"
     return result
 
@@ -665,7 +716,10 @@ def run_datalad_create_sibling_ria(
     new_store_ok: bool = True,
     datalad_executable: str = "",
     timeout_seconds: int = 600,
+    line_callback: Any = None,
 ) -> dict[str, Any]:
+    """See `run_datalad_create_sibling_plain` for the `line_callback` contract
+    (this is the RIA-store counterpart, same live-streaming rationale)."""
     root = Path(project_root)
     resolved = str(datalad_executable or resolve_datalad_executable()).strip()
     result: dict[str, Any] = {
@@ -699,13 +753,11 @@ def run_datalad_create_sibling_ria(
     result["command"] = shlex.join(command)
 
     try:
-        process = subprocess.run(
+        run_result = _run_streaming_command(
             command,
             cwd=str(root),
-            capture_output=True,
-            text=True,
-            timeout=max(1, int(timeout_seconds)),
-            check=False,
+            timeout_seconds=timeout_seconds,
+            line_callback=line_callback,
         )
     except subprocess.TimeoutExpired:
         result["message"] = (
@@ -716,15 +768,15 @@ def run_datalad_create_sibling_ria(
         result["message"] = f"DataLad create-sibling-ria failed ({type(exc).__name__}: {exc})."
         return result
 
-    result["stdout"] = process.stdout or ""
-    result["stderr"] = process.stderr or ""
+    result["stdout"] = run_result["output"]
+    result["stderr"] = ""
 
-    if process.returncode == 0:
+    if run_result["returncode"] == 0:
         result["success"] = True
         result["message"] = "DataLad RIA sibling created/reconfigured."
         return result
 
-    detail = (process.stderr or process.stdout or "").strip()
+    detail = run_result["output"].strip()
     result["message"] = f"DataLad create-sibling-ria failed: {detail or 'Unknown DataLad error.'}"
     return result
 
@@ -738,7 +790,12 @@ def run_datalad_push(
     since: str = "",
     datalad_executable: str = "",
     timeout_seconds: int = 7200,
+    line_callback: Any = None,
 ) -> dict[str, Any]:
+    """See `run_datalad_create_sibling_plain` for the `line_callback`
+    contract. `push -r` across 100+ subdatasets with real annexed content is
+    the single longest-running step in the sync/finalize flow -- this is
+    where live progress matters most."""
     root = Path(project_root)
     resolved = str(datalad_executable or resolve_datalad_executable()).strip()
     result: dict[str, Any] = {
@@ -768,13 +825,11 @@ def run_datalad_push(
     result["command"] = shlex.join(command)
 
     try:
-        process = subprocess.run(
+        run_result = _run_streaming_command(
             command,
             cwd=str(root),
-            capture_output=True,
-            text=True,
-            timeout=max(1, int(timeout_seconds)),
-            check=False,
+            timeout_seconds=timeout_seconds,
+            line_callback=line_callback,
         )
     except subprocess.TimeoutExpired:
         result["message"] = (
@@ -785,18 +840,18 @@ def run_datalad_push(
         result["message"] = f"DataLad push failed ({type(exc).__name__}: {exc})."
         return result
 
-    result["stdout"] = process.stdout or ""
-    result["stderr"] = process.stderr or ""
+    result["stdout"] = run_result["output"]
+    result["stderr"] = ""
 
-    combined = f"{result['stdout']}\n{result['stderr']}".lower()
+    combined = result["stdout"].lower()
     has_failure_marker = "(failed)" in combined or "error(" in combined or " error " in combined
 
-    if process.returncode == 0 and not has_failure_marker:
+    if run_result["returncode"] == 0 and not has_failure_marker:
         result["success"] = True
         result["message"] = "DataLad push completed."
         return result
 
-    detail = (result["stderr"] or result["stdout"]).strip()
+    detail = result["stdout"].strip()
     result["message"] = f"DataLad push failed: {detail or 'Unknown DataLad error.'}"
     return result
 
@@ -809,6 +864,7 @@ def run_datalad_push_verify(
     is_ria: bool = True,
     datalad_executable: str = "",
     timeout_seconds: int = 1800,
+    line_callback: Any = None,
 ) -> dict[str, Any]:
     """Confirm every annexed key in each dataset root is present on the sibling.
 
@@ -823,6 +879,12 @@ def run_datalad_push_verify(
     content presence must be checked against `<name>-storage`. A plain
     (non-RIA) sibling has no such pairing -- content is pushed directly to
     `<name>` itself, so `is_ria=False` checks that name instead.
+
+    Unlike `run_datalad_push`/`run_datalad_create_sibling`, this already
+    loops per dataset root as separate (fast) subprocess calls in our own
+    code, so there's no need for line-level Popen streaming -- `line_callback`
+    (if given) is simply called once per root with a "checking N/M" message,
+    which is enough to show live progress across a 100+-subdataset project.
     """
     resolved = str(datalad_executable or resolve_datalad_executable()).strip()
     result: dict[str, Any] = {
@@ -847,9 +909,13 @@ def run_datalad_push_verify(
 
     all_unverified: list[str] = []
     per_dataset: list[dict[str, Any]] = []
+    roots_list = list(dataset_roots)
+    total_roots = len(roots_list)
 
-    for dataset_root in dataset_roots:
+    for index, dataset_root in enumerate(roots_list, start=1):
         root = Path(dataset_root)
+        if callable(line_callback):
+            line_callback(f"Verifying {root.name or root} ({index}/{total_roots})...")
         command = [git_executable, "annex", "find", "--not", "--in", check_name]
         entry: dict[str, Any] = {
             "path": str(root),
@@ -919,7 +985,11 @@ def run_datalad_remove_sibling(
     mark_annex_dead: bool = False,
     datalad_executable: str = "",
     timeout_seconds: int = 300,
+    line_callback: Any = None,
 ) -> dict[str, Any]:
+    """`line_callback`, if given, is called once per dataset root with a
+    "removing N/M" message -- see `run_datalad_push_verify`'s docstring for
+    why this doesn't need Popen-level streaming like the create/push steps."""
     resolved = str(datalad_executable or resolve_datalad_executable()).strip()
     result: dict[str, Any] = {
         "attempted": False,
@@ -961,8 +1031,12 @@ def run_datalad_remove_sibling(
         return False, (process.stderr or process.stdout or "").strip() or "Unknown DataLad error."
 
     per_dataset: list[dict[str, Any]] = []
-    for dataset_root in dataset_roots:
+    roots_list = list(dataset_roots)
+    total_roots = len(roots_list)
+    for index, dataset_root in enumerate(roots_list, start=1):
         root = Path(dataset_root)
+        if callable(line_callback):
+            line_callback(f"Disconnecting {root.name or root} ({index}/{total_roots})...")
         entry: dict[str, Any] = {"path": str(root), "success": False, "message": ""}
 
         ok, detail = _run([resolved, "siblings", "remove", "-s", name], root)
@@ -1013,6 +1087,7 @@ def run_datalad_upload_to_sibling(
     mark_annex_dead: bool = False,
     datalad_executable: str = "",
     progress_callback: Any = None,
+    line_callback: Any = None,
     is_cancelled: Any = None,
 ) -> dict[str, Any]:
     """Orchestrate create-sibling -> push -> verify -> (optional) disconnect.
@@ -1023,6 +1098,13 @@ def run_datalad_upload_to_sibling(
     disconnect step only runs when verification confirms every annexed key
     reached the sibling; otherwise the sibling is left registered so a
     retry can resume the incomplete push.
+
+    `progress_callback(percent, message)` reports the coarse (percent,
+    status) pair for a UI progress bar. `line_callback(line)`, if given, is
+    forwarded into every sub-step so each one can stream its own live output
+    (raw DataLad/git-annex lines for create/push, "N/M" progress for
+    verify/disconnect) -- see `run_datalad_create_sibling_plain`'s docstring
+    for why this matters on a project with 100+ nested subdatasets.
     """
     resolved = str(datalad_executable or resolve_datalad_executable()).strip()
     is_ria = is_ria_url(remote_url)
@@ -1030,6 +1112,8 @@ def run_datalad_upload_to_sibling(
     def _report(percent: int, message: str) -> None:
         if callable(progress_callback):
             progress_callback(percent, message)
+        if callable(line_callback):
+            line_callback(message)
 
     def _cancelled() -> bool:
         return bool(callable(is_cancelled) and is_cancelled())
@@ -1066,6 +1150,7 @@ def run_datalad_upload_to_sibling(
         sibling_name=sibling_name,
         alias=alias,
         datalad_executable=resolved,
+        line_callback=line_callback,
     )
     result["create"] = create_result
     if not create_result.get("success"):
@@ -1082,17 +1167,21 @@ def run_datalad_upload_to_sibling(
         project_root,
         sibling_name=sibling_name,
         datalad_executable=resolved,
+        line_callback=line_callback,
     )
     result["push"] = push_result
-    if not push_result.get("success"):
-        result["message"] = f"Push failed: {push_result.get('message')}"
-        return result
-    result["pushed"] = True
 
     if _cancelled():
         result["message"] = "Cancelled after push; sibling left registered."
         return result
 
+    # `datalad push`'s own exit code/output is not trusted at face value even
+    # when it reports failure: on a large recursive multi-dataset push it can
+    # report a non-zero exit with no actual error text anywhere in its log
+    # (observed live on a 150+ subdataset project -- every "Finished push of
+    # Dataset(...)" line succeeded, yet the process still exited non-zero).
+    # Always run the independent per-file presence check below and let it be
+    # the deciding signal, rather than short-circuiting on push's own verdict.
     _report(70, "Verifying all content reached the server...")
     verify_result = run_datalad_push_verify(
         project_root,
@@ -1100,15 +1189,25 @@ def run_datalad_upload_to_sibling(
         dataset_roots=dataset_roots,
         is_ria=is_ria,
         datalad_executable=resolved,
+        line_callback=line_callback,
     )
     result["verify"] = verify_result
     result["verified"] = bool(verify_result.get("verified"))
     if not result["verified"]:
-        result["message"] = (
-            f"Push could not be verified: {verify_result.get('message')}. "
-            "Sibling left registered for retry."
-        )
+        if push_result.get("success"):
+            result["message"] = (
+                f"Push could not be verified: {verify_result.get('message')}. "
+                "Sibling left registered for retry."
+            )
+        else:
+            result["message"] = (
+                f"Push failed: {push_result.get('message')} "
+                f"Verification confirms content is still missing: {verify_result.get('message')}. "
+                "Sibling left registered for retry."
+            )
         return result
+
+    result["pushed"] = True
 
     if keep_sibling:
         result["success"] = True
@@ -1127,6 +1226,7 @@ def run_datalad_upload_to_sibling(
         is_ria=is_ria,
         mark_annex_dead=mark_annex_dead,
         datalad_executable=resolved,
+        line_callback=line_callback,
     )
     result["disconnect"] = disconnect_result
     result["disconnected"] = bool(disconnect_result.get("success"))

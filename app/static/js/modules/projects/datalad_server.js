@@ -307,6 +307,45 @@ async function onSaveConfigSubmit(e) {
     }
 }
 
+async function onDeleteScansTsvClick() {
+    const projectPath = resolveCurrentProjectPath();
+    if (!projectPath) {
+        alert('No project is currently loaded');
+        return;
+    }
+    const confirmed = window.confirm(
+        'This permanently deletes every *_scans.tsv file across the dataset (superdataset and ' +
+        'nested subject/derivatives subdatasets), committing the removal in each. Continue?'
+    );
+    if (!confirmed) return;
+
+    const btn = getById('dataladServerDeleteScansTsvBtn');
+    const resultDiv = getById('dataladServerDeleteScansTsvResult');
+    const originalText = setButtonLoading(btn, true, 'Deleting...');
+    try {
+        const resp = await fetchWithApiFallback('/api/projects/datalad/remove-scans-tsv', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ confirmed: true }),
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.success) {
+            throw new Error(data.error || data.message || 'Failed to delete scans.tsv files');
+        }
+        if (resultDiv) {
+            setHtml(resultDiv, `<div class="alert alert-success py-2 px-3 mb-0"><small>${escapeHtml(data.message || 'Deleted.')}</small></div>`);
+        }
+    } catch (error) {
+        if (resultDiv) {
+            setHtml(resultDiv, `<div class="alert alert-danger py-2 px-3 mb-0"><small>${escapeHtml(error.message || 'Failed to delete scans.tsv files')}</small></div>`);
+        } else {
+            alert(error.message || 'Failed to delete scans.tsv files');
+        }
+    } finally {
+        setButtonLoading(btn, false, null, originalText);
+    }
+}
+
 export function initDataladServerSection() {
     if (dataladServerModuleInitialized) {
         showDataladServerCard();
@@ -325,6 +364,9 @@ export function initDataladServerSection() {
 
     const configForm = getById('dataladServerConfigForm');
     if (configForm) configForm.addEventListener('submit', onSaveConfigSubmit);
+
+    const deleteScansTsvBtn = getById('dataladServerDeleteScansTsvBtn');
+    if (deleteScansTsvBtn) deleteScansTsvBtn.addEventListener('click', onDeleteScansTsvClick);
 
     showDataladServerCard();
 }

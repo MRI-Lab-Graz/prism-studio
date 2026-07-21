@@ -20,6 +20,36 @@ from src.datalad_execution import (
 )
 
 
+class _FakeDataladPopen:
+    """Minimal subprocess.Popen stand-in for the streaming create-sibling/push
+    functions' contract (`.stdout` iterable, `.wait()`, `.returncode`,
+    `.kill()`), mirroring tests/test_rsync_execution.py's helper. Output is
+    merged stdout+stderr (as the real command runs with
+    stderr=subprocess.STDOUT), so tests provide a single `stdout_lines` list."""
+
+    def __init__(self, returncode: int = 0, stdout_lines: "list[str] | None" = None):
+        self.returncode = returncode
+        self.stdout = iter(stdout_lines or [])
+
+    def wait(self, timeout=None):
+        return self.returncode
+
+    def kill(self):
+        pass
+
+
+def _fake_popen_capturing_commands(seen_commands, *, returncode=0, stdout_lines=None):
+    """Return a subprocess.Popen side_effect that records the command it was
+    invoked with (mirroring the seen_commands pattern used for subprocess.run
+    fakes elsewhere in this file) and yields a _FakeDataladPopen."""
+
+    def _side_effect(command, **kwargs):
+        seen_commands.append([str(item) for item in command])
+        return _FakeDataladPopen(returncode=returncode, stdout_lines=stdout_lines)
+
+    return _side_effect
+
+
 def test_run_datalad_unlock_command_omits_on_failure_flag(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
@@ -146,11 +176,10 @@ def test_run_datalad_create_sibling_ria_builds_reconfigure_command(
     erroring on an already-connected sibling."""
     seen_commands: list[list[str]] = []
 
-    def _fake_run(command, **kwargs):
-        seen_commands.append([str(item) for item in command])
-        return SimpleNamespace(returncode=0, stdout="", stderr="")
-
-    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+    monkeypatch.setattr(
+        "src.datalad_execution.subprocess.Popen",
+        _fake_popen_capturing_commands(seen_commands),
+    )
 
     result = run_datalad_create_sibling_ria(
         tmp_path,
@@ -175,9 +204,9 @@ def test_run_datalad_create_sibling_ria_reports_failure_detail(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.setattr(
-        "src.datalad_execution.subprocess.run",
-        lambda *a, **k: SimpleNamespace(
-            returncode=1, stdout="", stderr="ssh: connect to host failed"
+        "src.datalad_execution.subprocess.Popen",
+        lambda *a, **k: _FakeDataladPopen(
+            returncode=1, stdout_lines=["ssh: connect to host failed\n"]
         ),
     )
 
@@ -187,6 +216,32 @@ def test_run_datalad_create_sibling_ria_reports_failure_detail(
 
     assert result["success"] is False
     assert "ssh: connect to host failed" in result["message"]
+
+
+def test_run_datalad_create_sibling_ria_streams_output_via_line_callback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A recursive create-sibling-ria across 100+ nested subdatasets can run
+    for minutes; line_callback must receive each output line as it's
+    produced (not just a final summary), matching the terminal output
+    nested-subdataset registration already provides."""
+    monkeypatch.setattr(
+        "src.datalad_execution.subprocess.Popen",
+        lambda *a, **k: _FakeDataladPopen(
+            returncode=0, stdout_lines=["create-sibling-ria(ok): sub-001 \n", "create-sibling-ria(ok): sub-002 \n"]
+        ),
+    )
+    seen_lines: list[str] = []
+
+    result = run_datalad_create_sibling_ria(
+        tmp_path,
+        ria_url="ria+ssh://user@host/store",
+        datalad_executable="/usr/bin/datalad",
+        line_callback=seen_lines.append,
+    )
+
+    assert result["success"] is True
+    assert seen_lines == ["create-sibling-ria(ok): sub-001", "create-sibling-ria(ok): sub-002"]
 
 
 # ===== Plain (non-RIA) sibling support: for servers not initialized as a =====
@@ -224,11 +279,10 @@ def test_run_datalad_create_sibling_plain_builds_reconfigure_command(
 ):
     seen_commands: list[list[str]] = []
 
-    def _fake_run(command, **kwargs):
-        seen_commands.append([str(item) for item in command])
-        return SimpleNamespace(returncode=0, stdout="", stderr="")
-
-    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+    monkeypatch.setattr(
+        "src.datalad_execution.subprocess.Popen",
+        _fake_popen_capturing_commands(seen_commands),
+    )
 
     result = run_datalad_create_sibling_plain(
         tmp_path,
@@ -252,9 +306,9 @@ def test_run_datalad_create_sibling_plain_reports_failure_detail(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.setattr(
-        "src.datalad_execution.subprocess.run",
-        lambda *a, **k: SimpleNamespace(
-            returncode=1, stdout="", stderr="ssh: connect to host failed"
+        "src.datalad_execution.subprocess.Popen",
+        lambda *a, **k: _FakeDataladPopen(
+            returncode=1, stdout_lines=["ssh: connect to host failed\n"]
         ),
     )
 
@@ -271,11 +325,10 @@ def test_run_datalad_create_sibling_dispatches_ria_url_to_create_sibling_ria(
 ):
     seen_commands: list[list[str]] = []
 
-    def _fake_run(command, **kwargs):
-        seen_commands.append([str(item) for item in command])
-        return SimpleNamespace(returncode=0, stdout="", stderr="")
-
-    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+    monkeypatch.setattr(
+        "src.datalad_execution.subprocess.Popen",
+        _fake_popen_capturing_commands(seen_commands),
+    )
 
     result = run_datalad_create_sibling(
         tmp_path,
@@ -293,11 +346,10 @@ def test_run_datalad_create_sibling_dispatches_plain_url_to_create_sibling(
 ):
     seen_commands: list[list[str]] = []
 
-    def _fake_run(command, **kwargs):
-        seen_commands.append([str(item) for item in command])
-        return SimpleNamespace(returncode=0, stdout="", stderr="")
-
-    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+    monkeypatch.setattr(
+        "src.datalad_execution.subprocess.Popen",
+        _fake_popen_capturing_commands(seen_commands),
+    )
 
     result = run_datalad_create_sibling(
         tmp_path,
@@ -317,11 +369,10 @@ def test_run_datalad_push_uses_sibling_name_and_recursive_flag(
 ):
     seen_commands: list[list[str]] = []
 
-    def _fake_run(command, **kwargs):
-        seen_commands.append([str(item) for item in command])
-        return SimpleNamespace(returncode=0, stdout="publish ok", stderr="")
-
-    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+    monkeypatch.setattr(
+        "src.datalad_execution.subprocess.Popen",
+        _fake_popen_capturing_commands(seen_commands, stdout_lines=["publish ok\n"]),
+    )
 
     result = run_datalad_push(
         tmp_path, sibling_name="ria-store", datalad_executable="/usr/bin/datalad"
@@ -339,8 +390,8 @@ def test_run_datalad_push_fails_on_nonzero_returncode(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.setattr(
-        "src.datalad_execution.subprocess.run",
-        lambda *a, **k: SimpleNamespace(returncode=1, stdout="", stderr="connection refused"),
+        "src.datalad_execution.subprocess.Popen",
+        lambda *a, **k: _FakeDataladPopen(returncode=1, stdout_lines=["connection refused\n"]),
     )
 
     result = run_datalad_push(
@@ -361,11 +412,13 @@ def test_run_datalad_push_fails_on_embedded_failure_marker_despite_zero_returnco
     exists to catch independently -- but push itself must not paper over it
     either."""
     monkeypatch.setattr(
-        "src.datalad_execution.subprocess.run",
-        lambda *a, **k: SimpleNamespace(
+        "src.datalad_execution.subprocess.Popen",
+        lambda *a, **k: _FakeDataladPopen(
             returncode=0,
-            stdout="publish(ok): sub-001 (dataset)\npublish(failed): sub-002/anat/sub-002_T1w.nii.gz (file)",
-            stderr="",
+            stdout_lines=[
+                "publish(ok): sub-001 (dataset)\n",
+                "publish(failed): sub-002/anat/sub-002_T1w.nii.gz (file)\n",
+            ],
         ),
     )
 
@@ -374,6 +427,28 @@ def test_run_datalad_push_fails_on_embedded_failure_marker_despite_zero_returnco
     )
 
     assert result["success"] is False
+
+
+def test_run_datalad_push_streams_output_via_line_callback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(
+        "src.datalad_execution.subprocess.Popen",
+        lambda *a, **k: _FakeDataladPopen(
+            returncode=0, stdout_lines=["copy sub-001/file.nii.gz ok\n"]
+        ),
+    )
+    seen_lines: list[str] = []
+
+    result = run_datalad_push(
+        tmp_path,
+        sibling_name="ria-store",
+        datalad_executable="/usr/bin/datalad",
+        line_callback=seen_lines.append,
+    )
+
+    assert result["success"] is True
+    assert seen_lines == ["copy sub-001/file.nii.gz ok"]
 
 
 def test_run_datalad_remove_sibling_removes_both_git_and_storage_remotes(
@@ -692,22 +767,28 @@ def test_upload_to_sibling_uses_plain_create_sibling_and_no_storage_remote_for_n
 ):
     """End-to-end create -> push -> verify -> disconnect for a plain (non-RIA)
     sibling: no `create-sibling-ria`, and no `<name>-storage` companion
-    remote checked or removed."""
+    remote checked or removed. create/push stream via Popen; verify/disconnect
+    still use plain subprocess.run (see run_datalad_push_verify's docstring),
+    so both need faking here."""
     seen_commands: list[list[str]] = []
+
+    def _fake_popen(command, **kwargs):
+        cmd = [str(c) for c in command]
+        seen_commands.append(cmd)
+        if "push" in cmd and "--to" in cmd:
+            return _FakeDataladPopen(returncode=0, stdout_lines=["publish ok\n"])
+        return _FakeDataladPopen(returncode=0, stdout_lines=[])
 
     def _fake_run(command, cwd=None, **kwargs):
         cmd = [str(c) for c in command]
         seen_commands.append(cmd)
-        if "create-sibling" in cmd:
-            return SimpleNamespace(returncode=0, stdout="", stderr="")
-        if "push" in cmd and "--to" in cmd:
-            return SimpleNamespace(returncode=0, stdout="publish ok", stderr="")
         if "annex" in cmd and "find" in cmd:
             return SimpleNamespace(returncode=0, stdout="", stderr="")
         if ("siblings" in cmd or "remote" in cmd) and "remove" in cmd:
             return SimpleNamespace(returncode=0, stdout="", stderr="")
         return SimpleNamespace(returncode=0, stdout="", stderr="")
 
+    monkeypatch.setattr("src.datalad_execution.subprocess.Popen", _fake_popen)
     monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
 
     result = run_datalad_upload_to_sibling(
@@ -723,3 +804,93 @@ def test_upload_to_sibling_uses_plain_create_sibling_and_no_storage_remote_for_n
     assert result["disconnected"] is True
     assert not any("create-sibling-ria" in cmd for cmd in seen_commands)
     assert not any("server-storage" in cmd for cmd in seen_commands)
+
+
+def test_upload_to_sibling_recovers_when_push_reports_failure_but_content_is_actually_present(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Regression guard for a live incident (129_PK01, 2026-07-21): a
+    recursive `datalad push -r` across 150+ subdatasets exited non-zero with
+    a log containing nothing but successful "[INFO] Finished push of
+    Dataset(...)" lines -- no error text anywhere -- while independent
+    verification (`git annex find --not --in`, the same check
+    run_datalad_push_verify always performs) confirmed every dataset's
+    content had, in fact, reached the sibling. Trusting push's own exit code
+    as the final word reported a false "Push failed"/blocked disconnect even
+    though nothing was actually missing. push's raw result must not
+    short-circuit the orchestration -- verify is the deciding signal."""
+    seen_commands: list[list[str]] = []
+
+    def _fake_popen(command, **kwargs):
+        cmd = [str(c) for c in command]
+        seen_commands.append(cmd)
+        if "push" in cmd and "--to" in cmd:
+            # Non-zero exit, but the log itself contains no failure marker --
+            # exactly what was observed live.
+            return _FakeDataladPopen(
+                returncode=1,
+                stdout_lines=["[INFO] Finished push of Dataset(/data/proj)\n"],
+            )
+        return _FakeDataladPopen(returncode=0, stdout_lines=[])
+
+    def _fake_run(command, cwd=None, **kwargs):
+        cmd = [str(c) for c in command]
+        seen_commands.append(cmd)
+        if "annex" in cmd and "find" in cmd:
+            # Nothing missing: independent verification proves the push
+            # actually succeeded despite its own non-zero exit code.
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+        if ("siblings" in cmd or "remote" in cmd) and "remove" in cmd:
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr("src.datalad_execution.subprocess.Popen", _fake_popen)
+    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+
+    result = run_datalad_upload_to_sibling(
+        tmp_path,
+        dataset_roots=[tmp_path],
+        remote_url="ria+ssh://user@host/store",
+        sibling_name="ria-store",
+        datalad_executable="/usr/bin/datalad",
+    )
+
+    assert result["verified"] is True, result
+    assert result["success"] is True, result
+    assert result["disconnected"] is True
+
+
+def test_upload_to_sibling_still_fails_when_push_fails_and_content_is_actually_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Companion to the false-failure regression guard above: when push
+    fails AND independent verification also finds content genuinely missing,
+    the failure must still be reported and disconnect must still be blocked."""
+
+    def _fake_popen(command, **kwargs):
+        cmd = [str(c) for c in command]
+        if "push" in cmd and "--to" in cmd:
+            return _FakeDataladPopen(returncode=1, stdout_lines=["connection refused\n"])
+        return _FakeDataladPopen(returncode=0, stdout_lines=[])
+
+    def _fake_run(command, cwd=None, **kwargs):
+        cmd = [str(c) for c in command]
+        if "annex" in cmd and "find" in cmd:
+            return SimpleNamespace(returncode=0, stdout="sub-001/scan.nii.gz\n", stderr="")
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr("src.datalad_execution.subprocess.Popen", _fake_popen)
+    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+
+    result = run_datalad_upload_to_sibling(
+        tmp_path,
+        dataset_roots=[tmp_path],
+        remote_url="ria+ssh://user@host/store",
+        sibling_name="ria-store",
+        datalad_executable="/usr/bin/datalad",
+    )
+
+    assert result["verified"] is False
+    assert result["success"] is False
+    assert result["disconnected"] is False
+    assert "connection refused" in result["message"]
