@@ -22,6 +22,7 @@ if app_path not in sys.path:
 from src.project_manager import (
     DATALAD_TEXT_POLICY_REQUIRED_LINES,
     GIT_LFS_EXPORT_GITATTRIBUTES_LINES,
+    STALE_GIT_LOCK_AGE_SECONDS,
     ProjectManager,
 )
 
@@ -52,6 +53,23 @@ def _registered_nested_path_sequence(*path_sets):
         if remaining:
             last_paths = set(remaining.pop(0))
         return set(last_paths)
+
+    return _side_effect
+
+
+def _alternating_diff_index_run_side_effect():
+    """subprocess.run side_effect for tests exercising `_run_git_commit_for_path`
+    end-to-end: `git diff-index --cached --quiet HEAD -- <path>` alternates
+    "has staged changes" (1, odd calls -- the pre-commit check) then "clean"
+    (0, even calls -- the post-commit verification), matching a real commit
+    actually taking effect. Every other command defaults to plain success."""
+    diff_index_calls = {"n": 0}
+
+    def _side_effect(command, *_args, **_kwargs):
+        if command[:4] == ["git", "diff-index", "--cached", "--quiet"]:
+            diff_index_calls["n"] += 1
+            return Mock(returncode=1 if diff_index_calls["n"] % 2 == 1 else 0, stdout="", stderr="")
+        return Mock(returncode=0, stdout="", stderr="")
 
     return _side_effect
 
@@ -1725,6 +1743,55 @@ class TestProjectManager(unittest.TestCase):
         self.assertEqual(mock_run.call_count, 1)
         mock_sleep.assert_not_called()
 
+    def test_run_command_with_index_lock_retry_cleans_up_self_orphaned_lock_on_timeout(self):
+        """A subprocess timeout force-kills the child, so git never gets a
+        chance to remove its own .git/index.lock. Regression guard for the
+        2026-07-21 production incident: a 300GB derivatives/ directory's
+        `git rm --cached` genuinely exceeded the old 120s budget, and the
+        resulting orphaned lock then made every subsequent attempt fail
+        immediately on "index.lock: File exists" until a human noticed and
+        deleted it by hand. This must now self-heal instead."""
+        manager = ProjectManager()
+
+        def _raise_timeout(command, **kwargs):
+            raise subprocess.TimeoutExpired(cmd=command, timeout=kwargs.get("timeout", 1))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            cwd = Path(tmp) / "demo_project"
+            git_dir = cwd / ".git"
+            git_dir.mkdir(parents=True, exist_ok=True)
+            lock_path = git_dir / "index.lock"
+            lock_path.touch()
+
+            with patch("src.project_manager.subprocess.run", side_effect=_raise_timeout):
+                with self.assertRaises(subprocess.TimeoutExpired):
+                    manager._run_command_with_index_lock_retry(
+                        ["git", "rm", "--cached", "-r", "--", "derivatives"],
+                        cwd=str(cwd),
+                        timeout=1,
+                        max_attempts=1,
+                    )
+
+            self.assertFalse(lock_path.exists(), "orphaned lock must be removed after our own timeout kill")
+
+    def test_run_command_with_index_lock_retry_timeout_cleanup_tolerates_missing_lock(self):
+        """No lock file existing when the timeout fires (e.g. the killed
+        process never got as far as creating one) must not raise."""
+        manager = ProjectManager()
+
+        def _raise_timeout(command, **kwargs):
+            raise subprocess.TimeoutExpired(cmd=command, timeout=kwargs.get("timeout", 1))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            cwd = Path(tmp) / "demo_project"
+            cwd.mkdir(parents=True, exist_ok=True)
+
+            with patch("src.project_manager.subprocess.run", side_effect=_raise_timeout):
+                with self.assertRaises(subprocess.TimeoutExpired):
+                    manager._run_command_with_index_lock_retry(
+                        ["git", "commit", "-m", "x"], cwd=str(cwd), timeout=1, max_attempts=1
+                    )
+
     @patch("src.project_manager.time.sleep")
     @patch("src.project_manager.subprocess.run")
     def test_run_git_commit_for_path_recovers_from_transient_index_lock(
@@ -1735,13 +1802,17 @@ class TestProjectManager(unittest.TestCase):
         frontend status poll touching the same index), not fail the whole
         registration on the first collision."""
         manager = ProjectManager()
+        # git diff-index --cached --quiet: exit 1 = has staged changes
+        pre_check_has_changes = Mock(returncode=1, stdout="", stderr="")
         lock_error = Mock(
             returncode=128,
             stdout="",
             stderr="fatal: Unable to create '.git/index.lock': File exists.",
         )
         success = Mock(returncode=0, stdout="", stderr="")
-        mock_run.side_effect = [lock_error, success]
+        # git diff-index --cached --quiet: exit 0 = clean, confirming the commit landed
+        post_check_clean = Mock(returncode=0, stdout="", stderr="")
+        mock_run.side_effect = [pre_check_has_changes, lock_error, success, post_check_clean]
 
         result = manager._run_git_commit_for_path(
             Path("/tmp/demo_project"),
@@ -1750,8 +1821,61 @@ class TestProjectManager(unittest.TestCase):
         )
 
         self.assertTrue(result.get("saved"), result)
-        self.assertEqual(mock_run.call_count, 2)
+        self.assertEqual(mock_run.call_count, 4)
         mock_sleep.assert_called_once()
+        # The actual commit (2nd and 3rd calls) must NOT use a pathspec --
+        # see _run_git_commit_for_path's docstring for why a scoped commit is
+        # unreliable on this app's target git version.
+        commit_call_command = mock_run.call_args_list[2].args[0]
+        self.assertEqual(commit_call_command, ["git", "commit", "-m", "PRISM checkpoint"])
+
+    @patch("src.project_manager.subprocess.run")
+    def test_run_git_commit_for_path_skips_commit_when_nothing_staged(self, mock_run):
+        """No staged changes for the path -> no_changes, and `git commit`
+        itself must never be invoked (nothing to accidentally sweep in)."""
+        manager = ProjectManager()
+        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")  # clean
+
+        result = manager._run_git_commit_for_path(
+            Path("/tmp/demo_project"),
+            relative_dataset_text="sub-005",
+            message="PRISM checkpoint",
+        )
+
+        self.assertTrue(result.get("no_changes"))
+        self.assertFalse(result.get("saved"))
+        self.assertEqual(mock_run.call_count, 1)
+
+    @patch("src.project_manager.subprocess.run")
+    def test_run_git_commit_for_path_fails_when_commit_reports_success_but_did_not_take_effect(
+        self, mock_run
+    ):
+        """Regression guard for the 2026-07-21 production incident: a
+        pathspec-scoped `git commit -- <path>` on git 2.54.0 silently
+        reported "nothing to commit" (effectively a no-op) even though
+        `git diff-index --cached HEAD -- <path>` showed real staged changes
+        for that exact path -- caused by an unrelated dirty/stale submodule
+        elsewhere in the repo blocking all scoped commits. The caller then
+        proceeded to `datalad create --force` on content that was never
+        actually untracked, failing with "collision with content in parent
+        dataset". This must now be caught as a real failure instead of
+        silently treated as success."""
+        manager = ProjectManager()
+        pre_check_has_changes = Mock(returncode=1, stdout="", stderr="")
+        commit_reports_ok = Mock(returncode=0, stdout="", stderr="")
+        # Still staged after "successful" commit -- it didn't actually happen.
+        post_check_still_staged = Mock(returncode=1, stdout="", stderr="")
+        mock_run.side_effect = [pre_check_has_changes, commit_reports_ok, post_check_still_staged]
+
+        result = manager._run_git_commit_for_path(
+            Path("/tmp/demo_project"),
+            relative_dataset_text="sub-001",
+            message="PRISM checkpoint",
+        )
+
+        self.assertFalse(result.get("saved"))
+        self.assertFalse(result.get("no_changes"))
+        self.assertIn("did not actually take effect", result.get("message", ""))
 
     @patch("src.project_manager.time.sleep")
     @patch("src.project_manager.subprocess.run")
@@ -1845,7 +1969,7 @@ class TestProjectManager(unittest.TestCase):
     ):
         manager = ProjectManager()
         mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
-        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+        mock_run.side_effect = _alternating_diff_index_run_side_effect()
 
         with tempfile.TemporaryDirectory() as tmp:
             project_path = Path(tmp) / "demo_project"
@@ -1882,14 +2006,15 @@ class TestProjectManager(unittest.TestCase):
             ["git", "rm", "--cached", "-r", "--", "derivatives"],
             commands,
         )
+        # Unscoped commit, not `git commit -- derivatives` -- see
+        # _run_git_commit_for_path's docstring: a pathspec-scoped commit is
+        # unreliable on this app's target git version.
         self.assertIn(
             [
                 "git",
                 "commit",
                 "-m",
                 'PRISM: Converting data into nested PRISM-structure (prepare parent untracking "derivatives")',
-                "--",
-                "derivatives",
             ],
             commands,
         )
@@ -1905,7 +2030,7 @@ class TestProjectManager(unittest.TestCase):
     ):
         manager = ProjectManager()
         mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
-        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+        mock_run.side_effect = _alternating_diff_index_run_side_effect()
 
         with tempfile.TemporaryDirectory() as tmp:
             project_path = Path(tmp) / "demo_project"
@@ -1948,8 +2073,6 @@ class TestProjectManager(unittest.TestCase):
                 "commit",
                 "-m",
                 'PRISM: Converting data into nested PRISM-structure (prepare parent untracking "sub-020")',
-                "--",
-                "sub-020",
             ],
             commands,
         )
@@ -2010,7 +2133,7 @@ class TestProjectManager(unittest.TestCase):
     ):
         manager = ProjectManager()
         mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
-        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+        mock_run.side_effect = _alternating_diff_index_run_side_effect()
 
         with tempfile.TemporaryDirectory() as tmp:
             project_path = Path(tmp) / "demo_project"
@@ -2057,8 +2180,6 @@ class TestProjectManager(unittest.TestCase):
                 "commit",
                 "-m",
                 'PRISM: Converting data into nested PRISM-structure (prepare parent untracking "sub-013")',
-                "--",
-                "sub-013",
             ],
             commands,
         )
@@ -2074,7 +2195,7 @@ class TestProjectManager(unittest.TestCase):
     ):
         manager = ProjectManager()
         mock_which.side_effect = lambda executable: f"/usr/bin/{executable}"
-        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+        mock_run.side_effect = _alternating_diff_index_run_side_effect()
 
         with tempfile.TemporaryDirectory() as tmp:
             project_path = Path(tmp) / "demo_project"
@@ -2110,8 +2231,6 @@ class TestProjectManager(unittest.TestCase):
                 "commit",
                 "-m",
                 'PRISM: Converting data into nested PRISM-structure (prepare parent untracking "sub-035")',
-                "--",
-                "sub-035",
             ],
             commands,
         )
@@ -2193,7 +2312,16 @@ class TestProjectManager(unittest.TestCase):
         self.assertTrue(result.get("success"), result)
         failures = result.get("datalad", {}).get("subdataset_failures") or []
         self.assertEqual(len(failures), 1)
-        self.assertIn("timed out after 120 seconds", failures[0])
+        # The untrack ("git rm --cached -r") step's cost scales with how much
+        # content is under the path (it stages a removal entry per tracked
+        # file), so -- like fetch/unlock -- it uses the large
+        # DATALAD_SAVE_STEP_TIMEOUT_SECONDS budget, not the short
+        # metadata-only DATALAD_REPAIR_STEP_TIMEOUT_SECONDS one. Regression
+        # guard: the short budget was too small for a real ~300GB
+        # derivatives/ directory in production (2026-07-21), and repeatedly
+        # timing out there force-killed git mid-write, leaving a stale
+        # .git/index.lock behind on every attempt.
+        self.assertIn("timed out after 3600 seconds", failures[0])
 
     @patch("src.project_manager.shutil.which")
     def test_enable_datalad_for_project_fails_without_git_annex(self, mock_which):
@@ -4770,6 +4898,141 @@ def _make_fake_ria_subprocess(*, outstanding_files=None, remove_sibling_ok=True,
         return SimpleNamespace(returncode=0, stdout="", stderr="")
 
     return _fake_run
+
+
+class TestDataladHealthChecks(unittest.TestCase):
+    """Stale-lock and unlocked-annex-backlog detection: proactive warnings for
+    the two failure modes that caused a nested-subdataset registration to
+    silently fail/restart-from-scratch on every attempt (2026-07-21 incident:
+    an orphaned .git/index.lock from a killed process, plus thousands of
+    files left "unlocked" by repeated failed conversion attempts, made every
+    git operation on the repo fail or crawl)."""
+
+    def test_detect_stale_git_locks_flags_old_lock_file(self):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "demo_project"
+            (root / ".git").mkdir(parents=True, exist_ok=True)
+            lock_path = root / ".git" / "index.lock"
+            lock_path.touch()
+            old_time = time.time() - (STALE_GIT_LOCK_AGE_SECONDS + 60)
+            os.utime(lock_path, (old_time, old_time))
+
+            stale = manager._detect_stale_git_locks([root])
+
+        self.assertEqual(len(stale), 1)
+        self.assertEqual(stale[0]["path"], str(lock_path))
+        self.assertGreaterEqual(stale[0]["age_seconds"], STALE_GIT_LOCK_AGE_SECONDS)
+
+    def test_detect_stale_git_locks_ignores_fresh_lock_file(self):
+        """A lock file that's only seconds old is very likely a real,
+        in-progress git operation -- must not be flagged as stale."""
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "demo_project"
+            (root / ".git").mkdir(parents=True, exist_ok=True)
+            (root / ".git" / "index.lock").touch()
+
+            stale = manager._detect_stale_git_locks([root])
+
+        self.assertEqual(stale, [])
+
+    def test_detect_stale_git_locks_ignores_missing_lock_file(self):
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "demo_project"
+            root.mkdir(parents=True, exist_ok=True)
+
+            stale = manager._detect_stale_git_locks([root])
+
+        self.assertEqual(stale, [])
+
+    @patch("src.project_manager.subprocess.run")
+    def test_detect_unlocked_annex_backlog_flags_large_count(self, mock_run):
+        manager = ProjectManager()
+        many_files = "\n".join(f"sub-{i:03d}/file.nii.gz" for i in range(50))
+        mock_run.return_value = SimpleNamespace(returncode=0, stdout=many_files, stderr="")
+
+        backlog = manager._detect_unlocked_annex_backlog(
+            [Path("/tmp/demo_project")], datalad_executable="/usr/bin/datalad"
+        )
+
+        self.assertEqual(len(backlog), 1)
+        self.assertEqual(backlog[0]["unlocked_count"], 50)
+
+    @patch("src.project_manager.subprocess.run")
+    def test_detect_unlocked_annex_backlog_ignores_small_count(self, mock_run):
+        """A handful of unlocked files is normal (e.g. someone editing via
+        `datalad unlock`) -- only a large backlog indicates the failure
+        pattern this check exists to catch."""
+        manager = ProjectManager()
+        few_files = "\n".join(f"sub-{i:03d}/file.nii.gz" for i in range(3))
+        mock_run.return_value = SimpleNamespace(returncode=0, stdout=few_files, stderr="")
+
+        backlog = manager._detect_unlocked_annex_backlog(
+            [Path("/tmp/demo_project")], datalad_executable="/usr/bin/datalad"
+        )
+
+        self.assertEqual(backlog, [])
+
+    @patch("src.project_manager.subprocess.run")
+    def test_detect_unlocked_annex_backlog_ignores_command_failure(self, mock_run):
+        manager = ProjectManager()
+        mock_run.return_value = SimpleNamespace(returncode=1, stdout="", stderr="not an annex repo")
+
+        backlog = manager._detect_unlocked_annex_backlog(
+            [Path("/tmp/demo_project")], datalad_executable="/usr/bin/datalad"
+        )
+
+        self.assertEqual(backlog, [])
+
+    @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
+    def test_enable_datalad_fails_fast_on_stale_lock_without_attempting_registration(
+        self, _mock_which
+    ):
+        """A known-bad repo state (stale lock) must be reported once, up
+        front -- not discovered the hard way after silently attempting (and
+        failing) every remaining subject."""
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / ".git").mkdir(parents=True, exist_ok=True)
+            lock_path = project_path / ".git" / "index.lock"
+            lock_path.touch()
+            old_time = time.time() - (STALE_GIT_LOCK_AGE_SECONDS + 60)
+            os.utime(lock_path, (old_time, old_time))
+
+            with patch.object(
+                ProjectManager, "get_datalad_status", return_value={"enabled": True}
+            ), patch.object(
+                ProjectManager, "_create_nested_subdatasets"
+            ) as mock_create_nested:
+                result = manager.enable_datalad_for_project(project_path)
+
+        mock_create_nested.assert_not_called()
+        self.assertFalse(result.get("success"))
+        self.assertIn("index.lock", result.get("error", ""))
+        self.assertEqual(len(result.get("stale_git_locks", [])), 1)
+
+    def test_compute_datalad_status_surfaces_stale_lock_warning_on_fast_path(self):
+        """Stale-lock detection is cheap (mtime check only) and must run even
+        on the fast page-load status path, not just the deep check."""
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / ".git").mkdir(parents=True, exist_ok=True)
+            lock_path = project_path / ".git" / "index.lock"
+            lock_path.touch()
+            old_time = time.time() - (STALE_GIT_LOCK_AGE_SECONDS + 60)
+            os.utime(lock_path, (old_time, old_time))
+
+            with patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad"):
+                result = manager._compute_datalad_status(project_path, fast=True)
+
+        self.assertEqual(len(result.get("stale_git_locks", [])), 1)
+        self.assertIn("Stale git lock", result.get("message", ""))
 
 
 class TestSyncProjectToRiaVerify(unittest.TestCase):

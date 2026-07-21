@@ -736,6 +736,16 @@ export function initOpenProjectController({
             let data = null;
             let iterations = 0;
             const MAX_ITERATIONS = 500;
+            // A call that reports a real failure (not just "ran out of time
+            // budget mid-fetch") and converted nothing is a stall, not
+            // progress. A single stall can be transient (e.g. a one-off lock
+            // collision that outlasted the backend's own retries) and is
+            // worth another attempt, but repeated stalls on the same item
+            // mean a genuine, non-transient error -- stop and surface it
+            // instead of silently grinding through up to MAX_ITERATIONS
+            // (500 x up to 90s each = ~12.5 hours) with no visible progress.
+            const MAX_CONSECUTIVE_STALLS = 3;
+            let consecutiveStalls = 0;
             for (;;) {
                 iterations += 1;
                 const response = await fetchWithApiFallback('/api/projects/datalad/enable', {
@@ -753,6 +763,20 @@ export function initOpenProjectController({
                 const remaining = Number.parseInt(String(data.datalad?.subdatasets_remaining_count ?? 0), 10) || 0;
                 if (remaining <= 0 || iterations >= MAX_ITERATIONS) {
                     break;
+                }
+
+                const createdThisCall = data.datalad?.subdatasets_created?.length ?? 0;
+                const failuresThisCall = data.datalad?.subdataset_failures ?? [];
+                if (createdThisCall === 0 && failuresThisCall.length > 0) {
+                    consecutiveStalls += 1;
+                    if (consecutiveStalls >= MAX_CONSECUTIVE_STALLS) {
+                        throw new Error(
+                            `Registration is stuck on the same nested dataset after ${consecutiveStalls} ` +
+                            `attempts and made no further progress: ${failuresThisCall[0]}`
+                        );
+                    }
+                } else {
+                    consecutiveStalls = 0;
                 }
 
                 const nextTarget = data.datalad?.next_missing_subdataset || 'the next nested dataset';
