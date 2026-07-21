@@ -9,7 +9,7 @@ detect-secrets
 bandit
 mypy
 semgrep>=1.170.0
-PyJWT>=2.12.1
+PyJWT>=2.13.0
 codespell
 safety
 pip-audit
