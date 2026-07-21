@@ -1728,12 +1728,19 @@ def main():
         if args.debug:
             configure_debug_logging()
             print("[DEBUG] Debug mode enabled (verbose logging, Flask debugger active)")
+            # threaded=True: Flask's dev server otherwise handles one request
+            # at a time, so a long-running mutation (e.g. DataLad nested
+            # subdataset registration, which can run for tens of seconds per
+            # call) blocks every other request -- including the frontend's
+            # own status poll for that same operation, which needs to run
+            # concurrently to show live progress instead of appearing frozen.
             app.run(
                 host=host,
                 port=port,
                 debug=args.debug,
                 use_reloader=False,
                 use_evalex=False,
+                threaded=True,
             )
         else:
             try:
@@ -1747,7 +1754,9 @@ def main():
                 print(
                     "[WARN]  Waitress not installed, falling back to Flask development server"
                 )
-                app.run(host=host, port=port, debug=False)
+                # threaded=True: see the debug-mode app.run() call above --
+                # same reasoning applies to this fallback path.
+                app.run(host=host, port=port, debug=False, threaded=True)
 
     if launch_mode == "window":
         # In window mode the server runs on a background daemon thread so the
