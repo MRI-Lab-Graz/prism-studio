@@ -5516,6 +5516,57 @@ class TestFinalizeProjectUpload(unittest.TestCase):
         self.assertIn("Full verification on finalize", result.get("message", ""))
 
     @patch("src.datalad_execution.resolve_datalad_executable", return_value="/usr/bin/datalad")
+    def test_full_verify_local_validation_holds_the_project_lock(self, _mock_resolve):
+        """Regression guard for a live incident: the BIDS validator does its
+        own raw filesystem walk (list dir, then readlink each entry
+        separately -- not an atomic git operation), which crashed with
+        ENOENT when a concurrent git-mutating call ("Delete all scans.tsv
+        files", running in another request thread) deleted
+        `.git/index.lock` out from under it mid-walk. Pre-flight validation
+        must hold the per-project DataLad lock for its duration, the same
+        way every other git-mutating method already does, so a concurrent
+        mutation blocks until validation finishes instead of racing it."""
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = self._project_dir(tmp)
+            lock = ProjectManager._datalad_lock_for(project_path)
+            validation_running = threading.Event()
+            release_validation = threading.Event()
+
+            def _blocking_validation(*args, **kwargs):
+                validation_running.set()
+                release_validation.wait(timeout=5)
+                return None
+
+            job_thread = threading.Thread(
+                target=lambda: manager.finalize_project_upload(
+                    project_path, ria_url="ria+ssh://user@host/store", verify_mode="full"
+                )
+            )
+            with patch(
+                "src.web.blueprints.projects_export_blueprint._run_pre_export_validation",
+                side_effect=_blocking_validation,
+            ):
+                job_thread.start()
+                self.assertTrue(validation_running.wait(timeout=5))
+
+                # A concurrent mutation attempting the same project's lock
+                # must NOT be able to acquire it while validation is in
+                # flight -- that's exactly the race that crashed the
+                # validator live.
+                acquired_concurrently = lock.acquire(blocking=False)
+                if acquired_concurrently:
+                    lock.release()
+
+                release_validation.set()
+                job_thread.join(timeout=5)
+
+        self.assertFalse(
+            acquired_concurrently,
+            "a concurrent DataLad mutation must block while local validation is running",
+        )
+
+    @patch("src.datalad_execution.resolve_datalad_executable", return_value="/usr/bin/datalad")
     def test_cancellation_before_disconnect_leaves_sibling_registered(self, _mock_resolve):
         manager = ProjectManager()
         with tempfile.TemporaryDirectory() as tmp:

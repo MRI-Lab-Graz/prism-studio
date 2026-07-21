@@ -926,6 +926,28 @@
                             <div id="fileDeleteResult" class="mt-3"></div>
                         </div>
                     </div>
+
+                    <div class="card border-danger mb-4 shadow-sm">
+                        <div class="card-header bg-danger bg-opacity-10 d-flex align-items-center">
+                            <h5 class="mb-0 text-dark">
+                                <i class="fas fa-trash me-2 text-danger"></i>Delete scans.tsv Files
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <button type="button" class="btn btn-outline-danger btn-sm" id="fileDeleteScansTsvBtn">
+                                    <i class="fas fa-trash me-2"></i>Delete all scans.tsv files
+                                </button>
+                                <small class="text-muted">
+                                    Removes every <code>*_scans.tsv</code> file across the dataset (superdataset and
+                                    nested subject/derivatives subdatasets), committing the removal in each. Use this
+                                    if a BIDS validation run reports <code>scans.tsv</code> errors you want to clear
+                                    instead of fixing.
+                                </small>
+                            </div>
+                            <div id="fileDeleteScansTsvResult" class="mt-2"></div>
+                        </div>
+                    </div>
                 </div>
 
             </div>
