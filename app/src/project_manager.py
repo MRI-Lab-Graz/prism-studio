@@ -5716,7 +5716,7 @@ git push -u origin main
                     project_path,
                     relative_dataset_text=".",
                     message=(
-                        "Update submodule pointers after removing scans.tsv files "
+                        "Refresh submodule pointers after removing scans.tsv files "
                         f"({len(rel_names)} dataset root(s))"
                     ),
                 )
