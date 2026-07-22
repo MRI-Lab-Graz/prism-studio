@@ -8,14 +8,41 @@ concrete regexes/strings from it instead of hardcoding their own copies.
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
 from src.schema_manager import load_schema
 
-_REPO_ROOT = Path(__file__).resolve().parent.parent
-_DEFAULT_SCHEMA_DIR = str(_REPO_ROOT / "app" / "schemas")
+
+def _resolve_default_schema_dir() -> str:
+    """Find `app/schemas` across dev and PyInstaller-frozen layouts.
+
+    In the editable/dev layout, this file lives at `<repo_root>/src/
+    entity_rules.py`, so `app/schemas` is a sibling of `src`'s parent.
+    But in the frozen onedir build, this file is bundled under
+    `<bundle_root>/backend_bundle/src/` (see `app/src/__init__.py`'s
+    `_candidate_src_paths`) while `app/schemas` is bundled *unnested* at
+    `<bundle_root>/schemas` (`--add-data=app/schemas:schemas` in
+    scripts/build/build_app.py) -- the two bundled paths are not siblings
+    under a common parent the way they are in dev, so the naive
+    `Path(__file__).resolve().parent.parent / "app" / "schemas"` guess
+    silently resolves to a directory that only exists in dev, breaking
+    every consumer (validator, fixer, rewriter) in the packaged app.
+    """
+    candidates = [Path(__file__).resolve().parent.parent / "app" / "schemas"]
+    if getattr(sys, "frozen", False):
+        meipass = getattr(sys, "_MEIPASS", None)
+        if meipass:
+            candidates.append(Path(meipass).resolve() / "schemas")
+    for candidate in candidates:
+        if candidate.is_dir():
+            return str(candidate)
+    return str(candidates[0])
+
+
+_DEFAULT_SCHEMA_DIR = _resolve_default_schema_dir()
 
 
 @dataclass(frozen=True)
@@ -182,7 +209,7 @@ def load_entity_rules(schema_dir: str | None = None, version: str = "stable") ->
     schema = load_schema("entities", schema_dir or _DEFAULT_SCHEMA_DIR, version)
     if not schema:
         raise RuntimeError(
-            "Could not load entities.json rules file from "
+            "Could not load entities.schema.json rules file from "
             f"{schema_dir or _DEFAULT_SCHEMA_DIR}/{version}."
         )
 
