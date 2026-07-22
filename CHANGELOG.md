@@ -7,6 +7,113 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.17.0] - 2026-07-22
+
+This release is anchored by a production incident: registering nested
+DataLad subdatasets on a large (150-subject, 340GB) real-world dataset
+surfaced a chain of DataLad/git-annex reliability bugs (index-lock
+collisions, timeout-orphaned locks, an unlocked-annex backlog, and a
+silent git scoped-commit failure), all fixed here along with proactive
+health checks so the same failure mode is caught early next time. Also
+included: a BIDS `phenotype/` compatibility bridge, a declarative
+entity/filename rules system that replaces several independently
+hardcoded copies of the same suffix grammar, and recipe provenance
+tracking.
+
+### Added
+- **BIDS `phenotype/` compatibility bridge**: an opt-in export flag
+  aggregates `survey/` data into a vanilla BIDS `phenotype/` directory
+  alongside PRISM's own layout; import fires automatically (with a
+  non-blocking summary banner) when initializing a project from an
+  existing BIDS dataset that already has a `phenotype/` directory.
+  Deliberately a lossy escape hatch, not a first-class conversion path --
+  PRISM's per-subject/session survey layout can express acquisition
+  variants that a flat phenotype table cannot.
+- **Recipe-computed derivative provenance**: `dataset_description.json`
+  now carries the real PRISM version and refreshes its provenance fields
+  on every recipe run (preserving user-edited fields like `Name`/
+  `License`); each recipe also gets a `<recipe_id>_provenance.json`
+  sidecar recording its exact input files (sha256-hashed) plus recipe
+  id/version and timestamp. DataLad-tracked projects get a scoped
+  `datalad save` covering the derivative output after scoring.
+- **Declarative entity/filename rules**: validator suffix/entity
+  patterns, rewriter constants, fix-hint text, and (as a follow-up)
+  filename construction in the survey/biometrics/physio converters now
+  all derive from one `app/schemas/stable/entities.schema.json`
+  (compiled via `src/entity_rules.py`), instead of several independently
+  hardcoded copies that could silently drift from each other.
+- **Instrument registry**: `generate_instrument_registry.py` builds an
+  `index.json` over survey instrument templates; `instrument_registry.py`
+  loads and queries it, wired into the schema-sync CI check.
+- **DataLad health checks**: proactive detection of stale
+  `.git/index.lock` files (age-based) and a backlog of "unlocked"
+  (materialized-as-real-files) annexed files above a threshold. Both
+  surface a clear warning and block further mutation attempts up front,
+  instead of every remaining subject in a batch silently failing through.
+- **DataLad concurrency control**: DataLad-mutating operations on a
+  project are now serialized against the frontend's own status-polling
+  reads via a per-project lock, closing a class of `.git/index.lock`
+  collisions seen in production on large multi-subject datasets.
+- **Emergency-save recovery**: if a subject/entity rewrite fails partway
+  through (some files already renamed on disk before the error), the
+  batch now attempts an emergency `datalad save` and clearly reports
+  "renamed but not committed -- needs manual review" instead of silently
+  treating it the same as a failure that touched nothing. The batch stops
+  rather than piling more unsaved renames onto an already-dirty worktree.
+- **Bulk `scans.tsv` deletion**: removes every `*_scans.tsv` file across a
+  project's superdataset and nested subject/derivatives subdatasets in
+  one operation, with per-root commits and a final submodule-pointer
+  update in the superdataset; holds the DataLad lock for the whole
+  operation.
+- **Remote folder browsing**: a "Browse..." picker for the rsync and
+  DataLad-server destination fields lists/creates directories on an
+  SSH-accessible remote server.
+- **Plain (non-RIA) DataLad siblings**: DataLad Server push now supports
+  plain SSH/local siblings in addition to RIA siblings.
+- **rsync exclude patterns**: rsync server config now accepts and saves
+  exclude patterns, forwarded on sync (falling back to saved patterns
+  when not explicitly provided).
+- **Export defacing controls**: a dedicated button to run `pydeface` on
+  export copies, with a time-cost note in the confirmation dialog;
+  defacing warnings now trigger regardless of the `scrub_mri_json` flag
+  and respect subject/session exclusion filters.
+- Push-server toggle and reworked export-section UI for configuring
+  DataLad/rsync push destinations.
+- Survey import from JSON to prefill the new-project form.
+- Download endpoint for recipe output files.
+
+### Changed
+- Participants-mapping now returns detailed per-subject results and
+  short-circuits early when a project has no subjects; UI reflects
+  mapping results directly.
+- Export metadata exclusion is now derived from the repository mode
+  instead of a separate flag.
+- Projects page: Share & Archive functionality split out into its own
+  page.
+- Setup script: improved package-manager detection and virtual-environment
+  creation.
+- CLI documentation, error codes, and schema versioning paths updated.
+
+### Fixed
+- `fixer.py`'s eyetracking suffix inference no longer misses the `_gaze`
+  suffix.
+- `MODALITY_PATTERNS` restricted to modalities that actually have real
+  suffix grammar defined (was previously silently over-broad).
+- `git commit -- <path>` (pathspec-scoped) can silently report "nothing
+  to commit" on git 2.54.0 even with real staged changes for that path
+  when a dirty submodule exists elsewhere in the repo; DataLad mutation
+  commits are now unscoped and independently verified via
+  `git diff-index` before and after, rather than trusting git's own
+  return code/message.
+- `datalad push -r` on a large recursive multi-dataset push can report
+  failure with a 100%-clean, error-free log; push success/failure is now
+  always independently verified against actual content presence rather
+  than trusted at face value.
+
+### Removed
+- Deprecated DataLad/rsync server template sections superseded by the new
+  push-server UI.
+
 ## [1.16.0] - 2026-07-05
 
 This release moves the desktop app to a native-feeling window on every
