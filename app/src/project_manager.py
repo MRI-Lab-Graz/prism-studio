@@ -3926,6 +3926,8 @@ git push -u origin main
         120s budget, and each timeout left a fresh stale lock for the next
         attempt to trip over).
         """
+        if max_attempts < 1:
+            raise ValueError(f"max_attempts must be >= 1, got {max_attempts}.")
         process = None
         for attempt in range(1, max_attempts + 1):
             try:
@@ -3949,6 +3951,7 @@ git push -u origin main
             if not is_lock_contention or attempt == max_attempts:
                 return process
             time.sleep(retry_delay_seconds * attempt)
+        assert process is not None  # loop runs >=1 time; max_attempts < 1 raises above
         return process
 
     def _remove_self_orphaned_index_lock(self, cwd: str) -> None:
@@ -4066,7 +4069,7 @@ git push -u origin main
         start_time = self._monotonic_clock()
 
         def _budget_exhausted() -> bool:
-            if max_to_create is not None and remaining_budget <= 0:
+            if remaining_budget is not None and remaining_budget <= 0:
                 return True
             if max_seconds is not None and (self._monotonic_clock() - start_time) >= max_seconds:
                 return True
