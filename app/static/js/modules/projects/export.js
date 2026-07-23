@@ -318,6 +318,21 @@ function normalizeDefacingConfirmationMode(value) {
     return normalized === 'always' ? 'always' : 'risk';
 }
 
+async function loadGlobalDefacingDefault() {
+    const select = getById('exportDefacingGlobalDefaultMode');
+    if (!select) return;
+
+    try {
+        const response = await fetchWithApiFallback('/api/settings/global-library');
+        const data = await response.json();
+        if (data && data.success) {
+            select.value = normalizeDefacingConfirmationMode(data.export_defacing_confirmation_mode);
+        }
+    } catch (error) {
+        console.error('Error loading global defacing confirmation default:', error);
+    }
+}
+
 function shouldScrubAllMriTags() {
     return getById('exportScrubAllTags')?.checked !== false;
 }
@@ -1549,6 +1564,44 @@ export function initExportForm() {
                 await loadExportPreferences();
             } finally {
                 updateExportSnapshotUi();
+            }
+        });
+    }
+
+    loadGlobalDefacingDefault();
+
+    const saveGlobalDefaultBtn = getById('exportDefacingSaveGlobalDefault');
+    if (saveGlobalDefaultBtn) {
+        saveGlobalDefaultBtn.addEventListener('click', async () => {
+            const select = getById('exportDefacingGlobalDefaultMode');
+            const statusDiv = getById('exportDefacingGlobalDefaultStatus');
+            const mode = normalizeDefacingConfirmationMode(select?.value);
+
+            saveGlobalDefaultBtn.disabled = true;
+            try {
+                const response = await fetchWithApiFallback('/api/settings/global-library', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ export_defacing_confirmation_mode: mode }),
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Could not save global default.');
+                }
+                if (statusDiv) {
+                    statusDiv.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Global default saved.</span>';
+                    setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
+                }
+                window.dispatchEvent(new CustomEvent('prism-library-settings-changed', {
+                    detail: { export_defacing_confirmation_mode: mode },
+                }));
+                await loadExportPreferences();
+            } catch (error) {
+                if (statusDiv) {
+                    statusDiv.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle me-1"></i>${escapeHtml(error.message || 'Could not save global default.')}</span>`;
+                }
+            } finally {
+                saveGlobalDefaultBtn.disabled = false;
             }
         });
     }

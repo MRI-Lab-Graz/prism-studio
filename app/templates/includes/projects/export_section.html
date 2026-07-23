@@ -236,6 +236,21 @@
                                                                 <i class="fas fa-undo me-1"></i>Use Global Default Confirmation Mode
                                                             </button>
                                                         </div>
+                                                        <div class="mt-3 ms-4 p-2 border rounded">
+                                                            <label for="exportDefacingGlobalDefaultMode" class="form-label fw-semibold small mb-1">
+                                                                <i class="fas fa-globe me-1"></i>Global default (used for projects without their own setting)
+                                                            </label>
+                                                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                                <select class="form-select form-select-sm w-auto" id="exportDefacingGlobalDefaultMode">
+                                                                    <option value="risk">Ask only when unresolved defacing risk is detected</option>
+                                                                    <option value="always">Always ask before export when MRI JSON scrubbing is enabled</option>
+                                                                </select>
+                                                                <button type="button" class="btn btn-sm btn-outline-secondary" id="exportDefacingSaveGlobalDefault">
+                                                                    <i class="fas fa-save me-1"></i>Save as Global Default
+                                                                </button>
+                                                            </div>
+                                                            <div id="exportDefacingGlobalDefaultStatus" class="form-text mt-1"></div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
