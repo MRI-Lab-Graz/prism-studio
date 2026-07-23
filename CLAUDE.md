@@ -40,3 +40,13 @@ extraction there now uses the same plain `_sanitize_bids_label()` used for
 subject labels (alphanumeric-only, no padding/coercion). Do not reintroduce
 numeric session normalization anywhere in this codebase — any session
 matching/comparison logic must be an exact string comparison.
+
+## Prefer extracting functions out of monolithic scripts
+
+When touching a large monolithic script (e.g. `app/prism-studio.py`), prefer
+slicing out the logic you're changing into a small, focused, testable
+function rather than growing the monolith in place. After extracting a
+function, add a dedicated test for it. This is about keeping the repo
+maintainable over time — don't do large opportunistic refactors unrelated to
+the task at hand, but when you're already editing a function, leave it (and
+its neighborhood) more separable than you found it.
