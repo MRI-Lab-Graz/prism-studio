@@ -156,10 +156,6 @@
     background-color: var(--studio-surface);
 }
 
-.studio-theme main {
-    min-height: calc(100vh - 220px);
-}
-
 .studio-theme .studio-page-shell {
     max-width: var(--studio-content-max-width);
     margin-left: auto;

@@ -221,6 +221,31 @@
             opacity: 0.65;
             cursor: not-allowed;
         }
+        .studio-navbar-shell .navbar-nav .dropdown-menu {
+            width: 21rem;
+            max-width: calc(100vw - 2rem);
+        }
+        .navbar-status-group {
+            flex-wrap: wrap;
+        }
+        .navbar-status-group #currentProjectBadge .badge,
+        .navbar-status-group #navbarDataladToggle {
+            max-width: 11rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        @media (max-width: 575.98px) {
+            .navbar-status-group #currentProjectBadge .badge,
+            .navbar-status-group #navbarDataladToggle {
+                max-width: 7rem;
+            }
+        }
+        @media (min-width: 1400px) {
+            .navbar-status-group {
+                flex-wrap: nowrap;
+            }
+        }
         .navbar-flow-item {
             white-space: normal;
         }
@@ -334,11 +359,8 @@
                     <small class="text-muted">PRISM Studio</small>
                 </div>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <div class="navbar-text me-3 d-none d-lg-block" id="currentProjectBadge"
+            <div class="d-flex align-items-center gap-2 me-auto navbar-status-group">
+                <div class="navbar-text mb-0" id="currentProjectBadge"
                      data-path="{{ current_project.path or '' }}" data-name="{{ current_project.name or '' }}" data-icon="{{ current_project.icon or '' }}" data-has-data="{{ 'true' if current_project.has_data else 'false' }}">
                     {% if current_project.path %}
                     <a class="badge bg-warning text-dark text-decoration-none" href="{{ url_for('projects.projects_page') }}?preserve_current=1" title="Go to {{ current_project.path }}" aria-label="Go to current project: {{ current_project.path }}">
@@ -350,7 +372,7 @@
                     </span>
                     {% endif %}
                 </div>
-                <div class="me-3" id="navbarDataladStatusShell">
+                <div id="navbarDataladStatusShell">
                     <a class="btn btn-sm border-0 bg-transparent px-0 py-0 d-inline-flex align-items-center text-decoration-none"
                        id="navbarDataladToggle"
                        href="{{ url_for('projects.projects_page') }}?preserve_current=1"
@@ -372,6 +394,11 @@
                         <span class="badge rounded-pill border ms-2 d-none" id="navbarDataladToggleFeedback" aria-live="polite"></span>
                     </a>
                 </div>
+            </div>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-lg-center">
                     <li class="nav-item">
                         <a class="nav-link{% if request.endpoint == 'index' %} active{% endif %}" href="{{ url_for('index') }}">
@@ -399,6 +426,16 @@
                             <li><h6 class="dropdown-header">Recent Projects</h6></li>
                             <li class="px-0"><div id="projectsRecentList"></div></li>
                             <li id="projectsRecentEmpty"><span class="dropdown-item-text text-muted small">No recent projects yet</span></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="px-3 py-1">
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="beginnerHelpModeToggle">
+                                    <label class="form-check-label" for="beginnerHelpModeToggle">
+                                        <span class="d-block fw-semibold small"><i class="fas fa-graduation-cap me-1 text-info"></i>Beginner help mode</span>
+                                        <small class="text-muted">Show guidance under fields (all pages)</small>
+                                    </label>
+                                </div>
+                            </li>
                         </ul>
                     </li>
 
