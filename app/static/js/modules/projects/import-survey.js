@@ -22,14 +22,19 @@ function splitPersonName(fullName) {
 export function mapSurveyResponseToFormFields(response) {
     const r = response && typeof response === 'object' ? response : {};
 
-    const pi = splitPersonName(r.PI_Name);
+    // Support both old Pavlovia format (PI_Name) and new internal format (pi_contact.pi_name)
+    const piContact = r.pi_contact && typeof r.pi_contact === 'object' ? r.pi_contact : {};
+    const piName = String(r.PI_Name || piContact.pi_name || '').trim();
+    const piEmail = String(r.PI_email || piContact.pi_email || '').trim();
+    const piOrcid = String(r.PI_orcid || piContact.pi_orcid || '').trim();
+    const pi = splitPersonName(piName);
     const authors = [];
     if (pi.first || pi.last) {
         authors.push({
             'given-names': pi.first,
             'family-names': pi.last,
-            email: r.PI_email || '',
-            orcid: r.PI_orcid || '',
+            email: piEmail,
+            orcid: piOrcid,
             corresponding: true,
         });
     }
@@ -48,15 +53,20 @@ export function mapSurveyResponseToFormFields(response) {
         });
     }
 
-    const keywords = Array.isArray(r.keywords)
-        ? r.keywords.filter(Boolean)
-        : [];
+    // Support keyword dict {keyword_1: 'x', ...} (new format) or plain array (old format)
+    let keywords = [];
+    if (Array.isArray(r.keywords)) {
+        keywords = r.keywords.map(String).filter(Boolean);
+    } else if (r.keywords && typeof r.keywords === 'object') {
+        keywords = Object.values(r.keywords).map(String).filter(Boolean);
+    }
 
+    // Support both r.Ethics (old) and r.ethics_approved (new)
     let ethics = null;
-    if (r.Ethics === true) {
+    if (r.Ethics === true || r.ethics_approved === true) {
         const committee = String(r.ethics_committee || '').trim();
-        const votum = String(r.code_ethic || '').trim();
-        const date = String(r.date_ethic || '').trim();
+        const votum = String(r.code_ethic || r.ethics_reference || '').trim();
+        const date = String(r.date_ethic || r.ethics_approval_date || '').trim();
         const votumWithDate = date ? [votum, `(${date})`].filter(Boolean).join(' ') : votum;
         ethics = { committee, votum: votumWithDate };
     }
@@ -69,11 +79,44 @@ export function mapSurveyResponseToFormFields(response) {
         };
     }
 
+    // Support direct string values (new: 'longitudinal') and old item codes ('item2')
     let studyDesignType = '';
-    if (r.study_design === 'item1') studyDesignType = 'cross-sectional';
-    else if (r.study_design === 'item2') studyDesignType = 'longitudinal';
+    if (r.study_design === 'item1' || r.study_design === 'cross-sectional') studyDesignType = 'cross-sectional';
+    else if (r.study_design === 'item2' || r.study_design === 'longitudinal') studyDesignType = 'longitudinal';
 
+    // Support old timespan.text1/text2 and new study_period.start_date/end_date (ISO YYYY-MM-DD)
     const timespan = r.timespan && typeof r.timespan === 'object' ? r.timespan : {};
+    const studyPeriod = r.study_period && typeof r.study_period === 'object' ? r.study_period : {};
+
+    // financial_compensation: boolean in new format
+    let financialCompensation = null;
+    if (r.financial_compensation === true) financialCompensation = 'Financial compensation';
+    else if (r.financial_compensation === false) financialCompensation = 'No financial compensation';
+
+    // Recruitment methods: array of method-key strings
+    const recruitmentMethods = Array.isArray(r.recruitment_method)
+        ? r.recruitment_method.filter(Boolean)
+        : [];
+
+    // Inclusion/exclusion criteria: [{criterion: '...'}, ...] in new format
+    const inclusionCriteria = Array.isArray(r.inclusion_criteria)
+        ? r.inclusion_criteria.map(item => {
+            if (typeof item === 'string') return item.trim();
+            if (item && typeof item === 'object') {
+                return String(item.criterion || item.text || Object.values(item)[0] || '').trim();
+            }
+            return '';
+        }).filter(Boolean)
+        : [];
+    const exclusionCriteria = Array.isArray(r.exclusion_criteria)
+        ? r.exclusion_criteria.map(item => {
+            if (typeof item === 'string') return item.trim();
+            if (item && typeof item === 'object') {
+                return String(item.criterion || item.text || item.question1 || Object.values(item)[0] || '').trim();
+            }
+            return '';
+        }).filter(Boolean)
+        : [];
 
     return {
         title: String(r.bids_title || '').trim(),
@@ -84,10 +127,16 @@ export function mapSurveyResponseToFormFields(response) {
         funding,
         sampleSize: r.nr_participants !== undefined && r.nr_participants !== null && r.nr_participants !== ''
             ? parseInt(r.nr_participants, 10)
-            : null,
+            : r.number_of_participants !== undefined && r.number_of_participants !== null
+                ? parseInt(r.number_of_participants, 10)
+                : null,
         studyDesignType,
-        recruitmentStart: timespan.text1 || '',
-        recruitmentEnd: timespan.text2 || '',
+        financialCompensation,
+        recruitmentMethods,
+        inclusionCriteria,
+        exclusionCriteria,
+        recruitmentStart: timespan.text1 || studyPeriod.start_date || '',
+        recruitmentEnd: timespan.text2 || studyPeriod.end_date || '',
     };
 }
 
@@ -98,6 +147,8 @@ function applyMappedFields(mapped, deps) {
         setFundingChoice,
         addFundingRow,
         setYearMonthValue,
+        setRecMethodList,
+        setOverviewList,
         updateCreateProjectButton,
     } = deps;
 
@@ -144,6 +195,23 @@ function applyMappedFields(mapped, deps) {
         if (sampleSizeField) sampleSizeField.value = String(mapped.sampleSize);
     }
 
+    if (mapped.financialCompensation) {
+        const compField = document.getElementById('smRecCompensation');
+        if (compField) compField.value = mapped.financialCompensation;
+    }
+
+    if (mapped.recruitmentMethods && mapped.recruitmentMethods.length && setRecMethodList) {
+        setRecMethodList(mapped.recruitmentMethods);
+    }
+
+    if (mapped.inclusionCriteria && mapped.inclusionCriteria.length && setOverviewList) {
+        setOverviewList('smEligInclusion', mapped.inclusionCriteria);
+    }
+
+    if (mapped.exclusionCriteria && mapped.exclusionCriteria.length && setOverviewList) {
+        setOverviewList('smEligExclusion', mapped.exclusionCriteria);
+    }
+
     if (mapped.studyDesignType) {
         const sdType = document.getElementById('smSDType');
         if (sdType) sdType.value = mapped.studyDesignType;
@@ -165,6 +233,8 @@ export function initSurveyImportController({
     setFundingChoice,
     addFundingRow,
     setYearMonthValue,
+    setRecMethodList,
+    setOverviewList,
     updateCreateProjectButton,
     escapeHtml,
 }) {
@@ -201,6 +271,8 @@ export function initSurveyImportController({
                     setFundingChoice,
                     addFundingRow,
                     setYearMonthValue,
+                    setRecMethodList,
+                    setOverviewList,
                     updateCreateProjectButton,
                 });
                 setStatus(`Imported survey response from "${file.name}". Review the prefilled fields below.`, false);

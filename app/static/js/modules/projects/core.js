@@ -48,6 +48,8 @@ import {
     setEthicsApprovals,
     setFundingChoice,
     addFundingRow,
+    setRecMethodList,
+    setOverviewList,
     resetStudyMetadataForm,
     saveProjectSchemaConfig,
     showStudyMetadataCard,
@@ -226,6 +228,8 @@ initSurveyImportController({
     setFundingChoice,
     addFundingRow,
     setYearMonthValue,
+    setRecMethodList,
+    setOverviewList,
     updateCreateProjectButton,
     escapeHtml,
 });
