@@ -1403,7 +1403,7 @@ function addOverviewListRow(fieldId, value = '') {
     _syncOverviewListField(fieldId);
 }
 
-function setOverviewList(fieldId, rawValue) {
+export function setOverviewList(fieldId, rawValue) {
     const config = OVERVIEW_LIST_FIELDS[fieldId];
     const list = document.getElementById(config?.listId || '');
     if (!config || !list) return;
