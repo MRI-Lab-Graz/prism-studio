@@ -7,7 +7,9 @@ function splitPersonName(fullName) {
     const cleaned = String(fullName || '').trim();
     if (!cleaned) return { first: '', last: '' };
     if (cleaned.includes(',')) {
-        const [last, first] = cleaned.split(',').map(s => s.trim());
+        // Study Application authors are entered as "First name, Last name"
+        // (see additional_authors[].author_name), not CFF's "Family, Given".
+        const [first, last] = cleaned.split(',').map(s => s.trim());
         return { first: first || '', last: last || '' };
     }
     const tokens = cleaned.split(/\s+/).filter(Boolean);
@@ -166,8 +168,8 @@ function applyMappedFields(mapped, deps) {
     }
 
     if (mapped.studyDescription) {
-        const overviewMain = document.getElementById('smOverviewMain');
-        if (overviewMain) overviewMain.value = mapped.studyDescription;
+        const procOverview = document.getElementById('smProcOverview');
+        if (procOverview) procOverview.value = mapped.studyDescription;
     }
 
     if (mapped.keywords.length) {
