@@ -182,6 +182,73 @@ export function initBackendMonitoringToggle() {
     }
 }
 
+function setStudyApplicationImportVisibility(enabled) {
+    const container = document.getElementById('surveyImportContainer');
+    if (container) {
+        // Bootstrap's `.d-flex`/`.d-none` utilities are !important, so they must
+        // be swapped via classList rather than an inline style (which an
+        // !important utility class would silently win against).
+        container.classList.toggle('d-flex', Boolean(enabled));
+        container.classList.toggle('d-none', !enabled);
+    }
+}
+
+async function loadStudyApplicationImportSetting() {
+    const toggle = document.getElementById('studyApplicationImportToggle');
+    if (!toggle) return;
+
+    try {
+        const response = await fetchWithApiFallback('/api/settings/study-application-import');
+        const data = await response.json();
+        if (data && data.success) {
+            const enabled = Boolean(data.enable_study_application_import);
+            toggle.checked = enabled;
+            setStudyApplicationImportVisibility(enabled);
+        }
+    } catch (error) {
+        console.error('Error loading study application import setting:', error);
+    }
+}
+
+async function saveStudyApplicationImportSetting(enabled) {
+    const response = await fetchWithApiFallback('/api/settings/study-application-import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enable_study_application_import: Boolean(enabled) })
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data || !data.success) {
+        throw new Error(data?.error || 'Failed to save study application import setting');
+    }
+
+    return Boolean(data.enable_study_application_import);
+}
+
+export function initStudyApplicationImportToggle() {
+    const toggle = document.getElementById('studyApplicationImportToggle');
+    if (!toggle) return;
+
+    loadStudyApplicationImportSetting();
+
+    toggle.addEventListener('change', async () => {
+        const desired = Boolean(toggle.checked);
+        toggle.disabled = true;
+
+        try {
+            const persisted = await saveStudyApplicationImportSetting(desired);
+            toggle.checked = persisted;
+            setStudyApplicationImportVisibility(persisted);
+        } catch (error) {
+            console.error('Error saving study application import setting:', error);
+            toggle.checked = !desired;
+            alert('Could not update study application import setting.');
+        } finally {
+            toggle.disabled = false;
+        }
+    });
+}
+
 export function initDedicatedTerminalToggle() {
     const toggle = document.getElementById('dedicatedTerminalToggle');
     if (!toggle) return;
