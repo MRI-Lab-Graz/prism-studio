@@ -113,6 +113,30 @@ PIP_AUDIT_IGNORED_ADVISORIES = {
     "GHSA-5239-wwwm-4pmq",
 }
 
+# Curated flake8-bandit (ruff "S") rules for the `ruff-security` check.
+#
+# Ruff runs these over the whole tree in well under a second, so this is the
+# fast first line of defense that `bandit` (slow, and gated to medium+ severity
+# via -ll) does not provide -- notably S311, which is LOW severity in bandit and
+# therefore invisible there, but is exactly how a predictable PRNG ends up in
+# anonymization/ID-generation code.
+#
+# Deliberately NOT selected, as they are high-volume and low-signal here:
+#   S101 assert, S110 try-except-pass, S112 try-except-continue,
+#   S603 subprocess-without-shell-equals-true, S607 partial-executable-path.
+# Suppress individual findings inline with `# noqa: S###` plus a reason, rather
+# than adding paths to an allowlist in this script.
+RUFF_SECURITY_RULES = (
+    "S105,S106,S107,S301,S302,S306,S307,S308,S310,S311,S312,S321,S324,"
+    "S501,S502,S506,S508,S509,S601,S602,S604,S605,S606,S608,S609,S612,S701,S702"
+)
+
+# Known-unreviewed `ruff-security` findings. The check fails when the count goes
+# ABOVE this number, so new security-relevant code cannot regress silently while
+# the existing backlog is triaged. Ratchet this down as findings are fixed or
+# given an inline `# noqa: S###` with a justification; never raise it.
+RUFF_SECURITY_BASELINE = 23
+
 # ANSI escape code stripper
 ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
@@ -391,8 +415,11 @@ def check_secrets(repo_path, fix=False):
         ignored_regex = "|".join([re.escape(d) for d in IGNORED_DIRS])
         known_false_positive_paths = [
             r"app/static/js/jszip\.min\.js",
+            r"app/static/vendor/jszip/jszip\.min\.js",
             r"docs/WINDOWS_SETUP\.md",
+            r"docs/CLI_REFERENCE\.md",
             r"vendor/pyedflib/version\.py",
+            r"tests/test_projects_library_settings_api\.py",
         ]
         known_false_positive_regex = "|".join(known_false_positive_paths)
         exclude_arg = (
@@ -435,6 +462,173 @@ def check_secrets(repo_path, fix=False):
             print_warning("detect-secrets failed to run.")
     else:
         print_warning("detect-secrets not installed. Skipping deep secret scan.")
+
+
+def check_secrets_history(repo_path, fix=False):
+    """Scan the whole git history for committed secrets.
+
+    `detect-secrets` in check_secrets only sees the current working tree. A
+    credential that was committed and then removed in a later commit is still
+    in history, still clonable, and must still be treated as compromised --
+    which is why this repo's own git-status note has always pointed at
+    gitleaks/trufflehog for the deep scan. This runs that scan.
+    """
+    print_header("Scanning Git History for Secrets (gitleaks)")
+
+    if not os.path.isdir(os.path.join(repo_path, ".git")):
+        print_info("Not a git repository. Skipping history scan.")
+        return
+
+    if not check_tool("gitleaks", "brew install gitleaks (or see gitleaks.io)"):
+        print_warning("gitleaks not installed. Skipping git history secret scan.")
+        return
+
+    print_info("Running 'gitleaks git' over full history...")
+    result = run_command("gitleaks git --no-banner --redact --exit-code 1", cwd=repo_path)
+
+    if result is None:
+        print_warning("gitleaks failed to run.")
+        return
+
+    if result.returncode == 0:
+        print_success("gitleaks found no secrets in git history.")
+        return
+
+    print_error("gitleaks found potential secrets in git history:")
+    if result.stdout:
+        print(result.stdout)
+    print_info(
+        "Findings are redacted above. Any real hit must be treated as "
+        "compromised: rotate the credential, then purge it from history."
+    )
+
+
+def check_ruff_security(repo_path, fix=False):
+    """Fast AST-based security linting via ruff's flake8-bandit rules."""
+    print_header("Running Ruff Security Rules (flake8-bandit)")
+
+    if not check_tool("ruff", "pip install ruff"):
+        print_warning("Ruff not installed. Skipping security lint.")
+        return
+
+    print_info("Scanning src and app/src...")
+    result = run_command(
+        f"ruff check src app/src --select {RUFF_SECURITY_RULES} "
+        f"--exclude vendor --output-format concise",
+        cwd=repo_path,
+    )
+
+    if result is None:
+        print_warning("Ruff security scan failed to run.")
+        return
+
+    findings = [
+        line
+        for line in (result.stdout or "").splitlines()
+        if re.search(r":\d+:\d+: S\d+", line)
+    ]
+    count = len(findings)
+
+    if count == 0:
+        print_success("Ruff security rules passed with no findings.")
+        if RUFF_SECURITY_BASELINE > 0:
+            print_info(
+                f"RUFF_SECURITY_BASELINE is {RUFF_SECURITY_BASELINE} but the tree "
+                "is clean -- lower it to 0 in tests/verify_repo.py."
+            )
+        return
+
+    for line in findings:
+        print(f"  {line}")
+
+    if count > RUFF_SECURITY_BASELINE:
+        print_error(
+            f"Ruff security findings increased: {count} found, "
+            f"baseline is {RUFF_SECURITY_BASELINE}. Fix the new finding(s), or "
+            "suppress with an inline '# noqa: S###' plus a justification."
+        )
+    else:
+        print_info(
+            f"{count} finding(s) at or below the reviewed baseline of "
+            f"{RUFF_SECURITY_BASELINE}. Ratchet the baseline down as these are "
+            "triaged."
+        )
+        if count < RUFF_SECURITY_BASELINE:
+            print_info(
+                f"Baseline can now be lowered to {count} in tests/verify_repo.py."
+            )
+
+
+def check_actions_security(repo_path, fix=False):
+    """Audit GitHub Actions workflows with zizmor.
+
+    check_github_actions is two regexes; zizmor understands workflow semantics
+    and catches the classes that actually matter for a repo that publishes
+    signed release artifacts: over-broad GITHUB_TOKEN permissions, credentials
+    left in .git by checkout (then swept into an uploaded artifact), and
+    template injection into run: blocks.
+    """
+    print_header("Auditing GitHub Actions Security (zizmor)")
+
+    workflow_dir = os.path.join(repo_path, ".github", "workflows")
+    if not os.path.exists(workflow_dir):
+        print_info("No GitHub Actions workflows found.")
+        return
+
+    if not check_tool("zizmor", "pip install zizmor (or: uv tool install zizmor)"):
+        print_warning("zizmor not installed. Skipping Actions security audit.")
+        return
+
+    print_info("Running zizmor...")
+    result = run_command(
+        "zizmor -q --no-progress --format=json --min-severity=medium .github/workflows/",
+        cwd=repo_path,
+    )
+
+    if result is None:
+        print_warning("zizmor failed to run.")
+        return
+
+    # zizmor writes log lines (offline-mode/YAML-anchor warnings, etc.) to
+    # stderr, which run_command merges onto the same stream as its JSON
+    # stdout -- even with -q. Take everything from the first '[' onward.
+    raw = result.stdout or "[]"
+    json_start = raw.find("[")
+    try:
+        payload = json.loads(raw[json_start:] if json_start != -1 else raw)
+    except json.JSONDecodeError:
+        print_warning("Could not parse zizmor output:")
+        print(raw)
+        return
+
+    # Pinning every action to a commit SHA is a separate hardening decision
+    # tracked outside this check, so those findings are not gated here.
+    payload = [f for f in payload if f.get("ident") != "unpinned-uses"]
+
+    if not payload:
+        print_success("zizmor found no medium-or-higher workflow issues.")
+        return
+
+    by_rule = {}
+    for finding in payload:
+        ident = str(finding.get("ident") or "unknown")
+        by_rule.setdefault(ident, []).append(finding)
+
+    print_warning(f"zizmor found {len(payload)} workflow issue(s):")
+    for ident, items in sorted(by_rule.items()):
+        severity = str(
+            (items[0].get("determinations") or {}).get("severity") or "unknown"
+        )
+        print(f"  - {ident} ({severity}): {len(items)} occurrence(s)")
+        for item in items[:3]:
+            locations = item.get("locations") or []
+            if locations:
+                symbolic = (locations[0].get("symbolic") or {})
+                key = symbolic.get("key") or {}
+                where = (key.get("Local") or {}).get("verbatim_path") or "workflow"
+                annotation = symbolic.get("annotation") or ""
+                print(f"      {where}: {annotation}")
+    print_info("Details: zizmor .github/workflows/ (docs: https://docs.zizmor.sh)")
 
 
 def check_gitignore(repo_path, fix=False):
@@ -812,7 +1006,10 @@ def check_github_actions(repo_path):
         return
 
     found_issues = False
-    for workflow_file in Path(workflow_dir).glob("*.yml"):
+    workflow_files = sorted(
+        list(Path(workflow_dir).glob("*.yml")) + list(Path(workflow_dir).glob("*.yaml"))
+    )
+    for workflow_file in workflow_files:
         try:
             with open(workflow_file, "r") as f:
                 content = f.read()
@@ -1129,9 +1326,12 @@ def check_dependencies(repo_path, fix=False):
         if check_tool("npm", "Install Node.js from https://nodejs.org/"):
             npm_audit_command = "npm audit --package-lock-only"
             if fix:
-                print_info(f"Running '{npm_audit_command} --fix'...")
+                # `npm audit fix` is a subcommand -- `npm audit --fix` is not a
+                # real flag and npm ignores it (warning "Unknown cli config"),
+                # so the old form silently audited without fixing anything.
+                print_info("Running 'npm audit fix --package-lock-only'...")
                 result = run_command(
-                    f"{npm_audit_command} --fix",
+                    "npm audit fix --package-lock-only",
                     cwd=repo_path,
                 )
                 if result and result.returncode == 0:
@@ -2158,12 +2358,15 @@ CHECKS = {
     "sensitive-files": check_sensitive_files,
     "large-files": check_large_files,
     "github-actions": check_github_actions,
+    "actions-security": check_actions_security,
     "secrets": check_secrets,
+    "secrets-history": check_secrets_history,
     "gitignore": check_gitignore,
     "python-security": check_python_security,
     "unsafe-patterns": check_unsafe_patterns,
     "linting": check_linting,
     "ruff": check_ruff,
+    "ruff-security": check_ruff_security,
     "pytest": check_pytest,
     "pytest-modularity": check_pytest_modularity,
     "mypy": check_mypy,
@@ -2194,6 +2397,9 @@ DEFAULT_CHECK_PROFILES = {
         "import-boundaries",
         "unsafe-patterns",
         "ruff",
+        # Sub-second AST security lint, so it belongs in the fast profile that
+        # runs on every push rather than only in the nightly deep pass.
+        "ruff-security",
         "mypy",
         "pytest",
     ],
@@ -2203,6 +2409,9 @@ DEFAULT_CHECK_PROFILES = {
 
 CHECKS_SUPPORT_FIX = {
     "secrets",
+    "secrets-history",
+    "actions-security",
+    "ruff-security",
     "gitignore",
     "python-security",
     "unsafe-patterns",
@@ -2230,10 +2439,17 @@ NON_BLOCKING_WARNING_CHECKS = {
     "forbidden-binary-tracking",
     "linting",
     "mypy",
-    "pip-audit",
     "todos",
     "docs-build",
+    # Reports real hardening gaps (artipacked, excessive-permissions) that need
+    # workflow edits across build.yml/docker-validator.yml. Promote to blocking
+    # once those are cleaned up.
+    "actions-security",
 }
+# NOTE: `pip-audit` is deliberately NOT in the non-blocking set. A known CVE in a
+# Python dependency must fail the run, the same way `dependencies` already fails
+# on an npm advisory -- previously Python vulnerabilities only warned, so the
+# two ecosystems were held to opposite standards.
 
 
 def parse_selected_checks(check_args):
@@ -2332,6 +2548,15 @@ def main():
         action="store_true",
         help="Enable codespell check (disabled by default)",
     )
+    parser.add_argument(
+        "--fail-fast",
+        action="store_true",
+        default=False,
+        help=(
+            "Stop at the first failing check. Off by default so one finding "
+            "never hides the results of later checks."
+        ),
+    )
     args = parser.parse_args()
 
     if args.list_checks:
@@ -2399,19 +2624,43 @@ def main():
                     f"Running checks: {', '.join(checks_to_run) if checks_to_run else 'none'}"
                 )
 
-                failed_check = None
+                # Every check runs, even after one fails. Stopping at the first
+                # failure used to mean a single benign finding (e.g. one npm
+                # advisory) silently skipped every later check -- including the
+                # rest of the security scans -- so a "failed" run told you
+                # nothing about the checks that never got to run.
+                failed_checks = []
+                aborted_early = False
                 for check_name in checks_to_run:
                     check_passed = run_check(
                         check_name, CHECKS[check_name], repo_path, args.fix
                     )
                     if not check_passed:
-                        failed_check = check_name
-                        print_error(
-                            f"Check '{check_name}' has unresolved issues. Fix this check before proceeding to the next one."
-                        )
-                        break
+                        failed_checks.append(check_name)
+                        print_error(f"Check '{check_name}' has unresolved issues.")
+                        if args.fail_fast:
+                            print_warning(
+                                "--fail-fast set: skipping remaining checks."
+                            )
+                            aborted_early = True
+                            break
 
                 print_header("Summary")
+
+                ran_count = (
+                    checks_to_run.index(failed_checks[-1]) + 1
+                    if aborted_early
+                    else len(checks_to_run)
+                )
+                print_info(f"Ran {ran_count}/{len(checks_to_run)} checks.")
+                if failed_checks:
+                    print_error(
+                        f"{len(failed_checks)} check(s) with unresolved issues: "
+                        f"{', '.join(failed_checks)}"
+                    )
+                else:
+                    print_success("All checks passed.")
+
                 if MISSING_TOOLS:
                     print_warning(
                         "Some tools were missing. Install them for better results:"
@@ -2425,10 +2674,7 @@ def main():
                 print("  ☐ Run the code once to ensure it works")
                 print("\nDone.")
 
-                if failed_check:
-                    print_warning(
-                        "Verification stopped early due to unresolved issues in the current check."
-                    )
+                if failed_checks:
                     sys.exit(1)
             finally:
                 # Restore stdout

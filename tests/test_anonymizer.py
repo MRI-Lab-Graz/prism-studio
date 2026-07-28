@@ -2,6 +2,7 @@
 
 import csv
 import json
+import secrets
 import sys
 import os
 import pytest
@@ -21,6 +22,7 @@ from src.anonymizer import (
     _pick_preferred_text,
     _iter_survey_template_items,
     _get_survey_license_info,
+    _load_or_create_secret_key,
 )
 
 
@@ -41,15 +43,53 @@ class TestGenerateRandomId:
         rid = generate_random_id(length=8)
         assert len(rid.split("-")[1]) == 8
 
-    def test_deterministic_with_seed(self):
-        a = generate_random_id(seed="participant-001")
-        b = generate_random_id(seed="participant-001")
+    def test_seed_without_secret_key_raises(self):
+        """A seed alone must not make the ID reproducible -- that would let
+        anyone with the source code brute-force IDs from published pseudonyms."""
+        with pytest.raises(ValueError):
+            generate_random_id(seed="participant-001")
+
+    def test_deterministic_with_seed_and_secret_key(self):
+        key = secrets.token_bytes(32)
+        a = generate_random_id(seed="participant-001", secret_key=key)
+        b = generate_random_id(seed="participant-001", secret_key=key)
         assert a == b
 
     def test_different_seeds_differ(self):
-        a = generate_random_id(seed="alpha")
-        b = generate_random_id(seed="beta")
+        key = secrets.token_bytes(32)
+        a = generate_random_id(seed="alpha", secret_key=key)
+        b = generate_random_id(seed="beta", secret_key=key)
         assert a != b
+
+    def test_same_seed_different_secret_key_differs(self):
+        a = generate_random_id(seed="participant-001", secret_key=secrets.token_bytes(32))
+        b = generate_random_id(seed="participant-001", secret_key=secrets.token_bytes(32))
+        assert a != b
+
+
+# ---------------------------------------------------------------------------
+# _load_or_create_secret_key
+# ---------------------------------------------------------------------------
+
+class TestLoadOrCreateSecretKey:
+    def test_no_output_file_returns_fresh_key(self):
+        key = _load_or_create_secret_key(None)
+        assert isinstance(key, bytes) and len(key) == 32
+
+    def test_missing_file_returns_fresh_key(self, tmp_path):
+        key = _load_or_create_secret_key(tmp_path / "does_not_exist.json")
+        assert isinstance(key, bytes) and len(key) == 32
+
+    def test_reuses_persisted_key(self, tmp_path):
+        out = tmp_path / "m.json"
+        out.write_text(json.dumps({"_secret_key": "ab" * 32}), encoding="utf-8")
+        assert _load_or_create_secret_key(out) == bytes.fromhex("ab" * 32)
+
+    def test_corrupt_file_returns_fresh_key(self, tmp_path):
+        out = tmp_path / "m.json"
+        out.write_text("not json", encoding="utf-8")
+        key = _load_or_create_secret_key(out)
+        assert isinstance(key, bytes) and len(key) == 32
 
 
 # ---------------------------------------------------------------------------
@@ -77,11 +117,48 @@ class TestCreateParticipantMapping:
         assert "mapping" in data
         assert "reverse_mapping" in data
 
-    def test_deterministic(self, tmp_path):
+    def test_deterministic_reuses_same_output_file(self, tmp_path):
+        """Re-running against the SAME output_file reproduces the same
+        pseudonyms, because the secret key persisted in that file is reused."""
+        ids = ["sub-001", "sub-002"]
+        out = tmp_path / "m.json"
+        m1 = create_participant_mapping(ids, out, deterministic=True)
+        m2 = create_participant_mapping(ids, out, deterministic=True)
+        assert m1 == m2
+
+    def test_deterministic_independent_files_do_not_match(self, tmp_path):
+        """Regression test: two independent runs (no shared secret key) must
+        NOT produce the same pseudonyms for the same participant IDs.
+        Previously pseudonyms were derived purely from hashlib.md5(id), so
+        anyone with a published dataset and this source code could
+        brute-force real participant IDs back out of the pseudonyms alone --
+        this asserts that class of bug can't reappear."""
         ids = ["sub-001", "sub-002"]
         m1 = create_participant_mapping(ids, tmp_path / "m1.json", deterministic=True)
         m2 = create_participant_mapping(ids, tmp_path / "m2.json", deterministic=True)
-        assert m1 == m2
+        assert m1 != m2
+
+    def test_secret_key_not_brute_forceable_from_published_ids(self, tmp_path):
+        """End-to-end regression test for the reversibility bug: someone who
+        has only the published pseudonyms and this source code (not the
+        private mapping file) must not be able to recover real IDs."""
+        real_ids = [f"sub-{i:03d}" for i in range(1, 21)]
+        mapping = create_participant_mapping(
+            real_ids, tmp_path / "m.json", deterministic=True
+        )
+        published = set(mapping.values())
+
+        recovered = set()
+        for i in range(1, 1000):
+            candidate = f"sub-{i:03d}"
+            try:
+                # No secret_key available to an outside attacker.
+                guess = generate_random_id("sub", 6, candidate)
+            except ValueError:
+                continue
+            if guess in published:
+                recovered.add(guess)
+        assert not recovered
 
     def test_prefix_preserved(self, tmp_path):
         ids = ["sub-001"]

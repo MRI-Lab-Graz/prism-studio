@@ -41,6 +41,9 @@ def test_check_dependencies_uses_lockfile_only_npm_audit(
 def test_check_dependencies_fix_uses_lockfile_only_npm_audit(
     tmp_path: Path, monkeypatch
 ) -> None:
+    """`npm audit --fix` is not a real flag (npm silently ignores it, auditing
+    without fixing anything) -- the fix path must use the `npm audit fix`
+    subcommand instead."""
     verify_repo = _load_verify_repo_module()
 
     (tmp_path / "package.json").write_text("{}\n", encoding="utf-8")
@@ -59,4 +62,4 @@ def test_check_dependencies_fix_uses_lockfile_only_npm_audit(
 
     verify_repo.check_dependencies(str(tmp_path), fix=True)
 
-    assert ("npm audit --package-lock-only --fix", str(tmp_path)) in commands
+    assert ("npm audit fix --package-lock-only", str(tmp_path)) in commands
