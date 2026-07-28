@@ -406,6 +406,12 @@ class AppSettings:
     # 'always' => ask before export regardless of risk summary.
     export_defacing_confirmation_mode: str = "risk"
 
+    # Show the MRI-Lab Graz study application (Pavlovia survey.json) import
+    # button on the Create Project and Init-on-BIDS flows. Off by default
+    # since this import format is specific to that lab's intake survey and
+    # is not meaningful for external users.
+    enable_study_application_import: bool = False
+
     # Settings file location (set after loading)
     _settings_path: Optional[str] = None
 
@@ -484,6 +490,9 @@ def load_app_settings(app_root: Optional[str] = None) -> AppSettings:
             export_defacing_confirmation_mode=normalize_export_defacing_confirmation_mode(
                 data.get("exportDefacingConfirmationMode", "risk")
             ),
+            enable_study_application_import=bool(
+                data.get("enableStudyApplicationImport", False)
+            ),
         )
         settings._settings_path = settings_path
         return settings
@@ -522,6 +531,7 @@ def save_app_settings(settings: AppSettings, app_root: Optional[str] = None) -> 
         "exportDefacingConfirmationMode": normalize_export_defacing_confirmation_mode(
             settings.export_defacing_confirmation_mode
         ),
+        "enableStudyApplicationImport": settings.enable_study_application_import,
     }
 
     # Remove None values
