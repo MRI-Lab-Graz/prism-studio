@@ -9,8 +9,10 @@ Provides functionality to:
 
 from __future__ import annotations
 
+import hmac
 import json
 import random
+import secrets
 import string
 import re
 from pathlib import Path
@@ -19,7 +21,11 @@ import hashlib
 
 
 def generate_random_id(
-    prefix: str = "sub", length: int = 6, seed: Optional[str] = None
+    prefix: str = "sub",
+    length: int = 6,
+    seed: Optional[str] = None,
+    *,
+    secret_key: Optional[bytes] = None,
 ) -> str:
     """
     Generate a random alphanumeric ID with the given prefix.
@@ -27,19 +33,55 @@ def generate_random_id(
     Args:
         prefix: ID prefix (e.g., "sub", "ses")
         length: Length of random part
-        seed: Optional seed for reproducibility
+        seed: Optional value to derive a reproducible ID from. Requires
+            `secret_key` -- deriving the ID from `seed` text alone (e.g. a
+            hash of the plaintext participant ID) would let anyone with a
+            published, "anonymized" dataset and this source code brute-force
+            every real ID back out of its pseudonym.
+        secret_key: Secret bytes that make `seed`-based generation
+            reproducible only for holders of the key.
 
     Returns:
         Random ID like "sub-R7X2K9"
     """
-    if seed:
-        # Use hash of seed for reproducibility (not for security)
-        hash_obj = hashlib.md5(seed.encode(), usedforsecurity=False)
-        random.seed(int(hash_obj.hexdigest(), 16))
-
     chars = string.ascii_uppercase + string.digits
-    random_part = "".join(random.choice(chars) for _ in range(length))
+    if seed is not None:
+        if not secret_key:
+            raise ValueError(
+                "generate_random_id(seed=...) requires secret_key; without "
+                "one, IDs would be recoverable by brute-forcing 'seed' "
+                "candidates against this function."
+            )
+        digest = hmac.new(secret_key, seed.encode("utf-8"), hashlib.sha256).digest()
+        rng = random.Random(digest)
+    else:
+        rng = secrets.SystemRandom()
+    random_part = "".join(rng.choice(chars) for _ in range(length))
     return f"{prefix}-{random_part}"
+
+
+def _load_or_create_secret_key(output_file: Optional[Path]) -> bytes:
+    """Reuse the secret key persisted in `output_file`, or mint a new one.
+
+    The key is stored in the same JSON as the mapping it protects. Both are
+    already treated as sensitive (never included in dataset exports, marked
+    "KEEP THIS FILE SECURE"), so co-locating the key adds no new exposure --
+    and doing so is what lets `deterministic=True` keep producing the same
+    pseudonyms across repeated exports of the same project without the
+    pseudonyms being derivable from participant IDs alone.
+    """
+    if output_file is not None and output_file.exists():
+        try:
+            existing = json.loads(output_file.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            existing = {}
+        key_hex = existing.get("_secret_key") if isinstance(existing, dict) else None
+        if isinstance(key_hex, str) and key_hex:
+            try:
+                return bytes.fromhex(key_hex)
+            except ValueError:
+                pass
+    return secrets.token_bytes(32)
 
 
 def create_participant_mapping(
@@ -56,13 +98,21 @@ def create_participant_mapping(
         output_file: Optional path to save the mapping JSON. When None,
             mapping is generated in-memory only and not persisted to disk.
         id_length: Length of random ID part
-        deterministic: If True, same input always generates same random IDs
+        deterministic: If True, re-running this against the same
+            `output_file` reproduces the same pseudonyms (the secret key
+            that makes this possible is persisted alongside the mapping, in
+            that same file). Without an `output_file`, this only guarantees
+            a stable mapping within this single call.
 
     Returns:
         Dictionary mapping original_id → random_id
     """
     mapping = {}
     used_ids = set()
+
+    secret_key: Optional[bytes] = None
+    if deterministic:
+        secret_key = _load_or_create_secret_key(output_file)
 
     for original_id in sorted(participant_ids):
         # Extract prefix (e.g., "sub" from "sub-001")
@@ -75,7 +125,7 @@ def create_participant_mapping(
         seed = original_id if deterministic else None
         attempts = 0
         while attempts < 1000:
-            random_id = generate_random_id(prefix, id_length, seed)
+            random_id = generate_random_id(prefix, id_length, seed, secret_key=secret_key)
             if random_id not in used_ids:
                 mapping[original_id] = random_id
                 used_ids.add(random_id)
@@ -90,17 +140,16 @@ def create_participant_mapping(
     # Save mapping only when a path is provided.
     if output_file is not None:
         output_file.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "_description": "Participant ID anonymization mapping",
+            "_warning": "KEEP THIS FILE SECURE! It allows re-identification.",
+            "mapping": mapping,
+            "reverse_mapping": {v: k for k, v in mapping.items()},
+        }
+        if secret_key is not None:
+            payload["_secret_key"] = secret_key.hex()
         with open(output_file, "w", encoding="utf-8") as f:
-            json.dump(
-                {
-                    "_description": "Participant ID anonymization mapping",
-                    "_warning": "KEEP THIS FILE SECURE! It allows re-identification.",
-                    "mapping": mapping,
-                    "reverse_mapping": {v: k for k, v in mapping.items()},
-                },
-                f,
-                indent=2,
-            )
+            json.dump(payload, f, indent=2)
 
     return mapping
 
