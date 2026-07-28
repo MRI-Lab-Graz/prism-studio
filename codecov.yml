@@ -2,8 +2,15 @@ coverage:
   status:
     project:
       default:
-        target: 80%       # interim repository target coverage
-        threshold: 1%     # allow 1% drop before failing
+        # app/src/ was excluded below until 2026-07-28; that hid ~38k
+        # statements (most of the actual Flask app, CLI, and project
+        # manager) from this target. Including it drops the honest
+        # combined number from ~82% (src/ only) to ~64% overnight -- not a
+        # regression, just no longer hidden. Target set below the current
+        # combined baseline so CI doesn't fail on every push while app/src/
+        # gets real test coverage; ratchet this up as that happens.
+        target: 60%
+        threshold: 2%     # allow some drop while app/src/ coverage is uneven
     patch:
       default:
         target: auto
@@ -15,7 +22,6 @@ comment:
   require_changes: true   # only comment when coverage changes
 
 ignore:
-  - "app/src/**"          # thin adapter layer (UX wiring only)
   - "app/static/**"
   - "app/templates/**"
   - "tests/**"
