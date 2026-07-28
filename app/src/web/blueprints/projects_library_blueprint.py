@@ -49,6 +49,64 @@ def get_global_library_settings():
             "export_defacing_confirmation_mode": normalize_export_defacing_confirmation_mode(
                 getattr(settings, "export_defacing_confirmation_mode", "risk")
             ),
+            "enable_study_application_import": bool(
+                getattr(settings, "enable_study_application_import", False)
+            ),
+        }
+    )
+
+
+@projects_library_bp.route("/api/settings/study-application-import", methods=["GET"])
+def get_study_application_import_setting():
+    """Get whether the MRI-Lab Graz study application import UI is enabled."""
+    from src.config import load_app_settings
+    from flask import current_app
+
+    app_root = Path(current_app.root_path)
+    settings = load_app_settings(app_root=str(app_root))
+
+    return jsonify(
+        {
+            "success": True,
+            "enable_study_application_import": bool(
+                settings.enable_study_application_import
+            ),
+        }
+    )
+
+
+@projects_library_bp.route("/api/settings/study-application-import", methods=["POST"])
+def set_study_application_import_setting():
+    """Update whether the MRI-Lab Graz study application import UI is enabled."""
+    from src.config import load_app_settings, save_app_settings
+    from flask import current_app
+
+    data = request.get_json() or {}
+    if "enable_study_application_import" not in data:
+        return (
+            jsonify(
+                {"success": False, "error": "Missing enable_study_application_import"}
+            ),
+            400,
+        )
+
+    app_root = Path(current_app.root_path)
+    settings = load_app_settings(app_root=str(app_root))
+    settings.enable_study_application_import = bool(
+        data.get("enable_study_application_import")
+    )
+
+    try:
+        save_app_settings(settings, str(app_root))
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+    return jsonify(
+        {
+            "success": True,
+            "enable_study_application_import": bool(
+                settings.enable_study_application_import
+            ),
         }
     )
 

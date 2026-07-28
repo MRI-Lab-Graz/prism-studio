@@ -13,6 +13,7 @@ PyJWT>=2.13.0
 codespell
 safety
 pip-audit
+zizmor
 types-requests
 types-PyYAML
 types-waitress
