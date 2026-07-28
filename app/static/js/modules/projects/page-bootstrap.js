@@ -3,6 +3,7 @@ export function initProjectsPageBootstrap({
     initBeginnerHelpMode,
     initBackendMonitoringToggle,
     initDedicatedTerminalToggle,
+    initStudyApplicationImportToggle,
     loadGlobalSettings,
     loadLibraryInfo,
     showStudyMetadataCard,
@@ -67,6 +68,7 @@ export function initProjectsPageBootstrap({
     initBeginnerHelpMode();
     initBackendMonitoringToggle();
     initDedicatedTerminalToggle();
+    initStudyApplicationImportToggle();
 
     loadGlobalSettings();
     loadLibraryInfo();

@@ -91,7 +91,7 @@ def list_remote_directory(
         key=str.lower,
     )
 
-    parent = posixpath.dirname(resolved_path.rstrip("/")) or "/"
+    parent: str | None = posixpath.dirname(resolved_path.rstrip("/")) or "/"
     if parent == resolved_path:
         parent = None
 
