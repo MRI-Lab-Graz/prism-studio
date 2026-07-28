@@ -3253,9 +3253,9 @@ export function computeLocalCompleteness() {
     // readiness score and shows a CORE badge, but does not block project creation.
     const requiredFields = {
         Basics: new Set(['Name', 'Authors', 'Keywords', 'EthicsApprovals', 'Funding', 'License']),
-        Overview: new Set(['Main']),
+        Overview: new Set(),
         StudyDesign: new Set(['Type']),
-        Recruitment: new Set(['Method', 'Location', 'Period.Start', 'Period.End', 'Compensation']),
+        Recruitment: new Set(['Method']),
         Eligibility: new Set(['InclusionCriteria']),
         Procedure: new Set(['Overview'])
     };
