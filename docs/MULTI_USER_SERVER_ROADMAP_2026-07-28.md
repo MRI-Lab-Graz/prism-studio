@@ -1,3 +1,7 @@
+---
+orphan: true
+---
+
 # Multi-User Web Server Roadmap (assessment, 2026-07-28)
 
 > **Status: exploratory — not scheduled, not approved.** This is a feasibility
