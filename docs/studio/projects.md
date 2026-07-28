@@ -30,11 +30,19 @@ Fields on the **Create New Project** form:
 - **Use DataLad version control for this new project** — optional checkbox. If
   DataLad/git-annex aren't installed, project creation silently falls back to a
   non-DataLad project rather than failing.
-- **Import from study application (survey.json)** — optional file button that prefills
-  PI/author/ethics/funding fields from a Pavlovia study-application export.
 
 There is no modality or session picker at creation time — modalities and sessions are
 no longer chosen up front; they're populated as you actually import data.
+
+### Importing from a study application
+
+If **MRI-Lab Graz study application import** is enabled in Global Settings, the
+Study Metadata card (shown for both **Create New Project** and **Init PRISM on
+BIDS Dataset**) gets an **Import from study application (survey.json)** file
+button that prefills PI/author/ethics/funding/study fields from a Pavlovia
+study-application export. This format is specific to MRI-Lab Graz's intake
+survey, so the toggle is off by default; external users can leave it off and
+fill in Study Metadata by hand.
 
 Buttons: **Preliminary Save** (saves the form without creating the project yet) and
 **Create Project**.
