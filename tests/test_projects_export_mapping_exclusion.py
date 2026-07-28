@@ -10,8 +10,20 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
 
-from src.anonymizer import create_participant_mapping
 from src.web.export_project import export_project
+
+
+def _read_generated_mapping(project_dir):
+    """Read the pseudonym mapping export_project() actually wrote.
+
+    The mapping's secret key lives in project_dir/code/anonymization_map.json
+    itself (see src.anonymizer._load_or_create_secret_key), so pseudonyms are
+    no longer derivable by calling create_participant_mapping() separately
+    against some other output_file -- tests must read what export_project()
+    really produced.
+    """
+    mapping_path = project_dir / "code" / "anonymization_map.json"
+    return json.loads(mapping_path.read_text(encoding="utf-8"))["mapping"]
 
 
 def test_export_never_includes_participants_mapping(tmp_path):
@@ -502,13 +514,6 @@ def test_export_anonymize_keeps_overlapping_subject_ids_distinct(tmp_path):
         encoding="utf-8",
     )
 
-    expected_mapping = create_participant_mapping(
-        ["sub-01", "sub-010"],
-        tmp_path / "mapping.json",
-        id_length=6,
-        deterministic=True,
-    )
-
     output_zip = tmp_path / "export_overlap.zip"
     export_project(
         project_path=project_dir,
@@ -521,8 +526,9 @@ def test_export_anonymize_keeps_overlapping_subject_ids_distinct(tmp_path):
         include_analysis=False,
     )
 
-    sub01_anon = expected_mapping["sub-01"]
-    sub010_anon = expected_mapping["sub-010"]
+    generated_mapping = _read_generated_mapping(project_dir)
+    sub01_anon = generated_mapping["sub-01"]
+    sub010_anon = generated_mapping["sub-010"]
     malformed_sub010 = f"{sub01_anon}0"
 
     with zipfile.ZipFile(output_zip, "r") as archive:
@@ -654,13 +660,6 @@ def test_export_anonymize_rewrites_subject_id_columns_in_tsv(tmp_path):
         encoding="utf-8",
     )
 
-    expected_mapping = create_participant_mapping(
-        ["sub-001", "sub-002"],
-        tmp_path / "mapping.json",
-        id_length=6,
-        deterministic=True,
-    )
-
     output_zip = tmp_path / "export_subject_id.zip"
     export_project(
         project_path=project_dir,
@@ -673,7 +672,8 @@ def test_export_anonymize_rewrites_subject_id_columns_in_tsv(tmp_path):
         include_analysis=False,
     )
 
-    sub001_anon = expected_mapping["sub-001"]
+    generated_mapping = _read_generated_mapping(project_dir)
+    sub001_anon = generated_mapping["sub-001"]
 
     with zipfile.ZipFile(output_zip, "r") as archive:
         names = set(archive.namelist())
@@ -684,8 +684,8 @@ def test_export_anonymize_rewrites_subject_id_columns_in_tsv(tmp_path):
     assert f"{sub001_anon}/beh/{sub001_anon}_task-demo_records.tsv" in names
     assert "sub-001" not in tsv_data
     assert "sub-002" not in tsv_data
-    assert expected_mapping["sub-001"] in tsv_data
-    assert expected_mapping["sub-002"] in tsv_data
+    assert generated_mapping["sub-001"] in tsv_data
+    assert generated_mapping["sub-002"] in tsv_data
 
 
 def test_export_anonymize_rewrites_recursive_json_string_paths(tmp_path):
@@ -719,13 +719,6 @@ def test_export_anonymize_rewrites_recursive_json_string_paths(tmp_path):
         encoding="utf-8",
     )
 
-    expected_mapping = create_participant_mapping(
-        ["sub-01", "sub-010"],
-        tmp_path / "mapping.json",
-        id_length=6,
-        deterministic=True,
-    )
-
     output_zip = tmp_path / "export_recursive_json.zip"
     export_project(
         project_path=project_dir,
@@ -738,8 +731,9 @@ def test_export_anonymize_rewrites_recursive_json_string_paths(tmp_path):
         include_analysis=False,
     )
 
-    sub01_anon = expected_mapping["sub-01"]
-    sub010_anon = expected_mapping["sub-010"]
+    generated_mapping = _read_generated_mapping(project_dir)
+    sub01_anon = generated_mapping["sub-01"]
+    sub010_anon = generated_mapping["sub-010"]
     malformed_sub010 = f"{sub01_anon}0"
 
     with zipfile.ZipFile(output_zip, "r") as archive:

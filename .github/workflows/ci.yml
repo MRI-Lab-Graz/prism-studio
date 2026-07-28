@@ -39,7 +39,7 @@ jobs:
 
       - name: Fast repository verification
         run: |
-          python tests/verify_repo.py --check git-status,entrypoints-smoke,import-boundaries,pytest-modularity,linting,ruff,mypy --no-fix
+          python tests/verify_repo.py --check git-status,entrypoints-smoke,import-boundaries,pytest-modularity,linting,ruff,ruff-security,mypy --no-fix
 
   nightly-deep-checks:
     name: Nightly Deep Checks
@@ -61,9 +61,17 @@ jobs:
           pip install -r requirements.txt
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
 
+      - name: Install gitleaks
+        run: |
+          GITLEAKS_VERSION="$(curl -sSfL https://api.github.com/repos/gitleaks/gitleaks/releases/latest | \
+            python3 -c 'import json,sys; print(json.load(sys.stdin)["tag_name"].lstrip("v"))')"
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+
       - name: Nightly repository verification
         run: |
-          python tests/verify_repo.py --check git-status,entrypoints-smoke,bids-compat-smoke,path-hygiene,system-file-filtering,import-boundaries,python-security,unsafe-patterns,dependencies,pip-audit,pytest,linting,ruff,mypy,testing,todos,documentation --no-fix
+          python tests/verify_repo.py --check git-status,entrypoints-smoke,bids-compat-smoke,path-hygiene,system-file-filtering,import-boundaries,python-security,unsafe-patterns,ruff-security,secrets,secrets-history,actions-security,dependencies,pip-audit,pytest,linting,ruff,mypy,testing,todos,documentation --no-fix
 
   coverage:
     name: Coverage Report (Python ${{ matrix.python-version }})
@@ -101,6 +109,11 @@ jobs:
         with:
           files: coverage.xml
           fail_ci_if_error: false
+          # main is a protected branch on Codecov, which rejects tokenless
+          # uploads ("Token required because branch is protected") -- without
+          # this, continue-on-error/fail_ci_if_error masked every upload
+          # failing silently, so coverage data on codecov.io went stale.
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   cross-platform-tests:
     name: Pytest (${{ matrix.os }})
