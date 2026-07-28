@@ -210,7 +210,7 @@ def _start_ria_job(kind: str, runner) -> tuple:
         # nested-subdataset registration produces) would ever be printed.
         from flask import current_app
 
-        app_obj = current_app._get_current_object()
+        app_obj = current_app._get_current_object()  # type: ignore[attr-defined]
 
         def _run_with_app_context(*args, **kwargs):
             with app_obj.app_context():

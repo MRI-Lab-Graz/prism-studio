@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable, Optional, cast
 
 from .project_structure import get_project_modalities_and_sessions
 
@@ -32,7 +32,7 @@ def list_known_sessions(
     project_path = Path(project_root)
     if subject is None:
         summary = get_project_modalities_and_sessions(project_path)
-        return list(summary.get("sessions") or [])
+        return list(cast("list[str]", summary.get("sessions") or []))
 
     subject_dir = project_path / subject
     if not subject_dir.is_dir():
