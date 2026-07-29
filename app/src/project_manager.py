@@ -1540,10 +1540,7 @@ class ProjectManager:
         }
 
     def _normalize_dataset_type(self, dataset_type: Any) -> str:
-        """Normalize DatasetType to BIDS-compatible values."""
-        value = str(dataset_type or "").strip().lower()
-        if value in VALID_DATASET_TYPES:
-            return value
+        """Force DatasetType to "raw" - derivative datasets are not supported."""
         return "raw"
 
     def _create_participants_tsv(self) -> str:
@@ -6999,7 +6996,7 @@ Subfolders:
             "governance": {
                 "funding": config.get("funding", []),
                 "ethics_approvals": config.get("ethics_approvals", []),
-                "contacts": [],
+                "contacts": self._normalize_list(config.get("authors")),
                 "preregistration": "",
                 "data_access": "",
                 "notes": "",

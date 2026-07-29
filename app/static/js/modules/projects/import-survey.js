@@ -3,6 +3,8 @@
  * to prefill the Create Project form.
  */
 
+import { validateAuthorsBadge } from './validation.js';
+
 function splitPersonName(fullName) {
     const cleaned = String(fullName || '').trim();
     if (!cleaned) return { first: '', last: '' };
@@ -179,6 +181,11 @@ function applyMappedFields(mapped, deps) {
 
     if (mapped.authors.length) {
         setAuthorsList(mapped.authors);
+        // setAuthorsList rebuilds the author rows via innerHTML, which sets
+        // the corresponding-author checkbox's `checked` attribute without
+        // dispatching a change event - refresh the badge explicitly so it
+        // doesn't stay stale until the user manually touches a row.
+        validateAuthorsBadge();
     }
 
     if (mapped.ethics && mapped.ethics.committee) {

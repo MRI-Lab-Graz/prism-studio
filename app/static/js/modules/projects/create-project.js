@@ -166,7 +166,7 @@ export function initCreateProjectController({
             funding: getFundingList(),
             references_and_links: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
             hed_version: document.getElementById('metadataHED').value.trim(),
-            dataset_type: document.getElementById('metadataType').value,
+            dataset_type: 'raw',
             Overview: {
                 Main: document.getElementById('smOverviewMain').value || undefined,
                 IndependentVariables: document.getElementById('smOverviewIV').value || undefined,
