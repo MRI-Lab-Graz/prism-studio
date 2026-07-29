@@ -372,8 +372,13 @@ class ProjectManager:
             )
             created_files.append("project.json")
 
+            # Build CITATION.cff through the same enrichment path the "Citation
+            # Health" check expects (contact derived from the corresponding
+            # author, abstract/keywords defaults, etc.) - both project.json and
+            # dataset_description.json are already on disk at this point - so
+            # the freshly created file doesn't immediately show as out of sync.
             citation_path = project_path / "CITATION.cff"
-            citation_content = self._create_citation_cff(name, config)
+            citation_content = self._build_expected_citation_cff_content(project_path)
             CrossPlatformFile.write_text(str(citation_path), citation_content)
             created_files.append("CITATION.cff")
 
@@ -592,10 +597,14 @@ class ProjectManager:
                 created_files.append("project.json")
 
             # --- CITATION.cff -----------------------------------------------
+            # Same enrichment path as create_project (see comment there): keeps
+            # the freshly written file consistent with what the "Citation
+            # Health" check expects instead of the bare submitted config.
             citation_path = project_path / "CITATION.cff"
             if not citation_path.exists():
                 CrossPlatformFile.write_text(
-                    str(citation_path), self._create_citation_cff(name, config)
+                    str(citation_path),
+                    self._build_expected_citation_cff_content(project_path),
                 )
                 created_files.append("CITATION.cff")
 
