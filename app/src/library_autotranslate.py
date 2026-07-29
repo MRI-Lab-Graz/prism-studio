@@ -88,7 +88,7 @@ class DeepLTranslationProvider:
         ]
         form_data.extend(("text", text) for text in texts)
         payload = parse.urlencode(form_data).encode("utf-8")
-        req = request.Request(
+        req = request.Request(  # noqa: S310 - URL validated as https:// in __init__
             self.api_url,
             data=payload,
             headers={
@@ -98,7 +98,7 @@ class DeepLTranslationProvider:
             method="POST",
         )
         try:
-            with request.urlopen(
+            with request.urlopen(  # noqa: S310 - URL validated as https:// in __init__
                 req, timeout=60
             ) as response:  # nosec B310 - URL validated as https:// in __init__
                 body = response.read().decode("utf-8")
@@ -152,14 +152,14 @@ class LibreTranslateProvider:
             payload_dict["api_key"] = self.api_key
 
         payload = json.dumps(payload_dict).encode("utf-8")
-        req = request.Request(
+        req = request.Request(  # noqa: S310 - URL validated as https:// in __init__
             self.api_url,
             data=payload,
             headers={"Content-Type": "application/json"},
             method="POST",
         )
         try:
-            with request.urlopen(
+            with request.urlopen(  # noqa: S310 - URL validated as https:// in __init__
                 req, timeout=60
             ) as response:  # nosec B310 - URL validated as https:// in __init__
                 body = response.read().decode("utf-8")

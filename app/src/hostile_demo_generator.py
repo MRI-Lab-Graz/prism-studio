@@ -1129,7 +1129,7 @@ def build_random_survey_template(seed: int) -> tuple[str, dict[str, Any], list[s
     """Generate a brand-new (not from official/library) single-variant
     survey template, purely for stress-testing import/scoring — not a real
     instrument."""
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # noqa: S311 - deterministic test-fixture generator, not security-sensitive
     task_name = f"rndsurvey{seed % 1000}"
     item_count = rng.randint(5, 8)
     item_codes = [f"{task_name.upper()}{i + 1:02d}" for i in range(item_count)]
@@ -1179,7 +1179,7 @@ def build_hostile_survey_response_variants(
     hostile import scenario for the survey response converter
     (SurveyResponsesConverter.convert_xlsx, which despite the name also
     reads .csv/.tsv)."""
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # noqa: S311 - deterministic test-fixture generator, not security-sensitive
     variants: list[tuple[str, bytes, HostileCase]] = []
 
     def likert_row(pid: str, **overrides: Any) -> dict[str, Any]:

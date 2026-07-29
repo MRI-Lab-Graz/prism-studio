@@ -728,7 +728,7 @@ def _sanitize_session_token(value: str) -> str:
     token = re.sub(r"[^A-Za-z0-9]+", "-", str(value or "").strip())
     token = re.sub(r"-+", "-", token).strip("-")
     if not token:
-        token = "unknown"
+        token = "unknown"  # noqa: S105 - sanitized session-label fallback, not a credential
     return token.lower()
 
 

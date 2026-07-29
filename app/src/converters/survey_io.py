@@ -272,7 +272,7 @@ def _process_and_write_responses(
                         strict_levels=strict_levels,
                         normalize_fn=normalize_item_fn,
                         is_missing_fn=is_missing_fn,
-                        missing_token="n/a",
+                        missing_token="n/a",  # noqa: S106 - placeholder for missing survey answers, not a credential
                         suggested_offsets=candidate_offsets,
                     )
                     task_offset_evidence_cache[cache_key] = evidence_payload
@@ -511,7 +511,7 @@ def _generate_participants_preview(
     survey_columns: set[str] | None = None,
     ls_system_columns: list[str] | None = None,
     lsa_questions_map: dict | None = None,
-    missing_token: str = "n/a",
+    missing_token: str = "n/a",  # noqa: S107 - placeholder for missing survey answers, not a credential
 ) -> dict:
     """Generate a preview of what will be written to participants.tsv."""
     from .survey_participants_logic import (
@@ -971,7 +971,7 @@ def _generate_dry_run_preview(
     output_root: Path,
     dataset_root: Path,
     lsa_questions_map: dict | None = None,
-    missing_token: str = "n/a",
+    missing_token: str = "n/a",  # noqa: S107 - placeholder for missing survey answers, not a credential
     task_runs: dict[str, int | None] | None = None,
     task_context_acq_map: (
         dict[tuple[str, str | None, str | int | None], str | None] | None
