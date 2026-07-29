@@ -16,7 +16,6 @@ const METADATA_VALIDATION_FIELDS = [
     'metadataLicense',
     'metadataAcknowledgements',
     'metadataDOI',
-    'metadataType',
     'metadataHED',
     'metadataKeywords',
     'metadataHowToAcknowledge',

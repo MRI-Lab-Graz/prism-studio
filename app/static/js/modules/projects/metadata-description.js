@@ -162,7 +162,6 @@ export function createMetadataDescriptionController({
                 document.getElementById('metadataDOI').value = cleanMetadataText(desc.DatasetDOI || '');
                 setEthicsApprovals(desc.EthicsApprovals);
                 document.getElementById('metadataKeywords').value = cleanMetadataList(desc.Keywords).join(', ');
-                document.getElementById('metadataType').value = cleanMetadataText(desc.DatasetType || '');
                 document.getElementById('metadataHED').value = cleanMetadataList(desc.HEDVersion).join(', ');
                 setFundingFromDescription(desc.Funding);
                 document.getElementById('metadataHowToAcknowledge').value = cleanMetadataText(desc.HowToAcknowledge || '');
@@ -219,7 +218,7 @@ export function createMetadataDescriptionController({
                 EthicsApprovals: getEthicsApprovals(),
                 Keywords: document.getElementById('metadataKeywords').value.split(',').map(s => s.trim()).filter(s => s),
                 BIDSVersion: getBidsVersion(),
-                DatasetType: document.getElementById('metadataType').value || undefined,
+                DatasetType: 'raw',
                 HowToAcknowledge: document.getElementById('metadataHowToAcknowledge').value,
                 Funding: getFundingList(),
                 ReferencesAndLinks: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
