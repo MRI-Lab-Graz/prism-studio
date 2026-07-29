@@ -7,6 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Global default for export defacing confirmation mode**: the "ask before
+  defacing on export" behavior is now configurable as a global default
+  (Settings, saved via `/api/settings/global-library`) instead of only being
+  set per project.
+- **MRI-Lab Graz study application import, gated behind a toggle**: the
+  "Import from study application (survey.json)" button on Create Project /
+  Init-on-BIDS now only appears when `enable_study_application_import` is
+  turned on in Global Settings (off by default) -- the format is specific to
+  that lab's Pavlovia intake survey and isn't meaningful for external users.
+- **Survey import accepts both old and new study-application formats**:
+  `mapSurveyResponseToFormFields` now reads either the legacy Pavlovia field
+  names (`PI_Name`, `Ethics`, `study_design: 'item2'`, `timespan.text1/2`)
+  or the newer internal format (`pi_contact.pi_name`, `ethics_approved`,
+  `study_design: 'longitudinal'`, `study_period.start_date/end_date`,
+  `recruitment_method`, structured `inclusion_criteria`/`exclusion_criteria`),
+  so imports from either export version prefill the project metadata form.
+- **`ruff-security` CI check**: fast AST-based security linting (curated
+  flake8-bandit rules via `ruff`) added to `tests/verify_repo.py` -- catches
+  classes of issues bandit's medium+ severity gate misses (notably
+  predictable-PRNG-in-ID-generation), backed by a ratcheting baseline so new
+  findings fail CI immediately instead of joining a silent backlog.
+- **Git-history secret scanning**: `tests/verify_repo.py` now also runs
+  `gitleaks git` over full history, not just the working tree.
+
+### Fixed
+- **Anonymization pseudonyms were brute-forceable in deterministic mode**:
+  each pseudonym's PRNG seed was derived from an unsalted hash of the
+  plaintext participant ID, so anyone with a published "anonymized" dataset
+  and this source code could recover every real ID. Deterministic IDs are
+  now seeded via HMAC-SHA256 with a per-mapping secret key, persisted
+  alongside the (already sensitive, "KEEP THIS FILE SECURE") mapping file --
+  reproducible only for holders of that key.
+- **Study-application author names were parsed in the wrong order**: names
+  from MRI-Lab Graz study-application imports (`"First, Last"`) were parsed
+  as CFF's `"Family, Given"` order, silently swapping first/last names on
+  import. Also fixed `studyDescription` writing to the wrong form field, and
+  loosened "required for CORE badge" fields (`Overview.Main`, most
+  `Recruitment` fields) that didn't reflect actual requirements.
+- **`get_json_hash()` always hashed empty content, not the file**: a broken
+  `usedforsecurity` conditional passed the JSON content as the
+  `usedforsecurity` keyword instead of as the hash's data argument, so every
+  JSON file collided on the MD5 of `b""` -- silently breaking sidecar
+  deduplication. Also cleared 22 other `ruff-security` findings (mostly
+  false-positive hardcoded-secret/PRNG/URL-scheme warnings, now suppressed
+  inline with justification).
+- **Dataset fixer's rename action could fail on Windows**: switched
+  `os.rename()` to `os.replace()` in `DatasetFixer._rename_file`, since
+  `os.rename()` raises `FileExistsError` on Windows (unlike POSIX, which
+  overwrites atomically) if the destination filename is already occupied --
+  which can happen when two independently broken filenames are corrected to
+  the same fixed name.
+
+### Security
+- Bumped `postcss`/`nanoid` to resolve a high-severity `npm audit` finding
+  in `postcss` (path traversal via source-map auto-loading,
+  GHSA-r28c-9q8g-f849).
+- Bumped `cryptography`, `bidsschematools`, and `semgrep` dependency floors.
+
 ## [1.17.0] - 2026-07-22
 
 This release is anchored by a production incident: registering nested
