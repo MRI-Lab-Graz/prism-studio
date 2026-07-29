@@ -189,7 +189,10 @@ class DatasetFixer:
         """Rename a file"""
         new_path = fix.details.get("new_path")
         if new_path and os.path.exists(fix.file_path):
-            os.rename(fix.file_path, new_path)
+            # os.rename() raises FileExistsError on Windows if new_path already
+            # exists (unlike POSIX, which overwrites atomically); os.replace()
+            # is the cross-platform-safe equivalent.
+            os.replace(fix.file_path, new_path)
             return True
         return False
 
