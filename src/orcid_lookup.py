@@ -73,7 +73,7 @@ def _validate_orcid_api_url(url: str) -> str:
 
 def _fetch_json(url: str, timeout_seconds: float = _DEFAULT_TIMEOUT_SECONDS) -> dict[str, Any]:
     validated_url = _validate_orcid_api_url(url)
-    request = Request(
+    request = Request(  # noqa: S310 - URL restricted to validated public ORCID HTTPS API
         validated_url,
         headers={
             "Accept": _JSON_ACCEPT_HEADER,
@@ -83,7 +83,7 @@ def _fetch_json(url: str, timeout_seconds: float = _DEFAULT_TIMEOUT_SECONDS) -> 
     )
     try:
         # URL is restricted to the validated public ORCID HTTPS API.
-        with urlopen(
+        with urlopen(  # noqa: S310 - URL restricted to validated public ORCID HTTPS API
             request, timeout=timeout_seconds
         ) as response:  # nosec B310
             payload = response.read().decode("utf-8")

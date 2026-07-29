@@ -135,7 +135,7 @@ RUFF_SECURITY_RULES = (
 # ABOVE this number, so new security-relevant code cannot regress silently while
 # the existing backlog is triaged. Ratchet this down as findings are fixed or
 # given an inline `# noqa: S###` with a justification; never raise it.
-RUFF_SECURITY_BASELINE = 23
+RUFF_SECURITY_BASELINE = 0
 
 # ANSI escape code stripper
 ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")

@@ -53,7 +53,7 @@ def generate_random_id(
                 "candidates against this function."
             )
         digest = hmac.new(secret_key, seed.encode("utf-8"), hashlib.sha256).digest()
-        rng = random.Random(digest)
+        rng = random.Random(digest)  # noqa: S311 - seeded by HMAC-SHA256 digest of secret_key, see docstring
     else:
         rng = secrets.SystemRandom()
     random_part = "".join(rng.choice(chars) for _ in range(length))
