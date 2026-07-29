@@ -32,8 +32,10 @@ class _ProjectManagerStub:
         self.create_calls.append((path, config))
         return {"success": True, "path": path, "created_files": [], "message": "ok"}
 
-    def init_on_existing_bids(self, path: str, config: dict):
+    def init_on_existing_bids(self, path: str, config: dict, *, progress_callback=None):
         self.init_calls.append((path, config))
+        if progress_callback is not None:
+            progress_callback("stub init started", "info")
         return {"success": True, "path": path, "created_files": [], "message": "ok"}
 
     def inspect_remote_dataset_source(self, remote_url: str):
@@ -446,6 +448,48 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         body = response.get_json()
         self.assertTrue(body["success"])
         self.assertEqual(manager.init_calls[0][1]["use_datalad"], False)
+
+    def test_init_on_bids_streams_progress_to_job_log_when_job_id_given(self):
+        """A client-supplied job_id lets the browser poll live progress lines
+        while the (potentially long-running) init-on-bids request is still in
+        flight - see handle_init_on_bids_log."""
+        manager = _ProjectManagerStub()
+        target_path = Path(self.tmp_dir.name) / "existing_bids"
+        target_path.mkdir(parents=True, exist_ok=True)
+        job_id = "test-job-123"
+
+        with self.app.test_request_context(
+            "/api/projects/init-on-bids",
+            method="POST",
+            json={"path": str(target_path), "name": "existing_bids", "job_id": job_id},
+        ):
+            response = self.module.handle_init_on_bids(
+                project_manager=manager,
+                set_current_project=lambda *a, **k: None,
+                save_last_project=lambda *a, **k: None,
+            )
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+
+        with self.app.test_request_context(
+            f"/api/projects/init-on-bids-log/{job_id}", method="GET"
+        ):
+            log_response = self.module.handle_init_on_bids_log(job_id)
+
+        log_body = log_response.get_json()
+        self.assertTrue(log_body["done"])
+        self.assertTrue(
+            any(entry["message"] == "stub init started" for entry in log_body["logs"])
+        )
+
+    def test_init_on_bids_log_returns_404_for_unknown_job(self):
+        with self.app.test_request_context(
+            "/api/projects/init-on-bids-log/does-not-exist", method="GET"
+        ):
+            response = self.module.handle_init_on_bids_log("does-not-exist")
+
+        self.assertEqual(response[1], 404)
 
     def test_init_on_bids_triggers_auto_environment_enrichment_by_default(self):
         manager = _ProjectManagerStub()
