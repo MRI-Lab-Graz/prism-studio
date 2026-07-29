@@ -96,6 +96,44 @@ class TestProjectManager(unittest.TestCase):
             self.assertIn('family-names: "prism-studio"', citation_content)
             self.assertIn('given-names: "dataset"', citation_content)
 
+    def test_create_project_preserves_authors_through_metadata_precedence(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            authors = [
+                {"given-names": "Alex", "family-names": "Example", "email": "alex@example.org"},
+                {"given-names": "Jamie", "family-names": "Sample", "corresponding": True},
+            ]
+            result = manager.create_project(
+                str(project_path), {"name": "demo_project", "authors": authors}
+            )
+            self.assertTrue(result.get("success"), result)
+
+            project_meta = json.loads(
+                (project_path / "project.json").read_text(encoding="utf-8")
+            )
+            self.assertTrue(project_meta.get("governance", {}).get("contacts"))
+
+            # Simulate the read-path merge handle_get_dataset_description performs:
+            # CITATION.cff-derived authors are merged into the description, then
+            # overlaid with canonical project.json metadata via
+            # apply_project_metadata_precedence. Authors must survive that overlay
+            # instead of being silently dropped.
+            merged = manager.apply_project_metadata_precedence(
+                {"Authors": authors}, project_path=project_path
+            )
+
+            self.assertIn("Authors", merged)
+            self.assertTrue(merged["Authors"])
+            family_names = {
+                author.get("family-names")
+                for author in merged["Authors"]
+                if isinstance(author, dict)
+            }
+            self.assertIn("Example", family_names)
+            self.assertIn("Sample", family_names)
+
     def test_create_project_does_not_seed_sessions_metadata(self):
         manager = ProjectManager()
 

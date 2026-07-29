@@ -1543,7 +1543,8 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         self.assertEqual(saved["Name"], "Other Updated")
 
     def test_description_helper_normalization_and_placeholders(self):
-        self.assertEqual(self.normalize_dataset_type("DERIVATIVE"), "derivative")
+        # Derivative datasets are not supported - DatasetType is always forced to "raw".
+        self.assertEqual(self.normalize_dataset_type("DERIVATIVE"), "raw")
         self.assertEqual(self.normalize_dataset_type("invalid"), "raw")
 
         normalized = self.normalize_author_names(

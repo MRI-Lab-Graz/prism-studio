@@ -28,9 +28,7 @@ _init_bids_job_store = ConversionJobStore(log_level_key="level")
 
 
 def _normalize_dataset_type(dataset_type):
-    value = str(dataset_type or "").strip().lower()
-    if value in {"raw", "derivative"}:
-        return value
+    """Force DatasetType to "raw" - derivative datasets are not supported."""
     return "raw"
 
 

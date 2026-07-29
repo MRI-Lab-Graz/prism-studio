@@ -34,9 +34,7 @@ _PLACEHOLDER_DESCRIPTION_SNIPPETS = (
 
 
 def _normalize_dataset_type(dataset_type):
-    value = str(dataset_type or "").strip().lower()
-    if value in {"raw", "derivative"}:
-        return value
+    """Force DatasetType to "raw" - derivative datasets are not supported."""
     return "raw"
 
 
@@ -715,12 +713,7 @@ def handle_save_dataset_description(
             if "License" not in description:
                 description["License"] = "CC0"
 
-        if "DatasetType" not in description:
-            description["DatasetType"] = "raw"
-        else:
-            description["DatasetType"] = _normalize_dataset_type(
-                description.get("DatasetType")
-            )
+        description["DatasetType"] = _normalize_dataset_type(description.get("DatasetType"))
         if not description.get("HEDVersion"):
             description.pop("HEDVersion", None)
 

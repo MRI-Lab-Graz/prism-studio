@@ -1998,7 +1998,7 @@ function refreshMetadataValidationState(options = {}) {
     const { onlyFilled = false, includeRequirementGapWarning = false } = options;
     const fieldIds = [
         'metadataSchemaVersion', 'metadataName', 'metadataLicense', 'metadataAcknowledgements',
-        'metadataDOI', 'metadataType', 'metadataHED', 'metadataKeywords',
+        'metadataDOI', 'metadataHED', 'metadataKeywords',
         'metadataHowToAcknowledge', 'metadataReferences',
         'smOverviewMain', 'smOverviewIV', 'smOverviewDV', 'smOverviewCV', 'smOverviewQA',
         'smSDType', 'smSDConditionType', 'smSDTypeDesc', 'smSDBlinding', 'smSDRandomization', 'smSDControl',
@@ -2621,7 +2621,7 @@ export function buildDraftDatasetDescriptionForValidation() {
         Keywords: (document.getElementById('metadataKeywords')?.value || '')
             .split(',').map(s => _cleanMetadataText(s)).filter(Boolean),
         BIDSVersion: _bidsVersion,
-        DatasetType: _cleanMetadataText(document.getElementById('metadataType')?.value || '') || undefined,
+        DatasetType: 'raw',
         HowToAcknowledge: _cleanMetadataText(document.getElementById('metadataHowToAcknowledge')?.value || ''),
         Funding: getFundingList(),
         ReferencesAndLinks: (document.getElementById('metadataReferences')?.value || '')
@@ -3252,7 +3252,7 @@ export function computeLocalCompleteness() {
     // Fields scored toward FAIR/methods readiness. Missing these lowers the
     // readiness score and shows a CORE badge, but does not block project creation.
     const requiredFields = {
-        Basics: new Set(['Name', 'Authors', 'Keywords', 'EthicsApprovals', 'Funding', 'License']),
+        Basics: new Set(['Name', 'Authors', 'Keywords', 'EthicsApprovals', 'Funding']),
         Overview: new Set(),
         StudyDesign: new Set(['Type']),
         Recruitment: new Set(['Method']),
@@ -3323,7 +3323,6 @@ export function computeLocalCompleteness() {
     addField('Basics', 'Keywords', keywordList.length >= 3);
     addField('Basics', 'Acknowledgements', textFilled(document.getElementById('metadataAcknowledgements')?.value));
     addField('Basics', 'DatasetDOI', textFilled(_cleanMetadataText(document.getElementById('metadataDOI')?.value)));
-    addField('Basics', 'DatasetType', textFilled(document.getElementById('metadataType')?.value));
     addField('Basics', 'HEDVersion', textFilled(document.getElementById('metadataHED')?.value));
     addField('Basics', 'HowToAcknowledge', textFilled(document.getElementById('metadataHowToAcknowledge')?.value));
     addField('Basics', 'ReferencesAndLinks', textFilled(document.getElementById('metadataReferences')?.value));
@@ -3874,11 +3873,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initYearMonthSelect('smRecPeriodStartYear', 'smRecPeriodStartMonth');
     initYearMonthSelect('smRecPeriodEndYear', 'smRecPeriodEndMonth');
     updateCreateProjectButton();
-
-    const datasetTypeSelect = document.getElementById('metadataType');
-    if (datasetTypeSelect) {
-        datasetTypeSelect.value = '';
-    }
 
     const studyDesignTypeSelect = document.getElementById('smSDType');
     if (studyDesignTypeSelect) {
