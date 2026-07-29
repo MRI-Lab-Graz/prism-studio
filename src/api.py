@@ -23,6 +23,15 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
+# runner.py, schema_manager.py, and issues.py are canonical under app/src,
+# not mirrored into this top-level src/ tree. runner.py also does its own
+# bare `from schema_manager import ...`-style sibling imports internally, so
+# app/src must be on sys.path directly (not just reachable via the `src`
+# package name) -- mirroring the bootstrap app/prism.py already does.
+_app_src_dir = os.path.join(os.path.dirname(current_dir), "app", "src")
+if os.path.isdir(_app_src_dir) and _app_src_dir not in sys.path:
+    sys.path.insert(0, _app_src_dir)
+
 try:
     from runner import validate_dataset
     from schema_manager import get_available_schema_versions, load_all_schemas
@@ -31,6 +40,10 @@ except ImportError as e:
     print(f"⚠️  API import error: {e}")
     validate_dataset = None
     get_available_schema_versions = None
+    load_all_schemas = None
+    tuple_to_issue = None
+    issues_to_dict = None
+    summarize_issues = None
 
 
 def _utc_isoformat_z() -> str:

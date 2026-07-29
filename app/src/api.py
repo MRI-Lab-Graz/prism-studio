@@ -20,6 +20,9 @@ _utc_isoformat_z = _real._utc_isoformat_z
 validate_dataset = getattr(_real, "validate_dataset", None)
 get_available_schema_versions = getattr(_real, "get_available_schema_versions", None)
 load_all_schemas = getattr(_real, "load_all_schemas", None)
+tuple_to_issue = getattr(_real, "tuple_to_issue", None)
+issues_to_dict = getattr(_real, "issues_to_dict", None)
+summarize_issues = getattr(_real, "summarize_issues", None)
 
 __all__ = [
     "create_api_blueprint",
