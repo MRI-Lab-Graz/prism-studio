@@ -38,7 +38,7 @@ import time
 import yaml
 from pathlib import Path
 from datetime import date
-from typing import Dict, List, Any, Optional, Set, Union
+from typing import Callable, Dict, List, Any, Optional, Set, Tuple, Union
 from urllib.parse import urlparse
 
 from src.fixer import DatasetFixer
@@ -435,7 +435,11 @@ class ProjectManager:
             return result
 
     def init_on_existing_bids(
-        self, path: str, config: Optional[Dict[str, Any]] = None
+        self,
+        path: str,
+        config: Optional[Dict[str, Any]] = None,
+        *,
+        progress_callback: Optional[Callable[[str, str], None]] = None,
     ) -> Dict[str, Any]:
         """
         Initialise PRISM Studio on top of an *existing* BIDS root.
@@ -447,6 +451,10 @@ class ProjectManager:
         Args:
             path: Absolute path to the existing BIDS dataset root.
             config: Optional study metadata (same keys as create_project).
+            progress_callback: Optional ``(message, level)`` sink invoked live
+                as each step happens (e.g. to stream progress to a UI log
+                panel while this call is still in flight), in addition to the
+                step-by-step ``log`` returned once the call completes.
 
         Returns:
             Dict with ``success``, ``path``, ``created_files``, ``message``.
@@ -460,6 +468,8 @@ class ProjectManager:
 
         def add_log(message: str, level: str = "info") -> None:
             log.append({"message": message, "level": level})
+            if progress_callback is not None:
+                progress_callback(message, level)
 
         remote_url = self._normalize_remote_dataset_url(config.get("remote_url"))
         if remote_url:
@@ -467,11 +477,15 @@ class ProjectManager:
             source_result = self._acquire_remote_bids_dataset(
                 project_path,
                 remote_url=remote_url,
+                include_derivatives=bool(config.get("fetch_remote_derivatives", False)),
+                include_sourcedata=bool(config.get("fetch_remote_sourcedata", False)),
+                include_rawdata=bool(config.get("fetch_remote_rawdata", False)),
+                progress_callback=progress_callback,
             )
             if not source_result.get("success"):
-                source_result["log"] = log + [
-                    {"message": source_result.get("error") or "Remote acquisition failed.", "level": "error"}
-                ]
+                error_message = source_result.get("error") or "Remote acquisition failed."
+                add_log(error_message, "error")
+                source_result["log"] = log
                 return source_result
             add_log(source_result.get("message") or "Remote dataset acquired.", "info")
 
@@ -838,13 +852,73 @@ class ProjectManager:
             ),
         }
 
+    def _remote_content_fetch_targets(
+        self,
+        destination_path: Path,
+        *,
+        include_derivatives: bool,
+        include_sourcedata: bool,
+        include_rawdata: bool,
+    ) -> Tuple[List[Path], List[str]]:
+        """Decide which top-level content directories to actually download
+        real file content for right after a remote OpenNeuro/DataLad install.
+
+        ``sub-*/`` folders that sit directly at the dataset root are core
+        BIDS data and always get their real content fetched - there's no
+        opting out of the subject data itself. ``derivatives/``,
+        ``sourcedata/``, and a literal top-level ``rawdata/`` *wrapper*
+        folder (used by layouts that nest subjects under ``rawdata/``
+        instead of the dataset root, as opposed to the root-level ``sub-*/``
+        case above) are bulk/optional content and stay opt-in - by default
+        PRISM only installs their *structure* (presence/symlinks), and the
+        caller can fetch a specific category later (e.g. via
+        ``datalad get -r <path>``).
+
+        Returns a tuple of (paths to fetch content for, labels of categories
+        that were found but skipped).
+        """
+        targets: List[Path] = []
+        skipped_labels: List[str] = []
+
+        optional_categories = (
+            ("derivatives", include_derivatives),
+            ("sourcedata", include_sourcedata),
+            ("rawdata", include_rawdata),
+        )
+        for folder_name, included in optional_categories:
+            folder_path = destination_path / folder_name
+            if not folder_path.is_dir():
+                continue
+            if included:
+                targets.append(folder_path)
+            else:
+                skipped_labels.append(f"{folder_name}/")
+
+        # Subject folders directly at the dataset root are core BIDS data -
+        # always fetched, regardless of the opt-in toggles above.
+        for child_path in sorted(destination_path.iterdir()):
+            if child_path.is_dir() and child_path.name.startswith("sub-"):
+                targets.append(child_path)
+
+        return targets, skipped_labels
+
     def _acquire_remote_bids_dataset(
         self,
         destination_path: Path,
         *,
         remote_url: str,
+        include_derivatives: bool = False,
+        include_sourcedata: bool = False,
+        include_rawdata: bool = False,
+        progress_callback: Optional[Callable[[str, str], None]] = None,
     ) -> Dict[str, Any]:
         """Clone or install a remote BIDS dataset into a local destination."""
+
+        def _emit(message: str, level: str = "info", *, command: str = "") -> None:
+            self._emit_backend_progress(message, command=command)
+            if progress_callback is not None:
+                progress_callback(message, level)
+
         remote_status = self.inspect_remote_dataset_source(remote_url)
         if not remote_status.get("valid"):
             return {
@@ -968,52 +1042,68 @@ class ProjectManager:
             # entire multi-minute-to-multi-hour download of a real dataset -
             # with no progress line, that silence is indistinguishable from
             # a hang.
-            subject_paths = self._iter_nested_dataset_paths(destination_path)
+            content_fetch_targets, skipped_labels = self._remote_content_fetch_targets(
+                destination_path,
+                include_derivatives=include_derivatives,
+                include_sourcedata=include_sourcedata,
+                include_rawdata=include_rawdata,
+            )
+            found_recognized_structure = bool(content_fetch_targets or skipped_labels)
             content_fetch_warning = ""
 
-            if subject_paths:
-                total_subjects = len(subject_paths)
-                self._emit_backend_progress(
-                    f"Downloading content for {total_subjects} subject(s) "
-                    "(this can take a while for large datasets)..."
+            if skipped_labels:
+                _emit(
+                    f"Skipping {', '.join(skipped_labels)} content (opt-in only) - "
+                    "only presence information was installed, not the actual files.",
+                    "step",
                 )
-                for subject_index, subject_path in enumerate(subject_paths, start=1):
-                    relative_subject_text = subject_path.relative_to(
-                        destination_path
-                    ).as_posix()
-                    subject_get_command = [
-                        datalad_executable_text,
-                        "-C",
-                        str(destination_path),
-                        "get",
-                        "-r",
-                        relative_subject_text,
-                    ]
-                    self._emit_backend_progress(
-                        f'Fetching content for subject {subject_index}/{total_subjects}: '
-                        f'"{relative_subject_text}"...',
-                        command=" ".join(subject_get_command),
-                    )
-                    subject_get_result = self._stream_datalad_get_command(
-                        subject_get_command,
-                        step_label=f'DataLad content fetch for "{relative_subject_text}"',
-                        timeout_seconds=REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS,
-                    )
-                    if not subject_get_result.get("success"):
-                        # Some files being genuinely unfetchable from the
-                        # remote (e.g. a real upstream data gap) shouldn't
-                        # fail the whole install - report it but keep
-                        # whatever content DID download, and keep going
-                        # with the remaining subjects.
-                        content_fetch_warning = (
-                            subject_get_result.get("message") or content_fetch_warning
-                        )
 
-                # Catch any loose root-level files outside subject/derivatives
-                # directories (dataset_description.json, participants.tsv,
-                # etc.). Already-fetched subject content is skipped quickly
-                # by git-annex, so re-touching it here is cheap.
-                self._emit_backend_progress("Fetching remaining top-level dataset files...")
+            if found_recognized_structure:
+                if content_fetch_targets:
+                    total_targets = len(content_fetch_targets)
+                    _emit(
+                        f"Downloading content for {total_targets} item(s) "
+                        "(this can take a while for large datasets)...",
+                        "step",
+                    )
+                    for target_index, target_path in enumerate(content_fetch_targets, start=1):
+                        relative_target_text = target_path.relative_to(
+                            destination_path
+                        ).as_posix()
+                        target_get_command = [
+                            datalad_executable_text,
+                            "-C",
+                            str(destination_path),
+                            "get",
+                            "-r",
+                            relative_target_text,
+                        ]
+                        _emit(
+                            f'Fetching content for {target_index}/{total_targets}: '
+                            f'"{relative_target_text}"...',
+                            "info",
+                            command=" ".join(target_get_command),
+                        )
+                        target_get_result = self._stream_datalad_get_command(
+                            target_get_command,
+                            step_label=f'DataLad content fetch for "{relative_target_text}"',
+                            timeout_seconds=REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS,
+                        )
+                        if not target_get_result.get("success"):
+                            # Some files being genuinely unfetchable from the
+                            # remote (e.g. a real upstream data gap) shouldn't
+                            # fail the whole install - report it but keep
+                            # whatever content DID download, and keep going
+                            # with the remaining targets.
+                            content_fetch_warning = (
+                                target_get_result.get("message") or content_fetch_warning
+                            )
+
+                # Catch any loose root-level files outside subject/derivatives/
+                # sourcedata directories (dataset_description.json,
+                # participants.tsv, etc.). Already-fetched content is skipped
+                # quickly by git-annex, so re-touching it here is cheap.
+                _emit("Fetching remaining top-level dataset files...", "step")
                 root_get_result = self._stream_datalad_get_command(
                     [datalad_executable_text, "-C", str(destination_path), "get", "."],
                     step_label="DataLad root content fetch",
@@ -1025,9 +1115,9 @@ class ProjectManager:
                     )
             else:
                 # Unusual/non-standard layout with no top-level sub-*
-                # directories (or rawdata/sub-*) - fall back to one
-                # whole-dataset recursive fetch rather than silently
-                # skipping content.
+                # directories (or rawdata/sub-*), derivatives/, or
+                # sourcedata/ - fall back to one whole-dataset recursive
+                # fetch rather than silently skipping content.
                 whole_dataset_command = [
                     datalad_executable_text,
                     "-C",
@@ -1036,9 +1126,10 @@ class ProjectManager:
                     "-r",
                     ".",
                 ]
-                self._emit_backend_progress(
+                _emit(
                     "Downloading all dataset content recursively (this can take "
                     "a while for large datasets)...",
+                    "step",
                     command=" ".join(whole_dataset_command),
                 )
                 whole_dataset_result = self._stream_datalad_get_command(
@@ -1056,6 +1147,11 @@ class ProjectManager:
                 f'Installed OpenNeuro/DataLad dataset from "{normalized_remote_url}" '
                 "and fetched its content locally."
             )
+            if skipped_labels:
+                message = (
+                    f"{message} Skipped {', '.join(skipped_labels)} content "
+                    "(opt-in only) - use 'datalad get -r <path>' later to fetch it."
+                )
             if content_fetch_warning:
                 message = f"{message} Warning: {content_fetch_warning}"
         else:

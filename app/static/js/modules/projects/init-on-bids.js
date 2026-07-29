@@ -126,19 +126,32 @@ export function initProjectInitOnBidsController({
         const dataladToggle = document.getElementById('initBidsUseDatalad');
         const dataladToggleContainer = dataladToggle?.closest('.form-check');
 
-        if (!dataladToggle || !dataladToggleContainer) {
-            return;
+        if (dataladToggle && dataladToggleContainer) {
+            if (hasRemote) {
+                dataladToggle.checked = false;
+                dataladToggle.disabled = true;
+                dataladToggleContainer.classList.add('d-none');
+            } else {
+                dataladToggle.disabled = false;
+                dataladToggleContainer.classList.remove('d-none');
+            }
         }
 
-        if (hasRemote) {
-            dataladToggle.checked = false;
-            dataladToggle.disabled = true;
-            dataladToggleContainer.classList.add('d-none');
-            return;
-        }
-
-        dataladToggle.disabled = false;
-        dataladToggleContainer.classList.remove('d-none');
+        ['Derivatives', 'Sourcedata', 'Rawdata'].forEach(function(suffix) {
+            const toggle = document.getElementById(`initBidsFetch${suffix}`);
+            const container = document.getElementById(`initBidsFetch${suffix}Container`);
+            if (!toggle || !container) {
+                return;
+            }
+            if (hasRemote) {
+                toggle.disabled = false;
+                container.classList.remove('d-none');
+            } else {
+                toggle.checked = false;
+                toggle.disabled = true;
+                container.classList.add('d-none');
+            }
+        });
     }
 
     function renderRemoteStatus(status, options = {}) {
@@ -258,6 +271,9 @@ export function initProjectInitOnBidsController({
         const displayName = (document.getElementById('initBidsName')?.value || '').trim();
         const useDatalad = document.getElementById('initBidsUseDatalad')?.checked !== false;
         const autoEnvironmentEnrichment = document.getElementById('initBidsAutoEnvironmentEnrichment')?.checked !== false;
+        const fetchRemoteDerivatives = document.getElementById('initBidsFetchDerivatives')?.checked === true;
+        const fetchRemoteSourcedata = document.getElementById('initBidsFetchSourcedata')?.checked === true;
+        const fetchRemoteRawdata = document.getElementById('initBidsFetchRawdata')?.checked === true;
         const hasRemote = remoteUrl.length > 0;
         const targetPath = hasRemote ? clonePath : bidsPath;
 
@@ -304,10 +320,67 @@ export function initProjectInitOnBidsController({
         appendLog(`Starting initialization for: ${targetPath}`, 'info');
         appendLog(hasRemote ? `Source: remote (${remoteUrl})` : 'Source: local BIDS root', 'step');
         appendLog(hasRemote ? 'DataLad: managed automatically for remote sources' : `DataLad version control: ${useDatalad ? 'enabled' : 'disabled'}`, 'step');
+        if (hasRemote) {
+            appendLog('Subject (sub-*/) folders at the dataset root: always downloaded in full', 'step');
+            [
+                ['derivatives/', fetchRemoteDerivatives],
+                ['sourcedata/', fetchRemoteSourcedata],
+                ['rawdata/ wrapper folder (if present)', fetchRemoteRawdata]
+            ].forEach(function([label, opted]) {
+                appendLog(
+                    opted
+                        ? `${label} content: will be downloaded (opted in)`
+                        : `${label} content: skipped by default (structure only) - enable the toggle to download it`,
+                    'step'
+                );
+            });
+        }
         startProgress(hasRemote ? 'Cloning remote dataset...' : 'Validating BIDS dataset...');
 
         const originalText = setButtonLoading(initBidsSubmitBtn, true, 'Initialising…');
         initBidsSubmitBtn.disabled = true;
+
+        // The init-on-bids request can block for a long time on real remote
+        // datasets (multi-GB content fetches). It streams progress into a
+        // server-side job log as it goes; poll that concurrently so the log
+        // panel updates live instead of going silent until the request
+        // finally resolves.
+        const jobId = (window.crypto && typeof window.crypto.randomUUID === 'function')
+            ? window.crypto.randomUUID()
+            : `init-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        let jobLogCursor = 0;
+        let keepPollingJobLog = true;
+
+        async function drainInitBidsJobLog() {
+            try {
+                const pollResponse = await fetchWithApiFallback(
+                    `/api/projects/init-on-bids-log/${encodeURIComponent(jobId)}?cursor=${jobLogCursor}`
+                );
+                if (!pollResponse.ok) {
+                    return;
+                }
+                const payload = await pollResponse.json().catch(() => null);
+                if (!payload) {
+                    return;
+                }
+                if (Array.isArray(payload.logs) && payload.logs.length > 0) {
+                    appendConverterLogBatch(payload.logs, 'info', initBidsLog);
+                }
+                if (Number.isInteger(payload.next_cursor)) {
+                    jobLogCursor = payload.next_cursor;
+                }
+            } catch (_pollError) {
+                // Transient poll failures are non-fatal - the final result
+                // still arrives via the main request below.
+            }
+        }
+
+        (async function pollInitBidsJobLog() {
+            while (keepPollingJobLog) {
+                await drainInitBidsJobLog();
+                await new Promise((resolve) => window.setTimeout(resolve, 1000));
+            }
+        })();
 
         try {
             const response = await fetchWithApiFallback('/api/projects/init-on-bids', {
@@ -321,15 +394,18 @@ export function initProjectInitOnBidsController({
                     use_datalad: useDatalad,
                     remote_url: hasRemote ? remoteUrl : undefined,
                     source_type: hasRemote ? 'remote' : 'local',
-                    auto_environment_enrichment: autoEnvironmentEnrichment
+                    auto_environment_enrichment: autoEnvironmentEnrichment,
+                    fetch_remote_derivatives: fetchRemoteDerivatives,
+                    fetch_remote_sourcedata: fetchRemoteSourcedata,
+                    fetch_remote_rawdata: fetchRemoteRawdata,
+                    job_id: jobId
                 })
             });
             setProgress(70, 'Server response received. Applying changes...', 'info', true);
             const result = await response.json();
 
-            if (Array.isArray(result.log)) {
-                appendConverterLogBatch(result.log, 'info', initBidsLog);
-            }
+            keepPollingJobLog = false;
+            await drainInitBidsJobLog(); // flush any lines emitted since the last poll tick
 
             resultDiv.style.display = 'block';
 
@@ -433,6 +509,7 @@ export function initProjectInitOnBidsController({
                 </div>
             `;
         } finally {
+            keepPollingJobLog = false;
             setButtonLoading(initBidsSubmitBtn, false, null, originalText);
             initBidsSubmitBtn.disabled = false;
         }

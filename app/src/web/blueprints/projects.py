@@ -63,6 +63,7 @@ from .projects_lifecycle_handlers import (
     handle_get_fixable_issues,
     handle_get_recent_projects,
     handle_init_on_bids,
+    handle_init_on_bids_log,
     handle_project_path_status,
     handle_remote_source_status,
     handle_recruitment_location_search,
@@ -489,6 +490,12 @@ def init_on_bids():
         set_current_project=set_current_project,
         save_last_project=_save_last_project,
     )
+
+
+@projects_bp.route("/api/projects/init-on-bids-log/<job_id>", methods=["GET"])
+def init_on_bids_log(job_id: str):
+    """Poll live progress lines for an in-flight init-on-bids request."""
+    return handle_init_on_bids_log(job_id)
 
 
 @projects_bp.route("/api/projects/validate", methods=["POST"])

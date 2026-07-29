@@ -68,6 +68,21 @@
                         <label class="form-check-label fw-semibold" for="initBidsAutoEnvironmentEnrichment">Automatically enrich with environmental data from MRI scans</label>
                         <small class="d-block text-muted">On by default. After initialisation, PRISM scans rawdata/ for MRI acquisition timestamps and scanner-site locations and runs the Environment converter automatically in the background. Turn this off to skip it.</small>
                     </div>
+                    <div class="form-check form-switch mt-3" id="initBidsFetchDerivativesContainer">
+                        <input class="form-check-input" type="checkbox" id="initBidsFetchDerivatives">
+                        <label class="form-check-label fw-semibold" for="initBidsFetchDerivatives">Download derivatives/ content from remote dataset</label>
+                        <small class="d-block text-muted">Off by default. OpenNeuro derivatives/ (preprocessed outputs) can be as large as - or larger than - the raw data and can take a very long time to download. PRISM installs the dataset structure either way; turn this on only if you need the derivatives file content right away (you can always fetch it later with <code>datalad get -r derivatives</code>).</small>
+                    </div>
+                    <div class="form-check form-switch mt-3" id="initBidsFetchSourcedataContainer">
+                        <input class="form-check-input" type="checkbox" id="initBidsFetchSourcedata">
+                        <label class="form-check-label fw-semibold" for="initBidsFetchSourcedata">Download sourcedata/ content from remote dataset</label>
+                        <small class="d-block text-muted">Off by default. Same reasoning as derivatives/ - structure is installed either way, only the file content is skipped (fetch later with <code>datalad get -r sourcedata</code>).</small>
+                    </div>
+                    <div class="form-check form-switch mt-3" id="initBidsFetchRawdataContainer">
+                        <input class="form-check-input" type="checkbox" id="initBidsFetchRawdata">
+                        <label class="form-check-label fw-semibold" for="initBidsFetchRawdata">Download rawdata/ wrapper folder content from remote dataset</label>
+                        <small class="d-block text-muted">Off by default. Only relevant for datasets that nest subjects under a dedicated top-level <code>rawdata/</code> folder instead of the dataset root. Subject (<code>sub-*/</code>) folders at the dataset root are always fetched in full - this toggle only affects the separate <code>rawdata/</code> wrapper folder, treated like derivatives/sourcedata (fetch later with <code>datalad get -r rawdata</code>).</small>
+                    </div>
                 </form>
 
                 <div class="d-flex justify-content-end align-items-center gap-2 mt-3">

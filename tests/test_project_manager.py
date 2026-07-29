@@ -612,6 +612,287 @@ class TestProjectManager(unittest.TestCase):
     @patch("src.project_manager.shutil.which")
     @patch("src.project_manager.subprocess.Popen")
     @patch("src.project_manager.subprocess.run")
+    def test_init_on_existing_bids_always_fetches_root_subject_folders(
+        self,
+        mock_run,
+        mock_popen,
+        mock_which,
+        mock_create_nested,
+        mock_run_datalad_save,
+    ):
+        """Remote OpenNeuro installs must always download the real content
+        of sub-*/ folders that sit directly at the dataset root - that's the
+        core BIDS data, not optional bulk content. derivatives/, sourcedata/,
+        and a literal top-level rawdata/ wrapper folder are the optional
+        bulk content and stay opt-in (skipped by default)."""
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: {
+            "datalad": "/usr/bin/datalad",
+            "git-annex": "/usr/bin/git-annex",
+        }.get(executable)
+        mock_create_nested.return_value = {
+            "subdatasets_created": [],
+            "subdatasets_existing": [],
+            "subdataset_failures": [],
+            "subdatasets_skipped": [],
+            "subdatasets_total_count": 0,
+            "subdatasets_registered_count": 0,
+            "subdatasets_remaining_count": 0,
+            "subject_datasets_created": [],
+            "subject_datasets_existing": [],
+            "subject_dataset_failures": [],
+        }
+        mock_run_datalad_save.return_value = {
+            "available": True,
+            "saved": True,
+            "message": 'DataLad saved changes with message "Initialize PRISM on existing BIDS dataset".',
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "ds007677"
+
+            def _fake_run(command, **_kwargs):
+                normalized = [str(part) for part in command]
+                if normalized[:3] == ["/usr/bin/datalad", "install", "-s"]:
+                    destination_path = Path(normalized[4])
+                    destination_path.mkdir(parents=True, exist_ok=True)
+                    (destination_path / ".datalad").mkdir(parents=True, exist_ok=True)
+                    (destination_path / ".git").mkdir(parents=True, exist_ok=True)
+                    (destination_path / "dataset_description.json").write_text(
+                        "{}\n",
+                        encoding="utf-8",
+                    )
+                    (destination_path / "derivatives").mkdir(parents=True, exist_ok=True)
+                    (destination_path / "sourcedata").mkdir(parents=True, exist_ok=True)
+                    (destination_path / "rawdata").mkdir(parents=True, exist_ok=True)
+                    (destination_path / "sub-01").mkdir(parents=True, exist_ok=True)
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
+
+            mock_run.side_effect = _fake_run
+            mock_popen.side_effect = lambda command, **_kwargs: _FakePopen(returncode=0)
+
+            result = manager.init_on_existing_bids(
+                str(project_path),
+                {
+                    "remote_url": "https://github.com/OpenNeuroDatasets/ds007677.git",
+                    "use_datalad": False,
+                },
+            )
+
+        self.assertTrue(result.get("success"), result)
+        message = result.get("source", {}).get("message", "")
+        self.assertIn("Skipped", message)
+        self.assertIn("derivatives/", message)
+        self.assertIn("sourcedata/", message)
+        self.assertIn("rawdata/", message)
+        popen_commands = [call.args[0] for call in mock_popen.call_args_list]
+        # Root-level subject data is core content - always fetched.
+        self.assertIn(
+            ["/usr/bin/datalad", "-C", str(project_path), "get", "-r", "sub-01"],
+            popen_commands,
+        )
+        # Bulk/optional categories stay opt-in and are skipped by default.
+        self.assertNotIn(
+            ["/usr/bin/datalad", "-C", str(project_path), "get", "-r", "derivatives"],
+            popen_commands,
+        )
+        self.assertNotIn(
+            ["/usr/bin/datalad", "-C", str(project_path), "get", "-r", "sourcedata"],
+            popen_commands,
+        )
+        self.assertNotIn(
+            ["/usr/bin/datalad", "-C", str(project_path), "get", "-r", "rawdata"],
+            popen_commands,
+        )
+        # The final loose top-level-file sweep still runs (cheap, non-recursive).
+        self.assertIn(
+            ["/usr/bin/datalad", "-C", str(project_path), "get", "."],
+            popen_commands,
+        )
+
+    @patch("src.project_manager.ProjectManager._run_datalad_save")
+    @patch("src.project_manager.ProjectManager._create_nested_subdatasets")
+    @patch("src.project_manager.shutil.which")
+    @patch("src.project_manager.subprocess.Popen")
+    @patch("src.project_manager.subprocess.run")
+    def test_init_on_existing_bids_fetches_only_opted_in_bulk_categories(
+        self,
+        mock_run,
+        mock_popen,
+        mock_which,
+        mock_create_nested,
+        mock_run_datalad_save,
+    ):
+        """Each of derivatives/sourcedata/rawdata is an independent opt-in -
+        opting into one must not silently opt into the others, and must not
+        affect the always-on root subject data fetch."""
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: {
+            "datalad": "/usr/bin/datalad",
+            "git-annex": "/usr/bin/git-annex",
+        }.get(executable)
+        mock_create_nested.return_value = {
+            "subdatasets_created": [],
+            "subdatasets_existing": [],
+            "subdataset_failures": [],
+            "subdatasets_skipped": [],
+            "subdatasets_total_count": 0,
+            "subdatasets_registered_count": 0,
+            "subdatasets_remaining_count": 0,
+            "subject_datasets_created": [],
+            "subject_datasets_existing": [],
+            "subject_dataset_failures": [],
+        }
+        mock_run_datalad_save.return_value = {
+            "available": True,
+            "saved": True,
+            "message": 'DataLad saved changes with message "Initialize PRISM on existing BIDS dataset".',
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "ds007677"
+
+            def _fake_run(command, **_kwargs):
+                normalized = [str(part) for part in command]
+                if normalized[:3] == ["/usr/bin/datalad", "install", "-s"]:
+                    destination_path = Path(normalized[4])
+                    destination_path.mkdir(parents=True, exist_ok=True)
+                    (destination_path / ".datalad").mkdir(parents=True, exist_ok=True)
+                    (destination_path / ".git").mkdir(parents=True, exist_ok=True)
+                    (destination_path / "dataset_description.json").write_text(
+                        "{}\n",
+                        encoding="utf-8",
+                    )
+                    (destination_path / "derivatives").mkdir(parents=True, exist_ok=True)
+                    (destination_path / "sourcedata").mkdir(parents=True, exist_ok=True)
+                    (destination_path / "rawdata").mkdir(parents=True, exist_ok=True)
+                    (destination_path / "sub-01").mkdir(parents=True, exist_ok=True)
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
+
+            mock_run.side_effect = _fake_run
+            mock_popen.side_effect = lambda command, **_kwargs: _FakePopen(returncode=0)
+
+            result = manager.init_on_existing_bids(
+                str(project_path),
+                {
+                    "remote_url": "https://github.com/OpenNeuroDatasets/ds007677.git",
+                    "use_datalad": False,
+                    "fetch_remote_derivatives": True,
+                },
+            )
+
+        self.assertTrue(result.get("success"), result)
+        message = result.get("source", {}).get("message", "")
+        self.assertIn("sourcedata/", message)
+        self.assertIn("rawdata/", message)
+        popen_commands = [call.args[0] for call in mock_popen.call_args_list]
+        self.assertIn(
+            ["/usr/bin/datalad", "-C", str(project_path), "get", "-r", "derivatives"],
+            popen_commands,
+        )
+        self.assertIn(
+            ["/usr/bin/datalad", "-C", str(project_path), "get", "-r", "sub-01"],
+            popen_commands,
+        )
+        self.assertNotIn(
+            ["/usr/bin/datalad", "-C", str(project_path), "get", "-r", "sourcedata"],
+            popen_commands,
+        )
+        self.assertNotIn(
+            ["/usr/bin/datalad", "-C", str(project_path), "get", "-r", "rawdata"],
+            popen_commands,
+        )
+
+    @patch("src.project_manager.ProjectManager._run_datalad_save")
+    @patch("src.project_manager.ProjectManager._create_nested_subdatasets")
+    @patch("src.project_manager.shutil.which")
+    @patch("src.project_manager.subprocess.Popen")
+    @patch("src.project_manager.subprocess.run")
+    def test_init_on_existing_bids_fetches_all_content_when_all_opted_in(
+        self,
+        mock_run,
+        mock_popen,
+        mock_which,
+        mock_create_nested,
+        mock_run_datalad_save,
+    ):
+        manager = ProjectManager()
+        mock_which.side_effect = lambda executable: {
+            "datalad": "/usr/bin/datalad",
+            "git-annex": "/usr/bin/git-annex",
+        }.get(executable)
+        mock_create_nested.return_value = {
+            "subdatasets_created": [],
+            "subdatasets_existing": [],
+            "subdataset_failures": [],
+            "subdatasets_skipped": [],
+            "subdatasets_total_count": 0,
+            "subdatasets_registered_count": 0,
+            "subdatasets_remaining_count": 0,
+            "subject_datasets_created": [],
+            "subject_datasets_existing": [],
+            "subject_dataset_failures": [],
+        }
+        mock_run_datalad_save.return_value = {
+            "available": True,
+            "saved": True,
+            "message": 'DataLad saved changes with message "Initialize PRISM on existing BIDS dataset".',
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "ds007677"
+
+            def _fake_run(command, **_kwargs):
+                normalized = [str(part) for part in command]
+                if normalized[:3] == ["/usr/bin/datalad", "install", "-s"]:
+                    destination_path = Path(normalized[4])
+                    destination_path.mkdir(parents=True, exist_ok=True)
+                    (destination_path / ".datalad").mkdir(parents=True, exist_ok=True)
+                    (destination_path / ".git").mkdir(parents=True, exist_ok=True)
+                    (destination_path / "dataset_description.json").write_text(
+                        "{}\n",
+                        encoding="utf-8",
+                    )
+                    (destination_path / "derivatives").mkdir(parents=True, exist_ok=True)
+                    (destination_path / "sourcedata").mkdir(parents=True, exist_ok=True)
+                    (destination_path / "rawdata").mkdir(parents=True, exist_ok=True)
+                    (destination_path / "sub-01").mkdir(parents=True, exist_ok=True)
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
+
+            mock_run.side_effect = _fake_run
+            mock_popen.side_effect = lambda command, **_kwargs: _FakePopen(returncode=0)
+
+            result = manager.init_on_existing_bids(
+                str(project_path),
+                {
+                    "remote_url": "https://github.com/OpenNeuroDatasets/ds007677.git",
+                    "use_datalad": False,
+                    "fetch_remote_derivatives": True,
+                    "fetch_remote_sourcedata": True,
+                    "fetch_remote_rawdata": True,
+                },
+            )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertNotIn("Skipped", result.get("source", {}).get("message", ""))
+        popen_commands = [call.args[0] for call in mock_popen.call_args_list]
+        for expected_path in ("derivatives", "sourcedata", "rawdata", "sub-01"):
+            self.assertIn(
+                ["/usr/bin/datalad", "-C", str(project_path), "get", "-r", expected_path],
+                popen_commands,
+            )
+
+    @patch("src.project_manager.ProjectManager._run_datalad_save")
+    @patch("src.project_manager.ProjectManager._create_nested_subdatasets")
+    @patch("src.project_manager.shutil.which")
+    @patch("src.project_manager.subprocess.Popen")
+    @patch("src.project_manager.subprocess.run")
     def test_init_on_existing_bids_merges_into_preexisting_bidsignore(
         self,
         mock_run,

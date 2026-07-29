@@ -10,6 +10,7 @@ import requests
 from .projects_helpers import _load_recent_projects, _save_recent_projects
 from .projects_helpers import _resolve_project_json_path, _resolve_project_root_path
 from .projects_citation_helpers import _validate_recruitment_payload
+from .conversion_job_store import ConversionJobStore
 from src.project_icons import choose_random_project_icon, normalize_project_icon, resolve_project_icon
 from src.system_files import filter_system_files
 
@@ -17,6 +18,13 @@ _RECRUITMENT_GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 _RECRUITMENT_GEOCODING_TIMEOUT_SECONDS = 5
 _DATALAD_DOCS_URL = "https://www.datalad.org/"
 _DATALAD_INSTALL_HINT = "Install with: uv tool install datalad git-annex"
+
+# init-on-bids can take a very long time for real remote datasets (multi-GB
+# content fetches). This job store only backs a live log-tailing endpoint -
+# the actual result still comes back on the original synchronous request
+# below; it's just how a browser polling loop can show progress lines while
+# that request is still in flight.
+_init_bids_job_store = ConversionJobStore(log_level_key="level")
 
 
 def _normalize_dataset_type(dataset_type):
@@ -346,9 +354,29 @@ def handle_init_on_bids(project_manager, set_current_project, save_last_project)
             "dataset_type": _normalize_dataset_type(data.get("dataset_type")),
             "description": data.get("description"),
             "auto_environment_enrichment": bool(data.get("auto_environment_enrichment", True)),
+            "fetch_remote_derivatives": bool(data.get("fetch_remote_derivatives", False)),
+            "fetch_remote_sourcedata": bool(data.get("fetch_remote_sourcedata", False)),
+            "fetch_remote_rawdata": bool(data.get("fetch_remote_rawdata", False)),
         }
 
-        result = project_manager.init_on_existing_bids(path, config)
+        job_id = str(data.get("job_id") or "").strip()
+        progress_callback = None
+        if job_id:
+            try:
+                _init_bids_job_store.create(job_id)
+            except ValueError:
+                pass  # job id already registered (e.g. a retried request) - keep appending to it
+
+            def progress_callback(message: str, level: str = "info") -> None:
+                _init_bids_job_store.append_log(job_id, message, level)
+
+        try:
+            result = project_manager.init_on_existing_bids(
+                path, config, progress_callback=progress_callback
+            )
+        finally:
+            if job_id:
+                _init_bids_job_store.update(job_id, done=True)
 
         if result.get("success"):
             resolved_path = str(result.get("path") or path)
@@ -370,8 +398,8 @@ def handle_init_on_bids(project_manager, set_current_project, save_last_project)
                         trigger_automatic_environment_enrichment,
                     )
 
-                    job_id = trigger_automatic_environment_enrichment(Path(resolved_path))
-                    result["environment_enrichment_job_id"] = job_id
+                    env_job_id = trigger_automatic_environment_enrichment(Path(resolved_path))
+                    result["environment_enrichment_job_id"] = env_job_id
                 except Exception:
                     result["environment_enrichment_job_id"] = None
             return jsonify(result)
@@ -379,6 +407,26 @@ def handle_init_on_bids(project_manager, set_current_project, save_last_project)
         return jsonify(result), 400
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 500
+
+
+def handle_init_on_bids_log(job_id: str):
+    """Poll live progress lines for an in-flight init-on-bids request.
+
+    This is purely a log tail - the actual result is still delivered by the
+    original synchronous ``/api/projects/init-on-bids`` response once it
+    completes. A client polls this endpoint concurrently (with the same
+    ``job_id`` it sent in that request) to show progress while waiting.
+    """
+    try:
+        cursor = int(request.args.get("cursor", "0"))
+    except (TypeError, ValueError):
+        cursor = 0
+
+    snapshot = _init_bids_job_store.snapshot(job_id, cursor)
+    if snapshot is None:
+        return jsonify({"error": "Job not found"}), 404
+
+    return jsonify(snapshot)
 
 
 def handle_validate_project(project_manager, set_current_project, save_last_project):
