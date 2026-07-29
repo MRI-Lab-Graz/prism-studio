@@ -69,24 +69,12 @@ def get_json_hash(json_path):
             obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False
         )
         return hashlib.md5(
-            usedforsecurity=(
-                False
-                if hasattr(hashlib, "md5")
-                and "usedforsecurity" in hashlib.md5.__code__.co_varnames
-                else canonical.encode("utf-8")
-            )
+            canonical.encode("utf-8"), usedforsecurity=False
         ).hexdigest()
     except Exception:
         # Fallback: raw bytes hash
         with open(json_path, "rb") as f:
-            return hashlib.md5(
-                usedforsecurity=(
-                    False
-                    if hasattr(hashlib, "md5")
-                    and "usedforsecurity" in hashlib.md5.__code__.co_varnames
-                    else f.read()
-                )
-            ).hexdigest()
+            return hashlib.md5(f.read(), usedforsecurity=False).hexdigest()
 
 
 def consolidate_sidecars(output_dir, task, suffix):

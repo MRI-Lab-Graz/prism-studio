@@ -172,7 +172,7 @@ def _find_matching_global_template(
     )
 
 
-_MISSING_TOKEN = "n/a"
+_MISSING_TOKEN = "n/a"  # noqa: S105 - placeholder value for missing survey answers, not a credential
 # LimeSurvey answer code max length (used for reverse lookup)
 _LS_ANSWER_CODE_MAX_LENGTH = 5
 

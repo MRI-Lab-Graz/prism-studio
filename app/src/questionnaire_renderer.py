@@ -319,7 +319,7 @@ def render_questionnaire_docx(
         visible.append((key, item, q_type, levels))
 
     if randomize:
-        rng = random.Random(random_seed)
+        rng = random.Random(random_seed)  # noqa: S311 - item order shuffle, not security-sensitive
         rng.shuffle(visible)
 
     # ── Group consecutive radio items with same scale into matrix ────

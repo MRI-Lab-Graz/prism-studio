@@ -1039,7 +1039,9 @@ def _perform_environment_conversion(
             ]
             unique_participants = sorted(set(participants))
             if unique_participants:
-                pilot_subject_label = random.choice(unique_participants)
+                pilot_subject_label = random.choice(  # noqa: S311 - pilot sample pick, not security-sensitive
+                    unique_participants
+                )
                 df = df[
                     df[participant_col].astype(str).str.strip() == pilot_subject_label
                 ]
@@ -1048,7 +1050,9 @@ def _perform_environment_conversion(
                     "info",
                 )
             else:
-                random_index = random.choice(list(df.index))
+                random_index = random.choice(  # noqa: S311 - pilot sample pick, not security-sensitive
+                    list(df.index)
+                )
                 df = df.loc[[random_index]]
                 pilot_subject_label = "row-fallback"
                 log_callback(
@@ -1056,7 +1060,9 @@ def _perform_environment_conversion(
                     "warning",
                 )
         elif len(df) > 0:
-            random_index = random.choice(list(df.index))
+            random_index = random.choice(  # noqa: S311 - pilot sample pick, not security-sensitive
+                list(df.index)
+            )
             df = df.loc[[random_index]]
             pilot_subject_label = "row-fallback"
             log_callback(
