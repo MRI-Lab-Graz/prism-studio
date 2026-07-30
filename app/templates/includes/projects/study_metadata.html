@@ -52,10 +52,18 @@
             </div>
 
             <form id="studyMetadataForm" novalidate>
-                <div class="sm-section-group mb-3" id="smCoreSetupGroup">
-                    <div class="sm-section-group__eyebrow">Core study setup</div>
-                    <p class="sm-section-group__copy mb-0">Start with the sections that unlock project creation, methods readiness, and cross-file metadata syncing.</p>
+                <div class="mb-3" id="smCoreSetupGroup">
+                    <button class="btn sm-section-group w-100 text-start sm-group-toggle" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smCoreSetupGroupBody" aria-expanded="false" aria-controls="smCoreSetupGroupBody">
+                        <span class="sm-section-group__titleline">
+                            <span class="sm-section-group__eyebrow">Core study setup</span>
+                            <i class="fas fa-chevron-down sm-group-chevron"></i>
+                        </span>
+                        <p class="sm-section-group__copy mb-0">Start with the sections that unlock project creation, methods readiness, and cross-file metadata syncing.</p>
+                    </button>
                 </div>
+
+                <div class="collapse" id="smCoreSetupGroupBody">
 
                 <!-- Basics (BIDS) Section -->
                 <div class="mb-3">
@@ -73,60 +81,15 @@
                             <div id="metadataValidationFeedback" class="mb-3" style="display: none;"></div>
                             <div class="sm-basics-intro mb-3">
                                 <div class="sm-basics-intro__eyebrow">Start here</div>
-                                <p class="sm-basics-intro__copy mb-0">Complete the identity, ethics, keywords, and funding fields first. The DOI, HED, and other discovery details below can be filled in once the project scaffold is stable.</p>
+                                <p class="sm-basics-intro__copy mb-0">Complete the identity, ethics, keywords, and funding fields first. DOI, HED, and other discovery/citation details live in their own section under Reporting and follow-up, and can be filled in once the project scaffold is stable.</p>
                             </div>
                             <div class="row g-3">
-                                <div class="col-md-12 col-lg-6">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                        <span class="badge bg-info text-dark">PROJECT</span> Schema Version
-                                    </label>
-                                    <select class="form-select form-select-sm" id="metadataSchemaVersion">
-                                        {% for v in schema_versions %}
-                                        <option value="{{ v }}" {% if v == default_schema_version %}selected{% endif %}>{{ v }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <small class="text-muted">Defaults to stable. Only switch when a project must stay on an older PRISM schema.</small>
-                                </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                         <span class="badge bg-danger">REQUIRED</span> Dataset Name
                                     </label>
                                     <input type="text" class="form-control form-control-sm" id="metadataName" required>
                                     <small class="text-muted">This becomes the BIDS Name field and is reused in CITATION.cff.</small>
-                                </div>
-                                <div class="col-md-12 col-lg-6">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                        <span class="badge bg-secondary" id="metadataLicenseRequiredBadge">OPTIONAL</span> License
-                                        <i class="fas fa-info-circle text-muted ms-1"
-                                           data-bs-toggle="tooltip"
-                                           data-bs-placement="right"
-                                           data-bs-html="true"
-                                           title="<strong>Most common for open research data:</strong><br>
-&bull; <strong>CC0</strong> – No restrictions, maximum reuse (recommended for datasets)<br>
-&bull; <strong>CC BY 4.0</strong> – Free reuse with attribution<br>
-&bull; <strong>CC BY-NC 4.0</strong> – Non-commercial use only<br><br>
-Avoid SA / NC variants if you want your data indexed in major repositories."
-                                           style="cursor:help;"></i>
-                                    </label>
-                                    <select class="form-select form-select-sm" id="metadataLicense">
-                                        <option value="">Select a license...</option>
-                                        <option value="Not decided yet">Not decided yet</option>
-                                        <option value="CC0">CC0 (Public Domain)</option>
-                                        <option value="CC BY 4.0">CC BY 4.0</option>
-                                        <option value="CC BY-SA 4.0">CC BY-SA 4.0</option>
-                                        <option value="CC BY-NC 4.0">CC BY-NC 4.0</option>
-                                        <option value="CC BY-NC-SA 4.0">CC BY-NC-SA 4.0</option>
-                                        <option value="ODbL 1.0">Open Database License (ODbL)</option>
-                                        <option value="PDDL 1.0">Public Domain Dedication and License (PDDL)</option>
-                                        <option value="Other">Other/Proprietary</option>
-                                    </select>
-                                    <small class="text-muted">
-                                        A missing license is the most common reason shared data cannot legally be reused. Pick "Not decided yet" if you are not ready to choose &mdash; that still counts as an explicit answer.
-                                        Synced to dataset_description.json and CITATION.cff. &nbsp;
-                                        <a href="https://creativecommons.org/choose/" target="_blank" rel="noopener" class="text-muted">
-                                            <i class="fas fa-external-link-alt me-1" style="font-size:0.7em;"></i>Help me choose
-                                        </a>
-                                    </small>
                                 </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
@@ -142,7 +105,8 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                         <span class="badge bg-secondary">OPTIONAL</span> Acknowledgements
                                     </label>
-                                    <textarea class="form-control form-control-sm" id="metadataAcknowledgements" rows="2" placeholder="Funding, grants, people to thank..."></textarea>
+                                    <textarea class="form-control form-control-sm" id="metadataAcknowledgements" rows="2" placeholder="People, labs, or institutions to thank..."></textarea>
+                                    <small class="text-muted">Personal thanks only &mdash; funding sources have their own field below.</small>
                                 </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
@@ -194,40 +158,21 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                     </div>
                                     <small class="text-muted">If funding exists, add one row per funding source with its agency and grant number.</small>
                                 </div>
-                                <div class="col-md-12">
-                                    <div class="sm-basics-secondary-panel mt-3 pt-3 border-top">
-                                        <div class="sm-basics-secondary-panel__eyebrow">Discovery and citation details</div>
-                                        <p class="sm-basics-secondary-panel__copy mb-3">These fields refine discovery, reuse, and formal citation. They are useful, but they do not have to block the first save.</p>
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                                    <span class="badge bg-secondary">OPTIONAL</span> Dataset DOI
-                                                </label>
-                                                <input type="text" class="form-control form-control-sm" id="metadataDOI" placeholder="Example: 10.5281/zenodo.1234567">
-                                                <small class="text-muted">Enter a DOI only when one already exists. It syncs into CITATION.cff.</small>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                                    <span class="badge bg-secondary">OPTIONAL</span> HED Version
-                                                </label>
-                                                <input type="text" class="form-control form-control-sm" id="metadataHED" placeholder="Example: 8.2.0">
-                                                <small class="text-muted">Leave empty unless the dataset uses HED tags. <a href="https://www.hedtags.org" target="_blank" rel="noopener noreferrer">What is HED?</a></small>
-                                            </div>
-                                            <div class="col-md-12">
-                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                                    <span class="badge bg-secondary">OPTIONAL</span> How to Acknowledge
-                                                </label>
-                                                <textarea class="form-control form-control-sm" id="metadataHowToAcknowledge" rows="2" placeholder="Please cite the following paper..."></textarea>
-                                                <small class="text-muted">Saved into CITATION.cff and kept aligned with dataset_description.json.</small>
-                                            </div>
-                                            <div class="col-md-12">
-                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                                    <span class="badge bg-secondary">OPTIONAL</span> Citation Links
-                                                </label>
-                                                <textarea class="form-control form-control-sm" id="metadataReferences" rows="2" placeholder="https://doi.org/..., https://example.com/..." ></textarea>
-                                                <small class="text-muted">Add URLs or citations separated by commas. They sync into CITATION.cff and dataset_description.json.</small>
-                                            </div>
-                                        </div>
+                                <div class="col-12">
+                                    <button class="btn btn-link btn-sm p-0 text-decoration-none" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#smBasicsAdvanced" aria-expanded="false" aria-controls="smBasicsAdvanced">
+                                        <i class="fas fa-chevron-down me-1"></i>Advanced
+                                    </button>
+                                    <div class="collapse mt-2" id="smBasicsAdvanced">
+                                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                            <span class="badge bg-info text-dark">PROJECT</span> Schema Version
+                                        </label>
+                                        <select class="form-select form-select-sm" id="metadataSchemaVersion">
+                                            {% for v in schema_versions %}
+                                            <option value="{{ v }}" {% if v == default_schema_version %}selected{% endif %}>{{ v }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <small class="text-muted">Defaults to stable. Only switch when a project must stay on an older PRISM schema.</small>
                                     </div>
                                 </div>
                             </div>
@@ -374,10 +319,20 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                     </div>
                 </div>
 
-                <div class="sm-section-group mb-3" id="smRecruitmentExecutionGroup">
-                    <div class="sm-section-group__eyebrow">Recruitment and execution</div>
-                    <p class="sm-section-group__copy mb-0">Expand these sections once the core project scaffold is in place and you are ready to document participants and procedure details.</p>
+                </div><!-- /smCoreSetupGroupBody -->
+
+                <div class="mb-3" id="smRecruitmentExecutionGroup">
+                    <button class="btn sm-section-group w-100 text-start sm-group-toggle" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smRecruitmentExecutionGroupBody" aria-expanded="false" aria-controls="smRecruitmentExecutionGroupBody">
+                        <span class="sm-section-group__titleline">
+                            <span class="sm-section-group__eyebrow">Recruitment and execution</span>
+                            <i class="fas fa-chevron-down sm-group-chevron"></i>
+                        </span>
+                        <p class="sm-section-group__copy mb-0">Expand these sections once the core project scaffold is in place and you are ready to document participants and procedure details.</p>
+                    </button>
                 </div>
+
+                <div class="collapse" id="smRecruitmentExecutionGroupBody">
 
                 <!-- Recruitment -->
                 <div class="mb-3">
@@ -590,11 +545,6 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                                 </button>
                                             </div>
                                             <div class="col-md-6">
-                                                <label class="form-label fw-bold small">Missing Data Handling</label>
-                                                <input type="text" class="form-control form-control-sm" id="smProcMissing"
-                                                       placeholder="How was missing data handled?">
-                                            </div>
-                                            <div class="col-md-6">
                                                 <label class="form-label fw-bold small">Debriefing</label>
                                                 <textarea class="form-control form-control-sm" id="smProcDebriefing" rows="2"
                                                           placeholder="Debriefing procedure"></textarea>
@@ -618,9 +568,65 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                     </div>
                 </div>
 
-                <div class="sm-section-group mb-3" id="smReportingFollowupGroup">
-                    <div class="sm-section-group__eyebrow">Reporting and follow-up</div>
-                    <p class="sm-section-group__copy mb-0">Use these sections later in the project lifecycle to document gaps, issues, and supporting literature.</p>
+                </div><!-- /smRecruitmentExecutionGroupBody -->
+
+                <div class="mb-3" id="smReportingFollowupGroup">
+                    <button class="btn sm-section-group w-100 text-start sm-group-toggle" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smReportingFollowupGroupBody" aria-expanded="false" aria-controls="smReportingFollowupGroupBody">
+                        <span class="sm-section-group__titleline">
+                            <span class="sm-section-group__eyebrow">Reporting and follow-up</span>
+                            <i class="fas fa-chevron-down sm-group-chevron"></i>
+                        </span>
+                        <p class="sm-section-group__copy mb-0">Use these sections later in the project lifecycle to document gaps, issues, citation/discovery details, and supporting literature.</p>
+                    </button>
+                </div>
+
+                <div class="collapse" id="smReportingFollowupGroupBody">
+
+                <!-- Discovery & Citation -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start sm-section-toggle" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smDiscoveryCitation" aria-expanded="false" aria-controls="smDiscoveryCitation">
+                        <span class="sm-section-toggle__titleline">
+                            <span class="sm-section-toggle__title"><i class="fas fa-quote-right me-1"></i> Discovery &amp; Citation</span>
+                            <span class="sm-section-toggle__badge" id="smDiscoveryCitationBadge"></span>
+                        </span>
+                        <span class="sm-section-toggle__summary">Discovery and citation details: DOI, HED version, acknowledgement text, and citation links. These refine discovery, reuse, and formal citation, but do not have to block the first save.</span>
+                    </button>
+                    <div class="collapse" id="smDiscoveryCitation">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-secondary">OPTIONAL</span> Dataset DOI
+                                    </label>
+                                    <input type="text" class="form-control form-control-sm" id="metadataDOI" placeholder="Example: 10.5281/zenodo.1234567">
+                                    <small class="text-muted">Enter a DOI only when one already exists. It syncs into CITATION.cff.</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-secondary">OPTIONAL</span> HED Version
+                                    </label>
+                                    <input type="text" class="form-control form-control-sm" id="metadataHED" placeholder="Example: 8.2.0">
+                                    <small class="text-muted">Leave empty unless the dataset uses HED tags. <a href="https://www.hedtags.org" target="_blank" rel="noopener noreferrer">What is HED?</a></small>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-secondary">OPTIONAL</span> How to Acknowledge
+                                    </label>
+                                    <textarea class="form-control form-control-sm" id="metadataHowToAcknowledge" rows="2" placeholder="Please cite the following paper..."></textarea>
+                                    <small class="text-muted">Saved into CITATION.cff and kept aligned with dataset_description.json.</small>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-secondary">OPTIONAL</span> Citation Links
+                                    </label>
+                                    <textarea class="form-control form-control-sm" id="metadataReferences" rows="2" placeholder="https://doi.org/..., https://example.com/..." ></textarea>
+                                    <small class="text-muted">Add URLs or citations separated by commas. They sync into CITATION.cff and dataset_description.json.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Missing Data & Issues -->
@@ -678,7 +684,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                             <span class="sm-section-toggle__title"><i class="fas fa-book me-1"></i> Background Literature</span>
                             <span class="sm-section-toggle__badge" id="smReferencesBadge"></span>
                         </span>
-                        <span class="sm-section-toggle__summary">Cite related papers, prior work, or supporting literature to include in the README. Not the same as the Citation Links field under Basics, which feeds CITATION.cff.</span>
+                        <span class="sm-section-toggle__summary">Cite related papers, prior work, or supporting literature to include in the README. Not the same as the Citation Links field under Discovery &amp; Citation, which feeds CITATION.cff.</span>
                     </button>
                     <div class="collapse" id="smReferences">
                         <div class="card card-body border-0 bg-light mt-1">
@@ -687,12 +693,14 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                     <label class="form-label fw-bold small">Background Literature</label>
                                     <textarea class="form-control form-control-sm" id="smReferencesText" rows="4"
                                               placeholder="One reference per line or formatted citations..."></textarea>
-                                    <small class="text-muted">Included in the README, separate from the Citation Links field above (which feeds CITATION.cff).</small>
+                                    <small class="text-muted">Included in the README, separate from the Citation Links field under Discovery &amp; Citation (which feeds CITATION.cff).</small>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                </div><!-- /smReportingFollowupGroupBody -->
 
                 <div class="text-end" id="saveStudyMetadataSection">
                     <div class="d-flex justify-content-end align-items-center gap-2 flex-wrap">

@@ -1534,6 +1534,7 @@ class ProjectManager:
             or "A PRISM-compatible dataset for psychological research.",
             "Acknowledgements": config.get("acknowledgements", ""),
             "Funding": config.get("funding", []),
+            "License": config.get("license", "") or "CC0",
             "DatasetDOI": normalized_doi,
             "EthicsApprovals": config.get("ethics_approvals", []),
             "Keywords": config.get("keywords", ["psychology", "experiment", "PRISM"]),

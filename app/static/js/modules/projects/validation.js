@@ -13,7 +13,6 @@ const DATE_RANGE_BADGE_IDS = {
 const METADATA_VALIDATION_FIELDS = [
     'metadataSchemaVersion',
     'metadataName',
-    'metadataLicense',
     'metadataAcknowledgements',
     'metadataDOI',
     'metadataHED',

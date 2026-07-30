@@ -92,8 +92,6 @@
     };
 
     const prefixRules = [
-        { prefix: 'metadata', hint: 'These fields define dataset-level metadata and are synchronized with citation files where applicable.' },
-        { prefix: 'sm', hint: 'This setting belongs to structured study metadata used for methods and FAIR reporting.' },
         { prefix: 'project', hint: 'These settings control project creation, loading, and active project context.' },
         { prefix: 'global', hint: 'These are global defaults shared across projects unless a project overrides them.' },
         { prefix: 'convert', hint: 'These options control survey conversion into PRISM/BIDS-style outputs.' },
