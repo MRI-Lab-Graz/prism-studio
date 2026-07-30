@@ -83,9 +83,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (['hidden', 'button', 'submit', 'reset'].includes(type)) return false;
         if (field.hasAttribute('disabled')) return false;
 
-        if (field instanceof HTMLInputElement && field.type === 'file') {
-            const isHidden = field.classList.contains('d-none') || field.offsetParent === null;
-            if (isHidden) return false;
+        // Skip hidden data-backing proxies (e.g. chip-list inputs mirrored into
+        // a d-none/aria-hidden textarea) — they're never directly edited, but a
+        // hint for them would still render into the visible layout since the
+        // hint is appended to the field's (visible) parent group.
+        if (field.classList.contains('d-none') || field.getAttribute('aria-hidden') === 'true' || field.offsetParent === null) {
+            return false;
         }
 
         if (field.hasAttribute('readonly')) return false;
@@ -189,27 +192,25 @@ document.addEventListener('DOMContentLoaded', () => {
             return `Select one or more files to continue.${acceptHint}`;
         }
 
-        if (labelText) {
-            if (field instanceof HTMLInputElement && (field.type === 'checkbox' || field.type === 'radio')) {
-                return `Enable "${labelText}" if this applies to your project.`;
-            }
-            if (field.tagName === 'SELECT') {
-                return `Set "${labelText}" to the option that matches your data.`;
-            }
-            return `Enter "${labelText}".`;
-        }
-
-        const placeholder = normalizeHintText(field.getAttribute('placeholder'));
-        if (placeholder) {
-            return `Example: ${placeholder}`;
+        if (field instanceof HTMLInputElement && (field.type === 'checkbox' || field.type === 'radio')) {
+            return labelText
+                ? `Enable "${labelText}" if this applies to your project.`
+                : 'Enable this option if it applies to your project.';
         }
 
         if (field.tagName === 'SELECT') {
-            return 'Choose the option that best matches your data.';
+            return labelText
+                ? `Set "${labelText}" to the option that matches your data.`
+                : 'Choose the option that best matches your data.';
         }
 
-        if (field instanceof HTMLInputElement && (field.type === 'checkbox' || field.type === 'radio')) {
-            return 'Enable this option if it applies to your project.';
+        // For plain text/textarea fields, a placeholder adds real information;
+        // restating the (already-visible) label does not, so prefer the
+        // placeholder and otherwise fall through to a generic, non-repeating hint.
+        const placeholder = normalizeHintText(field.getAttribute('placeholder'));
+        if (placeholder) {
+            const alreadyExample = /^(e\.g\.,?|example:?)/i.test(placeholder);
+            return alreadyExample ? placeholder : `Example: ${placeholder}`;
         }
 
         return 'Fill this field to continue.';
