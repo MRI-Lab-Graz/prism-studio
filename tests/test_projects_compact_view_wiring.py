@@ -52,12 +52,33 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
         self.assertIn('<div class="collapse" id="smStudyDesign">', content)
         self.assertNotIn('<div class="collapse show" id="smStudyDesign">', content)
 
-    def test_study_metadata_basics_has_compact_intro_and_secondary_panel(self):
+    def test_study_metadata_groups_are_collapsible_folds_collapsed_by_default(self):
+        content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
+
+        for group_id, body_id in (
+            ("smCoreSetupGroup", "smCoreSetupGroupBody"),
+            ("smRecruitmentExecutionGroup", "smRecruitmentExecutionGroupBody"),
+            ("smReportingFollowupGroup", "smReportingFollowupGroupBody"),
+        ):
+            self.assertIn(f'data-bs-target="#{body_id}"', content)
+            self.assertIn(f'aria-expanded="false" aria-controls="{body_id}"', content)
+            self.assertIn(f'<div class="collapse" id="{body_id}">', content)
+
+    def test_study_metadata_basics_has_compact_intro(self):
         content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn('class="sm-basics-intro mb-3"', content)
-        self.assertIn('class="sm-basics-secondary-panel mt-3 pt-3 border-top"', content)
-        self.assertIn('Discovery and citation details', content)
+
+    def test_study_metadata_discovery_citation_is_its_own_section_under_reporting(self):
+        content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('Discovery &amp; Citation', content)
+        self.assertIn('id="smDiscoveryCitation"', content)
+        self.assertIn('id="metadataDOI"', content)
+
+        reporting_start = content.index('id="smReportingFollowupGroup"')
+        discovery_pos = content.index('id="smDiscoveryCitation"')
+        self.assertGreater(discovery_pos, reporting_start)
 
     def test_projects_header_has_preliminary_badge_placeholder(self):
         content = PROJECTS_TEMPLATE.read_text(encoding="utf-8")

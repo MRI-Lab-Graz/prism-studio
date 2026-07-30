@@ -158,7 +158,6 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
         document.getElementById('smProcOverview').value = proc.Overview || '';
         document.getElementById('smProcConsent').value = proc.InformedConsent || '';
         setOverviewList('smProcQC', proc.QualityControl);
-        document.getElementById('smProcMissing').value = proc.MissingDataHandling || '';
         document.getElementById('smProcDebriefing').value = proc.Debriefing || '';
         document.getElementById('smProcAdditionalData').value = proc.AdditionalData || '';
         document.getElementById('smProcNotes').value = proc.Notes || '';
@@ -375,7 +374,6 @@ function _buildStudyMetadataPayload() {
             Overview: document.getElementById('smProcOverview').value || undefined,
             InformedConsent: document.getElementById('smProcConsent').value || undefined,
             QualityControl: getOverviewList('smProcQC') || undefined,
-            MissingDataHandling: document.getElementById('smProcMissing').value || undefined,
             Debriefing: document.getElementById('smProcDebriefing').value || undefined,
             AdditionalData: document.getElementById('smProcAdditionalData').value || undefined,
             Notes: document.getElementById('smProcNotes').value || undefined,
@@ -1255,22 +1253,22 @@ const OVERVIEW_LIST_FIELDS = {
     smOverviewIV: {
         listId: 'smOverviewIVList',
         addId: 'smOverviewIVAdd',
-        placeholder: 'Independent variable',
+        placeholder: 'e.g., pleasant vs. unpleasant images',
     },
     smOverviewDV: {
         listId: 'smOverviewDVList',
         addId: 'smOverviewDVAdd',
-        placeholder: 'Dependent variable',
+        placeholder: 'e.g., reaction times, BOLD signal',
     },
     smOverviewCV: {
         listId: 'smOverviewCVList',
         addId: 'smOverviewCVAdd',
-        placeholder: 'Control variable',
+        placeholder: 'e.g., age, sex, reading performance',
     },
     smOverviewQA: {
         listId: 'smOverviewQAList',
         addId: 'smOverviewQAAdd',
-        placeholder: 'Quality note or assessment link',
+        placeholder: 'e.g., link to quality report or QC notes',
     },
     smEligInclusion: {
         listId: 'smEligInclusionList',
@@ -1997,14 +1995,14 @@ function _getRequiredValidationIssueMessages(validation) {
 function refreshMetadataValidationState(options = {}) {
     const { onlyFilled = false, includeRequirementGapWarning = false } = options;
     const fieldIds = [
-        'metadataSchemaVersion', 'metadataName', 'metadataLicense', 'metadataAcknowledgements',
+        'metadataSchemaVersion', 'metadataName', 'metadataAcknowledgements',
         'metadataDOI', 'metadataHED', 'metadataKeywords',
         'metadataHowToAcknowledge', 'metadataReferences',
         'smOverviewMain', 'smOverviewIV', 'smOverviewDV', 'smOverviewCV', 'smOverviewQA',
         'smSDType', 'smSDConditionType', 'smSDTypeDesc', 'smSDBlinding', 'smSDRandomization', 'smSDControl',
         'smRecMethod', 'smRecPeriodStartYear', 'smRecPeriodStartMonth', 'smRecPeriodEndYear', 'smRecPeriodEndMonth', 'smRecCompensation',
         'smEligInclusion', 'smEligExclusion', 'smEligSampleSize', 'smEligPower',
-        'smProcOverview', 'smProcConsent', 'smProcQC', 'smProcMissing', 'smProcDebriefing',
+        'smProcOverview', 'smProcConsent', 'smProcQC', 'smProcDebriefing',
         'smProcAdditionalData', 'smProcNotes', 'smMissingDesc', 'smMissingFiles', 'smKnownIssues',
         'smReferencesText'
     ];
@@ -2417,7 +2415,6 @@ export function updateCreateProjectButton() {
 const mandatoryFieldIds = [
     'metadataName',
     'metadataKeywords',
-    'metadataLicense',
     'smOverviewMain', 'smSDType', 'smRecMethod',
     'smRecPeriodStartYear', 'smRecPeriodStartMonth',
     'smRecPeriodEndYear', 'smRecPeriodEndMonth',
@@ -2614,7 +2611,7 @@ export function buildDraftDatasetDescriptionForValidation() {
     return {
         Name: _cleanMetadataText(document.getElementById('metadataName')?.value || ''),
         Authors: getAuthorsList(),
-        License: _cleanMetadataText(document.getElementById('metadataLicense')?.value || ''),
+        License: _cleanMetadataText(document.getElementById('metadataLicense')?.value || '') || 'CC0',
         Acknowledgements: _cleanMetadataText(document.getElementById('metadataAcknowledgements')?.value || ''),
         DatasetDOI: _isValidDoiFormat(doiValue) ? normalizedDoi : '',
         EthicsApprovals: getEthicsApprovals(),
@@ -2634,7 +2631,7 @@ export function buildDraftDatasetDescriptionForValidation() {
 function buildDraftCitationFieldsForValidation() {
     return {
         Authors: getCitationAuthorsList(),
-        License: _cleanMetadataText(document.getElementById('metadataLicense')?.value || ''),
+        License: _cleanMetadataText(document.getElementById('metadataLicense')?.value || '') || 'CC0',
         HowToAcknowledge: _cleanMetadataText(document.getElementById('metadataHowToAcknowledge')?.value || ''),
         ReferencesAndLinks: (document.getElementById('metadataReferences')?.value || '')
             .split(',').map(s => _cleanMetadataText(s)).filter(Boolean),
@@ -2791,8 +2788,8 @@ export function resetStudyMetadataForm() {
 
     const badgeIds = [
         'smBasicsBadge', 'smOverviewBadge', 'smStudyDesignBadge',
-        'smRecruitmentBadge', 'smEligibilityBadge',
-        'smProcedureBadge', 'smMissingDataBadge', 'smReferencesBadge'
+        'smRecruitmentBadge', 'smEligibilityBadge', 'smProcedureBadge',
+        'smDiscoveryCitationBadge', 'smMissingDataBadge', 'smReferencesBadge'
     ];
     badgeIds.forEach(id => {
         const el = document.getElementById(id);
@@ -3319,13 +3316,13 @@ export function computeLocalCompleteness() {
     addField('Basics', 'Description', textFilled(document.getElementById('smOverviewMain')?.value));
     addField('Basics', 'EthicsApprovals', hasValidEthicsResponse());
     addField('Basics', 'Funding', hasValidFundingResponse());
-    addField('Basics', 'License', textFilled(document.getElementById('metadataLicense')?.value));
     addField('Basics', 'Keywords', keywordList.length >= 3);
     addField('Basics', 'Acknowledgements', textFilled(document.getElementById('metadataAcknowledgements')?.value));
-    addField('Basics', 'DatasetDOI', textFilled(_cleanMetadataText(document.getElementById('metadataDOI')?.value)));
-    addField('Basics', 'HEDVersion', textFilled(document.getElementById('metadataHED')?.value));
-    addField('Basics', 'HowToAcknowledge', textFilled(document.getElementById('metadataHowToAcknowledge')?.value));
-    addField('Basics', 'ReferencesAndLinks', textFilled(document.getElementById('metadataReferences')?.value));
+
+    addField('DiscoveryCitation', 'DatasetDOI', textFilled(_cleanMetadataText(document.getElementById('metadataDOI')?.value)));
+    addField('DiscoveryCitation', 'HEDVersion', textFilled(document.getElementById('metadataHED')?.value));
+    addField('DiscoveryCitation', 'HowToAcknowledge', textFilled(document.getElementById('metadataHowToAcknowledge')?.value));
+    addField('DiscoveryCitation', 'ReferencesAndLinks', textFilled(document.getElementById('metadataReferences')?.value));
 
     addField('Overview', 'Main', textFilled(document.getElementById('smOverviewMain')?.value));
     addField('Overview', 'IndependentVariables', getOverviewList('smOverviewIV').length > 0);
@@ -3358,7 +3355,6 @@ export function computeLocalCompleteness() {
     addField('Procedure', 'Overview', textFilled(document.getElementById('smProcOverview')?.value));
     addField('Procedure', 'InformedConsent', textFilled(document.getElementById('smProcConsent')?.value));
     addField('Procedure', 'QualityControl', getOverviewList('smProcQC').length > 0);
-    addField('Procedure', 'MissingDataHandling', textFilled(document.getElementById('smProcMissing')?.value));
     addField('Procedure', 'Debriefing', textFilled(document.getElementById('smProcDebriefing')?.value));
     addField('Procedure', 'AdditionalData', textFilled(document.getElementById('smProcAdditionalData')?.value));
     addField('Procedure', 'Notes', textFilled(document.getElementById('smProcNotes')?.value));
@@ -3430,7 +3426,7 @@ export function updateCompletenessUI(completeness) {
     const sections = completeness.sections || {};
     const sectionOrder = [
         'Basics', 'Overview', 'StudyDesign', 'Recruitment', 'Eligibility',
-        'Procedure', 'MissingData', 'References'
+        'Procedure', 'DiscoveryCitation', 'MissingData', 'References'
     ];
     const sectionLabels = {
         Basics: 'Basics (BIDS)',
@@ -3439,6 +3435,7 @@ export function updateCompletenessUI(completeness) {
         Recruitment: 'Recruitment',
         Eligibility: 'Eligibility',
         Procedure: 'Procedure',
+        DiscoveryCitation: 'Discovery & Citation',
         MissingData: 'Missing Data & Issues',
         References: 'Background Literature'
     };
@@ -3579,6 +3576,13 @@ function _jumpToSection(sectionKey) {
     const collapseId = 'sm' + sectionKey;
     const collapseEl = document.getElementById(collapseId);
     const toggleButton = document.querySelector(`[data-bs-target="#${collapseId}"]`);
+
+    // Expand any ancestor section-group fold first, since a section's own
+    // collapse can be "show" while still hidden inside a collapsed group.
+    const groupBody = collapseEl?.closest('.collapse[id$="GroupBody"]');
+    if (groupBody && window.bootstrap?.Collapse) {
+        window.bootstrap.Collapse.getOrCreateInstance(groupBody, { toggle: false }).show();
+    }
 
     if (collapseEl && window.bootstrap?.Collapse) {
         window.bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false }).show();

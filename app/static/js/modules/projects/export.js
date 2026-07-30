@@ -1446,7 +1446,84 @@ export async function loadExportPreferences() {
 /**
  * Initialize export form
  */
+let exportLicenseLoadToken = 0;
+
+export async function loadExportLicense() {
+    const licenseSelect = getById('exportLicenseSelect');
+    if (!licenseSelect) return;
+
+    const requestProjectPath = resolveCurrentProjectPath();
+    if (!requestProjectPath) return;
+
+    const requestToken = ++exportLicenseLoadToken;
+
+    try {
+        const resp = await fetchWithApiFallback(
+            `/api/projects/description?project_path=${encodeURIComponent(requestProjectPath)}`
+        );
+        const data = await resp.json().catch(() => ({}));
+        if (requestToken !== exportLicenseLoadToken || requestProjectPath !== resolveCurrentProjectPath()) {
+            return;
+        }
+        if (data.success && data.description) {
+            licenseSelect.value = data.description.License || 'CC0';
+        }
+    } catch {
+        // Leave the select at its current/default value on failure.
+    }
+}
+
+async function saveExportLicense() {
+    const licenseSelect = getById('exportLicenseSelect');
+    const statusEl = getById('exportLicenseSaveStatus');
+    const saveBtn = getById('exportLicenseSaveBtn');
+    if (!licenseSelect) return;
+
+    const requestProjectPath = resolveCurrentProjectPath();
+    if (!requestProjectPath) {
+        if (statusEl) statusEl.textContent = 'No project is currently loaded.';
+        return;
+    }
+
+    const originalText = saveBtn ? setButtonLoading(saveBtn, true, 'Saving...') : null;
+    if (statusEl) statusEl.textContent = '';
+
+    try {
+        const currentResp = await fetchWithApiFallback(
+            `/api/projects/description?project_path=${encodeURIComponent(requestProjectPath)}`
+        );
+        const currentData = await currentResp.json().catch(() => ({}));
+        const description = (currentData.success && currentData.description) ? { ...currentData.description } : {};
+        description.License = licenseSelect.value;
+
+        const response = await fetchWithApiFallback('/api/projects/description', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                project_path: requestProjectPath,
+                description,
+                citation_fields: { License: licenseSelect.value },
+            }),
+        });
+        const result = await response.json().catch(() => ({}));
+
+        if (statusEl) {
+            statusEl.textContent = result.success ? 'Saved.' : (result.error || 'Could not save license.');
+        }
+    } catch (error) {
+        if (statusEl) statusEl.textContent = 'Could not save license.';
+        console.error('Error saving license:', error);
+    } finally {
+        if (saveBtn && originalText !== null) setButtonLoading(saveBtn, false, null, originalText);
+    }
+}
+
 export function initExportForm() {
+    const exportLicenseSaveBtn = getById('exportLicenseSaveBtn');
+    if (exportLicenseSaveBtn) {
+        exportLicenseSaveBtn.addEventListener('click', saveExportLicense);
+    }
+
     const exportProjectForm = getById('exportProjectForm');
     if (exportProjectForm) {
         exportProjectForm.addEventListener('submit', handleExportSubmit);
@@ -1839,6 +1916,7 @@ export function initExportForm() {
 export function initializeProjectsExport() {
     if (exportModuleInitialized) {
         updateExportSnapshotUi();
+        loadExportLicense();
         showExportCard();
         return;
     }
@@ -1848,6 +1926,7 @@ export function initializeProjectsExport() {
     initAndExport();
     initOpenMindsExport();
     loadExportPreferences();
+    loadExportLicense();
     updateExportSnapshotUi();
     showExportCard();
 }
