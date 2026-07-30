@@ -112,25 +112,52 @@
 }
 
 .sm-section-group {
-    padding: 0.85rem 1rem;
-    border: 1px solid #d8e5eb;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid #a9c2cd;
+    border-left: 5px solid #4f6b78;
     border-radius: 14px;
-    background: linear-gradient(180deg, rgba(248, 251, 252, 0.96), rgba(240, 246, 248, 0.92));
+    background: linear-gradient(180deg, rgba(226, 238, 242, 0.9), rgba(214, 231, 237, 0.75));
+}
+
+.sm-group-toggle:hover,
+.sm-group-toggle:focus {
+    border-color: #8facb9;
+}
+
+.sm-section-group__titleline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
 }
 
 .sm-section-group__eyebrow {
-    margin-bottom: 0.2rem;
-    font-size: 0.72rem;
+    font-size: 1.05rem;
     font-weight: 800;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #4f6b78;
+    color: #2c4753;
 }
 
 .sm-section-group__copy {
     font-size: 0.92rem;
     line-height: 1.45;
-    color: #51606d;
+    color: #45535d;
+    white-space: normal;
+}
+
+.sm-group-chevron {
+    flex-shrink: 0;
+    color: #2c4753;
+    transition: transform 0.2s ease;
+}
+
+.sm-group-toggle[aria-expanded="true"] .sm-group-chevron {
+    transform: rotate(180deg);
 }
 
 .sm-section-toggle {
@@ -180,19 +207,14 @@
     white-space: normal;
 }
 
-.sm-basics-intro,
-.sm-basics-secondary-panel {
+.sm-basics-intro {
     padding: 0.85rem 1rem;
     border-radius: 12px;
-}
-
-.sm-basics-intro {
     border: 1px solid #d9e7ec;
     background: rgba(247, 250, 251, 0.96);
 }
 
-.sm-basics-intro__eyebrow,
-.sm-basics-secondary-panel__eyebrow {
+.sm-basics-intro__eyebrow {
     margin-bottom: 0.2rem;
     font-size: 0.72rem;
     font-weight: 800;
@@ -201,15 +223,10 @@
     color: #55707d;
 }
 
-.sm-basics-intro__copy,
-.sm-basics-secondary-panel__copy {
+.sm-basics-intro__copy {
     font-size: 0.9rem;
     line-height: 1.45;
     color: #5c6a75;
-}
-
-.sm-basics-secondary-panel {
-    background: rgba(255, 255, 255, 0.58);
 }
 
 @media (max-width: 767.98px) {

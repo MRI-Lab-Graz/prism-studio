@@ -157,7 +157,6 @@ export function createMetadataDescriptionController({
 
                 document.getElementById('metadataName').value = cleanMetadataText(desc.Name || '');
                 setAuthorsList(Array.isArray(desc.Authors) ? desc.Authors : (desc.Authors ? [desc.Authors] : []));
-                document.getElementById('metadataLicense').value = cleanMetadataText(desc.License || '') || 'CC0';
                 document.getElementById('metadataAcknowledgements').value = cleanMetadataText(desc.Acknowledgements || '');
                 document.getElementById('metadataDOI').value = cleanMetadataText(desc.DatasetDOI || '');
                 setEthicsApprovals(desc.EthicsApprovals);
@@ -212,7 +211,6 @@ export function createMetadataDescriptionController({
             const description = {
                 Name: nameField.value.trim(),
                 Authors: getAuthorsList(),
-                License: document.getElementById('metadataLicense').value,
                 Acknowledgements: document.getElementById('metadataAcknowledgements').value,
                 DatasetDOI: normalizedDoi,
                 EthicsApprovals: getEthicsApprovals(),
@@ -228,7 +226,6 @@ export function createMetadataDescriptionController({
 
             const citationFields = {
                 Authors: getCitationAuthorsList(),
-                License: document.getElementById('metadataLicense').value,
                 HowToAcknowledge: document.getElementById('metadataHowToAcknowledge').value,
                 ReferencesAndLinks: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
             };

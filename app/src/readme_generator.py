@@ -122,7 +122,7 @@ class ReadmeGenerator:
             "Description", "A PRISM/BIDS-compatible dataset."
         )
         metadata["BIDS_VERSION"] = dataset_desc.get("BIDSVersion", "1.9.0")
-        metadata["LICENSE"] = dataset_desc.get("License", "CC-BY-4.0")
+        metadata["LICENSE"] = dataset_desc.get("License", "CC0")
 
         # --- Overview section from project.json ---
         overview = self._as_dict(project_data.get("Overview", {}))
@@ -549,9 +549,17 @@ class ReadmeGenerator:
 ## Metadata
 
 - **BIDS Version**: {metadata.get("BIDS_VERSION", "1.9.0")}
-- **License**: {metadata.get("LICENSE", "CC-BY-4.0")}
+- **License**: {metadata.get("LICENSE", "CC0")}
 - **Funding**: {metadata.get("FUNDING", "Not specified")}
 - **Ethics Approvals**: {metadata.get("ETHICS_APPROVALS", "Not specified")}
+
+## Data Sharing
+
+This README describes the dataset as stored in its working project folder.
+Do not distribute this raw folder (or its DataLad-annexed content) directly.
+Before sharing publicly, use PRISM Studio's Export feature, which strips
+DataLad/annex traces and applies the license and anonymization settings you
+choose.
 
 ---
 
