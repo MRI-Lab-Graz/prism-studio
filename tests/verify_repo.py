@@ -420,6 +420,7 @@ def check_secrets(repo_path, fix=False):
             r"docs/CLI_REFERENCE\.md",
             r"vendor/pyedflib/version\.py",
             r"tests/test_projects_library_settings_api\.py",
+            r"tests/test_convert_get_json_hash\.py",
         ]
         known_false_positive_regex = "|".join(known_false_positive_paths)
         exclude_arg = (
