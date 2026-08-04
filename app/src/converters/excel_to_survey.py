@@ -60,6 +60,7 @@ try:
         clean_variable_name,
         parse_levels,
         detect_language,
+        read_excel_sheets,
     )
 except (ImportError, ValueError):
     # Fallback for different execution contexts
@@ -69,6 +70,7 @@ except (ImportError, ValueError):
         clean_variable_name as _clean_variable_name,
         parse_levels as _parse_levels,
         detect_language as _detect_language,
+        read_excel_sheets as _read_excel_sheets,
     )
 
     norm_key = _norm_key
@@ -76,6 +78,7 @@ except (ImportError, ValueError):
     clean_variable_name = _clean_variable_name
     parse_levels = _parse_levels
     detect_language = _detect_language
+    read_excel_sheets = _read_excel_sheets
 
 # Standard metadata for known instruments
 # You can extend this dictionary or load it from an external file
@@ -1062,9 +1065,7 @@ def extract_excel_templates(
         elif str(excel_file).lower().endswith(".tsv"):
             df_meta = pd.read_csv(excel_file, sep="\t", header=None, dtype=str)
         else:
-            workbook = pd.read_excel(
-                excel_file, sheet_name=None, header=None, dtype=str
-            )
+            workbook = read_excel_sheets(excel_file)
             if isinstance(workbook, dict):
                 (
                     variant_definitions_by_prefix,
