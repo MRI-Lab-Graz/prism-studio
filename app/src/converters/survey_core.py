@@ -180,31 +180,61 @@ def load_survey_library(library_path: str) -> Dict[str, Dict[str, Any]]:
 
 
 def get_allowed_values(col_def: Any) -> Optional[List[str]]:
-    """Return allowed values for a column, expanding numeric level endpoints to full range."""
+    """Return allowed values for a column, expanding numeric level endpoints to a range.
+
+    This is the single canonical implementation — it used to be reimplemented
+    independently in `app/src/validator.py` and in the physically-separate
+    `src/converters/survey_base.py` mirror, with subtly different behavior
+    (see CLAUDE.md's dual-tree note). Precedence: explicit `AllowedValues`
+    first, then `Levels`. When `Levels` is present, explicit `MinValue`/
+    `MaxValue` on the column define the range if both are set; otherwise a
+    numeric subset of the level keys is expanded into a contiguous range
+    (only when that range is neither trivially small nor implausibly large —
+    `1 < range < 100` — to avoid either a no-op "range" or an unbounded
+    expansion from a stray numeric-looking key). Non-numeric level keys are
+    always preserved rather than dropped, and a `Levels`-bearing column never
+    resolves to `None` — even in the worst case it falls back to the raw
+    level keys, so downstream allowed-value checks still run instead of
+    silently no-op'ing.
+    """
     if not isinstance(col_def, dict):
         return None
 
-    if "AllowedValues" in col_def:
-        return [str(x) for x in col_def["AllowedValues"]]
+    allowed_values = col_def.get("AllowedValues")
+    if isinstance(allowed_values, list):
+        return [str(x) for x in allowed_values]
 
-    if "Levels" in col_def:
-        level_keys = list(col_def["Levels"].keys())
+    levels = col_def.get("Levels")
+    if not isinstance(levels, dict):
+        return None
+
+    level_keys = list(levels.keys())
+
+    min_val = col_def.get("MinValue")
+    max_val = col_def.get("MaxValue")
+    if min_val is not None and max_val is not None:
         try:
-            numeric_levels = [int(float(k)) for k in level_keys]
+            min_i = int(float(min_val))
+            max_i = int(float(max_val))
+            return [str(i) for i in range(min_i, max_i + 1)]
         except (ValueError, TypeError):
-            numeric_levels = []
-
-        if numeric_levels:
-            min_level = min(numeric_levels)
-            max_level = max(numeric_levels)
-            # Only expand if it looks like a continuous range
-            if max_level - min_level < 100:
-                full_range = [str(i) for i in range(min_level, max_level + 1)]
-                return full_range
-            # Otherwise return explicit levels
             return level_keys
 
-    return None
+    numeric_level_keys = []
+    non_numeric_keys = []
+    for key in level_keys:
+        try:
+            numeric_level_keys.append(int(float(key)))
+        except (ValueError, TypeError):
+            non_numeric_keys.append(key)
+
+    if numeric_level_keys:
+        min_level, max_level = min(numeric_level_keys), max(numeric_level_keys)
+        if 1 < (max_level - min_level) < 100:
+            full_range = [str(i) for i in range(min_level, max_level + 1)]
+            return full_range + non_numeric_keys
+
+    return level_keys
 
 
 # =============================================================================
