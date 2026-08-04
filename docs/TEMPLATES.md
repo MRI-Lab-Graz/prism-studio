@@ -193,6 +193,9 @@ using the `Questions` structure — both forms are valid).
 
 ## What's next
 
+- [Excel Survey Template — Basics](EXCEL_TEMPLATE_BASICS.md) /
+  [— Multiple Versions](EXCEL_TEMPLATE_ADVANCED.md) — build a template like the ones
+  above from a spreadsheet instead of the editor form
 - [Template Editor](studio/template_editor.md)
 - [Survey Import](studio/converter_survey.md)
 - [Validator](studio/validator.md) · [specs/survey](specs/survey)

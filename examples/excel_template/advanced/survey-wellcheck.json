@@ -1,0 +1,535 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "PRISM Tutorial",
+    "Language": "en",
+    "Respondent": "self",
+    "AdministrationMethod": "digital",
+    "ResponseType": [
+      "paper-pencil"
+    ]
+  },
+  "I18n": {
+    "Languages": [
+      "en",
+      "de"
+    ],
+    "DefaultLanguage": "en",
+    "TranslationMethod": "forward-backward"
+  },
+  "Study": {
+    "TaskName": "wellcheck",
+    "OriginalName": {
+      "en": "Brief Wellbeing Check",
+      "de": "Kurzer Wohlbefindens-Check"
+    },
+    "ShortName": "wellcheck",
+    "Version": "10-item",
+    "Citation": "PRISM Docs Team (2026). Brief Wellbeing Check (tutorial example).",
+    "Construct": {
+      "en": "General wellbeing",
+      "de": "Allgemeines Wohlbefinden"
+    },
+    "Description": {
+      "en": "I felt cheerful and in good spirits",
+      "de": "Ich fuehlte mich froehlich und guter Laune"
+    },
+    "Authors": [
+      "PRISM Docs Team"
+    ],
+    "Keywords": [
+      "wellbeing",
+      "tutorial",
+      "example",
+      "multi-version"
+    ],
+    "Versions": [
+      "10-item",
+      "5-item"
+    ],
+    "VariantDefinitions": [
+      {
+        "VariantID": "10-item",
+        "ItemCount": 10,
+        "ScaleType": "likert",
+        "Description": {
+          "en": "Full 10-item form",
+          "de": "Vollstaendige 10-Item-Form"
+        }
+      },
+      {
+        "VariantID": "5-item",
+        "ItemCount": 5,
+        "ScaleType": "likert",
+        "Description": {
+          "en": "Short 5-item form",
+          "de": "Kurze 5-Item-Form"
+        }
+      }
+    ],
+    "Instructions": {
+      "en": "For each statement, select the response closest to how you have felt over the last two weeks.",
+      "de": "Waehlen Sie fuer jede Aussage die Antwort, die am ehesten beschreibt, wie Sie sich in den letzten zwei Wochen gefuehlt haben."
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.1",
+    "CreationDate": "2026-08-03",
+    "Creator": "excel_to_library.py"
+  },
+  "wellcheck01": {
+    "Description": {
+      "de": "Ich fuehlte mich froehlich und guter Laune",
+      "en": "I felt cheerful and in good spirits"
+    },
+    "Levels": {
+      "0": {
+        "de": "zu keinem Zeitpunkt",
+        "en": "at no time"
+      },
+      "1": {
+        "de": "manchmal",
+        "en": "some of the time"
+      },
+      "2": {
+        "de": "mehr als die Haelfte der Zeit",
+        "en": "more than half the time"
+      },
+      "3": {
+        "de": "meistens",
+        "en": "most of the time"
+      },
+      "4": {
+        "de": "die ganze Zeit",
+        "en": "all of the time"
+      }
+    },
+    "Unit": "ordinal",
+    "DataType": "integer",
+    "MinValue": 0.0,
+    "MaxValue": 4.0,
+    "AllowedValues": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "VariantScales": [
+      {
+        "VariantID": "5-item",
+        "Levels": {
+          "0": {
+            "en": "rarely",
+            "de": "selten"
+          },
+          "1": {
+            "en": "sometimes",
+            "de": "manchmal"
+          },
+          "2": {
+            "en": "often",
+            "de": "haeufig"
+          }
+        },
+        "DataType": "integer",
+        "MinValue": 0.0,
+        "MaxValue": 2.0,
+        "Unit": "ordinal",
+        "AllowedValues": [
+          0,
+          1,
+          2
+        ],
+        "ScaleType": "likert"
+      }
+    ],
+    "ApplicableVersions": [
+      "10-item",
+      "5-item"
+    ]
+  },
+  "wellcheck02": {
+    "Description": {
+      "de": "Ich fuehlte mich ruhig und entspannt",
+      "en": "I felt calm and relaxed"
+    },
+    "Levels": {
+      "0": {
+        "de": "zu keinem Zeitpunkt",
+        "en": "at no time"
+      },
+      "1": {
+        "de": "manchmal",
+        "en": "some of the time"
+      },
+      "2": {
+        "de": "mehr als die Haelfte der Zeit",
+        "en": "more than half the time"
+      },
+      "3": {
+        "de": "meistens",
+        "en": "most of the time"
+      },
+      "4": {
+        "de": "die ganze Zeit",
+        "en": "all of the time"
+      }
+    },
+    "Unit": "ordinal",
+    "DataType": "integer",
+    "MinValue": 0.0,
+    "MaxValue": 4.0,
+    "AllowedValues": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "ApplicableVersions": [
+      "10-item",
+      "5-item"
+    ]
+  },
+  "wellcheck03": {
+    "Description": {
+      "de": "Ich fuehlte mich aktiv und tatkraeftig",
+      "en": "I felt active and vigorous"
+    },
+    "Levels": {
+      "0": {
+        "de": "zu keinem Zeitpunkt",
+        "en": "at no time"
+      },
+      "1": {
+        "de": "manchmal",
+        "en": "some of the time"
+      },
+      "2": {
+        "de": "mehr als die Haelfte der Zeit",
+        "en": "more than half the time"
+      },
+      "3": {
+        "de": "meistens",
+        "en": "most of the time"
+      },
+      "4": {
+        "de": "die ganze Zeit",
+        "en": "all of the time"
+      }
+    },
+    "Unit": "ordinal",
+    "DataType": "integer",
+    "MinValue": 0.0,
+    "MaxValue": 4.0,
+    "AllowedValues": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "ApplicableVersions": [
+      "10-item",
+      "5-item"
+    ]
+  },
+  "wellcheck04": {
+    "Description": {
+      "de": "Ich bin frisch und ausgeruht aufgewacht",
+      "en": "I woke up feeling fresh and rested"
+    },
+    "Levels": {
+      "0": {
+        "de": "zu keinem Zeitpunkt",
+        "en": "at no time"
+      },
+      "1": {
+        "de": "manchmal",
+        "en": "some of the time"
+      },
+      "2": {
+        "de": "mehr als die Haelfte der Zeit",
+        "en": "more than half the time"
+      },
+      "3": {
+        "de": "meistens",
+        "en": "most of the time"
+      },
+      "4": {
+        "de": "die ganze Zeit",
+        "en": "all of the time"
+      }
+    },
+    "Unit": "ordinal",
+    "DataType": "integer",
+    "MinValue": 0.0,
+    "MaxValue": 4.0,
+    "AllowedValues": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "ApplicableVersions": [
+      "10-item",
+      "5-item"
+    ]
+  },
+  "wellcheck05": {
+    "Description": {
+      "de": "Mein Alltag war voller Dinge, die mich interessieren",
+      "en": "My daily life was filled with things that interest me"
+    },
+    "Levels": {
+      "0": {
+        "de": "zu keinem Zeitpunkt",
+        "en": "at no time"
+      },
+      "1": {
+        "de": "manchmal",
+        "en": "some of the time"
+      },
+      "2": {
+        "de": "mehr als die Haelfte der Zeit",
+        "en": "more than half the time"
+      },
+      "3": {
+        "de": "meistens",
+        "en": "most of the time"
+      },
+      "4": {
+        "de": "die ganze Zeit",
+        "en": "all of the time"
+      }
+    },
+    "Unit": "ordinal",
+    "DataType": "integer",
+    "MinValue": 0.0,
+    "MaxValue": 4.0,
+    "AllowedValues": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "ApplicableVersions": [
+      "10-item",
+      "5-item"
+    ]
+  },
+  "wellcheck06": {
+    "Description": {
+      "de": "Ich fuehlte mich zuversichtlich in Bezug auf die Zukunft",
+      "en": "I felt confident about the future"
+    },
+    "Levels": {
+      "0": {
+        "de": "zu keinem Zeitpunkt",
+        "en": "at no time"
+      },
+      "1": {
+        "de": "manchmal",
+        "en": "some of the time"
+      },
+      "2": {
+        "de": "mehr als die Haelfte der Zeit",
+        "en": "more than half the time"
+      },
+      "3": {
+        "de": "meistens",
+        "en": "most of the time"
+      },
+      "4": {
+        "de": "die ganze Zeit",
+        "en": "all of the time"
+      }
+    },
+    "Unit": "ordinal",
+    "DataType": "integer",
+    "MinValue": 0.0,
+    "MaxValue": 4.0,
+    "AllowedValues": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "ApplicableVersions": [
+      "10-item"
+    ]
+  },
+  "wellcheck07": {
+    "Description": {
+      "de": "Ich fuehlte mich von Menschen in meiner Umgebung unterstuetzt",
+      "en": "I felt supported by people around me"
+    },
+    "Levels": {
+      "0": {
+        "de": "zu keinem Zeitpunkt",
+        "en": "at no time"
+      },
+      "1": {
+        "de": "manchmal",
+        "en": "some of the time"
+      },
+      "2": {
+        "de": "mehr als die Haelfte der Zeit",
+        "en": "more than half the time"
+      },
+      "3": {
+        "de": "meistens",
+        "en": "most of the time"
+      },
+      "4": {
+        "de": "die ganze Zeit",
+        "en": "all of the time"
+      }
+    },
+    "Unit": "ordinal",
+    "DataType": "integer",
+    "MinValue": 0.0,
+    "MaxValue": 4.0,
+    "AllowedValues": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "ApplicableVersions": [
+      "10-item"
+    ]
+  },
+  "wellcheck08": {
+    "Description": {
+      "de": "Ich konnte mich auf das konzentrieren, was ich tat",
+      "en": "I was able to concentrate on what I was doing"
+    },
+    "Levels": {
+      "0": {
+        "de": "zu keinem Zeitpunkt",
+        "en": "at no time"
+      },
+      "1": {
+        "de": "manchmal",
+        "en": "some of the time"
+      },
+      "2": {
+        "de": "mehr als die Haelfte der Zeit",
+        "en": "more than half the time"
+      },
+      "3": {
+        "de": "meistens",
+        "en": "most of the time"
+      },
+      "4": {
+        "de": "die ganze Zeit",
+        "en": "all of the time"
+      }
+    },
+    "Unit": "ordinal",
+    "DataType": "integer",
+    "MinValue": 0.0,
+    "MaxValue": 4.0,
+    "AllowedValues": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "ApplicableVersions": [
+      "10-item"
+    ]
+  },
+  "wellcheck09": {
+    "Description": {
+      "de": "Ich hatte ein Gefuehl von Sinn in meinen taeglichen Aktivitaeten",
+      "en": "I felt a sense of purpose in my daily activities"
+    },
+    "Levels": {
+      "0": {
+        "de": "zu keinem Zeitpunkt",
+        "en": "at no time"
+      },
+      "1": {
+        "de": "manchmal",
+        "en": "some of the time"
+      },
+      "2": {
+        "de": "mehr als die Haelfte der Zeit",
+        "en": "more than half the time"
+      },
+      "3": {
+        "de": "meistens",
+        "en": "most of the time"
+      },
+      "4": {
+        "de": "die ganze Zeit",
+        "en": "all of the time"
+      }
+    },
+    "Unit": "ordinal",
+    "DataType": "integer",
+    "MinValue": 0.0,
+    "MaxValue": 4.0,
+    "AllowedValues": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "ApplicableVersions": [
+      "10-item"
+    ]
+  },
+  "wellcheck10": {
+    "Description": {
+      "de": "Ich war im Allgemeinen mit meinem Leben zufrieden",
+      "en": "I generally felt satisfied with my life"
+    },
+    "Levels": {
+      "0": {
+        "de": "zu keinem Zeitpunkt",
+        "en": "at no time"
+      },
+      "1": {
+        "de": "manchmal",
+        "en": "some of the time"
+      },
+      "2": {
+        "de": "mehr als die Haelfte der Zeit",
+        "en": "more than half the time"
+      },
+      "3": {
+        "de": "meistens",
+        "en": "most of the time"
+      },
+      "4": {
+        "de": "die ganze Zeit",
+        "en": "all of the time"
+      }
+    },
+    "Unit": "ordinal",
+    "DataType": "integer",
+    "MinValue": 0.0,
+    "MaxValue": 4.0,
+    "AllowedValues": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "ApplicableVersions": [
+      "10-item"
+    ]
+  }
+}
