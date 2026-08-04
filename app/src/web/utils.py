@@ -122,15 +122,17 @@ def shorten_path(path: str, max_parts: int = 3) -> str:
         return "General"
     import os
 
-    parts = path.replace("\\", "/").split("/")
+    parts = path.replace("\\", os.sep).split(os.sep)
     if len(parts) <= max_parts:
-        return "/".join(parts)
-    return ".../" + "/".join(parts[-max_parts:])
+        return os.sep.join(parts)
+    return "..." + os.sep + os.sep.join(parts[-max_parts:])
 
 
 def get_filename_from_path(path: str) -> str:
     if _import_get_filename_from_path is not None:
         return _import_get_filename_from_path(path)
+    if not path:
+        return "General"
     try:
         import os
 

@@ -38,6 +38,18 @@ for the import path you care about:
 python3 -c "import src.converters.<module> as m; print(m.__file__)"
 ```
 
+**Which side wins is not uniform across the tree** — it depends on whether
+either side has a real `__init__.py`. `src.converters` has no `__init__.py`
+on either side, so it's a pure namespace-package merge and the physical file
+under top-level `src/` wins (this is what bit `excel_base.py`/
+`survey_base.py`). `src.web`, by contrast, resolves to
+`app/src/web/__init__.py` — a real package — because a regular package
+always wins over a namespace-package portion, so for anything under
+`src.web.*` it's the physically-adjacent file in `app/src/web/` that's live,
+and a same-named file directly under top-level `src/web/` is the dead one
+instead (this is what happened to `web/utils.py`, see below). Always check
+with the one-liner below rather than assuming a direction.
+
 If that resolves to a *different* file than the one you edited, your change
 is not in effect for anything importing through `src.*` (the CLI: `prism.py`,
 `prism_tools.py`, `python -m src.cli.entrypoint`). Do not just duplicate the
@@ -75,7 +87,26 @@ making `survey_core.get_allowed_values` the one canonical implementation
 it instead of keeping a private copy, and collapsing `src/converters/
 survey_base.py` into a symlink like `excel_base.py`. Regression tests:
 `tests/test_survey_base.py` (function-level) and
-`tests/test_validator_allowed_values.py` (validator integration). Don't treat the absence of a file
+`tests/test_validator_allowed_values.py` (validator integration).
+
+`web/utils.py` (also 2026-08-04) turned out to be the opposite failure mode:
+`src/web/utils.py` was a fully independent file, but — per the `__init__.py`
+rule above — completely *unreachable*, dead code; `app/src/web/utils.py` was
+already the live copy everywhere (the Flask app, the CLI, and the test
+suite all resolve `src.web.utils` there). Confirmed by checking
+`src.web.__path__` directly and by grepping every place in this repo that
+imports `src.web.utils`/`endpoint_exists` for how each one sets up `sys.path`.
+Still worth reconciling before deleting: the dead file's fallback bodies
+(only reached if `src.web.path_utils` itself fails to import — a real, if
+rare, concern for the PyInstaller-frozen build) had two correctness fixes
+the live file was missing — `os.sep` instead of a hardcoded `/`, and an
+empty-path guard on `get_filename_from_path`. Ported those into
+`app/src/web/utils.py`, then collapsed `src/web/utils.py` into a symlink.
+Regression tests: `tests/test_web_utils_fallback.py` (forces the dormant
+fallback branches directly via monkeypatch, since normal test runs never
+reach them — the only way to give a safety net real coverage).
+
+Don't treat the absence of a file
 from this note as proof it's safe; the check above is the source of truth,
 this paragraph is not a checklist.
 
