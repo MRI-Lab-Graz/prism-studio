@@ -9,6 +9,7 @@ repository has reusable sample assets — this page tells you which path to choo
 |---|---|---|
 | Get one quick success | [Quick Start](QUICK_START.md) | 10–15 min |
 | Learn the full beginner workflow | [Workshop](WORKSHOP.md) | ~90 min |
+| Build a survey template from an Excel codebook | [Excel Survey Template — Basics](EXCEL_TEMPLATE_BASICS.md), then [— Multiple Versions](EXCEL_TEMPLATE_ADVANCED.md) | 15–35 min |
 | Reuse import templates only | `docs/examples/` sample files | A few minutes |
 | Teach PRISM in a class or onboarding session | `examples/workshop/` handouts and exercises | 90–120 min |
 
@@ -24,6 +25,12 @@ teaching/offline use), and the long-form
 
 For a format reference without running the full workshop, `docs/examples/` has
 sample import files: `survey_import_template.xlsx`, `biometrics_import_template.xlsx`.
+
+For turning a spreadsheet codebook into a reusable survey **template** (instrument
+definition, not respondent data), see
+[Excel Survey Template — Basics](EXCEL_TEMPLATE_BASICS.md) and
+[— Multiple Versions](EXCEL_TEMPLATE_ADVANCED.md), backed by worked examples under
+`examples/excel_template/`.
 
 These materials are also the best base for future documentation examples — concrete,
 repository-local, and easy to verify against current behavior.

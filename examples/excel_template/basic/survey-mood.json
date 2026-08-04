@@ -1,0 +1,195 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "PRISM Tutorial",
+    "Language": "en",
+    "Respondent": "self",
+    "AdministrationMethod": "digital",
+    "ResponseType": [
+      "paper-pencil"
+    ]
+  },
+  "I18n": {
+    "Languages": [
+      "en",
+      "de"
+    ],
+    "DefaultLanguage": "en",
+    "TranslationMethod": "forward-backward"
+  },
+  "Study": {
+    "TaskName": "mood",
+    "OriginalName": {
+      "en": "Daily Mood Check",
+      "de": "Taeglicher Stimmungscheck"
+    },
+    "ShortName": "mood",
+    "Version": {
+      "en": "1",
+      "de": "1"
+    },
+    "Citation": "PRISM Docs Team (2026). Daily Mood Check (tutorial example).",
+    "Construct": {
+      "en": "Momentary mood",
+      "de": "Momentane Stimmung"
+    },
+    "Description": {
+      "en": "Today I felt cheerful",
+      "de": "Heute fuehlte ich mich froehlich"
+    },
+    "Authors": [
+      "PRISM Docs Team"
+    ],
+    "Keywords": [
+      "mood",
+      "tutorial",
+      "example"
+    ],
+    "Instructions": {
+      "en": "Think about today and answer each question.",
+      "de": "Denken Sie an den heutigen Tag und beantworten Sie jede Frage."
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.1",
+    "CreationDate": "2026-08-03",
+    "Creator": "excel_to_library.py"
+  },
+  "mood01": {
+    "Description": {
+      "de": "Heute fuehlte ich mich froehlich",
+      "en": "Today I felt cheerful"
+    },
+    "Levels": {
+      "0": {
+        "de": "nie",
+        "en": "never"
+      },
+      "1": {
+        "de": "selten",
+        "en": "rarely"
+      },
+      "2": {
+        "de": "manchmal",
+        "en": "sometimes"
+      },
+      "3": {
+        "de": "haeufig",
+        "en": "often"
+      }
+    },
+    "Unit": "ordinal",
+    "DataType": "integer",
+    "MinValue": 0.0,
+    "MaxValue": 3.0,
+    "AllowedValues": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  "mood02": {
+    "Description": {
+      "de": "Heute fuehlte ich mich aengstlich",
+      "en": "Today I felt anxious"
+    },
+    "Levels": {
+      "0": {
+        "de": "nie",
+        "en": "never"
+      },
+      "1": {
+        "de": "selten",
+        "en": "rarely"
+      },
+      "2": {
+        "de": "manchmal",
+        "en": "sometimes"
+      },
+      "3": {
+        "de": "haeufig",
+        "en": "often"
+      }
+    },
+    "Unit": "ordinal",
+    "DataType": "integer",
+    "MinValue": 0.0,
+    "MaxValue": 3.0,
+    "AllowedValues": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  "mood03": {
+    "Description": {
+      "de": "Heute hatte ich das Gefuehl, die Dinge im Griff zu haben",
+      "en": "Today I felt in control of things"
+    },
+    "Levels": {
+      "0": {
+        "de": "nie",
+        "en": "never"
+      },
+      "1": {
+        "de": "selten",
+        "en": "rarely"
+      },
+      "2": {
+        "de": "manchmal",
+        "en": "sometimes"
+      },
+      "3": {
+        "de": "haeufig",
+        "en": "often"
+      }
+    },
+    "Unit": "ordinal",
+    "DataType": "integer",
+    "MinValue": 0.0,
+    "MaxValue": 3.0,
+    "AllowedValues": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  "mood04": {
+    "Description": {
+      "de": "Heute war ich mit meinem Tag zufrieden",
+      "en": "Today I felt satisfied with my day"
+    },
+    "Levels": {
+      "0": {
+        "de": "nie",
+        "en": "never"
+      },
+      "1": {
+        "de": "selten",
+        "en": "rarely"
+      },
+      "2": {
+        "de": "manchmal",
+        "en": "sometimes"
+      },
+      "3": {
+        "de": "haeufig",
+        "en": "often"
+      }
+    },
+    "Unit": "ordinal",
+    "DataType": "integer",
+    "MinValue": 0.0,
+    "MaxValue": 3.0,
+    "AllowedValues": [
+      0,
+      1,
+      2,
+      3
+    ]
+  }
+}

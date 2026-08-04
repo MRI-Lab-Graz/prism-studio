@@ -5,6 +5,10 @@ The `survey` modality is a PRISM extension for handling complex questionnaires. 
 > [!TIP]
 > **Starting a new survey?** The canonical workbook is [official/create_new_survey/survey_import_template.xlsx](../../official/create_new_survey/survey_import_template.xlsx).
 > For direct browser download on Read the Docs, you can also use [Survey Import Template](../examples/survey_import_template.xlsx).
+> For a guided, step-by-step walkthrough with worked examples, see
+> [Excel Survey Template — Basics](../EXCEL_TEMPLATE_BASICS.md) and
+> [— Multiple Versions](../EXCEL_TEMPLATE_ADVANCED.md) — this page stays the terse
+> field-by-field reference.
 
 ## Import Template Layout
 

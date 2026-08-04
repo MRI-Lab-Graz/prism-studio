@@ -140,6 +140,8 @@ Why researchers use PRISM Studio
 
    WORKSHOP
    EXAMPLES
+   EXCEL_TEMPLATE_BASICS
+   EXCEL_TEMPLATE_ADVANCED
 
 .. toctree::
    :maxdepth: 2

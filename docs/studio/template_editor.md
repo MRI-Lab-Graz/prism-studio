@@ -17,7 +17,10 @@ template from one of two dropdowns:
 
 You can also **Create** a blank template from the schema, or **Import** from
 LimeSurvey XML (`.lsq`/`.lsg`/`.lsa`) or a tabular codebook (`.xlsx`/`.csv`/`.tsv`,
-with a group picker for multi-instrument Excel files).
+with a group picker for multi-instrument Excel files). For a guided, step-by-step walk
+through the Excel codebook import path, see
+[Excel Survey Template — Basics](../EXCEL_TEMPLATE_BASICS.md) and
+[— Multiple Versions](../EXCEL_TEMPLATE_ADVANCED.md).
 
 ## Editing
 
@@ -74,6 +77,9 @@ available.
 
 ## What's next
 
+- [Excel Survey Template — Basics](../EXCEL_TEMPLATE_BASICS.md) /
+  [— Multiple Versions](../EXCEL_TEMPLATE_ADVANCED.md) — tutorials for the Excel
+  import path used above
 - [Survey Import](converter_survey.md) — templates copied during import land here
 - [Recipe Builder](recipe_builder.md) — scoring recipes reference template items
 - [Schema Versioning](../SCHEMA_VERSIONING.md) for how `Study.Versions` drives
