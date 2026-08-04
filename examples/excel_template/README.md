@@ -32,5 +32,7 @@ known-good, not hand-written.
 Both workbooks carry the same guardrails as the canonical
 `official/create_new_survey/survey_import_template.xlsx`: locked header rows,
 `General` locked outside its `Value` column, and dropdown (list) data validation on
-`DataType`, `Units`, `Respondent`, `AdministrationMethod`, `ScaleType`, and — in
-`advanced/` — `Version`/`ApplicableVersions` sourced live from the `Variants` sheet.
+`DataType`, `Units`, `LicenseID`, `Respondent`, `AdministrationMethod`,
+`SoftwarePlatform`, `TranslationMethod`, `ScaleType`/`DataType` (on `Variants`), and —
+in `advanced/` — `Version`/`ApplicableVersions` sourced live from the `Variants`
+sheet.
