@@ -33,11 +33,13 @@ by heart:
 
 - **Header row is locked.** You can fill in rows below it, but the column names
   themselves can't be edited by accident.
-- **`DataType` and `Units` are dropdowns**, not free-text fields — click the cell and
-  pick from the list instead of typing. This is the main thing that avoids a failed or
-  silently-wrong import: a typo like `interger` in a hand-typed `DataType` column
-  won't be caught until validation (or later), while the dropdown only offers valid
-  values in the first place.
+- **Several columns are dropdowns**, not free-text fields — click the cell and pick
+  from the list instead of typing. In `Items`: `DataType`, `Units`. In `General`:
+  `LicenseID`, `Respondent`, `AdministrationMethod`, `SoftwarePlatform`,
+  `TranslationMethod`. This is the main thing that avoids a failed or silently-wrong
+  import: a typo like `interger` in a hand-typed `DataType` column, or `digital` where
+  the schema actually expects `online`, won't be caught until validation, while the
+  dropdown only offers valid values in the first place.
 - Dropdowns here are a *guide*, not a hard lock — you can still type a custom value if
   you have a good reason to (e.g. a `Units` value not in the recommended list).
 - In `General`, only the `Value` column is editable; `Field`, `Required`, and `Notes`
@@ -70,12 +72,23 @@ validation later:
 |---|---|
 | `OriginalName_en` *(required)* | Daily Mood Check |
 | `OriginalName_de` *(required — at least one `OriginalName_<lang>` is mandatory)* | Taeglicher Stimmungscheck |
+| `LicenseID` *(required)* | CC-BY-4.0 |
 | `ShortName` | mood |
 | `Authors` | PRISM Docs Team |
 | `Respondent` | self |
-| `AdministrationMethod` | digital |
+| `AdministrationMethod` | online |
+| `SoftwarePlatform` | Other |
+| `SoftwareVersion` | unspecified |
 | `I18nLanguages` | en;de |
 | `I18nDefaultLanguage` | en |
+
+`LicenseID` is required by the schema — pick from the dropdown (SPDX-style IDs, or
+`Proprietary`/`Other` if none fit). `AdministrationMethod` and `SoftwarePlatform` are
+both closed enums (that's why they're dropdowns): there's no `digital` option for
+administration — the closest valid value for a self-administered digital
+questionnaire is `online`. And whenever `SoftwarePlatform` is set to anything other
+than `Paper and Pencil` (and `AdministrationMethod` isn't `paper`), `SoftwareVersion`
+becomes required too — fill in something, even a placeholder like `unspecified`.
 
 Leave `Version`, `Versions`, and the entire `Variants` sheet empty — those only apply
 when an instrument has multiple variants (see the advanced tutorial).
@@ -101,10 +114,17 @@ The saved template's `Study` block and one item look like this (trimmed):
     "OriginalName": { "en": "Daily Mood Check", "de": "Taeglicher Stimmungscheck" },
     "ShortName": "mood",
     "Authors": ["PRISM Docs Team"],
+    "LicenseID": "CC-BY-4.0",
     "Instructions": {
       "en": "Think about today and answer each question.",
       "de": "Denken Sie an den heutigen Tag und beantworten Sie jede Frage."
     }
+  },
+  "Technical": {
+    "SoftwarePlatform": "Other",
+    "SoftwareVersion": "unspecified",
+    "Respondent": "self",
+    "AdministrationMethod": "online"
   },
   "mood01": {
     "Description": { "en": "Today I felt cheerful", "de": "Heute fuehlte ich mich froehlich" },
@@ -129,12 +149,27 @@ Full output for comparison:
 
 - **No `OriginalName_<lang>` filled in** — validation fails with `Study.OriginalName`
   missing. At least one language variant is required.
+- **No `LicenseID`** — validation fails with `Study.LicenseID` missing; it's required
+  even for an internal/unpublished instrument. Pick `Proprietary` or `Other` if no
+  real license applies yet.
+- **`AdministrationMethod`/`SoftwarePlatform` set to something outside the dropdown
+  list** (typed instead of picked) — these are closed enums; a value like `digital` or
+  `PsychoPy 2023` fails validation even though it reads as reasonable. Pick from the
+  dropdown.
+- **Placeholder text like `n/a`, `NA`, or `null` in any `Value` cell** — pandas (which
+  PRISM uses to read the workbook) treats these as blank/missing, even when the
+  column is read as text. If a field is required (like `SoftwareVersion` once
+  `SoftwarePlatform` is set), use a real placeholder word such as `unspecified`
+  instead — `n/a` will silently disappear on import.
 - **`Scale` and `AllowedValues`/`MinValue`/`MaxValue` disagree** — e.g. four scale
-  labels (`0`–`3`) but `MaxValue` set to `4`. Keep them in sync. The `DataType`/`Units`
-  dropdowns prevent typos in those two columns specifically, but they can't catch a
-  mismatch between the scale and the numeric bounds — check that by hand.
+  labels (`0`–`3`) but `MaxValue` set to `4`. Keep them in sync. The dropdown columns
+  prevent typos in themselves, but they can't catch a mismatch between the scale and
+  the numeric bounds — check that by hand.
 - **Duplicate `ItemID` across rows** — each item key must be unique within the
-  instrument.
+  instrument. PRISM does *not* check this against other templates already in your
+  project when importing here (that check only runs in the Converter's bulk import,
+  not Template Editor) — use an instrument-specific prefix (`mood01`, not `q01`) so two
+  different instruments can never collide.
 - **Forgetting to pick a `Group`** when the workbook has several instruments in one
   sheet — you'll otherwise get one merged, nonsensical template.
 - **Trying to edit the header row or unprotecting the sheet "to fix" the dropdown** —

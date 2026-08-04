@@ -27,13 +27,17 @@ Follow along with
 [examples/excel_template/advanced/survey_import_advanced_example.xlsx](../examples/excel_template/advanced/survey_import_advanced_example.xlsx)
 — a 10-item "Brief Wellbeing Check" with a 5-item short form.
 
-Like the basics workbook, headers are locked and `DataType`/`Units` are dropdowns.
-This workbook adds one more: `Items.ApplicableVersions` and `General.Version` are also
-dropdowns, sourced live from whatever `VariantID`s you've defined in the `Variants`
-sheet — so once you've named your variants there, picking one elsewhere is a click,
-not free typing. Like the other dropdowns, this is a convenience, not a hard gate: it
-only offers one `VariantID` at a time, so for an item that belongs to *multiple*
-variants (step 2 below) you still type the semicolon-separated list by hand.
+Like the basics workbook, headers are locked and `DataType`/`Units`/`LicenseID`/
+`Respondent`/`AdministrationMethod`/`SoftwarePlatform`/`TranslationMethod` are
+dropdowns. This workbook adds two more: `Items.ApplicableVersions` and
+`General.Version` are also dropdowns, sourced live from whatever `VariantID`s you've
+defined in the `Variants` sheet — so once you've named your variants there, picking
+one elsewhere is a click, not free typing. Like the other dropdowns, this is a
+convenience, not a hard gate: it only offers one `VariantID` at a time, so for an item
+that belongs to *multiple* variants (step 2 below) you still type the
+semicolon-separated list by hand. `Variants.ScaleType` and `Variants.DataType` (used
+on override rows) are dropdowns too, matching the same enums as `Items.DataType` and
+the `ScaleType` used in `Study.VariantDefinitions`.
 
 ## 2. `Items`: tag every row with `ApplicableVersions`
 
@@ -161,6 +165,10 @@ Full output for comparison:
 - **Putting an override row's `VariantID` in the wrong sheet position** — `Variants`
   row type is inferred from whether `ItemID` is filled in, not from a separate flag;
   an accidental value in `ItemID` turns a definition row into an override row.
+- All the `General`-sheet gotchas from the basics tutorial still apply here — missing
+  `LicenseID`, typed-instead-of-picked `AdministrationMethod`/`SoftwarePlatform`
+  values, and `n/a`-style placeholders silently reading as blank. See
+  [Common mistakes](EXCEL_TEMPLATE_BASICS.md#common-mistakes) there.
 
 ## What's next
 

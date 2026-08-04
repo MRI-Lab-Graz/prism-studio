@@ -199,6 +199,7 @@ SOFTWARE_PLATFORM_ALIASES = {
     "software",
 }
 SOFTWARE_VERSION_ALIASES = {"softwareversion", "software_version"}
+LICENSE_ID_ALIASES = {"licenseid", "license_id", "license"}
 I18N_LANGUAGES_ALIASES = {"languages", "i18n_languages", "i18nlanguages"}
 I18N_DEFAULT_LANGUAGE_ALIASES = {
     "defaultlanguage",
@@ -1135,6 +1136,7 @@ def extract_excel_templates(
     admin_method_idx = find_column_idx(header_row, ADMIN_METHOD_ALIASES)
     platform_idx = find_column_idx(header_row, SOFTWARE_PLATFORM_ALIASES)
     platform_version_idx = find_column_idx(header_row, SOFTWARE_VERSION_ALIASES)
+    license_id_idx = find_column_idx(header_row, LICENSE_ID_ALIASES)
     i18n_languages_idx = find_column_idx(header_row, I18N_LANGUAGES_ALIASES)
     i18n_default_lang_idx = find_column_idx(header_row, I18N_DEFAULT_LANGUAGE_ALIASES)
     i18n_translation_method_idx = find_column_idx(
@@ -1364,6 +1366,7 @@ def extract_excel_templates(
         i18n_translation_method = get_val(row, i18n_translation_method_idx)
         authors = get_val(row, authors_idx)
         doi = get_val(row, doi_idx)
+        license_id = get_val(row, license_id_idx)
         reliability = get_val(row, reliability_idx)
         reliability_en = get_val(row, reliability_en_idx)
         reliability_de = get_val(row, reliability_de_idx)
@@ -1452,6 +1455,8 @@ def extract_excel_templates(
             meta["Citation"] = _clean_cell(citation)
         if _clean_cell(doi) and "DOI" not in meta:
             meta["DOI"] = _clean_cell(doi)
+        if _clean_cell(license_id) and "LicenseID" not in meta:
+            meta["LicenseID"] = _clean_cell(license_id)
         if _clean_cell(authors) and "Authors" not in meta:
             meta["Authors"] = [
                 a.strip() for a in re.split(r"[;,]", str(authors)) if a.strip()
@@ -2098,6 +2103,8 @@ def extract_excel_templates(
                 sidecar["Study"]["Authors"] = meta["Authors"]
             if meta.get("DOI"):
                 sidecar["Study"]["DOI"] = meta["DOI"]
+            if meta.get("LicenseID"):
+                sidecar["Study"]["LicenseID"] = meta["LicenseID"]
             if keywords:
                 sidecar["Study"]["Keywords"] = keywords
 
