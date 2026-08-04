@@ -13,6 +13,7 @@ from typing import Callable
 from jsonschema import validate, ValidationError
 from src.schema_manager import validate_schema_version, apply_schema_validation_profile
 from src.entity_rules import load_entity_rules
+from src.converters.survey_core import get_allowed_values
 from src.cross_platform import (
     normalize_path,
     safe_path_join,
@@ -649,52 +650,11 @@ class DatasetValidator:
                 )
         return issues
 
-    def _get_allowed_values_list(self, col_def: dict) -> list | None:
-        """Get the list of allowed values from a column definition, resolving range logic."""
-        if "AllowedValues" in col_def and isinstance(col_def["AllowedValues"], list):
-            return [str(x) for x in col_def["AllowedValues"]]
-
-        if "Levels" in col_def and isinstance(col_def["Levels"], dict):
-            levels = col_def["Levels"]
-            level_keys = list(levels.keys())
-
-            # If explicit MinValue/MaxValue are provided, use them to define the range
-            min_val = col_def.get("MinValue")
-            max_val = col_def.get("MaxValue")
-
-            if min_val is not None and max_val is not None:
-                try:
-                    min_i = int(float(min_val))
-                    max_i = int(float(max_val))
-                    return [str(i) for i in range(min_i, max_i + 1)]
-                except (ValueError, TypeError):
-                    return level_keys
-
-            # Fallback: key range expansion for numeric ordinal scales
-            numeric_level_keys = []
-            non_numeric_keys = []
-            for k in level_keys:
-                try:
-                    numeric_level_keys.append(int(float(k)))
-                except (ValueError, TypeError):
-                    non_numeric_keys.append(k)
-
-            if numeric_level_keys:
-                min_level, max_level = min(numeric_level_keys), max(numeric_level_keys)
-                # Only expand if it looks like a continuous Likert-style range
-                # and doesn't create thousands of entries from arbitrary numbers
-                if 1 < (max_level - min_level) < 100:
-                    full_range = [str(i) for i in range(min_level, max_level + 1)]
-                    return full_range + non_numeric_keys
-
-            return level_keys
-        return None
-
     def _check_allowed_values(
         self, value: str, col_name: str, col_def: dict, file_name: str, row_idx: int
     ) -> list:
         """Checks if a value is within the allowed values or levels."""
-        allowed = self._get_allowed_values_list(col_def)
+        allowed = get_allowed_values(col_def)
         if not allowed or value in allowed:
             return []
 
