@@ -2,10 +2,11 @@
   "Technical": {
     "StimulusType": "Questionnaire",
     "FileFormat": "tsv",
-    "SoftwarePlatform": "PRISM Tutorial",
+    "SoftwarePlatform": "Other",
+    "SoftwareVersion": "unspecified",
     "Language": "en",
     "Respondent": "self",
-    "AdministrationMethod": "digital",
+    "AdministrationMethod": "online",
     "ResponseType": [
       "paper-pencil"
     ]
@@ -38,6 +39,7 @@
     "Authors": [
       "PRISM Docs Team"
     ],
+    "LicenseID": "CC-BY-4.0",
     "Keywords": [
       "wellbeing",
       "tutorial",

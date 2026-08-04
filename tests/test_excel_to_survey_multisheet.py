@@ -69,6 +69,66 @@ def test_extract_excel_templates_supports_split_item_and_metadata_sheets(tmp_pat
     assert sidecar["ADS02"]["RunHint"] == "run-1"
 
 
+def test_extract_excel_templates_reads_license_id_from_general_sheet(tmp_path):
+    """General sheet LicenseID should land in Study.LicenseID (schema-required field)."""
+    excel_path = tmp_path / "survey_license.xlsx"
+
+    items_df = pd.DataFrame(
+        [
+            {
+                "ItemID": "MOOD01",
+                "Description_en": "Today I felt cheerful",
+                "Scale_en": "0=never;1=rarely;2=sometimes;3=often",
+                "Group": "mood",
+            },
+        ]
+    )
+
+    general_df = pd.DataFrame(
+        [
+            {"Field": "OriginalName_en", "Value": "Daily Mood Check"},
+            {"Field": "LicenseID", "Value": "CC-BY-4.0"},
+        ]
+    )
+
+    with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
+        items_df.to_excel(writer, index=False, sheet_name="Items")
+        general_df.to_excel(writer, index=False, sheet_name="General")
+
+    surveys = extract_excel_templates(excel_file=excel_path, check_collisions=False)
+    sidecar = surveys["mood"]
+
+    assert sidecar["Study"]["LicenseID"] == "CC-BY-4.0"
+
+
+def test_extract_excel_templates_omits_license_id_when_absent(tmp_path):
+    """No General.LicenseID row means no Study.LicenseID key (not an empty string)."""
+    excel_path = tmp_path / "survey_no_license.xlsx"
+
+    items_df = pd.DataFrame(
+        [
+            {
+                "ItemID": "MOOD01",
+                "Description_en": "Today I felt cheerful",
+                "Scale_en": "0=never;1=rarely;2=sometimes;3=often",
+                "Group": "mood",
+            },
+        ]
+    )
+    general_df = pd.DataFrame(
+        [{"Field": "OriginalName_en", "Value": "Daily Mood Check"}]
+    )
+
+    with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
+        items_df.to_excel(writer, index=False, sheet_name="Items")
+        general_df.to_excel(writer, index=False, sheet_name="General")
+
+    surveys = extract_excel_templates(excel_file=excel_path, check_collisions=False)
+    sidecar = surveys["mood"]
+
+    assert "LicenseID" not in sidecar["Study"]
+
+
 def test_extract_excel_templates_supports_additional_languages(tmp_path):
     """Import should preserve language columns beyond de/en."""
     excel_path = tmp_path / "survey_multilang.xlsx"
