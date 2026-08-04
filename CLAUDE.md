@@ -26,21 +26,58 @@ silently ineffective for anything reached through the CLI (`prism.py`,
 `prism_tools.py`, `python -m src.cli.entrypoint`) — it will keep running the
 stale `src/` version and you won't get an import error, just wrong behavior.
 
-**Before editing any module under `app/src/` that isn't pure Flask
-route/adapter code** (converters, validators, shared utils — anything that
-looks like business logic): check whether a physically separate file exists
-at the mirrored path under top-level `src/` (`find src -name '<filename>.py'`).
-As of this writing, known genuinely-independent, silently-drifting pairs
-include `converters/excel_base.py`, `converters/csv.py`,
-`converters/survey_base.py`, and `web/utils.py` — treat this list as
-non-exhaustive and re-check, since new drift can appear any time someone
-edits one side and not the other. If both copies exist, either update both in
-lockstep or check whether the module already uses the
-`load_canonical_module`/`_compat.py` delegation pattern (many `app/src/`
-modules do — e.g. `excel_to_biometrics.py`) in which case only the `src/`
-copy should be edited and `app/src/` is a thin shim. A handful of modules
-(e.g. `converters/survey.py`) are real symlinks rather than duplicates — those
-are safe, only real independent files are the hazard.
+**Mandatory check — every time you touch a function in `app/src/` that isn't
+pure Flask route/adapter code** (converters, validators, shared utils —
+anything that looks like business logic), and every time you **add** a new
+function to such a module: run `find src -name '<filename>.py'` for a
+same-named file at the mirrored path under top-level `src/`. If one exists,
+don't assume your edit is live — confirm which physical file actually answers
+for the import path you care about:
+
+```bash
+python3 -c "import src.converters.<module> as m; print(m.__file__)"
+```
+
+If that resolves to a *different* file than the one you edited, your change
+is not in effect for anything importing through `src.*` (the CLI: `prism.py`,
+`prism_tools.py`, `python -m src.cli.entrypoint`). Do not just duplicate the
+edit into both files as a workaround — that only adds more surface for the
+next person to drift. Prefer collapsing the pair into one real file with a
+symlink for the other, the way `converters/survey.py` (`src/` side is the
+symlink) and, as of 2026-08-04, `converters/excel_base.py` (`src/` side is
+now a symlink to `app/src/converters/excel_base.py`, matching the
+`survey.py` precedent since its sibling files
+`excel_to_survey.py`/`excel_template_import.py` only exist in `app/src/`)
+already do. A real symlink makes the drift class structurally impossible
+for that file, rather than relying on anyone remembering to edit both sides.
+If a proper delegation shim already exists instead (e.g.
+`load_canonical_module`/`_compat.py`, or a hand-rolled
+`spec_from_file_location` bridge like `src/converters/csv.py` uses to load
+`app/src/converters/csv.py`), editing the implementation side is enough —
+just confirm which side that is before assuming.
+
+This problem is not fully mapped — treat every file as unverified until you've
+run the check above yourself. Status as of 2026-08-04: `converters/
+excel_base.py` and `converters/survey_base.py` were genuinely drifting and
+are now fixed (see below); `converters/csv.py` was spot-checked and found
+already safe (explicit file-path-loading shim, verified live) — no change
+needed there. `converters/survey_base.py` had a genuine three-way divergence:
+`app/src/converters/survey_base.py` delegated to `app/src/converters/
+survey_core.py::get_allowed_values`, while the physically-independent
+`src/converters/survey_base.py` carried its own from-scratch
+reimplementation, and `app/src/validator.py` carried a *third*, more
+complete one (`_get_allowed_values_list` — the only one honoring explicit
+`MinValue`/`MaxValue`, and the only one that never silently returned `None`
+for a `Levels` column with non-numeric keys, which made
+`_check_allowed_values` skip validation for that column entirely). Fixed by
+making `survey_core.get_allowed_values` the one canonical implementation
+(merging in the validator's stronger behavior), having `validator.py` import
+it instead of keeping a private copy, and collapsing `src/converters/
+survey_base.py` into a symlink like `excel_base.py`. Regression tests:
+`tests/test_survey_base.py` (function-level) and
+`tests/test_validator_allowed_values.py` (validator integration). Don't treat the absence of a file
+from this note as proof it's safe; the check above is the source of truth,
+this paragraph is not a checklist.
 
 ## Git-annex / DataLad text-file policy
 
