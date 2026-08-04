@@ -1,5 +1,47 @@
 # Repo Notes for Claude
 
+## `src/` vs `app/src/`: dual-tree drift is a live, recurring bug source
+
+**Intended architecture** (per `docs/PROJECT_OVERVIEW.md`): `src/` is the one
+canonical backend logic tree. `app/src/` is supposed to be Flask routes and
+adapter code that wires the Studio GUI to that backend — UI glue, not a second
+copy of business logic. In practice this boundary has been violated in
+several places, and it has already caused the exact same production bug more
+than once (see `docs/_archive/MODULARIZATION_ROADMAP.md`, which diagnosed
+this same failure mode on `excel_base.py` previously and recommended — but
+never carried out — eliminating the mirrors).
+
+**Why it bites silently**: `src.converters` (and sibling packages like
+`src.web`) are *implicit namespace packages* whose search path is the
+concatenation of `src/converters/` and `app/src/converters/` (wired in
+`src/__init__.py`). When CLI code does `from src.converters.excel_to_survey
+import ...` and no physical file exists at `src/converters/excel_to_survey.py`,
+Python loads `app/src/converters/excel_to_survey.py` instead — but under the
+`src.converters` package identity. That module's own relative imports (e.g.
+`from .excel_base import ...`) then resolve against the *merged* namespace,
+and a real, independently-maintained file at `src/converters/excel_base.py`
+wins over the physically-adjacent file sitting right next to it in
+`app/src/converters/`. Editing only the `app/src/` copy of a shared helper is
+silently ineffective for anything reached through the CLI (`prism.py`,
+`prism_tools.py`, `python -m src.cli.entrypoint`) — it will keep running the
+stale `src/` version and you won't get an import error, just wrong behavior.
+
+**Before editing any module under `app/src/` that isn't pure Flask
+route/adapter code** (converters, validators, shared utils — anything that
+looks like business logic): check whether a physically separate file exists
+at the mirrored path under top-level `src/` (`find src -name '<filename>.py'`).
+As of this writing, known genuinely-independent, silently-drifting pairs
+include `converters/excel_base.py`, `converters/csv.py`,
+`converters/survey_base.py`, and `web/utils.py` — treat this list as
+non-exhaustive and re-check, since new drift can appear any time someone
+edits one side and not the other. If both copies exist, either update both in
+lockstep or check whether the module already uses the
+`load_canonical_module`/`_compat.py` delegation pattern (many `app/src/`
+modules do — e.g. `excel_to_biometrics.py`) in which case only the `src/`
+copy should be edited and `app/src/` is a thin shim. A handful of modules
+(e.g. `converters/survey.py`) are real symlinks rather than duplicates — those
+are safe, only real independent files are the hazard.
+
 ## Git-annex / DataLad text-file policy
 
 Text-format and small-codebook files must **never** be tracked by git-annex

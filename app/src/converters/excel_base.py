@@ -4,6 +4,7 @@ Shared logic for survey and biometrics library generation.
 """
 
 import re
+import warnings
 import pandas as pd
 from typing import Dict, Any, List, Optional
 
@@ -16,7 +17,27 @@ __all__ = [
     "clean_variable_name",
     "parse_levels",
     "detect_language",
+    "read_excel_sheets",
 ]
+
+
+def read_excel_sheets(path) -> Dict[str, "pd.DataFrame"]:
+    """Read every sheet of an .xlsx as raw (unheadered) string DataFrames.
+
+    Suppresses openpyxl's "Data Validation extension is not supported" warning.
+    It fires when a workbook's data validations were upgraded to the newer x14
+    extension format by Excel/Numbers/LibreOffice on save (common for our
+    dropdown-guided import templates once a researcher opens and re-saves one).
+    openpyxl's reader can't parse that format and drops it — harmless here,
+    since this function only reads cell values, never validation metadata.
+    """
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="Data Validation extension is not supported.*",
+            category=UserWarning,
+        )
+        return pd.read_excel(path, sheet_name=None, header=None, dtype=str)
 
 
 def find_column_idx(header: List[str], aliases: set) -> Optional[int]:

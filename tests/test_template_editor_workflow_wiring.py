@@ -35,7 +35,7 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         self.assertIn('<option value="survey" selected>survey</option>', content)
         self.assertIn('<option value="biometrics">biometrics</option>', content)
         self.assertIn(
-            'Choose modality first (default: survey), then select a template from the dropdown to load it, or click Create to start a new one.',
+            'Choose modality first (default: survey), then select a template from the dropdown to load it, or click Create or Import to start a new one.',
             content,
         )
 

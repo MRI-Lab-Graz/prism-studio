@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from .excel_base import detect_language
+from .excel_base import detect_language, read_excel_sheets
 from .excel_to_survey import extract_excel_templates
 
 RESERVED_TOPLEVEL = {
@@ -56,7 +56,7 @@ def _autolabel_description_column(path: Path) -> None:
     elif suffix == ".tsv":
         df = pd.read_csv(path, sep="\t", header=None, dtype=str, keep_default_na=False)
     else:
-        sheets = pd.read_excel(path, sheet_name=None, header=None, dtype=str)
+        sheets = read_excel_sheets(path)
         if len(sheets) != 1:
             return
         df = next(iter(sheets.values()))

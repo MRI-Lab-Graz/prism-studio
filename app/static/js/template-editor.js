@@ -4667,7 +4667,7 @@
     if (!loadTemplateHintEl) return;
     loadTemplateHintEl.textContent = hasSelection
       ? 'Ready to load selected template.'
-      : 'Select a project or global template first. Click Create to open template creation tools.';
+      : 'Select a project or global template first. Click Create or Import to open template creation tools.';
   }
 
   function focusCreateSourcePanel() {
