@@ -27,6 +27,14 @@ Follow along with
 [examples/excel_template/advanced/survey_import_advanced_example.xlsx](../examples/excel_template/advanced/survey_import_advanced_example.xlsx)
 — a 10-item "Brief Wellbeing Check" with a 5-item short form.
 
+Like the basics workbook, headers are locked and `DataType`/`Units` are dropdowns.
+This workbook adds one more: `Items.ApplicableVersions` and `General.Version` are also
+dropdowns, sourced live from whatever `VariantID`s you've defined in the `Variants`
+sheet — so once you've named your variants there, picking one elsewhere is a click,
+not free typing. Like the other dropdowns, this is a convenience, not a hard gate: it
+only offers one `VariantID` at a time, so for an item that belongs to *multiple*
+variants (step 2 below) you still type the semicolon-separated list by hand.
+
 ## 2. `Items`: tag every row with `ApplicableVersions`
 
 The workbook declares 10 items (`wellcheck01`–`wellcheck10`). Five are shared between
