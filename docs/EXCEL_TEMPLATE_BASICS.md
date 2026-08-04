@@ -28,6 +28,21 @@ Either way, you get the same four sheets: `Items`, `General`, `Variants`, `Help`
 tutorial only uses `Items` and `General` — `Variants` is for multi-version instruments,
 covered in [Excel Survey Template — Multiple Versions](EXCEL_TEMPLATE_ADVANCED.md).
 
+Both sheets have built-in guardrails so you don't have to remember every valid value
+by heart:
+
+- **Header row is locked.** You can fill in rows below it, but the column names
+  themselves can't be edited by accident.
+- **`DataType` and `Units` are dropdowns**, not free-text fields — click the cell and
+  pick from the list instead of typing. This is the main thing that avoids a failed or
+  silently-wrong import: a typo like `interger` in a hand-typed `DataType` column
+  won't be caught until validation (or later), while the dropdown only offers valid
+  values in the first place.
+- Dropdowns here are a *guide*, not a hard lock — you can still type a custom value if
+  you have a good reason to (e.g. a `Units` value not in the recommended list).
+- In `General`, only the `Value` column is editable; `Field`, `Required`, and `Notes`
+  are locked so a metadata key can't be renamed by mistake.
+
 ## 2. Fill in `Items`
 
 One row per question. The columns that matter for a simple, single-version, bilingual
@@ -115,11 +130,16 @@ Full output for comparison:
 - **No `OriginalName_<lang>` filled in** — validation fails with `Study.OriginalName`
   missing. At least one language variant is required.
 - **`Scale` and `AllowedValues`/`MinValue`/`MaxValue` disagree** — e.g. four scale
-  labels (`0`–`3`) but `MaxValue` set to `4`. Keep them in sync.
+  labels (`0`–`3`) but `MaxValue` set to `4`. Keep them in sync. The `DataType`/`Units`
+  dropdowns prevent typos in those two columns specifically, but they can't catch a
+  mismatch between the scale and the numeric bounds — check that by hand.
 - **Duplicate `ItemID` across rows** — each item key must be unique within the
   instrument.
 - **Forgetting to pick a `Group`** when the workbook has several instruments in one
   sheet — you'll otherwise get one merged, nonsensical template.
+- **Trying to edit the header row or unprotecting the sheet "to fix" the dropdown** —
+  you don't need to. There's no password; if you ever genuinely need to change a
+  header name, unprotect via Excel's Review tab and re-protect afterward.
 
 ## What's next
 
