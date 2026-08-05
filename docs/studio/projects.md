@@ -108,6 +108,12 @@ rest of Studio, and remembers it as your last-opened project.
 A **Recent Projects** list (with a **Clear** button) tracks projects you've opened
 before, de-duplicated by their resolved absolute path.
 
+Each project gets a small emoji icon (e.g. 🧬) assigned the first time it's created
+or loaded. It's chosen at random from a fixed set and then persisted into that
+project's `project.json`, so it stays the same on every later load; it's shown next
+to the project's name in Recent Projects and in the header once loaded, purely as a
+visual identifier with no other meaning.
+
 ## What's next
 
 - [Studio Guide overview](index.md)
