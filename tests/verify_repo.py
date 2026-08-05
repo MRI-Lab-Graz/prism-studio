@@ -109,8 +109,20 @@ DOCS_BUILD_WARNING_BASELINE = 16
 # Temporary pip-audit advisory allowlist.
 # Remove GHSA-5239-wwwm-4pmq once a fixed Pygments release is available
 # in the project's package index/resolver.
+#
+# PYSEC-2026-3552 (cryptography, fixed in 50.0.0): Bleichenbacher oracle in
+# PKCS#7 EnvelopedData/S-MIME decryption (pkcs7_decrypt_der/_pem/_smime).
+# This codebase never calls those APIs -- cryptography is only used here for
+# TLS/hashing primitives, not S/MIME decryption -- so the finding is not
+# reachable. Cannot upgrade past 49.x to pick up the fix anyway: cryptography
+# 50.0.0 still ships no macOS x86_64 wheel (confirmed via PyPI's file
+# listing, arm64-only since 49.0.0), and bumping the pin breaks the Intel
+# macOS PyInstaller build the same way reverted in commit 00213061. Remove
+# this entry once cryptography restores an Intel-mac wheel and the pin in
+# requirements-runtime.txt can move to >=50.
 PIP_AUDIT_IGNORED_ADVISORIES = {
     "GHSA-5239-wwwm-4pmq",
+    "PYSEC-2026-3552",
 }
 
 # Curated flake8-bandit (ruff "S") rules for the `ruff-security` check.
