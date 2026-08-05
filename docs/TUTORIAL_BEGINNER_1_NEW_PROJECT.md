@@ -97,10 +97,16 @@ author.
 
 ### 3. Worth doing now, not required: Ethics, Keywords, Funding
 
-Three more fields sit right below Authors in the same Basics section,
-labeled **CORE** rather than **REQUIRED** — they don't block creation, but
-they're quick to answer honestly right now and they drive the **Methods
-Readiness / FAIR score** shown at the top of the card:
+Three more fields sit right below Authors in the same Basics section, under
+a **Core study setup** header and carrying a blue **CORE** badge — not the
+red **REQUIRED** badge Dataset Name and Authors carry. **CORE does not mean
+blocking**: these three fields cannot trigger the Required Fields Missing
+dialog in Part C no matter how you leave them. What CORE *does* mean is that
+they feed the **Methods Readiness / FAIR score** shown at the top of the
+card (the small ring badge labeled **FAIR**) — a completeness/quality
+indicator, not a gate. They're quick to answer honestly right now, so do
+that, but don't go looking for a missing-fields error that these three
+fields can't actually cause:
 
 - **Ethics Approvals** — click Yes/No. If Yes, fill in the committee name
   and reference number.
@@ -175,10 +181,9 @@ layout, so you can always re-check it later without leaving the project.
   common reason the Required Fields Missing dialog still appears after
   filling in Part B; the email is only required *because* that author is
   corresponding, so add it or unmark the checkbox.
-- **Confusing CORE with REQUIRED** — Ethics Approvals, Keywords, and Funding
-  are worth answering now (Part B, step 3) but won't block creation either
-  way; don't spend time hunting for a missing-fields error that Ethics/
-  Keywords/Funding can't actually cause.
+- **Confusing CORE with REQUIRED** — see Part B, step 3: the blue CORE badge
+  (Ethics Approvals, Keywords, Funding) never blocks creation, only the red
+  REQUIRED badge (Dataset Name, Authors) does.
 - **Expecting a DataLad checkbox mistake to be permanent** — it isn't; this
   choice can be revisited later and isn't covered in depth until the
   Intermediate tutorial.
