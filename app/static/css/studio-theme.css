@@ -289,6 +289,28 @@
     min-height: var(--studio-control-min-height);
 }
 
+/* Bootstrap's default outline-secondary (#6c757d) reads as disabled against
+   this theme's cream page background and grey readonly inputs; darken it so
+   enabled picker buttons (Browse/Server/Clear) stay visibly interactive. */
+.studio-theme main .studio-picker-trigger,
+.studio-theme main .studio-picker-clear {
+    color: var(--studio-brand-primary);
+    border-color: var(--studio-brand-primary);
+}
+
+.studio-theme main .studio-picker-trigger:hover,
+.studio-theme main .studio-picker-clear:hover {
+    color: #fff;
+    background-color: var(--studio-brand-primary);
+    border-color: var(--studio-brand-primary);
+}
+
+.studio-theme main .studio-picker-trigger:disabled,
+.studio-theme main .studio-picker-clear:disabled {
+    color: #6c757d;
+    border-color: #6c757d;
+}
+
 .studio-theme main .alert {
     border-radius: 10px;
 }

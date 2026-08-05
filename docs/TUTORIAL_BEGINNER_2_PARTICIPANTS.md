@@ -17,21 +17,36 @@ one row per participant with columns like `participant_id`, `session`,
 Only the demographic columns matter for this chapter — `WB01`-`WB05` are the
 survey items, imported separately in chapter 3.
 
-## 2. Open Converter → Sociodemographics
+## 2. Reopen `wellbeing_study`
+
+If Studio is still the same session you created the project in, it's
+already loaded — skip to step 3. Otherwise, go to **Project Manager** and
+either paste the project's path (e.g. `~/prism_projects/wellbeing_study`)
+into **Select project folder or project.json** and click **Load Project**,
+or click it under **Recent Projects**, which lists every project you've
+created or opened before, de-duplicated by its resolved absolute path.
+
+Each project is assigned a small emoji icon (e.g. 🧬) the first time it's
+created or loaded, saved permanently into that project's `project.json`, and
+shown next to its name both in Recent Projects and in the header once
+loaded — it's just a visual identifier to tell projects apart at a glance,
+not a status indicator.
+
+## 3. Open Converter → Sociodemographics
 
 With `wellbeing_study` loaded, go to **Converter**. The **Sociodemographics**
 tab is the default/first tab.
 
 ![PRISM Studio Participants converter tab](_static/screenshots/prism-studio-converter-participants.png)
 
-## 3. Select the file and ID column
+## 4. Select the file and ID column
 
 - Upload `wellbeing.xlsx`. Excel files expose a sheet selector if there's
   more than one sheet.
 - **Participant ID Column** defaults to "Auto-detect", which recognizes
   `participant_id` directly here — no need to override it for this file.
 
-## 4. Review Participant Fields
+## 5. Review Participant Fields
 
 Click **Review Participant Fields** to preview detected columns and sample
 values before anything is written. You should see `age`, `sex`, `education`,
@@ -44,7 +59,7 @@ which don't belong in the same file. Use **Add More Columns (Optional)**
 only if you want to bring in additional demographic-style columns beyond
 what's auto-detected — not for the survey items.
 
-## 5. Create Participant Files
+## 6. Create Participant Files
 
 Click **Create Participant Files**. This writes `participants.tsv` and
 `participants.json` together — every import path writes both, never just
