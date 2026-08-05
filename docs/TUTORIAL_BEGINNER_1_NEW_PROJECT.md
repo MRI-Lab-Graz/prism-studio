@@ -66,6 +66,9 @@ effort at this point, and it means `dataset_description.json` and
 Expand the card and make sure you're in its **Basics (BIDS)** section (open
 by default under "Core study setup").
 
+
+![PRISM Studio Meta Data](_static/screenshots/prism-studio-project-metadata.png)
+
 ### 1. Dataset Name
 
 Enter a human-readable dataset title, e.g. `Wellbeing Study` — minimum 3
