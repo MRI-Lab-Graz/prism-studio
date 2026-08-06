@@ -114,13 +114,6 @@ Why researchers use PRISM Studio
 .. toctree::
    :maxdepth: 2
    :hidden:
-   :caption: Getting Started
-
-   TUTORIAL_BEGINNER
-
-.. toctree::
-   :maxdepth: 2
-   :hidden:
    :caption: Studio Guide
 
    studio/index
@@ -138,6 +131,7 @@ Why researchers use PRISM Studio
    :hidden:
    :caption: Tutorial
 
+   TUTORIAL_BEGINNER
    TUTORIAL_BEGINNER_1_NEW_PROJECT
    TUTORIAL_BEGINNER_2_PARTICIPANTS
    TUTORIAL_BEGINNER_3_SURVEY_IMPORT
