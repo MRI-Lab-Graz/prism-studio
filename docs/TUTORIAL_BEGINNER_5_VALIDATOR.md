@@ -9,6 +9,40 @@ which will vary by project.
 `wellbeing_study`, and enough understanding of the results to know what to
 do next.
 
+<div class="prism-persona-note" data-persona-note>
+<p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
+
+<div class="prism-persona-note-content" data-persona="student" hidden>
+<span class="prism-persona-note-badge">👩🏽‍🎓 The enthusiastic student <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+*Four chapters of doing things "properly" are about to get checked by
+someone other than you.* This is the moment `wellbeing_study` stops being
+"what you believe is correct" and starts being "what PRISM can verify is
+correct" — that gap is exactly what a reviewer or reuser would otherwise
+find for you, later, less kindly.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="pi" hidden>
+<span class="prism-persona-note-badge">👨🏿‍🔬 The skeptical PI <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+*This is the step that didn't exist three years ago, when the undocumented
+Excel files went out the door unchecked.* Findings on a first pass are
+normal — the only unacceptable outcome is not running this at all before
+something leaves the lab.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="future" hidden>
+<span class="prism-persona-note-badge">🧑🏻 Future-you <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+*This is the closest thing to a guarantee you get: a record, made today,
+that everything checked out.* Whatever this run reports, eighteen-months-
+from-now-you will be glad it exists either way.
+
+</div>
+</div>
+
 ## 1. Open the Validator
 
 ![PRISM Studio Validator start screen](_static/screenshots/prism-studio-validator.png)
@@ -94,6 +128,38 @@ prism-validator /path/to/wellbeing_study --fix
 - **Missing BIDS warnings because "Show BIDS Warnings" is off** — turn it on
   in Advanced Options if you want the complete warning picture, not just
   PRISM-side warnings.
+
+<div class="prism-persona-note" data-persona-note>
+<p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
+
+<div class="prism-persona-note-content" data-persona="student" hidden>
+<span class="prism-persona-note-badge">👩🏽‍🎓 The enthusiastic student <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+This is the FAIR payoff, five chapters in. A dataset that passes these
+checks is one an unfamiliar reviewer, reuser, or repository can actually
+open and trust without asking you anything first — which was the entire
+point since Chapter 1.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="pi" hidden>
+<span class="prism-persona-note-badge">👨🏿‍🔬 The skeptical PI <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+This is the report that would have saved you that week three years ago —
+errors caught here, before submission, instead of found by a reviewer after
+it. Worth making mandatory lab-wide, not just for this one study.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="future" hidden>
+<span class="prism-persona-note-badge">🧑🏻 Future-you <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+This is you, eighteen months from now, grateful that today-you ran this
+instead of assuming everything was fine. One chapter left, and it's the one
+that actually proves it.
+
+</div>
+</div>
 
 ## Wrap-up
 

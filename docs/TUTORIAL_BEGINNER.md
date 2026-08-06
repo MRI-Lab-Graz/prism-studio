@@ -16,6 +16,71 @@ plan to work through it alone.
 working scoring recipe, validated — plus experience enriching an existing BIDS
 dataset with the same tools.
 
+## Pick a reason to be here
+
+None of this affects the instructions below — skip it entirely if you'd
+rather just get started. But six chapters go down easier with a "why"
+attached. **Click one to select it** — your pick is remembered (in this
+browser only) and the chapters ahead will call back to it directly:
+
+<div class="prism-persona-grid" id="prismPersonaGrid">
+
+<div class="prism-persona-card" data-persona="student" role="button" tabindex="0" aria-pressed="false">
+<span class="prism-persona-card-check" aria-hidden="true">&check;</span>
+<div class="prism-persona-card-header">
+<span class="prism-persona-icon">👩🏽‍🎓</span>
+<span class="prism-persona-title">The enthusiastic student</span>
+</div>
+<span class="prism-persona-text">
+
+You're a grad student who just read your program's data-sharing policy and
+realized "FAIR" isn't optional anymore. `wellbeing_study` is your first real
+attempt at building something reusable from day one — sloppy folder
+structures, undocumented column codes, and datasets nobody can open two
+years from now are exactly what you're trying to avoid.
+
+</span>
+</div>
+
+<div class="prism-persona-card" data-persona="pi" role="button" tabindex="0" aria-pressed="false">
+<span class="prism-persona-card-check" aria-hidden="true">&check;</span>
+<div class="prism-persona-card-header">
+<span class="prism-persona-icon">👨🏿‍🔬</span>
+<span class="prism-persona-title">The skeptical PI</span>
+</div>
+<span class="prism-persona-text">
+
+Three years ago a collaborator sent you a folder of Excel files with columns
+named `V1`, `V2`, `Sex (1=M?)`, and no codebook — it cost you a week and a
+resubmission. Every project in your lab goes through PRISM before anyone
+touches the data now, no exceptions. `wellbeing_study` is the newest one,
+walked through end-to-end so you can see exactly where the process pays for
+itself.
+
+</span>
+</div>
+
+<div class="prism-persona-card" data-persona="future" role="button" tabindex="0" aria-pressed="false">
+<span class="prism-persona-card-check" aria-hidden="true">&check;</span>
+<div class="prism-persona-card-header">
+<span class="prism-persona-icon">🧑🏻</span>
+<span class="prism-persona-title">Future-you</span>
+</div>
+<span class="prism-persona-text">
+
+It's eighteen months from now. A reviewer wants your raw data, or you need
+to reanalyze `wellbeing_study` for a follow-up, and you have exactly one
+sentence of memory left about what "handedness" was coded as. Everything in
+this tutorial is what today-you does so that future-you doesn't have to
+guess.
+
+</span>
+</div>
+
+</div>
+
+<p class="prism-persona-hint" id="prismPersonaHint">Pick one — chapters ahead will speak to it.</p>
+
 <div class="prism-chapter-grid">
   <a class="prism-chapter-card" href="TUTORIAL_BEGINNER_1_NEW_PROJECT.html">
     <span class="prism-chapter-icon">1</span>

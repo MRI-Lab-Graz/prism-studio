@@ -9,6 +9,40 @@ chapter 3.
 **Time:** ~15 minutes. **Outcome:** `participants.tsv` and
 `participants.json` written into `wellbeing_study`, one row per participant.
 
+<div class="prism-persona-note" data-persona-note>
+<p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
+
+<div class="prism-persona-note-content" data-persona="student" hidden>
+<span class="prism-persona-note-badge">👩🏽‍🎓 The enthusiastic student <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+*The empty scaffold from Chapter 1 is still just a promise. This is where
+it becomes a real dataset.* `age`, `sex`, `education`, `handedness` — plain
+columns today, but properly typed and documented, they're fields a reviewer
+or reuser will actually be able to trust without emailing you to ask what
+they mean.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="pi" hidden>
+<span class="prism-persona-note-badge">👨🏿‍🔬 The skeptical PI <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+*This is the exact step your last collaborator skipped.* Their `sex` column
+was an undocumented `1`/`2` code nobody could interpret two years later —
+watch how little extra effort it takes to not repeat that.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="future" hidden>
+<span class="prism-persona-note-badge">🧑🏻 Future-you <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+*The empty project from Chapter 1 gets its first real content here — and
+its first permanent naming decision.* You won't remember what `DEMO001`
+meant either, but `sub-DEMO001`, sanitized and consistent, is at least
+something you can grep for.
+
+</div>
+</div>
+
 ## 1. Look at the source file
 
 Open `examples/workshop/exercise_1_raw_data/raw_data/wellbeing.xlsx`. It has
@@ -70,6 +104,36 @@ Behind the scenes, each `participant_id` value is trimmed, Unicode-normalized,
 had any leading `sub-` stripped, then non-alphanumeric characters removed,
 and re-prefixed with `sub-` — so a source ID like `DEMO001` becomes
 `sub-DEMO001` in the output. IDs are sanitized, never renumbered.
+
+<div class="prism-persona-note" data-persona-note>
+<p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
+
+<div class="prism-persona-note-content" data-persona="student" hidden>
+<span class="prism-persona-note-badge">👩🏽‍🎓 The enthusiastic student <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+`participants.tsv` and `.json` now exist, and every ID is consistent. The
+raw survey codes (`WB01`-`WB05`) are still sitting in `wellbeing.xlsx`
+untouched — Chapter 3 is where those actually become data.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="pi" hidden>
+<span class="prism-persona-note-badge">👨🏿‍🔬 The skeptical PI <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+Demographics done properly, five minutes in. Next chapter is where most
+labs' ad-hoc import scripts actually live — watch how PRISM replaces that
+with something reusable instead.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="future" hidden>
+<span class="prism-persona-note-badge">🧑🏻 Future-you <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+Every participant ID is now sanitized the same way, permanently. That's one
+naming scheme you will never have to reverse-engineer later.
+
+</div>
+</div>
 
 ## Common mistakes
 

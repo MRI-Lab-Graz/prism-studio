@@ -10,6 +10,41 @@ belongs later in a study's lifecycle.
 **Time:** ~15 minutes. **Outcome:** a `wellbeing_study` project with a
 correct folder structure and complete required metadata, ready for chapter 2.
 
+<div class="prism-persona-note" data-persona-note>
+<p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
+
+<div class="prism-persona-note-content" data-persona="student" hidden>
+<span class="prism-persona-note-badge">👩🏽‍🎓 The enthusiastic student <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+*Your last rotation project ended as a folder called `data_final2`, and you
+promised yourself the next one wouldn't.* `wellbeing_study` is that next
+one. This is where you stop improvising folder structure from scratch every
+time — everything later in this series (participants, surveys, scoring,
+sharing) assumes exactly this layout, so you never have to reinvent it.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="pi" hidden>
+<span class="prism-persona-note-badge">👨🏿‍🔬 The skeptical PI <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+*Three years after the Excel-files-with-no-codebook incident, "every
+project goes through PRISM, no exceptions" is lab policy now — and
+`wellbeing_study` is the one you're setting up as this semester's example
+for the new students.* This is the structure you'll point them to instead
+of explaining it from memory again.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="future" hidden>
+<span class="prism-persona-note-badge">🧑🏻 Future-you <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+*Eighteen months from now, someone — probably you — is going to open this
+folder with zero memory of today.* Fill in Dataset Name and Authors
+properly now; today is the only day this is cheap.
+
+</div>
+</div>
+
 ## Part A — Project basics
 
 ### 1. Launch Studio
@@ -163,6 +198,38 @@ wellbeing_study/
 Notice `participants.tsv` is **not** in this list — that's created in
 chapter 2. The generated `README.md` inside the project describes this same
 layout, so you can always re-check it later without leaving the project.
+
+<div class="prism-persona-note" data-persona-note>
+<p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
+
+<div class="prism-persona-note-content" data-persona="student" hidden>
+<span class="prism-persona-note-badge">👩🏽‍🎓 The enthusiastic student <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+An empty, correctly-shaped project, `dataset_description.json` and
+`CITATION.cff` already accurate. It doesn't feel like much yet — that
+changes in Chapter 2, when real data goes in for the first time.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="pi" hidden>
+<span class="prism-persona-note-badge">👨🏿‍🔬 The skeptical PI <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+Five minutes of metadata, and the scaffold is already more complete than
+half the datasets that have crossed your desk. Chapter 2 is where you find
+out whether the data behind it holds up to the same standard.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="future" hidden>
+<span class="prism-persona-note-badge">🧑🏻 Future-you <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+Whatever you typed into Dataset Name and Authors just now is what
+`dataset_description.json` will say forever, or until someone deliberately
+edits it. That's one less thing eighteen-months-from-now-you has to
+reconstruct from memory.
+
+</div>
+</div>
 
 ## Common mistakes
 

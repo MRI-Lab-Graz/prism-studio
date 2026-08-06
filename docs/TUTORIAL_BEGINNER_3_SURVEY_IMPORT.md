@@ -10,6 +10,41 @@ response data** against that template.
 **Time:** ~25 minutes. **Outcome:** survey response files for every
 participant, written into subject-level folders under `wellbeing_study`.
 
+<div class="prism-persona-note" data-persona-note>
+<p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
+
+<div class="prism-persona-note-content" data-persona="student" hidden>
+<span class="prism-persona-note-badge">👩🏽‍🎓 The enthusiastic student <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+*Demographics were the easy part. This is the chapter where "FAIR" actually
+gets tested.* This is where PRISM stops treating your survey responses as
+"just another spreadsheet" and starts treating them as documented,
+scoreable instrument data — the difference between a file and a shareable
+dataset.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="pi" hidden>
+<span class="prism-persona-note-badge">👨🏿‍🔬 The skeptical PI <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+*You've watched three different students write three different one-off
+import scripts for the same questionnaire over the years, each one leaving
+with them.* This is the chapter where that stops: every instrument gets a
+template now, saved in the project, not on anyone's laptop.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="future" hidden>
+<span class="prism-persona-note-badge">🧑🏻 Future-you <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+*Of everything in this tutorial, this chapter is the one future-you will be
+most grateful for.* `WB01`-`WB05` mean nothing on their own eighteen months
+from now — the template you attach here is what makes them mean something
+again.
+
+</div>
+</div>
+
 ## Part A — Get a template
 
 A survey import needs a template to map columns against. There are two ways
@@ -84,6 +119,35 @@ one pair of files per participant. If you used the fast-path template
 (already project-local), no extra copy step happens on Convert; if the
 template had come from the official/global library instead, Convert would
 copy it into `code/library/survey/` automatically at this point.
+
+<div class="prism-persona-note" data-persona-note>
+<p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
+
+<div class="prism-persona-note-content" data-persona="student" hidden>
+<span class="prism-persona-note-badge">👩🏽‍🎓 The enthusiastic student <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+Raw numbers per item, per participant, documented and typed. It's still not
+a "score" yet, though — that's the whole point of Chapter 4.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="pi" hidden>
+<span class="prism-persona-note-badge">👨🏿‍🔬 The skeptical PI <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+Instrument responses, templated and traceable back to their source
+instrument's citation and license. Next chapter turns them into the number
+that actually goes in a results table.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="future" hidden>
+<span class="prism-persona-note-badge">🧑🏻 Future-you <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+Every response file now carries its own item labels and scale range with
+it. You could open this in five years and still know what a `3` meant.
+
+</div>
+</div>
 
 ## Common mistakes
 

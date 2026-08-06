@@ -37,6 +37,7 @@ exclude_patterns = [
 html_theme = "shibuya"
 html_static_path = ["_static", "img"]
 html_css_files = ["custom.css"]
+html_js_files = ["persona.js"]
 html_title = "PRISM Studio Documentation (Draft)"
 html_short_title = "PRISM Docs (Draft)"
 
