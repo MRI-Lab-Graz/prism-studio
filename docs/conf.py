@@ -34,7 +34,7 @@ exclude_patterns = [
 ]
 
 # -- Options for HTML output -------------------------------------------------
-html_theme = "sphinx_rtd_theme"
+html_theme = "shibuya"
 html_static_path = ["_static", "img"]
 html_css_files = ["custom.css"]
 html_title = "PRISM Studio Documentation (Draft)"
@@ -42,6 +42,11 @@ html_short_title = "PRISM Docs (Draft)"
 
 # Logo for ReadTheDocs / HTML output. The file is at docs/img/prism_logo.png
 html_logo = "img/prism_logo.png"
+
+html_theme_options = {
+    "accent_color": "green",
+    "github_url": "https://github.com/MRI-Lab-Graz/prism-studio",
+}
 
 # -- MyST Parser configuration -----------------------------------------------
 myst_enable_extensions = [

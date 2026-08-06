@@ -16,14 +16,44 @@ plan to work through it alone.
 working scoring recipe, validated — plus experience enriching an existing BIDS
 dataset with the same tools.
 
-| Chapter | Topic | Time | Outcome |
-|---|---|---|---|
-| [1](TUTORIAL_BEGINNER_1_NEW_PROJECT.md) | Create a project | ~15 min | A correctly-structured PRISM project with complete required metadata |
-| [2](TUTORIAL_BEGINNER_2_PARTICIPANTS.md) | Import sociodemographic data | ~15 min | `participants.tsv` / `participants.json` |
-| [3](TUTORIAL_BEGINNER_3_SURVEY_IMPORT.md) | Import a survey via Excel | ~25 min | Survey response files in subject folders |
-| [4](TUTORIAL_BEGINNER_4_RECIPE.md) | Prepare a recipe | ~15 min | A saved, working scoring recipe and its output |
-| [5](TUTORIAL_BEGINNER_5_VALIDATOR.md) | Use the validator | ~15 min | Validation findings understood and resolved |
-| [6](TUTORIAL_BEGINNER_6_EXISTING_BIDS.md) | Enrich an existing BIDS dataset | ~15 min | Same workflow applied to a published OpenNeuro dataset |
+<div class="prism-chapter-grid">
+  <a class="prism-chapter-card" href="TUTORIAL_BEGINNER_1_NEW_PROJECT.html">
+    <span class="prism-chapter-icon">1</span>
+    <span class="prism-chapter-title">Create a Project</span>
+    <span class="prism-chapter-outcome">A correctly-structured PRISM project with complete required metadata</span>
+    <span class="prism-chapter-time">~15 min</span>
+  </a>
+  <a class="prism-chapter-card" href="TUTORIAL_BEGINNER_2_PARTICIPANTS.html">
+    <span class="prism-chapter-icon">2</span>
+    <span class="prism-chapter-title">Import Sociodemographic Data</span>
+    <span class="prism-chapter-outcome"><code>participants.tsv</code> / <code>participants.json</code></span>
+    <span class="prism-chapter-time">~15 min</span>
+  </a>
+  <a class="prism-chapter-card" href="TUTORIAL_BEGINNER_3_SURVEY_IMPORT.html">
+    <span class="prism-chapter-icon">3</span>
+    <span class="prism-chapter-title">Import a Survey via Excel</span>
+    <span class="prism-chapter-outcome">Survey response files written into subject folders</span>
+    <span class="prism-chapter-time">~25 min</span>
+  </a>
+  <a class="prism-chapter-card" href="TUTORIAL_BEGINNER_4_RECIPE.html">
+    <span class="prism-chapter-icon">4</span>
+    <span class="prism-chapter-title">Prepare a Recipe</span>
+    <span class="prism-chapter-outcome">A saved, working scoring recipe and its output</span>
+    <span class="prism-chapter-time">~15 min</span>
+  </a>
+  <a class="prism-chapter-card" href="TUTORIAL_BEGINNER_5_VALIDATOR.html">
+    <span class="prism-chapter-icon">5</span>
+    <span class="prism-chapter-title">Use the Validator</span>
+    <span class="prism-chapter-outcome">Validation findings understood and resolved</span>
+    <span class="prism-chapter-time">~15 min</span>
+  </a>
+  <a class="prism-chapter-card" href="TUTORIAL_BEGINNER_6_EXISTING_BIDS.html">
+    <span class="prism-chapter-icon">6</span>
+    <span class="prism-chapter-title">Enrich an Existing BIDS Dataset</span>
+    <span class="prism-chapter-outcome">Same workflow applied to a published OpenNeuro dataset</span>
+    <span class="prism-chapter-time">~15 min</span>
+  </a>
+</div>
 
 ## Prerequisites
 
