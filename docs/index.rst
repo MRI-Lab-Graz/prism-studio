@@ -114,9 +114,9 @@ Why researchers use PRISM Studio
 .. toctree::
    :maxdepth: 2
    :hidden:
-   :caption: Quick Start
+   :caption: Getting Started
 
-   QUICK_START
+   TUTORIAL_BEGINNER
 
 .. toctree::
    :maxdepth: 2
