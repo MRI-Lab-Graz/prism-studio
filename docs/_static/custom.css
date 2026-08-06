@@ -639,3 +639,142 @@ html[data-color-mode="dark"] .prism-os-card > summary {
     height: 1.2rem;
     fill: currentColor;
 }
+
+/* -- Tutorial persona picker ("Pick a reason to be here") ------------------- */
+
+.prism-persona-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 0.9rem;
+    margin: 1rem 0 0.75rem;
+}
+
+.prism-persona-card {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    position: relative;
+    border: 2px solid var(--prism-border-soft);
+    border-radius: var(--prism-radius);
+    background: var(--prism-surface);
+    box-shadow: var(--prism-shadow);
+    padding: 1.1rem 1.2rem 1.25rem;
+    cursor: pointer;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+}
+
+.prism-persona-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--prism-brand-success);
+}
+
+.prism-persona-card.is-selected {
+    border-color: var(--prism-brand-success);
+    box-shadow: 0 0 0 3px var(--prism-brand-success-soft), var(--prism-shadow);
+}
+
+.prism-persona-card-check {
+    position: absolute;
+    top: 0.9rem;
+    right: 0.9rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    border: 2px solid var(--prism-border-soft);
+    background: var(--prism-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: transparent;
+    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.prism-persona-card.is-selected .prism-persona-card-check {
+    background: var(--prism-brand-success);
+    border-color: var(--prism-brand-success);
+    color: #fff;
+}
+
+.prism-persona-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin-bottom: 0.65rem;
+    padding-right: 1.6rem;
+}
+
+.prism-persona-title {
+    font-weight: 700;
+    font-size: 0.98rem;
+    color: var(--prism-brand-primary);
+}
+
+html[data-color-mode="dark"] .prism-persona-title {
+    color: inherit;
+}
+
+.prism-persona-text {
+    display: block;
+    font-size: 0.86rem;
+    font-weight: 400;
+    color: var(--prism-text-muted);
+}
+
+.prism-persona-hint {
+    font-size: 0.85rem;
+    color: var(--prism-text-soft);
+    margin: -0.3rem 0 1.5rem;
+}
+
+.prism-persona-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.75rem;
+    height: 3.75rem;
+    border-radius: 999px;
+    background: var(--prism-brand-success-soft);
+    flex: 0 0 auto;
+    font-size: 2.1rem;
+    line-height: 1;
+}
+
+/* -- Per-chapter persona flavor note ----------------------------------------- */
+
+.prism-persona-note {
+    border-left: 3px solid var(--prism-brand-success);
+    background: var(--prism-brand-success-soft);
+    border-radius: 0 var(--prism-radius) var(--prism-radius) 0;
+    padding: 0.9rem 1.15rem;
+    margin: 1.4rem 0;
+    font-size: 0.9rem;
+}
+
+.prism-persona-note-empty {
+    color: var(--prism-text-muted);
+    font-style: italic;
+}
+
+.prism-persona-note-badge {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+    color: var(--prism-brand-primary);
+}
+
+html[data-color-mode="dark"] .prism-persona-note-badge {
+    color: inherit;
+}
+
+.prism-persona-note-content p {
+    margin: 0;
+}
+
+.prism-persona-note-change {
+    font-weight: 400;
+    font-size: 0.78rem;
+    margin-left: 0.4rem;
+}

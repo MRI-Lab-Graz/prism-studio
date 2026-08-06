@@ -9,6 +9,38 @@ separate page, covered in step 5 below.
 **Time:** ~15 minutes. **Outcome:** a saved scoring recipe for the
 `wellbeing` survey, and a computed total score for every participant.
 
+<div class="prism-persona-note" data-persona-note>
+<p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
+
+<div class="prism-persona-note-content" data-persona="student" hidden>
+<span class="prism-persona-note-badge">👩🏽‍🎓 The enthusiastic student <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+*You've got real, templated responses from Chapter 3. Now they need to
+become the one number your advisor actually wants to see.* A saved recipe
+means that scoring logic is no longer a mental note or a one-off script —
+anyone, including future you, can re-run it and get the exact same result.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="pi" hidden>
+<span class="prism-persona-note-badge">👨🏿‍🔬 The skeptical PI <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+*"We computed the composite score in Excel" is a sentence you've had to
+write in a methods section before, and you hated it.* A saved recipe is the
+artifact that replaces that sentence with something an actual reviewer can
+check.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="future" hidden>
+<span class="prism-persona-note-badge">🧑🏻 Future-you <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+*Right now the scoring formula feels obvious. It will not feel obvious in
+eighteen months.* You will not remember it — but this recipe file will.
+
+</div>
+</div>
+
 ## 1. Open Recipe Builder
 
 ![PRISM Studio Recipe Builder screen](_static/screenshots/prism-studio-recipe-builder.png)
@@ -77,6 +109,35 @@ Equivalent from the terminal:
 ```bash
 python prism_tools.py recipes surveys --prism /path/to/wellbeing_study --format prism
 ```
+
+<div class="prism-persona-note" data-persona-note>
+<p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
+
+<div class="prism-persona-note-content" data-persona="student" hidden>
+<span class="prism-persona-note-badge">👩🏽‍🎓 The enthusiastic student <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+A real total score, per participant, computed the same reproducible way
+every time. Chapter 5 is where you find out if any of the last three
+chapters actually hold together end to end.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="pi" hidden>
+<span class="prism-persona-note-badge">👨🏿‍🔬 The skeptical PI <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+A defensible, reproducible scoring pipeline, in a file, not in someone's
+head. Chapter 5 is the audit — where you'd normally find out too late.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="future" hidden>
+<span class="prism-persona-note-badge">🧑🏻 Future-you <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+The formula is safely written down now. Chapter 5 checks whether everything
+*else* you did along the way was written down correctly too.
+
+</div>
+</div>
 
 ## Common mistakes
 

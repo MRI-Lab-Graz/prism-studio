@@ -8,6 +8,39 @@ The first five chapters showed you how to build a PRISM project from scratch: cr
 
 Good news: PRISM handles both paths with the same tools. This chapter shows that enriching an existing BIDS dataset is exactly the same workflow as building one from zero.
 
+<div class="prism-persona-note" data-persona-note>
+<p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
+
+<div class="prism-persona-note-content" data-persona="student" hidden>
+<span class="prism-persona-note-badge">👩🏽‍🎓 The enthusiastic student <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+*Everything so far has been on `wellbeing_study`, a dataset you built and
+already understand.* This chapter is the real test: a dataset you had no
+part in creating. If the last five chapters actually taught you something
+transferable, this is where that shows.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="pi" hidden>
+<span class="prism-persona-note-badge">👨🏿‍🔬 The skeptical PI <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+*Your lab doesn't only produce data — it inherits it, from collaborators,
+from students who've graduated, from datasets you're asked to extend for a
+new grant.* This is the scenario "every project goes through PRISM" was
+actually meant for.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="future" hidden>
+<span class="prism-persona-note-badge">🧑🏻 Future-you <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+*This chapter is a simulation of exactly what you've been preparing for
+since Chapter 1* — opening a dataset that isn't fresh in your memory and
+still being able to work with it.
+
+</div>
+</div>
+
 ## Prerequisites
 
 You need a BIDS dataset to work with. We'll use a real one from OpenNeuro: **ds003138** (a small neuroimaging study). You have two ways to get it:
@@ -125,6 +158,37 @@ You took a published BIDS dataset and added two layers of PRISM metadata:
 The workflow was identical to building a dataset from scratch in Chapters 1–5. The only difference: you started with existing MRI/BIDS structure instead of an empty folder.
 
 This is the real-world value of PRISM: it works *on top* of BIDS, not instead of it. Whether you're creating a dataset or enhancing one, the tools stay the same.
+
+<div class="prism-persona-note" data-persona-note>
+<p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This closing note speaks to it.</p>
+
+<div class="prism-persona-note-content" data-persona="student" hidden>
+<span class="prism-persona-note-badge">👩🏽‍🎓 The enthusiastic student <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+This is the FAIR-sharing payoff, in full: a stranger's dataset, not your
+own, and you were still able to open it, understand it, and add to it
+without guessing. That's what you were building toward since Chapter 1.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="pi" hidden>
+<span class="prism-persona-note-badge">👨🏿‍🔬 The skeptical PI <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+This is the insurance policy paying out: a dataset you didn't build, from a
+group you've never met, and PRISM still let you extend it safely. That's
+exactly why every project in your lab goes through this now.
+
+</div>
+
+<div class="prism-persona-note-content" data-persona="future" hidden>
+<span class="prism-persona-note-badge">🧑🏻 Future-you <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
+
+This is what it feels like from the other side — opening someone else's
+(or eighteen-months-ago-you's) dataset and it just making sense. That's the
+relief you were setting up back in Chapter 1.
+
+</div>
+</div>
 
 ## What's next
 
