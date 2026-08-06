@@ -101,6 +101,6 @@ environment is active it runs directly (no `python` prefix), and is equivalent t
 After installation: create or open a project, import data, validate the dataset, then
 run scoring if needed.
 
-- [Quick Start](QUICK_START.md)
+- [Getting Started](TUTORIAL_BEGINNER.md)
 - [Studio Guide](studio/index.md)
 - [CLI Reference](CLI_REFERENCE.md)

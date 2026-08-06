@@ -7,7 +7,7 @@ repository has reusable sample assets — this page tells you which path to choo
 
 | If you want to... | Start here | Time |
 |---|---|---|
-| Get one quick success | [Quick Start](QUICK_START.md) | 10–15 min |
+| Get one quick success | [Getting Started](TUTORIAL_BEGINNER.md) | 10–15 min |
 | Learn the full beginner workflow | [Workshop](WORKSHOP.md) | ~90 min |
 | Build a survey template from an Excel codebook | [Excel Survey Template — Basics](EXCEL_TEMPLATE_BASICS.md), then [— Multiple Versions](EXCEL_TEMPLATE_ADVANCED.md) | 15–35 min |
 | Reuse import templates only | `docs/examples/` sample files | A few minutes |
@@ -37,7 +37,7 @@ repository-local, and easy to verify against current behavior.
 
 ## Recommended order and outcomes
 
-If you're new: [Quick Start](QUICK_START.md) → [Workshop](WORKSHOP.md) →
+If you're new: [Getting Started](TUTORIAL_BEGINNER.md) → [Workshop](WORKSHOP.md) →
 [Projects](studio/projects.md) → [Survey Import](studio/converter_survey.md) →
 [Validator](studio/validator.md). That gives you one short success first, then one
 fuller end-to-end example, then the deeper workflow pages.
