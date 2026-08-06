@@ -1,4 +1,4 @@
-# Beginner Tutorial 5 — Use the Validator
+# Chapter 5: Use the Validator
 
 Chapter 5 of [Getting Started — Your First PRISM Project](TUTORIAL_BEGINNER.md).
 This is about running PRISM's built-in checks against `wellbeing_study` and

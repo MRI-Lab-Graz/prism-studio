@@ -1,4 +1,4 @@
-# Beginner Tutorial 3 — Import a Survey via Excel
+# Chapter 3: Import a Survey via Excel
 
 Chapter 3 of [Getting Started — Your First PRISM Project](TUTORIAL_BEGINNER.md).
 This is about turning the five wellbeing-survey columns (`WB01`-`WB05`) in

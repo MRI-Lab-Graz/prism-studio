@@ -1,4 +1,4 @@
-# Beginner Tutorial 2 — Import Sociodemographic Data
+# Chapter 2: Import Sociodemographic Data
 
 Chapter 2 of [Getting Started — Your First PRISM Project](TUTORIAL_BEGINNER.md).
 This is about getting per-participant demographic fields (age, sex,
