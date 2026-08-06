@@ -82,7 +82,7 @@ scoring or export as the payoff.
 
 ## What's next
 
-- [Quick Start](QUICK_START.md)
+- [Getting Started](TUTORIAL_BEGINNER.md)
 - [Projects](studio/projects.md) · [Survey Import](studio/converter_survey.md) ·
   [Validator](studio/validator.md)
 - [Recipes](RECIPES.md)

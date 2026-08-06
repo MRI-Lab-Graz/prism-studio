@@ -135,5 +135,5 @@ Use the dry run first whenever the dataset isn't disposable. Re-run validation
 after each repair instead of making many unrelated changes at once. See
 [Validator](studio/validator.md) for the broader workflow,
 [Specifications](SPECIFICATIONS.md) or the modality spec pages for schema context,
-or [Quick Start](QUICK_START.md)/[Workshop](WORKSHOP.md) if the issue is really a
+or [Getting Started](TUTORIAL_BEGINNER.md)/[Workshop](WORKSHOP.md) if the issue is really a
 workflow misunderstanding rather than a code-level problem.
