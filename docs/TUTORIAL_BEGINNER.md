@@ -1,18 +1,20 @@
 # Getting Started — Your First PRISM Project
 
 A self-paced, start-from-zero walkthrough for someone who has never opened
-PRISM Studio before. Five chapters take you from an empty folder to a
-validated, scored project, using one running example throughout so you never
-have to switch mental models mid-tutorial.
+PRISM Studio before. Six chapters take you from an empty folder through
+building and scoring a project, then applying the same workflow to an existing
+BIDS dataset, using one running example so you never have to switch mental
+models mid-tutorial.
 
 This sits alongside another on-ramp:
 [Workshop](WORKSHOP.md) is the same core journey packaged for a live,
 instructor-led session. Use this tutorial if you want the most explanation and
 plan to work through it alone.
 
-**Time:** ~85 minutes for all five chapters. **Outcome:** one project
+**Time:** ~100 minutes for all six chapters. **Outcome:** one new project
 (`wellbeing_study`) with sociodemographic data, imported survey responses, a
-working scoring recipe, and a clean validation run.
+working scoring recipe, validated — plus experience enriching an existing BIDS
+dataset with the same tools.
 
 | Chapter | Topic | Time | Outcome |
 |---|---|---|---|
@@ -21,6 +23,7 @@ working scoring recipe, and a clean validation run.
 | [3](TUTORIAL_BEGINNER_3_SURVEY_IMPORT.md) | Import a survey via Excel | ~25 min | Survey response files in subject folders |
 | [4](TUTORIAL_BEGINNER_4_RECIPE.md) | Prepare a recipe | ~15 min | A saved, working scoring recipe and its output |
 | [5](TUTORIAL_BEGINNER_5_VALIDATOR.md) | Use the validator | ~15 min | Validation findings understood and resolved |
+| [6](TUTORIAL_BEGINNER_6_EXISTING_BIDS.md) | Enrich an existing BIDS dataset | ~15 min | Same workflow applied to a published OpenNeuro dataset |
 
 ## Prerequisites
 
@@ -52,7 +55,7 @@ explains each step in far more detail and at your own pace.
 
 ## What's next
 
-Once you've completed all five chapters, an **Intermediate** tutorial
+Once you've completed all six chapters, an **Intermediate** tutorial
 covering DataLad version control and bulk file/folder manipulation is
 planned as the next step in this series — check back here once it's
 published. In the meantime:
