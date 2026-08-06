@@ -30,6 +30,26 @@ html[data-color-mode="dark"] {
     --prism-code-bg: #232629;
 }
 
+/* -- Sidebar dividers ---------------------------------------------------
+   Shibuya doesn't draw a border between the left nav / content / right
+   "on this page" TOC by default, which makes the three columns bleed
+   together. Add a hairline using the theme's own divider color, matching
+   the breakpoints where each sidebar actually renders inline (md for the
+   left nav, xl for the sticky right TOC) so nothing shows on mobile where
+   they become overlay drawers instead. */
+@media (min-width: 768px) {
+    .sy-lside {
+        border-right: 1px solid var(--sy-c-divider);
+    }
+}
+
+@media (min-width: 1280px) {
+    .sy-rside {
+        border-left: 1px solid var(--sy-c-divider);
+        box-shadow: none;
+    }
+}
+
 /* -- Navbar logo -------------------------------------------------------- */
 
 .sy-head-brand img {
@@ -420,64 +440,84 @@ html[data-color-mode="dark"] .prism-structure-copy h4 {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2.4rem;
-    height: 2.4rem;
+    width: 2.6rem;
+    height: 2.6rem;
     border-radius: 999px;
     background: var(--prism-brand-success);
     color: #fff;
     font-weight: 700;
-    font-size: 1.05rem;
+    font-size: 1.1rem;
+    box-shadow: 0 6px 14px rgba(44, 154, 98, 0.32);
 }
 
 /* Content-relevant icon badge for reference/hub grids (as opposed to the
-   numbered .prism-chapter-icon used for genuinely sequential tutorials). */
+   numbered .prism-chapter-icon used for genuinely sequential tutorials).
+   Solid + white icon + colored glow, matching the tutorial number badges
+   instead of the earlier flat pastel-circle treatment. */
 .prism-card-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2.4rem;
-    height: 2.4rem;
+    width: 2.6rem;
+    height: 2.6rem;
     border-radius: 999px;
-    background: var(--prism-card-accent-soft, var(--prism-brand-success-soft));
-    color: var(--prism-card-accent, var(--prism-brand-success-hover));
+    background: var(--prism-card-icon-bg, var(--prism-brand-success));
+    color: #fff;
+    box-shadow: 0 6px 14px rgba(var(--prism-card-icon-shadow-rgb, 44, 154, 98), 0.32);
 }
 
 .prism-card-icon svg {
-    width: 1.15rem;
-    height: 1.15rem;
+    width: 1.3rem;
+    height: 1.3rem;
     stroke: currentColor;
 }
 
 /* Category color variants — set the accent consumed by .prism-card-icon and
-   the card's hover border. Each pair is light/dark-mode aware. */
+   the card's hover border. --prism-card-accent/-soft adapt per theme (used
+   for text/hover-border, which need to stay legible against the page
+   background). --prism-card-icon-bg and -icon-shadow-rgb stay vivid in both
+   themes since they sit behind a white icon, the same way the solid green
+   .prism-chapter-icon badge doesn't need a dark-mode override either. */
 .prism-chapter-grid--blue {
     --prism-card-accent: #2f6fed;
     --prism-card-accent-soft: #e8f0fe;
+    --prism-card-icon-bg: #2f6fed;
+    --prism-card-icon-shadow-rgb: 47, 111, 237;
 }
 
 .prism-chapter-grid--teal {
     --prism-card-accent: #0f8a8a;
     --prism-card-accent-soft: #e2f6f6;
+    --prism-card-icon-bg: #0f8a8a;
+    --prism-card-icon-shadow-rgb: 15, 138, 138;
 }
 
 .prism-chapter-grid--purple {
     --prism-card-accent: #7c3aed;
     --prism-card-accent-soft: #f1e9fe;
+    --prism-card-icon-bg: #7c3aed;
+    --prism-card-icon-shadow-rgb: 124, 58, 237;
 }
 
 .prism-chapter-grid--green {
     --prism-card-accent: #2c9a62;
     --prism-card-accent-soft: #e8f6ee;
+    --prism-card-icon-bg: #2c9a62;
+    --prism-card-icon-shadow-rgb: 44, 154, 98;
 }
 
 .prism-chapter-grid--amber {
     --prism-card-accent: #b3690a;
     --prism-card-accent-soft: #fdf1de;
+    --prism-card-icon-bg: #c2790f;
+    --prism-card-icon-shadow-rgb: 194, 121, 15;
 }
 
 .prism-chapter-grid--slate {
     --prism-card-accent: #52606d;
     --prism-card-accent-soft: #eef1f3;
+    --prism-card-icon-bg: #52606d;
+    --prism-card-icon-shadow-rgb: 82, 96, 109;
 }
 
 html[data-color-mode="dark"] .prism-chapter-grid--blue { --prism-card-accent: #6c9bff; --prism-card-accent-soft: rgba(47, 111, 237, 0.18); }
@@ -585,20 +625,17 @@ html[data-color-mode="dark"] .prism-os-card > summary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    width: 2.15rem;
+    height: 2.15rem;
     border-radius: 999px;
-    background: var(--prism-brand-success-soft);
-    color: var(--prism-brand-success-hover);
+    background: var(--prism-brand-success);
+    color: #fff;
     flex: 0 0 auto;
-}
-
-html[data-color-mode="dark"] .prism-os-icon {
-    color: #7fd8a8;
+    box-shadow: 0 4px 10px rgba(44, 154, 98, 0.3);
 }
 
 .prism-os-icon svg {
-    width: 1.1rem;
-    height: 1.1rem;
+    width: 1.2rem;
+    height: 1.2rem;
     fill: currentColor;
 }
