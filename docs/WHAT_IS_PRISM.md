@@ -97,5 +97,5 @@ project structures that scale beyond small local folders. See [DataLad](DATALAD.
 ## What's next
 
 - [Project Overview](PROJECT_OVERVIEW.md) for the repo and feature map
-- [Installation](INSTALLATION.md) · [Quick Start](QUICK_START.md) ·
+- [Installation](INSTALLATION.md) · [Getting Started](TUTORIAL_BEGINNER.md) ·
   [Workshop](WORKSHOP.md)

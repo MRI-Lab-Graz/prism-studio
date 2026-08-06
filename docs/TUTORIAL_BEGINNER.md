@@ -5,10 +5,9 @@ PRISM Studio before. Five chapters take you from an empty folder to a
 validated, scored project, using one running example throughout so you never
 have to switch mental models mid-tutorial.
 
-This sits alongside two other on-ramps rather than replacing them: [Quick
-Start](QUICK_START.md) is faster and assumes you'll fill in gaps yourself;
+This sits alongside another on-ramp:
 [Workshop](WORKSHOP.md) is the same core journey packaged for a live,
-instructor-led session. Use this one if you want the most explanation and
+instructor-led session. Use this tutorial if you want the most explanation and
 plan to work through it alone.
 
 **Time:** ~85 minutes for all five chapters. **Outcome:** one project

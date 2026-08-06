@@ -1,8 +1,8 @@
 # CLI & Script Reference
 
 The detailed command reference for PRISM's terminal surfaces. Reference-first — for
-a guided narrative use [CLI Workflows](CLI_WORKFLOWS.md), for a short first success
-[Quick Start](QUICK_START.md), for schema context [Specifications](SPECIFICATIONS.md),
+a guided narrative use [CLI Workflows](CLI_WORKFLOWS.md), for a guided first success
+[Getting Started](TUTORIAL_BEGINNER.md), for schema context [Specifications](SPECIFICATIONS.md),
 for scoring-definition details [Recipes](RECIPES.md).
 
 ## Getting started

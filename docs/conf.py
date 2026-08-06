@@ -29,6 +29,8 @@ exclude_patterns = [
     # Advanced pages intentionally hidden from public RTD navigation.
     "LIMESURVEY_VERSION_DIFFERENCES.md",
     "PAVLOVIA_EXPORT.md",
+    # Replaced by TUTORIAL_BEGINNER
+    "QUICK_START.md",
 ]
 
 # -- Options for HTML output -------------------------------------------------

@@ -74,7 +74,7 @@ BIDS compatibility → export from a copy when you need anonymization or defacin
 ## What's next
 
 - [What is PRISM](WHAT_IS_PRISM.md) for the model and compatibility story
-- [Installation](INSTALLATION.md) · [Quick Start](QUICK_START.md) ·
+- [Installation](INSTALLATION.md) · [Getting Started](TUTORIAL_BEGINNER.md) ·
   [Studio Guide](studio/index.md)
 - [Workshop](WORKSHOP.md) and [Examples](EXAMPLES.md) for guided/sample-driven
   learning; `examples/workshop/` and `tests/` for reusable assets
