@@ -7,11 +7,49 @@
     --prism-brand-success-hover: #248352;
     --prism-brand-success-soft: #e8f6ee;
     --prism-brand-accent: #ffd500;
+    --prism-border: #d7dbe0;
+    --prism-border-soft: #e5e8ec;
+    --prism-radius: 14px;
+    --prism-shadow: 0 1px 2px rgba(31, 35, 40, 0.06), 0 4px 14px rgba(31, 35, 40, 0.07);
+    --prism-surface: #ffffff;
+    --prism-surface-muted: #fafafa;
+    --prism-text-muted: #4a4d55;
+    --prism-text-soft: #5a5d64;
+    --prism-code-bg: #f4f5f6;
+}
+
+html[data-color-mode="dark"] {
+    --prism-brand-success-soft: rgba(44, 154, 98, 0.16);
+    --prism-border: #3a3d44;
+    --prism-border-soft: #2f3237;
+    --prism-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.24);
+    --prism-surface: #1c1e22;
+    --prism-surface-muted: #232629;
+    --prism-text-muted: #c7c9cd;
+    --prism-text-soft: #b3b5ba;
+    --prism-code-bg: #232629;
+}
+
+/* -- Navbar logo -------------------------------------------------------- */
+
+.sy-head-brand img {
+    height: 40px !important;
+    width: auto !important;
+}
+
+/* -- Hero ----------------------------------------------------------------- */
+
+.prism-hero-shell {
+    background: var(--prism-surface);
+    border: 1px solid var(--prism-border-soft);
+    border-radius: var(--prism-radius);
+    box-shadow: var(--prism-shadow);
+    padding: 1.75rem 1.5rem 2rem;
+    margin: 1.5rem 0 2rem;
 }
 
 .prism-hero {
     text-align: center;
-    margin: 1.5rem 0 2rem;
 }
 
 .prism-hero img {
@@ -25,7 +63,7 @@
     font-size: 1.15rem;
     max-width: 640px;
     margin: 0 auto 1.25rem;
-    color: #4a4d55;
+    color: var(--prism-text-muted);
 }
 
 .prism-pill-list {
@@ -49,6 +87,10 @@
     font-weight: 600;
 }
 
+html[data-color-mode="dark"] .prism-pill {
+    color: #7fd8a8;
+}
+
 .prism-cta {
     display: inline-block;
     background: var(--prism-brand-success);
@@ -65,20 +107,34 @@
 }
 
 .prism-cta.prism-cta--secondary {
-    background: #fff;
+    background: transparent;
     color: var(--prism-brand-success-hover) !important;
     border: 1px solid var(--prism-brand-success);
+}
+
+html[data-color-mode="dark"] .prism-cta.prism-cta--secondary {
+    color: #7fd8a8 !important;
 }
 
 .prism-cta.prism-cta--secondary:hover {
     background: var(--prism-brand-success-soft);
 }
 
+.prism-screenshot {
+    max-width: 100%;
+    border: 1px solid var(--prism-border-soft);
+    border-radius: 8px;
+    box-shadow: var(--prism-shadow);
+    margin: 1.5rem 0;
+}
+
+/* -- Before / after proof grid -------------------------------------------- */
+
 .prism-proof-grid {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     gap: 1.25rem;
-    align-items: center;
+    align-items: stretch;
     margin: 1.5rem 0;
 }
 
@@ -89,29 +145,127 @@
 }
 
 .prism-proof-panel {
-    border: 1px solid #e3e4e6;
-    border-radius: 8px;
-    padding: 1rem 1.25rem;
-    background: #fafafa;
+    border: 1px solid var(--prism-border-soft);
+    border-radius: var(--prism-radius);
+    padding: 1.15rem 1.25rem;
+    background: var(--prism-surface);
+    box-shadow: var(--prism-shadow);
 }
 
 .prism-proof-panel h4 {
-    margin-top: 0 !important;
+    margin: 0 0 0.85rem !important;
+    font-size: 1rem !important;
 }
 
 .prism-proof-label {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.26rem 0.62rem;
+    font-size: 0.76rem;
     font-weight: 700;
-    color: #8a8d94;
+    letter-spacing: 0.01em;
+    margin-bottom: 0.85rem;
 }
 
-.prism-proof-arrow {
-    text-align: center;
-    font-size: 1.5rem;
-    color: var(--prism-brand-success);
+.prism-proof-label--before {
+    background: var(--prism-surface-muted);
+    border: 1px solid var(--prism-border);
+    color: var(--prism-text-muted);
 }
+
+.prism-proof-label--after {
+    background: var(--prism-brand-success-soft);
+    border: 1px solid var(--prism-brand-success);
+    color: var(--prism-brand-success-hover);
+}
+
+html[data-color-mode="dark"] .prism-proof-label--after {
+    color: #7fd8a8;
+}
+
+.prism-proof-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.65rem;
+}
+
+.prism-proof-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.62rem;
+    font-size: 0.92rem;
+    color: var(--prism-text-muted);
+}
+
+.prism-proof-icon {
+    flex: 0 0 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.prism-proof-icon--before {
+    background: var(--prism-surface-muted);
+    color: var(--prism-text-soft);
+    border: 1px solid var(--prism-border);
+}
+
+.prism-proof-icon--after {
+    background: var(--prism-brand-success-soft);
+    color: var(--prism-brand-success-hover);
+}
+
+html[data-color-mode="dark"] .prism-proof-icon--after {
+    color: #7fd8a8;
+}
+
+.prism-proof-step {
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    min-width: 108px;
+}
+
+.prism-proof-step-badge {
+    width: 2.9rem;
+    height: 2.9rem;
+    border-radius: 999px;
+    background: var(--prism-brand-success);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    box-shadow: 0 8px 16px rgba(44, 154, 98, 0.28);
+}
+
+.prism-proof-step-text {
+    text-align: center;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--prism-text-muted);
+    max-width: 118px;
+}
+
+.prism-proof-note {
+    margin-top: 1.25rem;
+    font-size: 0.92rem;
+    color: var(--prism-text-soft);
+}
+
+/* -- Highlights grid -------------------------------------------------------- */
 
 .prism-highlight-grid {
     display: grid;
@@ -127,20 +281,324 @@
 }
 
 .prism-highlight-grid h4 {
-    margin: 0 0 0.25rem !important;
-    font-size: 1rem !important;
+    display: inline-flex;
+    align-items: center;
+    background: var(--prism-brand-success-soft);
+    color: var(--prism-brand-success-hover);
+    border: 1px solid var(--prism-brand-success);
+    border-radius: 999px;
+    padding: 0.28rem 0.75rem;
+    margin: 0 0 0.4rem !important;
+    font-size: 0.9rem !important;
+    font-weight: 700;
+}
+
+html[data-color-mode="dark"] .prism-highlight-grid h4 {
+    color: #7fd8a8;
 }
 
 .prism-highlight-grid p {
     margin: 0;
     font-size: 0.9rem;
-    color: #5a5d64;
+    color: var(--prism-text-soft);
 }
 
-.prism-screenshot {
-    max-width: 100%;
-    border: 1px solid #e3e4e6;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+/* -- Project structure section ---------------------------------------------- */
+
+.prism-structure-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
     margin: 1.5rem 0;
+}
+
+@media (max-width: 700px) {
+    .prism-structure-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.prism-structure-tree {
+    background: var(--prism-code-bg);
+    border: 1px solid var(--prism-border-soft);
+    border-radius: var(--prism-radius);
+    border-top: 4px solid var(--prism-brand-success);
+    padding: 1rem 1.15rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 0;
+}
+
+.prism-structure-copy h4 {
+    margin: 0 0 0.4rem !important;
+    font-size: 1rem !important;
+    color: var(--prism-brand-primary);
+}
+
+html[data-color-mode="dark"] .prism-structure-copy h4 {
+    color: inherit;
+}
+
+.prism-structure-copy > p {
+    color: var(--prism-text-soft);
+    font-size: 0.92rem;
+    margin: 0 0 0.85rem;
+}
+
+.prism-structure-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.55rem;
+    font-size: 0.9rem;
+    color: var(--prism-text-muted);
+}
+
+.prism-structure-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+}
+
+.prism-structure-check {
+    flex: 0 0 auto;
+    color: var(--prism-brand-success);
+    font-weight: 700;
+}
+
+.prism-structure-list code {
+    background: var(--prism-code-bg);
+    border-radius: 4px;
+    padding: 0.1rem 0.35rem;
+}
+
+/* -- Tutorial chapter grid -------------------------------------------------- */
+
+.prism-chapter-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin: 1.5rem 0 2rem;
+}
+
+@media (max-width: 900px) {
+    .prism-chapter-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .prism-chapter-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.prism-chapter-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    background: var(--prism-surface);
+    border: 1px solid var(--prism-border-soft);
+    border-radius: var(--prism-radius);
+    box-shadow: var(--prism-shadow);
+    padding: 1.1rem 1.15rem 1.25rem;
+    text-decoration: none !important;
+    color: inherit !important;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.prism-chapter-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--prism-card-accent, var(--prism-brand-success));
+    box-shadow: 0 4px 10px rgba(31, 35, 40, 0.1), 0 12px 28px rgba(31, 35, 40, 0.12);
+}
+
+.prism-chapter-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 999px;
+    background: var(--prism-brand-success);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.05rem;
+}
+
+/* Content-relevant icon badge for reference/hub grids (as opposed to the
+   numbered .prism-chapter-icon used for genuinely sequential tutorials). */
+.prism-card-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 999px;
+    background: var(--prism-card-accent-soft, var(--prism-brand-success-soft));
+    color: var(--prism-card-accent, var(--prism-brand-success-hover));
+}
+
+.prism-card-icon svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    stroke: currentColor;
+}
+
+/* Category color variants — set the accent consumed by .prism-card-icon and
+   the card's hover border. Each pair is light/dark-mode aware. */
+.prism-chapter-grid--blue {
+    --prism-card-accent: #2f6fed;
+    --prism-card-accent-soft: #e8f0fe;
+}
+
+.prism-chapter-grid--teal {
+    --prism-card-accent: #0f8a8a;
+    --prism-card-accent-soft: #e2f6f6;
+}
+
+.prism-chapter-grid--purple {
+    --prism-card-accent: #7c3aed;
+    --prism-card-accent-soft: #f1e9fe;
+}
+
+.prism-chapter-grid--green {
+    --prism-card-accent: #2c9a62;
+    --prism-card-accent-soft: #e8f6ee;
+}
+
+.prism-chapter-grid--amber {
+    --prism-card-accent: #b3690a;
+    --prism-card-accent-soft: #fdf1de;
+}
+
+.prism-chapter-grid--slate {
+    --prism-card-accent: #52606d;
+    --prism-card-accent-soft: #eef1f3;
+}
+
+html[data-color-mode="dark"] .prism-chapter-grid--blue { --prism-card-accent: #6c9bff; --prism-card-accent-soft: rgba(47, 111, 237, 0.18); }
+html[data-color-mode="dark"] .prism-chapter-grid--teal { --prism-card-accent: #4fc6c6; --prism-card-accent-soft: rgba(15, 138, 138, 0.2); }
+html[data-color-mode="dark"] .prism-chapter-grid--purple { --prism-card-accent: #ab84fb; --prism-card-accent-soft: rgba(124, 58, 237, 0.2); }
+html[data-color-mode="dark"] .prism-chapter-grid--green { --prism-card-accent: #7fd8a8; --prism-card-accent-soft: rgba(44, 154, 98, 0.18); }
+html[data-color-mode="dark"] .prism-chapter-grid--amber { --prism-card-accent: #e5a34d; --prism-card-accent-soft: rgba(179, 105, 10, 0.2); }
+html[data-color-mode="dark"] .prism-chapter-grid--slate { --prism-card-accent: #a7b0ba; --prism-card-accent-soft: rgba(82, 96, 109, 0.22); }
+
+.prism-chapter-title {
+    font-weight: 700;
+    font-size: 0.98rem;
+    color: var(--prism-brand-primary);
+}
+
+html[data-color-mode="dark"] .prism-chapter-title {
+    color: inherit;
+}
+
+.prism-chapter-outcome {
+    font-size: 0.85rem;
+    color: var(--prism-text-soft);
+    flex-grow: 1;
+}
+
+.prism-chapter-time {
+    display: inline-flex;
+    align-self: flex-start;
+    background: var(--prism-brand-success-soft);
+    color: var(--prism-brand-success-hover);
+    border-radius: 999px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+html[data-color-mode="dark"] .prism-chapter-time {
+    color: #7fd8a8;
+}
+
+/* -- OS picker cards (installation instructions) ---------------------------- */
+
+.prism-os-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.85rem;
+    margin: 1rem 0 1.5rem;
+}
+
+.prism-os-card {
+    border: 1px solid var(--prism-border-soft);
+    border-radius: var(--prism-radius);
+    background: var(--prism-surface);
+    box-shadow: var(--prism-shadow);
+    overflow: hidden;
+}
+
+.prism-os-card > summary {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--prism-brand-primary);
+    list-style: none;
+}
+
+html[data-color-mode="dark"] .prism-os-card > summary {
+    color: inherit;
+}
+
+.prism-os-card > summary::-webkit-details-marker {
+    display: none;
+}
+
+.prism-os-card > summary::after {
+    content: "\203A";
+    margin-left: auto;
+    font-size: 1.1rem;
+    color: var(--prism-text-soft);
+    transition: transform 0.12s ease;
+}
+
+.prism-os-card[open] > summary::after {
+    transform: rotate(90deg);
+}
+
+.prism-os-card .prism-os-body {
+    padding: 0 1.1rem 1.05rem 3.65rem;
+    font-size: 0.88rem;
+    color: var(--prism-text-muted);
+}
+
+.prism-os-card .prism-os-body > *:first-child {
+    margin-top: 0 !important;
+}
+
+.prism-os-card .prism-os-body > *:last-child {
+    margin-bottom: 0 !important;
+}
+
+.prism-os-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    background: var(--prism-brand-success-soft);
+    color: var(--prism-brand-success-hover);
+    flex: 0 0 auto;
+}
+
+html[data-color-mode="dark"] .prism-os-icon {
+    color: #7fd8a8;
+}
+
+.prism-os-icon svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    fill: currentColor;
 }

@@ -10,28 +10,44 @@ folder — no Python or repository setup needed.
 1. Open the [latest release page](https://github.com/MRI-Lab-Graz/prism-studio/releases/latest).
 2. Pick your OS and download the matching ZIP:
 
-  <details>
-  <summary><strong>macOS</strong></summary>
+<div class="prism-os-grid">
 
-  Choose your Mac chip and download the matching ZIP:
-  - Apple Silicon (M1/M2/M3/M4): `prism-studio-macOS-AppleSilicon.zip`
-  - Intel: `prism-studio-macOS-AppleIntel.zip`
+<details class="prism-os-card">
+<summary><span class="prism-os-icon"><svg viewBox="0 0 24 24"><path d="M16.7 12.4c0-2.7 2.2-4 2.3-4.1-1.3-1.9-3.3-2.1-4-2.2-1.7-.2-3.3 1-4.2 1-.9 0-2.2-1-3.6-1-1.9 0-3.6 1.1-4.5 2.7-1.9 3.3-.5 8.2 1.4 10.9.9 1.3 2 2.9 3.4 2.8 1.4-.1 1.9-.9 3.5-.9s2.1.9 3.5.9c1.5 0 2.4-1.4 3.3-2.7.6-.9 1-1.8 1.4-2.8-1.9-.7-2.5-2.6-2.5-2.6Z"/><path d="M13.9 4.1c.7-.9 1.2-2.1 1.1-3.3-1.1.1-2.3.7-3 1.6-.7.8-1.3 2.1-1.1 3.3 1.2.1 2.4-.6 3-1.6Z"/></svg></span>macOS</summary>
 
-  Not sure which Mac you have? Apple menu → **About This Mac** → check the chip:
-  anything with "Apple M..." is Apple Silicon, "Intel" is Intel.
-  </details>
+<div class="prism-os-body">
 
-  <details>
-  <summary><strong>Windows</strong></summary>
+Choose your Mac chip and download the matching ZIP:
+- Apple Silicon (M1/M2/M3/M4): `prism-studio-macOS-AppleSilicon.zip`
+- Intel: `prism-studio-macOS-AppleIntel.zip`
 
-  Download: `prism-studio-Windows.zip`
-  </details>
+Not sure which Mac you have? Apple menu → **About This Mac** → check the chip:
+anything with "Apple M..." is Apple Silicon, "Intel" is Intel.
 
-  <details>
-  <summary><strong>Linux</strong></summary>
+</div>
+</details>
 
-  Download: `prism-studio-Linux.zip`
-  </details>
+<details class="prism-os-card">
+<summary><span class="prism-os-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg></span>Windows</summary>
+
+<div class="prism-os-body">
+
+Download: `prism-studio-Windows.zip`
+
+</div>
+</details>
+
+<details class="prism-os-card">
+<summary><span class="prism-os-icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="15" rx="6" ry="7"/><circle cx="12" cy="7" r="3.2"/><ellipse cx="9.5" cy="16" rx="1.6" ry="2.4" fill="var(--prism-surface)"/><ellipse cx="14.5" cy="16" rx="1.6" ry="2.4" fill="var(--prism-surface)"/></svg></span>Linux</summary>
+
+<div class="prism-os-body">
+
+Download: `prism-studio-Linux.zip`
+
+</div>
+</details>
+
+</div>
 
 3. Extract the ZIP and start PRISM Studio from the extracted folder.
    - **macOS first launch**: if the OS blocks the app, use
@@ -47,8 +63,12 @@ the source tree. Requires **Python 3.10+** (3.9 is not supported).
 
 Pick your OS:
 
-<details>
-<summary><strong>macOS / Linux</strong></summary>
+<div class="prism-os-grid">
+
+<details class="prism-os-card">
+<summary><span class="prism-os-icon"><svg viewBox="0 0 24 24"><path d="M16.7 12.4c0-2.7 2.2-4 2.3-4.1-1.3-1.9-3.3-2.1-4-2.2-1.7-.2-3.3 1-4.2 1-.9 0-2.2-1-3.6-1-1.9 0-3.6 1.1-4.5 2.7-1.9 3.3-.5 8.2 1.4 10.9.9 1.3 2 2.9 3.4 2.8 1.4-.1 1.9-.9 3.5-.9s2.1.9 3.5.9c1.5 0 2.4-1.4 3.3-2.7.6-.9 1-1.8 1.4-2.8-1.9-.7-2.5-2.6-2.5-2.6Z"/><path d="M13.9 4.1c.7-.9 1.2-2.1 1.1-3.3-1.1.1-2.3.7-3 1.6-.7.8-1.3 2.1-1.1 3.3 1.2.1 2.4-.6 3-1.6Z"/></svg></span>macOS / Linux</summary>
+
+<div class="prism-os-body">
 
 ```bash
 git clone https://github.com/MRI-Lab-Graz/prism-studio.git
@@ -57,10 +77,14 @@ cd prism-studio
 source .venv/bin/activate
 python prism-studio.py
 ```
+
+</div>
 </details>
 
-<details>
-<summary><strong>Windows</strong></summary>
+<details class="prism-os-card">
+<summary><span class="prism-os-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg></span>Windows</summary>
+
+<div class="prism-os-body">
 
 ```powershell
 git clone https://github.com/MRI-Lab-Graz/prism-studio.git
@@ -69,7 +93,11 @@ cd prism-studio
 .venv\Scripts\activate
 python prism-studio.py
 ```
+
+</div>
 </details>
+
+</div>
 
 Always activate the repo-local virtual environment first
 (`source .venv/bin/activate` / `.venv\Scripts\activate`) — command-line tools run
