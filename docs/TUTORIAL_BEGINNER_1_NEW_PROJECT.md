@@ -1,4 +1,4 @@
-# Beginner Tutorial 1 — Create a Project
+# Chapter 1: Create a Project
 
 Chapter 1 of [Getting Started — Your First PRISM Project](TUTORIAL_BEGINNER.md).
 This is about creating the project structure everything else in this series

@@ -1,4 +1,4 @@
-# Beginner Tutorial 4 — Prepare a Recipe
+# Chapter 4: Prepare a Recipe
 
 Chapter 4 of [Getting Started — Your First PRISM Project](TUTORIAL_BEGINNER.md).
 This is about turning the five imported `WB01`-`WB05` responses into one
