@@ -59,6 +59,8 @@ def dispatch_prism_tools(
             handlers["participants_merge"](args)
         elif args.action == "save-mapping":
             handlers["participants_save_mapping"](args)
+        elif args.action == "neurobagel-schema":
+            handlers["participants_neurobagel_schema"](args)
         else:
             parsers["participants"].print_help()
     elif args.command == "environment":

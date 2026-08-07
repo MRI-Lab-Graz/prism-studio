@@ -5,27 +5,14 @@ Handles NeuroBagel API routes.
 
 import os
 import json
-import pandas as pd
 from flask import Blueprint, jsonify, request, current_app
-from src.web.neurobagel import fetch_neurobagel_participants, augment_neurobagel_data
+from src.web.neurobagel import (
+    augment_neurobagel_data,
+    fetch_neurobagel_participants,
+    sample_local_participant_columns,
+)
 
 neurobagel_bp = Blueprint("neurobagel", __name__)
-
-
-def _is_non_participant_summary_column(column_name: str) -> bool:
-    normalized = "".join(
-        ch for ch in str(column_name or "").strip().lower() if ch.isalnum()
-    )
-    return normalized in {
-        "session",
-        "visit",
-        "timepoint",
-        "run",
-        "runid",
-        "runnumber",
-        "runnr",
-        "repeat",
-    }
 
 
 @neurobagel_bp.route("/api/neurobagel/participants")
@@ -63,26 +50,8 @@ def get_local_participants():
         session_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], session_id)
         tsv_path = os.path.join(session_dir, "participants.tsv")
 
-    if not os.path.exists(tsv_path):
-        return jsonify({"columns": {}})
-
     try:
-        df = pd.read_csv(tsv_path, sep="\t")
-        result = {}
-        for col in df.columns:
-            # Always include non-ID columns so availability detection works
-            # for both categorical and continuous fields (e.g., age).
-            if col.lower() in ["participant_id", "id"]:
-                continue
-            if _is_non_participant_summary_column(col):
-                continue
-
-            # Keep payload bounded by sampling at most 50 unique values.
-            # The widget primarily needs column presence, and only uses
-            # values for categorical level suggestions.
-            unique_vals = [str(v) for v in df[col].dropna().unique().tolist()][:50]
-            result[col] = sorted(unique_vals)
-
+        result = sample_local_participant_columns(tsv_path)
         return jsonify({"columns": result})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
