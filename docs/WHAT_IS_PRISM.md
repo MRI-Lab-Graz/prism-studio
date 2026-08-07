@@ -1,24 +1,25 @@
 # What is PRISM?
 
-PRISM stands for **Psychological Research Information System Model** — a data and
-metadata model for psychological research datasets. PRISM extends
-[BIDS](https://bids.neuroimaging.io/) for workflows common in psychology
-(questionnaires, sport-science biometrics/performance assessments, environment descriptions, richer study metadata) while
-keeping compatibility with the standard BIDS ecosystem. **PRISM Studio** is the
-software that implements these workflows as a web interface and command-line tools.
+Psychological studies often combine well-supported BIDS data with materials that
+do not have a shared practical structure: questionnaires and their item-level
+response options, participant and sociodemographic data, sport-science
+biometrics and performance assessments, environment descriptions, and scoring
+rules. Too often, these details remain in spreadsheets or lab-specific folder
+conventions, making validation, reuse, and reproducible derived results harder.
+
+PRISM provides documented structures and validation for these psychology-focused
+workflows. It extends [BIDS](https://bids.neuroimaging.io/) with explicit files
+and metadata for the information BIDS does not standardize, while retaining the
+BIDS organization and naming that existing BIDS tools expect. **PRISM Studio**
+implements the model as a web interface and command-line tools.
 
 ```{important}
 PRISM does not replace BIDS. It adds structure for psychological research while
 preserving the ability to use BIDS-oriented tooling.
 ```
 
-**Why PRISM exists**: psychological studies need data structures only partially
-covered by standard BIDS practice — survey instruments with item-level descriptions
-and response options, sociodemographics/participant harmonization, biometrics and
-sport-science performance-testing metadata, physiology/environment metadata tied to a study
-workflow, and recipe-based scoring with reproducible derived outputs. PRISM gives
-those areas a documented structure instead of leaving them as spreadsheet
-conventions or lab-specific folder rules.
+PRISM stands for **Psychological Research Information System Model** — the data
+and metadata model behind these additions.
 
 ## How PRISM relates to BIDS
 
