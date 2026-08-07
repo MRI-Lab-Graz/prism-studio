@@ -184,21 +184,25 @@ class TestApply:
         assert payload["success"] is True
         assert payload["applied"] is True
 
-    def test_no_matching_files_reports_and_does_not_apply(self, tmp_path, capsys):
+    def test_unknown_current_value_reports_error_and_exits(self, tmp_path, capsys):
+        # BidsEntityRewriter.preview() validates current_value against the
+        # values actually present for that entity and raises if it isn't
+        # found — the CLI should surface that as a clean error, not a crash.
         project_root = _make_project(tmp_path)
-        cmd_dataset_rewrite_entities(
-            _args(
-                project=str(project_root),
-                modality="func",
-                entity="task",
-                current_value="doesnotexist",
-                operation="rename",
-                replacement="rest",
-                yes=True,
+        with pytest.raises(SystemExit) as exc_info:
+            cmd_dataset_rewrite_entities(
+                _args(
+                    project=str(project_root),
+                    modality="func",
+                    entity="task",
+                    current_value="doesnotexist",
+                    operation="rename",
+                    replacement="rest",
+                    yes=True,
+                )
             )
-        )
-        out = capsys.readouterr().out
-        assert "No files match" in out
+        assert exc_info.value.code == 1
+        assert "was not found" in capsys.readouterr().out
 
 
 class TestRejectsSubjectEntity:
