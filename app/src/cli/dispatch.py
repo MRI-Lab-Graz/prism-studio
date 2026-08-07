@@ -132,6 +132,8 @@ def dispatch_prism_tools(
             handlers["file_management_delete_files"](args)
         elif args.action == "remove-scans-tsv":
             handlers["file_management_remove_scans_tsv"](args)
+        elif args.action == "rename-physio":
+            handlers["file_management_rename_physio"](args)
         else:
             parsers["file_management"].print_help()
     elif args.command == "recipes":

@@ -1493,6 +1493,92 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
     )
 
+    parser_file_management_rename_physio = file_management_subparsers.add_parser(
+        "rename-physio",
+        help="Preview or apply a regex-based batch rename of physio/eyetracking files. "
+        "Matches the Studio GUI's Converter -> Physio Renamer action.",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--input",
+        required=True,
+        help="Folder to scan for files to rename (recursive, skips dotfiles)",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--output",
+        default=None,
+        help="Folder to write renamed copies into. Required with --apply.",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--pattern",
+        required=True,
+        help="Regex pattern matched against each filename (e.g. '^VP_')",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--replacement",
+        required=True,
+        help="Replacement text. May include {subject}/{session} placeholders when "
+        "--id-source is 'folder'.",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--id-source",
+        default="filename",
+        choices=["filename", "folder"],
+        help="'filename' renames using only regex substitution; 'folder' also resolves "
+        "{subject}/{session} placeholders from each file's folder path (default: filename)",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--folder-subject-level",
+        type=int,
+        default=2,
+        help="With --id-source folder: folder depth (from the end) containing the subject "
+        "label (default: 2)",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--folder-session-level",
+        type=int,
+        default=1,
+        help="With --id-source folder: folder depth (from the end) containing the session "
+        "label (default: 1)",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--folder-example-path",
+        default=None,
+        help="With --id-source folder: an example source path illustrating where the "
+        "subject/session values appear (used with --folder-subject-value/"
+        "--folder-session-value)",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--folder-subject-value",
+        default=None,
+        help="With --folder-example-path: the substring in the example path that is the "
+        "subject value",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--folder-session-value",
+        default=None,
+        help="With --folder-example-path: the substring in the example path that is the "
+        "session value",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--modality",
+        default="physio",
+        help="Modality label used when --organize is set (default: physio)",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--organize",
+        action="store_true",
+        help="Write output under sub-XXX/ses-XXX/<modality>/ instead of flat, when the "
+        "renamed filename parses as BIDS",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--apply",
+        action="store_true",
+        help="Actually copy renamed files to --output (default: preview only)",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
+    )
+
     return parser, {
         "root": parser,
         "survey": parser_survey,

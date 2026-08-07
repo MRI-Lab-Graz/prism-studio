@@ -8,11 +8,18 @@ GUI-only. See docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md, P2.
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 from pathlib import Path
 
 from src.bids_file_deleter import BidsFileDeleter
+from src.physio_renamer import plan_rename
 from src.project_manager import ProjectManager
+
+try:
+    from src.batch_convert import parse_bids_filename
+except ImportError:
+    parse_bids_filename = None
 
 _LOG_PREFIXES = {
     "error": "✗",
@@ -169,3 +176,124 @@ def cmd_file_management_remove_scans_tsv(args) -> None:
         if result.get("errors"):
             for error in result["errors"]:
                 print(f"⚠ {error}")
+
+
+def _scan_input_folder(input_root: Path) -> list[tuple[str, str]]:
+    """List files under input_root as (absolute_path, relative_path) pairs,
+    skipping dotfiles/dot-directories — matches the Studio GUI's server-side
+    folder scan for the physio renamer's `folder_path` input."""
+    entries: list[tuple[str, str]] = []
+    for candidate in sorted(input_root.rglob("*")):
+        if not candidate.is_file():
+            continue
+        if any(part.startswith(".") for part in candidate.parts):
+            continue
+        entries.append((str(candidate), candidate.relative_to(input_root).as_posix()))
+    return entries
+
+
+def cmd_file_management_rename_physio(args) -> None:
+    """Preview or apply a regex-based batch rename of physio/eyetracking
+    files — the CLI equivalent of the Studio GUI's File Management /
+    Converter -> Physio Renamer action (src.physio_renamer.plan_rename)."""
+    as_json = bool(getattr(args, "json", False))
+    input_root = Path(args.input).resolve()
+    if not input_root.is_dir():
+        print(f"Error: --input is not a directory: {input_root}")
+        sys.exit(1)
+
+    entries = _scan_input_folder(input_root)
+    if not entries:
+        if as_json:
+            print(json.dumps({"success": True, "applied": False, "results": []}, indent=2))
+        else:
+            print(f"No files found under {input_root}.")
+        return
+
+    try:
+        results, warnings = plan_rename(
+            entries,
+            pattern=args.pattern,
+            replacement=args.replacement,
+            id_source=args.id_source,
+            folder_subject_level=args.folder_subject_level,
+            folder_session_level=args.folder_session_level,
+            folder_example_path=args.folder_example_path or "",
+            folder_subject_value=args.folder_subject_value or "",
+            folder_session_value=args.folder_session_value or "",
+            modality=args.modality,
+            organize=bool(getattr(args, "organize", False)),
+            parse_bids_filename=parse_bids_filename,
+        )
+    except ValueError as error:
+        if as_json:
+            print(json.dumps({"success": False, "error": str(error)}, indent=2))
+        else:
+            print(f"Error: {error}")
+        sys.exit(1)
+
+    failed = [r for r in results if not r["success"]]
+
+    if not getattr(args, "apply", False):
+        if as_json:
+            print(
+                json.dumps(
+                    {
+                        "success": True,
+                        "applied": False,
+                        "results": results,
+                        "warnings": warnings,
+                    },
+                    indent=2,
+                )
+            )
+        else:
+            print("Preview only — pass --apply and --output to write renamed files.")
+            for entry in results:
+                if entry["success"]:
+                    print(f"  {entry['old']} -> {entry['path']}")
+                else:
+                    print(f"  {entry['old']}: ERROR: {entry['new']}")
+            if failed:
+                print(f"{len(failed)} file(s) could not be renamed.")
+        return
+
+    if not args.output:
+        print("Error: --output is required with --apply")
+        sys.exit(1)
+
+    output_root = Path(args.output).resolve()
+    output_root.mkdir(parents=True, exist_ok=True)
+
+    copied = 0
+    copy_errors: list[str] = []
+    for entry in results:
+        if not entry["success"]:
+            copy_errors.append(f"{entry['old']}: {entry['new']}")
+            continue
+        source = Path(entry["old"])
+        dest = output_root / entry["path"]
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, dest)
+        copied += 1
+
+    if as_json:
+        print(
+            json.dumps(
+                {
+                    "success": True,
+                    "applied": True,
+                    "copied": copied,
+                    "errors": copy_errors,
+                    "results": results,
+                    "warnings": warnings,
+                },
+                indent=2,
+            )
+        )
+    else:
+        print(f"Done: {copied} file(s) copied to {output_root}.")
+        if copy_errors:
+            print(f"{len(copy_errors)} file(s) failed:")
+            for error in copy_errors:
+                print(f"  ✗ {error}")
