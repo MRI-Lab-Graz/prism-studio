@@ -290,6 +290,12 @@ def main():  # noqa: C901
         prism_tools_main()
         return
 
+    if len(sys.argv) > 1 and sys.argv[1] == "file-management":
+        from src.cli.entrypoint import main as prism_tools_main
+
+        prism_tools_main()
+        return
+
     if len(sys.argv) > 1 and sys.argv[1] == "merge-versions":
         _cli_merge_versions(sys.argv[2:])
         return
