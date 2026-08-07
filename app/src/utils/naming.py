@@ -1,4 +1,21 @@
 import re
+import unicodedata
+
+
+def normalize_filename(name: str) -> str:
+    """Normalize filename to ASCII-safe characters (e.g., remove umlauts)."""
+    dash_map = {
+        ord("–"): "-",  # en dash
+        ord("—"): "-",  # em dash
+        ord("‑"): "-",  # non-breaking hyphen
+        ord("−"): "-",  # minus sign
+        ord("‐"): "-",  # hyphen
+    }
+    normalized = name.translate(dash_map)
+    normalized = unicodedata.normalize("NFKD", normalized)
+    normalized = normalized.encode("ascii", "ignore").decode("ascii")
+    normalized = re.sub(r"\s+", "_", normalized)
+    return normalized
 
 
 def sanitize_id(id_str: str) -> str:

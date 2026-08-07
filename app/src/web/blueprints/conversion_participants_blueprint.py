@@ -24,6 +24,7 @@ from src.participants_backend import (
     convert_dataset_participants,
     describe_participants_workflow,
     export_participants_merge_conflicts_csv,
+    merge_neurobagel_schema_for_columns as _merge_neurobagel_schema_for_columns,
     preview_dataset_participants,
     preview_participants_merge,
     save_participant_mapping as save_participant_mapping_backend,
@@ -309,52 +310,6 @@ def _get_session_project_root() -> Path | None:
     if not isinstance(current_project_path, str) or not current_project_path.strip():
         return None
     return _resolve_project_root_path(current_project_path)
-
-
-def _merge_neurobagel_schema_for_columns(
-    base_schema: dict,
-    neurobagel_schema: dict,
-    allowed_columns: list[str],
-    log_callback=None,
-) -> tuple[dict, int]:
-    """Merge NeuroBagel schema into participants metadata, limited to TSV columns only."""
-    if not isinstance(base_schema, dict):
-        base_schema = {}
-    if not isinstance(neurobagel_schema, dict):
-        return base_schema, 0
-
-    allowed = {str(col) for col in allowed_columns}
-    merged_count = 0
-
-    for col, schema_def in neurobagel_schema.items():
-        if col not in allowed:
-            if log_callback:
-                log_callback(
-                    "INFO",
-                    f"Skipped annotation-only field '{col}' (not present in participants.tsv)",
-                )
-            continue
-
-        if col not in base_schema:
-            base_schema[col] = {}
-
-        if isinstance(schema_def, dict) and "Annotations" in schema_def:
-            if "Annotations" not in base_schema[col]:
-                base_schema[col]["Annotations"] = {}
-            annotations = schema_def["Annotations"]
-            if isinstance(annotations, dict):
-                base_schema[col]["Annotations"].update(annotations)
-
-        if isinstance(schema_def, dict):
-            for key, value in schema_def.items():
-                if key == "Annotations":
-                    continue
-                if key not in base_schema[col]:
-                    base_schema[col][key] = value
-
-        merged_count += 1
-
-    return base_schema, merged_count
 
 
 def _normalize_column_token(value: str | None) -> str:

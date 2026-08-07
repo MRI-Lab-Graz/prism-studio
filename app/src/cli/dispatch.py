@@ -59,6 +59,10 @@ def dispatch_prism_tools(
             handlers["participants_merge"](args)
         elif args.action == "save-mapping":
             handlers["participants_save_mapping"](args)
+        elif args.action == "neurobagel-schema":
+            handlers["participants_neurobagel_schema"](args)
+        elif args.action == "save-schema":
+            handlers["participants_save_schema"](args)
         else:
             parsers["participants"].print_help()
     elif args.command == "environment":
@@ -66,6 +70,8 @@ def dispatch_prism_tools(
             handlers["environment_preview"](args)
         elif args.action == "convert":
             handlers["environment_convert"](args)
+        elif args.action == "scan-mri":
+            handlers["environment_scan_mri"](args)
         else:
             parsers["environment"].print_help()
     elif args.command == "demo" and args.action == "create":
@@ -77,6 +83,12 @@ def dispatch_prism_tools(
             handlers["survey_convert"](args)
         elif args.action == "validate":
             handlers["survey_validate"](args)
+        elif args.action == "export-lss":
+            handlers["survey_export_lss"](args)
+        elif args.action == "export-lss-customized":
+            handlers["survey_export_lss_customized"](args)
+        elif args.action == "export-questionnaire-docx":
+            handlers["survey_export_questionnaire_docx"](args)
         elif args.action == "import-limesurvey":
             handlers["survey_import_limesurvey"](args)
         elif args.action == "import-limesurvey-batch":
@@ -112,6 +124,10 @@ def dispatch_prism_tools(
             handlers["library_catalog"](args)
         elif args.action == "fill":
             handlers["library_fill"](args)
+        elif args.action == "template-save":
+            handlers["library_template_save"](args)
+        elif args.action == "template-delete":
+            handlers["library_template_delete"](args)
         else:
             parsers["library"].print_help()
     elif args.command == "dataset":
@@ -121,15 +137,33 @@ def dispatch_prism_tools(
             handlers["dataset_cleanup_project_metadata"](args)
         elif args.action == "rename-subjects":
             handlers["dataset_rename_subjects"](args)
+        elif args.action == "rewrite-entities":
+            handlers["dataset_rewrite_entities"](args)
         elif args.action == "build-hostile-demo":
             handlers["dataset_build_hostile_demo"](args)
         else:
             parsers["dataset"].print_help()
+    elif args.command == "file-management":
+        if args.action == "delete-files":
+            handlers["file_management_delete_files"](args)
+        elif args.action == "remove-scans-tsv":
+            handlers["file_management_remove_scans_tsv"](args)
+        elif args.action == "rename-physio":
+            handlers["file_management_rename_physio"](args)
+        else:
+            parsers["file_management"].print_help()
+    elif args.command == "json-editor":
+        if args.action == "save":
+            handlers["json_editor_save"](args)
+        else:
+            parsers["json_editor"].print_help()
     elif args.command == "recipes":
         if args.kind in {"surveys", "survey", "surves"}:
             handlers["recipes_surveys"](args)
         elif args.kind in {"biometrics", "biometric"}:
             handlers["recipes_biometrics"](args)
+        elif args.kind == "validate-file":
+            handlers["recipes_validate_file"](args)
         else:
             parsers["recipes"].print_help()
     else:

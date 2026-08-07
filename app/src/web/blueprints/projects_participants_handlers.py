@@ -1,9 +1,9 @@
 import json
-import re
 from pathlib import Path
 
 from flask import jsonify, request
 from src.participants_backend import (
+    canonicalize_participants_schema_keys as _canonicalize_participant_schema_keys,
     merge_survey_selected_participants_schema,
     resolve_survey_schema_merge_mode,
 )
@@ -12,115 +12,6 @@ from .projects_helpers import (
     _resolve_project_root_path,
     _resolve_requested_or_current_project_root,
 )
-
-
-def _normalize_schema_key(value: str | None) -> str:
-    return re.sub(r"[^a-z0-9]+", "", str(value or "").strip().lower())
-
-
-def _is_participant_id_field(field_name: str, field_schema: dict | None = None) -> bool:
-    name_norm = _normalize_schema_key(field_name)
-    if name_norm in {"participantid", "participantsid"}:
-        return True
-
-    if not isinstance(field_schema, dict):
-        return False
-
-    annotations = field_schema.get("Annotations")
-    if not isinstance(annotations, dict):
-        return False
-
-    is_about = annotations.get("IsAbout")
-    if not isinstance(is_about, dict):
-        return False
-
-    term_url = str(is_about.get("TermURL") or "").strip().lower()
-    if term_url == "nb:participantid":
-        return True
-
-    label_norm = _normalize_schema_key(is_about.get("Label"))
-    return label_norm in {"participantid", "subjectid"}
-
-
-def _merge_participants_schema_field(existing: dict, incoming: dict) -> dict:
-    merged = dict(existing)
-
-    for key, value in incoming.items():
-        if key == "Annotations" and isinstance(value, dict):
-            current_annotations = merged.get("Annotations")
-            if not isinstance(current_annotations, dict):
-                merged["Annotations"] = dict(value)
-                continue
-
-            next_annotations = dict(current_annotations)
-            for ann_key, ann_value in value.items():
-                if (
-                    ann_key in next_annotations
-                    and isinstance(next_annotations[ann_key], dict)
-                    and isinstance(ann_value, dict)
-                ):
-                    combined = dict(next_annotations[ann_key])
-                    combined.update(ann_value)
-                    next_annotations[ann_key] = combined
-                elif ann_key not in next_annotations:
-                    next_annotations[ann_key] = ann_value
-
-            merged["Annotations"] = next_annotations
-            continue
-
-        current_value = merged.get(key)
-        is_empty_struct = current_value == {} or current_value == []
-        if (
-            key not in merged
-            or current_value is None
-            or current_value == ""
-            or is_empty_struct
-        ):
-            merged[key] = value
-
-    return merged
-
-
-def _canonicalize_participant_schema_keys(schema: dict) -> dict:
-    if not isinstance(schema, dict):
-        return {}
-
-    canonical: dict = {}
-
-    # Process canonical participant_id-like keys first so their values take precedence
-    # when alias/source keys (e.g., Code with nb:ParticipantID) are merged.
-    items = list(schema.items())
-    items.sort(
-        key=lambda item: (
-            0
-            if _normalize_schema_key(item[0]) in {"participantid", "participantsid"}
-            else 1
-        )
-    )
-
-    for raw_key, raw_field in items:
-        key = str(raw_key or "").strip()
-        if not key:
-            continue
-
-        field = dict(raw_field) if isinstance(raw_field, dict) else raw_field
-        target_key = (
-            "participant_id"
-            if _is_participant_id_field(
-                key, raw_field if isinstance(raw_field, dict) else None
-            )
-            else key
-        )
-
-        if target_key not in canonical:
-            canonical[target_key] = field
-            continue
-
-        existing = canonical[target_key]
-        if isinstance(existing, dict) and isinstance(field, dict):
-            canonical[target_key] = _merge_participants_schema_field(existing, field)
-
-    return canonical
 
 
 def _resolve_current_project_root(current_project: dict) -> Path | None:

@@ -331,12 +331,70 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
+    parser_participants_neurobagel_schema = participants_subparsers.add_parser(
+        "neurobagel-schema",
+        help="Fetch the Neurobagel controlled vocabulary and sample local "
+        "participants.tsv columns, to inform building a --neurobagel-schema "
+        "payload. Matches the value the Studio GUI's Neurobagel widget adds "
+        "beyond a raw --neurobagel-schema passthrough.",
+    )
+    parser_participants_neurobagel_schema.add_argument(
+        "--project", required=True, help="Project root containing participants.tsv"
+    )
+    parser_participants_neurobagel_schema.add_argument(
+        "--output", default=None, help="Path to write the combined JSON (optional)"
+    )
+    parser_participants_neurobagel_schema.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
+    parser_participants_save_schema = participants_subparsers.add_parser(
+        "save-schema",
+        help="Save a participants.json schema into a project, canonicalizing "
+        "participant-ID-like fields into one 'participant_id' key. Matches the "
+        "Studio GUI's Neurobagel widget 'Save Annotations' action.",
+    )
+    parser_participants_save_schema.add_argument(
+        "--project", required=True, help="Project root (participants.json target)"
+    )
+    parser_participants_save_schema.add_argument(
+        "--schema-json",
+        default=None,
+        help="Path to the full schema JSON to save (mutually exclusive with "
+        "--survey-selected-schema)",
+    )
+    parser_participants_save_schema.add_argument(
+        "--survey-selected-schema",
+        default=None,
+        help="Path to a survey-selected-fields schema JSON to merge into the "
+        "existing participants.json (mutually exclusive with --schema-json)",
+    )
+    parser_participants_save_schema.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
     parser_environment = subparsers.add_parser(
         "environment",
         help="Environment conversion utilities (preview)",
     )
     environment_subparsers = parser_environment.add_subparsers(
         dest="action", help="Action"
+    )
+
+    parser_environment_scan_mri = environment_subparsers.add_parser(
+        "scan-mri",
+        help="Scan a project's rawdata for MRI acquisition timestamps/location and "
+        "write a TSV usable with 'environment convert --input'. Matches the Studio "
+        "GUI's Environment/MRI tab 'Scan Project MRI Data' action.",
+    )
+    parser_environment_scan_mri.add_argument(
+        "--project", required=True, help="Project root folder"
+    )
+    parser_environment_scan_mri.add_argument(
+        "--output", required=True, help="Path to write the scanned TSV"
+    )
+    parser_environment_scan_mri.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
     parser_environment_preview = environment_subparsers.add_parser(
@@ -747,7 +805,27 @@ def build_prism_tools_parsers(
         "--anonymized",
         "-a",
         action="store_true",
-        help="Append '_anon' to output subfolder (indicating anonymized export)",
+        help=(
+            "Anonymize participant IDs in the output (pseudonymized via "
+            "participants.tsv) and append '_anon' to the output subfolder. "
+            "Matches the Studio GUI's Recipes page 'Anonymize' option."
+        ),
+    )
+    parser_deriv_surveys.add_argument(
+        "--mask-questions",
+        action="store_true",
+        help="With --anonymized, also replace question/item text columns with '[MASKED]'",
+    )
+    parser_deriv_surveys.add_argument(
+        "--id-length",
+        type=int,
+        default=8,
+        help="With --anonymized, length of the random portion of generated pseudonyms (default: 8)",
+    )
+    parser_deriv_surveys.add_argument(
+        "--random-ids",
+        action="store_true",
+        help="With --anonymized, use non-deterministic random pseudonyms instead of deterministic ones",
     )
     parser_deriv_surveys.add_argument(
         "--missing-policy",
@@ -842,7 +920,50 @@ def build_prism_tools_parsers(
         "--anonymized",
         "-a",
         action="store_true",
-        help="Append '_anon' to output subfolder (indicating anonymized export)",
+        help=(
+            "Anonymize participant IDs in the output (pseudonymized via "
+            "participants.tsv) and append '_anon' to the output subfolder. "
+            "Matches the Studio GUI's Recipes page 'Anonymize' option."
+        ),
+    )
+    parser_deriv_biometrics.add_argument(
+        "--mask-questions",
+        action="store_true",
+        help="With --anonymized, also replace question/item text columns with '[MASKED]'",
+    )
+    parser_deriv_biometrics.add_argument(
+        "--id-length",
+        type=int,
+        default=8,
+        help="With --anonymized, length of the random portion of generated pseudonyms (default: 8)",
+    )
+    parser_deriv_biometrics.add_argument(
+        "--random-ids",
+        action="store_true",
+        help="With --anonymized, use non-deterministic random pseudonyms instead of deterministic ones",
+    )
+
+    parser_recipes_validate_file = recipes_subparsers.add_parser(
+        "validate-file",
+        help="Validate a recipe JSON file's structure without running a scoring job. "
+        "Matches the validation the Studio GUI's Recipe Builder 'Save' action uses.",
+    )
+    parser_recipes_validate_file.add_argument(
+        "recipe", help="Path to the recipe JSON file to validate"
+    )
+    parser_recipes_validate_file.add_argument(
+        "--known-items-from",
+        default=None,
+        help="Optional path to the matched survey/biometrics template JSON, so item "
+        "IDs referenced by the recipe (Scores/Transforms) are checked for typos",
+    )
+    parser_recipes_validate_file.add_argument(
+        "--recipe-id",
+        default=None,
+        help="Label used in error messages (default: the recipe filename)",
+    )
+    parser_recipes_validate_file.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
     )
 
     parser_biometrics_excel = biometrics_subparsers.add_parser(
@@ -1048,6 +1169,75 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
     )
 
+    parser_dataset_rewrite_entities = dataset_subparsers.add_parser(
+        "rewrite-entities",
+        help=(
+            "Rename or delete a non-subject BIDS entity (task/acq/run/ses/etc.) across a "
+            "dataset's filenames (DataLad-aware). Matches the Studio GUI's File Management "
+            "-> 'Edit BIDS Filename Parts' action. Use 'rename-subjects' for the sub- entity."
+        ),
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--project",
+        required=True,
+        help="Dataset/project root folder",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--modality",
+        default=None,
+        help="Modality to rewrite within (e.g. beh, physio, eeg). Required unless "
+        "--list-modalities is used.",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--entity",
+        default=None,
+        help="BIDS entity/part to rewrite, with or without a leading underscore "
+        "(e.g. task, acq, run, ses). The sub entity is not supported here — use "
+        "'dataset rename-subjects'.",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--operation",
+        default="rename",
+        choices=["rename", "delete"],
+        help="'rename' replaces the entity's value; 'delete' removes the entity entirely "
+        "(default: rename)",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--current-value",
+        default=None,
+        help="Only rewrite files where the entity currently has this value "
+        "(default: match all values)",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--replacement",
+        default=None,
+        help="New value for the entity. Required when --operation is 'rename'.",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--list-modalities",
+        action="store_true",
+        help="List available modalities for --project and exit",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--list-entities",
+        action="store_true",
+        help="List available entities/values for --project and --modality, and exit",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview the rewrite and report conflicts without renaming anything",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Apply without an interactive confirmation prompt",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
+    )
+
     parser_ds_bio.add_argument(
         "--supervisor",
         default="investigator",
@@ -1115,6 +1305,112 @@ def build_prism_tools_parsers(
     )
     parser_survey_validate.add_argument(
         "--library", default="survey_library", help="Path to survey library"
+    )
+
+    parser_survey_export_lss = survey_subparsers.add_parser(
+        "export-lss",
+        help="Export PRISM survey template JSON file(s) to a LimeSurvey .lss file. "
+        "Matches the Studio GUI's Survey Generator 'Quick Export' action.",
+    )
+    parser_survey_export_lss.add_argument(
+        "files", nargs="+", help="One or more PRISM survey template JSON files"
+    )
+    parser_survey_export_lss.add_argument(
+        "--output", required=True, help="Path to write the .lss file"
+    )
+    parser_survey_export_lss.add_argument(
+        "--language", default="en", help="Primary export language (default: en)"
+    )
+    parser_survey_export_lss.add_argument(
+        "--languages",
+        default=None,
+        help="Comma-separated language codes to include (default: --language only)",
+    )
+    parser_survey_export_lss.add_argument(
+        "--base-language",
+        default=None,
+        help="Base language code (default: --language)",
+    )
+    parser_survey_export_lss.add_argument(
+        "--ls-version",
+        default="3",
+        choices=["3", "6"],
+        help="Target LimeSurvey version (default: 3)",
+    )
+
+    parser_survey_export_lss_customized = survey_subparsers.add_parser(
+        "export-lss-customized",
+        help="Export a Survey Customizer-style customization JSON to a LimeSurvey "
+        ".lss file. Matches the Studio GUI's Survey Customizer 'Export' action.",
+    )
+    parser_survey_export_lss_customized.add_argument(
+        "--customization-json",
+        required=True,
+        help="Path to a customization JSON file (the 'groups' structure produced by "
+        "the Survey Customizer's own 'Preview/Copy JSON' action)",
+    )
+    parser_survey_export_lss_customized.add_argument(
+        "--output", required=True, help="Path to write the .lss file"
+    )
+    parser_survey_export_lss_customized.add_argument(
+        "--language", default="en", help="Primary export language (default: en)"
+    )
+    parser_survey_export_lss_customized.add_argument(
+        "--languages",
+        default=None,
+        help="Comma-separated language codes to include (default: --language only)",
+    )
+    parser_survey_export_lss_customized.add_argument(
+        "--base-language",
+        default=None,
+        help="Base language code (default: --language)",
+    )
+    parser_survey_export_lss_customized.add_argument(
+        "--ls-version",
+        default="6",
+        choices=["3", "6"],
+        help="Target LimeSurvey version (default: 6)",
+    )
+    parser_survey_export_lss_customized.add_argument(
+        "--survey-title",
+        default=None,
+        help="Override survey title (default: from customization JSON, if present)",
+    )
+    parser_survey_export_lss_customized.add_argument(
+        "--no-matrix",
+        action="store_true",
+        help="Disable grouping identical-option questions into matrices",
+    )
+    parser_survey_export_lss_customized.add_argument(
+        "--no-matrix-global",
+        action="store_true",
+        help="Only matrix-group consecutive questions, not all identical-option ones",
+    )
+
+    parser_survey_export_questionnaire_docx = survey_subparsers.add_parser(
+        "export-questionnaire-docx",
+        help="Render a PRISM survey template as a paper-pencil Word (.docx) "
+        "questionnaire. Matches the 'Export Word' action shared by the Studio "
+        "GUI's Template Editor and Survey Customizer pages.",
+    )
+    parser_survey_export_questionnaire_docx.add_argument(
+        "--template", required=True, help="Path to a PRISM survey template JSON file"
+    )
+    parser_survey_export_questionnaire_docx.add_argument(
+        "--output", required=True, help="Path to write the .docx file"
+    )
+    parser_survey_export_questionnaire_docx.add_argument(
+        "--language", default="en", help="Export language (default: en)"
+    )
+    parser_survey_export_questionnaire_docx.add_argument(
+        "--variant-id", default=None, help="Optional VariantID to render (default: all)"
+    )
+    parser_survey_export_questionnaire_docx.add_argument(
+        "--options-json",
+        default=None,
+        help="Rendering options as a JSON file path or inline JSON string (e.g. "
+        '\'{"show_item_codes": true, "font_size": 11}\'). See '
+        "render_questionnaire_docx's docstring for available keys.",
     )
 
     parser_survey_limesurvey = survey_subparsers.add_parser(
@@ -1313,6 +1609,245 @@ def build_prism_tools_parsers(
     )
     parser_lib_fill.add_argument("--version", default="stable", help="Schema version")
 
+    parser_lib_template_save = subparsers_library.add_parser(
+        "template-save",
+        help="Validate and save a single template into a project's library. "
+        "Matches the Studio GUI's Template Editor Save action.",
+    )
+    parser_lib_template_save.add_argument(
+        "--project", required=True, help="Project root folder"
+    )
+    parser_lib_template_save.add_argument(
+        "--modality", choices=["survey", "biometrics"], required=True
+    )
+    parser_lib_template_save.add_argument(
+        "--filename", required=True, help="Target filename (e.g. survey-mytask.json)"
+    )
+    parser_lib_template_save.add_argument(
+        "--template", required=True, help="Path to the template JSON file to save"
+    )
+    parser_lib_template_save.add_argument(
+        "--schema-version", default="stable", help="Schema version to validate against"
+    )
+    parser_lib_template_save.add_argument(
+        "--is-global",
+        action="store_true",
+        help="Validate as a global/library template (relaxes project-copy-only "
+        "required fields like TaskName)",
+    )
+    parser_lib_template_save.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite an existing template with the same filename",
+    )
+
+    parser_lib_template_delete = subparsers_library.add_parser(
+        "template-delete",
+        help="Delete a single project-library template. Matches the Studio GUI's "
+        "Template Editor Delete action.",
+    )
+    parser_lib_template_delete.add_argument(
+        "--project", required=True, help="Project root folder"
+    )
+    parser_lib_template_delete.add_argument(
+        "--modality", choices=["survey", "biometrics"], required=True
+    )
+    parser_lib_template_delete.add_argument(
+        "--filename", required=True, help="Filename to delete (e.g. survey-mytask.json)"
+    )
+    parser_lib_template_delete.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Delete without an interactive confirmation prompt",
+    )
+
+    parser_file_management = subparsers.add_parser(
+        "file-management",
+        help="Studio File Management page actions (delete files, etc.)",
+    )
+    file_management_subparsers = parser_file_management.add_subparsers(
+        dest="action", help="Action"
+    )
+
+    parser_file_management_delete = file_management_subparsers.add_parser(
+        "delete-files",
+        help="Preview or delete project files matching BIDS entity filters "
+        "(DataLad-aware). Matches the Studio GUI's File Management -> Delete Files action.",
+    )
+    parser_file_management_delete.add_argument(
+        "--project",
+        required=True,
+        help="Dataset/project root folder",
+    )
+    parser_file_management_delete.add_argument(
+        "--modality",
+        default=None,
+        help="Only match files under this modality folder (e.g. func, beh)",
+    )
+    parser_file_management_delete.add_argument(
+        "--entity-filter",
+        action="append",
+        metavar="KEY=VALUE",
+        help="Only match files where BIDS entity KEY has VALUE (e.g. task=RS). "
+        "Repeatable for multiple filters (all must match).",
+    )
+    parser_file_management_delete.add_argument(
+        "--subjects",
+        default=None,
+        help="Comma-separated subject IDs to restrict deletion to (e.g. 001,002 or sub-001,sub-002)",
+    )
+    parser_file_management_delete.add_argument(
+        "--apply",
+        action="store_true",
+        help="Actually delete the matched files (default: preview only)",
+    )
+    parser_file_management_delete.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Apply without an interactive confirmation prompt",
+    )
+    parser_file_management_delete.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
+    )
+
+    parser_file_management_remove_scans_tsv = file_management_subparsers.add_parser(
+        "remove-scans-tsv",
+        help="Delete every *_scans.tsv file across a project (superdataset + nested "
+        "subdatasets), committing the removal. Matches the Studio GUI's File "
+        "Management -> 'Delete all scans.tsv' action.",
+    )
+    parser_file_management_remove_scans_tsv.add_argument(
+        "--project",
+        required=True,
+        help="Dataset/project root folder",
+    )
+    parser_file_management_remove_scans_tsv.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Apply without an interactive confirmation prompt (required with --json)",
+    )
+    parser_file_management_remove_scans_tsv.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
+    )
+
+    parser_file_management_rename_physio = file_management_subparsers.add_parser(
+        "rename-physio",
+        help="Preview or apply a regex-based batch rename of physio/eyetracking files. "
+        "Matches the Studio GUI's Converter -> Physio Renamer action.",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--input",
+        required=True,
+        help="Folder to scan for files to rename (recursive, skips dotfiles)",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--output",
+        default=None,
+        help="Folder to write renamed copies into. Required with --apply.",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--pattern",
+        required=True,
+        help="Regex pattern matched against each filename (e.g. '^VP_')",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--replacement",
+        required=True,
+        help="Replacement text. May include {subject}/{session} placeholders when "
+        "--id-source is 'folder'.",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--id-source",
+        default="filename",
+        choices=["filename", "folder"],
+        help="'filename' renames using only regex substitution; 'folder' also resolves "
+        "{subject}/{session} placeholders from each file's folder path (default: filename)",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--folder-subject-level",
+        type=int,
+        default=2,
+        help="With --id-source folder: folder depth (from the end) containing the subject "
+        "label (default: 2)",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--folder-session-level",
+        type=int,
+        default=1,
+        help="With --id-source folder: folder depth (from the end) containing the session "
+        "label (default: 1)",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--folder-example-path",
+        default=None,
+        help="With --id-source folder: an example source path illustrating where the "
+        "subject/session values appear (used with --folder-subject-value/"
+        "--folder-session-value)",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--folder-subject-value",
+        default=None,
+        help="With --folder-example-path: the substring in the example path that is the "
+        "subject value",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--folder-session-value",
+        default=None,
+        help="With --folder-example-path: the substring in the example path that is the "
+        "session value",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--modality",
+        default="physio",
+        help="Modality label used when --organize is set (default: physio)",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--organize",
+        action="store_true",
+        help="Write output under sub-XXX/ses-XXX/<modality>/ instead of flat, when the "
+        "renamed filename parses as BIDS",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--apply",
+        action="store_true",
+        help="Actually copy renamed files to --output (default: preview only)",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
+    )
+
+    parser_json_editor = subparsers.add_parser(
+        "json-editor",
+        help="Studio JSON Editor page actions (save BIDS sidecar JSON files)",
+    )
+    json_editor_subparsers = parser_json_editor.add_subparsers(
+        dest="action", help="Action"
+    )
+
+    parser_json_editor_save = json_editor_subparsers.add_parser(
+        "save",
+        help="Save a BIDS sidecar JSON file into a project, with post-save "
+        "validation. Matches the Studio GUI's JSON Editor 'Save to Project' action.",
+    )
+    parser_json_editor_save.add_argument(
+        "--project", required=True, help="Project/BIDS root folder"
+    )
+    parser_json_editor_save.add_argument(
+        "--type",
+        required=True,
+        help="JSON type: 'dataset_description', 'participants', 'samples', or "
+        "'task-<name>' (e.g. task-rest)",
+    )
+    parser_json_editor_save.add_argument(
+        "--file", required=True, help="Path to the JSON file content to save"
+    )
+    parser_json_editor_save.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
     return parser, {
         "root": parser,
         "survey": parser_survey,
@@ -1323,4 +1858,6 @@ def build_prism_tools_parsers(
         "library": parser_library,
         "dataset": parser_dataset,
         "recipes": parser_recipes,
+        "file_management": parser_file_management,
+        "json_editor": parser_json_editor,
     }

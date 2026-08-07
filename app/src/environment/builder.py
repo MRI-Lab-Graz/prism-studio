@@ -2,10 +2,18 @@ from __future__ import annotations
 
 import argparse
 import csv
-import math
 import re
 from pathlib import Path
 from typing import Callable, Iterable
+
+from src.environment_temporal import (
+    estimate_daylight_hours,
+    hour_to_bin,
+    hours_since_sun,
+    pollen_risk_bin,
+    season_code,
+    sun_phase,
+)
 
 from .aggregator import collect
 from .cache import EnvironmentCache
@@ -44,18 +52,6 @@ CORE_COLUMNS = [
 ]
 
 
-def hour_to_bin(hour: int | None) -> str:
-    if hour is None:
-        return "unknown"
-    if 0 <= hour <= 5:
-        return "night"
-    if 6 <= hour <= 11:
-        return "morning"
-    if 12 <= hour <= 17:
-        return "afternoon"
-    return "evening"
-
-
 def parse_hour_from_anchor(anchor: str) -> int | None:
     match = ANCHOR_HOUR_RE.search(anchor)
     if not match:
@@ -74,67 +70,6 @@ def parse_day_of_year_from_anchor(anchor: str) -> int | None:
     if 1 <= day_of_year <= 366:
         return day_of_year
     return None
-
-
-def season_code(day_of_year: int | None) -> str:
-    if day_of_year is None:
-        return "unknown"
-    if 80 <= day_of_year <= 171:
-        return "spring"
-    if 172 <= day_of_year <= 263:
-        return "summer"
-    if 264 <= day_of_year <= 354:
-        return "autumn"
-    return "winter"
-
-
-def estimate_daylight_hours(day_of_year: int | None, lat: float) -> float:
-    if day_of_year is None:
-        return 10.0
-    baseline = 12.0
-    seasonal = 4.0 * math.sin((2 * math.pi * (day_of_year - 80)) / 365.0)
-    latitude_factor = min(max(abs(lat) / 90.0, 0.0), 1.0)
-    return round(max(4.0, min(20.0, baseline + seasonal * (0.5 + latitude_factor))), 1)
-
-
-def sun_window(daylight_hours: float) -> tuple[float, float]:
-    sunrise = 12.0 - (daylight_hours / 2.0)
-    sunset = 12.0 + (daylight_hours / 2.0)
-    return sunrise, sunset
-
-
-def sun_phase(hour: int | None, daylight_hours: float) -> str:
-    if hour is None:
-        return "unknown"
-    sunrise, sunset = sun_window(daylight_hours)
-    if hour < sunrise or hour > sunset:
-        return "night"
-    if sunrise <= hour < sunrise + 1.5:
-        return "dawn"
-    if sunset - 1.5 < hour <= sunset:
-        return "dusk"
-    return "day"
-
-
-def hours_since_sun(hour: int | None, daylight_hours: float) -> float:
-    if hour is None:
-        return -1.0
-    sunrise, sunset = sun_window(daylight_hours)
-    if sunrise <= hour <= sunset:
-        return 0.0
-    if hour > sunset:
-        return round(hour - sunset, 1)
-    return round((24.0 - sunset) + hour, 1)
-
-
-def pollen_risk_bin(total: float) -> str:
-    if total < 50:
-        return "low"
-    if total < 150:
-        return "medium"
-    if total < 300:
-        return "high"
-    return "very_high"
 
 
 def extract_subject_session(filename: str) -> tuple[str, str]:
