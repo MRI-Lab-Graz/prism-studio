@@ -277,21 +277,27 @@ python prism.py merge-versions survey-bdi.json bdi_long.xlsx --dry-run          
 ### Dataset utilities, anonymize, and export
 
 **`dataset build-hostile-demo`** / **`cleanup-project-metadata`** /
-**`rename-subjects`**: build an adversarial test dataset, remove legacy
-converter-written session metadata, or rename subject IDs (DataLad-aware, one commit
-per subject). Less common maintenance operations — run
-`python prism_tools.py dataset <action> --help` for full flags.
+**`rename-subjects`** / **`rewrite-entities`**: build an adversarial test dataset,
+remove legacy converter-written session metadata, rename subject IDs, or
+rename/delete a non-subject BIDS entity (task/acq/run/ses/etc.) — both rewrites are
+DataLad-aware (one commit per subject where tracked). Less common maintenance
+operations — run `python prism_tools.py dataset <action> --help` for full flags.
 
 ```bash
 python prism_tools.py dataset build-hostile-demo --output /tmp/prism_hostile_demo
 python prism_tools.py dataset cleanup-project-metadata --project /path/to/project
 python prism_tools.py dataset rename-subjects --project /path/to/project --mode last3 --dry-run
+python prism_tools.py dataset rewrite-entities --project /path/to/project --list-modalities
+python prism_tools.py dataset rewrite-entities --project /path/to/project \
+  --modality func --entity task --replacement rest --dry-run
 ```
 
 **`anonymize`** — randomize participant IDs and/or mask copyrighted question text,
 the CLI equivalent of Studio's Standard Export anonymization (see
-[Export](studio/export.md)). Distinct from `recipes`' `--anonymized` flag, which only
-affects the output subfolder name.
+[Export](studio/export.md)). `recipes surveys/biometrics --anonymized` does the
+same participant-ID pseudonymization scoped to that command's output (plus
+`--mask-questions`/`--id-length`/`--random-ids`); `anonymize` operates on a whole
+dataset copy instead.
 
 ```bash
 python prism_tools.py anonymize --dataset /path/to/project --output /path/to/project_anonymized --random --mask-questions

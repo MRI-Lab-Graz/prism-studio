@@ -190,7 +190,7 @@ def cmd_dataset_rewrite_entities(args) -> None:
         else:
             print(f"Available entities for modality '{args.modality}':")
             for entity in entities:
-                values = entity_values.get(entity, [])
+                values = entity_values.get(f"_{entity}", [])
                 print(f"  - _{entity}: {', '.join(values) if values else '(no values found)'}")
         return
 
