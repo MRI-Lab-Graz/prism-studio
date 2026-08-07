@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 
 from src.bids_file_deleter import BidsFileDeleter
+from src.project_manager import ProjectManager
 
 _LOG_PREFIXES = {
     "error": "✗",
@@ -115,3 +116,56 @@ def cmd_file_management_delete_files(args) -> None:
             f"{result.get('deleted_sidecars', 0)} sidecar(s), "
             f"{result.get('removed_empty_dirs', 0)} empty directory/directories removed."
         )
+
+
+def cmd_file_management_remove_scans_tsv(args) -> None:
+    """Delete every `*_scans.tsv` file across a project (superdataset plus
+    nested subject/derivatives subdatasets) — the CLI equivalent of the
+    Studio GUI's File Management -> "Delete all scans.tsv" action
+    (ProjectManager.remove_scans_tsv_files). This modifies the project in
+    place and commits the removal, so it requires --yes just like the
+    GUI's explicit confirmation requirement."""
+    as_json = bool(getattr(args, "json", False))
+    project_root = Path(args.project).resolve()
+
+    if not getattr(args, "yes", False) and not as_json:
+        confirmation = (
+            input(
+                f"Delete every *_scans.tsv file in {project_root}? This modifies the "
+                "project in place and cannot be undone from the CLI. [y/N] "
+            )
+            .strip()
+            .lower()
+        )
+        if confirmation not in {"y", "yes"}:
+            print("Aborted.")
+            return
+    elif not getattr(args, "yes", False):
+        if as_json:
+            print(
+                json.dumps(
+                    {
+                        "success": False,
+                        "error": "--yes is required with --json (no interactive confirmation available)",
+                    },
+                    indent=2,
+                )
+            )
+        sys.exit(1)
+
+    manager = ProjectManager()
+    result = manager.remove_scans_tsv_files(project_root)
+
+    if as_json:
+        print(json.dumps(result, indent=2))
+    else:
+        if not result.get("success"):
+            print(f"Error: {result.get('message') or result.get('errors')}")
+            sys.exit(1)
+        print(
+            f"Done: {result.get('removed', 0)} scans.tsv file(s) removed across "
+            f"{len(result.get('dataset_roots_touched', []))} dataset root(s)."
+        )
+        if result.get("errors"):
+            for error in result["errors"]:
+                print(f"⚠ {error}")
