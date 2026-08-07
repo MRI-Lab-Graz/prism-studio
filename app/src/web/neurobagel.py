@@ -3,9 +3,52 @@ NeuroBagel integration for PRISM.
 Handles fetching and augmenting NeuroBagel participants dictionary.
 """
 
+import os
 import requests
 from functools import lru_cache
 from typing import Any, Dict
+
+
+def _is_non_participant_summary_column(column_name: str) -> bool:
+    normalized = "".join(
+        ch for ch in str(column_name or "").strip().lower() if ch.isalnum()
+    )
+    return normalized in {
+        "session",
+        "visit",
+        "timepoint",
+        "run",
+        "runid",
+        "runnumber",
+        "runnr",
+        "repeat",
+    }
+
+
+def sample_local_participant_columns(tsv_path: str) -> Dict[str, list]:
+    """Sample unique values per column from a local participants.tsv, for
+    Neurobagel categorical-mapping suggestions.
+
+    Excludes ID columns and non-participant summary columns (session, run,
+    etc.); caps each column at 50 unique values, matching the Studio GUI
+    widget's payload-size limit. Returns {} if the file doesn't exist.
+    """
+    import pandas as pd
+
+    if not os.path.exists(tsv_path):
+        return {}
+
+    df = pd.read_csv(tsv_path, sep="\t")
+    result: Dict[str, list] = {}
+    for col in df.columns:
+        if col.lower() in ("participant_id", "id"):
+            continue
+        if _is_non_participant_summary_column(col):
+            continue
+        unique_vals = [str(v) for v in df[col].dropna().unique().tolist()][:50]
+        result[col] = sorted(unique_vals)
+
+    return result
 
 
 def get_fallback_neurobagel_schema() -> Dict[str, Any]:

@@ -331,6 +331,23 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
+    parser_participants_neurobagel_schema = participants_subparsers.add_parser(
+        "neurobagel-schema",
+        help="Fetch the Neurobagel controlled vocabulary and sample local "
+        "participants.tsv columns, to inform building a --neurobagel-schema "
+        "payload. Matches the value the Studio GUI's Neurobagel widget adds "
+        "beyond a raw --neurobagel-schema passthrough.",
+    )
+    parser_participants_neurobagel_schema.add_argument(
+        "--project", required=True, help="Project root containing participants.tsv"
+    )
+    parser_participants_neurobagel_schema.add_argument(
+        "--output", default=None, help="Path to write the combined JSON (optional)"
+    )
+    parser_participants_neurobagel_schema.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
     parser_environment = subparsers.add_parser(
         "environment",
         help="Environment conversion utilities (preview)",

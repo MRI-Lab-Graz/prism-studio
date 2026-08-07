@@ -746,3 +746,51 @@ def cmd_participants_save_mapping(args) -> None:
     else:
         print(payload["message"])
         print(f"Wrote: {payload['file_path']}")
+
+
+def cmd_participants_neurobagel_schema(args) -> None:
+    """Fetch the Neurobagel controlled vocabulary and sample local
+    participants.tsv columns — the CLI equivalent of the value the Studio
+    GUI's Neurobagel widget adds beyond a raw --neurobagel-schema
+    passthrough (audit item P2,
+    docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md). The output is meant to
+    inform hand-building a --neurobagel-schema payload for `participants
+    convert`/`merge`/`save-mapping`, not to be passed to them directly."""
+    from src.web.neurobagel import (
+        augment_neurobagel_data,
+        fetch_neurobagel_participants,
+        sample_local_participant_columns,
+    )
+
+    project_root = Path(args.project).resolve()
+    if not project_root.is_dir():
+        print(f"Error: --project is not a directory: {project_root}")
+        sys.exit(1)
+
+    raw_vocab = fetch_neurobagel_participants()
+    vocabulary = augment_neurobagel_data(raw_vocab)
+
+    tsv_path = project_root / "participants.tsv"
+    local_columns = sample_local_participant_columns(str(tsv_path))
+
+    payload = {"vocabulary": vocabulary, "local_columns": local_columns}
+
+    output_path = getattr(args, "output", None)
+    if output_path:
+        Path(output_path).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        if not bool(getattr(args, "json", False)):
+            print(f"✅ Wrote Neurobagel schema data to {output_path}")
+            print(
+                f"   Local columns found: {', '.join(sorted(local_columns)) or '(none)'}"
+            )
+        return
+
+    if bool(getattr(args, "json", False)):
+        _emit_json(payload)
+        return
+
+    print(f"Local participants.tsv columns: {', '.join(sorted(local_columns)) or '(none)'}")
+    print(f"Vocabulary properties: {', '.join(sorted(vocabulary.get('properties', {})))}")
+    print("Use --output to write the full JSON, or --json for machine-readable output.")
