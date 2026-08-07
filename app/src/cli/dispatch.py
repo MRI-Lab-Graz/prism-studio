@@ -150,6 +150,11 @@ def dispatch_prism_tools(
             handlers["file_management_rename_physio"](args)
         else:
             parsers["file_management"].print_help()
+    elif args.command == "json-editor":
+        if args.action == "save":
+            handlers["json_editor_save"](args)
+        else:
+            parsers["json_editor"].print_help()
     elif args.command == "recipes":
         if args.kind in {"surveys", "survey", "surves"}:
             handlers["recipes_surveys"](args)

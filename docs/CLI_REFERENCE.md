@@ -388,6 +388,17 @@ python prism_tools.py template-export --project /path/to/project --output /path/
 python prism_tools.py demo create --output archive/prism_demo_copy
 ```
 
+### JSON Editor
+
+**`json-editor save`** — save a BIDS sidecar JSON file (`dataset_description`,
+`participants`, `samples`, or `task-<name>`) into a project, with the same
+post-save validation the Studio GUI's JSON Editor "Save to Project" action runs:
+
+```bash
+python prism_tools.py json-editor save --project /path/to/project \
+  --type participants --file participants.json
+```
+
 ## Scripts in `scripts/`
 
 Most files under `scripts/` are implementation details called by the CLIs. If
