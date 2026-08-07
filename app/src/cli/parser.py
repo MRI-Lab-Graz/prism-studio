@@ -1794,6 +1794,35 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
     )
 
+    parser_json_editor = subparsers.add_parser(
+        "json-editor",
+        help="Studio JSON Editor page actions (save BIDS sidecar JSON files)",
+    )
+    json_editor_subparsers = parser_json_editor.add_subparsers(
+        dest="action", help="Action"
+    )
+
+    parser_json_editor_save = json_editor_subparsers.add_parser(
+        "save",
+        help="Save a BIDS sidecar JSON file into a project, with post-save "
+        "validation. Matches the Studio GUI's JSON Editor 'Save to Project' action.",
+    )
+    parser_json_editor_save.add_argument(
+        "--project", required=True, help="Project/BIDS root folder"
+    )
+    parser_json_editor_save.add_argument(
+        "--type",
+        required=True,
+        help="JSON type: 'dataset_description', 'participants', 'samples', or "
+        "'task-<name>' (e.g. task-rest)",
+    )
+    parser_json_editor_save.add_argument(
+        "--file", required=True, help="Path to the JSON file content to save"
+    )
+    parser_json_editor_save.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
     return parser, {
         "root": parser,
         "survey": parser_survey,
@@ -1805,4 +1834,5 @@ def build_prism_tools_parsers(
         "dataset": parser_dataset,
         "recipes": parser_recipes,
         "file_management": parser_file_management,
+        "json_editor": parser_json_editor,
     }
