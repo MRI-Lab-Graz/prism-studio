@@ -5,11 +5,11 @@ Helper functions and common logic used across survey, biometrics, physio convert
 
 import json
 import re
-import unicodedata
 from pathlib import Path
 from flask import current_app
 import pandas as pd
 from src.converters.file_reader import infer_tabular_kind, read_tabular_file
+from src.utils.naming import normalize_filename
 
 SEPARATOR_MAP: dict[str, str] = {
     "comma": ",",
@@ -468,22 +468,6 @@ def collect_multivariant_tasks_from_library(
         }
 
     return result
-
-
-def normalize_filename(name: str) -> str:
-    """Normalize filename to ASCII-safe characters (e.g., remove umlauts)."""
-    dash_map = {
-        ord("–"): "-",  # en dash
-        ord("—"): "-",  # em dash
-        ord("‑"): "-",  # non-breaking hyphen
-        ord("−"): "-",  # minus sign
-        ord("‐"): "-",  # hyphen
-    }
-    normalized = name.translate(dash_map)
-    normalized = unicodedata.normalize("NFKD", normalized)
-    normalized = normalized.encode("ascii", "ignore").decode("ascii")
-    normalized = re.sub(r"\s+", "_", normalized)
-    return normalized
 
 
 def read_tabular_dataframe_robust(
