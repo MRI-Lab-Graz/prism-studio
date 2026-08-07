@@ -66,6 +66,8 @@ def dispatch_prism_tools(
             handlers["environment_preview"](args)
         elif args.action == "convert":
             handlers["environment_convert"](args)
+        elif args.action == "scan-mri":
+            handlers["environment_scan_mri"](args)
         else:
             parsers["environment"].print_help()
     elif args.command == "demo" and args.action == "create":

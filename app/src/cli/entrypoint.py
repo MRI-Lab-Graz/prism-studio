@@ -35,6 +35,7 @@ from src.cli.commands.hostile_demo import cmd_dataset_build_hostile_demo
 from src.cli.commands.environment import (
     cmd_environment_convert,
     cmd_environment_preview,
+    cmd_environment_scan_mri,
 )
 from src.cli.commands.library import (
     cmd_library_catalog,
@@ -124,6 +125,7 @@ def main() -> None:
             "participants_save_mapping": cmd_participants_save_mapping,
             "environment_preview": cmd_environment_preview,
             "environment_convert": cmd_environment_convert,
+            "environment_scan_mri": cmd_environment_scan_mri,
             "biometrics_detect": cmd_biometrics_detect,
             "biometrics_convert": cmd_biometrics_convert,
             "biometrics_import_excel": cmd_biometrics_import_excel,
