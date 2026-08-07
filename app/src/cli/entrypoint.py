@@ -31,6 +31,7 @@ from src.cli.commands.file_management import (
     cmd_file_management_remove_scans_tsv,
     cmd_file_management_rename_physio,
 )
+from src.cli.commands.json_editor import cmd_json_editor_save
 from src.cli.commands.hostile_demo import cmd_dataset_build_hostile_demo
 from src.cli.commands.environment import (
     cmd_environment_convert,
@@ -145,6 +146,7 @@ def main() -> None:
             "file_management_delete_files": cmd_file_management_delete_files,
             "file_management_remove_scans_tsv": cmd_file_management_remove_scans_tsv,
             "file_management_rename_physio": cmd_file_management_rename_physio,
+            "json_editor_save": cmd_json_editor_save,
             "dataset_build_hostile_demo": cmd_dataset_build_hostile_demo,
             "recipes_surveys": cmd_recipes_surveys,
             "recipes_biometrics": cmd_recipes_biometrics,
