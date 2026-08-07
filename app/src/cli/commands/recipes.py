@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from src.config import get_effective_library_paths
-from src.recipes_surveys import compute_survey_recipes
+from src.recipes_surveys import anonymize_recipe_output, compute_survey_recipes
 
 _APP_ROOT = Path(__file__).resolve().parents[3]
 
@@ -53,6 +53,40 @@ def run_recipes_job(
         missing_policy=missing_policy,
         missing_numeric_value=missing_numeric_value,
     )
+
+
+def _run_anonymization_if_requested(args, *, prism_root: Path, result) -> None:
+    """Anonymize recipe output when --anonymized was passed.
+
+    Shared by cmd_recipes_surveys/cmd_recipes_biometrics so the CLI's
+    --anonymized flag anonymizes participant IDs the same way the Studio
+    GUI's Recipes page "Anonymize" option does, instead of only renaming
+    the output folder (see docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md,
+    P1-3).
+    """
+    if not bool(getattr(args, "anonymized", False)):
+        return
+
+    mask_questions = bool(getattr(args, "mask_questions", False))
+    id_length = int(getattr(args, "id_length", 8) or 8)
+    random_ids = bool(getattr(args, "random_ids", False))
+
+    try:
+        anonymized_count, mapping_file_path = anonymize_recipe_output(
+            dataset_path=prism_root,
+            out_root=result.out_root,
+            out_format=result.out_format,
+            id_length=id_length,
+            random_ids=random_ids,
+            mask_questions=mask_questions,
+        )
+    except Exception as e:
+        print(f"❌ Anonymization failed: {e}")
+        sys.exit(1)
+
+    print(f"🔒 Anonymized {anonymized_count} file(s); mapping: {mapping_file_path}")
+    if mask_questions:
+        print("🔒 Masked question/item text columns")
 
 
 def cmd_recipes_surveys(args):
@@ -123,6 +157,7 @@ def cmd_recipes_surveys(args):
         print(
             f"✅ Survey recipe scoring complete: {result.written_files} file(s) written"
         )
+        _run_anonymization_if_requested(args, prism_root=prism_root, result=result)
         if result.flat_out_path:
             print(f"   Flat output: {result.flat_out_path}")
         if result.fallback_note:
@@ -222,6 +257,7 @@ def cmd_recipes_biometrics(args):
         print(
             f"✅ Biometric recipe scoring complete: {result.written_files} file(s) written"
         )
+        _run_anonymization_if_requested(args, prism_root=prism_root, result=result)
         if result.flat_out_path:
             print(f"   Flat output: {result.flat_out_path}")
         if result.fallback_note:

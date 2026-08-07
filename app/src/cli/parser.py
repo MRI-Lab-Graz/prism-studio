@@ -747,7 +747,27 @@ def build_prism_tools_parsers(
         "--anonymized",
         "-a",
         action="store_true",
-        help="Append '_anon' to output subfolder (indicating anonymized export)",
+        help=(
+            "Anonymize participant IDs in the output (pseudonymized via "
+            "participants.tsv) and append '_anon' to the output subfolder. "
+            "Matches the Studio GUI's Recipes page 'Anonymize' option."
+        ),
+    )
+    parser_deriv_surveys.add_argument(
+        "--mask-questions",
+        action="store_true",
+        help="With --anonymized, also replace question/item text columns with '[MASKED]'",
+    )
+    parser_deriv_surveys.add_argument(
+        "--id-length",
+        type=int,
+        default=8,
+        help="With --anonymized, length of the random portion of generated pseudonyms (default: 8)",
+    )
+    parser_deriv_surveys.add_argument(
+        "--random-ids",
+        action="store_true",
+        help="With --anonymized, use non-deterministic random pseudonyms instead of deterministic ones",
     )
     parser_deriv_surveys.add_argument(
         "--missing-policy",
@@ -842,7 +862,27 @@ def build_prism_tools_parsers(
         "--anonymized",
         "-a",
         action="store_true",
-        help="Append '_anon' to output subfolder (indicating anonymized export)",
+        help=(
+            "Anonymize participant IDs in the output (pseudonymized via "
+            "participants.tsv) and append '_anon' to the output subfolder. "
+            "Matches the Studio GUI's Recipes page 'Anonymize' option."
+        ),
+    )
+    parser_deriv_biometrics.add_argument(
+        "--mask-questions",
+        action="store_true",
+        help="With --anonymized, also replace question/item text columns with '[MASKED]'",
+    )
+    parser_deriv_biometrics.add_argument(
+        "--id-length",
+        type=int,
+        default=8,
+        help="With --anonymized, length of the random portion of generated pseudonyms (default: 8)",
+    )
+    parser_deriv_biometrics.add_argument(
+        "--random-ids",
+        action="store_true",
+        help="With --anonymized, use non-deterministic random pseudonyms instead of deterministic ones",
     )
 
     parser_biometrics_excel = biometrics_subparsers.add_parser(
