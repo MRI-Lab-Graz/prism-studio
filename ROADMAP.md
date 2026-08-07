@@ -1,6 +1,6 @@
 # PRISM Studio - Roadmap
 
-Last updated: 2026-07-18
+Last updated: 2026-08-07
 
 ## Vision
 
@@ -154,6 +154,28 @@ structural-assessment guardrails, `./rtk coverage`, grouped-run DataLad
 tests, export anonymization/privacy/defacing suites) rather than new
 feature work, until a new strategic initiative is picked.
 
+## JOSS Publication Readiness
+
+- [x] Verify that the manuscript's capability claims and bundled-template
+      counts are supported by the v1.17.0 release.
+- [x] Identify documented research use: the Austrian NeuroCloud dataset
+      *Creativity: a (white) matter of connectivity*
+      (DOI: `10.60817/sama-va10`) records PRISM Studio v1.15.2 as its creation
+      tool.
+- [x] Align the manuscript with v1.17.0, add the dataset citation, and replace
+      the generic AI disclosure with the verified tool and responsibility
+      statement.
+- [x] Reconcile `codemeta.json` with the earliest repository commit
+      (`2025-09-09`) and the manuscript's public-development history.
+- [x] Replace obsolete contributor test commands and add a private security
+      reporting policy.
+- [x] Validate the manuscript source with the official JOSS paper checker;
+      keep generated PDF and JATS artifacts out of version control because
+      Overleaf is the authoring environment.
+- [ ] Archive the immutable v1.17.0 source snapshot after successful review,
+      then add the resulting software DOI to citation metadata, README, and
+      the final paper.
+
 ## Status Board (tactical execution layer)
 
 No open tactical priorities. Priority 3 (JSON tag stripping and NIfTI GZIP
@@ -187,6 +209,10 @@ Changelog remains canonical for release-facing history:
 
 ## Lessons Learned
 
+- A dataset DOI can demonstrate documented PRISM use, but it must remain
+      distinct from the software archive DOI required for the final JOSS release.
+- Research-impact claims should cite a public record and state the exact
+      verified workflow without implying independent adoption or broader access.
 - Keep icon assignment in backend metadata (project.json) and only render in frontend adapters to avoid drift between session, recent-project cache, and persisted project state.
 - Export privacy tests should always include both positive MRI scrubbing assertions and non-MRI preservation checks, plus nested/derivative path variants for `.nii.gz` header cleaning.
 - For potentially disruptive privacy checks, shipping warning metadata in async status first is a low-risk way to add guidance without blocking export flows.

@@ -40,9 +40,10 @@ Feature requests are welcome! Please open an issue with:
 4. **Make your changes** following our coding standards (see below)
 5. **Run tests** to ensure nothing breaks:
    ```bash
-   ./run_tests.sh  # macOS/Linux
+   source .venv/bin/activate  # macOS/Linux
+   rtk test -q
    # OR
-   python run_all_tests.py
+   pytest -q
    ```
 6. **Commit your changes** with clear, descriptive commit messages
 7. **Push to your fork** and **open a pull request** against `main`

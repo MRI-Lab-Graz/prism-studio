@@ -14,7 +14,7 @@ authors:
 affiliations:
   - index: 1
     name: MRI-Lab Graz, Department of Psychology, University of Graz, Graz, Austria
-date: 14 April 2026
+date: 7 August 2026
 bibliography: paper.bib
 ---
 
@@ -42,7 +42,7 @@ Survey collection platforms such as LimeSurvey solve a different problem again: 
 
 PRISM follows three design principles. First, it preserves BIDS compatibility by treating PRISM metadata as an additive layer. PRISM-specific files live alongside standard BIDS content, and `.bidsignore` support allows standard BIDS tools to ignore PRISM-only artifacts when necessary. This makes it possible to keep imaging pipelines such as BIDS apps usable while still attaching richer metadata for psychology-focused modalities.
 
-Second, PRISM keeps workflow logic in a shared Python backend and exposes it through both CLI and web interfaces. The core backend modules under `src/` implement conversion, reshaping, export, recipe execution, and other data-processing helpers; the web layer in `app/` primarily acts as a thin adapter over those capabilities. This arrangement matters for reproducibility because the same backend behavior can be exercised from scripted terminal workflows and from PRISM Studio's interactive pages.
+Second, PRISM provides shared Python backend operations through both CLI and web interfaces. Core modules under `src/` implement conversion, reshaping, export, recipe execution, and other data-processing helpers, while PRISM Studio exposes guided workflows for these operations. This arrangement matters for reproducibility because core behavior can be exercised from scripted terminal workflows as well as PRISM Studio's interactive pages.
 
 Third, PRISM treats metadata authoring as part of routine data handling rather than as a separate curation step. Survey and biometrics templates are versioned JSON documents that can be edited interactively, validated against schema expectations, and reused across projects. Recent development extended this model with template-driven survey versioning via `Study.Version`, `Study.Versions`, and `acq-<version>` filename entities; run-aware survey conversion for repeated administrations; and version-aware recipe selection. The same instrument descriptions can be exported to LimeSurvey 3.x, 5.x, and 6.x, re-imported from survey archives, or rendered as paper-pencil `.docx` questionnaires.
 
@@ -54,19 +54,21 @@ PRISM also includes workflow features that are difficult to express with static 
 
 # Research impact statement
 
-PRISM demonstrates credible research significance through a combination of domain focus, open development history, and researcher-facing workflows. The public repository shows iterative development from September 2025 onward, tagged releases through version 1.15.0, automated continuous integration, and cross-platform release artifacts for macOS, Windows, and Linux. The repository also includes workshop materials, example datasets, and end-to-end documentation so that researchers can test the workflows locally rather than treating the software as an opaque web service.
+PRISM has supported a research-data workflow for the Austrian NeuroCloud dataset *Creativity: a (white) matter of connectivity* [@koschutnig2026creativity]. Its public record identifies PRISM Studio version 1.15.2 as the creation tool; the authors used PRISM to enrich the BIDS dataset with metadata and validate it. This documented use shows the toolkit operating on a real mixed-modality research dataset, while the dataset itself remains access-restricted under the Austrian NeuroCloud data-use agreement.
+
+The public repository shows iterative development from September 2025 onward, tagged releases through version 1.17.0, automated continuous integration, and cross-platform release artifacts for macOS, Windows, and Linux. The repository also includes workshop materials, example datasets, and end-to-end documentation so that researchers can test the workflows locally rather than treating the software as an opaque web service.
 
 The scientific value of PRISM is its attempt to make structured behavioral metadata operational in day-to-day research practice. The bundled template library, participants and NeuroBagel workflows, survey version handling, wide-to-long reshaping, LimeSurvey integration, and repository-facing exports reduce the amount of manual metadata reconciliation required to move from raw collection outputs to reusable datasets. This is particularly relevant for labs that already use BIDS for imaging data but still manage questionnaires and participant metadata in less standardized ways.
 
 # Availability and reproducibility
 
-PRISM is released under the GNU Affero General Public License v3.0 (AGPL-3.0) and developed at https://github.com/MRI-Lab-Graz/prism-studio. The release described here is version 1.15.0. Source installation is documented for macOS, Windows, and Linux through `setup.sh` and `setup.ps1`, and the main user entry points are `python prism-studio.py` for the web application and `python prism.py` for CLI workflows. The repository contains example datasets and workshop material under `examples/`, while automated checks are run in CI through `python tests/verify_repo.py` and pytest-based verification.
+PRISM is released under the GNU Affero General Public License v3.0 (AGPL-3.0) and developed at https://github.com/MRI-Lab-Graz/prism-studio. The release described here is version 1.17.0. Source installation is documented for macOS, Windows, and Linux through `setup.sh` and `setup.ps1`, and the main user entry points are `python prism-studio.py` for the web application and `python prism.py` for CLI workflows. The repository contains example datasets and workshop material under `examples/`, while automated checks are run in CI through `python tests/verify_repo.py` and pytest-based verification.
 
 The final JOSS submission should cite the archival DOI for the exact release under review once the corresponding Zenodo snapshot has been created.
 
 # AI usage disclosure
 
-Generative AI tools, including GitHub Copilot and Claude, were used for code drafting and refactoring, documentation editing, and manuscript drafting. All AI-assisted outputs were reviewed, edited, and validated by the author, and all substantive software-design and scientific framing decisions remained under human control.
+Claude Sonnet 5 and GitHub Copilot were used to assist with code drafting and refactoring, documentation editing, and manuscript drafting and editing. The GitHub Copilot model and version were not recorded. The author reviewed all AI-assisted outputs, accepts full responsibility for the manuscript and software, and retained control of the substantive software-design and scientific framing decisions.
 
 # Acknowledgements
 
