@@ -15,8 +15,13 @@ from flask import (
 
 from src.config import load_config
 from src.constants import SUPPORTED_MODALITIES
-from src.converters.survey_io import normalize_paper_software_platform
-from src.survey_scale_inference import apply_implicit_numeric_level_ranges
+from src.survey_template_normalization import (
+    autofill_single_version_variant_ids as _autofill_single_version_variant_ids,
+    is_blank_localized_value as _is_blank_localized_value,
+    is_empty_variant_definition_placeholder as _is_empty_variant_definition_placeholder,
+    normalize_survey_template_for_validation,
+    prune_optional_variant_placeholders as _prune_optional_variant_placeholders,
+)
 from src.utils.io import dump_json_text
 from .tools_helpers import (
     _global_survey_library_root,
@@ -70,146 +75,10 @@ def _relax_schema_for_library_template(schema: dict) -> dict:
     return schema
 
 
-def _autofill_single_version_variant_ids(template: dict) -> dict:
-    """Fill empty VariantID values when the template has exactly one version."""
-    if not isinstance(template, dict):
-        return template
-
-    study = template.get("Study")
-    if not isinstance(study, dict):
-        return template
-
-    versions = [
-        str(v).strip()
-        for v in (study.get("Versions") or [])
-        if isinstance(v, str) and str(v).strip()
-    ]
-    fallback_version = ""
-    if len(versions) == 1:
-        fallback_version = versions[0]
-    elif len(versions) == 0:
-        singular = study.get("Version")
-        if isinstance(singular, str) and singular.strip():
-            fallback_version = singular.strip()
-
-    if not fallback_version:
-        return template
-
-    variant_defs = study.get("VariantDefinitions")
-    if isinstance(variant_defs, list):
-        for entry in variant_defs:
-            if (
-                isinstance(entry, dict)
-                and not str(entry.get("VariantID") or "").strip()
-            ):
-                entry["VariantID"] = fallback_version
-
-    for key, value in template.items():
-        if key in {
-            "Technical",
-            "Study",
-            "Metadata",
-            "I18n",
-            "LimeSurvey",
-            "Scoring",
-            "Normative",
-        }:
-            continue
-        if not isinstance(value, dict):
-            continue
-        variant_scales = value.get("VariantScales")
-        if not isinstance(variant_scales, list):
-            continue
-        for entry in variant_scales:
-            if (
-                isinstance(entry, dict)
-                and not str(entry.get("VariantID") or "").strip()
-            ):
-                entry["VariantID"] = fallback_version
-
-    return template
-
-
-def _is_blank_localized_value(value) -> bool:
-    if value is None:
-        return True
-    if isinstance(value, str):
-        return not value.strip()
-    if isinstance(value, dict):
-        return all(_is_blank_localized_value(v) for v in value.values())
-    if isinstance(value, list):
-        return all(_is_blank_localized_value(v) for v in value)
-    return False
-
-
-def _is_empty_variant_definition_placeholder(entry: object) -> bool:
-    if not isinstance(entry, dict):
-        return False
-
-    variant_id = str(entry.get("VariantID") or "").strip()
-    item_count = entry.get("ItemCount")
-    scale_type = str(entry.get("ScaleType") or "").strip().lower()
-    description = entry.get("Description")
-    extra_keys = set(entry.keys()) - {
-        "VariantID",
-        "ItemCount",
-        "ScaleType",
-        "Description",
-    }
-
-    return (
-        not variant_id
-        and item_count in {None, "", 0}
-        and scale_type in {"", "likert"}
-        and _is_blank_localized_value(description)
-        and all(_is_blank_localized_value(entry.get(key)) for key in extra_keys)
-    )
-
-
-def _prune_optional_variant_placeholders(template: dict) -> dict:
-    if not isinstance(template, dict):
-        return template
-
-    study = template.get("Study")
-    if not isinstance(study, dict):
-        return template
-
-    versions = [
-        str(value).strip()
-        for value in (study.get("Versions") or [])
-        if isinstance(value, str) and str(value).strip()
-    ]
-    has_multiple_versions = len(versions) > 1
-    variant_definitions = study.get("VariantDefinitions")
-
-    if not isinstance(variant_definitions, list):
-        return template
-
-    filtered_definitions = []
-    for entry in variant_definitions:
-        if not has_multiple_versions and _is_empty_variant_definition_placeholder(
-            entry
-        ):
-            continue
-        filtered_definitions.append(entry)
-
-    if filtered_definitions:
-        study["VariantDefinitions"] = filtered_definitions
-    else:
-        study.pop("VariantDefinitions", None)
-
-    return template
-
-
 def _normalize_template_for_validation(*, modality: str, template: dict) -> dict:
     template = _strip_template_editor_internal_keys(template)
     if modality == "survey":
-        normalized_template = normalize_paper_software_platform(template)
-        if isinstance(normalized_template, dict):
-            template = normalized_template
-        template = _autofill_single_version_variant_ids(template)
-        template = _prune_optional_variant_placeholders(template)
-        template = apply_implicit_numeric_level_ranges(template)
+        template = normalize_survey_template_for_validation(template)
     return template
 
 
