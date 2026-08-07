@@ -51,7 +51,11 @@ from src.cli.commands.participants import (
     cmd_participants_preview,
     cmd_participants_save_mapping,
 )
-from src.cli.commands.recipes import cmd_recipes_biometrics, cmd_recipes_surveys
+from src.cli.commands.recipes import (
+    cmd_recipes_biometrics,
+    cmd_recipes_surveys,
+    cmd_recipes_validate_file,
+)
 from src.cli.commands.survey import (
     cmd_survey_convert,
     cmd_survey_export_lss,
@@ -140,6 +144,7 @@ def main() -> None:
             "dataset_build_hostile_demo": cmd_dataset_build_hostile_demo,
             "recipes_surveys": cmd_recipes_surveys,
             "recipes_biometrics": cmd_recipes_biometrics,
+            "recipes_validate_file": cmd_recipes_validate_file,
         },
     )
 
