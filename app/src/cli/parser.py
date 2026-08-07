@@ -1528,6 +1528,59 @@ def build_prism_tools_parsers(
     )
     parser_lib_fill.add_argument("--version", default="stable", help="Schema version")
 
+    parser_lib_template_save = subparsers_library.add_parser(
+        "template-save",
+        help="Validate and save a single template into a project's library. "
+        "Matches the Studio GUI's Template Editor Save action.",
+    )
+    parser_lib_template_save.add_argument(
+        "--project", required=True, help="Project root folder"
+    )
+    parser_lib_template_save.add_argument(
+        "--modality", choices=["survey", "biometrics"], required=True
+    )
+    parser_lib_template_save.add_argument(
+        "--filename", required=True, help="Target filename (e.g. survey-mytask.json)"
+    )
+    parser_lib_template_save.add_argument(
+        "--template", required=True, help="Path to the template JSON file to save"
+    )
+    parser_lib_template_save.add_argument(
+        "--schema-version", default="stable", help="Schema version to validate against"
+    )
+    parser_lib_template_save.add_argument(
+        "--is-global",
+        action="store_true",
+        help="Validate as a global/library template (relaxes project-copy-only "
+        "required fields like TaskName)",
+    )
+    parser_lib_template_save.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite an existing template with the same filename",
+    )
+
+    parser_lib_template_delete = subparsers_library.add_parser(
+        "template-delete",
+        help="Delete a single project-library template. Matches the Studio GUI's "
+        "Template Editor Delete action.",
+    )
+    parser_lib_template_delete.add_argument(
+        "--project", required=True, help="Project root folder"
+    )
+    parser_lib_template_delete.add_argument(
+        "--modality", choices=["survey", "biometrics"], required=True
+    )
+    parser_lib_template_delete.add_argument(
+        "--filename", required=True, help="Filename to delete (e.g. survey-mytask.json)"
+    )
+    parser_lib_template_delete.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Delete without an interactive confirmation prompt",
+    )
+
     parser_file_management = subparsers.add_parser(
         "file-management",
         help="Studio File Management page actions (delete files, etc.)",

@@ -118,6 +118,10 @@ def dispatch_prism_tools(
             handlers["library_catalog"](args)
         elif args.action == "fill":
             handlers["library_fill"](args)
+        elif args.action == "template-save":
+            handlers["library_template_save"](args)
+        elif args.action == "template-delete":
+            handlers["library_template_delete"](args)
         else:
             parsers["library"].print_help()
     elif args.command == "dataset":

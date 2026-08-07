@@ -128,6 +128,17 @@ python prism_tools.py library sync --modality biometrics --path library/biometri
 python prism_tools.py library catalog --input library/survey --output catalog.csv
 ```
 
+**`library template-save`** / **`template-delete`** — validate-and-save or delete a
+single template in a project's own `code/library/<modality>/` folder, the CLI
+equivalents of Studio's Template Editor Save/Delete actions:
+
+```bash
+python prism_tools.py library template-save --project /path/to/project \
+  --modality survey --filename survey-mytask.json --template mytask.json
+python prism_tools.py library template-delete --project /path/to/project \
+  --modality survey --filename survey-mytask.json --yes
+```
+
 The generated Methods boilerplate summarizes richer schema metadata (DOIs, licenses,
 age ranges, administration/scoring times, item counts, access levels) alongside
 citations.

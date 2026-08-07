@@ -41,6 +41,8 @@ from src.cli.commands.library import (
     cmd_library_fill,
     cmd_library_generate_methods_text,
     cmd_library_sync,
+    cmd_library_template_delete,
+    cmd_library_template_save,
 )
 from src.cli.commands.participants import (
     cmd_participants_convert,
@@ -126,6 +128,8 @@ def main() -> None:
             "library_sync": cmd_library_sync,
             "library_catalog": cmd_library_catalog,
             "library_fill": cmd_library_fill,
+            "library_template_save": cmd_library_template_save,
+            "library_template_delete": cmd_library_template_delete,
             "dataset_build_biometrics_smoketest": cmd_dataset_build_biometrics_smoketest,
             "dataset_cleanup_project_metadata": cmd_dataset_cleanup_project_metadata,
             "dataset_rename_subjects": cmd_dataset_rename_subjects,

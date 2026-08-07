@@ -15,6 +15,9 @@ from flask import (
 
 from src.config import load_config
 from src.constants import SUPPORTED_MODALITIES
+from src.prism_template_validation import (
+    relax_schema_for_library_template as _relax_schema_for_library_template,
+)
 from src.survey_template_normalization import (
     autofill_single_version_variant_ids as _autofill_single_version_variant_ids,
     is_blank_localized_value as _is_blank_localized_value,
@@ -36,43 +39,6 @@ from .tools_helpers import (
 )
 
 tools_template_editor_bp = Blueprint("tools_template_editor", __name__)
-
-# Fields in Study/Technical that are relaxed when validating a global/library
-# template. These are either project-copy-specific (TaskName) or frequently absent
-# from official library entries that are still work-in-progress (LicenseID, Citation).
-_LIBRARY_RELAXED_STUDY_REQUIRED = {"TaskName", "LicenseID", "Citation"}
-_LIBRARY_RELAXED_TECHNICAL_REQUIRED = {"SoftwarePlatform", "AdministrationMethod"}
-
-
-def _relax_schema_for_library_template(schema: dict) -> dict:
-    """Return a copy of *schema* with project-local required fields removed.
-
-    Official library templates intentionally omit administration-specific fields
-    (TaskName, SoftwarePlatform, AdministrationMethod) that only make sense in a
-    project copy. Validating them against the full project-copy schema produces
-    misleading errors. This helper strips those fields from the required arrays
-    so validators only flag genuine structural problems.
-    """
-    import copy
-
-    schema = copy.deepcopy(schema)
-    props = schema.get("properties", {})
-
-    study_schema = props.get("Study", {})
-    study_required = study_schema.get("required")
-    if isinstance(study_required, list):
-        study_schema["required"] = [
-            f for f in study_required if f not in _LIBRARY_RELAXED_STUDY_REQUIRED
-        ]
-
-    tech_schema = props.get("Technical", {})
-    tech_required = tech_schema.get("required")
-    if isinstance(tech_required, list):
-        tech_schema["required"] = [
-            f for f in tech_required if f not in _LIBRARY_RELAXED_TECHNICAL_REQUIRED
-        ]
-
-    return schema
 
 
 def _normalize_template_for_validation(*, modality: str, template: dict) -> dict:
