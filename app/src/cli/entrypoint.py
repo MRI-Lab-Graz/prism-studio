@@ -52,6 +52,9 @@ from src.cli.commands.participants import (
 from src.cli.commands.recipes import cmd_recipes_biometrics, cmd_recipes_surveys
 from src.cli.commands.survey import (
     cmd_survey_convert,
+    cmd_survey_export_lss,
+    cmd_survey_export_lss_customized,
+    cmd_survey_export_questionnaire_docx,
     cmd_survey_i18n_autotranslate,
     cmd_survey_i18n_build,
     cmd_survey_i18n_migrate,
@@ -100,6 +103,9 @@ def main() -> None:
             "survey_import_excel": cmd_survey_import_excel,
             "survey_convert": cmd_survey_convert,
             "survey_validate": cmd_survey_validate,
+            "survey_export_lss": cmd_survey_export_lss,
+            "survey_export_lss_customized": cmd_survey_export_lss_customized,
+            "survey_export_questionnaire_docx": cmd_survey_export_questionnaire_docx,
             "survey_import_limesurvey": cmd_survey_import_limesurvey,
             "survey_import_limesurvey_batch": cmd_survey_import_limesurvey_batch,
             "survey_i18n_migrate": cmd_survey_i18n_migrate,
