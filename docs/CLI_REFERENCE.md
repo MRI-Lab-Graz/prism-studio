@@ -265,6 +265,17 @@ python prism_tools.py environment convert \
   --project /absolute/path/to/my-project --timestamp-col collected_at
 ```
 
+**`environment scan-mri`** — scan a project's rawdata for MRI acquisition
+timestamps/scanner-site location from existing BIDS JSON sidecars, writing a TSV
+usable with `environment convert --input`. Matches the Studio GUI's
+Environment/MRI tab "Scan Project MRI Data" action:
+
+```bash
+python prism_tools.py environment scan-mri --project /path/to/project --output mri_scan.tsv
+python prism_tools.py environment convert --input mri_scan.tsv --project /path/to/project \
+  --timestamp-col timestamp
+```
+
 ### Physio and eyetracking
 
 **`convert physio`** — Varioport (`.raw`/`.vpd`) recordings from a `sourcedata`

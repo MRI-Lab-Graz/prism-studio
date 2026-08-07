@@ -339,6 +339,22 @@ def build_prism_tools_parsers(
         dest="action", help="Action"
     )
 
+    parser_environment_scan_mri = environment_subparsers.add_parser(
+        "scan-mri",
+        help="Scan a project's rawdata for MRI acquisition timestamps/location and "
+        "write a TSV usable with 'environment convert --input'. Matches the Studio "
+        "GUI's Environment/MRI tab 'Scan Project MRI Data' action.",
+    )
+    parser_environment_scan_mri.add_argument(
+        "--project", required=True, help="Project root folder"
+    )
+    parser_environment_scan_mri.add_argument(
+        "--output", required=True, help="Path to write the scanned TSV"
+    )
+    parser_environment_scan_mri.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
     parser_environment_preview = environment_subparsers.add_parser(
         "preview",
         help="Preview environment-compatible columns and sample rows from an input file",
