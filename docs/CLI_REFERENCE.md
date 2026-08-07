@@ -299,12 +299,15 @@ same participant-ID pseudonymization scoped to that command's output (plus
 `--mask-questions`/`--id-length`/`--random-ids`); `anonymize` operates on a whole
 dataset copy instead.
 
-**`file-management delete-files`** / **`remove-scans-tsv`** — preview or delete
-project files matching BIDS entity filters, or delete every `*_scans.tsv` file
-across a project (both DataLad-aware where applicable), the CLI equivalents of
-Studio's File Management -> Delete Files / "Delete all scans.tsv" actions. Also
-runnable as `prism.py file-management ...` (delegates into the same
-`prism_tools.py` command tree, like `wide-to-long`).
+**`file-management delete-files`** / **`remove-scans-tsv`** / **`rename-physio`** —
+preview or delete project files matching BIDS entity filters, delete every
+`*_scans.tsv` file across a project (DataLad-aware where applicable), or
+regex-rename a folder of physio/eyetracking files (with optional
+`{subject}`/`{session}` folder-path placeholders and BIDS-organized output) —
+the CLI equivalents of Studio's File Management -> Delete Files / "Delete all
+scans.tsv" / Physio Renamer actions. Also runnable as `prism.py
+file-management ...` (delegates into the same `prism_tools.py` command tree,
+like `wide-to-long`).
 
 ```bash
 python prism_tools.py file-management delete-files --project /path/to/project \
@@ -312,6 +315,10 @@ python prism_tools.py file-management delete-files --project /path/to/project \
 python prism_tools.py file-management delete-files --project /path/to/project \
   --modality func --entity-filter task=RS --apply --yes   # actually delete
 python prism_tools.py file-management remove-scans-tsv --project /path/to/project --yes
+python prism_tools.py file-management rename-physio --input /path/to/raw \
+  --pattern '^VP_' --replacement 'clean_'                 # preview only
+python prism_tools.py file-management rename-physio --input /path/to/raw \
+  --output /path/to/renamed --pattern '^VP_' --replacement 'clean_' --apply
 ```
 
 ```bash
