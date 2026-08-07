@@ -348,6 +348,31 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
+    parser_participants_save_schema = participants_subparsers.add_parser(
+        "save-schema",
+        help="Save a participants.json schema into a project, canonicalizing "
+        "participant-ID-like fields into one 'participant_id' key. Matches the "
+        "Studio GUI's Neurobagel widget 'Save Annotations' action.",
+    )
+    parser_participants_save_schema.add_argument(
+        "--project", required=True, help="Project root (participants.json target)"
+    )
+    parser_participants_save_schema.add_argument(
+        "--schema-json",
+        default=None,
+        help="Path to the full schema JSON to save (mutually exclusive with "
+        "--survey-selected-schema)",
+    )
+    parser_participants_save_schema.add_argument(
+        "--survey-selected-schema",
+        default=None,
+        help="Path to a survey-selected-fields schema JSON to merge into the "
+        "existing participants.json (mutually exclusive with --schema-json)",
+    )
+    parser_participants_save_schema.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
     parser_environment = subparsers.add_parser(
         "environment",
         help="Environment conversion utilities (preview)",

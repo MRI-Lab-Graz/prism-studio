@@ -254,6 +254,10 @@ python prism_tools.py participants save-mapping --mapping-json '{"participant_id
 # Fetch the Neurobagel vocabulary + sample local participants.tsv columns,
 # to inform building a --neurobagel-schema payload for convert/merge/save-mapping
 python prism_tools.py participants neurobagel-schema --project /absolute/path/to/my-project --json
+
+# Save a participants.json schema (canonicalizes participant-ID-like fields).
+# Matches Studio's Neurobagel widget "Save Annotations" action.
+python prism_tools.py participants save-schema --project /absolute/path/to/my-project --schema-json schema.json
 ```
 
 ### Environment

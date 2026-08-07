@@ -16,11 +16,14 @@ _real = load_canonical_module(
 
 ParticipantLogCallback = _real.ParticipantLogCallback
 apply_participants_merge = _real.apply_participants_merge
+canonicalize_participants_schema_keys = _real.canonicalize_participants_schema_keys
 collect_dataset_participants = _real.collect_dataset_participants
 convert_dataset_participants = _real.convert_dataset_participants
 describe_participants_workflow = _real.describe_participants_workflow
 export_participants_merge_conflicts_csv = _real.export_participants_merge_conflicts_csv
+is_participant_id_field = _real.is_participant_id_field
 merge_neurobagel_schema_for_columns = _real.merge_neurobagel_schema_for_columns
+merge_participants_schema_field = _real.merge_participants_schema_field
 merge_survey_selected_participants_schema = (
     _real.merge_survey_selected_participants_schema
 )
@@ -35,11 +38,14 @@ sync_participants_tsv_with_subject_dirs = _real.sync_participants_tsv_with_subje
 __all__ = [
     "ParticipantLogCallback",
     "apply_participants_merge",
+    "canonicalize_participants_schema_keys",
     "collect_dataset_participants",
     "convert_dataset_participants",
     "describe_participants_workflow",
     "export_participants_merge_conflicts_csv",
+    "is_participant_id_field",
     "merge_neurobagel_schema_for_columns",
+    "merge_participants_schema_field",
     "merge_survey_selected_participants_schema",
     "resolve_survey_schema_merge_mode",
     "normalize_participant_mapping",
