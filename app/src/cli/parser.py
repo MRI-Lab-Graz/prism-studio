@@ -1472,6 +1472,27 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
     )
 
+    parser_file_management_remove_scans_tsv = file_management_subparsers.add_parser(
+        "remove-scans-tsv",
+        help="Delete every *_scans.tsv file across a project (superdataset + nested "
+        "subdatasets), committing the removal. Matches the Studio GUI's File "
+        "Management -> 'Delete all scans.tsv' action.",
+    )
+    parser_file_management_remove_scans_tsv.add_argument(
+        "--project",
+        required=True,
+        help="Dataset/project root folder",
+    )
+    parser_file_management_remove_scans_tsv.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Apply without an interactive confirmation prompt (required with --json)",
+    )
+    parser_file_management_remove_scans_tsv.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
+    )
+
     return parser, {
         "root": parser,
         "survey": parser_survey,

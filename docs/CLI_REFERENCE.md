@@ -299,16 +299,19 @@ same participant-ID pseudonymization scoped to that command's output (plus
 `--mask-questions`/`--id-length`/`--random-ids`); `anonymize` operates on a whole
 dataset copy instead.
 
-**`file-management delete-files`** — preview or delete project files matching BIDS
-entity filters (DataLad-aware), the CLI equivalent of Studio's File Management ->
-Delete Files action. Also runnable as `prism.py file-management delete-files`
-(delegates into the same `prism_tools.py` command tree, like `wide-to-long`).
+**`file-management delete-files`** / **`remove-scans-tsv`** — preview or delete
+project files matching BIDS entity filters, or delete every `*_scans.tsv` file
+across a project (both DataLad-aware where applicable), the CLI equivalents of
+Studio's File Management -> Delete Files / "Delete all scans.tsv" actions. Also
+runnable as `prism.py file-management ...` (delegates into the same
+`prism_tools.py` command tree, like `wide-to-long`).
 
 ```bash
 python prism_tools.py file-management delete-files --project /path/to/project \
   --modality func --entity-filter task=RS                # preview only
 python prism_tools.py file-management delete-files --project /path/to/project \
   --modality func --entity-filter task=RS --apply --yes   # actually delete
+python prism_tools.py file-management remove-scans-tsv --project /path/to/project --yes
 ```
 
 ```bash
