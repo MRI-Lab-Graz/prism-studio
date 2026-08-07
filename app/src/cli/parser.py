@@ -1422,6 +1422,56 @@ def build_prism_tools_parsers(
     )
     parser_lib_fill.add_argument("--version", default="stable", help="Schema version")
 
+    parser_file_management = subparsers.add_parser(
+        "file-management",
+        help="Studio File Management page actions (delete files, etc.)",
+    )
+    file_management_subparsers = parser_file_management.add_subparsers(
+        dest="action", help="Action"
+    )
+
+    parser_file_management_delete = file_management_subparsers.add_parser(
+        "delete-files",
+        help="Preview or delete project files matching BIDS entity filters "
+        "(DataLad-aware). Matches the Studio GUI's File Management -> Delete Files action.",
+    )
+    parser_file_management_delete.add_argument(
+        "--project",
+        required=True,
+        help="Dataset/project root folder",
+    )
+    parser_file_management_delete.add_argument(
+        "--modality",
+        default=None,
+        help="Only match files under this modality folder (e.g. func, beh)",
+    )
+    parser_file_management_delete.add_argument(
+        "--entity-filter",
+        action="append",
+        metavar="KEY=VALUE",
+        help="Only match files where BIDS entity KEY has VALUE (e.g. task=RS). "
+        "Repeatable for multiple filters (all must match).",
+    )
+    parser_file_management_delete.add_argument(
+        "--subjects",
+        default=None,
+        help="Comma-separated subject IDs to restrict deletion to (e.g. 001,002 or sub-001,sub-002)",
+    )
+    parser_file_management_delete.add_argument(
+        "--apply",
+        action="store_true",
+        help="Actually delete the matched files (default: preview only)",
+    )
+    parser_file_management_delete.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Apply without an interactive confirmation prompt",
+    )
+    parser_file_management_delete.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
+    )
+
     return parser, {
         "root": parser,
         "survey": parser_survey,
@@ -1432,4 +1482,5 @@ def build_prism_tools_parsers(
         "library": parser_library,
         "dataset": parser_dataset,
         "recipes": parser_recipes,
+        "file_management": parser_file_management,
     }

@@ -26,6 +26,7 @@ from src.cli.commands.dataset import (
     cmd_dataset_rename_subjects,
     cmd_dataset_rewrite_entities,
 )
+from src.cli.commands.file_management import cmd_file_management_delete_files
 from src.cli.commands.hostile_demo import cmd_dataset_build_hostile_demo
 from src.cli.commands.environment import (
     cmd_environment_convert,
@@ -119,6 +120,7 @@ def main() -> None:
             "dataset_cleanup_project_metadata": cmd_dataset_cleanup_project_metadata,
             "dataset_rename_subjects": cmd_dataset_rename_subjects,
             "dataset_rewrite_entities": cmd_dataset_rewrite_entities,
+            "file_management_delete_files": cmd_file_management_delete_files,
             "dataset_build_hostile_demo": cmd_dataset_build_hostile_demo,
             "recipes_surveys": cmd_recipes_surveys,
             "recipes_biometrics": cmd_recipes_biometrics,

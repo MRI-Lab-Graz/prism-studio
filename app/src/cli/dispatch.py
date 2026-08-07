@@ -127,6 +127,11 @@ def dispatch_prism_tools(
             handlers["dataset_build_hostile_demo"](args)
         else:
             parsers["dataset"].print_help()
+    elif args.command == "file-management":
+        if args.action == "delete-files":
+            handlers["file_management_delete_files"](args)
+        else:
+            parsers["file_management"].print_help()
     elif args.command == "recipes":
         if args.kind in {"surveys", "survey", "surves"}:
             handlers["recipes_surveys"](args)
