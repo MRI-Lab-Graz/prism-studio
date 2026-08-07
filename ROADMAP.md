@@ -165,6 +165,10 @@ feature work, until a new strategic initiative is picked.
 - [x] Align the manuscript with v1.17.0, add the dataset citation, and replace
       the generic AI disclosure with the verified tool and responsibility
       statement.
+- [x] Strengthen the design narrative around the template-to-sharing lifecycle,
+      the loss-aware BIDS `phenotype/` bridge, standalone validator, derivative
+      provenance, controlled sharing, and bounded FAIR-oriented support; add
+      conceptual lifecycle and representation figures.
 - [x] Reconcile `codemeta.json` with the earliest repository commit
       (`2025-09-09`) and the manuscript's public-development history.
 - [x] Replace obsolete contributor test commands and add a private security
