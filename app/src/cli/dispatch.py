@@ -151,6 +151,8 @@ def dispatch_prism_tools(
             handlers["recipes_surveys"](args)
         elif args.kind in {"biometrics", "biometric"}:
             handlers["recipes_biometrics"](args)
+        elif args.kind == "validate-file":
+            handlers["recipes_validate_file"](args)
         else:
             parsers["recipes"].print_help()
     else:

@@ -885,6 +885,29 @@ def build_prism_tools_parsers(
         help="With --anonymized, use non-deterministic random pseudonyms instead of deterministic ones",
     )
 
+    parser_recipes_validate_file = recipes_subparsers.add_parser(
+        "validate-file",
+        help="Validate a recipe JSON file's structure without running a scoring job. "
+        "Matches the validation the Studio GUI's Recipe Builder 'Save' action uses.",
+    )
+    parser_recipes_validate_file.add_argument(
+        "recipe", help="Path to the recipe JSON file to validate"
+    )
+    parser_recipes_validate_file.add_argument(
+        "--known-items-from",
+        default=None,
+        help="Optional path to the matched survey/biometrics template JSON, so item "
+        "IDs referenced by the recipe (Scores/Transforms) are checked for typos",
+    )
+    parser_recipes_validate_file.add_argument(
+        "--recipe-id",
+        default=None,
+        help="Label used in error messages (default: the recipe filename)",
+    )
+    parser_recipes_validate_file.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
+    )
+
     parser_biometrics_excel = biometrics_subparsers.add_parser(
         "import-excel", help="Import biometrics templates/library from Excel"
     )
