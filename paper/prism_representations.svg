@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="title desc">
+  <title id="title">PRISM native survey representation and BIDS phenotype compatibility view</title>
+  <desc id="desc">A subject, session, run, and acquisition-version resolved native PRISM survey layout is exported to a flat BIDS phenotype table through an optional lossy bridge.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#b76d44"/>
+    </marker>
+    <style>
+      .title { font: 700 30px 'DejaVu Sans', Arial, sans-serif; fill: #17343b; }
+      .subtitle { font: 400 17px 'DejaVu Sans', Arial, sans-serif; fill: #50636a; }
+      .panel-title { font: 700 22px 'DejaVu Sans', Arial, sans-serif; fill: #17343b; }
+      .code { font: 400 16px 'DejaVu Sans Mono', Consolas, monospace; fill: #24434b; }
+      .code-strong { font: 700 16px 'DejaVu Sans Mono', Consolas, monospace; fill: #17343b; }
+      .body { font: 400 16px 'DejaVu Sans', Arial, sans-serif; fill: #24434b; }
+      .small { font: 400 14px 'DejaVu Sans', Arial, sans-serif; fill: #50636a; }
+      .arrow-label { font: 700 17px 'DejaVu Sans', Arial, sans-serif; fill: #9a5736; }
+      .footer { font: 400 16px 'DejaVu Sans', Arial, sans-serif; fill: #50636a; }
+    </style>
+  </defs>
+  <rect width="1400" height="760" fill="#ffffff"/>
+  <text x="70" y="64" class="title">Native acquisition context, with a compatibility view when needed</text>
+  <text x="70" y="95" class="subtitle">PRISM preserves repeated administrations in native survey files; BIDS phenotype tables remain available as aggregates.</text>
+
+  <rect x="70" y="135" width="585" height="475" rx="10" fill="#e7f2ef" stroke="#4b807c" stroke-width="2"/>
+  <text x="102" y="180" class="panel-title">Native PRISM survey layout</text>
+  <text x="102" y="212" class="small">Canonical, acquisition-facing representation</text>
+  <rect x="102" y="238" width="520" height="325" rx="6" fill="#ffffff" stroke="#bfd4ce" stroke-width="1.5"/>
+  <text x="128" y="276" class="code-strong">sub-01/</text>
+  <text x="156" y="310" class="code-strong">ses-baseline/survey/</text>
+  <text x="186" y="344" class="code">task-pss_run-01_acq-v1_survey.tsv</text>
+  <text x="186" y="374" class="code">task-pss_run-01_acq-v1_survey.json</text>
+  <text x="156" y="416" class="code-strong">ses-week04/survey/</text>
+  <text x="186" y="450" class="code">task-pss_run-02_acq-v2_survey.tsv</text>
+  <text x="186" y="480" class="code">task-pss_run-02_acq-v2_survey.json</text>
+  <text x="128" y="524" class="code-strong">sub-02/ ...</text>
+  <text x="102" y="595" class="body">Preserves participant, session, run, and version context</text>
+
+  <path d="M 684 370 L 786 370" stroke="#b76d44" stroke-width="5" marker-end="url(#arrow)"/>
+  <text x="680" y="318" class="arrow-label">Optional bridge</text>
+  <text x="688" y="345" class="small">compatibility export</text>
+  <text x="704" y="408" class="arrow-label">Lossy</text>
+  <text x="679" y="433" class="small">aggregate view</text>
+
+  <rect x="815" y="195" width="515" height="350" rx="10" fill="#f7eee2" stroke="#ba8551" stroke-width="2"/>
+  <text x="847" y="240" class="panel-title">BIDS phenotype/ table</text>
+  <text x="847" y="270" class="small">Optional aggregate representation for compatibility</text>
+  <rect x="847" y="300" width="450" height="150" fill="#ffffff" stroke="#d2b28e" stroke-width="1.5"/>
+  <rect x="847" y="300" width="450" height="38" fill="#f2d8b9"/>
+  <line x1="995" y1="300" x2="995" y2="450" stroke="#d2b28e" stroke-width="1.5"/>
+  <line x1="1145" y1="300" x2="1145" y2="450" stroke="#d2b28e" stroke-width="1.5"/>
+  <line x1="847" y1="338" x2="1297" y2="338" stroke="#d2b28e" stroke-width="1.5"/>
+  <line x1="847" y1="375" x2="1297" y2="375" stroke="#d2b28e" stroke-width="1.5"/>
+  <line x1="847" y1="412" x2="1297" y2="412" stroke="#d2b28e" stroke-width="1.5"/>
+  <text x="866" y="325" class="code-strong">participant_id</text>
+  <text x="1020" y="325" class="code-strong">pss_total</text>
+  <text x="1170" y="325" class="code-strong">age</text>
+  <text x="866" y="363" class="code">sub-01</text>
+  <text x="1020" y="363" class="code">18</text>
+  <text x="1170" y="363" class="code">24</text>
+  <text x="866" y="400" class="code">sub-02</text>
+  <text x="1020" y="400" class="code">12</text>
+  <text x="1170" y="400" class="code">31</text>
+  <text x="866" y="437" class="code">...</text>
+  <text x="847" y="492" class="body">Does not unambiguously retain session, run, or acquisition version</text>
+
+  <rect x="815" y="585" width="515" height="68" rx="8" fill="#eef3f3" stroke="#b8cdc8" stroke-width="1.5"/>
+  <text x="842" y="614" class="body">Design decision: native survey files remain canonical;</text>
+  <text x="842" y="640" class="body">phenotype/ is a useful downstream compatibility view.</text>
+
+  <text x="70" y="710" class="footer">This distinction preserves information needed for longitudinal and multi-version instruments while remaining compatible with established BIDS workflows.</text>
+</svg>
