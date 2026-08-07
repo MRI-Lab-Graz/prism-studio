@@ -148,6 +148,21 @@ python prism_tools.py survey convert --input survey_export.xlsx --output /tmp/my
 language, `de` default / `auto` for `.lsa`), `--unknown {error,warn,ignore}`
 (unmapped columns), `--dry-run`, `--force`.
 
+**`survey export-lss`** / **`export-lss-customized`** / **`export-questionnaire-docx`**
+— export template(s) to a LimeSurvey `.lss` file, export a Survey Customizer-style
+customization JSON to `.lss`, or render a template as a paper-pencil Word
+questionnaire. CLI equivalents of Studio's Survey Generator "Quick Export", Survey
+Customizer "Export", and the "Export Word" action shared by Template Editor and
+Survey Customizer:
+
+```bash
+python prism_tools.py survey export-lss library/survey/survey-gad7.json --output gad7.lss
+python prism_tools.py survey export-lss-customized \
+  --customization-json my_customization.json --output custom.lss
+python prism_tools.py survey export-questionnaire-docx \
+  --template library/survey/survey-gad7.json --output gad7.docx
+```
+
 **`survey import-limesurvey`** / **`survey import-limesurvey-batch`**:
 
 ```bash
