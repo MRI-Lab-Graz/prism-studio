@@ -23,6 +23,10 @@ from flask import (
 )
 from werkzeug.utils import secure_filename
 
+from src.validation_library_resolution import (
+    default_global_validation_library_path,
+    default_validation_library_path,
+)
 from src.web.utils import format_validation_results
 from src.web.validation import (
     run_validation,
@@ -179,34 +183,14 @@ def _safe_expand_validation_path(path_value: str) -> Path:
 
 def _get_global_validation_library_path() -> str:
     """Return the configured global validation library fallback."""
-    from src.config import get_effective_library_paths
-
-    lib_paths = get_effective_library_paths(app_root=str(current_app.root_path))
-    configured_path = lib_paths.get("global_library_path")
-    if configured_path:
-        candidate = _safe_expand_validation_path(configured_path)
-        if candidate.exists() and candidate.is_dir():
-            return str(candidate)
-
-    return str(
-        _safe_expand_validation_path(
-            str(Path(current_app.root_path) / "survey_library")
-        )
-    )
+    return default_global_validation_library_path(str(current_app.root_path))
 
 
 def _get_default_validation_library_path(project_path: str | None = None) -> str:
     """Resolve the library path used when the user does not override it."""
-    if project_path:
-        project_root = _safe_expand_validation_path(project_path)
-        if project_root.is_file():
-            project_root = project_root.parent
-
-        for candidate in (project_root / "library", project_root / "code" / "library"):
-            if candidate.exists() and candidate.is_dir():
-                return str(candidate)
-
-    return _get_global_validation_library_path()
+    return default_validation_library_path(
+        str(current_app.root_path), project_path=project_path
+    )
 
 
 def _resolve_requested_validation_library_path(

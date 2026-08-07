@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="820" viewBox="0 0 1400 820" role="img" aria-labelledby="title desc">
+  <title id="title">PRISM metadata lifecycle</title>
+  <desc id="desc">A workflow from instrument definition through conversion, validation, derived data, and privacy-controlled sharing.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#35616c"/>
+    </marker>
+    <style>
+      .title { font: 700 30px 'DejaVu Sans', Arial, sans-serif; fill: #17343b; }
+      .subtitle { font: 400 17px 'DejaVu Sans', Arial, sans-serif; fill: #50636a; }
+      .box-title { font: 700 20px 'DejaVu Sans', Arial, sans-serif; fill: #17343b; }
+      .body { font: 400 16px 'DejaVu Sans', Arial, sans-serif; fill: #24434b; }
+      .small { font: 400 14px 'DejaVu Sans', Arial, sans-serif; fill: #24434b; }
+      .label { font: 700 15px 'DejaVu Sans', Arial, sans-serif; fill: #35616c; letter-spacing: 1px; }
+      .footer { font: 400 15px 'DejaVu Sans', Arial, sans-serif; fill: #50636a; }
+    </style>
+  </defs>
+  <rect width="1400" height="820" fill="#ffffff"/>
+  <text x="70" y="65" class="title">A metadata contract across the research-data lifecycle</text>
+  <text x="70" y="96" class="subtitle">PRISM carries instrument definitions, validation rules, and provenance from study design to controlled sharing.</text>
+
+  <line x1="294" y1="272" x2="338" y2="272" stroke="#35616c" stroke-width="4" marker-end="url(#arrow)"/>
+  <line x1="550" y1="272" x2="594" y2="272" stroke="#35616c" stroke-width="4" marker-end="url(#arrow)"/>
+  <line x1="806" y1="272" x2="850" y2="272" stroke="#35616c" stroke-width="4" marker-end="url(#arrow)"/>
+  <line x1="1062" y1="272" x2="1106" y2="272" stroke="#35616c" stroke-width="4" marker-end="url(#arrow)"/>
+
+  <g>
+    <rect x="70" y="150" width="224" height="244" rx="8" fill="#e8f3ef" stroke="#4b807c" stroke-width="2"/>
+    <text x="94" y="190" class="box-title">Instrument definition</text>
+    <text x="94" y="224" class="body">Excel codebook</text>
+    <text x="94" y="252" class="body">JSON or Studio editor</text>
+    <text x="94" y="290" class="body">Items and response levels</text>
+    <text x="94" y="318" class="body">Identity, licence, citation</text>
+    <text x="94" y="346" class="body">Versions and variants</text>
+    <text x="94" y="378" class="label">TEMPLATE</text>
+  </g>
+
+  <g>
+    <rect x="338" y="150" width="212" height="244" rx="8" fill="#f6eee1" stroke="#ba8551" stroke-width="2"/>
+    <text x="362" y="190" class="box-title">Collection and conversion</text>
+    <text x="362" y="224" class="body">LimeSurvey, paper,</text>
+    <text x="362" y="248" class="body">or tabular exports</text>
+    <text x="362" y="290" class="body">Participants mapping</text>
+    <text x="362" y="318" class="body">Run-aware conversion</text>
+    <text x="362" y="346" class="body">Wide-to-long transforms</text>
+    <text x="362" y="378" class="label">CONVERT</text>
+  </g>
+
+  <g>
+    <rect x="594" y="150" width="212" height="244" rx="8" fill="#e6f0f8" stroke="#5381a2" stroke-width="2"/>
+    <text x="618" y="190" class="box-title">Native PRISM/BIDS data</text>
+    <text x="618" y="224" class="body">TSV plus JSON sidecars</text>
+    <text x="618" y="252" class="body">Subject/session/run context</text>
+    <text x="618" y="290" class="body">Entity and schema rules</text>
+    <text x="618" y="318" class="body">Instrument registry</text>
+    <text x="618" y="346" class="body">BIDS compatibility</text>
+    <text x="618" y="378" class="label">DATA CONTRACT</text>
+  </g>
+
+  <g>
+    <rect x="850" y="150" width="212" height="244" rx="8" fill="#f3eaf0" stroke="#a56586" stroke-width="2"/>
+    <text x="874" y="190" class="box-title">Portable validation</text>
+    <text x="874" y="224" class="body">Studio or CLI</text>
+    <text x="874" y="252" class="body">Optional BIDS checks</text>
+    <text x="874" y="290" class="body">Template validation</text>
+    <text x="874" y="318" class="body">Fix previews</text>
+    <text x="874" y="346" class="body">Docker and CI reports</text>
+    <text x="874" y="378" class="label">ENFORCE</text>
+  </g>
+
+  <g>
+    <rect x="1106" y="150" width="224" height="244" rx="8" fill="#edf1e3" stroke="#82964d" stroke-width="2"/>
+    <text x="1130" y="190" class="box-title">Derived data and sharing</text>
+    <text x="1130" y="224" class="body">Recipe outputs</text>
+    <text x="1130" y="252" class="body">Input-hash provenance</text>
+    <text x="1130" y="290" class="body">Privacy controls</text>
+    <text x="1130" y="318" class="body">Repository packages</text>
+    <text x="1130" y="346" class="body">FAIR-oriented metadata</text>
+    <text x="1130" y="378" class="label">REUSE</text>
+  </g>
+
+  <path d="M 700 425 L 700 474" stroke="#35616c" stroke-width="4" marker-end="url(#arrow)"/>
+  <rect x="70" y="474" width="1260" height="220" rx="10" fill="#f7faf9" stroke="#b8cdc8" stroke-width="2"/>
+  <text x="102" y="520" class="box-title">Validated export gate</text>
+  <line x1="382" y1="548" x2="382" y2="663" stroke="#c3d3cf" stroke-width="2"/>
+  <line x1="706" y1="548" x2="706" y2="663" stroke="#c3d3cf" stroke-width="2"/>
+  <line x1="1018" y1="548" x2="1018" y2="663" stroke="#c3d3cf" stroke-width="2"/>
+
+  <text x="102" y="565" class="label">SELECT</text>
+  <text x="102" y="596" class="body">Subjects, sessions, modalities,</text>
+  <text x="102" y="622" class="body">derivatives, and source material</text>
+
+  <text x="414" y="565" class="label">PROTECT</text>
+  <text x="414" y="596" class="body">Randomize identifiers, mask items,</text>
+  <text x="414" y="622" class="body">scrub sidecars, deface export copies</text>
+
+  <text x="738" y="565" class="label">PACKAGE</text>
+  <text x="738" y="596" class="body">Analysis outputs, reusable project</text>
+  <text x="738" y="622" class="body">templates, or sharing archives</text>
+
+  <text x="1050" y="565" class="label">DEPOSIT</text>
+  <text x="1050" y="596" class="body">BIDS-compatible folders, ANC</text>
+  <text x="1050" y="622" class="body">packages, optional openMINDS</text>
+
+  <text x="70" y="754" class="footer">The same structured metadata is available to interactive and automated workflows; validation occurs before data leave the project.</text>
+</svg>

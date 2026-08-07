@@ -2055,6 +2055,13 @@ def compute_survey_recipes(
             include_recipe_prefix: If True, prefix combined-export columns with the
                 recipe name when possible.
             anonymized: If True, append '_anon' to output subfolder name.
+                This only affects the folder name — it does not anonymize
+                the written data. Callers that want real anonymization
+                (participant-ID pseudonymization, optional question
+                masking) must additionally call `anonymize_recipe_output`
+                on this function's `SurveyRecipesResult.out_root` after it
+                returns; both the CLI's `--anonymized` flag and the Studio
+                GUI's "Anonymize" option do so.
             missing_policy: Missing-value export policy for csv/xlsx/sav
                 (system-missing, text-na, text-nan, numeric-sentinel).
             missing_numeric_value: Numeric sentinel used when policy is
@@ -2817,6 +2824,234 @@ def compute_survey_recipes(
         missing_input_tasks=missing_input_tasks,
         raw_only_tasks=tuple(sorted(raw_only_tasks)),
     )
+
+
+def _canonical_pid_for_anonymization(value: Any) -> Optional[str]:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    lowered = text.lower()
+    if lowered in {"nan", "none", "null", "na", "n/a"}:
+        return None
+    if lowered.startswith("sub"):
+        text = text[3:].lstrip("-_")
+    text = text.strip().lower()
+    if not text:
+        return None
+    if text.isdigit():
+        return str(int(text))
+    return text
+
+
+def anonymize_recipe_output(
+    *,
+    dataset_path: str | Path,
+    out_root: str | Path,
+    out_format: str,
+    id_length: int = 8,
+    random_ids: bool = False,
+    mask_questions: bool = False,
+) -> tuple[int, Path]:
+    """Pseudonymize participant IDs in recipe output already written to `out_root`.
+
+    Reads `participant_id` values from `<dataset_path>/participants.tsv`,
+    creates (or reuses) a stable pseudonym mapping via
+    `src.anonymizer.create_participant_mapping`, and rewrites every score
+    file under `out_root` in place, replacing `participant_id` values with
+    their pseudonyms. When `mask_questions` is set, question-text
+    columns/labels are replaced with the literal string ``"[MASKED]"``.
+
+    Both the CLI (`recipes surveys/biometrics --anonymized`) and the Studio
+    GUI's Recipes page "Anonymize" option call this same function, so
+    anonymized output is identical regardless of entry point — see
+    docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md (P1-3): previously the CLI
+    flag only renamed the output folder and never anonymized anything.
+
+    Args:
+        dataset_path: PRISM dataset root containing `participants.tsv`.
+        out_root: Directory the recipe run already wrote output into
+            (`SurveyRecipesResult.out_root`).
+        out_format: The format the output was written in
+            (`sav`/`spss`, `csv`/`tsv`/`flat`/`prism`, or `xlsx`/`excel`).
+        id_length: Length of the random portion of a newly generated pseudonym.
+        random_ids: If True, generate non-deterministic pseudonyms instead of
+            deterministic ones.
+        mask_questions: If True, also replace question-text columns/labels
+            with "[MASKED]".
+
+    Returns:
+        (anonymized_file_count, mapping_file_path)
+    """
+    import os
+
+    import pandas as pd
+
+    from src.anonymizer import create_participant_mapping
+
+    dataset_path = str(dataset_path)
+    out_root = Path(out_root)
+    output_dir = str(out_root)
+
+    def _map_pid(
+        value: Any, mapping: dict[str, str], canonical_map: dict[str, str]
+    ) -> Any:
+        if pd.isna(value):
+            return value
+        text = str(value).strip()
+        if text in mapping:
+            return mapping[text]
+        key = _canonical_pid_for_anonymization(text)
+        if key and key in canonical_map:
+            return canonical_map[key]
+        return value
+
+    participants_tsv = os.path.join(dataset_path, "participants.tsv")
+    if not os.path.exists(participants_tsv):
+        raise FileNotFoundError(f"participants.tsv not found in {dataset_path}/")
+
+    participants_df = pd.read_csv(participants_tsv, sep="\t", dtype=str)
+    if "participant_id" not in participants_df.columns:
+        raise ValueError("participants.tsv must have a 'participant_id' column")
+    participant_ids = participants_df["participant_id"].tolist()
+
+    if not os.path.exists(output_dir):
+        raise FileNotFoundError(f"Output directory not found: {output_dir}")
+
+    mapping_file_path = out_root / "participants_mapping.json"
+
+    if mapping_file_path.exists():
+        with open(mapping_file_path, "r", encoding="utf-8") as f:
+            mapping_data = json.load(f)
+            participant_mapping = {
+                str(k): str(v)
+                for k, v in (mapping_data.get("mapping", {}) or {}).items()
+            }
+    else:
+        participant_mapping = create_participant_mapping(
+            [str(pid) for pid in participant_ids],
+            mapping_file_path,
+            id_length=id_length,
+            deterministic=not random_ids,
+        )
+
+    canonical_mapping: dict[str, str] = {}
+    for original_id, anonymized_id in participant_mapping.items():
+        key = _canonical_pid_for_anonymization(original_id)
+        if key and key not in canonical_mapping:
+            canonical_mapping[key] = anonymized_id
+
+    anonymized_count = 0
+
+    if out_format in ("sav", "spss"):
+        try:
+            import pyreadstat
+        except ImportError as exc:
+            raise ImportError(
+                "pyreadstat required for anonymizing SPSS files "
+                "(install with: pip install pyreadstat)"
+            ) from exc
+
+        for root, _dirs, files in os.walk(output_dir):
+            for file in files:
+                if not file.endswith(".sav"):
+                    continue
+                sav_path = os.path.join(root, file)
+                df_data, meta = pyreadstat.read_sav(sav_path)
+
+                if "participant_id" in df_data.columns:
+                    before = df_data["participant_id"].copy()
+                    df_data["participant_id"] = df_data["participant_id"].map(
+                        lambda x: _map_pid(x, participant_mapping, canonical_mapping)
+                    )
+                    changed = int(
+                        (before.astype(str) != df_data["participant_id"].astype(str)).sum()
+                    )
+                    if changed > 0:
+                        anonymized_count += 1
+
+                if mask_questions:
+                    question_cols = [
+                        col for col in df_data.columns if "question" in col.lower()
+                    ]
+                    for col in question_cols:
+                        if col in meta.column_names_to_labels:
+                            meta.column_names_to_labels[col] = "[MASKED]"
+
+                pyreadstat.write_sav(
+                    df_data,
+                    sav_path,
+                    column_labels=meta.column_names_to_labels,
+                    variable_value_labels=getattr(meta, "variable_value_labels", None),
+                )
+
+    elif out_format in ("csv", "tsv", "flat", "prism"):
+        for root, _dirs, files in os.walk(output_dir):
+            for file in files:
+                if not (file.endswith(".tsv") or file.endswith(".csv")):
+                    continue
+                file_path = os.path.join(root, file)
+                sep = "\t" if file.endswith(".tsv") else ","
+
+                df_data = pd.read_csv(file_path, sep=sep)
+                if "participant_id" in df_data.columns:
+                    before = df_data["participant_id"].copy()
+                    df_data["participant_id"] = df_data["participant_id"].map(
+                        lambda x: _map_pid(x, participant_mapping, canonical_mapping)
+                    )
+                    changed = int(
+                        (before.astype(str) != df_data["participant_id"].astype(str)).sum()
+                    )
+                    if changed > 0:
+                        anonymized_count += 1
+
+                if mask_questions and "question" in df_data.columns:
+                    df_data["question"] = "[MASKED]"
+
+                df_data.to_csv(file_path, sep=sep, index=False)
+
+    elif out_format in ("xlsx", "excel"):
+        for root, _dirs, files in os.walk(output_dir):
+            for file in files:
+                if not file.endswith(".xlsx"):
+                    continue
+                file_path = os.path.join(root, file)
+
+                excel_file = pd.ExcelFile(file_path)
+                sheet_names = excel_file.sheet_names
+                sheet_frames = {
+                    sheet_name: pd.read_excel(file_path, sheet_name=sheet_name)
+                    for sheet_name in sheet_names
+                }
+
+                file_had_participant_ids = False
+                for _sheet_name, df_data in sheet_frames.items():
+                    if "participant_id" in df_data.columns:
+                        before = df_data["participant_id"].copy()
+                        df_data["participant_id"] = df_data["participant_id"].map(
+                            lambda x: _map_pid(x, participant_mapping, canonical_mapping)
+                        )
+                        changed = int(
+                            (
+                                before.astype(str)
+                                != df_data["participant_id"].astype(str)
+                            ).sum()
+                        )
+                        if changed > 0:
+                            file_had_participant_ids = True
+
+                    if mask_questions and "question" in df_data.columns:
+                        df_data["question"] = "[MASKED]"
+
+                with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
+                    for sheet_name in sheet_names:
+                        sheet_frames[sheet_name].to_excel(
+                            writer, sheet_name=sheet_name, index=False
+                        )
+
+                if file_had_participant_ids:
+                    anonymized_count += 1
+
+    return anonymized_count, mapping_file_path
 
 
 def _write_jamovi_r_helper(

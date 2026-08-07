@@ -12,9 +12,11 @@ import pandas as pd
 from src.converters.file_reader import read_tabular_file
 from src.participants_backend import (
     apply_participants_merge,
+    canonicalize_participants_schema_keys,
     convert_dataset_participants,
     export_participants_merge_conflicts_csv,
     merge_neurobagel_schema_for_columns,
+    merge_survey_selected_participants_schema,
     preview_dataset_participants,
     preview_participants_merge,
     save_participant_mapping,
@@ -746,3 +748,144 @@ def cmd_participants_save_mapping(args) -> None:
     else:
         print(payload["message"])
         print(f"Wrote: {payload['file_path']}")
+
+
+def cmd_participants_neurobagel_schema(args) -> None:
+    """Fetch the Neurobagel controlled vocabulary and sample local
+    participants.tsv columns — the CLI equivalent of the value the Studio
+    GUI's Neurobagel widget adds beyond a raw --neurobagel-schema
+    passthrough (audit item P2,
+    docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md). The output is meant to
+    inform hand-building a --neurobagel-schema payload for `participants
+    convert`/`merge`/`save-mapping`, not to be passed to them directly."""
+    from src.web.neurobagel import (
+        augment_neurobagel_data,
+        fetch_neurobagel_participants,
+        sample_local_participant_columns,
+    )
+
+    project_root = Path(args.project).resolve()
+    if not project_root.is_dir():
+        print(f"Error: --project is not a directory: {project_root}")
+        sys.exit(1)
+
+    raw_vocab = fetch_neurobagel_participants()
+    vocabulary = augment_neurobagel_data(raw_vocab)
+
+    tsv_path = project_root / "participants.tsv"
+    local_columns = sample_local_participant_columns(str(tsv_path))
+
+    payload = {"vocabulary": vocabulary, "local_columns": local_columns}
+
+    output_path = getattr(args, "output", None)
+    if output_path:
+        Path(output_path).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        if not bool(getattr(args, "json", False)):
+            print(f"✅ Wrote Neurobagel schema data to {output_path}")
+            print(
+                f"   Local columns found: {', '.join(sorted(local_columns)) or '(none)'}"
+            )
+        return
+
+    if bool(getattr(args, "json", False)):
+        _emit_json(payload)
+        return
+
+    print(f"Local participants.tsv columns: {', '.join(sorted(local_columns)) or '(none)'}")
+    print(f"Vocabulary properties: {', '.join(sorted(vocabulary.get('properties', {})))}")
+    print("Use --output to write the full JSON, or --json for machine-readable output.")
+
+
+def cmd_participants_save_schema(args) -> None:
+    """Save a participants.json schema into a project, canonicalizing
+    participant-ID-like fields into one 'participant_id' key — the CLI
+    equivalent of the Studio GUI's Neurobagel widget "Save Annotations"
+    action (audit item P2,
+    docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md)."""
+    as_json = bool(getattr(args, "json", False))
+    project_root = Path(args.project).resolve()
+    if not project_root.is_dir():
+        print(f"Error: --project is not a directory: {project_root}")
+        sys.exit(1)
+
+    participants_path = project_root / "participants.json"
+
+    survey_selected_path = getattr(args, "survey_selected_schema", None)
+    if survey_selected_path:
+        schema_path = Path(survey_selected_path).resolve()
+        if not schema_path.exists():
+            print(f"Error: --survey-selected-schema not found: {schema_path}")
+            sys.exit(1)
+        try:
+            selected_schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            print(f"Error: --survey-selected-schema is not valid JSON: {exc}")
+            sys.exit(1)
+        if not isinstance(selected_schema, dict):
+            print("Error: --survey-selected-schema must decode to a JSON object")
+            sys.exit(1)
+
+        existing_schema: dict = {}
+        if participants_path.exists():
+            try:
+                existing_schema = json.loads(
+                    participants_path.read_text(encoding="utf-8")
+                )
+            except json.JSONDecodeError as exc:
+                print(f"Error: could not read existing participants.json: {exc}")
+                sys.exit(1)
+            if not isinstance(existing_schema, dict):
+                existing_schema = {}
+
+        schema = merge_survey_selected_participants_schema(
+            existing_schema=existing_schema,
+            selected_schema=selected_schema,
+        )
+    else:
+        schema_path_raw = getattr(args, "schema_json", None)
+        if not schema_path_raw:
+            print("Error: either --schema-json or --survey-selected-schema is required")
+            sys.exit(1)
+        schema_path = Path(schema_path_raw).resolve()
+        if not schema_path.exists():
+            print(f"Error: --schema-json not found: {schema_path}")
+            sys.exit(1)
+        try:
+            schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            print(f"Error: --schema-json is not valid JSON: {exc}")
+            sys.exit(1)
+        if not isinstance(schema, dict):
+            print("Error: --schema-json must decode to a JSON object")
+            sys.exit(1)
+
+    schema = canonicalize_participants_schema_keys(schema)
+
+    if "participant_id" not in schema:
+        schema = {
+            "participant_id": {"Description": "Unique participant identifier"},
+            **schema,
+        }
+    elif isinstance(schema.get("participant_id"), dict):
+        description = str(schema["participant_id"].get("Description") or "").strip()
+        if not description:
+            schema["participant_id"]["Description"] = "Unique participant identifier"
+
+    participants_path.write_text(
+        json.dumps(schema, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+
+    if as_json:
+        _emit_json(
+            {
+                "success": True,
+                "path": str(participants_path),
+                "fields": list(schema.keys()),
+            }
+        )
+        return
+
+    print(f"✅ Saved {participants_path}")
+    print(f"   Fields: {', '.join(schema.keys())}")

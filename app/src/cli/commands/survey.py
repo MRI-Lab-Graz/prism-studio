@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -14,6 +15,7 @@ from src.library_autotranslate import (
 )
 from src.library_i18n import compile_survey_template, migrate_survey_template_to_i18n
 from src.library_validator import check_uniqueness
+from src.limesurvey_exporter import generate_lss, generate_lss_from_customization
 from src.utils.io import ensure_dir as _ensure_dir
 from src.utils.io import read_json as _read_json
 from src.utils.io import write_json as _write_json
@@ -732,3 +734,160 @@ def cmd_survey_i18n_autotranslate(args):
     print(f"   Files changed:   {stats.files_changed}")
     print(f"   Entries added:   {stats.localized_entries_added}")
     print(f"   Unique texts:    {stats.unique_source_texts}")
+
+
+def cmd_survey_export_lss(args) -> None:
+    """Export PRISM survey template JSON files to a LimeSurvey .lss file —
+    the CLI equivalent of the Studio GUI's Survey Generator "Quick Export"
+    action (src.limesurvey_exporter.generate_lss). See
+    docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md, P2."""
+    files = [str(Path(f).resolve()) for f in args.files]
+    missing = [f for f in files if not Path(f).exists()]
+    if missing:
+        print(f"Error: file(s) not found: {', '.join(missing)}")
+        sys.exit(1)
+
+    language = str(getattr(args, "language", "en") or "en")
+    languages_raw = getattr(args, "languages", None)
+    languages = (
+        [lang.strip() for lang in languages_raw.split(",") if lang.strip()]
+        if languages_raw
+        else [language]
+    )
+    base_language = str(getattr(args, "base_language", None) or language)
+    ls_version = str(getattr(args, "ls_version", "3") or "3")
+    output_path = Path(args.output).resolve()
+
+    try:
+        generate_lss(
+            files,
+            str(output_path),
+            language=language,
+            languages=languages,
+            base_language=base_language,
+            ls_version=ls_version,
+        )
+    except Exception as exc:
+        print(f"Error: {exc}")
+        sys.exit(1)
+
+    print(f"✅ LimeSurvey export written: {output_path}")
+
+
+def cmd_survey_export_lss_customized(args) -> None:
+    """Export a Survey Customizer-style customization JSON to a LimeSurvey
+    .lss file — the CLI equivalent of the Studio GUI's Survey Customizer
+    "Export" action (src.limesurvey_exporter.generate_lss_from_customization).
+    The input JSON is the same `groups` structure the GUI's Survey
+    Customizer produces (visible via its own "Preview/Copy JSON" action)."""
+    customization_path = Path(args.customization_json).resolve()
+    if not customization_path.exists():
+        print(f"Error: --customization-json not found: {customization_path}")
+        sys.exit(1)
+
+    try:
+        payload = json.loads(customization_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"Error: could not read --customization-json: {exc}")
+        sys.exit(1)
+
+    groups = payload.get("groups") if isinstance(payload, dict) else payload
+    if not isinstance(groups, list):
+        print(
+            "Error: --customization-json must contain a 'groups' list "
+            "(or be a JSON array of groups directly)"
+        )
+        sys.exit(1)
+
+    ls_settings = payload.get("ls_settings") if isinstance(payload, dict) else None
+    survey_title = (
+        payload.get("survey_title") if isinstance(payload, dict) else None
+    ) or getattr(args, "survey_title", None)
+
+    language = str(getattr(args, "language", "en") or "en")
+    languages_raw = getattr(args, "languages", None)
+    languages = (
+        [lang.strip() for lang in languages_raw.split(",") if lang.strip()]
+        if languages_raw
+        else [language]
+    )
+    base_language = str(getattr(args, "base_language", None) or language)
+    ls_version = str(getattr(args, "ls_version", "6") or "6")
+    output_path = Path(args.output).resolve()
+
+    try:
+        generate_lss_from_customization(
+            groups,
+            str(output_path),
+            language=language,
+            languages=languages,
+            base_language=base_language,
+            ls_version=ls_version,
+            matrix_mode=not getattr(args, "no_matrix", False),
+            matrix_global=not getattr(args, "no_matrix_global", False),
+            survey_title=survey_title,
+            ls_settings=ls_settings,
+        )
+    except Exception as exc:
+        print(f"Error: {exc}")
+        sys.exit(1)
+
+    print(f"✅ LimeSurvey export written: {output_path}")
+
+
+def cmd_survey_export_questionnaire_docx(args) -> None:
+    """Render a PRISM survey template as a paper-pencil Word (.docx)
+    questionnaire — the CLI equivalent of the "Export Word" action shared
+    by the Studio GUI's Template Editor and Survey Customizer pages
+    (src.questionnaire_renderer.render_questionnaire_docx)."""
+    template_path = Path(args.template).resolve()
+    if not template_path.exists():
+        print(f"Error: --template not found: {template_path}")
+        sys.exit(1)
+
+    try:
+        template = json.loads(template_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"Error: could not read --template: {exc}")
+        sys.exit(1)
+
+    options: dict = {}
+    options_json = getattr(args, "options_json", None)
+    if options_json:
+        options_path = Path(options_json)
+        try:
+            raw = (
+                options_path.read_text(encoding="utf-8")
+                if options_path.exists()
+                else options_json
+            )
+            options = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            print(f"Error: --options-json is not valid JSON: {exc}")
+            sys.exit(1)
+        if not isinstance(options, dict):
+            print("Error: --options-json must decode to a JSON object")
+            sys.exit(1)
+
+    try:
+        from src.questionnaire_renderer import render_questionnaire_docx
+    except ImportError:
+        print(
+            "Error: python-docx is not installed. Install it with: pip install python-docx"
+        )
+        sys.exit(1)
+
+    try:
+        buf = render_questionnaire_docx(
+            template,
+            language=str(getattr(args, "language", "en") or "en"),
+            variant_id=getattr(args, "variant_id", None) or None,
+            options=options,
+        )
+    except Exception as exc:
+        print(f"Error: {exc}")
+        sys.exit(1)
+
+    output_path = Path(args.output).resolve()
+    output_path.write_bytes(buf.getvalue())
+    print(f"✅ Questionnaire Word document written: {output_path}")

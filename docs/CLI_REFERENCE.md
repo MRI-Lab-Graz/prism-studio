@@ -119,6 +119,15 @@ python prism_tools.py recipes surveys --prism /path/to/dataset --format prism
 python prism_tools.py recipes biometrics --prism /path/to/dataset --format xlsx
 ```
 
+**`recipes validate-file`** — validate a recipe JSON file's structure on its own,
+without running a scoring job. Matches the validation Studio's Recipe Builder
+"Save" action uses; pass `--known-items-from` a matched template to also catch
+typo'd item IDs in `Scores`/`Transforms`:
+
+```bash
+python prism_tools.py recipes validate-file recipe-ads.json --known-items-from survey-ads.json
+```
+
 **`library`** — maintain the PRISM library:
 
 ```bash
@@ -126,6 +135,17 @@ python prism_tools.py library generate-methods-text --output methods.md --lang e
 python prism_tools.py library fill --modality survey --path library/survey/
 python prism_tools.py library sync --modality biometrics --path library/biometrics/
 python prism_tools.py library catalog --input library/survey --output catalog.csv
+```
+
+**`library template-save`** / **`template-delete`** — validate-and-save or delete a
+single template in a project's own `code/library/<modality>/` folder, the CLI
+equivalents of Studio's Template Editor Save/Delete actions:
+
+```bash
+python prism_tools.py library template-save --project /path/to/project \
+  --modality survey --filename survey-mytask.json --template mytask.json
+python prism_tools.py library template-delete --project /path/to/project \
+  --modality survey --filename survey-mytask.json --yes
 ```
 
 The generated Methods boilerplate summarizes richer schema metadata (DOIs, licenses,
@@ -147,6 +167,21 @@ python prism_tools.py survey convert --input survey_export.xlsx --output /tmp/my
 `survey convert` key options: `--library` (template folder), `--lang` (i18n
 language, `de` default / `auto` for `.lsa`), `--unknown {error,warn,ignore}`
 (unmapped columns), `--dry-run`, `--force`.
+
+**`survey export-lss`** / **`export-lss-customized`** / **`export-questionnaire-docx`**
+— export template(s) to a LimeSurvey `.lss` file, export a Survey Customizer-style
+customization JSON to `.lss`, or render a template as a paper-pencil Word
+questionnaire. CLI equivalents of Studio's Survey Generator "Quick Export", Survey
+Customizer "Export", and the "Export Word" action shared by Template Editor and
+Survey Customizer:
+
+```bash
+python prism_tools.py survey export-lss library/survey/survey-gad7.json --output gad7.lss
+python prism_tools.py survey export-lss-customized \
+  --customization-json my_customization.json --output custom.lss
+python prism_tools.py survey export-questionnaire-docx \
+  --template library/survey/survey-gad7.json --output gad7.docx
+```
 
 **`survey import-limesurvey`** / **`survey import-limesurvey-batch`**:
 
@@ -215,6 +250,14 @@ python prism_tools.py participants merge --input /absolute/path/to/T1.xlsx --id-
 
 # Save a reusable mapping (preferred target: <project>/code/library)
 python prism_tools.py participants save-mapping --mapping-json '{"participant_id": {"source_column": "ID"}}' --project /absolute/path/to/my-project/project.json
+
+# Fetch the Neurobagel vocabulary + sample local participants.tsv columns,
+# to inform building a --neurobagel-schema payload for convert/merge/save-mapping
+python prism_tools.py participants neurobagel-schema --project /absolute/path/to/my-project --json
+
+# Save a participants.json schema (canonicalizes participant-ID-like fields).
+# Matches Studio's Neurobagel widget "Save Annotations" action.
+python prism_tools.py participants save-schema --project /absolute/path/to/my-project --schema-json schema.json
 ```
 
 ### Environment
@@ -228,6 +271,17 @@ python prism_tools.py environment preview --input /absolute/path/to/environment.
 python prism_tools.py environment convert \
   --input /absolute/path/to/environment.xlsx \
   --project /absolute/path/to/my-project --timestamp-col collected_at
+```
+
+**`environment scan-mri`** — scan a project's rawdata for MRI acquisition
+timestamps/scanner-site location from existing BIDS JSON sidecars, writing a TSV
+usable with `environment convert --input`. Matches the Studio GUI's
+Environment/MRI tab "Scan Project MRI Data" action:
+
+```bash
+python prism_tools.py environment scan-mri --project /path/to/project --output mri_scan.tsv
+python prism_tools.py environment convert --input mri_scan.tsv --project /path/to/project \
+  --timestamp-col timestamp
 ```
 
 ### Physio and eyetracking
@@ -277,21 +331,49 @@ python prism.py merge-versions survey-bdi.json bdi_long.xlsx --dry-run          
 ### Dataset utilities, anonymize, and export
 
 **`dataset build-hostile-demo`** / **`cleanup-project-metadata`** /
-**`rename-subjects`**: build an adversarial test dataset, remove legacy
-converter-written session metadata, or rename subject IDs (DataLad-aware, one commit
-per subject). Less common maintenance operations — run
-`python prism_tools.py dataset <action> --help` for full flags.
+**`rename-subjects`** / **`rewrite-entities`**: build an adversarial test dataset,
+remove legacy converter-written session metadata, rename subject IDs, or
+rename/delete a non-subject BIDS entity (task/acq/run/ses/etc.) — both rewrites are
+DataLad-aware (one commit per subject where tracked). Less common maintenance
+operations — run `python prism_tools.py dataset <action> --help` for full flags.
 
 ```bash
 python prism_tools.py dataset build-hostile-demo --output /tmp/prism_hostile_demo
 python prism_tools.py dataset cleanup-project-metadata --project /path/to/project
 python prism_tools.py dataset rename-subjects --project /path/to/project --mode last3 --dry-run
+python prism_tools.py dataset rewrite-entities --project /path/to/project --list-modalities
+python prism_tools.py dataset rewrite-entities --project /path/to/project \
+  --modality func --entity task --replacement rest --dry-run
 ```
 
 **`anonymize`** — randomize participant IDs and/or mask copyrighted question text,
 the CLI equivalent of Studio's Standard Export anonymization (see
-[Export](studio/export.md)). Distinct from `recipes`' `--anonymized` flag, which only
-affects the output subfolder name.
+[Export](studio/export.md)). `recipes surveys/biometrics --anonymized` does the
+same participant-ID pseudonymization scoped to that command's output (plus
+`--mask-questions`/`--id-length`/`--random-ids`); `anonymize` operates on a whole
+dataset copy instead.
+
+**`file-management delete-files`** / **`remove-scans-tsv`** / **`rename-physio`** —
+preview or delete project files matching BIDS entity filters, delete every
+`*_scans.tsv` file across a project (DataLad-aware where applicable), or
+regex-rename a folder of physio/eyetracking files (with optional
+`{subject}`/`{session}` folder-path placeholders and BIDS-organized output) —
+the CLI equivalents of Studio's File Management -> Delete Files / "Delete all
+scans.tsv" / Physio Renamer actions. Also runnable as `prism.py
+file-management ...` (delegates into the same `prism_tools.py` command tree,
+like `wide-to-long`).
+
+```bash
+python prism_tools.py file-management delete-files --project /path/to/project \
+  --modality func --entity-filter task=RS                # preview only
+python prism_tools.py file-management delete-files --project /path/to/project \
+  --modality func --entity-filter task=RS --apply --yes   # actually delete
+python prism_tools.py file-management remove-scans-tsv --project /path/to/project --yes
+python prism_tools.py file-management rename-physio --input /path/to/raw \
+  --pattern '^VP_' --replacement 'clean_'                 # preview only
+python prism_tools.py file-management rename-physio --input /path/to/raw \
+  --output /path/to/renamed --pattern '^VP_' --replacement 'clean_' --apply
+```
 
 ```bash
 python prism_tools.py anonymize --dataset /path/to/project --output /path/to/project_anonymized --random --mask-questions
@@ -308,6 +390,17 @@ python prism_tools.py template-export --project /path/to/project --output /path/
 
 ```bash
 python prism_tools.py demo create --output archive/prism_demo_copy
+```
+
+### JSON Editor
+
+**`json-editor save`** — save a BIDS sidecar JSON file (`dataset_description`,
+`participants`, `samples`, or `task-<name>`) into a project, with the same
+post-save validation the Studio GUI's JSON Editor "Save to Project" action runs:
+
+```bash
+python prism_tools.py json-editor save --project /path/to/project \
+  --type participants --file participants.json
 ```
 
 ## Scripts in `scripts/`

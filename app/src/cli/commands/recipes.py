@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
 from src.config import get_effective_library_paths
-from src.recipes_surveys import compute_survey_recipes
+from src.recipe_validation import validate_recipe
+from src.recipes_surveys import anonymize_recipe_output, compute_survey_recipes
 
 _APP_ROOT = Path(__file__).resolve().parents[3]
 
@@ -53,6 +55,40 @@ def run_recipes_job(
         missing_policy=missing_policy,
         missing_numeric_value=missing_numeric_value,
     )
+
+
+def _run_anonymization_if_requested(args, *, prism_root: Path, result) -> None:
+    """Anonymize recipe output when --anonymized was passed.
+
+    Shared by cmd_recipes_surveys/cmd_recipes_biometrics so the CLI's
+    --anonymized flag anonymizes participant IDs the same way the Studio
+    GUI's Recipes page "Anonymize" option does, instead of only renaming
+    the output folder (see docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md,
+    P1-3).
+    """
+    if not bool(getattr(args, "anonymized", False)):
+        return
+
+    mask_questions = bool(getattr(args, "mask_questions", False))
+    id_length = int(getattr(args, "id_length", 8) or 8)
+    random_ids = bool(getattr(args, "random_ids", False))
+
+    try:
+        anonymized_count, mapping_file_path = anonymize_recipe_output(
+            dataset_path=prism_root,
+            out_root=result.out_root,
+            out_format=result.out_format,
+            id_length=id_length,
+            random_ids=random_ids,
+            mask_questions=mask_questions,
+        )
+    except Exception as e:
+        print(f"❌ Anonymization failed: {e}")
+        sys.exit(1)
+
+    print(f"🔒 Anonymized {anonymized_count} file(s); mapping: {mapping_file_path}")
+    if mask_questions:
+        print("🔒 Masked question/item text columns")
 
 
 def cmd_recipes_surveys(args):
@@ -123,6 +159,7 @@ def cmd_recipes_surveys(args):
         print(
             f"✅ Survey recipe scoring complete: {result.written_files} file(s) written"
         )
+        _run_anonymization_if_requested(args, prism_root=prism_root, result=result)
         if result.flat_out_path:
             print(f"   Flat output: {result.flat_out_path}")
         if result.fallback_note:
@@ -222,6 +259,7 @@ def cmd_recipes_biometrics(args):
         print(
             f"✅ Biometric recipe scoring complete: {result.written_files} file(s) written"
         )
+        _run_anonymization_if_requested(args, prism_root=prism_root, result=result)
         if result.flat_out_path:
             print(f"   Flat output: {result.flat_out_path}")
         if result.fallback_note:
@@ -234,3 +272,60 @@ def cmd_recipes_biometrics(args):
     except Exception as e:
         print(f"❌ Error: {e}")
         sys.exit(1)
+
+
+def cmd_recipes_validate_file(args) -> None:
+    """Validate a hand-authored (or Recipe Builder-exported) recipe JSON
+    file without running a full scoring job — the same
+    src.recipe_validation.validate_recipe check `recipes surveys`/
+    `recipes biometrics` run internally, and the Studio GUI's Recipe
+    Builder "Save" action already uses. See
+    docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md, P2 (Recipe Builder):
+    the interactive item-picking/reordering UI is client-side form state,
+    not business logic, but there was no CLI way to pre-flight-check a
+    recipe file's validity on its own."""
+    recipe_path = Path(args.recipe).resolve()
+    if not recipe_path.exists():
+        print(f"Error: recipe file not found: {recipe_path}")
+        sys.exit(1)
+
+    try:
+        recipe = json.loads(recipe_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        print(f"Error: {recipe_path} is not valid JSON: {exc}")
+        sys.exit(1)
+
+    known_items = None
+    known_items_from = getattr(args, "known_items_from", None)
+    if known_items_from:
+        template_path = Path(known_items_from).resolve()
+        if not template_path.exists():
+            print(f"Error: --known-items-from not found: {template_path}")
+            sys.exit(1)
+        try:
+            template = json.loads(template_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            print(f"Error: --known-items-from is not valid JSON: {exc}")
+            sys.exit(1)
+
+        from src.survey_scale_inference import get_survey_item_map
+
+        known_items = set(get_survey_item_map(template).keys())
+
+    recipe_id = getattr(args, "recipe_id", None) or recipe_path.stem
+
+    errors = validate_recipe(recipe, recipe_id=recipe_id, known_items=known_items)
+
+    if getattr(args, "json", False):
+        print(json.dumps({"success": not errors, "errors": errors}, indent=2))
+        if errors:
+            sys.exit(1)
+        return
+
+    if errors:
+        print(f"❌ {len(errors)} validation error(s):")
+        for error in errors:
+            print(f"  - {error}")
+        sys.exit(1)
+
+    print(f"✅ {recipe_path} is a valid recipe.")

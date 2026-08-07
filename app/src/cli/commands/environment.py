@@ -275,3 +275,62 @@ def cmd_environment_convert(args) -> None:
 
     if exit_code != 0:
         sys.exit(exit_code)
+
+
+def cmd_environment_scan_mri(args) -> None:
+    """Scan a project's rawdata for MRI acquisition timestamps and
+    scanner-site location tags, writing a TSV that can be fed straight
+    into `environment convert --input`. The CLI equivalent of the Studio
+    GUI's Environment/MRI tab "Scan Project MRI Data" action."""
+    from src.web.blueprints.conversion_environment_mri_scan_helpers import (
+        build_mri_acquisition_table,
+        resolve_bids_rawdata_root,
+    )
+
+    as_json = bool(getattr(args, "json", False))
+    project_root = Path(args.project).expanduser().resolve()
+    if not project_root.is_dir():
+        message = f"--project is not a directory: {project_root}"
+        if as_json:
+            _emit_json({"success": False, "error": message})
+        else:
+            print(f"Error: {message}")
+        sys.exit(1)
+
+    df, stats = build_mri_acquisition_table(resolve_bids_rawdata_root(project_root))
+    if df.empty:
+        message = "No MRI acquisition timestamps found in this project's rawdata."
+        if as_json:
+            _emit_json({"success": False, "error": message, "stats": stats})
+        else:
+            print(f"Error: {message}")
+        sys.exit(1)
+
+    output_path = Path(args.output).expanduser().resolve()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(output_path, sep="\t", index=False)
+
+    if as_json:
+        _emit_json(
+            {
+                "success": True,
+                "output": str(output_path),
+                "row_count": int(len(df)),
+                "stats": stats,
+            }
+        )
+        return
+
+    print(f"✅ Wrote {len(df)} row(s) to {output_path}")
+    print(
+        f"   Subjects found: {stats.get('subjects_found', 0)}, "
+        f"with timestamp: {stats.get('rows_with_timestamp', 0)}, "
+        f"with location: {stats.get('rows_with_location', 0)}"
+    )
+    if stats.get("subjects_missing_timestamp"):
+        missing = ", ".join(stats["subjects_missing_timestamp"])
+        print(f"   ⚠ Missing timestamp: {missing}")
+    print(
+        f"   Next: python prism_tools.py environment convert --input {output_path} "
+        "--output-tsv <dataset>/environment.tsv ..."
+    )

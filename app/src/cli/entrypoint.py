@@ -24,28 +24,47 @@ from src.cli.commands.dataset import (
     cmd_dataset_build_biometrics_smoketest,
     cmd_dataset_cleanup_project_metadata,
     cmd_dataset_rename_subjects,
+    cmd_dataset_rewrite_entities,
 )
+from src.cli.commands.file_management import (
+    cmd_file_management_delete_files,
+    cmd_file_management_remove_scans_tsv,
+    cmd_file_management_rename_physio,
+)
+from src.cli.commands.json_editor import cmd_json_editor_save
 from src.cli.commands.hostile_demo import cmd_dataset_build_hostile_demo
 from src.cli.commands.environment import (
     cmd_environment_convert,
     cmd_environment_preview,
+    cmd_environment_scan_mri,
 )
 from src.cli.commands.library import (
     cmd_library_catalog,
     cmd_library_fill,
     cmd_library_generate_methods_text,
     cmd_library_sync,
+    cmd_library_template_delete,
+    cmd_library_template_save,
 )
 from src.cli.commands.participants import (
     cmd_participants_convert,
     cmd_participants_detect_id,
     cmd_participants_merge,
+    cmd_participants_neurobagel_schema,
     cmd_participants_preview,
     cmd_participants_save_mapping,
+    cmd_participants_save_schema,
 )
-from src.cli.commands.recipes import cmd_recipes_biometrics, cmd_recipes_surveys
+from src.cli.commands.recipes import (
+    cmd_recipes_biometrics,
+    cmd_recipes_surveys,
+    cmd_recipes_validate_file,
+)
 from src.cli.commands.survey import (
     cmd_survey_convert,
+    cmd_survey_export_lss,
+    cmd_survey_export_lss_customized,
+    cmd_survey_export_questionnaire_docx,
     cmd_survey_i18n_autotranslate,
     cmd_survey_i18n_build,
     cmd_survey_i18n_migrate,
@@ -94,6 +113,9 @@ def main() -> None:
             "survey_import_excel": cmd_survey_import_excel,
             "survey_convert": cmd_survey_convert,
             "survey_validate": cmd_survey_validate,
+            "survey_export_lss": cmd_survey_export_lss,
+            "survey_export_lss_customized": cmd_survey_export_lss_customized,
+            "survey_export_questionnaire_docx": cmd_survey_export_questionnaire_docx,
             "survey_import_limesurvey": cmd_survey_import_limesurvey,
             "survey_import_limesurvey_batch": cmd_survey_import_limesurvey_batch,
             "survey_i18n_migrate": cmd_survey_i18n_migrate,
@@ -104,8 +126,11 @@ def main() -> None:
             "participants_convert": cmd_participants_convert,
             "participants_merge": cmd_participants_merge,
             "participants_save_mapping": cmd_participants_save_mapping,
+            "participants_neurobagel_schema": cmd_participants_neurobagel_schema,
+            "participants_save_schema": cmd_participants_save_schema,
             "environment_preview": cmd_environment_preview,
             "environment_convert": cmd_environment_convert,
+            "environment_scan_mri": cmd_environment_scan_mri,
             "biometrics_detect": cmd_biometrics_detect,
             "biometrics_convert": cmd_biometrics_convert,
             "biometrics_import_excel": cmd_biometrics_import_excel,
@@ -114,12 +139,20 @@ def main() -> None:
             "library_sync": cmd_library_sync,
             "library_catalog": cmd_library_catalog,
             "library_fill": cmd_library_fill,
+            "library_template_save": cmd_library_template_save,
+            "library_template_delete": cmd_library_template_delete,
             "dataset_build_biometrics_smoketest": cmd_dataset_build_biometrics_smoketest,
             "dataset_cleanup_project_metadata": cmd_dataset_cleanup_project_metadata,
             "dataset_rename_subjects": cmd_dataset_rename_subjects,
+            "dataset_rewrite_entities": cmd_dataset_rewrite_entities,
+            "file_management_delete_files": cmd_file_management_delete_files,
+            "file_management_remove_scans_tsv": cmd_file_management_remove_scans_tsv,
+            "file_management_rename_physio": cmd_file_management_rename_physio,
+            "json_editor_save": cmd_json_editor_save,
             "dataset_build_hostile_demo": cmd_dataset_build_hostile_demo,
             "recipes_surveys": cmd_recipes_surveys,
             "recipes_biometrics": cmd_recipes_biometrics,
+            "recipes_validate_file": cmd_recipes_validate_file,
         },
     )
 

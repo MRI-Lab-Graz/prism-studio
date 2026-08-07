@@ -16,9 +16,11 @@ from src.maintenance.project_metadata_cleanup import (
     cleanup_project_metadata,
     cleanup_project_metadata_tree,
 )
+from src.bids_entity_rewriter import BidsEntityRewriter
 from src.repo_rewrite_datalad_runner import (
     RewriteCancelledError,
     TrackedRewriteError,
+    apply_entity_rewrite,
     apply_subject_rewrite,
 )
 from src.subject_code_rewriter import SubjectCodeRewriter
@@ -142,6 +144,160 @@ def cmd_dataset_rename_subjects(args) -> None:
             f"Done: {result.get('mapping_count', 0)} subject mapping(s), "
             f"{result.get('directory_rename_count', 0)} folder rename(s), "
             f"{result.get('file_rename_count', 0)} filename rename(s) applied."
+        )
+
+
+def cmd_dataset_rewrite_entities(args) -> None:
+    """Rename or delete a non-subject BIDS entity (task/acq/run/ses/etc.)
+    across a dataset's filenames — DataLad-aware, mirroring the Studio
+    GUI's File Management -> "Edit BIDS Filename Parts" action (previously
+    only reachable from the GUI; see
+    docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md, P1-7). Renaming the
+    `sub` entity is intentionally not supported here — use `dataset
+    rename-subjects` for that."""
+    as_json = bool(getattr(args, "json", False))
+    project_root = Path(args.project).resolve()
+    rewriter = BidsEntityRewriter(project_root)
+
+    if getattr(args, "list_modalities", False):
+        modalities = rewriter.list_modalities()
+        if as_json:
+            print(json.dumps({"success": True, "available_modalities": modalities}, indent=2))
+        else:
+            print("Available modalities:")
+            for modality in modalities:
+                print(f"  - {modality}")
+        return
+
+    if getattr(args, "list_entities", False):
+        if not args.modality:
+            print("Error: --modality is required with --list-entities")
+            sys.exit(1)
+        entities = rewriter.list_entities(args.modality)
+        entity_values = rewriter.list_entity_values(args.modality)
+        if as_json:
+            print(
+                json.dumps(
+                    {
+                        "success": True,
+                        "modality": args.modality,
+                        "available_entities": entities,
+                        "entity_values": entity_values,
+                    },
+                    indent=2,
+                )
+            )
+        else:
+            print(f"Available entities for modality '{args.modality}':")
+            for entity in entities:
+                values = entity_values.get(f"_{entity}", [])
+                print(f"  - _{entity}: {', '.join(values) if values else '(no values found)'}")
+        return
+
+    if not args.modality or not args.entity:
+        print("Error: --modality and --entity are required (or use --list-modalities/--list-entities)")
+        sys.exit(1)
+
+    try:
+        preview = rewriter.preview(
+            modality=args.modality,
+            entity=args.entity,
+            operation=args.operation,
+            current_value=args.current_value,
+            replacement=args.replacement,
+        )
+    except ValueError as error:
+        if as_json:
+            print(json.dumps({"success": False, "error": str(error)}, indent=2))
+        else:
+            print(f"Error: {error}")
+        sys.exit(1)
+
+    if preview.get("conflicts"):
+        if as_json:
+            print(json.dumps({"success": False, **preview}, indent=2))
+        else:
+            print("Cannot proceed — conflicts detected:")
+            for conflict in preview["conflicts"]:
+                print(f"  - {conflict}")
+        sys.exit(1)
+
+    rename_count = int(preview.get("rename_count") or 0)
+    if rename_count == 0:
+        if as_json:
+            print(json.dumps({"success": True, "applied": False, **preview}, indent=2))
+        else:
+            print(f"No files match {preview.get('entity')} in {project_root}.")
+        return
+
+    if not as_json:
+        print(
+            f"{rename_count} filename rename(s), "
+            f"{preview.get('text_update_count', 0)} metadata text update(s)."
+        )
+
+    if getattr(args, "dry_run", False):
+        if as_json:
+            print(json.dumps({"success": True, "applied": False, **preview}, indent=2))
+        else:
+            print("Dry run — no changes applied. Renames:")
+            for entry in preview.get("renames", []):
+                print(f"  {entry['from']} -> {entry['to']}")
+        return
+
+    if not getattr(args, "yes", False) and not as_json:
+        confirmation = (
+            input(
+                f"Apply this rewrite to {rename_count} file(s) in {project_root}? [y/N] "
+            )
+            .strip()
+            .lower()
+        )
+        if confirmation not in {"y", "yes"}:
+            print("Aborted.")
+            return
+
+    def on_log(message: str, level: str) -> None:
+        if as_json:
+            return
+        prefix = _REWRITE_LOG_PREFIXES.get(level, " ")
+        print(f"{prefix} {message}")
+
+    try:
+        result = apply_entity_rewrite(
+            project_root,
+            modality=args.modality,
+            entity=args.entity,
+            operation=args.operation,
+            current_value=args.current_value,
+            replacement=args.replacement,
+            on_log=on_log,
+        )
+    except RewriteCancelledError as error:
+        if as_json:
+            print(json.dumps({"success": False, "cancelled": True, "error": str(error)}, indent=2))
+        else:
+            print(f"Cancelled: {error}")
+        sys.exit(130)
+    except TrackedRewriteError as error:
+        if as_json:
+            print(json.dumps({"success": False, "error": str(error), "log": error.log}, indent=2))
+        else:
+            print(f"Error: {error}")
+        sys.exit(1)
+    except ValueError as error:
+        if as_json:
+            print(json.dumps({"success": False, "error": str(error)}, indent=2))
+        else:
+            print(f"Error: {error}")
+        sys.exit(1)
+
+    if as_json:
+        print(json.dumps({"success": True, **result}, indent=2))
+    else:
+        print(
+            f"Done: {result.get('rename_count', 0)} filename rename(s), "
+            f"{result.get('text_update_count', 0)} metadata text update(s) applied."
         )
 
 

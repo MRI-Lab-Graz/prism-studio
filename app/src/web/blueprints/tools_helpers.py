@@ -4,7 +4,10 @@ from pathlib import Path
 from typing import Any, cast
 
 from flask import current_app
-from src.converters.survey_io import normalize_paper_software_platform
+from src.prism_template_validation import (
+    strip_template_editor_internal_keys as _strip_template_editor_internal_keys,
+    validate_template_against_schema as _validate_against_schema,
+)
 
 
 def _default_library_root_for_templates(*, modality: str) -> Path:
@@ -297,45 +300,3 @@ def _new_template_from_schema(*, modality: str, schema_version: str | None) -> d
     return out
 
 
-def _validate_against_schema(*, instance: object, schema: dict) -> list[dict]:
-    from jsonschema import Draft7Validator
-
-    normalized_instance = normalize_paper_software_platform(instance)
-
-    validator = Draft7Validator(schema)
-    errors = []
-    for err in sorted(validator.iter_errors(normalized_instance), key=lambda e: list(e.path)):
-        path = "/".join(str(p) for p in err.path)
-        errors.append({"path": path, "message": err.message})
-
-    if isinstance(normalized_instance, dict) and "Technical" in normalized_instance:
-        technical = normalized_instance["Technical"]
-        if isinstance(technical, dict):
-            admin_method = str(technical.get("AdministrationMethod", "")).strip().lower()
-            platform = str(technical.get("SoftwarePlatform", "")).strip()
-            version = str(technical.get("SoftwareVersion", "")).strip()
-            if (
-                admin_method != "paper"
-                and platform
-                and platform != "Paper and Pencil"
-                and not version
-            ):
-                errors.append(
-                    {
-                        "path": "Technical/SoftwareVersion",
-                        "message": f"SoftwareVersion is required when SoftwarePlatform is '{platform}'",
-                    }
-                )
-
-    return errors
-
-
-def _strip_template_editor_internal_keys(template: dict) -> dict:
-    """Remove editor-internal metadata keys that are not part of PRISM schemas."""
-    if not isinstance(template, dict):
-        return template
-
-    cleaned = dict(template)
-    cleaned.pop("_aliases", None)
-    cleaned.pop("_reverse_aliases", None)
-    return cleaned
