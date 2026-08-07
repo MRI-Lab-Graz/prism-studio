@@ -1226,6 +1226,112 @@ def build_prism_tools_parsers(
         "--library", default="survey_library", help="Path to survey library"
     )
 
+    parser_survey_export_lss = survey_subparsers.add_parser(
+        "export-lss",
+        help="Export PRISM survey template JSON file(s) to a LimeSurvey .lss file. "
+        "Matches the Studio GUI's Survey Generator 'Quick Export' action.",
+    )
+    parser_survey_export_lss.add_argument(
+        "files", nargs="+", help="One or more PRISM survey template JSON files"
+    )
+    parser_survey_export_lss.add_argument(
+        "--output", required=True, help="Path to write the .lss file"
+    )
+    parser_survey_export_lss.add_argument(
+        "--language", default="en", help="Primary export language (default: en)"
+    )
+    parser_survey_export_lss.add_argument(
+        "--languages",
+        default=None,
+        help="Comma-separated language codes to include (default: --language only)",
+    )
+    parser_survey_export_lss.add_argument(
+        "--base-language",
+        default=None,
+        help="Base language code (default: --language)",
+    )
+    parser_survey_export_lss.add_argument(
+        "--ls-version",
+        default="3",
+        choices=["3", "6"],
+        help="Target LimeSurvey version (default: 3)",
+    )
+
+    parser_survey_export_lss_customized = survey_subparsers.add_parser(
+        "export-lss-customized",
+        help="Export a Survey Customizer-style customization JSON to a LimeSurvey "
+        ".lss file. Matches the Studio GUI's Survey Customizer 'Export' action.",
+    )
+    parser_survey_export_lss_customized.add_argument(
+        "--customization-json",
+        required=True,
+        help="Path to a customization JSON file (the 'groups' structure produced by "
+        "the Survey Customizer's own 'Preview/Copy JSON' action)",
+    )
+    parser_survey_export_lss_customized.add_argument(
+        "--output", required=True, help="Path to write the .lss file"
+    )
+    parser_survey_export_lss_customized.add_argument(
+        "--language", default="en", help="Primary export language (default: en)"
+    )
+    parser_survey_export_lss_customized.add_argument(
+        "--languages",
+        default=None,
+        help="Comma-separated language codes to include (default: --language only)",
+    )
+    parser_survey_export_lss_customized.add_argument(
+        "--base-language",
+        default=None,
+        help="Base language code (default: --language)",
+    )
+    parser_survey_export_lss_customized.add_argument(
+        "--ls-version",
+        default="6",
+        choices=["3", "6"],
+        help="Target LimeSurvey version (default: 6)",
+    )
+    parser_survey_export_lss_customized.add_argument(
+        "--survey-title",
+        default=None,
+        help="Override survey title (default: from customization JSON, if present)",
+    )
+    parser_survey_export_lss_customized.add_argument(
+        "--no-matrix",
+        action="store_true",
+        help="Disable grouping identical-option questions into matrices",
+    )
+    parser_survey_export_lss_customized.add_argument(
+        "--no-matrix-global",
+        action="store_true",
+        help="Only matrix-group consecutive questions, not all identical-option ones",
+    )
+
+    parser_survey_export_questionnaire_docx = survey_subparsers.add_parser(
+        "export-questionnaire-docx",
+        help="Render a PRISM survey template as a paper-pencil Word (.docx) "
+        "questionnaire. Matches the 'Export Word' action shared by the Studio "
+        "GUI's Template Editor and Survey Customizer pages.",
+    )
+    parser_survey_export_questionnaire_docx.add_argument(
+        "--template", required=True, help="Path to a PRISM survey template JSON file"
+    )
+    parser_survey_export_questionnaire_docx.add_argument(
+        "--output", required=True, help="Path to write the .docx file"
+    )
+    parser_survey_export_questionnaire_docx.add_argument(
+        "--language", default="en", help="Export language (default: en)"
+    )
+    parser_survey_export_questionnaire_docx.add_argument(
+        "--variant-id", default=None, help="Optional VariantID to render (default: all)"
+    )
+    parser_survey_export_questionnaire_docx.add_argument(
+        "--options-json",
+        default=None,
+        help="Rendering options as a JSON file path or inline JSON string (e.g. "
+        '\'{"show_item_codes": true, "font_size": 11}\'). See '
+        "render_questionnaire_docx's docstring for available keys.",
+    )
+
     parser_survey_limesurvey = survey_subparsers.add_parser(
         "import-limesurvey", help="Import LimeSurvey structure"
     )

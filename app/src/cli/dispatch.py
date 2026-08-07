@@ -77,6 +77,12 @@ def dispatch_prism_tools(
             handlers["survey_convert"](args)
         elif args.action == "validate":
             handlers["survey_validate"](args)
+        elif args.action == "export-lss":
+            handlers["survey_export_lss"](args)
+        elif args.action == "export-lss-customized":
+            handlers["survey_export_lss_customized"](args)
+        elif args.action == "export-questionnaire-docx":
+            handlers["survey_export_questionnaire_docx"](args)
         elif args.action == "import-limesurvey":
             handlers["survey_import_limesurvey"](args)
         elif args.action == "import-limesurvey-batch":
