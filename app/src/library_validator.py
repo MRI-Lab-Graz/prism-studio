@@ -54,6 +54,9 @@ def check_uniqueness(library_path):
     try:
         from .schema_manager import load_schema
         from jsonschema import validate, ValidationError
+        from src.survey_template_normalization import (
+            normalize_survey_template_for_validation,
+        )
 
         print("\nChecking schema compliance...")
         survey_schema = load_schema("survey", version="stable")
@@ -68,14 +71,19 @@ def check_uniqueness(library_path):
             ):
                 continue
 
-            schema = (
-                survey_schema
-                if file_path.name.startswith("survey-")
-                else biometrics_schema
-            )
+            is_survey = file_path.name.startswith("survey-")
+            schema = survey_schema if is_survey else biometrics_schema
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
+                if is_survey:
+                    # Match the Studio Template Editor's Validate/Save
+                    # pipeline so a template can't pass in the GUI and then
+                    # fail here for reasons the GUI already normalizes away
+                    # (implicit numeric level ranges, single-version
+                    # VariantID autofill, paper/software platform mapping)
+                    # — see docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md, P1-4.
+                    data = normalize_survey_template_for_validation(data)
                 validate(instance=data, schema=schema)
             except ValidationError as e:
                 print(f"❌ Schema error in {file_path.name}: {e.message}")
