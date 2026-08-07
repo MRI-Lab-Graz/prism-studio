@@ -250,6 +250,10 @@ python prism_tools.py participants merge --input /absolute/path/to/T1.xlsx --id-
 
 # Save a reusable mapping (preferred target: <project>/code/library)
 python prism_tools.py participants save-mapping --mapping-json '{"participant_id": {"source_column": "ID"}}' --project /absolute/path/to/my-project/project.json
+
+# Fetch the Neurobagel vocabulary + sample local participants.tsv columns,
+# to inform building a --neurobagel-schema payload for convert/merge/save-mapping
+python prism_tools.py participants neurobagel-schema --project /absolute/path/to/my-project --json
 ```
 
 ### Environment
