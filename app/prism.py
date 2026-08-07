@@ -60,6 +60,8 @@ try:
         build_validation_report,
     )
     from config import load_config, merge_cli_args, find_config_file
+    from src.validation_library_resolution import default_validation_library_path
+    from derivatives.participants_mapping import apply_participants_mapping
     from fixer import DatasetFixer, get_fixable_issues
     from formatters import format_output
     from plugins import (
@@ -227,6 +229,57 @@ Examples:
     print(f"\n✅ Merged template saved to: {output_path}")
     versions = merged.get("Study", {}).get("Versions", [])
     print(f"   Versions: {versions}")
+
+
+def apply_participants_mapping_before_validation(
+    dataset_path: str, *, machine_output: bool
+) -> dict | None:
+    """Auto-apply a previously-saved participants_mapping.json, if present.
+
+    Mirrors the Studio GUI's Validate Dataset page, which has always done
+    this before running the core validator. This mutates participants.tsv,
+    so the result is printed (never left silent) unless machine_output is
+    set, matching how the GUI surfaces it on the results page instead of
+    hiding it. See docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md, P1-5.
+
+    Returns the mapping result dict (or None on failure/no-op).
+    """
+    try:
+        mapping_result = apply_participants_mapping(dataset_path)
+    except Exception as e:
+        if not machine_output:
+            print(f"⚠️  Could not apply participants mapping: {e}")
+        return None
+
+    if mapping_result and mapping_result.get("applied") and not machine_output:
+        print(
+            f"🔄 Applied participants mapping from {mapping_result.get('mapping_file')} "
+            f"({mapping_result.get('rows')} row(s) updated in participants.tsv)"
+        )
+    return mapping_result
+
+
+def resolve_effective_library_path(
+    requested_library_path: str | None, dataset_path: str, *, machine_output: bool
+) -> str | None:
+    """Resolve the template library to validate against.
+
+    Returns the explicit --library value unchanged when given; otherwise
+    resolves the same default the GUI's Validate Dataset page uses instead
+    of leaving library_path=None (which falls back to a much narrower
+    sidecar search in the validator). See
+    docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md, P1-6.
+    """
+    if requested_library_path:
+        return requested_library_path
+
+    app_root = os.path.dirname(os.path.abspath(__file__))
+    library_path = default_validation_library_path(
+        app_root, project_path=dataset_path
+    )
+    if not machine_output:
+        print(f"📚 Using template library: {library_path}")
+    return library_path
 
 
 def main():  # noqa: C901
@@ -587,11 +640,21 @@ Examples:
     # Use config values (CLI args already merged and take precedence)
     schema_version = config.schema_version
     run_bids = config.run_bids
+    run_prism = not args.no_prism
 
     if not machine_output:
         print(f"🔍 Validating dataset: {args.dataset}")
         if schema_version != "stable":
             print(f"📋 Using schema version: {schema_version}")
+
+    if run_prism:
+        apply_participants_mapping_before_validation(
+            args.dataset, machine_output=machine_output
+        )
+
+    library_path = resolve_effective_library_path(
+        args.library, args.dataset, machine_output=machine_output
+    )
 
     try:
         issues, stats = validate_dataset(
@@ -599,8 +662,8 @@ Examples:
             verbose=args.verbose and not machine_output,
             schema_version=schema_version,
             run_bids=run_bids,
-            run_prism=not args.no_prism,
-            library_path=args.library,
+            run_prism=run_prism,
+            library_path=library_path,
         )
 
         # Convert legacy tuples to Issue objects for structured output
