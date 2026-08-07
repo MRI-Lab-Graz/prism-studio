@@ -28,6 +28,18 @@ from .conversion_utils import (
 )
 from src.web.services.project_registration import register_session_in_project
 from src.datalad_project_copy import copy_files_into_project
+from src.physio_renamer import (
+    apply_folder_placeholders as _apply_folder_placeholders,
+    extract_subject_session_from_source_path as _extract_subject_session_from_source_path,
+    normalize_project_dest_root as _normalize_project_dest_root,
+    normalize_subject_rewrite_mode as _normalize_subject_rewrite_mode,
+    resolve_project_copy_root as _resolve_project_copy_root,
+    rewrite_subject_in_filename as _rewrite_subject_in_filename,
+    rewrite_subject_in_relative_path as _rewrite_subject_in_relative_path,
+    rewrite_subject_label as _rewrite_subject_label,
+    sanitize_bids_label as _sanitize_bids_label,
+    should_use_flat_project_copy as _should_use_flat_project_copy,
+)
 
 # Optional dependencies
 convert_varioport: Any = None
@@ -44,90 +56,11 @@ _batch_jobs_lock = _batch_job_store.lock
 _batch_jobs = _batch_job_store.jobs
 
 
-def _normalize_project_dest_root(raw_value: str | None) -> str:
-    dest_root = (raw_value or "prism").strip().lower()
-    if dest_root == "root":
-        dest_root = "prism"
-    if dest_root not in {"prism", "rawdata", "sourcedata"}:
-        dest_root = "prism"
-    return dest_root
-
-
-def _resolve_project_copy_root(project_path: str | Path, dest_root: str) -> Path:
-    project_root = Path(project_path)
-    normalized_dest_root = _normalize_project_dest_root(dest_root)
-    if normalized_dest_root in {"rawdata", "sourcedata"}:
-        project_root = project_root / normalized_dest_root
-    return project_root
-
-
 def _requested_project_path() -> str | None:
     raw_value = (
         request.form.get("project_path") or request.args.get("project_path") or ""
     ).strip()
     return raw_value or None
-
-
-def _should_use_flat_project_copy(dest_root: str, flat_structure: bool) -> bool:
-    return bool(flat_structure) and _normalize_project_dest_root(dest_root) in {
-        "rawdata",
-        "sourcedata",
-    }
-
-
-def _normalize_subject_rewrite_mode(raw_value: str | None) -> str:
-    mode = (raw_value or "keep").strip().lower()
-    if mode not in {"keep", "last3"}:
-        return "keep"
-    return mode
-
-
-def _rewrite_subject_label(subject_label: str, mode: str) -> str:
-    normalized_mode = _normalize_subject_rewrite_mode(mode)
-    if normalized_mode != "last3":
-        return subject_label
-
-    text = (subject_label or "").strip()
-    if not text:
-        return subject_label
-
-    base = text[4:] if text.lower().startswith("sub-") else text
-    digits = "".join(ch for ch in base if ch.isdigit())
-    if digits:
-        return f"sub-{digits[-3:]}"
-
-    cleaned = re.sub(r"[^A-Za-z0-9]", "", base)
-    if not cleaned:
-        return subject_label
-    return f"sub-{cleaned[-3:]}"
-
-
-def _rewrite_subject_in_filename(filename: str, mode: str) -> str:
-    normalized_mode = _normalize_subject_rewrite_mode(mode)
-    if normalized_mode != "last3":
-        return filename
-    return re.sub(
-        r"sub-[A-Za-z0-9]+",
-        lambda match: _rewrite_subject_label(match.group(0), normalized_mode),
-        filename,
-        count=1,
-    )
-
-
-def _rewrite_subject_in_relative_path(rel_path: Path, mode: str) -> Path:
-    normalized_mode = _normalize_subject_rewrite_mode(mode)
-    if normalized_mode != "last3":
-        return rel_path
-
-    parts = list(rel_path.parts)
-    if not parts:
-        return rel_path
-
-    if re.fullmatch(r"sub-[A-Za-z0-9]+", parts[0]):
-        parts[0] = _rewrite_subject_label(parts[0], normalized_mode)
-
-    parts[-1] = _rewrite_subject_in_filename(parts[-1], normalized_mode)
-    return Path(*parts)
 
 
 def _resolve_batch_convert_copy_path(
@@ -1130,190 +1063,6 @@ def api_batch_convert():
         return jsonify({"error": str(e), "logs": logs}), 500
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
-
-
-def _sanitize_bids_label(raw: str) -> str | None:
-    cleaned = re.sub(r"[^A-Za-z0-9]", "", (raw or "").strip())
-    return cleaned or None
-
-
-def _extract_subject_session_from_source_path(
-    source_path: str,
-    subject_level_from_end: int = 2,
-    session_level_from_end: int = 1,
-    example_path: str = "",
-    subject_example_value: str = "",
-    session_example_value: str = "",
-) -> tuple[str | None, str | None]:
-    normalized = (source_path or "").replace("\\", "/")
-    parts = [
-        part for part in PurePosixPath(normalized).parts[:-1] if part not in {".", ".."}
-    ]
-
-    subject_label = None
-    session_label = None
-
-    sub_pattern = re.compile(r"^sub[-_]?([A-Za-z0-9]+)$", re.IGNORECASE)
-    ses_pattern = re.compile(r"^ses[-_]?([A-Za-z0-9]+)$", re.IGNORECASE)
-
-    for part in parts:
-        if subject_label is None:
-            sub_match = sub_pattern.match(part)
-            if sub_match:
-                subject_label = _sanitize_bids_label(sub_match.group(1))
-        if session_label is None:
-            ses_match = ses_pattern.match(part)
-            if ses_match:
-                session_label = _sanitize_bids_label(ses_match.group(1))
-
-    subject_level = max(1, int(subject_level_from_end or 2))
-    session_level = max(1, int(session_level_from_end or 1))
-
-    def _split_parent_parts(path_value: str) -> list[str]:
-        normalized_path = (path_value or "").replace("\\", "/")
-        return [
-            part
-            for part in PurePosixPath(normalized_path).parts[:-1]
-            if part not in {".", ".."}
-        ]
-
-    def _part_at_level(parts_list: list[str], level_from_end: int) -> str | None:
-        if not parts_list:
-            return None
-        idx = len(parts_list) - max(1, int(level_from_end))
-        if idx < 0:
-            idx = 0
-        if idx >= len(parts_list):
-            return None
-        return parts_list[idx]
-
-    def _normalize_entity_label(part_value: str, entity: str) -> str | None:
-        if part_value is None:
-            return None
-        if entity == "subject":
-            sub_match = re.match(r"^sub[-_]?([A-Za-z0-9]+)$", part_value, re.IGNORECASE)
-            if sub_match:
-                return _sanitize_bids_label(sub_match.group(1))
-        if entity == "session":
-            ses_match = re.match(r"^ses[-_]?([A-Za-z0-9]+)$", part_value, re.IGNORECASE)
-            if ses_match:
-                return _sanitize_bids_label(ses_match.group(1))
-            return _sanitize_bids_label(part_value)
-        return _sanitize_bids_label(part_value)
-
-    def _extract_by_example(
-        source_part: str,
-        example_part: str,
-        example_value: str,
-        entity: str,
-    ) -> str | None:
-        if source_part is None:
-            return None
-        if not example_value:
-            return _normalize_entity_label(source_part, entity)
-
-        token = (example_value or "").strip()
-        if not token:
-            return _normalize_entity_label(source_part, entity)
-
-        pos = example_part.find(token) if example_part is not None else -1
-        if pos < 0 and example_part is not None:
-            lower_pos = example_part.lower().find(token.lower())
-            pos = lower_pos
-
-        if pos < 0:
-            return _normalize_entity_label(source_part, entity)
-
-        prefix = example_part[:pos]
-        suffix = example_part[pos + len(token) :]
-
-        candidate = source_part
-        if prefix and candidate.startswith(prefix):
-            candidate = candidate[len(prefix) :]
-        if suffix and candidate.endswith(suffix):
-            candidate = candidate[: -len(suffix)]
-
-        return _normalize_entity_label(candidate, entity)
-
-    src_parts = _split_parent_parts(source_path)
-    ex_parts = _split_parent_parts(example_path) if example_path else []
-
-    source_subject_part = _part_at_level(src_parts, subject_level)
-    source_session_part = _part_at_level(src_parts, session_level)
-    example_subject_part = _part_at_level(ex_parts, subject_level) if ex_parts else ""
-    example_session_part = _part_at_level(ex_parts, session_level) if ex_parts else ""
-
-    if source_subject_part is not None:
-        subject_label = _extract_by_example(
-            source_subject_part,
-            example_subject_part or source_subject_part,
-            (subject_example_value or "").strip(),
-            "subject",
-        )
-
-    session_token = (session_example_value or "").strip()
-    if session_token and source_session_part is not None:
-        session_label = _extract_by_example(
-            source_session_part,
-            example_session_part or source_session_part,
-            session_token,
-            "session",
-        )
-
-    if subject_label is None and parts:
-        subject_idx = len(parts) - subject_level
-        if subject_idx < 0:
-            subject_idx = 0
-        subject_label = _sanitize_bids_label(parts[subject_idx])
-
-    if session_label is None and parts:
-        session_idx = len(parts) - session_level
-        if session_idx < 0:
-            session_idx = 0
-        if subject_label is not None and len(parts) == 1:
-            session_label = None
-        elif session_idx < len(parts):
-            candidate = _sanitize_bids_label(parts[session_idx])
-            if candidate is not None and candidate != subject_label:
-                session_label = _sanitize_bids_label(candidate)
-
-    return subject_label, session_label
-
-
-def _apply_folder_placeholders(
-    name_template: str,
-    source_path: str,
-    subject_level_from_end: int = 2,
-    session_level_from_end: int = 1,
-    example_path: str = "",
-    subject_example_value: str = "",
-    session_example_value: str = "",
-) -> str:
-    subject_label, session_label = _extract_subject_session_from_source_path(
-        source_path,
-        subject_level_from_end=subject_level_from_end,
-        session_level_from_end=session_level_from_end,
-        example_path=example_path,
-        subject_example_value=subject_example_value,
-        session_example_value=session_example_value,
-    )
-
-    if "{subject}" in name_template and not subject_label:
-        raise ValueError("Could not extract subject from folder path")
-
-    resolved = name_template.replace("{subject}", subject_label or "")
-
-    if "{session}" in resolved:
-        if session_label:
-            resolved = resolved.replace("{session}", session_label)
-        else:
-            resolved = resolved.replace("_ses-{session}", "")
-            resolved = resolved.replace("ses-{session}_", "")
-            resolved = resolved.replace("ses-{session}", "")
-            resolved = resolved.replace("{session}", "")
-
-    resolved = re.sub(r"__+", "_", resolved)
-    return re.sub(r"^_+|_+$", "", resolved)
 
 
 def api_physio_rename():
