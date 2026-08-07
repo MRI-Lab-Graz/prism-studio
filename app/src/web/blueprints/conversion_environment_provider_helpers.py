@@ -8,6 +8,8 @@ from typing import Any
 
 import requests
 
+from src.environment_temporal import pollen_risk_bin as _shared_pollen_risk_bin
+
 
 def handle_hourly_value(payload: dict, key: str, timestamp_iso: str) -> float | None:
     hourly = payload.get("hourly") or {}
@@ -31,15 +33,7 @@ def handle_hourly_value(payload: dict, key: str, timestamp_iso: str) -> float | 
 
 
 def handle_pollen_risk_bin(total: float | None) -> str:
-    if total is None:
-        return "unknown"
-    if total < 50:
-        return "low"
-    if total < 150:
-        return "medium"
-    if total < 300:
-        return "high"
-    return "very_high"
+    return _shared_pollen_risk_bin(total)
 
 
 def handle_payload_has_hourly_data(payload: dict[str, Any] | None) -> bool:

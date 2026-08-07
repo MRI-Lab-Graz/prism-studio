@@ -42,6 +42,13 @@ from werkzeug.utils import secure_filename
 
 from src.system_files import filter_system_files  # noqa: F401 – available if needed
 from src.bids_integration import check_and_update_bidsignore
+from src.environment_temporal import (
+    estimate_daylight_hours as _shared_estimate_daylight_hours,
+    hour_to_bin as _shared_hour_to_bin,
+    hours_since_sun as _shared_hours_since_sun,
+    season_code as _shared_season_code,
+    sun_phase as _shared_sun_phase,
+)
 from .conversion_job_store import ConversionJobStore
 from .conversion_environment_mri_scan_helpers import (
     build_mri_acquisition_table,
@@ -162,51 +169,23 @@ OUTPUT_COLUMNS = [
 
 
 def _hour_bin(hour: int) -> str:
-    if 0 <= hour <= 5:
-        return "night"
-    if 6 <= hour <= 11:
-        return "morning"
-    if 12 <= hour <= 17:
-        return "afternoon"
-    return "evening"
+    return _shared_hour_to_bin(hour)
 
 
 def _season_code(doy: int) -> str:
-    if 80 <= doy <= 171:
-        return "spring"
-    if 172 <= doy <= 263:
-        return "summer"
-    if 264 <= doy <= 354:
-        return "autumn"
-    return "winter"
+    return _shared_season_code(doy)
 
 
 def _estimate_daylight(doy: int, lat: float = 47.0) -> float:
-    seasonal = 4.0 * math.sin((2 * math.pi * (doy - 80)) / 365.0)
-    lat_factor = min(max(abs(lat) / 90.0, 0.0), 1.0)
-    return round(max(4.0, min(20.0, 12.0 + seasonal * (0.5 + lat_factor))), 1)
+    return _shared_estimate_daylight_hours(doy, lat)
 
 
 def _sun_phase(hour: int, daylight: float) -> str:
-    sunrise = 12.0 - daylight / 2.0
-    sunset = 12.0 + daylight / 2.0
-    if hour < sunrise or hour > sunset:
-        return "night"
-    if sunrise <= hour < sunrise + 1.5:
-        return "dawn"
-    if sunset - 1.5 < hour <= sunset:
-        return "dusk"
-    return "day"
+    return _shared_sun_phase(hour, daylight)
 
 
 def _hours_since_sun(hour: int, daylight: float) -> float:
-    sunrise = 12.0 - daylight / 2.0
-    sunset = 12.0 + daylight / 2.0
-    if sunrise <= hour <= sunset:
-        return 0.0
-    if hour > sunset:
-        return round(hour - sunset, 1)
-    return round((24.0 - sunset) + hour, 1)
+    return _shared_hours_since_sun(hour, daylight)
 
 
 def _moon_status(dt: datetime) -> tuple[str, float]:
