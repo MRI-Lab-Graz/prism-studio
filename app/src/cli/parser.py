@@ -1088,6 +1088,75 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
     )
 
+    parser_dataset_rewrite_entities = dataset_subparsers.add_parser(
+        "rewrite-entities",
+        help=(
+            "Rename or delete a non-subject BIDS entity (task/acq/run/ses/etc.) across a "
+            "dataset's filenames (DataLad-aware). Matches the Studio GUI's File Management "
+            "-> 'Edit BIDS Filename Parts' action. Use 'rename-subjects' for the sub- entity."
+        ),
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--project",
+        required=True,
+        help="Dataset/project root folder",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--modality",
+        default=None,
+        help="Modality to rewrite within (e.g. beh, physio, eeg). Required unless "
+        "--list-modalities is used.",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--entity",
+        default=None,
+        help="BIDS entity/part to rewrite, with or without a leading underscore "
+        "(e.g. task, acq, run, ses). The sub entity is not supported here — use "
+        "'dataset rename-subjects'.",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--operation",
+        default="rename",
+        choices=["rename", "delete"],
+        help="'rename' replaces the entity's value; 'delete' removes the entity entirely "
+        "(default: rename)",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--current-value",
+        default=None,
+        help="Only rewrite files where the entity currently has this value "
+        "(default: match all values)",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--replacement",
+        default=None,
+        help="New value for the entity. Required when --operation is 'rename'.",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--list-modalities",
+        action="store_true",
+        help="List available modalities for --project and exit",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--list-entities",
+        action="store_true",
+        help="List available entities/values for --project and --modality, and exit",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview the rewrite and report conflicts without renaming anything",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Apply without an interactive confirmation prompt",
+    )
+    parser_dataset_rewrite_entities.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
+    )
+
     parser_ds_bio.add_argument(
         "--supervisor",
         default="investigator",
