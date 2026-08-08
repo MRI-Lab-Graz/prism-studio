@@ -176,6 +176,12 @@ feature work, until a new strategic initiative is picked.
 - [x] Validate the manuscript source with the official JOSS paper checker;
       keep generated PDF and JATS artifacts out of version control because
       Overleaf is the authoring environment.
+- [x] Remove the tracked session-assignment audit report from all mutable
+      branches and tags, ignore future `reports/` artifacts, and reject them in
+      `tests/verify_repo.py`.
+- [ ] Ask GitHub Support to purge the server-managed pull-request heads #65-71
+      and #73-104, which retain the removed audit report and cannot be rewritten
+      through Git; do not publish before the purge is confirmed.
 - [ ] Archive the immutable v1.17.0 source snapshot after successful review,
       then add the resulting software DOI to citation metadata, README, and
       the final paper.
@@ -197,7 +203,9 @@ regression suites) stay part of standard release validation.
 
 ## Active Work
 
-No active tactical work. See Deferred/Done below for what's tracked next.
+Publication hygiene: obtain GitHub Support confirmation that the sensitive
+audit report has been purged from immutable pull-request references before
+making the repository public.
 
 ## Deferred
 
@@ -217,6 +225,9 @@ Changelog remains canonical for release-facing history:
       distinct from the software archive DOI required for the final JOSS release.
 - Research-impact claims should cite a public record and state the exact
       verified workflow without implying independent adoption or broader access.
+- Removing a sensitive file from branches and tags is insufficient on GitHub:
+      pull-request references can retain it and require a Support purge. Keep
+      generated reports ignored and block them in the repository verifier.
 - Keep icon assignment in backend metadata (project.json) and only render in frontend adapters to avoid drift between session, recent-project cache, and persisted project state.
 - Export privacy tests should always include both positive MRI scrubbing assertions and non-MRI preservation checks, plus nested/derivative path variants for `.nii.gz` header cleaning.
 - For potentially disruptive privacy checks, shipping warning metadata in async status first is a low-risk way to add guidance without blocking export flows.
