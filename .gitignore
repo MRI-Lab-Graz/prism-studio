@@ -50,6 +50,7 @@ htmlcov/
 # Logs
 *.log
 logs/
+reports/
 *_report_*.txt
 
 # OS generated files

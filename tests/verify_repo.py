@@ -2006,17 +2006,19 @@ def check_report_artifacts(repo_path, fix=False):
         print_info("Not a git repository. Skipping tracked report artifact check.")
         return
 
-    result = run_command('git ls-files "*_report_*.txt"', cwd=repo_path)
+    result = run_command(
+        'git ls-files -- "*_report_*.txt" "reports/**"', cwd=repo_path
+    )
     if result and result.returncode == 0:
         tracked = [
             line.strip() for line in (result.stdout or "").splitlines() if line.strip()
         ]
         if tracked:
-            print_error("Report artifacts are tracked in git:")
+            print_error("Report artifacts or reports/ files are tracked in git:")
             for item in tracked:
                 print(f"  - {item}")
         else:
-            print_success("No tracked *_report_*.txt artifacts found.")
+            print_success("No tracked report artifacts found.")
     else:
         print_warning("Could not query tracked report artifacts with git ls-files.")
 

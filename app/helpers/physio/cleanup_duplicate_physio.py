@@ -1,3 +1,4 @@
+import argparse
 from pathlib import Path
 
 
@@ -49,4 +50,9 @@ def cleanup_duplicates(root_dir):
 
 
 if __name__ == "__main__":
-    cleanup_duplicates("/Volumes/Evo/data/prism_output")
+    parser = argparse.ArgumentParser(
+        description="Remove raw physio files when an equivalent VPD recording exists."
+    )
+    parser.add_argument("root_dir", help="PRISM project root to clean")
+    args = parser.parse_args()
+    cleanup_duplicates(args.root_dir)
