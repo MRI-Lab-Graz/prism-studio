@@ -82,7 +82,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--sourcedata",
-        default="/Volumes/Evo/data/prism_output/sourcedata",
+        required=True,
         help="Path to sourcedata root",
     )
     parser.add_argument(
