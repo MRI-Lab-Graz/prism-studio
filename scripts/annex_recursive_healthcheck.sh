@@ -2,7 +2,12 @@
 
 set -euo pipefail
 
-DATASET_PATH="${1:-/Volumes/Thunder/129_PK01/rawdata}"
+if [[ $# -ne 1 ]]; then
+  echo "Usage: $0 /path/to/dataset"
+  exit 2
+fi
+
+DATASET_PATH="$1"
 
 if [[ ! -d "$DATASET_PATH" ]]; then
   echo "ERROR: dataset path not found: $DATASET_PATH"
