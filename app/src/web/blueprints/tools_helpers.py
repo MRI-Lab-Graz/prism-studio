@@ -8,6 +8,7 @@ from src.prism_template_validation import (
     strip_template_editor_internal_keys as _strip_template_editor_internal_keys,
     validate_template_against_schema as _validate_against_schema,
 )
+from src.validator import _deep_merge
 
 
 def _default_library_root_for_templates(*, modality: str) -> Path:
@@ -251,18 +252,6 @@ def _schema_example(schema: dict) -> object:
         return None
 
     return ""
-
-
-def _deep_merge(base: object, override: object) -> object:
-    if isinstance(base, dict) and isinstance(override, dict):
-        out = dict(base)
-        for key, value in override.items():
-            if key in out:
-                out[key] = _deep_merge(out[key], value)
-            else:
-                out[key] = value
-        return out
-    return override
 
 
 def _new_template_from_schema(*, modality: str, schema_version: str | None) -> dict:
