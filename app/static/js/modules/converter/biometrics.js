@@ -9,6 +9,7 @@ import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createJobRunController } from './job-run-controller.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { pollJobStatus } from '../../shared/job-polling.js';
+import { escapeHtml } from '../../shared/dom.js';
 import { pickServerFile, prefersServerPicker } from './server-picker.js';
 
 export function initBiometrics(elements) {
@@ -161,7 +162,7 @@ export function initBiometrics(elements) {
 
             const options = ['<option value="">Auto-detect from file columns</option>'];
             columns.forEach((column) => {
-                options.push(`<option value="${escapeHtmlForOption(column)}">${escapeHtmlForOption(column)}</option>`);
+                options.push(`<option value="${escapeHtml(column)}">${escapeHtml(column)}</option>`);
             });
             biometricsIdColumn.innerHTML = options.join('');
 
@@ -177,7 +178,7 @@ export function initBiometrics(elements) {
             }
             if (biometricsIdColumnHelp) {
                 biometricsIdColumnHelp.innerHTML = suggested
-                    ? `<i class="fas fa-check-circle me-1 text-success"></i>Suggested: <strong>${escapeHtmlForOption(suggested)}</strong>`
+                    ? `<i class="fas fa-check-circle me-1 text-success"></i>Suggested: <strong>${escapeHtml(suggested)}</strong>`
                     : '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>No participant ID column found. Please select it manually.';
             }
         } catch (error) {
@@ -190,17 +191,9 @@ export function initBiometrics(elements) {
                 biometricsIdColumnStatus.className = 'ms-2 small text-danger';
             }
             if (biometricsIdColumnHelp) {
-                biometricsIdColumnHelp.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-danger"></i>${escapeHtmlForOption(error.message || 'Failed to detect columns')}`;
+                biometricsIdColumnHelp.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-danger"></i>${escapeHtml(error.message || 'Failed to detect columns')}`;
             }
         }
-    }
-
-    function escapeHtmlForOption(value) {
-        return String(value)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
     }
 
     function getBiometricsIdColumnValue() {
