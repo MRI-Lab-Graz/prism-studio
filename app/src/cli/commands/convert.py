@@ -21,24 +21,7 @@ from src.converters.wide_to_long import (
 )
 from src.cross_platform import normalize_path
 from src.entity_rules import load_entity_rules
-
-
-def sanitize_id(id_str):
-    """Sanitize subject/session IDs by replacing German umlauts and special characters."""
-    if not id_str:
-        return id_str
-    replacements = {
-        "ä": "ae",
-        "ö": "oe",
-        "ü": "ue",
-        "Ä": "Ae",
-        "Ö": "Oe",
-        "Ü": "Ue",
-        "ß": "ss",
-    }
-    for char, repl in replacements.items():
-        id_str = id_str.replace(char, repl)
-    return id_str
+from src.utils.naming import sanitize_id
 
 
 def _normalize_physio_suffix(raw_suffix: str | None) -> str:
