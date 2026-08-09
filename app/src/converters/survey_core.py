@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
@@ -26,6 +25,7 @@ except ImportError:
     from src.survey_scale_inference import apply_implicit_numeric_level_ranges
 
 from src.entity_rules import load_entity_rules
+from src.converters import survey_processing as _survey_processing
 
 try:
     import pandas as pd
@@ -116,23 +116,10 @@ def _build_bids_survey_filename(
     acq: str | None = None,
 ) -> str:
     """Build a BIDS-compliant survey filename."""
-
-    def _normalize_run_entity(value: str | int | None) -> str | None:
-        if value is None:
-            return None
-        text = str(value).strip()
-        if not text:
-            return None
-        label = text[4:] if text[:4].lower() == "run-" else text
-        label = re.sub(r"[^A-Za-z0-9]+", "", label)
-        if not label:
-            return None
-        return f"run-{label}"
-
     parts = [sub_id, ses_id, f"task-{task}"]
     if acq:
         parts.append(f"acq-{acq}")
-    normalized_run = _normalize_run_entity(run)
+    normalized_run = _survey_processing.normalize_run_entity(run)
     if normalized_run is not None:
         parts.append(normalized_run)
     parts.append(_SURVEY_SUFFIX)  # Add suffix without extension
