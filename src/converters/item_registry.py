@@ -10,14 +10,8 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
-import json
 
-
-def _read_json(path: Path) -> dict:
-    """Simple JSON reader fallback."""
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
+from src.utils.io import read_json as _read_json
 
 _NON_ITEM_TOPLEVEL_KEYS = {
     "Technical",
@@ -243,120 +237,9 @@ class ItemRegistry:
             "description": description[:100],
         }
 
-    def check_batch(self, items: dict[str, Any], template_name: str) -> list[str]:
-        """Check a batch of items for collisions without registering.
-
-        Args:
-            items: Dict of item_id -> item_data
-            template_name: Template name for error messages
-
-        Returns:
-            List of error messages (empty if no collisions)
-        """
-        errors = []
-        for item_id, item_data in items.items():
-            if item_id in _NON_ITEM_TOPLEVEL_KEYS:
-                continue
-
-            existing = self._items.get(item_id)
-            if existing:
-                # Extract description
-                desc = item_data.get("Description", "")
-                if isinstance(desc, dict):
-                    desc = (
-                        desc.get("en")
-                        or desc.get("de")
-                        or next(iter(desc.values()), "")
-                    )
-
-                existing_source = existing["source_type"]
-                existing_template = existing["source_template"]
-                existing_desc = existing["description"]
-
-                errors.append(
-                    f"Item '{item_id}' conflicts with {existing_source} template "
-                    f"'{existing_template}': {existing_desc}"
-                )
-
-        return errors
-
     def get_item_count(self) -> int:
         """Return total number of registered items."""
         return len(self._items)
-
-    def get_items_by_template(self, template_name: str) -> list[str]:
-        """Get all item IDs for a specific template.
-
-        Args:
-            template_name: Template name (e.g., "survey-phq9")
-
-        Returns:
-            List of item IDs
-        """
-        return [
-            item_id
-            for item_id, meta in self._items.items()
-            if meta["source_template"] == template_name
-        ]
-
-    def check_version_compatibility(
-        self, item_id: str, new_item_data: dict, existing_item_data: dict
-    ) -> tuple[bool, str]:
-        """Check if two items with same ID are compatible as version variants.
-
-        Args:
-            item_id: The item identifier
-            new_item_data: Item data from import
-            existing_item_data: Item data from existing template
-
-        Returns:
-            Tuple of (is_compatible, reason)
-        """
-
-        # Extract descriptions
-        def get_desc(data):
-            desc = data.get("Description", "")
-            if isinstance(desc, dict):
-                # Get first non-empty language
-                return next((v for v in desc.values() if v), "")
-            return str(desc)
-
-        new_desc = get_desc(new_item_data)
-        existing_desc = get_desc(existing_item_data)
-
-        # Normalize for comparison (strip whitespace, lowercase)
-        new_desc_norm = new_desc.strip().lower()
-        existing_desc_norm = existing_desc.strip().lower()
-
-        if not new_desc_norm or not existing_desc_norm:
-            return False, "Missing description"
-
-        # Check if descriptions match (allowing for minor variations)
-        if new_desc_norm != existing_desc_norm:
-            # Check if one is substring of other (e.g., with/without instructions)
-            if (
-                new_desc_norm not in existing_desc_norm
-                and existing_desc_norm not in new_desc_norm
-            ):
-                return False, "Different descriptions"
-
-        # Check Levels compatibility
-        new_levels = new_item_data.get("Levels", {})
-        existing_levels = existing_item_data.get("Levels", {})
-
-        if new_levels or existing_levels:
-            # Both should have levels if either does
-            if bool(new_levels) != bool(existing_levels):
-                return False, "One has Levels, other doesn't"
-
-            # Check if level structures are compatible
-            if isinstance(new_levels, dict) and isinstance(existing_levels, dict):
-                # Check if keys match
-                if set(new_levels.keys()) != set(existing_levels.keys()):
-                    return False, "Different level values"
-
-        # Items are compatible
-        return True, "Compatible"
 
     def is_version_candidate(
         self, item_id: str, template_name: str, existing_meta: dict

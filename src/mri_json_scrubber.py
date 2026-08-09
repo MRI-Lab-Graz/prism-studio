@@ -40,6 +40,9 @@ from src.datalad_execution import (
     run_datalad_get_paths,
     run_datalad_run,
 )
+from src.project_export_helpers import (
+    extract_terminal_suffix_label as _extract_terminal_suffix_label,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -437,30 +440,6 @@ _DEFACED_FILENAME_RE = re.compile(
     re.IGNORECASE,
 )
 _ACQ_ENTITY_RE = re.compile(r"_acq-([A-Za-z0-9]+)", re.IGNORECASE)
-
-
-def _extract_terminal_suffix_label(filename: str) -> Optional[str]:
-    """Return the terminal BIDS suffix token from a filename, or None."""
-    name = str(filename or "").strip()
-    if not name:
-        return None
-
-    lower_name = name.lower()
-    for compound_ext in (".nii.gz", ".tsv.gz"):
-        if lower_name.endswith(compound_ext):
-            name = name[: -len(compound_ext)]
-            break
-    else:
-        if "." in name:
-            name = name.rsplit(".", 1)[0]
-
-    if not name:
-        return None
-
-    suffix = name.rsplit("_", 1)[-1]
-    if not suffix or "-" in suffix:
-        return None
-    return suffix
 
 
 def _extract_acq_label(filename: str) -> Optional[str]:

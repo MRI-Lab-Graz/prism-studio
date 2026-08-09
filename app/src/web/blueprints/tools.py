@@ -1,4 +1,3 @@
-import os
 import sys
 import json
 import re
@@ -17,7 +16,6 @@ from flask import (
     session,
     Response,
 )
-from src.config import load_config
 from src.constants import DEFAULT_BIDS_VERSION
 from src.converters.file_reader import list_excel_sheets, resolve_sheet_selection
 from src.cross_platform import normalize_path
@@ -38,21 +36,7 @@ from src.subject_code_rewriter import SubjectCodeRewriter
 from src.web.blueprints.projects import get_current_project
 from .conversion_job_store import ConversionJobStore
 from .tools_helpers import (
-    _default_library_root_for_templates,
-    _safe_expand_path,
     _global_survey_library_root,
-    _global_recipes_root,
-    _resolve_library_root,
-    _template_dir,
-    _project_library_root,
-    _project_template_folder,
-    _load_prism_schema,
-    _pick_enum_value,
-    _schema_example,
-    _deep_merge,
-    _new_template_from_schema,
-    _validate_against_schema,
-    _strip_template_editor_internal_keys,
 )
 from .tools_survey_customizer_handlers import (
     get_survey_customizer_formats_payload,

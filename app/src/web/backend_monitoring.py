@@ -113,6 +113,23 @@ def _quote(part: str) -> str:
     return "'" + part.replace("'", "'\"'\"'") + "'"
 
 
+def _curl_json_post(endpoint_url: str, body: dict) -> str:
+    """Build a curl POST command preview for a JSON request body."""
+    return " ".join(
+        _quote(part)
+        for part in [
+            "curl",
+            "-X",
+            "POST",
+            endpoint_url,
+            "-H",
+            "Content-Type: application/json",
+            "-d",
+            json.dumps(body),
+        ]
+    )
+
+
 def _coerce_template_version_value(raw_value: object) -> str:
     """Collapse template version payloads to a concrete version string."""
     if isinstance(raw_value, str):
@@ -366,34 +383,7 @@ def _build_projects_set_current_terminal_command(req) -> str:
     project_path = _absolute_path_value(payload.get("path"))
     endpoint_url = _get_request_url(req, "/api/projects/current")
 
-    if not project_path:
-        return " ".join(
-            _quote(part)
-            for part in [
-                "curl",
-                "-X",
-                "POST",
-                endpoint_url,
-                "-H",
-                "Content-Type: application/json",
-                "-d",
-                json.dumps({"path": ""}),
-            ]
-        )
-
-    return " ".join(
-        _quote(part)
-        for part in [
-            "curl",
-            "-X",
-            "POST",
-            endpoint_url,
-            "-H",
-            "Content-Type: application/json",
-            "-d",
-            json.dumps({"path": project_path}),
-        ]
-    )
+    return _curl_json_post(endpoint_url, {"path": project_path or ""})
 
 
 def _build_projects_export_structure_terminal_command(req) -> str:
@@ -406,19 +396,7 @@ def _build_projects_export_structure_terminal_command(req) -> str:
     endpoint_url = _get_request_url(req, "/api/projects/export/structure")
     body = {"project_path": project_path or "<project-path>"}
 
-    return " ".join(
-        _quote(part)
-        for part in [
-            "curl",
-            "-X",
-            "POST",
-            endpoint_url,
-            "-H",
-            "Content-Type: application/json",
-            "-d",
-            json.dumps(body),
-        ]
-    )
+    return _curl_json_post(endpoint_url, body)
 
 
 def _build_projects_folder_export_terminal_command(req) -> str:
@@ -680,19 +658,7 @@ def _build_projects_template_export_terminal_command(req) -> str:
         body["output_folder"] = output_folder
 
     endpoint_url = _get_request_url(req, "/api/projects/template-export")
-    return " ".join(
-        _quote(part)
-        for part in [
-            "curl",
-            "-X",
-            "POST",
-            endpoint_url,
-            "-H",
-            "Content-Type: application/json",
-            "-d",
-            json.dumps(body),
-        ]
-    )
+    return _curl_json_post(endpoint_url, body)
 
 
 def _build_survey_convert_terminal_command(req, *, dry_run: bool = False) -> str:

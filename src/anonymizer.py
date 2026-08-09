@@ -329,56 +329,6 @@ def update_intendedfor_paths(
     return _remap(json_data)
 
 
-def anonymize_dataset(
-    dataset_path: Path,
-    output_path: Path,
-    mapping_path: Optional[Path] = None,
-    mask_questions: bool = True,
-    id_length: int = 6,
-) -> Path:
-    """
-    Anonymize an entire PRISM dataset for sharing.
-
-    Args:
-        dataset_path: Path to original dataset
-        output_path: Path for anonymized dataset
-        mapping_path: Path to save ID mapping (default: output_path/code/anonymization_map.json)
-        mask_questions: Whether to mask copyrighted question text
-        id_length: Length of random ID part
-
-    Returns:
-        Path to mapping file
-    """
-    if mapping_path is None:
-        mapping_path = output_path / "code" / "anonymization_map.json"
-
-    # Collect all participant IDs
-    participant_ids = set()
-    for tsv_file in dataset_path.rglob("*.tsv"):
-        if tsv_file.name == "participants.tsv":
-            import csv
-
-            with open(tsv_file, "r", encoding="utf-8") as f:
-                reader = csv.DictReader(f, delimiter="\t")
-                for row in reader:
-                    pid = row.get("participant_id", "")
-                    if pid:
-                        participant_ids.add(pid)
-
-    # Create participant mapping
-    participant_mapping = create_participant_mapping(
-        list(participant_ids), mapping_path, id_length=id_length
-    )
-
-    print(
-        f"✓ Created anonymization mapping for {len(participant_mapping)} participants"
-    )
-    print(f"  Mapping saved to: {mapping_path}")
-    print("  ⚠️  KEEP THIS FILE SECURE! It allows re-identification.")
-
-    return mapping_path
-
-
 def check_survey_copyright(survey_template: Dict) -> bool:
     """
     Check if a survey has copyright restrictions.

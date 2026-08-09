@@ -4,8 +4,7 @@
  */
 
 // Export all shared utilities that converter module needs
-export { apiGet, apiPost, apiPut, apiDelete, apiUpload } from '../../shared/api.js';
-export { 
+export {
     validateRequiredFields, 
     clearFormValidation, 
     showValidationError, 
@@ -24,7 +23,6 @@ export {
     getText,
     setHtml
 } from '../../shared/dom.js';
-export { getLocalStorage, setLocalStorage, removeLocalStorage } from '../../shared/storage.js';
 
 function initConverterModules() {
     const isConverterPage = document.getElementById('converterTabs');

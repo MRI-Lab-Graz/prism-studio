@@ -20,6 +20,7 @@ import logging
 from typing import Dict, Optional, Any, List
 from datetime import datetime
 import sys
+import yaml
 from urllib.parse import urlparse
 
 # Add parent directory to path for imports
@@ -506,10 +507,6 @@ class ANCExporter:
             return False
         return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
 
-    @staticmethod
-    def _yaml_quote(value: Any) -> str:
-        return json.dumps(str(value or ""))
-
     def _flatten_reference_candidates(self, value: Any) -> List[Any]:
         flattened: List[Any] = []
         if value is None:
@@ -710,7 +707,7 @@ For more information about this dataset, please contact the dataset authors.
         repository_code = str(metadata.get("CFF_REPOSITORY_CODE") or "").strip()
 
         authors = metadata.get("CFF_AUTHORS") or []
-        author_lines: List[str] = []
+        author_entries: List[Dict[str, str]] = []
         for author in authors:
             if not isinstance(author, dict):
                 continue
@@ -719,69 +716,63 @@ For more information about this dataset, please contact the dataset authors.
             given = str(author.get("given-names") or "").strip()
             name = str(author.get("name") or "").strip()
 
+            entry: Dict[str, str] = {}
             if family:
-                author_lines.append(f"  - family-names: {self._yaml_quote(family)}")
+                entry["family-names"] = family
                 if given:
-                    author_lines.append(f"    given-names: {self._yaml_quote(given)}")
+                    entry["given-names"] = given
             elif name:
-                author_lines.append(f"  - name: {self._yaml_quote(name)}")
+                entry["name"] = name
             else:
                 continue
 
             for field in ("email", "orcid", "affiliation"):
                 value = str(author.get(field) or "").strip()
                 if value:
-                    author_lines.append(f"    {field}: {self._yaml_quote(value)}")
+                    entry[field] = value
 
-        if not author_lines:
-            fallback_given = metadata.get("AUTHOR_GIVEN_NAME", "Unknown")
-            fallback_family = metadata.get("AUTHOR_FAMILY_NAME", "Author")
-            author_lines = [
-                f"  - given-names: {self._yaml_quote(fallback_given)}",
-                f"    family-names: {self._yaml_quote(fallback_family)}",
-            ]
+            author_entries.append(entry)
+
+        if not author_entries:
+            entry = {
+                "given-names": str(metadata.get("AUTHOR_GIVEN_NAME", "Unknown")),
+                "family-names": str(metadata.get("AUTHOR_FAMILY_NAME", "Author")),
+            }
             contact_email = str(metadata.get("CONTACT_EMAIL") or "").strip()
             if contact_email:
-                author_lines.append(f"    email: {self._yaml_quote(contact_email)}")
+                entry["email"] = contact_email
             contact_orcid = str(metadata.get("CONTACT_ORCID") or "").strip()
             if contact_orcid:
-                author_lines.append(f"    orcid: {self._yaml_quote(contact_orcid)}")
+                entry["orcid"] = contact_orcid
+            author_entries = [entry]
 
-        lines = [
-            "# This CITATION.cff file was generated with PRISM Studio",
-            "# For AND (Austrian NeuroCloud) submission",
-            "",
-            "cff-version: 1.2.0",
-            f"title: {self._yaml_quote(title)}",
-            f"message: {self._yaml_quote(message)}",
-            "type: dataset",
-            f"date-released: {self._yaml_quote(datetime.now().strftime('%Y-%m-%d'))}",
-        ]
+        data: Dict[str, Any] = {
+            "cff-version": "1.2.0",
+            "title": title,
+            "message": message,
+            "type": "dataset",
+            "date-released": datetime.now().strftime("%Y-%m-%d"),
+        }
 
         if doi:
-            lines.append(f"doi: {self._yaml_quote(doi)}")
+            data["doi"] = doi
         if license_value:
-            lines.append(f"license: {self._yaml_quote(license_value)}")
+            data["license"] = license_value
         if version:
-            lines.append(f"version: {self._yaml_quote(version)}")
+            data["version"] = version
         if canonical_url and self._is_url(canonical_url):
-            lines.append(f"url: {self._yaml_quote(canonical_url)}")
+            data["url"] = canonical_url
         if repository_code and self._is_url(repository_code):
-            lines.append(f"repository-code: {self._yaml_quote(repository_code)}")
+            data["repository-code"] = repository_code
 
-        lines.append(f"abstract: {self._yaml_quote(abstract)}")
-        lines.append("keywords:")
-        for keyword in keywords:
-            lines.append(f"  - {self._yaml_quote(keyword)}")
-
-        lines.append("authors:")
-        lines.extend(author_lines)
+        data["abstract"] = abstract
+        data["keywords"] = keywords
+        data["authors"] = author_entries
 
         references = self._flatten_reference_candidates(metadata.get("CFF_REFERENCES"))
         if references:
-            lines.append("references:")
+            ref_entries: List[Dict[str, Any]] = []
             for ref in references:
-                lines.append("  -")
                 if isinstance(ref, dict):
                     ref_type = str(ref.get("type") or "generic").strip() or "generic"
                     ref_title = str(ref.get("title") or "").strip()
@@ -796,38 +787,46 @@ For more information about this dataset, please contact the dataset authors.
                         else:
                             ref_title = "Referenced work"
 
-                    lines.append(f"    type: {self._yaml_quote(ref_type)}")
-                    lines.append(f"    title: {self._yaml_quote(ref_title)}")
+                    ref_entry: Dict[str, Any] = {"type": ref_type, "title": ref_title}
                     if ref_doi:
-                        lines.append(f"    doi: {self._yaml_quote(ref_doi)}")
+                        ref_entry["doi"] = ref_doi
                     if ref_url and self._is_url(ref_url):
-                        lines.append(f"    url: {self._yaml_quote(ref_url)}")
+                        ref_entry["url"] = ref_url
 
                     ref_authors = ref.get("authors") if isinstance(ref, dict) else None
                     if isinstance(ref_authors, list) and ref_authors:
-                        lines.append("    authors:")
-                        for ref_author in ref_authors:
-                            if isinstance(ref_author, dict):
-                                name = str(ref_author.get("name") or "").strip()
-                                if name:
-                                    lines.append(
-                                        f"      - name: {self._yaml_quote(name)}"
-                                    )
+                        names = [
+                            {"name": str(a.get("name") or "").strip()}
+                            for a in ref_authors
+                            if isinstance(a, dict) and str(a.get("name") or "").strip()
+                        ]
+                        if names:
+                            ref_entry["authors"] = names
+
+                    ref_entries.append(ref_entry)
                     continue
 
                 ref_text = str(ref or "").strip()
-                lines.append('    type: "generic"')
                 if self._is_url(ref_text):
-                    lines.append(
-                        f"    title: {self._yaml_quote(f'Referenced resource: {ref_text}')}"
+                    ref_entries.append(
+                        {
+                            "type": "generic",
+                            "title": f"Referenced resource: {ref_text}",
+                            "url": ref_text,
+                        }
                     )
-                    lines.append(f"    url: {self._yaml_quote(ref_text)}")
                 else:
-                    lines.append(
-                        f"    title: {self._yaml_quote(ref_text or 'Referenced work')}"
+                    ref_entries.append(
+                        {"type": "generic", "title": ref_text or "Referenced work"}
                     )
 
-        citation = "\n".join(lines) + "\n"
+            data["references"] = ref_entries
+
+        header = (
+            "# This CITATION.cff file was generated with PRISM Studio\n"
+            "# For AND (Austrian NeuroCloud) submission\n\n"
+        )
+        citation = header + yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
 
         output_file = self.output_path / "CITATION.cff"
         output_file.write_text(citation)

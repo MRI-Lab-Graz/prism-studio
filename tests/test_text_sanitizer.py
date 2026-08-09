@@ -15,10 +15,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))
 from src.text_sanitizer import (
     sanitize_display_text,
     sanitize_answer_text,
-    sanitize_question_text,
-    has_annotations,
-    list_annotations,
-    clean_levels_dict,
 )
 
 
@@ -112,89 +108,6 @@ class TestSanitizeAnswerText:
         """Test that answer text sanitization works correctly."""
         assert sanitize_answer_text("{score=0} very rarely") == "very rarely"
         assert sanitize_answer_text("{score=1} often") == "often"
-
-
-class TestSanitizeQuestionText:
-    """Tests for sanitize_question_text (wrapper function)."""
-
-    def test_basic_cleaning(self):
-        """Test question text sanitization."""
-        assert sanitize_question_text("{reverse} I feel sad") == "I feel sad"
-
-
-class TestHasAnnotations:
-    """Tests for has_annotations function."""
-
-    def test_detects_score(self):
-        """Test detection of score annotations."""
-        assert has_annotations("{score=0} rarely") is True
-        assert has_annotations("{score=1} often") is True
-
-    def test_detects_reverse(self):
-        """Test detection of reverse marker."""
-        assert has_annotations("{reverse} text") is True
-
-    def test_no_annotations(self):
-        """Test that clean text returns False."""
-        assert has_annotations("Normal text") is False
-        assert has_annotations("Strongly agree") is False
-
-    def test_empty_and_none(self):
-        """Test empty and None values."""
-        assert has_annotations("") is False
-        assert has_annotations(None) is False
-
-
-class TestListAnnotations:
-    """Tests for list_annotations function."""
-
-    def test_lists_score_annotations(self):
-        """Test listing of score annotations."""
-        annotations = list_annotations("{score=0} rarely")
-        assert len(annotations) >= 1
-        assert any("score" in desc.lower() for _, desc in annotations)
-
-    def test_empty_for_clean_text(self):
-        """Test that clean text returns empty list."""
-        assert list_annotations("Normal text") == []
-
-    def test_multiple_annotations(self):
-        """Test listing multiple annotations."""
-        annotations = list_annotations("{score=1} {reverse} text")
-        assert len(annotations) >= 2
-
-
-class TestCleanLevelsDict:
-    """Tests for clean_levels_dict function."""
-
-    def test_simple_dict(self):
-        """Test cleaning simple level dictionary."""
-        levels = {
-            "0": "{score=0} very rarely",
-            "1": "{score=0} rarely",
-            "2": "{score=1} sometimes",
-        }
-        cleaned = clean_levels_dict(levels)
-        assert cleaned["0"] == "very rarely"
-        assert cleaned["1"] == "rarely"
-        assert cleaned["2"] == "sometimes"
-
-    def test_multilingual_dict(self):
-        """Test cleaning multilingual level dictionary."""
-        levels = {
-            "0": {"en": "{score=0} very rarely", "de": "{score=0} sehr selten"},
-            "1": {"en": "{score=1} often", "de": "{score=1} oft"},
-        }
-        cleaned = clean_levels_dict(levels)
-        assert cleaned["0"]["en"] == "very rarely"
-        assert cleaned["0"]["de"] == "sehr selten"
-        assert cleaned["1"]["en"] == "often"
-        assert cleaned["1"]["de"] == "oft"
-
-    def test_empty_dict(self):
-        """Test handling of empty dictionary."""
-        assert clean_levels_dict({}) == {}
-        assert clean_levels_dict(None) is None
 
 
 class TestRealWorldExamples:

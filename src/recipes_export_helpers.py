@@ -9,10 +9,11 @@ companion codebook files. They are re-exported from
 from __future__ import annotations
 
 import csv
-import json
 import re
 from pathlib import Path
 from typing import Any, Dict, Optional
+
+from src.utils.io import write_json as _write_json_local
 
 
 _MISSING_TEXT_TOKENS = {"", "n/a", "na", "nan", "none", "null"}
@@ -23,12 +24,6 @@ _SPSS_VARIABLE_MAX_LENGTH = 64
 def _ensure_dir_local(path: Path) -> Path:
     path.mkdir(parents=True, exist_ok=True)
     return path
-
-
-def _write_json_local(path: Path, obj: dict) -> None:
-    _ensure_dir_local(path.parent)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(obj, f, ensure_ascii=False, indent=2)
 
 
 def _coerce_value_labeled_columns_for_sav(

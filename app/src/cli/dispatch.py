@@ -12,26 +12,6 @@ from typing import Callable, Mapping
 CommandHandler = Callable[[Namespace], None]
 
 
-def dispatch_command(
-    args: Namespace,
-    handlers: Mapping[str, CommandHandler],
-) -> bool:
-    """Dispatch to a top-level command handler if present.
-
-    Returns True when a handler was found and executed, otherwise False.
-    """
-    command = getattr(args, "command", None)
-    if not command:
-        return False
-
-    handler = handlers.get(command)
-    if not handler:
-        return False
-
-    handler(args)
-    return True
-
-
 def dispatch_prism_tools(
     args: Namespace,
     parsers: Mapping[str, ArgumentParser],

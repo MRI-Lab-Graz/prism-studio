@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let _idCounter = 0;
     function newId() { return ++_idCounter; }
-    function cloneJson(value) { return JSON.parse(JSON.stringify(value || {})); }
+    function cloneJson(value) { return structuredClone(value || {}); }
 
     const EDITABLE_METHODS = new Set(['sum', 'mean']);
     const SAFE_SCORE_KEYS = new Set(['Name', 'Method', 'Description', 'Items', 'Missing', 'Range', 'MinValid']);

@@ -957,7 +957,6 @@ def _parse_participants_merge_request(
         uploaded_file=request.files.get("file"),
         temp_prefix="prism_participants_merge_api_",
     )
-    filename = str(upload["filename"])
     suffix = str(upload["suffix"])
 
     separator_option = _normalize_separator_option(request.form.get("separator"))

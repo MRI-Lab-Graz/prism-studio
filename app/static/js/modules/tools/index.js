@@ -4,8 +4,7 @@
  */
 
 // Export all shared utilities that tools module needs
-export { apiGet, apiPost, apiPut, apiDelete, apiUpload } from '../../shared/api.js';
-export { 
+export {
     validateRequiredFields, 
     clearFormValidation, 
     showValidationError, 
@@ -26,7 +25,6 @@ export {
     scrollIntoView,
     focus
 } from '../../shared/dom.js';
-export { getLocalStorage, setLocalStorage, removeLocalStorage } from '../../shared/storage.js';
 
 // Import and re-export tool-specific modules
 // (Will be populated as individual tool files are converted to modules)

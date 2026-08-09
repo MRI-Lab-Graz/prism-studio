@@ -8,8 +8,7 @@
  */
 
 // Export all shared utilities
-export { apiGet, apiPost, apiPut, apiDelete, apiUpload } from '../../shared/api.js';
-export { 
+export {
     isValidProjectName, 
     validateRequiredFields, 
     clearFormValidation, 
@@ -29,7 +28,6 @@ export {
     setText, 
     getText 
 } from '../../shared/dom.js';
-export { getLocalStorage, setLocalStorage, removeLocalStorage } from '../../shared/storage.js';
 
 // Import project-specific modules
 import * as helpers from './helpers.js';

@@ -3,14 +3,13 @@ Physio/Eyetracking conversion logic for the Prism Web UI.
 Extracted from conversion.py to reduce module size.
 """
 
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 import io
 import re
 import shutil
 import tempfile
 import zipfile
 import base64
-import logging
 import threading
 import uuid
 from contextlib import nullcontext
@@ -36,8 +35,6 @@ from src.physio_renamer import (
     resolve_project_copy_root as _resolve_project_copy_root,
     rewrite_subject_in_filename as _rewrite_subject_in_filename,
     rewrite_subject_in_relative_path as _rewrite_subject_in_relative_path,
-    rewrite_subject_label as _rewrite_subject_label,
-    sanitize_bids_label as _sanitize_bids_label,
     should_use_flat_project_copy as _should_use_flat_project_copy,
 )
 
