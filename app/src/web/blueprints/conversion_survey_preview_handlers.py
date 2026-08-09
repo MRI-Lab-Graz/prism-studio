@@ -30,8 +30,6 @@ from .conversion_utils import (
     parse_selected_survey_tasks,
     parse_task_value_offsets,
     parse_template_version_overrides,
-    require_existing_project_root,
-    resolve_existing_project_root,
     resolve_validation_library_path,
 )
 from .conversion_request_helpers import (

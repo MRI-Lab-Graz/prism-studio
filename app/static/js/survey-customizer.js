@@ -214,11 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Generate UUID
     function uuid() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            const r = Math.random() * 16 | 0;
-            const v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
+        return crypto.randomUUID();
     }
 
     // Get text from multilingual object
@@ -489,7 +485,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Build groups from loaded data
             customizationState.groups = result.groups;
-            originalState = JSON.parse(JSON.stringify(customizationState));
+            originalState = structuredClone(customizationState);
 
             // Detect languages available in template content (for preview switcher only)
             // Do NOT overwrite customizationState.survey.languages — those are the user's export selection
@@ -1228,7 +1224,7 @@ document.addEventListener('DOMContentLoaded', function() {
     resetBtn.addEventListener('click', () => {
         if (!originalState) return;
         if (confirm('Reset all changes to the original state?')) {
-            customizationState = JSON.parse(JSON.stringify(originalState));
+            customizationState = structuredClone(originalState);
             renderGroups();
             renderQuestions();
         }

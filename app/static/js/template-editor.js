@@ -300,7 +300,7 @@
   }
 
   function cloneDeep(obj) {
-    return obj === undefined ? undefined : JSON.parse(JSON.stringify(obj));
+    return structuredClone(obj);
   }
 
   const sharedApiModuleUrl = new URL('./shared/api.js', document.currentScript?.src || window.location.href).href;
@@ -3097,7 +3097,7 @@
 
         targetKeys.forEach(k => {
           if (typeof currentTemplate[k] !== 'object') currentTemplate[k] = {};
-          currentTemplate[k][name] = JSON.parse(JSON.stringify(normalized)); // deep copy
+          currentTemplate[k][name] = structuredClone(normalized);
         });
 
         renderSelectedItem();

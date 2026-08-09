@@ -3,7 +3,6 @@ Biometrics conversion logic for the Prism Web UI.
 Extracted from conversion.py to reduce module size.
 """
 
-import re
 import shutil
 import tempfile
 import threading

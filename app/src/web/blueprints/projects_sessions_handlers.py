@@ -1,6 +1,4 @@
 import re
-from datetime import date
-from pathlib import Path
 
 from flask import jsonify, request
 
@@ -143,9 +141,6 @@ def handle_register_session(get_current_project, read_project_json, write_projec
 
     session_id = (req.get("session_id") or "").strip()
     tasks = req.get("tasks", [])
-    modality = req.get("modality", "survey")
-    source_file = req.get("source_file", "")
-    converter = req.get("converter", "manual")
 
     if not session_id:
         return jsonify({"success": False, "error": "session_id is required"}), 400

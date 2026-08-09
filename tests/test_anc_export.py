@@ -2,6 +2,8 @@ import json
 import tempfile
 from pathlib import Path
 
+import yaml
+
 from src.converters.anc_export import ANCExporter
 
 
@@ -144,15 +146,15 @@ class TestANCExporterCitation:
             exporter._generate_citation(metadata)
 
             citation_text = (output_path / "CITATION.cff").read_text(encoding="utf-8")
+            citation = yaml.safe_load(citation_text)
 
-            assert 'title: "Workshop Test Dataset"' in citation_text
-            assert 'family-names: "ff"' in citation_text
-            assert 'given-names: "prism-studio"' in citation_text
-            assert 'email: "team@example.org"' in citation_text
-            assert 'abstract: "Project overview abstract."' in citation_text
-            assert 'doi: "10.1000/xyz123"' in citation_text
-            assert 'url: "https://osf.io/abcd1/"' in citation_text
-            assert "references:" in citation_text
+            assert citation["title"] == "Workshop Test Dataset"
+            assert citation["authors"][0]["family-names"] == "ff"
+            assert citation["authors"][0]["given-names"] == "prism-studio"
+            assert citation["authors"][0]["email"] == "team@example.org"
+            assert citation["abstract"] == "Project overview abstract."
+            assert citation["url"] == "https://osf.io/abcd1/"
+            assert citation["references"][0]["doi"] == "10.1000/xyz123"
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -222,14 +224,6 @@ class TestIsUrl:
 
     def test_none_not_url(self):
         assert ANCExporter._is_url(None) is False
-
-
-class TestYamlQuote:
-    def test_simple_string(self):
-        assert ANCExporter._yaml_quote("hello") == '"hello"'
-
-    def test_none_gives_empty_string(self):
-        assert ANCExporter._yaml_quote(None) == '""'
 
 
 class TestExtractMetadata:

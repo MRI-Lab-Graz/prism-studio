@@ -30,6 +30,7 @@ from src.datalad_execution import (
     run_datalad_save,
 )
 from src.recipe_validation import validate_recipe
+from src.utils.io import read_json as _read_json, write_json as _write_json
 from src.recipes_formula_engine import (
     _calculate_derived_variables,
     _calculate_scores,
@@ -72,17 +73,6 @@ class SurveyRecipesResult:
 def _ensure_dir(path: Path) -> Path:
     path.mkdir(parents=True, exist_ok=True)
     return path
-
-
-def _read_json(path: Path) -> dict:
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def _write_json(path: Path, obj: dict) -> None:
-    _ensure_dir(path.parent)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(obj, f, indent=2, ensure_ascii=False)
 
 
 def _copy_recipes_to_project(

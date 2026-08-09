@@ -14,31 +14,26 @@ conversion can still finish with the core temporal fields intact.
 from __future__ import annotations
 
 import csv
-import io
 import json
 import math
 import random
 import re
 import shutil
 import subprocess
-import sys
 import tempfile
 import logging
 import threading
-from contextlib import redirect_stderr, redirect_stdout
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from pathlib import Path
 from time import sleep
 from time import perf_counter
-from types import SimpleNamespace
 from typing import Any
 
 import pandas as pd
 from src.converters.file_reader import infer_tabular_kind, read_tabular_file
 import requests
 from flask import request, jsonify, session
-from werkzeug.utils import secure_filename
 
 from src.system_files import filter_system_files  # noqa: F401 – available if needed
 from src.bids_integration import check_and_update_bidsignore
@@ -90,7 +85,6 @@ from .conversion_request_helpers import (
     resolve_uploaded_or_source_file as _shared_resolve_uploaded_or_source_file,
 )
 from .conversion_utils import (
-    read_tabular_dataframe_robust,
     expected_delimiter_for_suffix,
     normalize_separator_option,
     require_existing_project_root,
@@ -1055,7 +1049,6 @@ def _perform_environment_conversion(
 
     raise_if_cancelled()
 
-    written_project_paths_for_cleanup: list[Path] = []
     inherited_sidecar_path: Path | None = None
     provider_failures: set[str] = set()
 

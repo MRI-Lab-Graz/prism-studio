@@ -1,16 +1,12 @@
 """Survey conversion handlers extracted from the conversion blueprint."""
 
-from copy import deepcopy
 import inspect
-import io
-import json
 import shutil
 import tempfile
-import zipfile
 from pathlib import Path
 from typing import Any
 
-from flask import current_app, has_app_context, jsonify, request, send_file, session
+from flask import current_app, has_app_context, jsonify, request, session
 from werkzeug.utils import secure_filename
 from src.participants_paths import participants_mapping_candidates
 from src.survey_workflow_service import (
@@ -20,11 +16,6 @@ from src.survey_workflow_service import (
     SurveyWorkflowStageOptions,
     SurveyWorkflowStageService,
 )
-
-try:
-    import defusedxml.ElementTree as ET
-except ImportError:
-    import xml.etree.ElementTree as ET
 
 from src.web.reporting_utils import sanitize_jsonable
 from src.web.validation import run_validation
@@ -52,7 +43,6 @@ from .conversion_utils import (
     participant_json_candidates,
     require_existing_project_root,
     resolve_effective_library_path,
-    resolve_existing_project_root,
     resolve_validation_library_path,
     should_retry_with_official_library,
     summarize_project_output_paths,

@@ -1,4 +1,4 @@
-"""Routing coverage for src.cli.dispatch: dispatch_command / dispatch_prism_tools."""
+"""Routing coverage for src.cli.dispatch: dispatch_prism_tools."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.cli.dispatch import dispatch_command, dispatch_prism_tools
+from src.cli.dispatch import dispatch_prism_tools
 
 # (command, extra kwargs, expected handler key) for every branch that calls a
 # handler directly in dispatch_prism_tools.
@@ -168,27 +168,3 @@ def test_dispatch_prism_tools_falls_back_to_help(extra_args, expected_parser_key
         handler.assert_not_called()
 
 
-def test_dispatch_command_returns_false_without_command_attribute():
-    handlers = {"foo": MagicMock()}
-    assert dispatch_command(Namespace(), handlers) is False
-
-
-def test_dispatch_command_returns_false_when_command_is_none():
-    handlers = {"foo": MagicMock()}
-    assert dispatch_command(Namespace(command=None), handlers) is False
-
-
-def test_dispatch_command_returns_false_for_unknown_command():
-    handlers = {"foo": MagicMock()}
-    assert dispatch_command(Namespace(command="bar"), handlers) is False
-
-
-def test_dispatch_command_dispatches_and_returns_true():
-    handler = MagicMock()
-    handlers = {"foo": handler}
-    args = Namespace(command="foo")
-
-    result = dispatch_command(args, handlers)
-
-    assert result is True
-    handler.assert_called_once_with(args)

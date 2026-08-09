@@ -10,7 +10,6 @@ from flask import (
     render_template,
     request,
     send_file,
-    session,
 )
 
 from src.config import load_config
@@ -20,10 +19,7 @@ from src.prism_template_validation import (
 )
 from src.survey_template_normalization import (
     autofill_single_version_variant_ids as _autofill_single_version_variant_ids,
-    is_blank_localized_value as _is_blank_localized_value,
-    is_empty_variant_definition_placeholder as _is_empty_variant_definition_placeholder,
     normalize_survey_template_for_validation,
-    prune_optional_variant_placeholders as _prune_optional_variant_placeholders,
 )
 from src.utils.io import dump_json_text
 from .tools_helpers import (

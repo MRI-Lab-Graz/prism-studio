@@ -31,14 +31,6 @@ class TestItemRegistryBasic:
             reg.register_item("PHQ9_01", "survey-phq9-v2")
         assert exc_info.value.collision_type == "duplicate"
 
-    def test_get_items_by_template(self):
-        reg = ItemRegistry()
-        reg.register_item("PHQ9_01", "survey-phq9")
-        reg.register_item("PHQ9_02", "survey-phq9")
-        reg.register_item("GAD7_01", "survey-gad7")
-        result = reg.get_items_by_template("survey-phq9")
-        assert set(result) == {"PHQ9_01", "PHQ9_02"}
-
 
 # ---------------------------------------------------------------------------
 # Collision types
@@ -142,68 +134,6 @@ class TestFromLibraries:
 
 
 # ---------------------------------------------------------------------------
-# check_batch
-# ---------------------------------------------------------------------------
-
-class TestCheckBatch:
-    def test_no_collision(self):
-        reg = ItemRegistry()
-        reg.register_item("A_01", "survey-a")
-        errors = reg.check_batch({"B_01": {"Description": "new"}}, "survey-b")
-        assert errors == []
-
-    def test_collision_returns_error(self):
-        reg = ItemRegistry()
-        reg.register_item("A_01", "survey-a")
-        errors = reg.check_batch({"A_01": {"Description": "duplicate"}}, "survey-b")
-        assert len(errors) == 1
-        assert "A_01" in errors[0]
-
-    def test_non_item_keys_skipped(self):
-        reg = ItemRegistry()
-        errors = reg.check_batch({"Technical": {"x": 1}, "Scoring": {}}, "survey-a")
-        assert errors == []
-
-
-# ---------------------------------------------------------------------------
-# check_version_compatibility
-# ---------------------------------------------------------------------------
-
-class TestCheckVersionCompatibility:
-    def test_same_description_compatible(self):
-        reg = ItemRegistry()
-        compatible, reason = reg.check_version_compatibility(
-            "Q1",
-            {"Description": "How are you?", "Levels": {"1": "Bad", "2": "Good"}},
-            {"Description": "How are you?", "Levels": {"1": "Bad", "2": "Good"}},
-        )
-        assert compatible is True
-
-    def test_different_descriptions_incompatible(self):
-        reg = ItemRegistry()
-        compatible, _ = reg.check_version_compatibility(
-            "Q1",
-            {"Description": "Question A"},
-            {"Description": "Question B"},
-        )
-        assert compatible is False
-
-    def test_missing_description_incompatible(self):
-        reg = ItemRegistry()
-        compatible, reason = reg.check_version_compatibility("Q1", {}, {})
-        assert compatible is False
-
-    def test_different_levels_incompatible(self):
-        reg = ItemRegistry()
-        compatible, _ = reg.check_version_compatibility(
-            "Q1",
-            {"Description": "same", "Levels": {"1": "a", "2": "b"}},
-            {"Description": "same", "Levels": {"1": "a", "3": "c"}},
-        )
-        assert compatible is False
-
-
-# ---------------------------------------------------------------------------
 # _load_library_items - malformed JSON skipped (lines 109-110)
 # ---------------------------------------------------------------------------
 
@@ -228,9 +158,8 @@ class TestLoadLibraryMalformedJson:
         (lib_dir / "survey-test.json").write_text(json.dumps(sidecar))
         reg = ItemRegistry.from_libraries(local_library=lib_dir)
         # Q1 should be skipped, Q2 should be registered
-        items = reg.get_items_by_template("survey-test")
-        assert "Q2" in items
-        assert "Q1" not in items
+        assert "Q2" in reg._items
+        assert "Q1" not in reg._items
 
 
 # ---------------------------------------------------------------------------

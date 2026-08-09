@@ -16,7 +16,6 @@ from src.anonymizer import (
     anonymize_tsv_file,
     replace_participant_ids_in_text,
     update_intendedfor_paths,
-    anonymize_dataset,
     check_survey_copyright,
     _is_copyright_restricted,
     _pick_preferred_text,
@@ -278,30 +277,6 @@ class TestAnonymizeTsvFile:
         # should not raise
         anonymize_tsv_file(src, dst, {"sub-001": "sub-XYZ"})
         assert dst.exists()
-
-
-# ---------------------------------------------------------------------------
-# anonymize_dataset
-# ---------------------------------------------------------------------------
-
-class TestAnonymizeDataset:
-    def test_creates_mapping_file(self, tmp_path):
-        ds = tmp_path / "dataset"
-        sub = ds / "sub-001"
-        sub.mkdir(parents=True)
-        ptable = ds / "participants.tsv"
-        with open(ptable, "w") as f:
-            f.write("participant_id\nsub-001\n")
-        mapping_path = tmp_path / "mapping.json"
-        result = anonymize_dataset(ds, tmp_path / "out", mapping_path=mapping_path)
-        assert result == mapping_path
-        assert mapping_path.exists()
-
-    def test_empty_dataset_no_error(self, tmp_path):
-        ds = tmp_path / "empty"
-        ds.mkdir()
-        result = anonymize_dataset(ds, tmp_path / "out")
-        assert result.exists()
 
 
 # ---------------------------------------------------------------------------

@@ -8,7 +8,6 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Any
 
 from flask import current_app, jsonify
 

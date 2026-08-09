@@ -4,8 +4,7 @@
  */
 
 // Export all shared utilities that survey module needs
-export { apiGet, apiPost, apiPut, apiDelete, apiUpload } from '../../shared/api.js';
-export { 
+export {
     validateRequiredFields, 
     clearFormValidation, 
     showValidationError, 
@@ -24,7 +23,6 @@ export {
     getText,
     setHtml
 } from '../../shared/dom.js';
-export { getLocalStorage, setLocalStorage, removeLocalStorage } from '../../shared/storage.js';
 
 // Import and re-export survey-specific modules
 // (Will be populated as survey-*.js files are converted to modules)

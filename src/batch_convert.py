@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import io
+import filecmp
 import re
 from datetime import date
 import shutil
@@ -150,14 +151,7 @@ def _files_identical(path1: Path, path2: Path) -> bool:
     try:
         if not path1.exists() or not path2.exists():
             return False
-        # For large files, compare size first
-        if path1.stat().st_size != path2.stat().st_size:
-            return False
-        # For small files, compare content
-        if path1.stat().st_size < 1_000_000:  # < 1 MB
-            return path1.read_bytes() == path2.read_bytes()
-        # For larger files, just trust size comparison
-        return True
+        return filecmp.cmp(path1, path2, shallow=False)
     except Exception:
         return False
 

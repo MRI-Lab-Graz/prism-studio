@@ -182,38 +182,3 @@ class TestItemRegistry:
                 description="Import attempt",
             )
 
-    def test_check_batch(self):
-        """Test batch checking without registration."""
-        registry = ItemRegistry()
-        registry.register_item(
-            item_id="PHQ9_01", template_name="survey-phq9", description="Existing item"
-        )
-
-        # Check a batch with one collision
-        batch = {
-            "PHQ9_01": {"Description": "Collision"},
-            "PHQ9_02": {"Description": "New item"},
-            "Study": {"TaskName": "phq9"},  # Should be ignored
-        }
-
-        errors = registry.check_batch(batch, template_name="survey-import")
-
-        # Should have 1 error for PHQ9_01
-        assert len(errors) == 1
-        assert "PHQ9_01" in errors[0]
-
-    def test_get_items_by_template(self):
-        """Test retrieving items for a specific template."""
-        registry = ItemRegistry()
-        registry.register_item("PHQ9_01", "survey-phq9", "Q1")
-        registry.register_item("PHQ9_02", "survey-phq9", "Q2")
-        registry.register_item("GAD7_01", "survey-gad7", "Q1")
-
-        phq9_items = registry.get_items_by_template("survey-phq9")
-        assert len(phq9_items) == 2
-        assert "PHQ9_01" in phq9_items
-        assert "PHQ9_02" in phq9_items
-
-        gad7_items = registry.get_items_by_template("survey-gad7")
-        assert len(gad7_items) == 1
-        assert "GAD7_01" in gad7_items

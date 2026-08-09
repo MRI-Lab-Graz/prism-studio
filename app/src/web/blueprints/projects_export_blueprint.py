@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app, jsonify, request, send_file, session
+from flask import Blueprint, current_app, jsonify, request, session
 from pathlib import Path
 import atexit
 import json
@@ -12,7 +12,6 @@ import traceback
 import uuid
 from threading import Lock
 from typing import Dict, Optional, Set
-from src.cross_platform import safe_path_join
 from .projects_helpers import _resolve_project_root_path
 
 projects_export_bp = Blueprint("projects_export", __name__)
@@ -365,7 +364,6 @@ def _run_export_job(
     dest_dir.mkdir(parents=True, exist_ok=True)
     output_zip = dest_dir / filename
 
-    completed_ok = False
     try:
         job = _export_jobs.get(job_id, {})
         cancel_event = job.get("cancel_event")
@@ -428,7 +426,6 @@ def _run_export_job(
             )
             output_zip.unlink(missing_ok=True)
         else:
-            completed_ok = True
             _update_export_job(
                 job_id,
                 status="complete",
