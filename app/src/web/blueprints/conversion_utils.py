@@ -10,6 +10,7 @@ from flask import current_app
 import pandas as pd
 from src.converters.file_reader import infer_tabular_kind, read_tabular_file
 from src.utils.naming import normalize_filename
+from src.converters.survey_processing import normalize_run_entity as _normalize_run_entity
 
 SEPARATOR_MAP: dict[str, str] = {
     "comma": ",",
@@ -118,19 +119,6 @@ def _coerce_template_version_value(raw_value: object) -> str:
     return ""
 
 
-def _normalize_run_entity(run_value: object) -> str | None:
-    text = str(run_value or "").strip()
-    if not text:
-        return None
-    label = text[4:] if text[:4].lower() == "run-" else text
-    label = re.sub(r"[^A-Za-z0-9]+", "", label)
-    if not label:
-        raise ValueError(
-            "Invalid template version selection payload. Run must contain only letters and numbers."
-        )
-    return f"run-{label}"
-
-
 def parse_template_version_overrides(
     raw_value: str | None,
 ) -> dict[str, str] | list[dict[str, object]]:
@@ -171,7 +159,7 @@ def parse_template_version_overrides(
             run_entity = None
             if run_value not in {None, ""}:
                 try:
-                    run_entity = _normalize_run_entity(run_value)
+                    run_entity = _normalize_run_entity(run_value, raise_on_empty_label=True)
                 except ValueError as exc:
                     raise ValueError(str(exc)) from exc
             if run_entity is None and session_name is None:
@@ -213,7 +201,7 @@ def parse_template_version_overrides(
         run_value = entry.get("run")
         if run_value not in {None, ""}:
             try:
-                run_entity = _normalize_run_entity(run_value)
+                run_entity = _normalize_run_entity(run_value, raise_on_empty_label=True)
             except ValueError as exc:
                 raise ValueError(str(exc)) from exc
         overrides.append(
