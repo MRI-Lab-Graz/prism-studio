@@ -663,7 +663,7 @@ export function initPhysio(elements) {
                     abortErrorMessage: 'Physio polling aborted due to project change.',
                     timeoutErrorMessage: 'Physio conversion status timed out after 5 minutes. Please review logs and retry.',
                     statusFailureMessage: 'Failed to retrieve conversion status after multiple attempts.',
-                    getFailureError: (nextStatusData) => nextStatusData.error || 'Batch conversion failed',
+                    failureMessage: 'Batch conversion failed',
                 });
 
                 const result = statusData.result || {};

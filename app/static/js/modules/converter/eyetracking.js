@@ -478,7 +478,7 @@ export function initEyetracking(elements) {
                     abortErrorMessage: 'Eyetracking polling aborted due to project change.',
                     timeoutErrorMessage: 'Eyetracking conversion status timed out after 5 minutes. Please review logs and retry.',
                     statusFailureMessage: 'Failed to retrieve conversion status after multiple attempts.',
-                    getFailureError: (nextStatusData) => nextStatusData.error || 'Batch conversion failed',
+                    failureMessage: 'Batch conversion failed',
                 });
 
                 const result = statusData.result || {};
