@@ -607,7 +607,7 @@ export function initBiometrics(elements) {
                 abortErrorMessage: 'Biometrics polling aborted due to project change.',
                 timeoutErrorMessage: 'Biometrics conversion status timed out after 2 hours. The conversion may still be running in the background -- check the project for partial results before retrying.',
                 statusFailureMessage: 'Failed to retrieve conversion status after multiple attempts.',
-                getFailureError: (status) => status.error || errorMessage,
+                failureMessage: errorMessage,
             });
             return statusData.result || {};
         } finally {
