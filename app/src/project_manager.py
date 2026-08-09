@@ -6802,34 +6802,32 @@ git push -u origin main
 
     def _create_bidsignore(self, modalities: List[str]) -> str:
         """Create .bidsignore content."""
-        content = "# .bidsignore - PRISM and YODA files excluded from BIDS validation\n"
-        content += (
-            "# This ensures compatibility with standard BIDS tools (fMRIPrep, etc.)\n\n"
+        lines = [
+            "# .bidsignore - PRISM and YODA files excluded from BIDS validation",
+            "# This ensures compatibility with standard BIDS tools (fMRIPrep, etc.)",
+            "",
+            "project.json",
+            ".prismrc.json",
+            "",
+            "sourcedata/",
+            "derivatives/",
+            "analysis/",
+            "paper/",
+            "code/",
+            "",
+            "recipes/",
+            "recipe/",
+            "library/",
+            "code/recipes/",
+            "code/library/",
+            "",
+        ]
+        lines.extend(
+            f"{mod}/"
+            for mod in modalities
+            if mod in PRISM_MODALITIES and mod not in BIDS_PASSTHROUGH_MODALITIES
         )
-
-        # Ignore project-level metadata
-        content += "project.json\n"
-        content += ".prismrc.json\n\n"
-
-        # Ignore YODA folders (they are outside rawdata/ but just in case)
-        content += "sourcedata/\n"
-        content += "derivatives/\n"
-        content += "analysis/\n"
-        content += "paper/\n"
-        content += "code/\n\n"
-
-        # Ignore legacy/non-BIDS project folders if present
-        content += "recipes/\n"
-        content += "recipe/\n"
-        content += "library/\n"
-        content += "code/recipes/\n"
-        content += "code/library/\n\n"
-
-        for mod in modalities:
-            if mod in PRISM_MODALITIES and mod not in BIDS_PASSTHROUGH_MODALITIES:
-                content += f"{mod}/\n"
-
-        return content
+        return "\n".join(lines) + "\n"
 
     def _create_prismrc(self) -> Dict[str, Any]:
         """Create .prismrc.json content."""
