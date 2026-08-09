@@ -8,7 +8,6 @@ from src.prism_template_validation import (
     strip_template_editor_internal_keys as _strip_template_editor_internal_keys,
     validate_template_against_schema as _validate_against_schema,
 )
-from src.validator import _deep_merge
 
 
 def _default_library_root_for_templates(*, modality: str) -> Path:
