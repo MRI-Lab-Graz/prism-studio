@@ -185,11 +185,9 @@ def parse_lsa_responses(lsa_path):
         title = row.find("title").text
         qid_to_title[qid] = title
 
-    text = xml_resp.decode("utf-8")
-    fieldnames = re.findall(r"<fieldname>(.*?)</fieldname>", text)
-
-    # Parse rows by XML to preserve order and decode CDATA
+    # Parse once; both the fieldname list and the row data come from this tree.
     resp_root = ET.fromstring(xml_resp)
+    fieldnames = [el.text or "" for el in resp_root.findall(".//fieldname")]
     rows = resp_root.findall("./responses/rows/row")
     records = []
     for row in rows:
