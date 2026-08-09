@@ -11,11 +11,13 @@ import json
 import shutil
 import sys
 from pathlib import Path
+from typing import Callable
 
 from src.bids_file_deleter import BidsFileDeleter
 from src.physio_renamer import plan_rename
 from src.project_manager import ProjectManager
 
+parse_bids_filename: Callable[[str], dict[object, object] | None] | None
 try:
     from src.batch_convert import parse_bids_filename
 except ImportError:
@@ -226,10 +228,11 @@ def cmd_file_management_rename_physio(args) -> None:
             parse_bids_filename=parse_bids_filename,
         )
     except ValueError as error:
+        error_message = str(error)
         if as_json:
-            print(json.dumps({"success": False, "error": str(error)}, indent=2))
+            print(json.dumps({"success": False, "error": error_message}, indent=2))
         else:
-            print(f"Error: {error}")
+            print(f"Error: {error_message}")
         sys.exit(1)
 
     failed = [r for r in results if not r["success"]]
@@ -295,5 +298,5 @@ def cmd_file_management_rename_physio(args) -> None:
         print(f"Done: {copied} file(s) copied to {output_root}.")
         if copy_errors:
             print(f"{len(copy_errors)} file(s) failed:")
-            for error in copy_errors:
-                print(f"  ✗ {error}")
+            for copy_error in copy_errors:
+                print(f"  ✗ {copy_error}")

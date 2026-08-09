@@ -79,8 +79,11 @@ def _extract_by_example(
     if not token:
         return _normalize_entity_label(source_part, entity)
 
-    pos = example_part.find(token) if example_part is not None else -1
-    if pos < 0 and example_part is not None:
+    if example_part is None:
+        return _normalize_entity_label(source_part, entity)
+
+    pos = example_part.find(token)
+    if pos < 0:
         pos = example_part.lower().find(token.lower())
 
     if pos < 0:
