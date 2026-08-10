@@ -63,6 +63,7 @@ from .conversion_participants_merge import (
     _validate_participants_merge_request_context,
 )
 from .conversion_participants_convert import (
+    _check_existing_participants_files,
     _participants_job_store,
     _run_participants_convert_job,
 )
@@ -865,28 +866,11 @@ def api_participants_convert():
     if not project_root:
         return jsonify({"error": "No project selected"}), 400
 
-    participants_tsv = project_root / "participants.tsv"
-    participants_json = project_root / "participants.json"
-
-    existing_files = []
-    if participants_tsv.exists():
-        existing_files.append(str(participants_tsv))
-    if participants_json.exists():
-        existing_files.append(str(participants_json))
-
-    # Only block on real participant data (participants.tsv). A schema-only
-    # participants.json saved earlier from the annotation widget has no rows
-    # to lose, so it shouldn't require force_overwrite confirmation.
-    if participants_tsv.exists() and not force_overwrite and mode != "existing":
-        return (
-            jsonify(
-                {
-                    "error": "Participant files already exist. Enable 'force overwrite' to replace them.",
-                    "existing_files": existing_files,
-                }
-            ),
-            409,
-        )
+    participants_tsv, participants_json, existing_files, error_response = (
+        _check_existing_participants_files(project_root, mode, force_overwrite)
+    )
+    if error_response is not None:
+        return error_response
 
     logs = []
 
@@ -1139,25 +1123,11 @@ def api_participants_convert_start():
     if not project_root:
         return jsonify({"error": "No project selected"}), 400
 
-    participants_tsv = project_root / "participants.tsv"
-    participants_json = project_root / "participants.json"
-
-    existing_files = []
-    if participants_tsv.exists():
-        existing_files.append(str(participants_tsv))
-    if participants_json.exists():
-        existing_files.append(str(participants_json))
-
-    if participants_tsv.exists() and not force_overwrite and mode != "existing":
-        return (
-            jsonify(
-                {
-                    "error": "Participant files already exist. Enable 'force overwrite' to replace them.",
-                    "existing_files": existing_files,
-                }
-            ),
-            409,
-        )
+    participants_tsv, participants_json, existing_files, error_response = (
+        _check_existing_participants_files(project_root, mode, force_overwrite)
+    )
+    if error_response is not None:
+        return error_response
 
     upfront_logs: list[dict[str, str]] = []
 

@@ -1,6 +1,9 @@
 import json
 import shutil
+from pathlib import Path
 from typing import Any
+
+from flask import Response, jsonify
 
 from src.participants_backend import convert_dataset_participants
 from src.participants_backend import (
@@ -12,6 +15,41 @@ from .conversion_participants_mapping import _rekey_neurobagel_schema_to_output_
 from .conversion_participants_merge import _convert_existing_participants_files
 
 _participants_job_store = ConversionJobStore(log_level_key="level")
+
+
+def _check_existing_participants_files(
+    project_root: Path, mode: str, force_overwrite: bool
+) -> tuple[Path, Path, list[str], "tuple[Response, int] | None"]:
+    """Return (participants_tsv, participants_json, existing_files, error_response).
+
+    error_response is None when the request may proceed; otherwise it's the
+    (response, status_code) tuple the caller should return immediately.
+    Only blocks on real participant data (participants.tsv). A schema-only
+    participants.json saved earlier from the annotation widget has no rows
+    to lose, so it doesn't require force_overwrite confirmation.
+    """
+    participants_tsv = project_root / "participants.tsv"
+    participants_json = project_root / "participants.json"
+
+    existing_files = []
+    if participants_tsv.exists():
+        existing_files.append(str(participants_tsv))
+    if participants_json.exists():
+        existing_files.append(str(participants_json))
+
+    if participants_tsv.exists() and not force_overwrite and mode != "existing":
+        error_response = (
+            jsonify(
+                {
+                    "error": "Participant files already exist. Enable 'force overwrite' to replace them.",
+                    "existing_files": existing_files,
+                }
+            ),
+            409,
+        )
+        return participants_tsv, participants_json, existing_files, error_response
+
+    return participants_tsv, participants_json, existing_files, None
 
 
 def _run_participants_convert_job(job_id: str, config: dict[str, Any]) -> None:
