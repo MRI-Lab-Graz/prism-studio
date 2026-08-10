@@ -28,6 +28,20 @@ def _bootstrap_import_path() -> None:
             sys.path.insert(0, candidate_str)
 
 
+def _import_with_bootstrap(import_fn, *, catch=(ImportError,)):
+    """Run `import_fn`; on failure, add repo/app roots to sys.path and retry once.
+
+    If the retry also fails, the exception propagates to the caller — callers
+    that want a silent fallback (leaving names as their pre-declared default)
+    must wrap the call in their own try/except.
+    """
+    try:
+        return import_fn()
+    except catch:
+        _bootstrap_import_path()
+        return import_fn()
+
+
 # Import item registry for collision detection
 ItemRegistry: Any = None
 ItemCollisionError: Any = None
@@ -35,56 +49,58 @@ merge_survey_versions: Callable[..., Any] | None = None
 save_merged_template: Callable[..., Any] | None = None
 detect_version_name_from_import: Callable[..., Any] | None = None
 
-try:
+
+def _import_item_registry_and_merger():
     from src.converters.item_registry import (
-        ItemRegistry as _ItemRegistry,
-        ItemCollisionError as _ItemCollisionError,
+        ItemRegistry as item_registry_cls,
+        ItemCollisionError as item_collision_error_cls,
     )
     from src.converters.version_merger import (
-        merge_survey_versions as _merge_survey_versions,
-        save_merged_template as _save_merged_template,
-        detect_version_name_from_import as _detect_version_name_from_import,
+        merge_survey_versions as merge_survey_versions_fn,
+        save_merged_template as save_merged_template_fn,
+        detect_version_name_from_import as detect_version_name_from_import_fn,
     )
 
-    ItemRegistry = _ItemRegistry
-    ItemCollisionError = _ItemCollisionError
-    merge_survey_versions = _merge_survey_versions
-    save_merged_template = _save_merged_template
-    detect_version_name_from_import = _detect_version_name_from_import
-except ImportError:
-    _bootstrap_import_path()
-    try:
-        from src.converters.item_registry import (
-            ItemRegistry as _ItemRegistry,
-            ItemCollisionError as _ItemCollisionError,
-        )
-        from src.converters.version_merger import (
-            merge_survey_versions as _merge_survey_versions,
-            save_merged_template as _save_merged_template,
-            detect_version_name_from_import as _detect_version_name_from_import,
-        )
+    return (
+        item_registry_cls,
+        item_collision_error_cls,
+        merge_survey_versions_fn,
+        save_merged_template_fn,
+        detect_version_name_from_import_fn,
+    )
 
-        ItemRegistry = _ItemRegistry
-        ItemCollisionError = _ItemCollisionError
-        merge_survey_versions = _merge_survey_versions
-        save_merged_template = _save_merged_template
-        detect_version_name_from_import = _detect_version_name_from_import
-    except ImportError:
-        pass
 
 try:
-    from src.converters.survey_base import load_survey_library as load_schemas
-    from src.utils.naming import sanitize_task_name
-except (ImportError, ValueError):
-    _bootstrap_import_path()
-    from src.converters.survey_base import load_survey_library as load_schemas
+    (
+        ItemRegistry,
+        ItemCollisionError,
+        merge_survey_versions,
+        save_merged_template,
+        detect_version_name_from_import,
+    ) = _import_with_bootstrap(_import_item_registry_and_merger)
+except ImportError:
+    pass
+
+
+def _import_survey_base_and_naming():
+    from src.converters.survey_base import load_survey_library
     from src.utils.naming import sanitize_task_name
 
-try:
+    return load_survey_library, sanitize_task_name
+
+
+load_schemas, sanitize_task_name = _import_with_bootstrap(
+    _import_survey_base_and_naming, catch=(ImportError, ValueError)
+)
+
+
+def _import_csv_process_dataframe():
     from src.converters.csv import process_dataframe  # noqa: E402
-except ImportError:
-    _bootstrap_import_path()
-    from src.converters.csv import process_dataframe  # noqa: E402
+
+    return process_dataframe
+
+
+process_dataframe = _import_with_bootstrap(_import_csv_process_dataframe)
 
 # LimeSurvey question type codes mapped to human-readable names
 LIMESURVEY_QUESTION_TYPES = {
@@ -169,11 +185,9 @@ def parse_lsa_responses(lsa_path):
         title = row.find("title").text
         qid_to_title[qid] = title
 
-    text = xml_resp.decode("utf-8")
-    fieldnames = re.findall(r"<fieldname>(.*?)</fieldname>", text)
-
-    # Parse rows by XML to preserve order and decode CDATA
+    # Parse once; both the fieldname list and the row data come from this tree.
     resp_root = ET.fromstring(xml_resp)
+    fieldnames = [el.text or "" for el in resp_root.findall(".//fieldname")]
     rows = resp_root.findall("./responses/rows/row")
     records = []
     for row in rows:

@@ -111,8 +111,13 @@ def load_canonical_module(
         )
         return _caller_module_fallback()
 
-    # Canonical path is always repo_root/src/<canonical_rel_path>.
-    repo_root = canonical_path.parent.parent
+    # Canonical path is always repo_root/src/<canonical_rel_path>, where
+    # canonical_rel_path may itself contain subdirectories (e.g.
+    # "maintenance/sync_survey_keys.py"). Walk up one level per path
+    # component plus one more for "src" itself, rather than assuming a
+    # fixed two-level hop — a fixed hop only works when canonical_rel_path
+    # is a bare filename with no subdirectory.
+    repo_root = canonical_path.parents[len(Path(canonical_rel_path).parts)]
 
     repo_root_str = str(repo_root)
     if repo_root_str not in sys.path:
