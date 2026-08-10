@@ -55,7 +55,11 @@ From a prebuilt release, open the app. From a source checkout:
 source .venv/bin/activate && python prism-studio.py
 ```
 
-Studio opens at `http://localhost:5001` and lands on the **Projects** page.
+Studio opens at `http://localhost:5001` on its landing page.
+
+![PRISM Studio landing page](_static/screenshots/prism-studio-landing-create.png)
+
+Select **Create or Open a Project** to open the **Projects** page.
 
 ### 2. Choose "Create New Project"
 
@@ -69,21 +73,19 @@ applies here since we're starting from nothing.
 
 ### 3. Name and location
 
+![PRISM Studio project creation details](_static/screenshots/prism-studio-projects-createInfo.png)
+
 | Field | What to enter | Notes |
 |---|---|---|
 | Project Name | `wellbeing_study` | Letters, numbers, `_`, `-` only — no spaces. The field validates live and tells you exactly what's wrong (e.g. names a space or an umlaut) rather than just turning red. |
 | Project Location | a parent folder, e.g. `~/prism_projects` | The new project directory is created *inside* this folder, named after Project Name — so the actual target is `<Location>/wellbeing_study/`. The parent folder itself can already contain other things (other projects, unrelated files); what has to be empty or not-yet-existing is that specific `<Location>/wellbeing_study/` subfolder. |
-| Use DataLad version control | leave unchecked for now | Optional. Covered properly in the upcoming Intermediate tutorial — you can always turn a project into a DataLad dataset later, so there's no wrong choice here for a first project. |
+| Use DataLad version control | leave unchecked for now | Optional. You can enable DataLad later; the Intermediate tutorial explains when it is useful. |
 
-**Why the target folder has to start empty**: PRISM checks this and fails
-outright (*"Directory already exists and is not empty"*) rather than
-merging into a folder that already has files in it — pick a different name
-or parent instead of fighting this. It matters even more if you *do* check
-**Use DataLad version control**: DataLad's dataset creation runs inside that
-same folder right after it's created, and its first save captures whatever
-is sitting there at that point — starting from anything other than a fresh,
-empty target risks sweeping unrelated leftover files into your dataset's
-very first commit.
+```{warning}
+PRISM creates `<Location>/wellbeing_study/`. That exact folder must be new or
+empty; do not point it at a folder that already contains source files. Leave
+DataLad unchecked for this first project.
+```
 
 There is no modality or session picker at this step; modalities and
 sessions are populated automatically as you import data in later chapters.
@@ -167,8 +169,6 @@ depends on them.
 
 Click **Create Project** (not **Preliminary Save**, which only saves the
 form without creating anything yet).
-
-![PRISM Studio project creation info](_static/screenshots/prism-studio-projects-createInfo.png)
 
 With Dataset Name and a corresponding Author filled in from Part B, project
 creation should proceed straight through without any warning dialog. If a
