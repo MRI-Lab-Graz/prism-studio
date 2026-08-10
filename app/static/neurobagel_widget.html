@@ -960,23 +960,22 @@ window.renderNeurobagelWidget = async function() {
         const uniqueValues = window.participantsTsvData[colName];
         console.log(`📊 Column ${colName} - TSV values:`, uniqueValues);
         
-        // If backend already provided enriched levels (with SNOMED codes), preserve them
-        // Only add missing TSV values that aren't already defined
-        if (!colData.levels) {
-          colData.levels = {};
-        }
-        
-        // Add TSV values as levels, but PRESERVE existing enriched data from backend
+        // Dataset codes define the editable rows. Generic vocabulary entries remain
+        // available in the harmonization selector, but must not appear as data values.
+        const knownLevels = colData.levels && typeof colData.levels === 'object'
+          ? colData.levels
+          : {};
+        colData.levels = {};
+
         uniqueValues.forEach(value => {
-          if (!colData.levels[value]) {
-            // Only add if not already enriched by backend
-            colData.levels[value] = {
-              label: value,
-              description: '',
-              uri: null
-            };
-          }
-          // If already exists from backend, keep it (it has SNOMED codes!)
+          const sourceKey = String(value ?? '').trim();
+          if (!sourceKey) return;
+          const knownLevel = knownLevels[sourceKey];
+          colData.levels[sourceKey] = {
+            label: knownLevel?.label || sourceKey,
+            description: knownLevel?.description || '',
+            uri: knownLevel?.uri || null
+          };
         });
         
         console.log(`✅ Merged ${colName} with ${Object.keys(colData.levels).length} categorical levels (${uniqueValues.length} from TSV)`);

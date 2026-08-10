@@ -149,6 +149,25 @@ class TestParticipantsNeurobagelWidgetWiring(unittest.TestCase):
         )
         self.assertIn("continue;", widget_content)
 
+    def test_widget_limits_categorical_rows_to_observed_dataset_codes(self):
+        widget_content = WIDGET_FILE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "Dataset codes define the editable rows.",
+            widget_content,
+        )
+        self.assertIn(
+            "const knownLevels = colData.levels && typeof colData.levels === 'object'",
+            widget_content,
+        )
+        self.assertIn("const sourceKey = String(value ?? '').trim();", widget_content)
+        self.assertIn("const knownLevel = knownLevels[sourceKey];", widget_content)
+        self.assertIn("label: knownLevel?.label || sourceKey", widget_content)
+        self.assertIn(
+            "window.canonicalizeCategoricalLevels(colData, mapping);",
+            widget_content,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

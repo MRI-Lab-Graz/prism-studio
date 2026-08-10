@@ -1,13 +1,25 @@
 # Chapter 2: Import Sociodemographic Data
 
 Chapter 2 of [Getting Started — Your First PRISM Project](TUTORIAL_BEGINNER.md).
-This is about getting per-participant demographic fields (age, sex,
-education, handedness, ...) into `participants.tsv`/`participants.json` —
-it's not about the survey items in the same source file, which come in
-chapter 3.
+This chapter imports information about the people who take part in a study,
+such as age, sex, education, and handedness. It does not import their survey
+responses from the same source spreadsheet; those come in chapter 3.
 
-**Time:** ~15 minutes. **Outcome:** `participants.tsv` and
-`participants.json` written into `wellbeing_study`, one row per participant.
+```{important}
+**Data and its description belong together.** This is a crucial PRISM and BIDS
+convention: a TSV data table stores the recorded values, and a matching JSON
+file explains what its columns and values mean. The two files are a pair, not
+alternatives to each other. You will use this same TSV/JSON pattern throughout
+PRISM for surveys, biometrics, study environment data, and other documented
+tables.
+```
+
+In this chapter, `participants.tsv` is a table with one row for each person.
+`participants.json` explains columns such as `participant_id`, `age`, and
+`sex`, including any codes used in the table.
+
+**Time:** ~15 minutes. **Outcome:** a matching `participants.tsv` and
+`participants.json` pair written into `wellbeing_study`.
 
 <div class="prism-persona-note" data-persona-note>
 <p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
@@ -50,6 +62,13 @@ one row per participant with columns like `participant_id`, `session`,
 `age`, `sex`, `education`, `handedness`, `WB01`-`WB05`, `completion_date`.
 Only the demographic columns matter for this chapter — `WB01`-`WB05` are the
 survey items, imported separately in chapter 3.
+
+```{tip}
+This tutorial uses an Excel (`.xlsx`) workbook as an example; it is not an
+Excel-only workflow. The Participants converter also accepts CSV (`.csv`), TSV
+(`.tsv`), SPSS (`.sav`), R (`.rds`, `.rdata`, `.rda`), and LimeSurvey (`.lsa`)
+source files.
+```
 
 ## 2. Reopen `wellbeing_study`
 
