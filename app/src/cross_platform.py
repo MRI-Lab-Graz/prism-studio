@@ -28,6 +28,65 @@ def get_platform_info():
     }
 
 
+def windows_symlinks_supported():
+    """Return True/False on Windows, None on every other platform.
+
+    git-annex tracks files as symlinks into `.git/annex/objects/` by
+    default. Creating a symlink on Windows requires Developer Mode
+    (Win10 1703+) or admin rights -- there is no API to query that
+    privilege directly, so this actually creates and removes a throwaway
+    symlink in a temp directory, the same way Windows itself decides.
+    When unsupported, git-annex automatically falls back to an "adjusted
+    unlocked branch" (files materialize as real files instead of
+    symlinks) -- a supported mode, not an error, but worth surfacing so
+    it isn't silent.
+    """
+    if not sys.platform.startswith("win"):
+        return None
+
+    import tempfile
+
+    try:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            target = os.path.join(tmp_dir, "target")
+            link = os.path.join(tmp_dir, "link")
+            with open(target, "w", encoding="utf-8"):
+                pass
+            os.symlink(target, link)
+        return True
+    except OSError:
+        return False
+
+
+def windows_long_paths_enabled():
+    """Return True/False on Windows, None on every other platform.
+
+    Windows enforces a 260-character MAX_PATH by default. git-annex's
+    hashed object-store paths
+    (`.git/annex/objects/<2>/<2>/SHA256E-.../<original filename>`) can
+    exceed that on deeply nested datasets even when the original path
+    was well within limits. The only way to check is the registry value
+    Windows itself consults; any failure to read it (missing key, no
+    `winreg`, permission denied) is treated as "not confirmed enabled"
+    rather than assumed safe, since a false warning is harmless but a
+    missed one causes a mid-operation failure.
+    """
+    if not sys.platform.startswith("win"):
+        return None
+
+    try:
+        import winreg
+
+        with winreg.OpenKey(
+            winreg.HKEY_LOCAL_MACHINE,
+            r"SYSTEM\CurrentControlSet\Control\FileSystem",
+        ) as key:
+            value, _ = winreg.QueryValueEx(key, "LongPathsEnabled")
+        return bool(value)
+    except OSError:
+        return False
+
+
 def normalize_line_endings(text):
     """Normalize line endings for cross-platform compatibility"""
     # Convert to Unix-style line endings, then to platform-appropriate
