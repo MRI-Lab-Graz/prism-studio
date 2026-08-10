@@ -331,7 +331,7 @@ export function createSurveyWorkflowConvertController({
                 abortErrorMessage: 'Conversion canceled by user.',
                 timeoutErrorMessage: 'Survey conversion status timed out. Please review logs and retry.',
                 statusFailureMessage: 'Failed to retrieve conversion status after multiple attempts.',
-                getFailureError: (status) => status.error || 'Conversion failed',
+                failureMessage: 'Conversion failed',
             });
 
             advanceSurveyRunProgress('convert', 68, 'Applying conversion output and validation details...');

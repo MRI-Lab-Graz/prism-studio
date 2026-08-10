@@ -235,20 +235,23 @@ def resolve_sidecar_path(file_path, root_dir, library_path=None):
     return candidate
 
 
-def _deep_merge(base: dict, override: dict) -> dict:
+def _deep_merge(base: object, override: object) -> object:
     """
-    Deep merge two dictionaries. Override values take precedence.
+    Deep merge two values. Override values take precedence.
 
-    For nested dicts, recursively merge. For other types, override replaces base.
-    This implements BIDS inheritance where subject-level values override root-level.
+    For nested dicts, recursively merge; for anything else, override replaces
+    base outright. This implements BIDS inheritance where subject-level
+    values override root-level values.
     """
-    result = base.copy()
-    for key, value in override.items():
-        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
-            result[key] = _deep_merge(result[key], value)
-        else:
-            result[key] = value
-    return result
+    if isinstance(base, dict) and isinstance(override, dict):
+        result = dict(base)
+        for key, value in override.items():
+            if key in result:
+                result[key] = _deep_merge(result[key], value)
+            else:
+                result[key] = value
+        return result
+    return override
 
 
 def _find_inherited_root_sidecar(file_path: str, root_dir: str) -> str | None:

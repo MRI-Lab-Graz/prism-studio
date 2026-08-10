@@ -173,8 +173,10 @@ def _find_matching_global_template(
 
 
 _MISSING_TOKEN = "n/a"  # noqa: S105 - placeholder value for missing survey answers, not a credential
-# LimeSurvey answer code max length (used for reverse lookup)
-_LS_ANSWER_CODE_MAX_LENGTH = 5
+
+# Reuse the canonical implementation (survey_processing already imported as
+# _survey_processing above) instead of hand-rolling a second copy.
+_sanitize_answer_code_for_ls = _survey_processing._sanitize_answer_code_for_ls
 
 
 def _normalize_run_id(value: object) -> str | None:
@@ -186,32 +188,6 @@ def _normalize_run_id(value: object) -> str | None:
     if not label:
         return None
     return f"run-{label}"
-
-
-def _sanitize_answer_code_for_ls(code: str) -> str:
-    """Apply LimeSurvey answer code sanitization (for reverse lookup).
-
-    This mirrors the logic in limesurvey_exporter._sanitize_answer_code()
-    to allow matching truncated codes back to original level keys.
-
-    LimeSurvey truncates answer codes to 5 chars using: first 3 + last 2 chars
-    after removing non-alphanumeric characters.
-    """
-    # Handle n/a specially
-    if code.lower() in ("n/a", "na"):
-        return "na"
-
-    # Remove non-alphanumeric characters
-    sanitized = re.sub(r"[^a-zA-Z0-9]", "", code)
-
-    if len(sanitized) <= _LS_ANSWER_CODE_MAX_LENGTH:
-        return sanitized.lower()
-
-    # For long codes: first 3 chars + last 2 chars
-    prefix_len = _LS_ANSWER_CODE_MAX_LENGTH - 2  # 3
-    suffix_len = 2
-    abbreviated = sanitized[:prefix_len] + sanitized[-suffix_len:]
-    return abbreviated.lower()
 
 
 def _find_matching_level_key(value: str, levels: dict) -> str | None:
