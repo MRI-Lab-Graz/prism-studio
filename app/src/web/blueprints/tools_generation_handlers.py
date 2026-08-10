@@ -68,6 +68,8 @@ def handle_generate_lss_endpoint():
         base_language = data.get("base_language") or language
         ls_version = data.get("ls_version", "3")
         survey_title = data.get("survey_title", "")
+        matrix_mode = bool(data.get("matrix", True))
+        matrix_global = bool(data.get("matrix_global", True))
         generate_lss(
             valid_files,
             temp_path,
@@ -75,6 +77,8 @@ def handle_generate_lss_endpoint():
             languages=languages,
             base_language=base_language,
             ls_version=ls_version,
+            matrix_mode=matrix_mode,
+            matrix_global=matrix_global,
         )
 
         import re

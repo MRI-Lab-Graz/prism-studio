@@ -1337,6 +1337,24 @@ def build_prism_tools_parsers(
         choices=["3", "6"],
         help="Target LimeSurvey version (default: 3)",
     )
+    parser_survey_export_lss.add_argument(
+        "--no-matrix",
+        dest="matrix",
+        action="store_false",
+        default=True,
+        help="Do not group questions with identical answer options into a "
+        "LimeSurvey array/matrix question (default: grouped, matching the "
+        "Survey Customizer's export behavior)",
+    )
+    parser_survey_export_lss.add_argument(
+        "--no-matrix-global",
+        dest="matrix_global",
+        action="store_false",
+        default=True,
+        help="When grouping into matrices, only group consecutive questions "
+        "with identical options rather than all matching questions in the "
+        "file (default: all matching questions)",
+    )
 
     parser_survey_export_lss_customized = survey_subparsers.add_parser(
         "export-lss-customized",

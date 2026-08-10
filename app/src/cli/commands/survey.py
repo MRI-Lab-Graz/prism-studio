@@ -756,6 +756,8 @@ def cmd_survey_export_lss(args) -> None:
     )
     base_language = str(getattr(args, "base_language", None) or language)
     ls_version = str(getattr(args, "ls_version", "3") or "3")
+    matrix_mode = bool(getattr(args, "matrix", True))
+    matrix_global = bool(getattr(args, "matrix_global", True))
     output_path = Path(args.output).resolve()
 
     try:
@@ -766,6 +768,8 @@ def cmd_survey_export_lss(args) -> None:
             languages=languages,
             base_language=base_language,
             ls_version=ls_version,
+            matrix_mode=matrix_mode,
+            matrix_global=matrix_global,
         )
     except Exception as exc:
         print(f"Error: {exc}")
