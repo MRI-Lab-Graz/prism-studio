@@ -6,7 +6,7 @@ from pathlib import Path
 from flask import request
 from werkzeug.utils import secure_filename
 
-from src.converters.file_reader import infer_tabular_kind
+from src.converters.file_reader import infer_tabular_kind, read_tabular_file
 
 from .conversion_utils import (
     expected_delimiter_for_suffix as _shared_expected_delimiter_for_suffix,
@@ -90,11 +90,6 @@ def _read_participants_input_table(
 
     kind = infer_tabular_kind(input_path)
     if kind in {"xlsx", "csv", "tsv", "sav", "rds", "rdata"}:
-        # Import at runtime so tests can mock it from the blueprint module
-        from src.web.blueprints.conversion_participants_blueprint import (
-            read_tabular_file,
-        )
-
         result = read_tabular_file(
             input_path,
             kind=kind,

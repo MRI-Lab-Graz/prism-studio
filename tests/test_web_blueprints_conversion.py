@@ -61,6 +61,7 @@ try:
     from src.web.blueprints import (
         conversion_participants_blueprint as participants_module,
     )
+    from src.web.blueprints import conversion_participants_io as io_module
     from src.web.blueprints.conversion import conversion_bp
     from src.web.blueprints.conversion_biometrics_handlers import (
         api_biometrics_check_library,
@@ -5039,7 +5040,7 @@ class TestParticipantsInputFileEdgeCases(unittest.TestCase):
         participants_module, "_load_survey_template_item_ids", return_value=set()
     )
     @patch.object(participants_module, "resolve_effective_library_path")
-    @patch.object(participants_module, "read_tabular_file")
+    @patch.object(io_module, "read_tabular_file")
     def test_preview_rejects_fake_xlsx_content(
         self,
         mock_read_tabular_file,
