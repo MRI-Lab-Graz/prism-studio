@@ -11,13 +11,89 @@ coverage:
         # gets real test coverage; ratchet this up as that happens.
         target: 60%
         threshold: 2%     # allow some drop while app/src/ coverage is uneven
+      # Goal line for the >80%-everywhere effort (see individual_components
+      # below). Informational only -- doesn't block merges -- until the
+      # blended number actually clears it, at which point flip this to
+      # enforcing and delete the 60% status above.
+      goal-80:
+        target: 80%
+        informational: true
     patch:
       default:
         target: auto
         threshold: 5%     # new code in a PR needs ≥ this coverage
 
+# Per-directory coverage, tracked separately because the blended project
+# number above hides how unevenly coverage is distributed (as of
+# 2026-08-10: src/converters ~89%, app/src/environment ~29%,
+# app/src/derivatives ~19%). Goal is >80% in each one; `informational: true`
+# means these post to PRs for visibility without failing CI. As a component
+# is actually brought above 80%, flip that one entry to
+# `informational: false` (enforcing) in a follow-up PR -- same ratchet
+# pattern as the project-level target above, just per-directory.
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: 80%
+        threshold: 2%
+        informational: true
+  individual_components:
+    - component_id: src_converters
+      name: src/converters
+      paths:
+        - src/converters/**
+    - component_id: src_derivatives
+      name: src/derivatives
+      paths:
+        - src/derivatives/**
+    - component_id: src_root
+      name: src (root modules)
+      paths:
+        - src/*.py
+    - component_id: app_web
+      name: app/src/web (Flask blueprints/routes)
+      paths:
+        - app/src/web/**
+    - component_id: app_converters
+      name: app/src/converters
+      paths:
+        - app/src/converters/**
+    - component_id: app_cli
+      name: app/src/cli
+      paths:
+        - app/src/cli/**
+    - component_id: app_core
+      name: app/src/core
+      paths:
+        - app/src/core/**
+    - component_id: app_derivatives
+      name: app/src/derivatives
+      paths:
+        - app/src/derivatives/**
+    - component_id: app_json_editor
+      name: app/src/json_editor
+      paths:
+        - app/src/json_editor/**
+    - component_id: app_environment
+      name: app/src/environment
+      paths:
+        - app/src/environment/**
+    - component_id: app_maintenance
+      name: app/src/maintenance
+      paths:
+        - app/src/maintenance/**
+    - component_id: app_utils
+      name: app/src/utils
+      paths:
+        - app/src/utils/**
+    - component_id: app_root
+      name: app/src (root modules)
+      paths:
+        - app/src/*.py
+
 comment:
-  layout: "reach,diff,flags,files"
+  layout: "reach,diff,flags,components,files"
   behavior: default
   require_changes: true   # only comment when coverage changes
 
