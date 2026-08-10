@@ -9,7 +9,7 @@ pydicom>=3.0.2
 authlib>=1.7.0
 
 # NLP and scraping helpers used by scripts/workflows
-nltk>=3.10.0
+nltk>=3.10.2
 beautifulsoup4
 
 # Optional export formats and physio support
