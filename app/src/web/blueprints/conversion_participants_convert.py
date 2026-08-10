@@ -52,6 +52,88 @@ def _check_existing_participants_files(
     return participants_tsv, participants_json, existing_files, None
 
 
+def _write_participants_outputs(
+    project_root: Path,
+    input_path: Path,
+    mapping: dict,
+    converter_separator: str,
+    sheet_arg,
+    participants_tsv: Path,
+    participants_json: Path,
+    neurobagel_schema: dict,
+    existing_files: list[str],
+    log_msg,
+) -> dict[str, Any]:
+    """Run ParticipantsConverter, write participants.tsv/json, return the
+    success result payload (no "log" key -- callers merge that in)."""
+    from src.participants_converter import ParticipantsConverter
+
+    converter = ParticipantsConverter(project_root, log_callback=log_msg)
+    success, df, messages = converter.convert_participant_data(
+        source_file=str(input_path),
+        mapping=mapping,
+        output_file=str(participants_tsv),
+        separator=converter_separator,
+        sheet=sheet_arg,
+    )
+
+    for msg in messages:
+        log_msg("INFO", msg)
+
+    if not success or df is None:
+        raise ValueError("Conversion failed")
+
+    df.to_csv(participants_tsv, sep="\t", index=False)
+    log_msg("INFO", f"✓ Created {participants_tsv.name}")
+
+    participants_json_data: dict[str, Any] = {str(col): {} for col in df.columns}
+
+    if neurobagel_schema:
+        try:
+            aligned_neurobagel_schema = _rekey_neurobagel_schema_to_output_columns(
+                neurobagel_schema=neurobagel_schema,
+                mapping=mapping if isinstance(mapping, dict) else None,
+                allowed_columns=list(df.columns),
+            )
+            participants_json_data, merged_count = _merge_neurobagel_schema_for_columns(
+                participants_json_data,
+                aligned_neurobagel_schema,
+                list(df.columns),
+                log_callback=log_msg,
+            )
+            log_msg(
+                "INFO",
+                f"Merged NeuroBagel annotations for {merged_count} participants.tsv column(s)",
+            )
+        except Exception as e:
+            log_msg("WARNING", f"Could not merge NeuroBagel schema: {str(e)}")
+
+    fallback_descriptions = {
+        "participant_id": "Participant identifier (sub-<label>)",
+        "age": "Age of participant",
+    }
+    for col in df.columns:
+        col_name = str(col)
+        field = participants_json_data.setdefault(col_name, {})
+        current_description = str(field.get("Description") or "").strip()
+        if current_description:
+            continue
+        field["Description"] = fallback_descriptions.get(col_name, f"Participant {col_name}")
+
+    with open(participants_json, "w", encoding="utf-8") as f:
+        json.dump(participants_json_data, f, indent=2, ensure_ascii=False)
+
+    log_msg("INFO", f"✓ Created {participants_json.name}")
+
+    return {
+        "status": "success",
+        "files_created": [str(participants_tsv), str(participants_json)],
+        "output_directory": str(project_root),
+        "overwrote_existing": bool(existing_files),
+        "overwritten_files": existing_files if existing_files else [],
+    }
+
+
 def _run_participants_convert_job(job_id: str, config: dict[str, Any]) -> None:
     """Worker thread body for an async participants conversion job."""
 
@@ -67,97 +149,29 @@ def _run_participants_convert_job(job_id: str, config: dict[str, Any]) -> None:
         if mode == "file":
             tmp_dir = config["tmp_dir"]
             try:
-                from src.participants_converter import ParticipantsConverter
-
                 input_path = config["input_path"]
                 participants_tsv = config["participants_tsv"]
                 participants_json = config["participants_json"]
                 mapping = config["mapping"]
 
-                converter = ParticipantsConverter(project_root, log_callback=log_msg)
-                success, df, messages = converter.convert_participant_data(
-                    source_file=str(input_path),
-                    mapping=mapping,
-                    output_file=str(participants_tsv),
-                    separator=config["converter_separator"],
-                    sheet=config["sheet_arg"],
-                )
-
-                for msg in messages:
-                    log_msg("INFO", msg)
-
-                if not success or df is None:
+                try:
+                    result = _write_participants_outputs(
+                        project_root=project_root,
+                        input_path=input_path,
+                        mapping=mapping,
+                        converter_separator=config["converter_separator"],
+                        sheet_arg=config["sheet_arg"],
+                        participants_tsv=participants_tsv,
+                        participants_json=participants_json,
+                        neurobagel_schema=neurobagel_schema,
+                        existing_files=existing_files,
+                        log_msg=log_msg,
+                    )
+                except ValueError:
                     _participants_job_store.failure(job_id, "Conversion failed")
                     return
 
-                df.to_csv(participants_tsv, sep="\t", index=False)
-                log_msg("INFO", f"✓ Created {participants_tsv.name}")
-
-                participants_json_data: dict[str, Any] = {str(col): {} for col in df.columns}
-
-                if neurobagel_schema:
-                    try:
-                        aligned_neurobagel_schema = (
-                            _rekey_neurobagel_schema_to_output_columns(
-                                neurobagel_schema=neurobagel_schema,
-                                mapping=mapping if isinstance(mapping, dict) else None,
-                                allowed_columns=list(df.columns),
-                            )
-                        )
-                        participants_json_data, merged_count = (
-                            _merge_neurobagel_schema_for_columns(
-                                participants_json_data,
-                                aligned_neurobagel_schema,
-                                list(df.columns),
-                                log_callback=log_msg,
-                            )
-                        )
-                        log_msg(
-                            "INFO",
-                            f"Merged NeuroBagel annotations for {merged_count} participants.tsv column(s)",
-                        )
-                    except Exception as e:
-                        log_msg(
-                            "WARNING", f"Could not merge NeuroBagel schema: {str(e)}"
-                        )
-
-                fallback_descriptions = {
-                    "participant_id": "Participant identifier (sub-<label>)",
-                    "age": "Age of participant",
-                }
-                for col in df.columns:
-                    col_name = str(col)
-                    field = participants_json_data.setdefault(col_name, {})
-                    current_description = str(field.get("Description") or "").strip()
-                    if current_description:
-                        continue
-                    field["Description"] = fallback_descriptions.get(
-                        col_name, f"Participant {col_name}"
-                    )
-
-                with open(participants_json, "w", encoding="utf-8") as f:
-                    json.dump(
-                        participants_json_data,
-                        f,
-                        indent=2,
-                        ensure_ascii=False,
-                    )
-
-                log_msg("INFO", f"✓ Created {participants_json.name}")
-
-                _participants_job_store.success(
-                    job_id,
-                    {
-                        "status": "success",
-                        "files_created": [
-                            str(participants_tsv),
-                            str(participants_json),
-                        ],
-                        "output_directory": str(project_root),
-                        "overwrote_existing": bool(existing_files),
-                        "overwritten_files": existing_files if existing_files else [],
-                    },
-                )
+                _participants_job_store.success(job_id, result)
             finally:
                 shutil.rmtree(tmp_dir, ignore_errors=True)
 
