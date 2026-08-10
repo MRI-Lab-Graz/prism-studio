@@ -7,32 +7,20 @@
  * each sync is additive, optionally followed by a checksum verification.
  */
 
-import { setButtonLoading } from './helpers.js';
+import { getProgressEls, setButtonLoading, setStatusBadge as setStatusBadgeFor } from './helpers.js';
 import { getById, setHtml, hide, show, escapeHtml } from '../../shared/dom.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { openRemoteFolderPicker } from './remote_folder_picker.js';
 
+const PROGRESS_PREFIX = 'rsyncServer';
+
 let rsyncServerModuleInitialized = false;
 let activeJobId = null;
 let activeJobCancelled = false;
 
-function getProgressEls() {
-    return {
-        progressDiv: getById('rsyncServerProgress'),
-        progressBar: getById('rsyncServerProgressBar'),
-        progressText: getById('rsyncServerProgressText'),
-        statusText: getById('rsyncServerStatusText'),
-        resultDiv: getById('rsyncServerResult'),
-        cancelBtn: getById('rsyncServerCancelBtn'),
-    };
-}
-
 function setStatusBadge(text, tone = 'secondary') {
-    const badge = getById('rsyncServerStatusBadge');
-    if (!badge) return;
-    badge.className = `badge bg-${tone}`;
-    badge.textContent = text;
+    setStatusBadgeFor(PROGRESS_PREFIX, text, tone);
 }
 
 /**
@@ -129,7 +117,7 @@ async function onSyncClick() {
     }
     requestData.verify = !!getById('rsyncServerVerify')?.checked;
 
-    const { progressDiv, progressBar, progressText, statusText, resultDiv, cancelBtn } = getProgressEls();
+    const { progressDiv, progressBar, progressText, statusText, resultDiv, cancelBtn } = getProgressEls(PROGRESS_PREFIX);
 
     activeJobCancelled = false;
     activeJobId = null;
