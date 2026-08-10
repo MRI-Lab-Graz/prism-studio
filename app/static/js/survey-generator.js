@@ -642,6 +642,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Tool-specific payload fields
         if (getSelectedTool() === 'limesurvey') {
             payload.ls_version = document.getElementById('lsVersionSelect').value;
+            payload.matrix = document.getElementById('lsMatrixGroupCheckbox').checked;
+            payload.matrix_global = payload.matrix;
         }
 
         fetchWithApiFallback(cfg.exportEndpoint, {
