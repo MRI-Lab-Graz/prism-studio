@@ -71,16 +71,7 @@ def _preview_display_path(file_path: str | Path, output_root: str | Path) -> str
 
 
 def _normalize_run_entity(value: str | int | None) -> str | None:
-    if value is None:
-        return None
-    text = str(value).strip()
-    if not text or text.lower() == "nan":
-        return None
-    label = text[4:] if text[:4].lower() == "run-" else text
-    label = re.sub(r"[^A-Za-z0-9]+", "", label)
-    if not label:
-        return None
-    return f"run-{label}"
+    return _survey_processing.normalize_run_entity(value, nan_as_none=True)
 
 
 def _lookup_task_context_value(

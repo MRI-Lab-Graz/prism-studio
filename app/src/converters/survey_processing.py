@@ -96,6 +96,39 @@ def _sanitize_answer_code_for_ls(code: str) -> str:
     return abbreviated.lower()
 
 
+def normalize_run_entity(
+    value: object,
+    *,
+    nan_as_none: bool = False,
+    raise_on_empty_label: bool = False,
+) -> str | None:
+    """Normalize a BIDS `run-<label>` entity value.
+
+    Strips an existing ``run-`` prefix, removes non-alphanumeric characters,
+    and re-prefixes. Two call-site-specific edge cases are opt-in:
+
+    - ``nan_as_none``: treat the literal string ``"nan"`` (pandas' stringified
+      missing-float marker) the same as an empty value.
+    - ``raise_on_empty_label``: raise ``ValueError`` (instead of returning
+      ``None``) when the value is non-empty but becomes empty after removing
+      non-alphanumeric characters (e.g. ``"---"``).
+    """
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text or (nan_as_none and text.lower() == "nan"):
+        return None
+    label = text[4:] if text[:4].lower() == "run-" else text
+    label = re.sub(r"[^A-Za-z0-9]+", "", label)
+    if not label:
+        if raise_on_empty_label:
+            raise ValueError(
+                "Invalid template version selection payload. Run must contain only letters and numbers."
+            )
+        return None
+    return f"run-{label}"
+
+
 def _find_matching_level_key(value: str, levels: dict) -> str | None:
     v_lower = value.lower().strip()
 

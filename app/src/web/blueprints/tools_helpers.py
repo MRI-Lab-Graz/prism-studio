@@ -253,18 +253,6 @@ def _schema_example(schema: dict) -> object:
     return ""
 
 
-def _deep_merge(base: object, override: object) -> object:
-    if isinstance(base, dict) and isinstance(override, dict):
-        out = dict(base)
-        for key, value in override.items():
-            if key in out:
-                out[key] = _deep_merge(out[key], value)
-            else:
-                out[key] = value
-        return out
-    return override
-
-
 def _new_template_from_schema(*, modality: str, schema_version: str | None) -> dict:
     schema = _load_prism_schema(modality=modality, schema_version=schema_version)
     out: dict[str, object] = {}
