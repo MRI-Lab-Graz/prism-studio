@@ -32,6 +32,26 @@ document.addEventListener('DOMContentLoaded', () => {
         return sharedFetchWithApiFallback(url, options, fallbackMessage);
     }
 
+    const sharedPathPickerModuleUrl = new URL('./shared/path-picker.js', fileManagementScriptUrl).href;
+    let sharedPrefersServerPickerPromise = null;
+
+    function loadSharedPrefersServerPicker() {
+        if (!sharedPrefersServerPickerPromise) {
+            sharedPrefersServerPickerPromise = import(sharedPathPickerModuleUrl).then(({ prefersServerPicker }) => {
+                if (typeof prefersServerPicker !== 'function') {
+                    throw new Error('Shared path picker helper is unavailable.');
+                }
+                return prefersServerPicker;
+            });
+        }
+        return sharedPrefersServerPickerPromise;
+    }
+
+    async function prefersServerPicker() {
+        const sharedPrefersServerPicker = await loadSharedPrefersServerPicker();
+        return sharedPrefersServerPicker();
+    }
+
     function getCurrentProjectPath() {
         if (typeof window.resolveCurrentProjectPath === 'function') {
             return String(window.resolveCurrentProjectPath() || '').trim();
@@ -211,11 +231,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return window.PrismPathPicker || null;
     }
 
-    function prefersServerPicker() {
-        const pathPicker = getPathPicker();
-        return Boolean(pathPicker && typeof pathPicker.prefersServerPicker === 'function' && pathPicker.prefersServerPicker());
-    }
-
     async function pickServerFolder(options = {}) {
         const pathPicker = getPathPicker();
         if (!(pathPicker && typeof pathPicker.pickServerFolder === 'function')) {
@@ -234,8 +249,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return pathPicker.pickServerFile(options);
     }
 
-    function applyRemotePickerUiState() {
-        const connectedToServer = prefersServerPicker();
+    async function applyRemotePickerUiState() {
+        const connectedToServer = await prefersServerPicker();
 
         const renamerInput = document.getElementById('renamerFiles');
         const renamerLocalUploadGroup = document.getElementById('renamerLocalUploadGroup');
