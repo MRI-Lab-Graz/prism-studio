@@ -1278,6 +1278,10 @@ def generate_lss(
                 # Matrix Question (Array)
                 q_type = "F"
 
+                any_mandatory = any(
+                    data_item.get("Mandatory", True) for _code, data_item in group
+                )
+
                 matrix_title = _apply_run_suffix(f"M{first_code}", run_number)
 
                 # Matrix parent question text: prefer Study.Instructions, fall back to generic
@@ -1307,7 +1311,7 @@ def generate_lss(
                         "type": q_type,
                         "title": matrix_title,
                         "other": "N",
-                        "mandatory": "Y",
+                        "mandatory": "Y" if any_mandatory else "N",
                         "question_order": str(q_sort_order),
                         "scale_id": "0",
                         "same_default": "0",
@@ -1340,7 +1344,7 @@ def generate_lss(
                             "type": q_type,
                             "title": matrix_title,
                             "other": "N",
-                            "mandatory": "Y",
+                            "mandatory": "Y" if any_mandatory else "N",
                             "question_order": str(q_sort_order),
                             "scale_id": "0",
                             "same_default": "0",
@@ -1487,6 +1491,7 @@ def generate_lss(
                 # Single Question (with run suffix if applicable)
                 q_code = _apply_run_suffix(first_code, run_number)
                 q_data = first_data
+                is_mandatory = q_data.get("Mandatory", True)
 
                 # Determine Type using helper function
                 q_type, extra_attrs = _determine_ls_question_type(q_data, bool(levels))
@@ -1505,7 +1510,7 @@ def generate_lss(
                         "type": q_type,
                         "title": q_code,
                         "other": "Y" if has_other else "N",
-                        "mandatory": "Y",
+                        "mandatory": "Y" if is_mandatory else "N",
                         "question_order": str(q_sort_order),
                         "scale_id": "0",
                         "same_default": "0",
@@ -1562,7 +1567,7 @@ def generate_lss(
                             "type": q_type,
                             "title": q_code,
                             "other": "Y" if has_other else "N",
-                            "mandatory": "Y",
+                            "mandatory": "Y" if is_mandatory else "N",
                             "question_order": str(q_sort_order),
                             "scale_id": "0",
                             "same_default": "0",
