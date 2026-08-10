@@ -1,14 +1,9 @@
+import { prefersServerPicker } from '../../shared/path-picker.js';
+
+export { prefersServerPicker };
+
 function getPathPicker() {
     return typeof window !== 'undefined' ? window.PrismPathPicker : null;
-}
-
-export function prefersServerPicker() {
-    const pathPicker = getPathPicker();
-    return Boolean(
-        pathPicker
-        && typeof pathPicker.prefersServerPicker === 'function'
-        && pathPicker.prefersServerPicker()
-    );
 }
 
 export async function pickServerFile(options) {

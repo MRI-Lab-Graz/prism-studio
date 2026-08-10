@@ -24,6 +24,26 @@ document.addEventListener('DOMContentLoaded', function() {
         return sharedFetchWithRelativePathFallback(url, options, fallbackMessage);
     }
 
+    const sharedPathPickerModuleUrl = new URL('./shared/path-picker.js', validatorScriptUrl).href;
+    let sharedPrefersServerPickerPromise = null;
+
+    function loadSharedPrefersServerPicker() {
+        if (!sharedPrefersServerPickerPromise) {
+            sharedPrefersServerPickerPromise = import(sharedPathPickerModuleUrl).then(({ prefersServerPicker }) => {
+                if (typeof prefersServerPicker !== 'function') {
+                    throw new Error('Shared path picker helper is unavailable.');
+                }
+                return prefersServerPicker;
+            });
+        }
+        return sharedPrefersServerPickerPromise;
+    }
+
+    async function prefersServerPicker() {
+        const sharedPrefersServerPicker = await loadSharedPrefersServerPicker();
+        return sharedPrefersServerPicker();
+    }
+
     // Validation Mode Toggles
     const modeRadios = document.querySelectorAll('input[name="validation_mode"]');
     const bidsOptions = document.getElementById('bids_options');
@@ -167,11 +187,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function getPathPicker() {
         return window.PrismPathPicker || null;
-    }
-
-    function prefersServerPicker() {
-        const pathPicker = getPathPicker();
-        return Boolean(pathPicker && typeof pathPicker.prefersServerPicker === 'function' && pathPicker.prefersServerPicker());
     }
 
     async function browseFolder(options = {}) {
@@ -992,8 +1007,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function applyRemotePickerUiState() {
-        const connectedToServer = prefersServerPicker();
+    async function applyRemotePickerUiState() {
+        const connectedToServer = await prefersServerPicker();
 
         if (folderBtn) {
             folderBtn.innerHTML = '<i class="fas fa-folder-open me-2"></i>Browse Folder';
@@ -1110,8 +1125,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (browseLibraryBtn && libraryPathInput) {
         browseLibraryBtn.addEventListener('click', async function() {
             try {
+                const title = (await prefersServerPicker())
+                    ? 'Select Template Library Root on Server'
+                    : 'Select Template Library Root';
                 const pickedPath = await browseFolder({
-                    title: prefersServerPicker() ? 'Select Template Library Root on Server' : 'Select Template Library Root',
+                    title,
                     confirmLabel: 'Use This Folder',
                     startPath: (libraryPathInput.value || '').trim()
                 });

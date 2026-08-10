@@ -3,7 +3,36 @@
  * UI helper functions for button states, alerts, toasts, and feedback
  */
 
-import { escapeHtml } from '../../shared/dom.js';
+import { escapeHtml, getById } from '../../shared/dom.js';
+
+/**
+ * Look up the standard progress-panel elements for a server-sync section.
+ * @param {string} prefix - Element ID prefix (e.g. 'dataladServer', 'rsyncServer')
+ * @returns {{progressDiv, progressBar, progressText, statusText, resultDiv, cancelBtn}}
+ */
+export function getProgressEls(prefix) {
+    return {
+        progressDiv: getById(`${prefix}Progress`),
+        progressBar: getById(`${prefix}ProgressBar`),
+        progressText: getById(`${prefix}ProgressText`),
+        statusText: getById(`${prefix}StatusText`),
+        resultDiv: getById(`${prefix}Result`),
+        cancelBtn: getById(`${prefix}CancelBtn`),
+    };
+}
+
+/**
+ * Set a server-sync section's status badge tone and text.
+ * @param {string} prefix - Element ID prefix (e.g. 'dataladServer', 'rsyncServer')
+ * @param {string} text - Badge text
+ * @param {string} tone - Bootstrap badge tone (default 'secondary')
+ */
+export function setStatusBadge(prefix, text, tone = 'secondary') {
+    const badge = getById(`${prefix}StatusBadge`);
+    if (!badge) return;
+    badge.className = `badge bg-${tone}`;
+    badge.textContent = text;
+}
 
 /**
  * Set button loading state
