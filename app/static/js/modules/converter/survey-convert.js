@@ -7,6 +7,7 @@
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createSessionRegistrar } from '../../shared/session-register.js';
+import { escapeHtml } from '../../shared/dom.js';
 import { createSurveyParticipantsMetadataController } from './survey-participants-metadata.js';
 import { createSurveyWorkflowPrepareController } from './survey-workflow-prepare.js';
 import { createSurveyWorkflowConvertController } from './survey-workflow-convert.js';
@@ -1983,16 +1984,6 @@ export function initSurveyConvert(elements) {
         convertInfo,
         appendLog,
     });
-
-    function escapeHtml(text) {
-        if (text === null || text === undefined) return '';
-        return String(text)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
 
     const participantsMetadataController = createSurveyParticipantsMetadataController({
         escapeHtml,

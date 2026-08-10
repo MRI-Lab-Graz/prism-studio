@@ -18,11 +18,7 @@
  * @param {string} [options.abortErrorMessage='Polling aborted.']
  * @param {string} [options.timeoutErrorMessage='Job status timed out.']
  * @param {string} [options.statusFailureMessage='Failed to retrieve job status after multiple attempts.']
- * @param {(status:Object)=>Array} [options.getLogs]
- * @param {(status:Object,cursor:number,logs:Array)=>number} [options.getNextCursor]
- * @param {(status:Object)=>boolean} [options.isDone]
- * @param {(status:Object)=>boolean} [options.isSuccess]
- * @param {(status:Object)=>string} [options.getFailureError]
+ * @param {string} [options.failureMessage='Job failed.'] - Fallback used when the final status has no `.error` field.
  * @returns {Promise<Object>} Final successful status payload.
  */
 export async function pollJobStatus(options) {
@@ -80,16 +76,18 @@ export async function pollJobStatus(options) {
         abortErrorMessage = 'Polling aborted.',
         timeoutErrorMessage = 'Job status timed out.',
         statusFailureMessage = 'Failed to retrieve job status after multiple attempts.',
-        getLogs = (status) => (Array.isArray(status && status.logs) ? status.logs : []),
-        getNextCursor = (status, cursor, logs) => (
-            Number.isInteger(status && status.next_cursor)
-                ? status.next_cursor
-                : cursor + logs.length
-        ),
-        isDone = (status) => Boolean(status && status.done),
-        isSuccess = (status) => Boolean(status && status.success),
-        getFailureError = (status) => (status && status.error) || 'Job failed.',
+        failureMessage = 'Job failed.',
     } = options || {};
+
+    const getLogs = (status) => (Array.isArray(status && status.logs) ? status.logs : []);
+    const getNextCursor = (status, cursor, logs) => (
+        Number.isInteger(status && status.next_cursor)
+            ? status.next_cursor
+            : cursor + logs.length
+    );
+    const isDone = (status) => Boolean(status && status.done);
+    const isSuccess = (status) => Boolean(status && status.success);
+    const getFailureError = (status) => (status && status.error) || failureMessage;
 
     if (typeof fetchStatus !== 'function') {
         throw new Error('pollJobStatus requires a fetchStatus callback.');

@@ -3144,7 +3144,7 @@ export function initParticipants() {
                 abortErrorMessage: 'Participants polling aborted due to project change.',
                 timeoutErrorMessage: 'Participants conversion status timed out. Please review logs and retry.',
                 statusFailureMessage: 'Failed to retrieve conversion status after multiple attempts.',
-                getFailureError: (status) => status.error || 'Conversion failed',
+                failureMessage: 'Conversion failed',
             });
             return statusData.result || {};
         } finally {

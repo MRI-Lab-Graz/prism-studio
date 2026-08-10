@@ -670,7 +670,7 @@ export function initEnvironment(elements) {
                 abortErrorMessage: 'Environment polling aborted due to project change.',
                 timeoutErrorMessage: 'Environment conversion status timed out after 5 minutes. Please check conversion logs and retry.',
                 statusFailureMessage: 'Failed to retrieve environment conversion status after multiple attempts.',
-                getFailureError: (nextStatusData) => nextStatusData.error || 'Environment conversion failed',
+                failureMessage: 'Environment conversion failed',
             });
 
             updateProgressUI(100);
@@ -1139,7 +1139,7 @@ export function initEnvironment(elements) {
                     abortErrorMessage: 'Environment polling aborted due to project change.',
                     timeoutErrorMessage: 'Environment conversion status timed out after 5 minutes. Please check conversion logs and retry.',
                     statusFailureMessage: 'Failed to retrieve environment conversion status after multiple attempts.',
-                    getFailureError: (nextStatusData) => nextStatusData.error || 'Environment conversion failed',
+                    failureMessage: 'Environment conversion failed',
                 });
 
                 if (!pilotMode) {
