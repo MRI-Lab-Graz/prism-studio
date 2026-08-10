@@ -33,6 +33,7 @@ archive/PK01/
 .vscode/
 .idea/
 .claude/
+.superpowers/
 CLAUDE.local.md
 *.swp
 *.swo
