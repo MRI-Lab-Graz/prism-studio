@@ -767,6 +767,8 @@ def generate_lss(
     languages=None,
     base_language=None,
     ls_version="6",
+    matrix_mode=True,
+    matrix_global=True,
 ):
     """
     Generate a LimeSurvey Structure (.lss) file from a list of Prism JSON sidecars.
@@ -775,8 +777,11 @@ def generate_lss(
         json_files (list): List of paths to JSON files, or dicts with:
             - path (str): Path to JSON file
             - include (list, optional): Keys to include from the file
-            - matrix (bool, optional): Enable matrix grouping
-            - matrix_global (bool, optional): Group all questions with same levels
+            - matrix (bool, optional): Enable matrix grouping for this file.
+              Defaults to the function-level `matrix_mode` argument.
+            - matrix_global (bool, optional): Group all questions with same
+              levels, not just consecutive ones, for this file. Defaults to
+              the function-level `matrix_global` argument.
             - run (int, optional): Run number for multi-run surveys.
               If run > 1, appends "_run-NN" to question codes.
               Example: "PANAS_1" with run=2 becomes "PANAS_1_run-02"
@@ -785,6 +790,16 @@ def generate_lss(
         languages (list, optional): List of language codes to include. If None, uses [language].
         base_language (str, optional): Base language code. If None, uses languages[0] or language.
         ls_version (str): Target LimeSurvey version ("3" or "6").
+        matrix_mode (bool): Group questions with identical Levels into a single
+            LimeSurvey array/matrix question instead of one question each.
+            Default True — matches generate_lss_from_customization's default,
+            so Quick Export and Customizer Export produce the same structure
+            for the same data unless overridden. Per-file "matrix" in
+            json_files takes precedence when given.
+        matrix_global (bool): When matrix_mode is True, group ALL questions
+            sharing identical Levels rather than only consecutive ones.
+            Default True. Per-file "matrix_global" in json_files takes
+            precedence when given.
 
     Returns:
         str: The XML content if output_path is None, else None.
@@ -884,19 +899,23 @@ def generate_lss(
     aid_counter = 1  # Answer ID counter (links answers <-> answer_l10ns in LS6)
 
     # --- Process Each JSON as a Group ---
+    # Snapshot the function-level defaults before the loop starts reusing these
+    # names per-item below.
+    _default_matrix_mode = matrix_mode
+    _default_matrix_global = matrix_global
     for item in json_files:
         # Determine path, filter, and run number
         if isinstance(item, str):
             json_path = item
             include_keys = None
-            matrix_mode = False
-            matrix_global = False
+            matrix_mode = _default_matrix_mode
+            matrix_global = _default_matrix_global
             run_number = None
         elif isinstance(item, dict):
             json_path = item.get("path")
             include_keys = item.get("include")
-            matrix_mode = item.get("matrix", False)
-            matrix_global = item.get("matrix_global", False)
+            matrix_mode = item.get("matrix", _default_matrix_mode)
+            matrix_global = item.get("matrix_global", _default_matrix_global)
             run_number = item.get("run")  # Run number for multi-run surveys
         else:
             continue
@@ -1278,6 +1297,10 @@ def generate_lss(
                 # Matrix Question (Array)
                 q_type = "F"
 
+                any_mandatory = any(
+                    data_item.get("Mandatory", True) for _code, data_item in group
+                )
+
                 matrix_title = _apply_run_suffix(f"M{first_code}", run_number)
 
                 # Matrix parent question text: prefer Study.Instructions, fall back to generic
@@ -1307,7 +1330,7 @@ def generate_lss(
                         "type": q_type,
                         "title": matrix_title,
                         "other": "N",
-                        "mandatory": "Y",
+                        "mandatory": "Y" if any_mandatory else "N",
                         "question_order": str(q_sort_order),
                         "scale_id": "0",
                         "same_default": "0",
@@ -1340,7 +1363,7 @@ def generate_lss(
                             "type": q_type,
                             "title": matrix_title,
                             "other": "N",
-                            "mandatory": "Y",
+                            "mandatory": "Y" if any_mandatory else "N",
                             "question_order": str(q_sort_order),
                             "scale_id": "0",
                             "same_default": "0",
@@ -1487,6 +1510,7 @@ def generate_lss(
                 # Single Question (with run suffix if applicable)
                 q_code = _apply_run_suffix(first_code, run_number)
                 q_data = first_data
+                is_mandatory = q_data.get("Mandatory", True)
 
                 # Determine Type using helper function
                 q_type, extra_attrs = _determine_ls_question_type(q_data, bool(levels))
@@ -1505,7 +1529,7 @@ def generate_lss(
                         "type": q_type,
                         "title": q_code,
                         "other": "Y" if has_other else "N",
-                        "mandatory": "Y",
+                        "mandatory": "Y" if is_mandatory else "N",
                         "question_order": str(q_sort_order),
                         "scale_id": "0",
                         "same_default": "0",
@@ -1562,7 +1586,7 @@ def generate_lss(
                             "type": q_type,
                             "title": q_code,
                             "other": "Y" if has_other else "N",
-                            "mandatory": "Y",
+                            "mandatory": "Y" if is_mandatory else "N",
                             "question_order": str(q_sort_order),
                             "scale_id": "0",
                             "same_default": "0",

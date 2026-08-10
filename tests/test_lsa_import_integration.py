@@ -798,7 +798,18 @@ class TestPrismExportRoundTrip:
             pytest.skip("Global library not available")
 
         lss_path = tmp_path / "export.lss"
-        generate_lss([str(gad7_path)], str(lss_path), language="en", ls_version="6")
+        # matrix_mode=False: this test verifies code-normalization/library-match
+        # fidelity through export->reimport, not matrix grouping. Matrix
+        # subquestion codes have a much tighter 5-char limit than standalone
+        # question codes and no codemap-based recovery, so they'd fail this
+        # identity check for an unrelated reason.
+        generate_lss(
+            [str(gad7_path)],
+            str(lss_path),
+            language="en",
+            ls_version="6",
+            matrix_mode=False,
+        )
 
         with open(lss_path, "rb") as f:
             parsed = parse_lss_xml_by_groups(f.read())
@@ -838,7 +849,8 @@ class TestPrismExportRoundTrip:
             pytest.skip("Global library templates not available")
 
         lss_path = tmp_path / "multi_export.lss"
-        generate_lss(paths, str(lss_path), language="en", ls_version="6")
+        # matrix_mode=False: see test_roundtrip_single_template.
+        generate_lss(paths, str(lss_path), language="en", ls_version="6", matrix_mode=False)
 
         with open(lss_path, "rb") as f:
             parsed = parse_lss_xml_by_groups(f.read())
@@ -870,7 +882,11 @@ class TestPrismExportRoundTrip:
             pytest.skip("BFI-S template not available")
 
         lss_path = tmp_path / "bfis.lss"
-        generate_lss([str(bfis_path)], str(lss_path), language="en", ls_version="6")
+        # matrix_mode=False: see test_roundtrip_single_template.
+        generate_lss(
+            [str(bfis_path)], str(lss_path), language="en", ls_version="6",
+            matrix_mode=False,
+        )
 
         with open(lss_path, "rb") as f:
             parsed = parse_lss_xml_by_groups(f.read())
