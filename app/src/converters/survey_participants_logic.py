@@ -631,6 +631,77 @@ def _determine_participant_output_columns(
     )
 
 
+def _build_participant_output_dataframe(
+    *,
+    df,
+    id_col: str,
+    normalize_sub_fn,
+    is_missing_fn,
+    missing_token: str,
+    column_plan: ParticipantColumnPlan,
+):
+    """Build the deduplicated participants dataframe: participant_id plus
+    the extra columns column_plan selected, with value mappings, missing-value
+    substitution, and template-based auto-correction applied."""
+    import pandas as pd
+
+    df_part = pd.DataFrame(
+        {"participant_id": df[id_col].astype(str).map(normalize_sub_fn)}
+    )
+
+    extra_cols = column_plan.extra_cols
+    if extra_cols:
+        extra_cols = list(dict.fromkeys(extra_cols))
+        df_extra = df[[id_col] + extra_cols].copy()
+
+        for c in extra_cols:
+            output_name = column_plan.col_output_names.get(c, c)
+
+            if output_name in column_plan.value_mappings:
+                val_map = column_plan.value_mappings[output_name]
+                df_extra[c] = (
+                    df_extra[c]
+                    .astype(str)
+                    .map(
+                        lambda v, vm=val_map: (
+                            vm.get(v, v)
+                            if v not in ("nan", "None", "")
+                            else missing_token
+                        )
+                    )
+                )
+            else:
+                df_extra[c] = df_extra[c].apply(
+                    lambda v: missing_token if is_missing_fn(v) else v
+                )
+
+        df_extra[id_col] = df_extra[id_col].astype(str).map(normalize_sub_fn)
+        df_extra = df_extra.rename(columns={id_col: "participant_id"})
+        df_extra = (
+            df_extra.groupby("participant_id", dropna=False)[extra_cols]
+            .first()
+            .reset_index()
+        )
+
+        rename_map = {c: column_plan.col_output_names.get(c, c) for c in extra_cols}
+        df_extra = df_extra.rename(columns=rename_map)
+
+        if column_plan.template_norm:
+            for col in df_extra.columns:
+                if col == "participant_id":
+                    continue
+                df_extra[col] = df_extra[col].apply(
+                    lambda v, c=col, t=column_plan.template_norm: (
+                        _auto_correct_participant_value(v, c, t, missing_token=missing_token)
+                    )
+                )
+
+        df_part = df_part.merge(df_extra, on="participant_id", how="left")
+
+    df_part = df_part.drop_duplicates(subset=["participant_id"]).reset_index(drop=True)
+    return df_part
+
+
 def _write_survey_participants(
     *,
     df,
@@ -666,71 +737,14 @@ def _write_survey_participants(
         participant_template=participant_template,
         lsa_col_renames=lsa_col_renames,
     )
-    extra_cols = column_plan.extra_cols
-    col_output_names = column_plan.col_output_names
-    mapping_descriptions = column_plan.mapping_descriptions
-    value_mappings = column_plan.value_mappings
-    template_norm = column_plan.template_norm
-
-    # Start with participant_id column
-    df_part = pd.DataFrame(
-        {"participant_id": df[id_col].astype(str).map(normalize_sub_fn)}
+    df_part = _build_participant_output_dataframe(
+        df=df,
+        id_col=id_col,
+        normalize_sub_fn=normalize_sub_fn,
+        is_missing_fn=is_missing_fn,
+        missing_token=missing_token,
+        column_plan=column_plan,
     )
-
-    if extra_cols:
-        extra_cols = list(dict.fromkeys(extra_cols))
-        df_extra = df[[id_col] + extra_cols].copy()
-
-        # Apply value mappings and missing value handling
-        for c in extra_cols:
-            output_name = col_output_names.get(c, c)
-
-            # Apply value mapping if specified
-            if output_name in value_mappings:
-                val_map = value_mappings[output_name]
-                df_extra[c] = (
-                    df_extra[c]
-                    .astype(str)
-                    .map(
-                        lambda v, vm=val_map: (
-                            vm.get(v, v)
-                            if v not in ("nan", "None", "")
-                            else missing_token
-                        )
-                    )
-                )
-            else:
-                df_extra[c] = df_extra[c].apply(
-                    lambda v: missing_token if is_missing_fn(v) else v
-                )
-
-        # Normalize ID column and rename to participant_id
-        df_extra[id_col] = df_extra[id_col].astype(str).map(normalize_sub_fn)
-        df_extra = df_extra.rename(columns={id_col: "participant_id"})
-        df_extra = (
-            df_extra.groupby("participant_id", dropna=False)[extra_cols]
-            .first()
-            .reset_index()
-        )
-
-        # Rename columns to standard variable names
-        rename_map = {c: col_output_names.get(c, c) for c in extra_cols}
-        df_extra = df_extra.rename(columns=rename_map)
-
-        # Auto-correct values: truncated LS codes -> original level keys, formulas -> numbers
-        if template_norm:
-            for col in df_extra.columns:
-                if col == "participant_id":
-                    continue
-                df_extra[col] = df_extra[col].apply(
-                    lambda v, c=col, t=template_norm: _auto_correct_participant_value(
-                        v, c, t, missing_token
-                    )
-                )
-
-        df_part = df_part.merge(df_extra, on="participant_id", how="left")
-
-    df_part = df_part.drop_duplicates(subset=["participant_id"]).reset_index(drop=True)
 
     # Merge with existing participants.tsv if it exists
     participants_tsv_path = output_root / "participants.tsv"
@@ -789,6 +803,6 @@ def _write_survey_participants(
     p_json = _participants_json_from_template(
         columns=[str(c) for c in df_part.columns],
         template=participant_template,
-        extra_descriptions=mapping_descriptions,
+        extra_descriptions=column_plan.mapping_descriptions,
     )
     _write_json(parts_json_path, p_json)
