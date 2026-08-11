@@ -1580,56 +1580,20 @@ def _convert_survey_dataframe_to_prism_dataset(
     _is_missing_value = id_normalizers.is_missing
 
     # --- Load Aliases and Templates ---
-    alias_map: dict[str, str] | None = None
-    canonical_aliases: dict[str, list[str]] | None = None
-    if alias_file:
-        alias_path = Path(alias_file).resolve()
-        if alias_path.exists() and alias_path.is_file():
-            rows = _read_alias_rows(alias_path)
-            if rows:
-                alias_map = _build_alias_map(rows)
-                canonical_aliases = _build_canonical_aliases(rows)
-
-    # Initialize conversion warnings list early (will be extended throughout processing)
-    conversion_warnings: list[str] = []
-
-    # Participants converter: participant-template loading, normalization, and writing
     participants_converter = ParticipantsConverter()
-
-    # Load participant template and compare with global
-    raw_participant_template = participants_converter.load_template(library_dir)
-    participant_template = participants_converter.normalize_template(
-        raw_participant_template
+    loaded = _survey_core._load_survey_aliases_and_templates(
+        participants_converter=participants_converter,
+        library_dir=library_dir,
+        alias_file=alias_file,
+        load_and_preprocess_templates_fn=_load_and_preprocess_templates,
     )
-    participant_columns_lower: set[str] = set()
-    if participant_template:
-        participant_columns_lower = {
-            str(k).strip().lower()
-            for k in participant_template.keys()
-            if isinstance(k, str)
-        }
-
-    # Compare participants.json with global
-    if raw_participant_template:
-        _, _, _, part_warnings = participants_converter.compare_with_global(
-            raw_participant_template
-        )
-        conversion_warnings.extend(part_warnings)
-
-    templates, item_to_task, duplicates, template_warnings_by_task = (
-        _load_and_preprocess_templates(
-            library_dir,
-            canonical_aliases,
-            compare_with_global=True,
-        )
-    )
-    if duplicates:
-        msg_lines = [
-            "Duplicate item IDs found across survey templates (ambiguous mapping):"
-        ]
-        for it_id, tsks in sorted(duplicates.items()):
-            msg_lines.append(f"- {it_id}: {', '.join(sorted(tsks))}")
-        raise ValueError("\n".join(msg_lines))
+    alias_map = loaded.alias_map
+    participant_template = loaded.participant_template
+    participant_columns_lower = loaded.participant_columns_lower
+    templates = loaded.templates
+    item_to_task = loaded.item_to_task
+    template_warnings_by_task = loaded.template_warnings_by_task
+    conversion_warnings: list[str] = list(loaded.warnings)
 
     # --- LSA Structural Matching ---
     # When converting .lsa files without an explicit survey= filter,

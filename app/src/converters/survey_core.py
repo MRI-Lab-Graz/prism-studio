@@ -392,6 +392,83 @@ def _build_canonical_aliases(rows: Iterable[list[str]]) -> dict[str, list[str]]:
     return out
 
 
+@dataclass(frozen=True)
+class SurveyAliasesAndTemplates:
+    alias_map: Optional[Dict[str, str]]
+    participant_template: Optional[dict]
+    participant_columns_lower: Set[str]
+    templates: Dict[str, dict]
+    item_to_task: Dict[str, str]
+    template_warnings_by_task: dict
+    warnings: List[str]
+
+
+def _load_survey_aliases_and_templates(
+    *,
+    participants_converter,
+    library_dir: Path,
+    alias_file,
+    load_and_preprocess_templates_fn,
+) -> SurveyAliasesAndTemplates:
+    """Load alias mappings and survey/participant templates for conversion.
+
+    Raises ValueError if duplicate item IDs are found across templates.
+    """
+    alias_map: Optional[Dict[str, str]] = None
+    canonical_aliases: Optional[Dict[str, List[str]]] = None
+    if alias_file:
+        alias_path = Path(alias_file).resolve()
+        if alias_path.exists() and alias_path.is_file():
+            rows = _read_alias_rows(alias_path)
+            if rows:
+                alias_map = _build_alias_map(rows)
+                canonical_aliases = _build_canonical_aliases(rows)
+
+    raw_participant_template = participants_converter.load_template(library_dir)
+    participant_template = participants_converter.normalize_template(
+        raw_participant_template
+    )
+    participant_columns_lower: Set[str] = set()
+    if participant_template:
+        participant_columns_lower = {
+            str(k).strip().lower()
+            for k in participant_template.keys()
+            if isinstance(k, str)
+        }
+
+    warnings: List[str] = []
+    if raw_participant_template:
+        _, _, _, part_warnings = participants_converter.compare_with_global(
+            raw_participant_template
+        )
+        warnings.extend(part_warnings)
+
+    templates, item_to_task, duplicates, template_warnings_by_task = (
+        load_and_preprocess_templates_fn(
+            library_dir,
+            canonical_aliases,
+            compare_with_global=True,
+        )
+    )
+    if duplicates:
+        msg_lines = [
+            "Duplicate item IDs found across survey templates (ambiguous mapping):"
+        ]
+        for it_id, tsks in sorted(duplicates.items()):
+            msg_lines.append(f"- {it_id}: {', '.join(sorted(tsks))}")
+        raise ValueError("\n".join(msg_lines))
+
+    return SurveyAliasesAndTemplates(
+        alias_map=alias_map,
+        participant_template=participant_template,
+        participant_columns_lower=participant_columns_lower,
+        templates=templates,
+        item_to_task=item_to_task,
+        template_warnings_by_task=template_warnings_by_task,
+        warnings=warnings,
+    )
+
+
 def _apply_alias_file_to_dataframe(*, df, alias_file: str | Path) -> "object":
     """Apply alias mapping to dataframe columns."""
     path = Path(alias_file).resolve()
