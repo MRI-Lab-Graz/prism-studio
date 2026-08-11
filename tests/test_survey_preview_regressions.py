@@ -14,7 +14,7 @@ if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
 
-from src.converters.survey import ColumnMapping
+from src.converters.survey_column_mapping import ColumnMapping
 from src.converters.survey import SurveyResponsesConverter
 from src.converters.survey_io import _generate_dry_run_preview
 from src.web.blueprints.conversion_survey_preview_handlers import (
