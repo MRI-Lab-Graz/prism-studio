@@ -5610,6 +5610,36 @@ git push -u origin main
                 stale.append({"path": str(lock_path), "age_seconds": int(age_seconds)})
         return stale
 
+    def _is_adjusted_unlocked_branch(
+        self, root: Path, *, git_executable: str
+    ) -> bool:
+        """Return True if `root`'s current branch is a git-annex adjusted
+        unlocked branch (`adjusted/<branch>(unlocked)`).
+
+        git-annex switches a repository onto this branch automatically
+        when the filesystem can't support symlinks -- notably on Windows
+        without Developer Mode / admin rights (see
+        `cross_platform.windows_symlinks_supported`). Every annexed file
+        legitimately shows up as "unlocked" there as its normal,
+        permanent state, so `_detect_unlocked_annex_backlog`'s
+        count-based heuristic (built for a batch operation that failed
+        partway through) must not fire for these roots.
+        """
+        try:
+            process = subprocess.run(
+                [git_executable, "-C", str(root), "symbolic-ref", "--short", "HEAD"],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=UNLOCKED_ANNEX_QUERY_TIMEOUT_SECONDS,
+            )
+        except Exception:
+            return False
+        if process.returncode != 0:
+            return False
+        branch = (process.stdout or "").strip()
+        return branch.startswith("adjusted/") and branch.endswith("(unlocked)")
+
     def _detect_unlocked_annex_backlog(
         self,
         dataset_roots: List[Path],
@@ -5627,10 +5657,16 @@ git push -u origin main
         since git must invoke git-annex's smudge/clean filter per unlocked
         file to compare it against the index -- so this is worth surfacing
         even before it blocks anything outright.
+
+        Roots running on a git-annex adjusted-unlocked branch (see
+        `_is_adjusted_unlocked_branch`) are skipped -- "unlocked" is their
+        permanent, intended state, not a backlog.
         """
         git_executable = shutil.which("git") or "git"
         backlog: List[Dict[str, Any]] = []
         for root in dataset_roots:
+            if self._is_adjusted_unlocked_branch(root, git_executable=git_executable):
+                continue
             try:
                 process = subprocess.run(
                     [git_executable, "-C", str(root), "annex", "find", "--in=here", "--unlocked"],
