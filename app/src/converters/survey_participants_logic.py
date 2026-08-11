@@ -529,6 +529,108 @@ def _auto_correct_participant_value(
     return value
 
 
+@dataclass
+class ParticipantColumnPlan:
+    extra_cols: list
+    col_output_names: dict
+    mapping_descriptions: dict
+    value_mappings: dict
+    template_norm: dict | None
+
+
+def _determine_participant_output_columns(
+    *,
+    df,
+    output_root: Path,
+    id_col: str,
+    ses_col: str | None,
+    participant_template: dict | None,
+    lsa_col_renames: dict | None,
+) -> ParticipantColumnPlan:
+    """Decide which source columns go into participants.tsv and under what
+    output name.
+
+    Mode 1 (participants_mapping.json exists): only explicitly mapped
+    columns, renamed per the mapping.
+    Mode 2 (no mapping): only columns present in the official participant
+    template, with an LSA-mangled-name fallback lookup.
+    """
+    lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
+
+    participants_mapping = _load_participants_mapping(output_root)
+    mapped_cols, col_renames, value_mappings = _get_mapped_columns(participants_mapping)
+
+    if participants_mapping:
+        print(
+            f"[INFO] Using participants_mapping.json from project ({len(mapped_cols)} mapped columns)"
+        )
+        if col_renames:
+            print(f"[INFO]   Column renames: {col_renames}")
+        if value_mappings:
+            print(f"[INFO]   Value transformations for: {list(value_mappings.keys())}")
+    else:
+        print("[INFO] No participants_mapping.json found (using template columns only)")
+
+    template_norm = _normalize_participant_template_dict(participant_template)
+    template_cols = set(template_norm.keys()) if template_norm else set()
+    non_column_keys = {
+        "@context",
+        "Technical",
+        "I18n",
+        "Study",
+        "Metadata",
+        "_aliases",
+        "_reverse_aliases",
+    }
+    template_cols = template_cols - non_column_keys
+
+    extra_cols: list = []
+    col_output_names: dict = {}
+    mapping_descriptions: dict = {}
+
+    if participants_mapping and mapped_cols:
+        for source_col_lower in mapped_cols:
+            if source_col_lower in lower_to_col:
+                actual_col = lower_to_col[source_col_lower]
+                if actual_col not in {id_col, ses_col}:
+                    extra_cols.append(actual_col)
+                    output_name = col_renames.get(source_col_lower, source_col_lower)
+                    col_output_names[actual_col] = output_name
+
+        for var_name, spec in participants_mapping.get("mappings", {}).items():
+            if isinstance(spec, dict):
+                standard_var = spec.get("standard_variable", var_name)
+                if standard_var not in template_cols and "description" in spec:
+                    mapping_descriptions[standard_var] = spec["description"]
+    else:
+        for col in template_cols:
+            if col in lower_to_col:
+                actual_col = lower_to_col[col]
+                if actual_col not in {id_col, ses_col}:
+                    extra_cols.append(actual_col)
+                    col_output_names[actual_col] = col
+            elif lsa_col_renames:
+                mangled = None
+                for mangled_name, standard_name in lsa_col_renames.items():
+                    if standard_name == col:
+                        mangled = mangled_name
+                        break
+                mangled_lower = mangled.strip().lower() if mangled else None
+                if mangled_lower and mangled_lower in lower_to_col:
+                    actual_col = lower_to_col[mangled_lower]
+                    if actual_col not in {id_col, ses_col}:
+                        extra_cols.append(actual_col)
+                        col_output_names[actual_col] = col
+
+    return ParticipantColumnPlan(
+        extra_cols=extra_cols,
+        col_output_names=col_output_names,
+        mapping_descriptions=mapping_descriptions,
+        value_mappings=value_mappings,
+        template_norm=template_norm,
+    )
+
+
 def _write_survey_participants(
     *,
     df,
@@ -556,87 +658,24 @@ def _write_survey_participants(
     """
     import pandas as pd
 
-    lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
-
-    # Try to load participants_mapping.json from the project
-    participants_mapping = _load_participants_mapping(output_root)
-    mapped_cols, col_renames, value_mappings = _get_mapped_columns(participants_mapping)
-
-    # Log what was found
-    if participants_mapping:
-        print(
-            f"[INFO] Using participants_mapping.json from project ({len(mapped_cols)} mapped columns)"
-        )
-        if col_renames:
-            print(f"[INFO]   Column renames: {col_renames}")
-        if value_mappings:
-            print(f"[INFO]   Value transformations for: {list(value_mappings.keys())}")
-    else:
-        print("[INFO] No participants_mapping.json found (using template columns only)")
+    column_plan = _determine_participant_output_columns(
+        df=df,
+        output_root=output_root,
+        id_col=id_col,
+        ses_col=ses_col,
+        participant_template=participant_template,
+        lsa_col_renames=lsa_col_renames,
+    )
+    extra_cols = column_plan.extra_cols
+    col_output_names = column_plan.col_output_names
+    mapping_descriptions = column_plan.mapping_descriptions
+    value_mappings = column_plan.value_mappings
+    template_norm = column_plan.template_norm
 
     # Start with participant_id column
     df_part = pd.DataFrame(
         {"participant_id": df[id_col].astype(str).map(normalize_sub_fn)}
     )
-
-    # Normalize template to get column definitions
-    template_norm = _normalize_participant_template_dict(participant_template)
-    template_cols = set(template_norm.keys()) if template_norm else set()
-    # Remove non-column keys from template
-    non_column_keys = {
-        "@context",
-        "Technical",
-        "I18n",
-        "Study",
-        "Metadata",
-        "_aliases",
-        "_reverse_aliases",
-    }
-    template_cols = template_cols - non_column_keys
-
-    # Determine which columns to include
-    extra_cols: list[str] = []
-    col_output_names: dict[str, str] = {}  # Maps source col -> output name
-    mapping_descriptions: dict[str, str] = {}  # Extra descriptions from mapping
-
-    if participants_mapping and mapped_cols:
-        # MODE 1: Use mapping - only include explicitly mapped columns
-        for source_col_lower in mapped_cols:
-            if source_col_lower in lower_to_col:
-                actual_col = lower_to_col[source_col_lower]
-                if actual_col not in {id_col, ses_col}:
-                    extra_cols.append(actual_col)
-                    # Get the standard variable name (renamed output)
-                    output_name = col_renames.get(source_col_lower, source_col_lower)
-                    col_output_names[actual_col] = output_name
-
-        # Extract descriptions from mapping for columns not in template
-        for var_name, spec in participants_mapping.get("mappings", {}).items():
-            if isinstance(spec, dict):
-                standard_var = spec.get("standard_variable", var_name)
-                if standard_var not in template_cols and "description" in spec:
-                    mapping_descriptions[standard_var] = spec["description"]
-    else:
-        # MODE 2: No mapping - only include columns defined in the official template
-        for col in template_cols:
-            if col in lower_to_col:
-                # Direct match: template field name found as-is in DataFrame
-                actual_col = lower_to_col[col]
-                if actual_col not in {id_col, ses_col}:
-                    extra_cols.append(actual_col)
-                    col_output_names[actual_col] = col
-            elif lsa_col_renames:
-                # Fallback: look up the LS-mangled column name for this field
-                mangled = None
-                for mangled_name, standard_name in lsa_col_renames.items():
-                    if standard_name == col:
-                        mangled = mangled_name
-                        break
-                if mangled and mangled in lower_to_col:
-                    actual_col = lower_to_col[mangled]
-                    if actual_col not in {id_col, ses_col}:
-                        extra_cols.append(actual_col)
-                        col_output_names[actual_col] = col  # Output uses standard name
 
     if extra_cols:
         extra_cols = list(dict.fromkeys(extra_cols))
