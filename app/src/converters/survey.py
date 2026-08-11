@@ -56,6 +56,7 @@ from .survey_core import (
     _compare_template_structures,
     _build_bids_survey_filename,
     _determine_task_runs,
+    _resolve_existing_project_root,
     _read_alias_rows,
     _build_alias_map,
     _build_canonical_aliases,
@@ -383,22 +384,6 @@ def _resolve_dataset_root(output_root: Path) -> Path:
     if cut_idx is None or cut_idx == 0:
         return output_root
     return Path(*parts[:cut_idx])
-
-
-def _resolve_existing_project_root(project_path: str | Path | None) -> Path | None:
-    if not project_path:
-        return None
-
-    try:
-        resolved = Path(project_path).expanduser().resolve()
-    except Exception:
-        return None
-
-    if resolved.is_file():
-        resolved = resolved.parent
-    if not resolved.exists() or not resolved.is_dir():
-        return None
-    return resolved
 
 
 def _summarize_labels(values: list[str], limit: int = 10) -> str:

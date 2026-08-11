@@ -140,6 +140,22 @@ def _determine_task_runs(
     return task_runs
 
 
+def _resolve_existing_project_root(project_path: str | Path | None) -> Path | None:
+    if not project_path:
+        return None
+
+    try:
+        resolved = Path(project_path).expanduser().resolve()
+    except Exception:
+        return None
+
+    if resolved.is_file():
+        resolved = resolved.parent
+    if not resolved.exists() or not resolved.is_dir():
+        return None
+    return resolved
+
+
 # =============================================================================
 # BASE UTILITIES (from survey_base.py)
 # =============================================================================
