@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 
 from src.converters.survey_participants_logic import _determine_participant_output_columns
@@ -169,3 +171,75 @@ def test_duplicate_participant_ids_are_deduplicated():
     )
 
     assert len(result) == 1
+
+
+from src.converters.survey_participants_logic import _merge_with_existing_participants_tsv
+
+
+def test_no_existing_file_returns_df_part_unchanged(tmp_path):
+    df_part = pd.DataFrame({"participant_id": ["sub-001"], "age": ["25"]})
+    result = _merge_with_existing_participants_tsv(
+        df_part=df_part, participants_tsv_path=tmp_path / "participants.tsv"
+    )
+    assert result.equals(df_part)
+
+
+def test_new_values_preferred_over_existing_for_overlapping_participant(tmp_path):
+    tsv_path = tmp_path / "participants.tsv"
+    tsv_path.write_text("participant_id\tage\nsub-001\t25\n")
+    df_part = pd.DataFrame({"participant_id": ["sub-001"], "age": ["26"]})
+
+    result = _merge_with_existing_participants_tsv(
+        df_part=df_part, participants_tsv_path=tsv_path
+    )
+
+    row = result[result["participant_id"] == "sub-001"].iloc[0]
+    assert row["age"] == "26"
+
+
+def test_existing_participants_not_in_new_data_are_kept(tmp_path):
+    tsv_path = tmp_path / "participants.tsv"
+    tsv_path.write_text("participant_id\tage\nsub-999\t40\n")
+    df_part = pd.DataFrame({"participant_id": ["sub-001"], "age": ["25"]})
+
+    result = _merge_with_existing_participants_tsv(
+        df_part=df_part, participants_tsv_path=tsv_path
+    )
+
+    assert "sub-999" in list(result["participant_id"])
+    assert "sub-001" in list(result["participant_id"])
+
+
+def test_existing_file_without_participant_id_column_is_left_unmerged(tmp_path):
+    tsv_path = tmp_path / "participants.tsv"
+    tsv_path.write_text("subject\tage\nsub-001\t25\n")
+    df_part = pd.DataFrame({"participant_id": ["sub-002"], "age": ["30"]})
+
+    result = _merge_with_existing_participants_tsv(
+        df_part=df_part, participants_tsv_path=tsv_path
+    )
+
+    assert result.equals(df_part)
+
+
+def test_unreadable_existing_file_falls_back_to_df_part(tmp_path, capsys):
+    # NOTE: the brief's original fixture used a file with an embedded null
+    # byte, on the theory that it would fail pandas' C parser. Verified on
+    # this pandas version that it does NOT raise (pandas parses it as a
+    # normal, if odd, TSV row). Replaced with a permission-denied file,
+    # which reliably raises PermissionError from pd.read_csv and is a more
+    # honest fit for the test name/scenario anyway.
+    tsv_path = tmp_path / "participants.tsv"
+    tsv_path.write_text("participant_id\tage\nsub-001\t25\n")
+    os.chmod(tsv_path, 0o000)
+    df_part = pd.DataFrame({"participant_id": ["sub-001"], "age": ["25"]})
+
+    try:
+        result = _merge_with_existing_participants_tsv(
+            df_part=df_part, participants_tsv_path=tsv_path
+        )
+    finally:
+        os.chmod(tsv_path, 0o644)
+
+    assert result.equals(df_part)
+    assert "Could not merge" in capsys.readouterr().out

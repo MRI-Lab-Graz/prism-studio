@@ -702,6 +702,59 @@ def _build_participant_output_dataframe(
     return df_part
 
 
+def _merge_with_existing_participants_tsv(*, df_part, participants_tsv_path: Path):
+    """Merge df_part with an existing participants.tsv on disk, if present.
+    New values win for overlapping participants/columns; falls back to the
+    old value if the new one is missing. Returns df_part unchanged if there's
+    no existing file, it has no participant_id column, or the merge fails."""
+    import pandas as pd
+
+    if not participants_tsv_path.exists():
+        return df_part
+
+    try:
+        existing_df = pd.read_csv(participants_tsv_path, sep="\t", dtype=str)
+        if "participant_id" not in existing_df.columns:
+            return df_part
+
+        merged = pd.merge(
+            existing_df,
+            df_part,
+            on="participant_id",
+            how="outer",
+            suffixes=("_old", "_new"),
+        )
+
+        for col in merged.columns:
+            if col.endswith("_new"):
+                base_col = col[:-4]
+                old_col = base_col + "_old"
+                if old_col in merged.columns:
+                    merged[base_col] = merged.apply(
+                        lambda row: (
+                            row[col]
+                            if pd.notna(row[col])
+                            and str(row[col]) not in ("n/a", "nan", "")
+                            else (
+                                row[old_col] if pd.notna(row[old_col]) else "n/a"
+                            )
+                        ),
+                        axis=1,
+                    )
+                    merged = merged.drop(columns=[old_col, col])
+                else:
+                    merged = merged.rename(columns={col: base_col})
+
+        merged = merged.sort_values("participant_id").reset_index(drop=True)
+        print(
+            f"[INFO] Merged with existing participants.tsv ({len(existing_df)} existing → {len(merged)} total)"
+        )
+        return merged
+    except Exception as e:
+        print(f"[WARNING] Could not merge with existing participants.tsv: {e}")
+        return df_part
+
+
 def _write_survey_participants(
     *,
     df,
@@ -727,8 +780,6 @@ def _write_survey_participants(
 
     All columns in the output must have documentation in participants.json.
     """
-    import pandas as pd
-
     column_plan = _determine_participant_output_columns(
         df=df,
         output_root=output_root,
@@ -746,55 +797,10 @@ def _write_survey_participants(
         column_plan=column_plan,
     )
 
-    # Merge with existing participants.tsv if it exists
     participants_tsv_path = output_root / "participants.tsv"
-    if participants_tsv_path.exists():
-        try:
-            existing_df = pd.read_csv(participants_tsv_path, sep="\t", dtype=str)
-            if "participant_id" in existing_df.columns:
-                # Merge new data with existing, preferring new values for overlapping participants
-                # but keeping all existing participants and columns
-                df_part = pd.merge(
-                    existing_df,
-                    df_part,
-                    on="participant_id",
-                    how="outer",
-                    suffixes=("_old", "_new"),
-                )
-
-                # For each column that exists in both, prefer new value if not n/a
-                for col in df_part.columns:
-                    if col.endswith("_new"):
-                        base_col = col[:-4]  # Remove "_new"
-                        old_col = base_col + "_old"
-                        if old_col in df_part.columns:
-                            # Prefer new value, fall back to old if new is n/a
-                            df_part[base_col] = df_part.apply(
-                                lambda row: (
-                                    row[col]
-                                    if pd.notna(row[col])
-                                    and str(row[col]) not in ("n/a", "nan", "")
-                                    else (
-                                        row[old_col]
-                                        if pd.notna(row[old_col])
-                                        else "n/a"
-                                    )
-                                ),
-                                axis=1,
-                            )
-                            # Drop the _old and _new columns
-                            df_part = df_part.drop(columns=[old_col, col])
-                        else:
-                            # No old column, just rename new column
-                            df_part = df_part.rename(columns={col: base_col})
-
-                # Sort by participant_id
-                df_part = df_part.sort_values("participant_id").reset_index(drop=True)
-                print(
-                    f"[INFO] Merged with existing participants.tsv ({len(existing_df)} existing → {len(df_part)} total)"
-                )
-        except Exception as e:
-            print(f"[WARNING] Could not merge with existing participants.tsv: {e}")
+    df_part = _merge_with_existing_participants_tsv(
+        df_part=df_part, participants_tsv_path=participants_tsv_path
+    )
 
     df_part.to_csv(participants_tsv_path, sep="\t", index=False)
 
