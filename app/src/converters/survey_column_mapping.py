@@ -278,6 +278,102 @@ def _find_near_match_candidates(
     return near_match_candidates, warnings
 
 
+def _apply_approved_near_matches(
+    *,
+    near_match_candidates: list[dict[str, object]],
+    allow_near_item_match: bool,
+    near_match_tasks: set[str] | None,
+    col_to_mapping: dict[str, ColumnMapping],
+    task_run_tracker: dict[str, set[int | None]],
+    filtered_unknown: list[str],
+) -> tuple[list[str], bool, list[str]]:
+    """Apply near-match candidates the caller has confirmed (allow_near_item_match),
+    optionally restricted to near_match_tasks. Mutates col_to_mapping and
+    task_run_tracker in place. Returns the updated filtered_unknown list,
+    whether anything was applied, and any warnings."""
+    near_match_task_filter: set[str] | None = None
+    if near_match_tasks is not None:
+        near_match_task_filter = {
+            str(task).strip().lower() for task in near_match_tasks if str(task).strip()
+        }
+
+    near_match_applied = False
+    warnings: list[str] = []
+
+    if near_match_candidates and allow_near_item_match:
+        candidates_to_apply = near_match_candidates
+        if near_match_task_filter is not None:
+            candidates_to_apply = [
+                candidate
+                for candidate in near_match_candidates
+                if str(candidate.get("task", "")).strip().lower()
+                in near_match_task_filter
+            ]
+
+        applied_columns: list[str] = []
+        for candidate in candidates_to_apply:
+            source_column = str(candidate.get("source_column", "")).strip()
+            target_item = str(candidate.get("target_item", "")).strip()
+            task = str(candidate.get("task", "")).strip()
+            run_value = candidate.get("run")
+
+            if not source_column or not target_item or not task:
+                continue
+            if source_column in col_to_mapping:
+                continue
+
+            col_to_mapping[source_column] = ColumnMapping(
+                task=task,
+                run=cast(int | None, run_value),
+                base_item=target_item,
+            )
+            task_run_tracker.setdefault(task, set()).add(cast(int | None, run_value))
+            applied_columns.append(source_column)
+
+        if applied_columns:
+            near_match_applied = True
+            applied_set = set(applied_columns)
+            filtered_unknown = [
+                col for col in filtered_unknown if col not in applied_set
+            ]
+            shown = ", ".join(
+                f"{candidate['source_column']}->{candidate['target_item']}"
+                for candidate in candidates_to_apply[:8]
+            )
+            more = (
+                ""
+                if len(candidates_to_apply) <= 8
+                else f" (+{len(candidates_to_apply) - 8} more)"
+            )
+            warnings.append(
+                f"Applied near item matches after confirmation ({len(applied_columns)}): {shown}{more}"
+            )
+        skipped_candidate_count = len(near_match_candidates) - len(candidates_to_apply)
+        if skipped_candidate_count > 0:
+            warnings.append(
+                f"Skipped {skipped_candidate_count} near-match candidate(s) for unselected survey tasks."
+            )
+        if not candidates_to_apply and near_match_task_filter is not None:
+            warnings.append(
+                "Near item matches were enabled, but none matched the selected survey tasks."
+            )
+    elif near_match_candidates:
+        shown = ", ".join(
+            f"{candidate['source_column']}->{candidate['target_item']}"
+            for candidate in near_match_candidates[:8]
+        )
+        more = (
+            ""
+            if len(near_match_candidates) <= 8
+            else f" (+{len(near_match_candidates) - 8} more)"
+        )
+        warnings.append(
+            f"Near item matches available after confirmation ({len(near_match_candidates)}): {shown}{more}"
+        )
+
+    return filtered_unknown, near_match_applied, warnings
+
+
 def _map_survey_columns(
     *,
     df,
@@ -352,8 +448,6 @@ def _map_survey_columns(
         and not _prismmeta_pattern.match(str(c).strip())
     ]
 
-    near_match_applied = False
-
     near_match_candidates, near_match_find_warnings = _find_near_match_candidates(
         filtered_unknown=filtered_unknown,
         templates=templates,
@@ -362,84 +456,17 @@ def _map_survey_columns(
     )
     warnings.extend(near_match_find_warnings)
 
-    near_match_task_filter: set[str] | None = None
-    if near_match_tasks is not None:
-        near_match_task_filter = {
-            str(task).strip().lower()
-            for task in near_match_tasks
-            if str(task).strip()
-        }
-
-    if near_match_candidates and allow_near_item_match:
-        candidates_to_apply = near_match_candidates
-        if near_match_task_filter is not None:
-            candidates_to_apply = [
-                candidate
-                for candidate in near_match_candidates
-                if str(candidate.get("task", "")).strip().lower()
-                in near_match_task_filter
-            ]
-
-        applied_columns: list[str] = []
-        for candidate in candidates_to_apply:
-            source_column = str(candidate.get("source_column", "")).strip()
-            target_item = str(candidate.get("target_item", "")).strip()
-            task = str(candidate.get("task", "")).strip()
-            run_value = candidate.get("run")
-
-            if not source_column or not target_item or not task:
-                continue
-            if source_column in col_to_mapping:
-                continue
-
-            col_to_mapping[source_column] = ColumnMapping(
-                task=task,
-                run=cast(int | None, run_value),
-                base_item=target_item,
-            )
-            task_run_tracker.setdefault(task, set()).add(cast(int | None, run_value))
-            applied_columns.append(source_column)
-
-        if applied_columns:
-            near_match_applied = True
-            applied_set = set(applied_columns)
-            filtered_unknown = [
-                col for col in filtered_unknown if col not in applied_set
-            ]
-            shown = ", ".join(
-                f"{candidate['source_column']}->{candidate['target_item']}"
-                for candidate in candidates_to_apply[:8]
-            )
-            more = (
-                ""
-                if len(candidates_to_apply) <= 8
-                else f" (+{len(candidates_to_apply) - 8} more)"
-            )
-            warnings.append(
-                f"Applied near item matches after confirmation ({len(applied_columns)}): {shown}{more}"
-            )
-        skipped_candidate_count = len(near_match_candidates) - len(candidates_to_apply)
-        if skipped_candidate_count > 0:
-            warnings.append(
-                f"Skipped {skipped_candidate_count} near-match candidate(s) for unselected survey tasks."
-            )
-        if not candidates_to_apply and near_match_task_filter is not None:
-            warnings.append(
-                "Near item matches were enabled, but none matched the selected survey tasks."
-            )
-    elif near_match_candidates:
-        shown = ", ".join(
-            f"{candidate['source_column']}->{candidate['target_item']}"
-            for candidate in near_match_candidates[:8]
+    filtered_unknown, near_match_applied, near_match_apply_warnings = (
+        _apply_approved_near_matches(
+            near_match_candidates=near_match_candidates,
+            allow_near_item_match=allow_near_item_match,
+            near_match_tasks=near_match_tasks,
+            col_to_mapping=col_to_mapping,
+            task_run_tracker=task_run_tracker,
+            filtered_unknown=filtered_unknown,
         )
-        more = (
-            ""
-            if len(near_match_candidates) <= 8
-            else f" (+{len(near_match_candidates) - 8} more)"
-        )
-        warnings.append(
-            f"Near item matches available after confirmation ({len(near_match_candidates)}): {shown}{more}"
-        )
+    )
+    warnings.extend(near_match_apply_warnings)
 
     # Determine final run assignments per task
     # If a task has only items with run=None, no runs needed

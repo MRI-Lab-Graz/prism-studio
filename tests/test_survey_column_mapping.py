@@ -2,6 +2,7 @@ import pandas as pd
 
 from src.converters.survey_column_mapping import ColumnMapping, _match_columns_to_templates
 from src.converters.survey_column_mapping import _find_near_match_candidates
+from src.converters.survey_column_mapping import _apply_approved_near_matches
 
 
 def test_exact_match_maps_column_to_task():
@@ -155,3 +156,91 @@ def test_selected_tasks_scopes_which_templates_are_considered():
     )
 
     assert candidates == []
+
+
+def _one_candidate():
+    return [
+        {
+            "source_column": "panas-2",
+            "source_base_item": "panas-2",
+            "target_item": "panas_2",
+            "task": "panas",
+            "run": None,
+        }
+    ]
+
+
+def test_allow_near_item_match_false_leaves_everything_unapplied_but_warns():
+    col_to_mapping = {}
+    task_run_tracker = {}
+
+    filtered_unknown, applied, warnings = _apply_approved_near_matches(
+        near_match_candidates=_one_candidate(),
+        allow_near_item_match=False,
+        near_match_tasks=None,
+        col_to_mapping=col_to_mapping,
+        task_run_tracker=task_run_tracker,
+        filtered_unknown=["panas-2"],
+    )
+
+    assert applied is False
+    assert col_to_mapping == {}
+    assert filtered_unknown == ["panas-2"]
+    assert any("available after confirmation" in w for w in warnings)
+
+
+def test_allow_near_item_match_true_applies_and_removes_from_unknown():
+    col_to_mapping = {}
+    task_run_tracker = {}
+
+    filtered_unknown, applied, warnings = _apply_approved_near_matches(
+        near_match_candidates=_one_candidate(),
+        allow_near_item_match=True,
+        near_match_tasks=None,
+        col_to_mapping=col_to_mapping,
+        task_run_tracker=task_run_tracker,
+        filtered_unknown=["panas-2"],
+    )
+
+    assert applied is True
+    assert col_to_mapping["panas-2"].task == "panas"
+    assert col_to_mapping["panas-2"].base_item == "panas_2"
+    assert filtered_unknown == []
+    assert task_run_tracker == {"panas": {None}}
+    assert any("Applied near item matches" in w for w in warnings)
+
+
+def test_near_match_tasks_filter_excludes_non_matching_task_candidates():
+    col_to_mapping = {}
+    task_run_tracker = {}
+
+    filtered_unknown, applied, warnings = _apply_approved_near_matches(
+        near_match_candidates=_one_candidate(),
+        allow_near_item_match=True,
+        near_match_tasks={"phq9"},  # doesn't include "panas"
+        col_to_mapping=col_to_mapping,
+        task_run_tracker=task_run_tracker,
+        filtered_unknown=["panas-2"],
+    )
+
+    assert applied is False
+    assert col_to_mapping == {}
+    assert any("none matched the selected survey tasks" in w for w in warnings)
+
+
+def test_already_mapped_source_column_is_not_overwritten():
+    from src.converters.survey_column_mapping import ColumnMapping
+
+    col_to_mapping = {"panas-2": ColumnMapping(task="other", run=None, base_item="other_item")}
+    task_run_tracker = {}
+
+    _apply_approved_near_matches(
+        near_match_candidates=_one_candidate(),
+        allow_near_item_match=True,
+        near_match_tasks=None,
+        col_to_mapping=col_to_mapping,
+        task_run_tracker=task_run_tracker,
+        filtered_unknown=["panas-2"],
+    )
+
+    assert col_to_mapping["panas-2"].task == "other"
