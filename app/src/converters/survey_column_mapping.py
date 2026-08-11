@@ -68,6 +68,72 @@ def _collect_primary_template_items(template_payload: dict) -> set[str]:
     return items
 
 
+def _match_columns_to_templates(
+    *,
+    df,
+    item_to_task: dict[str, str],
+    participant_columns_lower: set[str],
+    id_col: str,
+    ses_col: str | None,
+    run_col: str | None,
+) -> tuple[dict[str, ColumnMapping], list[str], dict[str, set[int | None]]]:
+    """Exact-match each non-id/session/run column against item_to_task,
+    tolerating a PRISM run suffix ({item}_run-{NN})."""
+    lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
+
+    participant_fallbacks = {
+        "age",
+        "sex",
+        "gender",
+        "education",
+        "handedness",
+        "completion_date",
+    }
+    participant_columns_present = {
+        lower_to_col[c]
+        for c in (participant_columns_lower | participant_fallbacks)
+        if c in lower_to_col
+    }
+
+    cols = [
+        c for c in df.columns if c not in {id_col} and c != ses_col and c != run_col
+    ]
+    col_to_mapping: dict[str, ColumnMapping] = {}
+    unknown_cols: list[str] = []
+    task_run_tracker: dict[str, set[int | None]] = {}
+
+    for c in cols:
+        col_lower = str(c).strip().lower()
+
+        if c in participant_columns_present or col_lower in participant_columns_present:
+            continue
+        if col_lower in participant_columns_lower:
+            continue
+
+        base_name, run_num = _parse_run_from_column(c)
+
+        matched_task = None
+        matched_base = c
+        if c in item_to_task:
+            matched_task = item_to_task[c]
+            matched_base = c
+        elif base_name in item_to_task:
+            matched_task = item_to_task[base_name]
+            matched_base = base_name
+
+        if matched_task:
+            col_to_mapping[c] = ColumnMapping(
+                task=matched_task, run=run_num, base_item=matched_base
+            )
+            if matched_task not in task_run_tracker:
+                task_run_tracker[matched_task] = set()
+            task_run_tracker[matched_task].add(run_num)
+        else:
+            unknown_cols.append(c)
+
+    return col_to_mapping, unknown_cols, task_run_tracker
+
+
 def _map_survey_columns(
     *,
     df,
@@ -102,68 +168,14 @@ def _map_survey_columns(
         near_match_candidates: Safe near-match candidates requiring explicit confirmation
         near_match_applied: Whether near matches were actually applied
     """
-    lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
-
-    # Detect participant-related columns first so they are not treated as unmapped survey items.
-    participant_fallbacks = {
-        "age",
-        "sex",
-        "gender",
-        "education",
-        "handedness",
-        "completion_date",
-    }
-
-    participant_columns_present = {
-        lower_to_col[c]
-        for c in (participant_columns_lower | participant_fallbacks)
-        if c in lower_to_col
-    }
-
-    cols = [
-        c for c in df.columns if c not in {id_col} and c != ses_col and c != run_col
-    ]
-    col_to_mapping: dict[str, ColumnMapping] = {}
-    unknown_cols: list[str] = []
-
-    # Track runs per task: task -> set of run numbers seen
-    task_run_tracker: dict[str, set[int | None]] = {}
-
-    for c in cols:
-        col_lower = str(c).strip().lower()
-
-        # Skip participant columns
-        if c in participant_columns_present or col_lower in participant_columns_present:
-            continue
-        if col_lower in participant_columns_lower:
-            continue
-
-        # Parse run suffix from column name
-        base_name, run_num = _parse_run_from_column(c)
-
-        # Try to match against templates (original name first, then base name)
-        matched_task = None
-        matched_base = c
-
-        if c in item_to_task:
-            # Direct match (e.g., 'PANAS_1' without run suffix)
-            matched_task = item_to_task[c]
-            matched_base = c
-        elif base_name in item_to_task:
-            # Match after stripping run suffix (e.g., 'PANAS_1' from 'PANAS_1_run-01')
-            matched_task = item_to_task[base_name]
-            matched_base = base_name
-
-        if matched_task:
-            col_to_mapping[c] = ColumnMapping(
-                task=matched_task, run=run_num, base_item=matched_base
-            )
-            # Track runs for this task
-            if matched_task not in task_run_tracker:
-                task_run_tracker[matched_task] = set()
-            task_run_tracker[matched_task].add(run_num)
-        else:
-            unknown_cols.append(c)
+    col_to_mapping, unknown_cols, task_run_tracker = _match_columns_to_templates(
+        df=df,
+        item_to_task=item_to_task,
+        participant_columns_lower=participant_columns_lower,
+        id_col=id_col,
+        ses_col=ses_col,
+        run_col=run_col,
+    )
 
     warnings: list[str] = []
     bookkeeping = {
