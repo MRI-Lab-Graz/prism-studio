@@ -16,6 +16,7 @@ Usage:
 
 import os
 import json
+import time
 from datetime import date
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
@@ -59,6 +60,33 @@ class FixAction:
             "details": self.details,
             "applied": self.applied,
         }
+
+
+_RENAME_RETRY_ATTEMPTS = 5
+_RENAME_RETRY_DELAY_SECONDS = 0.2
+
+
+def _replace_with_retry(source: str, destination: str) -> None:
+    """os.replace() with short retries for a transient Windows file lock.
+
+    Antivirus/Windows Defender frequently holds a brief exclusive lock on
+    a just-written file, which surfaces as PermissionError (WinError 32)
+    on os.replace() even though nothing in PRISM itself still has the
+    file open. POSIX platforms don't exhibit this, so the retry only
+    ever loops when the first attempt actually raises -- no added cost
+    on the common path.
+    """
+    last_error: Optional[OSError] = None
+    for attempt in range(_RENAME_RETRY_ATTEMPTS):
+        try:
+            os.replace(source, destination)
+            return
+        except PermissionError as exc:
+            last_error = exc
+            if attempt < _RENAME_RETRY_ATTEMPTS - 1:
+                time.sleep(_RENAME_RETRY_DELAY_SECONDS)
+    assert last_error is not None
+    raise last_error
 
 
 class DatasetFixer:
@@ -192,7 +220,7 @@ class DatasetFixer:
             # os.rename() raises FileExistsError on Windows if new_path already
             # exists (unlike POSIX, which overwrites atomically); os.replace()
             # is the cross-platform-safe equivalent.
-            os.replace(fix.file_path, new_path)
+            _replace_with_retry(fix.file_path, new_path)
             return True
         return False
 
