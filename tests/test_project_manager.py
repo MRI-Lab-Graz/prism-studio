@@ -5435,6 +5435,54 @@ class TestDataladHealthChecks(unittest.TestCase):
 
         self.assertEqual(backlog, [])
 
+    @patch("src.project_manager.subprocess.run")
+    def test_is_adjusted_unlocked_branch_true_for_adjusted_branch(self, mock_run):
+        mock_run.return_value = SimpleNamespace(
+            returncode=0, stdout="adjusted/main(unlocked)\n", stderr=""
+        )
+        manager = ProjectManager()
+
+        result = manager._is_adjusted_unlocked_branch(
+            Path("/tmp/demo_project"), git_executable="git"
+        )
+
+        self.assertTrue(result)
+
+    @patch("src.project_manager.subprocess.run")
+    def test_is_adjusted_unlocked_branch_false_for_normal_branch(self, mock_run):
+        mock_run.return_value = SimpleNamespace(returncode=0, stdout="main\n", stderr="")
+        manager = ProjectManager()
+
+        result = manager._is_adjusted_unlocked_branch(
+            Path("/tmp/demo_project"), git_executable="git"
+        )
+
+        self.assertFalse(result)
+
+    @patch("src.project_manager.subprocess.run")
+    def test_detect_unlocked_annex_backlog_skips_adjusted_unlocked_branch(self, mock_run):
+        """A repo running on git-annex's adjusted-unlocked branch (the
+        Windows-without-symlink-support fallback) has every annexed file
+        "unlocked" as its normal, permanent state -- that must not be
+        reported as a stalled-batch backlog."""
+
+        def _fake_run(cmd, **kwargs):
+            if "symbolic-ref" in cmd:
+                return SimpleNamespace(
+                    returncode=0, stdout="adjusted/main(unlocked)\n", stderr=""
+                )
+            many_files = "\n".join(f"sub-{i:03d}/file.nii.gz" for i in range(50))
+            return SimpleNamespace(returncode=0, stdout=many_files, stderr="")
+
+        mock_run.side_effect = _fake_run
+        manager = ProjectManager()
+
+        backlog = manager._detect_unlocked_annex_backlog(
+            [Path("/tmp/demo_project")], datalad_executable="/usr/bin/datalad"
+        )
+
+        self.assertEqual(backlog, [])
+
     @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
     def test_enable_datalad_fails_fast_on_stale_lock_without_attempting_registration(
         self, _mock_which
