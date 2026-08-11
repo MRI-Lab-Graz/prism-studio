@@ -134,6 +134,150 @@ def _match_columns_to_templates(
     return col_to_mapping, unknown_cols, task_run_tracker
 
 
+def _find_near_match_candidates(
+    *,
+    filtered_unknown: list[str],
+    templates: dict[str, dict] | None,
+    selected_tasks: set[str] | None,
+    col_to_mapping: dict[str, ColumnMapping],
+) -> tuple[list[dict[str, object]], list[str]]:
+    """Find unmapped columns that near-match a template item (tolerating
+    separator/casing/zero-padding differences), conservatively: only
+    approved when applying every candidate for a task would produce a full
+    1:1 item-count match against that task's remaining unmapped items, or
+    the candidates carry explicit run context."""
+    near_match_candidates: list[dict[str, object]] = []
+    warnings: list[str] = []
+
+    if not (filtered_unknown and templates):
+        return near_match_candidates, warnings
+
+    scoped_tasks = set(selected_tasks) if selected_tasks else set(templates.keys())
+
+    task_primary_items: dict[str, set[str]] = {}
+    task_alias_lookup: dict[str, dict[str, str]] = {}
+    normalized_item_lookup: dict[str, set[tuple[str, str]]] = {}
+
+    for task, template_data in templates.items():
+        if task not in scoped_tasks:
+            continue
+        template_json = (
+            template_data.get("json") if isinstance(template_data, dict) else None
+        )
+        if not isinstance(template_json, dict):
+            continue
+
+        primary_items = _collect_primary_template_items(template_json)
+        if not primary_items:
+            continue
+        task_primary_items[task] = primary_items
+
+        aliases = template_json.get("_aliases")
+        alias_lookup: dict[str, str] = {}
+        if isinstance(aliases, dict):
+            for alias, canonical in aliases.items():
+                if not isinstance(alias, str) or not isinstance(canonical, str):
+                    continue
+                if canonical in primary_items:
+                    alias_lookup[alias] = canonical
+        task_alias_lookup[task] = alias_lookup
+
+        for item_key in primary_items:
+            normalized = _normalize_near_match_item_code(item_key)
+            if not normalized:
+                continue
+            normalized_item_lookup.setdefault(normalized, set()).add((task, item_key))
+
+    exact_mapped_by_task: dict[str, set[str]] = {}
+    for mapping in col_to_mapping.values():
+        if mapping.task not in task_primary_items:
+            continue
+        canonical = task_alias_lookup.get(mapping.task, {}).get(
+            mapping.base_item, mapping.base_item
+        )
+        exact_mapped_by_task.setdefault(mapping.task, set()).add(canonical)
+
+    task_candidates: dict[str, list[dict[str, object]]] = {}
+    for source_column in filtered_unknown:
+        base_name, run_num = _parse_run_from_column(source_column)
+        normalized_base = _normalize_near_match_item_code(base_name)
+        if not normalized_base:
+            continue
+
+        target_candidates = normalized_item_lookup.get(normalized_base) or set()
+        if len(target_candidates) != 1:
+            continue
+
+        task, target_item = next(iter(target_candidates))
+        task_candidates.setdefault(task, []).append(
+            {
+                "source_column": source_column,
+                "source_base_item": base_name,
+                "target_item": target_item,
+                "task": task,
+                "run": run_num,
+            }
+        )
+
+    approved_candidates: list[dict[str, object]] = []
+    for task, candidates in task_candidates.items():
+        if task not in task_primary_items:
+            continue
+        primary_items = task_primary_items[task]
+        if not primary_items:
+            continue
+
+        has_explicit_run_context = any(
+            candidate.get("run") is not None for candidate in candidates
+        )
+        proposed_items = {
+            str(candidate.get("target_item", ""))
+            for candidate in candidates
+            if candidate.get("target_item")
+        }
+
+        if not has_explicit_run_context:
+            exact_items = exact_mapped_by_task.get(task, set())
+            missing_items = primary_items - exact_items
+            if proposed_items != missing_items or len(candidates) != len(
+                missing_items
+            ):
+                warnings.append(
+                    f"Near-match candidates for task '{task}' were ignored because "
+                    "they do not produce a full one-to-one item count match."
+                )
+                continue
+
+        seen_targets: set[tuple[str, object]] = set()
+        has_duplicate_targets = False
+        for candidate in candidates:
+            target_item = str(candidate.get("target_item", "")).strip()
+            target_run = candidate.get("run")
+            key = (target_item, target_run)
+            if key in seen_targets:
+                has_duplicate_targets = True
+                break
+            seen_targets.add(key)
+
+        if has_duplicate_targets:
+            warnings.append(
+                f"Near-match candidates for task '{task}' were ignored due to duplicate target mappings."
+            )
+            continue
+
+        approved_candidates.extend(candidates)
+
+    near_match_candidates = sorted(
+        approved_candidates,
+        key=lambda candidate: (
+            str(candidate.get("task", "")),
+            str(candidate.get("source_column", "")),
+        ),
+    )
+
+    return near_match_candidates, warnings
+
+
 def _map_survey_columns(
     *,
     df,
@@ -208,134 +352,15 @@ def _map_survey_columns(
         and not _prismmeta_pattern.match(str(c).strip())
     ]
 
-    near_match_candidates: list[dict[str, object]] = []
     near_match_applied = False
 
-    if filtered_unknown and templates:
-        scoped_tasks = set(selected_tasks) if selected_tasks else set(templates.keys())
-
-        task_primary_items: dict[str, set[str]] = {}
-        task_alias_lookup: dict[str, dict[str, str]] = {}
-        normalized_item_lookup: dict[str, set[tuple[str, str]]] = {}
-
-        for task, template_data in templates.items():
-            if task not in scoped_tasks:
-                continue
-            template_json = (
-                template_data.get("json") if isinstance(template_data, dict) else None
-            )
-            if not isinstance(template_json, dict):
-                continue
-
-            primary_items = _collect_primary_template_items(template_json)
-            if not primary_items:
-                continue
-            task_primary_items[task] = primary_items
-
-            aliases = template_json.get("_aliases")
-            alias_lookup: dict[str, str] = {}
-            if isinstance(aliases, dict):
-                for alias, canonical in aliases.items():
-                    if not isinstance(alias, str) or not isinstance(canonical, str):
-                        continue
-                    if canonical in primary_items:
-                        alias_lookup[alias] = canonical
-            task_alias_lookup[task] = alias_lookup
-
-            for item_key in primary_items:
-                normalized = _normalize_near_match_item_code(item_key)
-                if not normalized:
-                    continue
-                normalized_item_lookup.setdefault(normalized, set()).add(
-                    (task, item_key)
-                )
-
-        exact_mapped_by_task: dict[str, set[str]] = {}
-        for mapping in col_to_mapping.values():
-            if mapping.task not in task_primary_items:
-                continue
-            canonical = task_alias_lookup.get(mapping.task, {}).get(
-                mapping.base_item, mapping.base_item
-            )
-            exact_mapped_by_task.setdefault(mapping.task, set()).add(canonical)
-
-        task_candidates: dict[str, list[dict[str, object]]] = {}
-        for source_column in filtered_unknown:
-            base_name, run_num = _parse_run_from_column(source_column)
-            normalized_base = _normalize_near_match_item_code(base_name)
-            if not normalized_base:
-                continue
-
-            target_candidates = normalized_item_lookup.get(normalized_base) or set()
-            if len(target_candidates) != 1:
-                continue
-
-            task, target_item = next(iter(target_candidates))
-            task_candidates.setdefault(task, []).append(
-                {
-                    "source_column": source_column,
-                    "source_base_item": base_name,
-                    "target_item": target_item,
-                    "task": task,
-                    "run": run_num,
-                }
-            )
-
-        approved_candidates: list[dict[str, object]] = []
-        for task, candidates in task_candidates.items():
-            if task not in task_primary_items:
-                continue
-            primary_items = task_primary_items[task]
-            if not primary_items:
-                continue
-
-            has_explicit_run_context = any(
-                candidate.get("run") is not None for candidate in candidates
-            )
-            proposed_items = {
-                str(candidate.get("target_item", ""))
-                for candidate in candidates
-                if candidate.get("target_item")
-            }
-
-            if not has_explicit_run_context:
-                exact_items = exact_mapped_by_task.get(task, set())
-                missing_items = primary_items - exact_items
-                if proposed_items != missing_items or len(candidates) != len(
-                    missing_items
-                ):
-                    warnings.append(
-                        f"Near-match candidates for task '{task}' were ignored because "
-                        "they do not produce a full one-to-one item count match."
-                    )
-                    continue
-
-            seen_targets: set[tuple[str, object]] = set()
-            has_duplicate_targets = False
-            for candidate in candidates:
-                target_item = str(candidate.get("target_item", "")).strip()
-                target_run = candidate.get("run")
-                key = (target_item, target_run)
-                if key in seen_targets:
-                    has_duplicate_targets = True
-                    break
-                seen_targets.add(key)
-
-            if has_duplicate_targets:
-                warnings.append(
-                    f"Near-match candidates for task '{task}' were ignored due to duplicate target mappings."
-                )
-                continue
-
-            approved_candidates.extend(candidates)
-
-        near_match_candidates = sorted(
-            approved_candidates,
-            key=lambda candidate: (
-                str(candidate.get("task", "")),
-                str(candidate.get("source_column", "")),
-            ),
-        )
+    near_match_candidates, near_match_find_warnings = _find_near_match_candidates(
+        filtered_unknown=filtered_unknown,
+        templates=templates,
+        selected_tasks=selected_tasks,
+        col_to_mapping=col_to_mapping,
+    )
+    warnings.extend(near_match_find_warnings)
 
     near_match_task_filter: set[str] | None = None
     if near_match_tasks is not None:
