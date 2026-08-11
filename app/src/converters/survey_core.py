@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import unicodedata
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
@@ -26,6 +28,8 @@ except ImportError:
 
 from src.entity_rules import load_entity_rules
 from src.converters import survey_processing as _survey_processing
+from src.subject_id_matching import build_subject_id_matcher, load_existing_participant_ids
+from src.utils.naming import sanitize_id
 
 try:
     import pandas as pd
@@ -154,6 +158,90 @@ def _resolve_existing_project_root(project_path: str | Path | None) -> Path | No
     if not resolved.exists() or not resolved.is_dir():
         return None
     return resolved
+
+
+@dataclass(frozen=True)
+class SurveyIdNormalizers:
+    normalize_sub: Any
+    normalize_ses: Any
+    normalize_run: Any
+    is_missing: Any
+
+
+def build_survey_id_normalizers(project_path: str | Path | None) -> SurveyIdNormalizers:
+    """Build the subject/session/run-ID normalizers and missing-value check
+    shared across survey conversion.
+
+    normalize_sub additionally resolves against the project's existing
+    participants.tsv IDs (via build_subject_id_matcher) so e.g. a bare "1"
+    in the source data lands in an existing "sub-001" folder rather than
+    creating a duplicate "sub-1".
+    """
+
+    def _normalize_sub_id_raw(val) -> str:
+        s = str(val).strip()
+        if not s:
+            return s
+        if s.lower() == "nan":
+            return ""
+        # Normalize to NFC before stripping non-ASCII chars so a name like
+        # "José" sanitizes the same way regardless of which Unicode
+        # normalization form the source system used.
+        s = unicodedata.normalize("NFC", s)
+        label = s[4:] if s[:4].lower() == "sub-" else s
+        label = re.sub(r"[^A-Za-z0-9]+", "", label)
+        if not label:
+            return ""
+        return f"sub-{label}"
+
+    existing_project_root_for_matching = _resolve_existing_project_root(project_path)
+    subject_id_match = build_subject_id_matcher(
+        load_existing_participant_ids(existing_project_root_for_matching)
+        if existing_project_root_for_matching is not None
+        else set()
+    )
+
+    def normalize_sub(val) -> str:
+        normalized = _normalize_sub_id_raw(val)
+        if not normalized:
+            return normalized
+        return subject_id_match(normalized) or normalized
+
+    def normalize_ses(val) -> str:
+        s = sanitize_id(str(val).strip())
+        if not s:
+            return "ses-1"
+        if s.lower() == "nan":
+            return "ses-1"
+        label = s[4:] if s[:4].lower() == "ses-" else s
+        label = re.sub(r"[^A-Za-z0-9]+", "", label)
+        if not label:
+            return "ses-1"
+        return f"ses-{label}"
+
+    def normalize_run(val) -> str | None:
+        s = sanitize_id(str(val).strip())
+        if not s or s.lower() == "nan":
+            return None
+        label = s[4:] if s[:4].lower() == "run-" else s
+        label = re.sub(r"[^A-Za-z0-9]+", "", label)
+        if not label:
+            return None
+        return f"run-{label}"
+
+    def is_missing(val) -> bool:
+        if pd.isna(val):
+            return True
+        if isinstance(val, str) and val.strip() == "":
+            return True
+        return False
+
+    return SurveyIdNormalizers(
+        normalize_sub=normalize_sub,
+        normalize_ses=normalize_ses,
+        normalize_run=normalize_run,
+        is_missing=is_missing,
+    )
 
 
 # =============================================================================
