@@ -157,6 +157,7 @@ def _canonicalize_preview_id_column(
     )
 
     if keep_session_id_columns and "participant_id" in preview_df.columns:
+
         def _normalized_alias(value: object) -> str:
             return re.sub(r"[^a-z0-9]+", "", str(value or "").strip().lower())
 
@@ -268,9 +269,7 @@ def _resolve_excluded_output_columns(
     return resolved
 
 
-def _collect_preview_column_values(
-    df, *, max_values: int = 50
-) -> dict[str, list[str]]:
+def _collect_preview_column_values(df, *, max_values: int = 50) -> dict[str, list[str]]:
     if df is None or getattr(df, "empty", True):
         return {}
 

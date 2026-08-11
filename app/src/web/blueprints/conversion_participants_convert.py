@@ -118,7 +118,9 @@ def _write_participants_outputs(
         current_description = str(field.get("Description") or "").strip()
         if current_description:
             continue
-        field["Description"] = fallback_descriptions.get(col_name, f"Participant {col_name}")
+        field["Description"] = fallback_descriptions.get(
+            col_name, f"Participant {col_name}"
+        )
 
     with open(participants_json, "w", encoding="utf-8") as f:
         json.dump(participants_json_data, f, indent=2, ensure_ascii=False)

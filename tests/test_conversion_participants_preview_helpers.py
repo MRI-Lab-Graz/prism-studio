@@ -49,9 +49,7 @@ def test_excluded_column_from_saved_mapping_is_skipped():
             json.dumps({"mappings": {"site": {"source_column": "site"}}})
         )
 
-        result = _resolve_additional_preview_columns(
-            _df(), project_root, {"site"}, ""
-        )
+        result = _resolve_additional_preview_columns(_df(), project_root, {"site"}, "")
 
         assert "site" not in result
 

@@ -15,12 +15,19 @@ from flask import (
     session,
 )
 from src.participants_id_selection import resolve_participants_id_selection
+
+# merge_neurobagel_schema_for_columns / _rekey_neurobagel_schema_to_output_columns
+# below are re-exported (not called directly in this module) so that
+# tests/test_neurobagel_merge_no_duplication.py and
+# tests/test_web_blueprints_conversion.py::TestParticipantsSchemaMerge can
+# assert this module resolves to the one canonical implementation, guarding
+# against the duplicate-implementation drift CLAUDE.md warns about.
 from src.participants_backend import (
     apply_participants_merge,
     convert_dataset_participants,
     describe_participants_workflow,
     export_participants_merge_conflicts_csv,
-    merge_neurobagel_schema_for_columns as _merge_neurobagel_schema_for_columns,
+    merge_neurobagel_schema_for_columns as _merge_neurobagel_schema_for_columns,  # noqa: F401
     preview_dataset_participants,
     preview_participants_merge,
     save_participant_mapping as save_participant_mapping_backend,
@@ -49,7 +56,7 @@ from .conversion_participants_mapping import (
     _canonicalize_preview_id_column,
     _collect_preview_column_values,
     _parse_requested_column_list,
-    _rekey_neurobagel_schema_to_output_columns,
+    _rekey_neurobagel_schema_to_output_columns,  # noqa: F401 (re-export, see note above)
     _resolve_additional_preview_columns,
     _resolve_web_participant_import_mapping,
 )
@@ -697,9 +704,7 @@ def api_participants_merge_conflicts():
             preview_limit=int(merge_request["preview_limit"]),
             neurobagel_schema=merge_request["neurobagel_schema"],
             harmonization_decisions=merge_request["harmonization_decisions"],
-            session_resolution_decisions=merge_request[
-                "session_resolution_decisions"
-            ],
+            session_resolution_decisions=merge_request["session_resolution_decisions"],
             log_callback=log_msg,
         )
         response = Response(csv_text, mimetype="text/csv")

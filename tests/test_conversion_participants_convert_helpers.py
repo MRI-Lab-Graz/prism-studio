@@ -100,13 +100,19 @@ def test_write_participants_outputs_creates_tsv_and_json():
         )
 
         assert result["status"] == "success"
-        assert result["files_created"] == [str(participants_tsv), str(participants_json)]
+        assert result["files_created"] == [
+            str(participants_tsv),
+            str(participants_json),
+        ]
         assert result["overwrote_existing"] is False
         assert participants_tsv.exists()
 
         written = json.loads(participants_json.read_text())
         assert "participant_id" in written
-        assert written["participant_id"]["Description"] == "Participant identifier (sub-<label>)"
+        assert (
+            written["participant_id"]["Description"]
+            == "Participant identifier (sub-<label>)"
+        )
 
 
 def test_write_participants_outputs_raises_on_conversion_failure():

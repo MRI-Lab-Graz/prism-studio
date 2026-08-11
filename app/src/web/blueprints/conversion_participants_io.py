@@ -33,10 +33,9 @@ def _save_participants_upload_to_temp(
     uploaded_file,
     temp_prefix: str,
 ) -> dict[str, object]:
-    source_file_path = (
-        (request.form.get("source_file_path") or "").strip()
-        or (request.args.get("source_file_path") or "").strip()
-    )
+    source_file_path = (request.form.get("source_file_path") or "").strip() or (
+        request.args.get("source_file_path") or ""
+    ).strip()
 
     source_path: Path | None = None
     if uploaded_file and uploaded_file.filename:

@@ -130,9 +130,7 @@ def _parse_participants_merge_request(
         except json.JSONDecodeError:
             harmonization_decisions = {}
 
-    session_resolution_decisions_json = request.form.get(
-        "session_resolution_decisions"
-    )
+    session_resolution_decisions_json = request.form.get("session_resolution_decisions")
     session_resolution_decisions: dict[str, object] = {}
     if session_resolution_decisions_json:
         try:
