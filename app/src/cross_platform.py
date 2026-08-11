@@ -147,7 +147,7 @@ def windows_long_paths_enabled():
         ) as key:
             value, _ = winreg.QueryValueEx(key, "LongPathsEnabled")
         return bool(value)
-    except OSError:
+    except (OSError, ImportError):
         return False
 
 
