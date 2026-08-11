@@ -54,6 +54,7 @@ def tearDownModule():
 
 
 try:
+    import src.participants_backend as participants_backend
     from src.web.blueprints import conversion as conversion_module
     from src.web.blueprints import conversion_biometrics_handlers as biometrics_module
     from src.web.blueprints import conversion_environment_handlers as environment_module
@@ -61,6 +62,11 @@ try:
     from src.web.blueprints import (
         conversion_participants_blueprint as participants_module,
     )
+    from src.web.blueprints import conversion_participants_io as io_module
+    from src.web.blueprints import (
+        conversion_participants_mapping as mapping_module,
+    )
+    from src.web.blueprints import conversion_participants_merge as merge_module
     from src.web.blueprints.conversion import conversion_bp
     from src.web.blueprints.conversion_biometrics_handlers import (
         api_biometrics_check_library,
@@ -2791,7 +2797,7 @@ class TestParticipantsSchemaMerge(unittest.TestCase):
         def _logger(level, message):
             messages.append((level, message))
 
-        merged, merged_count = participants_module._merge_neurobagel_schema_for_columns(
+        merged, merged_count = participants_backend.merge_neurobagel_schema_for_columns(
             base_schema=base,
             neurobagel_schema=nb_schema,
             allowed_columns=["participant_id", "group"],
@@ -2819,7 +2825,7 @@ class TestParticipantsSchemaMerge(unittest.TestCase):
             }
         }
 
-        merged, merged_count = participants_module._merge_neurobagel_schema_for_columns(
+        merged, merged_count = participants_backend.merge_neurobagel_schema_for_columns(
             base_schema=base,
             neurobagel_schema=nb_schema,
             allowed_columns=["age"],
@@ -2890,7 +2896,7 @@ class TestParticipantsSchemaMerge(unittest.TestCase):
             mapping=mapping,
             allowed_columns=["participant_id"],
         )
-        merged, merged_count = participants_module._merge_neurobagel_schema_for_columns(
+        merged, merged_count = participants_backend.merge_neurobagel_schema_for_columns(
             base_schema={"participant_id": {}},
             neurobagel_schema=aligned,
             allowed_columns=["participant_id"],
@@ -3134,8 +3140,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         payload = response.get_json() or {}
         self.assertIn("participants.tsv", payload.get("error", ""))
 
-    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
-    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(merge_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(merge_module, "resolve_effective_library_path")
     def test_preview_existing_mode_reads_existing_participants_files(
         self,
         mock_resolve_library,
@@ -3172,8 +3178,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             "Age from existing schema",
         )
 
-    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
-    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(merge_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(merge_module, "resolve_effective_library_path")
     def test_preview_existing_mode_includes_session_id_and_honors_excluded_columns(
         self,
         mock_resolve_library,
@@ -3204,8 +3210,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         self.assertIn("session_id", payload.get("columns") or [])
         self.assertNotIn("weight", payload.get("columns") or [])
 
-    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
-    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(merge_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(merge_module, "resolve_effective_library_path")
     def test_preview_existing_mode_exposes_column_values_beyond_preview_rows(
         self,
         mock_resolve_library,
@@ -3809,10 +3815,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             if old_has_pm is not None:
                 id_detection_module.has_prismmeta_columns = old_has_pm
 
-    @patch.object(
-        participants_module, "_load_survey_template_item_ids", return_value=set()
-    )
-    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(mapping_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(mapping_module, "resolve_effective_library_path")
     def test_convert_defaults_to_first_non_empty_excel_sheet_when_sheet_not_provided(
         self,
         mock_resolve_library,
@@ -4127,10 +4131,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             if old_has_pm is not None:
                 id_detection_module.has_prismmeta_columns = old_has_pm
 
-    @patch.object(
-        participants_module, "_load_survey_template_item_ids", return_value=set()
-    )
-    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(mapping_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(mapping_module, "resolve_effective_library_path")
     def test_convert_auto_imports_relevant_sociodemographics_and_filters_questionnaire_columns(
         self,
         mock_resolve_library,
@@ -4187,10 +4189,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             if old_has_pm is not None:
                 id_detection_module.has_prismmeta_columns = old_has_pm
 
-    @patch.object(
-        participants_module, "_load_survey_template_item_ids", return_value=set()
-    )
-    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(mapping_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(mapping_module, "resolve_effective_library_path")
     def test_convert_honors_requested_extra_columns_without_saved_mapping(
         self,
         mock_resolve_library,
@@ -4245,10 +4245,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             if old_has_pm is not None:
                 id_detection_module.has_prismmeta_columns = old_has_pm
 
-    @patch.object(
-        participants_module, "_load_survey_template_item_ids", return_value=set()
-    )
-    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(mapping_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(mapping_module, "resolve_effective_library_path")
     def test_convert_forces_selected_source_id_to_participant_id_and_drops_source_id_column(
         self,
         mock_resolve_library,
@@ -4322,10 +4320,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             if old_has_pm is not None:
                 id_detection_module.has_prismmeta_columns = old_has_pm
 
-    @patch.object(
-        participants_module, "_load_survey_template_item_ids", return_value=set()
-    )
-    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(mapping_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(mapping_module, "resolve_effective_library_path")
     def test_convert_returns_409_when_existing_participant_files_without_force_overwrite(
         self,
         mock_resolve_library,
@@ -4385,10 +4381,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             if old_has_pm is not None:
                 id_detection_module.has_prismmeta_columns = old_has_pm
 
-    @patch.object(
-        participants_module, "_load_survey_template_item_ids", return_value=set()
-    )
-    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(mapping_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(mapping_module, "resolve_effective_library_path")
     def test_convert_force_overwrite_replaces_existing_participant_files_and_reports_location(
         self,
         mock_resolve_library,
@@ -4457,10 +4451,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             if old_has_pm is not None:
                 id_detection_module.has_prismmeta_columns = old_has_pm
 
-    @patch.object(
-        participants_module, "_load_survey_template_item_ids", return_value=set()
-    )
-    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(mapping_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(mapping_module, "resolve_effective_library_path")
     def test_merge_preview_reports_conflicts_and_blocks_apply(
         self,
         mock_resolve_library,
@@ -4515,10 +4507,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         self.assertEqual(preview_rows[0].get("age"), "21")
         self.assertEqual(preview_rows[0].get("handedness"), "right")
 
-    @patch.object(
-        participants_module, "_load_survey_template_item_ids", return_value=set()
-    )
-    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(mapping_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(mapping_module, "resolve_effective_library_path")
     def test_merge_preview_exposes_harmonization_candidates(
         self,
         mock_resolve_library,
@@ -4563,10 +4553,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         self.assertEqual(preview_rows[2].get("participant_id"), "sub-003")
         self.assertEqual(preview_rows[2].get("sex"), "M")
 
-    @patch.object(
-        participants_module, "_load_survey_template_item_ids", return_value=set()
-    )
-    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(mapping_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(mapping_module, "resolve_effective_library_path")
     def test_merge_preview_keep_both_adds_incoming_column(
         self,
         mock_resolve_library,
@@ -4612,10 +4600,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         self.assertEqual(preview_rows[2].get("sex"), "F")
         self.assertEqual(preview_rows[2].get("sex_code"), "1")
 
-    @patch.object(
-        participants_module, "_load_survey_template_item_ids", return_value=set()
-    )
-    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(mapping_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(mapping_module, "resolve_effective_library_path")
     def test_merge_preview_session_resolution_candidates_block_apply_until_decided(
         self,
         mock_resolve_library,
@@ -4662,10 +4648,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         self.assertEqual(candidates[0].get("session_column"), "session")
         self.assertEqual(candidates[0].get("available_sessions"), ["1", "2"])
 
-    @patch.object(
-        participants_module, "_load_survey_template_item_ids", return_value=set()
-    )
-    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(mapping_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(mapping_module, "resolve_effective_library_path")
     def test_merge_preview_session_pick_resolves_repeated_row_blocker(
         self,
         mock_resolve_library,
@@ -4713,10 +4697,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         self.assertEqual(preview_rows[0].get(bmi_key), "20.1")
         self.assertEqual(preview_rows[1].get(bmi_key), "30.0")
 
-    @patch.object(
-        participants_module, "_load_survey_template_item_ids", return_value=set()
-    )
-    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(mapping_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(mapping_module, "resolve_effective_library_path")
     def test_merge_preview_pick_latest_session_resolves_to_highest_session(
         self,
         mock_resolve_library,
@@ -4767,10 +4749,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         self.assertEqual((decisions.get("BMI") or {}).get("action"), "pick_latest_session")
         self.assertEqual((decisions.get("BMI") or {}).get("session"), "2")
 
-    @patch.object(
-        participants_module, "_load_survey_template_item_ids", return_value=set()
-    )
-    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(mapping_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(mapping_module, "resolve_effective_library_path")
     def test_merge_apply_updates_participants_and_creates_backups(
         self,
         mock_resolve_library,
@@ -4847,10 +4827,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             "Preferred hand",
         )
 
-    @patch.object(
-        participants_module, "_load_survey_template_item_ids", return_value=set()
-    )
-    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(mapping_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(mapping_module, "resolve_effective_library_path")
     def test_merge_apply_use_incoming_harmonization_rewrites_existing_codes(
         self,
         mock_resolve_library,
@@ -4890,10 +4868,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         out_df = pd.read_csv(participants_tsv, sep="\t").fillna("")
         self.assertEqual([str(value) for value in out_df["sex"].tolist()], ["2", "1", "2"])
 
-    @patch.object(
-        participants_module, "_load_survey_template_item_ids", return_value=set()
-    )
-    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(mapping_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(mapping_module, "resolve_effective_library_path")
     def test_merge_conflict_export_returns_full_csv_report(
         self,
         mock_resolve_library,
@@ -5039,7 +5015,7 @@ class TestParticipantsInputFileEdgeCases(unittest.TestCase):
         participants_module, "_load_survey_template_item_ids", return_value=set()
     )
     @patch.object(participants_module, "resolve_effective_library_path")
-    @patch.object(participants_module, "read_tabular_file")
+    @patch.object(io_module, "read_tabular_file")
     def test_preview_rejects_fake_xlsx_content(
         self,
         mock_read_tabular_file,
