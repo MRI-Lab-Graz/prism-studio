@@ -6,8 +6,9 @@ from pathlib import Path
 from dataclasses import dataclass
 
 from ..participants_paths import participants_mapping_candidates
-from ..utils.io import read_json as _read_json
+from ..utils.io import read_json as _read_json, write_json as _write_json
 from .id_detection import detect_id_column, IdColumnNotDetectedError
+from . import survey_processing as _survey_processing
 
 # =============================================================================
 # MAPPING LOADING & COLUMNS
@@ -350,3 +351,405 @@ def _resolve_id_and_session_cols(
         resolved_run = _find_col({"run", "run_id", "run_number", "run_nr"})
 
     return str(resolved_id), resolved_ses, resolved_run
+
+
+# =============================================================================
+# VALUE AUTO-CORRECTION & PARTICIPANTS.TSV WRITING
+# =============================================================================
+
+
+def _find_matching_level_key(value: str, levels: dict) -> str | None:
+    """Try to find the original level key for a potentially sanitized value.
+
+    Handles:
+    - Direct matches (case-insensitive)
+    - LimeSurvey truncated codes (e.g., 'cohng' -> 'cohabiting')
+    - Common missing value formats (e.g., 'na' -> 'n/a')
+
+    Returns:
+        Original level key if found, None otherwise
+    """
+    v_lower = value.lower().strip()
+
+    # Direct match (case-insensitive)
+    for key in levels:
+        if key.lower() == v_lower:
+            return key
+
+    # Handle common missing value variations
+    if v_lower == "na":
+        if "n/a" in levels:
+            return "n/a"
+        if "N/A" in levels:
+            return "N/A"
+
+    # Try reverse LimeSurvey sanitization lookup
+    # For each level key, compute what LimeSurvey would truncate it to
+    # and see if it matches the input value
+    for key in levels:
+        sanitized = _survey_processing._sanitize_answer_code_for_ls(key)
+        if sanitized == v_lower:
+            return key
+
+    return None
+
+
+def _safe_eval_formula(formula: str) -> float | None:
+    """Safely evaluate a simple arithmetic formula (e.g., BMI calculation).
+
+    Only allows: numbers, basic arithmetic (+, -, *, /), round(), parentheses.
+    Returns None if evaluation fails or formula is unsafe.
+
+    Examples:
+        'round(56 / ((145 / 100) * (145 / 100)), 1)' -> 26.6
+        '123 + 456' -> 579
+    """
+    import ast
+    import operator
+
+    if not isinstance(formula, str):
+        return None
+
+    formula = formula.strip()
+    if not formula:
+        return None
+
+    # Quick check: must contain at least one digit and an operator
+    if not any(c.isdigit() for c in formula):
+        return None
+    if not any(c in formula for c in "+-*/()"):
+        return None
+
+    # Whitelist of safe operations
+    safe_operators = {
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+        ast.USub: operator.neg,
+        ast.UAdd: operator.pos,
+    }
+
+    def _eval_node(node):
+        if isinstance(node, ast.Constant):
+            if isinstance(node.value, (int, float)):
+                return node.value
+            raise ValueError("Non-numeric constant")
+        elif isinstance(node, ast.Num):  # Python 3.7 compatibility
+            return node.n
+        elif isinstance(node, ast.BinOp):
+            if type(node.op) not in safe_operators:
+                raise ValueError(f"Unsafe operator: {type(node.op)}")
+            left = _eval_node(node.left)
+            right = _eval_node(node.right)
+            return safe_operators[type(node.op)](left, right)
+        elif isinstance(node, ast.UnaryOp):
+            if type(node.op) not in safe_operators:
+                raise ValueError(f"Unsafe unary operator: {type(node.op)}")
+            operand = _eval_node(node.operand)
+            return safe_operators[type(node.op)](operand)
+        elif isinstance(node, ast.Call):
+            # Only allow round() function
+            if isinstance(node.func, ast.Name) and node.func.id == "round":
+                args = [_eval_node(arg) for arg in node.args]
+                return round(*args)
+            raise ValueError("Unsafe function call")
+        elif isinstance(node, ast.Expression):
+            return _eval_node(node.body)
+        else:
+            raise ValueError(f"Unsafe node type: {type(node)}")
+
+    try:
+        tree = ast.parse(formula, mode="eval")
+        result = _eval_node(tree)
+        if isinstance(result, (int, float)) and not (result != result):  # not NaN
+            return result
+        return None
+    except Exception:
+        return None
+
+
+def _auto_correct_participant_value(
+    value, col_name: str, template: dict | None, missing_token: str
+) -> str:
+    """Auto-correct a participant data value based on template Levels.
+
+    Handles:
+    - LimeSurvey truncated codes -> original level keys
+    - 'na' -> 'n/a' for missing values
+    - Formula strings -> evaluated numeric values
+
+    Returns the corrected value, or original if no correction needed/possible.
+    """
+    if template is None:
+        return value
+
+    # Get column schema from template
+    col_schema = template.get(col_name)
+    if not isinstance(col_schema, dict):
+        return value
+
+    v_str = str(value).strip() if value is not None else ""
+
+    # Skip empty/missing values
+    if not v_str or v_str.lower() in ("", "nan", "none"):
+        return missing_token
+
+    # Check for Levels - try to find matching key
+    levels = col_schema.get("Levels")
+    if isinstance(levels, dict) and levels:
+        # Direct match
+        if v_str in levels:
+            return v_str
+
+        # Try reverse lookup
+        matched_key = _find_matching_level_key(v_str, levels)
+        if matched_key is not None:
+            return matched_key
+
+    # Check for numeric DataType - try to evaluate formulas
+    data_type = col_schema.get("DataType", "").lower()
+    if data_type in ("number", "integer", "float"):
+        # If it's already a valid number, return as-is
+        try:
+            float(v_str)
+            return v_str
+        except (ValueError, TypeError):
+            pass
+
+        # Try to evaluate as formula
+        result = _safe_eval_formula(v_str)
+        if result is not None:
+            if data_type == "integer":
+                return str(int(round(result)))
+            else:
+                # Round to reasonable precision
+                return str(round(result, 2))
+
+    return value
+
+
+def _write_survey_participants(
+    *,
+    df,
+    output_root: Path,
+    id_col: str,
+    ses_col: str | None,
+    participant_template: dict | None,
+    normalize_sub_fn,
+    is_missing_fn,
+    missing_token: str,
+    lsa_col_renames: dict[str, str] | None = None,
+):
+    """Write participants.tsv and participants.json.
+
+    Column inclusion logic:
+    1. If participants_mapping.json exists in project:
+       - Only include columns explicitly defined in the mapping
+       - Apply value transformations as specified
+       - Rename columns to standard variable names
+    2. If no mapping exists:
+       - Only include columns that exist in the official participants template
+       - No arbitrary extra columns from source data
+
+    All columns in the output must have documentation in participants.json.
+    """
+    import pandas as pd
+
+    lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
+
+    # Try to load participants_mapping.json from the project
+    participants_mapping = _load_participants_mapping(output_root)
+    mapped_cols, col_renames, value_mappings = _get_mapped_columns(participants_mapping)
+
+    # Log what was found
+    if participants_mapping:
+        print(
+            f"[INFO] Using participants_mapping.json from project ({len(mapped_cols)} mapped columns)"
+        )
+        if col_renames:
+            print(f"[INFO]   Column renames: {col_renames}")
+        if value_mappings:
+            print(f"[INFO]   Value transformations for: {list(value_mappings.keys())}")
+    else:
+        print("[INFO] No participants_mapping.json found (using template columns only)")
+
+    # Start with participant_id column
+    df_part = pd.DataFrame(
+        {"participant_id": df[id_col].astype(str).map(normalize_sub_fn)}
+    )
+
+    # Normalize template to get column definitions
+    template_norm = _normalize_participant_template_dict(participant_template)
+    template_cols = set(template_norm.keys()) if template_norm else set()
+    # Remove non-column keys from template
+    non_column_keys = {
+        "@context",
+        "Technical",
+        "I18n",
+        "Study",
+        "Metadata",
+        "_aliases",
+        "_reverse_aliases",
+    }
+    template_cols = template_cols - non_column_keys
+
+    # Determine which columns to include
+    extra_cols: list[str] = []
+    col_output_names: dict[str, str] = {}  # Maps source col -> output name
+    mapping_descriptions: dict[str, str] = {}  # Extra descriptions from mapping
+
+    if participants_mapping and mapped_cols:
+        # MODE 1: Use mapping - only include explicitly mapped columns
+        for source_col_lower in mapped_cols:
+            if source_col_lower in lower_to_col:
+                actual_col = lower_to_col[source_col_lower]
+                if actual_col not in {id_col, ses_col}:
+                    extra_cols.append(actual_col)
+                    # Get the standard variable name (renamed output)
+                    output_name = col_renames.get(source_col_lower, source_col_lower)
+                    col_output_names[actual_col] = output_name
+
+        # Extract descriptions from mapping for columns not in template
+        for var_name, spec in participants_mapping.get("mappings", {}).items():
+            if isinstance(spec, dict):
+                standard_var = spec.get("standard_variable", var_name)
+                if standard_var not in template_cols and "description" in spec:
+                    mapping_descriptions[standard_var] = spec["description"]
+    else:
+        # MODE 2: No mapping - only include columns defined in the official template
+        for col in template_cols:
+            if col in lower_to_col:
+                # Direct match: template field name found as-is in DataFrame
+                actual_col = lower_to_col[col]
+                if actual_col not in {id_col, ses_col}:
+                    extra_cols.append(actual_col)
+                    col_output_names[actual_col] = col
+            elif lsa_col_renames:
+                # Fallback: look up the LS-mangled column name for this field
+                mangled = None
+                for mangled_name, standard_name in lsa_col_renames.items():
+                    if standard_name == col:
+                        mangled = mangled_name
+                        break
+                if mangled and mangled in lower_to_col:
+                    actual_col = lower_to_col[mangled]
+                    if actual_col not in {id_col, ses_col}:
+                        extra_cols.append(actual_col)
+                        col_output_names[actual_col] = col  # Output uses standard name
+
+    if extra_cols:
+        extra_cols = list(dict.fromkeys(extra_cols))
+        df_extra = df[[id_col] + extra_cols].copy()
+
+        # Apply value mappings and missing value handling
+        for c in extra_cols:
+            output_name = col_output_names.get(c, c)
+
+            # Apply value mapping if specified
+            if output_name in value_mappings:
+                val_map = value_mappings[output_name]
+                df_extra[c] = (
+                    df_extra[c]
+                    .astype(str)
+                    .map(
+                        lambda v, vm=val_map: (
+                            vm.get(v, v)
+                            if v not in ("nan", "None", "")
+                            else missing_token
+                        )
+                    )
+                )
+            else:
+                df_extra[c] = df_extra[c].apply(
+                    lambda v: missing_token if is_missing_fn(v) else v
+                )
+
+        # Normalize ID column and rename to participant_id
+        df_extra[id_col] = df_extra[id_col].astype(str).map(normalize_sub_fn)
+        df_extra = df_extra.rename(columns={id_col: "participant_id"})
+        df_extra = (
+            df_extra.groupby("participant_id", dropna=False)[extra_cols]
+            .first()
+            .reset_index()
+        )
+
+        # Rename columns to standard variable names
+        rename_map = {c: col_output_names.get(c, c) for c in extra_cols}
+        df_extra = df_extra.rename(columns=rename_map)
+
+        # Auto-correct values: truncated LS codes -> original level keys, formulas -> numbers
+        if template_norm:
+            for col in df_extra.columns:
+                if col == "participant_id":
+                    continue
+                df_extra[col] = df_extra[col].apply(
+                    lambda v, c=col, t=template_norm: _auto_correct_participant_value(
+                        v, c, t, missing_token
+                    )
+                )
+
+        df_part = df_part.merge(df_extra, on="participant_id", how="left")
+
+    df_part = df_part.drop_duplicates(subset=["participant_id"]).reset_index(drop=True)
+
+    # Merge with existing participants.tsv if it exists
+    participants_tsv_path = output_root / "participants.tsv"
+    if participants_tsv_path.exists():
+        try:
+            existing_df = pd.read_csv(participants_tsv_path, sep="\t", dtype=str)
+            if "participant_id" in existing_df.columns:
+                # Merge new data with existing, preferring new values for overlapping participants
+                # but keeping all existing participants and columns
+                df_part = pd.merge(
+                    existing_df,
+                    df_part,
+                    on="participant_id",
+                    how="outer",
+                    suffixes=("_old", "_new"),
+                )
+
+                # For each column that exists in both, prefer new value if not n/a
+                for col in df_part.columns:
+                    if col.endswith("_new"):
+                        base_col = col[:-4]  # Remove "_new"
+                        old_col = base_col + "_old"
+                        if old_col in df_part.columns:
+                            # Prefer new value, fall back to old if new is n/a
+                            df_part[base_col] = df_part.apply(
+                                lambda row: (
+                                    row[col]
+                                    if pd.notna(row[col])
+                                    and str(row[col]) not in ("n/a", "nan", "")
+                                    else (
+                                        row[old_col]
+                                        if pd.notna(row[old_col])
+                                        else "n/a"
+                                    )
+                                ),
+                                axis=1,
+                            )
+                            # Drop the _old and _new columns
+                            df_part = df_part.drop(columns=[old_col, col])
+                        else:
+                            # No old column, just rename new column
+                            df_part = df_part.rename(columns={col: base_col})
+
+                # Sort by participant_id
+                df_part = df_part.sort_values("participant_id").reset_index(drop=True)
+                print(
+                    f"[INFO] Merged with existing participants.tsv ({len(existing_df)} existing → {len(df_part)} total)"
+                )
+        except Exception as e:
+            print(f"[WARNING] Could not merge with existing participants.tsv: {e}")
+
+    df_part.to_csv(participants_tsv_path, sep="\t", index=False)
+
+    # participants.json - all columns must be documented
+    parts_json_path = output_root / "participants.json"
+    p_json = _participants_json_from_template(
+        columns=[str(c) for c in df_part.columns],
+        template=participant_template,
+        extra_descriptions=mapping_descriptions,
+    )
+    _write_json(parts_json_path, p_json)
