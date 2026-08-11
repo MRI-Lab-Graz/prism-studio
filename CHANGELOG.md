@@ -7,7 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.17.1] - 2026-08-11
+
+This release hardens DataLad/git-annex behavior on Windows, ahead of
+broader Windows rollout: git-annex's symlink-unsupported fallback
+("adjusted unlocked branch") is now detected and surfaced instead of
+being silently misreported as a stalled-batch backlog, Windows long-path
+support is checked proactively, and dataset-fixer renames retry through
+transient antivirus file locks.
+
 ### Added
+- **Windows symlink and long-path detection**: `cross_platform.windows_symlinks_supported()`
+  and `windows_long_paths_enabled()` detect whether the current Windows
+  machine can create symlinks (Developer Mode / admin rights) and whether
+  `LongPathsEnabled` is set, surfaced in the DataLad/git-annex preflight
+  status message shown during project setup.
 - **Global default for export defacing confirmation mode**: the "ask before
   defacing on export" behavior is now configurable as a global default
   (Settings, saved via `/api/settings/global-library`) instead of only being
@@ -33,6 +47,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `gitleaks git` over full history, not just the working tree.
 
 ### Fixed
+- **git-annex adjusted-unlocked branches falsely reported as a backlog**:
+  `_detect_unlocked_annex_backlog` now skips dataset roots running on a
+  git-annex adjusted-unlocked branch (git-annex's automatic fallback when
+  the filesystem can't support symlinks, e.g. Windows without Developer
+  Mode) -- every annexed file is legitimately "unlocked" there as its
+  permanent state, not a stalled-batch backlog, and the prior warning
+  told users to run `git annex lock`, which fights the adjusted branch's
+  normal operation.
+- **`DatasetFixer` renames could fail under a transient antivirus file
+  lock**: `_rename_file` now retries `os.replace()` briefly on
+  `PermissionError` (Windows Defender/AV frequently holds a brief
+  exclusive lock on a just-written file).
 - **Anonymization pseudonyms were brute-forceable in deterministic mode**:
   each pseudonym's PRNG seed was derived from an unsalted hash of the
   plaintext participant ID, so anyone with a published "anonymized" dataset
