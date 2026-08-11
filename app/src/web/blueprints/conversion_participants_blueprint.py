@@ -25,8 +25,6 @@ from src.participants_backend import (
     preview_participants_merge,
     save_participant_mapping as save_participant_mapping_backend,
 )
-from src.participants_paths import participants_mapping_candidates
-
 from .conversion_participants_helpers import (
     _detect_repeated_questionnaire_prefixes,
     _filter_participant_relevant_columns,
@@ -51,6 +49,7 @@ from .conversion_participants_mapping import (
     _collect_preview_column_values,
     _parse_requested_column_list,
     _rekey_neurobagel_schema_to_output_columns,
+    _resolve_additional_preview_columns,
     _resolve_web_participant_import_mapping,
 )
 from .conversion_participants_merge import (
@@ -387,74 +386,16 @@ def api_participants_preview():
                 if col != id_column
             )
 
-            additional_columns = []
-            project_root = _get_session_project_root()
-            if project_root:
-                import json
-
-                mapping_candidates = participants_mapping_candidates(project_root)
-
-                loaded_mapping = None
-                for candidate in mapping_candidates:
-                    if candidate.exists() and candidate.is_file():
-                        try:
-                            with open(candidate, "r", encoding="utf-8") as mapping_file:
-                                loaded_mapping = json.load(mapping_file)
-                            break
-                        except Exception:
-                            loaded_mapping = None
-
-                if isinstance(loaded_mapping, dict):
-                    if isinstance(loaded_mapping.get("mappings"), dict):
-                        for map_spec in loaded_mapping["mappings"].values():
-                            if not isinstance(map_spec, dict):
-                                continue
-                            source_col = str(
-                                map_spec.get("source_column") or ""
-                            ).strip()
-                            if (
-                                source_col
-                                and source_col in df.columns
-                                and source_col not in excluded_columns
-                            ):
-                                additional_columns.append(source_col)
-                    elif loaded_mapping:
-                        for source_col in loaded_mapping.keys():
-                            source_name = str(source_col or "").strip()
-                            if (
-                                source_name
-                                and source_name in df.columns
-                                and source_name not in excluded_columns
-                            ):
-                                additional_columns.append(source_name)
-
-                # Keep preview column membership driven by the current source file
-                # plus the explicit additional-variable selection. Saved
-                # participants.json metadata is merged separately in the UI and
-                # must not force removed variables back into the preview.
+            additional_columns = _resolve_additional_preview_columns(
+                df=df,
+                project_root=_get_session_project_root(),
+                excluded_columns=excluded_columns,
+                extra_columns_json=request.form.get("extra_columns", ""),
+            )
 
             for column_name in additional_columns:
                 if column_name not in output_columns:
                     output_columns.append(column_name)
-
-            # Also honour any columns explicitly requested by the frontend
-            # (user-added via "Additional Variables" modal, sent as extra_columns JSON).
-            extra_columns_json = request.form.get("extra_columns", "")
-            if extra_columns_json:
-                try:
-                    import json as _json
-
-                    for col in _json.loads(extra_columns_json):
-                        col = str(col or "").strip()
-                        if (
-                            col
-                            and col in df.columns
-                            and col not in excluded_columns
-                            and col not in output_columns
-                        ):
-                            output_columns.append(col)
-                except Exception:
-                    pass
 
             if excluded_columns:
                 output_columns = [

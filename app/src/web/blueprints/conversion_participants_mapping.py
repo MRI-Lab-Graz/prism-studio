@@ -591,3 +591,68 @@ def _resolve_web_participant_import_mapping(
         "questionnaire_like_columns": questionnaire_like_columns,
         "library_path": library_path,
     }
+
+
+def _resolve_additional_preview_columns(
+    df,
+    project_root: "Path | None",
+    excluded_columns: set[str],
+    extra_columns_json: str,
+) -> list[str]:
+    """Extra source columns to add to a participants preview.
+
+    Columns come from the project's saved participants mapping (via
+    participants_mapping_candidates) and the frontend's "Additional
+    Variables" selection (extra_columns_json), minus excluded_columns.
+    Only columns present in df are returned.
+    """
+    additional_columns: list[str] = []
+
+    if project_root:
+        loaded_mapping = None
+        for candidate in participants_mapping_candidates(project_root):
+            if candidate.exists() and candidate.is_file():
+                try:
+                    with open(candidate, "r", encoding="utf-8") as mapping_file:
+                        loaded_mapping = json.load(mapping_file)
+                    break
+                except Exception:
+                    loaded_mapping = None
+
+        if isinstance(loaded_mapping, dict):
+            if isinstance(loaded_mapping.get("mappings"), dict):
+                for map_spec in loaded_mapping["mappings"].values():
+                    if not isinstance(map_spec, dict):
+                        continue
+                    source_col = str(map_spec.get("source_column") or "").strip()
+                    if (
+                        source_col
+                        and source_col in df.columns
+                        and source_col not in excluded_columns
+                    ):
+                        additional_columns.append(source_col)
+            elif loaded_mapping:
+                for source_col in loaded_mapping.keys():
+                    source_name = str(source_col or "").strip()
+                    if (
+                        source_name
+                        and source_name in df.columns
+                        and source_name not in excluded_columns
+                    ):
+                        additional_columns.append(source_name)
+
+    if extra_columns_json:
+        try:
+            for col in json.loads(extra_columns_json):
+                col = str(col or "").strip()
+                if (
+                    col
+                    and col in df.columns
+                    and col not in excluded_columns
+                    and col not in additional_columns
+                ):
+                    additional_columns.append(col)
+        except Exception:
+            pass
+
+    return additional_columns
