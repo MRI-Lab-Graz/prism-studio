@@ -6,9 +6,17 @@ private `_merge_neurobagel_schema_for_columns` that was byte-identical to
 the canonical `src.participants_backend.merge_neurobagel_schema_for_columns`
 — already imported into the same file for other symbols — but was an
 independently-maintained copy rather than a reference to it, i.e. exactly
-the `survey_base.py`-style drift class CLAUDE.md warns about. It has since
-been replaced with an import alias; this test fails again if a future edit
-reintroduces a local copy instead of importing the canonical function.
+the `survey_base.py`-style drift class CLAUDE.md warns about. It was fixed
+by importing the canonical function under a private alias.
+
+The participants blueprint has since been split (see
+.superpowers/sdd/2026-08-10-participants-blueprint-split/) and the only
+call sites for `_merge_neurobagel_schema_for_columns` now live in
+`conversion_participants_merge.py` and `conversion_participants_convert.py`
+— the blueprint module itself no longer calls it at all. This test asserts
+identity against those two real call sites directly, so it keeps guarding
+against the same drift class even if a future edit changes how (or whether)
+the blueprint re-exports the name.
 """
 
 import sys
@@ -19,11 +27,23 @@ if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
 import src.participants_backend as participants_backend  # noqa: E402
-from src.web.blueprints import conversion_participants_blueprint as bp  # noqa: E402
+from src.web.blueprints import (  # noqa: E402
+    conversion_participants_convert as convert_module,
+)
+from src.web.blueprints import (  # noqa: E402
+    conversion_participants_merge as merge_module,
+)
 
 
-def test_blueprint_merge_function_is_the_canonical_one():
+def test_merge_module_uses_the_canonical_merge_function():
     assert (
-        bp._merge_neurobagel_schema_for_columns
+        merge_module._merge_neurobagel_schema_for_columns
+        is participants_backend.merge_neurobagel_schema_for_columns
+    )
+
+
+def test_convert_module_uses_the_canonical_merge_function():
+    assert (
+        convert_module._merge_neurobagel_schema_for_columns
         is participants_backend.merge_neurobagel_schema_for_columns
     )

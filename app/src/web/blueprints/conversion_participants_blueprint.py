@@ -16,18 +16,11 @@ from flask import (
 )
 from src.participants_id_selection import resolve_participants_id_selection
 
-# merge_neurobagel_schema_for_columns / _rekey_neurobagel_schema_to_output_columns
-# below are re-exported (not called directly in this module) so that
-# tests/test_neurobagel_merge_no_duplication.py and
-# tests/test_web_blueprints_conversion.py::TestParticipantsSchemaMerge can
-# assert this module resolves to the one canonical implementation, guarding
-# against the duplicate-implementation drift CLAUDE.md warns about.
 from src.participants_backend import (
     apply_participants_merge,
     convert_dataset_participants,
     describe_participants_workflow,
     export_participants_merge_conflicts_csv,
-    merge_neurobagel_schema_for_columns as _merge_neurobagel_schema_for_columns,  # noqa: F401
     preview_dataset_participants,
     preview_participants_merge,
     save_participant_mapping as save_participant_mapping_backend,
@@ -52,6 +45,12 @@ from .conversion_participants_io import (
     _resolve_participants_sheet_arg,
     _save_participants_upload_to_temp,
 )
+
+# _rekey_neurobagel_schema_to_output_columns below is re-exported (not
+# called directly in this module) so that
+# tests/test_web_blueprints_conversion.py::TestParticipantsSchemaMerge can
+# assert this module resolves to the one canonical implementation, guarding
+# against the duplicate-implementation drift CLAUDE.md warns about.
 from .conversion_participants_mapping import (
     _canonicalize_preview_id_column,
     _collect_preview_column_values,
