@@ -36,6 +36,7 @@ from .conversion_participants_helpers import (
 )
 from .conversion_participants_io import (
     _detect_mixed_time_style_columns,
+    _diagnose_preview_error,
     _expected_delimiter_for_suffix,
     _format_mixed_time_style_message,
     _get_excel_sheet_metadata,
@@ -471,76 +472,16 @@ def api_participants_preview():
             )
 
         except Exception as e:
-            diagnostic_columns: list[dict[str, object]] = []
-
-            try:
-                if "df" in locals():
-                    diagnostic_columns = _detect_mixed_time_style_columns(df)
-            except Exception:
-                diagnostic_columns = []
-
-            if not diagnostic_columns:
-                try:
-                    diagnostic_df = (
-                        _read_participants_input_table(
-                            input_path=input_path,
-                            suffix=suffix,
-                            sheet_arg=sheet_arg,
-                            separator_option=separator_option,
-                        )
-                        if suffix in {".xlsx", ".csv", ".tsv", ".lsa"}
-                        else None
-                    )
-
-                    if diagnostic_df is not None:
-                        diagnostic_columns = _detect_mixed_time_style_columns(
-                            diagnostic_df
-                        )
-                except Exception:
-                    diagnostic_columns = []
-
-            if diagnostic_columns:
-                mixed_time_message = _format_mixed_time_style_message(
-                    diagnostic_columns
-                )
-                return (
-                    jsonify(
-                        {
-                            "error": mixed_time_message,
-                            "error_code": "mixed_time_formats",
-                            "problem_columns": diagnostic_columns,
-                        }
-                    ),
-                    400,
-                )
-
-            error_text = str(e) or "Preview failed"
-            error_type = e.__class__.__name__
-            stage_text = (
-                preview_stage
-                if "preview_stage" in locals() and preview_stage
-                else "unknown stage"
-            )
-
-            if (
-                error_text.strip().lower()
-                == "the string did not match the expected pattern."
-            ):
-                error_text = (
-                    "Preview failed due to an invalid value pattern in the uploaded data "
-                    f"(stage: {stage_text}). Please check columns with timing/duration values "
-                    "for mixed formats and ambiguous tokens, then retry."
-                )
-
-            return (
-                jsonify(
-                    {
-                        "error": error_text,
-                        "error_type": error_type,
-                        "error_stage": stage_text,
-                    }
+            return _diagnose_preview_error(
+                exc=e,
+                df=df if "df" in locals() else None,
+                input_path=input_path if "input_path" in locals() else None,
+                suffix=suffix if "suffix" in locals() else None,
+                sheet_arg=sheet_arg if "sheet_arg" in locals() else None,
+                separator_option=(
+                    separator_option if "separator_option" in locals() else None
                 ),
-                500,
+                preview_stage=preview_stage if "preview_stage" in locals() else None,
             )
 
         finally:

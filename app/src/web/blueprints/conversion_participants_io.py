@@ -3,7 +3,7 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from flask import request
+from flask import Response, jsonify, request
 from werkzeug.utils import secure_filename
 
 from src.converters.file_reader import infer_tabular_kind, read_tabular_file
@@ -262,4 +262,80 @@ def _format_mixed_time_style_message(
         "PRISM does not auto-convert mixed formats. Use exactly one format per "
         "affected column (recommended: all HH:MM or all numeric minutes) and "
         "avoid ranges/ambiguous values (for example '4-6h' or '10 30')."
+    )
+
+
+def _diagnose_preview_error(
+    exc: Exception,
+    df,
+    input_path: "Path | None",
+    suffix: "str | None",
+    sheet_arg,
+    separator_option: "str | None",
+    preview_stage: "str | None",
+) -> "tuple[Response, int]":
+    """Build the error response for a failed /api/participants-preview request.
+
+    Tries to detect mixed time-format columns (using df if already loaded,
+    else by re-reading input_path) to give a more actionable error than the
+    raw exception message.
+    """
+    diagnostic_columns: list[dict[str, object]] = []
+
+    if df is not None:
+        try:
+            diagnostic_columns = _detect_mixed_time_style_columns(df)
+        except Exception:
+            diagnostic_columns = []
+
+    if (
+        not diagnostic_columns
+        and input_path is not None
+        and suffix in {".xlsx", ".csv", ".tsv", ".lsa"}
+    ):
+        try:
+            diagnostic_df = _read_participants_input_table(
+                input_path=input_path,
+                suffix=suffix,
+                sheet_arg=sheet_arg,
+                separator_option=separator_option,
+            )
+            if diagnostic_df is not None:
+                diagnostic_columns = _detect_mixed_time_style_columns(diagnostic_df)
+        except Exception:
+            diagnostic_columns = []
+
+    if diagnostic_columns:
+        mixed_time_message = _format_mixed_time_style_message(diagnostic_columns)
+        return (
+            jsonify(
+                {
+                    "error": mixed_time_message,
+                    "error_code": "mixed_time_formats",
+                    "problem_columns": diagnostic_columns,
+                }
+            ),
+            400,
+        )
+
+    error_text = str(exc) or "Preview failed"
+    error_type = exc.__class__.__name__
+    stage_text = preview_stage or "unknown stage"
+
+    if error_text.strip().lower() == "the string did not match the expected pattern.":
+        error_text = (
+            "Preview failed due to an invalid value pattern in the uploaded data "
+            f"(stage: {stage_text}). Please check columns with timing/duration values "
+            "for mixed formats and ambiguous tokens, then retry."
+        )
+
+    return (
+        jsonify(
+            {
+                "error": error_text,
+                "error_type": error_type,
+                "error_stage": stage_text,
+            }
+        ),
+        500,
     )
