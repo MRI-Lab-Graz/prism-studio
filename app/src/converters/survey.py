@@ -1595,67 +1595,17 @@ def _convert_survey_dataframe_to_prism_dataset(
     template_warnings_by_task = loaded.template_warnings_by_task
     conversion_warnings: list[str] = list(loaded.warnings)
 
-    # --- LSA Structural Matching ---
-    # When converting .lsa files without an explicit survey= filter,
-    # use the .lss structure analysis to auto-detect and register templates.
-    unmatched_groups: list[dict] = []
-    if lsa_analysis and not survey:
-        for group_name, group_info in lsa_analysis["groups"].items():
-            match = group_info.get("match")
-            if match and match.is_participants:
-                # Participant/sociodemographic data: register item codes
-                # as participant columns so they get written to participants.tsv
-                # instead of being treated as unmapped survey items.
-                # Always register the actual LS-mangled item_codes (DataFrame
-                # column names) so they are recognized during column mapping.
-                # Also register PRISMMETA variable names as standard aliases.
-                _survey_lsa._register_participant_columns_from_lsa_group(
-                    group_info=group_info,
-                    participant_columns_lower=participant_columns_lower,
-                )
-            elif match and match.confidence in ("exact", "high"):
-                # Use the matched library template
-                _add_matched_template(templates, item_to_task, match, group_info)
-            elif match and match.confidence == "medium":
-                # Medium confidence — still use it, but warn
-                _add_matched_template(templates, item_to_task, match, group_info)
-                conversion_warnings.append(
-                    f"Group '{group_name}' matched template '{match.template_key}' "
-                    f"with medium confidence ({match.overlap_count}/{match.template_items} items). "
-                    f"Review the match to ensure correctness."
-                )
-            else:
-                # No match or low confidence — collect as unmatched.
-                # Deduplicate run groups: if "resiliencebrsrun1" and
-                # "resiliencebrsrun2" both fail, collapse them into a
-                # single "resiliencebrs" entry so the user saves ONE
-                # base template that matches all runs.
-                from ..utils.naming import sanitize_task_name
-
-                _survey_lsa._collect_unmatched_lsa_group(
-                    group_name=group_name,
-                    group_info=group_info,
-                    unmatched_groups=unmatched_groups,
-                    non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
-                    sanitize_task_name_fn=sanitize_task_name,
-                )
-
-                if match:
-                    conversion_warnings.append(
-                        f"Group '{group_name}' had low-confidence match to "
-                        f"'{match.template_key}'. No suitable template found."
-                    )
-
-    if unmatched_groups:
-        names = [g["group_name"] for g in unmatched_groups]
-        raise UnmatchedGroupsError(
-            unmatched=unmatched_groups,
-            message=(
-                f"No library template found for {len(unmatched_groups)} group(s): "
-                f"{', '.join(names)}. Save templates to project library first, "
-                f"then re-run conversion."
-            ),
+    conversion_warnings.extend(
+        _survey_lsa._apply_lsa_structural_matching(
+            templates=templates,
+            item_to_task=item_to_task,
+            participant_columns_lower=participant_columns_lower,
+            lsa_analysis=lsa_analysis,
+            survey_filter=survey,
+            add_matched_template_fn=_add_matched_template,
+            unmatched_groups_error_cls=UnmatchedGroupsError,
         )
+    )
 
     # --- LSA Participant Column Renames ---
     # When converting .lsa files, LimeSurvey mangles question codes (strips
