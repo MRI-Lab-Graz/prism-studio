@@ -87,3 +87,9 @@ def test_windows_long_paths_enabled_false_when_key_missing(monkeypatch):
     monkeypatch.setattr(sys, "platform", "win32")
     monkeypatch.setitem(sys.modules, "winreg", _fake_winreg(0, missing_key=True))
     assert cross_platform.windows_long_paths_enabled() is False
+
+
+def test_windows_long_paths_enabled_false_when_winreg_unavailable(monkeypatch):
+    monkeypatch.setattr(sys, "platform", "win32")
+    monkeypatch.setitem(sys.modules, "winreg", None)
+    assert cross_platform.windows_long_paths_enabled() is False
