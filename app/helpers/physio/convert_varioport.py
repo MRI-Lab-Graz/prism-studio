@@ -2,10 +2,46 @@ import struct
 import json
 import argparse
 import re
+import sys
 from datetime import date
 from pathlib import Path
 from typing import Any, Literal, cast, overload
 import numpy as np
+
+
+_VENDOR_DIR = Path(__file__).resolve().parents[3] / "vendor"
+
+
+def _import_pyedflib():
+    """Import pyedflib, falling back to the pre-compiled copy bundled at
+    vendor/pyedflib/ if pip's copy isn't installed or importable.
+
+    pyedflib is an optional dependency (setup.py's "edf" extra); the vendor
+    copy exists for machines where pip's install fails (historically some
+    Windows setups without a C compiler). This is a from-source-only safety
+    net -- both PyInstaller .spec files deliberately exclude pyedflib from
+    the frozen app builds, so it never applies there.
+
+    Returns the module, or None if neither is available.
+    """
+    try:
+        import pyedflib
+
+        return pyedflib
+    except ImportError:
+        pass
+
+    if not (_VENDOR_DIR / "pyedflib").exists():
+        return None
+    vendor_str = str(_VENDOR_DIR)
+    if vendor_str not in sys.path:
+        sys.path.insert(0, vendor_str)
+    try:
+        import pyedflib
+
+        return pyedflib
+    except ImportError:
+        return None
 
 
 def _find_companion_definition_file(raw_path: str | Path) -> Path | None:
@@ -932,13 +968,12 @@ def convert_varioport(
     Returns:
         dict: Written sidecar metadata (includes AverageHeartRateBPM when estimable)
     """
-    try:
-        import pyedflib
-    except ImportError as exc:
+    pyedflib = _import_pyedflib()
+    if pyedflib is None:
         raise ImportError(
             "pyedflib is required for Varioport EDF conversion. Install it "
             "with the 'edf' extra: pip install prism-studio[edf]"
-        ) from exc
+        )
 
     definition_info = None
     definition_file = _find_companion_definition_file(raw_path)
