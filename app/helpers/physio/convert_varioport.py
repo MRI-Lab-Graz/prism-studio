@@ -6,7 +6,6 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Literal, cast, overload
 import numpy as np
-import pyedflib
 
 
 def _find_companion_definition_file(raw_path: str | Path) -> Path | None:
@@ -933,6 +932,13 @@ def convert_varioport(
     Returns:
         dict: Written sidecar metadata (includes AverageHeartRateBPM when estimable)
     """
+    try:
+        import pyedflib
+    except ImportError as exc:
+        raise ImportError(
+            "pyedflib is required for Varioport EDF conversion. Install it "
+            "with the 'edf' extra: pip install prism-studio[edf]"
+        ) from exc
 
     definition_info = None
     definition_file = _find_companion_definition_file(raw_path)
