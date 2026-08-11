@@ -11,3 +11,11 @@ updates:
       interval: "weekly"
     ignore:
       - dependency-name: "python"
+      # cryptography 49+ dropped Intel/universal2 macOS wheels (arm64-only),
+      # so it breaks the Intel macOS PyInstaller build (Rosetta cross-compile
+      # of the Rust extension fails without a cross OpenSSL toolchain).
+      # requirements-runtime.txt pins <49 for the same reason; without this,
+      # Dependabot just rewrites that ceiling past 49 again (it already has,
+      # twice: chore(deps) commits 64409aa1 and 1d0527b3).
+      - dependency-name: "cryptography"
+        versions: [">=49"]
