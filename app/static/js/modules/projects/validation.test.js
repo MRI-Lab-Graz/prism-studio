@@ -17,6 +17,19 @@ function stubField() {
     };
 }
 
+function stubBadge(initialText, initialClasses = []) {
+    const classes = new Set(initialClasses);
+    return {
+        textContent: initialText,
+        classList: {
+            add: (c) => classes.add(c),
+            remove: (c) => classes.delete(c),
+            contains: (c) => classes.has(c),
+        },
+        classes,
+    };
+}
+
 describe('setRequiredFieldBorder', () => {
     it('marks a required/core field red when empty', () => {
         const field = stubField();
@@ -44,5 +57,27 @@ describe('setRequiredFieldBorder', () => {
         setRequiredFieldBorder(field, true, true);
         expect(field.classes.has('required-field-filled')).toBe(true);
         expect(field.classes.has('required-field-empty')).toBe(false);
+    });
+});
+
+describe('updateBadgeColor', () => {
+    it('gives an unfilled CORE badge a color distinct from the filled/success color', async () => {
+        const { updateBadgeColor } = await import('./validation.js');
+        const badge = stubBadge('CORE');
+
+        updateBadgeColor(badge, false);
+        expect(badge.classes.has('badge-tier-core')).toBe(true);
+        expect(badge.classes.has('bg-success')).toBe(false);
+        expect(badge.classes.has('bg-primary')).toBe(false);
+    });
+
+    it('turns a filled CORE badge bg-success and strips the tier color', async () => {
+        const { updateBadgeColor } = await import('./validation.js');
+        const badge = stubBadge('CORE');
+
+        updateBadgeColor(badge, false);
+        updateBadgeColor(badge, true);
+        expect(badge.classes.has('bg-success')).toBe(true);
+        expect(badge.classes.has('badge-tier-core')).toBe(false);
     });
 });
