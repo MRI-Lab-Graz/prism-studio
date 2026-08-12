@@ -2748,9 +2748,11 @@ export function showStudyMetadataCard() {
 
         // For new projects there's nothing to score yet, so the readiness
         // panel stays hidden; the REQUIRED/CORE/FAIR legend above it is
-        // relevant either way and always shown (governed only by the
-        // global beginner-help-mode toggle, like other .beginner-help-block
-        // elements - see global-help-mode.js).
+        // relevant either way and always shown. It is deliberately NOT a
+        // .beginner-help-block, so the global beginner-help-mode toggle does
+        // not gate it - see
+        // test_field_tier_legend_is_not_gated_by_beginner_help_mode in
+        // tests/test_projects_workflow_wiring.py for why the class is absent.
         if (completenessPanel) {
             completenessPanel.style.display = isNewProject ? 'none' : 'block';
         }

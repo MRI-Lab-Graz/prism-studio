@@ -116,12 +116,19 @@
    greens, close enough that an unfilled CORE badge and a filled/"done"
    badge were visually indistinguishable. A true blue keeps "this is a
    CORE field" and "this field is filled" unambiguous at a glance.
-
-   Background uses rgba(13, 110, 253, var(--bs-bg-opacity, 1)) instead of
-   a hex color so Bootstrap's bg-opacity-* utilities (e.g., bg-opacity-75)
-   can scale the alpha channel — don't simplify this to a hex value. */
+   Deliberately a flat hex value, NOT rgba(..., var(--bs-bg-opacity)) - this
+   app's theme (studio-theme.css) overrides .badge.bg-primary/.bg-danger/etc
+   with flat !important colors that already ignore --bs-bg-opacity, so no
+   other badge in this app actually respects bg-opacity-* either. Worse,
+   --bs-bg-opacity is an INHERITED custom property: when this badge sits
+   inside a bg-opacity-10 container (see the legend's outer alert div in
+   study_metadata.html), that 0.1 silently inherits down and makes the
+   badge nearly invisible unless this rule re-declares --bs-bg-opacity - a
+   real regression a prior fix-round introduced. Do not change this to
+   read var(--bs-bg-opacity) without re-declaring --bs-bg-opacity: 1 first
+   AND verifying every ancestor's bg-opacity-* doesn't leak through. */
 .badge-tier-core {
-    background-color: rgba(13, 110, 253, var(--bs-bg-opacity, 1)) !important;
+    background-color: #0d6efd !important;
     color: #fff !important;
 }
 
