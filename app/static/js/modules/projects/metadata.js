@@ -3289,6 +3289,14 @@ export function computeLocalCompleteness() {
             };
         }
         sections[section].fields.push({ name, filled: isFilled, priority: 1, hint: '', required: isRequired, blocksCreation });
+
+        // REQUIRED-tier (red, creation-blocking) fields are a third tier -
+        // neither CORE nor optional - so they're excluded from the CORE/FAIR
+        // readiness score entirely (header tooltip: "Share of CORE and
+        // optional fields"). They stay in .fields above for the creation-gate
+        // check in validateAllMandatoryFields.
+        if (blocksCreation && !isRequired) return;
+
         sections[section].total += 1;
         sections[section].weight_total += 1;
         if (isRequired) {

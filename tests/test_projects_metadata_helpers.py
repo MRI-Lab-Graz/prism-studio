@@ -128,6 +128,33 @@ def test_required_fields_schema_matches_core_tier_only():
     assert schema["Procedure"] == {"Overview"}
 
 
+def test_compute_methods_completeness_excludes_creation_blocking_fields_from_score():
+    """Basics.Name/Authors are REQUIRED-tier (red, creation-blocking), a third
+    tier that is neither CORE nor optional. They must not inflate
+    optional_total/total (the "FAIR X/Y" badge) even though they're excluded
+    from required_total (the "Core X/Y" badge) - see CREATION_BLOCKING_FIELDS.
+    """
+    project_data = {
+        "Basics": {
+            "Name": "RIBS Study",
+            "Authors": ["Ada Lovelace"],
+        },
+    }
+
+    completeness = metadata_helpers._compute_methods_completeness(project_data, {})
+    basics = completeness["sections"]["Basics"]
+
+    field_names = {f["name"] for f in basics["fields"]}
+    assert {"Name", "Authors"} <= field_names
+
+    # Name/Authors are tracked in "fields" (for creation-gating elsewhere)
+    # but must not be counted in total/optional_total - only the 11
+    # non-creation-blocking fields (13 Basics fields minus Name/Authors).
+    assert basics["total"] == 11
+    assert basics["required_total"] == 3  # EthicsApprovals, Keywords, Funding
+    assert basics["optional_total"] == 8
+
+
 def test_compute_methods_completeness_recruitment_requires_only_method():
     """Only Method is CORE-tier for Recruitment; Location/Period/Compensation
     are OPTIONAL in the template and must not inflate required_total.

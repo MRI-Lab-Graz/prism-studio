@@ -328,6 +328,14 @@ REQUIRED_FIELDS_SCHEMA: dict[str, set[str]] = {
     "Procedure": {"Overview"},
 }
 
+# REQUIRED-tier (red, creation-blocking) fields - a third tier, neither CORE
+# nor optional. Excluded from the CORE/FAIR readiness score below so they
+# don't inflate "optional_total"; mirrors creationBlockingFields in
+# metadata.js's computeLocalCompleteness.
+CREATION_BLOCKING_FIELDS: dict[str, set[str]] = {
+    "Basics": {"Name", "Authors"},
+}
+
 
 def _compute_methods_completeness(
     project_data: dict, dataset_desc: dict | None
@@ -631,6 +639,9 @@ def _compute_methods_completeness(
 
     for section_key, field_name, priority, hint, is_filled in fields:
         is_required = field_name in required_fields.get(section_key, set())
+        blocks_creation = field_name in CREATION_BLOCKING_FIELDS.get(
+            section_key, set()
+        )
         if section_key not in sections_map:
             sections_map[section_key] = {
                 "fields": [],
@@ -654,6 +665,8 @@ def _compute_methods_completeness(
                 "required": is_required,
             }
         )
+        if blocks_creation and not is_required:
+            continue
         sec["total"] += 1
         sec["weight_total"] += priority
         if is_required:
