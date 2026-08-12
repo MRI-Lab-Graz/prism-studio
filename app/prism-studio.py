@@ -1769,10 +1769,23 @@ def main():
 
         # Wait for the server to actually be listening before opening the
         # window, otherwise the window would briefly show a connection error.
-        for _ in range(100):  # up to ~10s
+        # 45s (not ~10s) because the *first* launch of a freshly installed
+        # Windows exe is far slower than later ones: Defender real-time
+        # scanning + SmartScreen reputation check on a brand-new binary, plus
+        # cold DLL/file-cache reads, can eat the interpreter startup time
+        # before Waitress ever binds. A too-short cap here silently opened
+        # the window anyway, showing ERR_CONNECTION_REFUSED on first run
+        # while later runs (Defender verdict cached, warm disk cache) came
+        # up in time.
+        for _ in range(450):  # up to ~45s
             if is_port_in_use(host, port):
                 break
             time.sleep(0.1)
+        else:
+            print(
+                f"[WARN]  Server did not start listening on {host}:{port} within 45s; "
+                "opening window anyway, it may show a connection error."
+            )
 
         if sys.platform == "darwin":
             # macOS: pywebview's Cocoa/WebKit backend (pyobjc) freezes cleanly
