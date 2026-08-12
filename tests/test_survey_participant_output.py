@@ -275,3 +275,34 @@ def test_unreadable_existing_file_falls_back_to_df_part(tmp_path, capsys, monkey
 
     assert result.equals(df_part)
     assert "Could not merge" in capsys.readouterr().out
+
+
+def test_post_merge_failure_falls_back_to_original_df_part(
+    tmp_path, capsys, monkeypatch
+):
+    # Unlike test_unreadable_existing_file_falls_back_to_df_part above (which
+    # fails at pd.read_csv, before pd.merge ever runs), this forces the
+    # failure at sort_values -- reached only after pd.merge and the full
+    # _old/_new reconciliation loop already succeeded. Confirms the
+    # extracted function returns the ORIGINAL df_part (not a half-merged
+    # frame with stray _old/_new columns) when something breaks post-merge.
+    tsv_path = tmp_path / "participants.tsv"
+    tsv_path.write_text("participant_id\tage\nsub-001\t25\n")
+    df_part = pd.DataFrame({"participant_id": ["sub-001"], "age": ["26"]})
+
+    reached_sort_values = []
+
+    def _raise(*args, **kwargs):
+        reached_sort_values.append(True)
+        raise ValueError("simulated sort_values failure")
+
+    monkeypatch.setattr(pd.DataFrame, "sort_values", _raise)
+
+    result = _merge_with_existing_participants_tsv(
+        df_part=df_part, participants_tsv_path=tsv_path
+    )
+
+    assert reached_sort_values, "sort_values (post-merge) was never reached"
+    assert result.equals(df_part)
+    assert not any(c.endswith("_old") or c.endswith("_new") for c in result.columns)
+    assert "Could not merge" in capsys.readouterr().out
