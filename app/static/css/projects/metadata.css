@@ -115,9 +115,13 @@
    theme's --bs-primary (#1f8b5c) and --bs-success (#2c9a62) are both dark
    greens, close enough that an unfilled CORE badge and a filled/"done"
    badge were visually indistinguishable. A true blue keeps "this is a
-   CORE field" and "this field is filled" unambiguous at a glance. */
+   CORE field" and "this field is filled" unambiguous at a glance.
+
+   Background uses rgba(13, 110, 253, var(--bs-bg-opacity, 1)) instead of
+   a hex color so Bootstrap's bg-opacity-* utilities (e.g., bg-opacity-75)
+   can scale the alpha channel — don't simplify this to a hex value. */
 .badge-tier-core {
-    background-color: #0d6efd !important;
+    background-color: rgba(13, 110, 253, var(--bs-bg-opacity, 1)) !important;
     color: #fff !important;
 }
 
