@@ -155,14 +155,29 @@ export function createMetadataDescriptionController({
             if (data.success && data.description) {
                 const desc = data.description;
 
+                // An empty EthicsApprovals/Funding array in dataset_description.json
+                // is ambiguous (never answered vs. explicitly declared none) - this
+                // preference namespace is the only place that distinction is
+                // recorded (set by the Yes/No click handlers). Best-effort: if it
+                // fails to load, both toggles fall back to neutral/unanswered
+                // rather than wrongly assuming a declared "No".
+                let declared = {};
+                try {
+                    const declResponse = await fetchWithApiFallback(
+                        withProjectPathQuery('/api/projects/preferences/metadataDeclarations', requestProjectPath)
+                    );
+                    const declData = await declResponse.json();
+                    if (declData.success) declared = declData.preferences || {};
+                } catch { /* fall back to neutral */ }
+
                 document.getElementById('metadataName').value = cleanMetadataText(desc.Name || '');
                 setAuthorsList(Array.isArray(desc.Authors) ? desc.Authors : (desc.Authors ? [desc.Authors] : []));
                 document.getElementById('metadataAcknowledgements').value = cleanMetadataText(desc.Acknowledgements || '');
                 document.getElementById('metadataDOI').value = cleanMetadataText(desc.DatasetDOI || '');
-                setEthicsApprovals(desc.EthicsApprovals);
+                setEthicsApprovals(desc.EthicsApprovals, declared.ethicsApprovalsDeclared === true);
                 document.getElementById('metadataKeywords').value = cleanMetadataList(desc.Keywords).join(', ');
                 document.getElementById('metadataHED').value = cleanMetadataList(desc.HEDVersion).join(', ');
-                setFundingFromDescription(desc.Funding);
+                setFundingFromDescription(desc.Funding, declared.fundingDeclared === true);
                 document.getElementById('metadataHowToAcknowledge').value = cleanMetadataText(desc.HowToAcknowledge || '');
                 document.getElementById('metadataReferences').value = cleanMetadataList(desc.ReferencesAndLinks).join(', ');
 
@@ -170,7 +185,6 @@ export function createMetadataDescriptionController({
 
                 setTimeout(() => {
                     refreshMetadataValidationState({
-                        onlyFilled: true,
                         includeRequirementGapWarning: true
                     });
                 }, 100);

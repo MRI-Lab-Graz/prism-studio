@@ -15,6 +15,12 @@
         </div>
         <div class="collapse" id="studyMetadataSection">
         <div class="card-body">
+            <div class="alert alert-primary border-0 bg-primary bg-opacity-10 py-2 mb-3 beginner-help-block" id="smFieldTierLegend">
+                <i class="fas fa-lightbulb me-2"></i>
+                <span class="badge bg-danger">REQUIRED</span> fields must be filled in before you can create the project (just Dataset Name and Authors).
+                <span class="badge bg-primary">CORE</span> and <span class="badge bg-secondary">OPTIONAL</span> fields never block creation &mdash; they drive the Methods Readiness / FAIR score below instead (CORE fields matter most for that score). Each section below shows its own <span class="badge bg-danger bg-opacity-75">Required</span>/<span class="badge bg-primary bg-opacity-75">Core</span>/<span class="badge bg-warning text-dark bg-opacity-75">FAIR</span> tally so you can see what's missing without expanding it.
+            </div>
+
             <!-- Completeness Panel -->
             <div class="mb-3 p-3 bg-light rounded" id="smCompletenessPanel">
                 <div class="d-flex align-items-center gap-3 mb-2 sm-readiness-row">
@@ -43,12 +49,6 @@
                 <input type="file" id="surveyImportInput" accept="application/json,.json" class="visually-hidden">
                 <small class="text-muted">Prefills PI/author, ethics, funding and study fields from a Pavlovia survey response export.</small>
                 <div id="surveyImportStatus" class="small w-100" role="status" aria-live="polite"></div>
-            </div>
-
-            <div class="alert alert-primary border-0 bg-primary bg-opacity-10 py-2 mb-3 beginner-help-block" id="smNewProjectInfo" style="display: none;">
-                <i class="fas fa-lightbulb me-2"></i>
-                For a new project, fill out <span class="badge bg-danger">REQUIRED</span> fields to enable project creation.
-                <span class="badge bg-primary">CORE</span> fields are not required to create the project, but they drive your Methods Readiness / FAIR score below — fill them in as soon as you can.
             </div>
 
             <form id="studyMetadataForm" novalidate>
