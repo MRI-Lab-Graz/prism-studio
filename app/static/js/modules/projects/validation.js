@@ -10,6 +10,24 @@ const DATE_RANGE_BADGE_IDS = {
     'Period End': 'smRecPeriodEndRequiredBadge'
 };
 
+/**
+ * Sets the red/green "missing"/"filled" border feedback on a field.
+ * OPTIONAL-tier fields never get the alarming red-empty treatment - that
+ * visual language is reserved for REQUIRED/CORE tiers.
+ */
+export function setRequiredFieldBorder(field, isFilled, isOptionalTier) {
+    if (isFilled) {
+        removeClass(field, 'required-field-empty');
+        addClass(field, 'required-field-filled');
+    } else if (isOptionalTier) {
+        removeClass(field, 'required-field-empty');
+        removeClass(field, 'required-field-filled');
+    } else {
+        removeClass(field, 'required-field-filled');
+        addClass(field, 'required-field-empty');
+    }
+}
+
 const METADATA_VALIDATION_FIELDS = [
     'metadataSchemaVersion',
     'metadataName',
@@ -114,16 +132,11 @@ export function validateDateRangeBadge(yearId, monthId, badgeText) {
     if (badge) {
         updateBadgeColor(badge, hasValue);
     }
+    const isOptionalTier = badge?.textContent.trim() === 'OPTIONAL';
 
     // Update border feedback on both selects in the pair
     for (const field of [yearField, monthField]) {
-        if (hasValue) {
-            removeClass(field, 'required-field-empty');
-            addClass(field, 'required-field-filled');
-        } else {
-            removeClass(field, 'required-field-filled');
-            addClass(field, 'required-field-empty');
-        }
+        setRequiredFieldBorder(field, hasValue, isOptionalTier);
     }
 }
 
@@ -164,21 +177,10 @@ export function validateEligibilityCriteriaBadges() {
         updateBadgeColor(optionalBadge, exclusionValues.length > 0);
     }
 
-    if (totalCriteria >= 2) {
-        removeClass(inclusionField, 'required-field-empty');
-        addClass(inclusionField, 'required-field-filled');
-    } else {
-        removeClass(inclusionField, 'required-field-filled');
-        addClass(inclusionField, 'required-field-empty');
-    }
-
-    if (exclusionValues.length > 0) {
-        removeClass(exclusionField, 'required-field-empty');
-        addClass(exclusionField, 'required-field-filled');
-    } else {
-        removeClass(exclusionField, 'required-field-filled');
-        addClass(exclusionField, 'required-field-empty');
-    }
+    // Inclusion is the CORE-tier field (red-when-empty applies); Exclusion is
+    // OPTIONAL (never gets the alarming red border).
+    setRequiredFieldBorder(inclusionField, totalCriteria >= 2, false);
+    setRequiredFieldBorder(exclusionField, exclusionValues.length > 0, true);
 }
 
 /**
@@ -398,8 +400,6 @@ export function validateProjectField(fieldId) {
         isPatternValid = /^[a-zA-Z0-9_-]+$/.test(field.value.trim());
         if (!isPatternValid) {
             debugWarn(`Pattern validation failed for ${fieldId}`);
-            removeClass(field, 'required-field-filled');
-            addClass(field, 'required-field-empty');
         }
     }
 
@@ -409,22 +409,12 @@ export function validateProjectField(fieldId) {
         isPatternValid = commaCount >= 2;
         if (!isPatternValid) {
             debugWarn(`Pattern validation failed for ${fieldId}: needs at least 2 commas`);
-            removeClass(field, 'required-field-filled');
-            addClass(field, 'required-field-empty');
         }
-    }
-    
-    if (isValid && isPatternValid) {
-        removeClass(field, 'required-field-empty');
-        addClass(field, 'required-field-filled');
-    } else {
-        removeClass(field, 'required-field-filled');
-        addClass(field, 'required-field-empty');
     }
 
     // Find the label - could be a sibling, parent, or ancestor
     let label = document.querySelector(`label[for="${fieldId}"]`);
-    
+
     // If not found with for attribute, search for label among siblings or nearby elements
     if (!label && field.parentElement) {
         // Check siblings and parent
@@ -437,16 +427,19 @@ export function validateProjectField(fieldId) {
             }
         }
     }
-    
-    if (!label) {
-        return;
-    }
-    
-    const badge = label.querySelector('.badge');
+
+    const badge = label?.querySelector('.badge') || null;
+    // OPTIONAL fields must never show the alarming red "missing" border -
+    // that visual language is reserved for REQUIRED/CORE tiers. Tier comes
+    // from the badge text already rendered next to the field (CORE tier is
+    // itself backend-driven, see study-metadata-required-fields.js).
+    const isOptionalTier = badge?.textContent.trim() === 'OPTIONAL';
+    setRequiredFieldBorder(field, isValid && isPatternValid, isOptionalTier);
+
     if (!badge) {
         return;
     }
-    
+
     debugLog(`Found badge for ${fieldId}, updating color...`);
     updateBadgeColor(badge, isValid && isPatternValid);
 }

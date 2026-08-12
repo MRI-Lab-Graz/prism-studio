@@ -27,18 +27,6 @@ function getExistingFieldHelpTexts(field) {
     return texts;
 }
 
-function isHintDuplicate(hintText, existingTexts) {
-    const normalizedHint = normalizeHintText(hintText);
-    if (!normalizedHint) return true;
-
-    return (Array.isArray(existingTexts) ? existingTexts : []).some((existingText) => {
-        const normalizedExisting = normalizeHintText(existingText);
-        if (!normalizedExisting) return false;
-        return normalizedExisting.includes(normalizedHint)
-            || normalizedHint.includes(normalizedExisting);
-    });
-}
-
 function isFieldEffectivelyEmpty(field) {
     if (field.type === 'checkbox' || field.type === 'radio') {
         return !field.checked;
@@ -136,8 +124,11 @@ function renderInlineFieldHints() {
             const hintText = getFieldHintText(field);
             if (!hintText) return;
 
-            const existingHelpTexts = getExistingFieldHelpTexts(field);
-            if (isHintDuplicate(hintText, existingHelpTexts)) return;
+            // Skip entirely when the field already has curated static help
+            // text in its group (most fields do) - the auto "Example: ..."
+            // hint just echoes the placeholder and stacked below the
+            // hand-written hint it visually duplicates the layout.
+            if (getExistingFieldHelpTexts(field).length > 0) return;
 
             const fieldGroup = field.closest('.form-check, .input-group, [class*="col-"]') || field.parentElement;
             if (!fieldGroup) return;

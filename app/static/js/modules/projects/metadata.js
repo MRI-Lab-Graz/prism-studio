@@ -20,18 +20,27 @@ import {
 } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
+import { DEFAULT_REQUIRED_FIELDS_SCHEMA, normalizeRequiredFieldsSchema } from './study-metadata-required-fields.js';
 
 function _getCurrentProjectState() {
     return getProjectStateSnapshot();
 }
 
-// BIDSVersion is fetched from /api/config at load time; fallback used if offline.
+// BIDSVersion and the CORE-tier required-fields schema (which fields count
+// toward the "Core X/Y" badge) are both fetched from /api/config at load
+// time; backend (projects_metadata_helpers.REQUIRED_FIELDS_SCHEMA) is the
+// single source of truth, per CLAUDE.md's "no duplicate business rules in
+// frontend/backend" rule. Fallbacks are used if offline.
 let _bidsVersion = '1.10.1';
+let _requiredFieldsSchema = DEFAULT_REQUIRED_FIELDS_SCHEMA;
 (async () => {
     try {
         const r = await fetchWithApiFallback('/api/config');
         const cfg = await r.json();
         if (cfg && cfg.BIDSVersion) _bidsVersion = cfg.BIDSVersion;
+        if (cfg && cfg.studyMetadataRequiredFields) {
+            _requiredFieldsSchema = normalizeRequiredFieldsSchema(cfg.studyMetadataRequiredFields);
+        }
     } catch { /* use fallback */ }
 })();
 
@@ -3247,15 +3256,11 @@ export function computeLocalCompleteness() {
     let totalFields = 0;
 
     // Fields scored toward FAIR/methods readiness. Missing these lowers the
-    // readiness score and shows a CORE badge, but does not block project creation.
-    const requiredFields = {
-        Basics: new Set(['Name', 'Authors', 'Keywords', 'EthicsApprovals', 'Funding']),
-        Overview: new Set(),
-        StudyDesign: new Set(['Type']),
-        Recruitment: new Set(['Method']),
-        Eligibility: new Set(['InclusionCriteria']),
-        Procedure: new Set(['Overview'])
-    };
+    // readiness score and shows a CORE badge, but does not block project
+    // creation. Backend-owned schema (see study-metadata-required-fields.js);
+    // Basics.Name/Authors are excluded here since those are the separate
+    // REQUIRED-tier (creation-blocking) fields tracked below.
+    const requiredFields = _requiredFieldsSchema;
 
     // Minimal subset that actually gates project creation (triggers the
     // incomplete-metadata confirmation). Everything else in requiredFields is
@@ -3439,6 +3444,17 @@ export function updateCompletenessUI(completeness) {
         MissingData: 'Missing Data & Issues',
         References: 'Background Literature'
     };
+    // Friendlier labels for the "what's missing" tooltip; falls back to the
+    // raw field name (matches computeLocalCompleteness's addField() names).
+    const fieldDisplayNames = {
+        EthicsApprovals: 'Ethics Approvals',
+        Keywords: 'Keywords',
+        Funding: 'Funding',
+        Type: 'Study Design Type',
+        Method: 'Recruitment Method',
+        InclusionCriteria: 'Inclusion Criteria',
+        Overview: 'Overview'
+    };
 
     let html = '';
     let nextActionKey = null;
@@ -3474,11 +3490,21 @@ export function updateCompletenessUI(completeness) {
 
         const autoLabel = sec.read_only ? ' <span class="text-muted small">(auto)</span>' : '';
         const rowClickable = !sec.read_only;
+
+        // "What's missing" tooltip text for the Core badge - names the
+        // specific unfilled CORE-tier fields instead of just a raw count.
+        const missingCoreFields = (sec.fields || [])
+            .filter(f => f.required && !f.filled)
+            .map(f => fieldDisplayNames[f.name] || f.name);
+        const coreTitleAttr = missingCoreFields.length
+            ? ` title="Missing: ${_escapeHtmlAttr(missingCoreFields.join(', '))}"`
+            : ' title="All Core fields filled"';
+
         html += `<div class="section-completeness-row${rowClickable ? ' section-completeness-row--clickable' : ''}"${rowClickable ? ` data-section-key="${key}" role="button" tabindex="0"` : ''}>
             <span class="section-label">${sectionLabels[key] || key}${autoLabel}</span>
             <span class="completeness-dot ${dotClass}" title="${pct}%"></span>
             <span class="section-badge">
-                <span class="${reqTextClass}">Core ${reqFilled}/${reqTotal}</span>
+                <span class="${reqTextClass}"${coreTitleAttr}>Core ${reqFilled}/${reqTotal}</span>
                 <span class="text-muted"> • </span>
                 <span class="${fairTextClass}">FAIR ${optFilled}/${optTotal}</span>
             </span>
@@ -3489,7 +3515,7 @@ export function updateCompletenessUI(completeness) {
             const reqClass = reqDone ? 'bg-success' : 'bg-danger';
             const fairClass = fairDone ? 'bg-success' : 'bg-warning text-dark';
             badgeEl.innerHTML = `
-                <span class="badge ${reqClass} bg-opacity-75">Core ${reqFilled}/${reqTotal}</span>
+                <span class="badge ${reqClass} bg-opacity-75"${coreTitleAttr}>Core ${reqFilled}/${reqTotal}</span>
                 <span class="badge ${fairClass} bg-opacity-75">FAIR ${optFilled}/${optTotal}</span>
             `;
         }

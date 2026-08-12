@@ -311,6 +311,23 @@ _EDITABLE_SECTIONS = (
     "Conditions",
 )
 
+# Single source of truth for which fields count toward the CORE tier (blue
+# "CORE" badge) that drives the "Core X/Y" readiness score, per section.
+# Must stay aligned with the CORE badges hand-authored in
+# app/templates/includes/projects/study_metadata.html - the frontend fetches
+# this via /api/config instead of keeping its own copy (see CLAUDE.md:
+# "no duplicate implementations" of business rules in frontend/backend).
+# Deliberately excludes Basics.Name/Authors: those are REQUIRED-tier (red,
+# creation-blocking) fields, a separate concept from CORE/FAIR readiness.
+REQUIRED_FIELDS_SCHEMA: dict[str, set[str]] = {
+    "Basics": {"EthicsApprovals", "Keywords", "Funding"},
+    "Overview": set(),
+    "StudyDesign": {"Type"},
+    "Recruitment": {"Method"},
+    "Eligibility": {"InclusionCriteria"},
+    "Procedure": {"Overview"},
+}
+
 
 def _compute_methods_completeness(
     project_data: dict, dataset_desc: dict | None
@@ -604,20 +621,7 @@ def _compute_methods_completeness(
             ]
         )
 
-    required_fields = {
-        "Basics": {"Name"},
-        "Overview": {"Main"},
-        "StudyDesign": {"Type"},
-        "Recruitment": {
-            "Method",
-            "Location",
-            "Period.Start",
-            "Period.End",
-            "Compensation",
-        },
-        "Eligibility": {"InclusionCriteria"},
-        "Procedure": {"Overview"},
-    }
+    required_fields = REQUIRED_FIELDS_SCHEMA
 
     sections_map: dict[str, dict] = {}
     total_weight = 0

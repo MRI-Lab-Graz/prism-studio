@@ -17,6 +17,7 @@ from flask import (
     Response,
 )
 from src.constants import DEFAULT_BIDS_VERSION
+from .projects_metadata_helpers import REQUIRED_FIELDS_SCHEMA
 from src.converters.file_reader import list_excel_sheets, resolve_sheet_selection
 from src.cross_platform import normalize_path
 from src.runtime_dependencies import (
@@ -249,7 +250,13 @@ tools_bp = Blueprint("tools", __name__)
 @tools_bp.route("/api/config", methods=["GET"])
 def api_config():
     """Return global frontend configuration constants."""
-    return jsonify({"BIDSVersion": DEFAULT_BIDS_VERSION})
+    return jsonify({
+        "BIDSVersion": DEFAULT_BIDS_VERSION,
+        "studyMetadataRequiredFields": {
+            section: sorted(fields)
+            for section, fields in REQUIRED_FIELDS_SCHEMA.items()
+        },
+    })
 
 
 @tools_bp.route("/api/tools/parse-session-map", methods=["GET"])
