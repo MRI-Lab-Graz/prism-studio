@@ -22,7 +22,6 @@ import csv
 import zipfile
 import defusedxml.ElementTree as ET
 import re
-import unicodedata
 from typing import cast
 
 try:
@@ -31,7 +30,6 @@ except ImportError:
     pd = None
 
 from ..cross_platform import describe_case_insensitive_id_collisions
-from ..subject_id_matching import build_subject_id_matcher, load_existing_participant_ids
 from ..utils.io import (
     ensure_dir as _ensure_dir,
     read_json as _read_json,
@@ -56,6 +54,7 @@ from .survey_core import (
     _compare_template_structures,
     _build_bids_survey_filename,
     _determine_task_runs,
+    _resolve_existing_project_root,
     _read_alias_rows,
     _build_alias_map,
     _build_canonical_aliases,
@@ -91,6 +90,7 @@ from . import survey_templates as _survey_templates
 from . import survey_processing as _survey_processing
 from . import survey_core as _survey_core
 from . import survey_participants_logic as _survey_participants_logic
+from . import survey_column_mapping as _survey_column_mapping
 
 SurveyValueOutOfBoundsError = _survey_processing.SurveyValueOutOfBoundsError
 
@@ -174,10 +174,6 @@ def _find_matching_global_template(
 
 _MISSING_TOKEN = "n/a"  # noqa: S105 - placeholder value for missing survey answers, not a credential
 
-# Reuse the canonical implementation (survey_processing already imported as
-# _survey_processing above) instead of hand-rolling a second copy.
-_sanitize_answer_code_for_ls = _survey_processing._sanitize_answer_code_for_ls
-
 
 def _normalize_run_id(value: object) -> str | None:
     text = sanitize_id(str(value).strip())
@@ -188,175 +184,6 @@ def _normalize_run_id(value: object) -> str | None:
     if not label:
         return None
     return f"run-{label}"
-
-
-def _find_matching_level_key(value: str, levels: dict) -> str | None:
-    """Try to find the original level key for a potentially sanitized value.
-
-    Handles:
-    - Direct matches (case-insensitive)
-    - LimeSurvey truncated codes (e.g., 'cohng' -> 'cohabiting')
-    - Common missing value formats (e.g., 'na' -> 'n/a')
-
-    Returns:
-        Original level key if found, None otherwise
-    """
-    v_lower = value.lower().strip()
-
-    # Direct match (case-insensitive)
-    for key in levels:
-        if key.lower() == v_lower:
-            return key
-
-    # Handle common missing value variations
-    if v_lower == "na":
-        if "n/a" in levels:
-            return "n/a"
-        if "N/A" in levels:
-            return "N/A"
-
-    # Try reverse LimeSurvey sanitization lookup
-    # For each level key, compute what LimeSurvey would truncate it to
-    # and see if it matches the input value
-    for key in levels:
-        sanitized = _sanitize_answer_code_for_ls(key)
-        if sanitized == v_lower:
-            return key
-
-    return None
-
-
-def _safe_eval_formula(formula: str) -> float | None:
-    """Safely evaluate a simple arithmetic formula (e.g., BMI calculation).
-
-    Only allows: numbers, basic arithmetic (+, -, *, /), round(), parentheses.
-    Returns None if evaluation fails or formula is unsafe.
-
-    Examples:
-        'round(56 / ((145 / 100) * (145 / 100)), 1)' -> 26.6
-        '123 + 456' -> 579
-    """
-    import ast
-    import operator
-
-    if not isinstance(formula, str):
-        return None
-
-    formula = formula.strip()
-    if not formula:
-        return None
-
-    # Quick check: must contain at least one digit and an operator
-    if not any(c.isdigit() for c in formula):
-        return None
-    if not any(c in formula for c in "+-*/()"):
-        return None
-
-    # Whitelist of safe operations
-    safe_operators = {
-        ast.Add: operator.add,
-        ast.Sub: operator.sub,
-        ast.Mult: operator.mul,
-        ast.Div: operator.truediv,
-        ast.USub: operator.neg,
-        ast.UAdd: operator.pos,
-    }
-
-    def _eval_node(node):
-        if isinstance(node, ast.Constant):
-            if isinstance(node.value, (int, float)):
-                return node.value
-            raise ValueError("Non-numeric constant")
-        elif isinstance(node, ast.Num):  # Python 3.7 compatibility
-            return node.n
-        elif isinstance(node, ast.BinOp):
-            if type(node.op) not in safe_operators:
-                raise ValueError(f"Unsafe operator: {type(node.op)}")
-            left = _eval_node(node.left)
-            right = _eval_node(node.right)
-            return safe_operators[type(node.op)](left, right)
-        elif isinstance(node, ast.UnaryOp):
-            if type(node.op) not in safe_operators:
-                raise ValueError(f"Unsafe unary operator: {type(node.op)}")
-            operand = _eval_node(node.operand)
-            return safe_operators[type(node.op)](operand)
-        elif isinstance(node, ast.Call):
-            # Only allow round() function
-            if isinstance(node.func, ast.Name) and node.func.id == "round":
-                args = [_eval_node(arg) for arg in node.args]
-                return round(*args)
-            raise ValueError("Unsafe function call")
-        elif isinstance(node, ast.Expression):
-            return _eval_node(node.body)
-        else:
-            raise ValueError(f"Unsafe node type: {type(node)}")
-
-    try:
-        tree = ast.parse(formula, mode="eval")
-        result = _eval_node(tree)
-        if isinstance(result, (int, float)) and not (result != result):  # not NaN
-            return result
-        return None
-    except Exception:
-        return None
-
-
-def _auto_correct_participant_value(value, col_name: str, template: dict | None) -> str:
-    """Auto-correct a participant data value based on template Levels.
-
-    Handles:
-    - LimeSurvey truncated codes -> original level keys
-    - 'na' -> 'n/a' for missing values
-    - Formula strings -> evaluated numeric values
-
-    Returns the corrected value, or original if no correction needed/possible.
-    """
-    if template is None:
-        return value
-
-    # Get column schema from template
-    col_schema = template.get(col_name)
-    if not isinstance(col_schema, dict):
-        return value
-
-    v_str = str(value).strip() if value is not None else ""
-
-    # Skip empty/missing values
-    if not v_str or v_str.lower() in ("", "nan", "none"):
-        return _MISSING_TOKEN
-
-    # Check for Levels - try to find matching key
-    levels = col_schema.get("Levels")
-    if isinstance(levels, dict) and levels:
-        # Direct match
-        if v_str in levels:
-            return v_str
-
-        # Try reverse lookup
-        matched_key = _find_matching_level_key(v_str, levels)
-        if matched_key is not None:
-            return matched_key
-
-    # Check for numeric DataType - try to evaluate formulas
-    data_type = col_schema.get("DataType", "").lower()
-    if data_type in ("number", "integer", "float"):
-        # If it's already a valid number, return as-is
-        try:
-            float(v_str)
-            return v_str
-        except (ValueError, TypeError):
-            pass
-
-        # Try to evaluate as formula
-        result = _safe_eval_formula(v_str)
-        if result is not None:
-            if data_type == "integer":
-                return str(int(round(result)))
-            else:
-                # Round to reasonable precision
-                return str(round(result, 2))
-
-    return value
 
 
 def _strip_internal_keys(sidecar: dict) -> dict:
@@ -383,22 +210,6 @@ def _resolve_dataset_root(output_root: Path) -> Path:
     if cut_idx is None or cut_idx == 0:
         return output_root
     return Path(*parts[:cut_idx])
-
-
-def _resolve_existing_project_root(project_path: str | Path | None) -> Path | None:
-    if not project_path:
-        return None
-
-    try:
-        resolved = Path(project_path).expanduser().resolve()
-    except Exception:
-        return None
-
-    if resolved.is_file():
-        resolved = resolved.parent
-    if not resolved.exists() or not resolved.is_dir():
-        return None
-    return resolved
 
 
 def _summarize_labels(values: list[str], limit: int = 10) -> str:
@@ -477,7 +288,9 @@ def _build_participant_registry_warning(
         return None
 
     missing_ids = sorted(
-        participant_id for participant_id in imported_ids if participant_id not in existing_ids
+        participant_id
+        for participant_id in imported_ids
+        if participant_id not in existing_ids
     )
     if not missing_ids:
         return None
@@ -567,9 +380,10 @@ class ParticipantsConverter:
         participant_template: dict | None,
         normalize_sub_fn,
         is_missing_fn,
+        missing_token: str,
         lsa_col_renames: dict[str, str] | None = None,
     ) -> None:
-        _write_survey_participants(
+        _survey_participants_logic._write_survey_participants(
             df=df,
             output_root=output_root,
             id_col=id_col,
@@ -577,6 +391,7 @@ class ParticipantsConverter:
             participant_template=participant_template,
             normalize_sub_fn=normalize_sub_fn,
             is_missing_fn=is_missing_fn,
+            missing_token=missing_token,
             lsa_col_renames=lsa_col_renames,
         )
 
@@ -1584,192 +1399,45 @@ def _convert_survey_dataframe_to_prism_dataset(
             normalized_task_value_offsets = None
 
     try:
-        import pandas as pd
+        import pandas  # noqa: F401 -- import-only fail-fast guard, see except below
     except Exception as e:  # pragma: no cover
         raise RuntimeError(
             "pandas is required for survey conversion. Ensure dependencies are installed via setup.sh"
         ) from e
 
-    # Determine normalization logic
-    def _normalize_sub_id_raw(val) -> str:
-        s = str(val).strip()
-        if not s:
-            return s
-        if s.lower() == "nan":
-            return ""
-        # Normalize to NFC before stripping non-ASCII chars so a name like
-        # "José" sanitizes the same way regardless of which Unicode
-        # normalization form the source system used (see
-        # ParticipantsConverter._normalize_participant_id for the full
-        # rationale).
-        s = unicodedata.normalize("NFC", s)
-        label = s[4:] if s[:4].lower() == "sub-" else s
-        label = re.sub(r"[^A-Za-z0-9]+", "", label)
-        if not label:
-            return ""
-        return f"sub-{label}"
-
-    # The project's own participants.tsv is the ground truth for participant
-    # identity. A survey export using e.g. bare "1" where the project already
-    # has "sub-001" must land in that existing subject's folder rather than
-    # creating a duplicate "sub-1" -- match against it whenever an unambiguous
-    # numeric correspondence exists; unmatched ids keep falling back to the
-    # uncoerced label above (see src/subject_id_matching.py for the policy).
-    _existing_project_root_for_matching = _resolve_existing_project_root(project_path)
-    _subject_id_match = build_subject_id_matcher(
-        load_existing_participant_ids(_existing_project_root_for_matching)
-        if _existing_project_root_for_matching is not None
-        else set()
-    )
-
-    def _normalize_sub_id(val) -> str:
-        normalized = _normalize_sub_id_raw(val)
-        if not normalized:
-            return normalized
-        return _subject_id_match(normalized) or normalized
-
-    def _normalize_ses_id(val) -> str:
-        s = sanitize_id(str(val).strip())
-        if not s:
-            return "ses-1"
-        if s.lower() == "nan":
-            return "ses-1"
-        label = s[4:] if s[:4].lower() == "ses-" else s
-        label = re.sub(r"[^A-Za-z0-9]+", "", label)
-        if not label:
-            return "ses-1"
-        return f"ses-{label}"
-
-    def _normalize_run_id(val) -> str | None:
-        s = sanitize_id(str(val).strip())
-        if not s or s.lower() == "nan":
-            return None
-        label = s[4:] if s[:4].lower() == "run-" else s
-        label = re.sub(r"[^A-Za-z0-9]+", "", label)
-        if not label:
-            return None
-        return f"run-{label}"
-
-    def _is_missing_value(val) -> bool:
-        if pd.isna(val):
-            return True
-        if isinstance(val, str) and val.strip() == "":
-            return True
-        return False
+    id_normalizers = _survey_core.build_survey_id_normalizers(project_path)
+    _normalize_sub_id = id_normalizers.normalize_sub
+    _normalize_ses_id = id_normalizers.normalize_ses
+    _normalize_run_id = id_normalizers.normalize_run
+    _is_missing_value = id_normalizers.is_missing
 
     # --- Load Aliases and Templates ---
-    alias_map: dict[str, str] | None = None
-    canonical_aliases: dict[str, list[str]] | None = None
-    if alias_file:
-        alias_path = Path(alias_file).resolve()
-        if alias_path.exists() and alias_path.is_file():
-            rows = _read_alias_rows(alias_path)
-            if rows:
-                alias_map = _build_alias_map(rows)
-                canonical_aliases = _build_canonical_aliases(rows)
-
-    # Initialize conversion warnings list early (will be extended throughout processing)
-    conversion_warnings: list[str] = []
-
-    # Participants converter: participant-template loading, normalization, and writing
     participants_converter = ParticipantsConverter()
-
-    # Load participant template and compare with global
-    raw_participant_template = participants_converter.load_template(library_dir)
-    participant_template = participants_converter.normalize_template(
-        raw_participant_template
+    loaded = _survey_core._load_survey_aliases_and_templates(
+        participants_converter=participants_converter,
+        library_dir=library_dir,
+        alias_file=alias_file,
+        load_and_preprocess_templates_fn=_load_and_preprocess_templates,
     )
-    participant_columns_lower: set[str] = set()
-    if participant_template:
-        participant_columns_lower = {
-            str(k).strip().lower()
-            for k in participant_template.keys()
-            if isinstance(k, str)
-        }
+    alias_map = loaded.alias_map
+    participant_template = loaded.participant_template
+    participant_columns_lower = loaded.participant_columns_lower
+    templates = loaded.templates
+    item_to_task = loaded.item_to_task
+    template_warnings_by_task = loaded.template_warnings_by_task
+    conversion_warnings: list[str] = list(loaded.warnings)
 
-    # Compare participants.json with global
-    if raw_participant_template:
-        _, _, _, part_warnings = participants_converter.compare_with_global(
-            raw_participant_template
-        )
-        conversion_warnings.extend(part_warnings)
-
-    templates, item_to_task, duplicates, template_warnings_by_task = (
-        _load_and_preprocess_templates(
-            library_dir,
-            canonical_aliases,
-            compare_with_global=True,
+    conversion_warnings.extend(
+        _survey_lsa._apply_lsa_structural_matching(
+            templates=templates,
+            item_to_task=item_to_task,
+            participant_columns_lower=participant_columns_lower,
+            lsa_analysis=lsa_analysis,
+            survey_filter=survey,
+            add_matched_template_fn=_add_matched_template,
+            unmatched_groups_error_cls=UnmatchedGroupsError,
         )
     )
-    if duplicates:
-        msg_lines = [
-            "Duplicate item IDs found across survey templates (ambiguous mapping):"
-        ]
-        for it_id, tsks in sorted(duplicates.items()):
-            msg_lines.append(f"- {it_id}: {', '.join(sorted(tsks))}")
-        raise ValueError("\n".join(msg_lines))
-
-    # --- LSA Structural Matching ---
-    # When converting .lsa files without an explicit survey= filter,
-    # use the .lss structure analysis to auto-detect and register templates.
-    unmatched_groups: list[dict] = []
-    if lsa_analysis and not survey:
-        for group_name, group_info in lsa_analysis["groups"].items():
-            match = group_info.get("match")
-            if match and match.is_participants:
-                # Participant/sociodemographic data: register item codes
-                # as participant columns so they get written to participants.tsv
-                # instead of being treated as unmapped survey items.
-                # Always register the actual LS-mangled item_codes (DataFrame
-                # column names) so they are recognized during column mapping.
-                # Also register PRISMMETA variable names as standard aliases.
-                _survey_lsa._register_participant_columns_from_lsa_group(
-                    group_info=group_info,
-                    participant_columns_lower=participant_columns_lower,
-                )
-            elif match and match.confidence in ("exact", "high"):
-                # Use the matched library template
-                _add_matched_template(templates, item_to_task, match, group_info)
-            elif match and match.confidence == "medium":
-                # Medium confidence — still use it, but warn
-                _add_matched_template(templates, item_to_task, match, group_info)
-                conversion_warnings.append(
-                    f"Group '{group_name}' matched template '{match.template_key}' "
-                    f"with medium confidence ({match.overlap_count}/{match.template_items} items). "
-                    f"Review the match to ensure correctness."
-                )
-            else:
-                # No match or low confidence — collect as unmatched.
-                # Deduplicate run groups: if "resiliencebrsrun1" and
-                # "resiliencebrsrun2" both fail, collapse them into a
-                # single "resiliencebrs" entry so the user saves ONE
-                # base template that matches all runs.
-                from ..utils.naming import sanitize_task_name
-
-                _survey_lsa._collect_unmatched_lsa_group(
-                    group_name=group_name,
-                    group_info=group_info,
-                    unmatched_groups=unmatched_groups,
-                    non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
-                    sanitize_task_name_fn=sanitize_task_name,
-                )
-
-                if match:
-                    conversion_warnings.append(
-                        f"Group '{group_name}' had low-confidence match to "
-                        f"'{match.template_key}'. No suitable template found."
-                    )
-
-    if unmatched_groups:
-        names = [g["group_name"] for g in unmatched_groups]
-        raise UnmatchedGroupsError(
-            unmatched=unmatched_groups,
-            message=(
-                f"No library template found for {len(unmatched_groups)} group(s): "
-                f"{', '.join(names)}. Save templates to project library first, "
-                f"then re-run conversion."
-            ),
-        )
 
     # --- LSA Participant Column Renames ---
     # When converting .lsa files, LimeSurvey mangles question codes (strips
@@ -1898,7 +1566,9 @@ def _convert_survey_dataframe_to_prism_dataset(
     # filesystem (default macOS/Windows): the second one written would
     # silently overwrite the first's survey files with no error. Fail
     # fast, before any output is written, rather than allow that.
-    normalized_ids_for_collision_check = df[res_id_col].astype(str).map(_normalize_sub_id)
+    normalized_ids_for_collision_check = (
+        df[res_id_col].astype(str).map(_normalize_sub_id)
+    )
     collision_message = describe_case_insensitive_id_collisions(
         [sid for sid in normalized_ids_for_collision_check if sid]
     )
@@ -1927,7 +1597,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         task_runs,
         near_match_candidates,
         near_match_applied,
-    ) = _map_survey_columns(
+    ) = _survey_column_mapping._map_survey_columns(
         df=df,
         item_to_task=item_to_task,
         participant_columns_lower=participant_columns_lower,
@@ -2061,6 +1731,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             participant_template=participant_template,
             normalize_sub_fn=_normalize_sub_id,
             is_missing_fn=_is_missing_value,
+            missing_token=_MISSING_TOKEN,
             lsa_col_renames=lsa_participant_renames,
         )
 
@@ -2085,32 +1756,30 @@ def _convert_survey_dataframe_to_prism_dataset(
         missing_cells_by_subject,
         items_using_tolerance,
         value_offset_application_counts,
-    ) = (
-        _survey_io._process_and_write_responses(
-            df=df,
-            res_id_col=res_id_col,
-            res_ses_col=res_ses_col,
-            res_run_col=res_run_col,
-            session=session,
-            output_root=output_root,
-            task_run_columns=task_run_columns,
-            selected_tasks=selected_tasks,
-            templates=templates,
-            task_context_templates=task_context_templates,
-            col_to_mapping=col_to_mapping,
-            strict_levels=strict_levels,
-            task_runs=task_runs,
-            task_context_acq_map=task_context_acq_map,
-            non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
-            normalize_sub_fn=_normalize_sub_id,
-            normalize_ses_fn=_normalize_ses_id,
-            normalize_item_fn=_normalize_item_value,
-            is_missing_fn=_is_missing_value,
-            ensure_dir_fn=_ensure_dir,
-            process_survey_row_with_run_fn=_process_survey_row_with_run,
-            build_bids_survey_filename_fn=_build_bids_survey_filename,
-            task_value_offsets=normalized_task_value_offsets,
-        )
+    ) = _survey_io._process_and_write_responses(
+        df=df,
+        res_id_col=res_id_col,
+        res_ses_col=res_ses_col,
+        res_run_col=res_run_col,
+        session=session,
+        output_root=output_root,
+        task_run_columns=task_run_columns,
+        selected_tasks=selected_tasks,
+        templates=templates,
+        task_context_templates=task_context_templates,
+        col_to_mapping=col_to_mapping,
+        strict_levels=strict_levels,
+        task_runs=task_runs,
+        task_context_acq_map=task_context_acq_map,
+        non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
+        normalize_sub_fn=_normalize_sub_id,
+        normalize_ses_fn=_normalize_ses_id,
+        normalize_item_fn=_normalize_item_value,
+        is_missing_fn=_is_missing_value,
+        ensure_dir_fn=_ensure_dir,
+        process_survey_row_with_run_fn=_process_survey_row_with_run,
+        build_bids_survey_filename_fn=_build_bids_survey_filename,
+        task_value_offsets=normalized_task_value_offsets,
     )
 
     applied_value_offsets: dict[str, float] = {}
@@ -2211,437 +1880,6 @@ def _resolve_id_and_session_cols(
     )
 
 
-@dataclass
-class ColumnMapping:
-    """Mapping information for a single column."""
-
-    task: str
-    run: int | None  # None if single occurrence, 1/2/3... if multiple runs
-    base_item: str  # Item name without run suffix (for template lookup)
-
-
-_NEAR_MATCH_SEPARATOR_RE = re.compile(r"[-_\s]+")
-_NEAR_MATCH_NON_ALNUM_RE = re.compile(r"[^a-zA-Z0-9]+")
-_NEAR_MATCH_DIGITS_RE = re.compile(r"\d+")
-
-
-def _normalize_near_match_item_code(value: str) -> str:
-    """Normalize item code for conservative near-match checks.
-
-    This intentionally only tolerates minimal formatting differences:
-    separators (``-``, ``_``, whitespace) and numeric zero-padding.
-    """
-    text = str(value or "").strip()
-    if not text:
-        return ""
-
-    compact = _NEAR_MATCH_SEPARATOR_RE.sub("", text)
-    compact = _NEAR_MATCH_NON_ALNUM_RE.sub("", compact).lower()
-    if not compact:
-        return ""
-
-    def _normalize_digits(match: re.Match[str]) -> str:
-        raw = match.group(0)
-        stripped = raw.lstrip("0")
-        return stripped or "0"
-
-    return _NEAR_MATCH_DIGITS_RE.sub(_normalize_digits, compact)
-
-
-def _collect_primary_template_items(template_payload: dict) -> set[str]:
-    """Return canonical template item keys used for response matching."""
-    items: set[str] = set()
-    for key, value in template_payload.items():
-        if key in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(value, dict):
-            continue
-        if value.get("AliasOf"):
-            continue
-
-        items.add(key)
-
-        nested_items = value.get("Items")
-        if isinstance(nested_items, dict):
-            for nested_key, nested_value in nested_items.items():
-                if not isinstance(nested_value, dict):
-                    continue
-                if nested_value.get("AliasOf"):
-                    continue
-                items.add(nested_key)
-
-    return items
-
-
-def _map_survey_columns(
-    *,
-    df,
-    item_to_task: dict[str, str],
-    participant_columns_lower: set[str],
-    id_col: str,
-    ses_col: str | None,
-    run_col: str | None = None,
-    unknown_mode: str,
-    templates: dict[str, dict] | None = None,
-    selected_tasks: set[str] | None = None,
-    allow_near_item_match: bool = False,
-    near_match_tasks: set[str] | None = None,
-) -> tuple[
-    dict[str, ColumnMapping],
-    list[str],
-    list[str],
-    dict[str, int | None],
-    list[dict[str, object]],
-    bool,
-]:
-    """Determine which columns map to which surveys and identify unmapped columns.
-
-    Now also detects run information from PRISM naming convention:
-    {QUESTIONNAIRE}_{ITEM}_run-{NN}
-
-    Returns:
-        col_to_mapping: Dict mapping column name to ColumnMapping(task, run, base_item)
-        unknown_cols: List of unmapped column names
-        warnings: List of warning messages
-        task_runs: Dict mapping task name to max run number (None if single occurrence)
-        near_match_candidates: Safe near-match candidates requiring explicit confirmation
-        near_match_applied: Whether near matches were actually applied
-    """
-    lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
-
-    # Detect participant-related columns first so they are not treated as unmapped survey items.
-    participant_fallbacks = {
-        "age",
-        "sex",
-        "gender",
-        "education",
-        "handedness",
-        "completion_date",
-    }
-
-    participant_columns_present = {
-        lower_to_col[c]
-        for c in (participant_columns_lower | participant_fallbacks)
-        if c in lower_to_col
-    }
-
-    cols = [
-        c for c in df.columns if c not in {id_col} and c != ses_col and c != run_col
-    ]
-    col_to_mapping: dict[str, ColumnMapping] = {}
-    unknown_cols: list[str] = []
-
-    # Track runs per task: task -> set of run numbers seen
-    task_run_tracker: dict[str, set[int | None]] = {}
-
-    for c in cols:
-        col_lower = str(c).strip().lower()
-
-        # Skip participant columns
-        if c in participant_columns_present or col_lower in participant_columns_present:
-            continue
-        if col_lower in participant_columns_lower:
-            continue
-
-        # Parse run suffix from column name
-        base_name, run_num = _parse_run_from_column(c)
-
-        # Try to match against templates (original name first, then base name)
-        matched_task = None
-        matched_base = c
-
-        if c in item_to_task:
-            # Direct match (e.g., 'PANAS_1' without run suffix)
-            matched_task = item_to_task[c]
-            matched_base = c
-        elif base_name in item_to_task:
-            # Match after stripping run suffix (e.g., 'PANAS_1' from 'PANAS_1_run-01')
-            matched_task = item_to_task[base_name]
-            matched_base = base_name
-
-        if matched_task:
-            col_to_mapping[c] = ColumnMapping(
-                task=matched_task, run=run_num, base_item=matched_base
-            )
-            # Track runs for this task
-            if matched_task not in task_run_tracker:
-                task_run_tracker[matched_task] = set()
-            task_run_tracker[matched_task].add(run_num)
-        else:
-            unknown_cols.append(c)
-
-    warnings: list[str] = []
-    bookkeeping = {
-        "id",
-        "submitdate",
-        "lastpage",
-        "startlanguage",
-        "seed",
-        "startdate",
-        "datestamp",
-        "token",
-        "refurl",
-        "ipaddr",
-        "googleid",
-        "session_id",
-        "participant_id",
-        "attribute_1",
-        "attribute_2",
-        "attribute_3",
-    }
-    # Also filter out LimeSurvey "Other" text columns (other, other_1, other_2, ...),
-    # PRISM metadata questions, and menstrual cycle columns with LS-mangled names
-    _other_pattern = re.compile(r"^other(_\d+)?$", re.IGNORECASE)
-    _prismmeta_pattern = re.compile(r"^prismmeta", re.IGNORECASE)
-    filtered_unknown = [
-        c
-        for c in unknown_cols
-        if str(c).lower() not in bookkeeping
-        and not _other_pattern.match(str(c).strip())
-        and not _prismmeta_pattern.match(str(c).strip())
-    ]
-
-    near_match_candidates: list[dict[str, object]] = []
-    near_match_applied = False
-
-    if filtered_unknown and templates:
-        scoped_tasks = set(selected_tasks) if selected_tasks else set(templates.keys())
-
-        task_primary_items: dict[str, set[str]] = {}
-        task_alias_lookup: dict[str, dict[str, str]] = {}
-        normalized_item_lookup: dict[str, set[tuple[str, str]]] = {}
-
-        for task, template_data in templates.items():
-            if task not in scoped_tasks:
-                continue
-            template_json = (
-                template_data.get("json") if isinstance(template_data, dict) else None
-            )
-            if not isinstance(template_json, dict):
-                continue
-
-            primary_items = _collect_primary_template_items(template_json)
-            if not primary_items:
-                continue
-            task_primary_items[task] = primary_items
-
-            aliases = template_json.get("_aliases")
-            alias_lookup: dict[str, str] = {}
-            if isinstance(aliases, dict):
-                for alias, canonical in aliases.items():
-                    if not isinstance(alias, str) or not isinstance(canonical, str):
-                        continue
-                    if canonical in primary_items:
-                        alias_lookup[alias] = canonical
-            task_alias_lookup[task] = alias_lookup
-
-            for item_key in primary_items:
-                normalized = _normalize_near_match_item_code(item_key)
-                if not normalized:
-                    continue
-                normalized_item_lookup.setdefault(normalized, set()).add(
-                    (task, item_key)
-                )
-
-        exact_mapped_by_task: dict[str, set[str]] = {}
-        for mapping in col_to_mapping.values():
-            if mapping.task not in task_primary_items:
-                continue
-            canonical = task_alias_lookup.get(mapping.task, {}).get(
-                mapping.base_item, mapping.base_item
-            )
-            exact_mapped_by_task.setdefault(mapping.task, set()).add(canonical)
-
-        task_candidates: dict[str, list[dict[str, object]]] = {}
-        for source_column in filtered_unknown:
-            base_name, run_num = _parse_run_from_column(source_column)
-            normalized_base = _normalize_near_match_item_code(base_name)
-            if not normalized_base:
-                continue
-
-            target_candidates = normalized_item_lookup.get(normalized_base) or set()
-            if len(target_candidates) != 1:
-                continue
-
-            task, target_item = next(iter(target_candidates))
-            task_candidates.setdefault(task, []).append(
-                {
-                    "source_column": source_column,
-                    "source_base_item": base_name,
-                    "target_item": target_item,
-                    "task": task,
-                    "run": run_num,
-                }
-            )
-
-        approved_candidates: list[dict[str, object]] = []
-        for task, candidates in task_candidates.items():
-            if task not in task_primary_items:
-                continue
-            primary_items = task_primary_items[task]
-            if not primary_items:
-                continue
-
-            has_explicit_run_context = any(
-                candidate.get("run") is not None for candidate in candidates
-            )
-            proposed_items = {
-                str(candidate.get("target_item", ""))
-                for candidate in candidates
-                if candidate.get("target_item")
-            }
-
-            if not has_explicit_run_context:
-                exact_items = exact_mapped_by_task.get(task, set())
-                missing_items = primary_items - exact_items
-                if proposed_items != missing_items or len(candidates) != len(
-                    missing_items
-                ):
-                    warnings.append(
-                        f"Near-match candidates for task '{task}' were ignored because "
-                        "they do not produce a full one-to-one item count match."
-                    )
-                    continue
-
-            seen_targets: set[tuple[str, object]] = set()
-            has_duplicate_targets = False
-            for candidate in candidates:
-                target_item = str(candidate.get("target_item", "")).strip()
-                target_run = candidate.get("run")
-                key = (target_item, target_run)
-                if key in seen_targets:
-                    has_duplicate_targets = True
-                    break
-                seen_targets.add(key)
-
-            if has_duplicate_targets:
-                warnings.append(
-                    f"Near-match candidates for task '{task}' were ignored due to duplicate target mappings."
-                )
-                continue
-
-            approved_candidates.extend(candidates)
-
-        near_match_candidates = sorted(
-            approved_candidates,
-            key=lambda candidate: (
-                str(candidate.get("task", "")),
-                str(candidate.get("source_column", "")),
-            ),
-        )
-
-    near_match_task_filter: set[str] | None = None
-    if near_match_tasks is not None:
-        near_match_task_filter = {
-            str(task).strip().lower()
-            for task in near_match_tasks
-            if str(task).strip()
-        }
-
-    if near_match_candidates and allow_near_item_match:
-        candidates_to_apply = near_match_candidates
-        if near_match_task_filter is not None:
-            candidates_to_apply = [
-                candidate
-                for candidate in near_match_candidates
-                if str(candidate.get("task", "")).strip().lower()
-                in near_match_task_filter
-            ]
-
-        applied_columns: list[str] = []
-        for candidate in candidates_to_apply:
-            source_column = str(candidate.get("source_column", "")).strip()
-            target_item = str(candidate.get("target_item", "")).strip()
-            task = str(candidate.get("task", "")).strip()
-            run_value = candidate.get("run")
-
-            if not source_column or not target_item or not task:
-                continue
-            if source_column in col_to_mapping:
-                continue
-
-            col_to_mapping[source_column] = ColumnMapping(
-                task=task,
-                run=cast(int | None, run_value),
-                base_item=target_item,
-            )
-            task_run_tracker.setdefault(task, set()).add(cast(int | None, run_value))
-            applied_columns.append(source_column)
-
-        if applied_columns:
-            near_match_applied = True
-            applied_set = set(applied_columns)
-            filtered_unknown = [
-                col for col in filtered_unknown if col not in applied_set
-            ]
-            shown = ", ".join(
-                f"{candidate['source_column']}->{candidate['target_item']}"
-                for candidate in candidates_to_apply[:8]
-            )
-            more = (
-                ""
-                if len(candidates_to_apply) <= 8
-                else f" (+{len(candidates_to_apply) - 8} more)"
-            )
-            warnings.append(
-                f"Applied near item matches after confirmation ({len(applied_columns)}): {shown}{more}"
-            )
-        skipped_candidate_count = len(near_match_candidates) - len(candidates_to_apply)
-        if skipped_candidate_count > 0:
-            warnings.append(
-                f"Skipped {skipped_candidate_count} near-match candidate(s) for unselected survey tasks."
-            )
-        if not candidates_to_apply and near_match_task_filter is not None:
-            warnings.append(
-                "Near item matches were enabled, but none matched the selected survey tasks."
-            )
-    elif near_match_candidates:
-        shown = ", ".join(
-            f"{candidate['source_column']}->{candidate['target_item']}"
-            for candidate in near_match_candidates[:8]
-        )
-        more = (
-            ""
-            if len(near_match_candidates) <= 8
-            else f" (+{len(near_match_candidates) - 8} more)"
-        )
-        warnings.append(
-            f"Near item matches available after confirmation ({len(near_match_candidates)}): {shown}{more}"
-        )
-
-    # Determine final run assignments per task
-    # If a task has only items with run=None, no runs needed
-    # If a task has items with run numbers, all items for that task get run numbers
-    task_runs: dict[str, int | None] = {}
-    for task, runs in task_run_tracker.items():
-        run_numbers = [run_number for run_number in runs if run_number is not None]
-        if run_numbers:
-            task_runs[task] = max(run_numbers)
-        else:
-            task_runs[task] = None
-
-    if filtered_unknown:
-        if unknown_mode == "error":
-            raise ValueError("Unmapped columns: " + ", ".join(filtered_unknown))
-        if unknown_mode == "warn":
-            shown = ", ".join(filtered_unknown[:10])
-            more = (
-                ""
-                if len(filtered_unknown) <= 10
-                else f" (+{len(filtered_unknown) - 10} more)"
-            )
-            warnings.append(
-                f"Unmapped columns (not in any survey template): {shown}{more}"
-            )
-
-    return (
-        col_to_mapping,
-        filtered_unknown,
-        warnings,
-        task_runs,
-        near_match_candidates,
-        near_match_applied,
-    )
-
-
 def _write_survey_description(
     output_root: Path, name: str | None, authors: list[str] | None
 ):
@@ -2737,231 +1975,6 @@ def _build_participant_col_renames(
             renames[sanitized_lower] = field_name
 
     return renames
-
-
-def _write_survey_participants(
-    *,
-    df,
-    output_root: Path,
-    id_col: str,
-    ses_col: str | None,
-    participant_template: dict | None,
-    normalize_sub_fn,
-    is_missing_fn,
-    lsa_col_renames: dict[str, str] | None = None,
-):
-    """Write participants.tsv and participants.json.
-
-    Column inclusion logic:
-    1. If participants_mapping.json exists in project:
-       - Only include columns explicitly defined in the mapping
-       - Apply value transformations as specified
-       - Rename columns to standard variable names
-    2. If no mapping exists:
-       - Only include columns that exist in the official participants template
-       - No arbitrary extra columns from source data
-
-    All columns in the output must have documentation in participants.json.
-    """
-    import pandas as pd
-
-    lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
-
-    # Try to load participants_mapping.json from the project
-    participants_mapping = _load_participants_mapping(output_root)
-    mapped_cols, col_renames, value_mappings = _get_mapped_columns(participants_mapping)
-
-    # Log what was found
-    if participants_mapping:
-        print(
-            f"[INFO] Using participants_mapping.json from project ({len(mapped_cols)} mapped columns)"
-        )
-        if col_renames:
-            print(f"[INFO]   Column renames: {col_renames}")
-        if value_mappings:
-            print(f"[INFO]   Value transformations for: {list(value_mappings.keys())}")
-    else:
-        print("[INFO] No participants_mapping.json found (using template columns only)")
-
-    # Start with participant_id column
-    df_part = pd.DataFrame(
-        {"participant_id": df[id_col].astype(str).map(normalize_sub_fn)}
-    )
-
-    # Normalize template to get column definitions
-    template_norm = _normalize_participant_template_dict(participant_template)
-    template_cols = set(template_norm.keys()) if template_norm else set()
-    # Remove non-column keys from template
-    non_column_keys = {
-        "@context",
-        "Technical",
-        "I18n",
-        "Study",
-        "Metadata",
-        "_aliases",
-        "_reverse_aliases",
-    }
-    template_cols = template_cols - non_column_keys
-
-    # Determine which columns to include
-    extra_cols: list[str] = []
-    col_output_names: dict[str, str] = {}  # Maps source col -> output name
-    mapping_descriptions: dict[str, str] = {}  # Extra descriptions from mapping
-
-    if participants_mapping and mapped_cols:
-        # MODE 1: Use mapping - only include explicitly mapped columns
-        for source_col_lower in mapped_cols:
-            if source_col_lower in lower_to_col:
-                actual_col = lower_to_col[source_col_lower]
-                if actual_col not in {id_col, ses_col}:
-                    extra_cols.append(actual_col)
-                    # Get the standard variable name (renamed output)
-                    output_name = col_renames.get(source_col_lower, source_col_lower)
-                    col_output_names[actual_col] = output_name
-
-        # Extract descriptions from mapping for columns not in template
-        for var_name, spec in participants_mapping.get("mappings", {}).items():
-            if isinstance(spec, dict):
-                standard_var = spec.get("standard_variable", var_name)
-                if standard_var not in template_cols and "description" in spec:
-                    mapping_descriptions[standard_var] = spec["description"]
-    else:
-        # MODE 2: No mapping - only include columns defined in the official template
-        for col in template_cols:
-            if col in lower_to_col:
-                # Direct match: template field name found as-is in DataFrame
-                actual_col = lower_to_col[col]
-                if actual_col not in {id_col, ses_col}:
-                    extra_cols.append(actual_col)
-                    col_output_names[actual_col] = col
-            elif lsa_col_renames:
-                # Fallback: look up the LS-mangled column name for this field
-                mangled = None
-                for mangled_name, standard_name in lsa_col_renames.items():
-                    if standard_name == col:
-                        mangled = mangled_name
-                        break
-                if mangled and mangled in lower_to_col:
-                    actual_col = lower_to_col[mangled]
-                    if actual_col not in {id_col, ses_col}:
-                        extra_cols.append(actual_col)
-                        col_output_names[actual_col] = col  # Output uses standard name
-
-    if extra_cols:
-        extra_cols = list(dict.fromkeys(extra_cols))
-        df_extra = df[[id_col] + extra_cols].copy()
-
-        # Apply value mappings and missing value handling
-        for c in extra_cols:
-            output_name = col_output_names.get(c, c)
-
-            # Apply value mapping if specified
-            if output_name in value_mappings:
-                val_map = value_mappings[output_name]
-                df_extra[c] = (
-                    df_extra[c]
-                    .astype(str)
-                    .map(
-                        lambda v, vm=val_map: (
-                            vm.get(v, v)
-                            if v not in ("nan", "None", "")
-                            else _MISSING_TOKEN
-                        )
-                    )
-                )
-            else:
-                df_extra[c] = df_extra[c].apply(
-                    lambda v: _MISSING_TOKEN if is_missing_fn(v) else v
-                )
-
-        # Normalize ID column and rename to participant_id
-        df_extra[id_col] = df_extra[id_col].astype(str).map(normalize_sub_fn)
-        df_extra = df_extra.rename(columns={id_col: "participant_id"})
-        df_extra = (
-            df_extra.groupby("participant_id", dropna=False)[extra_cols]
-            .first()
-            .reset_index()
-        )
-
-        # Rename columns to standard variable names
-        rename_map = {c: col_output_names.get(c, c) for c in extra_cols}
-        df_extra = df_extra.rename(columns=rename_map)
-
-        # Auto-correct values: truncated LS codes -> original level keys, formulas -> numbers
-        if template_norm:
-            for col in df_extra.columns:
-                if col == "participant_id":
-                    continue
-                df_extra[col] = df_extra[col].apply(
-                    lambda v, c=col, t=template_norm: _auto_correct_participant_value(
-                        v, c, t
-                    )
-                )
-
-        df_part = df_part.merge(df_extra, on="participant_id", how="left")
-
-    df_part = df_part.drop_duplicates(subset=["participant_id"]).reset_index(drop=True)
-
-    # Merge with existing participants.tsv if it exists
-    participants_tsv_path = output_root / "participants.tsv"
-    if participants_tsv_path.exists():
-        try:
-            existing_df = pd.read_csv(participants_tsv_path, sep="\t", dtype=str)
-            if "participant_id" in existing_df.columns:
-                # Merge new data with existing, preferring new values for overlapping participants
-                # but keeping all existing participants and columns
-                df_part = pd.merge(
-                    existing_df,
-                    df_part,
-                    on="participant_id",
-                    how="outer",
-                    suffixes=("_old", "_new"),
-                )
-
-                # For each column that exists in both, prefer new value if not n/a
-                for col in df_part.columns:
-                    if col.endswith("_new"):
-                        base_col = col[:-4]  # Remove "_new"
-                        old_col = base_col + "_old"
-                        if old_col in df_part.columns:
-                            # Prefer new value, fall back to old if new is n/a
-                            df_part[base_col] = df_part.apply(
-                                lambda row: (
-                                    row[col]
-                                    if pd.notna(row[col])
-                                    and str(row[col]) not in ("n/a", "nan", "")
-                                    else (
-                                        row[old_col]
-                                        if pd.notna(row[old_col])
-                                        else "n/a"
-                                    )
-                                ),
-                                axis=1,
-                            )
-                            # Drop the _old and _new columns
-                            df_part = df_part.drop(columns=[old_col, col])
-                        else:
-                            # No old column, just rename new column
-                            df_part = df_part.rename(columns={col: base_col})
-
-                # Sort by participant_id
-                df_part = df_part.sort_values("participant_id").reset_index(drop=True)
-                print(
-                    f"[INFO] Merged with existing participants.tsv ({len(existing_df)} existing → {len(df_part)} total)"
-                )
-        except Exception as e:
-            print(f"[WARNING] Could not merge with existing participants.tsv: {e}")
-
-    df_part.to_csv(participants_tsv_path, sep="\t", index=False)
-
-    # participants.json - all columns must be documented
-    parts_json_path = output_root / "participants.json"
-    p_json = _participants_json_from_template(
-        columns=[str(c) for c in df_part.columns],
-        template=participant_template,
-        extra_descriptions=mapping_descriptions,
-    )
-    _write_json(parts_json_path, p_json)
 
 
 def _load_and_preprocess_templates(
@@ -3122,7 +2135,9 @@ def _merge_template_version_overrides(
     return merged
 
 
-def _load_project_template_version_overrides(dataset_root: Path) -> list[dict[str, object]]:
+def _load_project_template_version_overrides(
+    dataset_root: Path,
+) -> list[dict[str, object]]:
     """Load normalized TemplateVersionSelections from project.json."""
 
     project_json_path = Path(dataset_root) / "project.json"
@@ -3441,7 +2456,9 @@ def _build_task_context_maps(
                 task_contexts.add((task, context_session, context_run))
 
     task_context_templates: dict[tuple[str, str | None, str | int | None], dict] = {}
-    task_context_acq_map: dict[tuple[str, str | None, str | int | None], str | None] = {}
+    task_context_acq_map: dict[
+        tuple[str, str | None, str | int | None], str | None
+    ] = {}
 
     for task, context_session, run in sorted(
         task_contexts, key=lambda item: (item[0], item[1] or "", str(item[2] or ""))
@@ -3659,7 +2676,7 @@ def _validate_survey_item_value(
         is_missing_fn=is_missing_fn,
         task_value_offsets=task_value_offsets,
         offset_application_counts=offset_application_counts,
-        find_matching_level_key_fn=_find_matching_level_key,
+        find_matching_level_key_fn=_survey_participants_logic._find_matching_level_key,
         missing_token=_MISSING_TOKEN,
     )
 

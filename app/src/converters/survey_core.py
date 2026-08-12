@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import unicodedata
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
@@ -26,6 +28,11 @@ except ImportError:
 
 from src.entity_rules import load_entity_rules
 from src.converters import survey_processing as _survey_processing
+from src.subject_id_matching import (
+    build_subject_id_matcher,
+    load_existing_participant_ids,
+)
+from src.utils.naming import sanitize_id
 
 try:
     import pandas as pd
@@ -138,6 +145,106 @@ def _determine_task_runs(
         else:
             task_runs[task] = None
     return task_runs
+
+
+def _resolve_existing_project_root(project_path: str | Path | None) -> Path | None:
+    if not project_path:
+        return None
+
+    try:
+        resolved = Path(project_path).expanduser().resolve()
+    except Exception:
+        return None
+
+    if resolved.is_file():
+        resolved = resolved.parent
+    if not resolved.exists() or not resolved.is_dir():
+        return None
+    return resolved
+
+
+@dataclass(frozen=True)
+class SurveyIdNormalizers:
+    normalize_sub: Any
+    normalize_ses: Any
+    normalize_run: Any
+    is_missing: Any
+
+
+def build_survey_id_normalizers(project_path: str | Path | None) -> SurveyIdNormalizers:
+    """Build the subject/session/run-ID normalizers and missing-value check
+    shared across survey conversion.
+
+    normalize_sub additionally resolves against the project's existing
+    participants.tsv IDs (via build_subject_id_matcher) so e.g. a bare "1"
+    in the source data lands in an existing "sub-001" folder rather than
+    creating a duplicate "sub-1".
+    """
+
+    def _normalize_sub_id_raw(val) -> str:
+        s = str(val).strip()
+        if not s:
+            return s
+        if s.lower() == "nan":
+            return ""
+        # Normalize to NFC before stripping non-ASCII chars so a name like
+        # "José" sanitizes the same way regardless of which Unicode
+        # normalization form the source system used.
+        s = unicodedata.normalize("NFC", s)
+        label = s[4:] if s[:4].lower() == "sub-" else s
+        label = re.sub(r"[^A-Za-z0-9]+", "", label)
+        if not label:
+            return ""
+        return f"sub-{label}"
+
+    existing_project_root_for_matching = _resolve_existing_project_root(project_path)
+    subject_id_match = build_subject_id_matcher(
+        load_existing_participant_ids(existing_project_root_for_matching)
+        if existing_project_root_for_matching is not None
+        else set()
+    )
+
+    def normalize_sub(val) -> str:
+        normalized = _normalize_sub_id_raw(val)
+        if not normalized:
+            return normalized
+        return subject_id_match(normalized) or normalized
+
+    def normalize_ses(val) -> str:
+        s = sanitize_id(str(val).strip())
+        if not s:
+            return "ses-1"
+        if s.lower() == "nan":
+            return "ses-1"
+        label = s[4:] if s[:4].lower() == "ses-" else s
+        label = re.sub(r"[^A-Za-z0-9]+", "", label)
+        if not label:
+            return "ses-1"
+        return f"ses-{label}"
+
+    def normalize_run(val) -> str | None:
+        s = sanitize_id(str(val).strip())
+        if not s or s.lower() == "nan":
+            return None
+        label = s[4:] if s[:4].lower() == "run-" else s
+        label = re.sub(r"[^A-Za-z0-9]+", "", label)
+        if not label:
+            return None
+        return f"run-{label}"
+
+    def is_missing(val) -> bool:
+        if pd.isna(val):
+            return True
+        if isinstance(val, str) and val.strip() == "":
+            return True
+        return False
+
+    return SurveyIdNormalizers(
+        normalize_sub=normalize_sub,
+        normalize_ses=normalize_ses,
+        normalize_run=normalize_run,
+        is_missing=is_missing,
+    )
 
 
 # =============================================================================
@@ -286,6 +393,83 @@ def _build_canonical_aliases(rows: Iterable[list[str]]) -> dict[str, list[str]]:
             if a not in out[canonical]:
                 out[canonical].append(a)
     return out
+
+
+@dataclass(frozen=True)
+class SurveyAliasesAndTemplates:
+    alias_map: Optional[Dict[str, str]]
+    participant_template: Optional[dict]
+    participant_columns_lower: Set[str]
+    templates: Dict[str, dict]
+    item_to_task: Dict[str, str]
+    template_warnings_by_task: dict
+    warnings: List[str]
+
+
+def _load_survey_aliases_and_templates(
+    *,
+    participants_converter,
+    library_dir: Path,
+    alias_file,
+    load_and_preprocess_templates_fn,
+) -> SurveyAliasesAndTemplates:
+    """Load alias mappings and survey/participant templates for conversion.
+
+    Raises ValueError if duplicate item IDs are found across templates.
+    """
+    alias_map: Optional[Dict[str, str]] = None
+    canonical_aliases: Optional[Dict[str, List[str]]] = None
+    if alias_file:
+        alias_path = Path(alias_file).resolve()
+        if alias_path.exists() and alias_path.is_file():
+            rows = _read_alias_rows(alias_path)
+            if rows:
+                alias_map = _build_alias_map(rows)
+                canonical_aliases = _build_canonical_aliases(rows)
+
+    raw_participant_template = participants_converter.load_template(library_dir)
+    participant_template = participants_converter.normalize_template(
+        raw_participant_template
+    )
+    participant_columns_lower: Set[str] = set()
+    if participant_template:
+        participant_columns_lower = {
+            str(k).strip().lower()
+            for k in participant_template.keys()
+            if isinstance(k, str)
+        }
+
+    warnings: List[str] = []
+    if raw_participant_template:
+        _, _, _, part_warnings = participants_converter.compare_with_global(
+            raw_participant_template
+        )
+        warnings.extend(part_warnings)
+
+    templates, item_to_task, duplicates, template_warnings_by_task = (
+        load_and_preprocess_templates_fn(
+            library_dir,
+            canonical_aliases,
+            compare_with_global=True,
+        )
+    )
+    if duplicates:
+        msg_lines = [
+            "Duplicate item IDs found across survey templates (ambiguous mapping):"
+        ]
+        for it_id, tsks in sorted(duplicates.items()):
+            msg_lines.append(f"- {it_id}: {', '.join(sorted(tsks))}")
+        raise ValueError("\n".join(msg_lines))
+
+    return SurveyAliasesAndTemplates(
+        alias_map=alias_map,
+        participant_template=participant_template,
+        participant_columns_lower=participant_columns_lower,
+        templates=templates,
+        item_to_task=item_to_task,
+        template_warnings_by_task=template_warnings_by_task,
+        warnings=warnings,
+    )
 
 
 def _apply_alias_file_to_dataframe(*, df, alias_file: str | Path) -> "object":
@@ -614,9 +798,7 @@ def _resolve_tasks_with_warnings(
         unmatched_hint = ""
         if unknown_cols:
             shown = ", ".join(str(c) for c in unknown_cols[:8])
-            more = (
-                f" (+{len(unknown_cols) - 8} more)" if len(unknown_cols) > 8 else ""
-            )
+            more = f" (+{len(unknown_cols) - 8} more)" if len(unknown_cols) > 8 else ""
             unmatched_hint = f" Unmatched column(s): {shown}{more}."
 
         raise ValueError(
