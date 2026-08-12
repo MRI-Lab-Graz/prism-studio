@@ -1,5 +1,3 @@
-import os
-
 import pandas as pd
 
 from src.converters.survey_participants_logic import _determine_participant_output_columns
@@ -222,24 +220,28 @@ def test_existing_file_without_participant_id_column_is_left_unmerged(tmp_path):
     assert result.equals(df_part)
 
 
-def test_unreadable_existing_file_falls_back_to_df_part(tmp_path, capsys):
+def test_unreadable_existing_file_falls_back_to_df_part(tmp_path, capsys, monkeypatch):
     # NOTE: the brief's original fixture used a file with an embedded null
     # byte, on the theory that it would fail pandas' C parser. Verified on
     # this pandas version that it does NOT raise (pandas parses it as a
-    # normal, if odd, TSV row). Replaced with a permission-denied file,
-    # which reliably raises PermissionError from pd.read_csv and is a more
-    # honest fit for the test name/scenario anyway.
+    # normal, if odd, TSV row). A follow-up chmod(0o000)-based fixture was
+    # also tried and rejected on review: root ignores permission bits, so
+    # under a root-executed CI container pd.read_csv would silently succeed
+    # instead of raising, making the test's outcome depend on which user
+    # runs pytest. Monkeypatching pandas.read_csv to raise directly forces
+    # the except-Exception fallback path deterministically on every OS/user.
     tsv_path = tmp_path / "participants.tsv"
     tsv_path.write_text("participant_id\tage\nsub-001\t25\n")
-    os.chmod(tsv_path, 0o000)
     df_part = pd.DataFrame({"participant_id": ["sub-001"], "age": ["25"]})
 
-    try:
-        result = _merge_with_existing_participants_tsv(
-            df_part=df_part, participants_tsv_path=tsv_path
-        )
-    finally:
-        os.chmod(tsv_path, 0o644)
+    def _raise(*args, **kwargs):
+        raise ValueError("simulated read_csv failure")
+
+    monkeypatch.setattr("pandas.read_csv", _raise)
+
+    result = _merge_with_existing_participants_tsv(
+        df_part=df_part, participants_tsv_path=tsv_path
+    )
 
     assert result.equals(df_part)
     assert "Could not merge" in capsys.readouterr().out
