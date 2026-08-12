@@ -16,6 +16,7 @@ from pathlib import Path
 
 import defusedxml.ElementTree as ET
 
+from ..utils.naming import sanitize_task_name
 from .survey_core import _NON_ITEM_TOPLEVEL_KEYS
 
 # -----------------------------------------------------------------------------
@@ -356,3 +357,69 @@ def _collect_unmatched_lsa_group(
         )
     else:
         existing["item_codes"] = existing["item_codes"] | base_codes
+
+
+def _apply_lsa_structural_matching(
+    *,
+    templates: dict,
+    item_to_task: dict,
+    participant_columns_lower: set,
+    lsa_analysis,
+    survey_filter,
+    add_matched_template_fn,
+    unmatched_groups_error_cls,
+) -> list:
+    """Classify each LSA structural-match group (participants / high-confidence
+    match / medium-confidence match / unmatched) and register templates or
+    participant columns accordingly.
+
+    Mutates templates and item_to_task in place. Returns the warnings
+    collected along the way. Raises unmatched_groups_error_cls if any group
+    ends up with no usable match.
+    """
+    unmatched_groups: list = []
+    warnings: list = []
+
+    if lsa_analysis and not survey_filter:
+        for group_name, group_info in lsa_analysis["groups"].items():
+            match = group_info.get("match")
+            if match and match.is_participants:
+                _register_participant_columns_from_lsa_group(
+                    group_info=group_info,
+                    participant_columns_lower=participant_columns_lower,
+                )
+            elif match and match.confidence in ("exact", "high"):
+                add_matched_template_fn(templates, item_to_task, match, group_info)
+            elif match and match.confidence == "medium":
+                add_matched_template_fn(templates, item_to_task, match, group_info)
+                warnings.append(
+                    f"Group '{group_name}' matched template '{match.template_key}' "
+                    f"with medium confidence ({match.overlap_count}/{match.template_items} items). "
+                    f"Review the match to ensure correctness."
+                )
+            else:
+                _collect_unmatched_lsa_group(
+                    group_name=group_name,
+                    group_info=group_info,
+                    unmatched_groups=unmatched_groups,
+                    non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
+                    sanitize_task_name_fn=sanitize_task_name,
+                )
+                if match:
+                    warnings.append(
+                        f"Group '{group_name}' had low-confidence match to "
+                        f"'{match.template_key}'. No suitable template found."
+                    )
+
+    if unmatched_groups:
+        names = [g["group_name"] for g in unmatched_groups]
+        raise unmatched_groups_error_cls(
+            unmatched=unmatched_groups,
+            message=(
+                f"No library template found for {len(unmatched_groups)} group(s): "
+                f"{', '.join(names)}. Save templates to project library first, "
+                f"then re-run conversion."
+            ),
+        )
+
+    return warnings
