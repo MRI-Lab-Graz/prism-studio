@@ -20,7 +20,11 @@ defusedxml
 # so pywebview — and its heavy pythonnet/.NET stack on Windows — is not needed
 # there and is intentionally scoped to macOS only.
 pywebview; sys_platform == "darwin"
-# cryptography 49+ dropped Intel/universal2 macOS wheels (arm64-only); pin below 49
-# so the Intel macOS PyInstaller build doesn't fall back to a Rosetta source build.
-cryptography>=50.0.0,<51
+# cryptography 49+ dropped Intel macOS wheels (arm64-only). A flat version
+# pin here gets silently re-widened by dependabot (it can't read this
+# comment) and has broken the Intel macOS build twice (2026-07-22,
+# 2026-08-08). Split by platform instead: Intel macOS stays on the last
+# release with an Intel wheel (48.0.1); everywhere else tracks latest.
+cryptography>=50.0.0,<51; platform_machine != "x86_64" or sys_platform != "darwin"
+cryptography>=46.0.7,<49; platform_machine == "x86_64" and sys_platform == "darwin"
 pydeface
