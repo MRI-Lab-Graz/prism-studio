@@ -18,7 +18,7 @@
             <div class="alert alert-primary border-0 bg-primary bg-opacity-10 py-2 mb-3 beginner-help-block" id="smFieldTierLegend">
                 <i class="fas fa-lightbulb me-2"></i>
                 <span class="badge bg-danger">REQUIRED</span> fields must be filled in before you can create the project (just Dataset Name and Authors).
-                <span class="badge bg-primary">CORE</span> and <span class="badge bg-secondary">OPTIONAL</span> fields never block creation &mdash; they drive the Methods Readiness / FAIR score below instead (CORE fields matter most for that score). Each section below shows its own <span class="badge bg-danger bg-opacity-75">Required</span>/<span class="badge bg-primary bg-opacity-75">Core</span>/<span class="badge bg-warning text-dark bg-opacity-75">FAIR</span> tally so you can see what's missing without expanding it.
+                <span class="badge badge-tier-core">CORE</span> and <span class="badge bg-secondary">OPTIONAL</span> fields never block creation &mdash; they drive the Methods Readiness / FAIR score below instead (CORE fields matter most for that score). Each section below shows its own <span class="badge bg-danger bg-opacity-75">Required</span>/<span class="badge badge-tier-core bg-opacity-75">Core</span>/<span class="badge bg-warning text-dark bg-opacity-75">FAIR</span> tally so you can see what's missing without expanding it.
             </div>
 
             <!-- Completeness Panel -->
@@ -110,7 +110,7 @@
                                 </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                        <span class="badge bg-primary" id="metadataEthicsRequiredBadge">CORE</span> Ethics Approvals
+                                        <span class="badge badge-tier-core" id="metadataEthicsRequiredBadge">CORE</span> Ethics Approvals
                                     </label>
                                     <div class="mb-2">
                                         <input type="hidden" id="metadataEthicsApproved" value="">
@@ -133,14 +133,14 @@
                                 </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                        <span class="badge bg-primary">CORE</span> Keywords (comma-separated)
+                                        <span class="badge badge-tier-core">CORE</span> Keywords (comma-separated)
                                     </label>
                                     <input type="text" class="form-control form-control-sm" id="metadataKeywords" placeholder="psychology, experiment, PRISM">
                                     <small class="text-muted">Enter at least three keywords so the dataset is schema-complete and easier to find later.</small>
                                 </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                        <span class="badge bg-primary" id="metadataFundingRequiredBadge">CORE</span> Funding
+                                        <span class="badge badge-tier-core" id="metadataFundingRequiredBadge">CORE</span> Funding
                                     </label>
                                     <div class="mb-2">
                                         <input type="hidden" id="metadataFundingDeclared" value="">
@@ -261,7 +261,7 @@
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-primary">CORE</span> Study Design Type
+                                        <span class="badge badge-tier-core">CORE</span> Study Design Type
                                     </label>
                                     <select class="form-select form-select-sm" id="smSDType">
                                         <option value="">-- Select --</option>
@@ -349,7 +349,7 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-primary" id="smRecMethodRequiredBadge">CORE</span> Method
+                                        <span class="badge badge-tier-core" id="smRecMethodRequiredBadge">CORE</span> Method
                                     </label>
                                     <!-- Hidden backing select (existing API surface) -->
                                     <select class="d-none" id="smRecMethod" multiple aria-hidden="true" tabindex="-1">
@@ -463,7 +463,7 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-primary" id="smEligCriteriaRequiredBadge">CORE</span> Inclusion Criteria
+                                        <span class="badge badge-tier-core" id="smEligCriteriaRequiredBadge">CORE</span> Inclusion Criteria
                                     </label>
                                     <textarea class="form-control form-control-sm d-none" id="smEligInclusion" rows="3"
                                               placeholder="One criterion per line" aria-hidden="true" tabindex="-1"></textarea>
@@ -518,7 +518,7 @@
                             <div class="row g-3">
                                 <div class="col-12">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-primary">CORE</span> Overview
+                                        <span class="badge badge-tier-core">CORE</span> Overview
                                     </label>
                                     <textarea class="form-control form-control-sm" id="smProcOverview" rows="3"
                                               placeholder="Narrative overview of the study procedure..."></textarea>

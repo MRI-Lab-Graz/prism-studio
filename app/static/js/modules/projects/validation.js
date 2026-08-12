@@ -307,20 +307,22 @@ function findBadgeByText(searchText) {
     debugWarn(`  No badge found for "${searchText}"`);
     return null;
 }
-function updateBadgeColor(badge, isFilled) {
+
+export function updateBadgeColor(badge, isFilled) {
     if (!badge) {
         debugWarn('Badge element is null');
         return;
     }
-    
+
     const badgeText = badge.textContent.trim();
     debugLog(`updateBadgeColor: "${badgeText}" isFilled=${isFilled}`);
-    
+
     if (isFilled) {
         removeClass(badge, 'bg-danger');
         removeClass(badge, 'bg-warning');
         removeClass(badge, 'bg-secondary');
         removeClass(badge, 'bg-primary');
+        removeClass(badge, 'badge-tier-core');
         removeClass(badge, 'text-dark');
         addClass(badge, 'bg-success');
         debugLog(`Badge "${badgeText}" turned GREEN`);
@@ -331,7 +333,7 @@ function updateBadgeColor(badge, isFilled) {
             addClass(badge, 'bg-danger');
             debugLog(`Badge "${badgeText}" turned RED`);
         } else if (text === 'CORE') {
-            addClass(badge, 'bg-primary');
+            addClass(badge, 'badge-tier-core');
             debugLog(`Badge "${badgeText}" turned BLUE (readiness-tier, not creation-blocking)`);
         } else if (text === 'RECOMMENDED') {
             addClass(badge, 'bg-warning');
@@ -602,20 +604,21 @@ export function resetAllBadges() {
 
     badges.forEach(badge => {
         const badgeText = badge.textContent.trim();
-        
+
         // Remove all color classes
         removeClass(badge, 'bg-danger');
         removeClass(badge, 'bg-warning');
         removeClass(badge, 'bg-secondary');
         removeClass(badge, 'bg-success');
         removeClass(badge, 'bg-primary');
+        removeClass(badge, 'badge-tier-core');
         removeClass(badge, 'text-dark');
 
         // Re-apply original color based on badge type
         if (badgeText === 'REQUIRED') {
             addClass(badge, 'bg-danger');
         } else if (badgeText === 'CORE') {
-            addClass(badge, 'bg-primary');
+            addClass(badge, 'badge-tier-core');
         } else if (badgeText === 'RECOMMENDED') {
             addClass(badge, 'bg-warning');
             addClass(badge, 'text-dark');

@@ -111,6 +111,16 @@
     padding: 2px;
 }
 
+/* CORE-tier field badge - deliberately NOT bg-primary/bg-success. This
+   theme's --bs-primary (#1f8b5c) and --bs-success (#2c9a62) are both dark
+   greens, close enough that an unfilled CORE badge and a filled/"done"
+   badge were visually indistinguishable. A true blue keeps "this is a
+   CORE field" and "this field is filled" unambiguous at a glance. */
+.badge-tier-core {
+    background-color: #0d6efd !important;
+    color: #fff !important;
+}
+
 .sm-section-group {
     display: flex;
     flex-direction: column;
