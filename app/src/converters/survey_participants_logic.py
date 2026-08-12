@@ -615,6 +615,10 @@ def _determine_participant_output_columns(
                     if standard_name == col:
                         mangled = mangled_name
                         break
+                # lower_to_col keys are always lowercased; normalize mangled
+                # to match before lookup. Both current producers of
+                # lsa_col_renames already key on lowercase, so this guards
+                # against a hypothetical future producer that doesn't.
                 mangled_lower = mangled.strip().lower() if mangled else None
                 if mangled_lower and mangled_lower in lower_to_col:
                     actual_col = lower_to_col[mangled_lower]
