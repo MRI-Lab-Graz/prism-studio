@@ -188,9 +188,14 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
 
         updateCreateProjectButton();
 
-        // Trigger validation on all study metadata fields so badges turn green if filled
+        // Trigger validation on all study metadata fields: filled ones turn
+        // green, empty CORE/REQUIRED ones turn red (setRequiredFieldBorder
+        // already spares OPTIONAL-tier fields from the red-when-empty
+        // treatment, so this no longer needs an onlyFilled guard - and that
+        // guard was hiding the red state for genuinely empty CORE fields,
+        // e.g. Keywords, after loading/switching projects).
         setTimeout(() => {
-            refreshMetadataValidationState({ onlyFilled: true });
+            refreshMetadataValidationState();
         }, 150);
     },
     refreshStatusSnapshots: async () => {
@@ -264,6 +269,24 @@ function _getCurrentProjectPath() {
 
 function _getCurrentProjectName() {
     return resolveCurrentProjectName();
+}
+
+// Persists that the user has explicitly clicked Yes/No for an ambiguous
+// Basics choice (Ethics Approvals, Funding), so a later reload can tell
+// "explicitly declared none" apart from "never answered" - see
+// setEthicsApprovals/setFundingFromDescription. Stored in .prismrc.json via
+// the existing project-preferences endpoint (same one export.js/recipes.js
+// use), not project.json/dataset_description.json - this is PRISM-internal
+// UI state, not BIDS metadata. Best-effort: a failed save just means the
+// toggle may show neutral again next load, not a data-loss risk.
+function _saveMetadataDeclaration(key, value) {
+    const projectPath = _getCurrentProjectPath();
+    if (!projectPath) return;
+    fetchWithApiFallback('/api/projects/preferences/metadataDeclarations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_path: projectPath, preferences: { [key]: value } })
+    }).catch(() => { /* best-effort */ });
 }
 
 function _setCurrentProjectName(name) {
@@ -2002,7 +2025,7 @@ function _getRequiredValidationIssueMessages(validation) {
 }
 
 function refreshMetadataValidationState(options = {}) {
-    const { onlyFilled = false, includeRequirementGapWarning = false } = options;
+    const { includeRequirementGapWarning = false } = options;
     const fieldIds = [
         'metadataSchemaVersion', 'metadataName', 'metadataAcknowledgements',
         'metadataDOI', 'metadataHED', 'metadataKeywords',
@@ -2020,7 +2043,6 @@ function refreshMetadataValidationState(options = {}) {
         try {
             const field = document.getElementById(fieldId);
             if (!field) return;
-            if (onlyFilled && !String(field.value || '').trim()) return;
             validateProjectField(fieldId);
         } catch (e) {
             console.log(`Could not validate ${fieldId}:`, e.message);
@@ -2714,24 +2736,23 @@ export function showStudyMetadataCard() {
     if (!card) return;
     
     const completenessPanel = document.getElementById('smCompletenessPanel');
-    const newProjectInfo = document.getElementById('smNewProjectInfo');
     const saveSection = document.getElementById('saveStudyMetadataSection');
-    
+
     const createSection = document.getElementById('section-create');
     const createActive = createSection && createSection.classList.contains('active');
     const currentProjectPath = _getCurrentProjectPath();
     const isNewProject = createActive && !currentProjectPath;
-    
+
     if (currentProjectPath || createActive) {
         card.style.display = 'block';
-        
-        // For new projects: hide info panels and save button, show data
-        // For existing projects: show everything
+
+        // For new projects there's nothing to score yet, so the readiness
+        // panel stays hidden; the REQUIRED/CORE/FAIR legend above it is
+        // relevant either way and always shown (governed only by the
+        // global beginner-help-mode toggle, like other .beginner-help-block
+        // elements - see global-help-mode.js).
         if (completenessPanel) {
             completenessPanel.style.display = isNewProject ? 'none' : 'block';
-        }
-        if (newProjectInfo) {
-            newProjectInfo.style.display = isNewProject ? 'block' : 'none';
         }
         if (saveSection) {
             saveSection.style.display = 'block';
@@ -3202,7 +3223,15 @@ function hasValidFundingResponse() {
     return false;
 }
 
-function setFundingFromDescription(fundingValues) {
+// An empty Funding/EthicsApprovals array is ambiguous on its own - it means
+// both "never answered" and "explicitly declared none", since dataset_
+// description.json has no field for the former. `wasExplicitlyDeclared`
+// (sourced from the metadataDeclarations project preference, set the moment
+// a user clicks Yes/No - see the click handlers below) resolves that: only
+// treat an empty array as a real "No" once the user has actually clicked
+// something, otherwise leave the toggle neutral so the CORE badge/border
+// correctly still reads as unfilled instead of silently defaulting to "No".
+function setFundingFromDescription(fundingValues, wasExplicitlyDeclared) {
     const values = Array.isArray(fundingValues)
         ? fundingValues
         : (fundingValues ? [fundingValues] : []);
@@ -3213,11 +3242,11 @@ function setFundingFromDescription(fundingValues) {
         setFundingChoice('yes');
     } else {
         setFundingRows([]);
-        setFundingChoice('no');
+        setFundingChoice(wasExplicitlyDeclared ? 'no' : '');
     }
 }
 
-export function setEthicsApprovals(ethicsArray) {
+export function setEthicsApprovals(ethicsArray, wasExplicitlyDeclared) {
     const committeeField = document.getElementById('metadataEthicsCommittee');
     const votumField = document.getElementById('metadataEthicsVotum');
 
@@ -3231,7 +3260,7 @@ export function setEthicsApprovals(ethicsArray) {
     if (!ethicsEntries.length) {
         committeeField.value = '';
         votumField.value = '';
-        setEthicsChoice('no');
+        setEthicsChoice(wasExplicitlyDeclared ? 'no' : '');
         return;
     }
 
@@ -3455,6 +3484,8 @@ export function updateCompletenessUI(completeness) {
     // Friendlier labels for the "what's missing" tooltip; falls back to the
     // raw field name (matches computeLocalCompleteness's addField() names).
     const fieldDisplayNames = {
+        Name: 'Dataset Name',
+        Authors: 'Authors',
         EthicsApprovals: 'Ethics Approvals',
         Keywords: 'Keywords',
         Funding: 'Funding',
@@ -3508,10 +3539,36 @@ export function updateCompletenessUI(completeness) {
             ? ` title="Missing: ${_escapeHtmlAttr(missingCoreFields.join(', '))}"`
             : ' title="All Core fields filled"';
 
+        // REQUIRED-tier (red, creation-blocking) fields aren't part of
+        // reqTotal/reqFilled above (those are CORE-only, see
+        // computeLocalCompleteness) - pull them from .fields directly so the
+        // collapsed section header also surfaces "you can't create the
+        // project without this" instead of only showing once expanded. Only
+        // rendered for sections that actually have such fields (today, only
+        // Basics: Name/Authors).
+        const blockingFields = (sec.fields || []).filter(f => f.blocksCreation);
+        const blockingTotal = blockingFields.length;
+        const blockingFilled = blockingFields.filter(f => f.filled).length;
+        const blockingDone = blockingTotal === 0 || blockingFilled === blockingTotal;
+        const missingRequiredFields = blockingFields
+            .filter(f => !f.filled)
+            .map(f => fieldDisplayNames[f.name] || f.name);
+        const requiredTitleAttr = missingRequiredFields.length
+            ? ` title="Required to create the project - missing: ${_escapeHtmlAttr(missingRequiredFields.join(', '))}"`
+            : ' title="All required fields filled"';
+        const requiredBadgeHtml = blockingTotal > 0
+            ? `<span class="${blockingDone ? 'text-success' : 'text-danger'}"${requiredTitleAttr}>Required ${blockingFilled}/${blockingTotal}</span>
+                <span class="text-muted"> • </span>`
+            : '';
+        const requiredBadgeElHtml = blockingTotal > 0
+            ? `<span class="badge ${blockingDone ? 'bg-success' : 'bg-danger'} bg-opacity-75"${requiredTitleAttr}>Required ${blockingFilled}/${blockingTotal}</span>`
+            : '';
+
         html += `<div class="section-completeness-row${rowClickable ? ' section-completeness-row--clickable' : ''}"${rowClickable ? ` data-section-key="${key}" role="button" tabindex="0"` : ''}>
             <span class="section-label">${sectionLabels[key] || key}${autoLabel}</span>
             <span class="completeness-dot ${dotClass}" title="${pct}%"></span>
             <span class="section-badge">
+                ${requiredBadgeHtml}
                 <span class="${reqTextClass}"${coreTitleAttr}>Core ${reqFilled}/${reqTotal}</span>
                 <span class="text-muted"> • </span>
                 <span class="${fairTextClass}">FAIR ${optFilled}/${optTotal}</span>
@@ -3523,6 +3580,7 @@ export function updateCompletenessUI(completeness) {
             const reqClass = reqDone ? 'bg-success' : 'bg-danger';
             const fairClass = fairDone ? 'bg-success' : 'bg-warning text-dark';
             badgeEl.innerHTML = `
+                ${requiredBadgeElHtml}
                 <span class="badge ${reqClass} bg-opacity-75"${coreTitleAttr}>Core ${reqFilled}/${reqTotal}</span>
                 <span class="badge ${fairClass} bg-opacity-75">FAIR ${optFilled}/${optTotal}</span>
             `;
@@ -3919,22 +3977,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const ethicsYesBtn = document.getElementById('metadataEthicsYes');
     if (ethicsYesBtn) {
-        ethicsYesBtn.addEventListener('click', () => setEthicsChoice('yes'));
+        ethicsYesBtn.addEventListener('click', () => {
+            setEthicsChoice('yes');
+            _saveMetadataDeclaration('ethicsApprovalsDeclared', true);
+        });
     }
 
     const ethicsNoBtn = document.getElementById('metadataEthicsNo');
     if (ethicsNoBtn) {
-        ethicsNoBtn.addEventListener('click', () => setEthicsChoice('no'));
+        ethicsNoBtn.addEventListener('click', () => {
+            setEthicsChoice('no');
+            _saveMetadataDeclaration('ethicsApprovalsDeclared', true);
+        });
     }
 
     const fundingYesBtn = document.getElementById('metadataFundingYes');
     if (fundingYesBtn) {
-        fundingYesBtn.addEventListener('click', () => setFundingChoice('yes'));
+        fundingYesBtn.addEventListener('click', () => {
+            setFundingChoice('yes');
+            _saveMetadataDeclaration('fundingDeclared', true);
+        });
     }
 
     const fundingNoBtn = document.getElementById('metadataFundingNo');
     if (fundingNoBtn) {
-        fundingNoBtn.addEventListener('click', () => setFundingChoice('no'));
+        fundingNoBtn.addEventListener('click', () => {
+            setFundingChoice('no');
+            _saveMetadataDeclaration('fundingDeclared', true);
+        });
     }
 
     metadataMethodsController.initMethodsControls();

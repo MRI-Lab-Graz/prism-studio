@@ -298,6 +298,40 @@ class TestProjectsSchemaConfigHandlers(unittest.TestCase):
         self.assertEqual(export_prefs["repository_mode"], "datalad_preserving")
         self.assertFalse((self.project_path / ".prismrc.json").exists())
 
+    def test_metadata_declarations_namespace_round_trips_without_special_casing(self):
+        """The study-metadata "explicitly declared No" flags (see
+        _saveMetadataDeclaration in metadata.js) use this same generic
+        preferences endpoint with a plain, non-"export" namespace - confirms
+        no backend changes were needed to support it and that save->get
+        round-trips a boolean untouched (no export-only normalization
+        applied to it).
+        """
+        with self.app.test_request_context(
+            "/api/projects/preferences/metadataDeclarations",
+            method="POST",
+            json={"preferences": {"ethicsApprovalsDeclared": True}},
+        ):
+            save_response = self.handle_save_project_preferences(
+                get_current_project=self._get_current_project,
+                namespace="metadataDeclarations",
+            )
+        save_payload = (
+            save_response[0] if isinstance(save_response, tuple) else save_response
+        ).get_json()
+        self.assertTrue(save_payload["success"])
+
+        with self.app.test_request_context(
+            "/api/projects/preferences/metadataDeclarations", method="GET"
+        ):
+            get_response = self.handle_get_project_preferences(
+                get_current_project=self._get_current_project,
+                namespace="metadataDeclarations",
+            )
+        get_payload = get_response.get_json()
+
+        self.assertTrue(get_payload["success"])
+        self.assertEqual(get_payload["preferences"], {"ethicsApprovalsDeclared": True})
+
     def test_save_export_preferences_clears_invalid_defacing_confirmation_override(self):
         other_project = self._make_project("other_project")
         (other_project / ".prismrc.json").write_text(
