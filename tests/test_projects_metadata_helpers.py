@@ -111,6 +111,44 @@ def test_resolve_level_label_uses_requested_language_only():
     assert metadata_helpers._resolve_level_label("2", levels, lang="en") == "2"
 
 
+def test_required_fields_schema_matches_core_tier_only():
+    """REQUIRED_FIELDS_SCHEMA drives the "Core X/Y" badge and must only list
+    the CORE-tier fields (blue badge) from study_metadata.html, not the
+    REQUIRED-tier (red, creation-blocking: Basics.Name/Authors) or OPTIONAL
+    fields. This is the single source of truth the frontend fetches via
+    /api/config instead of keeping its own copy.
+    """
+    schema = metadata_helpers.REQUIRED_FIELDS_SCHEMA
+
+    assert schema["Basics"] == {"EthicsApprovals", "Keywords", "Funding"}
+    assert schema["Overview"] == set()
+    assert schema["StudyDesign"] == {"Type"}
+    assert schema["Recruitment"] == {"Method"}
+    assert schema["Eligibility"] == {"InclusionCriteria"}
+    assert schema["Procedure"] == {"Overview"}
+
+
+def test_compute_methods_completeness_recruitment_requires_only_method():
+    """Only Method is CORE-tier for Recruitment; Location/Period/Compensation
+    are OPTIONAL in the template and must not inflate required_total.
+    """
+    project_data = {
+        "Recruitment": {
+            "Method": "participant-pool",
+            "Location": "Graz, Austria",
+            "Period": {"Start": "2026-01", "End": "2026-02"},
+            "Compensation": "Financial compensation",
+        },
+    }
+
+    completeness = metadata_helpers._compute_methods_completeness(project_data, {})
+    recruitment = completeness["sections"]["Recruitment"]
+
+    assert recruitment["required_total"] == 1
+    assert recruitment["required_filled"] == 1
+    assert recruitment["optional_total"] == 4
+
+
 def test_compute_methods_completeness_eligibility_requires_two_combined_criteria():
     project_data = {
         "Overview": {"Main": "Overview"},
