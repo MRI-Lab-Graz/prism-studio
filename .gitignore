@@ -137,3 +137,7 @@ tmp_investigation_2/root_ds
 # path-length handling, which breaks `git checkout` on Windows runners if
 # committed. Regenerate locally on demand instead of tracking it.
 examples/hostile_demo/
+
+# Subagent-driven-development scratch workspace (ledgers, briefs, review
+# packages) - not part of the codebase, see superpowers:subagent-driven-development
+.superpowers/
