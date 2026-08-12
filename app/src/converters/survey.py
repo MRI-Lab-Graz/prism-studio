@@ -288,7 +288,9 @@ def _build_participant_registry_warning(
         return None
 
     missing_ids = sorted(
-        participant_id for participant_id in imported_ids if participant_id not in existing_ids
+        participant_id
+        for participant_id in imported_ids
+        if participant_id not in existing_ids
     )
     if not missing_ids:
         return None
@@ -1564,7 +1566,9 @@ def _convert_survey_dataframe_to_prism_dataset(
     # filesystem (default macOS/Windows): the second one written would
     # silently overwrite the first's survey files with no error. Fail
     # fast, before any output is written, rather than allow that.
-    normalized_ids_for_collision_check = df[res_id_col].astype(str).map(_normalize_sub_id)
+    normalized_ids_for_collision_check = (
+        df[res_id_col].astype(str).map(_normalize_sub_id)
+    )
     collision_message = describe_case_insensitive_id_collisions(
         [sid for sid in normalized_ids_for_collision_check if sid]
     )
@@ -1752,32 +1756,30 @@ def _convert_survey_dataframe_to_prism_dataset(
         missing_cells_by_subject,
         items_using_tolerance,
         value_offset_application_counts,
-    ) = (
-        _survey_io._process_and_write_responses(
-            df=df,
-            res_id_col=res_id_col,
-            res_ses_col=res_ses_col,
-            res_run_col=res_run_col,
-            session=session,
-            output_root=output_root,
-            task_run_columns=task_run_columns,
-            selected_tasks=selected_tasks,
-            templates=templates,
-            task_context_templates=task_context_templates,
-            col_to_mapping=col_to_mapping,
-            strict_levels=strict_levels,
-            task_runs=task_runs,
-            task_context_acq_map=task_context_acq_map,
-            non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
-            normalize_sub_fn=_normalize_sub_id,
-            normalize_ses_fn=_normalize_ses_id,
-            normalize_item_fn=_normalize_item_value,
-            is_missing_fn=_is_missing_value,
-            ensure_dir_fn=_ensure_dir,
-            process_survey_row_with_run_fn=_process_survey_row_with_run,
-            build_bids_survey_filename_fn=_build_bids_survey_filename,
-            task_value_offsets=normalized_task_value_offsets,
-        )
+    ) = _survey_io._process_and_write_responses(
+        df=df,
+        res_id_col=res_id_col,
+        res_ses_col=res_ses_col,
+        res_run_col=res_run_col,
+        session=session,
+        output_root=output_root,
+        task_run_columns=task_run_columns,
+        selected_tasks=selected_tasks,
+        templates=templates,
+        task_context_templates=task_context_templates,
+        col_to_mapping=col_to_mapping,
+        strict_levels=strict_levels,
+        task_runs=task_runs,
+        task_context_acq_map=task_context_acq_map,
+        non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
+        normalize_sub_fn=_normalize_sub_id,
+        normalize_ses_fn=_normalize_ses_id,
+        normalize_item_fn=_normalize_item_value,
+        is_missing_fn=_is_missing_value,
+        ensure_dir_fn=_ensure_dir,
+        process_survey_row_with_run_fn=_process_survey_row_with_run,
+        build_bids_survey_filename_fn=_build_bids_survey_filename,
+        task_value_offsets=normalized_task_value_offsets,
     )
 
     applied_value_offsets: dict[str, float] = {}
@@ -2133,7 +2135,9 @@ def _merge_template_version_overrides(
     return merged
 
 
-def _load_project_template_version_overrides(dataset_root: Path) -> list[dict[str, object]]:
+def _load_project_template_version_overrides(
+    dataset_root: Path,
+) -> list[dict[str, object]]:
     """Load normalized TemplateVersionSelections from project.json."""
 
     project_json_path = Path(dataset_root) / "project.json"
@@ -2452,7 +2456,9 @@ def _build_task_context_maps(
                 task_contexts.add((task, context_session, context_run))
 
     task_context_templates: dict[tuple[str, str | None, str | int | None], dict] = {}
-    task_context_acq_map: dict[tuple[str, str | None, str | int | None], str | None] = {}
+    task_context_acq_map: dict[
+        tuple[str, str | None, str | int | None], str | None
+    ] = {}
 
     for task, context_session, run in sorted(
         task_contexts, key=lambda item: (item[0], item[1] or "", str(item[2] or ""))

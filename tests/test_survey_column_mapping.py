@@ -1,6 +1,9 @@
 import pandas as pd
 
-from src.converters.survey_column_mapping import ColumnMapping, _match_columns_to_templates
+from src.converters.survey_column_mapping import (
+    ColumnMapping,
+    _match_columns_to_templates,
+)
 from src.converters.survey_column_mapping import _find_near_match_candidates
 from src.converters.survey_column_mapping import _apply_approved_near_matches
 
@@ -17,7 +20,9 @@ def test_exact_match_maps_column_to_task():
         run_col=None,
     )
 
-    assert col_to_mapping["panas_1"] == ColumnMapping(task="panas", run=None, base_item="panas_1")
+    assert col_to_mapping["panas_1"] == ColumnMapping(
+        task="panas", run=None, base_item="panas_1"
+    )
     assert unknown_cols == []
     assert task_run_tracker == {"panas": {None}}
 
@@ -34,7 +39,9 @@ def test_run_suffixed_column_matches_base_item():
         run_col=None,
     )
 
-    assert col_to_mapping["panas_1_run-02"] == ColumnMapping(task="panas", run=2, base_item="panas_1")
+    assert col_to_mapping["panas_1_run-02"] == ColumnMapping(
+        task="panas", run=2, base_item="panas_1"
+    )
     assert task_run_tracker == {"panas": {2}}
 
 
@@ -102,7 +109,9 @@ def test_single_near_match_candidate_is_found_when_it_completes_full_item_set():
     # panas has 2 primary items; panas_1 is exactly mapped already, panas-2
     # (hyphen instead of underscore) is unmapped but near-matches panas_2 --
     # applying it would give a full 1:1 item-count match, so it's approved.
-    col_to_mapping = {"panas_1": ColumnMapping(task="panas", run=None, base_item="panas_1")}
+    col_to_mapping = {
+        "panas_1": ColumnMapping(task="panas", run=None, base_item="panas_1")
+    }
 
     candidates, warnings = _find_near_match_candidates(
         filtered_unknown=["panas-2"],
@@ -146,7 +155,9 @@ def test_no_templates_returns_no_candidates():
 
 
 def test_selected_tasks_scopes_which_templates_are_considered():
-    col_to_mapping = {"panas_1": ColumnMapping(task="panas", run=None, base_item="panas_1")}
+    col_to_mapping = {
+        "panas_1": ColumnMapping(task="panas", run=None, base_item="panas_1")
+    }
 
     candidates, _ = _find_near_match_candidates(
         filtered_unknown=["panas-2"],
@@ -231,7 +242,9 @@ def test_near_match_tasks_filter_excludes_non_matching_task_candidates():
 def test_already_mapped_source_column_is_not_overwritten():
     from src.converters.survey_column_mapping import ColumnMapping
 
-    col_to_mapping = {"panas-2": ColumnMapping(task="other", run=None, base_item="other_item")}
+    col_to_mapping = {
+        "panas-2": ColumnMapping(task="other", run=None, base_item="other_item")
+    }
     task_run_tracker = {}
 
     _apply_approved_near_matches(

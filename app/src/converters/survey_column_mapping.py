@@ -239,9 +239,7 @@ def _find_near_match_candidates(
         if not has_explicit_run_context:
             exact_items = exact_mapped_by_task.get(task, set())
             missing_items = primary_items - exact_items
-            if proposed_items != missing_items or len(candidates) != len(
-                missing_items
-            ):
+            if proposed_items != missing_items or len(candidates) != len(missing_items):
                 warnings.append(
                     f"Near-match candidates for task '{task}' were ignored because "
                     "they do not produce a full one-to-one item count match."

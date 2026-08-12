@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from src.converters.survey_core import _load_survey_aliases_and_templates
 
 
@@ -18,7 +16,9 @@ class _FakeParticipantsConverter:
         return self._compare_result
 
 
-def _fake_load_and_preprocess_templates(library_dir, canonical_aliases, compare_with_global=True):
+def _fake_load_and_preprocess_templates(
+    library_dir, canonical_aliases, compare_with_global=True
+):
     return ({"panas": {"json": {}}}, {"panas_1": "panas"}, {}, {})
 
 
@@ -52,7 +52,12 @@ def test_participant_template_compare_warnings_are_collected(tmp_path):
     result = _load_survey_aliases_and_templates(
         participants_converter=_FakeParticipantsConverter(
             template={"Age": {}},
-            compare_result=(False, set(), set(), ["Age column differs from global template"]),
+            compare_result=(
+                False,
+                set(),
+                set(),
+                ["Age column differs from global template"],
+            ),
         ),
         library_dir=tmp_path,
         alias_file=None,
@@ -79,7 +84,9 @@ def test_alias_file_builds_alias_map(tmp_path):
 
 
 def test_duplicate_item_ids_raise_value_error(tmp_path):
-    def _loader_with_duplicates(library_dir, canonical_aliases, compare_with_global=True):
+    def _loader_with_duplicates(
+        library_dir, canonical_aliases, compare_with_global=True
+    ):
         return ({}, {}, {"item_1": {"panas", "phq9"}}, {})
 
     import pytest

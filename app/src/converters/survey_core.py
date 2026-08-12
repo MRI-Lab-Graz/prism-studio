@@ -28,7 +28,10 @@ except ImportError:
 
 from src.entity_rules import load_entity_rules
 from src.converters import survey_processing as _survey_processing
-from src.subject_id_matching import build_subject_id_matcher, load_existing_participant_ids
+from src.subject_id_matching import (
+    build_subject_id_matcher,
+    load_existing_participant_ids,
+)
 from src.utils.naming import sanitize_id
 
 try:
@@ -795,9 +798,7 @@ def _resolve_tasks_with_warnings(
         unmatched_hint = ""
         if unknown_cols:
             shown = ", ".join(str(c) for c in unknown_cols[:8])
-            more = (
-                f" (+{len(unknown_cols) - 8} more)" if len(unknown_cols) > 8 else ""
-            )
+            more = f" (+{len(unknown_cols) - 8} more)" if len(unknown_cols) > 8 else ""
             unmatched_hint = f" Unmatched column(s): {shown}{more}."
 
         raise ValueError(

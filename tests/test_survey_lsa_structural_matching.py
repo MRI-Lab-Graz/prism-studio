@@ -4,8 +4,14 @@ from src.converters.survey_lsa import _apply_lsa_structural_matching
 
 
 class _FakeMatch:
-    def __init__(self, is_participants=False, confidence="exact", template_key="panas",
-                 overlap_count=5, template_items=5):
+    def __init__(
+        self,
+        is_participants=False,
+        confidence="exact",
+        template_key="panas",
+        overlap_count=5,
+        template_items=5,
+    ):
         self.is_participants = is_participants
         self.confidence = confidence
         self.template_key = template_key
@@ -70,7 +76,9 @@ def test_exact_confidence_match_calls_add_matched_template_with_no_warning():
 
 def test_medium_confidence_match_calls_add_matched_template_and_warns():
     lsa_analysis = {
-        "groups": {"g1": {"match": _FakeMatch(confidence="medium", template_key="phq9")}}
+        "groups": {
+            "g1": {"match": _FakeMatch(confidence="medium", template_key="phq9")}
+        }
     }
 
     warnings = _apply_lsa_structural_matching(
@@ -90,7 +98,11 @@ def test_medium_confidence_match_calls_add_matched_template_and_warns():
 def test_unmatched_group_raises_the_injected_error_class():
     lsa_analysis = {
         "groups": {
-            "g1": {"match": None, "item_codes": {"q1", "q2"}, "prism_json": {"q1": {}, "q2": {}}}
+            "g1": {
+                "match": None,
+                "item_codes": {"q1", "q2"},
+                "prism_json": {"q1": {}, "q2": {}},
+            }
         }
     }
 

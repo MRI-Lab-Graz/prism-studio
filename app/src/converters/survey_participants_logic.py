@@ -692,7 +692,9 @@ def _build_participant_output_dataframe(
                     continue
                 df_extra[col] = df_extra[col].apply(
                     lambda v, c=col, t=column_plan.template_norm: (
-                        _auto_correct_participant_value(v, c, t, missing_token=missing_token)
+                        _auto_correct_participant_value(
+                            v, c, t, missing_token=missing_token
+                        )
                     )
                 )
 
@@ -735,9 +737,7 @@ def _merge_with_existing_participants_tsv(*, df_part, participants_tsv_path: Pat
                             row[col]
                             if pd.notna(row[col])
                             and str(row[col]) not in ("n/a", "nan", "")
-                            else (
-                                row[old_col] if pd.notna(row[old_col]) else "n/a"
-                            )
+                            else (row[old_col] if pd.notna(row[old_col]) else "n/a")
                         ),
                         axis=1,
                     )
