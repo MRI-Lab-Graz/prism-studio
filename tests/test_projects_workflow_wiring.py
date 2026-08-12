@@ -1,3 +1,4 @@
+import re
 import unittest
 from pathlib import Path
 
@@ -1308,6 +1309,25 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn('id="exportRepositoryMode"', content)
         self.assertIn('value="datalad_free"', content)
         self.assertIn('value="datalad_preserving"', content)
+
+    def test_field_tier_legend_is_not_gated_by_beginner_help_mode(self):
+        content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
+
+        legend_match = re.search(
+            r'<div class="([^"]*)" id="smFieldTierLegend">', content
+        )
+        self.assertIsNotNone(
+            legend_match, "smFieldTierLegend element not found in template"
+        )
+        legend_classes = legend_match.group(1).split()
+        self.assertNotIn(
+            "beginner-help-block",
+            legend_classes,
+            "REQUIRED/CORE/FAIR legend must not be dismissible via the "
+            "site-wide beginner-help-mode toggle - it's reference info, "
+            "not a beginner tip, and should always be visible.",
+        )
+        self.assertIn("alert", legend_classes)
 
 
 if __name__ == "__main__":
