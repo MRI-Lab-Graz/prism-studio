@@ -6,6 +6,16 @@
 .completeness-dot.full { background-color: #198754; }
 .completeness-dot.partial { background-color: #ffc107; }
 .completeness-dot.empty { background-color: #dee2e6; }
+.section-completeness-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 1.5rem;
+}
+@media (max-width: 575.98px) {
+    .section-completeness-grid {
+        grid-template-columns: 1fr;
+    }
+}
 .section-completeness-row {
     display: flex; align-items: center; gap: 8px; padding: 4px 0;
 }

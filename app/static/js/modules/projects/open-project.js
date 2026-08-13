@@ -1079,8 +1079,16 @@ export function initOpenProjectController({
         const projectIconClass = escapeHtml(resolveProjectIconClass(getCurrentProjectState().icon));
         setProjectValidationResult(`
             <div class="validation-result pending project-loaded-state">
-                <h5><i class="fas fa-folder-open me-2"></i>Project Loaded</h5>
-                <p class="mb-1"><strong><span class="me-1" aria-hidden="true">${projectIconClass}</span>${escapeHtml(loadedName || 'Current project')}:</strong> <code>${escapeHtml(loadedPath)}</code></p>
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <h5 class="mb-0"><i class="fas fa-folder-open me-2"></i>Project Loaded</h5>
+                    <div class="d-flex align-items-center gap-2 flex-wrap" id="projectLoadedMetadataReminder">
+                        <span class="small text-muted">Study Metadata:</span>
+                        <span class="badge bg-danger" id="projectLoadedRequiredBadge" title="Required to create the project">Required &hellip;/&hellip;</span>
+                        <span class="badge badge-tier-core" id="projectLoadedCoreBadge" title="Drives the Methods Readiness / FAIR score">Core &hellip;/&hellip;</span>
+                        <span class="badge bg-warning text-dark" id="projectLoadedFairBadge" title="Optional fields that also count toward FAIR readiness">FAIR &hellip;/&hellip;</span>
+                    </div>
+                </div>
+                <p class="mb-1 mt-2"><strong><span class="me-1" aria-hidden="true">${projectIconClass}</span>${escapeHtml(loadedName || 'Current project')}:</strong> <code>${escapeHtml(loadedPath)}</code></p>
                 ${quickSummaryHtml}
                 <div class="alert alert-info mt-2 mb-0" role="status">
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">

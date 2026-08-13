@@ -21,6 +21,7 @@ import {
 import { escapeHtml } from '../../shared/dom.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { DEFAULT_REQUIRED_FIELDS_SCHEMA, normalizeRequiredFieldsSchema } from './study-metadata-required-fields.js';
+import { computeGlobalTierTotals } from './global-tier-totals.js';
 
 function _getCurrentProjectState() {
     return getProjectStateSnapshot();
@@ -2700,27 +2701,44 @@ export function displayMetadataIssues(issues) {
     }
 
     feedbackDiv.style.display = 'block';
-    let html = `
-        <div class="alert alert-danger py-2 mb-0">
-            <div class="fw-bold mb-1 small text-uppercase">
-                <i class="fas fa-times-circle me-2"></i>Dataset Description Issues (${issues.length})
-            </div>
-            <ul class="mb-0 ps-3 small">
-    `;
 
-    issues.forEach(issue => {
+    // CORE-tier fields (Keywords, Funding, EthicsApprovals - see
+    // project_manager.py's validate_dataset_description) are WARNING-level:
+    // schema-required for full PRISM/BIDS validity, but not creation-
+    // blocking, so they must not render identically to a true ERROR (e.g.
+    // a missing Name/Authors). Issues without a level (older callers)
+    // default to ERROR, preserving prior behavior.
+    const errors = issues.filter(issue => (issue.level || 'ERROR') !== 'WARNING');
+    const warnings = issues.filter(issue => issue.level === 'WARNING');
+
+    const renderIssueItems = (list) => list.map(issue => `
+        <li class="mb-1">
+            <strong>${issue.message}</strong>
+            ${issue.fix_hint ? `<div class="text-muted smaller"><i class="fas fa-lightbulb me-1"></i>${issue.fix_hint}</div>` : ''}
+        </li>
+    `).join('');
+
+    let html = '';
+    if (errors.length) {
         html += `
-            <li class="mb-1">
-                <strong>${issue.message}</strong>
-                ${issue.fix_hint ? `<div class="text-muted smaller"><i class="fas fa-lightbulb me-1"></i>${issue.fix_hint}</div>` : ''}
-            </li>
+            <div class="alert alert-danger py-2 ${warnings.length ? 'mb-2' : 'mb-0'}">
+                <div class="fw-bold mb-1 small text-uppercase">
+                    <i class="fas fa-times-circle me-2"></i>Dataset Description Issues (${errors.length})
+                </div>
+                <ul class="mb-0 ps-3 small">${renderIssueItems(errors)}</ul>
+            </div>
         `;
-    });
-
-    html += `
-            </ul>
-        </div>
-    `;
+    }
+    if (warnings.length) {
+        html += `
+            <div class="alert alert-warning py-2 mb-0">
+                <div class="fw-bold mb-1 small text-uppercase">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Recommended for FAIR Compliance (${warnings.length})
+                </div>
+                <ul class="mb-0 ps-3 small">${renderIssueItems(warnings)}</ul>
+            </div>
+        `;
+    }
     feedbackDiv.innerHTML = html;
 }
 
@@ -3497,7 +3515,12 @@ export function updateCompletenessUI(completeness) {
         Overview: 'Overview'
     };
 
-    let html = '';
+    // The 9 section rows render in a 2-column grid (metadata.css:
+    // .section-completeness-grid) to use horizontal space instead of a long
+    // half-empty single column; Metadata Sync/Citation Health stay outside
+    // it, appended below in normal block flow, so their dashed-divider
+    // styling (meant for a single-column list) keeps working.
+    let html = '<div class="section-completeness-grid">';
     let nextActionKey = null;
     let nextActionRatio = 1;
     for (const key of sectionOrder) {
@@ -3589,6 +3612,34 @@ export function updateCompletenessUI(completeness) {
         }
     }
 
+    // Compact reminder on the "Project Loaded" panel (open-project.js),
+    // rendered fresh every time a project loads - only populated here, once
+    // the Study Metadata form has actually been read (see updateCompletenessUI
+    // call sites), so it never shows a stale project's numbers.
+    const globalTierTotals = computeGlobalTierTotals(sections);
+    const requiredReminderBadge = document.getElementById('projectLoadedRequiredBadge');
+    if (requiredReminderBadge) {
+        const done = globalTierTotals.blockingTotal === 0 || globalTierTotals.blockingFilled === globalTierTotals.blockingTotal;
+        requiredReminderBadge.textContent = `Required ${globalTierTotals.blockingFilled}/${globalTierTotals.blockingTotal}`;
+        requiredReminderBadge.classList.toggle('bg-success', done);
+        requiredReminderBadge.classList.toggle('bg-danger', !done);
+    }
+    const coreReminderBadge = document.getElementById('projectLoadedCoreBadge');
+    if (coreReminderBadge) {
+        const done = globalTierTotals.coreTotal === 0 || globalTierTotals.coreFilled === globalTierTotals.coreTotal;
+        coreReminderBadge.textContent = `Core ${globalTierTotals.coreFilled}/${globalTierTotals.coreTotal}`;
+        coreReminderBadge.classList.toggle('bg-success', done);
+        coreReminderBadge.classList.toggle('badge-tier-core', !done);
+    }
+    const fairReminderBadge = document.getElementById('projectLoadedFairBadge');
+    if (fairReminderBadge) {
+        const done = globalTierTotals.fairTotal === 0 || globalTierTotals.fairFilled === globalTierTotals.fairTotal;
+        fairReminderBadge.textContent = `FAIR ${globalTierTotals.fairFilled}/${globalTierTotals.fairTotal}`;
+        fairReminderBadge.classList.toggle('bg-success', done);
+        fairReminderBadge.classList.toggle('bg-warning', !done);
+        fairReminderBadge.classList.toggle('text-dark', !done);
+    }
+
     let metadataDotClass = 'empty';
     let metadataText = 'Metadata sync status pending...';
     const lastMetadataSyncStatus = getLastMetadataSyncStatus();
@@ -3608,6 +3659,8 @@ export function updateCompletenessUI(completeness) {
     }
 
     const metadataStatusClass = metadataDotClass === 'full' ? 'text-success' : 'text-warning';
+
+    html += '</div>'; // close .section-completeness-grid
 
     html += `<div class="section-completeness-row section-completeness-row-metadata-sync">
         <span class="section-label">Metadata Sync</span>
