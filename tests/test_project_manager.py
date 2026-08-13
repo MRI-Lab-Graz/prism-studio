@@ -6352,5 +6352,68 @@ class TestDataladStatusConcurrency(unittest.TestCase):
         self.assertIn("in progress", result.get("message", ""))
 
 
+class TestValidateDatasetDescriptionSeverity(unittest.TestCase):
+    """CORE-tier fields (Keywords, Funding, EthicsApprovals - per
+    REQUIRED_FIELDS_SCHEMA, the Study Metadata editor's single source of
+    truth) are schema-required for full PRISM validity but must not block
+    project creation/editing. The live-preview "Dataset Description Issues"
+    panel must reflect that: a missing/too-short Keywords is a WARNING, not
+    an identical-looking ERROR to a missing Name/Authors (the true
+    creation-blocking REQUIRED tier). See CLAUDE.md scientific-rigor note on
+    error messages needing to be precise and actionable.
+    """
+
+    def test_short_keywords_is_a_warning_not_an_error(self):
+        manager = ProjectManager()
+        description = {
+            "Name": "Demo Study",
+            "BIDSVersion": "1.10.1",
+            "DatasetType": "raw",
+            "Authors": ["A. Researcher"],
+            "Keywords": [],
+        }
+
+        issues = manager.validate_dataset_description(description)
+
+        keyword_issues = [i for i in issues if i["message"].startswith("Keywords")]
+        self.assertEqual(len(keyword_issues), 1)
+        self.assertEqual(keyword_issues[0]["level"], "WARNING")
+
+    def test_missing_name_is_still_an_error(self):
+        manager = ProjectManager()
+        description = {
+            "BIDSVersion": "1.10.1",
+            "DatasetType": "raw",
+            "Authors": ["A. Researcher"],
+            "Keywords": ["psychology", "experiment", "PRISM"],
+        }
+
+        issues = manager.validate_dataset_description(description)
+
+        name_issues = [i for i in issues if "Name" in i["message"]]
+        self.assertEqual(len(name_issues), 1)
+        self.assertEqual(name_issues[0]["level"], "ERROR")
+
+    def test_missing_keywords_entirely_is_also_a_warning(self):
+        """Same as the too-short case, but hits the "required property"
+        validator branch instead of "minItems" - error.path is empty here
+        (the error is on the containing object), so the field name has to be
+        parsed out of the message instead of read from error.path.
+        """
+        manager = ProjectManager()
+        description = {
+            "Name": "Demo Study",
+            "BIDSVersion": "1.10.1",
+            "DatasetType": "raw",
+            "Authors": ["A. Researcher"],
+        }
+
+        issues = manager.validate_dataset_description(description)
+
+        keyword_issues = [i for i in issues if "Keywords" in i["message"]]
+        self.assertEqual(len(keyword_issues), 1)
+        self.assertEqual(keyword_issues[0]["level"], "WARNING")
+
+
 if __name__ == "__main__":
     unittest.main()

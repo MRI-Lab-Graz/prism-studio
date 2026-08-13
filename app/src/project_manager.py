@@ -1479,6 +1479,21 @@ class ProjectManager:
                 }
             ]
 
+        # CORE-tier fields (per REQUIRED_FIELDS_SCHEMA, the Study Metadata
+        # editor's single source of truth) are schema-required for a fully
+        # valid dataset - prism.py/Open Validator still fail without them -
+        # but they don't block project creation/editing, unlike Name/Authors.
+        # Deferred import: project_manager.py is core/src, this is a web
+        # blueprint helper; importing inside the function (matching this
+        # file's existing pattern, e.g. the src.web.backend_monitoring
+        # import above) avoids a module-load-time cycle since
+        # projects_metadata_helpers.py never imports project_manager.
+        from src.web.blueprints.projects_metadata_helpers import (
+            REQUIRED_FIELDS_SCHEMA,
+        )
+
+        core_tier_fields = REQUIRED_FIELDS_SCHEMA.get("Basics", set())
+
         try:
             # Use Draft7Validator to get all errors
             validator = Draft7Validator(schema)
@@ -1498,12 +1513,29 @@ class ProjectManager:
                 ):
                     code = "PRISM301"
 
+                # Top-level field this error is about: error.path is empty
+                # for a missing "required" property (the error is on the
+                # containing object, not the property), so fall back to
+                # parsing it out of the message in that case.
+                if error.path:
+                    field_name = str(error.path[0])
+                else:
+                    match = re.match(r"'(.+?)' is a required property", error.message)
+                    field_name = match.group(1) if match else ""
+
+                # CORE-tier fields are non-blocking everywhere else in the
+                # app (creation, FAIR scoring) - WARNING here keeps this
+                # live-preview panel consistent with that, instead of
+                # rendering identically to a true blocking ERROR (e.g. a
+                # missing Name/Authors, which still IS creation-blocking).
+                level = "WARNING" if field_name in core_tier_fields else "ERROR"
+
                 issues.append(
                     {
                         "code": code,
                         "message": msg,
                         "fix_hint": get_fix_hint(code, msg),
-                        "level": "ERROR",
+                        "level": level,
                     }
                 )
         except Exception as e:
