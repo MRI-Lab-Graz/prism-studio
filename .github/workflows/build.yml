@@ -59,7 +59,12 @@ jobs:
           NONINTERACTIVE=1 arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         fi
         arch -x86_64 /usr/local/bin/brew update
-        arch -x86_64 /usr/local/bin/brew install gettext openssl@3
+        # Homebrew has downgraded Intel macOS to Tier 3 support and no longer
+        # bottles every formula for it (e.g. openssl@3), so a plain bottled
+        # install can fail outright. Fall back to building from source rather
+        # than retrying, since a missing bottle isn't transient.
+        arch -x86_64 /usr/local/bin/brew install gettext openssl@3 || \
+          arch -x86_64 /usr/local/bin/brew install --build-from-source gettext openssl@3
         test -f /usr/local/opt/gettext/lib/libintl.8.dylib
         test -f /usr/local/opt/openssl@3/lib/libssl.3.dylib
         echo "DYLD_FALLBACK_LIBRARY_PATH=/usr/local/opt/openssl@3/lib:/usr/local/opt/gettext/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
@@ -129,7 +134,7 @@ jobs:
       if: runner.os == 'Windows' && env.SIGNPATH_API_TOKEN != ''
       env:
         SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
-      uses: signpath/github-action-submit-signing-request@v2.2
+      uses: signpath/github-action-submit-signing-request@v2.3
       with:
         api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
         organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}

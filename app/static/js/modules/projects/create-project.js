@@ -187,11 +187,11 @@ export function initCreateProjectController({
             Recruitment: {
                 Method: (function() {
                     const list = getRecMethodList();
-                    return list.length ? list : undefined;
+                    return list.length ? list.join('; ') : undefined;
                 })(),
                 Location: (function() {
                     const list = getRecLocationList();
-                    return list.length ? list : undefined;
+                    return list.length ? list.join('; ') : undefined;
                 })(),
                 Period: {
                     Start: getYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth') || undefined,
