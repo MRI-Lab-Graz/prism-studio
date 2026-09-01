@@ -1301,7 +1301,10 @@ def build_prism_tools_parsers(
     )
 
     parser_survey_validate = survey_subparsers.add_parser(
-        "validate", help="Validate survey library"
+        "validate",
+        help="Validate survey library for item-key uniqueness and schema "
+        "compliance (not answer-value/range checks; those run in the Studio "
+        "GUI's convert-and-validate step)",
     )
     parser_survey_validate.add_argument(
         "--library", default="survey_library", help="Path to survey library"

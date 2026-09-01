@@ -2356,6 +2356,89 @@ def check_import_boundaries(repo_path, fix=False):
         print_success("Import boundary check passed (no app.src.* runtime imports).")
 
 
+_DUAL_TREE_SHIM_MARKERS = ("load_canonical_module(", "spec_from_file_location(")
+
+
+def _is_symlink_pair(path_a: Path, path_b: Path) -> bool:
+    for link_path, other_path in ((path_a, path_b), (path_b, path_a)):
+        if not link_path.is_symlink():
+            continue
+        try:
+            if link_path.resolve() == other_path.resolve():
+                return True
+        except OSError:
+            continue
+    return False
+
+
+def _has_delegation_shim_marker(content: str) -> bool:
+    return any(marker in content for marker in _DUAL_TREE_SHIM_MARKERS)
+
+
+def check_dual_tree_drift(repo_path, fix=False):
+    """Flag .py files duplicated between src/ and app/src/ that aren't
+    resolved via a symlink or a recognized delegation shim (see CLAUDE.md's
+    src/ vs app/src/ dual-tree drift note)."""
+    print_header("Checking src/ vs app/src/ Dual-Tree Drift")
+
+    src_root = Path(repo_path) / "src"
+    app_src_root = Path(repo_path) / "app" / "src"
+
+    if not src_root.is_dir() or not app_src_root.is_dir():
+        print_success("Dual-tree drift check skipped (src/ or app/src/ not found).")
+        return
+
+    def collect(root):
+        files = {}
+        for py_file in root.rglob("*.py"):
+            if py_file.name == "__init__.py":
+                continue
+            if should_ignore(str(py_file), repo_path):
+                continue
+            files[py_file.relative_to(root)] = py_file
+        return files
+
+    src_files = collect(src_root)
+    app_files = collect(app_src_root)
+
+    unresolved = []
+    for rel_path in sorted(set(src_files) & set(app_files)):
+        src_file = src_files[rel_path]
+        app_file = app_files[rel_path]
+
+        if _is_symlink_pair(src_file, app_file):
+            continue
+
+        try:
+            src_content = src_file.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            src_content = ""
+        try:
+            app_content = app_file.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            app_content = ""
+
+        if _has_delegation_shim_marker(src_content) or _has_delegation_shim_marker(
+            app_content
+        ):
+            continue
+
+        unresolved.append(rel_path)
+
+    if unresolved:
+        for rel_path in unresolved:
+            print_error(
+                f"Unresolved dual-tree duplicate: src/{rel_path} and app/src/{rel_path} "
+                "both exist as independent files. Collapse into one real file with a "
+                "symlink for the other side, or use a load_canonical_module/"
+                "spec_from_file_location delegation shim (see CLAUDE.md)."
+            )
+    else:
+        print_success(
+            "Dual-tree drift check passed (no unresolved src/ vs app/src/ duplicates)."
+        )
+
+
 CHECKS = {
     "git-status": check_git_status,
     "schema-sync": check_schema_sync,
@@ -2370,6 +2453,7 @@ CHECKS = {
     "path-hygiene": check_cross_platform_path_hygiene,
     "system-file-filtering": check_system_file_filtering,
     "import-boundaries": check_import_boundaries,
+    "dual-tree-drift": check_dual_tree_drift,
     "sensitive-files": check_sensitive_files,
     "large-files": check_large_files,
     "github-actions": check_github_actions,
@@ -2410,6 +2494,7 @@ DEFAULT_CHECK_PROFILES = {
         "path-hygiene",
         "system-file-filtering",
         "import-boundaries",
+        "dual-tree-drift",
         "unsafe-patterns",
         "ruff",
         # Sub-second AST security lint, so it belongs in the fast profile that

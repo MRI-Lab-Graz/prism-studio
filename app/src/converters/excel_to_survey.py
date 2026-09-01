@@ -26,27 +26,18 @@ import pandas as pd
 
 # Import item registry for collision detection
 try:
-    from ...src.converters.item_registry import ItemRegistry, ItemCollisionError
-    from ...src.converters.version_merger import (
+    from src.converters.item_registry import ItemRegistry, ItemCollisionError
+    from src.converters.version_merger import (
         merge_survey_versions,
         save_merged_template,
         detect_version_name_from_import,
     )
-except ImportError:
-    # Fallback for standalone script usage
-    try:
-        from src.converters.item_registry import ItemRegistry, ItemCollisionError
-        from src.converters.version_merger import (
-            merge_survey_versions,
-            save_merged_template,
-            detect_version_name_from_import,
-        )
-    except ImportError:
-        ItemRegistry = None
-        ItemCollisionError = None
-        merge_survey_versions = None
-        save_merged_template = None
-        detect_version_name_from_import = None
+except ImportError:  # pragma: no cover - defensive fallback, unreachable in this repo
+    ItemRegistry = None
+    ItemCollisionError = None
+    merge_survey_versions = None
+    save_merged_template = None
+    detect_version_name_from_import = None
 
 # Add project root to path to import from src
 project_root = Path(__file__).resolve().parent.parent

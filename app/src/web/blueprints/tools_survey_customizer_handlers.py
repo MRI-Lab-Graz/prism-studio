@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import re
@@ -280,18 +281,25 @@ def handle_survey_customizer_export(data, project_path):
         fd, temp_path = tempfile.mkstemp(suffix=".lss")
         os.close(fd)
 
-        generate_lss_from_customization(
-            groups=groups,
-            output_path=temp_path,
-            language=language,
-            languages=languages,
-            base_language=base_language,
-            ls_version=ls_version,
-            matrix_mode=matrix_mode,
-            matrix_global=matrix_global,
-            survey_title=survey_title,
-            ls_settings=ls_settings,
-        )
+        try:
+            generate_lss_from_customization(
+                groups=groups,
+                output_path=temp_path,
+                language=language,
+                languages=languages,
+                base_language=base_language,
+                ls_version=ls_version,
+                matrix_mode=matrix_mode,
+                matrix_global=matrix_global,
+                survey_title=survey_title,
+                ls_settings=ls_settings,
+            )
+            lss_bytes = Path(temp_path).read_bytes()
+        finally:
+            try:
+                os.remove(temp_path)
+            except OSError:
+                pass
 
         safe_title = re.sub(r"[^\w\s-]", "", survey_title)
         safe_title = re.sub(r"[\s]+", "_", safe_title).strip("_")
@@ -301,11 +309,12 @@ def handle_survey_customizer_export(data, project_path):
         download_filename = f"{safe_title}_{date_str}.lss"
 
         response = send_file(
-            temp_path,
+            io.BytesIO(lss_bytes),
             as_attachment=True,
             download_name=download_filename,
             mimetype="application/xml",
         )
+
         if templates_saved:
             response.headers["X-Templates-Saved"] = str(templates_saved)
             response.headers["Access-Control-Expose-Headers"] = "X-Templates-Saved"
