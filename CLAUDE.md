@@ -106,6 +106,18 @@ Regression tests: `tests/test_web_utils_fallback.py` (forces the dormant
 fallback branches directly via monkeypatch, since normal test runs never
 reach them — the only way to give a safety net real coverage).
 
+`converters/limesurvey.py` (checked 2026-09-01, during a survey-module
+assessment) was flagged as an *unverified* risk going in — both
+`src/converters/limesurvey.py` and `app/src/converters/limesurvey.py` exist
+as physically distinct files, matching the shape of the bugs above, and it
+wasn't on the "already fixed" list. Checked and found already safe: the
+`app/src/` copy is a 34-line `load_canonical_module`/`_compat.py` delegation
+shim (per the pattern this note already documents above) that forwards to
+`src/converters/limesurvey.py` (2100 lines, canonical) by file path, and
+namespace-package resolution independently picks the `src/` copy first
+regardless. No divergence, no action needed — noted here only so the next
+person doesn't re-spend time re-verifying it from scratch.
+
 Don't treat the absence of a file
 from this note as proof it's safe; the check above is the source of truth,
 this paragraph is not a checklist.
