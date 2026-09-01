@@ -1,5 +1,6 @@
 import importlib
 import json
+import os
 from pathlib import Path
 
 from flask import Flask
@@ -43,6 +44,45 @@ def test_handle_survey_customizer_export_cleans_up_temp_file(monkeypatch) -> Non
     assert response.status_code == 200
     assert len(created_paths) == 1
     assert not Path(created_paths[0]).exists()
+
+
+def test_handle_survey_customizer_export_survives_cleanup_failure(monkeypatch) -> None:
+    handlers = importlib.import_module(
+        "src.web.blueprints.tools_survey_customizer_handlers"
+    )
+    exporter = importlib.import_module("src.limesurvey_exporter")
+
+    def fake_generate_lss_from_customization(*, output_path, **kwargs):
+        Path(output_path).write_text("<xml/>", encoding="utf-8")
+
+    monkeypatch.setattr(
+        exporter,
+        "generate_lss_from_customization",
+        fake_generate_lss_from_customization,
+    )
+    monkeypatch.setattr(
+        os, "remove", lambda path: (_ for _ in ()).throw(OSError("simulated"))
+    )
+
+    app = Flask(__name__)
+    app.add_url_rule(
+        "/api/survey-customizer/export",
+        view_func=lambda: handlers.handle_survey_customizer_export(
+            data={
+                "survey": {"title": "Demo Survey", "language": "en"},
+                "groups": [{"id": "g1"}],
+                "exportFormat": "limesurvey",
+            },
+            project_path=None,
+        ),
+        methods=["POST"],
+    )
+
+    with app.test_client() as client:
+        response = client.post("/api/survey-customizer/export")
+
+    assert response.status_code == 200
+    assert response.data == b"<xml/>"
 
 
 def test_handle_survey_customizer_load_builds_groups_from_template(tmp_path) -> None:

@@ -32,7 +32,7 @@ try:
         save_merged_template,
         detect_version_name_from_import,
     )
-except ImportError:
+except ImportError:  # pragma: no cover - defensive fallback, unreachable in this repo
     ItemRegistry = None
     ItemCollisionError = None
     merge_survey_versions = None
