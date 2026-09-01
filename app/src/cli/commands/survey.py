@@ -547,7 +547,11 @@ def cmd_survey_convert(args):
 
 
 def cmd_survey_validate(args):
-    """Validate survey library."""
+    """Validate survey library for item-key uniqueness and schema compliance.
+
+    This does not check answer values, allowed-value ranges, or data types —
+    those checks run only during Studio GUI survey conversion (DatasetValidator).
+    """
     library_path = str(Path(args.library).resolve())
     print(f"Validating survey library at {library_path}...")
     if check_uniqueness(library_path):

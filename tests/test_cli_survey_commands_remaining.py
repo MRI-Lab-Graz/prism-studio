@@ -230,6 +230,16 @@ class TestCmdSurveyValidate:
             cmd_survey_validate(SimpleNamespace(library=str(tmp_path)))
         assert exc_info.value.code == 1
 
+    def test_cmd_survey_validate_docstring_states_uniqueness_only_scope(self):
+        doc = cmd_survey_validate.__doc__ or ""
+        assert "uniqueness" in doc.lower()
+        assert "does not check" in doc.lower()
+
+    def test_survey_validate_help_states_uniqueness_only_scope(self):
+        parser_source = Path("app/src/cli/parser.py").read_text(encoding="utf-8")
+        validate_parser_block = parser_source.split('"validate",', 1)[1][:400]
+        assert "uniqueness" in validate_parser_block.lower()
+
 
 # ---------------------------------------------------------------------------
 # cmd_survey_import_limesurvey / batch
