@@ -2431,6 +2431,16 @@ class TestSurveyProjectTemplateCheckEndpoint(unittest.TestCase):
             self.assertEqual(len(payload.get("issues", [])), 1)
             self.assertTrue(payload.get("workflow_gate", {}).get("blocked"))
 
+            import importlib as _importlib
+
+            template_helpers = _importlib.import_module(
+                "src.web.blueprints.conversion_survey_template_helpers"
+            )
+            expected_gate = template_helpers.build_template_completion_gate(
+                tasks=["pss"], issues=mocked_issues
+            )
+            self.assertEqual(payload.get("workflow_gate"), expected_gate)
+
     def test_post_with_input_returns_matching_summary(self):
         import importlib
 
