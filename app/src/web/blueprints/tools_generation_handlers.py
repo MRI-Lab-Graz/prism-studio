@@ -1,3 +1,4 @@
+import io
 import os
 import sys
 import tempfile
@@ -70,16 +71,23 @@ def handle_generate_lss_endpoint():
         survey_title = data.get("survey_title", "")
         matrix_mode = bool(data.get("matrix", True))
         matrix_global = bool(data.get("matrix_global", True))
-        generate_lss(
-            valid_files,
-            temp_path,
-            language=language,
-            languages=languages,
-            base_language=base_language,
-            ls_version=ls_version,
-            matrix_mode=matrix_mode,
-            matrix_global=matrix_global,
-        )
+        try:
+            generate_lss(
+                valid_files,
+                temp_path,
+                language=language,
+                languages=languages,
+                base_language=base_language,
+                ls_version=ls_version,
+                matrix_mode=matrix_mode,
+                matrix_global=matrix_global,
+            )
+            lss_bytes = Path(temp_path).read_bytes()
+        finally:
+            try:
+                os.remove(temp_path)
+            except OSError:
+                pass
 
         import re
         from datetime import datetime
@@ -93,7 +101,7 @@ def handle_generate_lss_endpoint():
             download_filename = f"survey_export_{date_str}.lss"
 
         return send_file(
-            temp_path,
+            io.BytesIO(lss_bytes),
             as_attachment=True,
             download_name=download_filename,
             mimetype="application/xml",

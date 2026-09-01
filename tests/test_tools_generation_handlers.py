@@ -71,3 +71,68 @@ def test_generate_boilerplate_rejects_null_payload(monkeypatch):
     assert status_code == 400
     payload = error_response.get_json()
     assert "invalid json payload" in payload["error"].lower()
+
+
+def test_handle_generate_lss_endpoint_cleans_up_temp_file(monkeypatch, tmp_path) -> None:
+    handlers = importlib.import_module("src.web.blueprints.tools_generation_handlers")
+    exporter = importlib.import_module("src.limesurvey_exporter")
+
+    source_file = tmp_path / "survey-demo.json"
+    source_file.write_text("{}", encoding="utf-8")
+
+    created_paths = []
+
+    def fake_generate_lss(file_paths, output_path, **kwargs):
+        created_paths.append(output_path)
+        Path(output_path).write_text("<xml/>", encoding="utf-8")
+
+    monkeypatch.setattr(exporter, "generate_lss", fake_generate_lss)
+
+    app = Flask(__name__)
+    app.add_url_rule(
+        "/api/generate-lss",
+        view_func=handlers.handle_generate_lss_endpoint,
+        methods=["POST"],
+    )
+
+    with app.test_client() as client:
+        response = client.post(
+            "/api/generate-lss",
+            json={"files": [{"path": str(source_file)}], "survey_title": "Demo"},
+        )
+
+    assert response.status_code == 200
+    assert len(created_paths) == 1
+    assert not Path(created_paths[0]).exists()
+
+
+def test_handle_generate_lss_endpoint_survives_cleanup_failure(monkeypatch, tmp_path) -> None:
+    handlers = importlib.import_module("src.web.blueprints.tools_generation_handlers")
+    exporter = importlib.import_module("src.limesurvey_exporter")
+
+    source_file = tmp_path / "survey-demo.json"
+    source_file.write_text("{}", encoding="utf-8")
+
+    def fake_generate_lss(file_paths, output_path, **kwargs):
+        Path(output_path).write_text("<xml/>", encoding="utf-8")
+
+    monkeypatch.setattr(exporter, "generate_lss", fake_generate_lss)
+    monkeypatch.setattr(
+        os, "remove", lambda path: (_ for _ in ()).throw(OSError("simulated"))
+    )
+
+    app = Flask(__name__)
+    app.add_url_rule(
+        "/api/generate-lss",
+        view_func=handlers.handle_generate_lss_endpoint,
+        methods=["POST"],
+    )
+
+    with app.test_client() as client:
+        response = client.post(
+            "/api/generate-lss",
+            json={"files": [{"path": str(source_file)}], "survey_title": "Demo"},
+        )
+
+    assert response.status_code == 200
+    assert response.data == b"<xml/>"

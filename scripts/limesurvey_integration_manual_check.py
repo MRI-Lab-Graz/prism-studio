@@ -1,8 +1,10 @@
 """
-Comprehensive integration test for all LimeSurvey flows.
-Tests against running PRISM Studio instance (http://localhost:5001).
+Comprehensive manual check for all LimeSurvey flows.
+Tests against a running PRISM Studio instance (http://localhost:5001).
+Not part of the pytest suite (it needs a live server and local files) —
+run it by hand from the repo root when validating LimeSurvey changes.
 
-Run with: python tests/test_limesurvey_integration_manual.py
+Run with: python scripts/limesurvey_integration_manual_check.py
 """
 
 import json

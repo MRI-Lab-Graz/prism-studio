@@ -4,6 +4,8 @@ from flask import jsonify, request, session
 from werkzeug.utils import secure_filename
 from src.system_files import filter_system_files
 
+from .conversion_survey_template_helpers import build_template_completion_gate
+
 
 def handle_api_survey_check_project_templates(
     *,
@@ -190,22 +192,7 @@ def handle_api_survey_check_project_templates(
     )
 
     if issues:
-        gate = {
-            "blocked": True,
-            "reason": "project_template_completion_required",
-            "title": "Template Completion Required",
-            "message": (
-                "Official templates were copied to your project library. "
-                "Some required project-level fields still need to be completed in these templates before importing survey data."
-            ),
-            "tasks": sorted({task for task in tasks if task}),
-            "issue_count": len(issues),
-            "next_steps": [
-                "Open Template Editor for the copied survey templates in code/library/survey.",
-                "Fill project-specific administration fields in Technical (for example AdministrationMethod, SoftwarePlatform, SoftwareVersion) and any remaining required metadata.",
-                "Run Preview again. Import is unlocked automatically after template validation passes.",
-            ],
-        }
+        gate = build_template_completion_gate(tasks=tasks, issues=issues)
         return jsonify(
             {
                 "ok": False,
