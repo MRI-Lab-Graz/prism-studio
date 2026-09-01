@@ -85,6 +85,15 @@ PROJECTS_METADATA_MODULE = (
 PROJECTS_VALIDATION_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "validation.js"
 )
+PROJECTS_REQUIRED_FIELDS_MODULE = (
+    REPO_ROOT
+    / "app"
+    / "static"
+    / "js"
+    / "modules"
+    / "projects"
+    / "study-metadata-required-fields.js"
+)
 PROJECTS_INDEX_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "index.js"
 )
@@ -169,7 +178,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("const projectsRoot = document.getElementById('projectsRoot');", current_state_content)
         self.assertIn("const globalProjectState = getProjectStateSnapshot();", current_state_content)
         self.assertIn("let currentProjectDatalad = null;", current_state_content)
-        self.assertIn("window.updateNavbarProject(currentProjectName, currentProjectPath, currentProjectIcon, currentProjectDatalad);", current_state_content)
+        self.assertIn("window.updateNavbarProject(currentProjectName, currentProjectPath, currentProjectIcon, currentProjectDatalad, currentProjectHasData);", current_state_content)
         self.assertIn("window.addEventListener('prism-project-changed', function(event) {", current_state_content)
         self.assertLess(
             core_content.index("const currentProjectStateController = createProjectsCurrentStateController({"),
@@ -295,6 +304,9 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "    initializeProjectsExport();\n"
             "    initDataladServerSection();\n"
             "    initRsyncServerSection();\n"
+            "    // Runs after both destination sections so its show/hide of the merged\n"
+            "    // \"Push to Server\" card and its DataLad-vs-rsync toggle win last.\n"
+            "    initPushServerToggle();\n"
             "}",
             index_content,
         )
@@ -304,16 +316,14 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("document.getElementById('shareRoot')", main_content)
         self.assertIn("ProjectsModule.initializeSharePage()", main_content)
 
-        # The three archival sections live on share.html now, not projects.html.
+        # The archival sections live on share.html now, not projects.html.
+        # DataLad server push and rsync backup were later merged into one
+        # "Push to Server" card/include (see f747fd83 "push server toggle").
         self.assertNotIn("export_section.html", page_sections_content)
-        self.assertNotIn("datalad_server_section.html", page_sections_content)
-        self.assertNotIn("rsync_server_section.html", page_sections_content)
+        self.assertNotIn("push_server_section.html", page_sections_content)
         self.assertIn("includes/projects/export_section.html", share_template_content)
         self.assertIn(
-            "includes/projects/datalad_server_section.html", share_template_content
-        )
-        self.assertIn(
-            "includes/projects/rsync_server_section.html", share_template_content
+            "includes/projects/push_server_section.html", share_template_content
         )
         self.assertIn('id="shareRoot"', share_template_content)
 
@@ -367,24 +377,32 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertIn("backendMonitoringVerboseToggle", settings_template)
-        self.assertIn("exportDefacingConfirmationMode", settings_template)
-        self.assertIn(
-            "function normalizeExportDefacingConfirmationMode(value) {",
-            settings_content,
-        )
-        self.assertIn(
-            "const exportDefacingConfirmationModeSelect = document.getElementById('exportDefacingConfirmationMode');",
-            settings_content,
-        )
-        self.assertIn(
-            "export_defacing_confirmation_mode: exportDefacingConfirmationMode,",
-            settings_content,
-        )
         self.assertIn(
             "const verboseToggle = document.getElementById('backendMonitoringVerboseToggle');",
             settings_content,
         )
         self.assertIn("backend_monitoring_verbose", settings_content)
+
+    def test_export_defacing_global_default_is_wired(self):
+        # This setting lives in the export section, not the global settings
+        # card -- it moved there in 0eff7af2 ("add global default export
+        # defacing confirmation mode with save functionality").
+        export_content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
+        export_template = EXPORT_SECTION_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn("exportDefacingGlobalDefaultMode", export_template)
+        self.assertIn(
+            "function normalizeDefacingConfirmationMode(value) {",
+            export_content,
+        )
+        self.assertIn(
+            "const select = getById('exportDefacingGlobalDefaultMode');",
+            export_content,
+        )
+        self.assertIn(
+            "body: JSON.stringify({ export_defacing_confirmation_mode: mode }),",
+            export_content,
+        )
 
     def test_open_project_flow_reuses_metadata_button_binder(self):
         core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
@@ -1286,8 +1304,12 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         metadata_content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
         validation_content = PROJECTS_VALIDATION_MODULE.read_text(encoding="utf-8")
         template_content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
+        required_fields_content = PROJECTS_REQUIRED_FIELDS_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("Eligibility: new Set(['InclusionCriteria'])", metadata_content)
+        # The CORE-tier readiness schema (backend-driven, see
+        # study-metadata-required-fields.js) lists InclusionCriteria here;
+        # metadata.js only consumes it via _requiredFieldsSchema now.
+        self.assertIn("Eligibility: new Set(['InclusionCriteria'])", required_fields_content)
         self.assertIn("const eligibilityCriteriaTotal =", metadata_content)
         self.assertIn(
             "addField('Eligibility', 'InclusionCriteria', eligibilityCriteriaTotal >= 2);",

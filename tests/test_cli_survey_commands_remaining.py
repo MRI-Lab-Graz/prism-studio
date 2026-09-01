@@ -649,7 +649,7 @@ class TestCmdSurveyConvert:
             return _FakeResult()
 
         monkeypatch.setattr(
-            survey_cli, "convert_survey_xlsx_to_prism_dataset", _fake_convert
+            "src.converters.survey.convert_survey_xlsx_to_prism_dataset", _fake_convert
         )
         project_file = tmp_path / "project.json"
         project_file.write_text("{}")

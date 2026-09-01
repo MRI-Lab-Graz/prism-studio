@@ -4,7 +4,34 @@ Cross-platform compatibility utilities for prism
 
 import os
 import sys
+import tempfile
+import time
 from pathlib import Path
+
+_REPLACE_RETRY_ATTEMPTS = 5
+_REPLACE_RETRY_DELAY_SECONDS = 0.2
+
+
+def _replace_with_retry(source, destination):
+    """os.replace() with short retries for a transient Windows file lock.
+
+    Antivirus/Windows Defender frequently holds a brief exclusive lock on a
+    just-written file, which surfaces as PermissionError (WinError 32) on
+    os.replace() even though nothing in PRISM itself still has the file
+    open. POSIX platforms don't exhibit this, so the retry only ever loops
+    when the first attempt actually raises -- no added cost on the common
+    path. Mirrors the same pattern used for DatasetFixer renames.
+    """
+    last_error = None
+    for attempt in range(_REPLACE_RETRY_ATTEMPTS):
+        try:
+            os.replace(source, destination)
+            return
+        except PermissionError as exc:
+            last_error = exc
+            if attempt < _REPLACE_RETRY_ATTEMPTS - 1:
+                time.sleep(_REPLACE_RETRY_DELAY_SECONDS)
+    raise last_error
 
 
 def normalize_path(path):
@@ -82,12 +109,26 @@ class CrossPlatformFile:
 
     @staticmethod
     def write_text(filepath, content, encoding="utf-8"):
-        """Write text file with proper encoding"""
-        # Ensure directory exists
-        Path(filepath).parent.mkdir(parents=True, exist_ok=True)
+        """Write text file atomically, with proper encoding.
 
-        with open(filepath, "w", encoding=encoding, newline="") as f:
-            f.write(content)
+        Writes to a temp file in the same directory first, then replaces
+        the destination -- avoids a corrupted/truncated file if the
+        process is interrupted mid-write, and the replace step retries
+        through a transient Windows antivirus lock (see
+        _replace_with_retry).
+        """
+        directory = Path(filepath).parent
+        directory.mkdir(parents=True, exist_ok=True)
+
+        fd, temp_path = tempfile.mkstemp(dir=str(directory), suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding=encoding, newline="") as f:
+                f.write(content)
+            _replace_with_retry(temp_path, filepath)
+        except BaseException:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            raise
 
 
 def get_temp_dir():

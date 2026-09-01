@@ -126,18 +126,17 @@ def _browse_file_macos(project_json_only: bool) -> str:
     else:
         script = 'POSIX path of (choose file with prompt "Select a file")'
 
-    result = subprocess.check_output(
-        ["osascript", "-e", script], stderr=subprocess.STDOUT
-    )
+    result = subprocess.check_output(["osascript", "-e", script], stderr=subprocess.DEVNULL)
     return result.decode("utf-8").strip()
 
 
 def _browse_folder_macos() -> str:
     result = subprocess.check_output(
         ["osascript", "-e", "POSIX path of (choose folder)"],
-        stderr=subprocess.STDOUT,
+        stderr=subprocess.DEVNULL,
     )
-    return result.decode("utf-8").strip()
+    path = result.decode("utf-8").strip()
+    return path.rstrip("/") or "/"
 
 
 def _browse_file_tk(project_json_only: bool, topmost: bool) -> str:
