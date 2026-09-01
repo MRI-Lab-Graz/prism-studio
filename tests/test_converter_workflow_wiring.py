@@ -1850,7 +1850,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             session_picker_content,
         )
         self.assertIn(
-            "export function prefersServerPicker()",
+            "import { prefersServerPicker } from '../../shared/path-picker.js';",
+            server_picker_content,
+        )
+        self.assertIn(
+            "export { prefersServerPicker };",
             server_picker_content,
         )
         self.assertIn(

@@ -73,6 +73,18 @@ class TestWebFilePickerService(unittest.TestCase):
         self.assertEqual(result.status_code, 500)
         self.assertIn("tkinter and PowerShell dialogs failed", result.error)
 
+    @patch.object(file_picker.subprocess, "check_output")
+    def test_browse_folder_macos_strips_trailing_slash_and_ignores_stderr(
+        self, mock_check_output
+    ):
+        mock_check_output.return_value = b"/Users/tester/Desktop/Study/\n"
+
+        result = file_picker._browse_folder_macos()
+
+        self.assertEqual(result, "/Users/tester/Desktop/Study")
+        _args, kwargs = mock_check_output.call_args
+        self.assertNotEqual(kwargs.get("stderr"), file_picker.subprocess.STDOUT)
+
 
 if __name__ == "__main__":
     unittest.main()
