@@ -236,7 +236,13 @@ class TestCmdSurveyValidate:
         assert "does not check" in doc.lower()
 
     def test_survey_validate_help_states_uniqueness_only_scope(self):
-        parser_source = Path("app/src/cli/parser.py").read_text(encoding="utf-8")
+        parser_source = (APP_ROOT / "src" / "cli" / "parser.py").read_text(
+            encoding="utf-8"
+        )
+        # Assumes '"validate",' appears exactly once in the file; if a future
+        # duplicate is added, this assertion catches it instead of the split
+        # below silently checking the wrong block.
+        assert parser_source.count('"validate",') == 1
         validate_parser_block = parser_source.split('"validate",', 1)[1][:400]
         assert "uniqueness" in validate_parser_block.lower()
 

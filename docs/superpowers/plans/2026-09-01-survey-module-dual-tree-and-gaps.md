@@ -4,7 +4,7 @@
 
 **Goal:** Close the `src/` vs `app/src/` dual-tree drift hazard structurally (a CI-enforced check, not tribal knowledge in CLAUDE.md), then fix the concrete bugs and test-coverage gaps found during the 2026-09-01 survey-module deep assessment (schema/template, validation, import, LimeSurvey export/import).
 
-**Architecture:** Phase 1 adds one new check function to the repo's existing `tests/verify_repo.py` audit framework (the same framework that already runs `import-boundaries`, `unsafe-patterns`, etc. in CI) — it flags any `.py` file that exists at the same relative path under both `src/` and `app/src/` without being resolved via a symlink or a recognized delegation shim (`load_canonical_module`/`spec_from_file_location`). Phase 2 is nine small, independent bug/gap fixes identified during the assessment, each with its own regression test.
+**Architecture:** Phase 1 adds one new check function to the repo's existing `tests/verify_repo.py` audit framework (the same framework that already runs `import-boundaries`, `unsafe-patterns`, etc. in CI) — it flags any `.py` file that exists at the same relative path under both `src/` and `app/src/` without being resolved via a symlink or a recognized delegation shim (`load_canonical_module`/`spec_from_file_location`). Phase 2 is eight small, independent bug/gap fixes identified during the assessment, each with its own regression test.
 
 **Tech Stack:** Python 3.10+, pytest, Flask (test client / direct handler calls), the repo's existing `tests/verify_repo.py` check framework, GitHub Actions (`.github/workflows/ci.yml`).
 
@@ -15,7 +15,7 @@
 - Every user-triggered action must have a real backend implementation, and every backend command must have a dedicated test (`tests/CLAUDE.md`) — this is exactly what Phase 2 is closing gaps against.
 - `src/` is the canonical backend logic tree; `app/src/` is Flask/GUI adapter code. Never silently duplicate business logic between them — collapse into one real file + a symlink, or a `load_canonical_module`/`spec_from_file_location` delegation shim (CLAUDE.md).
 - Prefer extracting small, focused, testable functions over growing monoliths in place (CLAUDE.md) — but this plan does not do opportunistic refactors unrelated to each specific fix.
-- No behavior changes disguised as bug fixes: Task 11 (CLI `survey validate` scope) is documentation-only, not a validation-behavior change, because widening what the CLI command checks is a product decision outside this plan's scope.
+- No behavior changes disguised as bug fixes: Task 10 (CLI `survey validate` scope) is documentation-only, not a validation-behavior change, because widening what the CLI command checks is a product decision outside this plan's scope.
 - Cross-platform: all fixes must work on Windows, macOS, Linux (CLAUDE.md). The temp-file cleanup in Task 3 is best-effort (`try/except OSError`) for this reason — matching the existing `_build_zip_stream_response` pattern in `projects_export_blueprint.py`.
 - Known, deliberately deferred (not part of this plan): the ~500-line near-duplicate sync/async handlers in `conversion_survey_convert_validate_handlers.py`, and the `# TODO` project-path-resolution branch in `survey_templates.py:1159`. Both need their own scoping pass before a safe fix can be written — bundling them here risked exactly the kind of unreviewable, oversized change this plan is trying to avoid.
 
@@ -333,7 +333,7 @@ Both `handle_survey_customizer_export` (`tools_survey_customizer_handlers.py`) a
 - Modify: `app/src/web/blueprints/tools_survey_customizer_handlers.py:10` (import) and `:303-312` (cleanup)
 - Modify: `app/src/web/blueprints/tools_generation_handlers.py:6` (import) and `:95-99` (cleanup)
 - Test: `tests/test_tools_survey_customizer_handlers.py` (new file)
-- Test: `tests/test_tools_generation_handlers.py` (new file)
+- Test: `tests/test_tools_generation_handlers.py` (turned out to already exist — see the implementation's actual handling)
 
 **Interfaces:**
 - No signature changes to either handler — both remain drop-in replacements at their existing call sites in `tools.py`.
@@ -1089,4 +1089,4 @@ git commit -m "docs: clarify CLI survey validate only checks uniqueness, not val
 
 - **Coverage of assessment findings:** temp-file leak (Task 3, both instances found), duplicated gate dict (Task 4), missing `handle_survey_customizer_load` test (Task 5), missing `get_survey_customizer_formats_payload` test (Task 6), missing functional `/api/limesurvey-to-prism` test (Task 7), misleading manual test file (Task 8), dead import (Task 9), CLI/GUI validate scope confusion (Task 10, documentation-only by design). `handle_api_survey_check_project_templates` coverage gap turned out to already be adequately covered by existing tests in `TestSurveyProjectTemplateCheckEndpoint` (verified during planning) — folded into Task 4's regression test instead of a separate task, to avoid duplicating coverage that already exists.
 - **Deliberately deferred** (see Global Constraints): the ~500-line duplicate sync/async validate handlers, and the `survey_templates.py:1159` TODO — both need their own investigation pass before a safe fix can be scoped.
-- **Task independence:** Tasks 3–10 touch entirely different files and can be executed in any order or in parallel (subagent-driven-development). Phase 1 (Tasks 1–2) is sequential internally but independent of all of Phase 2.
+- **Task independence:** Tasks 3–10 touch entirely different files and can be executed in any order or in parallel (subagent-driven-development), with one exception: Tasks 3, 5, and 6 share `tests/test_tools_survey_customizer_handlers.py` in a create-then-append relationship (Task 3 creates it, Tasks 5 and 6 each append to it) and must be done in that order. Phase 1 (Tasks 1–2) is sequential internally but independent of all of Phase 2.

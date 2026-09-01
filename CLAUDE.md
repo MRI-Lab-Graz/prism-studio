@@ -122,6 +122,16 @@ Don't treat the absence of a file
 from this note as proof it's safe; the check above is the source of truth,
 this paragraph is not a checklist.
 
+An automated `dual-tree-drift` check now runs in CI
+(`python tests/verify_repo.py --check dual-tree-drift --no-fix`) and catches
+any *new* same-relative-path file that exists on both sides without being
+resolved via a symlink or a `load_canonical_module`/`spec_from_file_location`
+shim — but it only catches same-relative-path duplicates (like the
+`limesurvey.py` case above), not cross-name shadowing or the "dead file with
+a different name" pattern documented in the `web/utils.py` paragraph above,
+so the manual check above is still the source of truth for anything the
+automated one can't see.
+
 ## Git-annex / DataLad text-file policy
 
 Text-format and small-codebook files must **never** be tracked by git-annex
