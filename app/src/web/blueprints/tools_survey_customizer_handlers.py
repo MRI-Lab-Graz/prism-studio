@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-from flask import jsonify, send_file
+from flask import after_this_request, jsonify, send_file
 
 from .conversion_utils import require_existing_project_root
 
@@ -306,6 +306,15 @@ def handle_survey_customizer_export(data, project_path):
             download_name=download_filename,
             mimetype="application/xml",
         )
+
+        @after_this_request
+        def _cleanup_temp_export(resp):
+            try:
+                os.remove(temp_path)
+            except OSError:
+                pass
+            return resp
+
         if templates_saved:
             response.headers["X-Templates-Saved"] = str(templates_saved)
             response.headers["Access-Control-Expose-Headers"] = "X-Templates-Saved"

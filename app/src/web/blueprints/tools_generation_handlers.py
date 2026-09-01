@@ -3,7 +3,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from flask import current_app, jsonify, request, send_file
+from flask import after_this_request, current_app, jsonify, request, send_file
 from src.converters.file_reader import read_tabular_file
 
 from .conversion_utils import (
@@ -92,12 +92,22 @@ def handle_generate_lss_endpoint():
         else:
             download_filename = f"survey_export_{date_str}.lss"
 
-        return send_file(
+        response = send_file(
             temp_path,
             as_attachment=True,
             download_name=download_filename,
             mimetype="application/xml",
         )
+
+        @after_this_request
+        def _cleanup_temp_export(resp):
+            try:
+                os.remove(temp_path)
+            except OSError:
+                pass
+            return resp
+
+        return response
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
