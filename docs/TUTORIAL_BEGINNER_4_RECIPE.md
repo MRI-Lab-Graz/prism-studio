@@ -6,7 +6,7 @@ summary score per participant. Recipe Builder only creates and saves the
 scoring definition; actually running it against your data happens on a
 separate page, covered in step 5 below.
 
-**Time:** ~15 minutes. **Outcome:** a saved scoring recipe for the
+**Time:** ~20 minutes. **Outcome:** a saved scoring recipe for the
 `wellbeing` survey, and a computed total score for every participant.
 
 <div class="prism-persona-note" data-persona-note>
