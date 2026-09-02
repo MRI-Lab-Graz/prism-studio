@@ -18,8 +18,9 @@ In this chapter, `participants.tsv` is a table with one row for each person.
 `participants.json` explains columns such as `participant_id`, `age`, and
 `sex`, including any codes used in the table.
 
-**Time:** ~15 minutes. **Outcome:** a matching `participants.tsv` and
-`participants.json` pair written into `wellbeing_study`.
+**Time:** ~20 minutes. **Outcome:** a matching `participants.tsv` and
+`participants.json` pair written into `wellbeing_study`, plus hands-on
+experience with PRISM's Merge workflow for updating them later.
 
 <div class="prism-persona-note" data-persona-note>
 <p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
@@ -99,6 +100,16 @@ tab is the default/first tab.
 - **Participant ID Column** defaults to "Auto-detect", which recognizes
   `participant_id` directly here — no need to override it for this file.
 
+```{tip}
+**What if my ID column isn't called `participant_id`?** Auto-detect also
+recognizes `participantid`, `prism_participant_id`, and `prismparticipantid`
+directly, and falls back to `subject_id`, `sub_id`, `subject`, `sub`, `id`,
+or any column whose name contains both "participant" and "id". If your file
+uses something else entirely (e.g. `PID`), just pick it manually from the
+**Participant ID Column** dropdown — auto-detect is a convenience, not a
+requirement.
+```
+
 ## 5. Review Participant Fields
 
 Click **Review Participant Fields** to preview detected columns and sample
@@ -111,6 +122,17 @@ one-time-per-participant demographics with repeated-measure survey data,
 which don't belong in the same file. Use **Add More Columns (Optional)**
 only if you want to bring in additional demographic-style columns beyond
 what's auto-detected — not for the survey items.
+
+```{note}
+**Where did the `session` column go?** You won't see it in the preview,
+and it won't be in the output either. `participants.tsv` is a BIDS
+requirement of one row per participant, not one row per visit, so
+session-like columns (`session`, `ses`, `visit`, `run`, ...) are dropped
+before PRISM collapses the source rows down to one per participant. Session
+information itself isn't lost — it belongs on the survey/biometrics files
+you'll create in later chapters, each of which carries its own `ses-`
+label.
+```
 
 ## 6. Create Participant Files
 
@@ -154,23 +176,78 @@ naming scheme you will never have to reverse-engineer later.
 </div>
 </div>
 
+## 7. Optional: update participants with Merge
+
+Real studies rarely stop at one import. A more common situation: you already
+have `participants.tsv`, and a source file arrives with **one new
+participant** and a **corrected value** for someone already in the project.
+This step shows what PRISM does with that — and, just as importantly, what
+it deliberately refuses to do.
+
+1. Make your own working copy of the source file rather than editing the
+   shared example directly: copy
+   `examples/workshop/exercise_1_raw_data/raw_data/wellbeing.tsv` somewhere
+   convenient (Desktop, or your project folder) and rename it, e.g.
+   `wellbeing_update.tsv`.
+2. Open the copy in a spreadsheet or text editor and make two changes:
+   - Add one new row for a participant not yet in your project, e.g.
+     `DEMO010`, with plausible values for every column.
+   - Change `DEMO003`'s `age` value to something else (e.g. `22` → `23`) —
+     pretend you just noticed a typo in the original data.
+3. Back in **Converter → Sociodemographics**, since `participants.tsv`
+   already exists in this project, you'll now be asked to choose a
+   workflow first: **Replace** (the imported file becomes the new source of
+   truth), **Modify** (edit the current files in place), or **Merge** (safe
+   merge from an imported table). Choose **Merge**.
+4. Upload `wellbeing_update.tsv` and click **Preview Merge**. The Merge
+   Summary shows counts for matched participants, new participants, filled
+   values, and conflicts. You should see `1 new participant` (DEMO010) and
+   `1 conflict` (DEMO003's `age`).
+
+```{warning}
+**Merge won't overwrite an existing value, even to fix it.** It only fills
+in *missing* values, adds new participants, and adds new columns — any
+non-empty value that differs from what's already in `participants.tsv`
+is reported as a conflict, and **Apply Merge stays blocked** until it's
+resolved. This is deliberate: Merge assumes your project's existing data is
+correct unless you tell PRISM otherwise. Use **Download Conflict Report**
+to see exactly what disagreed. To actually correct a value (as opposed to
+adding new information), use **Modify** or a full **Replace** instead —
+Merge is the safe option for enrichment, not the tool for corrections.
+```
+
+5. For this exercise, you don't need to resolve the conflict — you've seen
+   what Merge does and doesn't do. If you want to see a clean **Apply
+   Merge** succeed, remove the `DEMO003` edit from your copy (keep only the
+   new `DEMO010` row) and preview again; with zero conflicts, **Apply
+   Merge** becomes available and adds the new participant without touching
+   anyone else's data.
+
 ## Common mistakes
 
-- **Including `WB01`-`WB05` as participant fields** — they're repeated
-  survey responses, not one-time demographics; keep them out of
-  `participants.tsv` and import them via the Survey converter in chapter 3
-  instead.
-- **Re-running this step later without noticing the overwrite warning** — if
-  `participants.tsv`/`.json` already exist, you'll be asked to confirm before
-  they're overwritten; read that warning rather than clicking through it.
-- **Expecting raw demographic codes to be relabeled automatically** — there
-  is no value-recoding step here. Raw values (e.g. a numeric sex code) are
-  preserved as-is in `participants.tsv`; labeling what a code means happens
-  separately via the "Participant Annotation" panel into `participants.json`,
-  and turning coded values into readable labels project-wide is covered by
-  the optional participant-mapping workflow (see
-  `examples/workshop/exercise_5_participant_mapping/` for a worked example) —
-  not required for this tutorial.
+```{warning}
+**Including `WB01`-`WB05` as participant fields.** They're repeated survey
+responses, not one-time demographics; keep them out of `participants.tsv`
+and import them via the Survey converter in chapter 3 instead.
+```
+
+```{warning}
+**Re-running this step later without noticing the workflow choice.** Once
+`participants.tsv` exists, PRISM makes you pick Replace, Modify, or Merge
+before anything else — read that choice rather than clicking through it.
+Replace and a resolved Merge both write over the current files.
+```
+
+```{tip}
+**Raw demographic codes aren't relabeled automatically, and that's normal.**
+There is no value-recoding step here. Raw values (e.g. a numeric sex code)
+are preserved as-is in `participants.tsv`; labeling what a code means
+happens separately via the "Participant Annotation" panel into
+`participants.json`, and turning coded values into readable labels
+project-wide is covered by the optional participant-mapping workflow (see
+`examples/workshop/exercise_5_participant_mapping/` for a worked example) —
+not required for this tutorial.
+```
 
 ## What's next
 
