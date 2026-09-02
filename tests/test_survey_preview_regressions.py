@@ -198,7 +198,7 @@ def test_survey_preview_validation_rerun_keeps_run_column(monkeypatch, tmp_path)
         session["current_project_path"] = str(project_root)
 
         response = handle_api_survey_convert_preview(
-            convert_survey_xlsx_to_prism_dataset=object(),
+            convert_survey_file_to_prism_dataset=object(),
             convert_survey_lsa_to_prism_dataset=object(),
             resolve_effective_library_path=lambda: library_root,
             run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
@@ -285,7 +285,7 @@ def test_survey_preview_validation_skips_per_task_probe_without_manual_review_co
         session["current_project_path"] = str(project_root)
 
         response = handle_api_survey_convert_preview(
-            convert_survey_xlsx_to_prism_dataset=object(),
+            convert_survey_file_to_prism_dataset=object(),
             convert_survey_lsa_to_prism_dataset=object(),
             resolve_effective_library_path=lambda: library_root,
             run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
@@ -385,7 +385,7 @@ def test_survey_preview_uses_project_template_version_overrides_when_request_mis
         session["current_project_path"] = str(project_root)
 
         response = handle_api_survey_convert_preview(
-            convert_survey_xlsx_to_prism_dataset=object(),
+            convert_survey_file_to_prism_dataset=object(),
             convert_survey_lsa_to_prism_dataset=object(),
             resolve_effective_library_path=lambda: library_root,
             run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
@@ -445,7 +445,7 @@ def test_survey_preview_requires_confirmation_for_near_matches(monkeypatch, tmp_
         session["current_project_path"] = str(project_root)
 
         response = handle_api_survey_convert_preview(
-            convert_survey_xlsx_to_prism_dataset=object(),
+            convert_survey_file_to_prism_dataset=object(),
             convert_survey_lsa_to_prism_dataset=object(),
             resolve_effective_library_path=lambda: library_root,
             run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
@@ -531,7 +531,7 @@ def test_survey_preview_passes_selected_near_match_tasks(monkeypatch, tmp_path):
         session["current_project_path"] = str(project_root)
 
         response = handle_api_survey_convert_preview(
-            convert_survey_xlsx_to_prism_dataset=object(),
+            convert_survey_file_to_prism_dataset=object(),
             convert_survey_lsa_to_prism_dataset=object(),
             resolve_effective_library_path=lambda: library_root,
             run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
@@ -607,7 +607,7 @@ def test_survey_preview_accepts_sav_input(monkeypatch, tmp_path):
         session["current_project_path"] = str(project_root)
 
         response = handle_api_survey_convert_preview(
-            convert_survey_xlsx_to_prism_dataset=object(),
+            convert_survey_file_to_prism_dataset=object(),
             convert_survey_lsa_to_prism_dataset=object(),
             resolve_effective_library_path=lambda: library_root,
             run_survey_with_official_fallback=fake_run_survey_with_official_fallback,

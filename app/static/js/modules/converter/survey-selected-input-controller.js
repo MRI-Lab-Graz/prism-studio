@@ -1,12 +1,12 @@
 export function createSurveySelectedInputController({
-    convertExcelFile = null,
+    convertSurveyFile = null,
     getConvertServerFilePath = () => '',
 } = {}) {
     const getServerFilePath = () => String(getConvertServerFilePath() || '');
 
     function getSelectedSurveyFile() {
-        return (convertExcelFile && convertExcelFile.files && convertExcelFile.files[0])
-            ? convertExcelFile.files[0]
+        return (convertSurveyFile && convertSurveyFile.files && convertSurveyFile.files[0])
+            ? convertSurveyFile.files[0]
             : null;
     }
 

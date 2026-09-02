@@ -188,7 +188,7 @@ def infer_tasks_against_official_templates(
     separator_option: str,
     supported_survey_tabular_suffixes: set[str] | tuple[str, ...],
     supported_survey_input_message: str,
-    convert_survey_xlsx_to_prism_dataset,
+    convert_survey_file_to_prism_dataset,
     convert_survey_lsa_to_prism_dataset,
     run_survey_with_official_fallback,
 ) -> dict[str, Any]:
@@ -230,7 +230,7 @@ def infer_tasks_against_official_templates(
         preflight_output_root = tmp_dir_path / "preflight_rawdata"
         if suffix in supported_survey_tabular_suffixes:
             result = run_survey_with_official_fallback(
-                convert_survey_xlsx_to_prism_dataset,
+                convert_survey_file_to_prism_dataset,
                 input_path=input_path,
                 library_dir=str(survey_official_dir),
                 output_root=preflight_output_root,

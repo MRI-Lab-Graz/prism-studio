@@ -45,7 +45,7 @@ class TestFilePickerResponsiveWiring(unittest.TestCase):
     def test_direct_picker_templates_use_shared_picker_group_class(self):
         templates = {
             CONVERTER_PARTICIPANTS_TEMPLATE: ["participantsChooseFileBtn"],
-            CONVERTER_SURVEY_TEMPLATE: ["convertExcelFile", "convertIdMapFile"],
+            CONVERTER_SURVEY_TEMPLATE: ["convertSurveyFile", "convertIdMapFile"],
             CONVERTER_BIOMETRICS_TEMPLATE: ["biometricsDataFile"],
             CONVERTER_ENVIRONMENT_TEMPLATE: ["envDataFile"],
             CONVERTER_PHYSIO_TEMPLATE: ["physioBatchFiles", "physioBatchFolder"],

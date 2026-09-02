@@ -34,6 +34,22 @@ attach NeuroBagel-style term mappings and `Levels` descriptions to `participants
 Saving this annotation is optional ("Save Draft Metadata (Optional)") — unsaved edits
 in that panel are still applied when you create the files in Step 3.
 
+## When participant files already exist: Replace / Modify / Merge
+
+If `participants.tsv` already exists in the project, the tab asks you to choose a
+workflow before Review/Save unlock:
+
+- **Replace** — the imported file becomes the new source of truth; current
+  `participants.tsv`/`.json` are fully replaced.
+- **Modify** — the current files stay authoritative; edit them (e.g. their metadata)
+  in place without importing a new source file.
+- **Merge** — safely combines an imported table into the current files: it fills
+  *missing* values, adds new participants, and adds new columns. Any incoming
+  non-empty value that differs from an existing one is reported as a **conflict**,
+  and Apply Merge is blocked until every conflict is resolved (fix the source and
+  re-preview) — Merge never silently overwrites existing data. Use **Download
+  Conflict Report** to see exactly what disagreed.
+
 ## Step 3 — Create Participant Files
 
 Writes `participants.tsv` and `participants.json` together — every conversion path

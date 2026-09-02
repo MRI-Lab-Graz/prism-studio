@@ -284,7 +284,7 @@ def test_survey_convert_rejects_stale_project_path(tmp_path, monkeypatch):
         )
 
     monkeypatch.setattr(
-        survey, "convert_survey_xlsx_to_prism_dataset", _unexpected_convert
+        survey, "convert_survey_file_to_prism_dataset", _unexpected_convert
     )
 
     with app.test_client() as client:

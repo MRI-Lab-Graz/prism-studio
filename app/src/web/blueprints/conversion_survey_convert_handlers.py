@@ -17,7 +17,7 @@ except ImportError:
 
 def handle_api_survey_convert(
     *,
-    convert_survey_xlsx_to_prism_dataset,
+    convert_survey_file_to_prism_dataset,
     convert_survey_lsa_to_prism_dataset,
     resolve_uploaded_or_source_file,
     resolve_requested_project_root,
@@ -53,7 +53,7 @@ def handle_api_survey_convert(
 ):
     """Run full survey conversion and return ZIP output."""
     if (
-        not convert_survey_xlsx_to_prism_dataset
+        not convert_survey_file_to_prism_dataset
         and not convert_survey_lsa_to_prism_dataset
     ):
         return jsonify({"error": "Survey conversion module not available"}), 500
@@ -206,7 +206,7 @@ def handle_api_survey_convert(
         try:
             preflight_result = survey_workflow_stage_service.run_stage(
                 workflow_runner=run_survey_with_official_fallback,
-                tabular_converter=convert_survey_xlsx_to_prism_dataset,
+                tabular_converter=convert_survey_file_to_prism_dataset,
                 lsa_converter=convert_survey_lsa_to_prism_dataset,
                 options=survey_workflow_stage_options_cls(
                     suffix=suffix,
@@ -328,7 +328,7 @@ def handle_api_survey_convert(
         try:
             convert_result = survey_workflow_stage_service.run_stage(
                 workflow_runner=run_survey_with_official_fallback,
-                tabular_converter=convert_survey_xlsx_to_prism_dataset,
+                tabular_converter=convert_survey_file_to_prism_dataset,
                 lsa_converter=convert_survey_lsa_to_prism_dataset,
                 options=survey_workflow_stage_options_cls(
                     suffix=suffix,

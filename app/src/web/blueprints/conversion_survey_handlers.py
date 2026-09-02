@@ -82,7 +82,7 @@ from .conversion_survey_template_helpers import (
     validate_project_templates_for_tasks,
 )
 
-convert_survey_xlsx_to_prism_dataset: Any = None
+convert_survey_file_to_prism_dataset: Any = None
 convert_survey_lsa_to_prism_dataset: Any = None
 infer_lsa_metadata: Any = None
 from .conversion_survey_version_context_handlers import (
@@ -109,7 +109,7 @@ try:
         UnmatchedGroupsError,
         _NON_ITEM_TOPLEVEL_KEYS,
         convert_survey_lsa_to_prism_dataset,
-        convert_survey_xlsx_to_prism_dataset,
+        convert_survey_file_to_prism_dataset,
         infer_lsa_metadata,
     )
 except ImportError:
@@ -380,7 +380,7 @@ def _infer_tasks_against_official_templates(
         separator_option=separator_option,
         supported_survey_tabular_suffixes=_SUPPORTED_SURVEY_TABULAR_SUFFIXES,
         supported_survey_input_message=_SUPPORTED_SURVEY_INPUT_MESSAGE,
-        convert_survey_xlsx_to_prism_dataset=convert_survey_xlsx_to_prism_dataset,
+        convert_survey_file_to_prism_dataset=convert_survey_file_to_prism_dataset,
         convert_survey_lsa_to_prism_dataset=convert_survey_lsa_to_prism_dataset,
         run_survey_with_official_fallback=_run_survey_with_official_fallback,
     )
@@ -424,7 +424,7 @@ def _detect_survey_version_contexts(
 
         def _run_detection(candidate_library_dir: Path):
             if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
-                return convert_survey_xlsx_to_prism_dataset(
+                return convert_survey_file_to_prism_dataset(
                     input_path=input_path,
                     library_dir=str(candidate_library_dir),
                     output_root=output_root,
@@ -646,7 +646,7 @@ def api_survey_prepare_workflow():
     """Run the survey setup phase without starting preview or conversion output."""
     try:
         preview_response = handle_api_survey_convert_preview(
-            convert_survey_xlsx_to_prism_dataset=convert_survey_xlsx_to_prism_dataset,
+            convert_survey_file_to_prism_dataset=convert_survey_file_to_prism_dataset,
             convert_survey_lsa_to_prism_dataset=convert_survey_lsa_to_prism_dataset,
             resolve_effective_library_path=_resolve_effective_library_path,
             run_survey_with_official_fallback=_run_survey_with_official_fallback,
@@ -825,7 +825,7 @@ def api_survey_detect_version_context():
 
 def api_survey_convert_preview():
     return handle_api_survey_convert_preview(
-        convert_survey_xlsx_to_prism_dataset=convert_survey_xlsx_to_prism_dataset,
+        convert_survey_file_to_prism_dataset=convert_survey_file_to_prism_dataset,
         convert_survey_lsa_to_prism_dataset=convert_survey_lsa_to_prism_dataset,
         resolve_effective_library_path=_resolve_effective_library_path,
         run_survey_with_official_fallback=_run_survey_with_official_fallback,
@@ -841,7 +841,7 @@ def api_survey_convert_preview():
 
 def api_survey_convert():
     return handle_api_survey_convert(
-        convert_survey_xlsx_to_prism_dataset=convert_survey_xlsx_to_prism_dataset,
+        convert_survey_file_to_prism_dataset=convert_survey_file_to_prism_dataset,
         convert_survey_lsa_to_prism_dataset=convert_survey_lsa_to_prism_dataset,
         resolve_uploaded_or_source_file=_resolve_uploaded_or_source_file,
         resolve_requested_project_root=_resolve_requested_project_root,
@@ -879,7 +879,7 @@ def api_survey_convert():
 
 def api_survey_convert_validate():
     return handle_api_survey_convert_validate(
-        convert_survey_xlsx_to_prism_dataset=convert_survey_xlsx_to_prism_dataset,
+        convert_survey_file_to_prism_dataset=convert_survey_file_to_prism_dataset,
         convert_survey_lsa_to_prism_dataset=convert_survey_lsa_to_prism_dataset,
         resolve_uploaded_or_source_file=_resolve_uploaded_or_source_file,
         resolve_requested_project_root=_resolve_requested_project_root,
@@ -924,7 +924,7 @@ def api_survey_convert_validate():
 
 def api_survey_convert_validate_start():
     return handle_api_survey_convert_validate_start(
-        convert_survey_xlsx_to_prism_dataset=convert_survey_xlsx_to_prism_dataset,
+        convert_survey_file_to_prism_dataset=convert_survey_file_to_prism_dataset,
         convert_survey_lsa_to_prism_dataset=convert_survey_lsa_to_prism_dataset,
         resolve_uploaded_or_source_file=_resolve_uploaded_or_source_file,
         resolve_requested_project_root=_resolve_requested_project_root,

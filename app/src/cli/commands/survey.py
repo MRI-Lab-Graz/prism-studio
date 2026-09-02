@@ -130,7 +130,7 @@ def cmd_survey_import_excel(args):
 def cmd_survey_convert(args):
     """Convert a wide survey table (currently .xlsx) into a PRISM/BIDS survey dataset."""
     try:
-        from src.converters.survey import convert_survey_xlsx_to_prism_dataset
+        from src.converters.survey import convert_survey_file_to_prism_dataset
     except Exception as e:
         print(f"Error: Could not import survey conversion module: {e}")
         sys.exit(1)
@@ -245,7 +245,7 @@ def cmd_survey_convert(args):
             p = Path(args.project).resolve()
             project_path = p.parent if p.is_file() else p
 
-        result = convert_survey_xlsx_to_prism_dataset(
+        result = convert_survey_file_to_prism_dataset(
             input_path=str(input_path),
             library_dir=str(lib_dir),
             output_root=str(output_root),

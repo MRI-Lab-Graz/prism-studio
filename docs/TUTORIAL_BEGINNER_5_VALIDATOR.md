@@ -5,9 +5,9 @@ This is about running PRISM's built-in checks against `wellbeing_study` and
 learning to read what they report — not about fixing every possible finding,
 which will vary by project.
 
-**Time:** ~15 minutes. **Outcome:** a validation run against
-`wellbeing_study`, and enough understanding of the results to know what to
-do next.
+**Time:** ~20 minutes. **Outcome:** a validation run against
+`wellbeing_study`, hands-on experience causing and clearing a real error,
+and enough understanding of the results to know what to do next.
 
 <div class="prism-persona-note" data-persona-note>
 <p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
@@ -57,11 +57,18 @@ Validation (PRISM + BIDS)** — you don't need to opt in to get BIDS checks,
 this is already the default. The one thing worth knowing about now:
 **Show BIDS Warnings** is off by default, so a first run's warning count
 undercounts BIDS-side warnings specifically; PRISM warnings are unaffected.
+Two other fields live here if you ever need them: **Schema Version**
+(defaults to `stable` — leave it unless you specifically need an older
+schema) and **Template Library Root** (optional — validation auto-detects
+your project's library by default).
 
 ## 3. Start Validation
 
 Click **Start Validation**. A progress panel appears, then you land on the
-results page automatically.
+results page automatically. For a project this small the run finishes in
+seconds, but for a large dataset the panel also offers **Pause Updates**
+(stops the live progress polling, not the validation run itself — resume
+with **Resume Updates**) and **Cancel Validation**.
 
 ## 4. Read the results
 
@@ -94,7 +101,47 @@ The full catalog, with fix hints for every code, is in
 [Error Codes](ERROR_CODES.md) — every finding in the results also links
 straight to its entry there.
 
-## 5. Fix and re-validate
+```{note}
+**If you skipped Chapter 4:** you'll also see a warning here — "Missing
+survey recipes for dataset-used surveys" — pointing at `wellbeing` having
+no saved recipe yet. That's the Validator noticing the same gap Chapter 4
+fills; it isn't a sign anything earlier in this tutorial went wrong.
+```
+
+## 5. See an error, then clear it
+
+Rather than describe error codes in the abstract, it's worth actually
+causing and fixing one. Survey Convert (Chapter 3) writes one shared JSON
+sidecar for the whole `wellbeing` survey at the project root —
+`task-wellbeing_survey.json` — rather than one per participant, because
+every `sub-*_task-wellbeing_survey.tsv` inherits it (BIDS's inheritance
+principle). That makes it an easy, safe, single-file way to see `PRISM201`
+in action:
+
+1. In your project folder, rename `task-wellbeing_survey.json` to
+   `task-wellbeing_survey.json.bak` (adding a suffix, so nothing is
+   deleted).
+2. Click **Re-validate**. Every `wellbeing` survey file (20 of them, one
+   per participant, if you're following along with the tutorial's data)
+   now has no sidecar to inherit from, and reports as a `PRISM201` error:
+   "Missing sidecar for `<file>.tsv`."
+3. Rename the file back to `task-wellbeing_survey.json` and **Re-validate**
+   again. The 20 errors should be gone.
+
+```{tip}
+`PRISM201` is one of only three codes that are currently **auto-fixable**
+from the CLI (`PRISM001`, `PRISM201`, `PRISM501` — see
+[Error Codes](ERROR_CODES.md)). If you'd rather test that path than rename
+the file back by hand: with the sidecar still missing, run
+`prism-validator /path/to/wellbeing_study --fix --dry-run` and read the
+planned actions before applying anything for real. Note it doesn't restore
+your original root sidecar — it creates a fresh, minimal per-participant
+stub `.json` next to each `.tsv` instead, which is a valid but different
+structure than the one you started with. For this exercise, renaming the
+file back is simpler and gets you back to exactly where you were.
+```
+
+## 6. Fix and re-validate
 
 Use the **Re-validate** button in the action bar to rerun without starting
 over from the Projects page. Repeat until the findings that matter to you
@@ -117,17 +164,25 @@ prism-validator /path/to/wellbeing_study --fix
 
 ## Common mistakes
 
-- **Narrowing to PRISM Only or BIDS Only and thinking that's the full
-  picture** — Full Validation is the default and covers both; only narrow
-  scope deliberately, not by accident while exploring Advanced Options.
-  Something like a survey conversion issue only shows up as a valid file
-  under BIDS-Only mode.
-- **Treating a first run's error count as a failure** — it's expected the
-  first time through; re-validate after each fix rather than expecting zero
-  findings on the first attempt.
-- **Missing BIDS warnings because "Show BIDS Warnings" is off** — turn it on
-  in Advanced Options if you want the complete warning picture, not just
-  PRISM-side warnings.
+```{warning}
+**Narrowing to PRISM Only or BIDS Only and thinking that's the full
+picture.** Full Validation is the default and covers both; only narrow
+scope deliberately, not by accident while exploring Advanced Options.
+Something like a survey conversion issue only shows up as a valid file
+under BIDS-Only mode.
+```
+
+```{note}
+**Treating a first run's error count as a failure.** It's expected the
+first time through; re-validate after each fix rather than expecting zero
+findings on the first attempt.
+```
+
+```{warning}
+**Missing BIDS warnings because "Show BIDS Warnings" is off.** Turn it on
+in Advanced Options if you want the complete warning picture, not just
+PRISM-side warnings.
+```
 
 <div class="prism-persona-note" data-persona-note>
 <p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>

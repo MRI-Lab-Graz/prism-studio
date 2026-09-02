@@ -342,7 +342,7 @@ def handle_api_survey_languages(participant_json_candidates):
 
 def handle_api_survey_convert_preview(
     *,
-    convert_survey_xlsx_to_prism_dataset,
+    convert_survey_file_to_prism_dataset,
     convert_survey_lsa_to_prism_dataset,
     resolve_effective_library_path,
     run_survey_with_official_fallback,
@@ -357,7 +357,7 @@ def handle_api_survey_convert_preview(
 ):
     """Run a dry-run conversion to preview what will be created without writing files."""
     if (
-        not convert_survey_xlsx_to_prism_dataset
+        not convert_survey_file_to_prism_dataset
         and not convert_survey_lsa_to_prism_dataset
     ):
         return jsonify({"error": "Survey conversion module not available"}), 500
@@ -541,7 +541,7 @@ def handle_api_survey_convert_preview(
 
         if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
             result = run_survey_with_official_fallback(
-                convert_survey_xlsx_to_prism_dataset,
+                convert_survey_file_to_prism_dataset,
                 input_path=input_path,
                 library_dir=str(effective_survey_dir),
                 output_root=output_root,
@@ -660,7 +660,7 @@ def handle_api_survey_convert_preview(
 
                 if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
                     return run_survey_with_official_fallback(
-                        convert_survey_xlsx_to_prism_dataset,
+                        convert_survey_file_to_prism_dataset,
                         input_path=input_path,
                         library_dir=str(effective_survey_dir),
                         output_root=task_validate_root,
@@ -733,7 +733,7 @@ def handle_api_survey_convert_preview(
                 try:
                     if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
                         run_survey_with_official_fallback(
-                            convert_survey_xlsx_to_prism_dataset,
+                            convert_survey_file_to_prism_dataset,
                             input_path=input_path,
                             library_dir=str(effective_survey_dir),
                             output_root=validate_root,
