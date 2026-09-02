@@ -8,19 +8,16 @@ import os
 from typing import Any, Dict, Iterable, List, Tuple
 
 try:
-    from src.runner import validate_dataset as _validate_dataset
+    import runner
 except ImportError:
-    from runner import validate_dataset as _validate_dataset
+    from src import runner
+
+validate_dataset = runner.validate_dataset
 
 try:
     from src.issues import tuple_to_issue, issues_to_dict, summarize_issues
 except ImportError:
     from issues import tuple_to_issue, issues_to_dict, summarize_issues
-
-
-def validate_dataset(*args, **kwargs):
-    """Validate a dataset using the canonical runner implementation."""
-    return _validate_dataset(*args, **kwargs)
 
 
 def _issue_is_error(issue: Any) -> bool:
