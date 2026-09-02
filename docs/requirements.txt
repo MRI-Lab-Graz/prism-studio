@@ -2,3 +2,4 @@
 sphinx
 shibuya
 myst-parser
+sphinxcontrib-mermaid
