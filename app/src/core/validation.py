@@ -7,20 +7,20 @@ consume instead of importing runner internals directly.
 import os
 from typing import Any, Dict, Iterable, List, Tuple
 
+# Bare-first: app/src/runner.py itself does bare sibling imports (from schema_manager
+# import ..., from validator import ...), so `from src import runner` can only
+# succeed once app/src is already on sys.path -- the same condition under which
+# bare `import runner` succeeds first anyway. issues.py has no such dependency,
+# so it stays src.-first below.
 try:
-    from src.runner import validate_dataset as _validate_dataset
+    from runner import validate_dataset
 except ImportError:
-    from runner import validate_dataset as _validate_dataset
+    from src.runner import validate_dataset
 
 try:
     from src.issues import tuple_to_issue, issues_to_dict, summarize_issues
 except ImportError:
     from issues import tuple_to_issue, issues_to_dict, summarize_issues
-
-
-def validate_dataset(*args, **kwargs):
-    """Validate a dataset using the canonical runner implementation."""
-    return _validate_dataset(*args, **kwargs)
 
 
 def _issue_is_error(issue: Any) -> bool:
