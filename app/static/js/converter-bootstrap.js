@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
         sessionPickerController.populateSessionPickers(projectPath);
     }
 
-    const convertExcelFile = document.getElementById('convertExcelFile');
+    const convertSurveyFile = document.getElementById('convertSurveyFile');
     const convertBtn = document.getElementById('convertBtn');
     const previewBtn = document.getElementById('previewBtn');
     const participantsDataFile = document.getElementById('participantsDataFile');
@@ -71,9 +71,9 @@ document.addEventListener('DOMContentLoaded', function() {
         appendLog(`[${modality}] ${message}`, 'warning');
     });
 
-    if (convertExcelFile && convertBtn) {
+    if (convertSurveyFile && convertBtn) {
         initSurveyConvert({
-            convertExcelFile,
+            convertSurveyFile,
             convertSeparator: document.getElementById('convertSeparator'),
             surveySeparatorGroup: document.getElementById('surveySeparatorGroup'),
             clearConvertExcelFileBtn: document.getElementById('clearConvertExcelFileBtn'),

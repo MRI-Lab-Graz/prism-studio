@@ -9,7 +9,7 @@
         globalRecipesPath: 'Set a shared recipe root that contains a recipe/ folder with recipe JSON files.',
         backendMonitoringToggle: 'Turn on terminal traces for backend requests and command execution.',
         dedicatedTerminalToggle: 'Open a separate terminal for startup logs. This applies after the next app launch.',
-        convertExcelFile: 'Select the survey source file to convert (Excel, CSV/TSV, SPSS SAV, R data, or LimeSurvey archive).',
+        convertSurveyFile: 'Select the survey source file to convert (Excel, CSV/TSV, SPSS SAV, R data, or LimeSurvey archive).',
         datasetFolder: 'Select the dataset root folder to validate when using the alternative target option.',
         library_path: 'Optional override for template library root. Leave empty to use automatic default detection.',
         convertSeparator: 'Set this only if automatic delimiter detection picked the wrong separator.',

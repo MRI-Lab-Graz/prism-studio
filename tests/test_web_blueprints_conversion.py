@@ -431,7 +431,7 @@ class TestSurveyPrepareWorkflowEndpoint(unittest.TestCase):
             "src.web.blueprints.conversion_survey_handlers"
         )
 
-        self.assertTrue(callable(handlers.convert_survey_xlsx_to_prism_dataset))
+        self.assertTrue(callable(handlers.convert_survey_file_to_prism_dataset))
         self.assertTrue(callable(handlers.convert_survey_lsa_to_prism_dataset))
 
     def test_prepare_workflow_passes_through_blocking_confirmation(self):
@@ -592,7 +592,7 @@ class TestSurveyPrepareWorkflowEndpoint(unittest.TestCase):
             with (
                 patch.object(
                     handlers,
-                    "convert_survey_xlsx_to_prism_dataset",
+                    "convert_survey_file_to_prism_dataset",
                     object(),
                 ),
                 patch.object(
@@ -703,7 +703,7 @@ class TestSurveyPrepareWorkflowEndpoint(unittest.TestCase):
             with (
                 patch.object(
                     handlers,
-                    "convert_survey_xlsx_to_prism_dataset",
+                    "convert_survey_file_to_prism_dataset",
                     object(),
                 ),
                 patch.object(
@@ -782,7 +782,7 @@ class TestSurveyConvertPreviewEndpoint(unittest.TestCase):
             with (
                 patch.object(
                     handlers,
-                    "convert_survey_xlsx_to_prism_dataset",
+                    "convert_survey_file_to_prism_dataset",
                     object(),
                 ),
                 patch.object(
@@ -1070,7 +1070,7 @@ class TestSurveyConvertValidateEndpoint(unittest.TestCase):
             with (
                 patch.object(
                     handlers,
-                    "convert_survey_xlsx_to_prism_dataset",
+                    "convert_survey_file_to_prism_dataset",
                     object(),
                 ),
                 patch.object(
@@ -1180,7 +1180,7 @@ class TestSurveyConvertValidateEndpoint(unittest.TestCase):
             with (
                 patch.object(
                     handlers,
-                    "convert_survey_xlsx_to_prism_dataset",
+                    "convert_survey_file_to_prism_dataset",
                     object(),
                 ),
                 patch.object(
@@ -1290,7 +1290,7 @@ class TestSurveyConvertValidateEndpoint(unittest.TestCase):
 
             with patch.object(
                 handlers,
-                "convert_survey_xlsx_to_prism_dataset",
+                "convert_survey_file_to_prism_dataset",
                 object(),
             ), patch.object(
                 handlers,
@@ -1403,7 +1403,7 @@ class TestSurveyConvertValidateEndpoint(unittest.TestCase):
             with (
                 patch.object(
                     handlers,
-                    "convert_survey_xlsx_to_prism_dataset",
+                    "convert_survey_file_to_prism_dataset",
                     object(),
                 ),
                 patch.object(
@@ -1665,7 +1665,7 @@ class TestSurveyConverterImports(unittest.TestCase):
 
         module = importlib.import_module("src.converters.survey")
         self.assertIsNotNone(module)
-        self.assertTrue(hasattr(module, "convert_survey_xlsx_to_prism_dataset"))
+        self.assertTrue(hasattr(module, "convert_survey_file_to_prism_dataset"))
 
     def test_survey_template_loader_accepts_injected_kwargs(self):
         import importlib

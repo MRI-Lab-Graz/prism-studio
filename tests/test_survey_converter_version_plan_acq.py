@@ -16,7 +16,7 @@ import pandas as pd
 from src.converters.survey import (
     _build_task_context_maps,
     _load_and_preprocess_templates,
-    convert_survey_xlsx_to_prism_dataset,
+    convert_survey_file_to_prism_dataset,
 )
 from src.converters.survey_io import _lookup_task_context_value
 from src.converters.survey_templates import _apply_template_version_selection
@@ -504,7 +504,7 @@ post,7,1,23,1,2,2,2,2,2,2,2,2,2,2,2
         encoding="utf-8",
     )
 
-    result = convert_survey_xlsx_to_prism_dataset(
+    result = convert_survey_file_to_prism_dataset(
         input_path=input_path,
         library_dir=library_dir,
         output_root=tmp_path / "out",

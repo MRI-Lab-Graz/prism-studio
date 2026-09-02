@@ -3,7 +3,7 @@
 
 Exercises the real production functions the Survey Converter and Recipe
 Builder UIs call: SurveyResponsesConverter (via
-convert_survey_xlsx_to_prism_dataset) and compute_survey_recipes.
+convert_survey_file_to_prism_dataset) and compute_survey_recipes.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.converters.survey import convert_survey_xlsx_to_prism_dataset
+from src.converters.survey import convert_survey_file_to_prism_dataset
 from src.converters.survey_processing import SurveyValueOutOfBoundsError
 from src.hostile_demo_generator import generate_hostile_dataset
 from src.recipe_validation import validate_recipe
@@ -50,7 +50,7 @@ def test_clean_baseline_imports_successfully(tmp_path, library_dir, rawdata_dir)
     out = tmp_path / "out"
     result = _run_pipeline_stage(
         "convert clean baseline",
-        convert_survey_xlsx_to_prism_dataset,
+        convert_survey_file_to_prism_dataset,
         input_path=rawdata_dir / "survey_clean_baseline.csv",
         library_dir=library_dir,
         output_root=out,
@@ -65,7 +65,7 @@ def test_exact_duplicate_rows_error_mode_raises_clean_error(
     tmp_path, library_dir, rawdata_dir
 ):
     with pytest.raises(ValueError, match="Duplicate entries"):
-        convert_survey_xlsx_to_prism_dataset(
+        convert_survey_file_to_prism_dataset(
             input_path=rawdata_dir / "survey_exact_duplicate_rows.csv",
             library_dir=library_dir,
             output_root=tmp_path / "out",
@@ -77,7 +77,7 @@ def test_exact_duplicate_rows_error_mode_raises_clean_error(
 def test_exact_duplicate_rows_keep_first_succeeds(tmp_path, library_dir, rawdata_dir):
     result = _run_pipeline_stage(
         "convert exact duplicates (keep_first)",
-        convert_survey_xlsx_to_prism_dataset,
+        convert_survey_file_to_prism_dataset,
         input_path=rawdata_dir / "survey_exact_duplicate_rows.csv",
         library_dir=library_dir,
         output_root=tmp_path / "out",
@@ -93,7 +93,7 @@ def test_conflicting_duplicate_rows_error_mode_raises_before_picking_an_answer(
     """The two rows disagree on an item value — 'error' must refuse rather
     than silently picking one answer over the other."""
     with pytest.raises(ValueError, match="Duplicate entries"):
-        convert_survey_xlsx_to_prism_dataset(
+        convert_survey_file_to_prism_dataset(
             input_path=rawdata_dir / "survey_conflicting_duplicate_rows.csv",
             library_dir=library_dir,
             output_root=tmp_path / "out",
@@ -107,7 +107,7 @@ def test_conflicting_duplicate_rows_keep_last_resolves_deterministically(
 ):
     result = _run_pipeline_stage(
         "convert conflicting duplicates (keep_last)",
-        convert_survey_xlsx_to_prism_dataset,
+        convert_survey_file_to_prism_dataset,
         input_path=rawdata_dir / "survey_conflicting_duplicate_rows.csv",
         library_dir=library_dir,
         output_root=tmp_path / "out",
@@ -129,7 +129,7 @@ def test_multi_session_same_participant_requires_one_call_per_session(
 
     single_call_result = _run_pipeline_stage(
         "convert multi-session without explicit session=",
-        convert_survey_xlsx_to_prism_dataset,
+        convert_survey_file_to_prism_dataset,
         input_path=source,
         library_dir=library_dir,
         output_root=tmp_path / "out_default",
@@ -145,7 +145,7 @@ def test_multi_session_same_participant_requires_one_call_per_session(
     for session in ("ses-1", "ses-2"):
         _run_pipeline_stage(
             f"convert multi-session with session={session}",
-            convert_survey_xlsx_to_prism_dataset,
+            convert_survey_file_to_prism_dataset,
             input_path=source,
             library_dir=library_dir,
             output_root=tmp_path / "out_per_session",
@@ -162,7 +162,7 @@ def test_multi_session_same_participant_requires_one_call_per_session(
 
 def test_out_of_range_value_raises_structured_error(tmp_path, library_dir, rawdata_dir):
     with pytest.raises(SurveyValueOutOfBoundsError):
-        convert_survey_xlsx_to_prism_dataset(
+        convert_survey_file_to_prism_dataset(
             input_path=rawdata_dir / "survey_out_of_range_value.csv",
             library_dir=library_dir,
             output_root=tmp_path / "out",
@@ -173,7 +173,7 @@ def test_out_of_range_value_raises_structured_error(tmp_path, library_dir, rawda
 def test_missing_cell_converts_without_crashing(tmp_path, library_dir, rawdata_dir):
     result = _run_pipeline_stage(
         "convert missing cell",
-        convert_survey_xlsx_to_prism_dataset,
+        convert_survey_file_to_prism_dataset,
         input_path=rawdata_dir / "survey_missing_cell.csv",
         library_dir=library_dir,
         output_root=tmp_path / "out",
@@ -189,7 +189,7 @@ def test_unmapped_extra_column_is_surfaced_not_dropped_silently(
     confirms the CSV quoting round-trips correctly through the parser."""
     result = _run_pipeline_stage(
         "convert with unmapped column",
-        convert_survey_xlsx_to_prism_dataset,
+        convert_survey_file_to_prism_dataset,
         input_path=rawdata_dir / "survey_unmapped_extra_column.csv",
         library_dir=library_dir,
         output_root=tmp_path / "out",
@@ -212,7 +212,7 @@ def test_mixed_tab_comma_delimiters_known_gap_garbles_one_row(
     out = tmp_path / "out"
     result = _run_pipeline_stage(
         "convert mixed delimiters",
-        convert_survey_xlsx_to_prism_dataset,
+        convert_survey_file_to_prism_dataset,
         input_path=rawdata_dir / "survey_mixed_tab_comma_delimiters.csv",
         library_dir=library_dir,
         output_root=out,
@@ -239,7 +239,7 @@ def test_recipe_computes_correct_scores_in_every_export_format(
     tmp_path, survey_dataset: Path, library_dir, rawdata_dir, out_format: str
 ):
     out = tmp_path / f"out_{out_format}"
-    convert_survey_xlsx_to_prism_dataset(
+    convert_survey_file_to_prism_dataset(
         input_path=rawdata_dir / "survey_clean_baseline.csv",
         library_dir=library_dir,
         output_root=out,
@@ -317,7 +317,7 @@ def test_survey_conversion_rejects_case_only_differing_ids(
     pd.DataFrame(rows).to_csv(collision_csv, index=False)
 
     with pytest.raises(ValueError, match="differ only by case"):
-        convert_survey_xlsx_to_prism_dataset(
+        convert_survey_file_to_prism_dataset(
             input_path=collision_csv,
             library_dir=library_dir,
             output_root=tmp_path / "out",

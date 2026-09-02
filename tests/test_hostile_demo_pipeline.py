@@ -16,7 +16,7 @@ import pytest
 from src.bids_entity_rewriter import BidsEntityRewriter
 from src.converters.biometrics import convert_biometrics_table_to_prism_dataset
 from src.converters.file_reader import read_tabular_file
-from src.converters.survey import convert_survey_xlsx_to_prism_dataset
+from src.converters.survey import convert_survey_file_to_prism_dataset
 from src.hostile_demo_generator import (
     NON_MRI_DOMAINS,
     assert_text_files_never_annexed,
@@ -496,8 +496,8 @@ def test_full_non_mri_sweep_with_and_without_datalad(tmp_path: Path, use_datalad
     # generated survey, into the same project root.
     library_dir = project_root / "code" / "library" / "survey"
     survey_result = _run_pipeline_stage(
-        "convert_survey_xlsx_to_prism_dataset",
-        convert_survey_xlsx_to_prism_dataset,
+        "convert_survey_file_to_prism_dataset",
+        convert_survey_file_to_prism_dataset,
         input_path=rawdata / "survey_clean_baseline.csv",
         library_dir=library_dir,
         output_root=project_root,

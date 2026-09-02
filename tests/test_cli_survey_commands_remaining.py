@@ -609,7 +609,7 @@ class TestCmdSurveyConvert:
     def test_success_basic(self, tmp_path, monkeypatch, capsys):
         self._plain_library(tmp_path)
         monkeypatch.setattr(
-            "src.converters.survey.convert_survey_xlsx_to_prism_dataset",
+            "src.converters.survey.convert_survey_file_to_prism_dataset",
             lambda **kw: _FakeResult(),
         )
         cmd_survey_convert(_convert_args(tmp_path))
@@ -623,7 +623,7 @@ class TestCmdSurveyConvert:
             raise RuntimeError("bad convert")
 
         monkeypatch.setattr(
-            "src.converters.survey.convert_survey_xlsx_to_prism_dataset", _boom
+            "src.converters.survey.convert_survey_file_to_prism_dataset", _boom
         )
         with pytest.raises(SystemExit) as exc_info:
             cmd_survey_convert(_convert_args(tmp_path))
@@ -633,7 +633,7 @@ class TestCmdSurveyConvert:
     def test_with_overrides_offsets_and_warnings(self, tmp_path, monkeypatch, capsys):
         self._plain_library(tmp_path)
         monkeypatch.setattr(
-            "src.converters.survey.convert_survey_xlsx_to_prism_dataset",
+            "src.converters.survey.convert_survey_file_to_prism_dataset",
             lambda **kw: _FakeResult(
                 session_column="session",
                 run_column="run",
@@ -665,7 +665,7 @@ class TestCmdSurveyConvert:
             return _FakeResult()
 
         monkeypatch.setattr(
-            "src.converters.survey.convert_survey_xlsx_to_prism_dataset", _fake_convert
+            "src.converters.survey.convert_survey_file_to_prism_dataset", _fake_convert
         )
         project_file = tmp_path / "project.json"
         project_file.write_text("{}")
@@ -763,7 +763,7 @@ class TestCmdSurveyConvert:
             ],
         }
         monkeypatch.setattr(
-            "src.converters.survey.convert_survey_xlsx_to_prism_dataset",
+            "src.converters.survey.convert_survey_file_to_prism_dataset",
             lambda **kw: _FakeResult(dry_run_preview=preview),
         )
         cmd_survey_convert(_convert_args(tmp_path, dry_run=True))
@@ -794,7 +794,7 @@ class TestCmdSurveyConvert:
             "files_to_create": [],
         }
         monkeypatch.setattr(
-            "src.converters.survey.convert_survey_xlsx_to_prism_dataset",
+            "src.converters.survey.convert_survey_file_to_prism_dataset",
             lambda **kw: _FakeResult(dry_run_preview=preview),
         )
         cmd_survey_convert(_convert_args(tmp_path, dry_run=True))
@@ -813,7 +813,7 @@ class TestCmdSurveyConvert:
             lambda data, lang, fallback_langs: {"compiled": True},
         )
         monkeypatch.setattr(
-            "src.converters.survey.convert_survey_xlsx_to_prism_dataset",
+            "src.converters.survey.convert_survey_file_to_prism_dataset",
             lambda **kw: _FakeResult(),
         )
         cmd_survey_convert(_convert_args(tmp_path, library=str(library)))
@@ -829,7 +829,7 @@ class TestCmdSurveyConvert:
         (lib_dir / "survey-pss.json").write_text(json.dumps({"pss01": {}}))
         monkeypatch.setattr(survey_cli, "_APP_ROOT", app_root)
         monkeypatch.setattr(
-            "src.converters.survey.convert_survey_xlsx_to_prism_dataset",
+            "src.converters.survey.convert_survey_file_to_prism_dataset",
             lambda **kw: _FakeResult(),
         )
         cmd_survey_convert(_convert_args(tmp_path, library=None))
@@ -850,7 +850,7 @@ class TestCmdSurveyConvert:
             lambda data, lang, fallback_langs: {"compiled": True},
         )
         monkeypatch.setattr(
-            "src.converters.survey.convert_survey_xlsx_to_prism_dataset",
+            "src.converters.survey.convert_survey_file_to_prism_dataset",
             lambda **kw: _FakeResult(),
         )
         cmd_survey_convert(_convert_args(tmp_path, library=None))
@@ -866,7 +866,7 @@ class TestCmdSurveyConvert:
         (lib_dir / "survey-pss.json").write_text(json.dumps({"pss01": {}}))
         monkeypatch.setattr(survey_cli, "_APP_ROOT", app_root)
         monkeypatch.setattr(
-            "src.converters.survey.convert_survey_xlsx_to_prism_dataset",
+            "src.converters.survey.convert_survey_file_to_prism_dataset",
             lambda **kw: _FakeResult(),
         )
         cmd_survey_convert(_convert_args(tmp_path, library=None))

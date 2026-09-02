@@ -61,7 +61,7 @@ import { createSurveyWorkflowPreviewController } from './survey-workflow-preview
 export function initSurveyConvert(elements) {
     const {
         // Survey Convert DOM elements
-        convertExcelFile,
+        convertSurveyFile,
         convertSeparator,
         surveySeparatorGroup,
         clearConvertExcelFileBtn,
@@ -191,7 +191,7 @@ export function initSurveyConvert(elements) {
     const surveyWorkflowResponseController = createSurveyWorkflowResponseController();
     const { parseJsonResponse } = surveyWorkflowResponseController;
     const surveySelectedInputController = createSurveySelectedInputController({
-        convertExcelFile,
+        convertSurveyFile,
         getConvertServerFilePath: () => convertServerFilePath,
     });
     const {
@@ -237,7 +237,7 @@ export function initSurveyConvert(elements) {
     const surveySourcedataQuickSelectController = createSurveySourcedataQuickSelectController({
         sourcedataQuickSelect,
         sourcedataFileSelect,
-        convertExcelFile,
+        convertSurveyFile,
         convertError,
         resolveCurrentProjectPath,
         onProjectChanged: () => {
@@ -671,9 +671,9 @@ export function initSurveyConvert(elements) {
             browseServerSurveyFileBtn.classList.toggle('d-none', !connectedToServer);
         }
 
-        if (convertExcelFile) {
-            convertExcelFile.disabled = connectedToServer;
-            convertExcelFile.title = connectedToServer ? 'Connected-to-server mode: use Browse Server File.' : '';
+        if (convertSurveyFile) {
+            convertSurveyFile.disabled = connectedToServer;
+            convertSurveyFile.title = connectedToServer ? 'Connected-to-server mode: use Browse Server File.' : '';
         }
     }
 
@@ -1842,7 +1842,7 @@ export function initSurveyConvert(elements) {
         });
     }
 
-    convertExcelFile.addEventListener('change', async function() {
+    convertSurveyFile.addEventListener('change', async function() {
         convertServerFilePath = '';
         resetSurveyRefreshFingerprint();
         const file = this.files?.[0];
@@ -1876,8 +1876,8 @@ export function initSurveyConvert(elements) {
     clearConvertExcelFileBtn?.addEventListener('click', function() {
         convertServerFilePath = '';
         resetSurveyRefreshFingerprint();
-        convertExcelFile.value = '';
-        convertExcelFile.dispatchEvent(new Event('change', { bubbles: true }));
+        convertSurveyFile.value = '';
+        convertSurveyFile.dispatchEvent(new Event('change', { bubbles: true }));
         surveyImportFormStateController.resetSurveyImportFormState();
     });
 
@@ -1949,8 +1949,8 @@ export function initSurveyConvert(elements) {
 
             convertServerFilePath = pickedPath;
             resetSurveyRefreshFingerprint();
-            if (convertExcelFile) {
-                convertExcelFile.value = '';
+            if (convertSurveyFile) {
+                convertSurveyFile.value = '';
             }
 
             templateWorkflowGate = null;
@@ -2339,7 +2339,7 @@ export function initSurveyConvert(elements) {
         convertSessionSelect,
         convertSessionCustom,
         convertAdvancedToggle,
-        convertExcelFile,
+        convertSurveyFile,
         templateResultsContainer,
         convertInfo,
         convertError,

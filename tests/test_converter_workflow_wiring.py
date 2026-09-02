@@ -1617,8 +1617,8 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         environment_content = ENVIRONMENT_TEMPLATE.read_text(encoding="utf-8")
         eyetracking_content = EYETRACKING_TEMPLATE.read_text(encoding="utf-8")
 
-        self.assertIn('class="form-control" type="file" id="convertExcelFile"', survey_content)
-        self.assertNotIn('visually-hidden" type="file" id="convertExcelFile"', survey_content)
+        self.assertIn('class="form-control" type="file" id="convertSurveyFile"', survey_content)
+        self.assertNotIn('visually-hidden" type="file" id="convertSurveyFile"', survey_content)
 
         self.assertIn('class="form-control" type="file" id="biometricsDataFile"', biometrics_content)
         self.assertNotIn('visually-hidden" type="file" id="biometricsDataFile"', biometrics_content)
@@ -2019,7 +2019,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             import_form_state_content,
         )
         self.assertIn(
-            "if (clearSelectedInput) {\n            setConvertServerFilePath('');\n            if (convertExcelFile) {\n                convertExcelFile.value = '';\n            }\n        }\n        surveySourcedataQuickSelectController.clearSelectedFile();",
+            "if (clearSelectedInput) {\n            setConvertServerFilePath('');\n            if (convertSurveyFile) {\n                convertSurveyFile.value = '';\n            }\n        }\n        surveySourcedataQuickSelectController.clearSelectedFile();",
             import_form_state_content,
         )
 
