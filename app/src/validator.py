@@ -621,18 +621,16 @@ class DatasetValidator:
         if isinstance(label, str):
             return label.strip() == ""
         if isinstance(label, dict):
-            has_any_value = False
             for value in label.values():
                 if value is None:
                     continue
                 if isinstance(value, str):
                     if value.strip():
                         return False
-                    has_any_value = True
                     continue
                 # Non-string values are considered non-empty payloads.
                 return False
-            return True if has_any_value or not label else True
+            return True
         return False
 
     def _check_empty_levels_labels(self, col_name: str, col_def: dict, file_name: str) -> list:
