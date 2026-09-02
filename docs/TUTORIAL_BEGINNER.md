@@ -110,7 +110,7 @@ guess.
     <span class="prism-chapter-icon">5</span>
     <span class="prism-chapter-title">Use the Validator</span>
     <span class="prism-chapter-outcome">Validation findings understood and resolved</span>
-    <span class="prism-chapter-time">~15 min</span>
+    <span class="prism-chapter-time">~20 min</span>
   </a>
   <a class="prism-chapter-card" href="TUTORIAL_BEGINNER_6_EXISTING_BIDS.html">
     <span class="prism-chapter-icon">6</span>
