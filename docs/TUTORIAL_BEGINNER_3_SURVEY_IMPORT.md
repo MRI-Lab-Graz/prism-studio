@@ -132,13 +132,20 @@ Click **Convert**. This writes the real output, e.g.:
 
 ```text
 sub-DEMO001/ses-baseline/survey/sub-DEMO001_ses-baseline_task-wellbeing_survey.tsv
-sub-DEMO001/ses-baseline/survey/sub-DEMO001_ses-baseline_task-wellbeing_survey.json
+sub-DEMO002/ses-baseline/survey/sub-DEMO002_ses-baseline_task-wellbeing_survey.tsv
+...
+task-wellbeing_survey.json
 ```
 
-one pair of files per participant. If you used the fast-path template
-(already project-local), no extra copy step happens on Convert; if the
-template had come from the official/global library instead, Convert would
-copy it into `code/library/survey/` automatically at this point.
+one `.tsv` per participant, but **one shared `.json` sidecar** at the
+dataset root rather than one per participant — this is BIDS's inheritance
+principle: a root-level sidecar applies to every matching file below it
+unless a more specific one overrides it, and PRISM writes it this way
+deliberately to avoid 20 identical copies of the same item descriptions.
+If you used the fast-path template (already project-local), no extra copy
+step happens on Convert; if the template had come from the official/global
+library instead, Convert would copy it into `code/library/survey/`
+automatically at this point.
 
 <div class="prism-persona-note" data-persona-note>
 <p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
