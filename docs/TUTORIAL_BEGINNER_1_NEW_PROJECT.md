@@ -11,12 +11,9 @@ belongs later in a study's lifecycle.
 correct folder structure and complete required metadata, ready for chapter 2.
 
 ```{mermaid}
-flowchart TD
-    A["Launch Studio"] --> B["Projects page:<br/>Create New Project"]
-    B --> C["Name & Location"]
-    C --> D["Study Metadata:<br/>Dataset Name, Authors, ..."]
-    D --> E["Create Project"]
-    E --> F["wellbeing_study/<br/>scaffold created"]
+flowchart LR
+    A["📁 An idea for a study<br/>nothing on disk yet"] --> B["🔧 Create New Project<br/>+ Study Metadata"]
+    B --> C["📁 wellbeing_study/<br/>correct structure,<br/>required metadata filled in"]
 ```
 
 <div class="prism-persona-note" data-persona-note>

@@ -10,13 +10,9 @@ separate page, covered in step 5 below.
 `wellbeing` survey, and a computed total score for every participant.
 
 ```{mermaid}
-flowchart TD
-    A["Open Recipe Builder"] --> B["Pick modality & template"]
-    B --> C["Reverse coding<br/>(skip if not needed)"]
-    C --> D["Build the score:<br/>Item Pool → Add Scale"]
-    D --> E["Variations<br/>(skip if one form)"]
-    E --> F["Metadata & Save"]
-    F --> G["Export / Analysis Output:<br/>run the recipe"]
+flowchart LR
+    A["📊 WB01-WB05<br/>item responses<br/>(kept as-is, untouched)"] --> B["🔧 Recipe Builder<br/>a saved scoring rule"]
+    B --> C["📈 Computed total score<br/>per participant<br/>re-runnable, never overwrites raw data"]
 ```
 
 <div class="prism-persona-note" data-persona-note>
