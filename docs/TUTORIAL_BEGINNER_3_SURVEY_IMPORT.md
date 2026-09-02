@@ -17,6 +17,19 @@ Archive) — see the format note in Part B, step 3.
 **Time:** ~25 minutes. **Outcome:** survey response files for every
 participant, written into subject-level folders under `wellbeing_study`.
 
+```{mermaid}
+flowchart TD
+    A["Part A: get a template"] --> B{"Already have one?"}
+    B -->|"Yes, ready-made"| C["Copy survey-wellbeing.json"]
+    B -->|"No, build your own"| D["Excel Template Basics"]
+    C --> E["Part B: Converter → Survey"]
+    D --> E
+    E --> F["Choose source file"]
+    F --> G["Confirm mapping:<br/>ID, Session"]
+    G --> H["Preview (dry-run)"]
+    H --> I["Convert"]
+```
+
 <div class="prism-persona-note" data-persona-note>
 <p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
 
