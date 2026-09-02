@@ -92,11 +92,11 @@ guess.
     <span class="prism-chapter-icon">2</span>
     <span class="prism-chapter-title">Import Sociodemographic Data</span>
     <span class="prism-chapter-outcome"><code>participants.tsv</code> / <code>participants.json</code></span>
-    <span class="prism-chapter-time">~15 min</span>
+    <span class="prism-chapter-time">~20 min</span>
   </a>
   <a class="prism-chapter-card" href="TUTORIAL_BEGINNER_3_SURVEY_IMPORT.html">
     <span class="prism-chapter-icon">3</span>
-    <span class="prism-chapter-title">Import a Survey via Excel</span>
+    <span class="prism-chapter-title">Import Survey Response Data</span>
     <span class="prism-chapter-outcome">Survey response files written into subject folders</span>
     <span class="prism-chapter-time">~25 min</span>
   </a>
