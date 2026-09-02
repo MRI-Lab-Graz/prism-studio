@@ -57,3 +57,13 @@ def test_build_validation_report_contains_expected_contract_fields():
     assert "issues" in report
     assert "statistics" in report
     assert report["statistics"]["total_files"] == 5
+
+
+def test_validate_dataset_is_runner_validate_dataset_directly():
+    """core.validation.validate_dataset must be runner.validate_dataset itself,
+    not a wrapper around it -- the module boundary comes from the import
+    rename, not from an extra indirection layer."""
+    import runner
+    import core.validation as core_validation
+
+    assert core_validation.validate_dataset is runner.validate_dataset

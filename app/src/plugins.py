@@ -40,7 +40,6 @@ class Plugin:
     module: Any
     description: str = ""
     version: str = "1.0.0"
-    enabled: bool = True
 
     @property
     def validate_func(self) -> Optional[Callable]:
@@ -189,9 +188,6 @@ class PluginManager:
         Returns:
             List of issues from plugin
         """
-        if not plugin.enabled:
-            return []
-
         func = plugin.validate_func
         if not func:
             return []
@@ -417,9 +413,8 @@ def list_plugins(manager: PluginManager) -> None:
 
     print(f"Loaded {len(manager.plugins)} plugin(s):")
     for plugin in manager.plugins:
-        status = "✓" if plugin.enabled else "✗"
         has_validate = "✓" if plugin.has_validate else "✗"
-        print(f"  {status} {plugin.name} v{plugin.version}")
+        print(f"  {plugin.name} v{plugin.version}")
         if plugin.description:
             print(f"      {plugin.description}")
         print(f"      validate(): {has_validate}  Path: {plugin.path}")
