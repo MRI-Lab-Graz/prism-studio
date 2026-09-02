@@ -2,3 +2,5 @@
 sphinx
 sphinx-rtd-theme
 myst-parser
+shibuya
+sphinxcontrib-mermaid

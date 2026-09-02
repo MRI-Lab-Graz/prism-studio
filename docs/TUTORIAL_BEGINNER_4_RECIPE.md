@@ -9,6 +9,16 @@ separate page, covered in step 5 below.
 **Time:** ~20 minutes. **Outcome:** a saved scoring recipe for the
 `wellbeing` survey, and a computed total score for every participant.
 
+```{mermaid}
+flowchart TD
+    A["Open Recipe Builder"] --> B["Pick modality & template"]
+    B --> C["Reverse coding<br/>(skip if not needed)"]
+    C --> D["Build the score:<br/>Item Pool → Add Scale"]
+    D --> E["Variations<br/>(skip if one form)"]
+    E --> F["Metadata & Save"]
+    F --> G["Export / Analysis Output:<br/>run the recipe"]
+```
+
 <div class="prism-persona-note" data-persona-note>
 <p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
 

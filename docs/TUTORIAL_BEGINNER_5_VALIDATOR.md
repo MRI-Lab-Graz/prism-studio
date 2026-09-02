@@ -9,6 +9,17 @@ which will vary by project.
 `wellbeing_study`, hands-on experience causing and clearing a real error,
 and enough understanding of the results to know what to do next.
 
+```{mermaid}
+flowchart TD
+    A["Open the Validator"] --> B["Leave Advanced Options<br/>at defaults"]
+    B --> C["Start Validation"]
+    C --> D["Read the results"]
+    D --> E["Fix an issue"]
+    E --> F["Re-validate"]
+    F -->|"issues remain"| D
+    F -->|"clean"| G["Done"]
+```
+
 <div class="prism-persona-note" data-persona-note>
 <p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
 

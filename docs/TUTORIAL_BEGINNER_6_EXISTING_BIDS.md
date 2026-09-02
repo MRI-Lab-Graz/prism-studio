@@ -4,6 +4,13 @@
 real published BIDS dataset, cloned and initialized without a manual
 terminal step, enriched with PRISM participant and behavioral metadata
 
+```{mermaid}
+flowchart TD
+    A["Init PRISM on BIDS Dataset:<br/>Git/DataLad URL"] --> B["Step 1: Merge into<br/>existing participants.tsv"]
+    B --> C["Step 2: add survey data<br/>(Converter → Survey)"]
+    C --> D["Step 3: Validate"]
+```
+
 ## Why enrich existing datasets?
 
 The first five chapters showed you how to build a PRISM project from scratch: create the structure, import data, add metadata, score, and validate. But you'll often work the opposite direction — you have a real BIDS dataset already published or in progress, and you want to add or fix metadata, attach behavioral scores, or complete missing participant info.
