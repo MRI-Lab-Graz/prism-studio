@@ -17,7 +17,7 @@ _survey_convert_job_store = ConversionJobStore(log_level_key="level")
 
 def handle_api_survey_convert_validate(
     *,
-    convert_survey_xlsx_to_prism_dataset,
+    convert_survey_file_to_prism_dataset,
     convert_survey_lsa_to_prism_dataset,
     resolve_uploaded_or_source_file,
     resolve_requested_project_root,
@@ -60,7 +60,7 @@ def handle_api_survey_convert_validate(
 ):
     """Convert survey, save to the active project, and return validation results."""
     if (
-        not convert_survey_xlsx_to_prism_dataset
+        not convert_survey_file_to_prism_dataset
         and not convert_survey_lsa_to_prism_dataset
     ):
         return jsonify({"error": "Survey conversion module not available"}), 500
@@ -218,7 +218,7 @@ def handle_api_survey_convert_validate(
         try:
             preflight_result = survey_workflow_stage_service.run_stage(
                 workflow_runner=run_survey_with_official_fallback,
-                tabular_converter=convert_survey_xlsx_to_prism_dataset,
+                tabular_converter=convert_survey_file_to_prism_dataset,
                 lsa_converter=convert_survey_lsa_to_prism_dataset,
                 options=survey_workflow_stage_options_cls(
                     suffix=suffix,
@@ -383,7 +383,7 @@ def handle_api_survey_convert_validate(
                 add_log(f"Processing LimeSurvey archive: {filename}", "info")
             convert_result = survey_workflow_stage_service.run_stage(
                 workflow_runner=run_survey_with_official_fallback,
-                tabular_converter=convert_survey_xlsx_to_prism_dataset,
+                tabular_converter=convert_survey_file_to_prism_dataset,
                 lsa_converter=convert_survey_lsa_to_prism_dataset,
                 options=survey_workflow_stage_options_cls(
                     suffix=suffix,
@@ -810,7 +810,7 @@ def handle_api_survey_convert_validate(
 
 def handle_api_survey_convert_validate_start(
     *,
-    convert_survey_xlsx_to_prism_dataset,
+    convert_survey_file_to_prism_dataset,
     convert_survey_lsa_to_prism_dataset,
     resolve_uploaded_or_source_file,
     resolve_requested_project_root,
@@ -853,7 +853,7 @@ def handle_api_survey_convert_validate_start(
 ):
     """Start an async survey conversion+validate job and return its job id for polling."""
     if (
-        not convert_survey_xlsx_to_prism_dataset
+        not convert_survey_file_to_prism_dataset
         and not convert_survey_lsa_to_prism_dataset
     ):
         return jsonify({"error": "Survey conversion module not available"}), 500
@@ -1053,7 +1053,7 @@ def handle_api_survey_convert_validate_start(
     }
 
     deps: dict[str, Any] = {
-        "convert_survey_xlsx_to_prism_dataset": convert_survey_xlsx_to_prism_dataset,
+        "convert_survey_file_to_prism_dataset": convert_survey_file_to_prism_dataset,
         "convert_survey_lsa_to_prism_dataset": convert_survey_lsa_to_prism_dataset,
         "survey_workflow_stage_service": survey_workflow_stage_service,
         "survey_workflow_stage_options_cls": survey_workflow_stage_options_cls,
@@ -1143,7 +1143,7 @@ def _run_survey_convert_validate_job(
             result=payload,
         )
 
-    convert_survey_xlsx_to_prism_dataset = deps["convert_survey_xlsx_to_prism_dataset"]
+    convert_survey_file_to_prism_dataset = deps["convert_survey_file_to_prism_dataset"]
     convert_survey_lsa_to_prism_dataset = deps["convert_survey_lsa_to_prism_dataset"]
     survey_workflow_stage_service = deps["survey_workflow_stage_service"]
     survey_workflow_stage_options_cls = deps["survey_workflow_stage_options_cls"]
@@ -1210,7 +1210,7 @@ def _run_survey_convert_validate_job(
         try:
             preflight_result = survey_workflow_stage_service.run_stage(
                 workflow_runner=run_survey_with_official_fallback,
-                tabular_converter=convert_survey_xlsx_to_prism_dataset,
+                tabular_converter=convert_survey_file_to_prism_dataset,
                 lsa_converter=convert_survey_lsa_to_prism_dataset,
                 options=survey_workflow_stage_options_cls(
                     suffix=suffix,
@@ -1368,7 +1368,7 @@ def _run_survey_convert_validate_job(
                 add_log(f"Processing LimeSurvey archive: {filename}", "info")
             convert_result = survey_workflow_stage_service.run_stage(
                 workflow_runner=run_survey_with_official_fallback,
-                tabular_converter=convert_survey_xlsx_to_prism_dataset,
+                tabular_converter=convert_survey_file_to_prism_dataset,
                 lsa_converter=convert_survey_lsa_to_prism_dataset,
                 options=survey_workflow_stage_options_cls(
                     suffix=suffix,

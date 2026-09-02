@@ -1522,7 +1522,7 @@ def build_hostile_participants_merge_assets(
                 "on-disk directory, so the second participant written "
                 "silently overwrote the first's file with no error. Fixed: "
                 "convert_biometrics_table_to_prism_dataset and "
-                "convert_survey_xlsx_to_prism_dataset now both call "
+                "convert_survey_file_to_prism_dataset now both call "
                 "src.cross_platform.describe_case_insensitive_id_collisions "
                 "before writing anything and raise a clear ValueError "
                 "instead (see tests/test_hostile_demo_pipeline.py::"

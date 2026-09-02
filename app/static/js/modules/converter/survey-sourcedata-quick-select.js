@@ -3,7 +3,7 @@ import { fetchWithApiFallback } from '../../shared/api.js';
 export function createSurveySourcedataQuickSelectController({
     sourcedataQuickSelect,
     sourcedataFileSelect,
-    convertExcelFile,
+    convertSurveyFile,
     convertError,
     resolveCurrentProjectPath,
     onProjectChanged,
@@ -16,11 +16,11 @@ export function createSurveySourcedataQuickSelectController({
         if (sourcedataQuickSelectEl && sourcedataFileSelectEl) {
             return;
         }
-        if (!convertExcelFile) {
+        if (!convertSurveyFile) {
             return;
         }
 
-        const pickerContainer = convertExcelFile.closest('.studio-file-picker');
+        const pickerContainer = convertSurveyFile.closest('.studio-file-picker');
         if (pickerContainer) {
             sourcedataQuickSelectEl = sourcedataQuickSelectEl || pickerContainer.querySelector('#sourcedataQuickSelect');
             sourcedataFileSelectEl = sourcedataFileSelectEl || pickerContainer.querySelector('#sourcedataFileSelect');
@@ -30,7 +30,7 @@ export function createSurveySourcedataQuickSelectController({
             return;
         }
 
-        const inputGroup = convertExcelFile.closest('.input-group');
+        const inputGroup = convertSurveyFile.closest('.input-group');
         if (!inputGroup || !inputGroup.parentElement) {
             return;
         }
@@ -187,8 +187,8 @@ export function createSurveySourcedataQuickSelectController({
                 const file = new File([blob], filename, { type: blob.type });
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(file);
-                convertExcelFile.files = dataTransfer.files;
-                convertExcelFile.dispatchEvent(new Event('change', { bubbles: true }));
+                convertSurveyFile.files = dataTransfer.files;
+                convertSurveyFile.dispatchEvent(new Event('change', { bubbles: true }));
             } catch (error) {
                 console.error('Failed to load sourcedata file:', error);
                 convertError.textContent = `Failed to load ${filename} from sourcedata.`;

@@ -11,7 +11,9 @@ This sits alongside another on-ramp:
 instructor-led session. Use this tutorial if you want the most explanation and
 plan to work through it alone.
 
-**Time:** ~100 minutes for all six chapters. **Outcome:** one new project
+**Time:** ~130 minutes for all six chapters (most of the added time is
+hands-on practice, plus Chapter 6's dataset download). **Outcome:** one new
+project
 (`wellbeing_study`) with sociodemographic data, imported survey responses, a
 working scoring recipe, validated — plus experience enriching an existing BIDS
 dataset with the same tools.
@@ -92,11 +94,11 @@ guess.
     <span class="prism-chapter-icon">2</span>
     <span class="prism-chapter-title">Import Sociodemographic Data</span>
     <span class="prism-chapter-outcome"><code>participants.tsv</code> / <code>participants.json</code></span>
-    <span class="prism-chapter-time">~15 min</span>
+    <span class="prism-chapter-time">~20 min</span>
   </a>
   <a class="prism-chapter-card" href="TUTORIAL_BEGINNER_3_SURVEY_IMPORT.html">
     <span class="prism-chapter-icon">3</span>
-    <span class="prism-chapter-title">Import a Survey via Excel</span>
+    <span class="prism-chapter-title">Import Survey Response Data</span>
     <span class="prism-chapter-outcome">Survey response files written into subject folders</span>
     <span class="prism-chapter-time">~25 min</span>
   </a>
@@ -104,19 +106,19 @@ guess.
     <span class="prism-chapter-icon">4</span>
     <span class="prism-chapter-title">Prepare a Recipe</span>
     <span class="prism-chapter-outcome">A saved, working scoring recipe and its output</span>
-    <span class="prism-chapter-time">~15 min</span>
+    <span class="prism-chapter-time">~20 min</span>
   </a>
   <a class="prism-chapter-card" href="TUTORIAL_BEGINNER_5_VALIDATOR.html">
     <span class="prism-chapter-icon">5</span>
     <span class="prism-chapter-title">Use the Validator</span>
     <span class="prism-chapter-outcome">Validation findings understood and resolved</span>
-    <span class="prism-chapter-time">~15 min</span>
+    <span class="prism-chapter-time">~20 min</span>
   </a>
   <a class="prism-chapter-card" href="TUTORIAL_BEGINNER_6_EXISTING_BIDS.html">
     <span class="prism-chapter-icon">6</span>
     <span class="prism-chapter-title">Enrich an Existing BIDS Dataset</span>
     <span class="prism-chapter-outcome">Same workflow applied to a published OpenNeuro dataset</span>
-    <span class="prism-chapter-time">~15 min</span>
+    <span class="prism-chapter-time">~30 min</span>
   </a>
 </div>
 

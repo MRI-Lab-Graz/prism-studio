@@ -527,7 +527,7 @@ def test_survey_preview_returns_value_offset_confirmation_payload(tmp_path):
         session["current_project_path"] = str(project_root)
 
         response = handle_api_survey_convert_preview(
-            convert_survey_xlsx_to_prism_dataset=object(),
+            convert_survey_file_to_prism_dataset=object(),
             convert_survey_lsa_to_prism_dataset=object(),
             resolve_effective_library_path=lambda: library_root,
             run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
@@ -622,7 +622,7 @@ def test_survey_preview_passes_value_offsets_to_converter(tmp_path):
     ):
         session["current_project_path"] = str(project_root)
         response = handle_api_survey_convert_preview(
-            convert_survey_xlsx_to_prism_dataset=object(),
+            convert_survey_file_to_prism_dataset=object(),
             convert_survey_lsa_to_prism_dataset=object(),
             resolve_effective_library_path=lambda: library_root,
             run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
@@ -703,7 +703,7 @@ def test_survey_preview_merges_selected_tasks_filter(tmp_path):
     ):
         session["current_project_path"] = str(project_root)
         response = handle_api_survey_convert_preview(
-            convert_survey_xlsx_to_prism_dataset=object(),
+            convert_survey_file_to_prism_dataset=object(),
             convert_survey_lsa_to_prism_dataset=object(),
             resolve_effective_library_path=lambda: library_root,
             run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
@@ -794,7 +794,7 @@ def test_survey_preview_validate_path_returns_task_review_summary(tmp_path):
     ):
         session["current_project_path"] = str(project_root)
         response = handle_api_survey_convert_preview(
-            convert_survey_xlsx_to_prism_dataset=object(),
+            convert_survey_file_to_prism_dataset=object(),
             convert_survey_lsa_to_prism_dataset=object(),
             resolve_effective_library_path=lambda: library_root,
             run_survey_with_official_fallback=fake_run_survey_with_official_fallback,

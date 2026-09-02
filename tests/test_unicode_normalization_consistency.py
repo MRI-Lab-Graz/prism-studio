@@ -64,7 +64,7 @@ def test_survey_normalize_sub_id_consistent_across_unicode_forms() -> None:
     import pandas as pd
 
     from app.src.hostile_demo_generator import build_random_survey_template
-    from src.converters.survey import convert_survey_xlsx_to_prism_dataset
+    from src.converters.survey import convert_survey_file_to_prism_dataset
     from src.utils.io import ensure_dir, write_json
 
     task_name, template, item_codes = build_random_survey_template(seed=1)
@@ -78,7 +78,7 @@ def test_survey_normalize_sub_id_consistent_across_unicode_forms() -> None:
         pd.DataFrame([{"participant_id": name, **{c: 1 for c in item_codes}}]).to_csv(
             data_csv, index=False
         )
-        convert_survey_xlsx_to_prism_dataset(
+        convert_survey_file_to_prism_dataset(
             input_path=data_csv,
             library_dir=library_dir,
             output_root=tmp_path / f"out_{label}",

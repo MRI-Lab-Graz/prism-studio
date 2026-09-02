@@ -437,7 +437,7 @@ class SurveyResponsesConverter:
         allow_near_item_match: bool = False,
         near_match_tasks: set[str] | None = None,
     ) -> SurveyConvertResult:
-        return _convert_survey_xlsx_to_prism_dataset_impl(
+        return _convert_survey_file_to_prism_dataset_impl(
             input_path=input_path,
             library_dir=library_dir,
             output_root=output_root,
@@ -544,7 +544,7 @@ def _copy_templates_to_project(
     )
 
 
-def _convert_survey_xlsx_to_prism_dataset_impl(
+def _convert_survey_file_to_prism_dataset_impl(
     *,
     input_path: str | Path,
     library_dir: str | Path,
@@ -772,7 +772,7 @@ def _convert_survey_lsa_to_prism_dataset_impl(
     )
 
 
-def convert_survey_xlsx_to_prism_dataset(
+def convert_survey_file_to_prism_dataset(
     *,
     input_path: str | Path,
     library_dir: str | Path,

@@ -5,7 +5,7 @@ export function createSurveyImportFormStateController({
     convertSessionSelect,
     convertSessionCustom,
     convertAdvancedToggle,
-    convertExcelFile,
+    convertSurveyFile,
     templateResultsContainer,
     convertInfo,
     convertError,
@@ -75,8 +75,8 @@ export function createSurveyImportFormStateController({
 
         if (clearSelectedInput) {
             setConvertServerFilePath('');
-            if (convertExcelFile) {
-                convertExcelFile.value = '';
+            if (convertSurveyFile) {
+                convertSurveyFile.value = '';
             }
         }
         surveySourcedataQuickSelectController.clearSelectedFile();
