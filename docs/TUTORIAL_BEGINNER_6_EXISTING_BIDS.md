@@ -5,10 +5,9 @@ real published BIDS dataset, cloned and initialized without a manual
 terminal step, enriched with PRISM participant and behavioral metadata
 
 ```{mermaid}
-flowchart TD
-    A["Init PRISM on BIDS Dataset:<br/>Git/DataLad URL"] --> B["Step 1: Merge into<br/>existing participants.tsv"]
-    B --> C["Step 2: add survey data<br/>(Converter → Survey)"]
-    C --> D["Step 3: Validate"]
+flowchart LR
+    A["🧠 ds003138<br/>existing BIDS dataset<br/>MRI data, no PRISM layer"] --> B["🔧 Init PRISM +<br/>Merge + Survey Import"]
+    B --> C["📋 Same dataset,<br/>enriched with<br/>PRISM metadata"]
 ```
 
 ## Why enrich existing datasets?

@@ -10,14 +10,9 @@ which will vary by project.
 and enough understanding of the results to know what to do next.
 
 ```{mermaid}
-flowchart TD
-    A["Open the Validator"] --> B["Leave Advanced Options<br/>at defaults"]
-    B --> C["Start Validation"]
-    C --> D["Read the results"]
-    D --> E["Fix an issue"]
-    E --> F["Re-validate"]
-    F -->|"issues remain"| D
-    F -->|"clean"| G["Done"]
+flowchart LR
+    A["📁 wellbeing_study<br/>as built so far"] --> B["🔧 Validator<br/>PRISM + BIDS checks"]
+    B --> C["✅ Findings read & fixed<br/>a dataset you can trust"]
 ```
 
 <div class="prism-persona-note" data-persona-note>

@@ -23,13 +23,9 @@ In this chapter, `participants.tsv` is a table with one row for each person.
 experience with PRISM's Merge workflow for updating them later.
 
 ```{mermaid}
-flowchart TD
-    A["Open wellbeing.xlsx<br/>(the source file)"] --> B["Reopen wellbeing_study<br/>(Project Manager)"]
-    B --> C["Converter →<br/>Sociodemographics tab"]
-    C --> D["Select file &<br/>ID column"]
-    D --> E["Review Participant<br/>Fields"]
-    E --> F["Create Participant<br/>Files"]
-    F -.optional later.-> G["Merge:<br/>update participants.tsv"]
+flowchart LR
+    A["📄 wellbeing.xlsx<br/>raw spreadsheet<br/>age, sex, education..."] --> B["🔧 Sociodemographics<br/>Converter"]
+    B --> C["📋 participants.tsv<br/>+ participants.json<br/>documented, ready to validate"]
 ```
 
 <div class="prism-persona-note" data-persona-note>
