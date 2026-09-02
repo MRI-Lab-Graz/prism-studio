@@ -188,10 +188,13 @@ it deliberately refuses to do.
    shared example directly: copy
    `examples/workshop/exercise_1_raw_data/raw_data/wellbeing.tsv` somewhere
    convenient (Desktop, or your project folder) and rename it, e.g.
-   `wellbeing_update.tsv`.
+   `wellbeing_update.tsv`. (This file has all 20 of the same participants
+   you already imported in step 6 via `wellbeing.xlsx` — same data, just a
+   different format.)
 2. Open the copy in a spreadsheet or text editor and make two changes:
-   - Add one new row for a participant not yet in your project, e.g.
-     `DEMO010`, with plausible values for every column.
+   - Add one new row for a participant not yet in your project — everyone
+     up to `DEMO020` is already there, so use `DEMO021`, with plausible
+     values for every column.
    - Change `DEMO003`'s `age` value to something else (e.g. `22` → `23`) —
      pretend you just noticed a typo in the original data.
 3. Back in **Converter → Sociodemographics**, since `participants.tsv`
@@ -201,7 +204,7 @@ it deliberately refuses to do.
    merge from an imported table). Choose **Merge**.
 4. Upload `wellbeing_update.tsv` and click **Preview Merge**. The Merge
    Summary shows counts for matched participants, new participants, filled
-   values, and conflicts. You should see `1 new participant` (DEMO010) and
+   values, and conflicts. You should see `1 new participant` (DEMO021) and
    `1 conflict` (DEMO003's `age`).
 
 ```{warning}
@@ -219,7 +222,7 @@ Merge is the safe option for enrichment, not the tool for corrections.
 5. For this exercise, you don't need to resolve the conflict — you've seen
    what Merge does and doesn't do. If you want to see a clean **Apply
    Merge** succeed, remove the `DEMO003` edit from your copy (keep only the
-   new `DEMO010` row) and preview again; with zero conflicts, **Apply
+   new `DEMO021` row) and preview again; with zero conflicts, **Apply
    Merge** becomes available and adds the new participant without touching
    anyone else's data.
 
@@ -251,6 +254,6 @@ not required for this tutorial.
 
 ## What's next
 
-- [Chapter 3 — Import a survey via Excel](TUTORIAL_BEGINNER_3_SURVEY_IMPORT.md)
+- [Chapter 3 — Import survey response data](TUTORIAL_BEGINNER_3_SURVEY_IMPORT.md)
 - [Converter — Participants](studio/converter_participants.md) — full
   reference for this screen
