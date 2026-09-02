@@ -1667,6 +1667,17 @@ class TestSurveyConverterImports(unittest.TestCase):
         self.assertIsNotNone(module)
         self.assertTrue(hasattr(module, "convert_survey_file_to_prism_dataset"))
 
+    def test_conversion_survey_handlers_resolves_convert_function(self):
+        """The blueprint's module-level fallback (`= None`) must get overwritten
+        by the real converter on import, not silently stay None."""
+        import importlib
+
+        module = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+        self.assertIsNotNone(module.convert_survey_file_to_prism_dataset)
+        self.assertTrue(callable(module.convert_survey_file_to_prism_dataset))
+
     def test_survey_template_loader_accepts_injected_kwargs(self):
         import importlib
 
