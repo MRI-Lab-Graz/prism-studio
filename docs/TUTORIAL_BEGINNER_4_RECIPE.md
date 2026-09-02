@@ -41,6 +41,18 @@ eighteen months.* You will not remember it — but this recipe file will.
 </div>
 </div>
 
+```{tip}
+**Why not just score surveys in the original spreadsheet?** Adapted from the
+*PRISM without Panic* guide (ANC Salzburg). In a spreadsheet, raw answers
+and score formulas often live in the same file — easy to overwrite a
+formula, change a value by accident, or lose track of how a score was
+calculated. In PRISM, the raw questionnaire data stays completely separate
+from the scoring instructions, which are saved as a recipe: a file that can
+be checked, edited, reused, and re-run without touching the original survey
+data. If a scoring rule needs correcting later, you fix the recipe and
+recompute — the raw responses are never at risk.
+```
+
 ## 1. Open Recipe Builder
 
 ![PRISM Studio Recipe Builder screen](_static/screenshots/prism-studio-recipe-builder.png)
@@ -49,6 +61,9 @@ eighteen months.* You will not remember it — but this recipe file will.
 
 Set **Modality** to `survey`, then pick **Template**: `wellbeing` — the one
 you saved into the project in [Chapter 3](TUTORIAL_BEGINNER_3_SURVEY_IMPORT.md).
+Check **Include official library** if you don't see it — this widens the
+dropdown to templates you haven't used in this project yet, not just ones
+already imported.
 
 ## 3. Skip reverse coding
 
@@ -71,6 +86,21 @@ wellbeing) — so leave this panel empty.
 
 You don't need `Transforms.Derived` here — a single summed total doesn't
 need an intermediate helper computation.
+
+```{note}
+**What's "Min valid"?** Adapted from *PRISM without Panic* (ANC Salzburg).
+It controls how PRISM handles missing data when computing a score. Say a
+scale has 9 items: with Min valid off, the score is computed no matter how
+many items are missing. Set to 9, PRISM only computes it when all 9 have
+valid answers. Set to 7, it still computes with at least 7 of 9 answered.
+Leave it off for this tutorial's 5-item scale (no missing data in the
+example file) — for your own instruments, check the questionnaire's manual
+before deciding on a value.
+```
+
+You can click **Preview JSON** at any point to see the recipe's current
+`Scores[]` block as it will be saved, without a server round-trip — useful
+for a quick sanity check before you actually click Save.
 
 ## 5. Skip variations
 
@@ -141,17 +171,30 @@ The formula is safely written down now. Chapter 5 checks whether everything
 
 ## Common mistakes
 
-- **Item name mismatches** — the item names in the recipe must exactly match
-  the template's `ItemID`s (`WB01`-`WB05`); a typo produces a save-time
-  item-reference error, not a silent skip.
-- **Forgetting Range** — the schema requires a `Range` on every `Scores`
-  entry; derive it from the item scale rather than leaving it blank or
-  copying an unrelated instrument's numbers.
-- **Running the recipe before survey data exists** — Analysis Output has
-  nothing to compute against if you skipped Chapter 3; import the survey
-  data first.
-- **Expecting Recipe Builder itself to produce output** — saving a recipe
-  and running it are two different pages; Save only writes the definition.
+```{warning}
+**Item name mismatches.** The item names in the recipe must exactly match
+the template's `ItemID`s (`WB01`-`WB05`); a typo produces a save-time
+item-reference error, not a silent skip.
+```
+
+```{warning}
+**Forgetting Range.** The schema requires a `Range` on every `Scores`
+entry; derive it from the item scale rather than leaving it blank or
+copying an unrelated instrument's numbers.
+```
+
+```{warning}
+**Running the recipe before survey data exists.** Analysis Output has
+nothing to compute against if you skipped Chapter 3; import the survey
+data first.
+```
+
+```{note}
+**Expecting Recipe Builder itself to produce output.** Saving a recipe and
+running it are two different pages; Save only writes the definition —
+Preview JSON lets you sanity-check that definition before you save, but
+neither one runs the recipe against your data.
+```
 
 ## What's next
 
