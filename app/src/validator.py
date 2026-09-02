@@ -170,6 +170,17 @@ def _resolve_survey_variant(file_path: str, sidecar_data: dict | None) -> str | 
     return None
 
 
+def _value_candidates(base_value: str | None, acq_value: str | None) -> list[str]:
+    """Return name-lookup candidates for base_value, acq-qualified variant first."""
+    if not base_value:
+        return []
+    candidates = []
+    if acq_value:
+        candidates.append(f"{base_value}_acq-{acq_value}")
+    candidates.append(base_value)
+    return candidates
+
+
 def resolve_sidecar_path(file_path, root_dir, library_path=None):
     """Return best-matching sidecar path, supporting dataset-level survey sidecars."""
     candidate = derive_sidecar_path(file_path)
@@ -186,25 +197,16 @@ def resolve_sidecar_path(file_path, root_dir, library_path=None):
     task_value = _extract_entity_value(stem, "task")
     acq_value = _extract_entity_value(stem, "acq")
 
-    def _value_candidates(base_value):
-        if not base_value:
-            return []
-        candidates = []
-        if acq_value:
-            candidates.append(f"{base_value}_acq-{acq_value}")
-        candidates.append(base_value)
-        return candidates
-
     label_candidates = []
-    for survey_candidate in _value_candidates(survey_value):
+    for survey_candidate in _value_candidates(survey_value, acq_value):
         label_candidates.append(("survey", survey_candidate))
-    for biometrics_candidate in _value_candidates(biometrics_value):
+    for biometrics_candidate in _value_candidates(biometrics_value, acq_value):
         label_candidates.append(("biometrics", biometrics_candidate))
     if task_value:
-        for task_candidate in _value_candidates(task_value):
+        for task_candidate in _value_candidates(task_value, acq_value):
             label_candidates.append(("task", task_candidate))
         if not survey_value and not biometrics_value:
-            for task_candidate in _value_candidates(task_value):
+            for task_candidate in _value_candidates(task_value, acq_value):
                 label_candidates.append(("survey", task_candidate))
                 label_candidates.append(("biometrics", task_candidate))
 
@@ -277,36 +279,27 @@ def _find_inherited_root_sidecar(file_path: str, root_dir: str) -> str | None:
     path_parts = set(Path(file_path).parts)
     is_physio_context = bool(path_parts.intersection({"physio", "physiological"}))
 
-    def _value_candidates(base_value):
-        if not base_value:
-            return []
-        candidates = []
-        if acq_value:
-            candidates.append(f"{base_value}_acq-{acq_value}")
-        candidates.append(base_value)
-        return candidates
-
     candidate_names = []
-    for survey_candidate in _value_candidates(survey_value):
+    for survey_candidate in _value_candidates(survey_value, acq_value):
         candidate_names.append(f"survey-{survey_candidate}_{suffix}.json")
-    for biometrics_candidate in _value_candidates(biometrics_value):
+    for biometrics_candidate in _value_candidates(biometrics_value, acq_value):
         candidate_names.append(f"biometrics-{biometrics_candidate}_{suffix}.json")
     if task_value:
-        for task_candidate in _value_candidates(task_value):
+        for task_candidate in _value_candidates(task_value, acq_value):
             candidate_names.append(f"task-{task_candidate}_{suffix}.json")
 
         # Legacy physio compatibility: files named like *_task-rest_ecg.edf should
         # be allowed to inherit canonical root sidecars like
         # task-rest_recording-ecg_physio.json during migration.
         if is_physio_context and suffix not in {"physio", "survey", "biometrics"}:
-            for task_candidate in _value_candidates(task_value):
+            for task_candidate in _value_candidates(task_value, acq_value):
                 candidate_names.append(
                     f"task-{task_candidate}_recording-{suffix}_physio.json"
                 )
 
         # Backward-compatible fallback: some datasets use survey-/biometrics-
         # naming with task labels.
-        for task_candidate in _value_candidates(task_value):
+        for task_candidate in _value_candidates(task_value, acq_value):
             candidate_names.append(f"survey-{task_candidate}_{suffix}.json")
             candidate_names.append(f"biometrics-{task_candidate}_{suffix}.json")
 
