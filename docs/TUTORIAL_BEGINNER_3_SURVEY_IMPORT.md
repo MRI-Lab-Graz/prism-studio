@@ -18,16 +18,9 @@ Archive) — see the format note in Part B, step 3.
 participant, written into subject-level folders under `wellbeing_study`.
 
 ```{mermaid}
-flowchart TD
-    A["Part A: get a template"] --> B{"Already have one?"}
-    B -->|"Yes, ready-made"| C["Copy survey-wellbeing.json"]
-    B -->|"No, build your own"| D["Excel Template Basics"]
-    C --> E["Part B: Converter → Survey"]
-    D --> E
-    E --> F["Choose source file"]
-    F --> G["Confirm mapping:<br/>ID, Session"]
-    G --> H["Preview (dry-run)"]
-    H --> I["Convert"]
+flowchart LR
+    A["📄 wellbeing.xlsx<br/>WB01-WB05 responses<br/>+ a survey template"] --> B["🔧 Survey<br/>Converter"]
+    B --> C["📋 One survey.tsv<br/>per participant<br/>+ shared sidecar JSON"]
 ```
 
 <div class="prism-persona-note" data-persona-note>
