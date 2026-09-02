@@ -10,6 +10,15 @@ belongs later in a study's lifecycle.
 **Time:** ~15 minutes. **Outcome:** a `wellbeing_study` project with a
 correct folder structure and complete required metadata, ready for chapter 2.
 
+```{mermaid}
+flowchart TD
+    A["Launch Studio"] --> B["Projects page:<br/>Create New Project"]
+    B --> C["Name & Location"]
+    C --> D["Study Metadata:<br/>Dataset Name, Authors, ..."]
+    D --> E["Create Project"]
+    E --> F["wellbeing_study/<br/>scaffold created"]
+```
+
 <div class="prism-persona-note" data-persona-note>
 <p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
 
