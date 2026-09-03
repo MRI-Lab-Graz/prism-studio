@@ -188,6 +188,41 @@
             <div id="participantsInfo" class="alert alert-info d-none mt-3"></div>
             <div id="participantsSuccess" class="alert alert-success d-none mt-3"></div>
 
+            <!-- Preview Results -->
+            <div id="participantsPreviewResults" class="d-none mt-4">
+                <h6 class="mb-3">
+                    <i class="fas fa-table me-2 text-info"></i>Data Preview
+                    <span class="badge bg-info ms-2" id="participantsPreviewCount">0 participants</span>
+                </h6>
+
+                <!-- TSV Preview -->
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-sm table-hover" id="participantsPreviewTable">
+                        <thead class="table-light sticky-top">
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- NeuroBagel Schema Preview (collapsed by default) -->
+                <div id="neurobagelSchemaPreview" class="mt-4 d-none">
+                    <h6 class="mb-3">
+                        <i class="fas fa-code me-2 text-secondary"></i>
+                        Full participants.json Preview
+                        <button class="btn btn-sm btn-outline-secondary ms-2" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#schemaDetails">
+                            <i class="fas fa-code me-1"></i>View JSON
+                        </button>
+                    </h6>
+
+                    <!-- Collapsible JSON view -->
+                    <div class="collapse" id="schemaDetails">
+                        <pre class="bg-light p-3 rounded border" style="max-height: 400px; overflow: auto;"><code id="schemaJsonCode"></code></pre>
+                    </div>
+                </div>
+            </div>
+
             <!-- Participants Annotation Section -->
             <div class="mt-4 pt-3 border-top">
                 <h5 class="mb-2">
@@ -199,13 +234,19 @@
 
                 <div id="neurobagelSection">
                     <div class="card border-success mb-0">
-                        <div class="card-header bg-success bg-opacity-10 d-flex justify-content-between align-items-center">
+                        <div class="card-header bg-success bg-opacity-10 d-flex justify-content-between align-items-center"
+                             data-bs-toggle="collapse" data-bs-target="#neurobagelCollapse"
+                             role="button" tabindex="0" aria-expanded="false" aria-controls="neurobagelCollapse">
                             <h6 class="mb-0">
                                 <i class="fas fa-brain text-success me-2"></i>
                                 Participant Annotation
                             </h6>
-                            <span class="badge bg-light text-dark border">Optional</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-light text-dark border">Optional</span>
+                                <i class="fas fa-chevron-down text-muted" id="neurobagelChevron"></i>
+                            </div>
                         </div>
+                        <div class="collapse" id="neurobagelCollapse">
                         <div class="card-body">
                             <div id="neurobagelWidgetContainer"></div>
 
@@ -216,41 +257,7 @@
                             </div>
                             <small class="form-text text-muted mt-2 d-block">Draft save is optional. Current metadata is still used when creating files.</small>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Preview Results -->
-            <div id="participantsPreviewResults" class="d-none mt-4">
-                <h6 class="mb-3">
-                    <i class="fas fa-table me-2 text-info"></i>Data Preview
-                    <span class="badge bg-info ms-2" id="participantsPreviewCount">0 participants</span>
-                </h6>
-                
-                <!-- TSV Preview -->
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                    <table class="table table-sm table-hover" id="participantsPreviewTable">
-                        <thead class="table-light sticky-top">
-                        </thead>
-                        <tbody>
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- NeuroBagel Schema Preview (collapsed by default) -->
-                <div id="neurobagelSchemaPreview" class="mt-4 d-none">
-                    <h6 class="mb-3">
-                        <i class="fas fa-code me-2 text-secondary"></i>
-                        Full participants.json Preview
-                        <button class="btn btn-sm btn-outline-secondary ms-2" type="button" 
-                                data-bs-toggle="collapse" data-bs-target="#schemaDetails">
-                            <i class="fas fa-code me-1"></i>View JSON
-                        </button>
-                    </h6>
-                    
-                    <!-- Collapsible JSON view -->
-                    <div class="collapse" id="schemaDetails">
-                        <pre class="bg-light p-3 rounded border" style="max-height: 400px; overflow: auto;"><code id="schemaJsonCode"></code></pre>
+                        </div>
                     </div>
                 </div>
             </div>
