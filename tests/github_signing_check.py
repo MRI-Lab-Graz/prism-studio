@@ -150,8 +150,8 @@ class TestGitHubSigningConfiguration:
                 "project-slug": "Project slug",
                 "signing-policy-slug": "Signing policy",
                 "artifact-configuration-slug": "Artifact configuration",
-                "input-artifact-path": "Input artifact path",
-                "output-artifact-path": "Output artifact path",
+                "github-artifact-id": "GitHub artifact ID (uploaded unsigned artifact)",
+                "output-artifact-directory": "Output artifact directory",
                 "wait-for-completion": "Wait for completion flag",
             }
 
