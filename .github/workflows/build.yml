@@ -129,6 +129,17 @@ jobs:
       run: |
         python scripts/ci/smoke_packaged_web_app.py --app-path ${{ matrix.bundle_executable }} --probe-path /projects --probe-path / --probe-path /converter --require-pyreadstat-write-support --require-pandas-support --require-limesurvey-exporter --require-project-export-defacing-import
 
+    - name: Upload Unsigned Executable for Signing
+      if: runner.os == 'Windows' && env.SIGNPATH_API_TOKEN != ''
+      id: upload-unsigned-exe
+      env:
+        SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+      uses: actions/upload-artifact@v7
+      with:
+        name: unsigned-prism-studio-exe
+        path: dist/PrismStudio/PrismStudio.exe
+        retention-days: 1
+
     # Windows Code Signing (Free for Open Source via SignPath)
     - name: Sign Windows Executable
       if: runner.os == 'Windows' && env.SIGNPATH_API_TOKEN != ''
@@ -138,12 +149,13 @@ jobs:
       with:
         api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
         organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
-        project-slug: 'prism-validator'
+        project-slug: 'prism-studio'
         signing-policy-slug: 'release-signing'
         artifact-configuration-slug: 'windows-executable'
-        input-artifact-path: 'dist/PrismStudio/PrismStudio.exe'
-        output-artifact-path: 'dist/PrismStudio/PrismStudio.exe'
+        github-artifact-id: ${{ steps.upload-unsigned-exe.outputs.artifact-id }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         wait-for-completion: true
+        output-artifact-directory: 'dist/PrismStudio'
 
     # Verify Windows Signature
     - name: Verify Windows Signature

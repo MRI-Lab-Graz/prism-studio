@@ -173,7 +173,7 @@ def _generate_icon(name: str) -> str | None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Build Prism Validator using PyInstaller"
+        description="Build Prism Studio using PyInstaller"
     )
     parser.add_argument(
         "--entry",
@@ -182,8 +182,8 @@ def main() -> int:
     )
     parser.add_argument(
         "--name",
-        default="PrismValidator",
-        help="App name (default: PrismValidator)",
+        default="PrismStudio",
+        help="App name (default: PrismStudio)",
     )
     parser.add_argument(
         "--mode",
@@ -310,11 +310,6 @@ def main() -> int:
         # Explicitly exclude optional packages (only for dev/scripts, not release builds)
         "--exclude-module=pyarrow",
         "--exclude-module=nibabel",
-        "--exclude-module=pydicom",
-        "--exclude-module=authlib",
-        "--exclude-module=nltk",
-        "--exclude-module=beautifulsoup4",
-        "--exclude-module=bs4",
         "--exclude-module=pyedflib",
         # Explicitly exclude docs/build packages (never needed in release builds)
         "--exclude-module=sphinx",

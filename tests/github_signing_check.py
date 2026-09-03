@@ -150,8 +150,8 @@ class TestGitHubSigningConfiguration:
                 "project-slug": "Project slug",
                 "signing-policy-slug": "Signing policy",
                 "artifact-configuration-slug": "Artifact configuration",
-                "input-artifact-path": "Input artifact path",
-                "output-artifact-path": "Output artifact path",
+                "github-artifact-id": "GitHub artifact ID (uploaded unsigned artifact)",
+                "output-artifact-directory": "Output artifact directory",
                 "wait-for-completion": "Wait for completion flag",
             }
 
@@ -187,19 +187,14 @@ class TestGitHubSigningConfiguration:
                 content = f.read()
 
             # Check for correct executable path
-            if "PrismStudio.exe" in content or "PrismValidator.exe" in content:
+            if "PrismStudio.exe" in content:
                 print("    OK Executable name referenced correctly")
             else:
                 print("    FAIL Executable name not found")
                 return False
 
             # Check for dist directory path
-            if (
-                "dist/PrismStudio" in content
-                or "dist\\PrismStudio" in content
-                or "dist/PrismValidator" in content
-                or "dist\\PrismValidator" in content
-            ):
+            if "dist/PrismStudio" in content or "dist\\PrismStudio" in content:
                 print("    OK Distribution directory path configured")
             else:
                 print("    WARN Distribution path may be incorrect")
@@ -416,8 +411,6 @@ class TestGitHubSigningConfiguration:
 
             if "PrismStudio.exe" in content:
                 report.append("OK Target Executable: PrismStudio.exe")
-            elif "PrismValidator.exe" in content:
-                report.append("OK Target Executable: PrismValidator.exe")
 
             input_match = re.search(
                 r"input-artifact-path:\s*['\"]?([^'\"]+)['\"]?", content

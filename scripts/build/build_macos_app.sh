@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Build a macOS .app bundle for Prism Validator.
+# Build a macOS .app bundle for Prism Studio.
 # This uses the repo-local ./.venv and installs build deps via scripts/setup/setup.sh.
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -34,9 +34,9 @@ python -c "import PyInstaller" >/dev/null 2>&1 || {
 # Added --target-arch=universal2 to support both Intel and Apple Silicon Macs.
 python scripts/build/build_app.py \
   --entry app/prism-gui.py \
-  --name PrismValidator \
+  --name PrismStudio \
   --mode onedir \
   --target-arch universal2 \
   --clean-output
 
-echo "✅ Done. App bundle: dist/PrismValidator.app"
+echo "✅ Done. App bundle: dist/PrismStudio.app"

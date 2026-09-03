@@ -81,11 +81,6 @@ def test_validator_spec_includes_backend_bundle_and_optional_excludes() -> None:
     for excluded_pkg in (
         "'pyarrow'",
         "'nibabel'",
-        "'pydicom'",
-        "'authlib'",
-        "'nltk'",
-        "'beautifulsoup4'",
-        "'bs4'",
         "'pyedflib'",
         "'sphinx'",
         "'sphinx_rtd_theme'",
