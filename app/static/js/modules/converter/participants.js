@@ -19,6 +19,24 @@ export function initParticipants() {
     const participantsPanel = document.getElementById('participants-panel');
     if (!participantsPanel) return;
     const neurobagelWidgetUrl = participantsPanel.dataset.neurobagelWidgetUrl || '/static/neurobagel_widget.html';
+
+    const neurobagelCollapseEl = document.getElementById('neurobagelCollapse');
+    const neurobagelChevron = document.getElementById('neurobagelChevron');
+    if (neurobagelCollapseEl && neurobagelChevron) {
+        neurobagelCollapseEl.addEventListener('shown.bs.collapse', function() {
+            neurobagelChevron.classList.replace('fa-chevron-down', 'fa-chevron-up');
+        });
+        neurobagelCollapseEl.addEventListener('hidden.bs.collapse', function() {
+            neurobagelChevron.classList.replace('fa-chevron-up', 'fa-chevron-down');
+        });
+    }
+    const neurobagelHeader = document.querySelector('#neurobagelSection .card-header[data-bs-toggle="collapse"]');
+    neurobagelHeader?.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            neurobagelHeader.click();
+        }
+    });
     // Track whether preview has been completed
     let participantsPreviewCompleted = false;
     let participantsExcelSheetCount = null;
@@ -2208,6 +2226,10 @@ export function initParticipants() {
 
                 const neurobagelSection = document.getElementById('neurobagelSection');
                 if (neurobagelSection) {
+                    const collapseEl = document.getElementById('neurobagelCollapse');
+                    if (collapseEl && !collapseEl.classList.contains('show')) {
+                        bootstrap.Collapse.getOrCreateInstance(collapseEl).show();
+                    }
                     neurobagelSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             }, 350);
