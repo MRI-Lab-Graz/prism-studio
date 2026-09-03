@@ -5,15 +5,6 @@ This chapter imports information about the people who take part in a study,
 such as age, sex, education, and handedness. It does not import their survey
 responses from the same source spreadsheet; those come in chapter 3.
 
-```{important}
-**Data and its description belong together.** This is a crucial PRISM and BIDS
-convention: a TSV data table stores the recorded values, and a matching JSON
-file explains what its columns and values mean. The two files are a pair, not
-alternatives to each other. You will use this same TSV/JSON pattern throughout
-PRISM for surveys, biometrics, study environment data, and other documented
-tables.
-```
-
 In this chapter, `participants.tsv` is a table with one row for each person.
 `participants.json` explains columns such as `participant_id`, `age`, and
 `sex`, including any codes used in the table.
@@ -94,8 +85,8 @@ not a status indicator.
 
 ## 3. Open Converter → Sociodemographics
 
-With `wellbeing_study` loaded, go to **Converter**. The **Sociodemographics**
-tab is the default/first tab.
+With `wellbeing_study` loaded, go to **Prepare Data → Converter**. The
+**Sociodemographics** tab is the default/first tab.
 
 ![PRISM Studio Participants converter tab](_static/screenshots/prism-studio-converter-participants.png)
 
@@ -151,6 +142,18 @@ Behind the scenes, each `participant_id` value is trimmed, Unicode-normalized,
 had any leading `sub-` stripped, then non-alphanumeric characters removed,
 and re-prefixed with `sub-` — so a source ID like `DEMO001` becomes
 `sub-DEMO001` in the output. IDs are sanitized, never renumbered.
+
+You now have both `participants.tsv` and `participants.json` on disk together.
+
+```{important}
+**Data and its description belong together.** This is a crucial PRISM and BIDS
+convention: a TSV data table stores the recorded values, and a matching JSON
+file explains what its columns and values mean. The two files are a pair, not
+alternatives to each other — which is exactly what you just saw: one click
+wrote both, together. You will use this same TSV/JSON pattern throughout
+PRISM for surveys, biometrics, study environment data, and other documented
+tables.
+```
 
 <div class="prism-persona-note" data-persona-note>
 <p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
