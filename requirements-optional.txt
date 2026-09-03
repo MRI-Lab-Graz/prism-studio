@@ -1,16 +1,8 @@
 # Optional feature dependencies not required for core app startup
 # Install these when specific workflows require them.
 
-# Neuroimaging / DICOM tooling
+# Neuroimaging tooling
 Nibabel
-pydicom>=3.0.2
-
-# OAuth / authentication integrations
-authlib>=1.7.0
-
-# NLP and scraping helpers used by scripts/workflows
-nltk>=3.10.3
-beautifulsoup4
 
 # Optional export formats and physio support
 pyedflib
@@ -20,3 +12,9 @@ bids2openminds
 
 # Questionnaire preview export as Word document
 python-docx>=1.1.0
+
+# Anatomical MRI defacing on export (invoked as the `pydeface` CLI via
+# subprocess, not imported). Also requires FSL, a separate non-pip install,
+# to actually run -- pointless without it, so it does not belong in the
+# always-installed runtime set.
+pydeface

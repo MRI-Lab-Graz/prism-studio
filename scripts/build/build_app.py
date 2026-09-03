@@ -310,11 +310,6 @@ def main() -> int:
         # Explicitly exclude optional packages (only for dev/scripts, not release builds)
         "--exclude-module=pyarrow",
         "--exclude-module=nibabel",
-        "--exclude-module=pydicom",
-        "--exclude-module=authlib",
-        "--exclude-module=nltk",
-        "--exclude-module=beautifulsoup4",
-        "--exclude-module=bs4",
         "--exclude-module=pyedflib",
         # Explicitly exclude docs/build packages (never needed in release builds)
         "--exclude-module=sphinx",
