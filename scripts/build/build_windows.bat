@@ -1,9 +1,9 @@
 @echo off
-REM Windows build script for Prism Validator
+REM Windows build script for Prism Studio
 REM This script sets up the environment and builds the Windows executable
 
 echo ========================================
-echo Prism Validator - Windows Build Script
+echo Prism Studio - Windows Build Script
 echo ========================================
 echo.
 
@@ -73,9 +73,9 @@ echo ========================================
 echo Build complete!
 echo ========================================
 echo.
-echo Your application is in: dist\PrismValidator\
+echo Your application is in: dist\PrismStudio\
 echo.
-echo To run it: cd dist\PrismValidator ^&^& PrismValidator.exe
+echo To run it: cd dist\PrismStudio ^&^& PrismStudio.exe
 echo.
 REM pause removed for automation
 
