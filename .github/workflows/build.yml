@@ -138,7 +138,7 @@ jobs:
       with:
         api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
         organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
-        project-slug: 'prism-validator'
+        project-slug: 'prism-studio'
         signing-policy-slug: 'release-signing'
         artifact-configuration-slug: 'windows-executable'
         input-artifact-path: 'dist/PrismStudio/PrismStudio.exe'

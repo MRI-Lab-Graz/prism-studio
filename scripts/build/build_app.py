@@ -173,7 +173,7 @@ def _generate_icon(name: str) -> str | None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Build Prism Validator using PyInstaller"
+        description="Build Prism Studio using PyInstaller"
     )
     parser.add_argument(
         "--entry",
@@ -182,8 +182,8 @@ def main() -> int:
     )
     parser.add_argument(
         "--name",
-        default="PrismValidator",
-        help="App name (default: PrismValidator)",
+        default="PrismStudio",
+        help="App name (default: PrismStudio)",
     )
     parser.add_argument(
         "--mode",
