@@ -7,6 +7,10 @@ Flask>=3.1.3
 Werkzeug>=3.1.8
 bidsschematools>=1.2.7
 requests>=2.33.0
+# Direct floor, not just a transitive requests pin: requests itself only
+# requires urllib3>=1.26. GHSA-38jv-5279-wg99 / CVE-2026-21441 (decompression
+# bomb via redirect handling in the streaming API) is fixed in 2.6.3; pinning
+# here stops a resolver from settling on an older, vulnerable urllib3.
 urllib3>=2.6.3
 bids-validator
 pandas
@@ -27,4 +31,3 @@ pywebview; sys_platform == "darwin"
 # release with an Intel wheel (48.0.1); everywhere else tracks latest.
 cryptography>=50.0.0,<51; platform_machine != "x86_64" or sys_platform != "darwin"
 cryptography>=46.0.7,<49; platform_machine == "x86_64" and sys_platform == "darwin"
-pydeface

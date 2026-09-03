@@ -10,7 +10,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['pyarrow', 'nibabel', 'pydicom', 'authlib', 'nltk', 'beautifulsoup4', 'bs4', 'pyedflib', 'sphinx', 'sphinx_rtd_theme', 'myst_parser', 'babel', 'docutils', 'pygments'],
+    excludes=['pyarrow', 'nibabel', 'pyedflib', 'sphinx', 'sphinx_rtd_theme', 'myst_parser', 'babel', 'docutils', 'pygments'],
     noarchive=False,
     optimize=0,
 )
