@@ -419,6 +419,15 @@ export function initOpenProjectController({
             hint.textContent = 'DataLad version control is not enabled for this project. Use Enable DataLad any time to opt in.';
         }
 
+        const loadedSummary = document.getElementById('projectLoadedDataladSummary');
+        if (loadedSummary) {
+            loadedSummary.textContent = state.enabled
+                ? (state.available
+                    ? 'This project is DataLad-tracked.'
+                    : 'This project is DataLad-tracked, but DataLad isn\'t available here.')
+                : 'DataLad version control isn\'t set up for this project yet.';
+        }
+
         const operationState = getDataladOperationState();
         if (operationState.active) {
             enableButton.disabled = true;
@@ -1121,39 +1130,14 @@ export function initOpenProjectController({
                         </a>
                     </div>
                 </div>
-                <div class="alert alert-light border mt-3 mb-0" role="status">
-                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3">
-                        <div>
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <strong><i class="fas fa-code-branch me-1"></i>DataLad Version Control</strong>
-                                <span class="badge rounded-pill bg-light text-muted border" id="projectBoxDataladStateBadge">Not tracked</span>
-                                <a href="${DATALAD_DOCS_URL}" target="_blank" rel="noopener noreferrer" class="small text-muted" title="What is DataLad?">(?)</a>
-                            </div>
-                            <div class="small text-muted mt-2" id="projectBoxDataladStatus">Checking DataLad status...</div>
-                            <div class="small text-muted mt-1" id="projectBoxDataladHint">DataLad version control is not enabled for this project.</div>
-                            <div class="mt-2 d-none" id="projectBoxDataladProgressWrap">
-                                <div class="small text-muted mb-1" id="projectBoxDataladProgressLabel"></div>
-                                <div class="progress" style="height: 0.7rem;">
-                                    <div class="progress-bar bg-success" id="projectBoxDataladProgressBar" role="progressbar" style="width: 0%;" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
-                                </div>
-                            </div>
-                            <div class="mt-2 d-none" id="projectBoxDataladSaveProgressWrap">
-                                <div class="small text-muted mb-1" id="projectBoxDataladSaveProgressLabel"></div>
-                                <div class="progress" style="height: 0.85rem;">
-                                    <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" id="projectBoxDataladSaveProgressBar" role="progressbar" style="width: 0%;" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
-                                </div>
-                            </div>
-                            <div class="small mt-2 d-none" id="projectBoxDataladFeedback" aria-live="polite"></div>
-                        </div>
-                        <div class="d-flex gap-2 flex-wrap justify-content-lg-end">
-                            <button type="button" class="btn btn-sm btn-outline-primary" id="projectBoxDataladEnableBtn">
-                                <i class="fas fa-plus me-1"></i>Enable DataLad
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-success" id="projectBoxDataladSaveBtn">
-                                <i class="fas fa-floppy-disk me-1"></i>Save DataLad Snapshot
-                            </button>
-                        </div>
+                <div class="alert alert-light border mt-3 mb-0 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2" role="status">
+                    <div>
+                        <strong><i class="fas fa-code-branch me-1"></i>Version control</strong>
+                        <span class="ms-1" id="projectLoadedDataladSummary"></span>
                     </div>
+                    <a href="#dataladSection" class="btn btn-sm btn-outline-secondary" id="projectLoadedManageDataladLink">
+                        <i class="fas fa-arrow-down me-1"></i>Manage DataLad
+                    </a>
                 </div>
                 <div class="d-flex flex-column align-items-end mt-2">
                     <div class="d-flex gap-2 flex-wrap justify-content-end">
@@ -1181,6 +1165,30 @@ export function initOpenProjectController({
             return enteredPath;
         }
         return String(getCurrentProjectState().path || '').trim();
+    }
+
+    function showDataladCard() {
+        const card = document.getElementById('dataladSectionCard');
+        if (!card) return;
+        const path = String(getCurrentProjectState().path || '').trim();
+        card.style.display = path ? 'block' : 'none';
+        if (!path) return;
+
+        bindProjectBoxDataladActions();
+        renderProjectBoxDataladState(getCurrentProjectState().datalad, path);
+
+        fetchWithApiFallback('/api/projects/current')
+            .then((response) => response.json().catch(() => null))
+            .then((current) => {
+                if (!current || typeof current !== 'object') return;
+                const currentPath = String(current.path || '').trim();
+                if (currentPath !== path) return; // user navigated to a different project meanwhile
+                applyCurrentProject(current);
+                renderProjectBoxDataladState(current.datalad, currentPath);
+            })
+            .catch(() => {
+                // Best-effort enhancement only; the state from getCurrentProjectState() already rendered.
+            });
     }
 
     async function loadProjectWithoutValidation(path, triggerButton = null, options = {}) {
@@ -1229,6 +1237,7 @@ export function initOpenProjectController({
             showStudyMetadataCard();
             updateCreateProjectButton();
             showMethodsCard();
+            showDataladCard();
 
             renderLoadedProjectState(loadedName, loadedPath, projectSummary);
             renderProjectBoxDataladState(currentState.datalad, loadedPath);
@@ -1261,8 +1270,25 @@ export function initOpenProjectController({
         });
     }
 
+    document.addEventListener('click', function(event) {
+        const link = event.target.closest ? event.target.closest('#projectLoadedManageDataladLink') : null;
+        if (!link) return;
+        event.preventDefault();
+
+        const collapseEl = document.getElementById('dataladSection');
+        const cardEl = document.getElementById('dataladSectionCard');
+        if (!collapseEl || !cardEl) return;
+
+        cardEl.style.display = 'block';
+        if (window.bootstrap && typeof window.bootstrap.Collapse === 'function') {
+            window.bootstrap.Collapse.getOrCreateInstance(collapseEl).show();
+        }
+        cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
     return {
         getOpenProjectActionPath,
         loadProjectWithoutValidation,
+        showDataladCard,
     };
 }
