@@ -121,6 +121,9 @@ STUDY_METADATA_TEMPLATE = (
 EXPORT_SECTION_TEMPLATE = (
     REPO_ROOT / "app" / "templates" / "includes" / "projects" / "export_section.html"
 )
+DATALAD_SECTION_TEMPLATE = (
+    REPO_ROOT / "app" / "templates" / "includes" / "projects" / "datalad_section.html"
+)
 BASE_TEMPLATE = REPO_ROOT / "app" / "templates" / "base.html"
 
 
@@ -193,12 +196,16 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("function renderProjectBoxDataladState(", content)
-        self.assertIn('id="projectBoxDataladStateBadge"', content)
-        self.assertIn('id="projectBoxDataladEnableBtn"', content)
-        self.assertIn('id="projectBoxDataladSaveBtn"', content)
-        self.assertIn('id="projectBoxDataladProgressWrap"', content)
-        self.assertIn('id="projectBoxDataladProgressBar"', content)
-        self.assertIn('id="projectBoxDataladProgressLabel"', content)
+        # The static markup for these IDs now lives in datalad_section.html
+        # (see test_datalad_section_template_owns_static_datalad_markup below);
+        # open-project.js still "owns" them in the sense that its logic looks
+        # them up fresh via getElementById on every call.
+        self.assertIn("document.getElementById('projectBoxDataladStateBadge')", content)
+        self.assertIn("document.getElementById('projectBoxDataladEnableBtn')", content)
+        self.assertIn("document.getElementById('projectBoxDataladSaveBtn')", content)
+        self.assertIn("document.getElementById('projectBoxDataladProgressWrap')", content)
+        self.assertIn("document.getElementById('projectBoxDataladProgressBar')", content)
+        self.assertIn("document.getElementById('projectBoxDataladProgressLabel')", content)
         self.assertIn("Register Nested Dataset", content)
         self.assertIn("DataLad Structure Complete", content)
         self.assertIn("fetchWithApiFallback('/api/projects/datalad/enable'", content)
@@ -221,6 +228,36 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("/api/projects/preferences/${DATALAD_PREFERENCES_NAMESPACE}", content)
         self.assertIn("window.prismDataladOperationState", content)
         self.assertIn("maybePromptDataladOptIn", content)
+
+    def test_datalad_section_template_owns_static_datalad_markup(self):
+        self.assertTrue(DATALAD_SECTION_TEMPLATE.exists())
+        content = DATALAD_SECTION_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="dataladSectionCard"', content)
+        self.assertIn('style="display: none;"', content)
+        self.assertIn('data-bs-target="#dataladSection"', content)
+        self.assertIn('aria-controls="dataladSection"', content)
+        self.assertIn('id="dataladSectionChevron"', content)
+        self.assertIn('class="collapse" id="dataladSection"', content)
+        self.assertIn('id="projectBoxDataladStateBadge"', content)
+        self.assertIn('id="projectBoxDataladStatus"', content)
+        self.assertIn('id="projectBoxDataladHint"', content)
+        self.assertIn('id="projectBoxDataladProgressWrap"', content)
+        self.assertIn('id="projectBoxDataladProgressBar"', content)
+        self.assertIn('id="projectBoxDataladProgressLabel"', content)
+        self.assertIn('id="projectBoxDataladSaveProgressWrap"', content)
+        self.assertIn('id="projectBoxDataladSaveProgressBar"', content)
+        self.assertIn('id="projectBoxDataladSaveProgressLabel"', content)
+        self.assertIn('id="projectBoxDataladFeedback"', content)
+        self.assertIn('id="projectBoxDataladEnableBtn"', content)
+        self.assertIn('id="projectBoxDataladSaveBtn"', content)
+        self.assertIn('href="https://www.datalad.org/"', content)
+
+        page_sections_content = PAGE_SECTIONS_TEMPLATE.read_text(encoding="utf-8")
+        self.assertIn(
+            "{% include 'includes/projects/datalad_section.html' %}",
+            page_sections_content,
+        )
 
     def test_settings_and_fix_actions_use_api_fallback(self):
         settings_content = PROJECTS_SETTINGS_MODULE.read_text(encoding="utf-8")
@@ -861,6 +898,88 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("Open Validator", content)
         self.assertIn("id=\"projectBoxSaveBtn\"", content)
         self.assertIn("Save Changes to Project", content)
+
+    def test_loaded_project_state_links_out_to_datalad_card_instead_of_inlining_it(self):
+        content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
+
+        # Scope to renderLoadedProjectState's own template body: the descriptive
+        # sentence below is also legitimately used (unchanged) as dynamic hint text
+        # inside the separate renderProjectBoxDataladState logic function, so
+        # asserting against the whole file would false-positive on that unrelated
+        # code instead of verifying the inline block was actually removed here.
+        render_start = content.index("function renderLoadedProjectState(")
+        render_end = content.index("function getOpenProjectActionPath(")
+        render_body = content[render_start:render_end]
+
+        # The old inline block must be gone from renderLoadedProjectState's template.
+        self.assertNotIn("DataLad Version Control</strong>", render_body)
+        self.assertNotIn(
+            "DataLad adds Git-based version control to your project, useful for tracking changes over time. Click Enable DataLad to get started.",
+            render_body,
+        )
+
+        # A compact link-out row takes its place, matching the existing
+        # "Need a full dataset check?" pattern already in the same panel.
+        self.assertIn('id="projectLoadedManageDataladLink"', render_body)
+        self.assertIn('href="#dataladSection"', render_body)
+
+        # The row's descriptive sentence must be state-aware rather than a static
+        # claim that misleads once the project is already DataLad-tracked, so the
+        # old unconditional sentence is gone and a dynamic summary span replaces it.
+        self.assertNotIn("DataLad adds Git-based version control any time", render_body)
+        self.assertIn('id="projectLoadedDataladSummary"', render_body)
+
+        # showDataladCard mirrors showMethodsCard's show/hide-on-project-loaded logic.
+        self.assertIn("function showDataladCard()", content)
+        self.assertIn("dataladSectionCard", content)
+        self.assertIn("return {", content)
+        self.assertIn("showDataladCard,", content)
+
+    def test_datalad_card_visibility_is_wired_through_bootstrap_like_methods_card(self):
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+        bootstrap_content = PROJECTS_BOOTSTRAP_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("const showDataladCard = openProjectController.showDataladCard;", core_content)
+        self.assertIn("showDataladCard,", core_content)
+
+        self.assertIn("showDataladCard();", bootstrap_content)
+        self.assertIn(
+            "{ element: 'dataladSection', chevron: 'dataladSectionChevron' }",
+            bootstrap_content,
+        )
+
+    def test_show_datalad_card_populates_and_binds_when_visible(self):
+        # Finding 1 (whole-branch review): a plain GET /projects with a project
+        # already active in the session can show the card without ever running
+        # loadProjectWithoutValidation, so showDataladCard() itself must populate
+        # and bind the card rather than only toggling display.
+        content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
+
+        show_start = content.index("function showDataladCard()")
+        show_end = content.index("\n    }\n", show_start)
+        show_body = content[show_start:show_end]
+
+        self.assertIn("if (!path) return;", show_body)
+        self.assertIn("bindProjectBoxDataladActions();", show_body)
+        self.assertIn("renderProjectBoxDataladState(", show_body)
+        self.assertIn("fetchWithApiFallback('/api/projects/current')", show_body)
+        self.assertIn("applyCurrentProject(current);", show_body)
+
+    def test_render_project_box_datalad_state_updates_loaded_summary_span(self):
+        content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
+
+        render_start = content.index("function renderProjectBoxDataladState(")
+        render_end = content.index("\n    function refreshDataladStatusDeep(")
+        render_body = content[render_start:render_end]
+
+        self.assertIn("getElementById('projectLoadedDataladSummary')", render_body)
+        self.assertIn("This project is DataLad-tracked.", render_body)
+        self.assertIn("DataLad version control isn\\'t set up for this project yet.", render_body)
+
+        # Optional element: must not be added to the function's required-elements
+        # early-return guard, since the Project Loaded panel isn't always present.
+        guard_line = next(line for line in render_body.splitlines() if "if (!status" in line)
+        self.assertNotIn("projectLoadedDataladSummary", guard_line)
 
     def test_projects_page_no_longer_owns_inline_validation_actions(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")

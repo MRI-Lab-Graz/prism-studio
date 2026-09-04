@@ -8,6 +8,7 @@ export function initProjectsPageBootstrap({
     loadLibraryInfo,
     showStudyMetadataCard,
     showMethodsCard,
+    showDataladCard,
     renderRecentProjects,
     loadRecentProjectsFromServer,
     ensureOpenSectionVisibleForLoadedProject,
@@ -74,6 +75,7 @@ export function initProjectsPageBootstrap({
     loadLibraryInfo();
     showStudyMetadataCard();
     showMethodsCard();
+    showDataladCard();
     renderRecentProjects();
     loadRecentProjectsFromServer();
     ensureOpenSectionVisibleForLoadedProject();
@@ -87,6 +89,7 @@ export function initProjectsPageBootstrap({
         { element: 'openProjectSection', chevron: 'openProjectChevron' },
         { element: 'studyMetadataSection', chevron: 'studyMetadataChevron' },
         { element: 'methodsSectionBody', chevron: 'methodsSectionChevron' },
+        { element: 'dataladSection', chevron: 'dataladSectionChevron' },
         { element: 'exportSection', chevron: 'exportChevron' },
         { element: 'settingsSection', chevron: 'settingsChevron' }
     ];
