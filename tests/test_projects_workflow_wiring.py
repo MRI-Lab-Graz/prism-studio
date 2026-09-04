@@ -121,6 +121,9 @@ STUDY_METADATA_TEMPLATE = (
 EXPORT_SECTION_TEMPLATE = (
     REPO_ROOT / "app" / "templates" / "includes" / "projects" / "export_section.html"
 )
+DATALAD_SECTION_TEMPLATE = (
+    REPO_ROOT / "app" / "templates" / "includes" / "projects" / "datalad_section.html"
+)
 BASE_TEMPLATE = REPO_ROOT / "app" / "templates" / "base.html"
 
 
@@ -221,6 +224,36 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("/api/projects/preferences/${DATALAD_PREFERENCES_NAMESPACE}", content)
         self.assertIn("window.prismDataladOperationState", content)
         self.assertIn("maybePromptDataladOptIn", content)
+
+    def test_datalad_section_template_owns_static_datalad_markup(self):
+        self.assertTrue(DATALAD_SECTION_TEMPLATE.exists())
+        content = DATALAD_SECTION_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="dataladSectionCard"', content)
+        self.assertIn('style="display: none;"', content)
+        self.assertIn('data-bs-target="#dataladSection"', content)
+        self.assertIn('aria-controls="dataladSection"', content)
+        self.assertIn('id="dataladSectionChevron"', content)
+        self.assertIn('class="collapse" id="dataladSection"', content)
+        self.assertIn('id="projectBoxDataladStateBadge"', content)
+        self.assertIn('id="projectBoxDataladStatus"', content)
+        self.assertIn('id="projectBoxDataladHint"', content)
+        self.assertIn('id="projectBoxDataladProgressWrap"', content)
+        self.assertIn('id="projectBoxDataladProgressBar"', content)
+        self.assertIn('id="projectBoxDataladProgressLabel"', content)
+        self.assertIn('id="projectBoxDataladSaveProgressWrap"', content)
+        self.assertIn('id="projectBoxDataladSaveProgressBar"', content)
+        self.assertIn('id="projectBoxDataladSaveProgressLabel"', content)
+        self.assertIn('id="projectBoxDataladFeedback"', content)
+        self.assertIn('id="projectBoxDataladEnableBtn"', content)
+        self.assertIn('id="projectBoxDataladSaveBtn"', content)
+        self.assertIn('href="https://www.datalad.org/"', content)
+
+        page_sections_content = PAGE_SECTIONS_TEMPLATE.read_text(encoding="utf-8")
+        self.assertIn(
+            "{% include 'includes/projects/datalad_section.html' %}",
+            page_sections_content,
+        )
 
     def test_settings_and_fix_actions_use_api_fallback(self):
         settings_content = PROJECTS_SETTINGS_MODULE.read_text(encoding="utf-8")
