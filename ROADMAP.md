@@ -2,6 +2,15 @@
 
 Last updated: 2026-08-07
 
+## Recent Checkpoints
+
+- [x] 2026-09-04: Fixed standard BIDS validation on current Deno releases by
+      enabling Deno's automatic Node-compatible module directory for the pinned
+      `jsr:@bids/validator` dependency graph. Regression coverage verifies the
+      launch contract. Lesson learned: upstream JSR CLIs may load npm packages
+      through Node resolution and require `--node-modules-dir=auto` even when
+      the top-level command is a JSR specifier.
+
 ## Vision
 
 PRISM brings BIDS discipline to the modalities BIDS forgot — surveys,

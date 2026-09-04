@@ -13,7 +13,6 @@
     --studio-control-min-height: 2.5rem;
     --studio-action-button-min-height: 3.25rem;
     --studio-button-icon-size: 1rem;
-    --studio-page-icon-size: 1.35rem;
     --studio-brand-primary: #33363d;
     --studio-brand-primary-hover: #24272d;
     --studio-brand-primary-soft: #f1f2f3;
@@ -184,9 +183,6 @@
 }
 
 .studio-theme .studio-page-header-icon {
-    flex: 0 0 var(--studio-page-icon-size);
-    width: var(--studio-page-icon-size);
-    text-align: center;
     line-height: 1;
 }
 

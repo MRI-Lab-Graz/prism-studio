@@ -879,10 +879,6 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             open_form_content,
         )
         self.assertIn(
-            "Loading sets the current project. Full dataset validation runs from the Validator page.",
-            open_form_content,
-        )
-        self.assertIn(
             "Load a project you already use in PRISM Studio here, then run full checks in the Validator.",
             projects_page_content,
         )

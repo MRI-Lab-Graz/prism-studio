@@ -220,6 +220,7 @@ def run_bids_validator(
             [
                 "deno",
                 "run",
+                "--node-modules-dir=auto",
                 "-ERWN",
                 "--allow-sys",
                 DENO_BIDS_VALIDATOR_SPEC,

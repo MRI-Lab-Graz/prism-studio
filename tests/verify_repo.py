@@ -1358,6 +1358,17 @@ def check_dependencies(repo_path, fix=False):
                 result = run_command(npm_audit_command, cwd=repo_path)
                 if result and result.returncode == 0:
                     print_success("npm audit passed.")
+                elif result and (
+                    "Service Unavailable" in result.stdout
+                    or "audit endpoint returned an error" in result.stdout
+                ):
+                    # The npm registry's audit endpoint being down is an
+                    # infrastructure hiccup, not a vulnerability finding --
+                    # don't fail the nightly run over it.
+                    print_info(
+                        "npm audit could not reach the registry (service unavailable); skipping."
+                    )
+                    print(result.stdout)
                 else:
                     print_warning("npm audit found issues.")
                     if result:

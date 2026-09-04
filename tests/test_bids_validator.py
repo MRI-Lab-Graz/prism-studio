@@ -11,6 +11,25 @@ sys.path.insert(
 import bids_validator
 
 
+def test_deno_validator_uses_node_modules_directory(monkeypatch, tmp_path):
+    dataset = tmp_path / "dataset"
+    dataset.mkdir()
+    commands = []
+
+    def fake_run(cmd, check=False, stdout=None, stderr=None, text=False):
+        commands.append(cmd)
+        if cmd[:2] == ["deno", "--version"]:
+            return SimpleNamespace(stdout="deno 2.0.0", stderr="", returncode=0)
+        if cmd[:2] == ["deno", "run"]:
+            return SimpleNamespace(stdout='{"issues": {"issues": []}}', stderr="", returncode=0)
+        raise AssertionError(f"Unexpected command: {cmd}")
+
+    monkeypatch.setattr(bids_validator.subprocess, "run", fake_run)
+
+    assert bids_validator.run_bids_validator(str(dataset), verbose=False) == []
+    assert "--node-modules-dir=auto" in commands[1]
+
+
 def test_deno_parser_suppresses_recommended_key_warnings(monkeypatch, tmp_path):
     dataset = tmp_path / "dataset"
     dataset.mkdir()
