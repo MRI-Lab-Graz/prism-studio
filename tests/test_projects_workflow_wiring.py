@@ -922,7 +922,12 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         # "Need a full dataset check?" pattern already in the same panel.
         self.assertIn('id="projectLoadedManageDataladLink"', render_body)
         self.assertIn('href="#dataladSection"', render_body)
-        self.assertIn("DataLad adds Git-based version control any time", render_body)
+
+        # The row's descriptive sentence must be state-aware rather than a static
+        # claim that misleads once the project is already DataLad-tracked, so the
+        # old unconditional sentence is gone and a dynamic summary span replaces it.
+        self.assertNotIn("DataLad adds Git-based version control any time", render_body)
+        self.assertIn('id="projectLoadedDataladSummary"', render_body)
 
         # showDataladCard mirrors showMethodsCard's show/hide-on-project-loaded logic.
         self.assertIn("function showDataladCard()", content)
@@ -942,6 +947,39 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "{ element: 'dataladSection', chevron: 'dataladSectionChevron' }",
             bootstrap_content,
         )
+
+    def test_show_datalad_card_populates_and_binds_when_visible(self):
+        # Finding 1 (whole-branch review): a plain GET /projects with a project
+        # already active in the session can show the card without ever running
+        # loadProjectWithoutValidation, so showDataladCard() itself must populate
+        # and bind the card rather than only toggling display.
+        content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
+
+        show_start = content.index("function showDataladCard()")
+        show_end = content.index("\n    }\n", show_start)
+        show_body = content[show_start:show_end]
+
+        self.assertIn("if (!path) return;", show_body)
+        self.assertIn("bindProjectBoxDataladActions();", show_body)
+        self.assertIn("renderProjectBoxDataladState(", show_body)
+        self.assertIn("fetchWithApiFallback('/api/projects/current')", show_body)
+        self.assertIn("applyCurrentProject(current);", show_body)
+
+    def test_render_project_box_datalad_state_updates_loaded_summary_span(self):
+        content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
+
+        render_start = content.index("function renderProjectBoxDataladState(")
+        render_end = content.index("\n    function refreshDataladStatusDeep(")
+        render_body = content[render_start:render_end]
+
+        self.assertIn("getElementById('projectLoadedDataladSummary')", render_body)
+        self.assertIn("This project is DataLad-tracked.", render_body)
+        self.assertIn("DataLad version control isn\\'t set up for this project yet.", render_body)
+
+        # Optional element: must not be added to the function's required-elements
+        # early-return guard, since the Project Loaded panel isn't always present.
+        guard_line = next(line for line in render_body.splitlines() if "if (!status" in line)
+        self.assertNotIn("projectLoadedDataladSummary", guard_line)
 
     def test_projects_page_no_longer_owns_inline_validation_actions(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
