@@ -252,6 +252,7 @@ const openProjectController = initOpenProjectController({
 
 const getOpenProjectActionPath = openProjectController.getOpenProjectActionPath;
 const loadProjectWithoutValidation = openProjectController.loadProjectWithoutValidation;
+const showDataladCard = openProjectController.showDataladCard;
 
 initDeleteProjectController({ fetchWithApiFallback, escapeHtml });
 
@@ -285,6 +286,7 @@ export function initProjectsPage() {
         loadLibraryInfo,
         showStudyMetadataCard,
         showMethodsCard,
+        showDataladCard,
         renderRecentProjects,
         loadRecentProjectsFromServer,
         ensureOpenSectionVisibleForLoadedProject,
