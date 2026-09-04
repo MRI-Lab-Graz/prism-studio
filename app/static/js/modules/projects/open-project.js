@@ -1041,8 +1041,23 @@ export function initOpenProjectController({
         const sessionText = shownSessionLabels.map(label => escapeHtml(label)).join(', ');
         const modalityText = shownModalityLabels.map(label => escapeHtml(label)).join(', ');
 
-        return `
-            <div class="small text-muted mb-2"><i class="fas fa-database me-1"></i>Snapshot from folders currently found on disk.</div>
+        // No subjects means no real data has been imported yet -- the 5-tile
+        // grid is mostly padding around zeroes at that point, so collapse it
+        // to one line until there's something to actually show.
+        const isEmptyProject = subjects === 0;
+
+        const datasetDescriptionMark = hasDatasetDescription
+            ? '<span class="text-success">&check;</span>' : '<span class="text-danger">&#10007;</span>';
+        const participantsTsvMark = hasParticipantsTsv
+            ? '<span class="text-success">&check;</span>' : '<span class="text-danger">&#10007;</span>';
+
+        const statsHtml = isEmptyProject ? `
+            <div class="small text-muted mt-1">
+                0 subjects &middot; 0 sessions &middot; 0 modalities &middot;
+                dataset_description ${datasetDescriptionMark} &middot;
+                participants.tsv ${participantsTsvMark}
+            </div>
+        ` : `
             <div class="stats-grid mt-2">
                 <div class="stat-item">
                     <div class="stat-value">${subjects}</div>
@@ -1065,6 +1080,11 @@ export function initOpenProjectController({
                     <div class="stat-label">participants.tsv</div>
                 </div>
             </div>
+        `;
+
+        return `
+            <div class="small text-muted mb-2"><i class="fas fa-database me-1"></i>Snapshot from folders currently found on disk.</div>
+            ${statsHtml}
             ${modalityText ? `
                 <div class="small text-muted mt-2"><strong>Modalities:</strong> ${modalityText}${hiddenModalityCount > 0 ? ` (+${hiddenModalityCount} more)` : ''}</div>
             ` : ''}
