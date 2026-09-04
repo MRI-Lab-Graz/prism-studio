@@ -226,6 +226,37 @@ class TestAnonymizeRecipeOutputTsv:
             )
 
 
+class TestAnonymizeRecipeOutputSav:
+    def test_masks_variable_labels_with_item_id_column_names(self, tmp_path):
+        pyreadstat = pytest.importorskip("pyreadstat")
+        dataset_path = tmp_path / "dataset"
+        dataset_path.mkdir()
+        _write_participants_tsv(dataset_path, ["sub-01"])
+
+        out_root = tmp_path / "out"
+        out_root.mkdir()
+        sav_path = out_root / "wellbeing.sav"
+        pyreadstat.write_sav(
+            pd.DataFrame({"participant_id": ["sub-01"], "WB01": [3]}),
+            sav_path,
+            column_labels={
+                "participant_id": "Participant identifier",
+                "WB01": "I have felt cheerful and in good spirits",
+            },
+        )
+
+        anonymize_recipe_output(
+            dataset_path=dataset_path,
+            out_root=out_root,
+            out_format="sav",
+            mask_questions=True,
+        )
+
+        _data, metadata = pyreadstat.read_sav(sav_path)
+        assert metadata.column_names_to_labels["WB01"] == "[MASKED]"
+        assert metadata.column_names_to_labels["participant_id"] == "Participant identifier"
+
+
 class TestAnonymizeRecipeOutputCsv:
     def test_handles_csv_extension_as_well_as_tsv(self, tmp_path):
         dataset_path = tmp_path / "dataset"

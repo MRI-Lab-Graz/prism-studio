@@ -2960,12 +2960,11 @@ def anonymize_recipe_output(
                         anonymized_count += 1
 
                 if mask_questions:
-                    question_cols = [
-                        col for col in df_data.columns if "question" in col.lower()
-                    ]
-                    for col in question_cols:
-                        if col in meta.column_names_to_labels:
-                            meta.column_names_to_labels[col] = "[MASKED]"
+                    # SAV question text is stored as a variable label; the
+                    # variable name is typically an item ID such as WB01.
+                    for column, label in meta.column_names_to_labels.items():
+                        if label and column not in {"participant_id", "session"}:
+                            meta.column_names_to_labels[column] = "[MASKED]"
 
                 pyreadstat.write_sav(
                     df_data,

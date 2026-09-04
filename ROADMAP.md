@@ -10,6 +10,10 @@ Last updated: 2026-08-07
       launch contract. Lesson learned: upstream JSR CLIs may load npm packages
       through Node resolution and require `--node-modules-dir=auto` even when
       the top-level command is a JSR specifier.
+- [x] 2026-09-04: Fixed masked recipe SAV exports leaving question text in
+      variable labels for item-ID columns (for example, `WB01`). Lesson learned:
+      SAV question text is metadata, so masking cannot infer it from internal
+      variable names.
 
 ## Vision
 
