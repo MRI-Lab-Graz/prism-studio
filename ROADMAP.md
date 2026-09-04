@@ -14,6 +14,18 @@ Last updated: 2026-08-07
       variable labels for item-ID columns (for example, `WB01`). Lesson learned:
       SAV question text is metadata, so masking cannot infer it from internal
       variable names.
+- [x] 2026-09-04: Decoupled recipe question-text masking from participant-ID
+      anonymization so either privacy control works independently. Lesson
+      learned: separate GUI controls require separately executable backend
+      operations, even when they share an output-rewrite pass.
+- [x] 2026-09-04: Added a round-trip privacy export matrix covering all 12
+      participant-ID anonymization and question-masking combinations for TSV,
+      SAV, and multi-sheet XLSX outputs. Lesson learned: privacy settings need
+      artifact-level verification across each format family.
+- [x] 2026-09-04: Scoped SAV question-text masking to survey item variables;
+      sociodemographic fields from `participants.json` and score fields from
+      the generated codebook remain readable. Lesson learned: exported SAV
+      variable labels need metadata-based classification, not blanket masking.
 
 ## Vision
 
