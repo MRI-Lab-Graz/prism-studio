@@ -419,6 +419,15 @@ export function initOpenProjectController({
             hint.textContent = 'DataLad version control is not enabled for this project. Use Enable DataLad any time to opt in.';
         }
 
+        const loadedSummary = document.getElementById('projectLoadedDataladSummary');
+        if (loadedSummary) {
+            loadedSummary.textContent = state.enabled
+                ? (state.available
+                    ? 'This project is DataLad-tracked.'
+                    : 'This project is DataLad-tracked, but DataLad isn\'t available here.')
+                : 'DataLad version control isn\'t set up for this project yet.';
+        }
+
         const operationState = getDataladOperationState();
         if (operationState.active) {
             enableButton.disabled = true;
@@ -1104,7 +1113,7 @@ export function initOpenProjectController({
                 <div class="alert alert-light border mt-3 mb-0 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2" role="status">
                     <div>
                         <strong><i class="fas fa-code-branch me-1"></i>Version control</strong>
-                        <span class="ms-1">DataLad adds Git-based version control any time you're ready &mdash; no rush.</span>
+                        <span class="ms-1" id="projectLoadedDataladSummary"></span>
                     </div>
                     <a href="#dataladSection" class="btn btn-sm btn-outline-secondary" id="projectLoadedManageDataladLink">
                         <i class="fas fa-arrow-down me-1"></i>Manage DataLad
@@ -1141,7 +1150,25 @@ export function initOpenProjectController({
     function showDataladCard() {
         const card = document.getElementById('dataladSectionCard');
         if (!card) return;
-        card.style.display = getCurrentProjectState().path ? 'block' : 'none';
+        const path = String(getCurrentProjectState().path || '').trim();
+        card.style.display = path ? 'block' : 'none';
+        if (!path) return;
+
+        bindProjectBoxDataladActions();
+        renderProjectBoxDataladState(getCurrentProjectState().datalad, path);
+
+        fetchWithApiFallback('/api/projects/current')
+            .then((response) => response.json().catch(() => null))
+            .then((current) => {
+                if (!current || typeof current !== 'object') return;
+                const currentPath = String(current.path || '').trim();
+                if (currentPath !== path) return; // user navigated to a different project meanwhile
+                applyCurrentProject(current);
+                renderProjectBoxDataladState(current.datalad, currentPath);
+            })
+            .catch(() => {
+                // Best-effort enhancement only; the state from getCurrentProjectState() already rendered.
+            });
     }
 
     async function loadProjectWithoutValidation(path, triggerButton = null, options = {}) {
