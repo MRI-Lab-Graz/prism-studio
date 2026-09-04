@@ -366,7 +366,7 @@ def handle_api_recipes_surveys(data: dict):
 
         mapping_file: str | None = None
         anonymized_count = 0
-        if anonymize:
+        if anonymize or mask_questions:
             try:
                 from src.recipes_surveys import anonymize_recipe_output
 
@@ -379,13 +379,16 @@ def handle_api_recipes_surveys(data: dict):
                     out_format=out_format,
                     id_length=id_length,
                     random_ids=random_ids,
+                    anonymize_participant_ids=anonymize,
                     mask_questions=mask_questions,
                 )
 
-                print(f"[ANONYMIZATION] ✓ Anonymized {anonymized_count} file(s)")
+                if anonymize:
+                    print(f"[ANONYMIZATION] ✓ Anonymized {anonymized_count} file(s)")
                 if mask_questions:
                     print("[ANONYMIZATION] ✓ Masked copyrighted question text")
-                mapping_file = str(mapping_file_path)
+                if mapping_file_path is not None:
+                    mapping_file = str(mapping_file_path)
 
             except Exception as anon_error:
                 import traceback

@@ -227,6 +227,31 @@ class TestAnonymizeRecipeOutputTsv:
 
 
 class TestAnonymizeRecipeOutputSav:
+    def test_masks_variable_labels_without_anonymizing_participant_ids(self, tmp_path):
+        pyreadstat = pytest.importorskip("pyreadstat")
+        out_root = tmp_path / "out"
+        out_root.mkdir()
+        sav_path = out_root / "wellbeing.sav"
+        pyreadstat.write_sav(
+            pd.DataFrame({"participant_id": ["sub-01"], "WB01": [3]}),
+            sav_path,
+            column_labels={"WB01": "I have felt cheerful and in good spirits"},
+        )
+
+        anonymized_count, mapping_file = anonymize_recipe_output(
+            dataset_path=tmp_path / "dataset-without-participants",
+            out_root=out_root,
+            out_format="sav",
+            anonymize_participant_ids=False,
+            mask_questions=True,
+        )
+
+        data, metadata = pyreadstat.read_sav(sav_path)
+        assert anonymized_count == 0
+        assert mapping_file is None
+        assert data["participant_id"].iloc[0] == "sub-01"
+        assert metadata.column_names_to_labels["WB01"] == "[MASKED]"
+
     def test_masks_variable_labels_with_item_id_column_names(self, tmp_path):
         pyreadstat = pytest.importorskip("pyreadstat")
         dataset_path = tmp_path / "dataset"
@@ -256,6 +281,46 @@ class TestAnonymizeRecipeOutputSav:
         assert metadata.column_names_to_labels["WB01"] == "[MASKED]"
         assert metadata.column_names_to_labels["participant_id"] == "Participant identifier"
 
+    def test_keeps_sociodemographic_and_score_variable_labels(self, tmp_path):
+        pyreadstat = pytest.importorskip("pyreadstat")
+        dataset_path = tmp_path / "dataset"
+        dataset_path.mkdir()
+        _write_participants_tsv(dataset_path, ["sub-01"])
+        (dataset_path / "participants.json").write_text(
+            json.dumps({"age": {"Description": "Age in years"}}), encoding="utf-8"
+        )
+        out_root = tmp_path / "out"
+        out_root.mkdir()
+        sav_path = out_root / "wellbeing.sav"
+        pyreadstat.write_sav(
+            pd.DataFrame(
+                {"participant_id": ["sub-01"], "age": [30], "WB01": [3], "Total": [3]}
+            ),
+            sav_path,
+            column_labels={
+                "participant_id": "Participant identifier",
+                "age": "Age in years",
+                "WB01": "I have felt cheerful and in good spirits",
+                "Total": "Wellbeing total score",
+            },
+        )
+        (out_root / "wellbeing_codebook.json").write_text(
+            json.dumps({"variables": {"Total": {"score_info": {"method": "sum"}}}}),
+            encoding="utf-8",
+        )
+
+        anonymize_recipe_output(
+            dataset_path=dataset_path,
+            out_root=out_root,
+            out_format="sav",
+            mask_questions=True,
+        )
+
+        _data, metadata = pyreadstat.read_sav(sav_path)
+        assert metadata.column_names_to_labels["age"] == "Age in years"
+        assert metadata.column_names_to_labels["Total"] == "Wellbeing total score"
+        assert metadata.column_names_to_labels["WB01"] == "[MASKED]"
+
 
 class TestAnonymizeRecipeOutputCsv:
     def test_handles_csv_extension_as_well_as_tsv(self, tmp_path):
@@ -276,3 +341,90 @@ class TestAnonymizeRecipeOutputCsv:
 
         result_df = pd.read_csv(csv_path, dtype=str)
         assert result_df["participant_id"].iloc[0] != "sub-01"
+
+
+class TestAnonymizeRecipeOutputPrivacyMatrix:
+    """Round-trip each privacy-control combination for every export family."""
+
+    @pytest.mark.parametrize("out_format", ["tsv", "sav", "xlsx"])
+    @pytest.mark.parametrize("anonymize_participant_ids", [False, True])
+    @pytest.mark.parametrize("mask_questions", [False, True])
+    def test_all_privacy_control_combinations(
+        self,
+        tmp_path,
+        out_format,
+        anonymize_participant_ids,
+        mask_questions,
+    ):
+        participant_ids = ["sub-01", "sub-02"]
+        question_text = "I have felt cheerful and in good spirits"
+        dataset_path = tmp_path / "dataset"
+        dataset_path.mkdir()
+        _write_participants_tsv(dataset_path, participant_ids)
+        out_root = tmp_path / "out"
+        out_root.mkdir()
+
+        if out_format == "sav":
+            pyreadstat = pytest.importorskip("pyreadstat")
+            output_path = out_root / "wellbeing.sav"
+            pyreadstat.write_sav(
+                pd.DataFrame({"participant_id": participant_ids, "WB01": [3, 4]}),
+                output_path,
+                column_labels={
+                    "participant_id": "Participant identifier",
+                    "WB01": question_text,
+                },
+            )
+        elif out_format == "xlsx":
+            output_path = out_root / "wellbeing.xlsx"
+            with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
+                pd.DataFrame(
+                    {"participant_id": participant_ids, "question": [question_text] * 2}
+                ).to_excel(writer, sheet_name="responses", index=False)
+                pd.DataFrame(
+                    {"participant_id": participant_ids, "score": [3, 4]}
+                ).to_excel(writer, sheet_name="scores", index=False)
+        else:
+            output_path = out_root / "wellbeing.tsv"
+            pd.DataFrame(
+                {"participant_id": participant_ids, "question": [question_text] * 2}
+            ).to_csv(output_path, sep="\t", index=False)
+
+        anonymized_count, mapping_file = anonymize_recipe_output(
+            dataset_path=dataset_path,
+            out_root=out_root,
+            out_format=out_format,
+            anonymize_participant_ids=anonymize_participant_ids,
+            mask_questions=mask_questions,
+        )
+
+        if anonymize_participant_ids:
+            assert anonymized_count == 1
+            assert mapping_file is not None and mapping_file.exists()
+            mapped_ids = set(json.loads(mapping_file.read_text())["mapping"].values())
+        else:
+            assert anonymized_count == 0
+            assert mapping_file is None
+            mapped_ids = set(participant_ids)
+
+        if out_format == "sav":
+            data, metadata = pyreadstat.read_sav(output_path)
+            assert set(data["participant_id"]) == mapped_ids
+            assert metadata.column_names_to_labels["participant_id"] == "Participant identifier"
+            assert metadata.column_names_to_labels["WB01"] == (
+                "[MASKED]" if mask_questions else question_text
+            )
+        elif out_format == "xlsx":
+            responses = pd.read_excel(output_path, sheet_name="responses", dtype=str)
+            scores = pd.read_excel(output_path, sheet_name="scores", dtype=str)
+            assert set(responses["participant_id"]) == mapped_ids
+            assert set(scores["participant_id"]) == mapped_ids
+            assert set(responses["question"]) == {
+                "[MASKED]" if mask_questions else question_text
+            }
+        else:
+            data = pd.read_csv(output_path, sep="\t", dtype=str)
+            assert set(data["participant_id"]) == mapped_ids
+            assert set(data["question"]) == {
+                "[MASKED]" if mask_questions else question_text
+            }

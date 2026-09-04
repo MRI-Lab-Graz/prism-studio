@@ -510,8 +510,8 @@ document.addEventListener('DOMContentLoaded', function() {
       if (payload.include_raw) logToTerminal(`Including raw data columns`);
       if (payload.anonymize) {
         logToTerminal(`🔒 Anonymizing participant IDs (length: ${payload.id_length}, ${payload.random_ids ? 'random' : 'deterministic'})`, 'warning');
-        if (payload.mask_questions) logToTerminal(`🔒 Masking copyrighted question text`, 'warning');
       }
+      if (payload.mask_questions) logToTerminal(`🔒 Masking copyrighted question text`, 'warning');
       if (payload.survey) logToTerminal(`Recipe filter: ${payload.survey}`);
       if (payload.sessions) logToTerminal(`Sessions filter: ${payload.sessions}`);
     } else {

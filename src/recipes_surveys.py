@@ -2833,6 +2833,40 @@ def _canonical_pid_for_anonymization(value: Any) -> Optional[str]:
     return text
 
 
+def _sav_maskable_question_columns(
+    sav_path: str | Path, dataset_path: str | Path
+) -> set[str]:
+    """Return survey-item columns eligible for question-text label masking."""
+    dataset_path = Path(dataset_path)
+    excluded_columns = {"participant_id", "session", "run"}
+
+    participants_json = dataset_path / "participants.json"
+    if participants_json.exists():
+        try:
+            participant_metadata = _read_json(participants_json)
+            if isinstance(participant_metadata, dict):
+                excluded_columns.update(participant_metadata)
+        except (OSError, ValueError, json.JSONDecodeError):
+            pass
+
+    sav_path = Path(sav_path)
+    codebook_path = sav_path.with_name(f"{sav_path.stem}_codebook.json")
+    if codebook_path.exists():
+        try:
+            codebook = _read_json(codebook_path)
+            variables = codebook.get("variables", {}) if isinstance(codebook, dict) else {}
+            if isinstance(variables, dict):
+                excluded_columns.update(
+                    column
+                    for column, metadata in variables.items()
+                    if isinstance(metadata, dict) and "score_info" in metadata
+                )
+        except (OSError, ValueError, json.JSONDecodeError):
+            pass
+
+    return excluded_columns
+
+
 def anonymize_recipe_output(
     *,
     dataset_path: str | Path,
@@ -2840,16 +2874,17 @@ def anonymize_recipe_output(
     out_format: str,
     id_length: int = 8,
     random_ids: bool = False,
+    anonymize_participant_ids: bool = True,
     mask_questions: bool = False,
-) -> tuple[int, Path]:
+) -> tuple[int, Optional[Path]]:
     """Pseudonymize participant IDs in recipe output already written to `out_root`.
 
-    Reads `participant_id` values from `<dataset_path>/participants.tsv`,
-    creates (or reuses) a stable pseudonym mapping via
-    `src.anonymizer.create_participant_mapping`, and rewrites every score
-    file under `out_root` in place, replacing `participant_id` values with
-    their pseudonyms. When `mask_questions` is set, question-text
-    columns/labels are replaced with the literal string ``"[MASKED]"``.
+    When `anonymize_participant_ids` is set, reads `participant_id` values
+    from `<dataset_path>/participants.tsv`, creates (or reuses) a stable
+    pseudonym mapping via `src.anonymizer.create_participant_mapping`, and
+    rewrites every score file under `out_root` in place. When
+    `mask_questions` is set, question-text columns/labels are replaced with
+    the literal string ``"[MASKED]"``.
 
     Both the CLI (`recipes surveys/biometrics --anonymized`) and the Studio
     GUI's Recipes page "Anonymize" option call this same function, so
@@ -2866,17 +2901,18 @@ def anonymize_recipe_output(
         id_length: Length of the random portion of a newly generated pseudonym.
         random_ids: If True, generate non-deterministic pseudonyms instead of
             deterministic ones.
+        anonymize_participant_ids: If True, replace participant IDs with
+            pseudonyms and write a mapping file.
         mask_questions: If True, also replace question-text columns/labels
             with "[MASKED]".
 
     Returns:
-        (anonymized_file_count, mapping_file_path)
+        (anonymized_file_count, mapping_file_path), where the mapping path is
+        None when participant IDs were not anonymized.
     """
     import os
 
     import pandas as pd
-
-    from src.anonymizer import create_participant_mapping
 
     dataset_path = str(dataset_path)
     out_root = Path(out_root)
@@ -2895,40 +2931,42 @@ def anonymize_recipe_output(
             return canonical_map[key]
         return value
 
-    participants_tsv = os.path.join(dataset_path, "participants.tsv")
-    if not os.path.exists(participants_tsv):
-        raise FileNotFoundError(f"participants.tsv not found in {dataset_path}/")
-
-    participants_df = pd.read_csv(participants_tsv, sep="\t", dtype=str)
-    if "participant_id" not in participants_df.columns:
-        raise ValueError("participants.tsv must have a 'participant_id' column")
-    participant_ids = participants_df["participant_id"].tolist()
-
     if not os.path.exists(output_dir):
         raise FileNotFoundError(f"Output directory not found: {output_dir}")
 
-    mapping_file_path = out_root / "participants_mapping.json"
-
-    if mapping_file_path.exists():
-        with open(mapping_file_path, "r", encoding="utf-8") as f:
-            mapping_data = json.load(f)
-            participant_mapping = {
-                str(k): str(v)
-                for k, v in (mapping_data.get("mapping", {}) or {}).items()
-            }
-    else:
-        participant_mapping = create_participant_mapping(
-            [str(pid) for pid in participant_ids],
-            mapping_file_path,
-            id_length=id_length,
-            deterministic=not random_ids,
-        )
-
+    participant_mapping: dict[str, str] = {}
     canonical_mapping: dict[str, str] = {}
-    for original_id, anonymized_id in participant_mapping.items():
-        key = _canonical_pid_for_anonymization(original_id)
-        if key and key not in canonical_mapping:
-            canonical_mapping[key] = anonymized_id
+    mapping_file_path: Optional[Path] = None
+    if anonymize_participant_ids:
+        from src.anonymizer import create_participant_mapping
+
+        participants_tsv = os.path.join(dataset_path, "participants.tsv")
+        if not os.path.exists(participants_tsv):
+            raise FileNotFoundError(
+                f"participants.tsv not found in {dataset_path}/"
+            )
+        participants_df = pd.read_csv(participants_tsv, sep="\t", dtype=str)
+        if "participant_id" not in participants_df.columns:
+            raise ValueError("participants.tsv must have a 'participant_id' column")
+        mapping_file_path = out_root / "participants_mapping.json"
+        if mapping_file_path.exists():
+            with open(mapping_file_path, "r", encoding="utf-8") as f:
+                mapping_data = json.load(f)
+                participant_mapping = {
+                    str(k): str(v)
+                    for k, v in (mapping_data.get("mapping", {}) or {}).items()
+                }
+        else:
+            participant_mapping = create_participant_mapping(
+                [str(pid) for pid in participants_df["participant_id"].tolist()],
+                mapping_file_path,
+                id_length=id_length,
+                deterministic=not random_ids,
+            )
+        for original_id, anonymized_id in participant_mapping.items():
+            key = _canonical_pid_for_anonymization(original_id)
+            if key and key not in canonical_mapping:
+                canonical_mapping[key] = anonymized_id
 
     anonymized_count = 0
 
@@ -2948,7 +2986,7 @@ def anonymize_recipe_output(
                 sav_path = os.path.join(root, file)
                 df_data, meta = pyreadstat.read_sav(sav_path)
 
-                if "participant_id" in df_data.columns:
+                if anonymize_participant_ids and "participant_id" in df_data.columns:
                     before = df_data["participant_id"].copy()
                     df_data["participant_id"] = df_data["participant_id"].map(
                         lambda x: _map_pid(x, participant_mapping, canonical_mapping)
@@ -2962,8 +3000,11 @@ def anonymize_recipe_output(
                 if mask_questions:
                     # SAV question text is stored as a variable label; the
                     # variable name is typically an item ID such as WB01.
+                    excluded_columns = _sav_maskable_question_columns(
+                        sav_path, dataset_path
+                    )
                     for column, label in meta.column_names_to_labels.items():
-                        if label and column not in {"participant_id", "session"}:
+                        if label and column not in excluded_columns:
                             meta.column_names_to_labels[column] = "[MASKED]"
 
                 pyreadstat.write_sav(
@@ -2982,7 +3023,7 @@ def anonymize_recipe_output(
                 sep = "\t" if file.endswith(".tsv") else ","
 
                 df_data = pd.read_csv(file_path, sep=sep)
-                if "participant_id" in df_data.columns:
+                if anonymize_participant_ids and "participant_id" in df_data.columns:
                     before = df_data["participant_id"].copy()
                     df_data["participant_id"] = df_data["participant_id"].map(
                         lambda x: _map_pid(x, participant_mapping, canonical_mapping)
@@ -3014,7 +3055,7 @@ def anonymize_recipe_output(
 
                 file_had_participant_ids = False
                 for _sheet_name, df_data in sheet_frames.items():
-                    if "participant_id" in df_data.columns:
+                    if anonymize_participant_ids and "participant_id" in df_data.columns:
                         before = df_data["participant_id"].copy()
                         df_data["participant_id"] = df_data["participant_id"].map(
                             lambda x: _map_pid(x, participant_mapping, canonical_mapping)
