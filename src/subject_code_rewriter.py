@@ -98,6 +98,8 @@ class SubjectCodeRewriter:
         mode: str = "last3",
         example_subject: str | None = None,
         keep_fragment: str | None = None,
+        add_text: str | None = None,
+        add_position: str | None = None,
         allow_many_to_one: bool = False,
         subjects: list[str] | None = None,
         explicit_mapping: dict[str, str] | None = None,
@@ -107,6 +109,8 @@ class SubjectCodeRewriter:
             mode,
             example_subject=example_subject,
             keep_fragment=keep_fragment,
+            add_text=add_text,
+            add_position=add_position,
             allow_many_to_one=allow_many_to_one,
             subjects=subjects,
             explicit_mapping=explicit_mapping,
@@ -118,6 +122,8 @@ class SubjectCodeRewriter:
         mode: str = "last3",
         example_subject: str | None = None,
         keep_fragment: str | None = None,
+        add_text: str | None = None,
+        add_position: str | None = None,
         allow_many_to_one: bool = False,
         subjects: list[str] | None = None,
         explicit_mapping: dict[str, str] | None = None,
@@ -126,6 +132,8 @@ class SubjectCodeRewriter:
             mode,
             example_subject=example_subject,
             keep_fragment=keep_fragment,
+            add_text=add_text,
+            add_position=add_position,
             allow_many_to_one=allow_many_to_one,
             subjects=subjects,
             explicit_mapping=explicit_mapping,
@@ -186,6 +194,8 @@ class SubjectCodeRewriter:
         keep_fragment: str | None,
         allow_many_to_one: bool,
         subjects: list[str] | None,
+        add_text: str | None = None,
+        add_position: str | None = None,
         explicit_mapping: dict[str, str] | None = None,
     ) -> _RewritePlan:
         if not self.project_root.exists() or not self.project_root.is_dir():
@@ -211,6 +221,8 @@ class SubjectCodeRewriter:
                 subject_tokens,
                 example_subject=example_subject,
                 keep_fragment=keep_fragment,
+                add_text=add_text,
+                add_position=add_position,
             )
 
         if normalized_subjects:
@@ -326,6 +338,8 @@ class SubjectCodeRewriter:
         subject_tokens: list[str],
         example_subject: str | None,
         keep_fragment: str | None,
+        add_text: str | None = None,
+        add_position: str | None = None,
     ) -> tuple[dict[str, str], dict[str, str | int] | None]:
         rule: dict[str, str | int] | None = None
         if mode == "example_keep":
@@ -333,6 +347,8 @@ class SubjectCodeRewriter:
                 subject_tokens,
                 example_subject=example_subject,
                 keep_fragment=keep_fragment,
+                add_text=add_text,
+                add_position=add_position,
             )
 
         mapping: dict[str, str] = {}
@@ -347,6 +363,8 @@ class SubjectCodeRewriter:
         subject_tokens: list[str],
         example_subject: str | None,
         keep_fragment: str | None,
+        add_text: str | None = None,
+        add_position: str | None = None,
     ) -> dict[str, str | int]:
         if not subject_tokens:
             raise ValueError("No subject IDs were found in this project.")
@@ -367,36 +385,48 @@ class SubjectCodeRewriter:
             )
 
         raw_keep = (keep_fragment or "").strip()
-        if not raw_keep:
+        raw_add = (add_text or "").strip()
+        if not raw_keep and not raw_add:
             raise ValueError(
-                "Enter the part that should stay from the selected example subject ID."
+                "Enter a part to keep and/or a part to add for the selected example subject ID."
             )
+        if raw_add and not raw_add.isalnum():
+            raise ValueError("Text to add can only contain letters and numbers.")
 
-        keep_value = raw_keep[4:] if raw_keep.startswith("sub-") else raw_keep
         example_label = normalized_example[4:]
 
-        occurrence_count = example_label.count(keep_value)
-        if occurrence_count == 0:
-            raise ValueError(
-                f"'{keep_value}' is not part of {normalized_example}."
-            )
-        if occurrence_count > 1:
-            raise ValueError(
-                "Pattern is not unique in the selected example (e.g. sub-103103 -> 103). "
-                "Choose a different example or a more specific kept part."
-            )
+        if raw_keep:
+            keep_value = raw_keep[4:] if raw_keep.startswith("sub-") else raw_keep
 
-        start_index = example_label.find(keep_value)
-        end_index = start_index + len(keep_value)
+            occurrence_count = example_label.count(keep_value)
+            if occurrence_count == 0:
+                raise ValueError(
+                    f"'{keep_value}' is not part of {normalized_example}."
+                )
+            if occurrence_count > 1:
+                raise ValueError(
+                    "Pattern is not unique in the selected example (e.g. sub-103103 -> 103). "
+                    "Choose a different example or a more specific kept part."
+                )
 
-        if start_index == 0 and end_index == len(example_label):
-            strategy = "full"
-        elif end_index == len(example_label):
-            strategy = "suffix"
-        elif start_index == 0:
-            strategy = "prefix"
+            start_index = example_label.find(keep_value)
+            end_index = start_index + len(keep_value)
+
+            if start_index == 0 and end_index == len(example_label):
+                strategy = "full"
+            elif end_index == len(example_label):
+                strategy = "suffix"
+            elif start_index == 0:
+                strategy = "prefix"
+            else:
+                strategy = "slice"
         else:
-            strategy = "slice"
+            # Add-only: nothing is stripped, the whole existing label is kept
+            # as-is before add_text is applied.
+            keep_value = example_label
+            start_index = 0
+            end_index = len(example_label)
+            strategy = "full"
 
         rule: dict[str, str | int] = {
             "type": "example_keep",
@@ -415,6 +445,11 @@ class SubjectCodeRewriter:
             # derived from the one example.
             rule["prefix_anchor"] = example_label[:start_index]
             rule["suffix_anchor"] = example_label[end_index:]
+        if raw_add:
+            rule["add_text"] = raw_add
+            rule["add_position"] = (
+                "append" if add_position == "append" else "prepend"
+            )
         return rule
 
     @staticmethod
@@ -459,6 +494,13 @@ class SubjectCodeRewriter:
                 rewritten_label = label
             else:
                 return subject_token
+
+            add_text = str(rule.get("add_text") or "")
+            if add_text:
+                if rule.get("add_position") == "append":
+                    rewritten_label = f"{rewritten_label}{add_text}"
+                else:
+                    rewritten_label = f"{add_text}{rewritten_label}"
 
             if not rewritten_label:
                 return subject_token

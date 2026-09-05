@@ -8,6 +8,54 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Forced choice between "add new data" and "modify data already in the
+    // project" on the Rename Filenames tab: mirrors the project-card
+    // active/section-toggle pattern from project-selection.js.
+    (function initFmRenameModeSelection() {
+        const storageKey = 'prism_fm_rename_mode';
+        const cardAdd = document.getElementById('fmRenameModeCardAdd');
+        const cardExisting = document.getElementById('fmRenameModeCardExisting');
+        const sectionAdd = document.getElementById('fmRenameSectionAdd');
+        const sectionExisting = document.getElementById('fmRenameSectionExisting');
+        if (!cardAdd || !cardExisting || !sectionAdd || !sectionExisting) {
+            return;
+        }
+
+        function setRenameMode(mode) {
+            const isExisting = mode === 'existing';
+            cardAdd.classList.toggle('active', !isExisting);
+            cardExisting.classList.toggle('active', isExisting);
+            sectionAdd.classList.toggle('d-none', isExisting);
+            sectionExisting.classList.toggle('d-none', !isExisting);
+            try {
+                localStorage.setItem(storageKey, isExisting ? 'existing' : 'add');
+            } catch (_) {
+                // ignore storage failures
+            }
+        }
+
+        function bindCard(card, mode) {
+            card.addEventListener('click', () => setRenameMode(mode));
+            card.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    setRenameMode(mode);
+                }
+            });
+        }
+
+        bindCard(cardAdd, 'add');
+        bindCard(cardExisting, 'existing');
+
+        let storedMode = 'add';
+        try {
+            storedMode = localStorage.getItem(storageKey) === 'existing' ? 'existing' : 'add';
+        } catch (_) {
+            storedMode = 'add';
+        }
+        setRenameMode(storedMode);
+    })();
+
     const sharedApiModuleUrl = new URL('./shared/api.js', fileManagementScriptUrl).href;
     let sharedFetchWithApiFallbackPromise = null;
 
@@ -1105,6 +1153,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const repoSubjectRewritePreviewBtn = document.getElementById('repoSubjectRewritePreviewBtn');
     const repoSubjectRewriteExample = document.getElementById('repoSubjectRewriteExample');
     const repoSubjectRewriteKeep = document.getElementById('repoSubjectRewriteKeep');
+    const repoSubjectRewriteAddText = document.getElementById('repoSubjectRewriteAddText');
+    const repoSubjectRewriteAddPrepend = document.getElementById('repoSubjectRewriteAddPrepend');
+    const repoSubjectRewriteAddAppend = document.getElementById('repoSubjectRewriteAddAppend');
     const repoSubjectRewriteAllowMultiple = document.getElementById('repoSubjectRewriteAllowMultiple');
     const repoSubjectRewriteResult = document.getElementById('repoSubjectRewriteResult');
     const repoSubjectRewriteProgress = document.getElementById('repoSubjectRewriteProgress');
@@ -1541,6 +1592,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (repoSubjectRewriteKeep) {
             repoSubjectRewriteKeep.disabled = isBusy || repoSubjectExamples.length === 0;
         }
+        if (repoSubjectRewriteAddText) {
+            repoSubjectRewriteAddText.disabled = isBusy || repoSubjectExamples.length === 0;
+        }
+        if (repoSubjectRewriteAddPrepend) {
+            repoSubjectRewriteAddPrepend.disabled = isBusy || repoSubjectExamples.length === 0;
+        }
+        if (repoSubjectRewriteAddAppend) {
+            repoSubjectRewriteAddAppend.disabled = isBusy || repoSubjectExamples.length === 0;
+        }
         if (repoSubjectRewriteAllowMultiple) {
             repoSubjectRewriteAllowMultiple.disabled = isBusy || repoSubjectExamples.length === 0;
         }
@@ -1665,6 +1725,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const strategy = rule.strategy ? String(rule.strategy) : '';
         const keepFragment = rule.keep_fragment ? String(rule.keep_fragment) : '';
         const exampleSubject = rule.example_subject ? String(rule.example_subject) : '';
+        const ruleAddText = rule.add_text ? String(rule.add_text) : '';
+        const ruleAddPosition = rule.add_position === 'append' ? 'append' : 'prepend';
         const allowManyToOne = Boolean(payload.allow_many_to_one);
 
         let ruleText = '';
@@ -1678,6 +1740,10 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (strategy === 'full') {
                 ruleText = `Rule keeps the full ID from ${escapeHtml(exampleSubject)} (no shortening for this example).`;
             }
+        }
+        if (ruleAddText) {
+            const addClause = `${ruleAddPosition === 'append' ? 'Append' : 'Prepend'} '${escapeHtml(ruleAddText)}' to each subject ID.`;
+            ruleText = ruleText ? `${ruleText} ${addClause}` : addClause;
         }
 
         const ruleHtml = ruleText
@@ -1794,6 +1860,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const selectedExample = String(repoSubjectRewriteExample.value || '').trim();
         const keepFragment = String(repoSubjectRewriteKeep.value || '').trim();
+        const addText = String((repoSubjectRewriteAddText && repoSubjectRewriteAddText.value) || '').trim();
+        const addPosition = (repoSubjectRewriteAddAppend && repoSubjectRewriteAddAppend.checked) ? 'append' : 'prepend';
         const allowMultipleSources = Boolean(repoSubjectRewriteAllowMultiple && repoSubjectRewriteAllowMultiple.checked);
         if (!selectedExample) {
             if (repoSubjectRewriteResult) {
@@ -1801,9 +1869,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return;
         }
-        if (!keepFragment) {
+        if (!keepFragment && !addText) {
             if (repoSubjectRewriteResult) {
-                repoSubjectRewriteResult.innerHTML = '<div class="alert alert-danger py-2 mb-0">Enter the part that should stay from the example subject ID.</div>';
+                repoSubjectRewriteResult.innerHTML = '<div class="alert alert-danger py-2 mb-0">Enter a part to keep and/or a part to add.</div>';
             }
             return;
         }
@@ -1833,7 +1901,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (repoSubjectRewriteLog) repoSubjectRewriteLog.textContent = '';
         startRepoRewriteProgress(action === 'apply' ? 'Applying rename...' : 'Previewing...');
-        appendRepoRewriteLog(`Starting ${action === 'apply' ? 'apply' : 'preview'} for example "${selectedExample}", keep "${keepFragment}"...`, 'step');
+        const ruleDescription = [
+            keepFragment ? `keep "${keepFragment}"` : null,
+            addText ? `add "${addText}" (${addPosition})` : null,
+        ].filter(Boolean).join(', ');
+        appendRepoRewriteLog(`Starting ${action === 'apply' ? 'apply' : 'preview'} for example "${selectedExample}", ${ruleDescription}...`, 'step');
 
         try {
             let payload;
@@ -1846,6 +1918,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         mode: 'example_keep',
                         example_subject: selectedExample,
                         keep_fragment: keepFragment,
+                        add_text: addText,
+                        add_position: addPosition,
                         allow_multiple_sources: allowMultipleSources,
                         project_path: currentProjectPath,
                     }
@@ -1859,6 +1933,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         mode: 'example_keep',
                         example_subject: selectedExample,
                         keep_fragment: keepFragment,
+                        add_text: addText,
+                        add_position: addPosition,
                         allow_multiple_sources: allowMultipleSources,
                         project_path: currentProjectPath,
                     }),
@@ -1933,6 +2009,27 @@ document.addEventListener('DOMContentLoaded', () => {
             setRepoSubjectRewriteBusy(false);
         });
     }
+
+    if (repoSubjectRewriteAddText) {
+        repoSubjectRewriteAddText.addEventListener('input', () => {
+            resetRepoSubjectPreviewState();
+            if (repoSubjectRewriteResult) {
+                repoSubjectRewriteResult.innerHTML = '<div class="alert alert-secondary py-2 mb-0">Rule changed. Click Preview to regenerate mapping.</div>';
+            }
+            setRepoSubjectRewriteBusy(false);
+        });
+    }
+
+    [repoSubjectRewriteAddPrepend, repoSubjectRewriteAddAppend].forEach((radio) => {
+        if (!radio) return;
+        radio.addEventListener('change', () => {
+            resetRepoSubjectPreviewState();
+            if (repoSubjectRewriteResult) {
+                repoSubjectRewriteResult.innerHTML = '<div class="alert alert-secondary py-2 mb-0">Rule changed. Click Preview to regenerate mapping.</div>';
+            }
+            setRepoSubjectRewriteBusy(false);
+        });
+    });
 
     if (repoSubjectRewriteAllowMultiple) {
         repoSubjectRewriteAllowMultiple.addEventListener('change', () => {
