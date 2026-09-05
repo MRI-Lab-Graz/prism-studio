@@ -1055,6 +1055,8 @@ def _run_subject_rewrite_job(
     example_subject: str | None,
     keep_fragment: str | None,
     allow_many_to_one: bool,
+    add_text: str | None = None,
+    add_position: str | None = None,
 ) -> None:
     def _report_subject_progress(done: int, total: int) -> None:
         _rewrite_job_store.update(
@@ -1068,6 +1070,8 @@ def _run_subject_rewrite_job(
             mode=mode,
             example_subject=example_subject,
             keep_fragment=keep_fragment,
+            add_text=add_text,
+            add_position=add_position,
             allow_many_to_one=allow_many_to_one,
             on_log=lambda message, level: _rewrite_job_store.append_log(
                 job_id, message, level
@@ -1150,6 +1154,8 @@ def api_file_management_subject_rewrite_start():
     mode = str(data.get("mode") or "last3").strip().lower()
     example_subject = str(data.get("example_subject") or "").strip() or None
     keep_fragment = str(data.get("keep_fragment") or "").strip() or None
+    add_text = str(data.get("add_text") or "").strip() or None
+    add_position = str(data.get("add_position") or "").strip().lower() or None
     allow_multiple_raw = data.get("allow_multiple_sources")
     if isinstance(allow_multiple_raw, bool):
         allow_multiple_sources = allow_multiple_raw
@@ -1187,6 +1193,8 @@ def api_file_management_subject_rewrite_start():
         "mode": mode,
         "example_subject": example_subject or "",
         "keep_fragment": keep_fragment or "",
+        "add_text": add_text or "",
+        "add_position": add_position or "",
         "allow_multiple_sources": allow_multiple_sources,
     }
     last_preview = session.get(preview_session_key) or {}
@@ -1213,6 +1221,8 @@ def api_file_management_subject_rewrite_start():
             "mode": mode,
             "example_subject": example_subject,
             "keep_fragment": keep_fragment,
+            "add_text": add_text,
+            "add_position": add_position,
             "allow_many_to_one": allow_multiple_sources,
         },
         daemon=True,
@@ -1459,6 +1469,8 @@ def api_file_management_subject_rewrite():
     mode = str(data.get("mode") or "last3").strip().lower()
     example_subject = str(data.get("example_subject") or "").strip() or None
     keep_fragment = str(data.get("keep_fragment") or "").strip() or None
+    add_text = str(data.get("add_text") or "").strip() or None
+    add_position = str(data.get("add_position") or "").strip().lower() or None
     allow_multiple_raw = data.get("allow_multiple_sources")
     if isinstance(allow_multiple_raw, bool):
         allow_multiple_sources = allow_multiple_raw
@@ -1500,6 +1512,8 @@ def api_file_management_subject_rewrite():
             "mode": mode,
             "example_subject": example_subject or "",
             "keep_fragment": keep_fragment or "",
+            "add_text": add_text or "",
+            "add_position": add_position or "",
             "allow_multiple_sources": allow_multiple_sources,
         }
 
@@ -1528,6 +1542,8 @@ def api_file_management_subject_rewrite():
                 mode=mode,
                 example_subject=example_subject,
                 keep_fragment=keep_fragment,
+                add_text=add_text,
+                add_position=add_position,
                 allow_many_to_one=allow_multiple_sources,
             )
             session.pop(preview_session_key, None)
@@ -1536,6 +1552,8 @@ def api_file_management_subject_rewrite():
                 mode=mode,
                 example_subject=example_subject,
                 keep_fragment=keep_fragment,
+                add_text=add_text,
+                add_position=add_position,
                 allow_many_to_one=allow_multiple_sources,
             )
             if payload.get("conflicts"):

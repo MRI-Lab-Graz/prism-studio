@@ -4,6 +4,7 @@
 {% block title %}PRISM Studio - File Management{% endblock %}
 
 {% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/projects/cards.css') }}">
 <style>
     #fileManagementToolTabs .fm-tool-tabs {
         gap: 0.75rem;
@@ -154,6 +155,45 @@
 
             <div class="tab-content" id="fileManagementToolTabContent">
                 <div class="tab-pane fade show active" id="fm-renamer-panel" role="tabpanel" aria-labelledby="fm-renamer-tab" tabindex="0">
+
+                    <!-- Forced choice: bring new data in, or modify data already in the project -->
+                    <div class="row mb-4" id="fmRenameModeSelectionRow">
+                        <div class="col-md-6 mb-3">
+                            <div class="project-card project-card--create" id="fmRenameModeCardAdd" role="button" tabindex="0" aria-controls="fmRenameSectionAdd">
+                                <div class="project-card-topline">
+                                    <span class="project-card-kind">Bring data in</span>
+                                </div>
+                                <div class="project-card-icon-shell">
+                                    <i class="fas fa-file-import text-warning"></i>
+                                </div>
+                                <h5 class="project-card-title">Add New Data to PRISM</h5>
+                                <p class="project-card-lead">Rename raw/incoming files and bring them into this project for the first time.</p>
+                                <div class="project-card-tags" aria-hidden="true">
+                                    <span class="project-card-tag">Filename Renamer</span>
+                                </div>
+                                <p class="project-card-detail">Choose this when your files aren't in the project yet.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="project-card project-card--init" id="fmRenameModeCardExisting" role="button" tabindex="0" aria-controls="fmRenameSectionExisting">
+                                <div class="project-card-topline">
+                                    <span class="project-card-kind">Already in PRISM</span>
+                                </div>
+                                <div class="project-card-icon-shell">
+                                    <i class="fas fa-pen-ruler text-success"></i>
+                                </div>
+                                <h5 class="project-card-title">Modify Data Already in PRISM</h5>
+                                <p class="project-card-lead">Rename subject IDs or edit filename parts on files already inside this project.</p>
+                                <div class="project-card-tags" aria-hidden="true">
+                                    <span class="project-card-tag">Rename Subject IDs</span>
+                                    <span class="project-card-tag">Edit Filename Parts</span>
+                                </div>
+                                <p class="project-card-detail">Choose this when your files are already in the project.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="fmRenameSectionAdd" class="fm-rename-mode-section">
                     <!-- Filename Renamer Card -->
                     <div class="card border-warning mb-4 shadow-sm">
                         <div class="card-header bg-warning bg-opacity-10 d-flex align-items-center">
@@ -178,8 +218,7 @@
                                         <div><strong>Result:</strong> Previewed, consistent names you can copy into the project or download.</div>
                                     </div>
                                 </div>
-                                <p class="text-muted mb-3"><strong>Rename files to BIDS/PRISM valid filenames.</strong></p>
-                                
+
                                 <div class="row g-3 mb-3">
                                     <div class="col-md-12 studio-file-picker">
                                         <label for="renamerFiles" class="form-label fw-bold d-flex align-items-center gap-2">
@@ -219,11 +258,11 @@
                                         </label>
                                         <div class="d-flex gap-3 align-items-center flex-wrap">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="renamerIdSource" id="renamerIdFromFilename" value="filename" checked>
+                                                <input class="form-check-input" type="radio" name="renamerIdSource" id="renamerIdFromFilename" value="filename" checked data-help-skip="true">
                                                 <label class="form-check-label" for="renamerIdFromFilename">Filename</label>
                                             </div>
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="renamerIdSource" id="renamerIdFromFolder" value="folder">
+                                                <input class="form-check-input" type="radio" name="renamerIdSource" id="renamerIdFromFolder" value="folder" data-help-skip="true">
                                                 <label class="form-check-label" for="renamerIdFromFolder">Folder path</label>
                                             </div>
                                         </div>
@@ -237,7 +276,7 @@
                                             </span>
                                         </label>
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" id="renamerOrganize" checked>
+                                            <input class="form-check-input" type="checkbox" id="renamerOrganize" checked data-help-skip="true">
                                             <label class="form-check-label" for="renamerOrganize">
                                                 Organize into PRISM structure
                                             </label>
@@ -253,15 +292,15 @@
                                         </label>
                                         <div class="d-flex gap-3 align-items-center flex-wrap">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="renamerTargetRoot" id="renamerTargetPrism" value="prism" checked>
+                                                <input class="form-check-input" type="radio" name="renamerTargetRoot" id="renamerTargetPrism" value="prism" checked data-help-skip="true">
                                                 <label class="form-check-label" for="renamerTargetPrism">PRISM root</label>
                                             </div>
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="renamerTargetRoot" id="renamerTargetRaw" value="rawdata">
+                                                <input class="form-check-input" type="radio" name="renamerTargetRoot" id="renamerTargetRaw" value="rawdata" data-help-skip="true">
                                                 <label class="form-check-label" for="renamerTargetRaw">rawdata</label>
                                             </div>
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="renamerTargetRoot" id="renamerTargetSource" value="sourcedata">
+                                                <input class="form-check-input" type="radio" name="renamerTargetRoot" id="renamerTargetSource" value="sourcedata" data-help-skip="true">
                                                 <label class="form-check-label" for="renamerTargetSource">sourcedata</label>
                                             </div>
                                         </div>
@@ -436,14 +475,22 @@
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
+                    <div id="fmRenameSectionExisting" class="fm-rename-mode-section d-none">
                                     <div class="card border-secondary mt-4 shadow-sm">
                                         <div class="card-body">
                                             <h6 class="mb-2">
                                                 <i class="fas fa-pen-ruler me-2"></i>Rename Subject IDs (Current Project)
                                             </h6>
+                                            <p class="text-muted small mb-1">
+                                                Use this to change subject IDs already in this project &mdash; not for renaming incoming files (use Filename Renamer above) or a single filename part like <code>_task</code> (use Edit BIDS Filename Parts below).
+                                            </p>
                                             <p class="text-muted small mb-3">
-                                                Pick one existing subject ID as example, define what part should stay, preview the mapping, then apply.
+                                                Pick one existing subject ID as example, then strip a part, add a part, or both; preview the mapping, then apply.
                                                 Metadata links are updated as well (including JSON links such as <code>fmap</code> <code>IntendedFor</code> entries).
                                             </p>
                                             <div class="row g-3 align-items-start">
@@ -452,11 +499,31 @@
                                                     <select class="form-select" id="repoSubjectRewriteExample"></select>
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <label for="repoSubjectRewriteKeep" class="form-label">Part to Keep</label>
+                                                    <label for="repoSubjectRewriteKeep" class="form-label">Part to Keep (optional)</label>
                                                     <input type="text" class="form-control font-monospace" id="repoSubjectRewriteKeep" placeholder="e.g. 003">
                                                 </div>
                                             </div>
-                                            <div class="form-text mt-1">Example: from <code>sub-1291003</code>, keep <code>003</code>, result <code>sub-003</code></div>
+                                            <div class="form-text mt-1">Strip example: from <code>sub-1291003</code>, keep <code>003</code>, result <code>sub-003</code></div>
+                                            <div class="row g-3 align-items-start mt-1">
+                                                <div class="col-md-6">
+                                                    <label for="repoSubjectRewriteAddText" class="form-label">Text to Add (optional)</label>
+                                                    <input type="text" class="form-control font-monospace" id="repoSubjectRewriteAddText" placeholder="e.g. DEMO" data-help-skip="true">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label d-block">Position</label>
+                                                    <div class="d-flex gap-3">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" name="repoSubjectRewriteAddPosition" id="repoSubjectRewriteAddPrepend" value="prepend" checked data-help-skip="true">
+                                                            <label class="form-check-label" for="repoSubjectRewriteAddPrepend">Prepend</label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" name="repoSubjectRewriteAddPosition" id="repoSubjectRewriteAddAppend" value="append" data-help-skip="true">
+                                                            <label class="form-check-label" for="repoSubjectRewriteAddAppend">Append</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="form-text mt-1">Add example: from <code>sub-001</code>, add <code>DEMO</code> (prepend), result <code>sub-DEMO001</code>. Combine with Part to Keep to strip and add in one pass.</div>
                                             <div class="form-check mt-2">
                                                 <input class="form-check-input" type="checkbox" id="repoSubjectRewriteAllowMultiple">
                                                 <label class="form-check-label" for="repoSubjectRewriteAllowMultiple">
@@ -499,6 +566,9 @@
                                             <h6 class="mb-2">
                                                 <i class="fas fa-tags me-2"></i>Edit BIDS Filename Parts (Current Project)
                                             </h6>
+                                            <p class="text-muted small mb-1">
+                                                Use this for a filename part other than the subject ID (e.g. <code>_task</code>, <code>_acq</code>) &mdash; for the subject ID itself, use Rename Subject IDs above.
+                                            </p>
                                             <p class="text-muted small mb-3">
                                                 Edit one filename part for one modality at a time. Select a modality, pick a part that starts with <code>_</code>, then rename or delete it.
                                             </p>
@@ -551,9 +621,8 @@
                                             <div id="repoEntityRewriteResult" class="mt-3"></div>
                                         </div>
                                     </div>
-                            </div>
-                        </div>
-                </div>
+                    </div>
+
                 </div>
 
                 <div class="tab-pane fade" id="fm-organizer-panel" role="tabpanel" aria-labelledby="fm-organizer-tab" tabindex="0">

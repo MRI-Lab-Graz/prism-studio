@@ -420,6 +420,141 @@ def test_subject_code_rewriter_example_keep_slice_anchors_on_text_not_position(
     assert (project_root / "sub-123456").exists()
 
 
+def test_subject_code_rewriter_example_keep_add_only_prepend(tmp_path):
+    """Reverse direction of stripping: no keep_fragment, just prepend text
+    to every existing subject ID (e.g. sub-001 -> sub-DEMO001)."""
+    project_root = tmp_path / "project"
+    (project_root / "sub-001" / "ses-01" / "func").mkdir(parents=True)
+    (project_root / "sub-002" / "ses-01" / "func").mkdir(parents=True)
+
+    rewriter = SubjectCodeRewriter(project_root)
+    preview = rewriter.preview(
+        mode="example_keep",
+        example_subject="sub-001",
+        add_text="DEMO",
+        add_position="prepend",
+    )
+
+    assert preview["mapping"]["sub-001"] == "sub-DEMO001"
+    assert preview["mapping"]["sub-002"] == "sub-DEMO002"
+
+    result = rewriter.apply(
+        mode="example_keep",
+        example_subject="sub-001",
+        add_text="DEMO",
+        add_position="prepend",
+    )
+    assert result["mapping_count"] == 2
+    assert (project_root / "sub-DEMO001").exists()
+    assert (project_root / "sub-DEMO002").exists()
+
+
+def test_subject_code_rewriter_example_keep_add_only_append(tmp_path):
+    project_root = tmp_path / "project"
+    (project_root / "sub-001").mkdir(parents=True)
+
+    rewriter = SubjectCodeRewriter(project_root)
+    preview = rewriter.preview(
+        mode="example_keep",
+        example_subject="sub-001",
+        add_text="PILOT",
+        add_position="append",
+    )
+
+    assert preview["mapping"]["sub-001"] == "sub-001PILOT"
+
+
+def test_subject_code_rewriter_example_keep_strip_and_add_combined(tmp_path):
+    """Strip and add can be combined in one pass: keep '003' from
+    sub-1291003, then prepend 'DEMO' -> sub-DEMO003."""
+    project_root = tmp_path / "project"
+    (project_root / "sub-1291003").mkdir(parents=True)
+
+    rewriter = SubjectCodeRewriter(project_root)
+    preview = rewriter.preview(
+        mode="example_keep",
+        example_subject="sub-1291003",
+        keep_fragment="003",
+        add_text="DEMO",
+        add_position="prepend",
+    )
+
+    assert preview["mapping"]["sub-1291003"] == "sub-DEMO003"
+
+
+def test_subject_code_rewriter_example_keep_requires_keep_or_add(tmp_path):
+    project_root = tmp_path / "project"
+    (project_root / "sub-001").mkdir(parents=True)
+
+    rewriter = SubjectCodeRewriter(project_root)
+    with pytest.raises(ValueError, match="part to keep and/or a part to add"):
+        rewriter.preview(mode="example_keep", example_subject="sub-001")
+
+
+def test_subject_code_rewriter_example_keep_add_text_rejects_invalid_chars(tmp_path):
+    project_root = tmp_path / "project"
+    (project_root / "sub-001").mkdir(parents=True)
+
+    rewriter = SubjectCodeRewriter(project_root)
+    with pytest.raises(ValueError, match="letters and numbers"):
+        rewriter.preview(
+            mode="example_keep",
+            example_subject="sub-001",
+            add_text="DEMO_1",
+            add_position="prepend",
+        )
+
+
+def test_subject_code_rewriter_example_keep_slice_and_add_combined(tmp_path):
+    """add_text must also compose with the 'slice' strategy (kept fragment
+    anchored in the middle of the example ID), not just full/prefix/suffix."""
+    project_root = tmp_path / "project"
+    (project_root / "sub-AB1234XY").mkdir(parents=True)
+
+    rewriter = SubjectCodeRewriter(project_root)
+    preview = rewriter.preview(
+        mode="example_keep",
+        example_subject="sub-AB1234XY",
+        keep_fragment="1234",
+        add_text="DEMO",
+        add_position="prepend",
+    )
+
+    assert preview["rule"]["strategy"] == "slice"
+    assert preview["mapping"]["sub-AB1234XY"] == "sub-DEMO1234"
+
+
+def test_subject_code_rewriter_example_keep_add_text_collision_is_detected(tmp_path):
+    """A collision introduced downstream of a strip+add rule (two subjects
+    whose kept suffix matches, so add_text produces the same final ID for
+    both) must still surface through the existing generic collision path."""
+    project_root = tmp_path / "project"
+    (project_root / "sub-1291003").mkdir(parents=True)
+    (project_root / "sub-7777003").mkdir(parents=True)
+
+    rewriter = SubjectCodeRewriter(project_root)
+    preview = rewriter.preview(
+        mode="example_keep",
+        example_subject="sub-1291003",
+        keep_fragment="003",
+        add_text="DEMO",
+        add_position="prepend",
+    )
+
+    assert preview["mapping"]["sub-1291003"] == "sub-DEMO003"
+    assert preview["mapping"]["sub-7777003"] == "sub-DEMO003"
+    assert preview["conflicts"]
+
+    with pytest.raises(ValueError):
+        rewriter.apply(
+            mode="example_keep",
+            example_subject="sub-1291003",
+            keep_fragment="003",
+            add_text="DEMO",
+            add_position="prepend",
+        )
+
+
 def test_subject_rewrite_renames_broken_symlink_binary_files(tmp_path):
     """Regression guard: DataLad-tracked .nii.gz/.edf files are normally
     symlinks into .git/annex/objects/. Before content has been fetched

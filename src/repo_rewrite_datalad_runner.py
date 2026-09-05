@@ -288,6 +288,8 @@ def apply_subject_rewrite(
     example_subject: str | None,
     keep_fragment: str | None,
     allow_many_to_one: bool,
+    add_text: str | None = None,
+    add_position: str | None = None,
     on_log: Callable[[str, str], None] | None = None,
     on_subject_progress: Callable[[int, int], None] | None = None,
     is_cancelled: Callable[[], bool] | None = None,
@@ -311,6 +313,8 @@ def apply_subject_rewrite(
         mode=mode,
         example_subject=example_subject,
         keep_fragment=keep_fragment,
+        add_text=add_text,
+        add_position=add_position,
         allow_many_to_one=allow_many_to_one,
         cap_results=False,
     )
@@ -327,6 +331,8 @@ def apply_subject_rewrite(
             mode=mode,
             example_subject=example_subject,
             keep_fragment=keep_fragment,
+            add_text=add_text,
+            add_position=add_position,
             allow_many_to_one=allow_many_to_one,
         )
         if isinstance(result, dict):
