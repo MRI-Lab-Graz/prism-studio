@@ -14,7 +14,10 @@ from src.datalad_execution import (
     run_datalad_save,
     run_datalad_unlock,
 )
+from src.run_renumberer import RunRenumberer
+from src.session_code_rewriter import SessionCodeRewriter
 from src.subject_code_rewriter import SubjectCodeRewriter
+from src.undo_log import UndoLog
 
 
 def _fetch_all_content_before_rewrite(
@@ -281,6 +284,23 @@ def _apply_mutation_locally_with_datalad_save(
     return payload, mutation_result
 
 
+def _record_subject_rewrite_undo(root: Path, mapping: dict[str, str]) -> None:
+    if not mapping:
+        return
+    # A many-to-one merge (two old subjects mapped to the same new id) loses
+    # which original files came from which old subject once merged -- a
+    # plain old->new reversal would silently keep only one of them. Rather
+    # than record a lossy/broken undo, skip recording one at all for merges.
+    if len(set(mapping.values())) != len(mapping):
+        return
+    reverse_mapping = {new: old for old, new in mapping.items()}
+    UndoLog(root).record(
+        kind="subject_rewrite",
+        description=f"Renamed {len(mapping)} subject ID(s)",
+        payload={"reverse_mapping": reverse_mapping},
+    )
+
+
 def apply_subject_rewrite(
     project_root: Path,
     *,
@@ -290,6 +310,7 @@ def apply_subject_rewrite(
     allow_many_to_one: bool,
     add_text: str | None = None,
     add_position: str | None = None,
+    explicit_mapping: dict[str, str] | None = None,
     on_log: Callable[[str, str], None] | None = None,
     on_subject_progress: Callable[[int, int], None] | None = None,
     is_cancelled: Callable[[], bool] | None = None,
@@ -316,6 +337,7 @@ def apply_subject_rewrite(
         add_text=add_text,
         add_position=add_position,
         allow_many_to_one=allow_many_to_one,
+        explicit_mapping=explicit_mapping,
         cap_results=False,
     )
 
@@ -334,6 +356,7 @@ def apply_subject_rewrite(
             add_text=add_text,
             add_position=add_position,
             allow_many_to_one=allow_many_to_one,
+            explicit_mapping=explicit_mapping,
         )
         if isinstance(result, dict):
             add_log(
@@ -342,6 +365,12 @@ def apply_subject_rewrite(
                 "info",
             )
             result.setdefault("log", log)
+            # explicit_mapping means this call is itself a replay (e.g. an
+            # undo), not a fresh user edit -- logging it would let undo
+            # chain into "undo the undo" and clutter history with entries
+            # the user never asked for.
+            if explicit_mapping is None:
+                _record_subject_rewrite_undo(root, dict(result.get("mapping") or {}))
         return result
 
     rename_sources = sorted(
@@ -657,6 +686,9 @@ def apply_subject_rewrite(
         "success",
     )
 
+    if explicit_mapping is None:
+        _record_subject_rewrite_undo(root, dict(aggregate_mapping))
+
     return {
         "mode": preview.get("mode") or mode,
         "rule": preview.get("rule"),
@@ -685,6 +717,217 @@ def apply_subject_rewrite(
     }
 
 
+def _record_entity_rewrite_undo(root: Path, renames: list[dict[str, str]]) -> None:
+    if not renames:
+        return
+    reverse_renames = [
+        {"from": item["to"], "to": item["from"]}
+        for item in renames
+        if item.get("from") and item.get("to")
+    ]
+    if not reverse_renames:
+        return
+    UndoLog(root).record(
+        kind="entity_rewrite",
+        description=f"Renamed {len(reverse_renames)} filename part(s)",
+        payload={"reverse_renames": reverse_renames},
+    )
+
+
+def _record_session_rewrite_undo(root: Path, mapping: dict[str, str]) -> None:
+    if not mapping:
+        return
+    if len(set(mapping.values())) != len(mapping):
+        # Same many-to-one guard as subject rewrite: a merge loses which
+        # original files came from which old session once merged.
+        return
+    reverse_mapping = {new: old for old, new in mapping.items()}
+    UndoLog(root).record(
+        kind="session_rewrite",
+        description=f"Renamed {len(mapping)} session ID(s)",
+        payload={"reverse_mapping": reverse_mapping},
+    )
+
+
+def apply_session_rewrite(
+    project_root: Path,
+    *,
+    mode: str = "example_keep",
+    example_session: str | None = None,
+    keep_fragment: str | None = None,
+    allow_many_to_one: bool = False,
+    add_text: str | None = None,
+    add_position: str | None = None,
+    explicit_mapping: dict[str, str] | None = None,
+    on_log: Callable[[str, str], None] | None = None,
+    is_cancelled: Callable[[], bool] | None = None,
+) -> dict[str, Any]:
+    """Like apply_subject_rewrite, but for session labels (ses-XXX).
+
+    DataLad-tracked projects get ONE dataset-wide get/unlock/save instead
+    of subject_rewrite's per-subject-group commits: a session's rename
+    mapping is keyed by session token, not by subject, so it can't be
+    sliced per subject group the way subject_rewrite's mapping can (one
+    session label spans many subjects). A single atomic commit for the
+    whole session rewrite is simpler and still correct, just coarser-
+    grained DataLad history than subject rewrite's per-subject commits.
+    """
+    root = Path(project_root)
+    rewriter = SessionCodeRewriter(root)
+    log: list[dict[str, str]] = []
+
+    def add_log(message: str, level: str = "info") -> None:
+        log.append({"message": message, "level": level})
+        if on_log is not None:
+            try:
+                on_log(message, level)
+            except Exception:
+                pass
+
+    preview = rewriter.preview(
+        mode=mode,
+        example_session=example_session,
+        keep_fragment=keep_fragment,
+        add_text=add_text,
+        add_position=add_position,
+        allow_many_to_one=allow_many_to_one,
+        explicit_mapping=explicit_mapping,
+        cap_results=False,
+    )
+
+    should_use_datalad = (
+        is_datalad_dataset(root)
+        and (
+            int(preview.get("file_rename_count") or 0) > 0
+            or int(preview.get("directory_rename_count") or 0) > 0
+        )
+    )
+    if not should_use_datalad:
+        result = rewriter.apply(
+            mode=mode,
+            example_session=example_session,
+            keep_fragment=keep_fragment,
+            add_text=add_text,
+            add_position=add_position,
+            allow_many_to_one=allow_many_to_one,
+            explicit_mapping=explicit_mapping,
+        )
+        if isinstance(result, dict):
+            add_log(
+                "Project is not tracked by DataLad (or no renames were needed); "
+                "applied directly.",
+                "info",
+            )
+            result.setdefault("log", log)
+            if explicit_mapping is None:
+                _record_session_rewrite_undo(root, dict(result.get("mapping") or {}))
+        return result
+
+    if is_cancelled is not None and is_cancelled():
+        raise RewriteCancelledError("Cancelled before the session rewrite started.")
+
+    rename_sources = sorted(
+        {
+            str(item.get("from") or "").strip()
+            for item in list(preview.get("file_renames") or [])
+            if isinstance(item, dict) and str(item.get("from") or "").strip()
+        }
+        | {
+            str(item.get("from") or "").strip()
+            for item in list(preview.get("directory_renames") or [])
+            if isinstance(item, dict) and str(item.get("from") or "").strip()
+        }
+    )
+    text_update_sources = sorted(
+        {
+            str(path_text).strip()
+            for path_text in list(preview.get("text_update_files") or [])
+            if str(path_text or "").strip()
+        }
+    )
+    full_mapping = dict(preview.get("mapping") or {})
+
+    add_log(
+        "Project is tracked by DataLad; applying the session rewrite as one "
+        "commit.",
+        "step",
+    )
+
+    datalad_executable = resolve_datalad_executable()
+    if datalad_executable:
+        autosave_result = run_datalad_save(
+            root,
+            message="PRISM: autosave pending changes before session ID rewrite",
+            datalad_executable=datalad_executable,
+        )
+        if not autosave_result.get("success"):
+            raise ValueError(
+                str(
+                    autosave_result.get("message")
+                    or "DataLad autosave failed before session rewrite."
+                )
+            )
+        add_log(
+            "Verifying all affected content is actually downloaded before "
+            "renaming anything...",
+            "step",
+        )
+        unavailable = _fetch_all_content_before_rewrite(
+            root,
+            subject_groups=["dataset-root"],
+            rename_sources=rename_sources,
+            text_update_sources=text_update_sources,
+            datalad_executable=datalad_executable,
+            add_log=add_log,
+        )
+        if unavailable:
+            raise ValueError(
+                "Content is not available from any known remote for: "
+                + ", ".join(sorted(unavailable))
+            )
+
+    get_paths = rename_sources or ["."]
+    save_paths = sorted(set(rename_sources) | set(text_update_sources) | set(full_mapping.values()))
+
+    payload, mutation_result = _apply_mutation_locally_with_datalad_save(
+        project_root=root,
+        run_message="PRISM: Rewrite session IDs",
+        get_paths=get_paths,
+        content_paths=text_update_sources,
+        save_paths=save_paths,
+        apply_fn=lambda: rewriter.apply(
+            mode=mode,
+            allow_many_to_one=allow_many_to_one,
+            explicit_mapping=full_mapping,
+        ),
+    )
+
+    for step_name in ("get", "content_get", "unlock", "save"):
+        step_info = mutation_result.get(step_name) if isinstance(mutation_result, dict) else None
+        if isinstance(step_info, dict) and step_info.get("message"):
+            add_log(step_info["message"], "info")
+
+    add_log(
+        f"Rename complete: {payload.get('mapping_count', 0)} session mapping(s), "
+        f"{payload.get('directory_rename_count', 0)} folder rename(s), "
+        f"{payload.get('file_rename_count', 0)} filename rename(s).",
+        "success",
+    )
+
+    if explicit_mapping is None:
+        _record_session_rewrite_undo(root, dict(payload.get("mapping") or {}))
+
+    payload = dict(payload)
+    payload["log"] = log
+    payload["datalad"] = {
+        "used_run": False,
+        "tracked": True,
+        "get": mutation_result.get("get") if isinstance(mutation_result, dict) else None,
+        "save": mutation_result.get("save") if isinstance(mutation_result, dict) else None,
+    }
+    return payload
+
+
 def apply_entity_rewrite(
     project_root: Path,
     *,
@@ -693,6 +936,7 @@ def apply_entity_rewrite(
     operation: str,
     current_value: str | None,
     replacement: str | None,
+    explicit_renames: list[dict[str, str]] | None = None,
     on_log: Callable[[str, str], None] | None = None,
     on_subject_progress: Callable[[int, int], None] | None = None,
     is_cancelled: Callable[[], bool] | None = None,
@@ -718,6 +962,7 @@ def apply_entity_rewrite(
         current_value=current_value,
         operation=operation,
         replacement=replacement,
+        explicit_renames=explicit_renames,
         cap_results=False,
     )
 
@@ -732,6 +977,7 @@ def apply_entity_rewrite(
             current_value=current_value,
             operation=operation,
             replacement=replacement,
+            explicit_renames=explicit_renames,
         )
         if isinstance(result, dict):
             add_log(
@@ -740,6 +986,8 @@ def apply_entity_rewrite(
                 "info",
             )
             result.setdefault("log", log)
+            if explicit_renames is None:
+                _record_entity_rewrite_undo(root, list(result.get("renames") or []))
         return result
 
     rename_sources = sorted(
@@ -1022,6 +1270,9 @@ def apply_entity_rewrite(
         "success",
     )
 
+    if explicit_renames is None:
+        _record_entity_rewrite_undo(root, list(aggregate_renames))
+
     return {
         "modality": preview.get("modality") or modality,
         "entity": preview.get("entity") or entity,
@@ -1046,3 +1297,176 @@ def apply_entity_rewrite(
             "groups": group_details,
         },
     }
+
+
+def _apply_explicit_renames_two_phase(
+    root: Path,
+    renames: list[dict[str, str]],
+    *,
+    on_log: Callable[[str, str], None] | None = None,
+    is_cancelled: Callable[[], bool] | None = None,
+) -> dict[str, Any]:
+    """Apply a batch of explicit renames that may contain chains, via an
+    intermediate temp name, through apply_entity_rewrite (so DataLad
+    get/unlock/save still happens correctly for each phase).
+
+    A rename batch that closes a numbering gap (e.g. run values
+    [01,03,04] -> [01,02,03]) is a rename *chain*: 04->03 while 03 is also
+    moving to 02. Applied in one pass, correctness depends entirely on
+    processing order -- ascending old-value order is safe for closing a
+    gap, but replaying the same batch reversed (as undo does) needs
+    descending order instead. Rather than track which direction requires
+    which order, route every rename through a guaranteed-unused temp name
+    first: phase 1 can't collide (temp names are novel), and by phase 2
+    every original has already vacated its slot, so no target can still be
+    occupied either -- correct regardless of direction or ordering.
+
+    Costs one extra DataLad commit (the temp-name intermediate state) when
+    the project is tracked; accepted as a correctness-over-cosmetics
+    tradeoff rather than re-deriving per-chain-safe ordering here.
+    """
+    if not renames:
+        return {"applied": True, "rename_count": 0, "renames": [], "log": []}
+
+    temp_suffix = ".prism_rewrite_tmp"
+    to_temp = [{"from": item["from"], "to": f"{item['from']}{temp_suffix}"} for item in renames]
+    apply_entity_rewrite(
+        root,
+        modality="",
+        entity="",
+        operation="rename",
+        current_value=None,
+        replacement=None,
+        explicit_renames=to_temp,
+        on_log=on_log,
+        is_cancelled=is_cancelled,
+    )
+
+    from_temp = [{"from": f"{item['from']}{temp_suffix}", "to": item["to"]} for item in renames]
+    return apply_entity_rewrite(
+        root,
+        modality="",
+        entity="",
+        operation="rename",
+        current_value=None,
+        replacement=None,
+        explicit_renames=from_temp,
+        on_log=on_log,
+        is_cancelled=is_cancelled,
+    )
+
+
+def apply_run_renumbering(
+    project_root: Path,
+    *,
+    on_log: Callable[[str, str], None] | None = None,
+    is_cancelled: Callable[[], bool] | None = None,
+) -> dict[str, Any]:
+    """Detect and close gaps in run-XX sequences across the whole project.
+
+    Computes the renames (see RunRenumberer), then delegates the actual
+    mutation to apply_entity_rewrite's explicit_renames path (via the
+    two-phase helper above, since gap-closing batches can be rename
+    chains) -- reusing its DataLad handling rather than a second
+    implementation. Records its own undo entry since explicit_renames
+    calls don't auto-record (that path is also used for undo replay
+    itself; recording there would let undo chain into "undo the undo").
+    """
+    root = Path(project_root)
+    renumberer = RunRenumberer(root)
+    preview = renumberer.preview()
+    renames = [rename for group in preview["groups"] for rename in group["renames"]]
+
+    if not renames:
+        return {
+            "applied": True,
+            "rename_count": 0,
+            "groups": preview["groups"],
+            "skipped_groups": preview["skipped_groups"],
+            "log": [],
+        }
+
+    result = _apply_explicit_renames_two_phase(
+        root, renames, on_log=on_log, is_cancelled=is_cancelled
+    )
+
+    reverse_renames = [{"from": item["to"], "to": item["from"]} for item in renames]
+    UndoLog(root).record(
+        kind="run_renumber",
+        description=f"Renumbered runs in {len(preview['groups'])} group(s)",
+        payload={"reverse_renames": reverse_renames},
+    )
+
+    result = dict(result)
+    result["groups"] = preview["groups"]
+    result["skipped_groups"] = preview["skipped_groups"]
+    return result
+
+
+def undo_last_operation(
+    project_root: Path,
+    *,
+    on_log: Callable[[str, str], None] | None = None,
+    on_subject_progress: Callable[[int, int], None] | None = None,
+    is_cancelled: Callable[[], bool] | None = None,
+) -> dict[str, Any]:
+    """Reverse the most recent undoable File Management operation.
+
+    Reverses by replaying the same apply function with the mapping/renames
+    inverted, rather than tracking file contents -- it reuses the exact
+    same tested rename/collision/DataLad-save logic that performed the
+    original operation, instead of a second, parallel file-mutation path.
+    """
+    root = Path(project_root)
+    undo_log = UndoLog(root)
+    entry = undo_log.peek_last()
+    if entry is None:
+        raise ValueError("Nothing to undo.")
+
+    kind = entry.get("kind")
+    payload = entry.get("payload") or {}
+
+    if kind == "subject_rewrite":
+        result = apply_subject_rewrite(
+            root,
+            mode="example_keep",
+            example_subject=None,
+            keep_fragment=None,
+            allow_many_to_one=False,
+            explicit_mapping=dict(payload.get("reverse_mapping") or {}),
+            on_log=on_log,
+            on_subject_progress=on_subject_progress,
+            is_cancelled=is_cancelled,
+        )
+    elif kind == "entity_rewrite":
+        result = apply_entity_rewrite(
+            root,
+            modality="",
+            entity="",
+            operation="rename",
+            current_value=None,
+            replacement=None,
+            explicit_renames=list(payload.get("reverse_renames") or []),
+            on_log=on_log,
+            on_subject_progress=on_subject_progress,
+            is_cancelled=is_cancelled,
+        )
+    elif kind == "session_rewrite":
+        result = apply_session_rewrite(
+            root,
+            explicit_mapping=dict(payload.get("reverse_mapping") or {}),
+            on_log=on_log,
+            is_cancelled=is_cancelled,
+        )
+    elif kind == "run_renumber":
+        result = _apply_explicit_renames_two_phase(
+            root,
+            list(payload.get("reverse_renames") or []),
+            on_log=on_log,
+            is_cancelled=is_cancelled,
+        )
+    else:
+        raise ValueError(f"Cannot undo operation of unknown kind: {kind}")
+
+    undo_log.pop_last()
+    return result

@@ -6,26 +6,34 @@ BASE_TEMPLATE = REPO_ROOT / "app" / "templates" / "base.html"
 
 
 class TestNavbarWorkflowGrouping(unittest.TestCase):
-    def test_workflow_dropdown_labels_present(self):
+    def test_top_level_dropdown_labels_present(self):
         content = BASE_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn('id="projectsDropdown"', content)
         self.assertIn('text-primary"></i>Project', content)
-        self.assertIn('id="prepareDropdown"', content)
-        self.assertIn('text-success"></i>Prepare Data', content)
-        self.assertIn('id="modifyDropdown"', content)
-        self.assertIn('text-primary"></i>Modify in PRISM', content)
-        self.assertIn('id="derivativesDropdown"', content)
-        self.assertIn('text-warning"></i>Export Derivatives', content)
+        self.assertIn('id="workflowDropdown"', content)
+        self.assertIn('text-success"></i>Workflow', content)
         self.assertIn('id="docsDropdown"', content)
         self.assertIn('me-1"></i>Docs', content)
         self.assertNotIn('>Core<', content)
 
-    def test_workflow_hints_present(self):
-        content = BASE_TEMPLATE.read_text(encoding="utf-8")
+        # Prepare Data / Modify in PRISM / Export Derivatives / Share & Archive
+        # were merged into the single Workflow dropdown, not separate top-level items.
+        self.assertNotIn('id="prepareDropdown"', content)
+        self.assertNotIn('id="modifyDropdown"', content)
+        self.assertNotIn('id="derivativesDropdown"', content)
 
-        self.assertIn('Next: Modify in PRISM', content)
-        self.assertIn('Next: Export Derivatives', content)
+    def test_workflow_dropdown_contains_all_pipeline_stages(self):
+        content = BASE_TEMPLATE.read_text(encoding="utf-8")
+        workflow_section = content.split('id="workflowDropdown"', 1)[1].split(
+            'id="docsDropdown"', 1
+        )[0]
+
+        self.assertIn('1. Prepare Data', workflow_section)
+        self.assertIn('2. Modify in PRISM', workflow_section)
+        self.assertIn('3. Export Derivatives', workflow_section)
+        self.assertIn('4. Share &amp; Archive', workflow_section)
+        self.assertIn('id="shareArchiveLink"', workflow_section)
 
     def test_workflow_item_subtitles_present(self):
         content = BASE_TEMPLATE.read_text(encoding="utf-8")
@@ -45,14 +53,20 @@ class TestNavbarWorkflowGrouping(unittest.TestCase):
         self.assertIn('Online Docs', content)
         self.assertIn('>Specs</span>', content)
 
-        modify_section = content.split('id="modifyDropdown"', 1)[1].split(
-            'id="derivativesDropdown"', 1
+        workflow_section = content.split('id="workflowDropdown"', 1)[1].split(
+            'id="docsDropdown"', 1
         )[0]
-        self.assertNotIn('>Specs</span>', modify_section)
+        self.assertNotIn('>Specs</span>', workflow_section)
 
         docs_section = content.split('id="docsDropdown"', 1)[1]
         self.assertIn('>Specs</span>', docs_section)
         self.assertIn('url_for(\'specifications\')', docs_section)
+
+    def test_workflow_menu_scrolls_instead_of_overflowing(self):
+        content = BASE_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('dropdown-menu-scroll', content)
+        self.assertIn('.dropdown-menu.dropdown-menu-scroll', content)
 
     def test_phase_active_flags_cover_deep_paths(self):
         content = BASE_TEMPLATE.read_text(encoding="utf-8")
