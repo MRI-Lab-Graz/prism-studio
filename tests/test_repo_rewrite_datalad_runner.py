@@ -2,7 +2,14 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from src.repo_rewrite_datalad_runner import apply_entity_rewrite, apply_subject_rewrite
+from src.repo_rewrite_datalad_runner import (
+    apply_entity_rewrite,
+    apply_run_renumbering,
+    apply_session_rewrite,
+    apply_subject_rewrite,
+    undo_last_operation,
+)
+from src.undo_log import UndoLog
 
 
 def _fake_subprocess_run_factory(seen_commands):
@@ -422,4 +429,318 @@ def test_apply_subject_rewrite_stops_batch_when_save_fails_after_rename(tmp_path
 
     # The batch must have stopped before touching the second group.
     assert (project_root / "sub-1293002" / "ses-01" / "func").exists()
+
+
+def test_apply_subject_rewrite_records_undo_entry_after_success(tmp_path):
+    project_root = tmp_path / "project"
+    (project_root / "sub-1293167" / "ses-01").mkdir(parents=True)
+
+    apply_subject_rewrite(
+        project_root,
+        mode="last3",
+        example_subject=None,
+        keep_fragment=None,
+        allow_many_to_one=False,
+    )
+
+    entry = UndoLog(project_root).peek_last()
+    assert entry is not None
+    assert entry["kind"] == "subject_rewrite"
+    assert entry["payload"]["reverse_mapping"] == {"sub-167": "sub-1293167"}
+
+
+def test_apply_subject_rewrite_many_to_one_merge_does_not_record_undo_entry(tmp_path):
+    """A many-to-one merge loses which original files came from which old
+    subject once merged; reversing a plain old->new mapping would keep only
+    one of them. Recording a lossy undo would be worse than no undo."""
+    project_root = tmp_path / "project"
+    (project_root / "sub-1293167").mkdir(parents=True)
+    (project_root / "sub-999167").mkdir(parents=True)
+
+    apply_subject_rewrite(
+        project_root,
+        mode="last3",
+        example_subject=None,
+        keep_fragment=None,
+        allow_many_to_one=True,
+    )
+
+    assert (project_root / "sub-167").exists()
+    assert UndoLog(project_root).peek_last() is None
+
+
+def test_apply_subject_rewrite_with_explicit_mapping_does_not_record_undo_entry(tmp_path):
+    """A call driven by explicit_mapping is itself a replay/undo, not a
+    fresh user edit -- logging it would let "undo" chain into "undo the
+    undo" and clutter history with entries the user never asked for."""
+    project_root = tmp_path / "project"
+    (project_root / "sub-167").mkdir(parents=True)
+
+    apply_subject_rewrite(
+        project_root,
+        mode="example_keep",
+        example_subject=None,
+        keep_fragment=None,
+        allow_many_to_one=False,
+        explicit_mapping={"sub-167": "sub-1293167"},
+    )
+
+    assert (project_root / "sub-1293167").exists()
+    assert UndoLog(project_root).peek_last() is None
+
+
+def test_undo_last_operation_reverses_subject_rewrite(tmp_path):
+    project_root = tmp_path / "project"
+    (project_root / "sub-1293167" / "ses-01").mkdir(parents=True)
+
+    apply_subject_rewrite(
+        project_root,
+        mode="last3",
+        example_subject=None,
+        keep_fragment=None,
+        allow_many_to_one=False,
+    )
+    assert (project_root / "sub-167").exists()
+
+    result = undo_last_operation(project_root)
+
+    assert result.get("applied") is True
+    assert not (project_root / "sub-167").exists()
+    assert (project_root / "sub-1293167" / "ses-01").exists()
+    assert UndoLog(project_root).peek_last() is None
+
+
+def test_undo_last_operation_raises_when_nothing_to_undo(tmp_path):
+    project_root = tmp_path / "project"
+    project_root.mkdir(parents=True)
+
+    try:
+        undo_last_operation(project_root)
+        raised = False
+    except ValueError:
+        raised = True
+
+    assert raised
+
+
+def test_apply_session_rewrite_records_undo_entry_after_success(tmp_path):
+    project_root = tmp_path / "project"
+    (project_root / "sub-001" / "ses-baseline1").mkdir(parents=True)
+
+    apply_session_rewrite(
+        project_root,
+        example_session="ses-baseline1",
+        keep_fragment="baseline",
+    )
+
+    entry = UndoLog(project_root).peek_last()
+    assert entry is not None
+    assert entry["kind"] == "session_rewrite"
+    assert entry["payload"]["reverse_mapping"] == {"ses-baseline": "ses-baseline1"}
+
+
+def test_apply_session_rewrite_with_explicit_mapping_does_not_record_undo_entry(tmp_path):
+    project_root = tmp_path / "project"
+    (project_root / "sub-001" / "ses-baseline").mkdir(parents=True)
+
+    apply_session_rewrite(
+        project_root,
+        explicit_mapping={"ses-baseline": "ses-baseline1"},
+    )
+
+    assert (project_root / "sub-001" / "ses-baseline1").exists()
+    assert UndoLog(project_root).peek_last() is None
+
+
+def test_undo_last_operation_reverses_session_rewrite(tmp_path):
+    project_root = tmp_path / "project"
+    (project_root / "sub-001" / "ses-baseline1").mkdir(parents=True)
+
+    apply_session_rewrite(
+        project_root,
+        example_session="ses-baseline1",
+        keep_fragment="baseline",
+    )
+    assert (project_root / "sub-001" / "ses-baseline").exists()
+
+    result = undo_last_operation(project_root)
+
+    assert result.get("applied") is True
+    assert not (project_root / "sub-001" / "ses-baseline").exists()
+    assert (project_root / "sub-001" / "ses-baseline1").exists()
+    assert UndoLog(project_root).peek_last() is None
+
+
+def test_apply_session_rewrite_uses_datalad_get_and_save_when_project_is_tracked(
+    tmp_path, monkeypatch
+):
+    project_root = tmp_path / "project"
+    func_dir = project_root / "sub-001" / "ses-baseline1" / "func"
+    func_dir.mkdir(parents=True)
+    (project_root / ".datalad").mkdir(parents=True)
+    (func_dir / "sub-001_ses-baseline1_task-rest_bold.nii.gz").write_bytes(b"nii")
+
+    monkeypatch.setattr(
+        "src.datalad_execution.shutil.which",
+        lambda command: "/usr/bin/datalad" if command == "datalad" else "",
+    )
+    seen_commands: list[list[str]] = []
+    monkeypatch.setattr(
+        "src.datalad_execution.subprocess.run",
+        _fake_subprocess_run_factory(seen_commands),
+    )
+
+    result = apply_session_rewrite(
+        project_root,
+        example_session="ses-baseline1",
+        keep_fragment="baseline",
+    )
+
+    assert result.get("applied") is True
+    assert result.get("datalad", {}).get("tracked") is True
+    assert any(command[0:2] == ["/usr/bin/datalad", "get"] for command in seen_commands)
+    assert any(command[0:2] == ["/usr/bin/datalad", "save"] for command in seen_commands)
+    assert (
+        project_root / "sub-001" / "ses-baseline" / "func" / "sub-001_ses-baseline_task-rest_bold.nii.gz"
+    ).exists()
+
+
+def test_apply_run_renumbering_closes_gap_and_records_undo_entry(tmp_path):
+    project_root = tmp_path / "project"
+    func = project_root / "sub-001" / "ses-01" / "func"
+    func.mkdir(parents=True)
+    (func / "sub-001_ses-01_task-rest_run-01_bold.nii.gz").write_bytes(b"data")
+    (func / "sub-001_ses-01_task-rest_run-03_bold.nii.gz").write_bytes(b"data")
+
+    result = apply_run_renumbering(project_root)
+
+    assert result["applied"] is True
+    assert result["rename_count"] == 1
+    assert not (func / "sub-001_ses-01_task-rest_run-03_bold.nii.gz").exists()
+    assert (func / "sub-001_ses-01_task-rest_run-02_bold.nii.gz").exists()
+
+    entry = UndoLog(project_root).peek_last()
+    assert entry is not None
+    assert entry["kind"] == "run_renumber"
+    assert entry["payload"]["reverse_renames"] == [
+        {
+            "from": "sub-001/ses-01/func/sub-001_ses-01_task-rest_run-02_bold.nii.gz",
+            "to": "sub-001/ses-01/func/sub-001_ses-01_task-rest_run-03_bold.nii.gz",
+        }
+    ]
+
+
+def test_apply_run_renumbering_is_a_noop_when_no_gaps(tmp_path):
+    project_root = tmp_path / "project"
+    func = project_root / "sub-001" / "ses-01" / "func"
+    func.mkdir(parents=True)
+    (func / "sub-001_ses-01_task-rest_run-01_bold.nii.gz").write_bytes(b"data")
+
+    result = apply_run_renumbering(project_root)
+
+    assert result["applied"] is True
+    assert result["rename_count"] == 0
+    assert UndoLog(project_root).peek_last() is None
+
+
+def test_undo_last_operation_reverses_run_renumbering(tmp_path):
+    project_root = tmp_path / "project"
+    func = project_root / "sub-001" / "ses-01" / "func"
+    func.mkdir(parents=True)
+    (func / "sub-001_ses-01_task-rest_run-01_bold.nii.gz").write_bytes(b"data")
+    (func / "sub-001_ses-01_task-rest_run-03_bold.nii.gz").write_bytes(b"data")
+
+    apply_run_renumbering(project_root)
+    assert (func / "sub-001_ses-01_task-rest_run-02_bold.nii.gz").exists()
+
+    result = undo_last_operation(project_root)
+
+    assert result.get("applied") is True
+    assert not (func / "sub-001_ses-01_task-rest_run-02_bold.nii.gz").exists()
+    assert (func / "sub-001_ses-01_task-rest_run-03_bold.nii.gz").exists()
+    assert UndoLog(project_root).peek_last() is None
+
+
+def test_undo_last_operation_reverses_a_chained_run_renumbering_without_data_loss(tmp_path):
+    """Regression guard: closing [01,03,04] -> [01,02,03] is a rename chain
+    (04->03 while 03 is also moving to 02). The forward direction is safe
+    processed in ascending run-value order, but naively reversing the same
+    (from,to) pairs and replaying them through the same ascending-sort apply
+    path processes them in the WRONG order for the reverse direction --
+    02->03 landing on the still-occupied original run-03 before it moves to
+    run-04, silently overwriting (losing) its content. Undo must restore
+    the exact original files with their original content, not just the
+    right filenames."""
+    project_root = tmp_path / "project"
+    func = project_root / "sub-001" / "ses-01" / "func"
+    func.mkdir(parents=True)
+    (func / "sub-001_ses-01_task-rest_run-01_bold.nii.gz").write_bytes(b"run-01-content")
+    (func / "sub-001_ses-01_task-rest_run-03_bold.nii.gz").write_bytes(b"run-03-content")
+    (func / "sub-001_ses-01_task-rest_run-04_bold.nii.gz").write_bytes(b"run-04-content")
+
+    apply_run_renumbering(project_root)
+    assert (func / "sub-001_ses-01_task-rest_run-02_bold.nii.gz").read_bytes() == b"run-03-content"
+    assert (func / "sub-001_ses-01_task-rest_run-03_bold.nii.gz").read_bytes() == b"run-04-content"
+
+    result = undo_last_operation(project_root)
+    assert result.get("applied") is True
+
+    assert (func / "sub-001_ses-01_task-rest_run-01_bold.nii.gz").read_bytes() == b"run-01-content"
+    assert (func / "sub-001_ses-01_task-rest_run-03_bold.nii.gz").read_bytes() == b"run-03-content"
+    assert (func / "sub-001_ses-01_task-rest_run-04_bold.nii.gz").read_bytes() == b"run-04-content"
+    assert sorted(p.name for p in func.iterdir()) == [
+        "sub-001_ses-01_task-rest_run-01_bold.nii.gz",
+        "sub-001_ses-01_task-rest_run-03_bold.nii.gz",
+        "sub-001_ses-01_task-rest_run-04_bold.nii.gz",
+    ]
+
+
+def test_apply_entity_rewrite_records_undo_entry_after_success(tmp_path):
+    project_root = tmp_path / "project"
+    func_dir = project_root / "sub-001" / "ses-01" / "func"
+    func_dir.mkdir(parents=True)
+    (func_dir / "sub-001_ses-01_task-A_bold.nii.gz").write_bytes(b"nii")
+
+    apply_entity_rewrite(
+        project_root,
+        modality="func",
+        entity="_task",
+        operation="rename",
+        current_value="A",
+        replacement="rest",
+    )
+
+    entry = UndoLog(project_root).peek_last()
+    assert entry is not None
+    assert entry["kind"] == "entity_rewrite"
+    assert entry["payload"]["reverse_renames"] == [
+        {
+            "from": "sub-001/ses-01/func/sub-001_ses-01_task-rest_bold.nii.gz",
+            "to": "sub-001/ses-01/func/sub-001_ses-01_task-A_bold.nii.gz",
+        }
+    ]
+
+
+def test_undo_last_operation_reverses_entity_rewrite(tmp_path):
+    project_root = tmp_path / "project"
+    func_dir = project_root / "sub-001" / "ses-01" / "func"
+    func_dir.mkdir(parents=True)
+    (func_dir / "sub-001_ses-01_task-A_bold.nii.gz").write_bytes(b"nii")
+
+    apply_entity_rewrite(
+        project_root,
+        modality="func",
+        entity="_task",
+        operation="rename",
+        current_value="A",
+        replacement="rest",
+    )
+    assert (func_dir / "sub-001_ses-01_task-rest_bold.nii.gz").exists()
+
+    result = undo_last_operation(project_root)
+
+    assert result.get("applied") is True
+    assert (func_dir / "sub-001_ses-01_task-A_bold.nii.gz").exists()
+    assert not (func_dir / "sub-001_ses-01_task-rest_bold.nii.gz").exists()
+    assert UndoLog(project_root).peek_last() is None
     assert not (project_root / "sub-002").exists()

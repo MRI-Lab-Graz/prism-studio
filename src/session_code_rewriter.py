@@ -10,7 +10,16 @@ from src.bids_entity_parser import BidsEntityParser
 from src.system_files import filter_system_files
 from src.token_rewrite_rules import build_example_keep_rule, rewrite_token
 
-_SUBJECT_TOKEN_PATTERN = re.compile(r"sub-[A-Za-z0-9]+")
+# Mirrors src/subject_code_rewriter.py's traversal/collision/merge machinery
+# with sub- swapped for ses- -- the strip/add rule logic itself (the part
+# with the most edge cases: prefix/suffix/slice anchoring, add_text) is NOT
+# duplicated, both classes share src/token_rewrite_rules.py for that. Fully
+# unifying this remaining traversal layer too would mean restructuring
+# SubjectCodeRewriter's already-tested, production apply/collision pipeline;
+# left as tracked duplication for now rather than risking that class under
+# time pressure. Keep changes to collision/merge/iteration logic in sync
+# between the two files until/unless they're unified into one base class.
+_SESSION_TOKEN_PATTERN = re.compile(r"ses-[A-Za-z0-9]+")
 _IGNORED_DIR_NAMES = {
     ".git",
     ".venv",
@@ -42,9 +51,9 @@ class _RewritePlan:
     mode: str
     rule: dict[str, str | int] | None
     allow_many_to_one: bool
-    subject_examples: list[str]
-    subjects: list[str]
-    subject_token_sources: dict[str, list[str]]
+    session_examples: list[str]
+    sessions: list[str]
+    session_token_sources: dict[str, list[str]]
     mapping: dict[str, str]
     directory_ops: list[_RenameOperation]
     file_ops: list[_RenameOperation]
@@ -52,11 +61,14 @@ class _RewritePlan:
     conflicts: list[str]
 
 
-class SubjectCodeRewriter:
-    """Rewrite existing subject codes in a project tree.
+class SessionCodeRewriter:
+    """Rewrite existing session codes (ses-XXX) in a project tree.
 
-    The current supported mode is ``last3``:
-    ``sub-1293167`` -> ``sub-167``.
+    Session labels are free-form strings, never numbers -- "pre", "1", and
+    "01" are three distinct, independent labels. This rewriter never
+    zero-pads or otherwise coerces one into another; it only ever applies
+    the exact strip/add rule the caller supplies (see
+    src/token_rewrite_rules.py), same as SubjectCodeRewriter.
     """
 
     def __init__(self, project_root: Path):
@@ -66,82 +78,74 @@ class SubjectCodeRewriter:
     def _path_present(path: Path) -> bool:
         """True if `path` is a real file/dir OR a symlink (including a
         broken one pointing at not-yet-fetched git-annex content).
-
-        Plain Path.exists()/is_file() return False for a broken symlink, so
-        relying on them anywhere a rename source/target is checked would
-        silently treat unfetched annexed files (e.g. .nii.gz under a
-        DataLad dataset) as absent — excluding them from rename plans, or
-        missing real collisions against them. Renaming a symlink itself
-        never requires its target to be resolvable.
         """
         return path.is_symlink() or path.exists()
 
-    def list_root_subject_ids(self) -> list[str]:
-        """Return subject IDs from top-level project folders only.
+    def list_session_ids(self) -> list[str]:
+        """Return distinct session IDs found anywhere in the project.
 
-        This lightweight scan is used by the web UI to populate the
-        subject-example dropdown quickly without traversing the full dataset.
+        Unlike subject IDs, session directories are never at the project
+        root (they nest one level inside each subject directory), so this
+        scans the whole tree for ses- directory names rather than just
+        top-level entries.
         """
         if not self.project_root.exists() or not self.project_root.is_dir():
             return []
 
-        subject_ids: list[str] = []
-        for child in self.project_root.iterdir():
-            if not child.is_dir():
-                continue
-            name = child.name
-            if BidsEntityParser.is_subject_dir(name):
-                subject_ids.append(name)
-        return sorted(subject_ids)
+        session_ids: set[str] = set()
+        for directory in self._iter_directories():
+            if BidsEntityParser.is_session_dir(directory.name):
+                session_ids.add(directory.name)
+        return sorted(session_ids)
 
     def preview(
         self,
-        mode: str = "last3",
-        example_subject: str | None = None,
+        mode: str = "example_keep",
+        example_session: str | None = None,
         keep_fragment: str | None = None,
         add_text: str | None = None,
         add_position: str | None = None,
         allow_many_to_one: bool = False,
-        subjects: list[str] | None = None,
+        sessions: list[str] | None = None,
         explicit_mapping: dict[str, str] | None = None,
         cap_results: bool = True,
     ) -> dict:
         plan = self._build_plan(
             mode,
-            example_subject=example_subject,
+            example_session=example_session,
             keep_fragment=keep_fragment,
             add_text=add_text,
             add_position=add_position,
             allow_many_to_one=allow_many_to_one,
-            subjects=subjects,
+            sessions=sessions,
             explicit_mapping=explicit_mapping,
         )
         return self._plan_to_dict(plan, applied=False, cap_results=cap_results)
 
     def apply(
         self,
-        mode: str = "last3",
-        example_subject: str | None = None,
+        mode: str = "example_keep",
+        example_session: str | None = None,
         keep_fragment: str | None = None,
         add_text: str | None = None,
         add_position: str | None = None,
         allow_many_to_one: bool = False,
-        subjects: list[str] | None = None,
+        sessions: list[str] | None = None,
         explicit_mapping: dict[str, str] | None = None,
     ) -> dict:
         plan = self._build_plan(
             mode,
-            example_subject=example_subject,
+            example_session=example_session,
             keep_fragment=keep_fragment,
             add_text=add_text,
             add_position=add_position,
             allow_many_to_one=allow_many_to_one,
-            subjects=subjects,
+            sessions=sessions,
             explicit_mapping=explicit_mapping,
         )
         if plan.conflicts:
             raise ValueError(
-                "Subject rewrite cannot be applied due to conflicts: "
+                "Session rewrite cannot be applied due to conflicts: "
                 + "; ".join(plan.conflicts)
             )
 
@@ -161,9 +165,6 @@ class SubjectCodeRewriter:
             if not op.old_path.exists():
                 continue
             op.new_path.parent.mkdir(parents=True, exist_ok=True)
-            # On case-insensitive filesystems, a pure case-change rename
-            # (e.g. SUB-01 -> sub-01) makes new_path.exists() true even
-            # though it's the same directory, not a real merge target.
             is_case_only_change = (
                 op.old_path != op.new_path
                 and str(op.old_path).casefold() == str(op.new_path).casefold()
@@ -191,10 +192,10 @@ class SubjectCodeRewriter:
     def _build_plan(
         self,
         mode: str,
-        example_subject: str | None,
+        example_session: str | None,
         keep_fragment: str | None,
         allow_many_to_one: bool,
-        subjects: list[str] | None,
+        sessions: list[str] | None,
         add_text: str | None = None,
         add_position: str | None = None,
         explicit_mapping: dict[str, str] | None = None,
@@ -203,35 +204,30 @@ class SubjectCodeRewriter:
             raise ValueError(f"Project root does not exist: {self.project_root}")
 
         normalized_mode = self._normalize_mode(mode)
-        normalized_subjects = self._normalize_subjects(subjects)
-        subject_tokens, subject_token_sources = self._collect_subject_tokens()
+        normalized_sessions = self._normalize_sessions(sessions)
+        session_tokens, session_token_sources = self._collect_session_tokens()
         if explicit_mapping is not None:
-            # Caller already resolved the old->new subject mapping once
-            # (e.g. against the dataset's pre-rename state) and wants it
-            # applied as-is, bypassing example_subject/keep_fragment
-            # resolution entirely. This matters when this subject's rewrite
-            # runs in its own subprocess after earlier subjects in the same
-            # batch have already been renamed on disk: re-deriving the rule
-            # from a literal example_subject would fail once that example
-            # subject itself no longer exists under its old name.
+            # Same bypass rationale as SubjectCodeRewriter: a caller that
+            # already resolved the mapping once wants it applied as-is,
+            # without re-deriving from a possibly-now-stale example_session.
             mapping = dict(explicit_mapping)
             rule = None
         else:
-            mapping, rule = self._build_subject_mapping(
+            mapping, rule = self._build_session_mapping(
                 normalized_mode,
-                subject_tokens,
-                example_subject=example_subject,
+                session_tokens,
+                example_session=example_session,
                 keep_fragment=keep_fragment,
                 add_text=add_text,
                 add_position=add_position,
             )
 
-        if normalized_subjects:
+        if normalized_sessions:
             filtered_mapping: dict[str, str] = {}
-            for old_subject, new_subject in mapping.items():
-                old_label = old_subject[4:] if old_subject.startswith("sub-") else old_subject
-                if old_label in normalized_subjects:
-                    filtered_mapping[old_subject] = new_subject
+            for old_session, new_session in mapping.items():
+                old_label = old_session[4:] if old_session.startswith("ses-") else old_session
+                if old_label in normalized_sessions:
+                    filtered_mapping[old_session] = new_session
             mapping = filtered_mapping
 
         if not mapping:
@@ -239,9 +235,9 @@ class SubjectCodeRewriter:
                 mode=normalized_mode,
                 rule=rule,
                 allow_many_to_one=allow_many_to_one,
-                subject_examples=subject_tokens,
-                subjects=sorted(normalized_subjects),
-                subject_token_sources=subject_token_sources,
+                session_examples=session_tokens,
+                sessions=sorted(normalized_sessions),
+                session_token_sources=session_token_sources,
                 mapping={},
                 directory_ops=[],
                 file_ops=[],
@@ -252,10 +248,10 @@ class SubjectCodeRewriter:
         collisions = self._mapping_collisions(mapping)
         conflicts: list[str] = []
         if collisions and not allow_many_to_one:
-            for new_subject, old_subjects in collisions.items():
-                joined_old = ", ".join(sorted(old_subjects))
+            for new_session, old_sessions in collisions.items():
+                joined_old = ", ".join(sorted(old_sessions))
                 conflicts.append(
-                    f"Multiple source subjects map to {new_subject}: {joined_old}"
+                    f"Multiple source sessions map to {new_session}: {joined_old}"
                 )
 
         directory_ops = self._build_directory_rename_ops(mapping)
@@ -274,9 +270,9 @@ class SubjectCodeRewriter:
             mode=normalized_mode,
             rule=rule,
             allow_many_to_one=allow_many_to_one,
-            subject_examples=subject_tokens,
-            subjects=sorted(normalized_subjects),
-            subject_token_sources=subject_token_sources,
+            session_examples=session_tokens,
+            sessions=sorted(normalized_sessions),
+            session_token_sources=session_token_sources,
             mapping=mapping,
             directory_ops=directory_ops,
             file_ops=file_ops,
@@ -285,13 +281,13 @@ class SubjectCodeRewriter:
         )
 
     @staticmethod
-    def _normalize_subjects(subjects: list[str] | None) -> set[str]:
-        if not subjects:
+    def _normalize_sessions(sessions: list[str] | None) -> set[str]:
+        if not sessions:
             return set()
         normalized: set[str] = set()
-        for subject in subjects:
-            token = str(subject or "").strip()
-            if token.startswith("sub-"):
+        for session in sessions:
+            token = str(session or "").strip()
+            if token.startswith("ses-"):
                 token = token[4:]
             if BidsEntityParser.is_valid_label(token):
                 normalized.add(token)
@@ -299,45 +295,45 @@ class SubjectCodeRewriter:
 
     @staticmethod
     def _normalize_mode(mode: str | None) -> str:
-        normalized = (mode or "last3").strip().lower()
+        normalized = (mode or "example_keep").strip().lower()
         if normalized not in {"last3", "example_keep"}:
-            raise ValueError(f"Unsupported subject rewrite mode: {mode}")
+            raise ValueError(f"Unsupported session rewrite mode: {mode}")
         return normalized
 
-    def _collect_subject_tokens(self) -> tuple[list[str], dict[str, list[str]]]:
-        subject_tokens: set[str] = set()
-        subject_sources: dict[str, set[str]] = {}
+    def _collect_session_tokens(self) -> tuple[list[str], dict[str, list[str]]]:
+        session_tokens: set[str] = set()
+        session_sources: dict[str, set[str]] = {}
 
         def add_occurrence(token: str, source: str):
-            subject_tokens.add(token)
-            bucket = subject_sources.setdefault(token, set())
+            session_tokens.add(token)
+            bucket = session_sources.setdefault(token, set())
             if len(bucket) < 50:
                 bucket.add(source)
 
         for directory in self._iter_directories():
             rel_dir = directory.relative_to(self.project_root).as_posix()
-            for token in _SUBJECT_TOKEN_PATTERN.findall(directory.name):
+            for token in _SESSION_TOKEN_PATTERN.findall(directory.name):
                 add_occurrence(token, rel_dir)
 
         for file_path in self._iter_files():
             rel_path = file_path.relative_to(self.project_root).as_posix()
-            for token in _SUBJECT_TOKEN_PATTERN.findall(file_path.name):
+            for token in _SESSION_TOKEN_PATTERN.findall(file_path.name):
                 add_occurrence(token, rel_path)
-            for token in _SUBJECT_TOKEN_PATTERN.findall(rel_path):
+            for token in _SESSION_TOKEN_PATTERN.findall(rel_path):
                 add_occurrence(token, rel_path)
 
-        sorted_tokens = sorted(subject_tokens)
+        sorted_tokens = sorted(session_tokens)
         normalized_sources = {
-            token: sorted(subject_sources.get(token, set()))[:20]
+            token: sorted(session_sources.get(token, set()))[:20]
             for token in sorted_tokens
         }
         return sorted_tokens, normalized_sources
 
-    def _build_subject_mapping(
+    def _build_session_mapping(
         self,
         mode: str,
-        subject_tokens: list[str],
-        example_subject: str | None,
+        session_tokens: list[str],
+        example_session: str | None,
         keep_fragment: str | None,
         add_text: str | None = None,
         add_position: str | None = None,
@@ -345,50 +341,47 @@ class SubjectCodeRewriter:
         rule: dict[str, str | int] | None = None
         if mode == "example_keep":
             rule = self._build_example_keep_rule(
-                subject_tokens,
-                example_subject=example_subject,
+                session_tokens,
+                example_session=example_session,
                 keep_fragment=keep_fragment,
                 add_text=add_text,
                 add_position=add_position,
             )
 
         mapping: dict[str, str] = {}
-        for token in subject_tokens:
-            rewritten = self._rewrite_subject_token(token, mode, rule=rule)
+        for token in session_tokens:
+            rewritten = self._rewrite_session_token(token, mode, rule=rule)
             if rewritten and rewritten != token:
                 mapping[token] = rewritten
         return mapping, rule
 
     @staticmethod
     def _build_example_keep_rule(
-        subject_tokens: list[str],
-        example_subject: str | None,
+        session_tokens: list[str],
+        example_session: str | None,
         keep_fragment: str | None,
         add_text: str | None = None,
         add_position: str | None = None,
     ) -> dict[str, str | int]:
         rule = build_example_keep_rule(
-            tokens=subject_tokens,
-            example_token=example_subject,
+            tokens=session_tokens,
+            example_token=example_session,
             keep_fragment=keep_fragment,
-            token_prefix="sub-",
+            token_prefix="ses-",
             add_text=add_text,
             add_position=add_position,
-            id_noun="subject ID",
+            id_noun="session ID",
         )
-        # example_token is the prefix-agnostic key name in the shared rule
-        # builder; this class's public dict shape has always used
-        # example_subject, and the frontend already reads that key.
-        rule["example_subject"] = rule.pop("example_token")
+        rule["example_session"] = rule.pop("example_token")
         return rule
 
     @staticmethod
-    def _rewrite_subject_token(
-        subject_token: str,
+    def _rewrite_session_token(
+        session_token: str,
         mode: str,
         rule: dict[str, str | int] | None,
     ) -> str:
-        return rewrite_token(subject_token, mode, rule, "sub-")
+        return rewrite_token(session_token, mode, rule, "ses-")
 
     @staticmethod
     def _mapping_collisions(mapping: dict[str, str]) -> dict[str, list[str]]:
@@ -400,7 +393,7 @@ class SubjectCodeRewriter:
     def _build_directory_rename_ops(self, mapping: dict[str, str]) -> list[_RenameOperation]:
         ops: list[_RenameOperation] = []
         for directory in self._iter_directories():
-            if not BidsEntityParser.is_subject_dir(directory.name):
+            if not BidsEntityParser.is_session_dir(directory.name):
                 continue
             replacement = mapping.get(directory.name)
             if not replacement or replacement == directory.name:
@@ -455,7 +448,7 @@ class SubjectCodeRewriter:
                 self._merge_directories(child, destination)
                 continue
             raise ValueError(
-                "Subject rewrite cannot merge because target path already exists: "
+                "Session rewrite cannot merge because target path already exists: "
                 f"{self._rel(destination)}"
             )
         source_dir.rmdir()
@@ -495,11 +488,6 @@ class SubjectCodeRewriter:
     ) -> list[str]:
         conflicts: list[str] = []
         old_paths = {op.old_path for op in ops}
-        # Path.exists() is case-insensitive on macOS/Windows filesystems, so a
-        # pure case-change rename makes new_path appear to "already exist"
-        # even though it's just the file/dir being renamed. Casefold the
-        # source-path comparison too so that case isn't mistaken for a real
-        # collision.
         old_paths_casefold = {str(p).casefold() for p in old_paths}
         seen_targets: dict[Path, Path] = {}
 
@@ -571,22 +559,17 @@ class SubjectCodeRewriter:
     def _plan_to_dict(
         self, plan: _RewritePlan, applied: bool, cap_results: bool = True
     ) -> dict:
-        # `[:200]` caps exist so the UI preview/result panels don't have to
-        # render thousands of rows. Internal orchestration (deciding which
-        # files need a DataLad get/unlock before each subject's run) must
-        # see the *complete* lists, or files beyond the cap silently never
-        # get unlocked and the wrapped command fails with PermissionError.
         cap = (lambda items: items[:200]) if cap_results else (lambda items: items)
         return {
             "mode": plan.mode,
             "rule": plan.rule,
             "allow_many_to_one": bool(plan.allow_many_to_one),
-            "subjects": plan.subjects,
+            "sessions": plan.sessions,
             "applied": applied,
-            "subject_examples": cap(plan.subject_examples),
-            "subject_token_sources": {
+            "session_examples": cap(plan.session_examples),
+            "session_token_sources": {
                 key: value[:20]
-                for key, value in sorted(plan.subject_token_sources.items())
+                for key, value in sorted(plan.session_token_sources.items())
             },
             "mapping": dict(sorted(plan.mapping.items())),
             "mapping_count": len(plan.mapping),

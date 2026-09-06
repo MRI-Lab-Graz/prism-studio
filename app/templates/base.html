@@ -225,6 +225,10 @@
             width: 21rem;
             max-width: calc(100vw - 2rem);
         }
+        .studio-navbar-shell .navbar-nav .dropdown-menu.dropdown-menu-scroll {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
         .navbar-status-group {
             flex-wrap: wrap;
         }
@@ -385,12 +389,10 @@
                        data-can-enable="{{ 'true' if current_project_datalad.can_enable else 'false' }}"
                        data-can-save="{{ 'true' if current_project_datalad.can_save else 'false' }}"
                        data-message="{{ current_project_datalad.message or '' }}">
-                        <i class="fas fa-code-branch me-1 {% if current_project_datalad.enabled and current_project_datalad.available %}text-success{% elif current_project.path %}text-warning{% else %}text-muted{% endif %}" data-navbar-datalad-icon aria-hidden="true"></i>
-                        <i class="fas fa-circle-check me-1 d-none" id="navbarDataladTrackedIcon" aria-hidden="true"></i>
+                        <i class="fas fa-code-branch me-1 {% if current_project_datalad.enabled %}text-success{% elif current_project.path %}text-dark{% else %}text-muted{% endif %}" data-navbar-datalad-icon aria-hidden="true"></i>
                         <i class="fas fa-circle-check me-1 d-none" id="navbarDataladCleanIcon" aria-hidden="true"></i>
                         <i class="fas fa-spinner fa-spin me-1 d-none" id="navbarDataladSpinnerIcon" aria-hidden="true"></i>
                         <span data-navbar-datalad-label>DataLad</span>
-                        <span class="badge rounded-pill ms-2 {% if current_project_datalad.enabled and current_project_datalad.available %}bg-success text-white{% elif current_project_datalad.enabled %}bg-warning text-dark{% else %}bg-light text-muted{% endif %}" id="navbarDataladStateBadge">{% if current_project_datalad.enabled %}Tracked{% elif current_project.path %}Not tracked{% else %}No project{% endif %}</span>
                         <span class="badge rounded-pill border ms-2 d-none" id="navbarDataladToggleFeedback" aria-live="polite"></span>
                     </a>
                 </div>
@@ -440,11 +442,11 @@
                     </li>
 
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle{% if prepare_active %} active{% endif %}" href="#" id="prepareDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-box-open me-1 text-success"></i>Prepare Data
+                        <a class="nav-link dropdown-toggle{% if prepare_active or modify_active or export_active or share_active %} active{% endif %}" href="#" id="workflowDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-diagram-project me-1 text-success"></i>Workflow
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="prepareDropdown">
-                            <li><h6 class="dropdown-header text-muted">Bring source data into PRISM-ready shape</h6></li>
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-scroll" aria-labelledby="workflowDropdown">
+                            <li><h6 class="dropdown-header">1. Prepare Data</h6></li>
                             {% if converter_available %}
                             <li><a class="dropdown-item navbar-flow-item" href="{{ url_for('tools.converter') }}" title="Import and map raw input files to PRISM/BIDS-ready structure">
                                 <span class="navbar-flow-item-title"><i class="fas fa-file-arrow-up me-2 text-warning"></i>Converter</span>
@@ -472,21 +474,13 @@
                             </span></li>
                             {% endif %}
                             <li><hr class="dropdown-divider"></li>
-                            <li><span class="dropdown-item-text text-muted small">Next: Modify in PRISM</span></li>
-                        </ul>
-                    </li>
 
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle{% if modify_active %} active{% endif %}" href="#" id="modifyDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-sliders-h me-1 text-primary"></i>Modify in PRISM
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="modifyDropdown">
-                            <li><h6 class="dropdown-header text-muted">Inspect, fix, and curate project data</h6></li>
+                            <li><h6 class="dropdown-header">2. Modify in PRISM</h6></li>
                             <li><a class="dropdown-item navbar-flow-item" href="{{ url_for('validation.validate_dataset') }}" title="Run PRISM/BIDS checks and inspect issues before export">
                                 <span class="navbar-flow-item-title"><i class="fas fa-check-circle me-2 text-success"></i>Validator</span>
                                 <span class="navbar-flow-item-hint">Check completeness, consistency, and standard compliance</span>
                             </a></li>
-                            <li><a class="dropdown-item navbar-flow-item{% if not current_project.path or not file_management_available %} disabled{% endif %}" href="{% if current_project.path and file_management_available %}{{ url_for('tools.file_management') }}{% else %}#{% endif %}"{% if file_management_available %} data-file-management-url="{{ url_for('tools.file_management') }}"{% endif %} id="fileManagementLink"{% if not file_management_available %} title="Unavailable in this build" aria-disabled="true"{% elif not current_project.path %} title="Please load a project first"{% else %} title="Restructure, rename, and relocate files inside the active PRISM project"{% endif %}>
+                            <li><a class="dropdown-item navbar-flow-item{% if not current_project.path or not file_management_available %} disabled{% endif %}" href="{% if current_project.path and file_management_available %}{{ url_for('tools.file_management') }}{% else %}#{% endif %}"{% if file_management_available %} data-target-url="{{ url_for('tools.file_management') }}"{% endif %} id="fileManagementLink"{% if not file_management_available %} title="Unavailable in this build" aria-disabled="true"{% elif not current_project.path %} title="Please load a project first"{% else %} title="Restructure, rename, and relocate files inside the active PRISM project"{% endif %}>
                                 <span class="navbar-flow-item-title"><i class="fas fa-file-import me-2 text-warning"></i>File Management</span>
                                 <span class="navbar-flow-item-hint">Move, rename, and align files with project conventions</span>
                             </a></li>
@@ -495,18 +489,10 @@
                                 <span class="navbar-flow-item-hint">Fine-tune metadata fields when needed</span>
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><span class="dropdown-item-text text-muted small">Next: Export Derivatives</span></li>
-                        </ul>
-                    </li>
 
-                    <li class="nav-item dropdown">
-                        <a class="nav-link{% if export_active %} active{% endif %}{% if derivatives_enabled %} dropdown-toggle{% else %} disabled{% endif %}" href="#" id="derivativesDropdown" role="button" {% if derivatives_enabled %}data-bs-toggle="dropdown" aria-expanded="false"{% else %}aria-disabled="true" title="{% if not derivatives_available %}Unavailable in this build{% else %}Please load a project first{% endif %}"{% endif %}>
-                            <i class="fas fa-file-export me-1 text-warning"></i>Export Derivatives
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="derivativesDropdown">
-                            <li><h6 class="dropdown-header text-muted">Write PRISM outputs to derivatives</h6></li>
+                            <li><h6 class="dropdown-header{% if not derivatives_enabled %} text-muted{% endif %}">3. Export Derivatives</h6></li>
                             {% if survey_generator_available %}
-                            <li><a class="dropdown-item navbar-flow-item" href="{{ url_for('tools.survey_generator') }}" title="Export processed survey data into derivatives outputs">
+                            <li><a class="dropdown-item navbar-flow-item{% if not current_project.path %} disabled{% endif %}" href="{% if current_project.path %}{{ url_for('tools.survey_generator') }}{% else %}#{% endif %}" id="surveyExportLink" data-target-url="{{ url_for('tools.survey_generator') }}"{% if not current_project.path %} aria-disabled="true" title="Please load a project first"{% else %} title="Export processed survey data into derivatives outputs"{% endif %}>
                                 <span class="navbar-flow-item-title"><i class="fas fa-poll-h me-2 text-info"></i>Survey Export</span>
                                 <span class="navbar-flow-item-hint">Write curated survey tables to derivative folders</span>
                             </a></li>
@@ -517,7 +503,7 @@
                             </span></li>
                             {% endif %}
                             {% if recipes_available %}
-                            <li><a class="dropdown-item navbar-flow-item" href="{{ url_for('tools.recipes') }}" title="Generate analysis-ready derivative outputs from prepared project data">
+                            <li><a class="dropdown-item navbar-flow-item{% if not current_project.path %} disabled{% endif %}" href="{% if current_project.path %}{{ url_for('tools.recipes') }}{% else %}#{% endif %}" id="analysisOutputsLink" data-target-url="{{ url_for('tools.recipes') }}"{% if not current_project.path %} aria-disabled="true" title="Please load a project first"{% else %} title="Generate analysis-ready derivative outputs from prepared project data"{% endif %}>
                                 <span class="navbar-flow-item-title"><i class="fas fa-chart-line me-2 text-primary"></i>Analysis Outputs</span>
                                 <span class="navbar-flow-item-hint">Build downstream analysis datasets and reports</span>
                             </a></li>
@@ -528,7 +514,7 @@
                             </span></li>
                             {% endif %}
                             {% if prism_app_runner_available %}
-                            <li><a class="dropdown-item navbar-flow-item" href="{{ url_for('tools.prism_app_runner') }}" title="Run downstream PRISM app pipelines on derivative-ready data">
+                            <li><a class="dropdown-item navbar-flow-item{% if not current_project.path %} disabled{% endif %}" href="{% if current_project.path %}{{ url_for('tools.prism_app_runner') }}{% else %}#{% endif %}" id="prismAppRunnerLink" data-target-url="{{ url_for('tools.prism_app_runner') }}"{% if not current_project.path %} aria-disabled="true" title="Please load a project first"{% else %} title="Run downstream PRISM app pipelines on derivative-ready data"{% endif %}>
                                 <span class="navbar-flow-item-title"><i class="fas fa-rocket me-2 text-secondary"></i>PRISM App Runner</span>
                                 <span class="navbar-flow-item-hint">Launch app-specific processing on prepared outputs</span>
                             </a></li>
@@ -538,13 +524,14 @@
                                 <span class="navbar-flow-item-hint">Unavailable in this build</span>
                             </span></li>
                             {% endif %}
-                        </ul>
-                    </li>
+                            <li><hr class="dropdown-divider"></li>
 
-                    <li class="nav-item">
-                        <a class="nav-link{% if share_active %} active{% endif %}{% if not share_enabled %} disabled{% endif %}" href="{% if share_enabled %}{{ url_for('projects.share_page') }}{% else %}#{% endif %}" id="shareArchiveLink"{% if share_available %} data-share-archive-url="{{ url_for('projects.share_page') }}"{% endif %}{% if not share_enabled %} aria-disabled="true" title="{% if not share_available %}Unavailable in this build{% elif not current_project.path %}Please load a project first{% else %}No subjects found — add data before sharing{% endif %}"{% else %} title="Export, push to a DataLad server, or back up the active project"{% endif %}>
-                            <i class="fas fa-cloud-upload-alt me-1 text-info"></i>Share &amp; Archive
-                        </a>
+                            <li><h6 class="dropdown-header{% if not share_enabled %} text-muted{% endif %}">4. Share &amp; Archive</h6></li>
+                            <li><a class="dropdown-item navbar-flow-item{% if not share_enabled %} disabled{% endif %}" href="{% if share_enabled %}{{ url_for('projects.share_page') }}{% else %}#{% endif %}" id="shareArchiveLink"{% if share_available %} data-target-url="{{ url_for('projects.share_page') }}"{% endif %}{% if not share_enabled %} aria-disabled="true" title="{% if not share_available %}Unavailable in this build{% elif not current_project.path %}Please load a project first{% else %}No subjects found — add data before sharing{% endif %}"{% else %} title="Export, push to a DataLad server, or back up the active project"{% endif %}>
+                                <span class="navbar-flow-item-title"><i class="fas fa-cloud-upload-alt me-2 text-info"></i>Share &amp; Archive</span>
+                                <span class="navbar-flow-item-hint">Export, push to a DataLad server, or back up the project</span>
+                            </a></li>
+                        </ul>
                     </li>
 
                     <li class="nav-item dropdown">
@@ -850,60 +837,27 @@
             }
         }
 
-        function setFileManagementState(enabled) {
-            const fileManagementLink = document.getElementById('fileManagementLink');
-            if (!fileManagementLink) return;
+        function setProjectGatedLinkState(elementId, enabled, disabledTitle = 'Please load a project first', enabledTitle = '') {
+            const link = document.getElementById(elementId);
+            if (!link) return;
 
-            const targetHref = fileManagementLink.dataset.fileManagementUrl || fileManagementLink.getAttribute('href');
+            const targetHref = link.dataset.targetUrl || link.getAttribute('href');
             if (enabled) {
-                fileManagementLink.classList.remove('disabled');
-                fileManagementLink.removeAttribute('title');
+                link.classList.remove('disabled');
+                link.removeAttribute('aria-disabled');
+                if (enabledTitle) {
+                    link.setAttribute('title', enabledTitle);
+                } else {
+                    link.removeAttribute('title');
+                }
                 if (targetHref) {
-                    fileManagementLink.setAttribute('href', targetHref);
+                    link.setAttribute('href', targetHref);
                 }
             } else {
-                fileManagementLink.classList.add('disabled');
-                fileManagementLink.setAttribute('href', '#');
-                fileManagementLink.setAttribute('title', 'Please load a project first');
-            }
-        }
-
-        function setDerivativesState(enabled) {
-            const derivativesToggle = document.getElementById('derivativesDropdown');
-            if (!derivativesToggle) return;
-
-            if (enabled) {
-                derivativesToggle.classList.remove('disabled');
-                derivativesToggle.classList.add('dropdown-toggle');
-                derivativesToggle.setAttribute('data-bs-toggle', 'dropdown');
-                derivativesToggle.removeAttribute('aria-disabled');
-                derivativesToggle.removeAttribute('title');
-            } else {
-                derivativesToggle.classList.add('disabled');
-                derivativesToggle.classList.remove('dropdown-toggle');
-                derivativesToggle.removeAttribute('data-bs-toggle');
-                derivativesToggle.setAttribute('aria-disabled', 'true');
-                derivativesToggle.setAttribute('title', 'Please load a project first');
-            }
-        }
-
-        function setShareArchiveState(enabled) {
-            const shareArchiveLink = document.getElementById('shareArchiveLink');
-            if (!shareArchiveLink) return;
-
-            const targetHref = shareArchiveLink.dataset.shareArchiveUrl || shareArchiveLink.getAttribute('href');
-            if (enabled) {
-                shareArchiveLink.classList.remove('disabled');
-                shareArchiveLink.removeAttribute('aria-disabled');
-                shareArchiveLink.setAttribute('title', 'Export, push to a DataLad server, or back up the active project');
-                if (targetHref) {
-                    shareArchiveLink.setAttribute('href', targetHref);
-                }
-            } else {
-                shareArchiveLink.classList.add('disabled');
-                shareArchiveLink.setAttribute('href', '#');
-                shareArchiveLink.setAttribute('aria-disabled', 'true');
-                shareArchiveLink.setAttribute('title', 'Please load a project first');
+                link.classList.add('disabled');
+                link.setAttribute('href', '#');
+                link.setAttribute('aria-disabled', 'true');
+                link.setAttribute('title', disabledTitle);
             }
         }
 
@@ -1074,10 +1028,8 @@
 
         function renderNavbarDataladState(projectState) {
             const toggle = document.getElementById('navbarDataladToggle');
-            const stateBadge = document.getElementById('navbarDataladStateBadge');
-            const trackedIcon = document.getElementById('navbarDataladTrackedIcon');
             const cleanIcon = document.getElementById('navbarDataladCleanIcon');
-            if (!toggle || !stateBadge) {
+            if (!toggle) {
                 return;
             }
 
@@ -1097,42 +1049,30 @@
             toggle.dataset.message = dataladState.message || '';
             toggle.dataset.setupIntent = dataladState.setupIntent || 'unknown';
             toggle.dataset.askOnOpen = dataladState.askOnOpen ? 'true' : 'false';
-            icon?.classList.remove('text-success', 'text-warning', 'text-muted');
-            trackedIcon?.classList.add('d-none');
-            trackedIcon?.classList.remove('text-success', 'text-warning');
+            icon?.classList.remove('text-success', 'text-dark', 'text-muted');
             cleanIcon?.classList.add('d-none');
-            stateBadge.className = 'badge rounded-pill ms-2';
 
             if (!nextPath) {
                 icon?.classList.add('text-muted');
-                stateBadge.classList.add('bg-light', 'text-muted');
-                stateBadge.textContent = 'No project';
                 toggle.title = `Load a project to see DataLad status. ${statusTitleSuffix}`;
                 toggle.setAttribute('aria-label', 'DataLad status: no project loaded');
                 return;
             }
 
-            if (dataladState.enabled && dataladState.available) {
+            let stateLabel;
+            if (dataladState.enabled) {
                 icon?.classList.add('text-success');
-                trackedIcon?.classList.remove('d-none');
-                trackedIcon?.classList.add('text-success');
-                stateBadge.classList.add('bg-success', 'text-white');
-                stateBadge.textContent = 'Tracked';
-                fetchNavbarDataladCleanStatus(dataladState.path || nextPath);
-            } else if (dataladState.enabled) {
-                icon?.classList.add('text-warning');
-                trackedIcon?.classList.remove('d-none');
-                trackedIcon?.classList.add('text-warning');
-                stateBadge.classList.add('bg-warning', 'text-dark');
-                stateBadge.textContent = 'Tracked';
+                stateLabel = 'Tracked';
+                if (dataladState.available) {
+                    fetchNavbarDataladCleanStatus(dataladState.path || nextPath);
+                }
             } else {
-                icon?.classList.add('text-muted');
-                stateBadge.classList.add('bg-light', 'text-muted');
-                stateBadge.textContent = 'Not tracked';
+                icon?.classList.add('text-dark');
+                stateLabel = 'Not tracked';
             }
 
             toggle.title = `${dataladState.message} ${statusTitleSuffix}`;
-            toggle.setAttribute('aria-label', `DataLad status: ${stateBadge.textContent}. ${dataladState.message}`);
+            toggle.setAttribute('aria-label', `DataLad status: ${stateLabel}. ${dataladState.message}`);
         }
 
         const navbarDataladCleanStatusCacheTtlMs = 30000;
@@ -1207,33 +1147,22 @@
             const mainIcon = toggle.querySelector('[data-navbar-datalad-icon]');
             const cleanIcon = document.getElementById('navbarDataladCleanIcon');
             const spinnerIcon = document.getElementById('navbarDataladSpinnerIcon');
-            const stateBadge = document.getElementById('navbarDataladStateBadge');
 
             if (active) {
                 toggle.setAttribute('aria-busy', 'true');
+                toggle.setAttribute('aria-label', busyLabel);
                 toggle.classList.add('disabled');
                 toggle.style.pointerEvents = 'none';
                 mainIcon?.classList.add('d-none');
                 cleanIcon?.classList.add('d-none');
                 spinnerIcon?.classList.remove('d-none');
-                if (stateBadge) {
-                    stateBadge.dataset.prevText = stateBadge.textContent;
-                    stateBadge.textContent = busyLabel;
-                }
             } else {
                 toggle.removeAttribute('aria-busy');
                 toggle.classList.remove('disabled');
                 toggle.style.pointerEvents = '';
                 spinnerIcon?.classList.add('d-none');
                 mainIcon?.classList.remove('d-none');
-                // On success the state-change listener (renderNavbarDataladState) restores the
-                // badge text/classes for real; this is just a fallback for the error path.
-                if (stateBadge && stateBadge.dataset.prevText !== undefined) {
-                    if (stateBadge.textContent === busyLabel) {
-                        stateBadge.textContent = stateBadge.dataset.prevText;
-                    }
-                    delete stateBadge.dataset.prevText;
-                }
+                // The state-change listener (renderNavbarDataladState) restores the real aria-label.
             }
         }
 
@@ -1449,9 +1378,11 @@
                 datalad
             });
 
-            setFileManagementState(Boolean(path));
-            setDerivativesState(Boolean(path));
-            setShareArchiveState(resolvedHasData);
+            setProjectGatedLinkState('fileManagementLink', Boolean(path));
+            setProjectGatedLinkState('surveyExportLink', Boolean(path), 'Please load a project first', 'Export processed survey data into derivatives outputs');
+            setProjectGatedLinkState('analysisOutputsLink', Boolean(path), 'Please load a project first', 'Generate analysis-ready derivative outputs from prepared project data');
+            setProjectGatedLinkState('prismAppRunnerLink', Boolean(path), 'Please load a project first', 'Run downstream PRISM app pipelines on derivative-ready data');
+            setProjectGatedLinkState('shareArchiveLink', resolvedHasData, 'Please load a project first', 'Export, push to a DataLad server, or back up the active project');
             renderNavbarDataladState(nextState);
             renderNavbarRecentProjects();
 
@@ -1504,9 +1435,11 @@
                 }
             }
 
-            setFileManagementState(Boolean(nextPath));
-            setDerivativesState(Boolean(nextPath));
-            setShareArchiveState(resolvedHasData);
+            setProjectGatedLinkState('fileManagementLink', Boolean(nextPath));
+            setProjectGatedLinkState('surveyExportLink', Boolean(nextPath), 'Please load a project first', 'Export processed survey data into derivatives outputs');
+            setProjectGatedLinkState('analysisOutputsLink', Boolean(nextPath), 'Please load a project first', 'Generate analysis-ready derivative outputs from prepared project data');
+            setProjectGatedLinkState('prismAppRunnerLink', Boolean(nextPath), 'Please load a project first', 'Run downstream PRISM app pipelines on derivative-ready data');
+            setProjectGatedLinkState('shareArchiveLink', resolvedHasData, 'Please load a project first', 'Export, push to a DataLad server, or back up the active project');
             renderNavbarDataladState({ path: nextPath, datalad: nextDatalad });
             renderNavbarRecentProjects();
         }
@@ -1572,34 +1505,22 @@
                     badgeContainer.dataset.hasData === 'true'
                 );
             } else {
-                setFileManagementState(false);
-                setDerivativesState(false);
-                setShareArchiveState(false);
+                setProjectGatedLinkState('fileManagementLink', false);
+                setProjectGatedLinkState('surveyExportLink', false);
+                setProjectGatedLinkState('analysisOutputsLink', false);
+                setProjectGatedLinkState('prismAppRunnerLink', false);
+                setProjectGatedLinkState('shareArchiveLink', false);
                 renderNavbarDataladState({ path: '', datalad: readNavbarDataladStateFromDom() });
             }
 
-            const fileManagementLink = document.getElementById('fileManagementLink');
-            fileManagementLink?.addEventListener('click', function(e) {
-                if (fileManagementLink.classList.contains('disabled')) {
-                    e.preventDefault();
-                    alert('Please load a project first');
-                }
-            });
-
-            const derivativesDropdown = document.getElementById('derivativesDropdown');
-            derivativesDropdown?.addEventListener('click', function(e) {
-                if (derivativesDropdown.classList.contains('disabled')) {
-                    e.preventDefault();
-                    alert('Please load a project first');
-                }
-            });
-
-            const shareArchiveLink = document.getElementById('shareArchiveLink');
-            shareArchiveLink?.addEventListener('click', function(e) {
-                if (shareArchiveLink.classList.contains('disabled')) {
-                    e.preventDefault();
-                    alert('Please load a project first');
-                }
+            ['fileManagementLink', 'surveyExportLink', 'analysisOutputsLink', 'prismAppRunnerLink', 'shareArchiveLink'].forEach(function(linkId) {
+                const link = document.getElementById(linkId);
+                link?.addEventListener('click', function(e) {
+                    if (link.classList.contains('disabled')) {
+                        e.preventDefault();
+                        alert('Please load a project first');
+                    }
+                });
             });
 
             const navbarDataladToggle = document.getElementById('navbarDataladToggle');
