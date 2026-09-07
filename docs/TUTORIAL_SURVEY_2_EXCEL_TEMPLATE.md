@@ -49,6 +49,26 @@ One row per question. All 10 Full-version items share `Group = recovery`.
 Nine are 5-point Likert items; the pain item uses a 0–100 numeric scale
 instead.
 
+Six columns matter for this pass — the workbook has more (`Session`,
+`Run`, `AllowedValues`, ...), and `docs/EXCEL_TEMPLATE_BASICS.md`
+documents the full set:
+
+- **ItemID** — a unique, machine-readable identifier. It becomes the
+  column name in every response file this template ever produces, so pick
+  something stable (`rec_mood`, not `Q1`).
+- **Group** — which instrument this row belongs to. One workbook can
+  define several instruments; every row sharing a `Group` value becomes
+  one template.
+- **Description_en** — the actual question text a respondent sees, in
+  this language.
+- **Scale_en** — the response options, as `value=label;value=label;...`
+  pairs. Leave it blank for a continuous scale — see `rec_pain` below.
+- **DataType / MinValue / MaxValue** — the stored value's type and
+  numeric bounds, used for validation whether or not `Scale_en` is filled
+  in.
+- **Units** — optional, only meaningful for a continuous item like the
+  VAS pain scale below.
+
 | ItemID | Group | Description_en | Scale_en | DataType | MinValue | MaxValue | Units |
 |---|---|---|---|---|---|---|---|
 | `rec_mood` | recovery | Overall mood today | `1=not at all;2=slightly;3=moderately;4=very;5=extremely` | integer | 1 | 5 | |
