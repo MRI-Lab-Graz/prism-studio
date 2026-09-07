@@ -160,3 +160,15 @@ Once you've completed all six chapters:
 - [Studio Guide](studio/index.md) — full reference for every screen
 - [CLI Reference](CLI_REFERENCE.md) — the same workflows from the terminal
 - [Workshop](WORKSHOP.md) — the same journey as a guided group exercise
+
+```{toctree}
+:maxdepth: 1
+:hidden:
+
+TUTORIAL_BEGINNER_1_NEW_PROJECT
+TUTORIAL_BEGINNER_2_PARTICIPANTS
+TUTORIAL_BEGINNER_3_SURVEY_IMPORT
+TUTORIAL_BEGINNER_4_RECIPE
+TUTORIAL_BEGINNER_5_VALIDATOR
+TUTORIAL_BEGINNER_6_EXISTING_BIDS
+```
