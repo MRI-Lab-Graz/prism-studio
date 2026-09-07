@@ -34,12 +34,22 @@ workbook, or without touching the workbook at all.
 3. Back in the Template Editor, **Import Template Source** the updated
    workbook, as in [Chapter 2](TUTORIAL_SURVEY_2_EXCEL_TEMPLATE.md).
 
+```{note}
+Re-importing replaces the template's current state with whatever is in the
+workbook — including reverting the `rec_mood` wording tweak and Bulk Edit
+change you made directly in the Template Editor back in Chapter 3, since
+those changes were never written back into the `.xlsx` file. If you want to
+keep them, either make the same wording change in the workbook before
+re-importing, or use the in-editor language-bar path below instead of
+re-importing for this step.
+```
+
 ### In-editor path
 
-The language bar (`#languageBar`) sits above the item list once a template
-is loaded, showing the languages it currently detects. Click
-**"Add Language"** (`#btnAddLang`, tooltip "Add a language to all
-questions") and enter `de`. This adds an empty `de` slot to every item's
+The language bar sits above the item list once a template is loaded,
+showing the languages it currently detects. Click **"Add Language"**
+(tooltip "Add a language to all questions") and enter `de`. This adds an
+empty `de` slot to every item's
 `Description` (and to every Likert item's `Levels` value map) in one action
 — all 10 items at once, no workbook involved. The text itself still needs
 filling in afterward, one item at a time or through Bulk Edit, but the
@@ -101,10 +111,11 @@ field.
 Adding an eleventh Likert item that shares the same 1–5 scale as the
 existing nine doesn't mean retyping `MinValue`, `MaxValue`, and `DataType`
 by hand. In the item list, set `#newItemMode` to **"Copy style from item"**,
-then pick `rec_mood` in `#copyStyleSourceItem` and create the new item. It
-starts with `rec_mood`'s entire scale definition already filled in —
-`Levels`, `MinValue`, `MaxValue`, `DataType` — with only `Description`
-cleared out for you to write.
+pick `rec_mood` in `#copyStyleSourceItem`, type a demo ID such as
+`rec_demo` into the box above the item list, and click **Add**. It starts
+with `rec_mood`'s entire scale definition already filled in — `Levels`,
+`MinValue`, `MaxValue`, `DataType` — with only `Description` cleared out for
+you to write.
 
 ```{note}
 Copy Style is copy-based reuse, not a live reference. It clones `rec_mood`'s
@@ -113,6 +124,10 @@ object linking the two items afterward, by design. Editing `rec_mood`'s
 scale later does not change the new item's copy, and vice versa.
 ```
 
+`rec_demo` was only for demonstration — type `rec_demo` back into the box
+above the item list and click **Delete** to remove it again. The template
+should be back to exactly 10 items before moving on.
+
 ## What you just did
 
 You added German alongside English across all 10 items — via the Excel
@@ -120,8 +135,9 @@ workbook, via the Template Editor's "Add Language" button, or both — saw how
 Validate reports incomplete translations as warnings rather than errors, and
 looked at why `rec_pain`'s `MinValue`/`MaxValue` scale is a fundamentally
 different kind of measurement from the other nine items' `Levels` map, not
-just a longer one. You also reused an existing Likert scale on a new item
-with Copy Style, without hand-typing its scale definition again.
+just a longer one. You also saw how Copy Style reuses an existing Likert
+scale on a new item without hand-typing its scale definition again, then
+deleted that demo item, leaving the template at its original 10 items.
 
 ## What's next
 

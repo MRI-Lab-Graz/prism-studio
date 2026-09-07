@@ -25,7 +25,7 @@ and still be missing a required `Study` field, or have an item whose
 either, because rendering and schema-checking are different operations over
 the same JSON.
 
-**Validate** (`#btnValidate`) is the actual check, and it has been sitting in
+**Validate** is the actual check, and it has been sitting in
 the toolbar since Chapter 2 — you've clicked it at the end of nearly every
 chapter in this series without this chapter yet explaining what it's doing.
 It's time to open that up in full.

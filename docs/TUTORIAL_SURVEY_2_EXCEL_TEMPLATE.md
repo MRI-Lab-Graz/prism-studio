@@ -28,7 +28,7 @@ Start from the canonical blank workbook,
 Make a working copy — don't edit the official file in place. Save it as
 `recovery_survey_template.xlsx` somewhere convenient (your Desktop, a
 scratch folder — it doesn't need to be inside the PRISM project). Open the
-copy; you should see four sheets: `Items`, `General`, `Variants`, `Help`.
+copy; you should see four sheets: `Items`, `General`, `Help`, `Variants`.
 This chapter only fills in `Items` and `General` — `Variants` is for
 multi-version instruments (the Full/Short split), which a later chapter
 covers.
@@ -58,7 +58,7 @@ instead.
 | `rec_pain` | recovery | Pain intensity | *(leave blank)* | integer | 0 | 100 | points |
 
 Two things to note about that last row: `rec_pain` is the 0–100 VAS
-(visual analog scale) item — leave `Scale_en` empty and set `MinValue`/
+(visual analogue scale) item — leave `Scale_en` empty and set `MinValue`/
 `MaxValue`/`Units` instead. This is the same pattern the shipped template's
 own `Variants` sheet uses later for its `10-vas` variant row: a numeric
 range with `Units`, not a `value=label` list.

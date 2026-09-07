@@ -3,13 +3,13 @@
 Authoring survey templates is the part of PRISM Studio most people spend the
 most time in — it's where a paper questionnaire or an existing instrument
 becomes the structured template that drives import, scoring, and export
-everywhere else. This series stands on its own: no [Getting Started
-](TUTORIAL_BEGINNER.md) tutorial is required first.
+everywhere else. This series stands on its own: no
+[Getting Started](TUTORIAL_BEGINNER.md) tutorial is required first.
 
 ## Who this is for
 
-- PRISM Studio installed and launchable — see [Installation
-  ](INSTALLATION.md) if you haven't done this yet.
+- PRISM Studio installed and launchable — see
+  [Installation](INSTALLATION.md) if you haven't done this yet.
 - No LimeSurvey instance required — Chapter 6 exports a `.lss` file but
   never needs a live LimeSurvey server to do it.
 - No prior PRISM knowledge assumed.
@@ -21,7 +21,7 @@ study called **Recovery Check-In**. It has a **Full** version — a 10-item
 evening, post-training-session check-in covering mood, soreness, sleep
 quality, motivation, stress, fatigue, appetite, hydration, and satisfaction
 (all 5-point Likert items), plus a pain intensity item on a 0–100 VAS
-(visual analog scale) — and a **Short** version, a 5-item same-day quick
+(visual analogue scale) — and a **Short** version, a 5-item same-day quick
 follow-up (mood, soreness, pain intensity, fatigue, sleep quality) that's a
 true subset of the Full item set. Later chapters make the study bilingual,
 English and German.
