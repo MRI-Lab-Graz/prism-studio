@@ -7,34 +7,43 @@ first click.
 
 ![PRISM Studio File Management screen](../_static/screenshots/prism-studio-file-management.png)
 
-Four tabs:
+Five tabs, plus a global Undo bar (top of page) that reverses the single most
+recent rename/rewrite:
 
-## Rename Filenames
+## Filename Renamer
 
-Three sub-tools:
-
-- **Filename Renamer** — build a rename rule "by example" against selected files or a
-  folder, **Preview renames**, then either **Copy to Project** or **Rename & Download**
-  (as a ZIP).
-- **Rename Subject IDs (Current Project)** — **Preview**, then **Apply Rename**.
-  Confirmation dialog: *"Apply this subject ID rewrite mapping to the current project
-  and update internal metadata links?"* (with an extra warning if a many-to-one merge
-  is enabled).
-- **Edit BIDS Filename Parts (Current Project)** — rename or delete one filename
-  entity (radio: Rename/Delete), **Preview**, then **Apply Rewrite**. Confirmation:
-  *"Apply this rewrite to modality '\<x\>' and delete/rename \<part\>...?"*
+Build a rename rule "by example" against selected files or a folder,
+**Preview renames**, then either **Copy to Project** or **Rename & Download**
+(as a ZIP). For files that don't have BIDS names yet.
 
 ## Organize Folders (Copy)
 
 Copy-only reorganization into `sub-<label>/ses-<label>/<modality>/` — the card header
 is explicit: **"Folder Organizer (Copy Only)"**. There is no move/delete here, only
-**Dry Run** then **Copy to Project**. Your source files are never touched.
+**Dry Run** then **Copy to Project**. Your source files are never touched. For files
+that already have valid BIDS names but sit flat in one folder.
 
 ## Wide to Long
 
 Upload a CSV/TSV/XLSX file, set the ID column and optional session/run indicators,
 **Preview Output**, then **Convert & Save to Project** — writes into
 `sourcedata/wide_to_long/`.
+
+## Rename IDs & Parts
+
+Four sub-tools for editing IDs and filename parts already inside the current project:
+
+- **Rename Subject IDs** — **Preview**, then **Apply Rename**. Confirmation dialog:
+  *"Apply this subject ID rewrite mapping to the current project and update internal
+  metadata links?"* (with an extra warning if a many-to-one merge is enabled).
+- **Rename Session IDs** — same pattern, scoped to one session value across every
+  subject that has it.
+- **Edit BIDS Filename Parts** — rename or delete one filename entity (radio:
+  Rename/Delete), **Preview**, then **Apply Rewrite**. Confirmation:
+  *"Apply this rewrite to modality '\<x\>' and delete/rename \<part\>...?"*
+- **Renumber Runs** — fully automatic: **Preview** then **Apply** closes gaps in
+  `run-XX` sequences (e.g. after a middle run was deleted) so numbering stays
+  contiguous. Only touches clean, consistently zero-padded numeric sequences.
 
 ## Delete Files
 
@@ -43,6 +52,10 @@ Confirmation: *"Permanently delete the previewed files from this project? This a
 cannot be undone."* The Delete button is disabled until a preview has been run. The
 panel also warns that `participants.tsv` is **not** automatically updated when you
 delete subject files, and that DataLad history is updated if the project is tracked.
+
+A second card on this tab, **Delete scans.tsv Files**, is a single button with no
+filters — it removes every `*_scans.tsv` file across the whole project (including
+nested subject/derivatives subdatasets) in one pass.
 
 ## Every action is a backend command
 
