@@ -102,7 +102,7 @@ def _resolve_item_for_variant(
     Returns the (possibly overridden) item dict, or None if excluded.
     """
     applicable = item.get("ApplicableVersions")
-    if isinstance(applicable, list) and applicable and variant_id not in applicable:
+    if variant_id and isinstance(applicable, list) and applicable and variant_id not in applicable:
         return None
 
     variant_scales = item.get("VariantScales")
@@ -317,7 +317,7 @@ def build_psyexp_xml(
     # Group questions by their group name
     grouped_questions: Dict[str, List[Dict[str, Any]]] = {}
     for q in questions:
-        group = q["position"].get("Group", "questions")
+        group = q.get("position", {}).get("Group", "questions")
         if group not in grouped_questions:
             grouped_questions[group] = []
         grouped_questions[group].append(q)
