@@ -185,3 +185,4 @@ Full output for comparison:
 - [Survey Templates](TEMPLATES.md) — the reference model for the JSON this produces.
 - [Converter — Survey Import](studio/converter_survey.md) — the separate workflow for
   importing respondent data against a template like this one.
+- [Author a Survey (tutorial)](TUTORIAL_SURVEY.md) — this reference's content, as a guided hands-on walkthrough

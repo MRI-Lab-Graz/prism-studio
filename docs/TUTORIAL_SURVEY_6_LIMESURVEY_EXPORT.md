@@ -26,7 +26,7 @@ the row shows every item with its own checkbox — this is also where "which
 version" gets decided, since Survey Export doesn't have a separate `full`/
 `short` selector: all ten items are checked by default, which is the `full`
 set. (For a `short` export, you'd uncheck the five items that Chapter 5's
-`ApplicableVersions` tags as `full`-only:`rec_motiv`, `rec_stress`,
+`ApplicableVersions` tags as `full`-only: `rec_motiv`, `rec_stress`,
 `rec_appetite`, `rec_hydration`, `rec_satisf`.) Leave all ten checked.
 
 Two buttons become active once a template is checked:
