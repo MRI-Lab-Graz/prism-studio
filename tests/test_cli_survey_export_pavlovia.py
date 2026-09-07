@@ -29,7 +29,7 @@ GAD7_PATH = (
 
 
 def _args(**overrides) -> SimpleNamespace:
-    defaults = dict(json_path="", output=None, experiment_name=None)
+    defaults = dict(json_path="", output=None, experiment_name=None, language=None)
     defaults.update(overrides)
     return SimpleNamespace(**defaults)
 
@@ -56,3 +56,26 @@ class TestExportPavlovia:
             )
         assert exc_info.value.code == 1
         assert "not found" in capsys.readouterr().out
+
+    def test_language_flag_passed_through(self, tmp_path, capsys):
+        import json
+
+        json_path = tmp_path / "task-demo_survey.json"
+        json_path.write_text(
+            json.dumps(
+                {
+                    "I18n": {"Languages": ["en", "de"], "DefaultLanguage": "en"},
+                    "Study": {"TaskName": "demo"},
+                    "q1": {"Description": {"en": "Mood today", "de": "Stimmung heute"}},
+                }
+            ),
+            encoding="utf-8",
+        )
+        output_dir = tmp_path / "out"
+        cmd_survey_export_pavlovia(
+            _args(json_path=str(json_path), output=str(output_dir), language="de")
+        )
+
+        psyexp_text = (output_dir / "demo.psyexp").read_text(encoding="utf-8")
+        assert "Stimmung heute" in psyexp_text
+        assert "Mood today" not in psyexp_text

@@ -333,3 +333,24 @@ def test_export_to_pavlovia_end_to_end(tmp_path):
     )
     assert "Overall mood today" in all_param_values
     assert "Stimmung heute" not in all_param_values  # German NOT exported (single-language scope)
+
+
+def test_export_to_pavlovia_explicit_language_overrides_default(tmp_path):
+    """An explicit language= must override the template's own
+    I18n.DefaultLanguage (see review: this was previously unwired end to
+    end -- the GUI's Base Language dropdown had no effect)."""
+    prism_json = {
+        "I18n": {"Languages": ["en", "de"], "DefaultLanguage": "en"},
+        "Study": {"TaskName": "recovery"},
+        "rec_mood": {"Description": {"en": "Overall mood today", "de": "Stimmung heute"}},
+    }
+    json_path = tmp_path / "task-recovery_survey.json"
+    json_path.write_text(json.dumps(prism_json), encoding="utf-8")
+
+    psyexp_path = export_to_pavlovia(json_path, tmp_path / "out", language="de")
+
+    all_param_values = " ".join(
+        p.get("val", "") for p in ET.fromstring(psyexp_path.read_text(encoding="utf-8")).iter("Param")
+    )
+    assert "Stimmung heute" in all_param_values
+    assert "Overall mood today" not in all_param_values
