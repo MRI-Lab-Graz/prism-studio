@@ -367,7 +367,7 @@ class SessionCodeRewriter:
             tokens=session_tokens,
             example_token=example_session,
             keep_fragment=keep_fragment,
-            token_prefix="ses-",
+            token_prefix="ses-",  # noqa: S106 - BIDS entity prefix, not a secret
             add_text=add_text,
             add_position=add_position,
             id_noun="session ID",
