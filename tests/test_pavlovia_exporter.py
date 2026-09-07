@@ -3,6 +3,10 @@ from src.converters.pavlovia import (
     _resolve_text,
     _get_active_variant_id,
     _resolve_item_for_variant,
+    determine_component_type,
+    _safe_component_name,
+    create_slider_component,
+    create_textbox_component,
 )
 
 
@@ -111,3 +115,47 @@ def test_extract_questions_resolves_language_and_excludes_wrong_variant():
     mood = next(q for q in questions if q["code"] == "rec_mood")
     assert mood["description"] == "Mood today"
     assert mood["levels"] == {"1": "Low", "2": "High"}
+
+
+def test_determine_component_type_vas_scale_is_slider():
+    q = {"levels": {}, "scale_type": "vas", "min_value": 0, "max_value": 100}
+    assert determine_component_type(q) == "slider"
+
+
+def test_determine_component_type_visual_analogue_is_slider():
+    q = {"levels": {}, "scale_type": "visual-analogue"}
+    assert determine_component_type(q) == "slider"
+
+
+def test_determine_component_type_few_levels_is_radio():
+    q = {"levels": {"1": "Low", "2": "High"}, "scale_type": None}
+    assert determine_component_type(q) == "radio"
+
+
+def test_determine_component_type_many_levels_is_dropdown():
+    q = {"levels": {str(i): f"L{i}" for i in range(12)}, "scale_type": None}
+    assert determine_component_type(q) == "dropdown"
+
+
+def test_determine_component_type_no_levels_is_free_text():
+    q = {"levels": {}, "scale_type": None}
+    assert determine_component_type(q) == "free_text"
+
+
+def test_safe_component_name_replaces_invalid_characters():
+    assert _safe_component_name("rec-mood.1") == "rec_mood_1"
+    assert _safe_component_name("rec_mood") == "rec_mood"
+
+
+def test_create_slider_component_uses_min_max():
+    q = {"code": "rec_pain", "description": "Pain", "min_value": 0, "max_value": 100}
+    comp = create_slider_component(q)
+    assert comp["name"] == "rec_pain"
+    assert "0" in comp["ticks"] and "100" in comp["ticks"]
+
+
+def test_create_textbox_component_basic():
+    q = {"code": "notes", "description": "Anything else?"}
+    comp = create_textbox_component(q)
+    assert comp["name"] == "notes"
+    assert comp["prompt"] == "Anything else?"

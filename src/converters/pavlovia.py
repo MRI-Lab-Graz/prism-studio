@@ -10,6 +10,7 @@ Usage:
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Dict, List, Any, Optional
@@ -167,38 +168,59 @@ def extract_questions(
 
 
 def determine_component_type(question: Dict[str, Any]) -> str:
-    """Determine the best PsychoPy component type for a question.
+    """Classify a question into a PsychoPy component type.
 
-    Returns:
-        "form": Form component (best for multiple choice with many options)
-        "slider": Slider component (good for Likert scales)
-        "textbox": Textbox component (for free text)
-        "loop": Loop with conditions (for array questions)
+    Mirrors detectQuestionType's precedence in app/static/js/template-editor.js,
+    adapted to the fields extract_questions produces (Task 2): a question with
+    no Levels and no vas/visual-analogue ScaleType is free text; a
+    vas/visual-analogue ScaleType is a slider regardless of Levels; otherwise
+    the Levels count decides between a radio-style and dropdown-style choice
+    list, matching the >10-options threshold the Studio's own Preview uses.
     """
-    q_type = question.get("type", "").lower()
-    has_levels = bool(question.get("levels"))
-    has_items = bool(question.get("items"))
+    scale_type = (question.get("scale_type") or "").lower()
+    if scale_type in ("vas", "visual-analogue"):
+        return "slider"
 
-    # Array questions need loops
-    if has_items:
-        return "loop"
+    levels = question.get("levels") or {}
+    if levels:
+        return "dropdown" if len(levels) > 10 else "radio"
 
-    # Free text questions
-    if "text" in q_type and not has_levels:
-        return "textbox"
+    return "free_text"
 
-    # Scale questions (1-5, 1-7, etc.) work well as sliders
-    if has_levels:
-        level_keys = list(question["levels"].keys())
-        try:
-            numeric_keys = [int(k) for k in level_keys]
-            if len(numeric_keys) >= 3 and max(numeric_keys) - min(numeric_keys) <= 10:
-                return "slider"
-        except (ValueError, TypeError):
-            pass
 
-    # Default: form component for multiple choice
-    return "form"
+def _safe_component_name(code: str) -> str:
+    """PsychoPy component names must be valid Python identifiers.
+
+    Only replaces characters that are structurally invalid (not letters,
+    digits, or underscore) -- an already-valid code passes through unchanged,
+    per this plan's session-label/identifier constraint.
+    """
+    safe = re.sub(r"[^0-9a-zA-Z_]", "_", code)
+    if safe and safe[0].isdigit():
+        safe = f"_{safe}"
+    return safe
+
+
+def create_slider_component(question: Dict[str, Any]) -> Dict[str, str]:
+    """Build a slider component dict for a VAS/visual-analogue question."""
+    min_value = question.get("min_value")
+    max_value = question.get("max_value")
+    min_value = 0 if min_value is None else min_value
+    max_value = 100 if max_value is None else max_value
+    return {
+        "name": _safe_component_name(question["code"]),
+        "label": question.get("description", ""),
+        "ticks": f"({min_value}, {max_value})",
+        "granularity": "1",
+    }
+
+
+def create_textbox_component(question: Dict[str, Any]) -> Dict[str, str]:
+    """Build a textbox component dict for a free-text question."""
+    return {
+        "name": _safe_component_name(question["code"]),
+        "prompt": question.get("description", ""),
+    }
 
 
 def create_conditions_csv(
