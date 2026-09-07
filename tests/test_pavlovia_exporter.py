@@ -7,7 +7,9 @@ from src.converters.pavlovia import (
     _safe_component_name,
     create_slider_component,
     create_textbox_component,
+    build_psyexp_xml,
 )
+import xml.etree.ElementTree as ET
 
 
 def test_extract_questions_reads_conditional_display_showwhen():
@@ -159,3 +161,68 @@ def test_create_textbox_component_basic():
     comp = create_textbox_component(q)
     assert comp["name"] == "notes"
     assert comp["prompt"] == "Anything else?"
+
+
+def _sample_questions():
+    return [
+        {
+            "code": "rec_mood", "description": "Mood", "levels": {"1": "Low", "2": "High"},
+            "scale_type": None, "min_value": None, "max_value": None,
+            "mandatory": True, "condition": None,
+        },
+        {
+            "code": "rec_pain", "description": "Pain", "levels": {},
+            "scale_type": "vas", "min_value": 0, "max_value": 100,
+            "mandatory": True, "condition": None,
+        },
+        {
+            "code": "notes", "description": "Notes", "levels": {},
+            "scale_type": None, "min_value": None, "max_value": None,
+            "mandatory": False, "condition": "rec_mood == '1'",
+        },
+    ]
+
+
+def test_build_psyexp_xml_is_well_formed():
+    xml_str = build_psyexp_xml("recovery", _sample_questions(), {})
+    root = ET.fromstring(xml_str)  # raises if malformed
+    assert root.tag == "PsychoPy2experiment"
+
+
+def test_build_psyexp_xml_routes_slider_component():
+    xml_str = build_psyexp_xml("recovery", _sample_questions(), {})
+    root = ET.fromstring(xml_str)
+    slider_names = [
+        c.get("name") for c in root.iter("SliderComponent")
+    ]
+    assert "rec_pain" in slider_names
+
+
+def test_build_psyexp_xml_routes_textbox_component():
+    xml_str = build_psyexp_xml("recovery", _sample_questions(), {})
+    root = ET.fromstring(xml_str)
+    textbox_names = [c.get("name") for c in root.iter("TextboxComponent")]
+    assert "notes" in textbox_names
+
+
+def test_build_psyexp_xml_adds_code_component_for_conditional_question():
+    xml_str = build_psyexp_xml("recovery", _sample_questions(), {})
+    root = ET.fromstring(xml_str)
+    code_components = list(root.iter("CodeComponent"))
+    assert len(code_components) == 1
+    assert code_components[0].get("name") == "notes_condition"
+
+
+def test_build_psyexp_xml_single_routine_for_all_questions():
+    xml_str = build_psyexp_xml("recovery", _sample_questions(), {})
+    root = ET.fromstring(xml_str)
+    # Scoped to the <Routines> container: root.iter("Routine") alone would
+    # also match the Flow section's same-tag, same-name routine *reference*
+    # pointer (0 children, vs. the real definition's populated children),
+    # double-counting "questions" the same way "welcome"/"thanks" already
+    # appear once in each section.
+    routines_section = root.find("Routines")
+    question_routines = [
+        r for r in routines_section.iter("Routine") if r.get("name") not in ("welcome", "thanks")
+    ]
+    assert len(question_routines) == 1
