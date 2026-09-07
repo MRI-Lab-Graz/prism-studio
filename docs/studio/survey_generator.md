@@ -44,3 +44,4 @@ Three buttons, enabled once at least one template is checked:
 
 - [Survey Customizer](survey_customizer.md) for the full export workflow
 - [Template Editor](template_editor.md) to create or edit templates first
+- [Author a Survey (tutorial)](../TUTORIAL_SURVEY.md) — see Chapter 6 for a guided export walkthrough

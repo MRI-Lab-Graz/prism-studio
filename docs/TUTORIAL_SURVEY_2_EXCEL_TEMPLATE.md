@@ -148,7 +148,7 @@ that workbook through the Template Editor, validated it, and saved it as
 
 ## What's next
 
-- [Chapter 3: The Template Editor In Depth](TUTORIAL_SURVEY_3_TEMPLATE_EDITOR.md) —
+- [Chapter 3: Edit and Refine in the Template Editor](TUTORIAL_SURVEY_3_TEMPLATE_EDITOR.md) —
   work directly in the form you just imported into
 - [Excel Survey Template — Basics](EXCEL_TEMPLATE_BASICS.md) — the full
   field-by-field reference this chapter only used a slice of

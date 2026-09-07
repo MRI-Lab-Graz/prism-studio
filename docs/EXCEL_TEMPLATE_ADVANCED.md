@@ -178,3 +178,4 @@ Full output for comparison:
 - [Template Editor](studio/template_editor.md) · [Survey Templates](TEMPLATES.md)
 - [Converter — Survey Import](studio/converter_survey.md) — using a multi-version
   template to import actual respondent data
+- [Author a Survey (tutorial)](TUTORIAL_SURVEY.md) — see Chapter 5 for a guided walkthrough of adding a Variants sheet

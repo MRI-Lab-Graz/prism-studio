@@ -47,3 +47,4 @@ produces the `.lss` file with your grouping/settings applied).
 - [Survey Export](survey_generator.md)
 - [Template Editor](template_editor.md) — edit the underlying templates themselves,
   not just their export grouping/presentation
+- [Author a Survey (tutorial)](../TUTORIAL_SURVEY.md) — see Chapter 6 for a guided walkthrough of this screen
