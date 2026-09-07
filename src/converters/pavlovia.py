@@ -13,8 +13,11 @@ import json
 import sys
 from pathlib import Path
 from typing import Dict, List, Any, Optional
-from defusedxml import ElementTree as ET
-from defusedxml import minidom
+from xml.etree import ElementTree as ET
+try:
+    from defusedxml import minidom
+except ImportError:
+    from xml.dom import minidom
 import pandas as pd
 
 # PsychoPy experiment template structure
@@ -40,6 +43,24 @@ def load_prism_json(json_path: Path) -> Dict[str, Any]:
     return data
 
 
+def _extract_condition(value: Dict[str, Any]) -> Optional[str]:
+    """Get the display-condition expression for a question, if any.
+
+    Mirrors the precedence in app/src/limesurvey_exporter.py's
+    _build_relevance_equation: explicit Relevance wins, then
+    LimeSurvey.Relevance, then ConditionalDisplay.showWhen.
+    """
+    if "Relevance" in value:
+        return value["Relevance"]
+    limesurvey = value.get("LimeSurvey")
+    if isinstance(limesurvey, dict) and "Relevance" in limesurvey:
+        return limesurvey["Relevance"]
+    conditional = value.get("ConditionalDisplay")
+    if isinstance(conditional, dict):
+        return conditional.get("showWhen") or None
+    return None
+
+
 def extract_questions(prism_json: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Extract question data from PRISM JSON, filtering out metadata sections."""
     questions = []
@@ -54,7 +75,7 @@ def extract_questions(prism_json: Dict[str, Any]) -> List[Dict[str, Any]]:
                 "levels": value.get("Levels", {}),
                 "items": value.get("Items", {}),
                 "mandatory": value.get("Mandatory", False),
-                "condition": value.get("Condition", None),
+                "condition": _extract_condition(value),
                 "help": value.get("HelpText", None),
                 "position": value.get("Position", {}),
             }
