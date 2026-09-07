@@ -302,8 +302,10 @@ def build_psyexp_xml(
     - Welcome screen
     - A single "questions" routine holding a real component per question
       (SliderComponent/TextboxComponent/shared FormComponent, per
-      determine_component_type), each with an optional CodeComponent gate
-      for a non-null condition
+      determine_component_type), each with an optional CodeComponent for a
+      non-null condition -- this only surfaces the PRISM condition text as a
+      TODO comment for a researcher to translate manually; it does not gate
+      visibility automatically
     - Thank you screen
     - Flow connecting all routines
     """
@@ -371,7 +373,10 @@ def build_psyexp_xml(
             code_component.set("name", f"{safe_name}_condition")
             _add_component_param(
                 code_component, "Begin Routine",
-                f"{safe_name}_visible = bool({q['condition']!r})",
+                "# TODO: this question is conditionally displayed in PRISM:\n"
+                f"# {q['condition']}\n"
+                "# Translate this into PsychoPy/JS logic to gate visibility.\n"
+                f"{safe_name}_visible = True",
             )
 
     if form_items:
