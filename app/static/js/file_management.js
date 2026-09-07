@@ -1105,6 +1105,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const repoSubjectRewritePreviewBtn = document.getElementById('repoSubjectRewritePreviewBtn');
     const repoSubjectRewriteExample = document.getElementById('repoSubjectRewriteExample');
     const repoSubjectRewriteKeep = document.getElementById('repoSubjectRewriteKeep');
+    const repoSubjectRewriteAddText = document.getElementById('repoSubjectRewriteAddText');
+    const repoSubjectRewriteAddPrepend = document.getElementById('repoSubjectRewriteAddPrepend');
+    const repoSubjectRewriteAddAppend = document.getElementById('repoSubjectRewriteAddAppend');
     const repoSubjectRewriteAllowMultiple = document.getElementById('repoSubjectRewriteAllowMultiple');
     const repoSubjectRewriteResult = document.getElementById('repoSubjectRewriteResult');
     const repoSubjectRewriteProgress = document.getElementById('repoSubjectRewriteProgress');
@@ -1541,6 +1544,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (repoSubjectRewriteKeep) {
             repoSubjectRewriteKeep.disabled = isBusy || repoSubjectExamples.length === 0;
         }
+        if (repoSubjectRewriteAddText) {
+            repoSubjectRewriteAddText.disabled = isBusy || repoSubjectExamples.length === 0;
+        }
+        if (repoSubjectRewriteAddPrepend) {
+            repoSubjectRewriteAddPrepend.disabled = isBusy || repoSubjectExamples.length === 0;
+        }
+        if (repoSubjectRewriteAddAppend) {
+            repoSubjectRewriteAddAppend.disabled = isBusy || repoSubjectExamples.length === 0;
+        }
         if (repoSubjectRewriteAllowMultiple) {
             repoSubjectRewriteAllowMultiple.disabled = isBusy || repoSubjectExamples.length === 0;
         }
@@ -1665,6 +1677,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const strategy = rule.strategy ? String(rule.strategy) : '';
         const keepFragment = rule.keep_fragment ? String(rule.keep_fragment) : '';
         const exampleSubject = rule.example_subject ? String(rule.example_subject) : '';
+        const ruleAddText = rule.add_text ? String(rule.add_text) : '';
+        const ruleAddPosition = rule.add_position === 'append' ? 'append' : 'prepend';
         const allowManyToOne = Boolean(payload.allow_many_to_one);
 
         let ruleText = '';
@@ -1678,6 +1692,10 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (strategy === 'full') {
                 ruleText = `Rule keeps the full ID from ${escapeHtml(exampleSubject)} (no shortening for this example).`;
             }
+        }
+        if (ruleAddText) {
+            const addClause = `${ruleAddPosition === 'append' ? 'Append' : 'Prepend'} '${escapeHtml(ruleAddText)}' to each subject ID.`;
+            ruleText = ruleText ? `${ruleText} ${addClause}` : addClause;
         }
 
         const ruleHtml = ruleText
@@ -1794,6 +1812,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const selectedExample = String(repoSubjectRewriteExample.value || '').trim();
         const keepFragment = String(repoSubjectRewriteKeep.value || '').trim();
+        const addText = String((repoSubjectRewriteAddText && repoSubjectRewriteAddText.value) || '').trim();
+        const addPosition = (repoSubjectRewriteAddAppend && repoSubjectRewriteAddAppend.checked) ? 'append' : 'prepend';
         const allowMultipleSources = Boolean(repoSubjectRewriteAllowMultiple && repoSubjectRewriteAllowMultiple.checked);
         if (!selectedExample) {
             if (repoSubjectRewriteResult) {
@@ -1801,9 +1821,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return;
         }
-        if (!keepFragment) {
+        if (!keepFragment && !addText) {
             if (repoSubjectRewriteResult) {
-                repoSubjectRewriteResult.innerHTML = '<div class="alert alert-danger py-2 mb-0">Enter the part that should stay from the example subject ID.</div>';
+                repoSubjectRewriteResult.innerHTML = '<div class="alert alert-danger py-2 mb-0">Enter a part to keep and/or a part to add.</div>';
             }
             return;
         }
@@ -1833,7 +1853,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (repoSubjectRewriteLog) repoSubjectRewriteLog.textContent = '';
         startRepoRewriteProgress(action === 'apply' ? 'Applying rename...' : 'Previewing...');
-        appendRepoRewriteLog(`Starting ${action === 'apply' ? 'apply' : 'preview'} for example "${selectedExample}", keep "${keepFragment}"...`, 'step');
+        const ruleDescription = [
+            keepFragment ? `keep "${keepFragment}"` : null,
+            addText ? `add "${addText}" (${addPosition})` : null,
+        ].filter(Boolean).join(', ');
+        appendRepoRewriteLog(`Starting ${action === 'apply' ? 'apply' : 'preview'} for example "${selectedExample}", ${ruleDescription}...`, 'step');
 
         try {
             let payload;
@@ -1846,6 +1870,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         mode: 'example_keep',
                         example_subject: selectedExample,
                         keep_fragment: keepFragment,
+                        add_text: addText,
+                        add_position: addPosition,
                         allow_multiple_sources: allowMultipleSources,
                         project_path: currentProjectPath,
                     }
@@ -1859,6 +1885,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         mode: 'example_keep',
                         example_subject: selectedExample,
                         keep_fragment: keepFragment,
+                        add_text: addText,
+                        add_position: addPosition,
                         allow_multiple_sources: allowMultipleSources,
                         project_path: currentProjectPath,
                     }),
@@ -1933,6 +1961,391 @@ document.addEventListener('DOMContentLoaded', () => {
             setRepoSubjectRewriteBusy(false);
         });
     }
+
+    if (repoSubjectRewriteAddText) {
+        repoSubjectRewriteAddText.addEventListener('input', () => {
+            resetRepoSubjectPreviewState();
+            if (repoSubjectRewriteResult) {
+                repoSubjectRewriteResult.innerHTML = '<div class="alert alert-secondary py-2 mb-0">Rule changed. Click Preview to regenerate mapping.</div>';
+            }
+            setRepoSubjectRewriteBusy(false);
+        });
+    }
+
+    [repoSubjectRewriteAddPrepend, repoSubjectRewriteAddAppend].forEach((radio) => {
+        if (!radio) return;
+        radio.addEventListener('change', () => {
+            resetRepoSubjectPreviewState();
+            if (repoSubjectRewriteResult) {
+                repoSubjectRewriteResult.innerHTML = '<div class="alert alert-secondary py-2 mb-0">Rule changed. Click Preview to regenerate mapping.</div>';
+            }
+            setRepoSubjectRewriteBusy(false);
+        });
+    });
+
+    // Undo Last Operation bar: covers subject-rewrite and entity-rewrite
+    // (both record an undo entry after a successful apply). Refreshed on
+    // load and whenever any File Management apply fires the shared
+    // 'prism-project-changed' event, so it stays in sync without needing a
+    // hook at every individual apply call site.
+    (function initFmUndoBar() {
+        const bar = document.getElementById('fmUndoBar');
+        const descriptionEl = document.getElementById('fmUndoBarDescription');
+        const btn = document.getElementById('fmUndoBarBtn');
+        if (!bar || !descriptionEl || !btn) {
+            return;
+        }
+
+        async function refreshUndoBar() {
+            const projectPath = getCurrentProjectPath();
+            if (!projectPath) {
+                bar.classList.add('d-none');
+                return;
+            }
+            try {
+                const response = await fetchWithApiFallback(
+                    `/api/file-management/undo/peek?project_path=${encodeURIComponent(projectPath)}`
+                );
+                const payload = await response.json().catch(() => ({}));
+                if (response.ok && payload.available) {
+                    descriptionEl.textContent = payload.description || 'Undo last operation';
+                    bar.classList.remove('d-none');
+                } else {
+                    bar.classList.add('d-none');
+                }
+            } catch (_) {
+                bar.classList.add('d-none');
+            }
+        }
+
+        btn.addEventListener('click', async () => {
+            const projectPath = getCurrentProjectPath();
+            if (!projectPath) return;
+            if (!window.confirm('Undo the last File Management operation? This cannot itself be undone.')) {
+                return;
+            }
+            btn.disabled = true;
+            const originalLabel = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Undoing...';
+            try {
+                await runRepoRewriteApplyJob(
+                    '/api/file-management/undo/start',
+                    '/api/file-management/subject-rewrite/status',
+                    { project_path: projectPath }
+                );
+                window.dispatchEvent(new Event('prism-project-changed'));
+            } catch (error) {
+                window.alert(error.message || 'Undo failed.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalLabel;
+                refreshUndoBar();
+            }
+        });
+
+        window.addEventListener('prism-project-changed', refreshUndoBar);
+        refreshUndoBar();
+    })();
+
+    // Rename Session IDs: mirrors Rename Subject IDs's strip/add UX, but
+    // synchronous like Edit BIDS Filename Parts (no progress bar/log panel,
+    // no async job) since a session rewrite is always applied as one atomic
+    // operation server-side, never a long per-subject batch.
+    (function initFmSessionRewrite() {
+        const exampleSelect = document.getElementById('repoSessionRewriteExample');
+        const keepInput = document.getElementById('repoSessionRewriteKeep');
+        const addTextInput = document.getElementById('repoSessionRewriteAddText');
+        const addPrepend = document.getElementById('repoSessionRewriteAddPrepend');
+        const addAppend = document.getElementById('repoSessionRewriteAddAppend');
+        const allowMultiple = document.getElementById('repoSessionRewriteAllowMultiple');
+        const previewBtn = document.getElementById('repoSessionRewritePreviewBtn');
+        const applyBtn = document.getElementById('repoSessionRewriteBtn');
+        const resultEl = document.getElementById('repoSessionRewriteResult');
+        if (!exampleSelect || !keepInput || !previewBtn || !applyBtn || !resultEl) {
+            return;
+        }
+
+        let sessionExamples = [];
+        let previewReady = false;
+
+        function setBusy(isBusy) {
+            const hasExamples = sessionExamples.length > 0;
+            previewBtn.disabled = isBusy;
+            applyBtn.disabled = isBusy || !previewReady;
+            exampleSelect.disabled = isBusy || !hasExamples;
+            keepInput.disabled = isBusy || !hasExamples;
+            if (addTextInput) addTextInput.disabled = isBusy || !hasExamples;
+            if (addPrepend) addPrepend.disabled = isBusy || !hasExamples;
+            if (addAppend) addAppend.disabled = isBusy || !hasExamples;
+            if (allowMultiple) allowMultiple.disabled = isBusy || !hasExamples;
+        }
+
+        function resetPreviewState() {
+            previewReady = false;
+            applyBtn.disabled = true;
+        }
+
+        async function loadExamples() {
+            const projectPath = getCurrentProjectPath();
+            if (!projectPath) {
+                sessionExamples = [];
+                exampleSelect.innerHTML = '<option value="">No active project</option>';
+                return;
+            }
+            try {
+                const response = await fetchWithApiFallback('/api/file-management/session-rewrite', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'examples', project_path: projectPath }),
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(payload.error || 'Failed to load session ID examples.');
+                }
+                sessionExamples = Array.isArray(payload.session_examples) ? payload.session_examples : [];
+                if (sessionExamples.length === 0) {
+                    exampleSelect.innerHTML = '<option value="">No session IDs found</option>';
+                } else {
+                    exampleSelect.innerHTML = sessionExamples
+                        .map((id) => `<option value="${escapeHtml(id)}">${escapeHtml(id)}</option>`)
+                        .join('');
+                }
+            } catch (error) {
+                sessionExamples = [];
+                exampleSelect.innerHTML = '<option value="">Failed to load examples</option>';
+                resultEl.innerHTML = `<div class="alert alert-danger py-2 mb-0">${escapeHtml(error.message || 'Failed to load session ID examples.')}</div>`;
+            } finally {
+                setBusy(false);
+            }
+        }
+
+        function renderResult(payload, actionLabel) {
+            const hasConflicts = Array.isArray(payload.conflicts) && payload.conflicts.length > 0;
+            const mappingEntries = Object.entries(payload.mapping || {});
+            const mappingPreviewLimit = 20;
+            const mappingHeader = mappingEntries.length > mappingPreviewLimit
+                ? `<div class="small mb-1 text-muted"><strong>Mapping:</strong> showing first ${mappingPreviewLimit} of ${mappingEntries.length} entries.</div>`
+                : '<div class="small mb-1"><strong>Mapping:</strong> full mapping.</div>';
+            const mappingHtml = mappingEntries.length
+                ? `${mappingHeader}<div class="small">${mappingEntries.slice(0, mappingPreviewLimit).map(([oldId, newId]) => `${escapeHtml(oldId)} -> ${escapeHtml(newId)}`).join(' | ')}</div>`
+                : '<div class="small text-muted">No session IDs require rewriting.</div>';
+
+            const rule = payload.rule || {};
+            const strategy = rule.strategy ? String(rule.strategy) : '';
+            const keepFragment = rule.keep_fragment ? String(rule.keep_fragment) : '';
+            const exampleSession = rule.example_session ? String(rule.example_session) : '';
+            const ruleAddText = rule.add_text ? String(rule.add_text) : '';
+            const ruleAddPosition = rule.add_position === 'append' ? 'append' : 'prepend';
+
+            let ruleText = '';
+            if (strategy && keepFragment && exampleSession) {
+                if (strategy === 'suffix') {
+                    ruleText = `Keep suffix '${escapeHtml(keepFragment)}' from each session ID (based on ${escapeHtml(exampleSession)}).`;
+                } else if (strategy === 'prefix') {
+                    ruleText = `Keep prefix '${escapeHtml(keepFragment)}' from each session ID (based on ${escapeHtml(exampleSession)}).`;
+                } else if (strategy === 'slice') {
+                    ruleText = `Keep the selected internal segment '${escapeHtml(keepFragment)}' from each session ID (based on ${escapeHtml(exampleSession)}).`;
+                } else if (strategy === 'full') {
+                    ruleText = `Rule keeps the full ID from ${escapeHtml(exampleSession)} (no shortening for this example).`;
+                }
+            }
+            if (ruleAddText) {
+                const addClause = `${ruleAddPosition === 'append' ? 'Append' : 'Prepend'} '${escapeHtml(ruleAddText)}' to each session ID.`;
+                ruleText = ruleText ? `${ruleText} ${addClause}` : addClause;
+            }
+            const ruleHtml = ruleText ? `<div class="small mb-1"><strong>Rule:</strong> ${ruleText}</div>` : '';
+
+            const conflictHtml = hasConflicts
+                ? `<div class="alert alert-danger py-2 mb-2">${payload.conflicts.map((msg) => `<div>${escapeHtml(msg)}</div>`).join('')}</div>`
+                : '';
+            const infoClass = hasConflicts ? 'alert-warning' : (actionLabel === 'Preview' ? 'alert-info' : 'alert-success');
+            resultEl.innerHTML = `
+                ${conflictHtml}
+                <div class="alert ${infoClass} py-2 mb-0">
+                    <div><strong>${actionLabel}</strong>: ${payload.mapping_count || 0} session mapping(s), ${payload.directory_rename_count || 0} folder rename(s), ${payload.file_rename_count || 0} filename rename(s), ${payload.text_update_count || 0} metadata text update(s).</div>
+                    ${ruleHtml}
+                    ${mappingHtml}
+                </div>
+            `;
+        }
+
+        async function run(action) {
+            const projectPath = getCurrentProjectPath();
+            if (!projectPath) {
+                resultEl.innerHTML = '<div class="alert alert-danger py-2 mb-0">No active project selected. Open a project first.</div>';
+                return;
+            }
+            const selectedExample = String(exampleSelect.value || '').trim();
+            const keepFragment = String(keepInput.value || '').trim();
+            const addText = String((addTextInput && addTextInput.value) || '').trim();
+            const addPosition = (addAppend && addAppend.checked) ? 'append' : 'prepend';
+            const allowMultipleSources = Boolean(allowMultiple && allowMultiple.checked);
+
+            if (!selectedExample) {
+                resultEl.innerHTML = '<div class="alert alert-danger py-2 mb-0">Select an example session ID first.</div>';
+                return;
+            }
+            if (!keepFragment && !addText) {
+                resultEl.innerHTML = '<div class="alert alert-danger py-2 mb-0">Enter a part to keep and/or a part to add.</div>';
+                return;
+            }
+
+            if (action === 'apply') {
+                if (!previewReady) {
+                    resultEl.innerHTML = '<div class="alert alert-warning py-2 mb-0">Run Preview first, then apply.</div>';
+                    return;
+                }
+                const confirmed = window.confirm(
+                    'Apply this session ID rewrite mapping to the current project and update internal metadata links?'
+                );
+                if (!confirmed) return;
+            }
+
+            setBusy(true);
+            resultEl.innerHTML = `<div class="alert alert-info py-2 mb-0">${action === 'apply' ? 'Applying rewrite...' : 'Previewing rewrite mapping...'}</div>`;
+
+            try {
+                const response = await fetchWithApiFallback('/api/file-management/session-rewrite', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action,
+                        example_session: selectedExample,
+                        keep_fragment: keepFragment,
+                        add_text: addText,
+                        add_position: addPosition,
+                        allow_multiple_sources: allowMultipleSources,
+                        project_path: projectPath,
+                    }),
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(payload.error || 'Session rewrite request failed.');
+                }
+
+                renderResult(payload, action === 'apply' ? 'Applied' : 'Preview');
+                if (action === 'preview') {
+                    previewReady = !Array.isArray(payload.conflicts) || payload.conflicts.length === 0;
+                } else {
+                    previewReady = false;
+                    window.dispatchEvent(new Event('prism-project-changed'));
+                }
+            } catch (error) {
+                resultEl.innerHTML = `<div class="alert alert-danger py-2 mb-0">${escapeHtml(error.message || 'Session rewrite request failed.')}</div>`;
+                previewReady = false;
+            } finally {
+                setBusy(false);
+            }
+        }
+
+        previewBtn.addEventListener('click', () => run('preview'));
+        applyBtn.addEventListener('click', () => run('apply'));
+
+        [keepInput, addTextInput].forEach((field) => {
+            if (!field) return;
+            field.addEventListener('input', () => {
+                resetPreviewState();
+                resultEl.innerHTML = '<div class="alert alert-secondary py-2 mb-0">Rule changed. Click Preview to regenerate mapping.</div>';
+            });
+        });
+        [exampleSelect, addPrepend, addAppend, allowMultiple].forEach((field) => {
+            if (!field) return;
+            field.addEventListener('change', () => {
+                resetPreviewState();
+                resultEl.innerHTML = '<div class="alert alert-secondary py-2 mb-0">Rule changed. Click Preview to regenerate mapping.</div>';
+            });
+        });
+
+        window.addEventListener('prism-project-changed', loadExamples);
+        loadExamples();
+    })();
+
+    // Renumber Runs: fully automatic scan, no user-chosen fields, so there
+    // is no "rule changed, re-preview" invalidation to wire up like the
+    // other rewrite cards -- Apply always re-scans fresh via the backend
+    // regardless of what a stale preview showed.
+    (function initFmRunRenumber() {
+        const previewBtn = document.getElementById('runRenumberPreviewBtn');
+        const applyBtn = document.getElementById('runRenumberApplyBtn');
+        const resultEl = document.getElementById('runRenumberResult');
+        if (!previewBtn || !applyBtn || !resultEl) {
+            return;
+        }
+
+        let previewReady = false;
+
+        function renderResult(payload, actionLabel) {
+            const groups = Array.isArray(payload.groups) ? payload.groups : [];
+            const skipped = Array.isArray(payload.skipped_groups) ? payload.skipped_groups : [];
+
+            const groupRows = groups.length
+                ? groups.map((group) => `<div>${escapeHtml(group.key)}: [${group.current_runs.map(escapeHtml).join(', ')}] -> [${group.proposed_runs.map(escapeHtml).join(', ')}]</div>`).join('')
+                : '<div class="small text-muted">No run sequences need renumbering.</div>';
+
+            const skippedHtml = skipped.length
+                ? `<div class="small mt-2"><strong>Skipped (not touched):</strong>${skipped.map((item) => `<div>${escapeHtml(item.key)}: ${escapeHtml(item.reason)}</div>`).join('')}</div>`
+                : '';
+
+            const infoClass = actionLabel === 'Preview' ? 'alert-info' : 'alert-success';
+            resultEl.innerHTML = `
+                <div class="alert ${infoClass} py-2 mb-0">
+                    <div><strong>${actionLabel}</strong>: ${payload.rename_count || 0} filename rename(s) across ${groups.length} group(s).</div>
+                    <div class="small mt-1">${groupRows}</div>
+                    ${skippedHtml}
+                </div>
+            `;
+        }
+
+        async function run(action) {
+            const projectPath = getCurrentProjectPath();
+            if (!projectPath) {
+                resultEl.innerHTML = '<div class="alert alert-danger py-2 mb-0">No active project selected. Open a project first.</div>';
+                return;
+            }
+
+            if (action === 'apply') {
+                if (!previewReady) {
+                    resultEl.innerHTML = '<div class="alert alert-warning py-2 mb-0">Run Preview first, then apply.</div>';
+                    return;
+                }
+                const confirmed = window.confirm('Apply run renumbering across the whole project?');
+                if (!confirmed) return;
+            }
+
+            previewBtn.disabled = true;
+            applyBtn.disabled = true;
+            resultEl.innerHTML = `<div class="alert alert-info py-2 mb-0">${action === 'apply' ? 'Applying renumbering...' : 'Scanning for run gaps...'}</div>`;
+
+            try {
+                const response = await fetchWithApiFallback('/api/file-management/run-renumber', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, project_path: projectPath }),
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(payload.error || 'Run renumbering request failed.');
+                }
+
+                renderResult(payload, action === 'apply' ? 'Applied' : 'Preview');
+                if (action === 'preview') {
+                    previewReady = (payload.rename_count || 0) > 0;
+                } else {
+                    previewReady = false;
+                    window.dispatchEvent(new Event('prism-project-changed'));
+                }
+            } catch (error) {
+                resultEl.innerHTML = `<div class="alert alert-danger py-2 mb-0">${escapeHtml(error.message || 'Run renumbering request failed.')}</div>`;
+                previewReady = false;
+            } finally {
+                previewBtn.disabled = false;
+                applyBtn.disabled = !previewReady;
+            }
+        }
+
+        previewBtn.addEventListener('click', () => run('preview'));
+        applyBtn.addEventListener('click', () => run('apply'));
+    })();
 
     if (repoSubjectRewriteAllowMultiple) {
         repoSubjectRewriteAllowMultiple.addEventListener('change', () => {

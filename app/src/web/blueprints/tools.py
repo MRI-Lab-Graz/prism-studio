@@ -31,9 +31,15 @@ from src.repo_rewrite_datalad_runner import (
     RewriteCancelledError,
     TrackedRewriteError,
     apply_entity_rewrite as apply_entity_rewrite_with_datalad,
+    apply_run_renumbering as apply_run_renumbering_with_datalad,
+    apply_session_rewrite as apply_session_rewrite_with_datalad,
     apply_subject_rewrite as apply_subject_rewrite_with_datalad,
+    undo_last_operation,
 )
+from src.run_renumberer import RunRenumberer
+from src.session_code_rewriter import SessionCodeRewriter
 from src.subject_code_rewriter import SubjectCodeRewriter
+from src.undo_log import UndoLog
 from src.web.blueprints.projects import get_current_project
 from .conversion_job_store import ConversionJobStore
 from .tools_helpers import (
@@ -1055,6 +1061,8 @@ def _run_subject_rewrite_job(
     example_subject: str | None,
     keep_fragment: str | None,
     allow_many_to_one: bool,
+    add_text: str | None = None,
+    add_position: str | None = None,
 ) -> None:
     def _report_subject_progress(done: int, total: int) -> None:
         _rewrite_job_store.update(
@@ -1068,6 +1076,8 @@ def _run_subject_rewrite_job(
             mode=mode,
             example_subject=example_subject,
             keep_fragment=keep_fragment,
+            add_text=add_text,
+            add_position=add_position,
             allow_many_to_one=allow_many_to_one,
             on_log=lambda message, level: _rewrite_job_store.append_log(
                 job_id, message, level
@@ -1131,6 +1141,37 @@ def _run_entity_rewrite_job(
         _rewrite_job_store.failure(job_id, f"Entity rewrite failed: {exc}")
 
 
+def _run_undo_job(job_id: str, *, project_root: str) -> None:
+    def _report_subject_progress(done: int, total: int) -> None:
+        _rewrite_job_store.update(
+            job_id,
+            progress_pct=round(100 * done / total) if total else 100,
+        )
+
+    try:
+        payload = undo_last_operation(
+            Path(project_root),
+            on_log=lambda message, level: _rewrite_job_store.append_log(
+                job_id, message, level
+            ),
+            on_subject_progress=_report_subject_progress,
+            is_cancelled=lambda: _rewrite_job_store.is_cancelled(job_id),
+        )
+        _rewrite_job_store.success(job_id, payload)
+    except RewriteCancelledError as exc:
+        _rewrite_job_store.failure(job_id, str(exc), status="cancelled")
+    except TrackedRewriteError as exc:
+        for entry in exc.log:
+            _rewrite_job_store.append_log(
+                job_id, entry.get("message", ""), entry.get("level", "error")
+            )
+        _rewrite_job_store.failure(job_id, str(exc))
+    except ValueError as exc:
+        _rewrite_job_store.failure(job_id, str(exc))
+    except Exception as exc:
+        _rewrite_job_store.failure(job_id, f"Undo failed: {exc}")
+
+
 def _allocate_rewrite_job_id() -> str:
     for _ in range(5):
         candidate = uuid.uuid4().hex
@@ -1150,6 +1191,8 @@ def api_file_management_subject_rewrite_start():
     mode = str(data.get("mode") or "last3").strip().lower()
     example_subject = str(data.get("example_subject") or "").strip() or None
     keep_fragment = str(data.get("keep_fragment") or "").strip() or None
+    add_text = str(data.get("add_text") or "").strip() or None
+    add_position = str(data.get("add_position") or "").strip().lower() or None
     allow_multiple_raw = data.get("allow_multiple_sources")
     if isinstance(allow_multiple_raw, bool):
         allow_multiple_sources = allow_multiple_raw
@@ -1187,6 +1230,8 @@ def api_file_management_subject_rewrite_start():
         "mode": mode,
         "example_subject": example_subject or "",
         "keep_fragment": keep_fragment or "",
+        "add_text": add_text or "",
+        "add_position": add_position or "",
         "allow_multiple_sources": allow_multiple_sources,
     }
     last_preview = session.get(preview_session_key) or {}
@@ -1213,6 +1258,8 @@ def api_file_management_subject_rewrite_start():
             "mode": mode,
             "example_subject": example_subject,
             "keep_fragment": keep_fragment,
+            "add_text": add_text,
+            "add_position": add_position,
             "allow_many_to_one": allow_multiple_sources,
         },
         daemon=True,
@@ -1338,6 +1385,77 @@ def api_file_management_entity_rewrite_cancel(job_id: str):
     return jsonify({"cancelled": cancelled}), 200
 
 
+@tools_bp.route("/api/file-management/undo/peek", methods=["GET"])
+def api_file_management_undo_peek():
+    """Report whether an undoable operation exists for the active project."""
+    explicit_project_path = (
+        request.args.get("project_path")
+        or session.get("current_project_path")
+        or ""
+    )
+    project_path = str(explicit_project_path).strip()
+
+    try:
+        project_root = require_existing_project_root(
+            project_path,
+            missing_message="No active project selected.",
+            missing_path_message="The selected project path no longer exists.",
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    entry = UndoLog(project_root).peek_last()
+    if entry is None:
+        return jsonify({"available": False}), 200
+    return (
+        jsonify(
+            {
+                "available": True,
+                "kind": entry.get("kind"),
+                "description": entry.get("description"),
+            }
+        ),
+        200,
+    )
+
+
+@tools_bp.route("/api/file-management/undo/start", methods=["POST"])
+def api_file_management_undo_start():
+    """Start an async job reversing the most recent File Management operation."""
+    data = request.get_json(silent=True) or {}
+    explicit_project_path = (
+        request.args.get("project_path")
+        or data.get("project_path")
+        or session.get("current_project_path")
+        or ""
+    )
+    project_path = str(explicit_project_path).strip()
+
+    try:
+        project_root = require_existing_project_root(
+            project_path,
+            missing_message="No active project selected. Open a project before undoing.",
+            missing_path_message="The selected project path no longer exists. Reopen the project and retry.",
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    if UndoLog(project_root).peek_last() is None:
+        return jsonify({"error": "Nothing to undo."}), 400
+
+    job_id = _allocate_rewrite_job_id()
+    if not job_id:
+        return jsonify({"error": "Could not allocate undo job id"}), 500
+
+    thread = threading.Thread(
+        target=_run_undo_job,
+        kwargs={"job_id": job_id, "project_root": str(project_root)},
+        daemon=True,
+    )
+    thread.start()
+    return jsonify({"job_id": job_id, "project_path": str(project_root)}), 200
+
+
 @tools_bp.route("/api/file-management/entity-rewrite", methods=["POST"])
 def api_file_management_entity_rewrite():
     """Preview or apply entity-level BIDS filename rewrites for one modality."""
@@ -1459,6 +1577,8 @@ def api_file_management_subject_rewrite():
     mode = str(data.get("mode") or "last3").strip().lower()
     example_subject = str(data.get("example_subject") or "").strip() or None
     keep_fragment = str(data.get("keep_fragment") or "").strip() or None
+    add_text = str(data.get("add_text") or "").strip() or None
+    add_position = str(data.get("add_position") or "").strip().lower() or None
     allow_multiple_raw = data.get("allow_multiple_sources")
     if isinstance(allow_multiple_raw, bool):
         allow_multiple_sources = allow_multiple_raw
@@ -1500,6 +1620,8 @@ def api_file_management_subject_rewrite():
             "mode": mode,
             "example_subject": example_subject or "",
             "keep_fragment": keep_fragment or "",
+            "add_text": add_text or "",
+            "add_position": add_position or "",
             "allow_multiple_sources": allow_multiple_sources,
         }
 
@@ -1528,6 +1650,8 @@ def api_file_management_subject_rewrite():
                 mode=mode,
                 example_subject=example_subject,
                 keep_fragment=keep_fragment,
+                add_text=add_text,
+                add_position=add_position,
                 allow_many_to_one=allow_multiple_sources,
             )
             session.pop(preview_session_key, None)
@@ -1536,6 +1660,8 @@ def api_file_management_subject_rewrite():
                 mode=mode,
                 example_subject=example_subject,
                 keep_fragment=keep_fragment,
+                add_text=add_text,
+                add_position=add_position,
                 allow_many_to_one=allow_multiple_sources,
             )
             if payload.get("conflicts"):
@@ -1550,6 +1676,158 @@ def api_file_management_subject_rewrite():
         return jsonify({"error": str(exc)}), 400
     except Exception as exc:
         return jsonify({"error": f"Subject rewrite failed: {exc}"}), 500
+
+
+@tools_bp.route("/api/file-management/session-rewrite", methods=["POST"])
+def api_file_management_session_rewrite():
+    """Preview session-ID rewrites, or list example session IDs."""
+    preview_session_key = "session_rewrite_last_preview"
+    data = request.get_json(silent=True) or {}
+    action = str(data.get("action") or "preview").strip().lower()
+    example_session = str(data.get("example_session") or "").strip() or None
+    keep_fragment = str(data.get("keep_fragment") or "").strip() or None
+    add_text = str(data.get("add_text") or "").strip() or None
+    add_position = str(data.get("add_position") or "").strip().lower() or None
+    allow_multiple_raw = data.get("allow_multiple_sources")
+    if isinstance(allow_multiple_raw, bool):
+        allow_multiple_sources = allow_multiple_raw
+    elif isinstance(allow_multiple_raw, (int, float)):
+        allow_multiple_sources = allow_multiple_raw != 0
+    elif isinstance(allow_multiple_raw, str):
+        allow_multiple_sources = allow_multiple_raw.strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
+    else:
+        allow_multiple_sources = False
+
+    if action not in {"examples", "preview", "apply"}:
+        return jsonify({"error": f"Unsupported action: {action}"}), 400
+
+    explicit_project_path = (
+        request.args.get("project_path")
+        or data.get("project_path")
+        or session.get("current_project_path")
+        or ""
+    )
+    project_path = str(explicit_project_path).strip()
+
+    try:
+        project_root = require_existing_project_root(
+            project_path,
+            missing_message="No active project selected. Open a project before rewriting session IDs.",
+            missing_path_message="The selected project path no longer exists. Reopen the project and retry.",
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    try:
+        request_signature = {
+            "project_path": str(project_root),
+            "example_session": example_session or "",
+            "keep_fragment": keep_fragment or "",
+            "add_text": add_text or "",
+            "add_position": add_position or "",
+            "allow_multiple_sources": allow_multiple_sources,
+        }
+
+        if action == "apply":
+            last_preview = session.get(preview_session_key) or {}
+            if last_preview != request_signature:
+                return (
+                    jsonify(
+                        {
+                            "error": "Preview is required before apply. Run Preview with the current example and rule first."
+                        }
+                    ),
+                    400,
+                )
+
+        rewriter = SessionCodeRewriter(project_root)
+        if action == "examples":
+            payload = {
+                "applied": False,
+                "session_examples": rewriter.list_session_ids(),
+            }
+        elif action == "apply":
+            payload = apply_session_rewrite_with_datalad(
+                project_root,
+                example_session=example_session,
+                keep_fragment=keep_fragment,
+                add_text=add_text,
+                add_position=add_position,
+                allow_many_to_one=allow_multiple_sources,
+            )
+            session.pop(preview_session_key, None)
+        else:
+            payload = rewriter.preview(
+                example_session=example_session,
+                keep_fragment=keep_fragment,
+                add_text=add_text,
+                add_position=add_position,
+                allow_many_to_one=allow_multiple_sources,
+            )
+            if payload.get("conflicts"):
+                session.pop(preview_session_key, None)
+            else:
+                session[preview_session_key] = request_signature
+        payload["project_path"] = str(project_root)
+        return jsonify(payload), 200
+    except TrackedRewriteError as exc:
+        return jsonify({"error": str(exc), "log": exc.log}), 400
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": f"Session rewrite failed: {exc}"}), 500
+
+
+@tools_bp.route("/api/file-management/run-renumber", methods=["POST"])
+def api_file_management_run_renumber():
+    """Preview or apply automatic run-XX gap closing for the active project.
+
+    Fully automatic (no user-chosen parameters to go stale between preview
+    and apply), so unlike the other rewrite tools this doesn't gate apply
+    behind a matching prior preview -- applying always acts on the current,
+    freshly-rescanned state of the project, which is the correct behavior
+    here rather than a staleness risk.
+    """
+    data = request.get_json(silent=True) or {}
+    action = str(data.get("action") or "preview").strip().lower()
+    if action not in {"preview", "apply"}:
+        return jsonify({"error": f"Unsupported action: {action}"}), 400
+
+    explicit_project_path = (
+        request.args.get("project_path")
+        or data.get("project_path")
+        or session.get("current_project_path")
+        or ""
+    )
+    project_path = str(explicit_project_path).strip()
+
+    try:
+        project_root = require_existing_project_root(
+            project_path,
+            missing_message="No active project selected. Open a project before renumbering runs.",
+            missing_path_message="The selected project path no longer exists. Reopen the project and retry.",
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    try:
+        if action == "apply":
+            payload = apply_run_renumbering_with_datalad(project_root)
+        else:
+            payload = RunRenumberer(project_root).preview()
+        payload["project_path"] = str(project_root)
+        return jsonify(payload), 200
+    except TrackedRewriteError as exc:
+        return jsonify({"error": str(exc), "log": exc.log}), 400
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": f"Run renumbering failed: {exc}"}), 500
 
 
 @tools_bp.route("/recipes")

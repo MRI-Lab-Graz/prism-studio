@@ -5336,6 +5336,44 @@ class TestRemoveScansTsvFiles(unittest.TestCase):
             )
             self.assertIn("submodule pointer", super_log.stdout)
 
+    def test_removes_scans_tsv_from_a_flat_project_with_no_subdatasets(self):
+        """Same operation, but on a plain single-repo project (no
+        .gitmodules, no nested subdatasets) -- the superdataset/subdataset
+        split above is the common case, but a flat project must still hit
+        the single top-level commit path in _remove_scans_tsv_files_locked
+        rather than the per-subdataset-then-pointer-bump one."""
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            _init_git_repo(project_path)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+            (project_path / "sub-001_scans.tsv").write_text(
+                "filename\tacq_time\nanat/x.nii.gz\tn/a\n", encoding="utf-8"
+            )
+            (project_path / "keep.txt").write_text("keep me\n", encoding="utf-8")
+            subprocess.run(["git", "add", "."], cwd=project_path, check=True)
+            subprocess.run(
+                ["git", "commit", "-m", "init"], cwd=project_path, check=True, capture_output=True
+            )
+
+            result = manager.remove_scans_tsv_files(project_path)
+
+            self.assertTrue(result.get("success"), result)
+            self.assertEqual(result.get("removed"), 1)
+            self.assertEqual(result.get("errors"), [])
+            self.assertFalse((project_path / "sub-001_scans.tsv").exists())
+            self.assertTrue((project_path / "keep.txt").exists())
+
+            status = subprocess.run(
+                ["git", "status", "--short"],
+                cwd=project_path,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            self.assertEqual(status.stdout.strip(), "", status.stdout)
+
     def test_no_scans_tsv_files_is_a_clean_no_op(self):
         manager = ProjectManager()
         with tempfile.TemporaryDirectory() as tmp:
