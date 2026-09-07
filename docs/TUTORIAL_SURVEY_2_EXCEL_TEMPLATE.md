@@ -74,10 +74,11 @@ expected.
 ## Fill the General sheet
 
 `General` is transposed — one metadata field per row, `Field`/`Value`
-columns. Three fields are actually required by the schema
-(`OriginalName_en`, `LicenseID`, and — implicitly — a language declared in
-`I18nLanguages`/`I18nDefaultLanguage`); fill those plus the handful below
-that matter for this study:
+columns. The schema actually requires at least one `OriginalName_<lang>`
+field (`_de` or `_en`) plus `LicenseID`; filling in `OriginalName_en` below
+satisfies that on its own, so `OriginalName_de` doesn't need a value yet
+(German comes in a later chapter). Fill those two required fields plus the
+handful below that matter for this study:
 
 | Field | Value |
 |---|---|
@@ -126,9 +127,9 @@ items and the `General` fields you filled in above.
 
    Expected outcome: no errors. If validation fails, the most likely causes
    are the two things called out above — an `n/a`-style placeholder
-   somewhere it silently became blank, or one of the three required
-   `General` fields (`OriginalName_en`, `LicenseID`, a declared language)
-   left empty. Re-check the sheets against the tables above.
+   somewhere it silently became blank, or `OriginalName_en`/`LicenseID`
+   left empty (the schema needs at least one `OriginalName_<lang>` plus
+   `LicenseID`). Re-check the sheets against the tables above.
 
 2. Click **Save to Project**.
 
