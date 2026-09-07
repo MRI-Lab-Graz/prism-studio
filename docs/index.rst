@@ -154,6 +154,7 @@ One structure for multimodal studies
 
    TUTORIAL_BEGINNER
    TUTORIAL_FILE_MANAGEMENT
+   TUTORIAL_SURVEY
 
 .. toctree::
    :maxdepth: 2
