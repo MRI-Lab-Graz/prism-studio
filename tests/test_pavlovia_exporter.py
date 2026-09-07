@@ -1,3 +1,4 @@
+import json
 from src.converters.pavlovia import (
     extract_questions,
     _resolve_text,
@@ -8,6 +9,7 @@ from src.converters.pavlovia import (
     create_slider_component,
     create_textbox_component,
     build_psyexp_xml,
+    export_to_pavlovia,
 )
 import xml.etree.ElementTree as ET
 
@@ -226,3 +228,56 @@ def test_build_psyexp_xml_single_routine_for_all_questions():
         r for r in routines_section.iter("Routine") if r.get("name") not in ("welcome", "thanks")
     ]
     assert len(question_routines) == 1
+
+
+def test_export_to_pavlovia_end_to_end(tmp_path):
+    """A realistic bilingual, two-variant template exports cleanly."""
+    prism_json = {
+        "I18n": {"Languages": ["en", "de"], "DefaultLanguage": "en"},
+        "Study": {"TaskName": "recovery", "Version": "full"},
+        "rec_mood": {
+            "Description": {"en": "Overall mood today", "de": "Stimmung heute"},
+            "Levels": {
+                "1": {"en": "Not at all", "de": "Gar nicht"},
+                "2": {"en": "Slightly", "de": "Etwas"},
+            },
+            "DataType": "integer", "MinValue": 1, "MaxValue": 2,
+            "ApplicableVersions": ["full", "short"],
+        },
+        "rec_pain": {
+            "Description": {"en": "Pain intensity", "de": "Schmerzintensitaet"},
+            "DataType": "integer", "MinValue": 0, "MaxValue": 100,
+            "ApplicableVersions": ["full", "short"],
+            "VariantScales": [
+                {"VariantID": "full", "ScaleType": "vas", "MinValue": 0, "MaxValue": 100},
+            ],
+        },
+        "rec_extra": {
+            "Description": {"en": "Full-only extra item"},
+            "ApplicableVersions": ["full"],
+        },
+        "rec_notes": {
+            "Description": {"en": "Anything else?"},
+            "Mandatory": False,
+        },
+    }
+    json_path = tmp_path / "task-recovery_survey.json"
+    json_path.write_text(json.dumps(prism_json), encoding="utf-8")
+
+    psyexp_path = export_to_pavlovia(json_path, tmp_path / "out")
+
+    assert psyexp_path.exists()
+    root = ET.fromstring(psyexp_path.read_text(encoding="utf-8"))
+
+    slider_names = [c.get("name") for c in root.iter("SliderComponent")]
+    assert "rec_pain" in slider_names  # vas override applied
+
+    textbox_names = [c.get("name") for c in root.iter("TextboxComponent")]
+    assert "rec_notes" in textbox_names  # no Levels -> free text
+
+    # rec_mood's English label made it through (default language resolution)
+    all_param_values = " ".join(
+        p.get("val", "") for p in root.iter("Param")
+    )
+    assert "Overall mood today" in all_param_values
+    assert "Stimmung heute" not in all_param_values  # German NOT exported (single-language scope)
