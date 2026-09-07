@@ -152,11 +152,11 @@ explains each step in far more detail and at your own pace.
 
 ## What's next
 
-Once you've completed all six chapters, an **Intermediate** tutorial
-covering DataLad version control and bulk file/folder manipulation is
-planned as the next step in this series — check back here once it's
-published. In the meantime:
+Once you've completed all six chapters:
 
+- [File Management](TUTORIAL_FILE_MANAGEMENT.md) — the next step in this
+  series: bulk-renaming, reorganizing, reshaping, and cleaning up files
+  already in a project, DataLad-aware throughout
 - [Studio Guide](studio/index.md) — full reference for every screen
 - [CLI Reference](CLI_REFERENCE.md) — the same workflows from the terminal
 - [Workshop](WORKSHOP.md) — the same journey as a guided group exercise

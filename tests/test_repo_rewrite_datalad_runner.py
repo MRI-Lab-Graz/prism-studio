@@ -630,6 +630,44 @@ def test_apply_run_renumbering_closes_gap_and_records_undo_entry(tmp_path):
     ]
 
 
+def test_apply_run_renumbering_uses_datalad_get_and_save_when_project_is_tracked(
+    tmp_path,
+    monkeypatch,
+):
+    project_root = tmp_path / "project"
+    func = project_root / "sub-001" / "ses-01" / "func"
+    func.mkdir(parents=True)
+    (project_root / ".datalad").mkdir(parents=True)
+    (func / "sub-001_ses-01_task-rest_run-01_bold.nii.gz").write_bytes(b"data")
+    (func / "sub-001_ses-01_task-rest_run-03_bold.nii.gz").write_bytes(b"data")
+
+    monkeypatch.setattr(
+        "src.datalad_execution.shutil.which",
+        lambda command: "/usr/bin/datalad" if command == "datalad" else "",
+    )
+
+    seen_commands: list[list[str]] = []
+    monkeypatch.setattr(
+        "src.datalad_execution.subprocess.run",
+        _fake_subprocess_run_factory(seen_commands),
+    )
+
+    result = apply_run_renumbering(project_root)
+
+    assert result["applied"] is True
+    assert result["rename_count"] == 1
+    assert result.get("datalad", {}).get("tracked") is True
+    assert any(command[0:2] == ["/usr/bin/datalad", "get"] for command in seen_commands)
+    assert any(command[0:2] == ["/usr/bin/datalad", "save"] for command in seen_commands)
+
+    assert not (func / "sub-001_ses-01_task-rest_run-03_bold.nii.gz").exists()
+    assert (func / "sub-001_ses-01_task-rest_run-02_bold.nii.gz").exists()
+
+    entry = UndoLog(project_root).peek_last()
+    assert entry is not None
+    assert entry["kind"] == "run_renumber"
+
+
 def test_apply_run_renumbering_is_a_noop_when_no_gaps(tmp_path):
     project_root = tmp_path / "project"
     func = project_root / "sub-001" / "ses-01" / "func"

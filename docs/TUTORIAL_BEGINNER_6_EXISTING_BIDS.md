@@ -254,6 +254,8 @@ relief you were setting up back in Chapter 1.
 
 ## What's next
 
+- [File Management](TUTORIAL_FILE_MANAGEMENT.md) — the next step in this
+  series: bulk-renaming, reorganizing, and cleaning up files in a project
 - [Getting Started Home](TUTORIAL_BEGINNER.md) — review the full tutorial series
 - [Studio Guide](studio/index.md) — dive deeper into each converter and workflow
 - [Workshop](WORKSHOP.md) — try a longer, instructor-led version

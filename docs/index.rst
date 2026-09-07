@@ -159,6 +159,7 @@ One structure for multimodal studies
    TUTORIAL_BEGINNER_4_RECIPE
    TUTORIAL_BEGINNER_5_VALIDATOR
    TUTORIAL_BEGINNER_6_EXISTING_BIDS
+   TUTORIAL_FILE_MANAGEMENT
 
 .. toctree::
    :maxdepth: 2
