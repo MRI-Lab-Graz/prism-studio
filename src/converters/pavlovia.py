@@ -477,6 +477,7 @@ def export_to_pavlovia(
     json_path: Path,
     output_dir: Optional[Path] = None,
     experiment_name: Optional[str] = None,
+    language: Optional[str] = None,
 ) -> Path:
     """Main export function.
 
@@ -484,6 +485,10 @@ def export_to_pavlovia(
         json_path: Path to PRISM survey JSON
         output_dir: Output directory (default: ./task-name/)
         experiment_name: Override experiment name
+        language: Language code to export (default: template's own
+            I18n.DefaultLanguage, falling back to "en"). Pavlovia export is
+            single-language scoped -- this selects which language's text is
+            used, it does not export multiple languages.
 
     Returns:
         Path to created .psyexp file
@@ -509,7 +514,7 @@ def export_to_pavlovia(
     print(f"📁 Output directory: {output_dir}")
 
     # Extract questions
-    questions = extract_questions(prism_json)
+    questions = extract_questions(prism_json, language=language)
     print(f"📋 Found {len(questions)} questions")
 
     # Create conditions CSV if needed
@@ -578,6 +583,13 @@ def main():
         help="Override experiment name",
     )
     parser.add_argument(
+        "--language",
+        "-l",
+        type=str,
+        default=None,
+        help="Language code to export (default: template's own default language)",
+    )
+    parser.add_argument(
         "--import",
         dest="import_mode",
         action="store_true",
@@ -610,6 +622,7 @@ def main():
             args.json_path,
             args.output,
             args.experiment_name,
+            args.language,
         )
 
     if result:

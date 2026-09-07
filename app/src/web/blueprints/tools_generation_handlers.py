@@ -139,10 +139,11 @@ def handle_generate_pavlovia_endpoint():
             return jsonify({"error": "File not found"}), 404
 
         experiment_name = data.get("experiment_name") or None
+        language = data.get("base_language") or data.get("language")
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             output_dir = Path(tmp_dir) / "export"
-            export_to_pavlovia(json_path, output_dir, experiment_name)
+            export_to_pavlovia(json_path, output_dir, experiment_name, language=language)
 
             zip_fd, zip_path = tempfile.mkstemp(suffix=".zip")
             os.close(zip_fd)

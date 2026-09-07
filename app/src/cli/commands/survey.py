@@ -794,10 +794,11 @@ def cmd_survey_export_pavlovia(args) -> None:
         sys.exit(1)
 
     output_dir = Path(args.output).resolve() if getattr(args, "output", None) else None
+    language = getattr(args, "language", None)
 
     try:
         psyexp_path = export_to_pavlovia(
-            json_path, output_dir, getattr(args, "experiment_name", None)
+            json_path, output_dir, getattr(args, "experiment_name", None), language=language
         )
     except Exception as exc:
         print(f"Error: {exc}")

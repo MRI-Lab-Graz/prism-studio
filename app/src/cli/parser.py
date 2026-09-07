@@ -1372,6 +1372,13 @@ def build_prism_tools_parsers(
     parser_survey_export_pavlovia.add_argument(
         "--experiment-name", default=None, help="Override the experiment/task name"
     )
+    parser_survey_export_pavlovia.add_argument(
+        "--language",
+        "-l",
+        default=None,
+        help="Language code to export (default: template's own default language). "
+        "Pavlovia export is single-language scoped.",
+    )
 
     parser_survey_export_lss_customized = survey_subparsers.add_parser(
         "export-lss-customized",
