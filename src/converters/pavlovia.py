@@ -300,7 +300,10 @@ def build_psyexp_xml(
 
     This creates a minimal but functional experiment with:
     - Welcome screen
-    - Question routines (one per question or question group)
+    - A single "questions" routine holding a real component per question
+      (SliderComponent/TextboxComponent/shared FormComponent, per
+      determine_component_type), each with an optional CodeComponent gate
+      for a non-null condition
     - Thank you screen
     - Flow connecting all routines
     """
@@ -335,29 +338,45 @@ def build_psyexp_xml(
     _add_component_param(welcome_key, "keys", "['space']")
     _add_component_param(welcome_key, "text", "Press SPACE to continue")
 
-    # 2. Question routines
-    # Group questions by their group name
-    grouped_questions: Dict[str, List[Dict[str, Any]]] = {}
+    # 2. Question routine (single routine for all questions -- Position.Group
+    # doesn't exist in real template JSON, see plan's "What changed from v1")
+    routine = ET.SubElement(routines, "Routine")
+    routine.set("name", "questions")
+
+    form_items = []
     for q in questions:
-        group = q.get("position", {}).get("Group", "questions")
-        if group not in grouped_questions:
-            grouped_questions[group] = []
-        grouped_questions[group].append(q)
+        component_type = determine_component_type(q)
+        safe_name = _safe_component_name(q["code"])
 
-    # Create a routine for each group
-    for group_name, group_questions in grouped_questions.items():
-        routine = ET.SubElement(routines, "Routine")
-        routine_name = f"group_{group_name.lower().replace(' ', '_')}"
-        routine.set("name", routine_name)
-
-        # For now, create a simple form component
-        # Planned: Add specialized components for sliders, textboxes, and loops.
-        form_items = []
-        for q in group_questions:
+        if component_type == "slider":
+            component = ET.SubElement(routine, "SliderComponent")
+            component.set("name", safe_name)
+            slider_params = create_slider_component(q)
+            for key, value in slider_params.items():
+                if key != "name":
+                    _add_component_param(component, key, value)
+        elif component_type == "free_text":
+            component = ET.SubElement(routine, "TextboxComponent")
+            component.set("name", safe_name)
+            textbox_params = create_textbox_component(q)
+            for key, value in textbox_params.items():
+                if key != "name":
+                    _add_component_param(component, key, value)
+        else:
+            # radio / dropdown -- batch into the shared form item list
             form_items.append(create_psychopy_form_item(q))
 
+        if q.get("condition"):
+            code_component = ET.SubElement(routine, "CodeComponent")
+            code_component.set("name", f"{safe_name}_condition")
+            _add_component_param(
+                code_component, "Begin Routine",
+                f"{safe_name}_visible = bool({q['condition']!r})",
+            )
+
+    if form_items:
         form_component = ET.SubElement(routine, "FormComponent")
-        form_component.set("name", f"form_{routine_name}")
+        form_component.set("name", "form_questions")
         _add_component_param(form_component, "items", str(form_items))
         _add_component_param(form_component, "randomize", "False")
 
@@ -378,11 +397,9 @@ def build_psyexp_xml(
     flow_item = ET.SubElement(flow, "Routine")
     flow_item.set("name", "welcome")
 
-    # Add question routines
-    for group_name in grouped_questions.keys():
-        routine_name = f"group_{group_name.lower().replace(' ', '_')}"
-        flow_item = ET.SubElement(flow, "Routine")
-        flow_item.set("name", routine_name)
+    # Add the single question routine
+    flow_item = ET.SubElement(flow, "Routine")
+    flow_item.set("name", "questions")
 
     # Add thanks
     flow_item = ET.SubElement(flow, "Routine")
