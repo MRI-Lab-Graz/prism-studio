@@ -61,33 +61,107 @@ def _extract_condition(value: Dict[str, Any]) -> Optional[str]:
     return None
 
 
-def extract_questions(prism_json: Dict[str, Any]) -> List[Dict[str, Any]]:
+def _resolve_text(value: Any, language: str) -> str:
+    """Resolve a Description/Levels-label value to a plain string.
+
+    The schema allows either a plain string or a per-language object
+    ({"en": ..., "de": ...}). Prefer the requested language, fall back to
+    any available language, fall back to empty string.
+    """
+    if isinstance(value, dict):
+        if language in value:
+            return str(value[language])
+        for v in value.values():
+            if v:
+                return str(v)
+        return ""
+    if value is None:
+        return ""
+    return str(value)
+
+
+def _get_active_variant_id(prism_json: Dict[str, Any]) -> Optional[str]:
+    """The template's declared default/active variant, if any."""
+    study = prism_json.get("Study")
+    if isinstance(study, dict):
+        version = study.get("Version")
+        if version:
+            return str(version)
+    return None
+
+
+def _resolve_item_for_variant(
+    item: Dict[str, Any], variant_id: Optional[str]
+) -> Optional[Dict[str, Any]]:
+    """Apply variant filtering/override to one item.
+
+    Mirrors app/static/js/template-editor.js's own excludedByVariant check:
+    an item with no (or empty) ApplicableVersions applies to every variant;
+    otherwise it's excluded unless variant_id is explicitly listed.
+
+    Returns the (possibly overridden) item dict, or None if excluded.
+    """
+    applicable = item.get("ApplicableVersions")
+    if isinstance(applicable, list) and applicable and variant_id not in applicable:
+        return None
+
+    variant_scales = item.get("VariantScales")
+    if variant_id and isinstance(variant_scales, list):
+        for scale in variant_scales:
+            if isinstance(scale, dict) and scale.get("VariantID") == variant_id:
+                merged = dict(item)
+                for key in ("DataType", "MinValue", "MaxValue", "Levels", "ScaleType", "Unit"):
+                    if key in scale:
+                        merged[key] = scale[key]
+                return merged
+
+    return item
+
+
+def extract_questions(
+    prism_json: Dict[str, Any], language: Optional[str] = None
+) -> List[Dict[str, Any]]:
     """Extract question data from PRISM JSON, filtering out metadata sections."""
+    if language is None:
+        i18n = prism_json.get("I18n")
+        language = (
+            i18n.get("DefaultLanguage")
+            if isinstance(i18n, dict) and i18n.get("DefaultLanguage")
+            else "en"
+        )
+
+    active_variant = _get_active_variant_id(prism_json)
     questions = []
-    metadata_keys = {"Technical", "Study", "Metadata", "I18n", "Scoring"}
+    metadata_keys = {"Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"}
 
     for key, value in prism_json.items():
-        if key not in metadata_keys and isinstance(value, dict):
-            question = {
-                "code": key,
-                "description": value.get("Description", ""),
-                "type": value.get("QuestionType", ""),
-                "levels": value.get("Levels", {}),
-                "items": value.get("Items", {}),
-                "mandatory": value.get("Mandatory", False),
-                "condition": _extract_condition(value),
-                "help": value.get("HelpText", None),
-                "position": value.get("Position", {}),
-            }
-            questions.append(question)
+        if key in metadata_keys or not isinstance(value, dict):
+            continue
 
-    # Sort by group order and question order
-    questions.sort(
-        key=lambda q: (
-            q["position"].get("GroupOrder", 0),
-            q["position"].get("QuestionOrder", 0),
-        )
-    )
+        resolved = _resolve_item_for_variant(value, active_variant)
+        if resolved is None:
+            continue
+
+        raw_levels = resolved.get("Levels") if isinstance(resolved.get("Levels"), dict) else {}
+        flat_levels = {
+            level_key: _resolve_text(level_value, language)
+            for level_key, level_value in raw_levels.items()
+        }
+
+        question = {
+            "code": key,
+            "description": _resolve_text(resolved.get("Description", ""), language),
+            "levels": flat_levels,
+            "raw_levels": raw_levels,
+            "data_type": resolved.get("DataType", "string"),
+            "scale_type": resolved.get("ScaleType"),
+            "min_value": resolved.get("MinValue"),
+            "max_value": resolved.get("MaxValue"),
+            "mandatory": resolved.get("Mandatory", True),
+            "condition": _extract_condition(resolved),
+            "help": resolved.get("HelpText", None),
+        }
+        questions.append(question)
 
     return questions
 
