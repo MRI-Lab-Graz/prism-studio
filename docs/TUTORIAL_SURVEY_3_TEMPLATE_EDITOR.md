@@ -66,12 +66,12 @@ Bulk Edit applies to whichever items are checked in the list above it, or to
 Switch to the **Preview** tab to see the template rendered as a
 respondent would. Two export paths sit here, side by side:
 
-- **"Print / Save as PDF"** (`#btnPrintPreview`) — sends the current preview
-  to your browser's print dialog.
-- **"Export as Word document"** (`#btnExportWord`) — opens the **"Export
-  Paper-Pencil Questionnaire"** modal, with layout options including a
-  participant ID line, a date field, showing authors & year, showing item
-  codes, and randomizing item order.
+- **"Print / PDF"** (`#btnPrintPreview`, tooltip "Print / Save as PDF") —
+  sends the current preview to your browser's print dialog.
+- **"Export Word"** (`#btnExportWord`, tooltip "Export as Word document") —
+  opens the **"Export Paper-Pencil Questionnaire"** modal, with layout
+  options including a participant ID line, a date field, showing authors &
+  year, showing item codes, and randomizing item order.
 
 ```{note}
 Word export needs the `python-docx` package installed.
