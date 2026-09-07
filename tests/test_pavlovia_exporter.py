@@ -8,10 +8,12 @@ from src.converters.pavlovia import (
     _safe_component_name,
     create_slider_component,
     create_textbox_component,
+    create_conditions_csv,
     build_psyexp_xml,
     export_to_pavlovia,
 )
 import xml.etree.ElementTree as ET
+import pandas as pd
 
 
 def test_extract_questions_reads_conditional_display_showwhen():
@@ -163,6 +165,36 @@ def test_create_textbox_component_basic():
     comp = create_textbox_component(q)
     assert comp["name"] == "notes"
     assert comp["prompt"] == "Anything else?"
+
+
+def test_create_conditions_csv_populates_question_type(tmp_path):
+    """question_type must come from determine_component_type, not the dead
+    'type' key extract_questions never produces (see review: this used to
+    always be an empty string)."""
+    questions = [
+        {"code": "rec_mood", "description": "Mood", "levels": {"1": "Low", "2": "High"}},
+        {"code": "rec_pain", "description": "Pain", "levels": {}, "scale_type": "vas"},
+        {"code": "notes", "description": "Notes", "levels": {}},
+    ]
+    csv_path = create_conditions_csv(questions, tmp_path)
+    df = pd.read_csv(csv_path)
+    by_code = df.set_index("question_code")["question_type"].to_dict()
+    assert by_code["rec_mood"] == "radio"
+    assert by_code["rec_pain"] == "slider"
+    assert by_code["notes"] == "free_text"
+
+
+def test_create_conditions_csv_no_dead_items_expansion(tmp_path):
+    """An 'items' key (a fictional array-subquestion concept extract_questions
+    never emits) must not be treated specially -- one row per question."""
+    questions = [
+        {"code": "q1", "description": "Q1", "levels": {}, "items": {"01": {}}},
+    ]
+    csv_path = create_conditions_csv(questions, tmp_path)
+    df = pd.read_csv(csv_path)
+    assert len(df) == 1
+    assert df.iloc[0]["question_code"] == "q1"
+    assert "parent_code" not in df.columns
 
 
 def _sample_questions():
