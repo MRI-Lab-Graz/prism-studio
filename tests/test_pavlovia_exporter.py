@@ -215,6 +215,26 @@ def test_build_psyexp_xml_adds_code_component_for_conditional_question():
     assert code_components[0].get("name") == "notes_condition"
 
 
+def test_build_psyexp_xml_condition_code_surfaces_text_not_bool_eval():
+    """The CodeComponent must not lie about gating visibility (see review):
+
+    it should surface the literal condition text as a comment for a
+    researcher to translate, not evaluate bool() on the condition string
+    (which is truthy for any non-empty string and never actually gates
+    anything).
+    """
+    xml_str = build_psyexp_xml("recovery", _sample_questions(), {})
+    root = ET.fromstring(xml_str)
+    code_component = next(root.iter("CodeComponent"))
+    begin_routine_val = next(
+        p.get("val") for p in code_component.iter("Param")
+        if p.get("name") == "Begin Routine"
+    )
+    assert "rec_mood == '1'" in begin_routine_val
+    assert "bool('rec_mood == \\'1\\'')" not in begin_routine_val
+    assert "bool(" not in begin_routine_val
+
+
 def test_build_psyexp_xml_single_routine_for_all_questions():
     xml_str = build_psyexp_xml("recovery", _sample_questions(), {})
     root = ET.fromstring(xml_str)
