@@ -70,9 +70,20 @@ documents the full set:
   pairs. Leave it blank for a continuous scale — see `rec_pain` below.
 - **DataType / MinValue / MaxValue** — the stored value's type and
   numeric bounds, used for validation whether or not `Scale_en` is filled
-  in.
+  in. `DataType` is a dropdown, not free text — click the cell and Excel
+  shows exactly three choices: `string`, `integer`, `float`.
 - **Units** — optional, only meaningful for a continuous item like the
-  VAS pain scale below.
+  VAS pain scale below. Also a dropdown: `ordinal`, `points`, `count`,
+  `percent`, `seconds`, `milliseconds`, `minutes`, `hours`, `days`.
+
+```{note}
+How do you know which columns are constrained versus free text? Click the
+cell — a small dropdown arrow appears on any column Excel restricts to a
+fixed list (here, `DataType` and `Units`; on `General` below, three more
+fields work the same way). No arrow means it's free text: type whatever
+you want, PRISM doesn't validate the content until you click **Validate**
+in the Template Editor.
+```
 
 | ItemID | Group | Description_en | Scale_en | DataType | MinValue | MaxValue | Units |
 |---|---|---|---|---|---|---|---|
@@ -107,8 +118,22 @@ expected.
 columns. The schema actually requires at least one `OriginalName_<lang>`
 field (`_de` or `_en`) plus `LicenseID`; filling in `OriginalName_en` below
 satisfies that on its own, so `OriginalName_de` doesn't need a value yet
-(German comes in a later chapter). Fill those two required fields plus the
-handful below that matter for this study:
+(German comes in a later chapter). Three of the fields below are
+dropdown-constrained the same way `DataType`/`Units` were on `Items` —
+`LicenseID`, `Respondent`, and `AdministrationMethod` — so their full
+option lists are spelled out here rather than left for you to discover by
+clicking around:
+
+- `LicenseID`: `CC-BY-4.0`, `CC-BY-SA-4.0`, `CC-BY-ND-4.0`, `CC-BY-NC-4.0`,
+  `CC-BY-NC-SA-4.0`, `CC-BY-NC-ND-4.0`, `MIT`, `Apache-2.0`,
+  `GPL-3.0-only`, `GPL-3.0-or-later`, `LGPL-3.0-only`, `BSD-3-Clause`,
+  `Unlicense`, `PDDL-1.0`, `CC0-1.0`, `Proprietary`, `Other`
+- `Respondent`: `self`, `clinician`, `parent`, `teacher`, `caregiver`,
+  `other`
+- `AdministrationMethod`: `online`, `paper`, `interview`, `phone`, `mixed`
+
+Fill the two required fields plus the handful below that matter for this
+study:
 
 | Field | Value |
 |---|---|
@@ -119,18 +144,21 @@ handful below that matter for this study:
 | `I18nLanguages` | en |
 | `I18nDefaultLanguage` | en |
 | `Respondent` | self |
-| `AdministrationMethod` | electronic |
+| `AdministrationMethod` | online |
 
 Every other `General` field can stay blank — leave `Version`, `Versions`,
-`SoftwarePlatform`, `SoftwareVersion`, and the rest as they are.
+`SoftwarePlatform`, `SoftwareVersion`, and the rest as they are. (Those
+two are dropdowns too, if you're curious later: `SoftwarePlatform` offers
+`LimeSurvey`, `PsychoPy`, `Pavlovia`, `Paper and Pencil`, `Other`, and
+`TranslationMethod` offers `forward-backward`, `committee`, `parallel`,
+`original`, `validated-translation` — neither needs a value yet.)
 
 `AdministrationMethod` is worth a pause: the shipped example workbook
-defaults this to `paper`, but Recovery Check-In is a digital, in-app
-check-in, so this chapter sets it to `electronic` instead. That's a
-deliberate choice made now because a later chapter in this series exports
-this same template to LimeSurvey, which expects an electronic
-administration method — changing it later would mean re-editing metadata
-you've already validated and saved.
+defaults this to `paper`, but Recovery Check-In is a digital check-in, so
+this chapter sets it to `online` instead. That's a deliberate choice made
+now because a later chapter in this series exports this same template to
+LimeSurvey, which is an online-administration tool — changing it later
+would mean re-editing metadata you've already validated and saved.
 
 ```{warning}
 Placeholder text like `n/a`, `NA`, or `null` in any cell — pandas (which
