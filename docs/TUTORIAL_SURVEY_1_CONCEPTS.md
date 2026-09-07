@@ -98,9 +98,8 @@ scratch project that the rest of this series builds on.
 
 ## What's next
 
-- Chapter 2: Prepare a New Questionnaire in Excel
-  (`TUTORIAL_SURVEY_2_EXCEL_TEMPLATE.md`) — fill in the Recovery Check-In
-  Full version and import it
-- Author a Survey (`TUTORIAL_SURVEY.md`) — back to the series overview
+- [Chapter 2: Prepare a New Questionnaire in Excel](TUTORIAL_SURVEY_2_EXCEL_TEMPLATE.md) —
+  fill in the Recovery Check-In Full version and import it
+- [Author a Survey](TUTORIAL_SURVEY.md) — back to the series overview
 - [Templates](TEMPLATES.md) — the full reference for the template JSON
   model this chapter introduced
