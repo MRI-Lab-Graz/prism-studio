@@ -12,6 +12,18 @@ flowchart LR
     L -.-> LS["🖥️ LimeSurvey<br/>(not covered here)"]
 ```
 
+## One export target, not the only one
+
+LimeSurvey gets this chapter because it's the one delivery tool fully
+wired into Studio today — a real export button, no code to write. It
+isn't the point of PRISM, though: the template you built in Chapters 2–5
+is the reusable core, and LimeSurvey export is one way to turn it into
+something people can actually fill out. The `SoftwarePlatform` field you
+set back in Chapter 2 already recognizes `PsychoPy` and `Pavlovia` as
+valid administration platforms alongside LimeSurvey — direct Pavlovia
+export is in progress but not yet reachable from the Studio GUI, which is
+the only reason this chapter doesn't walk through it too.
+
 ## Quick Export vs. Customize & Export
 
 Open `/survey-generator` — the app still calls this route `survey-generator`,
