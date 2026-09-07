@@ -652,7 +652,7 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
         })
-        .then(r => { if (r.ok) return r.blob(); throw new Error('Export failed'); })
+        .then(r => { if (r.ok) return r.blob(); return r.json().then(e => { throw new Error(e.error); }); })
         .then(blob => {
             const langSuffix = selectedExportLanguages.length > 1 ? selectedExportLanguages.join('_') : currentLanguage;
             downloadBlobObj(blob, `survey_export_${langSuffix}${cfg.fileExt}`);
