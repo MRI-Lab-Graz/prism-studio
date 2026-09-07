@@ -55,7 +55,12 @@ documents the full set:
 
 - **ItemID** — a unique, machine-readable identifier. It becomes the
   column name in every response file this template ever produces, so pick
-  something stable (`rec_mood`, not `Q1`).
+  something stable (`rec_mood`, not `Q1`). It must be unique within this
+  instrument: two rows sharing an `ItemID` don't raise an error, they
+  silently merge into one item and you lose whichever row's data didn't
+  win. PRISM doesn't check this against other templates already in your
+  project either, so an instrument-specific prefix (`rec_mood`, not just
+  `mood`) is worth the extra characters.
 - **Group** — which instrument this row belongs to. One workbook can
   define several instruments; every row sharing a `Group` value becomes
   one template.
