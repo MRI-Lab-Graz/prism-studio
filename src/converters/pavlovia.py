@@ -226,40 +226,21 @@ def create_textbox_component(question: Dict[str, Any]) -> Dict[str, str]:
 def create_conditions_csv(
     questions: List[Dict[str, Any]], output_dir: Path
 ) -> Optional[Path]:
-    """Create conditions spreadsheet for loop-based questions."""
+    """Create conditions spreadsheet listing each question's code, text, type, and levels."""
     conditions_data = []
 
     for q in questions:
-        if q.get("items"):
-            # Expand array questions into rows
-            for item_code, item_data in q["items"].items():
-                row = {
-                    "question_code": f"{q['code']}_{item_code}",
-                    "question_text": item_data.get("Description", ""),
-                    "parent_code": q["code"],
-                    "item_order": item_data.get("Order", 0),
-                }
+        row = {
+            "question_code": q["code"],
+            "question_text": q["description"],
+            "question_type": determine_component_type(q),
+        }
 
-                # Add levels if present
-                if q.get("levels"):
-                    for level_key, level_text in q["levels"].items():
-                        row[f"level_{level_key}"] = level_text
+        if q.get("levels"):
+            for level_key, level_text in q["levels"].items():
+                row[f"level_{level_key}"] = level_text
 
-                conditions_data.append(row)
-        else:
-            # Regular questions (one row each)
-            row = {
-                "question_code": q["code"],
-                "question_text": q["description"],
-                "question_type": q.get("type", ""),
-            }
-
-            # Add levels
-            if q.get("levels"):
-                for level_key, level_text in q["levels"].items():
-                    row[f"level_{level_key}"] = level_text
-
-            conditions_data.append(row)
+        conditions_data.append(row)
 
     if not conditions_data:
         return None
