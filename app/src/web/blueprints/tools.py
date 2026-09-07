@@ -68,6 +68,7 @@ from .tools_library_handlers import (
 from .tools_generation_handlers import (
     handle_generate_boilerplate_endpoint,
     handle_generate_lss_endpoint,
+    handle_generate_pavlovia_endpoint,
 )
 from .tools_post_conversion_handlers import (
     handle_fix_participants_bids,
@@ -2251,6 +2252,12 @@ def list_library_files():
 def generate_lss_endpoint():
     """Generate LSS from selected JSON files"""
     return handle_generate_lss_endpoint()
+
+
+@tools_bp.route("/api/generate-pavlovia", methods=["POST"])
+def generate_pavlovia_endpoint():
+    """Generate a Pavlovia/PsychoPy experiment from a selected PRISM JSON file"""
+    return handle_generate_pavlovia_endpoint()
 
 
 @tools_bp.route("/api/generate-boilerplate", methods=["POST"])

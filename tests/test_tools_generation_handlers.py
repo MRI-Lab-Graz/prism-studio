@@ -136,3 +136,40 @@ def test_handle_generate_lss_endpoint_survives_cleanup_failure(monkeypatch, tmp_
 
     assert response.status_code == 200
     assert response.data == b"<xml/>"
+
+
+def test_handle_generate_pavlovia_endpoint_returns_zip(monkeypatch, tmp_path) -> None:
+    handlers = importlib.import_module("src.web.blueprints.tools_generation_handlers")
+    exporter = importlib.import_module("src.converters.pavlovia")
+
+    source_file = tmp_path / "task-demo_survey.json"
+    source_file.write_text(
+        '{"Study": {"TaskName": "demo"}, "q1": {"Description": "Q1"}}',
+        encoding="utf-8",
+    )
+
+    def fake_export_to_pavlovia(json_path, output_dir, experiment_name=None):
+        output_dir.mkdir(parents=True, exist_ok=True)
+        psyexp_path = output_dir / "demo.psyexp"
+        psyexp_path.write_text("<PsychoPy2experiment/>", encoding="utf-8")
+        (output_dir / "conditions.csv").write_text("cond\n", encoding="utf-8")
+        (output_dir / "README.md").write_text("readme", encoding="utf-8")
+        return psyexp_path
+
+    monkeypatch.setattr(exporter, "export_to_pavlovia", fake_export_to_pavlovia)
+
+    app = Flask(__name__)
+    app.add_url_rule(
+        "/api/generate-pavlovia",
+        view_func=handlers.handle_generate_pavlovia_endpoint,
+        methods=["POST"],
+    )
+
+    with app.test_client() as client:
+        response = client.post(
+            "/api/generate-pavlovia",
+            json={"files": [{"path": str(source_file)}]},
+        )
+
+    assert response.status_code == 200
+    assert response.mimetype == "application/zip"
