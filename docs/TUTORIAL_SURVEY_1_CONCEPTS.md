@@ -10,6 +10,27 @@ flowchart LR
     B -- "Save to Project" --> C["🗂️ code/library/survey/<br/>this project's fork"]
 ```
 
+## Why a survey template?
+
+If you've never used PRISM before, "survey template" might sound like
+paperwork. It isn't — it's the one place your questionnaire gets written
+down as actual data instead of tribal knowledge. Without one, every study
+starts from a blank spreadsheet: someone invents column names on the spot,
+nobody remembers a year later whether `Q7` meant "the third item on page
+one" or a typo, and the exact wording or response scale a follow-up study
+needs to match was never written down anywhere.
+
+A template fixes that in one file: every item's exact wording, its response
+scale, which language(s) it exists in, and how it's scored — written once,
+machine-readable, reusable. The same template then drives real work later
+in this series: it exports straight to LimeSurvey for data collection
+(Chapter 6), gets checked automatically for mistakes before you trust it
+(Chapter 7), and turns every response file it produces into something
+self-documenting instead of a mystery spreadsheet. Everything else in this
+chapter — where templates live, what "official" vs. "project-local"
+means — is really just how PRISM keeps that one file organized and safe to
+reuse across studies.
+
 ## If you haven't done the Beginner tutorial
 
 You don't need to have completed [Getting Started](TUTORIAL_BEGINNER.md) to
@@ -19,7 +40,16 @@ chapters click faster: a PRISM project stores everything under a
 in `sub-*/ses-*/survey/`. `participant_id` is the value that ties a
 participant's survey answers to every other modality collected for them.
 Treat the Beginner tutorial as optional background, not a prerequisite —
-come back to it any time.
+come back to it any time. Concretely, once this series is done, one
+subject's data looks like this:
+
+```text
+recovery_check_in_demo/
+└── sub-001/
+    └── ses-01/
+        └── survey/
+            └── sub-001_ses-01_task-recovery_survey.tsv
+```
 
 ## Official vs. project-local templates
 

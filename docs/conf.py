@@ -36,6 +36,12 @@ exclude_patterns = [
     "QUICK_START.md",
 ]
 
+# sphinxcontrib.mermaid defaults every diagram's rendered SVG to a fixed
+# 500px height regardless of actual content size, which is why simple
+# diagrams (a 3-node flowchart, say) render with a large empty band above
+# the visible boxes. "auto" sizes the SVG to its own content instead.
+mermaid_height = "auto"
+
 # -- Options for HTML output -------------------------------------------------
 html_theme = "shibuya"
 html_static_path = ["_static", "img"]
