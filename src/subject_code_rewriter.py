@@ -371,7 +371,7 @@ class SubjectCodeRewriter:
             tokens=subject_tokens,
             example_token=example_subject,
             keep_fragment=keep_fragment,
-            token_prefix="sub-",
+            token_prefix="sub-",  # noqa: S106 - BIDS entity prefix, not a secret
             add_text=add_text,
             add_position=add_position,
             id_noun="subject ID",
