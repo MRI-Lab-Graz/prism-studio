@@ -83,6 +83,11 @@ def test_resolve_item_for_variant_applies_variant_scale_override():
     assert resolved["ScaleType"] == "vas"
 
 
+def test_resolve_item_for_variant_no_active_variant_does_not_exclude():
+    item = {"Description": "Q", "ApplicableVersions": ["full"]}
+    assert _resolve_item_for_variant(item, None) == item
+
+
 def test_extract_questions_resolves_language_and_excludes_wrong_variant():
     prism_json = {
         "Study": {"Version": "full"},
