@@ -31,11 +31,11 @@ set. (For a `short` export, you'd uncheck the five items that Chapter 5's
 
 Two buttons become active once a template is checked:
 
-- **"Quick Export (.lss)"** (`#generateLssBtn`) downloads a ready-to-import
-  file immediately, with default presentation — no grouping, no per-question
-  overrides, one page.
-- **"Customize & Export"** (`#customizeExportBtn`) hands the same selection
-  to the Survey Customizer first.
+- **"Quick Export (.lss)"** downloads a ready-to-import file immediately,
+  with default presentation — no grouping, no per-question overrides, one
+  page.
+- **"Customize & Export"** hands the same selection to the Survey Customizer
+  first.
 
 Both produce a valid `.lss`. This tutorial uses **Customize & Export**,
 because the point of this chapter is to show what's actually configurable
@@ -45,7 +45,7 @@ before the file leaves PRISM.
 
 The Customizer opens with a **Groups** panel on the left and the question
 list on the right. Click the **+** button at the top of the Groups panel
-(`#addGroupBtn`, tooltipped "Add new group") and create two groups:
+(tooltipped "Add new group") and create two groups:
 
 - **Recovery Ratings** — for the nine Likert items
 - **Pain** — for `rec_pain`
@@ -84,9 +84,9 @@ not the question's data model). For `rec_pain`, set:
 
 ## Matrix grouping
 
-Enable **"Group questions with identical options into matrices"**
-(`#matrixMode`) and **"Global matrix grouping (all identical options, not
-just consecutive)"** (`#globalMatrix`) — both are checked by default.
+Enable **"Group questions with identical options into matrices"** and
+**"Global matrix grouping (all identical options, not just consecutive)"**
+— both are checked by default.
 
 This only does something useful because of a fact Chapter 4 already
 established: all nine Recovery Ratings items share the exact same `Levels`
@@ -102,13 +102,12 @@ as Chapter 4 distinguished it.
 ## Welcome text and export
 
 Scroll to **LimeSurvey Survey Settings → Text & Messages**. Either write your
-own **Welcome Message** (`#lsWelcomeText`) and **End Message** (`#lsEndText`)
-by hand, or pick **"Standard Welcome"** from the template dropdown
-(`#lsWelcomeTemplate`) and a matching end-message template to populate both
-fields for you.
+own **Welcome Message** and **End Message** by hand, or pick **"Standard
+Welcome"** from the template dropdown and a matching end-message template to
+populate both fields for you.
 
 Then fill in **Survey Name** (required — this feeds the downloaded
-filename) and click **"Export Survey"** (`#exportBtn`). The browser downloads
+filename) and click **"Export Survey"**. The browser downloads
 a `.lss` file named from your Survey Name plus today's date; save or rename
 it to `recovery_full_en_de.lss` to keep this tutorial's naming convention
 going. That file is this chapter's deliverable — a complete LimeSurvey

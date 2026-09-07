@@ -71,36 +71,28 @@ own example override row (`Group: test, VariantID: 10-vas, ItemID: test001,
 ScaleType: vas, ...`) — the same row shape, applied to this study's own pain
 item.
 
-This isn't cosmetic. In `app/static/js/template-editor.js`,
-`detectQuestionType()` checks a fixed sequence of signals in order, and case
-3 — checked before the fallback that looks at a `Levels` map — is exactly
-this:
-
-```js
-// 3. VariantScale ScaleType
-const activeVariantId = getActiveVariantId(template);
-const scale = getVariantScaleForItem(item, activeVariantId);
-if (scale?.ScaleType === 'vas' || scale?.ScaleType === 'visual-analogue') return 'slider';
-```
-
-An item's `VariantScales` entry with `ScaleType: vas` for the active variant
-is the *only* thing that makes this function return `'slider'`. Without this
-override row, `rec_pain` keeps falling through to the numeric-field default
-no matter how the `MinValue`/`MaxValue` are set — the override row is the
-mechanism, not a formality.
+This isn't cosmetic. The Template Editor's question-type detection checks a
+fixed sequence of signals in order, and an item's `VariantScales` entry with
+`ScaleType: vas` (or `visual-analogue`) for the active variant is checked
+before the fallback that looks at a `Levels` map — and is the *only* thing
+that renders the item as a slider. Without this override row, `rec_pain`
+keeps falling through to the numeric-field default no matter how its
+`MinValue`/`MaxValue` are set — the override row is the mechanism, not a
+formality.
 
 ## Re-import and confirm both versions
 
-Re-import the updated workbook (**Import Template Source**), or, if you
-still have `survey-recovery.json` open from Chapter 3, apply the same three
-rows via **"Bulk Edit Items"** instead — whichever you already have in
-front of you. Then:
+Re-import the updated workbook (**Import Template Source**) — remembering
+that this also reverts any wording changes made only in the Template Editor,
+per the note in Chapter 4 — or, if you still have `survey-recovery.json`
+open from Chapter 3, apply the same three rows via **"Bulk Edit Items"**
+instead — whichever you already have in front of you. Then:
 
 1. Click **Validate**.
 2. Click **Save to Project**.
-3. Check the **Survey Variant:** selector (`#activeVariantSelect`), which now
-   appears above the item list showing both `full` and `short`. Switching it
-   filters the item list to that version's `ApplicableVersions`.
+3. Check the **Survey Variant:** selector, which now appears above the item
+   list showing both `full` and `short`. Switching it filters the item list
+   to that version's `ApplicableVersions`.
 4. Open the **Preview** tab with `full` active. `rec_pain` now renders as a
    slider, not a plain numeric input — the payoff from the override row
    above.
@@ -134,7 +126,7 @@ from Chapter 4 and turning its Preview into an actual slider control.
 ## What's next
 
 - [Chapter 6: LimeSurvey Export](TUTORIAL_SURVEY_6_LIMESURVEY_EXPORT.md) —
-  export this two-version, bilingual template to LimeSurvey, picking which
-  version to include
+  export this two-version, bilingual template to LimeSurvey, choosing which
+  items go into the export
 - [Excel Survey Template — Multiple Versions](EXCEL_TEMPLATE_ADVANCED.md) —
   the full `Variants` sheet reference this chapter only used a slice of

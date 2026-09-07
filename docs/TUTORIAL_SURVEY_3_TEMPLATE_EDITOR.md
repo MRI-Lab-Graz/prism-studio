@@ -47,8 +47,8 @@ validate, save. No workbook touched.
 ## Bulk Edit Items
 
 Editing nine items one at a time for a shared wording change is exactly the
-kind of repetition the Template Editor avoids. Open **"Bulk Edit Items"**
-(`#bulkEditSection`), check the 9 Likert items in the item list — every
+kind of repetition the Template Editor avoids. Open **"Bulk Edit Items"**,
+check the 9 Likert items in the item list — every
 Recovery Check-In item except `rec_pain`, which is the 0–100 VAS pain item
 and has no `Scale_en` to share — then set the change once in the Bulk Edit
 form (for example, tightening the shared
@@ -66,10 +66,10 @@ Bulk Edit applies to whichever items are checked in the list above it, or to
 Switch to the **Preview** tab to see the template rendered as a
 respondent would. Two export paths sit here, side by side:
 
-- **"Print / PDF"** (`#btnPrintPreview`, tooltip "Print / Save as PDF") —
-  sends the current preview to your browser's print dialog.
-- **"Export Word"** (`#btnExportWord`, tooltip "Export as Word document") —
-  opens the **"Export Paper-Pencil Questionnaire"** modal, with layout
+- **"Print / PDF"** (tooltip "Print / Save as PDF") — sends the current
+  preview to your browser's print dialog.
+- **"Export Word"** (tooltip "Export as Word document") — opens the
+  **"Export Paper-Pencil Questionnaire"** modal, with layout
   options including a participant ID line, a date field, showing authors &
   year, showing item codes, and randomizing item order.
 
@@ -79,11 +79,12 @@ Word export needs the `python-docx` package installed.
 
 ## What you just did
 
-You edited `survey-recovery.json` three different ways without opening
-Excel once: a single item's wording through the item list and Selected Item
-panel, a shared wording change across all nine Likert items through Bulk
-Edit, and the Study/Technical metadata through the Top-level panel — then
-previewed the result and exported it as a paper-pencil Word questionnaire.
+You edited `survey-recovery.json` two different ways without opening Excel
+once: a single item's wording through the item list and Selected Item panel,
+and a shared wording change across all nine Likert items through Bulk Edit.
+You also saw how the Study/Technical metadata surfaces as form fields in the
+Top-level panel — then previewed the result and exported it as a
+paper-pencil Word questionnaire.
 
 ## What's next
 

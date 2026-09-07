@@ -67,7 +67,7 @@ study called **Recovery Check-In**. It has a **Full** version — a 10-item
 evening, post-training-session check-in covering mood, soreness, sleep
 quality, motivation, stress, fatigue, appetite, hydration, and satisfaction
 (all 5-point Likert items), plus a pain intensity item on a 0–100 VAS
-(visual analog scale) — and a **Short** version, a 5-item same-day quick
+(visual analogue scale) — and a **Short** version, a 5-item same-day quick
 follow-up (mood, soreness, pain intensity, fatigue, sleep quality) that's a
 true subset of the Full item set. Later chapters make the study bilingual,
 English and German. For now, all you need is the project it will live in.
