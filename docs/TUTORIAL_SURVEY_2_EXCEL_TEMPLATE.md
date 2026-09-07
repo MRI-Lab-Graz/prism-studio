@@ -26,9 +26,14 @@ Start from the canonical blank workbook,
 [official/create_new_survey/survey_import_template.xlsx](../official/create_new_survey/survey_import_template.xlsx).
 
 Make a working copy — don't edit the official file in place. Save it as
-`recovery_survey_template.xlsx` somewhere convenient (your Desktop, a
-scratch folder — it doesn't need to be inside the PRISM project). Open the
-copy; you should see four sheets: `Items`, `General`, `Help`, `Variants`.
+`code/survey/recovery_survey_template.xlsx` **inside** the
+`recovery_check_in_demo` project (create the `code/survey/` folder if it
+doesn't exist yet) rather than somewhere outside it like your Desktop —
+this workbook is authoring material for the template, the same way
+`code/library/` holds the template itself and `code/recipes/` holds
+scoring recipes, and keeping it in the project means it travels with your
+DataLad history instead of living only on your machine. Open the copy; you
+should see four sheets: `Items`, `General`, `Help`, `Variants`.
 This chapter only fills in `Items` and `General` — `Variants` is for
 multi-version instruments (the Full/Short split), which a later chapter
 covers.
