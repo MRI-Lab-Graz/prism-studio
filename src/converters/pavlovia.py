@@ -393,7 +393,7 @@ def build_psyexp_xml(
 
     # Convert to pretty XML string
     xml_str = ET.tostring(root, encoding="unicode")
-    dom = minidom.parseString(xml_str)
+    dom = minidom.parseString(xml_str)  # nosec B318 - xml_str is self-generated above, not untrusted input
     pretty_xml = dom.toprettyxml(indent="  ")
 
     return pretty_xml
