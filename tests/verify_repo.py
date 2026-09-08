@@ -2450,6 +2450,41 @@ def check_dual_tree_drift(repo_path, fix=False):
         )
 
 
+def check_library_uniqueness(repo_path, fix=False):
+    """Hard-fail on item IDs duplicated across official/library/survey/.
+
+    library_validator.check_uniqueness() only warns (it's meant for a
+    contributor validating their own project library, where a shadowed
+    item may be intentional). The official library is different: it's the
+    merge target for external contributor PRs, so a collision there must
+    block the merge rather than just print a warning."""
+    print_header("Checking Official Library Item ID Uniqueness")
+
+    library_dir = Path(repo_path) / "official" / "library" / "survey"
+    if not library_dir.is_dir():
+        print_success(
+            "Library uniqueness check skipped (official/library/survey not found)."
+        )
+        return
+
+    repo_root = str(Path(repo_path).resolve())
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
+    from src.library_validator import LibraryValidator
+
+    var_map = LibraryValidator(str(library_dir)).get_all_library_variables()
+    duplicates = {k: v for k, v in var_map.items() if len(v) > 1}
+
+    if duplicates:
+        for var, file_list in sorted(duplicates.items()):
+            print_error(
+                f"Item ID '{var}' is defined in multiple official library files: "
+                f"{', '.join(sorted(file_list))}"
+            )
+    else:
+        print_success("All item IDs are unique across the official library.")
+
+
 CHECKS = {
     "git-status": check_git_status,
     "schema-sync": check_schema_sync,
@@ -2465,6 +2500,7 @@ CHECKS = {
     "system-file-filtering": check_system_file_filtering,
     "import-boundaries": check_import_boundaries,
     "dual-tree-drift": check_dual_tree_drift,
+    "library-uniqueness": check_library_uniqueness,
     "sensitive-files": check_sensitive_files,
     "large-files": check_large_files,
     "github-actions": check_github_actions,
@@ -2506,6 +2542,7 @@ DEFAULT_CHECK_PROFILES = {
         "system-file-filtering",
         "import-boundaries",
         "dual-tree-drift",
+        "library-uniqueness",
         "unsafe-patterns",
         "ruff",
         # Sub-second AST security lint, so it belongs in the fast profile that

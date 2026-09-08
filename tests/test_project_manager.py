@@ -3515,6 +3515,95 @@ class TestProjectManager(unittest.TestCase):
                 warnings,
             )
 
+    def test_export_project_to_plain_folder_materialize_repairs_partial_gap_from_source(self):
+        """One subject's subdataset materializes fine in the temporary clone; another's
+        does not (mirrors a real-world partial `datalad get -r` failure at multi-subject
+        scale). The whole-scope "did anything materialize" check can't see this gap
+        because most files DID materialize -- so per-file reconciliation against the
+        source project must fill it in rather than silently dropping it."""
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+            source_ok_file = project_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_T1w.nii.gz"
+            source_ok_file.parent.mkdir(parents=True, exist_ok=True)
+            source_ok_file.write_bytes(b"nifti-1")
+
+            source_gap_file = (
+                project_path / "sub-002" / "ses-1" / "survey" / "sub-002_ses-1_task-ads_survey.tsv"
+            )
+            source_gap_file.parent.mkdir(parents=True, exist_ok=True)
+            source_gap_file.write_bytes(b"score\n1\n")
+
+            export_root = Path(tmp) / "exports"
+            materialization_workspace = Path(tmp) / "materialized_workspace"
+
+            def _fake_run(command, **_kwargs):
+                normalized = [str(part) for part in command]
+                if len(normalized) >= 2 and normalized[0] == "/usr/bin/datalad" and normalized[1] == "clone":
+                    clone_path = Path(normalized[-1])
+                    clone_path.mkdir(parents=True, exist_ok=True)
+                    (clone_path / ".datalad").mkdir(parents=True, exist_ok=True)
+                    (clone_path / ".git").mkdir(parents=True, exist_ok=True)
+                    (clone_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+
+                    # sub-001's subdataset materialized fully.
+                    clone_ok_file = (
+                        clone_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_T1w.nii.gz"
+                    )
+                    clone_ok_file.parent.mkdir(parents=True, exist_ok=True)
+                    clone_ok_file.write_bytes(b"nifti-1")
+
+                    # sub-002's subdataset registered but never populated (the partial
+                    # `datalad get -r` failure this test reproduces).
+                    (clone_path / "sub-002").mkdir(parents=True, exist_ok=True)
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if normalized[0:2] == ["/usr/bin/datalad", "get"]:
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                if normalized[0:2] == ["/usr/bin/git-annex", "unlock"]:
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                return subprocess.CompletedProcess(command, 1, "", "unexpected command")
+
+            with patch.object(
+                manager,
+                "get_datalad_status",
+                return_value={
+                    "enabled": True,
+                    "available": True,
+                    "executable": "/usr/bin/datalad",
+                    "annex_executable": "/usr/bin/git-annex",
+                    "message": "Current project is tracked by DataLad.",
+                },
+            ):
+                with patch(
+                    "src.project_manager.tempfile.mkdtemp",
+                    return_value=str(materialization_workspace),
+                ):
+                    with patch("src.project_manager.subprocess.run", side_effect=_fake_run):
+                        result = manager.export_project_to_plain_folder(
+                            project_path,
+                            output_root=export_root,
+                            materialize_annex_content=True,
+                        )
+
+            self.assertTrue(result.get("success"), result)
+            output_path = Path(result["output_path"])
+            self.assertTrue(
+                (output_path / "sub-001" / "ses-1" / "anat" / "sub-001_ses-1_T1w.nii.gz").exists()
+            )
+            repaired_file = (
+                output_path / "sub-002" / "ses-1" / "survey" / "sub-002_ses-1_task-ads_survey.tsv"
+            )
+            self.assertTrue(repaired_file.exists(), "gap left by partial materialization was not repaired")
+            self.assertEqual(repaired_file.read_bytes(), b"score\n1\n")
+
     def test_export_project_to_plain_folder_materialize_gets_only_selected_scope_targets(self):
         manager = ProjectManager()
 
