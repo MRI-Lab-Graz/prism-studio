@@ -1,0 +1,9 @@
+# gitleaks config -- extends the default ruleset, does not replace it.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Fake BIDS labels used as test fixtures, not real credentials"
+paths = [
+  '''tests/test_token_rewrite_rules\.py''',
+]
