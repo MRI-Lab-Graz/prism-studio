@@ -22,6 +22,7 @@ import { escapeHtml } from '../../shared/dom.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { DEFAULT_REQUIRED_FIELDS_SCHEMA, normalizeRequiredFieldsSchema } from './study-metadata-required-fields.js';
 import { computeGlobalTierTotals } from './global-tier-totals.js';
+import { MISSING_FILE_REASON_OPTIONS, combineMissingFilesRow, parseMissingFilesValue } from './missing-files-row.js';
 
 function _getCurrentProjectState() {
     return getProjectStateSnapshot();
@@ -174,7 +175,7 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
 
         const missingData = sm.MissingData || {};
         document.getElementById('smMissingDesc').value = missingData.Description || '';
-        setTwoFieldList('smMissingFiles', missingData.MissingFiles || '');
+        setMissingFilesList(missingData.MissingFiles || '');
         setTwoFieldList('smKnownIssues', missingData.KnownIssues || '');
 
         document.getElementById('smReferencesText').value = Array.isArray(sm.References)
@@ -1471,19 +1472,13 @@ function initOverviewListFields() {
     });
 }
 
-// ===== TWO-FIELD TABLE ROWS (Missing Files / Known Issues) =====
-// Each row combines two short text values (e.g. "SubjectID | What's missing")
-// into a single "field1 | field2" line. Rows are joined with newlines into
-// the same hidden textarea format the backend already stores as plain text,
-// so no backend changes are needed for this UI-only structuring.
+// ===== TWO-FIELD TABLE ROWS (Known Issues) =====
+// Each row combines two short text values (e.g. "Filename | Issue") into a
+// single "field1 | field2" line. Rows are joined with newlines into the
+// same hidden textarea format the backend already stores as plain text, so
+// no backend changes are needed for this UI-only structuring.
 
 const TWO_FIELD_LIST_FIELDS = {
-    smMissingFiles: {
-        listId: 'smMissingFilesList',
-        addId: 'smMissingFilesAddRow',
-        field1Placeholder: 'Subject/session ID (e.g. sub-002, ses-2)',
-        field2Placeholder: "What's missing (e.g. T1w, task-rest)",
-    },
     smKnownIssues: {
         listId: 'smKnownIssuesList',
         addId: 'smKnownIssuesAddRow',
@@ -1607,6 +1602,180 @@ function initTwoFieldListFields() {
             addTwoFieldRow(fieldId);
         }
     });
+}
+
+// ===== MISSING FILES TABLE ROWS =====
+// Each row is Subject | Session | Modality | Reason | Detail, serialized the
+// same way the two-field rows are: joined with " | " into one line, rows
+// joined with newlines into the #smMissingFiles hidden field. Subject/
+// session/modality options come from the project's on-disk structure, the
+// same endpoint the Export section already uses for its filter pickers.
+
+let _missingFilesStructureOptions = { subjects: [], sessions: [], modalities: [] };
+
+function _populateMissingFilesSelect(selectEl, placeholderLabel, options, currentValue) {
+    if (!selectEl) return;
+    const values = Array.isArray(options) ? options.slice() : [];
+    if (currentValue && !values.includes(currentValue)) values.push(currentValue);
+
+    selectEl.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = placeholderLabel;
+    selectEl.appendChild(placeholder);
+    values.forEach(value => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        selectEl.appendChild(option);
+    });
+    selectEl.value = currentValue || '';
+}
+
+async function _loadMissingFilesStructureOptions() {
+    const projectPath = _getCurrentProjectPath();
+    if (!projectPath) return;
+
+    try {
+        const resp = await fetchWithApiFallback('/api/projects/export/structure', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ project_path: projectPath }),
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (!data.success) return;
+
+        _missingFilesStructureOptions = {
+            subjects: data.subjects || [],
+            sessions: data.sessions || [],
+            modalities: data.modalities || [],
+        };
+
+        document.querySelectorAll('#smMissingFilesList .missing-files-row').forEach(row => {
+            _populateMissingFilesSelect(row.querySelector('.missing-files-subject'), 'Subject...', _missingFilesStructureOptions.subjects, row.dataset.subject);
+            _populateMissingFilesSelect(row.querySelector('.missing-files-session'), 'Session...', _missingFilesStructureOptions.sessions, row.dataset.session);
+            _populateMissingFilesSelect(row.querySelector('.missing-files-modality'), 'Modality...', _missingFilesStructureOptions.modalities, row.dataset.modality);
+        });
+    } catch (e) {
+        // Offline or no active project yet; selects just keep their placeholder-only options.
+    }
+}
+
+function _syncMissingFilesField() {
+    const hiddenField = document.getElementById('smMissingFiles');
+    const list = document.getElementById('smMissingFilesList');
+    if (!hiddenField || !list) return;
+
+    const values = Array.from(list.querySelectorAll('.missing-files-row'))
+        .map(row => combineMissingFilesRow({
+            subject: row.querySelector('.missing-files-subject')?.value || '',
+            session: row.querySelector('.missing-files-session')?.value || '',
+            modality: row.querySelector('.missing-files-modality')?.value || '',
+            reason: row.querySelector('.missing-files-reason')?.value || '',
+            detail: row.querySelector('.missing-files-detail')?.value || '',
+        }))
+        .filter(Boolean);
+    hiddenField.value = values.join('\n');
+    updateCreateProjectButton();
+}
+
+function addMissingFilesRow(fields = {}) {
+    const list = document.getElementById('smMissingFilesList');
+    if (!list) return;
+
+    const row = document.createElement('div');
+    row.className = 'input-group input-group-sm missing-files-row';
+    row.dataset.subject = fields.subject || '';
+    row.dataset.session = fields.session || '';
+    row.dataset.modality = fields.modality || '';
+
+    const subjectSelect = document.createElement('select');
+    subjectSelect.className = 'form-select missing-files-subject';
+    const sessionSelect = document.createElement('select');
+    sessionSelect.className = 'form-select missing-files-session';
+    const modalitySelect = document.createElement('select');
+    modalitySelect.className = 'form-select missing-files-modality';
+    _populateMissingFilesSelect(subjectSelect, 'Subject...', _missingFilesStructureOptions.subjects, fields.subject);
+    _populateMissingFilesSelect(sessionSelect, 'Session...', _missingFilesStructureOptions.sessions, fields.session);
+    _populateMissingFilesSelect(modalitySelect, 'Modality...', _missingFilesStructureOptions.modalities, fields.modality);
+
+    const reasonSelect = document.createElement('select');
+    reasonSelect.className = 'form-select missing-files-reason';
+    MISSING_FILE_REASON_OPTIONS.forEach(({ value, label }) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        reasonSelect.appendChild(option);
+    });
+    reasonSelect.value = fields.reason || '';
+
+    const detailInput = document.createElement('input');
+    detailInput.type = 'text';
+    detailInput.className = 'form-control missing-files-detail';
+    detailInput.placeholder = 'Detail (optional)';
+    detailInput.value = fields.detail || '';
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'btn btn-outline-danger missing-files-row-remove';
+    removeButton.setAttribute('aria-label', 'Remove entry');
+    removeButton.innerHTML = '<i class="fas fa-times"></i>';
+
+    const onChange = () => _syncMissingFilesField();
+    [subjectSelect, sessionSelect, modalitySelect, reasonSelect].forEach(el => el.addEventListener('change', onChange));
+    detailInput.addEventListener('input', onChange);
+
+    removeButton.addEventListener('click', () => {
+        row.remove();
+        if (!list.querySelector('.missing-files-row')) {
+            addMissingFilesRow();
+        }
+        _syncMissingFilesField();
+    });
+
+    row.appendChild(subjectSelect);
+    row.appendChild(sessionSelect);
+    row.appendChild(modalitySelect);
+    row.appendChild(reasonSelect);
+    row.appendChild(detailInput);
+    row.appendChild(removeButton);
+    list.appendChild(row);
+    _syncMissingFilesField();
+}
+
+function setMissingFilesList(rawValue) {
+    const list = document.getElementById('smMissingFilesList');
+    if (!list) return;
+
+    list.innerHTML = '';
+    const entries = parseMissingFilesValue(rawValue);
+    if (!entries.length) {
+        addMissingFilesRow();
+        return;
+    }
+
+    entries.forEach(entry => addMissingFilesRow(entry));
+    _syncMissingFilesField();
+}
+
+function initMissingFilesListField() {
+    const addButton = document.getElementById('smMissingFilesAddRow');
+    if (addButton && !addButton.dataset.bound) {
+        addButton.dataset.bound = '1';
+        addButton.addEventListener('click', () => {
+            addMissingFilesRow();
+            const list = document.getElementById('smMissingFilesList');
+            const lastSelect = list?.querySelector('.missing-files-row:last-child .missing-files-subject');
+            lastSelect?.focus();
+        });
+    }
+
+    const list = document.getElementById('smMissingFilesList');
+    if (list && !list.querySelector('.missing-files-row')) {
+        addMissingFilesRow();
+    }
+    _loadMissingFilesStructureOptions();
 }
 
 // ===== RECRUITMENT LOCATIONS =====
@@ -4012,6 +4181,7 @@ document.addEventListener('DOMContentLoaded', function() {
         metadataLoadToken += 1;
         metadataMethodsController.handleProjectChanged();
         _resetStudyMetadataTracking();
+        _loadMissingFilesStructureOptions();
         if (!studyMetadataSubmitInFlight) {
             updateCreateProjectButton();
         }
@@ -4019,6 +4189,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initOverviewListFields();
     initFundingRows();
     initTwoFieldListFields();
+    initMissingFilesListField();
     initRecMethodPicker();
     toggleRecLocationInputs();
     initYearMonthSelect('smRecPeriodStartYear', 'smRecPeriodStartMonth');

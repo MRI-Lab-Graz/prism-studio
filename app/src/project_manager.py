@@ -2922,8 +2922,8 @@ class ProjectManager:
                     return dst
                 raise
 
-        def _count_visible_scoped_subject_files(root_path: Path) -> int:
-            visible_file_count = 0
+        def _collect_visible_scoped_subject_files(root_path: Path) -> Set[str]:
+            visible_files: Set[str] = set()
             for current_dir_raw, dir_names, file_names in os.walk(root_path):
                 current_dir = Path(current_dir_raw)
                 try:
@@ -2960,9 +2960,9 @@ class ProjectManager:
 
                     candidate = current_dir / file_name
                     if candidate.exists() and candidate.is_file():
-                        visible_file_count += 1
+                        visible_files.add(Path(*rel_parts).as_posix())
 
-            return visible_file_count
+            return visible_files
 
         try:
             self._emit_backend_progress(
@@ -2988,48 +2988,49 @@ class ProjectManager:
                 )
 
         if materialized_export and copy_source_path != project_path:
-            exported_visible_subject_files = _count_visible_scoped_subject_files(
-                export_path
-            )
-            source_visible_subject_files = _count_visible_scoped_subject_files(
-                project_path
-            )
+            # The temporary clone can materialize the vast majority of the selected
+            # scope while still silently dropping a handful of files (e.g. a single
+            # subject's subdataset failing to install during a large recursive
+            # `datalad get -r`). Reconcile per-file against the real source project
+            # rather than only checking whether *anything* materialized -- a
+            # whole-scope check can't see a gap that leaves most files intact.
+            exported_scoped_files = _collect_visible_scoped_subject_files(export_path)
+            source_scoped_files = _collect_visible_scoped_subject_files(project_path)
+            missing_scoped_files = sorted(source_scoped_files - exported_scoped_files)
 
-            if (
-                exported_visible_subject_files == 0
-                and source_visible_subject_files > 0
-            ):
-                materialization_warnings.append(
-                    "Materialized temporary clone export contained no scoped subject files; "
-                    "retrying scoped copy directly from source project files."
+            if missing_scoped_files:
+                self._emit_backend_progress(
+                    f"Repairing {len(missing_scoped_files)} file(s) missing from the "
+                    "temporary clone directly from the source project.",
+                    command=f'cp -a "{project_path}"/... "{export_path}"/...',
                 )
 
-                try:
-                    shutil.rmtree(export_path, ignore_errors=True)
-                except Exception:
-                    pass
+                unrepaired_files: List[str] = []
+                for rel_path in missing_scoped_files:
+                    source_file = project_path / rel_path
+                    dest_file = export_path / rel_path
+                    try:
+                        dest_file.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(source_file, dest_file)
+                    except OSError:
+                        unrepaired_files.append(rel_path)
 
-                missing_source_paths = []
-                copy_source_path = project_path
-                try:
-                    self._emit_backend_progress(
-                        (
-                            "Retrying filesystem copy from source project because "
-                            "temporary clone did not expose scoped subject files."
-                        ),
-                        command=f'cp -a "{copy_source_path}" "{export_path}"',
+                if unrepaired_files:
+                    result["error"] = (
+                        "Folder export could not materialize "
+                        f"{len(unrepaired_files)} selected file(s), even directly from "
+                        "the source project: " + ", ".join(unrepaired_files[:20])
+                        + (" ..." if len(unrepaired_files) > 20 else "")
                     )
-                    shutil.copytree(
-                        copy_source_path,
-                        export_path,
-                        copy_function=_copy_with_missing_tolerance,
-                        ignore=_ignore,
-                        symlinks=False,
-                        ignore_dangling_symlinks=False,
-                    )
-                except Exception as exc:
-                    result["error"] = f"Could not export project folder: {exc}"
                     return result
+
+                materialization_warnings.append(
+                    "Temporary clone materialization was missing "
+                    f"{len(missing_scoped_files)} selected file(s); repaired directly "
+                    "from the source project: "
+                    + ", ".join(missing_scoped_files[:20])
+                    + (" ..." if len(missing_scoped_files) > 20 else "")
+                )
 
         scrubbed_sidecars = 0
         scrubbed_fields = 0

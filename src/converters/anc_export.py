@@ -624,7 +624,7 @@ class ANCExporter:
             "ADDITIONAL_DATA": "Not specified",
             "LOCATION_INFO": "Not specified",
             "MISSING_DATA_DESCRIPTION": "No known missing data",
-            "MISSING_FILES_TABLE": "| | |",
+            "MISSING_FILES_TABLE": "| | | | | |",
             "KNOWN_ISSUES_TABLE": "| | |",
             "ADDITIONAL_NOTES": "This dataset was created using PRISM Studio and exported for AND submission.",
             "DATA_AGREEMENT": "Contact dataset authors for data use agreement",
