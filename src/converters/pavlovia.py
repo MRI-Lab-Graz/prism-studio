@@ -13,7 +13,7 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 from xml.etree import ElementTree as ET
 try:
     from defusedxml import minidom
@@ -272,23 +272,24 @@ def create_psychopy_form_item(question: Dict[str, Any]) -> Dict[str, Any]:
     return item
 
 
-def build_psyexp_xml(
+def build_psyexp_xml_grouped(
     task_name: str,
-    questions: List[Dict[str, Any]],
+    routine_groups: List[Tuple[str, List[Dict[str, Any]]]],
     prism_metadata: Dict[str, Any],
 ) -> str:
-    """Build the PsychoPy .psyexp XML structure.
+    """Build the PsychoPy .psyexp XML structure from one or more question routines.
 
     This creates a minimal but functional experiment with:
     - Welcome screen
-    - A single "questions" routine holding a real component per question
+    - One question routine per (routine_name, questions) pair in
+      routine_groups, each holding a real component per question
       (SliderComponent/TextboxComponent/shared FormComponent, per
-      determine_component_type), each with an optional CodeComponent for a
+      determine_component_type), plus an optional CodeComponent for a
       non-null condition -- this only surfaces the PRISM condition text as a
       TODO comment for a researcher to translate manually; it does not gate
       visibility automatically
     - Thank you screen
-    - Flow connecting all routines
+    - Flow connecting all routines, in routine_groups order
     """
 
     root = ET.Element("PsychoPy2experiment")
@@ -311,7 +312,6 @@ def build_psyexp_xml(
 
     welcome_text = ET.SubElement(welcome_routine, "TextComponent")
     welcome_text.set("name", "welcome_text")
-    # Add text component parameters
     _add_component_param(welcome_text, "text", f"Welcome to {task_name}")
     _add_component_param(welcome_text, "pos", "[0, 0]")
     _add_component_param(welcome_text, "height", "0.05")
@@ -321,50 +321,50 @@ def build_psyexp_xml(
     _add_component_param(welcome_key, "keys", "['space']")
     _add_component_param(welcome_key, "text", "Press SPACE to continue")
 
-    # 2. Question routine (single routine for all questions -- Position.Group
-    # doesn't exist in real template JSON, see plan's "What changed from v1")
-    routine = ET.SubElement(routines, "Routine")
-    routine.set("name", "questions")
+    # 2. One question routine per routine_groups entry
+    for routine_name, questions in routine_groups:
+        routine = ET.SubElement(routines, "Routine")
+        routine.set("name", routine_name)
 
-    form_items = []
-    for q in questions:
-        component_type = determine_component_type(q)
-        safe_name = _safe_component_name(q["code"])
+        form_items = []
+        for q in questions:
+            component_type = determine_component_type(q)
+            safe_name = _safe_component_name(q["code"])
 
-        if component_type == "slider":
-            component = ET.SubElement(routine, "SliderComponent")
-            component.set("name", safe_name)
-            slider_params = create_slider_component(q)
-            for key, value in slider_params.items():
-                if key != "name":
-                    _add_component_param(component, key, value)
-        elif component_type == "free_text":
-            component = ET.SubElement(routine, "TextboxComponent")
-            component.set("name", safe_name)
-            textbox_params = create_textbox_component(q)
-            for key, value in textbox_params.items():
-                if key != "name":
-                    _add_component_param(component, key, value)
-        else:
-            # radio / dropdown -- batch into the shared form item list
-            form_items.append(create_psychopy_form_item(q))
+            if component_type == "slider":
+                component = ET.SubElement(routine, "SliderComponent")
+                component.set("name", safe_name)
+                slider_params = create_slider_component(q)
+                for key, value in slider_params.items():
+                    if key != "name":
+                        _add_component_param(component, key, value)
+            elif component_type == "free_text":
+                component = ET.SubElement(routine, "TextboxComponent")
+                component.set("name", safe_name)
+                textbox_params = create_textbox_component(q)
+                for key, value in textbox_params.items():
+                    if key != "name":
+                        _add_component_param(component, key, value)
+            else:
+                # radio / dropdown -- batch into the shared form item list
+                form_items.append(create_psychopy_form_item(q))
 
-        if q.get("condition"):
-            code_component = ET.SubElement(routine, "CodeComponent")
-            code_component.set("name", f"{safe_name}_condition")
-            _add_component_param(
-                code_component, "Begin Routine",
-                "# TODO: this question is conditionally displayed in PRISM:\n"
-                f"# {q['condition']}\n"
-                "# Translate this into PsychoPy/JS logic to gate visibility.\n"
-                f"{safe_name}_visible = True",
-            )
+            if q.get("condition"):
+                code_component = ET.SubElement(routine, "CodeComponent")
+                code_component.set("name", f"{safe_name}_condition")
+                _add_component_param(
+                    code_component, "Begin Routine",
+                    "# TODO: this question is conditionally displayed in PRISM:\n"
+                    f"# {q['condition']}\n"
+                    "# Translate this into PsychoPy/JS logic to gate visibility.\n"
+                    f"{safe_name}_visible = True",
+                )
 
-    if form_items:
-        form_component = ET.SubElement(routine, "FormComponent")
-        form_component.set("name", "form_questions")
-        _add_component_param(form_component, "items", str(form_items))
-        _add_component_param(form_component, "randomize", "False")
+        if form_items:
+            form_component = ET.SubElement(routine, "FormComponent")
+            form_component.set("name", f"form_{routine_name}")
+            _add_component_param(form_component, "items", str(form_items))
+            _add_component_param(form_component, "randomize", "False")
 
     # 3. Thank you routine
     thanks_routine = ET.SubElement(routines, "Routine")
@@ -379,15 +379,13 @@ def build_psyexp_xml(
     # Flow
     flow = ET.SubElement(root, "Flow")
 
-    # Add welcome
     flow_item = ET.SubElement(flow, "Routine")
     flow_item.set("name", "welcome")
 
-    # Add the single question routine
-    flow_item = ET.SubElement(flow, "Routine")
-    flow_item.set("name", "questions")
+    for routine_name, _questions in routine_groups:
+        flow_item = ET.SubElement(flow, "Routine")
+        flow_item.set("name", routine_name)
 
-    # Add thanks
     flow_item = ET.SubElement(flow, "Routine")
     flow_item.set("name", "thanks")
 
@@ -397,6 +395,19 @@ def build_psyexp_xml(
     pretty_xml = dom.toprettyxml(indent="  ")
 
     return pretty_xml
+
+
+def build_psyexp_xml(
+    task_name: str,
+    questions: List[Dict[str, Any]],
+    prism_metadata: Dict[str, Any],
+) -> str:
+    """Build a single-routine .psyexp -- the CLI/single-file export path.
+
+    Thin wrapper over build_psyexp_xml_grouped with one routine named
+    "questions", preserving this function's original single-routine output.
+    """
+    return build_psyexp_xml_grouped(task_name, [("questions", questions)], prism_metadata)
 
 
 def _add_component_param(component: ET.Element, name: str, value: str) -> None:

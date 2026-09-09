@@ -10,6 +10,7 @@ from src.converters.pavlovia import (
     create_textbox_component,
     create_conditions_csv,
     build_psyexp_xml,
+    build_psyexp_xml_grouped,
     export_to_pavlovia,
 )
 import xml.etree.ElementTree as ET
@@ -280,6 +281,29 @@ def test_build_psyexp_xml_single_routine_for_all_questions():
         r for r in routines_section.iter("Routine") if r.get("name") not in ("welcome", "thanks")
     ]
     assert len(question_routines) == 1
+
+
+def test_build_psyexp_xml_grouped_one_routine_per_group():
+    group_a = [{"code": "q1", "description": "Q1", "levels": {}, "mandatory": True, "condition": None}]
+    group_b = [{"code": "q2", "description": "Q2", "levels": {}, "mandatory": True, "condition": None}]
+
+    xml_str = build_psyexp_xml_grouped("combo", [("groupA", group_a), ("groupB", group_b)], {})
+    root = ET.fromstring(xml_str)
+
+    routines_section = root.find("Routines")
+    routine_names = [r.get("name") for r in routines_section.findall("Routine")]
+    assert routine_names == ["welcome", "groupA", "groupB", "thanks"]
+
+    flow = root.find("Flow")
+    flow_names = [r.get("name") for r in flow.findall("Routine")]
+    assert flow_names == ["welcome", "groupA", "groupB", "thanks"]
+
+
+def test_build_psyexp_xml_wraps_grouped_with_single_questions_routine():
+    questions = _sample_questions()
+    assert build_psyexp_xml("recovery", questions, {}) == build_psyexp_xml_grouped(
+        "recovery", [("questions", questions)], {}
+    )
 
 
 def test_export_to_pavlovia_end_to_end(tmp_path):
