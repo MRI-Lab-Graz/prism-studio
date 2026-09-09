@@ -81,7 +81,7 @@
                     <div class="export-option">
                         <label class="form-label fw-bold">Survey Name <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="surveyName" placeholder="Enter survey name" required>
-                        <small class="text-muted">This name will appear as the survey title in LimeSurvey</small>
+                        <small class="text-muted">This name will appear as the survey/experiment title in the exported file</small>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -89,6 +89,7 @@
                         <label class="form-label fw-bold">Target Tool</label>
                         <select class="form-select" id="targetTool">
                             <option value="limesurvey" selected>LimeSurvey</option>
+                            <option value="pavlovia">Pavlovia/PsychoPy</option>
                             <!-- Future: <option value="redcap">REDCap</option> -->
                             <!-- Future: <option value="qualtrics">Qualtrics</option> -->
                         </select>
@@ -101,6 +102,7 @@
                             <span class="lang-tag base">EN</span>
                         </div>
                         <small class="text-muted">Set from Survey Generator</small>
+                        <small class="text-muted d-none" id="pavloviaLanguageNote">Pavlovia export uses the base language only.</small>
                     </div>
                 </div>
             </div>
@@ -110,10 +112,11 @@
                         <label class="form-label">Export Format</label>
                         <select class="form-select" id="exportFormat">
                             <option value="limesurvey" selected>LimeSurvey (.lss)</option>
+                            <option value="pavlovia">Pavlovia (.zip)</option>
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4 limesurvey-only">
                     <div class="export-option">
                         <label class="form-label">LimeSurvey Version
                             <a href="#" data-bs-toggle="tooltip" data-bs-placement="top"
@@ -138,7 +141,7 @@
                     </div>
                 </div>
             </div>
-            <div class="row mt-2">
+            <div class="row mt-2 limesurvey-only">
                 <div class="col-md-6">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="matrixMode" checked>
@@ -172,7 +175,7 @@
         </div>
 
         <!-- LimeSurvey Survey Settings -->
-        <div class="ls-settings-section" id="lsSettingsSection">
+        <div class="ls-settings-section limesurvey-only" id="lsSettingsSection">
             <div class="accordion" id="lsSettingsAccordion">
                 <!-- Header -->
                 <h5 class="mb-2 mt-3">
