@@ -293,19 +293,20 @@ class ReadmeGenerator:
             miss_desc if miss_desc else "No known missing data"
         )
 
-        # Format missing files table
+        # Format missing files table (Subject | Session | Modality | Reason | Detail)
         miss_files = missing_data.get("MissingFiles", "")
         if miss_files:
             table_rows = []
             for line in miss_files.strip().split("\n"):
                 if "|" in line:
-                    parts = line.split("|", 1)
-                    table_rows.append(f"{parts[0].strip()} | {parts[1].strip()}")
+                    parts = [p.strip() for p in line.split("|")]
+                    parts += [""] * (5 - len(parts))
+                    table_rows.append("| " + " | ".join(parts[:5]) + " |")
             metadata["MISSING_FILES_TABLE"] = (
-                "\n".join(table_rows) if table_rows else "| | |"
+                "\n".join(table_rows) if table_rows else "| | | | | |"
             )
         else:
-            metadata["MISSING_FILES_TABLE"] = "| | |"
+            metadata["MISSING_FILES_TABLE"] = "| | | | | |"
 
         # Format known issues table
         known_issues = missing_data.get("KnownIssues", "")

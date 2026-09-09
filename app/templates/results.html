@@ -555,7 +555,11 @@
                 <hr>
                 <div class="mb-3">
                     <div class="small text-muted mb-2 text-uppercase fw-bold">Modalities & Content</div>
-                    {% for modality, count in dataset_stats.modalities.items() %}
+                    {% set mri_modality_order = ['anat', 'func', 'dwi', 'fmap'] %}
+                    {% set ordered_modalities = mri_modality_order | select('in', dataset_stats.modalities) | list
+                        + (dataset_stats.modalities.keys() | reject('in', mri_modality_order) | list) %}
+                    {% for modality in ordered_modalities %}
+                    {% set count = dataset_stats.modalities[modality] %}
                     <div class="mb-2">
                         <div class="d-flex justify-content-between mb-1">
                             <span>

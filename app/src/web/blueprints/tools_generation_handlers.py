@@ -2,6 +2,7 @@ import io
 import os
 import sys
 import tempfile
+import zipfile
 from pathlib import Path
 
 from flask import current_app, jsonify, request, send_file
@@ -108,6 +109,61 @@ def handle_generate_lss_endpoint():
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+def handle_generate_pavlovia_endpoint():
+    """Generate a Pavlovia/PsychoPy experiment .zip from a selected PRISM JSON file."""
+    try:
+        from src.converters.pavlovia import export_to_pavlovia
+    except ImportError:
+        export_to_pavlovia = None
+
+    if not export_to_pavlovia:
+        return jsonify({"error": "Pavlovia exporter not available"}), 500
+
+    try:
+        data, payload_error = _require_json_object_payload()
+        if payload_error is not None:
+            return payload_error
+
+        file_paths = _extract_file_paths(data.get("files", []))
+        if not file_paths:
+            return jsonify({"error": "No files selected"}), 400
+        if len(file_paths) > 1:
+            return jsonify(
+                {"error": "Pavlovia export supports one survey file at a time"}
+            ), 400
+
+        json_path = Path(file_paths[0])
+        if not json_path.exists():
+            return jsonify({"error": "File not found"}), 404
+
+        experiment_name = data.get("experiment_name") or None
+        language = data.get("base_language") or data.get("language")
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_dir = Path(tmp_dir) / "export"
+            export_to_pavlovia(json_path, output_dir, experiment_name, language=language)
+
+            zip_fd, zip_path = tempfile.mkstemp(suffix=".zip")
+            os.close(zip_fd)
+            with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+                for file_path in output_dir.rglob("*"):
+                    if file_path.is_file():
+                        zf.write(file_path, file_path.relative_to(output_dir))
+
+            download_filename = f"{output_dir.name}_pavlovia.zip"
+
+        response = send_file(
+            zip_path,
+            as_attachment=True,
+            download_name=download_filename,
+            mimetype="application/zip",
+        )
+        response.call_on_close(lambda: os.unlink(zip_path))
+        return response
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
 
 
 def handle_generate_boilerplate_endpoint():

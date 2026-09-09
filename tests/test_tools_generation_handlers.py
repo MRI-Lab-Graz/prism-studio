@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import importlib
+import io
+import json
 import os
 import sys
 import types
+import zipfile
 from pathlib import Path
 
 from flask import Flask
@@ -136,3 +139,125 @@ def test_handle_generate_lss_endpoint_survives_cleanup_failure(monkeypatch, tmp_
 
     assert response.status_code == 200
     assert response.data == b"<xml/>"
+
+
+def test_handle_generate_pavlovia_endpoint_returns_zip(monkeypatch, tmp_path) -> None:
+    handlers = importlib.import_module("src.web.blueprints.tools_generation_handlers")
+    exporter = importlib.import_module("src.converters.pavlovia")
+
+    source_file = tmp_path / "task-demo_survey.json"
+    source_file.write_text(
+        '{"Study": {"TaskName": "demo"}, "q1": {"Description": "Q1"}}',
+        encoding="utf-8",
+    )
+
+    def fake_export_to_pavlovia(json_path, output_dir, experiment_name=None, language=None):
+        output_dir.mkdir(parents=True, exist_ok=True)
+        psyexp_path = output_dir / "demo.psyexp"
+        psyexp_path.write_text("<PsychoPy2experiment/>", encoding="utf-8")
+        (output_dir / "conditions.csv").write_text("cond\n", encoding="utf-8")
+        (output_dir / "README.md").write_text("readme", encoding="utf-8")
+        return psyexp_path
+
+    monkeypatch.setattr(exporter, "export_to_pavlovia", fake_export_to_pavlovia)
+
+    app = Flask(__name__)
+    app.add_url_rule(
+        "/api/generate-pavlovia",
+        view_func=handlers.handle_generate_pavlovia_endpoint,
+        methods=["POST"],
+    )
+
+    with app.test_client() as client:
+        response = client.post(
+            "/api/generate-pavlovia",
+            json={"files": [{"path": str(source_file)}]},
+        )
+
+    assert response.status_code == 200
+    assert response.mimetype == "application/zip"
+
+
+def test_handle_generate_pavlovia_endpoint_passes_base_language(monkeypatch, tmp_path) -> None:
+    """The GUI's Base Language dropdown (sent as base_language) must reach
+    export_to_pavlovia's language= param -- previously it was silently
+    dropped (see review)."""
+    handlers = importlib.import_module("src.web.blueprints.tools_generation_handlers")
+    exporter = importlib.import_module("src.converters.pavlovia")
+
+    source_file = tmp_path / "task-demo_survey.json"
+    source_file.write_text(
+        '{"Study": {"TaskName": "demo"}, "q1": {"Description": {"en": "Q1", "de": "F1"}}}',
+        encoding="utf-8",
+    )
+
+    received = {}
+
+    def fake_export_to_pavlovia(json_path, output_dir, experiment_name=None, language=None):
+        received["language"] = language
+        output_dir.mkdir(parents=True, exist_ok=True)
+        psyexp_path = output_dir / "demo.psyexp"
+        psyexp_path.write_text(
+            f"<PsychoPy2experiment><Param val='{language}'/></PsychoPy2experiment>",
+            encoding="utf-8",
+        )
+        return psyexp_path
+
+    monkeypatch.setattr(exporter, "export_to_pavlovia", fake_export_to_pavlovia)
+
+    app = Flask(__name__)
+    app.add_url_rule(
+        "/api/generate-pavlovia",
+        view_func=handlers.handle_generate_pavlovia_endpoint,
+        methods=["POST"],
+    )
+
+    with app.test_client() as client:
+        response = client.post(
+            "/api/generate-pavlovia",
+            json={"files": [{"path": str(source_file)}], "base_language": "de"},
+        )
+
+    assert response.status_code == 200
+    assert received["language"] == "de"
+
+
+def test_handle_generate_pavlovia_endpoint_base_language_reaches_zip_content(
+    tmp_path,
+) -> None:
+    """End-to-end (real exporter, no monkeypatch): base_language: 'de'
+    actually produces German question text in the exported .psyexp, not the
+    template's own DefaultLanguage/'en'."""
+    handlers = importlib.import_module("src.web.blueprints.tools_generation_handlers")
+
+    source_file = tmp_path / "task-demo_survey.json"
+    source_file.write_text(
+        json.dumps(
+            {
+                "I18n": {"Languages": ["en", "de"], "DefaultLanguage": "en"},
+                "Study": {"TaskName": "demo"},
+                "q1": {"Description": {"en": "Mood today", "de": "Stimmung heute"}},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    app = Flask(__name__)
+    app.add_url_rule(
+        "/api/generate-pavlovia",
+        view_func=handlers.handle_generate_pavlovia_endpoint,
+        methods=["POST"],
+    )
+
+    with app.test_client() as client:
+        response = client.post(
+            "/api/generate-pavlovia",
+            json={"files": [{"path": str(source_file)}], "base_language": "de"},
+        )
+
+    assert response.status_code == 200
+    with zipfile.ZipFile(io.BytesIO(response.data)) as zf:
+        psyexp_bytes = zf.read("demo.psyexp")
+
+    assert "Stimmung heute".encode("utf-8") in psyexp_bytes
+    assert "Mood today".encode("utf-8") not in psyexp_bytes

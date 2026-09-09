@@ -1,5 +1,11 @@
 # Pavlovia Export Completion Implementation Plan
 
+> **SUPERSEDED (2026-09-07):** written against an assumed data shape that doesn't match
+> the real, current survey schema (per-language Description/Levels objects, VariantScales/
+> ApplicableVersions instead of a fictional `Items`/loop concept, stale wiring-file line
+> numbers). Do not execute this plan. See
+> `docs/superpowers/plans/2026-09-07-pavlovia-export-completion-v2.md` instead.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Turn `src/converters/pavlovia.py` from an unwired, half-implemented script into a

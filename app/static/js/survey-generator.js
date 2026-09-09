@@ -63,6 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Target tool configuration
     const toolConfig = {
         limesurvey: { label: 'LimeSurvey', exportEndpoint: '/api/generate-lss', fileExt: '.lss', optionsClass: 'tool-options-limesurvey' },
+        pavlovia: { label: 'Pavlovia/PsychoPy', exportEndpoint: '/api/generate-pavlovia', fileExt: '.zip', optionsClass: 'tool-options-pavlovia' },
         // Future tools:
         // redcap: { label: 'REDCap', exportEndpoint: '/api/generate-redcap', fileExt: '.csv', optionsClass: 'tool-options-redcap' },
         // qualtrics: { label: 'Qualtrics', exportEndpoint: '/api/generate-qsf', fileExt: '.qsf', optionsClass: 'tool-options-qualtrics' },
@@ -651,7 +652,7 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
         })
-        .then(r => { if (r.ok) return r.blob(); throw new Error('Export failed'); })
+        .then(r => { if (r.ok) return r.blob(); return r.json().then(e => { throw new Error(e.error); }); })
         .then(blob => {
             const langSuffix = selectedExportLanguages.length > 1 ? selectedExportLanguages.join('_') : currentLanguage;
             downloadBlobObj(blob, `survey_export_${langSuffix}${cfg.fileExt}`);

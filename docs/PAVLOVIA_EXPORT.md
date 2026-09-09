@@ -33,14 +33,36 @@ Online Experiment
 |--------------|-------------------|
 | Questions | Form components or Text + Slider |
 | Levels (answer options) | Choice lists / Scale parameters |
-| Items (array subquestions) | Loop + spreadsheet conditions |
-| Condition (relevance) | Code components with if-statements |
-| Position.GroupOrder | Routines in Flow |
+| Condition (relevance) | Code component with the condition surfaced as a TODO comment (manual translation required, see below) |
 | Mandatory | Validation in code component |
 
 ## Usage
 
-### Basic Conversion
+The normal way in is the CLI subcommand or the Studio GUI. The direct-script
+invocation below still works too -- it's the same underlying converter, just
+a lower-level entry point.
+
+### Studio GUI (recommended)
+
+1. Open Survey Export (`/survey-generator`)
+2. Set Target Tool to "Pavlovia/PsychoPy"
+3. Select one template
+4. Click Quick Export -- downloads a `.zip` containing the `.psyexp`,
+   `conditions.csv` (if any), and `README.md`
+
+### CLI subcommand (recommended)
+
+```bash
+python prism_tools.py survey export-pavlovia task-demo_beh.json \
+    --output ./experiments/demo_online \
+    --experiment-name "DEMO-II Online" \
+    --language en
+```
+
+See `app/src/cli/commands/survey.py` (`cmd_survey_export_pavlovia`) and
+`app/src/cli/parser.py` for the exact flags.
+
+### Direct script invocation (lower-level)
 
 ```bash
 # Convert single questionnaire
@@ -48,8 +70,6 @@ python src/converters/pavlovia.py task-demo_beh.json
 
 # Output: task-demo/task-demo.psyexp
 ```
-
-### With Customization
 
 ```bash
 # Specify output directory and experiment name
@@ -92,42 +112,21 @@ task-demo/
 
 **Pavlovia:** Creates a Form component with radio buttons or a Slider component with labeled ticks.
 
-### Array Questions (Multiple Items)
-
-**PRISM:**
-```json
-{
-  "ANXDEMO": {
-    "Description": "State Anxiety",
-    "Items": {
-      "01": {"Description": "I feel calm", "Order": 1},
-      "02": {"Description": "I feel secure", "Order": 2}
-    },
-    "Levels": {
-      "1": "Not at all",
-      "2": "Somewhat", 
-      "3": "Moderately so",
-      "4": "Very much so"
-    }
-  }
-}
-```
-
-**Pavlovia:** Creates a loop with conditions spreadsheet where each row = one item.
-
 ### Free Text
+
+Classification is via `determine_component_type()` in `src/converters/pavlovia.py`:
+a question with no `Levels` and no `vas`/`visual-analogue` `ScaleType` is free text.
 
 **PRISM:**
 ```json
 {
   "COMMENTS": {
-    "Description": "Any additional comments?",
-    "QuestionType": "Long Free Text"
+    "Description": "Any additional comments?"
   }
 }
 ```
 
-**Pavlovia:** Creates a Form component with textbox.
+**Pavlovia:** Creates a Textbox component (no `Levels` -> free text).
 
 ## Advanced Features
 
@@ -138,28 +137,21 @@ task-demo/
 {
   "PHQ9_10": {
     "Description": "Suicide ideation follow-up",
-    "Condition": "PHQ9_09 > 0"
+    "Relevance": "PHQ9_09 > 0"
   }
 }
 ```
 
-**Pavlovia:** Generates code component that checks previous response and conditionally shows question.
+`_extract_condition()` in `src/converters/pavlovia.py` reads the condition
+with this precedence: a top-level `Relevance` wins, then `LimeSurvey.Relevance`,
+then `ConditionalDisplay.showWhen`.
 
-### Randomization
-
-Use PRISM groups with randomization:
-
-**PRISM:**
-```json
-{
-  "Position": {
-    "Group": "BlockA",
-    "RandomizeGroup": true
-  }
-}
-```
-
-**Pavlovia:** Creates separate loops that can be randomized in the Flow.
+**Pavlovia:** Adds a `CodeComponent` to the question's routine, but it does
+**not** gate visibility automatically. It surfaces the PRISM condition text
+as a `# TODO` comment (plus a `<code>_visible = True` placeholder so the
+component still parses as valid PsychoPy code) for a researcher to manually
+translate into PsychoPy/JS logic. There is no automatic conditional-display
+support in the generated experiment.
 
 ## Limitations
 
@@ -198,16 +190,21 @@ Use PRISM groups with randomization:
 1. **Design in LimeSurvey or JSON Editor**
 2. **Convert to PRISM**: `python app/helpers/surveys/limesurvey_to_prism.py`
 3. **Validate**: `python prism-validator --validate task-demo_beh.json`
-4. **Export to Pavlovia**: `python src/converters/pavlovia.py task-demo_beh.json`
+4. **Export to Pavlovia**: Studio GUI Quick Export, `prism_tools.py survey export-pavlovia`, or `python src/converters/pavlovia.py task-demo_beh.json`
 5. **Upload to Pavlovia**: Via PsychoPy or git
 6. **Collect Data**: Participants complete online
 7. **Download Data**: From Pavlovia.org
-8. **Convert Back to PRISM**: `python src/converters/pavlovia.py --import data.csv task-demo_beh.json`
+8. **Convert Back to PRISM**: **NOT YET IMPLEMENTED** (see below)
 
-### Data Round-Trip
+### Data Round-Trip -- NOT YET IMPLEMENTED
+
+`import_from_pavlovia()` in `src/converters/pavlovia.py` is currently a stub:
+it prints "not yet implemented" and returns `None`. There is no working
+Pavlovia -> PRISM data conversion yet; the `--import`/`--pavlovia-csv` CLI
+flags exist but do not do anything besides call that stub.
 
 ```
-PRISM TSV/JSON → Pavlovia → Online Data → CSV Download → PRISM TSV/JSON
+PRISM TSV/JSON → Pavlovia → Online Data → CSV Download → (not yet implemented) → PRISM TSV/JSON
 ```
 
 ## See Also

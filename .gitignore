@@ -85,7 +85,6 @@ dist/
 !/PrismValidator.spec
 *_version.txt
 PrismValidator.iconset/
-PrismValidator.icns
 survey_library/
 
 # Local-only generated libraries / smoketest outputs
@@ -141,3 +140,6 @@ examples/hostile_demo/
 # Subagent-driven-development scratch workspace (ledgers, briefs, review
 # packages) - not part of the codebase, see superpowers:subagent-driven-development
 .superpowers/
+
+# Deno lockfile regenerated locally by bids-validator tooling (app/src/bids_validator.py)
+deno.lock

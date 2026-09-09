@@ -74,8 +74,8 @@ List of the control variables - aspects that were explicitly controlled in this 
 
 #### Missing files
 
-| Subject | Missing files |
-| ------ | ------ |
+| Subject | Session | Modality | Reason | Detail |
+| ------ | ------ | ------ | ------ | ------ |
 {MISSING_FILES_TABLE}
 
 #### Known issues in collected data

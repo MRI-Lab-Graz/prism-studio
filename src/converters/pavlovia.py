@@ -10,11 +10,15 @@ Usage:
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Dict, List, Any, Optional
-from defusedxml import ElementTree as ET
-from defusedxml import minidom
+from xml.etree import ElementTree as ET
+try:
+    from defusedxml import minidom
+except ImportError:
+    from xml.dom import minidom
 import pandas as pd
 
 # PsychoPy experiment template structure
@@ -40,109 +44,203 @@ def load_prism_json(json_path: Path) -> Dict[str, Any]:
     return data
 
 
-def extract_questions(prism_json: Dict[str, Any]) -> List[Dict[str, Any]]:
+def _extract_condition(value: Dict[str, Any]) -> Optional[str]:
+    """Get the display-condition expression for a question, if any.
+
+    Mirrors the precedence in app/src/limesurvey_exporter.py's
+    _build_relevance_equation: explicit Relevance wins, then
+    LimeSurvey.Relevance, then ConditionalDisplay.showWhen.
+    """
+    if "Relevance" in value:
+        return value["Relevance"]
+    limesurvey = value.get("LimeSurvey")
+    if isinstance(limesurvey, dict) and "Relevance" in limesurvey:
+        return limesurvey["Relevance"]
+    conditional = value.get("ConditionalDisplay")
+    if isinstance(conditional, dict):
+        return conditional.get("showWhen") or None
+    return None
+
+
+def _resolve_text(value: Any, language: str) -> str:
+    """Resolve a Description/Levels-label value to a plain string.
+
+    The schema allows either a plain string or a per-language object
+    ({"en": ..., "de": ...}). Prefer the requested language, fall back to
+    any available language, fall back to empty string.
+    """
+    if isinstance(value, dict):
+        if language in value:
+            return str(value[language])
+        for v in value.values():
+            if v:
+                return str(v)
+        return ""
+    if value is None:
+        return ""
+    return str(value)
+
+
+def _get_active_variant_id(prism_json: Dict[str, Any]) -> Optional[str]:
+    """The template's declared default/active variant, if any."""
+    study = prism_json.get("Study")
+    if isinstance(study, dict):
+        version = study.get("Version")
+        if version:
+            return str(version)
+    return None
+
+
+def _resolve_item_for_variant(
+    item: Dict[str, Any], variant_id: Optional[str]
+) -> Optional[Dict[str, Any]]:
+    """Apply variant filtering/override to one item.
+
+    Mirrors app/static/js/template-editor.js's own excludedByVariant check:
+    an item with no (or empty) ApplicableVersions applies to every variant;
+    otherwise it's excluded unless variant_id is explicitly listed.
+
+    Returns the (possibly overridden) item dict, or None if excluded.
+    """
+    applicable = item.get("ApplicableVersions")
+    if variant_id and isinstance(applicable, list) and applicable and variant_id not in applicable:
+        return None
+
+    variant_scales = item.get("VariantScales")
+    if variant_id and isinstance(variant_scales, list):
+        for scale in variant_scales:
+            if isinstance(scale, dict) and scale.get("VariantID") == variant_id:
+                merged = dict(item)
+                for key in ("DataType", "MinValue", "MaxValue", "Levels", "ScaleType", "Unit"):
+                    if key in scale:
+                        merged[key] = scale[key]
+                return merged
+
+    return item
+
+
+def extract_questions(
+    prism_json: Dict[str, Any], language: Optional[str] = None
+) -> List[Dict[str, Any]]:
     """Extract question data from PRISM JSON, filtering out metadata sections."""
+    if language is None:
+        i18n = prism_json.get("I18n")
+        language = (
+            i18n.get("DefaultLanguage")
+            if isinstance(i18n, dict) and i18n.get("DefaultLanguage")
+            else "en"
+        )
+
+    active_variant = _get_active_variant_id(prism_json)
     questions = []
-    metadata_keys = {"Technical", "Study", "Metadata", "I18n", "Scoring"}
+    metadata_keys = {"Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"}
 
     for key, value in prism_json.items():
-        if key not in metadata_keys and isinstance(value, dict):
-            question = {
-                "code": key,
-                "description": value.get("Description", ""),
-                "type": value.get("QuestionType", ""),
-                "levels": value.get("Levels", {}),
-                "items": value.get("Items", {}),
-                "mandatory": value.get("Mandatory", False),
-                "condition": value.get("Condition", None),
-                "help": value.get("HelpText", None),
-                "position": value.get("Position", {}),
-            }
-            questions.append(question)
+        if key in metadata_keys or not isinstance(value, dict):
+            continue
 
-    # Sort by group order and question order
-    questions.sort(
-        key=lambda q: (
-            q["position"].get("GroupOrder", 0),
-            q["position"].get("QuestionOrder", 0),
-        )
-    )
+        resolved = _resolve_item_for_variant(value, active_variant)
+        if resolved is None:
+            continue
+
+        raw_levels = resolved.get("Levels") if isinstance(resolved.get("Levels"), dict) else {}
+        flat_levels = {
+            level_key: _resolve_text(level_value, language)
+            for level_key, level_value in raw_levels.items()
+        }
+
+        question = {
+            "code": key,
+            "description": _resolve_text(resolved.get("Description", ""), language),
+            "levels": flat_levels,
+            "raw_levels": raw_levels,
+            "data_type": resolved.get("DataType", "string"),
+            "scale_type": resolved.get("ScaleType"),
+            "min_value": resolved.get("MinValue"),
+            "max_value": resolved.get("MaxValue"),
+            "mandatory": resolved.get("Mandatory", True),
+            "condition": _extract_condition(resolved),
+            "help": resolved.get("HelpText", None),
+        }
+        questions.append(question)
 
     return questions
 
 
 def determine_component_type(question: Dict[str, Any]) -> str:
-    """Determine the best PsychoPy component type for a question.
+    """Classify a question into a PsychoPy component type.
 
-    Returns:
-        "form": Form component (best for multiple choice with many options)
-        "slider": Slider component (good for Likert scales)
-        "textbox": Textbox component (for free text)
-        "loop": Loop with conditions (for array questions)
+    Mirrors detectQuestionType's precedence in app/static/js/template-editor.js,
+    adapted to the fields extract_questions produces (Task 2): a question with
+    no Levels and no vas/visual-analogue ScaleType is free text; a
+    vas/visual-analogue ScaleType is a slider regardless of Levels; otherwise
+    the Levels count decides between a radio-style and dropdown-style choice
+    list, matching the >10-options threshold the Studio's own Preview uses.
     """
-    q_type = question.get("type", "").lower()
-    has_levels = bool(question.get("levels"))
-    has_items = bool(question.get("items"))
+    scale_type = (question.get("scale_type") or "").lower()
+    if scale_type in ("vas", "visual-analogue"):
+        return "slider"
 
-    # Array questions need loops
-    if has_items:
-        return "loop"
+    levels = question.get("levels") or {}
+    if levels:
+        return "dropdown" if len(levels) > 10 else "radio"
 
-    # Free text questions
-    if "text" in q_type and not has_levels:
-        return "textbox"
+    return "free_text"
 
-    # Scale questions (1-5, 1-7, etc.) work well as sliders
-    if has_levels:
-        level_keys = list(question["levels"].keys())
-        try:
-            numeric_keys = [int(k) for k in level_keys]
-            if len(numeric_keys) >= 3 and max(numeric_keys) - min(numeric_keys) <= 10:
-                return "slider"
-        except (ValueError, TypeError):
-            pass
 
-    # Default: form component for multiple choice
-    return "form"
+def _safe_component_name(code: str) -> str:
+    """PsychoPy component names must be valid Python identifiers.
+
+    Only replaces characters that are structurally invalid (not letters,
+    digits, or underscore) -- an already-valid code passes through unchanged,
+    per this plan's session-label/identifier constraint.
+    """
+    safe = re.sub(r"[^0-9a-zA-Z_]", "_", code)
+    if safe and safe[0].isdigit():
+        safe = f"_{safe}"
+    return safe
+
+
+def create_slider_component(question: Dict[str, Any]) -> Dict[str, str]:
+    """Build a slider component dict for a VAS/visual-analogue question."""
+    min_value = question.get("min_value")
+    max_value = question.get("max_value")
+    min_value = 0 if min_value is None else min_value
+    max_value = 100 if max_value is None else max_value
+    return {
+        "name": _safe_component_name(question["code"]),
+        "label": question.get("description", ""),
+        "ticks": f"({min_value}, {max_value})",
+        "granularity": "1",
+    }
+
+
+def create_textbox_component(question: Dict[str, Any]) -> Dict[str, str]:
+    """Build a textbox component dict for a free-text question."""
+    return {
+        "name": _safe_component_name(question["code"]),
+        "prompt": question.get("description", ""),
+    }
 
 
 def create_conditions_csv(
     questions: List[Dict[str, Any]], output_dir: Path
 ) -> Optional[Path]:
-    """Create conditions spreadsheet for loop-based questions."""
+    """Create conditions spreadsheet listing each question's code, text, type, and levels."""
     conditions_data = []
 
     for q in questions:
-        if q.get("items"):
-            # Expand array questions into rows
-            for item_code, item_data in q["items"].items():
-                row = {
-                    "question_code": f"{q['code']}_{item_code}",
-                    "question_text": item_data.get("Description", ""),
-                    "parent_code": q["code"],
-                    "item_order": item_data.get("Order", 0),
-                }
+        row = {
+            "question_code": q["code"],
+            "question_text": q["description"],
+            "question_type": determine_component_type(q),
+        }
 
-                # Add levels if present
-                if q.get("levels"):
-                    for level_key, level_text in q["levels"].items():
-                        row[f"level_{level_key}"] = level_text
+        if q.get("levels"):
+            for level_key, level_text in q["levels"].items():
+                row[f"level_{level_key}"] = level_text
 
-                conditions_data.append(row)
-        else:
-            # Regular questions (one row each)
-            row = {
-                "question_code": q["code"],
-                "question_text": q["description"],
-                "question_type": q.get("type", ""),
-            }
-
-            # Add levels
-            if q.get("levels"):
-                for level_key, level_text in q["levels"].items():
-                    row[f"level_{level_key}"] = level_text
-
-            conditions_data.append(row)
+        conditions_data.append(row)
 
     if not conditions_data:
         return None
@@ -183,7 +281,12 @@ def build_psyexp_xml(
 
     This creates a minimal but functional experiment with:
     - Welcome screen
-    - Question routines (one per question or question group)
+    - A single "questions" routine holding a real component per question
+      (SliderComponent/TextboxComponent/shared FormComponent, per
+      determine_component_type), each with an optional CodeComponent for a
+      non-null condition -- this only surfaces the PRISM condition text as a
+      TODO comment for a researcher to translate manually; it does not gate
+      visibility automatically
     - Thank you screen
     - Flow connecting all routines
     """
@@ -218,29 +321,48 @@ def build_psyexp_xml(
     _add_component_param(welcome_key, "keys", "['space']")
     _add_component_param(welcome_key, "text", "Press SPACE to continue")
 
-    # 2. Question routines
-    # Group questions by their group name
-    grouped_questions: Dict[str, List[Dict[str, Any]]] = {}
+    # 2. Question routine (single routine for all questions -- Position.Group
+    # doesn't exist in real template JSON, see plan's "What changed from v1")
+    routine = ET.SubElement(routines, "Routine")
+    routine.set("name", "questions")
+
+    form_items = []
     for q in questions:
-        group = q["position"].get("Group", "questions")
-        if group not in grouped_questions:
-            grouped_questions[group] = []
-        grouped_questions[group].append(q)
+        component_type = determine_component_type(q)
+        safe_name = _safe_component_name(q["code"])
 
-    # Create a routine for each group
-    for group_name, group_questions in grouped_questions.items():
-        routine = ET.SubElement(routines, "Routine")
-        routine_name = f"group_{group_name.lower().replace(' ', '_')}"
-        routine.set("name", routine_name)
-
-        # For now, create a simple form component
-        # Planned: Add specialized components for sliders, textboxes, and loops.
-        form_items = []
-        for q in group_questions:
+        if component_type == "slider":
+            component = ET.SubElement(routine, "SliderComponent")
+            component.set("name", safe_name)
+            slider_params = create_slider_component(q)
+            for key, value in slider_params.items():
+                if key != "name":
+                    _add_component_param(component, key, value)
+        elif component_type == "free_text":
+            component = ET.SubElement(routine, "TextboxComponent")
+            component.set("name", safe_name)
+            textbox_params = create_textbox_component(q)
+            for key, value in textbox_params.items():
+                if key != "name":
+                    _add_component_param(component, key, value)
+        else:
+            # radio / dropdown -- batch into the shared form item list
             form_items.append(create_psychopy_form_item(q))
 
+        if q.get("condition"):
+            code_component = ET.SubElement(routine, "CodeComponent")
+            code_component.set("name", f"{safe_name}_condition")
+            _add_component_param(
+                code_component, "Begin Routine",
+                "# TODO: this question is conditionally displayed in PRISM:\n"
+                f"# {q['condition']}\n"
+                "# Translate this into PsychoPy/JS logic to gate visibility.\n"
+                f"{safe_name}_visible = True",
+            )
+
+    if form_items:
         form_component = ET.SubElement(routine, "FormComponent")
-        form_component.set("name", f"form_{routine_name}")
+        form_component.set("name", "form_questions")
         _add_component_param(form_component, "items", str(form_items))
         _add_component_param(form_component, "randomize", "False")
 
@@ -261,11 +383,9 @@ def build_psyexp_xml(
     flow_item = ET.SubElement(flow, "Routine")
     flow_item.set("name", "welcome")
 
-    # Add question routines
-    for group_name in grouped_questions.keys():
-        routine_name = f"group_{group_name.lower().replace(' ', '_')}"
-        flow_item = ET.SubElement(flow, "Routine")
-        flow_item.set("name", routine_name)
+    # Add the single question routine
+    flow_item = ET.SubElement(flow, "Routine")
+    flow_item.set("name", "questions")
 
     # Add thanks
     flow_item = ET.SubElement(flow, "Routine")
@@ -273,7 +393,7 @@ def build_psyexp_xml(
 
     # Convert to pretty XML string
     xml_str = ET.tostring(root, encoding="unicode")
-    dom = minidom.parseString(xml_str)
+    dom = minidom.parseString(xml_str)  # nosec B318 - xml_str is self-generated above, not untrusted input
     pretty_xml = dom.toprettyxml(indent="  ")
 
     return pretty_xml
@@ -357,6 +477,7 @@ def export_to_pavlovia(
     json_path: Path,
     output_dir: Optional[Path] = None,
     experiment_name: Optional[str] = None,
+    language: Optional[str] = None,
 ) -> Path:
     """Main export function.
 
@@ -364,6 +485,10 @@ def export_to_pavlovia(
         json_path: Path to PRISM survey JSON
         output_dir: Output directory (default: ./task-name/)
         experiment_name: Override experiment name
+        language: Language code to export (default: template's own
+            I18n.DefaultLanguage, falling back to "en"). Pavlovia export is
+            single-language scoped -- this selects which language's text is
+            used, it does not export multiple languages.
 
     Returns:
         Path to created .psyexp file
@@ -389,7 +514,7 @@ def export_to_pavlovia(
     print(f"📁 Output directory: {output_dir}")
 
     # Extract questions
-    questions = extract_questions(prism_json)
+    questions = extract_questions(prism_json, language=language)
     print(f"📋 Found {len(questions)} questions")
 
     # Create conditions CSV if needed
@@ -458,6 +583,13 @@ def main():
         help="Override experiment name",
     )
     parser.add_argument(
+        "--language",
+        "-l",
+        type=str,
+        default=None,
+        help="Language code to export (default: template's own default language)",
+    )
+    parser.add_argument(
         "--import",
         dest="import_mode",
         action="store_true",
@@ -490,6 +622,7 @@ def main():
             args.json_path,
             args.output,
             args.experiment_name,
+            args.language,
         )
 
     if result:

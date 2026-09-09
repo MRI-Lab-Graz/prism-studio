@@ -84,3 +84,4 @@ available.
 - [Recipe Builder](recipe_builder.md) — scoring recipes reference template items
 - [Schema Versioning](../SCHEMA_VERSIONING.md) for how `Study.Versions` drives
   multi-variant templates
+- [Author a Survey (tutorial)](../TUTORIAL_SURVEY.md) — a full guided walkthrough using this screen

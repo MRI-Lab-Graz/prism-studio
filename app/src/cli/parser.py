@@ -1359,6 +1359,27 @@ def build_prism_tools_parsers(
         "file (default: all matching questions)",
     )
 
+    parser_survey_export_pavlovia = survey_subparsers.add_parser(
+        "export-pavlovia",
+        help="Export a PRISM survey template to a Pavlovia/PsychoPy experiment",
+    )
+    parser_survey_export_pavlovia.add_argument(
+        "json_path", help="Path to the PRISM survey template JSON"
+    )
+    parser_survey_export_pavlovia.add_argument(
+        "--output", default=None, help="Output directory (default: alongside the input file)"
+    )
+    parser_survey_export_pavlovia.add_argument(
+        "--experiment-name", default=None, help="Override the experiment/task name"
+    )
+    parser_survey_export_pavlovia.add_argument(
+        "--language",
+        "-l",
+        default=None,
+        help="Language code to export (default: template's own default language). "
+        "Pavlovia export is single-language scoped.",
+    )
+
     parser_survey_export_lss_customized = survey_subparsers.add_parser(
         "export-lss-customized",
         help="Export a Survey Customizer-style customization JSON to a LimeSurvey "

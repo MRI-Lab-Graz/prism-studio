@@ -8,6 +8,7 @@ from pathlib import Path
 
 from src.converters.excel_to_survey import process_excel
 from src.converters.limesurvey import batch_convert_lsa, convert_lsa_to_prism
+from src.converters.pavlovia import export_to_pavlovia
 from src.library_autotranslate import (
     TranslationError,
     autotranslate_survey_library,
@@ -780,6 +781,30 @@ def cmd_survey_export_lss(args) -> None:
         sys.exit(1)
 
     print(f"✅ LimeSurvey export written: {output_path}")
+
+
+def cmd_survey_export_pavlovia(args) -> None:
+    """Export a PRISM survey template JSON to a Pavlovia/PsychoPy experiment
+    (.psyexp + conditions CSV). Delegates to
+    src.converters.pavlovia.export_to_pavlovia — see that function's
+    docstring for output layout."""
+    json_path = Path(args.json_path).resolve()
+    if not json_path.exists():
+        print(f"Error: {json_path} not found")
+        sys.exit(1)
+
+    output_dir = Path(args.output).resolve() if getattr(args, "output", None) else None
+    language = getattr(args, "language", None)
+
+    try:
+        psyexp_path = export_to_pavlovia(
+            json_path, output_dir, getattr(args, "experiment_name", None), language=language
+        )
+    except Exception as exc:
+        print(f"Error: {exc}")
+        sys.exit(1)
+
+    print(f"✅ Pavlovia export written: {psyexp_path}")
 
 
 def cmd_survey_export_lss_customized(args) -> None:
