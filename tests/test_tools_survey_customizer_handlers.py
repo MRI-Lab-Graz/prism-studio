@@ -85,6 +85,74 @@ def test_handle_survey_customizer_export_survives_cleanup_failure(monkeypatch) -
     assert response.data == b"<xml/>"
 
 
+def test_handle_survey_customizer_export_pavlovia_returns_zip(monkeypatch) -> None:
+    handlers = importlib.import_module(
+        "src.web.blueprints.tools_survey_customizer_handlers"
+    )
+    pavlovia = importlib.import_module("src.converters.pavlovia")
+
+    def fake_generate_pavlovia_from_customization(*, groups, output_dir, experiment_name, language):
+        output_dir.mkdir(parents=True, exist_ok=True)
+        (output_dir / f"{experiment_name}.psyexp").write_text("<xml/>", encoding="utf-8")
+        (output_dir / "README.md").write_text("readme", encoding="utf-8")
+        return output_dir / f"{experiment_name}.psyexp"
+
+    monkeypatch.setattr(
+        pavlovia,
+        "generate_pavlovia_from_customization",
+        fake_generate_pavlovia_from_customization,
+    )
+
+    app = Flask(__name__)
+    app.add_url_rule(
+        "/api/survey-customizer/export",
+        view_func=lambda: handlers.handle_survey_customizer_export(
+            data={
+                "survey": {"title": "Demo Survey", "language": "en"},
+                "groups": [{"id": "g1", "name": "Group 1", "questions": []}],
+                "exportFormat": "pavlovia",
+            },
+            project_path=None,
+        ),
+        methods=["POST"],
+    )
+
+    with app.test_client() as client:
+        response = client.post("/api/survey-customizer/export")
+
+    assert response.status_code == 200
+    assert response.mimetype == "application/zip"
+    # Werkzeug only quotes the filename when it needs quoting (RFC 6266); a
+    # plain token like "Demo_Survey_2026-09-09.zip" comes back unquoted, so
+    # strip any trailing quote before checking the extension.
+    assert response.headers["Content-Disposition"].rstrip('"').endswith(".zip")
+
+
+def test_handle_survey_customizer_export_unknown_format_400() -> None:
+    handlers = importlib.import_module(
+        "src.web.blueprints.tools_survey_customizer_handlers"
+    )
+
+    app = Flask(__name__)
+    app.add_url_rule(
+        "/api/survey-customizer/export",
+        view_func=lambda: handlers.handle_survey_customizer_export(
+            data={
+                "survey": {"title": "Demo Survey"},
+                "groups": [{"id": "g1"}],
+                "exportFormat": "qualtrics",
+            },
+            project_path=None,
+        ),
+        methods=["POST"],
+    )
+
+    with app.test_client() as client:
+        response = client.post("/api/survey-customizer/export")
+
+    assert response.status_code == 400
+
+
 def test_handle_survey_customizer_load_builds_groups_from_template(tmp_path) -> None:
     handlers = importlib.import_module(
         "src.web.blueprints.tools_survey_customizer_handlers"

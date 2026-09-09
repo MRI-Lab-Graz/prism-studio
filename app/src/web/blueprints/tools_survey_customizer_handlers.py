@@ -5,6 +5,7 @@ import re
 import shutil
 import tempfile
 import uuid
+import zipfile
 from datetime import datetime
 from pathlib import Path
 
@@ -204,18 +205,24 @@ def handle_survey_customizer_load(data, detect_languages_from_template):
 
 
 def handle_survey_customizer_export(data, project_path):
-    """Export customized survey groups to LimeSurvey .lss file."""
-    try:
-        from src.limesurvey_exporter import generate_lss_from_customization
-    except ImportError:
-        return jsonify({"error": "LimeSurvey exporter not available"}), 500
-
+    """Export customized survey groups to LimeSurvey (.lss) or Pavlovia/PsychoPy (.zip)."""
     export_format = data.get("exportFormat", "limesurvey")
-    if export_format != "limesurvey":
+    if export_format not in ("limesurvey", "pavlovia"):
         return (
             jsonify({"error": f"Export format '{export_format}' not yet supported"}),
             400,
         )
+
+    if export_format == "limesurvey":
+        try:
+            from src.limesurvey_exporter import generate_lss_from_customization
+        except ImportError:
+            return jsonify({"error": "LimeSurvey exporter not available"}), 500
+    else:
+        try:
+            from src.converters.pavlovia import generate_pavlovia_from_customization
+        except ImportError:
+            return jsonify({"error": "Pavlovia exporter not available"}), 500
 
     survey_info = data.get("survey", {})
     groups = data.get("groups", [])
@@ -277,50 +284,79 @@ def handle_survey_customizer_export(data, project_path):
         except OSError:
             pass
 
-    try:
-        fd, temp_path = tempfile.mkstemp(suffix=".lss")
-        os.close(fd)
+    safe_title = re.sub(r"[^\w\s-]", "", survey_title)
+    safe_title = re.sub(r"[\s]+", "_", safe_title).strip("_")
+    if not safe_title:
+        safe_title = "survey"
+    date_str = datetime.now().strftime("%Y-%m-%d")
 
+    if export_format == "limesurvey":
         try:
-            generate_lss_from_customization(
-                groups=groups,
-                output_path=temp_path,
-                language=language,
-                languages=languages,
-                base_language=base_language,
-                ls_version=ls_version,
-                matrix_mode=matrix_mode,
-                matrix_global=matrix_global,
-                survey_title=survey_title,
-                ls_settings=ls_settings,
-            )
-            lss_bytes = Path(temp_path).read_bytes()
-        finally:
+            fd, temp_path = tempfile.mkstemp(suffix=".lss")
+            os.close(fd)
+
             try:
-                os.remove(temp_path)
-            except OSError:
-                pass
+                generate_lss_from_customization(
+                    groups=groups,
+                    output_path=temp_path,
+                    language=language,
+                    languages=languages,
+                    base_language=base_language,
+                    ls_version=ls_version,
+                    matrix_mode=matrix_mode,
+                    matrix_global=matrix_global,
+                    survey_title=survey_title,
+                    ls_settings=ls_settings,
+                )
+                lss_bytes = Path(temp_path).read_bytes()
+            finally:
+                try:
+                    os.remove(temp_path)
+                except OSError:
+                    pass
 
-        safe_title = re.sub(r"[^\w\s-]", "", survey_title)
-        safe_title = re.sub(r"[\s]+", "_", safe_title).strip("_")
-        if not safe_title:
-            safe_title = "survey"
-        date_str = datetime.now().strftime("%Y-%m-%d")
-        download_filename = f"{safe_title}_{date_str}.lss"
+            response = send_file(
+                io.BytesIO(lss_bytes),
+                as_attachment=True,
+                download_name=f"{safe_title}_{date_str}.lss",
+                mimetype="application/xml",
+            )
+        except Exception as error:
+            return jsonify({"error": str(error)}), 500
+    else:
+        try:
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                output_dir = Path(tmp_dir) / "export"
+                generate_pavlovia_from_customization(
+                    groups=groups,
+                    output_dir=output_dir,
+                    experiment_name=safe_title,
+                    language=base_language,
+                )
 
-        response = send_file(
-            io.BytesIO(lss_bytes),
-            as_attachment=True,
-            download_name=download_filename,
-            mimetype="application/xml",
-        )
+                zip_fd, zip_path = tempfile.mkstemp(suffix=".zip")
+                os.close(zip_fd)
+                with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+                    for file_path in output_dir.rglob("*"):
+                        if file_path.is_file():
+                            zf.write(file_path, file_path.relative_to(output_dir))
 
-        if templates_saved:
-            response.headers["X-Templates-Saved"] = str(templates_saved)
-            response.headers["Access-Control-Expose-Headers"] = "X-Templates-Saved"
-        return response
-    except Exception as error:
-        return jsonify({"error": str(error)}), 500
+            response = send_file(
+                zip_path,
+                as_attachment=True,
+                download_name=f"{safe_title}_{date_str}.zip",
+                mimetype="application/zip",
+            )
+            response.call_on_close(lambda: os.unlink(zip_path))
+        except ValueError as error:
+            return jsonify({"error": str(error)}), 400
+        except Exception as error:
+            return jsonify({"error": str(error)}), 500
+
+    if templates_saved:
+        response.headers["X-Templates-Saved"] = str(templates_saved)
+        response.headers["Access-Control-Expose-Headers"] = "X-Templates-Saved"
+    return response
 
 
 def get_survey_customizer_formats_payload():
@@ -359,6 +395,13 @@ def get_survey_customizer_formats_payload():
                         "default": True,
                     },
                 ],
-            }
+            },
+            {
+                "id": "pavlovia",
+                "name": "Pavlovia/PsychoPy",
+                "extension": ".zip",
+                "description": "PsychoPy Builder experiment packaged with a conditions spreadsheet and README",
+                "options": [],
+            },
         ],
     }
