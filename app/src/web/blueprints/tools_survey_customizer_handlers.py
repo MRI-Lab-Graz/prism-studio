@@ -336,18 +336,24 @@ def handle_survey_customizer_export(data, project_path):
 
                 zip_fd, zip_path = tempfile.mkstemp(suffix=".zip")
                 os.close(zip_fd)
-                with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-                    for file_path in output_dir.rglob("*"):
-                        if file_path.is_file():
-                            zf.write(file_path, file_path.relative_to(output_dir))
+                try:
+                    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+                        for file_path in output_dir.rglob("*"):
+                            if file_path.is_file():
+                                zf.write(file_path, file_path.relative_to(output_dir))
+                    zip_bytes = Path(zip_path).read_bytes()
+                finally:
+                    try:
+                        os.remove(zip_path)
+                    except OSError:
+                        pass
 
             response = send_file(
-                zip_path,
+                io.BytesIO(zip_bytes),
                 as_attachment=True,
                 download_name=f"{safe_title}_{date_str}.zip",
                 mimetype="application/zip",
             )
-            response.call_on_close(lambda: os.unlink(zip_path))
         except ValueError as error:
             return jsonify({"error": str(error)}), 400
         except Exception as error:

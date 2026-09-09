@@ -179,6 +179,11 @@ def extract_questions_from_customized_group(
     each question's stored `originalData` as the fallback -- matching how
     the customizer's own LimeSurvey export already treats originalData as
     the source of truth for description/levels.
+
+    A question's `runNumber` (set by the customizer's multi-run
+    duplication) is appended to `code` as `_runNN` when greater than 1, so
+    two runs of the same questionnaire never produce colliding output
+    codes.
     """
     resolved_language = language or "en"
     ordered = sorted(
@@ -195,9 +200,14 @@ def extract_questions_from_customized_group(
             for level_key, level_value in raw_levels.items()
         }
 
+        run_number = q.get("runNumber", 1)
+        code = q.get("questionCode", "")
+        if run_number and run_number > 1:
+            code = f"{code}_run{run_number:02d}"
+
         questions.append(
             {
-                "code": q.get("questionCode", ""),
+                "code": code,
                 "description": _resolve_text(
                     original.get("Description", q.get("description", "")), resolved_language
                 ),
@@ -644,7 +654,11 @@ def generate_pavlovia_from_customization(
     """
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    used_names: set = set()
+    # Pre-seed with the two fixed routine names build_psyexp_xml_grouped
+    # always adds, so a customizer group that happens to be named "welcome"
+    # or "thanks" gets deduplicated instead of silently colliding with (and
+    # making unreachable in the Flow) one of those fixed routines.
+    used_names: set = {"welcome", "thanks"}
     routine_groups: List[Tuple[str, List[Dict[str, Any]]]] = []
     for group in groups:
         questions = extract_questions_from_customized_group(group, language=language)

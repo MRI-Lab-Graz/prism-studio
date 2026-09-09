@@ -529,3 +529,96 @@ def test_generate_pavlovia_from_customization_raises_when_all_groups_empty(tmp_p
     groups = [{"name": "Empty Group", "questions": [{"questionCode": "q1", "enabled": False, "originalData": {}}]}]
     with pytest.raises(ValueError):
         generate_pavlovia_from_customization(groups, tmp_path / "export", "empty_survey")
+
+
+def test_extract_questions_from_customized_group_applies_run_suffix():
+    group = {
+        "id": "g1",
+        "name": "PANAS (Run 2)",
+        "questions": [
+            {
+                "questionCode": "panas_free",
+                "displayOrder": 0,
+                "enabled": True,
+                "mandatory": True,
+                "runNumber": 2,
+                "originalData": {"Description": "How do you feel?"},
+            },
+        ],
+    }
+    questions = extract_questions_from_customized_group(group)
+    assert questions[0]["code"] == "panas_free_run02"
+
+
+def test_extract_questions_from_customized_group_no_suffix_for_run_one():
+    group = {
+        "id": "g1",
+        "name": "PANAS",
+        "questions": [
+            {
+                "questionCode": "panas_free",
+                "displayOrder": 0,
+                "enabled": True,
+                "mandatory": True,
+                "runNumber": 1,
+                "originalData": {"Description": "How do you feel?"},
+            },
+        ],
+    }
+    questions = extract_questions_from_customized_group(group)
+    assert questions[0]["code"] == "panas_free"
+
+
+def test_generate_pavlovia_from_customization_multi_run_codes_do_not_collide(tmp_path):
+    def make_run_group(run_number):
+        return {
+            "name": f"PANAS (Run {run_number})",
+            "questions": [
+                {
+                    "questionCode": "panas_free",
+                    "displayOrder": 0,
+                    "enabled": True,
+                    "mandatory": True,
+                    "runNumber": run_number,
+                    "originalData": {"Description": "How do you feel?"},
+                },
+            ],
+        }
+
+    groups = [make_run_group(1), make_run_group(2)]
+    output_dir = tmp_path / "export"
+    psyexp_path = generate_pavlovia_from_customization(groups, output_dir, "multirun_survey")
+
+    root = ET.parse(psyexp_path).getroot()
+    component_names = [
+        el.get("name") for r in root.find("Routines").findall("Routine")
+        for el in r
+        if el.tag in ("TextboxComponent", "SliderComponent")
+    ]
+    assert len(component_names) == len(set(component_names)), f"duplicate component names: {component_names}"
+
+
+def test_generate_pavlovia_from_customization_group_named_welcome_does_not_collide(tmp_path):
+    groups = [
+        {
+            "name": "welcome",
+            "questions": [
+                {
+                    "questionCode": "q1",
+                    "displayOrder": 0,
+                    "enabled": True,
+                    "mandatory": True,
+                    "originalData": {"Description": "A real question"},
+                },
+            ],
+        },
+    ]
+    output_dir = tmp_path / "export"
+    psyexp_path = generate_pavlovia_from_customization(groups, output_dir, "welcome_named_survey")
+
+    root = ET.parse(psyexp_path).getroot()
+    routine_names = [r.get("name") for r in root.find("Routines").findall("Routine")]
+    # Exactly one "welcome" (the fixed intro routine) and one distinctly-named
+    # routine for the group -- NOT two routines both named "welcome".
+    assert routine_names.count("welcome") == 1
+    assert routine_names == ["welcome", "welcome_2", "thanks"]
