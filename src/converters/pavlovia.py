@@ -167,6 +167,55 @@ def extract_questions(
     return questions
 
 
+def extract_questions_from_customized_group(
+    group: Dict[str, Any], language: Optional[str] = None
+) -> List[Dict[str, Any]]:
+    """Extract question data from one Survey Customizer group.
+
+    Mirrors extract_questions()'s output shape, but reads from the
+    customizer's `group["questions"]` list instead of a raw PRISM JSON
+    file: filters to `enabled` questions, orders by `displayOrder`, and
+    takes `mandatory` from the customizer's own field (a UI override) with
+    each question's stored `originalData` as the fallback -- matching how
+    the customizer's own LimeSurvey export already treats originalData as
+    the source of truth for description/levels.
+    """
+    resolved_language = language or "en"
+    ordered = sorted(
+        (q for q in group.get("questions", []) if q.get("enabled", True)),
+        key=lambda q: q.get("displayOrder", 0),
+    )
+
+    questions = []
+    for q in ordered:
+        original = q.get("originalData") or {}
+        raw_levels = original.get("Levels") if isinstance(original.get("Levels"), dict) else {}
+        flat_levels = {
+            level_key: _resolve_text(level_value, resolved_language)
+            for level_key, level_value in raw_levels.items()
+        }
+
+        questions.append(
+            {
+                "code": q.get("questionCode", ""),
+                "description": _resolve_text(
+                    original.get("Description", q.get("description", "")), resolved_language
+                ),
+                "levels": flat_levels,
+                "raw_levels": raw_levels,
+                "data_type": original.get("DataType", q.get("dataType", "string")),
+                "scale_type": original.get("ScaleType"),
+                "min_value": original.get("MinValue", q.get("minValue")),
+                "max_value": original.get("MaxValue", q.get("maxValue")),
+                "mandatory": q.get("mandatory", original.get("Mandatory", True)),
+                "condition": _extract_condition(original),
+                "help": original.get("HelpText", q.get("help") or None),
+            }
+        )
+
+    return questions
+
+
 def determine_component_type(question: Dict[str, Any]) -> str:
     """Classify a question into a PsychoPy component type.
 

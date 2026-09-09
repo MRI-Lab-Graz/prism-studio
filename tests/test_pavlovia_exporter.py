@@ -1,6 +1,7 @@
 import json
 from src.converters.pavlovia import (
     extract_questions,
+    extract_questions_from_customized_group,
     _resolve_text,
     _get_active_variant_id,
     _resolve_item_for_variant,
@@ -196,6 +197,60 @@ def test_create_conditions_csv_no_dead_items_expansion(tmp_path):
     assert len(df) == 1
     assert df.iloc[0]["question_code"] == "q1"
     assert "parent_code" not in df.columns
+
+
+def _sample_group():
+    return {
+        "id": "g1",
+        "name": "Sample Group",
+        "questions": [
+            {
+                "questionCode": "q2",
+                "displayOrder": 1,
+                "enabled": True,
+                "mandatory": True,
+                "originalData": {"Description": "Second question", "DataType": "string"},
+            },
+            {
+                "questionCode": "q1",
+                "displayOrder": 0,
+                "enabled": True,
+                "mandatory": False,
+                "originalData": {
+                    "Description": "First question",
+                    "DataType": "integer",
+                    "Levels": {"1": "Yes", "2": "No"},
+                    "Mandatory": True,
+                },
+            },
+            {
+                "questionCode": "q3",
+                "displayOrder": 2,
+                "enabled": False,
+                "mandatory": True,
+                "originalData": {"Description": "Disabled question"},
+            },
+        ],
+    }
+
+
+def test_extract_questions_from_customized_group_orders_and_filters():
+    questions = extract_questions_from_customized_group(_sample_group())
+    assert [q["code"] for q in questions] == ["q1", "q2"]
+
+
+def test_extract_questions_from_customized_group_honors_mandatory_override():
+    questions = extract_questions_from_customized_group(_sample_group())
+    by_code = {q["code"]: q for q in questions}
+    # q1's originalData says Mandatory=True, but the customizer overrode it to False
+    assert by_code["q1"]["mandatory"] is False
+
+
+def test_extract_questions_from_customized_group_resolves_description_and_levels():
+    questions = extract_questions_from_customized_group(_sample_group())
+    by_code = {q["code"]: q for q in questions}
+    assert by_code["q1"]["description"] == "First question"
+    assert by_code["q1"]["levels"] == {"1": "Yes", "2": "No"}
 
 
 def _sample_questions():
