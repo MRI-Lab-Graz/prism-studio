@@ -250,6 +250,24 @@ def _safe_component_name(code: str) -> str:
     return safe
 
 
+def _unique_routine_name(name: str, used: set) -> str:
+    """PsychoPy-safe, unique routine name.
+
+    Reuses _safe_component_name's identifier sanitizing and de-duplicates
+    collisions with a numeric suffix -- two customizer groups can share a
+    display name (e.g. two multi-run duplicates of the same
+    questionnaire).
+    """
+    base = _safe_component_name(name) or "routine"
+    candidate = base
+    counter = 2
+    while candidate in used:
+        candidate = f"{base}_{counter}"
+        counter += 1
+    used.add(candidate)
+    return candidate
+
+
 def create_slider_component(question: Dict[str, Any]) -> Dict[str, str]:
     """Build a slider component dict for a VAS/visual-analogue question."""
     min_value = question.get("min_value")
@@ -273,17 +291,26 @@ def create_textbox_component(question: Dict[str, Any]) -> Dict[str, str]:
 
 
 def create_conditions_csv(
-    questions: List[Dict[str, Any]], output_dir: Path
+    questions: List[Dict[str, Any]],
+    output_dir: Path,
+    routine_labels: Optional[List[str]] = None,
 ) -> Optional[Path]:
-    """Create conditions spreadsheet listing each question's code, text, type, and levels."""
+    """Create conditions spreadsheet listing each question's code, text, type, and levels.
+
+    routine_labels, when given, is a list parallel to `questions` naming
+    which PsychoPy routine each question belongs to -- adds a `routine`
+    column. Omitted for the existing single-routine callers, so their CSV
+    shape is unchanged.
+    """
     conditions_data = []
 
-    for q in questions:
-        row = {
-            "question_code": q["code"],
-            "question_text": q["description"],
-            "question_type": determine_component_type(q),
-        }
+    for index, q in enumerate(questions):
+        row = {}
+        if routine_labels is not None:
+            row["routine"] = routine_labels[index]
+        row["question_code"] = q["code"]
+        row["question_text"] = q["description"]
+        row["question_type"] = determine_component_type(q)
 
         if q.get("levels"):
             for level_key, level_text in q["levels"].items():
@@ -593,6 +620,52 @@ def export_to_pavlovia(
     print("📖 Created README with usage instructions")
 
     print(f"\n✨ Export complete! Open {psyexp_path.name} in PsychoPy Builder.")
+    return psyexp_path
+
+
+def generate_pavlovia_from_customization(
+    groups: List[Dict[str, Any]],
+    output_dir: Path,
+    experiment_name: str,
+    language: Optional[str] = None,
+) -> Path:
+    """Build a multi-routine Pavlovia/PsychoPy experiment from Survey
+    Customizer groups -- one routine per non-empty group, in group order.
+
+    Mirrors export_to_pavlovia's file-writing tail (conditions.csv,
+    .psyexp, README.md) but sources questions from the customizer's
+    `groups` model (already filtered/reordered/multi-run by the browser)
+    via extract_questions_from_customized_group, instead of reading a raw
+    PRISM JSON file.
+
+    Raises:
+        ValueError: every group came back empty after filtering (e.g. all
+            questions disabled) -- there is nothing to export.
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    used_names: set = set()
+    routine_groups: List[Tuple[str, List[Dict[str, Any]]]] = []
+    for group in groups:
+        questions = extract_questions_from_customized_group(group, language=language)
+        if not questions:
+            continue
+        routine_name = _unique_routine_name(group.get("name") or "questions", used_names)
+        routine_groups.append((routine_name, questions))
+
+    if not routine_groups:
+        raise ValueError("No enabled questions found in the selected groups")
+
+    all_questions = [q for _name, questions in routine_groups for q in questions]
+    routine_labels = [name for name, questions in routine_groups for _q in questions]
+    create_conditions_csv(all_questions, output_dir, routine_labels=routine_labels)
+
+    psyexp_content = build_psyexp_xml_grouped(experiment_name, routine_groups, {})
+    psyexp_path = output_dir / f"{experiment_name}.psyexp"
+    psyexp_path.write_text(psyexp_content, encoding="utf-8")
+
+    create_readme(output_dir, experiment_name)
+
     return psyexp_path
 
 

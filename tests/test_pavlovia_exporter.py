@@ -1,4 +1,5 @@
 import json
+import pytest
 from src.converters.pavlovia import (
     extract_questions,
     extract_questions_from_customized_group,
@@ -13,6 +14,7 @@ from src.converters.pavlovia import (
     build_psyexp_xml,
     build_psyexp_xml_grouped,
     export_to_pavlovia,
+    generate_pavlovia_from_customization,
 )
 import xml.etree.ElementTree as ET
 import pandas as pd
@@ -197,6 +199,23 @@ def test_create_conditions_csv_no_dead_items_expansion(tmp_path):
     assert len(df) == 1
     assert df.iloc[0]["question_code"] == "q1"
     assert "parent_code" not in df.columns
+
+
+def test_create_conditions_csv_adds_routine_column_when_labels_given(tmp_path):
+    questions = [
+        {"code": "q1", "description": "Q1", "levels": {}},
+        {"code": "q2", "description": "Q2", "levels": {}},
+    ]
+    csv_path = create_conditions_csv(questions, tmp_path, routine_labels=["groupA", "groupB"])
+    df = pd.read_csv(csv_path)
+    assert list(df["routine"]) == ["groupA", "groupB"]
+
+
+def test_create_conditions_csv_unchanged_when_routine_labels_omitted(tmp_path):
+    questions = [{"code": "q1", "description": "Q1", "levels": {}}]
+    csv_path = create_conditions_csv(questions, tmp_path)
+    df = pd.read_csv(csv_path)
+    assert "routine" not in df.columns
 
 
 def _sample_group():
@@ -433,3 +452,80 @@ def test_export_to_pavlovia_explicit_language_overrides_default(tmp_path):
     )
     assert "Stimmung heute" in all_param_values
     assert "Overall mood today" not in all_param_values
+
+
+def test_generate_pavlovia_from_customization_builds_one_routine_per_group(tmp_path):
+    groups = [
+        {
+            "name": "Group One",
+            "questions": [
+                {
+                    "questionCode": "g1q1",
+                    "displayOrder": 0,
+                    "enabled": True,
+                    "mandatory": True,
+                    "originalData": {"Description": "Group one question"},
+                },
+            ],
+        },
+        {
+            "name": "Group Two",
+            "questions": [
+                {
+                    "questionCode": "g2q1",
+                    "displayOrder": 0,
+                    "enabled": True,
+                    "mandatory": True,
+                    "originalData": {"Description": "Group two question"},
+                },
+            ],
+        },
+    ]
+
+    output_dir = tmp_path / "export"
+    psyexp_path = generate_pavlovia_from_customization(groups, output_dir, "combo_survey")
+
+    assert psyexp_path == output_dir / "combo_survey.psyexp"
+    assert psyexp_path.exists()
+
+    root = ET.parse(psyexp_path).getroot()
+    routines_section = root.find("Routines")
+    routine_names = [r.get("name") for r in routines_section.findall("Routine")]
+    assert routine_names == ["welcome", "Group_One", "Group_Two", "thanks"]
+
+    conditions_df = pd.read_csv(output_dir / "conditions.csv")
+    assert list(conditions_df["routine"]) == ["Group_One", "Group_Two"]
+    assert (output_dir / "README.md").exists()
+
+
+def test_generate_pavlovia_from_customization_deduplicates_routine_names(tmp_path):
+    def make_group(code):
+        return {
+            "name": "Same Name",
+            "questions": [
+                {
+                    "questionCode": code,
+                    "displayOrder": 0,
+                    "enabled": True,
+                    "mandatory": True,
+                    "originalData": {"Description": code},
+                },
+            ],
+        }
+
+    groups = [make_group("a"), make_group("b")]
+    output_dir = tmp_path / "export"
+    psyexp_path = generate_pavlovia_from_customization(groups, output_dir, "dup_survey")
+
+    root = ET.parse(psyexp_path).getroot()
+    routine_names = [
+        r.get("name") for r in root.find("Routines").findall("Routine")
+        if r.get("name") not in ("welcome", "thanks")
+    ]
+    assert routine_names == ["Same_Name", "Same_Name_2"]
+
+
+def test_generate_pavlovia_from_customization_raises_when_all_groups_empty(tmp_path):
+    groups = [{"name": "Empty Group", "questions": [{"questionCode": "q1", "enabled": False, "originalData": {}}]}]
+    with pytest.raises(ValueError):
+        generate_pavlovia_from_customization(groups, tmp_path / "export", "empty_survey")
