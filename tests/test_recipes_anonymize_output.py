@@ -305,7 +305,17 @@ class TestAnonymizeRecipeOutputSav:
             },
         )
         (out_root / "wellbeing_codebook.json").write_text(
-            json.dumps({"variables": {"Total": {"score_info": {"method": "sum"}}}}),
+            json.dumps(
+                {
+                    "variables": {
+                        "Total": {
+                            "label": "Wellbeing total score",
+                            "score_info": {"method": "sum"},
+                        },
+                        "WB01": {"label": "I have felt cheerful and in good spirits"},
+                    }
+                }
+            ),
             encoding="utf-8",
         )
 
@@ -320,6 +330,12 @@ class TestAnonymizeRecipeOutputSav:
         assert metadata.column_names_to_labels["age"] == "Age in years"
         assert metadata.column_names_to_labels["Total"] == "Wellbeing total score"
         assert metadata.column_names_to_labels["WB01"] == "[MASKED]"
+
+        # The companion codebook.json sidecar must not leak the real question
+        # text that was just masked in the .sav itself.
+        codebook = json.loads((out_root / "wellbeing_codebook.json").read_text())
+        assert codebook["variables"]["WB01"]["label"] == "[MASKED]"
+        assert codebook["variables"]["Total"]["label"] == "Wellbeing total score"
 
 
 class TestAnonymizeRecipeOutputCsv:

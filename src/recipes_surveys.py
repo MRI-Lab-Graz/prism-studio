@@ -31,6 +31,7 @@ from src.datalad_execution import (
 )
 from src.recipe_validation import validate_recipe
 from src.utils.io import read_json as _read_json, write_json as _write_json
+from src.survey_scale_inference import get_survey_item_map
 from src.recipes_formula_engine import (
     _calculate_derived_variables,
     _calculate_scores,
@@ -301,14 +302,17 @@ def _build_variable_metadata(
     variable_labels["participant_id"] = "Participant identifier"
     variable_labels["session"] = "Session identifier"
 
-    # From sidecar (survey-*.json)
+    # From sidecar (survey-*.json). Normalize first so both the flat,
+    # top-level-item shape and the {"Questions": {...}} nested shape (used by
+    # surveys authored through the Studio GUI) resolve item metadata the same way.
     if sidecar_meta:
+        item_map = get_survey_item_map(sidecar_meta)
         for col in columns:
             # Try exact match first, then strip session suffix (e.g. ADS01_ses_01 -> ADS01)
             sidecar_key = (
-                col if col in sidecar_meta else re.sub(r"_ses[_-]\w+$", "", col)
+                col if col in item_map else re.sub(r"_ses[_-]\w+$", "", col)
             )
-            col_meta = sidecar_meta.get(sidecar_key)
+            col_meta = item_map.get(sidecar_key)
             if isinstance(col_meta, dict):
                 desc = col_meta.get("Description") or col_meta.get("description") or ""
                 if desc:
@@ -541,7 +545,7 @@ def _build_combined_output_metadata(
     for recipe_id in recipe_by_id:
         if dataset_path:
             sidecar = _get_sidecar_for_task(dataset_path, modality, recipe_id)
-            for sidecar_key, col_meta in sidecar.items():
+            for sidecar_key, col_meta in get_survey_item_map(sidecar).items():
                 if not isinstance(col_meta, dict):
                     continue
                 candidate_names = {
@@ -2867,6 +2871,43 @@ def _sav_maskable_question_columns(
     return excluded_columns
 
 
+def _mask_codebook_sidecars(sav_path: str | Path, masked_columns: set[str]) -> None:
+    """Mask question-text labels in a .sav's companion codebook.json/.tsv."""
+    if not masked_columns:
+        return
+    sav_path = Path(sav_path)
+
+    codebook_json_path = sav_path.with_name(f"{sav_path.stem}_codebook.json")
+    if codebook_json_path.exists():
+        try:
+            codebook = _read_json(codebook_json_path)
+            variables = codebook.get("variables", {}) if isinstance(codebook, dict) else {}
+            changed = False
+            for column in masked_columns:
+                entry = variables.get(column)
+                if isinstance(entry, dict) and entry.get("label"):
+                    entry["label"] = "[MASKED]"
+                    changed = True
+            if changed:
+                _write_json(codebook_json_path, codebook)
+        except (OSError, ValueError, json.JSONDecodeError):
+            pass
+
+    codebook_tsv_path = sav_path.with_name(f"{sav_path.stem}_codebook.tsv")
+    if codebook_tsv_path.exists():
+        try:
+            header, rows = _read_tsv_rows(codebook_tsv_path)
+            changed = False
+            for row in rows:
+                if row.get("variable") in masked_columns and row.get("label"):
+                    row["label"] = "[MASKED]"
+                    changed = True
+            if changed:
+                _write_tsv_rows(codebook_tsv_path, header, rows)
+        except (OSError, ValueError, json.JSONDecodeError):
+            pass
+
+
 def anonymize_recipe_output(
     *,
     dataset_path: str | Path,
@@ -3003,9 +3044,16 @@ def anonymize_recipe_output(
                     excluded_columns = _sav_maskable_question_columns(
                         sav_path, dataset_path
                     )
+                    masked_columns: set[str] = set()
                     for column, label in meta.column_names_to_labels.items():
                         if label and column not in excluded_columns:
                             meta.column_names_to_labels[column] = "[MASKED]"
+                            masked_columns.add(column)
+                    # The companion codebook.json/.tsv sidecars written at
+                    # export time carry the same unmasked labels; mask those
+                    # too so real question text doesn't leak next to the
+                    # anonymized .sav.
+                    _mask_codebook_sidecars(sav_path, masked_columns)
 
                 pyreadstat.write_sav(
                     df_data,

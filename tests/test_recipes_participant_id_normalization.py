@@ -82,6 +82,28 @@ def test_build_combined_output_metadata_includes_participants_and_scores() -> No
     assert "pss_Total" in score_details
 
 
+def test_build_combined_output_metadata_reads_questions_nested_sidecar(
+    tmp_path: Path,
+) -> None:
+    # Surveys authored via the Studio GUI's Survey Customizer save items
+    # nested under "Questions" rather than as flat top-level keys.
+    lib_dir = tmp_path / "code" / "library" / "survey"
+    lib_dir.mkdir(parents=True)
+    (lib_dir / "survey-ads.json").write_text(
+        '{"Questions": {"ADS_01": {"Description": "Feeling anxious"}}}',
+        encoding="utf-8",
+    )
+
+    variable_labels, _, _ = _build_combined_output_metadata(
+        columns=["participant_id", "ADS_01"],
+        participants_meta={},
+        recipe_by_id={"ads": {}},
+        dataset_path=tmp_path,
+    )
+
+    assert variable_labels["ADS_01"] == "Feeling anxious"
+
+
 def test_coerce_value_labeled_columns_for_sav_numeric_cast() -> None:
     df = pd.DataFrame(
         {

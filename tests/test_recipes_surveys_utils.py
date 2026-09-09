@@ -485,6 +485,15 @@ class TestBuildVariableMetadata:
         )
         assert var_labels["ADS_01"] == "Feeling anxious"
 
+    def test_sidecar_description_used_with_questions_nested_shape(self):
+        # Surveys authored via the Studio GUI's Survey Customizer save items
+        # nested under "Questions" rather than as flat top-level keys.
+        sidecar = {"Questions": {"ADS_01": {"Description": "Feeling anxious"}}}
+        var_labels, _, _ = _build_variable_metadata(
+            ["ADS_01"], {}, {}, sidecar_meta=sidecar
+        )
+        assert var_labels["ADS_01"] == "Feeling anxious"
+
     def test_score_details_extracted(self):
         recipe = {
             "Scores": [{"Name": "total", "Method": "sum", "Items": ["q1", "q2"]}]
