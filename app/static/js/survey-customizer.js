@@ -433,8 +433,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update UI
             document.getElementById('languageSelect').value = customizationState.survey.language;
             document.getElementById('lsVersionSelect').value = customizationState.exportOptions.ls_version;
-            const targetToolEl = document.getElementById('targetTool');
-            if (targetToolEl && data.target_tool) targetToolEl.value = data.target_tool;
+            if (data.target_tool) syncExportFormat(data.target_tool);
 
             // Display language tags
             updateLanguageTags();
@@ -1388,6 +1387,15 @@ document.addEventListener('DOMContentLoaded', function() {
         ).join('');
     }
 
+    // Show/hide LimeSurvey-only export options based on the selected format
+    function updateExportFormatVisibility(format) {
+        document.querySelectorAll('.limesurvey-only').forEach((el) => {
+            el.hidden = format !== 'limesurvey';
+        });
+        const pavloviaNote = document.getElementById('pavloviaLanguageNote');
+        if (pavloviaNote) pavloviaNote.classList.toggle('d-none', format !== 'pavlovia');
+    }
+
     // Update preview language switcher above question list
     function updatePreviewLangSwitcher() {
         const container = document.getElementById('previewLangSwitcher');
@@ -1755,6 +1763,22 @@ document.addEventListener('DOMContentLoaded', function() {
             renderQuestions();
         });
     }
+
+    // Keep Target Tool / Export Format in sync and show/hide LimeSurvey-only options
+    const targetToolSelect = document.getElementById('targetTool');
+    const exportFormatSelect = document.getElementById('exportFormat');
+    function syncExportFormat(format) {
+        if (targetToolSelect) targetToolSelect.value = format;
+        if (exportFormatSelect) exportFormatSelect.value = format;
+        updateExportFormatVisibility(format);
+    }
+    if (targetToolSelect) {
+        targetToolSelect.addEventListener('change', (e) => syncExportFormat(e.target.value));
+    }
+    if (exportFormatSelect) {
+        exportFormatSelect.addEventListener('change', (e) => syncExportFormat(e.target.value));
+    }
+    updateExportFormatVisibility(exportFormatSelect ? exportFormatSelect.value : 'limesurvey');
 
     // --- Text templates ---
 
