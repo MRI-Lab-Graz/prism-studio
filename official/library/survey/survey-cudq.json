@@ -15,6 +15,7 @@
             "de": "Fragebogen zur Störung des Koffeinkonsums (CUDQ)"
         },
         "ShortName": "CUDQ",
+        "Category": "Addictive & Problematic Behaviors",
         "Authors": [
             "Addicott M. A"
         ],

@@ -15,6 +15,7 @@
             "de": "Skala der wahrgenommenen Belastung (PSS)"
         },
         "ShortName": "PSS",
+        "Category": "Mood, Anxiety & Clinical Screening",
         "Authors": [
             "Cohen",
             "S",

@@ -15,6 +15,7 @@
             "de": "Beziehungszufriedenheit (PN-SMD)"
         },
         "ShortName": "PNSMD",
+        "Category": "Social, Relationships & Attachment",
         "Authors": [
             "Mattson",
             "R. E",

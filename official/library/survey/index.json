@@ -1,5 +1,5 @@
 {
-  "GeneratedOn": "2026-07-18T18:48:09+00:00",
+  "GeneratedOn": "2026-09-10T04:39:32+00:00",
   "SourceLibrary": "official/library/survey",
   "Instruments": {
     "aai": {
@@ -15,7 +15,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Mood, Anxiety & Clinical Screening"
     },
     "agg-a": {
       "TaskName": "agg-a",
@@ -30,7 +31,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Aggression, Antisocial & Dark Traits"
     },
     "aiss": {
       "TaskName": "aiss",
@@ -45,7 +47,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Personality & Individual Differences"
     },
     "amas": {
       "TaskName": "amas",
@@ -60,7 +63,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Educational & Occupational"
     },
     "aq10": {
       "TaskName": "aq10",
@@ -75,7 +79,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Autism & Neurodevelopmental"
     },
     "ard": {
       "TaskName": "ard",
@@ -90,7 +95,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Social, Relationships & Attachment"
     },
     "bes-alt": {
       "TaskName": "bes-alt",
@@ -105,7 +111,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Educational & Occupational"
     },
     "bes": {
       "TaskName": "bes",
@@ -120,7 +127,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Self-Concept & Self-Esteem"
     },
     "bfas": {
       "TaskName": "bfas",
@@ -135,7 +143,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Addictive & Problematic Behaviors"
     },
     "bfi-s": {
       "TaskName": "bfi-s",
@@ -150,7 +159,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Personality & Individual Differences"
     },
     "bhps": {
       "TaskName": "bhps",
@@ -164,7 +174,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Personality & Individual Differences"
     },
     "bis": {
       "TaskName": "bis",
@@ -179,7 +190,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Personality & Individual Differences"
     },
     "bite": {
       "TaskName": "bite",
@@ -194,7 +206,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Mood, Anxiety & Clinical Screening"
     },
     "bpaq": {
       "TaskName": "bpaq",
@@ -209,7 +222,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Aggression, Antisocial & Dark Traits"
     },
     "brcs": {
       "TaskName": "brcs",
@@ -224,7 +238,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Well-being & Life Satisfaction"
     },
     "brs": {
       "TaskName": "brs",
@@ -239,7 +254,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Well-being & Life Satisfaction"
     },
     "bsas": {
       "TaskName": "bsas",
@@ -254,7 +270,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Social, Relationships & Attachment"
     },
     "bsri": {
       "TaskName": "bsri",
@@ -269,7 +286,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Personality & Individual Differences"
     },
     "burnout": {
       "TaskName": "burnout",
@@ -284,7 +302,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Educational & Occupational"
     },
     "cabs": {
       "TaskName": "cabs",
@@ -299,7 +318,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Aggression, Antisocial & Dark Traits"
     },
     "ccms": {
       "TaskName": "ccms",
@@ -314,7 +334,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Personality & Individual Differences"
     },
     "ccss": {
       "TaskName": "ccss",
@@ -329,7 +350,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Social, Relationships & Attachment"
     },
     "cfs": {
       "TaskName": "cfs",
@@ -344,7 +366,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Cognitive & Executive Function"
     },
     "cia": {
       "TaskName": "cia",
@@ -359,7 +382,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Mood, Anxiety & Clinical Screening"
     },
     "cirens": {
       "TaskName": "cirens",
@@ -374,7 +398,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Sleep, Health & Physical"
     },
     "cns": {
       "TaskName": "cns",
@@ -389,7 +414,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Beliefs, Values & Worldview"
     },
     "csjas": {
       "TaskName": "csjas",
@@ -404,7 +430,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Beliefs, Values & Worldview"
     },
     "cudos": {
       "TaskName": "cudos",
@@ -419,7 +446,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Mood, Anxiety & Clinical Screening"
     },
     "cudq": {
       "TaskName": "cudq",
@@ -434,7 +462,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Addictive & Problematic Behaviors"
     },
     "dass": {
       "TaskName": "dass",
@@ -449,7 +478,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Mood, Anxiety & Clinical Screening"
     },
     "dass21": {
       "TaskName": "dass21",
@@ -464,7 +494,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Mood, Anxiety & Clinical Screening"
     },
     "dmq-r": {
       "TaskName": "dmq-r",
@@ -479,7 +510,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Addictive & Problematic Behaviors"
     },
     "ehi": {
       "TaskName": "ehi",
@@ -494,7 +526,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Sleep, Health & Physical"
     },
     "ei": {
       "TaskName": "ei",
@@ -509,7 +542,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Cognitive & Executive Function"
     },
     "erq": {
       "TaskName": "erq",
@@ -524,7 +558,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Mood, Anxiety & Clinical Screening"
     },
     "fs": {
       "TaskName": "fs",
@@ -539,7 +574,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Well-being & Life Satisfaction"
     },
     "gad7": {
       "TaskName": "gad7",
@@ -554,7 +590,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Mood, Anxiety & Clinical Screening"
     },
     "gaene": {
       "TaskName": "gaene",
@@ -569,7 +606,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Beliefs, Values & Worldview"
     },
     "gas": {
       "TaskName": "gas",
@@ -584,7 +622,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Addictive & Problematic Behaviors"
     },
     "gp": {
       "TaskName": "gp",
@@ -599,7 +638,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Educational & Occupational"
     },
     "gq6": {
       "TaskName": "gq6",
@@ -614,7 +654,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Well-being & Life Satisfaction"
     },
     "grit-s": {
       "TaskName": "grit-s",
@@ -629,7 +670,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Personality & Individual Differences"
     },
     "gse": {
       "TaskName": "gse",
@@ -644,7 +686,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Self-Concept & Self-Esteem"
     },
     "gsqs": {
       "TaskName": "gsqs",
@@ -659,7 +702,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Sleep, Health & Physical"
     },
     "gtps": {
       "TaskName": "gtps",
@@ -674,7 +718,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Mood, Anxiety & Clinical Screening"
     },
     "hs": {
       "TaskName": "hs",
@@ -689,7 +734,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Self-Concept & Self-Esteem"
     },
     "hsc7": {
       "TaskName": "hsc7",
@@ -704,7 +750,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Sleep, Health & Physical"
     },
     "hsns": {
       "TaskName": "hsns",
@@ -719,7 +766,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Aggression, Antisocial & Dark Traits"
     },
     "hsq": {
       "TaskName": "hsq",
@@ -734,7 +782,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Personality & Individual Differences"
     },
     "isc": {
       "TaskName": "isc",
@@ -749,7 +798,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Personality & Individual Differences"
     },
     "las": {
       "TaskName": "las",
@@ -764,7 +814,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Social, Relationships & Attachment"
     },
     "lies": {
       "TaskName": "lies",
@@ -779,7 +830,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Aggression, Antisocial & Dark Traits"
     },
     "loneliness-3": {
       "TaskName": "loneliness-3",
@@ -794,7 +846,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Social, Relationships & Attachment"
     },
     "lot-r": {
       "TaskName": "lot-r",
@@ -809,7 +862,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Well-being & Life Satisfaction"
     },
     "lsrp": {
       "TaskName": "lsrp",
@@ -824,7 +878,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Aggression, Antisocial & Dark Traits"
     },
     "masi": {
       "TaskName": "masi",
@@ -839,7 +894,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Educational & Occupational"
     },
     "maslow": {
       "TaskName": "maslow",
@@ -854,7 +910,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Beliefs, Values & Worldview"
     },
     "mate": {
       "TaskName": "mate",
@@ -869,7 +926,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Beliefs, Values & Worldview"
     },
     "mhc-sf": {
       "TaskName": "mhc-sf",
@@ -884,7 +942,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Well-being & Life Satisfaction"
     },
     "ncs-6": {
       "TaskName": "ncs-6",
@@ -899,7 +958,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Cognitive & Executive Function"
     },
     "nmp-q": {
       "TaskName": "nmp-q",
@@ -914,7 +974,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Addictive & Problematic Behaviors"
     },
     "o-life": {
       "TaskName": "o-life",
@@ -929,7 +990,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Mood, Anxiety & Clinical Screening"
     },
     "oci-r": {
       "TaskName": "oci-r",
@@ -944,7 +1006,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Mood, Anxiety & Clinical Screening"
     },
     "ohq": {
       "TaskName": "ohq",
@@ -959,7 +1022,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Well-being & Life Satisfaction"
     },
     "pci": {
       "TaskName": "pci",
@@ -974,7 +1038,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Educational & Occupational"
     },
     "phq9": {
       "TaskName": "phq9",
@@ -989,7 +1054,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Mood, Anxiety & Clinical Screening"
     },
     "pios": {
       "TaskName": "pios",
@@ -1004,7 +1070,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Mood, Anxiety & Clinical Screening"
     },
     "piu": {
       "TaskName": "piu",
@@ -1019,7 +1086,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Addictive & Problematic Behaviors"
     },
     "piuq": {
       "TaskName": "piuq",
@@ -1034,7 +1102,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Addictive & Problematic Behaviors"
     },
     "pnsmd": {
       "TaskName": "pnsmd",
@@ -1049,7 +1118,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Social, Relationships & Attachment"
     },
     "pss": {
       "TaskName": "pss",
@@ -1064,7 +1134,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Mood, Anxiety & Clinical Screening"
     },
     "pts": {
       "TaskName": "pts",
@@ -1079,7 +1150,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Well-being & Life Satisfaction"
     },
     "rei": {
       "TaskName": "rei",
@@ -1094,7 +1166,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Cognitive & Executive Function"
     },
     "rosenberg": {
       "TaskName": "rosenberg",
@@ -1109,7 +1182,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Self-Concept & Self-Esteem"
     },
     "rrs": {
       "TaskName": "rrs",
@@ -1124,7 +1198,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Mood, Anxiety & Clinical Screening"
     },
     "saam": {
       "TaskName": "saam",
@@ -1139,7 +1214,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Social, Relationships & Attachment"
     },
     "saps": {
       "TaskName": "saps",
@@ -1154,7 +1230,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Personality & Individual Differences"
     },
     "sbs-10": {
       "TaskName": "sbs-10",
@@ -1169,7 +1246,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Beliefs, Values & Worldview"
     },
     "scsr": {
       "TaskName": "scsr",
@@ -1184,7 +1262,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Self-Concept & Self-Esteem"
     },
     "sd3": {
       "TaskName": "sd3",
@@ -1199,7 +1278,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Aggression, Antisocial & Dark Traits"
     },
     "sf-mjs": {
       "TaskName": "sf-mjs",
@@ -1214,7 +1294,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Social, Relationships & Attachment"
     },
     "shyness": {
       "TaskName": "shyness",
@@ -1229,7 +1310,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Personality & Individual Differences"
     },
     "skep": {
       "TaskName": "skep",
@@ -1244,7 +1326,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Beliefs, Values & Worldview"
     },
     "smd": {
       "TaskName": "smd",
@@ -1259,7 +1342,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Addictive & Problematic Behaviors"
     },
     "soc-3": {
       "TaskName": "soc-3",
@@ -1274,7 +1358,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Self-Concept & Self-Esteem"
     },
     "sos": {
       "TaskName": "sos",
@@ -1289,7 +1374,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Addictive & Problematic Behaviors"
     },
     "spane": {
       "TaskName": "spane",
@@ -1304,7 +1390,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Well-being & Life Satisfaction"
     },
     "spq": {
       "TaskName": "spq",
@@ -1319,7 +1406,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Mood, Anxiety & Clinical Screening"
     },
     "sqs": {
       "TaskName": "sqs",
@@ -1334,7 +1422,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Sleep, Health & Physical"
     },
     "sses": {
       "TaskName": "sses",
@@ -1349,7 +1438,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Self-Concept & Self-Esteem"
     },
     "swlls": {
       "TaskName": "swlls",
@@ -1364,7 +1454,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Social, Relationships & Attachment"
     },
     "swls": {
       "TaskName": "swls",
@@ -1379,7 +1470,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Well-being & Life Satisfaction"
     },
     "tai5": {
       "TaskName": "tai5",
@@ -1394,7 +1486,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Educational & Occupational"
     },
     "tipi": {
       "TaskName": "tipi",
@@ -1409,7 +1502,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Personality & Individual Differences"
     },
     "trust": {
       "TaskName": "trust",
@@ -1424,7 +1518,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Social, Relationships & Attachment"
     },
     "tsis": {
       "TaskName": "tsis",
@@ -1439,7 +1534,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Cognitive & Executive Function"
     },
     "type-d": {
       "TaskName": "type-d",
@@ -1454,7 +1550,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Personality & Individual Differences"
     },
     "uplas": {
       "TaskName": "uplas",
@@ -1469,7 +1566,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Social, Relationships & Attachment"
     },
     "vast": {
       "TaskName": "vast",
@@ -1484,7 +1582,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Aggression, Antisocial & Dark Traits"
     },
     "webexec": {
       "TaskName": "webexec",
@@ -1499,7 +1598,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Cognitive & Executive Function"
     },
     "wellbeing-multi": {
       "TaskName": "wellbeing-multi",
@@ -1534,7 +1634,8 @@
           "ScaleType": "vas"
         }
       ],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Well-being & Life Satisfaction"
     },
     "wellbeing": {
       "TaskName": "wellbeing",
@@ -1549,7 +1650,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Well-being & Life Satisfaction"
     },
     "who5": {
       "TaskName": "who5",
@@ -1564,7 +1666,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Well-being & Life Satisfaction"
     },
     "zkpq": {
       "TaskName": "zkpq",
@@ -1579,7 +1682,8 @@
       "Version": null,
       "Versions": [],
       "Variants": [],
-      "Vocabulary": null
+      "Vocabulary": null,
+      "Category": "Personality & Individual Differences"
     }
   }
 }

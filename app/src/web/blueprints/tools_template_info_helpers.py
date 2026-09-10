@@ -165,6 +165,7 @@ def extract_template_info(full_path, filename, source="global"):
                 "Norming": study.get("Norming", ""),
                 "Reliability": study.get("Reliability", ""),
                 "Validity": study.get("Validity", ""),
+                "Category": study.get("Category", ""),
             }
 
             if not desc:

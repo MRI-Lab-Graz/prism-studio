@@ -60,6 +60,49 @@ def test_list_library_files_merged_can_target_explicit_project_path(tmp_path):
     assert payload["sources"]["project_library_exists"] is True
 
 
+def test_list_library_files_merged_excludes_generated_index_json(tmp_path):
+    app = _build_app()
+    handlers = importlib.import_module("src.web.blueprints.tools_library_handlers")
+
+    project_root = tmp_path / "primary"
+    survey_dir = project_root / "code" / "library" / "survey"
+    survey_dir.mkdir(parents=True)
+    (survey_dir / "survey-demo.json").write_text("{}", encoding="utf-8")
+    (survey_dir / "index.json").write_text("{}", encoding="utf-8")
+
+    with app.test_request_context(
+        f"/api/list-library-files-merged?project_path={project_root}"
+    ):
+        session["current_project_path"] = str(project_root)
+        response = handlers.handle_list_library_files_merged(
+            extract_template_info=_extract_template_info,
+            global_survey_library_root=lambda: None,
+        )
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert [item["filename"] for item in payload["survey"]] == ["survey-demo.json"]
+
+
+def test_list_library_files_excludes_generated_index_json(tmp_path):
+    app = _build_app()
+    handlers = importlib.import_module("src.web.blueprints.tools_library_handlers")
+
+    survey_dir = tmp_path / "survey"
+    survey_dir.mkdir(parents=True)
+    (survey_dir / "survey-demo.json").write_text("{}", encoding="utf-8")
+    (survey_dir / "index.json").write_text("{}", encoding="utf-8")
+
+    with app.test_request_context(f"/api/list-library-files?path={tmp_path}"):
+        response = handlers.handle_list_library_files(
+            extract_template_info=_extract_template_info,
+        )
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert [item["filename"] for item in payload["survey"]] == ["survey-demo.json"]
+
+
 def test_list_library_files_merged_normalizes_project_json_session_path(tmp_path):
     app = _build_app()
     handlers = importlib.import_module("src.web.blueprints.tools_library_handlers")

@@ -15,6 +15,7 @@
             "de": "Skala zur Lebenszufriedenheit (SWLS)"
         },
         "ShortName": "SWLS",
+        "Category": "Well-being & Life Satisfaction",
         "Authors": [
             "Diener",
             "E",

@@ -45,6 +45,10 @@
               "System": {"type": "string", "enum": ["SNOMED", "NIH-CDE", "DOI", ""]},
               "URI": {"type": "string"}
             }
+          },
+          "Category": {
+            "type": "string",
+            "description": "Study.Category from the source template (see survey.schema.json's Study.Category enum). Empty string when absent."
           }
         },
         "required": ["TaskName", "SourceFile"]

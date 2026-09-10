@@ -15,6 +15,7 @@
             "de": "Fragebogen zur Patientengesundheit (PHQ-9)"
         },
         "ShortName": "PHQ9",
+        "Category": "Mood, Anxiety & Clinical Screening",
         "Authors": [
             "Kroenke",
             "K",

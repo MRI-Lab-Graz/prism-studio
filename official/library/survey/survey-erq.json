@@ -15,6 +15,7 @@
             "de": "Fragebogen zur Emotionsregulierung (ERQ)"
         },
         "ShortName": "ERQ",
+        "Category": "Mood, Anxiety & Clinical Screening",
         "Authors": [
             "Gross",
             "J.J",

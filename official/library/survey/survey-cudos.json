@@ -15,6 +15,7 @@
             "de": "Eine klinisch nützliche Depressionsergebnis-Skala (CUDOS)"
         },
         "ShortName": "CUDOS",
+        "Category": "Mood, Anxiety & Clinical Screening",
         "Authors": [
             "Zimmerman",
             "M",

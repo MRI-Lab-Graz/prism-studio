@@ -409,6 +409,39 @@ class TestSchemaManager:
         # Original schema remains unchanged
         assert "SoftwarePlatform" in schema["properties"]["Technical"]["required"]
 
+    def test_apply_schema_validation_profile_project_relaxes_official_only_fields(self):
+        schema = {
+            "type": "object",
+            "x-prism": {"officialOnlyRequired": {"Study": ["Category"]}},
+            "properties": {
+                "Study": {
+                    "type": "object",
+                    "required": ["TaskName", "Category"],
+                }
+            },
+        }
+
+        adjusted = apply_schema_validation_profile(schema, profile="project")
+        assert "Category" not in adjusted["properties"]["Study"]["required"]
+        assert "TaskName" in adjusted["properties"]["Study"]["required"]
+        # Original schema remains unchanged
+        assert "Category" in schema["properties"]["Study"]["required"]
+
+    def test_apply_schema_validation_profile_official_keeps_official_only_fields(self):
+        schema = {
+            "type": "object",
+            "x-prism": {"officialOnlyRequired": {"Study": ["Category"]}},
+            "properties": {
+                "Study": {
+                    "type": "object",
+                    "required": ["TaskName", "Category"],
+                }
+            },
+        }
+
+        adjusted = apply_schema_validation_profile(schema, profile="official")
+        assert "Category" in adjusted["properties"]["Study"]["required"]
+
 
 class TestInheritedSidecarResolution:
     """Validate BIDS inheritance merge behavior for sidecars."""

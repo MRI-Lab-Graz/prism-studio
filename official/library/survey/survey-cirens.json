@@ -15,6 +15,7 @@
             "de": "Chronotyp: Zirkadiane Energieskala (CIRENS)"
         },
         "ShortName": "CIRENS",
+        "Category": "Sleep, Health & Physical",
         "Authors": [
             "Reference to the original MEQ: Horne and Ostberg"
         ],

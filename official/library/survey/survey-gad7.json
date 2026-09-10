@@ -15,6 +15,7 @@
             "de": "Generalisierte Angststörung (GAD-7)"
         },
         "ShortName": "GAD7",
+        "Category": "Mood, Anxiety & Clinical Screening",
         "Authors": [
             "Spitzer",
             "R. L",

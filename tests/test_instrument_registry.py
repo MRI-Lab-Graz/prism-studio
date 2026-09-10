@@ -34,6 +34,7 @@ def test_known_instrument_resolves_expected_fields():
     assert aai["SourceFile"] == "survey-aai.json"
     assert aai["ShortName"] == "AAI"
     assert "Veale" in aai["Citation"]
+    assert aai["Category"] == "Mood, Anxiety & Clinical Screening"
 
 
 def test_write_and_load_registry_index_roundtrip(tmp_path):

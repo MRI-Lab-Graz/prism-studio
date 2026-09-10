@@ -15,6 +15,7 @@
             "de": "Das Edinburgh Handedness Inventory (Kurzform)"
         },
         "ShortName": "EHI",
+        "Category": "Sleep, Health & Physical",
         "Authors": [
             "Oldfield",
             "R.C"

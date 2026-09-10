@@ -15,6 +15,7 @@
             "de": "Messung der Ängstlichkeit bei Auswahlgesprächen (MASI)"
         },
         "ShortName": "MASI",
+        "Category": "Educational & Occupational",
         "Authors": [
             "McCarthy",
             "J. and Goffin",

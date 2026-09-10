@@ -6,6 +6,9 @@
     "projectOnlyRequired": {
       "Technical": ["Language", "Respondent", "AdministrationMethod", "SoftwarePlatform", "SoftwareVersion"],
       "Study": ["TaskName", "LicenseID", "Citation"]
+    },
+    "officialOnlyRequired": {
+      "Study": ["Category"]
     }
   },
   "title": "Survey Data Metadata",
@@ -168,6 +171,25 @@
             "CC0-1.0",
             "Proprietary",
             "Other"
+          ]
+        },
+        "Category": {
+          "type": "string",
+          "description": "Content-domain category for official library instruments (mandatory for official/library/survey templates only; see x-prism.officialOnlyRequired)",
+          "enum": [
+            "Personality & Individual Differences",
+            "Mood, Anxiety & Clinical Screening",
+            "Well-being & Life Satisfaction",
+            "Social, Relationships & Attachment",
+            "Addictive & Problematic Behaviors",
+            "Self-Concept & Self-Esteem",
+            "Aggression, Antisocial & Dark Traits",
+            "Cognitive & Executive Function",
+            "Autism & Neurodevelopmental",
+            "Sleep, Health & Physical",
+            "Beliefs, Values & Worldview",
+            "Educational & Occupational",
+            "Other / Uncategorized"
           ]
         },
         "LicenseURL": {
@@ -351,7 +373,7 @@
           }
         }
       },
-      "required": ["TaskName", "OriginalName", "Citation", "LicenseID"]
+      "required": ["TaskName", "OriginalName", "Citation", "LicenseID", "Category"]
     },
     "Normative": {
       "type": "object",

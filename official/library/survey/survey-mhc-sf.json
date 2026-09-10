@@ -15,6 +15,7 @@
             "de": "Mental Health Continuum Short Form (MHC-SF)"
         },
         "ShortName": "MHC-SF",
+        "Category": "Well-being & Life Satisfaction",
         "Authors": [
             "Keyes",
             "C.L.M"

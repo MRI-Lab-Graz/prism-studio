@@ -18,6 +18,7 @@
             "de": "Wohlbefinden Fragebogen (Multi-Varianten Demo)"
         },
         "ShortName": "WB-MULTI",
+        "Category": "Well-being & Life Satisfaction",
         "Version": "10-likert",
         "Versions": [
             "10-likert",

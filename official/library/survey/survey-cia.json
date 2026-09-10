@@ -15,6 +15,7 @@
             "de": "Fragebogen zur Bewertung klinischer Beeinträchtigungen (CIA 3.0)"
         },
         "ShortName": "CIA",
+        "Category": "Mood, Anxiety & Clinical Screening",
         "Authors": [
             "Bohn",
             "K",

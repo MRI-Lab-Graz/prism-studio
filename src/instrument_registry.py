@@ -71,6 +71,7 @@ def build_registry_index(library_dir: Path) -> dict[str, Any]:
             "Versions": [str(v) for v in (study.get("Versions") or [])],
             "Variants": _extract_variants(study),
             "Vocabulary": None,
+            "Category": study.get("Category", ""),
         }
 
     return {

@@ -49,6 +49,56 @@ document.addEventListener('DOMContentLoaded', function() {
         return sharedFetchWithApiFallback(url, options, fallbackMessage);
     }
 
+    // Fixed display order + labels for each groupable section's category
+    // subheaders - matches each modality's schema Study.Category enum.
+    const CATEGORY_GROUPING = {
+        survey: {
+            order: [
+                'Personality & Individual Differences',
+                'Mood, Anxiety & Clinical Screening',
+                'Well-being & Life Satisfaction',
+                'Social, Relationships & Attachment',
+                'Addictive & Problematic Behaviors',
+                'Self-Concept & Self-Esteem',
+                'Aggression, Antisocial & Dark Traits',
+                'Cognitive & Executive Function',
+                'Autism & Neurodevelopmental',
+                'Sleep, Health & Physical',
+                'Beliefs, Values & Worldview',
+                'Educational & Occupational',
+                'Other / Uncategorized',
+            ],
+            label: (category) => category,
+        },
+        biometrics: {
+            order: [
+                'cardiorespiratory',
+                'muscular-strength',
+                'muscular-endurance',
+                'flexibility',
+                'balance',
+                'body-composition',
+                'anthropometry',
+                '',
+            ],
+            label: (category) => {
+                if (!category) return 'Other / Uncategorized';
+                return category.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+            },
+        },
+    };
+    const groupByCategoryModuleUrl = new URL('./modules/survey/group-by-category.js', surveyGeneratorScriptUrl).href;
+    let groupTemplatesByCategoryPromise = null;
+
+    function loadGroupTemplatesByCategory() {
+        if (!groupTemplatesByCategoryPromise) {
+            groupTemplatesByCategoryPromise = import(groupByCategoryModuleUrl).then(
+                ({ groupTemplatesByCategory }) => groupTemplatesByCategory
+            );
+        }
+        return groupTemplatesByCategoryPromise;
+    }
+
     function getCurrentProjectPath() {
         if (typeof window.resolveCurrentProjectPath === 'function') {
             return String(window.resolveCurrentProjectPath() || '').trim();
@@ -182,6 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="d-flex align-items-center flex-wrap gap-1">
                         <span class="tpl-name">${escapeHtml(origName || file.filename)}</span>
                         ${sourceBadgeHtml(file.source)}
+                        ${CATEGORY_GROUPING[sectionKey] && file.study && file.study.Category ? `<span class="badge bg-light text-dark border" style="font-size:0.6rem;">${escapeHtml(CATEGORY_GROUPING[sectionKey].label(file.study.Category))}</span>` : ''}
                         <span class="badge bg-secondary" style="font-size:0.65rem;">${itemCount} items</span>
                         ${fileLangs.map(l => `<span class="lang-badge ${l === currentLanguage ? 'lang-badge-available' : ''}" style="font-size:0.6rem;">${l.toUpperCase()}</span>`).join('')}
                         ${hasPotentialMatrix ? '<span class="badge bg-success" style="font-size:0.6rem;"><i class="fas fa-th me-1"></i>Matrix</span>' : ''}
@@ -263,8 +314,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Render ---
-    function renderLibrary() {
+    async function renderLibrary() {
         if (!currentLibraryData) return;
+
+        const groupTemplatesByCategory = await loadGroupTemplatesByCategory();
+        if (!currentLibraryData) return; // project/language may have changed while the module loaded
 
         let hasAnyFiles = false;
         let hasAnyVisible = false;
@@ -287,11 +341,35 @@ document.addEventListener('DOMContentLoaded', function() {
                     ? `(${visibleFiles.length}/${totalFiles})`
                     : `(${totalFiles})`;
 
-                files.forEach((file, idx) => {
-                    const row = createTemplateRow(file, idx, key);
-                    listEl.appendChild(row);
-                    if (hasAllExportLanguages(file.detected_languages || ['en'])) hasAnyVisible = true;
-                });
+                let rowIndex = 0;
+                const grouping = CATEGORY_GROUPING[key];
+                if (grouping) {
+                    const groups = groupTemplatesByCategory(files, grouping.order);
+                    groups.forEach(group => {
+                        const groupEl = document.createElement('div');
+                        groupEl.className = 'tpl-category-group tpl-category-collapsed';
+                        const header = document.createElement('button');
+                        header.type = 'button';
+                        header.className = 'tpl-category-header';
+                        header.innerHTML = `<i class="fas fa-chevron-right tpl-category-caret"></i> ${escapeHtml(grouping.label(group.category))} <span class="tpl-category-count">(${group.files.length})</span>`;
+                        header.addEventListener('click', () => {
+                            groupEl.classList.toggle('tpl-category-collapsed');
+                        });
+                        groupEl.appendChild(header);
+                        group.files.forEach(file => {
+                            const row = createTemplateRow(file, rowIndex++, key);
+                            groupEl.appendChild(row);
+                            if (hasAllExportLanguages(file.detected_languages || ['en'])) hasAnyVisible = true;
+                        });
+                        listEl.appendChild(groupEl);
+                    });
+                } else {
+                    files.forEach(file => {
+                        const row = createTemplateRow(file, rowIndex++, key);
+                        listEl.appendChild(row);
+                        if (hasAllExportLanguages(file.detected_languages || ['en'])) hasAnyVisible = true;
+                    });
+                }
             } else {
                 container.classList.add('d-none');
             }
@@ -313,6 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function applySearchFilter() {
         const query = templateSearch.value.trim().toLowerCase();
+        libraryContent.classList.toggle('tpl-searching', !!query);
         document.querySelectorAll('.tpl-row').forEach(row => {
             if (!query) {
                 row.classList.remove('tpl-hidden-search');
@@ -324,6 +403,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const match = fn.includes(query) || on.includes(query) || desc.includes(query);
             if (match) row.classList.remove('tpl-hidden-search');
             else row.classList.add('tpl-hidden-search');
+        });
+
+        document.querySelectorAll('.tpl-category-group').forEach(group => {
+            const hasVisibleRow = !!group.querySelector('.tpl-row:not(.tpl-hidden-search)');
+            group.classList.toggle('tpl-category-hidden-search', !hasVisibleRow);
         });
     }
 

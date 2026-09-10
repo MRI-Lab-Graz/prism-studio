@@ -15,6 +15,7 @@
             "de": "Der WHO-5-Wohlfühl-Index"
         },
         "ShortName": "WHO5",
+        "Category": "Well-being & Life Satisfaction",
         "Authors": [
             "Topp",
             "C.W",

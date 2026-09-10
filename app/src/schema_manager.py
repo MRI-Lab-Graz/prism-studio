@@ -168,18 +168,18 @@ def apply_schema_validation_profile(schema, profile="project"):
     """Return schema adjusted for validation profile.
 
     Profiles:
-    - project: strict schema as defined
+    - project: relax fields listed in x-prism.officialOnlyRequired
     - official: relax fields listed in x-prism.projectOnlyRequired
     """
-    if profile == "project" or not isinstance(schema, dict):
-        return schema
-
-    if profile != "official":
+    if not isinstance(schema, dict) or profile not in ("project", "official"):
         return schema
 
     annotations = schema.get("x-prism", {})
-    project_only = annotations.get("projectOnlyRequired", {})
-    if not isinstance(project_only, dict) or not project_only:
+    relax_key = (
+        "officialOnlyRequired" if profile == "project" else "projectOnlyRequired"
+    )
+    relax_fields = annotations.get(relax_key, {})
+    if not isinstance(relax_fields, dict) or not relax_fields:
         return schema
 
     adjusted = deepcopy(schema)
@@ -187,7 +187,7 @@ def apply_schema_validation_profile(schema, profile="project"):
     if not isinstance(properties, dict):
         return adjusted
 
-    for section, keys in project_only.items():
+    for section, keys in relax_fields.items():
         if not isinstance(keys, list):
             continue
         section_schema = properties.get(section)

@@ -15,6 +15,7 @@
             "de": "BIG5 Zehn-Item-Persönlichkeitsinventar (TIPI)"
         },
         "ShortName": "TIPI",
+        "Category": "Personality & Individual Differences",
         "Authors": [
             "S. D. Gosling",
             "P. J. Rentfrow",

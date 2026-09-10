@@ -16,6 +16,7 @@
             "de": "Wohlbefindens-Fragebogen (WHO-5 adaptiert)"
         },
         "ShortName": "WB",
+        "Category": "Well-being & Life Satisfaction",
         "Authors": [
             "Topp",
             "C.W.",

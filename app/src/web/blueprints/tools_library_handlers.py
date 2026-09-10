@@ -56,7 +56,7 @@ def handle_list_library_files_merged(extract_template_info, global_survey_librar
             folder_path = lib_p / folder
             if folder_path.exists() and folder_path.is_dir():
                 for filepath in sorted(folder_path.glob("*.json")):
-                    if filepath.name.startswith("."):
+                    if filepath.name.startswith(".") or filepath.name == "index.json":
                         continue
                     results[folder].append(
                         extract_template_info(
@@ -66,9 +66,9 @@ def handle_list_library_files_merged(extract_template_info, global_survey_librar
 
         if not (lib_p / "survey").is_dir() and not (lib_p / "biometrics").is_dir():
             for filepath in sorted(lib_p.glob("*.json")):
-                if (
-                    filepath.name.startswith(".")
-                    or filepath.name == "participants.json"
+                if filepath.name.startswith(".") or filepath.name in (
+                    "participants.json",
+                    "index.json",
                 ):
                     continue
                 results["other"].append(
@@ -179,7 +179,11 @@ def handle_list_library_files(extract_template_info):
             folder_path = os.path.join(library_path, folder)
             if os.path.exists(folder_path) and os.path.isdir(folder_path):
                 for filename in os.listdir(folder_path):
-                    if filename.endswith(".json") and not filename.startswith("."):
+                    if (
+                        filename.endswith(".json")
+                        and not filename.startswith(".")
+                        and filename != "index.json"
+                    ):
                         results[folder].append(
                             extract_template_info(
                                 os.path.join(folder_path, filename), filename
@@ -191,7 +195,7 @@ def handle_list_library_files(extract_template_info):
                 if (
                     filename.endswith(".json")
                     and not filename.startswith(".")
-                    and filename != "participants.json"
+                    and filename not in ("participants.json", "index.json")
                 ):
                     results["other"].append(
                         extract_template_info(
