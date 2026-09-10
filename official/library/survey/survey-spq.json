@@ -32,15 +32,13 @@
         "DOI": "",
         "Citation": "Klorman, R., Weerts, T. C., Hastings, J. E., Melamed, B. G., Lang, P. J. (1974). Psychometric descriptions of some specific fear questionnaires. Behavior Therapy, 5, 401-409.",
         "ItemCount": 22,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "There are no clear reasons to assume that the SPQ cannot be used for research, but at the very least you need to acknowledge the authors and their research paper when writing about it ( Klorman et al., 1974 ).",
         "Source": "https://www.psytoolkit.org/survey-library/spider-fear-spq.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "SPQ01": {
         "Description": {

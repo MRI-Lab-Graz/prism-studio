@@ -25,15 +25,13 @@
         "DOI": "",
         "Citation": "McCarthy, J. and Goffin, R. (2004), Measuring Job Interview Anxiety: Beyond Weak Knees and Sweaty Palms. Personnel Psychology, 57, 607-637. LINK",
         "ItemCount": 28,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the MASI can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( McCarthy & Goffin, 2004 ).",
         "Source": "https://www.psytoolkit.org/survey-library/masi.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "MASI01": {
         "Description": {

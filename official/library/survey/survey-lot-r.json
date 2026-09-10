@@ -26,15 +26,13 @@
         "DOI": "",
         "Citation": "Scheier, M. F., & Carver, C. S. (1992). Effects of optimism on psychological and physical well-being:\nTheoretical overview and empirical update. Cognitive Therapy and Research, 16, 201-228.",
         "ItemCount": 7,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the LOT-R can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Scheier & Carver, 1992, 1994 ).",
         "Source": "https://www.psytoolkit.org/survey-library/optimism-lotr.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "LOT-R01": {
         "Description": {

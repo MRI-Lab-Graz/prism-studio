@@ -32,15 +32,13 @@
         "DOI": "",
         "Citation": "Mattson, R. E., Rogge, R. D., Johnson, M. D., Davidson, E. K. B., & Fincham, F. D. (2013). The positive and negative semantic dimensions of relationship satisfaction. Personal Relationships, 20, 328-355.",
         "ItemCount": 7,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the PN-SMD can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Mattson & Rogge, 2013 ).",
         "Source": "https://www.psytoolkit.org/survey-library/relationship-satisfaction-pnsmd.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "PNSMD01": {
         "Description": {

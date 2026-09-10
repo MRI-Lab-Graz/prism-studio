@@ -28,15 +28,13 @@
         "DOI": "",
         "Citation": "Stainton, M., Lay, C. H., & Flett, G. L. (2000). Trait procrastinators and behavior/trait-specific cognitions. Journal of social behavior and personality, 15, 297-312.",
         "ItemCount": 18,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the PCI be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Stainton et al., 2000 ).",
         "Source": "https://www.psytoolkit.org/survey-library/procrastination-pci.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "PCI01": {
         "Description": {

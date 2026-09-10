@@ -26,15 +26,13 @@
         "DOI": "",
         "Citation": "Paulhus, D.L., & Van Selst, M. (1990). The Spheres of Control scale: Ten years of research. Personality and Individual Differences, 11, 1029-1036.",
         "ItemCount": 15,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the SOCS can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( see references at bottom of page ).",
         "Source": "https://www.psytoolkit.org/survey-library/spheres-of-control-scale.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "SOC-301": {
         "Description": {

@@ -25,15 +25,13 @@
         "DOI": "",
         "Citation": "Ernst, J.M. & Cacioppo, J.T. (1999). Lonely hearts: Psychological perspectives on loneliness. Applied & Preventative Psychology, 8 (1), 1-22.",
         "ItemCount": 3,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the Three Item Scale of Loneliness (TILS) can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Hughes et al., 2004 ).",
         "Source": "https://www.psytoolkit.org/survey-library/loneliness-tils.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "LONELINESS-301": {
         "Description": {

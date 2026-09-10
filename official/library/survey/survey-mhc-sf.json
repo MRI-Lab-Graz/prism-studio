@@ -24,15 +24,13 @@
         "DOI": "",
         "Citation": "Keyes, C.L.M. (2006). Mental health in adolescence: Is America's youth flourishing? American Journal of Orthopsychiatry, 76, 395-402.",
         "ItemCount": 14,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The MHC-SF is copyrighted, but can be can be used for research when proper credit is given. This means that the work by Dr. C. Keyes needs to be acknowledged (see references below ).",
         "Source": "https://www.psytoolkit.org/survey-library/mhc-sf.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "MHC-SF01": {
         "Description": {

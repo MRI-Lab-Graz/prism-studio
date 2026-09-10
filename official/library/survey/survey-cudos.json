@@ -29,15 +29,13 @@
         "DOI": "",
         "Citation": "Zimmerman, M., Chelminski, I, McGlinchey, J. B. and Posternak, M. A.\n(2008). A clinically useful depression outcome scale. Comprehensive\nPsychiatry, 49, 131-140.",
         "ItemCount": 16,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "CUDOS can be used freely, but as with any scale you use, you always need to acknowledge the creators.",
         "Source": "https://www.psytoolkit.org/survey-library/depression-cudos.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "CUDOS01": {
         "Description": {

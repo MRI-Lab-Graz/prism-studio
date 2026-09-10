@@ -1,5 +1,5 @@
 {
-  "GeneratedOn": "2026-09-10T04:39:32+00:00",
+  "GeneratedOn": "2026-09-10T18:05:55+00:00",
   "SourceLibrary": "official/library/survey",
   "Instruments": {
     "aai": {
@@ -272,22 +272,6 @@
       "Variants": [],
       "Vocabulary": null,
       "Category": "Social, Relationships & Attachment"
-    },
-    "bsri": {
-      "TaskName": "bsri",
-      "SourceFile": "survey-bsri.json",
-      "ShortName": "BSRI",
-      "OriginalName": {
-        "en": "Bem sex role inventory (BSRI)",
-        "de": "Bem Geschlechtsrolleninventar (BSRI)"
-      },
-      "DOI": "",
-      "Citation": "Bem, S. L. (1974) The measurement of psychological\nandrogyny. Journal of Consulting and Clinical Psychology, 42,\n155-162.",
-      "Version": null,
-      "Versions": [],
-      "Variants": [],
-      "Vocabulary": null,
-      "Category": "Personality & Individual Differences"
     },
     "burnout": {
       "TaskName": "burnout",

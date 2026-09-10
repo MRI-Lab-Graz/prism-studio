@@ -28,15 +28,13 @@
         "DOI": "",
         "Citation": "Demetrovics, Z., Szeredi, B., & RÃ³zsa, S. (2008). The three-factor model of Internet addiction: The development of the Problematic Internet Use Questionnaire. Behavior Research Methods, 40, 563-574.",
         "ItemCount": 18,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the PIUQ can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Demetrovics et al., 2008 ).",
         "Source": "https://www.psytoolkit.org/survey-library/addiction-internet-piuq.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "PIUQ01": {
         "Description": {

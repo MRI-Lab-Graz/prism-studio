@@ -25,15 +25,13 @@
         "DOI": "",
         "Citation": "Buss, A.H. and Perry, M.P. (1992). The Aggression\nQuestionnaire. Journal of Personality and Social Psychology, 63,\n452-459.",
         "ItemCount": 27,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "On page 453 of the Buss and Perry (1992) paper it states: \"\" No permission is needed if the questionnaire is used for research purposes. Users make up their own mimeographed or printed version by scrambling the items so that items from any one factor do not pile up. \"\"",
         "Source": "https://www.psytoolkit.org/survey-library/aggression-buss-perry.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "BPAQ01": {
         "Description": {

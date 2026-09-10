@@ -25,15 +25,13 @@
         "DOI": "",
         "Citation": "D.H. Silvera, M. Martinussen, & T. I. Dahl. (2001). The TromsÃ¸\nSocial Intelligence Scale, a self-report measure of social\nintelligence. Scandinavian Journal of Psychology, 42, 313-319.",
         "ItemCount": 10,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that this scale can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Silvera et al., 2001 ).",
         "Source": "https://www.psytoolkit.org/survey-library/social-intelligence-tsis.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "TSIS01": {
         "Description": {

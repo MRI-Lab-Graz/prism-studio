@@ -34,15 +34,13 @@
         "DOI": "",
         "Citation": "Bohn, K., Doll, H. A., Cooper, Z., O’Connor, M., Palmer, R. L., & Fairburn, C. G. (2008). The measurement of impairment due to eating disorder psychopathology. Behaviour research and therapy, 46, 1105-1110. This is an open-access paper, click here to download.",
         "ItemCount": 16,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The article lists a http://creativecommons.org/licenses/by/3.0/ , which means that you can use the material in the paper in any medium or format. You must give appropriate credit to the authors ( Bohn et al., 2008 ), provide a link to the license, and indicate if changes were made. http://www.credo-oxford.com/6.2.html",
         "Source": "https://www.psytoolkit.org/survey-library/eating-cia.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "CIA01": {
         "Description": {

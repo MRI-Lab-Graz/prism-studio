@@ -35,15 +35,13 @@
         "DOI": "",
         "Citation": "Diener, E., Wirtz, D., Tov, W., Kim-Prieto, C., Choi. D., Oishi, S.,\n& Biswas-Diener, R. (2009). New measures of well-being: Flourishing\nand positive and negative feelings. Social Indicators Research,\n39,\n247-266. Online\navailable here.",
         "ItemCount": 12,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "According to the web page of the authors , \"the scale is copyrighted but you are free to use it without permission or charge by all professionals (researchers and practitioners) as long as you give credit to the authors of the scale\". The reference is at the bottom of this page.",
         "Source": "https://www.psytoolkit.org/survey-library/spane.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "SPANE01": {
         "Description": {

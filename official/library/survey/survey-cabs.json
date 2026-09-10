@@ -30,15 +30,13 @@
         "DOI": "",
         "Citation": "Strout, T.D., Vessey, J.A., Difazio, R.L., Ludlow, L.H. (2018). The\nChild Adolescent Bullying Scale (CABS): Psychometric evaluation of a\nnew measure. Research in Nursing and Health, 41, 1-13.",
         "ItemCount": 40,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The CABS is free to use, but you need to acknowledge the authors and their research paper when writing about it ( see references ).",
         "Source": "https://www.psytoolkit.org/survey-library/cabs.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "CABS01": {
         "Description": {

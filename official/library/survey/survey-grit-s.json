@@ -30,15 +30,13 @@
         "DOI": "",
         "Citation": "Duckworth, A.L., Peterson, C., Matthews, M.D., & Kelly, D.R. (2007). Grit: Perseverance and\npassion for long-term goals. Journal of Personality and Social Psychology, 9, 1087-1101.\nFree download via Research Gate",
         "ItemCount": 4,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the short grit scale (Grit-S) can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Duckworth and Quinn, 2009 ).",
         "Source": "https://www.psytoolkit.org/survey-library/grit-short.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "GRIT-S01": {
         "Description": {

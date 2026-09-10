@@ -34,15 +34,13 @@
         "DOI": "",
         "Citation": "Aluja, A., Rossier, J., GarcÃ­a, L. F., Angleitner, A., Kuhlman, M., & Zuckerman, M. (2006). A cros-cultural shortened form of the ZKPQ (ZKPQ-50-c) adapted to English, French, German, and Spanish languages. Personality and Individual Differences, 41, 619-628.",
         "ItemCount": 38,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The shortened ZKPQ be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Aluja et al., 2006 ).",
         "Source": "https://www.psytoolkit.org/survey-library/zkpq-50-cc.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "ZKPQ01": {
         "Description": {

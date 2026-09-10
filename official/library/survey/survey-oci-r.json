@@ -35,15 +35,13 @@
         "DOI": "",
         "Citation": "Foa, E.B., Huppert, J.D., Leiberg, S. Langner, R., Kichic, R., Hajcak,\nG., and Salkovskis, P.M. (2002). The obsessive-compulsive inventory:\nDevelopment and validation of a short version. Psychological\nAssessment, 14, 485-496.",
         "ItemCount": 18,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The survey can be used for research. You need to make sure you respect the copyright note in the paper, and acknowledge the authors and 2002 paper of Fao and colleagues (see reference below).",
         "Source": "https://www.psytoolkit.org/survey-library/obsessiveness-oci-r.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "OCI-R01": {
         "Description": {

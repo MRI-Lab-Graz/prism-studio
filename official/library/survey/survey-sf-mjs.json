@@ -28,15 +28,13 @@
         "DOI": "",
         "Citation": "Elphinston, R.A., Feeney, J.A., and Noller, P. (2011). Measuring\nromantic jealousy: Validation of the multidimensional jealousy scale\nin Australian samples. Australian Journal of Psychology, 63, 243-251. Open access link",
         "ItemCount": 5,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "This scale has been published in an academic journal (Elphinston et al., 2011) and it seems that it can be used for study and research as long as you acknowledge the authors and cite the paper.",
         "Source": "https://www.psytoolkit.org/survey-library/jealousy-sf-mjs.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "SF-MJS01": {
         "Description": {

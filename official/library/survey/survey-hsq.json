@@ -32,15 +32,13 @@
         "DOI": "",
         "Citation": "Martin, R.A., Puhlik-Doris, P., Larsen, G., Gray, J., and Weir, K. (2003). Individual differences in uses of humor and their relation to psychological well-being: Development of the Humor Styles Questionnaire. Journal of Research in Personality, 37, 48-75.",
         "ItemCount": 21,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "You can use the HSQ scale, as long as you acknowledge and cite the paper by Rod Martin and colleages.",
         "Source": "https://www.psytoolkit.org/survey-library/humor-hsq.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "HSQ01": {
         "Description": {

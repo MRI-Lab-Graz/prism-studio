@@ -28,15 +28,13 @@
         "DOI": "",
         "Citation": "McCullough, M. E., Emmons, R. A., & Tsang, J. (2002). The grateful\ndisposition: A conceptual and empirical topography. Journal of\nPersonality and Social Psychology, 82, 112- 127.",
         "ItemCount": 4,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The scale can be used for research when citing and acknowledging the authors and their paper.",
         "Source": "https://www.psytoolkit.org/survey-library/gratitude-gq6.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "GQ601": {
         "Description": {

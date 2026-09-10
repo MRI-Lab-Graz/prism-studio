@@ -28,15 +28,13 @@
         "DOI": "",
         "Citation": "Hendrick, C., Hendrick, S. S., & Reich, D. A. (2006). The Journal of Sex Research, 43, 76-86.",
         "ItemCount": 23,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "This scale has been published in an academic journal and it seems that it can be used in research, given that the relevant researchers and papers are acknowledged and cited.",
         "Source": "https://www.psytoolkit.org/survey-library/sexual-attitudes-scale-bsas.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "BSAS01": {
         "Description": {

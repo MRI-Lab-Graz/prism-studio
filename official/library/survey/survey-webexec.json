@@ -34,15 +34,13 @@
         "DOI": "",
         "Citation": "Buchanan, T., Heffernan, T. M., Parrott, A. C., Ling, J., Rodgers, J., & Scholey, A. B. (2010). A short self-report measure of problems with executive function suitable for administration via the Internet. Behavior Research Methods, 42, 709-714.",
         "ItemCount": 6,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the webexec can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Buchanan et al., 2010 ).",
         "Source": "https://www.psytoolkit.org/survey-library/webexec.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "WEBEXEC01": {
         "Description": {

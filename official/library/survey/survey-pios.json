@@ -31,15 +31,13 @@
         "DOI": "",
         "Citation": "Abramowitz, J.S., Hupper, J.D., Cohen, A.B., Tolin, D.F. & Cahill,\nS.P. (2002). Religious obsessions and compulsions in a non-clinical\nsample: the Penn Inventory of Scrupulosity (PIOS). Behaviour Research\nand Therapy, 40, 825-838.",
         "ItemCount": 19,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the PIOS can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( References ).",
         "Source": "https://www.psytoolkit.org/survey-library/scrupulosity-pios.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "PIOS01": {
         "Description": {

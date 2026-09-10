@@ -28,15 +28,13 @@
         "DOI": "",
         "Citation": "Coelho, G.L.D.H., Hanel, P.H.P, & Wolf, L.J. (2018). The\nVery Efficient Assessment of Need for Cognition: Developing a Six-Item\nVersion. Assessment, online first, 1-16. Download here.",
         "ItemCount": 4,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The need NCS-6 be used for research, but you need to acknowledge the authors and their research paper when writing about it ( References ).",
         "Source": "https://www.psytoolkit.org/survey-library/need-for-cognition-ncs6.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "NCS-601": {
         "Description": {

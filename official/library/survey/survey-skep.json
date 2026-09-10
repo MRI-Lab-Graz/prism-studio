@@ -25,15 +25,13 @@
         "DOI": "",
         "Citation": "Obermiller, C. & Spangenberg, E.R. (1998). Development of a scale to\nmeasure consumer skepticism toward advertising. Journal of Consumer\nPsychology, 7, 159-186.",
         "ItemCount": 5,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the SKEP can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Obermiller & Spangenberg, 1998 ).",
         "Source": "https://www.psytoolkit.org/survey-library/skepticism-skep.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "SKEP01": {
         "Description": {

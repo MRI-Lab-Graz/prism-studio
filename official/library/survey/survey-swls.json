@@ -30,15 +30,13 @@
         "DOI": "",
         "Citation": "Diener, E., Emmons, R. A., Larsen, R. J., & Griffin, S. (1985). The\nSatisfaction with Life Scale. Journal of Personality Assessment, 49,\n71-75.",
         "ItemCount": 5,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "On the SWLS website it says: \"The scale is copyrighted but you are free to use it without permission or charge by all professionals (researchers and practitioners) as long as you give credit to the authors of the scale: Ed Diener, Robert A. Emmons, Randy J. Larsen and Sharon Griffin as noted in the 1985 article in the Journal of Personality Assessment.\"",
         "Source": "https://www.psytoolkit.org/survey-library/satisfaction-with-life.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "SWLS01": {
         "Description": {

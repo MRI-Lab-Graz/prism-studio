@@ -32,15 +32,13 @@
         "DOI": "",
         "Citation": "Snyder, E., Cai, B., DeMuro, C., Morrison, M. F., & Ball, W. (2018). A new single-item sleep quality scale: results of psychometric evaluation in patients with chronic primary insomnia and depression. Journal of Clinical Sleep Medicine, 14(11), 1849-1857. Read full article for free here",
         "ItemCount": 1,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "NOT VERIFIED: the upstream source page states no licensing information for this instrument. Verify with the original publication before use.",
         "Source": "https://www.psytoolkit.org/survey-library/single-item-sleep-quality-scale.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "SQS01": {
         "Description": {

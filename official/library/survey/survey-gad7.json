@@ -30,15 +30,13 @@
         "DOI": "",
         "Citation": "Spitzer, R. L., Kroenke, K., Williams, J. B. W., & Lowe, B. (2006). A brief measure for assessing generalized anxiety disorder - The GAD-7. Archives of Internal Medicine, 166, 1092-1097.",
         "ItemCount": 7,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the GAD-7 can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Spitzer et al., 2006 ).",
         "Source": "https://www.psytoolkit.org/survey-library/anxiety-gad7.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "GAD701": {
         "Description": {

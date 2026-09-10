@@ -36,15 +36,13 @@
         "DOI": "",
         "Citation": "Pagano, M.E., Krentzman, A.R., Onder, C.C., Baryak, J.L., Murphy, J.L., Zywiak, W.H.,  & Stout, R. L. (2010). Service to Others in Sobriety (SOS). Alcohol Treatment Quarterly, 28, 111-127.  Read this paper online for free.",
         "ItemCount": 12,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The SOS be used for research, but you need to acknowledge the authors and their research paper(s) when writing about it ( Pagano et al., 2009, 2010, 2013 ).",
         "Source": "https://www.psytoolkit.org/survey-library/alcohol-sobriety-sos.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "SOS01": {
         "Description": {

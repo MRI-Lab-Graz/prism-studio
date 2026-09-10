@@ -24,15 +24,13 @@
         "DOI": "",
         "Citation": "Tang, S. (1999). Cooperation or competition: A comparison of U.S. and Chinese College students. The Journal of Psychology, 133, 413-423.",
         "ItemCount": 19,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that CCSS can be used for research, but you need to acknowledge the author and his research paper when writing about it ( Tang (1999) ).",
         "Source": "https://www.psytoolkit.org/survey-library/coop-comp-ccss.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "CCSS01": {
         "Description": {

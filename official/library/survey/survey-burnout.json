@@ -24,15 +24,13 @@
         "DOI": "",
         "Citation": "Campbell, L.P. (1983). Teacher burnout: Description and\nprescription. The Clearing House, 57, pp. 111-113",
         "ItemCount": 20,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "This scale can be used when acknowledging the original author and citing the paper by Richmond and colleages (2001).",
         "Source": "https://www.psytoolkit.org/survey-library/teacher-burnout.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "BURNOUT01": {
         "Description": {

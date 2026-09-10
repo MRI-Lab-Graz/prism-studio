@@ -23,15 +23,13 @@
         "DOI": "",
         "Citation": "Joanne Taylor & Frank P. Deane (2002) Development of a Short Form of the Test Anxiety Inventory (TAI), The Journal of General Psychology, 129:2, 127-136, DOI: 10.1080/00221300209603133",
         "ItemCount": 5,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the TAI-5 can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( References ).",
         "Source": "https://www.psytoolkit.org/survey-library/tai5.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "TAI501": {
         "Description": {

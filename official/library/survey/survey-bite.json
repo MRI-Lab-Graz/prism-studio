@@ -30,15 +30,13 @@
         "DOI": "",
         "Citation": "Holtzman, S., O'Connor, B.P., Barata, P.C., and Stewart,\nD.E. (2015). The Brief Irritability Test (BITe): A Measure of\nIrritability for Use Among Men and Women. Assessment, 22, 101-115. Read it for free via the US National Library of Medicine.",
         "ItemCount": 5,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The BITe can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Holtzman et al., 2015 ).",
         "Source": "https://www.psytoolkit.org/survey-library/irritability-bite.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "BITE01": {
         "Description": {

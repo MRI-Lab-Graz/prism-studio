@@ -26,15 +26,13 @@
         "DOI": "",
         "Citation": "D.R. Hopko, R. Mahadevan, R.L. Bare, & Melassa K. Hunt. (2003). The\nAbbreviated Math Anxiety Scale (AMAS): Construction, Validity, and\nReliability. Assessment, 10, 178-182.",
         "ItemCount": 9,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The AMAS can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Hopko et al., 2003 ).",
         "Source": "https://www.psytoolkit.org/survey-library/math-anxiety-amas.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "AMAS01": {
         "Description": {

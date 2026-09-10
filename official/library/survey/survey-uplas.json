@@ -24,15 +24,13 @@
         "DOI": "",
         "Citation": "Tharayil, D.P. (2012). Developing the University of the Philippines\nLoneliness Assessment Scale: A Cross-Cultural Measurement. Social\nIndicators Research, 106 (2), 307-321.",
         "ItemCount": 20,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the UPLAS can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( References ).",
         "Source": "https://www.psytoolkit.org/survey-library/loneliness-uplas.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "UPLAS01": {
         "Description": {

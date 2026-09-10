@@ -23,15 +23,13 @@
         "DOI": "",
         "Citation": "D. L. Paulhus & D. N. Jones (2015).  Measuring dark personalities via questionnaire.  In G. J. Boyle, D. H. Saklofske & G. Matthews (Eds.), Measures of personality and social psychological constructs (pp.562-594).  San Diego, CA: Academic Press.",
         "ItemCount": 23,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the VAST can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( References ).",
         "Source": "https://www.psytoolkit.org/survey-library/vast.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "VAST01": {
         "Description": {

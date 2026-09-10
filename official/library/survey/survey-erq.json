@@ -26,15 +26,13 @@
         "DOI": "",
         "Citation": "Gross, J.J., & John, O.P. (2003). Individual differences in two\nemotion regulation processes: Implications for affect, relationships,\nand well-being. Journal of Personality and Social Psychology, 85,\n348-362.",
         "ItemCount": 10,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The paper very clearly states that the items are under the copyright of the authors of the paper ( Gross & John, 2003 ). The test and other resources are on his website . It seems that when properly acknowledging the authors and paper, the ERQ can be used for research.",
         "Source": "https://www.psytoolkit.org/survey-library/emotional-regulation-erq.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "ERQ01": {
         "Description": {

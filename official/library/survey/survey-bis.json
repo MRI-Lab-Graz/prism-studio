@@ -23,15 +23,13 @@
         "DOI": "",
         "Citation": "E. S. Barratt (1965). Factor analysis of some psychometric measures\nof impulsiveness and anxiety. Psychological Reports, 16, 547-554.",
         "ItemCount": 5,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "NOT VERIFIED: the upstream source page states no licensing information for this instrument. Verify with the original publication before use.",
         "Source": "https://www.psytoolkit.org/survey-library/impulsiveness-barratt.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "BIS01": {
         "Description": {

@@ -21,15 +21,13 @@
         "DOI": "",
         "Citation": "Official webpage",
         "ItemCount": 21,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "This scale can be used as long as the website, the authors, and the papers are acknowledged.",
         "Source": "https://www.psytoolkit.org/survey-library/dass21.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "DASS2101": {
         "Description": {

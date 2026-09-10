@@ -26,15 +26,13 @@
         "DOI": "",
         "Citation": "Orpinas, P., and Frankowski, R. (2001). The Aggression Scale: A\nSelf-Report Measure of Aggressive Behavior for Young\nAdolescents. Journal of Early Adolescence, 21, 50-67.",
         "ItemCount": 11,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The scale and items were presented in a journal and seemingly can be used by anyone for research purposes.",
         "Source": "https://www.psytoolkit.org/survey-library/aggression-adolescents.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "AGG-A01": {
         "Description": {

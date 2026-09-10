@@ -34,15 +34,13 @@
         "DOI": "",
         "Citation": "Denollet, J., Sys, S.U., Stroobant, N., Rombouts, H., Gillebert,\nT.C., & Brutsaert, D.L. (1996). Personality as independent predictor\nof long-term mortality in patients with coronary heart disease. The\nLancet, 347, 417-421. Free link to full text",
         "ItemCount": 12,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the DS14 can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Denollet, 2005 ).",
         "Source": "https://www.psytoolkit.org/survey-library/personality-d.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "TYPE-D01": {
         "Description": {

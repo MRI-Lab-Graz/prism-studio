@@ -24,15 +24,13 @@
         "DOI": "",
         "Citation": "Yorke, M. (2016). The development and initial use of a survey of student 'belongingness', engagement and self-confidence in UK higher education. Assessment & Evaluation in Higher Education, 41(1), 154-166, DOI: 10.1080/02602938.2014.990415. Open access link.",
         "ItemCount": 12,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the BES can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( References ).",
         "Source": "https://www.psytoolkit.org/survey-library/bes.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "BES-ALT01": {
         "Description": {

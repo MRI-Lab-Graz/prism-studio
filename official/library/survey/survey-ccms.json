@@ -36,15 +36,13 @@
         "DOI": "",
         "Citation": "Franzen, P., Arens, A. K., Greiff, S., van der Westhuizen, L., Fischbach, A., WollschlÃ¤ger, R., & Niepel, C. (2021). Developing and Validating a Short-Form Questionnaire for the Assessment of Seven Facets of Conscientiousness in Large-Scale Assessments. Journal of Personality Assessment, 1-15. Advance online publication. Link to journal",
         "ItemCount": 16,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the CCM-S can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Valko et al., 2008 ).",
         "Source": "https://www.psytoolkit.org/survey-library/ccms-conscientiousness.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "CCMS01": {
         "Description": {

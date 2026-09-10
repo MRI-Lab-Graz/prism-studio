@@ -26,15 +26,13 @@
         "DOI": "",
         "Citation": "Hendin, H.M., & Cheek, J.M. (1997). Assessing Hypersensitive Narcissism: A Re-examination of Murray’s Narcissism Scale. Journal of Research in Personality, 31, 588-599.",
         "ItemCount": 10,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "You can use the published scale, but you need to acknowledge and cite the original research (Hendin & Cheek, 1997) .",
         "Source": "https://www.psytoolkit.org/survey-library/narcism-hsns.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "HSNS01": {
         "Description": {

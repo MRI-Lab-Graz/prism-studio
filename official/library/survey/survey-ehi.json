@@ -24,15 +24,13 @@
         "DOI": "",
         "Citation": "Oldfield, R.C. (1971). The assessment and analysis of handedness: The Edinburgh inventory. Neuropsychologia, 9, 97-113.",
         "ItemCount": 4,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "You can use this questionnaire, but you will need to cite both references listed at the bottom, as well as PsyToolkit.",
         "Source": "https://www.psytoolkit.org/survey-library/handedness-ehi.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "EHI01": {
         "Description": {

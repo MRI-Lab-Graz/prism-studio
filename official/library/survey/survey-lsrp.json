@@ -28,15 +28,13 @@
         "DOI": "",
         "Citation": "Levenson, M.R., Kiehl, K.A, Fitzpatrick, C.M. (1995). Assessing\npsychopathic attributes in a noninstitutionalized population. Journal\nof Personality and Social Psychology, 68, 151-158.",
         "ItemCount": 11,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The scale was published in the Levenson et al. (1995) paper. It seems that it can be used for research when acknowledging the paper and authors.",
         "Source": "https://www.psytoolkit.org/survey-library/psychopathy-lsrps.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "LSRP01": {
         "Description": {

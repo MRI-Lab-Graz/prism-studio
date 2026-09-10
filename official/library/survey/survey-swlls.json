@@ -24,15 +24,13 @@
         "DOI": "",
         "Citation": "Neto, F. (2005). The Satisfaction With Love Life Scale. Measurement and evaluation in counseling and development, 38, 2-13.",
         "ItemCount": 5,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "This scale was published in the paper by Neto (2005) and it appears that people can use it for research, given that the author is acknowledged and the paper cited.",
         "Source": "https://www.psytoolkit.org/survey-library/love-satisfaction-swlls.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "SWLLS01": {
         "Description": {

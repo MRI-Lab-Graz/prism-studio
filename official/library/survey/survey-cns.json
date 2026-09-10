@@ -25,15 +25,13 @@
         "DOI": "",
         "Citation": "Mayer, F.S. & McPherson Frantz, C. (2004). The connectedness to nature scale: A measure of individuals' feeling in community with nature. Journal of Environmental Psychology, 24, 503-515.",
         "ItemCount": 11,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The CNS be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Mayer & McPherson Frantz, 2004 ).",
         "Source": "https://www.psytoolkit.org/survey-library/connectedness-nature.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "CNS01": {
         "Description": {

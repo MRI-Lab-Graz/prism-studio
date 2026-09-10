@@ -34,15 +34,13 @@
         "DOI": "",
         "Citation": "Veale, D., Eshkevaria, E., Kanakama, N., Ellisona, N., Costa, A., and\nWerner, T. (2014). The Appearance Anxiety Inventory: Validation of a\nProcess Measure in the Treatment of Body Dysmorphic\nDisorder. Behavioural and Cognitive Psychotherapy, 42, 605-616. Link to publisher",
         "ItemCount": 10,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The paper says that this inventory can be used by researchers and clinicians: \"The AAI can be used as a tool for treatment planning and outcome measurement.\" (Veale et al., 2014, p.615)",
         "Source": "https://www.psytoolkit.org/survey-library/appearance-aai.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "AAI01": {
         "Description": {

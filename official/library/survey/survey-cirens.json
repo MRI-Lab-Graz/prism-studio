@@ -23,15 +23,13 @@
         "DOI": "",
         "Citation": "Reference to the original MEQ: Horne and Ostberg (1976). A\nself-assessment questionnaire to determine morningness-eveningness in\nhuman circadian rhythms.  International Journal of Chronobiology, 4,\n97-110.",
         "ItemCount": 2,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the CIRENS can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Ottoni et al., 2011 ).",
         "Source": "https://www.psytoolkit.org/survey-library/chronotype-cirens.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "CIRENS01": {
         "Description": {

@@ -28,15 +28,13 @@
         "DOI": "",
         "Citation": "Smith, M.U., Snyder, S.W., and Devereaux, R.S. (2016). The\nGAENE-Generalized Acceptance of EvolutioN Evaluation: Development of a\nNew Measure of Evolution Acceptance. Journal of Research in Science\nTeaching, 53(9), 1289-1315.",
         "ItemCount": 13,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The GAENE can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Smith, Snyder, & Devereaux, 2016 ).",
         "Source": "https://www.psytoolkit.org/survey-library/evolution-gaene.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "GAENE01": {
         "Description": {

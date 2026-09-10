@@ -24,15 +24,13 @@
         "DOI": "",
         "Citation": "Bandura, A. (1986). Social foundations of thought and action: A social cognitive theory.\nEnglewood Cliffs, NJ: Prentice Hall.",
         "ItemCount": 10,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the GSE can be used for research, but you need to acknowledge the authors and their research paper when writing about it, in particular the following: Scholz et al., 2002 Schwarzer, R., & Jerusalem, M. (1995) The scale is publicly available (in many languages) via the website of the creator .",
         "Source": "https://www.psytoolkit.org/survey-library/generalized-self-efficacy-gse.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "GSE01": {
         "Description": {

@@ -27,15 +27,13 @@
         "DOI": "",
         "Citation": "Barry, J.A., Bouloux, P. & Hardiman, P.J. (2011). The impact of\neating behavior on psychological symptoms typical of reactive\nhypoglycemia. A pilot study comparing women with polycystic ovary\nsyndrome to controls. Appetite, 57, 73-76.",
         "ItemCount": 7,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The HSC-7 can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( References ).",
         "Source": "https://www.psytoolkit.org/survey-library/hypoglycemia-hsc7.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "HSC701": {
         "Description": {

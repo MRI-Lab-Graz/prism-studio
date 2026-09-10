@@ -21,15 +21,13 @@
         "DOI": "",
         "Citation": "Official webpage",
         "ItemCount": 42,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The DASS website states that the DASS is public domain and can be used electronically but that a reference to the DASS website needs to be included: www.psy.unsw.edu.au/dass",
         "Source": "https://www.psytoolkit.org/survey-library/depression-anxiety-stress-dass.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "DASS01": {
         "Description": {

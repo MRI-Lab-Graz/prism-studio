@@ -28,15 +28,13 @@
         "DOI": "",
         "Citation": "Meijman, T. F., de Vries-Griever, A. H., de Vries, G. (1988): The\nevaluation of the Groningen Sleep Quality Scale. Groningen: Heymans\nBulletin (HB 88-13-EX).",
         "ItemCount": 12,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the GSQS can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Meijman et al., 1990 ).",
         "Source": "https://www.psytoolkit.org/survey-library/gsqs.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "GSQS01": {
         "Description": {

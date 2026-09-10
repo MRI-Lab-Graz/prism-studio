@@ -26,15 +26,13 @@
         "DOI": "",
         "Citation": "Sinclair, V. G., & Wallston, K.A. (2004). The development and psychometric evaluation of the\nBrief Resilient Coping Scale. Assessment, 11 (1), 94-101.",
         "ItemCount": 4,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The BRCS is in the public domain and can be used for research and education as long as it is properly cited and as long as the authors are acknowledged ( Sinclair & Wallston, 2004 ). Various other resilience scales can be used only if you pay for them. It seems that medical professionals often want to charge for scales they develop. Be careful with other resilience scales than the BRCS.",
         "Source": "https://www.psytoolkit.org/survey-library/resilience-brcs.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "BRCS01": {
         "Description": {

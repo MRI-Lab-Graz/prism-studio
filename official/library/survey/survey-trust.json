@@ -27,15 +27,13 @@
         "DOI": "",
         "Citation": "Rempel, J.K., Holmes, J.G. & Zanna, M.P. (1985). Trust in close relationships. Journal of\nPersonality and Social Psychology, 49, 95-112.",
         "ItemCount": 13,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the trust scale can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Rempel et al., 1985 ).",
         "Source": "https://www.psytoolkit.org/survey-library/trust.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "TRUST01": {
         "Description": {

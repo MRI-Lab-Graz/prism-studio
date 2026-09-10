@@ -24,15 +24,13 @@
         "DOI": "",
         "Citation": "Lay, C.H. (1986). At Last, My Research Article on\nProcrastination. Journal of Research in Personality, 20, 474-495.",
         "ItemCount": 10,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "This survey seems to be allowed for use in research. As usual, acknowledge the author and cite the paper .",
         "Source": "https://www.psytoolkit.org/survey-library/procrastination-gp.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "GP01": {
         "Description": {

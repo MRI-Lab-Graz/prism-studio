@@ -25,15 +25,13 @@
         "DOI": "",
         "Citation": "Yildirim, C. & Correia, A. (2015). Exploring the dimensions of nomophobia: Development and validation\nof a self-reported questionnaire. Computers in Human Behavior, 49, 130-137.",
         "ItemCount": 9,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "There are no reasons to assume that the NMP-Q cannot be used for research, as long as you make sure that you acknowledge the authors and their research paper when writing about it ( References ).",
         "Source": "https://www.psytoolkit.org/survey-library/nmp-q.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "NMP-Q01": {
         "Description": {

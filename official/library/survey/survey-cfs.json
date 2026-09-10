@@ -25,15 +25,13 @@
         "DOI": "",
         "Citation": "Martin, M. M. & Rubin, R.B. (1995). A new measure of cognitive flexibility. Psychological Reports, 76, 623-626. (Download here).",
         "ItemCount": 8,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the CFS can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Martin & Rubin, 1995 ).",
         "Source": "https://www.psytoolkit.org/survey-library/flexibility-cfs.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "CFS01": {
         "Description": {

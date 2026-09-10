@@ -27,15 +27,13 @@
         "DOI": "",
         "Citation": "Tsukayama, E., Duckworth, A.L. & Kim, B. (2013). Domain-specific impulsivity in school-age children. Developmental Science, 16, 879-893.",
         "ItemCount": 8,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The DSIS-C can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Tsukayama, Duckworth, & Kim, 2013 ).",
         "Source": "https://www.psytoolkit.org/survey-library/impulsiveness-isc.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "ISC01": {
         "Description": {

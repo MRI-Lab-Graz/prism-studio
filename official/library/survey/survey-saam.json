@@ -30,15 +30,13 @@
         "DOI": "",
         "Citation": "Gillath, O., Hart, J., Noftle, E. E., & Stockdale, G. D. (2009). Development and validation of a state adult attachment measure (SAAM). Journal of Research in Personality, 43, 362-373. See also this link to Gillath’s web page.",
         "ItemCount": 21,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "This scale was published in the Gillath et al. 2009 paper and can be used for research. As always, make sure the original study and authors are acknowledged.",
         "Source": "https://www.psytoolkit.org/survey-library/attachment-saam.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "SAAM01": {
         "Description": {

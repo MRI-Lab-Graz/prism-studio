@@ -25,15 +25,13 @@
         "DOI": "",
         "Citation": "K. G. Rice, C. M. E. Richardson, & S. Tueller. (2014). The Short Form of the Revised\nAlmost Perfect Scale. Journal of Personality Assessment, 96(3), 368-379.",
         "ItemCount": 8,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The SAPS be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Rice, Richardson, & Tueller, 2014 ).",
         "Source": "https://www.psytoolkit.org/survey-library/perfectionism-saps.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "SAPS01": {
         "Description": {

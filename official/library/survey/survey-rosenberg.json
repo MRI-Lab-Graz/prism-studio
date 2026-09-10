@@ -21,15 +21,13 @@
         "DOI": "",
         "Citation": "http://www.socy.umd.edu/quick-links/rosenberg-self-esteem-scale[Detailed\ndescription of scale at the University of Maryland, where Professor\nRosenberg worked.[",
         "ItemCount": 5,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The following statement can be found here : \"\" The scale may be used without explicit permission. The author’s family, however, would like to be kept informed of its use: The Morris Rosenberg Foundation c/o Department of Sociology University of Maryland 2112 Art/Soc Building College Park, MD 20742-1315 \"\" And on a link from the University of Maryland, it states : \"\" May I have permission to use the Rosenberg Self-Esteem Scale in my research? Dr. Florence Rosenberg, Manny’s wife, has given permission to use the Self-Esteem Scale for educational and professional research. There is no charge associated with the use of this scale in your professional research. However, please be sure to give credit to Dr. Rosenberg when you use the scale by citing his work in publications, papers and reports. We would also appreciate receiving copies of any published works resulting from your research at the University of Maryland address listed below. How do I cite the scale? You should cite the scale according to the standards of your discipline. The most appropriate citation is: \"Rosenberg, Morris. 1989. Society and the Adolescent Self-Image. Revised edition. Middletown, CT: Wesleyan University Press. \"\"",
         "Source": "https://www.psytoolkit.org/survey-library/self-esteem-rosenberg.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "ROSENBERG01": {
         "Description": {

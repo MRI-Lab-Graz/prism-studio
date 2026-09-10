@@ -25,15 +25,13 @@
         "DOI": "",
         "Citation": "Hendrick, C. & Hendrick, S. (1986). A theory and method of\nlove. Journal of Personality and Social Psychology, 50, 392-402.",
         "ItemCount": 24,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "This scale has been published in an academic journal and it seems that it can be used in research, given that the relevant researchers and papers are acknowledged and cited.",
         "Source": "https://www.psytoolkit.org/survey-library/love-styles-hendrick-sf.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "LAS01": {
         "Description": {

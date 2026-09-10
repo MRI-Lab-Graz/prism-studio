@@ -24,15 +24,13 @@
         "DOI": "",
         "Citation": "Franzoi, S.L. (1994). Further evidence of the reliability and validity of the body esteem scale.\nJournal of Clinical Psychology, 50, 237-239.",
         "ItemCount": 2,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that BES can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( References ).",
         "Source": "https://www.psytoolkit.org/survey-library/body-esteem-bes.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "BES01": {
         "Description": {

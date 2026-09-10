@@ -25,15 +25,13 @@
         "DOI": "",
         "Citation": "Hamby, S. L., (1996). The dominance scale: Preliminary Psychometric Properties. Violence and Victims, 11, 199-212. Link to paper online.",
         "ItemCount": 22,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The scale has been published in an academic journal ( see references ). It seems that it can be used for research given that the author and paper are acknowledged. Please note that the copyright lies with Sherry Hamby (details in references).",
         "Source": "https://www.psytoolkit.org/survey-library/dominance-ard.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "ARD01": {
         "Description": {

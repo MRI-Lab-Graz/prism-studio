@@ -28,15 +28,13 @@
         "DOI": "",
         "Citation": "Jong, J., Bluemke, M., & Halberstadt, J. (2013). Fear of death and supernatural beliefs: Developing a new supernatural belief scale to test the relationship. European Journal of Personality, 27, 495-506.",
         "ItemCount": 10,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The SBS-10 can be used for research, but you need to acknowledge the authors and their research paper ( Jong et al., 2013 ).",
         "Source": "https://www.psytoolkit.org/survey-library/supernatural-sbs.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "SBS-1001": {
         "Description": {

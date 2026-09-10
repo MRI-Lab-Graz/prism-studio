@@ -22,15 +22,13 @@
         "DOI": "",
         "Citation": "Ferguson & Negy (2014). Development of a brief screening questionnaire for histrionic personality symptoms. Personality & Individual Differences, 66, 124-127.",
         "ItemCount": 11,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The BHPS be used for research, but you need to acknowledge the authors and their research paper when writing about it ( References ).",
         "Source": "https://www.psytoolkit.org/survey-library/histrionic-bhps.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "BHPS01": {
         "Description": {

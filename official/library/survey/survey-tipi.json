@@ -25,15 +25,13 @@
         "DOI": "",
         "Citation": "S. D. Gosling, P. J. Rentfrow, and W. B. Swann Jr. (2003). A very\nbrief measure of the Big-Five personality domains. Journal of Research\nin Personality, 37, 504-528.",
         "ItemCount": 5,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "NOT VERIFIED: the upstream source page states no licensing information for this instrument. Verify with the original publication before use.",
         "Source": "https://www.psytoolkit.org/survey-library/big5-tipi.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "TIPI01": {
         "Description": {

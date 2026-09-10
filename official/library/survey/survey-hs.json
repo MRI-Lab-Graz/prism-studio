@@ -25,15 +25,13 @@
         "DOI": "",
         "Citation": "Kaufman, S.B. & Jauk, E. (2020). Healthy Selfishness and Pathological Altruism: Measuring Two Paradoxical Forms of Selfishness. Frontiers in Psychology, 11. Open Access",
         "ItemCount": 10,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the HS can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( References ).",
         "Source": "https://www.psytoolkit.org/survey-library/healthy-selfishness.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "HS01": {
         "Description": {

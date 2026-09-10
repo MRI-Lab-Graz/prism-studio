@@ -1,5 +1,10 @@
 # Survey instrument categorization (`Study.Category`)
 
+> **Later change (2026-09-10):** `BSRI` was removed from the library for
+> licensing reasons (Mind Garden licenses it and forbids open-web
+> publication). Counts below are the 104 as of this spec's date; the
+> library now holds 103.
+
 ## Problem
 
 The official instrument library (`official/library/survey/`, 104 questionnaire

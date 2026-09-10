@@ -24,15 +24,13 @@
         "DOI": "",
         "Citation": "Nolen-Hoeksema, S. (2000). The role of rumination in depressive\ndisorders and mixed anxiety/depressive Symptoms. Journal of Abnormal\nPsychology, 109, 504-511.",
         "ItemCount": 22,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "This score seems to be allowed to be used by researchers, given that the relevant work by Nolen-Hoeksma and colleagues is acknowledged and cited.",
         "Source": "https://www.psytoolkit.org/survey-library/rumination.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "RRS01": {
         "Description": {

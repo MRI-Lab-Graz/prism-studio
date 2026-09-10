@@ -36,15 +36,13 @@
         "DOI": "",
         "Citation": "Green, C. E. L., Freeman, D., Kuipers, E., Bebbington, P., Fowler, D., Dunn, G., & Garety, P. A. (2008). Measuring ideas of persecution and social reference: the Green et al. Paranoid Thought Scales (GPTS). Psychological medicine, 38, 101-111.",
         "ItemCount": 16,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that GPTS can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Green et al., 2008 ).",
         "Source": "https://www.psytoolkit.org/survey-library/paranoia-gpts.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "GTPS01": {
         "Description": {

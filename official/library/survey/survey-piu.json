@@ -25,15 +25,13 @@
         "DOI": "",
         "Citation": "Morahan-Martin, J. and Schumacher, P. (2000). Incidence and\ncorrelates of pathological Internet use among college\nstudents. Computers in Human Behavior, 16, 13-29.",
         "ItemCount": 11,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The PIU can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Morahan & Schumacher, 2000 ).",
         "Source": "https://www.psytoolkit.org/survey-library/addiction-internet-piu.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "PIU01": {
         "Description": {

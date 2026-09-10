@@ -25,15 +25,13 @@
         "DOI": "",
         "Citation": "Pacini, R. and Epstein, S. (1999). The Relation of Rational and\nExperiential Information Processing Styles to Personality, Basic\nBeliefs, and the Ratio-Bias Phenomenon. Personality and Individual\nDifferences, 76, 972-987.",
         "ItemCount": 10,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the improved REI, described in Pacini and Epstein’s article (1999), can be used by researchers as long as the original paper and authors are acknowledged.",
         "Source": "https://www.psytoolkit.org/survey-library/thinking-style-rei.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "REI01": {
         "Description": {

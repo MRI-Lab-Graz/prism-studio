@@ -25,15 +25,13 @@
         "DOI": "",
         "Citation": "Rutledge, M .L . & Warden, M .A . (1999). The development and validation of the Measure of Acceptance of the Theory of Evolution Instrument. School Science and Mathematics, 99(1), 13-18.",
         "ItemCount": 10,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the MATE be used for research, but you need to acknowledge the authors and their research papers when writing about it ( Rutlege & Warden, 1999; Rutledge & Kim, 2007 ).",
         "Source": "https://www.psytoolkit.org/survey-library/evolution-mate.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "MATE01": {
         "Description": {

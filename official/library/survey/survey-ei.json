@@ -36,15 +36,13 @@
         "DOI": "",
         "Citation": "Schutte, N. S., Malouff, J. M., Hall, L. E., Haggerty, D. J.,\nCooper, J. T., Golden, C. J., & Dornheim, L. (1998). Development and\nvalidation of a measure of emotional intelligence. Personality and\nIndividual Differences, 25, 167-177.",
         "ItemCount": 30,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "The authors of the test (Schutte et al) state: \"The authors permit free use of the scale for research and clinical purposes.\"(p.172).",
         "Source": "https://www.psytoolkit.org/survey-library/emotional-intelligence.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "EI01": {
         "Description": {

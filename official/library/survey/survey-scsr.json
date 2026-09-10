@@ -25,15 +25,13 @@
         "DOI": "",
         "Citation": "Scheier, M. F. & Carver, C. S. (1985). The self-consciousnes scale -\na revised version for use with general populations. Journal of\nApplied Social Psychology, 15, 687-699.",
         "ItemCount": 19,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the SCS-R can be used for research (it is published in a journal and the test is available via the first author’s webpage, but as always, you need to acknowledge the authors and their research paper when writing about it ( Scheier & Carver, 1985 ).",
         "Source": "https://www.psytoolkit.org/survey-library/self-consciousness-scale-scsr.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "SCSR01": {
         "Description": {

@@ -26,15 +26,13 @@
         "DOI": "https://doi.org/10.5406/amerjpsyc.132.3.0343.",
         "Citation": "Christian L. Hart, Jelisa M. Jones, John A. Terrizzi, Drew A. Curtis. (2019). Development of the Lying in Everyday Situations Scale. The American Journal of Psychology, 132 (3), 343-352. doi: https://doi.org/10.5406/amerjpsyc.132.3.0343. Download for free",
         "ItemCount": 7,
-        "License": {
-            "en": "Freely available for research purposes (verify with original publication)",
-            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
-        },
+        "License": "It seems that the Lying in Everyday Situations Scale can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Hart and colleagues (2019) ).",
         "Source": "https://www.psytoolkit.org/survey-library/everyday-lying.html",
         "Instructions": {
             "en": "Please read each statement and select the response that best describes you.",
             "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-        }
+        },
+        "LicenseID": "Other"
     },
     "LIES01": {
         "Description": {
