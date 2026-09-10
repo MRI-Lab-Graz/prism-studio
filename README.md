@@ -177,4 +177,12 @@ See `CITATION.cff` for citation metadata.
 
 ## License
 
-See `LICENSE`.
+See `LICENSE` (AGPL-3.0) for the software.
+
+**The bundled instrument library is content, not code, and AGPL-3.0 does not
+apply to it.** Most survey templates under `official/library/survey/` derive
+from the [PsyToolkit survey library](https://www.psytoolkit.org/survey-library/)
+and carry their own per-instrument terms in each template's `Study.License`
+field. See [`official/library/NOTICE.md`](official/library/NOTICE.md) for
+provenance, citation requirements, and what you must check before using an
+instrument.
