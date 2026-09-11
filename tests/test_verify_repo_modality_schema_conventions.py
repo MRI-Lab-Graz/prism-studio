@@ -106,3 +106,34 @@ def test_skipped_when_schema_dir_missing(tmp_path: Path, capsys) -> None:
     output = capsys.readouterr().out
 
     assert "skipped" in output
+
+
+def test_flags_non_object_json(tmp_path: Path, capsys) -> None:
+    """Test that non-object JSON (array, string, number) is properly caught."""
+    verify_repo = _load_verify_repo_module()
+    schema_dir = tmp_path / "app" / "schemas" / "stable"
+    schema_dir.mkdir(parents=True, exist_ok=True)
+
+    # Test with an array
+    (schema_dir / "survey.schema.json").write_text("[]", encoding="utf-8")
+    verify_repo.check_modality_schema_conventions(str(tmp_path))
+    output = capsys.readouterr().out
+    assert "[✗]" in output
+    assert "must be an object" in output
+    assert "got list" in output
+
+    # Test with a string
+    (schema_dir / "biometrics.schema.json").write_text('"todo"', encoding="utf-8")
+    verify_repo.check_modality_schema_conventions(str(tmp_path))
+    output = capsys.readouterr().out
+    assert "[✗]" in output
+    assert "must be an object" in output
+    assert "got str" in output
+
+    # Test with a number
+    (schema_dir / "physio.schema.json").write_text("123", encoding="utf-8")
+    verify_repo.check_modality_schema_conventions(str(tmp_path))
+    output = capsys.readouterr().out
+    assert "[✗]" in output
+    assert "must be an object" in output
+    assert "got int" in output

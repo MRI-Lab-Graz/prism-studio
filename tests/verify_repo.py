@@ -2401,6 +2401,13 @@ def check_modality_schema_conventions(repo_path, fix=False):
             print_error(f"{schema_path.name}: not valid JSON ({e}).")
             continue
 
+        if not isinstance(schema, dict):
+            print_error(
+                f"{schema_path.name}: top-level JSON must be an object, "
+                f"got {type(schema).__name__}."
+            )
+            continue
+
         for required_key in (
             "$schema",
             "$id",
