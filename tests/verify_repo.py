@@ -2369,6 +2369,65 @@ def check_library_uniqueness(repo_path, fix=False):
         print_success("All item IDs are unique across the official library.")
 
 
+def check_index_json_freshness(repo_path, fix=False):
+    """Fail if official/library/survey/index.json is out of sync with the
+    actual instrument templates -- whether hand-edited or simply not
+    regenerated after a template was added/changed/removed.
+
+    Comparison ignores 'GeneratedOn': it is a timestamp, not content, and a
+    byte-for-byte comparison would always report a diff (see spec section
+    1.4)."""
+    print_header("Checking official/library/survey/index.json Freshness")
+
+    library_dir = Path(repo_path) / "official" / "library" / "survey"
+    if not library_dir.is_dir():
+        print_success(
+            "index.json freshness check skipped (official/library/survey not found)."
+        )
+        return
+
+    index_path = library_dir / "index.json"
+    if not index_path.is_file():
+        print_error(f"{index_path} does not exist. Run scripts/generate_instrument_registry.py.")
+        return
+
+    repo_root = str(Path(repo_path).resolve())
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
+    from src.instrument_registry import build_registry_index
+
+    committed = json.loads(index_path.read_text(encoding="utf-8"))
+    expected = build_registry_index(library_dir)
+
+    committed_comparable = {k: v for k, v in committed.items() if k != "GeneratedOn"}
+    expected_comparable = {k: v for k, v in expected.items() if k != "GeneratedOn"}
+
+    if committed_comparable == expected_comparable:
+        print_success("index.json is up to date with official/library/survey/.")
+        return
+
+    committed_instruments = set(committed_comparable.get("Instruments", {}))
+    expected_instruments = set(expected_comparable.get("Instruments", {}))
+    added = expected_instruments - committed_instruments
+    removed = committed_instruments - expected_instruments
+    changed = {
+        name
+        for name in committed_instruments & expected_instruments
+        if committed_comparable["Instruments"][name]
+        != expected_comparable["Instruments"][name]
+    }
+
+    print_error(
+        "index.json is out of date. Run: python scripts/generate_instrument_registry.py"
+    )
+    if added:
+        print_error(f"  Missing from index.json (added to library): {sorted(added)}")
+    if removed:
+        print_error(f"  Stale in index.json (removed from library): {sorted(removed)}")
+    if changed:
+        print_error(f"  Out of date in index.json (library file changed): {sorted(changed)}")
+
+
 def check_modality_schema_conventions(repo_path, fix=False):
     """Validate community-extensible modality schemas are well-formed.
 
@@ -2475,6 +2534,7 @@ CHECKS = {
     "import-boundaries": check_import_boundaries,
     "dual-tree-drift": check_dual_tree_drift,
     "library-uniqueness": check_library_uniqueness,
+    "index-json-freshness": check_index_json_freshness,
     "modality-schema-conventions": check_modality_schema_conventions,
     "sensitive-files": check_sensitive_files,
     "large-files": check_large_files,
