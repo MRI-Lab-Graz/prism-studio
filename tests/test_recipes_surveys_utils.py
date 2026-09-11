@@ -32,6 +32,7 @@ from src.recipes_surveys import (
     _write_codebook_json,
     _write_codebook_tsv,
     _ensure_dir,
+    _unlock_for_overwrite,
     _get_item_value,
     _map_value_to_bucket,
     _generate_recipes_boilerplate_sections,
@@ -362,6 +363,16 @@ class TestGetI18nText:
     def test_none_returns_empty(self):
         assert get_i18n_text(None) == ""
 
+    def test_falls_back_when_requested_language_present_but_blank(self):
+        # A template authored in German with an untranslated "en": "" must
+        # fall through to German, not resolve to the blank placeholder.
+        assert (
+            get_i18n_text({"de": "Deutsch", "en": ""}, lang="en") == "Deutsch"
+        )
+
+    def test_falls_back_to_any_non_empty_value_when_en_and_de_blank(self):
+        assert get_i18n_text({"en": "", "de": "", "fr": "Français"}) == "Français"
+
 
 # ---------------------------------------------------------------------------
 # _ensure_bidsignore_prism_rules
@@ -493,6 +504,24 @@ class TestBuildVariableMetadata:
             ["ADS_01"], {}, {}, sidecar_meta=sidecar
         )
         assert var_labels["ADS_01"] == "Feeling anxious"
+
+    def test_sidecar_description_and_levels_fall_back_when_en_blank(self):
+        # Matches a real-world template shape: authored in German, with
+        # "en" translation keys present but left blank rather than omitted.
+        sidecar = {
+            "ADS01": {
+                "Description": {"de": "Ich fühlte mich niedergeschlagen.", "en": ""},
+                "Levels": {
+                    "0": {"de": "Selten", "en": ""},
+                    "1": {"de": "Manchmal", "en": ""},
+                },
+            }
+        }
+        var_labels, val_labels, _ = _build_variable_metadata(
+            ["ADS01"], {}, {}, sidecar_meta=sidecar, lang="en"
+        )
+        assert var_labels["ADS01"] == "Ich fühlte mich niedergeschlagen."
+        assert val_labels["ADS01"] == {"0": "Selten", "1": "Manchmal"}
 
     def test_score_details_extracted(self):
         recipe = {
@@ -1621,3 +1650,58 @@ class TestLoadAndValidateRecipes:
         (recipe_dir / "recipe-hrv.json").write_text(_json.dumps(bio_recipe))
         result, _ = _load_and_validate_recipes(tmp_path, "biometrics")
         assert "hrv" in result
+
+
+# ---------------------------------------------------------------------------
+# _unlock_for_overwrite
+# ---------------------------------------------------------------------------
+
+class TestUnlockForOverwrite:
+    def test_chmods_readonly_file_writable_outside_datalad_dataset(self, tmp_path):
+        # A previously-exported .sav can end up read-only (e.g. a stray
+        # chmod, or a git-annex checkout without a .datalad marker); outside
+        # an actual DataLad dataset there's no content-addressed object to
+        # corrupt, so a plain chmod is safe.
+        target = tmp_path / "out.sav"
+        target.write_bytes(b"stale")
+        target.chmod(0o444)
+
+        _unlock_for_overwrite(target, tmp_path)
+
+        assert os.access(target, os.W_OK)
+
+    def test_noop_when_already_writable(self, tmp_path):
+        target = tmp_path / "out.sav"
+        target.write_bytes(b"data")
+        # Should not raise or alter a file that's already writable.
+        _unlock_for_overwrite(target, tmp_path)
+        assert os.access(target, os.W_OK)
+
+    def test_noop_when_file_does_not_exist(self, tmp_path):
+        # Nothing to unlock for a brand-new export; must not raise.
+        _unlock_for_overwrite(tmp_path / "missing.sav", tmp_path)
+
+    def test_does_not_chmod_inside_datalad_dataset(self, tmp_path, monkeypatch):
+        # Inside a DataLad dataset, a locked file is a git-annex object
+        # (mode 444 by design); silently chmod'ing it would let a later
+        # write corrupt content-addressed storage. Must go through
+        # `datalad unlock` instead -- and if that's unavailable/fails, the
+        # file should be left locked (write fails loudly) rather than
+        # patched around.
+        (tmp_path / ".datalad").mkdir()
+        target = tmp_path / "out.sav"
+        target.write_bytes(b"stale")
+        target.chmod(0o444)
+
+        calls = []
+        monkeypatch.setattr(
+            "src.recipes_surveys.run_datalad_unlock",
+            lambda root, paths: calls.append((root, paths)),
+        )
+
+        _unlock_for_overwrite(target, tmp_path)
+
+        assert calls == [(tmp_path, [str(target)])]
+        # No chmod fallback was applied; the mock unlock didn't actually
+        # touch permissions, so the file is still locked.
+        assert not os.access(target, os.W_OK)

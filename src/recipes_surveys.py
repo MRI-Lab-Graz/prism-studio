@@ -20,6 +20,7 @@ from datetime import datetime
 from pathlib import Path
 import csv
 import hashlib
+import os
 import re
 import json
 from typing import Any, Dict, Optional
@@ -28,6 +29,7 @@ from src.datalad_execution import (
     is_datalad_dataset,
     resolve_datalad_executable,
     run_datalad_save,
+    run_datalad_unlock,
 )
 from src.recipe_validation import validate_recipe
 from src.utils.io import read_json as _read_json, write_json as _write_json
@@ -74,6 +76,34 @@ class SurveyRecipesResult:
 def _ensure_dir(path: Path) -> Path:
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def _unlock_for_overwrite(path: str | Path, dataset_root: str | Path) -> None:
+    """Make an existing output file writable before overwriting it in place.
+
+    A previously-exported .sav/.xlsx can already be a git-annex-locked
+    symlink (mode 444) once DataLad has saved it (see `is_datalad_dataset`
+    below, and CLAUDE.md's git-annex/DataLad text-file policy). Writing
+    straight to a locked file either raises PermissionError or, for some
+    writers, silently no-ops -- leaving stale binary content on disk while
+    the never-annexed .json/.tsv sidecars keep updating on every re-run, a
+    split that's easy to miss since both paths report success. `datalad
+    unlock` is a documented no-op when the path isn't actually annexed, so
+    this is safe to call unconditionally inside a DataLad dataset. Outside
+    one, chmod is safe too, since there's no content-addressed object to
+    corrupt.
+    """
+    path = Path(path)
+    if not path.exists() or os.access(path, os.W_OK):
+        return
+    dataset_root = Path(dataset_root)
+    if is_datalad_dataset(dataset_root):
+        run_datalad_unlock(dataset_root, paths=[str(path)])
+        return
+    try:
+        path.chmod(0o644)
+    except OSError:
+        pass
 
 
 def _copy_recipes_to_project(
@@ -247,8 +277,15 @@ def _write_tsv_rows(path: Path, header: list[str], rows: list[dict[str, str]]) -
 def get_i18n_text(obj: Any, lang: str = "en") -> str:
     """Get localized text from a string or a dictionary of translations."""
     if isinstance(obj, dict):
-        # Try requested language, then English, then first available
-        return str(obj.get(lang, obj.get("en", next(iter(obj.values()), ""))))
+        # Try requested language, then English, then German, then first
+        # available non-empty value. A present-but-blank translation (e.g.
+        # a template authored in German with an untranslated "en": "")
+        # must fall through, not be treated as the resolved text.
+        for candidate_lang in (lang, "en", "de"):
+            text = obj.get(candidate_lang)
+            if text:
+                return str(text)
+        return str(next((v for v in obj.values() if v), ""))
     return str(obj or "")
 
 
@@ -1670,6 +1707,7 @@ def _export_recipe_aggregated(
         )
     elif out_format == "xlsx":
         out_fname = out_root / f"{prefix}{recipe_id}.xlsx"
+        _unlock_for_overwrite(out_fname, output_prism_root)
         try:
             with pd.ExcelWriter(out_fname, engine="openpyxl") as writer:
                 df_for_write.to_excel(writer, sheet_name="Data", index=False)
@@ -1725,6 +1763,7 @@ def _export_recipe_aggregated(
         out_fname = out_root / f"{prefix}{recipe_id}.sav"
         codebook_json_path = out_root / f"{prefix}{recipe_id}_codebook.json"
         codebook_tsv_path = out_root / f"{prefix}{recipe_id}_codebook.tsv"
+        _unlock_for_overwrite(out_fname, output_prism_root)
         try:
             import pyreadstat
 
@@ -2645,8 +2684,10 @@ def compute_survey_recipes(
                 missing_policy=missing_policy,
                 missing_numeric_value=missing_numeric_value,
             )
+            _unlock_for_overwrite(out_path, output_prism_root)
             combined_for_write.to_excel(out_path, index=False)
         elif out_format == "sav":
+            _unlock_for_overwrite(out_path, output_prism_root)
             try:
                 import pyreadstat
 
@@ -2951,8 +2992,6 @@ def anonymize_recipe_output(
         (anonymized_file_count, mapping_file_path), where the mapping path is
         None when participant IDs were not anonymized.
     """
-    import os
-
     import pandas as pd
 
     dataset_path = str(dataset_path)
@@ -3055,6 +3094,7 @@ def anonymize_recipe_output(
                     # anonymized .sav.
                     _mask_codebook_sidecars(sav_path, masked_columns)
 
+                _unlock_for_overwrite(sav_path, dataset_path)
                 pyreadstat.write_sav(
                     df_data,
                     sav_path,
@@ -3120,6 +3160,7 @@ def anonymize_recipe_output(
                     if mask_questions and "question" in df_data.columns:
                         df_data["question"] = "[MASKED]"
 
+                _unlock_for_overwrite(file_path, dataset_path)
                 with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
                     for sheet_name in sheet_names:
                         sheet_frames[sheet_name].to_excel(
