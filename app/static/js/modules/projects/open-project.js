@@ -1050,6 +1050,15 @@ export function initOpenProjectController({
         const sessionText = shownSessionLabels.map(label => escapeHtml(label)).join(', ');
         const modalityText = shownModalityLabels.map(label => escapeHtml(label)).join(', ');
 
+        // A shallow summary answers from project.json and one directory read,
+        // so subjects and the root-file checks are exact but sessions and
+        // modalities are only what the project declares. Show those two as
+        // still-counting rather than as disk facts.
+        const isCounting = summary.scan === 'shallow';
+        const countingMark = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span><span class="visually-hidden">counting</span>';
+        const sessionsValue = isCounting ? countingMark : String(sessions);
+        const modalitiesValue = isCounting ? countingMark : String(modalities);
+
         // No subjects means no real data has been imported yet -- the 5-tile
         // grid is mostly padding around zeroes at that point, so collapse it
         // to one line until there's something to actually show.
@@ -1073,11 +1082,11 @@ export function initOpenProjectController({
                     <div class="stat-label">Subjects</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-value">${sessions}</div>
+                    <div class="stat-value">${sessionsValue}</div>
                     <div class="stat-label">Sessions</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-value">${modalities}</div>
+                    <div class="stat-value">${modalitiesValue}</div>
                     <div class="stat-label">Modalities</div>
                 </div>
                 <div class="stat-item">
@@ -1091,8 +1100,15 @@ export function initOpenProjectController({
             </div>
         `;
 
+        let caption = '<i class="fas fa-database me-1"></i>Snapshot from folders currently found on disk.';
+        if (isCounting) {
+            caption = '<i class="fas fa-bolt me-1"></i>Read from project.json. Counting folders on disk&hellip;';
+        } else if (summary.scan === 'declared') {
+            caption = '<i class="fas fa-file-lines me-1"></i>Declared in project.json &ndash; could not count folders on disk.';
+        }
+
         return `
-            <div class="small text-muted mb-2"><i class="fas fa-database me-1"></i>Snapshot from folders currently found on disk.</div>
+            <div class="small text-muted mb-2">${caption}</div>
             ${statsHtml}
             ${modalityText ? `
                 <div class="small text-muted mt-2"><strong>Modalities:</strong> ${modalityText}${hiddenModalityCount > 0 ? ` (+${hiddenModalityCount} more)` : ''}</div>
@@ -1101,6 +1117,27 @@ export function initOpenProjectController({
                 <div class="small text-muted mt-1"><strong>Sessions:</strong> ${sessionText}${hiddenSessionCount > 0 ? ` (+${hiddenSessionCount} more)` : ''}</div>
             ` : ''}
         `;
+    }
+
+    let lastShallowProjectSummary = null;
+
+    async function refreshProjectQuickSummary() {
+        const container = document.getElementById('projectQuickSummary');
+        if (!container) return;
+        try {
+            const response = await fetchWithApiFallback('/api/projects/summary');
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.success || !data.project_summary) {
+                throw new Error(data.error || 'Summary unavailable');
+            }
+            container.innerHTML = renderProjectQuickSummary(data.project_summary);
+        } catch (error) {
+            // Keep the declared numbers rather than an endless spinner.
+            const fallback = lastShallowProjectSummary
+                ? { ...lastShallowProjectSummary, scan: 'declared' }
+                : null;
+            container.innerHTML = renderProjectQuickSummary(fallback);
+        }
     }
 
     function renderLoadedProjectState(loadedName, loadedPath, summary) {
@@ -1118,7 +1155,7 @@ export function initOpenProjectController({
                     </div>
                 </div>
                 <p class="mb-1 mt-2"><strong><span class="me-1" aria-hidden="true">${projectIconClass}</span>${escapeHtml(loadedName || 'Current project')}:</strong> <code>${escapeHtml(loadedPath)}</code></p>
-                ${quickSummaryHtml}
+                <div id="projectQuickSummary">${quickSummaryHtml}</div>
                 <div class="alert alert-info mt-2 mb-0" role="status">
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
                         <div>
@@ -1227,7 +1264,13 @@ export function initOpenProjectController({
             const response = await fetchWithApiFallback('/api/projects/current', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: normalizedPath, defer_datalad_status: true })
+                // metadata_only: answer from project.json + one directory read so the
+                // card paints immediately; the counted summary follows below.
+                body: JSON.stringify({
+                    path: normalizedPath,
+                    defer_datalad_status: true,
+                    metadata_only: true
+                })
             });
             const result = await response.json().catch(() => ({
                 success: false,
@@ -1256,6 +1299,7 @@ export function initOpenProjectController({
             updateCreateProjectButton();
             showMethodsCard();
 
+            lastShallowProjectSummary = projectSummary;
             renderLoadedProjectState(loadedName, loadedPath, projectSummary);
             renderProjectBoxDataladState(currentState.datalad, loadedPath);
             bindProjectBoxActionButtons();
@@ -1264,8 +1308,9 @@ export function initOpenProjectController({
             updateLoadProjectButtonState();
             showAutosaveFailureFeedback(result.autosave_previous);
 
-            // Let the folder summary paint before starting DataLad status work.
+            // Let the card paint before the folder walk and DataLad status work.
             window.setTimeout(() => {
+                refreshProjectQuickSummary();
                 showDataladCard();
                 if (currentState.datalad && currentState.datalad.enabled) {
                     refreshDataladStatusDeep(loadedPath);

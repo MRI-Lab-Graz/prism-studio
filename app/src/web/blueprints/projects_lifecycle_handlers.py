@@ -68,17 +68,38 @@ def _derive_project_icon(
         return normalize_project_icon(fallback_icon) or choose_random_project_icon()
 
 
-def _build_project_quick_summary(root_path: Path) -> dict[str, Any]:
+def _build_project_quick_summary(root_path: Path, *, deep: bool = True) -> dict[str, Any]:
     """Build fast project summary metrics for UI cards.
 
     This intentionally avoids full validation and only scans structure basics.
+    With ``deep=False`` it reads just the project root listing and
+    project.json -- one directory round trip -- so the UI can paint before the
+    subject/session walk runs.
     """
     try:
         from src.project_structure import get_project_quick_summary
 
-        return get_project_quick_summary(root_path)
+        return get_project_quick_summary(root_path, deep=deep)
     except Exception:
         return {}
+
+
+def handle_project_summary():
+    """Return the counted (on-disk) summary for the current project.
+
+    Split out from the project-load response so a load can answer immediately
+    from project.json and the exact counts arrive once the card is on screen.
+    """
+    project_path = session.get("current_project_path")
+    if not project_path:
+        return jsonify({"success": False, "error": "No current project loaded."}), 400
+
+    return jsonify(
+        {
+            "success": True,
+            "project_summary": _build_project_quick_summary(Path(project_path)),
+        }
+    )
 
 
 def _get_datalad_preflight_status() -> dict[str, Any]:
@@ -219,7 +240,9 @@ def handle_set_current(
             "icon": resolved_icon,
             "datalad": {},
         }
-        summary = {} if metadata_only else _build_project_quick_summary(Path(path))
+        # metadata_only still answers with the cheap summary: it costs one
+        # directory read, and an empty card is worse feedback than a partial one.
+        summary = _build_project_quick_summary(Path(path), deep=not metadata_only)
     else:
         summary = _build_project_quick_summary(Path(path))
         current = dict(get_current_project() or {})

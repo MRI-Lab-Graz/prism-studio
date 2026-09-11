@@ -315,6 +315,7 @@ def validate_dataset(
     ]
 
     total_subjects = len(subject_dirs)
+    need_procedure_tasks = run_prism and _project_declares_sessions(root_dir)
 
     for idx, (item, item_path) in enumerate(subject_dirs):
         # Spend most of the progress budget on subject traversal before the final phases.
@@ -331,6 +332,7 @@ def validate_dataset(
             root_dir,
             run_prism=run_prism,
             run_bids=run_bids,
+            need_procedure_tasks=need_procedure_tasks,
         )
         issues.extend(subject_issues)
 
@@ -605,6 +607,22 @@ def _run_bids_validator(root_dir, verbose=False, check_nifti_headers=False):
     )
 
 
+def _project_declares_sessions(root_dir) -> bool:
+    """True when project.json declares Sessions, so procedure checks will run.
+
+    ``validate_procedure`` returns immediately when nothing is declared, and
+    collecting its on-disk inventory means reading modality folders the walk
+    would otherwise skip entirely. On a remote MRI project that is hundreds of
+    cold directory reads for an answer nobody looks at, so ask first.
+    """
+    try:
+        with open(os.path.join(root_dir, "project.json"), "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return False
+    return bool(isinstance(data, dict) and data.get("Sessions"))
+
+
 def _scan_dir(path, dir_cache=None):
     """Read a directory once: names plus entry types, with no per-entry stat().
 
@@ -624,7 +642,14 @@ def _scan_dir(path, dir_cache=None):
 
 
 def _validate_subject(
-    subject_dir, subject_id, validator, stats, root_dir, run_prism=True, run_bids=False
+    subject_dir,
+    subject_id,
+    validator,
+    stats,
+    root_dir,
+    run_prism=True,
+    run_bids=False,
+    need_procedure_tasks=False,
 ):
     issues = []
 
@@ -664,6 +689,7 @@ def _validate_subject(
                         root_dir,
                         run_prism=run_prism,
                         run_bids=run_bids,
+                        need_procedure_tasks=need_procedure_tasks,
                         entries=child_entries,
                     )
                 )
@@ -695,6 +721,7 @@ def _validate_session(
     root_dir,
     run_prism=True,
     run_bids=False,
+    need_procedure_tasks=False,
     entries=None,
 ):
     issues = []
@@ -706,18 +733,27 @@ def _validate_session(
     for item in filtered_items:
         item_path = os.path.join(session_dir, item)
         if entries[item].is_dir():
+            skipped_by_bids = run_bids and item in BIDS_MODALITIES and item != "func"
+            if skipped_by_bids and not need_procedure_tasks:
+                continue
+
             # Read the directory before any modality filtering: procedure
             # validation needs the task files of *every* sub-*/ses-*/<dir>,
             # including modalities this walk otherwise hands to the BIDS
             # validator. One readdir here replaces a second full tree walk.
             child_entries = _scan_dir(item_path, validator._dir_cache)
             filtered_contents = filter_system_files(list(child_entries))
-            stats.add_procedure_tasks(
-                session_id,
-                [name for name in filtered_contents if child_entries[name].is_file()],
-            )
+            if need_procedure_tasks:
+                stats.add_procedure_tasks(
+                    session_id,
+                    [
+                        name
+                        for name in filtered_contents
+                        if child_entries[name].is_file()
+                    ],
+                )
 
-            if run_bids and item in BIDS_MODALITIES and item != "func":
+            if skipped_by_bids:
                 continue
 
             if not filtered_contents:

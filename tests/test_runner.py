@@ -105,6 +105,7 @@ class TestValidateDataset:
             _root_dir,
             run_prism=True,
             run_bids=False,
+            need_procedure_tasks=False,
         ):
             stats.subjects.add(subject_id)
             return []
@@ -178,6 +179,7 @@ class TestValidateDataset:
             _root_dir,
             run_prism=True,
             run_bids=False,
+            need_procedure_tasks=False,
         ):
             stats.subjects.add(subject_id)
             return []

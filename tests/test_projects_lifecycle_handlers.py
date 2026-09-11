@@ -201,7 +201,7 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertEqual(captured["last_name"], "Resolved Name")
         self.assertIn(body["current"]["icon"], self.allowed_icons)
 
-    def test_set_current_metadata_only_skips_summary_and_status(self):
+    def test_set_current_metadata_only_returns_shallow_summary_without_status(self):
         (self.project_root / "project.json").write_text(
             '{"name": "Resolved Name"}', encoding="utf-8"
         )
@@ -230,7 +230,11 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertEqual(body["current"]["path"], str(self.project_root))
         self.assertEqual(body["current"]["name"], "Resolved Name")
         self.assertEqual(body["current"]["datalad"], {})
-        self.assertEqual(body["project_summary"], {})
+        # metadata_only costs one directory read: exact subject count and root
+        # file checks, with sessions/modalities taken from project.json.
+        summary = body["project_summary"]
+        self.assertEqual(summary["scan"], "shallow")
+        self.assertEqual(summary["subjects"], 0)
         self.assertEqual(captured["path"], str(self.project_root))
 
     def test_set_current_deferred_datalad_status_keeps_quick_summary(self):

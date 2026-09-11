@@ -67,6 +67,7 @@ from .projects_lifecycle_handlers import (
     handle_project_path_status,
     handle_remote_source_status,
     handle_recruitment_location_search,
+    handle_project_summary,
     handle_set_current,
     handle_set_recent_projects,
     handle_validate_project,
@@ -342,6 +343,12 @@ def get_datalad_status_deep():
         **_get_datalad_setup_preferences(project_path),
     }
     return jsonify({"success": True, "datalad": datalad_status})
+
+
+@projects_bp.route("/api/projects/summary", methods=["GET"])
+def get_project_summary():
+    """Counted project summary, fetched after the load response has painted."""
+    return handle_project_summary()
 
 
 @projects_bp.route("/api/projects/current", methods=["POST"])

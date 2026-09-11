@@ -5,6 +5,8 @@ Provides information about available sessions and modalities
 within a project directory, used for selective export/sharing.
 """
 
+import json
+import os
 import re
 from pathlib import Path
 from typing import Dict, List, Set
@@ -52,43 +54,116 @@ def _extract_suffix_label(filename: str) -> str | None:
     return suffix
 
 
-def get_project_quick_summary(project_path: Path) -> Dict[str, object]:
+def _declared_sessions_and_modalities(project_path: Path) -> tuple[List[str], List[str]]:
+    """Read declared sessions and modalities out of project.json.
+
+    This is what a PRISM project states about itself, so it needs no directory
+    walk at all -- one file read answers both. Returns empty lists for plain
+    BIDS folders with no project.json.
+    """
+    try:
+        with open(project_path / "project.json", "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return [], []
+
+    if not isinstance(data, dict):
+        return [], []
+
+    sessions = {
+        str(entry.get("id")).strip()
+        for entry in (data.get("Sessions") or [])
+        if isinstance(entry, dict) and str(entry.get("id") or "").strip()
+    }
+    task_definitions = data.get("TaskDefinitions")
+    modalities = {
+        str(definition.get("modality")).strip()
+        for definition in (task_definitions or {}).values()
+        if isinstance(definition, dict) and str(definition.get("modality") or "").strip()
+    } if isinstance(task_definitions, dict) else set()
+
+    return sorted(sessions), sorted(modalities)
+
+
+def get_project_quick_summary(
+    project_path: Path, *, deep: bool = True
+) -> Dict[str, object]:
     """Return lightweight project summary counts without running validation.
 
-    The scan only walks subject/session/modality directory levels and checks
-    a couple of root metadata files, so it remains fast on large datasets.
+    ``deep=True`` (the default) walks the subject/session/modality directory
+    levels and reports what is actually on disk.
+
+    ``deep=False`` reads only the project root listing and project.json, so it
+    costs one directory read regardless of project size. Sessions and
+    modalities are then the *declared* ones rather than the on-disk ones --
+    the ``scan`` key says which, so callers can show the fast answer first and
+    fill in the counted one afterwards. On a network-mounted project with a
+    few hundred subjects that is the difference between instant and ~20s.
     """
 
-    subject_dirs = [
-        sub_dir
-        for sub_dir in sorted(project_path.iterdir())
-        if sub_dir.is_dir() and sub_dir.name.startswith("sub-")
-    ]
+    with os.scandir(project_path) as root_scan:
+        root_entries = [(entry.name, entry.is_dir(), entry.is_file()) for entry in root_scan]
+
+    subject_count = sum(
+        1 for name, is_dir, _ in root_entries if is_dir and name.startswith("sub-")
+    )
+    root_files = {name for name, _, is_file in root_entries if is_file}
+
+    summary: Dict[str, object] = {
+        "subjects": subject_count,
+        "has_dataset_description": "dataset_description.json" in root_files,
+        "has_participants_tsv": "participants.tsv" in root_files,
+    }
+
+    if not deep:
+        declared_sessions, declared_modalities = _declared_sessions_and_modalities(
+            project_path
+        )
+        summary.update(
+            {
+                "sessions": len(declared_sessions),
+                "modalities": len(declared_modalities),
+                "session_labels": declared_sessions,
+                "modality_labels": declared_modalities,
+                "scan": "shallow",
+            }
+        )
+        return summary
 
     sessions: Set[str] = set()
     modalities: Set[str] = set()
 
-    for sub_dir in subject_dirs:
-        for child in sub_dir.iterdir():
-            if not child.is_dir():
+    for name, is_dir, _ in root_entries:
+        if not (is_dir and name.startswith("sub-")):
+            continue
+        # os.scandir carries the entry type from the directory read itself, so
+        # each level costs one round trip instead of one stat per child.
+        with os.scandir(project_path / name) as sub_scan:
+            children = [(child.name, child.is_dir(), child.path) for child in sub_scan]
+        for child_name, child_is_dir, child_path in children:
+            if not child_is_dir:
                 continue
-            if child.name.startswith("ses-"):
-                sessions.add(child.name)
-                for modality_dir in child.iterdir():
-                    if modality_dir.is_dir() and not modality_dir.name.startswith("."):
-                        modalities.add(modality_dir.name)
-            elif not child.name.startswith("."):
-                modalities.add(child.name)
+            if child_name.startswith("ses-"):
+                sessions.add(child_name)
+                with os.scandir(child_path) as session_scan:
+                    modalities.update(
+                        entry.name
+                        for entry in session_scan
+                        if entry.is_dir() and not entry.name.startswith(".")
+                    )
+            elif not child_name.startswith("."):
+                modalities.add(child_name)
 
-    return {
-        "subjects": len(subject_dirs),
-        "sessions": len(sessions),
-        "modalities": len(modalities),
-        "session_labels": sorted(sessions),
-        "modality_labels": sorted(modalities),
-        "has_dataset_description": (project_path / "dataset_description.json").is_file(),
-        "has_participants_tsv": (project_path / "participants.tsv").is_file(),
-    }
+    summary.update(
+        {
+            "sessions": len(sessions),
+            "modalities": len(modalities),
+            "session_labels": sorted(sessions),
+            "modality_labels": sorted(modalities),
+            "scan": "deep",
+        }
+    )
+    return summary
 
 
 def get_project_modalities_and_sessions(project_path: Path) -> Dict[str, object]:
