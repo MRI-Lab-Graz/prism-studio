@@ -453,9 +453,11 @@ class TestValidateDataset:
         )
 
         def unexpected_resolve(*args, **kwargs):
-            raise AssertionError("resolve_sidecar_path should not be called here")
+            raise AssertionError("sidecar resolution should not be called here")
 
-        monkeypatch.setattr(runner, "resolve_sidecar_path", unexpected_resolve)
+        monkeypatch.setattr(
+            DatasetValidator, "_resolve_sidecar_path_cached", unexpected_resolve
+        )
 
         issues = runner._validate_modality_dir(
             str(anat_dir),

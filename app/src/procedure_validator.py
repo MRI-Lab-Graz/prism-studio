@@ -8,16 +8,24 @@ actual data files on disk, emitting PRISM701-706 issues.
 import json
 import re
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Set, Tuple
 
 
-def validate_procedure(project_path: Path, rawdata_path: Path) -> List[Tuple[str, str]]:
+def validate_procedure(
+    project_path: Path,
+    rawdata_path: Path,
+    disk_index: Optional[Tuple[Set[str], Set[Tuple[str, str]]]] = None,
+) -> List[Tuple[str, str]]:
     """Cross-validate declared sessions/tasks against data on disk.
 
     Args:
         project_path: Path to the project root (containing project.json)
         rawdata_path: Path to the dataset root to scan for sub-* folders
             (same as project_path in PRISM — subjects live directly in the root)
+        disk_index: Optional ``(sessions, (session, task) pairs)`` already
+            collected by a caller that just walked the dataset. Supplying it
+            skips the scan below, which is otherwise a second full traversal
+            of the tree -- the dominant cost on network-mounted projects.
 
     Returns:
         List of (severity, message) tuples compatible with runner.py issues format.
@@ -66,7 +74,9 @@ def validate_procedure(project_path: Path, rawdata_path: Path) -> List[Tuple[str
     disk_set = set()
     disk_sessions = set()
 
-    if rawdata_path.is_dir():
+    if disk_index is not None:
+        disk_sessions, disk_set = disk_index
+    elif rawdata_path.is_dir():
         for sub_dir in rawdata_path.iterdir():
             if not sub_dir.is_dir() or not sub_dir.name.startswith("sub-"):
                 continue

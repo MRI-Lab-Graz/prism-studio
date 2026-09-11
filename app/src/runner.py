@@ -21,8 +21,8 @@ from validator import (
     DatasetValidator,
     MODALITY_PATTERNS,
     BIDS_MODALITIES,
-    resolve_sidecar_path,
 )
+from cross_platform import normalize_path
 from stats import DatasetStats
 from system_files import filter_system_files
 from bids_integration import check_and_update_bidsignore
@@ -299,7 +299,8 @@ def validate_dataset(
     report_progress(scan_progress, 100, "Scanning subjects...")
 
     # Walk through subject directories
-    all_items = os.listdir(root_dir)
+    root_entries = _scan_dir(root_dir, validator._dir_cache)
+    all_items = list(root_entries)
     filtered_items = filter_system_files(all_items)
 
     if verbose and len(all_items) != len(filtered_items):
@@ -310,7 +311,7 @@ def validate_dataset(
     subject_dirs = [
         (item, os.path.join(root_dir, item))
         for item in filtered_items
-        if os.path.isdir(os.path.join(root_dir, item)) and item.startswith("sub-")
+        if item.startswith("sub-") and root_entries[item].is_dir()
     ]
 
     total_subjects = len(subject_dirs)
@@ -348,7 +349,11 @@ def validate_dataset(
             from procedure_validator import validate_procedure
             from pathlib import Path as _Path
 
-            procedure_issues = validate_procedure(_Path(root_dir), _Path(root_dir))
+            procedure_issues = validate_procedure(
+                _Path(root_dir),
+                _Path(root_dir),
+                disk_index=(stats.disk_sessions, stats.procedure_tasks),
+            )
             issues.extend(procedure_issues)
 
     # Recipe coverage: warn if survey data exists but no recipe JSON files
@@ -600,23 +605,46 @@ def _run_bids_validator(root_dir, verbose=False, check_nifti_headers=False):
     )
 
 
+def _scan_dir(path, dir_cache=None):
+    """Read a directory once: names plus entry types, with no per-entry stat().
+
+    ``os.scandir`` carries is_dir/is_file from the directory read itself, so a
+    directory costs one round trip instead of one per entry -- the difference
+    between usable and unusable on a network share. The listing is also handed
+    to the validator's sidecar-probe cache so directories the walk already
+    visited are never listed a second time.
+    """
+    # OSError is deliberately not caught: the os.listdir calls this replaces
+    # propagated it, and a missing dataset root must still fail loudly.
+    with os.scandir(path) as scan:
+        entries = {entry.name: entry for entry in scan}
+    if dir_cache is not None:
+        dir_cache[normalize_path(path)] = frozenset(entries)
+    return entries
+
+
 def _validate_subject(
     subject_dir, subject_id, validator, stats, root_dir, run_prism=True, run_bids=False
 ):
     issues = []
 
-    all_items = os.listdir(subject_dir)
-    filtered_items = filter_system_files(all_items)
+    entries = _scan_dir(subject_dir, validator._dir_cache)
+    filtered_items = filter_system_files(list(entries))
 
     for item in filtered_items:
         item_path = os.path.join(subject_dir, item)
-        if os.path.isdir(item_path):
-            if run_bids and item in BIDS_MODALITIES and item != "func":
+        if entries[item].is_dir():
+            if item.startswith("ses-"):
+                # Recorded before the empty-directory check so an empty ses-*
+                # folder still counts as present on disk, matching the
+                # standalone procedure scan this replaces.
+                stats.disk_sessions.add(item)
+            elif run_bids and item in BIDS_MODALITIES and item != "func":
                 continue
 
             # Check for empty directory
-            dir_contents = os.listdir(item_path)
-            filtered_contents = filter_system_files(dir_contents)
+            child_entries = _scan_dir(item_path, validator._dir_cache)
+            filtered_contents = filter_system_files(list(child_entries))
 
             if not filtered_contents:
                 if run_prism:
@@ -636,6 +664,7 @@ def _validate_subject(
                         root_dir,
                         run_prism=run_prism,
                         run_bids=run_bids,
+                        entries=child_entries,
                     )
                 )
             elif item in MODALITY_PATTERNS or item in BIDS_MODALITIES:
@@ -650,6 +679,7 @@ def _validate_subject(
                         root_dir,
                         run_prism=run_prism,
                         run_bids=run_bids,
+                        entries=child_entries,
                     )
                 )
 
@@ -665,21 +695,30 @@ def _validate_session(
     root_dir,
     run_prism=True,
     run_bids=False,
+    entries=None,
 ):
     issues = []
 
-    all_items = os.listdir(session_dir)
-    filtered_items = filter_system_files(all_items)
+    if entries is None:
+        entries = _scan_dir(session_dir, validator._dir_cache)
+    filtered_items = filter_system_files(list(entries))
 
     for item in filtered_items:
         item_path = os.path.join(session_dir, item)
-        if os.path.isdir(item_path):
+        if entries[item].is_dir():
+            # Read the directory before any modality filtering: procedure
+            # validation needs the task files of *every* sub-*/ses-*/<dir>,
+            # including modalities this walk otherwise hands to the BIDS
+            # validator. One readdir here replaces a second full tree walk.
+            child_entries = _scan_dir(item_path, validator._dir_cache)
+            filtered_contents = filter_system_files(list(child_entries))
+            stats.add_procedure_tasks(
+                session_id,
+                [name for name in filtered_contents if child_entries[name].is_file()],
+            )
+
             if run_bids and item in BIDS_MODALITIES and item != "func":
                 continue
-
-            # Check for empty directory
-            dir_contents = os.listdir(item_path)
-            filtered_contents = filter_system_files(dir_contents)
 
             if not filtered_contents:
                 if run_prism:
@@ -700,6 +739,7 @@ def _validate_session(
                         root_dir,
                         run_prism=run_prism,
                         run_bids=run_bids,
+                        entries=child_entries,
                     )
                 )
 
@@ -716,6 +756,7 @@ def _validate_modality_dir(
     root_dir,
     run_prism=True,
     run_bids=False,
+    entries=None,
 ):
     issues = []
 
@@ -727,12 +768,13 @@ def _validate_modality_dir(
             return "events"
         return dir_modality
 
-    all_files = os.listdir(modality_dir)
-    filtered_files = filter_system_files(all_files)
+    if entries is None:
+        entries = _scan_dir(modality_dir, validator._dir_cache)
+    filtered_files = filter_system_files(list(entries))
 
     for fname in filtered_files:
         file_path = os.path.join(modality_dir, fname)
-        if os.path.isfile(file_path):
+        if entries[fname].is_file():
             # Extract task from filename
             task = None
             if "_task-" in fname:
@@ -771,8 +813,8 @@ def _validate_modality_dir(
                         file_path, sidecar_modality, root_dir
                     )
                     if sidecar_issues:
-                        sidecar_issue_path = resolve_sidecar_path(
-                            file_path, root_dir, validator.library_path
+                        sidecar_issue_path = validator._resolve_sidecar_path_cached(
+                            file_path, root_dir
                         )
                         for level, msg in sidecar_issues:
                             issues.append((level, msg, sidecar_issue_path))

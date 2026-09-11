@@ -48,12 +48,33 @@ class DatasetStats:
         self.physio = set()
         self.environment = set()
         self.descriptions = {}  # type -> name -> description
+        # On-disk inventory for procedure validation, collected during the one
+        # dataset walk so procedure checks don't have to traverse it again.
+        self.disk_sessions = set()  # ses-* folder names seen under any sub-*
+        self.procedure_tasks = set()  # (session_id, task) pairs seen on disk
         self.total_files = 0
         self.sidecar_files = 0
         # For consistency checking
         self.subject_data = (
             {}
         )  # subject_id -> {sessions: {}, modalities: set(), tasks: set()}
+
+    def add_procedure_tasks(self, session_id, filenames):
+        """Record (session, task) pairs for procedure validation.
+
+        Deliberately uses the procedure validator's own task pattern
+        (``[^_]+``, hyphens included) rather than the stricter one behind
+        ``tasks`` -- ``task-wellbeing-multi`` is one task here and
+        ``wellbeing`` there, and PRISM703/704 are phrased against the former.
+        """
+        if not session_id:
+            return
+        for filename in filenames:
+            if "_task-" not in filename:
+                continue
+            match = re.search(r"_task-([^_]+)", filename)
+            if match:
+                self.procedure_tasks.add((session_id, match.group(1)))
 
     def register_file(self, filename):
         """Register a generic file (non-subject specific)"""

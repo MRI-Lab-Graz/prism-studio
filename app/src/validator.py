@@ -181,10 +181,33 @@ def _value_candidates(base_value: str | None, acq_value: str | None) -> list[str
     return candidates
 
 
-def resolve_sidecar_path(file_path, root_dir, library_path=None):
+def _dir_contains(directory, name, dir_cache=None):
+    """Existence probe that costs one listdir per directory, not one stat per name.
+
+    Sidecar resolution probes the same handful of directories with dozens of
+    candidate filenames per data file. On a network share each stat is a round
+    trip, so a whole-directory listing (cached for the run) is dramatically
+    cheaper. With no cache this falls back to a plain stat.
+    """
+    if dir_cache is None:
+        return os.path.exists(safe_path_join(directory, name))
+    key = normalize_path(directory)
+    names = dir_cache.get(key)
+    if names is None:
+        try:
+            names = frozenset(os.listdir(directory))
+        except OSError:
+            names = frozenset()
+        dir_cache[key] = names
+    return name in names
+
+
+def resolve_sidecar_path(file_path, root_dir, library_path=None, dir_cache=None):
     """Return best-matching sidecar path, supporting dataset-level survey sidecars."""
     candidate = derive_sidecar_path(file_path)
-    if os.path.exists(candidate):
+    if _dir_contains(
+        os.path.dirname(candidate), os.path.basename(candidate), dir_cache
+    ):
         return candidate
 
     stem, _ext = split_compound_ext(os.path.basename(file_path))
@@ -230,9 +253,8 @@ def resolve_sidecar_path(file_path, root_dir, library_path=None):
         for directory in search_dirs:
             if not directory:
                 continue
-            dataset_candidate = safe_path_join(directory, file_name)
-            if os.path.exists(dataset_candidate):
-                return dataset_candidate
+            if _dir_contains(directory, file_name, dir_cache):
+                return safe_path_join(directory, file_name)
 
     return candidate
 
@@ -256,7 +278,9 @@ def _deep_merge(base: object, override: object) -> object:
     return override
 
 
-def _find_inherited_root_sidecar(file_path: str, root_dir: str) -> str | None:
+def _find_inherited_root_sidecar(
+    file_path: str, root_dir: str, dir_cache=None
+) -> str | None:
     """Find a dataset-level sidecar that can provide inherited defaults.
 
     Supports task-based and legacy survey/biometrics naming conventions so
@@ -364,9 +388,8 @@ def _find_inherited_root_sidecar(file_path: str, root_dir: str) -> str | None:
         if not directory:
             continue
         for candidate_name in candidate_names:
-            candidate_path = safe_path_join(directory, candidate_name)
-            if os.path.exists(candidate_path):
-                return candidate_path
+            if _dir_contains(directory, candidate_name, dir_cache):
+                return safe_path_join(directory, candidate_name)
 
     return None
 
@@ -388,6 +411,7 @@ def _resolve_inherited_sidecar_core(
     library_path: str | None,
     load_json: Callable[[str | None], "dict | None"],
     resolve_library_sidecar_path: Callable[[], "str | None"] | None = None,
+    dir_cache=None,
 ) -> tuple[dict | None, str | None]:
     """
     Build inherited sidecar content following BIDS inheritance principle.
@@ -411,7 +435,7 @@ def _resolve_inherited_sidecar_core(
         - primary_sidecar_path: Path to report errors against (subject-level if exists, else root)
     """
     subject_sidecar_path = derive_sidecar_path(file_path)
-    root_sidecar_path = _find_inherited_root_sidecar(file_path, root_dir)
+    root_sidecar_path = _find_inherited_root_sidecar(file_path, root_dir, dir_cache)
 
     root_data = load_json(root_sidecar_path)
     subject_data = load_json(subject_sidecar_path)
@@ -432,7 +456,9 @@ def _resolve_inherited_sidecar_core(
     if resolve_library_sidecar_path is not None:
         library_sidecar = resolve_library_sidecar_path()
     else:
-        library_sidecar = resolve_sidecar_path(file_path, root_dir, library_path)
+        library_sidecar = resolve_sidecar_path(
+            file_path, root_dir, library_path, dir_cache
+        )
     library_data = load_json(library_sidecar)
     if library_data:
         return library_data, library_sidecar
@@ -466,6 +492,9 @@ class DatasetValidator:
         self._sidecar_json_cache = {}
         self._sidecar_json_error_cache = {}
         self._original_name_cache = {}
+        # One directory listing per directory for the whole run, replacing tens
+        # of thousands of per-candidate stat() calls on network shares.
+        self._dir_cache = {}
 
     def _sidecar_cache_key(self, file_path: str, root_dir: str) -> tuple:
         """Build a stable cache key for sidecar resolution within one run."""
@@ -485,18 +514,30 @@ class DatasetValidator:
         if cached_path is not None:
             return cached_path
 
-        resolved_path = resolve_sidecar_path(file_path, root_dir, self.library_path)
+        resolved_path = resolve_sidecar_path(
+            file_path, root_dir, self.library_path, self._dir_cache
+        )
         self._sidecar_path_cache[cache_key] = resolved_path
         return resolved_path
 
     def _load_sidecar_json_cached(self, sidecar_path: str | None):
         """Read and parse a sidecar JSON file at most once per validation run."""
-        if not sidecar_path or not os.path.exists(sidecar_path):
+        if not sidecar_path:
             return None
 
+        # Check the cache before touching the filesystem: a shared root-level
+        # sidecar is resolved once per data file, and the existence stat alone
+        # is a round trip on a remote share.
         normalized_path = normalize_path(sidecar_path)
         if normalized_path in self._sidecar_json_cache:
             return self._sidecar_json_cache[normalized_path]
+
+        if not _dir_contains(
+            os.path.dirname(sidecar_path),
+            os.path.basename(sidecar_path),
+            self._dir_cache,
+        ):
+            return None
 
         parsed = None
         try:
@@ -543,6 +584,7 @@ class DatasetValidator:
             resolve_library_sidecar_path=lambda: self._resolve_sidecar_path_cached(
                 file_path, root_dir
             ),
+            dir_cache=self._dir_cache,
         )
 
         self._inherited_sidecar_cache[cache_key] = result
@@ -1314,7 +1356,9 @@ class DatasetValidator:
             # precise "invalid JSON" error instead of a misleading "missing"
             # one that sends them looking for a file that's actually right there.
             subject_sidecar_path = derive_sidecar_path(file_path)
-            root_sidecar_path = _find_inherited_root_sidecar(file_path, root_dir)
+            root_sidecar_path = _find_inherited_root_sidecar(
+                file_path, root_dir, self._dir_cache
+            )
             for candidate_path in (subject_sidecar_path, root_sidecar_path):
                 parse_error = self._sidecar_json_error(candidate_path)
                 if parse_error:

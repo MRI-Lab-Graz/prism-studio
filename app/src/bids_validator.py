@@ -4,6 +4,7 @@ Handles running both modern (Deno) and legacy (Node/Python) BIDS validators.
 """
 
 import os
+from functools import lru_cache
 import json
 import subprocess
 from typing import List, Tuple, Set, Optional
@@ -152,6 +153,10 @@ def run_bids_validator(
         # And sometimes reports a path prefix/suffix; handle partial match.
         return any(loc.endswith(p) or p.endswith(loc) for p in placeholders)
 
+    # A PRISM-only subject/session folder draws one NOT_INCLUDED issue per
+    # file inside it, and answering each one used to re-walk the whole subtree.
+    # The answer only depends on the folder, so compute it once per folder.
+    @lru_cache(maxsize=None)
     def _is_prism_only_container_location(location: str) -> bool:
         if not location:
             return False
