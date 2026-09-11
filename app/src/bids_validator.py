@@ -52,6 +52,7 @@ def run_bids_validator(
     verbose: bool = False,
     placeholders: Optional[Set[str]] = None,
     structure_only: bool = False,
+    check_nifti_headers: bool = False,
 ) -> List[Tuple[str, str, str]]:
     """
     Run the standard BIDS validator CLI and return issues.
@@ -61,6 +62,8 @@ def run_bids_validator(
         verbose: Enable verbose output
         placeholders: Set of relative paths to placeholder files to ignore content errors for
         structure_only: Whether this is a structure-only upload (suppress content errors)
+        check_nifti_headers: Whether to validate NIfTI headers (off by default to
+            avoid remote-storage content reads)
 
     Returns:
         List of (severity, message, file_path) tuples
@@ -216,17 +219,20 @@ def run_bids_validator(
         print(f"   Using Deno-based validator ({DENO_BIDS_VALIDATOR_SPEC})")
 
         # Run Deno validator
+        command = [
+            "deno",
+            "run",
+            "--node-modules-dir=auto",
+            "-ERWN",
+            "--allow-sys",
+            DENO_BIDS_VALIDATOR_SPEC,
+            root_dir,
+            "--json",
+        ]
+        if not check_nifti_headers:
+            command.append("--ignoreNiftiHeaders")
         process = subprocess.run(
-            [
-                "deno",
-                "run",
-                "--node-modules-dir=auto",
-                "-ERWN",
-                "--allow-sys",
-                DENO_BIDS_VALIDATOR_SPEC,
-                root_dir,
-                "--json",
-            ],
+            command,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -407,8 +413,11 @@ def run_bids_validator(
         )
 
         # Run validation
+        command = ["bids-validator", root_dir, "--json"]
+        if not check_nifti_headers:
+            command.append("--ignoreNiftiHeaders")
         process = subprocess.run(
-            ["bids-validator", root_dir, "--json"],
+            command,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,

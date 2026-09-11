@@ -349,6 +349,11 @@ Examples:
         help="Show warnings from the BIDS validator (default: hidden)",
     )
     parser.add_argument(
+        "--check-nifti-headers",
+        action="store_true",
+        help="Read NIfTI headers during BIDS validation (may be slow on remote storage)",
+    )
+    parser.add_argument(
         "--library",
         metavar="PATH",
         help="Path to a template library for sidecar resolution",
@@ -670,6 +675,7 @@ Examples:
             run_bids=run_bids,
             run_prism=run_prism,
             library_path=library_path,
+            check_nifti_headers=args.check_nifti_headers,
         )
 
         # Convert legacy tuples to Issue objects for structured output

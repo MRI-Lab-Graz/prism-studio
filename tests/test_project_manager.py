@@ -1057,6 +1057,11 @@ class TestProjectManager(unittest.TestCase):
 
         self.assertTrue(result.get("success"), result)
         self.assertEqual(result.get("source", {}).get("clone_method"), "git_clone")
+        log_messages = [entry["message"] for entry in result["log"]]
+        self.assertIn("Backend command:", log_messages)
+        self.assertIn("  ProjectManager.init_on_existing_bids(", log_messages)
+        self.assertIn(f"    path={str(project_path)!r},", log_messages)
+        self.assertIn("    use_datalad=False", log_messages)
 
     @patch("src.project_manager.subprocess.run")
     @patch(
@@ -4274,6 +4279,13 @@ class TestProjectManager(unittest.TestCase):
 
         self.assertIn('family-names: "Lovelace"', content)
         self.assertIn('given-names: "Ada"', content)
+
+    def test_create_citation_cff_normalizes_legacy_pddl_license(self):
+        content = ProjectManager()._create_citation_cff(
+            "demo_project", {"name": "demo_project", "license": "PDDL"}
+        )
+
+        self.assertIn('license: "PDDL-1.0"', content)
 
     def test_create_citation_cff_includes_extended_dataset_fields(self):
         manager = ProjectManager()

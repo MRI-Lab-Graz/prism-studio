@@ -220,6 +220,35 @@ def test_validate_folder_returns_json_for_ajax_requests(monkeypatch, tmp_path):
     assert captured["dataset_path"] == str(tmp_path)
     assert captured["project_path"] == str(tmp_path)
     assert captured["filename"] == os.path.basename(str(tmp_path))
+    assert captured["check_nifti_headers"] is False
+
+
+def test_validate_folder_forwards_deep_nifti_header_validation(monkeypatch, tmp_path):
+    app = _build_app()
+    captured = {}
+
+    def fake_launch_validation_job(**kwargs):
+        captured.update(kwargs)
+        return {"job_id": kwargs["job_id"], "progress_url": "/api/progress/job-deep", "status": "started"}
+
+    monkeypatch.setattr(
+        validation_blueprint_module, "_launch_validation_job", fake_launch_validation_job
+    )
+
+    with app.test_client() as client:
+        response = client.post(
+            "/validate_folder",
+            data={
+                "folder_path": str(tmp_path),
+                "validation_mode": "both",
+                "check_nifti_headers": "true",
+                "job_id": "job-deep",
+            },
+            headers={"X-Requested-With": "XMLHttpRequest"},
+        )
+
+    assert response.status_code == 202
+    assert captured["check_nifti_headers"] is True
 
 
 def test_validate_folder_uses_detected_library_when_no_override_submitted(

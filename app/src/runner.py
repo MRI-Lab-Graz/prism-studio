@@ -122,6 +122,7 @@ def validate_dataset(
     library_path=None,
     project_path: Optional[str] = None,
     progress_callback: Optional[ProgressCallback] = None,
+    check_nifti_headers: bool = False,
 ):
     """Main dataset validation function (refactored from prism.py)
 
@@ -134,6 +135,7 @@ def validate_dataset(
         library_path: Optional path to a template library for sidecar resolution
         progress_callback: Optional callback for progress updates.
                            Called as callback(current, total, message, file_path)
+        check_nifti_headers: Whether the BIDS validator should read NIfTI headers.
 
     Returns: (issues, stats)
     """
@@ -364,7 +366,9 @@ def validate_dataset(
     if run_bids:
         issues.extend(_check_participants_subject_alignment(root_dir))
         report_progress(bids_progress, 100, "Running BIDS validator...")
-        bids_issues = _run_bids_validator(root_dir, verbose)
+        bids_issues = _run_bids_validator(
+            root_dir, verbose, check_nifti_headers=check_nifti_headers
+        )
         issues.extend(bids_issues)
 
     report_progress(100, 100, "Validation complete")
@@ -562,7 +566,7 @@ def _check_participants_subject_alignment(root_dir: str) -> list[tuple[str, str,
     ]
 
 
-def _run_bids_validator(root_dir, verbose=False):
+def _run_bids_validator(root_dir, verbose=False, check_nifti_headers=False):
     """Run the standard BIDS validator CLI"""
     # Load placeholders to filter out content-related issues (expected in structure-only uploads)
     manifest = _get_upload_manifest(root_dir)
@@ -575,6 +579,7 @@ def _run_bids_validator(root_dir, verbose=False):
         verbose=verbose,
         placeholders=placeholders,
         structure_only=structure_only,
+        check_nifti_headers=check_nifti_headers,
     )
 
 

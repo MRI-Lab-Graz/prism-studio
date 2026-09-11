@@ -265,6 +265,7 @@ def run_validation(
     library_path: Optional[str] = None,
     project_path: Optional[str] = None,
     progress_callback: Optional[Callable[[int, str], None]] = None,
+    check_nifti_headers: bool = False,
 ) -> Tuple[List, Any]:
     """
     Run dataset validation using core validator or subprocess fallback.
@@ -277,6 +278,7 @@ def run_validation(
         run_prism: Also run PRISM-specific validation
         library_path: Optional path to a template library for sidecar resolution
         progress_callback: Optional callback for progress updates
+        check_nifti_headers: Whether the BIDS validator should read NIfTI headers
 
     Returns:
         Tuple of (issues list, stats object)
@@ -351,6 +353,7 @@ def run_validation(
                 library_path=library_path,
                 project_path=project_path,
                 progress_callback=wrapped_callback,
+                check_nifti_headers=check_nifti_headers,
             )
 
             # Convert issues to web format if needed
@@ -372,7 +375,12 @@ def run_validation(
 
     # Fallback to subprocess
     issues, stats = _run_validator_subprocess(
-        dataset_path, verbose=verbose, schema_version=schema_version, run_bids=run_bids
+        dataset_path,
+        verbose=verbose,
+        schema_version=schema_version,
+        run_bids=run_bids,
+        run_prism=run_prism,
+        check_nifti_headers=check_nifti_headers,
     )
     return issues, _attach_mapping_result(stats)
 
@@ -383,6 +391,7 @@ def _run_validator_subprocess(
     schema_version: Optional[str] = None,
     run_bids: bool = False,
     run_prism: bool = True,
+    check_nifti_headers: bool = False,
 ) -> Tuple[List, SimpleStats]:
     """Run validation via subprocess (fallback method)."""
 
@@ -395,6 +404,8 @@ def _run_validator_subprocess(
             cmd.extend(["--schema-version", schema_version])
         if run_bids:
             cmd.append("--bids")
+        if check_nifti_headers:
+            cmd.append("--check-nifti-headers")
         if not run_prism:
             cmd.append("--no-prism")
 

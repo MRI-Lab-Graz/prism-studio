@@ -31,6 +31,7 @@ def test_build_validate_folder_terminal_command_full_flags():
             "schema_version": "v0.1",
             "validation_mode": "bids",
             "bids_warnings": "true",
+            "check_nifti_headers": "true",
             "library_path": "/tmp/library path",
         },
     ):
@@ -38,7 +39,7 @@ def test_build_validate_folder_terminal_command_full_flags():
 
     assert cmd == (
         "python prism.py '/tmp/my dataset' --schema-version v0.1 "
-        "--bids --no-prism --bids-warnings --library '/tmp/library path'"
+        "--bids --no-prism --bids-warnings --check-nifti-headers --library '/tmp/library path'"
     )
 
 

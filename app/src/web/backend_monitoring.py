@@ -366,6 +366,8 @@ def _build_validate_folder_terminal_command(req) -> str:
 
     if _truthy_form_value(form.get("bids_warnings")):
         cmd_parts.append("--bids-warnings")
+    if _truthy_form_value(form.get("check_nifti_headers")):
+        cmd_parts.append("--check-nifti-headers")
 
     library_path = str(form.get("library_path", "")).strip()
     if library_path:

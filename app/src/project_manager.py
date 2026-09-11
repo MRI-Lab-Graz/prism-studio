@@ -476,6 +476,12 @@ class ProjectManager:
             if progress_callback is not None:
                 progress_callback(message, level)
 
+        add_log("Backend command:", "step")
+        add_log("  ProjectManager.init_on_existing_bids(", "info")
+        add_log(f"    path={str(project_path)!r},", "info")
+        add_log(f"    use_datalad={bool(config.get('use_datalad', False))}", "info")
+        add_log("  )", "info")
+
         remote_url = self._normalize_remote_dataset_url(config.get("remote_url"))
         if remote_url:
             add_log(f"Acquiring remote dataset from {remote_url}...", "step")
@@ -7213,6 +7219,7 @@ Subfolders:
             "CC-BY-NC-SA-4.0": "CC-BY-NC-SA-4.0",
             "ODBL 1.0": "ODbL-1.0",
             "ODBL-1.0": "ODbL-1.0",
+            "PDDL": "PDDL-1.0",
             "PDDL 1.0": "PDDL-1.0",
             "PDDL-1.0": "PDDL-1.0",
         }

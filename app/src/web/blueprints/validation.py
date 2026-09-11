@@ -351,6 +351,7 @@ def _build_validation_results_payload(
     run_bids: bool,
     run_prism: bool,
     show_bids_warnings: bool,
+    check_nifti_headers: bool = False,
     upload_type: str | None = None,
     manifest_path: str | None = None,
     revalidation: bool = False,
@@ -372,6 +373,7 @@ def _build_validation_results_payload(
     results["run_prism"] = run_prism
     results["validation_mode"] = _validation_mode_from_flags(run_bids, run_prism)
     results["show_bids_warnings"] = show_bids_warnings
+    results["check_nifti_headers"] = check_nifti_headers
 
     if revalidation:
         results["revalidation"] = True
@@ -410,6 +412,7 @@ def _execute_validation_job(
     manifest_path: str | None = None,
     revalidation: bool = False,
     previous_errors: int | None = None,
+    check_nifti_headers: bool = False,
 ) -> str:
     """Run one validation job end-to-end and store its result."""
 
@@ -473,6 +476,7 @@ def _execute_validation_job(
             library_path=library_path,
             project_path=project_path,
             progress_callback=progress_callback,
+            check_nifti_headers=check_nifti_headers,
         )
 
     _raise_if_cancelled()
@@ -487,6 +491,7 @@ def _execute_validation_job(
         run_bids=run_bids,
         run_prism=run_prism,
         show_bids_warnings=show_bids_warnings,
+        check_nifti_headers=check_nifti_headers,
         upload_type=upload_type,
         manifest_path=manifest_path,
         revalidation=revalidation,
@@ -660,6 +665,7 @@ def upload_dataset():
         run_bids, run_prism = _validation_mode_to_flags(validation_mode)
 
         show_bids_warnings = request.form.get("bids_warnings") == "true"
+        check_nifti_headers = request.form.get("check_nifti_headers") == "true"
         job_id = request.form.get("job_id", str(uuid.uuid4()))
         try:
             library_path = _resolve_requested_validation_library_path(
@@ -682,6 +688,7 @@ def upload_dataset():
             "run_prism": run_prism,
             "library_path": library_path,
             "show_bids_warnings": show_bids_warnings,
+            "check_nifti_headers": check_nifti_headers,
             "project_path": dataset_path,
             "upload_type": "structure_only",
             "manifest_path": manifest_path,
@@ -724,6 +731,7 @@ def validate_folder():
     run_bids, run_prism = _validation_mode_to_flags(validation_mode)
 
     show_bids_warnings = request.form.get("bids_warnings") == "true"
+    check_nifti_headers = request.form.get("check_nifti_headers") == "true"
     job_id = request.form.get("job_id", str(uuid.uuid4()))
     try:
         library_path = _resolve_requested_validation_library_path(
@@ -745,6 +753,7 @@ def validate_folder():
             "run_prism": run_prism,
             "library_path": library_path,
             "show_bids_warnings": show_bids_warnings,
+            "check_nifti_headers": check_nifti_headers,
             "project_path": folder_path,
             "upload_type": None,
             "manifest_path": None,
@@ -910,6 +919,7 @@ def revalidate(result_id):
         )
         run_bids, run_prism = _validation_mode_to_flags(selected_mode)
         show_bids_warnings = bool(original_results.get("show_bids_warnings", False))
+        check_nifti_headers = bool(original_results.get("check_nifti_headers", False))
         previous_errors = int(original_results.get("summary", {}).get("total_errors", 0))
 
         # Clean stale progress state from the previous run.
@@ -930,6 +940,7 @@ def revalidate(result_id):
             "run_prism": run_prism,
             "library_path": library_path,
             "show_bids_warnings": show_bids_warnings,
+            "check_nifti_headers": check_nifti_headers,
             "project_path": dataset_path,
             "upload_type": data.get("results", {}).get("upload_type"),
             "manifest_path": os.path.join(dataset_path, ".upload_manifest.json"),
@@ -1011,7 +1022,10 @@ def api_validate():
 
         with ProjectManager._datalad_lock_for(Path(dataset_path)):
             issues, stats = run_validation(
-                dataset_path, verbose=False, library_path=library_path
+                dataset_path,
+                verbose=False,
+                library_path=library_path,
+                check_nifti_headers=bool(data.get("check_nifti_headers", False)),
             )
         results = format_validation_results(issues, stats, dataset_path)
 

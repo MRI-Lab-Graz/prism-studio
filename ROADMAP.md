@@ -4,6 +4,24 @@ Last updated: 2026-08-07
 
 ## Recent Checkpoints
 
+- [x] 2026-09-11: Fixed generated `CITATION.cff` files using the legacy
+      `PDDL` shorthand by normalizing it to the valid SPDX identifier
+      `PDDL-1.0`; repaired the affected NEMO dataset citation file. Lesson
+      learned: CFF license values must be normalized against SPDX rather than
+      passed through from legacy BIDS metadata.
+- [x] 2026-09-11: Configured standard BIDS validation to skip NIfTI header
+      reads, keeping structural and metadata validation intact for datasets on
+      remote volumes. Lesson learned: BIDS validators traverse all standard
+      BIDS data, so optional binary-content checks must be disabled when they
+      provide disproportionate remote-storage latency.
+- [x] 2026-09-11: Added an opt-in deep BIDS validation control for NIfTI
+      header checks, with CLI, web-job, revalidation, and command-preview
+      support. Lesson learned: performance defaults must preserve a visible
+      path to stronger integrity checks when users need them.
+- [x] 2026-09-11: Made the Init PRISM on BIDS Dataset live log identify the
+      canonical `ProjectManager.init_on_existing_bids` backend command and its
+      path/DataLad arguments. Lesson learned: in-process backend workflows
+      need the same explicit command visibility as subprocess-backed actions.
 - [x] 2026-09-04: Fixed standard BIDS validation on current Deno releases by
       enabling Deno's automatic Node-compatible module directory for the pinned
       `jsr:@bids/validator` dependency graph. Regression coverage verifies the

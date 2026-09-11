@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const modeRadios = document.querySelectorAll('input[name="validation_mode"]');
     const bidsOptions = document.getElementById('bids_options');
     const bidsWarningsCheckbox = document.getElementById('bids_warnings');
+    const checkNiftiHeadersCheckbox = document.getElementById('check_nifti_headers');
     const advancedOptionsToggle = document.getElementById('advancedOptionsToggle');
     const currentProjectPathInput = document.getElementById('currentProjectPath');
     const currentProjectNameInput = document.getElementById('currentProjectName');
@@ -67,6 +68,13 @@ document.addEventListener('DOMContentLoaded', function() {
             bidsWarningsCheckbox.disabled = !enableWarnings;
             if (!enableWarnings) {
                 bidsWarningsCheckbox.checked = false;
+            }
+        }
+        if (checkNiftiHeadersCheckbox) {
+            const enableHeaderChecks = advancedEnabled && (selectedMode === 'both' || selectedMode === 'bids');
+            checkNiftiHeadersCheckbox.disabled = !enableHeaderChecks;
+            if (!enableHeaderChecks) {
+                checkNiftiHeadersCheckbox.checked = false;
             }
         }
     }
@@ -384,6 +392,7 @@ document.addEventListener('DOMContentLoaded', function() {
             validationMode: getSelectedValidationMode(),
             schemaVersion: getSelectedValidationSchemaVersion(),
             includeBidsWarnings: Boolean(bidsWarningsCheckbox && bidsWarningsCheckbox.checked),
+            checkNiftiHeaders: Boolean(checkNiftiHeadersCheckbox && checkNiftiHeadersCheckbox.checked),
             libraryPathOverride: getExplicitLibraryPathOverride(),
         };
     }
@@ -394,6 +403,9 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('schema_version', options.schemaVersion || 'stable');
         if (options.includeBidsWarnings) {
             formData.append('bids_warnings', 'true');
+        }
+        if (options.checkNiftiHeaders) {
+            formData.append('check_nifti_headers', 'true');
         }
         if (options.libraryPathOverride) {
             formData.append('library_path', options.libraryPathOverride);

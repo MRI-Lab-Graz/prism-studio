@@ -28,6 +28,7 @@ def test_deno_validator_uses_node_modules_directory(monkeypatch, tmp_path):
 
     assert bids_validator.run_bids_validator(str(dataset), verbose=False) == []
     assert "--node-modules-dir=auto" in commands[1]
+    assert "--ignoreNiftiHeaders" in commands[1]
 
 
 def test_deno_parser_suppresses_recommended_key_warnings(monkeypatch, tmp_path):
