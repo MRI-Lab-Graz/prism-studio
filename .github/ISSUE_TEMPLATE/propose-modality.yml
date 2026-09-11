@@ -1,0 +1,66 @@
+name: Propose a New Modality
+description: Propose a new PRISM modality (e.g. skin temperature, a new sensor type)
+title: "[Modality]: "
+labels: ["type: new-modality", "status: needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for proposing a new PRISM modality! PRISM describes data
+        belonging to a subject as a data file (any extension) plus a JSON
+        sidecar describing it -- this form collects what your modality's
+        sidecar needs to say.
+
+        Filling this out generates a draft schema, an example sidecar, and
+        a minimal test dataset, then opens a pull request automatically so
+        a maintainer can review it with you.
+
+  - type: input
+    id: modality_name
+    attributes:
+      label: Modality name
+      description: Short, lowercase, no spaces (e.g. "skintemp"). Becomes the schema filename and the BIDS-style suffix.
+      placeholder: skintemp
+    validations:
+      required: true
+
+  - type: input
+    id: suffix
+    attributes:
+      label: Filename suffix
+      description: The BIDS-style suffix used in data filenames (often the same as the modality name).
+      placeholder: skintemp
+    validations:
+      required: true
+
+  - type: input
+    id: extensions
+    attributes:
+      label: Allowed data file extensions
+      description: Comma-separated, no leading dot (e.g. "tsv, tsv.gz").
+      placeholder: tsv
+    validations:
+      required: true
+
+  - type: textarea
+    id: fields
+    attributes:
+      label: Sidecar fields
+      description: |
+        One field per line, in this format:
+        name | datatype | required | unit
+        (leave "unit" blank if not applicable, e.g. "SensorModel | string | yes |")
+      placeholder: |
+        SensorModel | string | yes |
+        SamplingRateHz | number | yes | Hz
+        AmbientTempC | number | no | degC
+    validations:
+      required: true
+
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Why this modality?
+      description: What kind of study or measurement does this support?
+    validations:
+      required: true
