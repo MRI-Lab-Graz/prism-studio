@@ -1215,6 +1215,12 @@ export function initOpenProjectController({
             return false;
         }
 
+        setProjectValidationResult(`
+            <div class="validation-result pending project-loaded-state" role="status" aria-live="polite">
+                <h5 class="mb-2"><span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Loading project details...</h5>
+                <p class="mb-0">Reading project metadata and folder summary.</p>
+            </div>
+        `);
         const originalText = triggerButton ? setButtonLoading(triggerButton, true, 'Loading...') : null;
 
         try {

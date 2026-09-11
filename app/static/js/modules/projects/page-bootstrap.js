@@ -1,4 +1,4 @@
-export function initProjectsPageBootstrap({
+export async function initProjectsPageBootstrap({
     initProjectFieldHints,
     initBeginnerHelpMode,
     initBackendMonitoringToggle,
@@ -71,16 +71,25 @@ export function initProjectsPageBootstrap({
     initDedicatedTerminalToggle();
     initStudyApplicationImportToggle();
 
+    const currentProjectState = getCurrentProjectState();
+    const hasLoadedProject = Boolean(currentProjectState.path);
+
+    // When arriving from the navbar, load the summary before metadata UI can
+    // calculate and display preliminary-state indicators.
+    if (hasLoadedProject) {
+        await ensureOpenSectionVisibleForLoadedProject();
+    }
+
     loadGlobalSettings();
     loadLibraryInfo();
     showStudyMetadataCard();
     showMethodsCard();
-    showDataladCard();
+    if (!hasLoadedProject) {
+        showDataladCard();
+    }
     renderRecentProjects();
     loadRecentProjectsFromServer();
-    ensureOpenSectionVisibleForLoadedProject();
 
-    const currentProjectState = getCurrentProjectState();
     if (currentProjectState.path) {
         addRecentProject(currentProjectState.name, currentProjectState.path, currentProjectState.icon);
     }

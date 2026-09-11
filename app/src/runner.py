@@ -323,7 +323,13 @@ def validate_dataset(
         report_progress(progress_pct, 100, f"Validating {item}...", item_path)
 
         subject_issues = _validate_subject(
-            item_path, item, validator, stats, root_dir, run_prism=run_prism
+            item_path,
+            item,
+            validator,
+            stats,
+            root_dir,
+            run_prism=run_prism,
+            run_bids=run_bids,
         )
         issues.extend(subject_issues)
 
@@ -336,6 +342,7 @@ def validate_dataset(
 
     # Procedure validation: cross-check declared sessions/tasks vs. on-disk data
     if run_prism:
+        report_progress(82, 100, "Checking declared procedure...")
         project_json = os.path.join(root_dir, "project.json")
         if os.path.exists(project_json):
             from procedure_validator import validate_procedure
@@ -346,8 +353,13 @@ def validate_dataset(
 
     # Recipe coverage: warn if survey data exists but no recipe JSON files
     if run_prism:
+        report_progress(84, 100, "Checking survey recipe coverage...")
         issues.extend(
-            _check_survey_recipe_coverage(root_dir, project_path=project_path)
+            _check_survey_recipe_coverage(
+                root_dir,
+                project_path=project_path,
+                survey_task_ids=stats.surveys,
+            )
         )
 
     # If no subjects were discovered, this usually means the user pointed
@@ -376,7 +388,9 @@ def validate_dataset(
 
 
 def _check_survey_recipe_coverage(
-    root_dir: str, project_path: Optional[str] = None
+    root_dir: str,
+    project_path: Optional[str] = None,
+    survey_task_ids: Optional[set[str]] = None,
 ) -> list:
     """Warn when survey data exists but project recipe coverage is incomplete."""
     from recipes_surveys import (
@@ -389,19 +403,22 @@ def _check_survey_recipe_coverage(
     root = Path(root_dir)
     project_root = Path(project_path).resolve() if project_path else None
 
-    # Detect survey data files anywhere under sub-* directories
-    survey_files = [p for p in root.glob("sub-*/**/*_survey.tsv") if p.is_file()] + [
-        p for p in root.glob("sub-*/**/*_survey.json") if p.is_file()
-    ]
-
-    if not survey_files:
-        return []
+    if survey_task_ids is None:
+        # Direct callers without an existing validation inventory retain the
+        # standalone filesystem scan.
+        survey_task_ids = {
+            _extract_task_from_survey_filename(path)
+            for path in root.glob("sub-*/**/*_survey.tsv")
+            if path.is_file()
+        } | {
+            _extract_task_from_survey_filename(path)
+            for path in root.glob("sub-*/**/*_survey.json")
+            if path.is_file()
+        }
 
     required_recipe_ids = {
         base_task
-        for task_id in (
-            _extract_task_from_survey_filename(path) for path in survey_files
-        )
+        for task_id in survey_task_ids
         for base_task in [_strip_acq_from_task(task_id)]
         if base_task
     }
@@ -584,7 +601,7 @@ def _run_bids_validator(root_dir, verbose=False, check_nifti_headers=False):
 
 
 def _validate_subject(
-    subject_dir, subject_id, validator, stats, root_dir, run_prism=True
+    subject_dir, subject_id, validator, stats, root_dir, run_prism=True, run_bids=False
 ):
     issues = []
 
@@ -594,6 +611,9 @@ def _validate_subject(
     for item in filtered_items:
         item_path = os.path.join(subject_dir, item)
         if os.path.isdir(item_path):
+            if run_bids and item in BIDS_MODALITIES and item != "func":
+                continue
+
             # Check for empty directory
             dir_contents = os.listdir(item_path)
             filtered_contents = filter_system_files(dir_contents)
@@ -615,6 +635,7 @@ def _validate_subject(
                         stats,
                         root_dir,
                         run_prism=run_prism,
+                        run_bids=run_bids,
                     )
                 )
             elif item in MODALITY_PATTERNS or item in BIDS_MODALITIES:
@@ -628,6 +649,7 @@ def _validate_subject(
                         stats,
                         root_dir,
                         run_prism=run_prism,
+                        run_bids=run_bids,
                     )
                 )
 
@@ -635,7 +657,14 @@ def _validate_subject(
 
 
 def _validate_session(
-    session_dir, subject_id, session_id, validator, stats, root_dir, run_prism=True
+    session_dir,
+    subject_id,
+    session_id,
+    validator,
+    stats,
+    root_dir,
+    run_prism=True,
+    run_bids=False,
 ):
     issues = []
 
@@ -645,6 +674,9 @@ def _validate_session(
     for item in filtered_items:
         item_path = os.path.join(session_dir, item)
         if os.path.isdir(item_path):
+            if run_bids and item in BIDS_MODALITIES and item != "func":
+                continue
+
             # Check for empty directory
             dir_contents = os.listdir(item_path)
             filtered_contents = filter_system_files(dir_contents)
@@ -667,6 +699,7 @@ def _validate_session(
                         stats,
                         root_dir,
                         run_prism=run_prism,
+                        run_bids=run_bids,
                     )
                 )
 
@@ -682,6 +715,7 @@ def _validate_modality_dir(
     stats,
     root_dir,
     run_prism=True,
+    run_bids=False,
 ):
     issues = []
 
@@ -711,7 +745,14 @@ def _validate_modality_dir(
             # Add to stats (acq- extraction happens inside add_file)
             stats.add_file(subject_id, session_id, modality, task, fname)
 
-            if run_prism:
+            # Standard BIDS modalities are fully owned by the BIDS validator
+            # in combined mode. Retain PRISM checks for PRISM extensions and
+            # events.tsv files nested in func/.
+            is_prism_event = _effective_modality_for_file(modality, fname) == "events"
+            should_run_prism_checks = run_prism and (
+                not run_bids or modality not in BIDS_MODALITIES or is_prism_event
+            )
+            if should_run_prism_checks:
                 # Validate filename
                 filename_issues = validator.validate_filename(
                     fname,

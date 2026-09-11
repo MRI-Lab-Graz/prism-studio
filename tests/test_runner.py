@@ -104,6 +104,7 @@ class TestValidateDataset:
             stats,
             _root_dir,
             run_prism=True,
+            run_bids=False,
         ):
             stats.subjects.add(subject_id)
             return []
@@ -176,6 +177,7 @@ class TestValidateDataset:
             stats,
             _root_dir,
             run_prism=True,
+            run_bids=False,
         ):
             stats.subjects.add(subject_id)
             return []
@@ -553,6 +555,87 @@ class TestValidateDataset:
         )
 
         assert seen_paths == [data_file.name]
+
+    def test_combined_mode_skips_duplicate_standard_bids_content_checks(
+        self, monkeypatch, tmp_path
+    ):
+        func_dir = tmp_path / "sub-01" / "ses-01" / "func"
+        func_dir.mkdir(parents=True)
+        bold_file = func_dir / "sub-01_ses-01_task-rest_bold.nii.gz"
+        bold_file.write_bytes(b"not a real nifti")
+
+        validator = DatasetValidator()
+        monkeypatch.setattr(
+            validator,
+            "validate_filename",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("BIDS validator owns standard BIDS filename checks")
+            ),
+        )
+        monkeypatch.setattr(
+            validator,
+            "validate_sidecar",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("BIDS validator owns standard BIDS sidecar checks")
+            ),
+        )
+        monkeypatch.setattr(
+            validator,
+            "validate_data_content",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("PRISM must not read standard BIDS content in combined mode")
+            ),
+        )
+
+        stats = DatasetStats()
+        runner._validate_modality_dir(
+            str(func_dir),
+            "sub-01",
+            "ses-01",
+            "func",
+            validator,
+            stats,
+            str(tmp_path),
+            run_prism=True,
+            run_bids=True,
+        )
+
+        assert stats.total_files == 1
+
+    def test_combined_mode_skips_standard_bids_modality_directories(
+        self, monkeypatch, tmp_path
+    ):
+        session_dir = tmp_path / "sub-01" / "ses-01"
+        anat_dir = session_dir / "anat"
+        func_dir = session_dir / "func"
+        survey_dir = session_dir / "survey"
+        for modality_dir in (anat_dir, func_dir, survey_dir):
+            modality_dir.mkdir(parents=True)
+            (modality_dir / "placeholder").write_text("", encoding="utf-8")
+
+        visited_modalities = []
+        monkeypatch.setattr(
+            runner,
+            "_validate_modality_dir",
+            lambda _path, _subject, _session, modality, *_args, **_kwargs: (
+                visited_modalities.append(modality) or []
+            ),
+        )
+
+        runner._validate_session(
+            str(session_dir),
+            "sub-01",
+            "ses-01",
+            DatasetValidator(),
+            DatasetStats(),
+            str(tmp_path),
+            run_prism=True,
+            run_bids=True,
+        )
+
+        assert "anat" not in visited_modalities
+        assert "func" in visited_modalities
+        assert "survey" in visited_modalities
 
 
 class TestSurveyRecipeCoverage:

@@ -4,6 +4,19 @@ Last updated: 2026-08-07
 
 ## Recent Checkpoints
 
+- [x] 2026-09-11: Stopped combined PRISM+BIDS validation from repeating
+      PRISM sidecar/content checks for standard BIDS modalities before the
+      BIDS validator runs. Lesson learned: duplicate content checks are
+      disproportionately slow on remote storage.
+- [x] 2026-09-11: Stopped combined validation from entering standard BIDS
+      modality directories before delegating them to the BIDS validator;
+      retained shallow `func` traversal for PRISM `events.tsv` validation.
+      Lesson learned: remote directory metadata calls are costly even when
+      no file content is read.
+- [x] 2026-09-11: Removed recipe coverage's duplicate recursive survey-file
+      scan by reusing the validation inventory and separated procedure/recipe
+      progress labels from consistency. Lesson learned: a stale progress label
+      can conceal a separate remote filesystem traversal.
 - [x] 2026-09-11: Made navbar recent-project activation metadata-only and
       added a visible loading state, avoiding target dataset summary and
       DataLad-status scans before navigation. Lesson learned: project context
@@ -14,6 +27,11 @@ Last updated: 2026-08-07
       for the already active path until another path is selected. Lesson
       learned: preserve an atomic load summary while deferring enrichments
       that require remote filesystem or Git access.
+- [x] 2026-09-11: Sequenced Project Manager bootstrap so navbar arrivals show
+      a loading state and finish their project summary before preliminary
+      metadata UI renders. Lesson learned: server-rendered active-project
+      context must drive first-paint controls, while dependent client state
+      waits for the active project summary.
 - [x] 2026-09-11: Fixed generated `CITATION.cff` files using the legacy
       `PDDL` shorthand by normalizing it to the valid SPDX identifier
       `PDDL-1.0`; repaired the affected NEMO dataset citation file. Lesson

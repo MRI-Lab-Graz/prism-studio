@@ -304,7 +304,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("export function initProjectsPage() {", core_content)
         self.assertIn("import { initProjectsPageBootstrap } from './page-bootstrap.js';", core_content)
         self.assertIn("initProjectsPageBootstrap({", core_content)
-        self.assertIn("export function initProjectsPageBootstrap({", bootstrap_content)
+        self.assertIn("export async function initProjectsPageBootstrap({", bootstrap_content)
         self.assertNotIn("document.addEventListener('DOMContentLoaded', initProjectsPage);", core_content)
         self.assertIn("let exportModuleInitialized = false;", export_content)
         self.assertIn("export function initializeProjectsExport() {", export_content)

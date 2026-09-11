@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         if (checkNiftiHeadersCheckbox) {
-            const enableHeaderChecks = advancedEnabled && (selectedMode === 'both' || selectedMode === 'bids');
+            const enableHeaderChecks = selectedMode === 'both' || selectedMode === 'bids';
             checkNiftiHeadersCheckbox.disabled = !enableHeaderChecks;
             if (!enableHeaderChecks) {
                 checkNiftiHeadersCheckbox.checked = false;

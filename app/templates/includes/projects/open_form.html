@@ -30,7 +30,7 @@
                         <div class="col-md-5">
                             <label class="form-label fw-bold d-none d-md-block">&nbsp;</label>
                             <div class="d-grid">
-                                <button type="submit" class="btn btn-primary w-100 studio-action-btn" id="loadProjectBtn">
+                                <button type="submit" class="btn btn-primary w-100 studio-action-btn" id="loadProjectBtn"{% if current_project.path %} disabled title="This project is already loaded"{% endif %}>
                                     <i class="fas fa-folder-open me-2"></i>Load Project
                                 </button>
                             </div>

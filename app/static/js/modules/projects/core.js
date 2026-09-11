@@ -276,7 +276,7 @@ export function initProjectsPage() {
     }
     projectsPageInitialized = true;
 
-    initProjectsPageBootstrap({
+    void initProjectsPageBootstrap({
         initProjectFieldHints,
         initBeginnerHelpMode,
         initBackendMonitoringToggle,

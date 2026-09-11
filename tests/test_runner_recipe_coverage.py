@@ -107,3 +107,18 @@ def test_recipe_coverage_ignores_acq_variant_when_base_recipe_exists(tmp_path) -
     )
 
     assert issues == []
+
+
+def test_recipe_coverage_uses_existing_survey_inventory(tmp_path) -> None:
+    project_root = tmp_path / "project"
+    recipe_dir = project_root / "code" / "recipes" / "survey"
+    recipe_dir.mkdir(parents=True)
+    (recipe_dir / "recipe-tsdz.json").write_text("{}", encoding="utf-8")
+
+    issues = _check_survey_recipe_coverage(
+        str(tmp_path / "remote_dataset"),
+        project_path=str(project_root),
+        survey_task_ids={"tsdz_acq-7"},
+    )
+
+    assert issues == []
