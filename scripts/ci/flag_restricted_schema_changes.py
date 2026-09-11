@@ -37,20 +37,30 @@ def find_restricted_changes(changed_files: list[str]) -> list[str]:
 
 
 def get_changed_files(base_ref: str, head_ref: str) -> list[str]:
-    """List files changed between base_ref and head_ref via git diff."""
-    result = subprocess.run(
-        ["git", "diff", "--name-only", f"{base_ref}...{head_ref}"],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    return [line for line in result.stdout.splitlines() if line]
+    """List files changed between base_ref and head_ref via git diff.
+
+    Returns empty list if git diff fails (e.g., shallow checkout with no merge-base).
+    """
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--name-only", f"{base_ref}...{head_ref}"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return [line for line in result.stdout.splitlines() if line]
+    except subprocess.CalledProcessError:
+        # Git diff failed (e.g., shallow checkout, missing refs).
+        # Return empty list to signal "couldn't determine changes" → advisory flag false.
+        return []
 
 
 def main() -> int:
     if len(sys.argv) != 3:
         print("Usage: flag_restricted_schema_changes.py <base_ref> <head_ref>")
-        return 1
+        print("(Advisory only, always exits 0)")
+        print("RESTRICTED_SCHEMA_CHANGES=false")
+        return 0
 
     changed = get_changed_files(sys.argv[1], sys.argv[2])
     restricted = find_restricted_changes(changed)

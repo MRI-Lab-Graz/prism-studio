@@ -1,5 +1,8 @@
 import importlib.util
+import subprocess
+import sys
 from pathlib import Path
+from unittest.mock import patch
 
 
 def _load_module():
@@ -49,3 +52,30 @@ def test_does_not_flag_unrelated_file():
 def test_empty_change_list_returns_empty():
     mod = _load_module()
     assert mod.find_restricted_changes([]) == []
+
+
+def test_get_changed_files_with_git_failure():
+    """Test that get_changed_files returns empty list on git failure (e.g., shallow checkout)."""
+    mod = _load_module()
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = subprocess.CalledProcessError(1, "git")
+        result = mod.get_changed_files("base", "head")
+        assert result == []
+
+
+def test_main_with_wrong_argc():
+    """Test that main() returns 0 (not 1) when given wrong number of arguments."""
+    mod = _load_module()
+    with patch.object(sys, "argv", ["prog"]):
+        exit_code = mod.main()
+        assert exit_code == 0
+
+
+def test_main_with_git_failure_returns_zero():
+    """Test that main() returns 0 and prints advisory flag even if git fails."""
+    mod = _load_module()
+    with patch.object(sys, "argv", ["prog", "base", "head"]):
+        with patch("subprocess.run") as mock_run:
+            mock_run.side_effect = subprocess.CalledProcessError(1, "git")
+            exit_code = mod.main()
+            assert exit_code == 0
