@@ -933,6 +933,17 @@ def _build_file_management_delete_terminal_command(req) -> str:
     return " ".join(_quote(part) for part in cmd_parts)
 
 
+def _get_file_management_delete_label(req) -> str:
+    """Return an action-specific label for the file-delete endpoint."""
+    payload = req.get_json(silent=True) or {}
+    action = str(payload.get("action") or "preview").strip().lower()
+    return {
+        "options": "load file-delete options",
+        "preview": "preview file deletion",
+        "apply": "delete files",
+    }.get(action, "file delete")
+
+
 def _build_file_management_entity_rewrite_terminal_command(req, *, start_async: bool = False) -> str:
     """Build CLI-style backend command preview for BIDS entity-rewrite endpoint."""
     payload = req.get_json(silent=True) or {}
@@ -2042,7 +2053,10 @@ def emit_backend_request_action(req, app_root: str) -> None:
     if endpoint in _SUPPRESSED_ENDPOINTS and not verbose_enabled:
         return
 
-    label = _ENDPOINT_LABELS.get(endpoint, endpoint.replace("_", " "))
+    if endpoint == "tools.api_file_management_delete":
+        label = _get_file_management_delete_label(req)
+    else:
+        label = _ENDPOINT_LABELS.get(endpoint, endpoint.replace("_", " "))
     payload_summary = _summarize_payload(req)
     prefix = "ANALYSIS_OUTPUT"
     if endpoint.startswith(("projects.", "projects_export.", "projects_library.")):

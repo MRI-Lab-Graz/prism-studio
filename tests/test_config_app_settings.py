@@ -154,6 +154,7 @@ def test_save_and_load_app_settings_roundtrip(tmp_path, monkeypatch):
 
     saved_path = save_app_settings(settings, app_root=str(tmp_path))
     assert Path(saved_path).exists()
+    assert not list(tmp_path.glob(".prism_studio_settings.json.*.tmp"))
 
     loaded = load_app_settings(app_root=str(tmp_path))
     assert loaded.global_library_root == str(tmp_path / "official")

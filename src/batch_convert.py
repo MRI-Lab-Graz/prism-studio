@@ -1183,8 +1183,14 @@ def convert_generic_file(
     if ses:
         parts.append(ses)
     parts.append(task)
+    extra_parts = []
     if extra:
-        parts.append(extra.lstrip("_"))
+        extra_parts = extra.lstrip("_").split("_")
+        # Events files belong in func/, but their BIDS suffix is `events`, not
+        # `bold`. Drop a previously appended bold suffix when re-organizing.
+        if target_modality == "func" and "events" in extra_parts:
+            extra_parts = [part for part in extra_parts if part != "bold"]
+        parts.append("_".join(extra_parts))
 
     # Add suffix based on modality if not already in extra
     suffix_map = {
@@ -1197,6 +1203,8 @@ def convert_generic_file(
     }
 
     suffix = suffix_map.get(target_modality, target_modality)
+    if target_modality == "func" and "events" in extra_parts:
+        suffix = "events"
 
     # Check if suffix is already present in the parts
     suffix_already_present = False

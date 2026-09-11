@@ -968,6 +968,35 @@ class TestConvertGenericFile:
         assert result.success
         assert result.session is None
 
+    def test_func_events_file_keeps_events_suffix(self, tmp_path):
+        src = tmp_path / "sub-001_ses-1_task-rest_events.tsv"
+        src.write_text("onset\tduration\n0\t1\n")
+        out_dir = tmp_path / "out"
+        parsed = parse_bids_filename(src.name)
+        assert parsed is not None
+
+        result = convert_generic_file(src, out_dir, parsed=parsed, target_modality="func")
+
+        assert result.success
+        output_names = {path.name for path in result.output_files}
+        assert "sub-001_ses-1_task-rest_events.tsv" in output_names
+        assert "sub-001_ses-1_task-rest_events.json" in output_names
+        assert not any("events_bold" in name for name in output_names)
+
+    def test_func_events_file_removes_stray_bold_suffix(self, tmp_path):
+        src = tmp_path / "sub-001_ses-1_task-rest_events_bold.tsv"
+        src.write_text("onset\tduration\n0\t1\n")
+        out_dir = tmp_path / "out"
+        parsed = parse_bids_filename(src.name)
+        assert parsed is not None
+
+        result = convert_generic_file(src, out_dir, parsed=parsed, target_modality="func")
+
+        assert result.success
+        assert "sub-001_ses-1_task-rest_events.tsv" in {
+            path.name for path in result.output_files
+        }
+
     def test_missing_source_returns_failed(self, tmp_path):
         src = tmp_path / "sub-001_task-x.tsv"
         out_dir = tmp_path / "out"

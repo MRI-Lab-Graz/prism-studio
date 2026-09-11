@@ -2,6 +2,7 @@
 Configuration file support for prism.
 
 Supports per-project configuration via:
+import tempfile
 - .prismrc.json (hidden file)
 - prism.config.json (visible file)
 
@@ -21,8 +22,21 @@ Example .prismrc.json:
     "strictMode": false,
     "runBids": false,
     "customModalities": {},
-    "templateLibraryPath": "/shared/templates"
-}
+    file_descriptor, temporary_path = tempfile.mkstemp(
+        prefix=f".{APP_SETTINGS_FILENAME}.", suffix=".tmp", dir=settings_dir
+    )
+    try:
+        with os.fdopen(file_descriptor, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temporary_path, settings_path)
+    except Exception:
+        try:
+            os.unlink(temporary_path)
+        except FileNotFoundError:
+            pass
+        raise
 """
 
 import os
