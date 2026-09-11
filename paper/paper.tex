@@ -96,10 +96,14 @@ validation, and export, while the standalone \texttt{prism-validator}
 enables the same data-quality checks in scripted and
 continuous-integration workflows. Survey templates can be authored as
 JSON, imported from structured Excel codebooks, or reused from the
-bundled library of 104 survey and one biometrics template. Templates
-retain item-level response options, instrument identity, administration
-details, versions, and variants from collection through validation and
-sharing.
+bundled library of 103 survey and one biometrics template. Most survey
+templates are derived from the PsyToolkit survey library
+\citep{stoet2010psytoolkit,stoet2017psytoolkit}; each template's
+metadata records the upstream licensing statement verbatim, and
+instruments with unclear or restrictive terms are excluded rather than
+shipped. Templates retain item-level response options, instrument
+identity, administration details, versions, and variants from
+collection through validation and sharing.
 
 \section{Statement of need}\label{statement-of-need}
 
@@ -244,7 +248,7 @@ rather than evidence of independent adoption, and the dataset remains
 access-restricted under the Austrian NeuroCloud data-use agreement.
 
 The public repository shows iterative development from September 2025
-onward, tagged releases through version 1.17.0, automated continuous
+onward, tagged releases through version 1.18.0, automated continuous
 integration, and cross-platform release artifacts for macOS, Windows,
 and Linux. The repository also includes workshop materials, example
 datasets, and end-to-end documentation so that researchers can test the
@@ -267,7 +271,7 @@ reproducibility}\label{availability-and-reproducibility}
 PRISM is released under the GNU Affero General Public License v3.0
 (AGPL-3.0) and developed at
 https://github.com/MRI-Lab-Graz/prism-studio. The release described here
-is version 1.17.0. Source installation is documented for macOS, Windows,
+is version 1.18.0. Source installation is documented for macOS, Windows,
 and Linux through \texttt{setup.sh} and \texttt{setup.ps1}; entry points
 include \texttt{python\ prism-studio.py} for the web application and
 \texttt{prism-validator} for portable validation. The validator is also
@@ -275,10 +279,12 @@ distributed as platform bundles, a Docker image, and a GitHub Action.
 The repository contains example datasets and workshop material under
 \texttt{examples/}, while automated checks are run in CI through
 \texttt{python\ tests/verify\_repo.py} and pytest-based verification.
+The bundled instrument library is third-party content rather than
+PRISM's own code and is licensed separately; see the library's own
+notice for provenance and per-instrument terms.
 
-The final JOSS submission should cite the archival DOI for the exact
-release under review once the corresponding Zenodo snapshot has been
-created.
+This manuscript should cite the archival DOI for the exact release
+under review once the corresponding Zenodo snapshot has been created.
 
 \section{AI usage disclosure}\label{ai-usage-disclosure}
 
