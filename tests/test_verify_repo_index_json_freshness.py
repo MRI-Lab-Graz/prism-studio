@@ -98,3 +98,36 @@ def test_skipped_when_library_dir_missing(tmp_path: Path, capsys) -> None:
     output = capsys.readouterr().out
 
     assert "skipped" in output
+
+
+def test_fails_with_malformed_json(tmp_path: Path, capsys) -> None:
+    verify_repo = _load_verify_repo_module()
+    library_dir = tmp_path / "official" / "library" / "survey"
+    library_dir.mkdir(parents=True, exist_ok=True)
+
+    # Write malformed JSON
+    index_path = library_dir / "index.json"
+    index_path.write_text("{invalid json", encoding="utf-8")
+
+    verify_repo.check_index_json_freshness(str(tmp_path))
+    output = capsys.readouterr().out
+
+    assert "[✗]" in output
+    assert "not valid JSON" in output
+
+
+def test_fails_with_non_dict_json(tmp_path: Path, capsys) -> None:
+    verify_repo = _load_verify_repo_module()
+    library_dir = tmp_path / "official" / "library" / "survey"
+    library_dir.mkdir(parents=True, exist_ok=True)
+
+    # Write valid JSON but not a dict (e.g., empty list)
+    index_path = library_dir / "index.json"
+    index_path.write_text("[]", encoding="utf-8")
+
+    verify_repo.check_index_json_freshness(str(tmp_path))
+    output = capsys.readouterr().out
+
+    assert "[✗]" in output
+    assert "must be an object" in output
+    assert "list" in output

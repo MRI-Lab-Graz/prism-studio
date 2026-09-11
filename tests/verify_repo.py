@@ -2396,7 +2396,19 @@ def check_index_json_freshness(repo_path, fix=False):
         sys.path.insert(0, repo_root)
     from src.instrument_registry import build_registry_index
 
-    committed = json.loads(index_path.read_text(encoding="utf-8"))
+    try:
+        committed = json.loads(index_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        print_error(f"index.json: not valid JSON ({e}).")
+        return
+
+    if not isinstance(committed, dict):
+        print_error(
+            f"index.json: top-level JSON must be an object, "
+            f"got {type(committed).__name__}."
+        )
+        return
+
     expected = build_registry_index(library_dir)
 
     committed_comparable = {k: v for k, v in committed.items() if k != "GeneratedOn"}
