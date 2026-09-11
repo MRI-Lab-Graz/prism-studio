@@ -1167,6 +1167,18 @@ export function initOpenProjectController({
         return String(getCurrentProjectState().path || '').trim();
     }
 
+    function updateLoadProjectButtonState() {
+        const input = document.getElementById('existingPath');
+        const button = document.getElementById('loadProjectBtn');
+        if (!input || !button) return;
+
+        const selectedPath = String(input.value || '').trim().replace(/[\\/]+$/, '');
+        const currentPath = String(getCurrentProjectState().path || '').trim().replace(/[\\/]+$/, '');
+        const isCurrentProject = Boolean(selectedPath && currentPath && selectedPath === currentPath);
+        button.disabled = isCurrentProject;
+        button.title = isCurrentProject ? 'This project is already loaded' : '';
+    }
+
     function showDataladCard() {
         const card = document.getElementById('dataladSectionCard');
         if (!card) return;
@@ -1209,7 +1221,7 @@ export function initOpenProjectController({
             const response = await fetchWithApiFallback('/api/projects/current', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: normalizedPath })
+                body: JSON.stringify({ path: normalizedPath, defer_datalad_status: true })
             });
             const result = await response.json().catch(() => ({
                 success: false,
@@ -1237,18 +1249,22 @@ export function initOpenProjectController({
             showStudyMetadataCard();
             updateCreateProjectButton();
             showMethodsCard();
-            showDataladCard();
 
             renderLoadedProjectState(loadedName, loadedPath, projectSummary);
             renderProjectBoxDataladState(currentState.datalad, loadedPath);
             bindProjectBoxActionButtons();
             bindProjectBoxDataladActions();
             updateCreateProjectButton();
+            updateLoadProjectButtonState();
             showAutosaveFailureFeedback(result.autosave_previous);
 
-            if (currentState.datalad && currentState.datalad.enabled) {
-                refreshDataladStatusDeep(loadedPath);
-            }
+            // Let the folder summary paint before starting DataLad status work.
+            window.setTimeout(() => {
+                showDataladCard();
+                if (currentState.datalad && currentState.datalad.enabled) {
+                    refreshDataladStatusDeep(loadedPath);
+                }
+            }, 0);
 
             return true;
         } catch (error) {
@@ -1269,6 +1285,9 @@ export function initOpenProjectController({
             await loadProjectWithoutValidation(getOpenProjectActionPath(), btn);
         });
     }
+
+    document.getElementById('existingPath')?.addEventListener('input', updateLoadProjectButtonState);
+    updateLoadProjectButtonState();
 
     document.addEventListener('click', function(event) {
         const link = event.target.closest ? event.target.closest('#projectLoadedManageDataladLink') : null;

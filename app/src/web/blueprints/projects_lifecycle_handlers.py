@@ -180,6 +180,8 @@ def handle_set_current(
         return jsonify(response_payload)
 
     name = data.get("name")
+    metadata_only = bool(data.get("metadata_only", False))
+    defer_datalad_status = bool(data.get("defer_datalad_status", False))
 
     if not os.path.exists(path):
         return jsonify({"success": False, "error": "Path does not exist"}), 400
@@ -210,9 +212,18 @@ def handle_set_current(
     session["current_project_icon"] = resolved_icon
     save_last_project(path, resolved_name)
 
-    summary = _build_project_quick_summary(Path(path))
-    current = dict(get_current_project() or {})
-    current["icon"] = resolved_icon
+    if metadata_only or defer_datalad_status:
+        current = {
+            "path": path,
+            "name": resolved_name,
+            "icon": resolved_icon,
+            "datalad": {},
+        }
+        summary = {} if metadata_only else _build_project_quick_summary(Path(path))
+    else:
+        summary = _build_project_quick_summary(Path(path))
+        current = dict(get_current_project() or {})
+        current["icon"] = resolved_icon
 
     response_payload: dict[str, Any] = {
         "success": True,

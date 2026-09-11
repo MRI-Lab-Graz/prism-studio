@@ -124,6 +124,7 @@ export function initProjectFileBrowser({ fetchWithApiFallback }) {
 
             if (pickedPath && existingInput) {
                 existingInput.value = pickedPath;
+                existingInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
         } catch (error) {
             console.error('Project file picker error:', error);
@@ -150,7 +151,10 @@ export function initProjectFileBrowser({ fetchWithApiFallback }) {
         selectBtn.addEventListener('click', function() {
             if (selectedProjectJson) {
                 const input = document.getElementById('existingPath');
-                if (input) input.value = selectedProjectJson;
+                if (input) {
+                    input.value = selectedProjectJson;
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                }
                 bootstrap.Modal.getInstance(modalEl)?.hide();
             }
         });

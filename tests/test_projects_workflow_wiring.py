@@ -884,9 +884,29 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("function renderProjectQuickSummary(summary) {", content)
         self.assertIn("const projectSummary = result.project_summary", content)
         self.assertIn("renderLoadedProjectState(loadedName, loadedPath, projectSummary);", content)
+        self.assertIn("defer_datalad_status: true", content)
+        self.assertIn("window.setTimeout(() => {", content)
         self.assertIn("import { initOpenProjectController } from './open-project.js';", core_content)
         self.assertIn("const openProjectController = initOpenProjectController({", core_content)
         self.assertNotIn("runProjectValidation(", bootstrap_content)
+
+    def test_navbar_recent_project_switch_shows_loading_state(self):
+        content = (REPO_ROOT / "app" / "templates" / "base.html").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("metadata_only: true", content)
+        self.assertIn("Loading project...", content)
+        self.assertIn("button.setAttribute('aria-busy', 'true');", content)
+
+    def test_load_button_disables_for_the_current_project_and_reacts_to_picker_changes(self):
+        content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
+        browser_content = (REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "file-browser.js").read_text(encoding="utf-8")
+
+        self.assertIn("function updateLoadProjectButtonState()", content)
+        self.assertIn("button.disabled = isCurrentProject;", content)
+        self.assertIn("addEventListener('input', updateLoadProjectButtonState)", content)
+        self.assertIn("dispatchEvent(new Event('input', { bubbles: true }))", browser_content)
 
     def test_loaded_project_state_links_to_full_validator(self):
         content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")

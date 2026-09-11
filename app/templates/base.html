@@ -792,7 +792,8 @@
             const payload = {
                 path: String(path || '').trim(),
                 name: String(name || '').trim(),
-                icon: normalizeProjectIconValue(icon)
+                icon: normalizeProjectIconValue(icon),
+                metadata_only: true
             };
 
             if (!payload.path) return;
@@ -1582,6 +1583,9 @@
 
                     recentProjectSwitchInFlight = true;
                     button.disabled = true;
+                    const originalButtonHtml = button.innerHTML;
+                    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Loading project...';
+                    button.setAttribute('aria-busy', 'true');
 
                     try {
                         await setCurrentProjectFromNavbar(targetPath, targetName, targetIcon);
@@ -1591,6 +1595,8 @@
                     } finally {
                         recentProjectSwitchInFlight = false;
                         button.disabled = false;
+                        button.innerHTML = originalButtonHtml;
+                        button.removeAttribute('aria-busy');
                     }
                 };
 

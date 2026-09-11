@@ -4,6 +4,16 @@ Last updated: 2026-08-07
 
 ## Recent Checkpoints
 
+- [x] 2026-09-11: Made navbar recent-project activation metadata-only and
+      added a visible loading state, avoiding target dataset summary and
+      DataLad-status scans before navigation. Lesson learned: project context
+      switches should read `project.json`; only the prior project's required
+      DataLad autosave may legitimately delay the switch.
+- [x] 2026-09-11: Made Project Manager loading return and render the folder
+      summary before deferred DataLad status work, and disabled Load Project
+      for the already active path until another path is selected. Lesson
+      learned: preserve an atomic load summary while deferring enrichments
+      that require remote filesystem or Git access.
 - [x] 2026-09-11: Fixed generated `CITATION.cff` files using the legacy
       `PDDL` shorthand by normalizing it to the valid SPDX identifier
       `PDDL-1.0`; repaired the affected NEMO dataset citation file. Lesson

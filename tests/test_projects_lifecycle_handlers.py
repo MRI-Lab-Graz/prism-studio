@@ -201,6 +201,63 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertEqual(captured["last_name"], "Resolved Name")
         self.assertIn(body["current"]["icon"], self.allowed_icons)
 
+    def test_set_current_metadata_only_skips_summary_and_status(self):
+        (self.project_root / "project.json").write_text(
+            '{"name": "Resolved Name"}', encoding="utf-8"
+        )
+        captured = {}
+
+        def get_current_project():
+            raise AssertionError("metadata-only activation must not load DataLad status")
+
+        def set_current_project(path: str, name: str | None = None):
+            captured["path"] = path
+            captured["name"] = name
+
+        with self.app.test_request_context(
+            "/api/projects/current",
+            method="POST",
+            json={"path": str(self.project_root), "metadata_only": True},
+        ):
+            response = self.handle_set_current(
+                get_current_project=get_current_project,
+                set_current_project=set_current_project,
+                save_last_project=lambda *_args: None,
+            )
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(body["current"]["path"], str(self.project_root))
+        self.assertEqual(body["current"]["name"], "Resolved Name")
+        self.assertEqual(body["current"]["datalad"], {})
+        self.assertEqual(body["project_summary"], {})
+        self.assertEqual(captured["path"], str(self.project_root))
+
+    def test_set_current_deferred_datalad_status_keeps_quick_summary(self):
+        (self.project_root / "project.json").write_text(
+            '{"name": "Resolved Name"}', encoding="utf-8"
+        )
+        (self.project_root / "sub-01" / "ses-01" / "func").mkdir(parents=True)
+
+        with self.app.test_request_context(
+            "/api/projects/current",
+            method="POST",
+            json={"path": str(self.project_root), "defer_datalad_status": True},
+        ):
+            response = self.handle_set_current(
+                get_current_project=lambda: (_ for _ in ()).throw(
+                    AssertionError("deferred status must not query DataLad")
+                ),
+                set_current_project=lambda *_args: None,
+                save_last_project=lambda *_args: None,
+            )
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(body["current"]["datalad"], {})
+        self.assertEqual(body["project_summary"]["subjects"], 1)
+        self.assertEqual(body["project_summary"]["modalities"], 1)
+
     def test_set_current_does_not_persist_generated_icon_on_open(self):
         (self.project_root / "project.json").write_text(
             '{"name": "Resolved Name"}', encoding="utf-8"
