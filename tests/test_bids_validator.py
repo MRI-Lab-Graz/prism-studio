@@ -31,6 +31,57 @@ def test_deno_validator_uses_node_modules_directory(monkeypatch, tmp_path):
     assert "--ignoreNiftiHeaders" in commands[1]
 
 
+def test_backend_info_reports_deno_engine_and_pinned_spec(monkeypatch, tmp_path):
+    dataset = tmp_path / "dataset"
+    dataset.mkdir()
+
+    def fake_run(cmd, check=False, stdout=None, stderr=None, text=False):
+        if cmd[:2] == ["deno", "--version"]:
+            return SimpleNamespace(stdout="deno 2.0.0", stderr="", returncode=0)
+        if cmd[:2] == ["deno", "run"]:
+            return SimpleNamespace(stdout='{"issues": {"issues": []}}', stderr="", returncode=0)
+        raise AssertionError(f"Unexpected command: {cmd}")
+
+    monkeypatch.setattr(bids_validator.subprocess, "run", fake_run)
+
+    backend_info = {}
+    bids_validator.run_bids_validator(
+        str(dataset), verbose=False, backend_info=backend_info
+    )
+
+    assert backend_info == {
+        "engine": "deno",
+        "spec": bids_validator.DENO_BIDS_VALIDATOR_SPEC,
+    }
+
+
+def test_backend_info_reports_legacy_engine_and_reported_version(monkeypatch, tmp_path):
+    dataset = tmp_path / "dataset"
+    dataset.mkdir()
+
+    def fake_run(cmd, check=False, stdout=None, stderr=None, text=False):
+        if cmd[:2] == ["deno", "--version"]:
+            raise FileNotFoundError("deno not installed")
+        if cmd[:2] == ["bids-validator", "--version"]:
+            return SimpleNamespace(stdout="1.14.0\n", stderr="", returncode=0)
+        if cmd and cmd[0] == "bids-validator":
+            return SimpleNamespace(
+                stdout='{"issues": {"errors": [], "warnings": []}}',
+                stderr="",
+                returncode=0,
+            )
+        raise AssertionError(f"Unexpected command: {cmd}")
+
+    monkeypatch.setattr(bids_validator.subprocess, "run", fake_run)
+
+    backend_info = {}
+    bids_validator.run_bids_validator(
+        str(dataset), verbose=False, backend_info=backend_info
+    )
+
+    assert backend_info == {"engine": "legacy", "spec": "bids-validator@1.14.0"}
+
+
 def test_deno_parser_suppresses_recommended_key_warnings(monkeypatch, tmp_path):
     dataset = tmp_path / "dataset"
     dataset.mkdir()

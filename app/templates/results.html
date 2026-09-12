@@ -16,10 +16,25 @@
                 {% if results and results.get('schema_version') %}
                 {% set results_header_subtitle = results_header_subtitle ~ ' • Schema Version: ' ~ results.schema_version %}
                 {% endif %}
+                {% set validator_info = results.get('validator_info') if results else none %}
+                {% set results_header_note = '' %}
+                {% if validator_info %}
+                    {% set schema_versions = validator_info.get('prism_schema_versions') or {} %}
+                    {% if schema_versions %}
+                        {% set version_parts = schema_versions.items()|sort|map('join', ' ')|join(', ') %}
+                        {% set results_header_note = 'PRISM schema: ' ~ version_parts %}
+                    {% endif %}
+                    {% set bids_backend = validator_info.get('bids_validator') %}
+                    {% if bids_backend and bids_backend.get('spec') %}
+                        {% set bids_note = 'BIDS validator: ' ~ bids_backend.get('spec') %}
+                        {% set results_header_note = (results_header_note ~ ' • ' ~ bids_note) if results_header_note else bids_note %}
+                    {% endif %}
+                {% endif %}
                 {{ page_header(
                     'fas fa-chart-line',
                     'Validation Results',
-                    results_header_subtitle
+                    results_header_subtitle,
+                    results_header_note
                 ) }}
             </div>
             <div class="d-flex flex-wrap align-items-center justify-content-end gap-2">
@@ -101,6 +116,21 @@
             Re-validation completed in <strong>{{ mode_label }}</strong> mode.
             Previous errors: <strong>{{ previous_errors }}</strong>.
             Current errors: <strong>{{ current_errors }}</strong>.
+        </div>
+        {% endif %}
+
+        {% if results and results.get('schema_change_notice') %}
+        {% set previous_schema = results.schema_change_notice.get('previous') or {} %}
+        <div class="alert alert-warning border-0 shadow-sm mb-4">
+            <i class="fas fa-triangle-exclamation me-2"></i>
+            <strong>Validator versions changed since this project was last validated.</strong>
+            {% if previous_schema.get('validatedAt') %}
+            Last validated {{ previous_schema.get('validatedAt') }} with a different PRISM schema
+            {%- if previous_schema.get('bids_validator') %} and/or BIDS validator{% endif -%}.
+            {% else %}
+            A previous validation of this project used different versions.
+            {% endif %}
+            Some previously-passing checks may now report differently.
         </div>
         {% endif %}
 

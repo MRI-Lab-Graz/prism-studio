@@ -2949,6 +2949,143 @@ def _mask_codebook_sidecars(sav_path: str | Path, masked_columns: set[str]) -> N
             pass
 
 
+def _mask_jamovi_helper(data_path: Path, masked_columns: set[str]) -> None:
+    """Mask question-text reference comments in a `*_jamovi_helper.R` sidecar."""
+    if not masked_columns:
+        return
+    helper_path = data_path.with_name(f"{data_path.stem}_jamovi_helper.R")
+    if not helper_path.exists():
+        return
+    try:
+        lines = helper_path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return
+    changed = False
+    for index, line in enumerate(lines):
+        match = re.match(r"^# (\S+): .+$", line)
+        if match and match.group(1) in masked_columns:
+            lines[index] = f"# {match.group(1)}: [MASKED]"
+            changed = True
+    if changed:
+        helper_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _mask_question_sidecars(data_path: Path, dataset_path: str | Path) -> set[str]:
+    """Mask question text in every sidecar written next to `data_path`.
+
+    Covers the `*_codebook.json` / `*_codebook.tsv` companions (written for
+    csv and sav exports) and the `*_jamovi_helper.R` reference comments
+    (csv only). Returns the columns that were masked.
+    """
+    excluded_columns = _sav_maskable_question_columns(data_path, dataset_path)
+    masked_columns: set[str] = set()
+
+    codebook_path = data_path.with_name(f"{data_path.stem}_codebook.json")
+    if codebook_path.exists():
+        try:
+            codebook = _read_json(codebook_path)
+            variables = (
+                codebook.get("variables", {}) if isinstance(codebook, dict) else {}
+            )
+            if isinstance(variables, dict):
+                masked_columns = {
+                    column
+                    for column, metadata in variables.items()
+                    if column not in excluded_columns
+                    and isinstance(metadata, dict)
+                    and metadata.get("label")
+                }
+        except (OSError, ValueError, json.JSONDecodeError):
+            masked_columns = set()
+
+    _mask_codebook_sidecars(data_path, masked_columns)
+    _mask_jamovi_helper(data_path, masked_columns)
+    return masked_columns
+
+
+def _mask_xlsx_codebook_frame(frame: Any, dataset_path: str | Path) -> bool:
+    """Mask question-text labels in an xlsx export's in-workbook Codebook sheet.
+
+    Score rows (identified by a non-empty `score_details` cell) and
+    participant-level columns keep their labels, matching the sidecar rules.
+    """
+    if "variable" not in frame.columns or "label" not in frame.columns:
+        return False
+
+    excluded_columns = {"participant_id", "session", "run"}
+    participants_json = Path(dataset_path) / "participants.json"
+    if participants_json.exists():
+        try:
+            participant_metadata = _read_json(participants_json)
+            if isinstance(participant_metadata, dict):
+                excluded_columns.update(participant_metadata)
+        except (OSError, ValueError, json.JSONDecodeError):
+            pass
+
+    import pandas as pd
+
+    def _cell(row: Any, column: str) -> str:
+        value = row.get(column)
+        # Empty cells read back as NaN, which is truthy -- never treat one as
+        # a real value (an unset score_details must not exempt an item row).
+        return "" if value is None or pd.isna(value) else str(value).strip()
+
+    changed = False
+    for index, row in frame.iterrows():
+        variable = _cell(row, "variable")
+        if not variable or variable in excluded_columns:
+            continue
+        if _cell(row, "score_details"):
+            continue
+        if _cell(row, "label"):
+            frame.at[index, "label"] = "[MASKED]"
+            changed = True
+    return changed
+
+
+def _anonymize_provenance_sidecars(
+    out_root: Path, mapping: dict[str, str], canonical_map: dict[str, str]
+) -> None:
+    """Replace participant IDs inside `*_provenance.json` input file paths.
+
+    The provenance sidecar records the exact source file for every scored
+    input (`sub-001/ses-1/survey/...`), so leaving it untouched hands back
+    the real participant IDs the export just pseudonymized.
+    """
+    if not mapping and not canonical_map:
+        return
+
+    def _swap(text: str) -> str:
+        def _replace(match: re.Match[str]) -> str:
+            token = match.group(0)
+            if token in mapping:
+                return mapping[token]
+            key = _canonical_pid_for_anonymization(token)
+            if key and key in canonical_map:
+                return canonical_map[key]
+            return token
+
+        return re.sub(r"sub-[A-Za-z0-9]+", _replace, text)
+
+    for path in sorted(out_root.rglob("*_provenance.json")):
+        try:
+            provenance = _read_json(path)
+        except (OSError, ValueError, json.JSONDecodeError):
+            continue
+        if not isinstance(provenance, dict):
+            continue
+        changed = False
+        for key in ("InputFiles", "ParticipantsFiles"):
+            for entry in provenance.get(key) or []:
+                if isinstance(entry, dict) and isinstance(entry.get("Path"), str):
+                    swapped = _swap(entry["Path"])
+                    if swapped != entry["Path"]:
+                        entry["Path"] = swapped
+                        changed = True
+        if changed:
+            _write_json(path, provenance)
+
+
 def anonymize_recipe_output(
     *,
     dataset_path: str | Path,
@@ -3009,7 +3146,12 @@ def anonymize_recipe_output(
         key = _canonical_pid_for_anonymization(text)
         if key and key in canonical_map:
             return canonical_map[key]
-        return value
+        if text in mapping.values() or text in minted_ids.values():
+            return value  # already a pseudonym (re-run over the same folder)
+        # An ID present in the data but absent from participants.tsv must
+        # not be handed back unchanged -- that ships a real participant ID
+        # inside an export the user was told is anonymized.
+        return _mint_pseudonym(text)
 
     if not os.path.exists(output_dir):
         raise FileNotFoundError(f"Output directory not found: {output_dir}")
@@ -3017,6 +3159,32 @@ def anonymize_recipe_output(
     participant_mapping: dict[str, str] = {}
     canonical_mapping: dict[str, str] = {}
     mapping_file_path: Optional[Path] = None
+    minted_ids: dict[str, str] = {}
+
+    def _mint_pseudonym(original_id: str) -> str:
+        """Pseudonymize an ID that participants.tsv never listed."""
+        if not anonymize_participant_ids:
+            return original_id
+        if original_id in minted_ids:
+            return minted_ids[original_id]
+
+        from src.anonymizer import generate_random_id
+
+        prefix = original_id.split("-")[0] if "-" in original_id else "sub"
+        used = set(participant_mapping.values()) | set(minted_ids.values())
+        for attempt in range(1000):
+            seed = None
+            if secret_key is not None:
+                seed = original_id if attempt == 0 else f"{original_id}_{attempt}"
+            candidate = generate_random_id(
+                prefix, id_length, seed, secret_key=secret_key
+            )
+            if candidate not in used:
+                minted_ids[original_id] = candidate
+                return candidate
+        raise RuntimeError(f"Could not generate unique ID for {original_id}")
+
+    secret_key: Optional[bytes] = None
     if anonymize_participant_ids:
         from src.anonymizer import create_participant_mapping
 
@@ -3048,9 +3216,32 @@ def anonymize_recipe_output(
             if key and key not in canonical_mapping:
                 canonical_mapping[key] = anonymized_id
 
+        # Reuse the persisted key so minted pseudonyms follow the same
+        # deterministic scheme as the ones create_participant_mapping made.
+        if not random_ids:
+            try:
+                key_hex = json.loads(
+                    mapping_file_path.read_text(encoding="utf-8")
+                ).get("_secret_key")
+                secret_key = bytes.fromhex(key_hex) if key_hex else None
+            except (OSError, ValueError, json.JSONDecodeError):
+                secret_key = None
+
     anonymized_count = 0
 
-    if out_format in ("sav", "spss"):
+    def _map_column(frame: Any) -> bool:
+        """Pseudonymize `participant_id` in `frame`; True if anything changed."""
+        if not anonymize_participant_ids or "participant_id" not in frame.columns:
+            return False
+        before = frame["participant_id"].copy()
+        frame["participant_id"] = frame["participant_id"].map(
+            lambda x: _map_pid(x, participant_mapping, canonical_mapping)
+        )
+        return bool(
+            (before.astype(str) != frame["participant_id"].astype(str)).any()
+        )
+
+    def _load_pyreadstat() -> Any:
         try:
             import pyreadstat
         except ImportError as exc:
@@ -3058,117 +3249,107 @@ def anonymize_recipe_output(
                 "pyreadstat required for anonymizing SPSS files "
                 "(install with: pip install pyreadstat)"
             ) from exc
+        return pyreadstat
 
-        for root, _dirs, files in os.walk(output_dir):
-            for file in files:
-                if not file.endswith(".sav"):
-                    continue
-                sav_path = os.path.join(root, file)
-                df_data, meta = pyreadstat.read_sav(sav_path)
+    # Walk by what was actually written, not by the requested format: a .sav
+    # export silently falls back to .csv when pyreadstat fails, and every
+    # format writes sidecars (codebook, Jamovi helper, provenance) that carry
+    # the same identifiers and question text as the data file itself.
+    for path in sorted(Path(output_dir).rglob("*")):
+        if not path.is_file():
+            continue
+        suffix = path.suffix.lower()
+        file_path = str(path)
 
-                if anonymize_participant_ids and "participant_id" in df_data.columns:
-                    before = df_data["participant_id"].copy()
-                    df_data["participant_id"] = df_data["participant_id"].map(
-                        lambda x: _map_pid(x, participant_mapping, canonical_mapping)
-                    )
-                    changed = int(
-                        (before.astype(str) != df_data["participant_id"].astype(str)).sum()
-                    )
-                    if changed > 0:
-                        anonymized_count += 1
+        if suffix == ".sav":
+            pyreadstat = _load_pyreadstat()
+            df_data, meta = pyreadstat.read_sav(file_path)
+            if _map_column(df_data):
+                anonymized_count += 1
 
+            if mask_questions:
+                # SAV question text is stored as a variable label; the
+                # variable name is typically an item ID such as WB01.
+                excluded_columns = _sav_maskable_question_columns(path, dataset_path)
+                masked_columns: set[str] = set()
+                for column, label in meta.column_names_to_labels.items():
+                    if label and column not in excluded_columns:
+                        meta.column_names_to_labels[column] = "[MASKED]"
+                        masked_columns.add(column)
+                # The companion codebook.json/.tsv sidecars written at
+                # export time carry the same unmasked labels; mask those
+                # too so real question text doesn't leak next to the
+                # anonymized .sav.
+                _mask_codebook_sidecars(path, masked_columns)
+
+            _unlock_for_overwrite(file_path, dataset_path)
+            pyreadstat.write_sav(
+                df_data,
+                file_path,
+                column_labels=meta.column_names_to_labels,
+                variable_value_labels=getattr(meta, "variable_value_labels", None),
+            )
+
+        elif suffix in (".csv", ".tsv") and not path.stem.endswith("_codebook"):
+            sep = "\t" if suffix == ".tsv" else ","
+            df_data = pd.read_csv(file_path, sep=sep)
+            changed = _map_column(df_data)
+            if changed:
+                anonymized_count += 1
+
+            if mask_questions and "question" in df_data.columns:
+                df_data["question"] = "[MASKED]"
+
+            _unlock_for_overwrite(file_path, dataset_path)
+            df_data.to_csv(file_path, sep=sep, index=False)
+            if mask_questions:
+                _mask_question_sidecars(path, dataset_path)
+
+        elif suffix == ".xlsx":
+            sheet_names = pd.ExcelFile(file_path).sheet_names
+            sheet_frames = {
+                sheet_name: pd.read_excel(file_path, sheet_name=sheet_name)
+                for sheet_name in sheet_names
+            }
+
+            file_had_participant_ids = False
+            for sheet_name, df_data in sheet_frames.items():
+                if _map_column(df_data):
+                    file_had_participant_ids = True
                 if mask_questions:
-                    # SAV question text is stored as a variable label; the
-                    # variable name is typically an item ID such as WB01.
-                    excluded_columns = _sav_maskable_question_columns(
-                        sav_path, dataset_path
-                    )
-                    masked_columns: set[str] = set()
-                    for column, label in meta.column_names_to_labels.items():
-                        if label and column not in excluded_columns:
-                            meta.column_names_to_labels[column] = "[MASKED]"
-                            masked_columns.add(column)
-                    # The companion codebook.json/.tsv sidecars written at
-                    # export time carry the same unmasked labels; mask those
-                    # too so real question text doesn't leak next to the
-                    # anonymized .sav.
-                    _mask_codebook_sidecars(sav_path, masked_columns)
-
-                _unlock_for_overwrite(sav_path, dataset_path)
-                pyreadstat.write_sav(
-                    df_data,
-                    sav_path,
-                    column_labels=meta.column_names_to_labels,
-                    variable_value_labels=getattr(meta, "variable_value_labels", None),
-                )
-
-    elif out_format in ("csv", "tsv", "flat", "prism"):
-        for root, _dirs, files in os.walk(output_dir):
-            for file in files:
-                if not (file.endswith(".tsv") or file.endswith(".csv")):
-                    continue
-                file_path = os.path.join(root, file)
-                sep = "\t" if file.endswith(".tsv") else ","
-
-                df_data = pd.read_csv(file_path, sep=sep)
-                if anonymize_participant_ids and "participant_id" in df_data.columns:
-                    before = df_data["participant_id"].copy()
-                    df_data["participant_id"] = df_data["participant_id"].map(
-                        lambda x: _map_pid(x, participant_mapping, canonical_mapping)
-                    )
-                    changed = int(
-                        (before.astype(str) != df_data["participant_id"].astype(str)).sum()
-                    )
-                    if changed > 0:
-                        anonymized_count += 1
-
-                if mask_questions and "question" in df_data.columns:
-                    df_data["question"] = "[MASKED]"
-
-                df_data.to_csv(file_path, sep=sep, index=False)
-
-    elif out_format in ("xlsx", "excel"):
-        for root, _dirs, files in os.walk(output_dir):
-            for file in files:
-                if not file.endswith(".xlsx"):
-                    continue
-                file_path = os.path.join(root, file)
-
-                excel_file = pd.ExcelFile(file_path)
-                sheet_names = excel_file.sheet_names
-                sheet_frames = {
-                    sheet_name: pd.read_excel(file_path, sheet_name=sheet_name)
-                    for sheet_name in sheet_names
-                }
-
-                file_had_participant_ids = False
-                for _sheet_name, df_data in sheet_frames.items():
-                    if anonymize_participant_ids and "participant_id" in df_data.columns:
-                        before = df_data["participant_id"].copy()
-                        df_data["participant_id"] = df_data["participant_id"].map(
-                            lambda x: _map_pid(x, participant_mapping, canonical_mapping)
-                        )
-                        changed = int(
-                            (
-                                before.astype(str)
-                                != df_data["participant_id"].astype(str)
-                            ).sum()
-                        )
-                        if changed > 0:
-                            file_had_participant_ids = True
-
-                    if mask_questions and "question" in df_data.columns:
+                    if "question" in df_data.columns:
                         df_data["question"] = "[MASKED]"
+                    if sheet_name.strip().lower() == "codebook":
+                        _mask_xlsx_codebook_frame(df_data, dataset_path)
 
-                _unlock_for_overwrite(file_path, dataset_path)
-                with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
-                    for sheet_name in sheet_names:
-                        sheet_frames[sheet_name].to_excel(
-                            writer, sheet_name=sheet_name, index=False
-                        )
+            _unlock_for_overwrite(file_path, dataset_path)
+            with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
+                for sheet_name in sheet_names:
+                    sheet_frames[sheet_name].to_excel(
+                        writer, sheet_name=sheet_name, index=False
+                    )
 
-                if file_had_participant_ids:
-                    anonymized_count += 1
+            if file_had_participant_ids:
+                anonymized_count += 1
+            if mask_questions:
+                _mask_question_sidecars(path, dataset_path)
+
+    if anonymize_participant_ids:
+        if minted_ids and mapping_file_path is not None:
+            payload = {}
+            try:
+                payload = json.loads(mapping_file_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError, json.JSONDecodeError):
+                payload = {}
+            participant_mapping.update(minted_ids)
+            payload["mapping"] = participant_mapping
+            payload["reverse_mapping"] = {
+                v: k for k, v in participant_mapping.items()
+            }
+            _write_json(mapping_file_path, payload)
+        _anonymize_provenance_sidecars(
+            out_root, participant_mapping, canonical_mapping
+        )
 
     return anonymized_count, mapping_file_path
 

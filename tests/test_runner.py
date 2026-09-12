@@ -3,6 +3,7 @@ Unit tests for src/runner.py validation functions - uses demo folder
 """
 
 import os
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -640,6 +641,55 @@ class TestValidateDataset:
         assert "anat" not in visited_modalities
         assert "func" in visited_modalities
         assert "survey" in visited_modalities
+
+    def test_validate_dataset_records_resolved_prism_schema_versions(self, tmp_path):
+        """stats.validator_info must carry the actual loaded schema versions.
+
+        This is what lets a project.json record be compared across two runs
+        to detect a schema bump -- so it has to reflect the schema file
+        contents, not just the requested tag ('stable').
+        """
+        _issues, stats = validate_dataset(
+            str(tmp_path), verbose=False, run_bids=False, run_prism=True
+        )
+
+        assert stats.validator_info["prism_schema_tag"] == "stable"
+        schema_versions = stats.validator_info["prism_schema_versions"]
+        assert schema_versions, "expected at least one loaded schema"
+        assert re.fullmatch(r"\d+\.\d+\.\d+", schema_versions.get("survey", ""))
+
+    def test_validate_dataset_records_bids_validator_backend_alongside_schema_info(
+        self, monkeypatch, tmp_path
+    ):
+        def fake_bids_validator(
+            root_dir, verbose=False, check_nifti_headers=False, backend_info=None
+        ):
+            if backend_info is not None:
+                backend_info.update({"engine": "deno", "spec": "jsr:@bids/validator@2.4.1"})
+            return []
+
+        monkeypatch.setattr(runner, "_run_bids_validator", fake_bids_validator)
+
+        _issues, stats = validate_dataset(
+            str(tmp_path), verbose=False, run_bids=True, run_prism=True
+        )
+
+        assert stats.validator_info["prism_schema_versions"]
+        assert stats.validator_info["bids_validator"] == {
+            "engine": "deno",
+            "spec": "jsr:@bids/validator@2.4.1",
+        }
+
+    def test_validate_dataset_skips_schema_info_when_prism_disabled(
+        self, monkeypatch, tmp_path
+    ):
+        monkeypatch.setattr(runner, "_run_bids_validator", lambda *_a, **_k: [])
+
+        _issues, stats = validate_dataset(
+            str(tmp_path), verbose=False, run_bids=True, run_prism=False
+        )
+
+        assert not hasattr(stats, "validator_info")
 
 
 class TestSurveyRecipeCoverage:

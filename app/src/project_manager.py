@@ -8868,6 +8868,50 @@ Subfolders:
             str(project_json), json.dumps(payload, indent=2, ensure_ascii=False)
         )
 
+    def record_validation_run(
+        self, project_path: Path, validator_info: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Persist which schema/BIDS-validator versions last validated this project.
+
+        A schema bump can turn a dataset that validated clean yesterday into
+        one with new errors today, with nothing on the user's end having
+        changed -- so the previous run's versions need to survive in
+        project.json for the next run to compare against.
+
+        Returns ``{"changed": bool, "previous": <prior record or None>}`` so
+        the caller can warn the user when the recorded versions differ from
+        this run's. ``changed`` is always False the first time (nothing to
+        compare against yet).
+        """
+        if not validator_info:
+            return {"changed": False, "previous": None}
+
+        project_json = Path(project_path) / "project.json"
+        if not project_json.exists():
+            return {"changed": False, "previous": None}
+
+        payload = self._load_json_dict(project_json)
+        previous = payload.get("LastValidation")
+
+        from datetime import datetime, timezone
+
+        record = dict(validator_info)
+        record["validatedAt"] = datetime.now(timezone.utc).isoformat()
+
+        changed = bool(previous) and (
+            previous.get("prism_schema_versions")
+            != validator_info.get("prism_schema_versions")
+            or (previous.get("bids_validator") or {}).get("spec")
+            != (validator_info.get("bids_validator") or {}).get("spec")
+        )
+
+        payload["LastValidation"] = record
+        CrossPlatformFile.write_text(
+            str(project_json), json.dumps(payload, indent=2, ensure_ascii=False)
+        )
+
+        return {"changed": changed, "previous": previous}
+
     def get_metadata_sync_status(self, project_path: Path) -> Dict[str, Any]:
         """Return consistency status for project.json and generated metadata files."""
         project_json_path = Path(project_path) / "project.json"

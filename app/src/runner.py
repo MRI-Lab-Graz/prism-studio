@@ -175,6 +175,30 @@ def validate_dataset(
     schema_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "schemas")
     schemas = load_all_schemas(schema_dir, version=schema_version)
 
+    # Record which schema files actually answered this run, so callers can
+    # show it and detect a schema bump between two validations of the same
+    # project (a schema_version bump can turn a previously-passing dataset
+    # invalid). version_tag comes from a loaded schema's own _validator_info
+    # rather than re-deriving load_all_schemas' folder-name normalization.
+    if run_prism:
+        schema_versions = {
+            name: schema["_validator_info"]["schema_version"]
+            for name, schema in schemas.items()
+            if isinstance(schema, dict) and "_validator_info" in schema
+        }
+        version_tag = next(
+            (
+                schema["_validator_info"]["version_tag"]
+                for schema in schemas.values()
+                if isinstance(schema, dict) and "_validator_info" in schema
+            ),
+            schema_version or "stable",
+        )
+        stats.validator_info = {
+            "prism_schema_tag": version_tag,
+            "prism_schema_versions": schema_versions,
+        }
+
     if verbose:
         version_tag = schema_version or "stable"
         prism_modalities = [
@@ -385,9 +409,18 @@ def validate_dataset(
     if run_bids:
         issues.extend(_check_participants_subject_alignment(root_dir))
         report_progress(bids_progress, 100, "Running BIDS validator...")
+        bids_backend_info: dict = {}
         bids_issues = _run_bids_validator(
-            root_dir, verbose, check_nifti_headers=check_nifti_headers
+            root_dir,
+            verbose,
+            check_nifti_headers=check_nifti_headers,
+            backend_info=bids_backend_info,
         )
+        if bids_backend_info:
+            stats.validator_info = {
+                **getattr(stats, "validator_info", {}),
+                "bids_validator": bids_backend_info,
+            }
         issues.extend(bids_issues)
 
     report_progress(100, 100, "Validation complete")
@@ -590,7 +623,9 @@ def _check_participants_subject_alignment(root_dir: str) -> list[tuple[str, str,
     ]
 
 
-def _run_bids_validator(root_dir, verbose=False, check_nifti_headers=False):
+def _run_bids_validator(
+    root_dir, verbose=False, check_nifti_headers=False, backend_info=None
+):
     """Run the standard BIDS validator CLI"""
     # Load placeholders to filter out content-related issues (expected in structure-only uploads)
     manifest = _get_upload_manifest(root_dir)
@@ -604,6 +639,7 @@ def _run_bids_validator(root_dir, verbose=False, check_nifti_headers=False):
         placeholders=placeholders,
         structure_only=structure_only,
         check_nifti_headers=check_nifti_headers,
+        backend_info=backend_info,
     )
 
 

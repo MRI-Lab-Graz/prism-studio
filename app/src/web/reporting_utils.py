@@ -340,6 +340,7 @@ def format_validation_results(
     participants_mapping_result = getattr(
         dataset_stats, "participants_mapping_result", None
     )
+    validator_info = getattr(dataset_stats, "validator_info", None)
 
     # Prepare grouped results for the UI (BIDS-validator style)
     errors_list = []
@@ -377,4 +378,5 @@ def format_validation_results(
         "dataset_name": dataset_name,
         "dataset_stats": serializable_stats,
         "participants_mapping": participants_mapping_result,
+        "validator_info": validator_info,
     }
