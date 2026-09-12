@@ -144,6 +144,7 @@ One structure for multimodal studies
    :caption: Concepts
 
    CONCEPTS
+   INTRODUCTION
    WHAT_IS_PRISM
    PROJECT_OVERVIEW
    SPECIFICATIONS

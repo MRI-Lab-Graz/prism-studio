@@ -4,6 +4,11 @@ The model behind PRISM Studio — what it is, how the repository and product sur
 fit together, and how the specification/schema layer underneath it all works.
 
 <div class="prism-chapter-grid prism-chapter-grid--slate">
+  <a class="prism-chapter-card" href="INTRODUCTION.html">
+    <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V6a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0 0 4h14"/></svg></span>
+    <span class="prism-chapter-title">Introduction</span>
+    <span class="prism-chapter-outcome">What PRISM Studio is staking a claim on, and why</span>
+  </a>
   <a class="prism-chapter-card" href="WHAT_IS_PRISM.html">
     <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.6 1.3c0 1.7-2.1 1.9-2.1 3.4"/><path d="M12 17h.01"/></svg></span>
     <span class="prism-chapter-title">What is PRISM?</span>
