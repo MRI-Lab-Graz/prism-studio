@@ -526,3 +526,57 @@ def test_recipe_builder_detects_ranges_from_contiguous_numeric_levels(tmp_path):
         ) == {
             "BFI01": {"": {"min": 0, "max": 3}}
         }
+
+
+def test_recipe_builder_load_rejects_task_with_path_separators(tmp_path):
+    """`load` must validate `task` the same way `save` already does.
+
+    `save` restricts task names to [a-zA-Z0-9_-] (tools_recipe_builder_handlers
+    .py's handle_api_recipe_builder_save) before it ever touches disk; `load`
+    built its candidate paths from the raw, unsanitized `task` instead. In
+    practice `f"recipe-{task}.json"` glues any leading "../" onto the
+    "recipe-" prefix, producing a literal "recipe-.." directory that must
+    physically exist for a real stat-based traversal to work -- so this
+    isn't an arbitrary-file-read the way an unsanitized path normally would
+    be. It's still inconsistent, unsanitized input reaching a filesystem
+    path, so `load` should reject it exactly like `save` does rather than
+    quietly return `{"recipe": None}` for a malformed task.
+    """
+    app, handlers = _build_app_and_handlers()
+
+    with app.test_request_context("/api/recipe-builder/load"):
+        response, status_code = handlers.handle_api_recipe_builder_load(
+            dataset_path=str(tmp_path),
+            task="../../etc/passwd",
+        )
+
+    assert status_code == 400
+    data = response.get_json()
+    assert "error" in data
+
+
+def test_recipe_builder_save_surfaces_min_valid_warning(tmp_path):
+    """A saved recipe with a risky sum-without-MinValid should still save,
+    but the response should carry a warning so the author can see it."""
+    app, handlers = _build_app_and_handlers()
+    _write_recipe_builder_template(tmp_path, "wb")
+
+    recipe = {
+        "RecipeVersion": "1.0",
+        "Kind": "survey",
+        "Survey": {"TaskName": "wb"},
+        "Scores": [
+            {"Name": "wb_total", "Method": "sum", "Items": ["WB01", "WB02"]},
+        ],
+    }
+
+    with app.test_request_context("/api/recipe-builder/save"):
+        response, status_code = handlers.handle_api_recipe_builder_save(
+            {"dataset_path": str(tmp_path), "recipe": recipe}
+        )
+
+    assert status_code == 200
+    data = response.get_json()
+    assert data["saved"] is True
+    assert len(data.get("warnings") or []) == 1
+    assert "wb_total" in data["warnings"][0]

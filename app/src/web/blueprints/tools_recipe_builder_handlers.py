@@ -12,7 +12,7 @@ from pathlib import Path
 from flask import current_app, jsonify
 
 from src.constants import SUPPORTED_MODALITIES as _SUPPORTED_MODALITIES
-from src.recipe_validation import validate_recipe
+from src.recipe_validation import validate_recipe, validate_recipe_warnings
 from src.survey_scale_inference import (
     apply_implicit_numeric_level_ranges,
     get_survey_item_map,
@@ -673,6 +673,13 @@ def handle_api_recipe_builder_load(
     if not dataset_path or not task:
         return jsonify({"recipe": None}), 200
 
+    # Same restriction handle_api_recipe_builder_save applies before writing
+    # -- task feeds straight into a filesystem path below, so reject anything
+    # containing a path separator or other unexpected character rather than
+    # silently returning {"recipe": None} for a malformed value.
+    if not re.fullmatch(r"[a-zA-Z0-9_-]+", task):
+        return jsonify({"error": "Invalid task"}), 400
+
     candidates: list[Path] = [
         Path(dataset_path) / "code" / "recipes" / modality / f"recipe-{task}.json",
         Path(dataset_path)
@@ -772,4 +779,5 @@ def handle_api_recipe_builder_save(data: dict):
     except Exception as exc:
         return jsonify({"error": f"Failed to write recipe: {exc}"}), 500
 
-    return jsonify({"saved": True, "path": str(out_path)}), 200
+    warnings = validate_recipe_warnings(recipe)
+    return jsonify({"saved": True, "path": str(out_path), "warnings": warnings}), 200

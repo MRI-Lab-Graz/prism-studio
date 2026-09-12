@@ -470,3 +470,71 @@ def validate_recipe(
         )
 
     return errors
+
+
+def _score_warnings(scores: Any, *, list_label: str, prefix: str) -> list[str]:
+    """Non-blocking warnings for one Scores/VersionedScores list.
+
+    Flags a multi-item sum/mean with the default Missing='ignore' and no
+    MinValid: at scoring time (_calculate_scores) that combination sums or
+    averages whatever items were answered with no signal distinguishing a
+    participant who answered 1-of-N items from one who answered all N.
+    This is a plausible, sometimes-intended scoring choice -- not an error
+    -- so it is surfaced to the recipe author rather than blocking save or
+    changing how existing recipes are scored.
+    """
+    warnings: list[str] = []
+    if not isinstance(scores, list):
+        return warnings
+    for idx, score in enumerate(scores):
+        if not isinstance(score, dict):
+            continue
+        name = score.get("Name")
+        if not _is_nonempty_str(name):
+            continue
+        method = str(score.get("Method", "sum")).strip().lower()
+        if method not in {"sum", "mean"}:
+            continue
+        items = _as_list_of_str(score.get("Items"))
+        if len(items) < 2:
+            continue
+        missing = str(score.get("Missing", "ignore")).strip().lower()
+        if missing != "ignore":
+            continue
+        if score.get("MinValid") is not None:
+            continue
+        warnings.append(
+            prefix
+            + f"{list_label}[{idx}].Name='{str(name).strip()}': Method='{method}' with "
+            f"Missing='ignore' and no MinValid set -- a partial response (as few as 1 of "
+            f"{len(items)} items answered) is scored the same as a complete one. Set "
+            f"MinValid to require a minimum number of answered items, or Missing="
+            f"'require_all' to require all of them."
+        )
+    return warnings
+
+
+def validate_recipe_warnings(
+    recipe: dict[str, Any], *, recipe_id: str | None = None
+) -> list[str]:
+    """Return non-blocking warnings about ``recipe`` (see ``validate_recipe``
+    for hard validation errors). Currently just the MinValid check above,
+    across both ``Scores`` and every ``VersionedScores`` variant.
+    """
+    if not isinstance(recipe, dict):
+        return []
+    prefix = f"recipe '{recipe_id}': " if recipe_id else ""
+    warnings = list(
+        _score_warnings(recipe.get("Scores"), list_label="Scores", prefix=prefix)
+    )
+    versioned_scores = recipe.get("VersionedScores")
+    if isinstance(versioned_scores, dict):
+        for version_key, version_scores in versioned_scores.items():
+            warnings.extend(
+                _score_warnings(
+                    version_scores,
+                    list_label=f"VersionedScores.{str(version_key).strip()}",
+                    prefix=prefix,
+                )
+            )
+    return warnings
