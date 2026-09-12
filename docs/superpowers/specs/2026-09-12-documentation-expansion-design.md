@@ -141,17 +141,55 @@ absorb this content.
 
 Two tracks, both additive. No Python autodoc.
 
-**D1 — GUI reference.** Each of the 19 `docs/studio/*.md` pages grows a
-`## Reference` section: every control, its accepted values, the file it
-writes and where, and its failure modes. Content read out of
-`app/templates/*.html` and the corresponding blueprint handlers so it is
-accurate rather than guessed. The thin pages gain the most
-(`converter.md` at 21 lines, `app_runner.md` at 32,
-`specifications.md` at 38).
+**D1 — GUI reference. CORRECTED 2026-09-12 after actually reading all 19
+pages** (the original version of this section, below, was written from
+line counts and `git log` dates alone, without opening most of the pages —
+that was a mistake; line count is not a reliable proxy for content depth
+in this tree, and app_runner.md's disabled feature is a case where "thin"
+is the correct amount, not a gap):
 
-Also new: `docs/studio/settings.md` for Global Settings, currently
-referenced by `docs/studio/projects.md:39` but documented nowhere. Add to
-the `studio/index.md` toctree and card grid.
+> ~~Each of the 19 `docs/studio/*.md` pages grows a `## Reference` section:
+> every control, its accepted values, the file it writes and where, and its
+> failure modes. Content read out of `app/templates/*.html` and the
+> corresponding blueprint handlers so it is accurate rather than guessed.
+> The thin pages gain the most (`converter.md` at 21 lines, `app_runner.md`
+> at 32, `specifications.md` at 38).~~
+
+Actual state, verified by reading all 19 pages in full and cross-checking
+representative ones against their template/blueprint source: 18 of 19 are
+**already at reference quality** — exact field names and accepted values,
+exact output file-path patterns, failure modes, CLI equivalents where one
+exists. Some were done in earlier work sessions (`converter_participants.md`,
+`template_editor.md`, `survey_customizer.md`, `survey_generator.md`,
+`file_management.md` all carry September 2026 commit dates and read like
+finished reference pages); others (`converter_biometrics.md`,
+`converter_environment.md`, `converter_eyetracking.md`,
+`converter_physio.md`, `converter_survey.md`, `export.md`, `json_editor.md`,
+`specifications.md`, `validator.md`) turned out to already be this detailed
+despite an unchanged July 2026 date — the date only tracks the last commit
+to the file, not whether that commit already did the work. `converter.md`
+(21 lines) and `home.md` are correctly thin: the former is a pure tab-router
+whose real content lives in the six pages it links to, the latter is the
+landing/pitch screen. `app_runner.md` documents a feature disabled by a
+hardcoded flag (`PRISM_APP_RUNNER_ENABLED = False` in
+`tools_prism_app_runner_handlers.py`) — there is no more to truthfully say
+about it until it ships.
+
+The one genuine, verified gap: **Global Settings is not a standalone
+screen** (there is no `/settings` route or `settings.html` template) — it's
+a collapsible card at the bottom of the Projects screen, rendered from
+`app/templates/includes/projects/settings_section.html` and included by
+`projects.html`. It holds five toggles (backend monitoring + its verbose
+sub-toggle, dedicated startup terminal, connected-to-server, MRI-Lab Graz
+study-application import) and two path fields (global survey template
+library, global recipe library) with Save/Use Default/Clear actions,
+persisted via the `/api/settings/*` routes in
+`projects_library_blueprint.py`. `docs/studio/projects.md:39` already
+references "Global Settings" but the section itself is undocumented
+anywhere. Fix: add a `## Global Settings` section to the *existing*
+`docs/studio/projects.md` — not a new `docs/studio/settings.md` page, since
+that would misrepresent it as a separate screen with its own route, which
+it is not.
 
 **D2 — CLI reference, generated.** `app/src/cli/parser.py` already holds
 every subcommand, flag, default, and help string across all 61
