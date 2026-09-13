@@ -356,6 +356,7 @@ def _build_validation_results_payload(
     manifest_path: str | None = None,
     revalidation: bool = False,
     previous_errors: int | None = None,
+    project_path: str | None = None,
 ) -> dict:
     """Format and annotate validation results for storage and UI rendering."""
     results = format_validation_results(issues, dataset_stats, dataset_path)
@@ -379,6 +380,18 @@ def _build_validation_results_payload(
         results["revalidation"] = True
     if previous_errors is not None:
         results["previous_errors"] = int(previous_errors)
+
+    # Record which validator versions produced this result so a later run
+    # against the same project can tell the user their schema moved under
+    # them, rather than leaving a version bump to look like a silent break.
+    if project_path and results.get("validator_info"):
+        from src.project_manager import ProjectManager
+
+        schema_change = ProjectManager().record_validation_run(
+            Path(project_path), results["validator_info"]
+        )
+        if schema_change.get("changed"):
+            results["schema_change_notice"] = schema_change
 
     if upload_type:
         results["upload_type"] = upload_type
@@ -496,6 +509,7 @@ def _execute_validation_job(
         manifest_path=manifest_path,
         revalidation=revalidation,
         previous_errors=previous_errors,
+        project_path=project_path,
     )
 
     result_id = _store_validation_result(results, dataset_path, temp_dir, filename)

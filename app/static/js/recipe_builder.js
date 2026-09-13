@@ -29,6 +29,20 @@ document.addEventListener('DOMContentLoaded', function () {
     const sharedApiModuleUrl = new URL('./shared/api.js', recipeBuilderScriptUrl).href;
     let sharedFetchWithApiFallbackPromise = null;
 
+    // Pure Invert-scale resolution logic (see modules/recipe-builder/
+    // scale-fallback.js for why it must never fabricate a range). Fail
+    // closed -- "no detected range" -- rather than reintroducing the old
+    // hardcoded-1-7 bug, in the unlikely case a caller runs before this
+    // dynamic import resolves.
+    let resolveInvertScale = () => null;
+    let buildInvertTransform = (items) => ({ transform: null, itemsWithoutRange: items || [] });
+    import(new URL('./modules/recipe-builder/scale-fallback.js', recipeBuilderScriptUrl).href)
+        .then(mod => {
+            resolveInvertScale = mod.resolveInvertScale;
+            buildInvertTransform = mod.buildInvertTransform;
+        })
+        .catch(() => {});
+
     function loadSharedFetchWithApiFallback() {
         if (!sharedFetchWithApiFallbackPromise) {
             sharedFetchWithApiFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithApiFallback }) => {
@@ -96,8 +110,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const state = {
         allItems:         [],           // string[]
         inverted:         new Set(),    // globally reverse-coded item IDs
-        invertMin:        1,
-        invertMax:        7,
+        invertMin:        null,          // null until a range is detected -- never a fabricated default
+        invertMax:        null,
         scaleRanges:      {},           // { [variantId]: {min, max} } — auto-detected from template
         itemRanges:       {},           // { itemId: { "": {min,max}, variantId: {min,max} } }
         itemDescriptions: {},           // { itemId: "full question text" }
@@ -187,8 +201,8 @@ document.addEventListener('DOMContentLoaded', function () {
         selectedTask = '';
         state.allItems = [];
         state.inverted = new Set();
-        state.invertMin = 1;
-        state.invertMax = 7;
+        state.invertMin = null;
+        state.invertMax = null;
         state.scaleRanges = {};
         state.itemRanges = {};
         state.itemDescriptions = {};
@@ -764,6 +778,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const unique = new Set(ranges.map(r => r.min + ',' + r.max));
         if (unique.size > 1) {
             invertScaleDisplay.textContent = 'varies by item';
+        } else if (state.invertMin == null || state.invertMax == null) {
+            invertScaleDisplay.textContent = 'unknown (no detected range)';
         } else {
             invertScaleDisplay.textContent = state.invertMin + ' – ' + state.invertMax;
         }
@@ -791,10 +807,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function _applyScaleForVariation(key) {
-        // Prefer exact variant match, then fall back to default (""), then hardcoded 1-7
-        const sr = state.scaleRanges[key] || state.scaleRanges[''] || null;
-        state.invertMin = sr ? sr.min : 1;
-        state.invertMax = sr ? sr.max : 7;
+        const sr = resolveInvertScale(state.scaleRanges, key);
+        // No hardcoded fallback: null means "no range was actually detected"
+        // and must not be presented as though it were.
+        state.invertMin = sr ? sr.min : null;
+        state.invertMax = sr ? sr.max : null;
         _updateScaleDisplay();
     }
 
@@ -1268,36 +1285,20 @@ document.addEventListener('DOMContentLoaded', function () {
         if (doi)  recipe[infoKey].DOI         = doi;
 
         if (state.inverted.size > 0) {
-            // Global fallback scale (most common range across inverted items)
             const invertedArr = [...state.inverted];
-            const vid = state.currentVariation;
-            const itemScales = {};
-            invertedArr.forEach(id => {
-                const r = getItemRange(id);
-                if (r) itemScales[id] = { min: r.min, max: r.max };
-            });
-            // Compute the most common range as the fallback Scale
-            const freq = {};
-            Object.values(itemScales).forEach(r => {
-                const k = r.min + ',' + r.max;
-                freq[k] = (freq[k] || 0) + 1;
-            });
-            let bestKey = Object.keys(freq).sort((a, b) => freq[b] - freq[a])[0];
-            let globalScale;
-            if (bestKey) {
-                const [mn, mx] = bestKey.split(',').map(Number);
-                globalScale = { min: mn, max: mx };
-            } else {
-                globalScale = { min: state.invertMin, max: state.invertMax };
+            const { transform, itemsWithoutRange } = buildInvertTransform(invertedArr, getItemRange);
+            // Items with no auto-detected MinValue/MaxValue are excluded from
+            // the emitted Invert.Items rather than silently defaulted to a
+            // hardcoded 1-7 range -- see modules/recipe-builder/scale-fallback.js.
+            if (itemsWithoutRange.length > 0) {
+                showStatus(
+                    'Skipped reverse-scoring for item(s) with no detected range: ' +
+                    _escHtml(itemsWithoutRange.join(', ')) +
+                    '. Set MinValue/MaxValue on the template to enable it.',
+                    'warning'
+                );
             }
-            // Only include ItemScales when ranges actually differ
-            const uniqueRanges = new Set(Object.values(itemScales).map(r => r.min + ',' + r.max));
-            const invert = {
-                Scale: globalScale,
-                Items: invertedArr,
-            };
-            if (uniqueRanges.size > 1) invert.ItemScales = itemScales;
-            recipe.Transforms = { Invert: invert };
+            if (transform) recipe.Transforms = { Invert: transform };
         }
 
         const defaultScales = state.scales[''] || [];
@@ -1347,7 +1348,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 body:    JSON.stringify({ dataset_path: path, task: selectedTask, modality, recipe }),
             });
             const data = await parseApiJsonResponse(response, 'Failed to save recipe.');
-            showStatus('Saved to <code>' + _escHtml(data.path || '') + '</code>', 'success');
+            const warnings = Array.isArray(data.warnings) ? data.warnings : [];
+            const warningHtml = warnings.length
+                ? '<div class="small mt-1">' + warnings.map(_escHtml).join('<br>') + '</div>'
+                : '';
+            showStatus(
+                'Saved to <code>' + _escHtml(data.path || '') + '</code>' + warningHtml,
+                warnings.length ? 'warning' : 'success'
+            );
         } catch (error) {
             const details = Array.isArray(error.payload && error.payload.validation_errors)
                 ? error.payload.validation_errors

@@ -244,17 +244,44 @@ def _get_item_value(
     v = _parse_numeric_cell(raw)
     if v is None:
         return None
-    if item_id in invert_items:
-        if item_scales and item_id in item_scales:
-            imin = item_scales[item_id].get("min")
-            imax = item_scales[item_id].get("max")
+    item_id_lower = str(item_id).strip().lower()
+    # Matches case-insensitively, same as item lookup above and as recipe
+    # validation's _unknown_items -- an Invert.Items entry with different
+    # casing than the data column (or the recipe's own Items list) must
+    # still trigger reversal, not silently pass the value through.
+    is_inverted = item_id in invert_items or any(
+        str(i).strip().lower() == item_id_lower for i in invert_items
+    )
+    if is_inverted:
+        scale_entry = None
+        if item_scales:
+            scale_entry = item_scales.get(item_id)
+            if scale_entry is None:
+                scale_entry = next(
+                    (
+                        scale
+                        for key, scale in item_scales.items()
+                        if str(key).strip().lower() == item_id_lower
+                    ),
+                    None,
+                )
+        if scale_entry is not None:
+            imin = scale_entry.get("min")
+            imax = scale_entry.get("max")
         else:
             imin, imax = invert_min, invert_max
         if imin is not None and imax is not None:
             try:
-                return float(imax) + float(imin) - float(v)
+                imin_f, imax_f = float(imin), float(imax)
             except Exception:
                 return v
+            if v < imin_f or v > imax_f:
+                # Out of the declared scale -- a data-entry error, not a
+                # valid response. Extrapolating (imax+imin-v) would produce
+                # a silently nonsensical, out-of-range score; treat as
+                # missing instead so MinValid/Missing handling can react.
+                return None
+            return imax_f + imin_f - v
     return v
 
 

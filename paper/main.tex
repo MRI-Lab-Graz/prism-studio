@@ -39,18 +39,65 @@ provides an effective baseline for organizing neuroimaging datasets and
 associated behavioral files \citep{gorgolewski2016bids}, but many psychology
 workflows still depend on ad hoc spreadsheets, incomplete codebooks, and
 lab-specific conventions for instrument metadata, response levels, and
-derived scores. PRISM is a local-first, open-source toolkit for converting,
-validating, and documenting psychological experiment datasets while
-remaining compatible with BIDS. It extends BIDS with additional
-schema-driven metadata for surveys, biometrics, physiological recordings,
-eye tracking, and environment/context files, additively rather than
-replacing core BIDS conventions. We describe PRISM's design, and present
-validation evidence from a seeded, synthetic adversarial test suite that
-exercises the conversion and validation pipeline against 59 deliberately
-hostile inputs.
+derived scores. BIDS standardizes dataset \emph{structure}; it says little
+about the \emph{content} of a behavioral measure, and behavioral research is
+open-ended in a way that resists any fixed catalogue of instruments. PRISM
+is a local-first, open-source toolkit for converting, validating, and
+documenting psychological experiment datasets while remaining compatible
+with BIDS. It adds schema-driven metadata for surveys, biometrics,
+physiological recordings, eye tracking, and environment/context files
+additively, without replacing core BIDS conventions. Its schemas constrain
+the shape of an instrument description without enumerating which
+instruments exist, so a lab can fully validate a questionnaire PRISM has
+never seen, in a language it does not ship, and can extend validation with
+its own plugin checks. A validator usable interactively, at the command
+line, and in continuous integration makes that contract executable rather
+than aspirational, and a guided local-first interface with full
+command-line parity addresses the last-mile adoption problem that structure
+alone does not solve. We describe the design and present validation
+evidence from a seeded, synthetic adversarial test suite that exercises the
+pipeline against 59 deliberately hostile inputs.
 \end{abstract}
 
 \section{Introduction}
+
+\subsection{What BIDS provides, and what it deliberately leaves open}
+
+The Brain Imaging Data Structure \citep{gorgolewski2016bids} is a community
+standard that specifies how a neuroimaging dataset is laid out on disk.
+Rather than inventing a database format, BIDS standardizes directory
+structure and filenames: measurements live in
+\texttt{sub-<label>/ses-<label>/<modality>/} directories, and each file name
+is composed of ordered key-value \emph{entities}
+(\texttt{sub-}, \texttt{ses-}, \texttt{task-}, \texttt{acq-}, \texttt{run-},
+and others) followed by a modality suffix. Every data file may be
+accompanied by a JSON \emph{sidecar} of the same basename carrying its
+metadata, and sidecars inherit along the directory hierarchy, so shared
+parameters can be declared once at the top level. A dataset-level
+\texttt{dataset\_description.json} and a tabular
+\texttt{participants.tsv} describe the study and its participants.
+Crucially, the standard ships with a validator, so ``is this a valid
+dataset?'' has a mechanical answer rather than an opinion. This combination
+of predictable paths, self-describing sidecars, and automated checking is
+what makes BIDS datasets portable between analysis pipelines, and it has
+been adopted widely enough that a large ecosystem of BIDS Apps can consume
+any conforming dataset without bespoke glue code.
+
+That design succeeds because it is deliberately minimal about
+\emph{content}. BIDS says a great deal about where a file goes and how it is
+named, and comparatively little about what the numbers inside a behavioral
+table actually mean. For imaging this is the right trade-off, since
+acquisition parameters are already standardized by the scanner and DICOM
+conversion. For questionnaires and other behavioral measures it leaves the
+scientifically decisive part unspecified: the exact wording of an item, the
+labels attached to each response level, which items are reverse-scored,
+which version or language of an instrument was administered, and how a
+published subscale score is computed from raw items. BIDS provides
+\texttt{phenotype/} tables for participant-level measures, but these are
+flat aggregates and cannot by themselves carry session-, run-, and
+variant-resolved administration context.
+
+\subsection{The resulting gap}
 
 Reproducible psychology requires more than stable filenames. Researchers
 need machine-readable descriptions of survey items, response options,
@@ -67,6 +114,17 @@ administrations, compare two versions of the same instrument, harmonize
 participant variables, or regenerate derived scores. These problems are not
 only about validation; they are also about conversion, template reuse, and
 keeping metadata synchronized with the data that produced it.
+
+Two further observations shaped PRISM's design. First, behavioral research
+is open-ended in a way imaging is not: there is no finite, enumerable list
+of psychological instruments, and any schema that tries to enumerate them
+is obsolete on arrival. A usable standard for this domain has to constrain
+the \emph{shape} of a description without fixing its \emph{vocabulary}.
+Second, a standard is only adopted if the path of least resistance leads to
+compliance. BIDS gives a structure; it does not give a researcher holding a
+LimeSurvey export and a spreadsheet codebook any help getting there. We
+therefore treat validation and user experience as first-class parts of the
+contribution rather than packaging around it.
 
 PRISM addresses this need by providing a single workflow layer for
 psychology-oriented metadata on top of BIDS. It offers schema-based
@@ -107,49 +165,123 @@ scoring, and export in one reproducible workflow. Contributing isolated
 pieces of this functionality upstream would not by itself provide the
 end-to-end workflow needed by the target users.
 
+A second distinction concerns how each approach handles the open-endedness
+of behavioral measurement. Instrument-specific converters and curated
+questionnaire databases solve the problem by enumeration: they support the
+instruments someone has already encoded, and an unsupported questionnaire
+requires either a code contribution or a wait. PRISM instead fixes the
+description contract and leaves the vocabulary open
+(Section~\ref{sec:openended}), so an unfamiliar, translated, or newly
+devised instrument is a data-authoring task for the researcher who has it
+rather than a feature request addressed to us. The bundled library is then a
+starting convenience rather than the boundary of what the system can
+express.
+
 \section{Software design}
 
-PRISM follows four design principles.
+\subsection{An open-ended schema layer, not a closed specification}
+\label{sec:openended}
 
-\textbf{Additive BIDS compatibility.} PRISM-specific files live alongside
-standard BIDS content, and \texttt{.bidsignore} support allows standard BIDS
-tools to ignore PRISM-only artifacts when necessary. This makes it possible
-to retain acquisition context in native survey files while keeping BIDS apps
-usable.
+The central design decision is that PRISM's schemas constrain the shape of a
+description without enumerating its vocabulary. A survey template's item
+namespace is deliberately not fixed: the schema declares that \emph{any}
+item identifier is acceptable provided the object behind it satisfies an
+item contract (a human-readable \texttt{Description}, optional
+\texttt{Levels} mapping values to labels, \texttt{MinValue}/\texttt{MaxValue}
+bounds, \texttt{DataType}, \texttt{Unit}, \texttt{AllowedValues}, and so on).
+A lab can therefore describe an instrument PRISM has never seen, in a
+language PRISM does not ship, and still obtain full machine validation of
+that description. Nothing has to be added to PRISM first. This is what we
+mean by building \emph{on} BIDS while staying open-ended: the structural
+contract is fixed and checkable, the scientific vocabulary is not.
 
-\textbf{Metadata as an executable contract.} Survey and biometrics templates
-separate instrument identity and item definitions from study-specific
-administration details. Versioned JSON schemas, a registry of instrument
-identifiers and citations, and declarative entity rules provide one
-machine-readable basis for conversion, filename construction, and
-validation. This supports multilingual templates, instrument variants, and
-version-aware scoring without requiring researchers to reconstruct those
-decisions from spreadsheet conventions. Most bundled survey templates are
-derived from the PsyToolkit survey library
+Several mechanisms extend the same principle across the system:
+
+\begin{itemize}
+  \item \textbf{Instruments evolve, and the schema follows.} Items carry
+  \texttt{ApplicableVersions} so a single template can describe both the
+  short and long form of an instrument; \texttt{VariantScales} let the same
+  question carry a different response format per variant (for example a
+  five-point Likert scale in one variant and a 0--100 visual analogue scale
+  in another); and \texttt{Aliases}/\texttt{AliasOf} reconcile the same
+  question appearing under different identifiers across studies, without
+  editing the source data.
+
+  \item \textbf{Validation strictness is a profile, not a constant.} The
+  schemas carry an \texttt{x-prism} extension block declaring which fields
+  are required only for the curated official library
+  (\texttt{officialOnlyRequired}) and which only for real project data
+  (\texttt{projectOnlyRequired}). One schema therefore enforces
+  curation-grade completeness on the bundled library while remaining
+  permissive enough that a researcher's own in-progress questionnaire is not
+  rejected for lacking a citation.
+
+  \item \textbf{Schema versions coexist.} Three schema versions
+  (\texttt{stable}, \texttt{v0.1}, \texttt{v0.2}) ship side by side and are
+  selectable per run with \texttt{--schema-version}, so a dataset validated
+  in 2025 can still be validated against the rules it was authored under.
+
+  \item \textbf{Users can add their own checks.} The validator loads custom
+  validator plugins from a \texttt{validators/} directory inside the dataset
+  or from a \texttt{plugins} array in the project's
+  \texttt{.prismrc.json}; \texttt{prism-validator --init-plugin <name>}
+  scaffolds one. Site-specific or study-specific rules (a local
+  participant-ID convention, a consortium requirement) become enforceable
+  without patching PRISM.
+
+  \item \textbf{Context enrichment is modular and opt-in.} Sessions can be
+  annotated with acquisition-time environmental context through independent
+  provider modules (weather, air quality, pollen), enabled per run with
+  \texttt{--environment-providers} and cached locally. This is the one part
+  of PRISM that contacts an external service (see
+  Section~\ref{sec:ux}); it is off by default and never required to produce
+  a valid dataset.
+\end{itemize}
+
+Twelve object and modality schemas currently ship in the \texttt{stable}
+version, covering surveys, biometrics, physiological recordings, eye
+tracking, events, environment/context, entities, recipes, projects, dataset
+descriptions, the instrument registry, and LimeSurvey import.
+
+\subsection{Additive BIDS compatibility}
+
+PRISM-specific files live alongside standard BIDS content, and
+\texttt{.bidsignore} support allows standard BIDS tools to ignore PRISM-only
+artifacts when necessary. This makes it possible to retain acquisition
+context in native survey files while keeping BIDS apps usable. PRISM never
+requires a dataset to stop being a BIDS dataset.
+
+\subsection{Metadata as an executable contract}
+
+Survey and biometrics templates separate instrument identity and item
+definitions from study-specific administration details. Versioned JSON
+schemas, a registry of instrument identifiers and citations, and declarative
+entity rules provide one machine-readable basis for conversion, filename
+construction, and validation. This supports multilingual templates,
+instrument variants, and version-aware scoring without requiring researchers
+to reconstruct those decisions from spreadsheet conventions. Most bundled
+survey templates are derived from the PsyToolkit survey library
 \citep{stoet2010psytoolkit,stoet2017psytoolkit}; each template's metadata
 records the upstream licensing statement verbatim, and instruments with
 unclear or restrictive terms are excluded rather than shipped (103 survey
-and one biometrics template at the time of writing).
+and one biometrics template at the time of writing). The bundled library is
+a convenience, not a constraint: it is an ordinary set of templates using
+exactly the same open item contract described in
+Section~\ref{sec:openended}, and a project may ignore it entirely or point
+PRISM at its own library.
 
-\textbf{Interactive assistance separated from portable enforcement.} PRISM
-Studio guides authoring and conversion (Figure~\ref{fig:studio}), whereas
-core schema, validation, and scoring operations are available through CLI
-workflows. The standalone \texttt{prism-validator} runs PRISM checks with
-optional BIDS validation, template-library validation, safe fix previews,
-and JSON, JUnit, SARIF, Markdown, or CSV reports. It is distributed as a
-lightweight Docker image and GitHub Action so that datasets can be checked
-before sharing and in continuous integration.
+\subsection{Auditable derived data and sharing decisions}
 
-\textbf{Auditable derived data and sharing decisions.} Recipe outputs
-include derivative metadata and per-recipe provenance sidecars recording the
-recipe identifier and version, PRISM version, timestamp, and SHA-256 hashes
-of input files. DataLad support is optional, but records scoped changes when
-used. The sharing workflow validates selected content before export and can
-randomize participant identifiers, mask copyrighted question text, scrub
-sensitive MRI sidecar fields, or apply anatomical defacing to the export
-copy. It prepares reusable project templates, analysis-oriented exports, and
-repository packages such as Austrian NeuroCloud submissions; optional
-openMINDS metadata export supports semantic sharing.
+Recipe outputs include derivative metadata and per-recipe provenance
+sidecars recording the recipe identifier and version, PRISM version,
+timestamp, and SHA-256 hashes of input files. DataLad support is optional,
+but records scoped changes when used. The sharing workflow validates
+selected content before export and can randomize participant identifiers,
+mask copyrighted question text, scrub sensitive MRI sidecar fields, or apply
+anatomical defacing to the export copy. It prepares reusable project
+templates, analysis-oriented exports, and repository packages such as
+Austrian NeuroCloud submissions; optional openMINDS metadata export supports
+semantic sharing.
 
 \begin{figure}[htbp]
   \centering
@@ -181,6 +313,131 @@ openMINDS metadata export supports semantic sharing.
   validation pipeline exercised in Section~\ref{sec:validation}.}
   \label{fig:studio}
 \end{figure}
+
+\section{The validator}
+\label{sec:validator}
+
+The validator is the component everything else is organized around. A schema
+that is not mechanically enforced is documentation, and documentation
+drifts. Making the metadata contract executable is what turns PRISM's
+templates from a convention into a guarantee, so the validator is designed
+to be usable in every setting where that guarantee matters: interactively
+while authoring, at the command line before sharing, and unattended in
+continuous integration.
+
+\textbf{Two independent layers.} \texttt{prism-validator} runs PRISM's own
+schema and consistency checks, and with \texttt{--bids} additionally invokes
+the official BIDS Validator over the same tree, merging both result sets
+into one report. The layers are deliberately not merged in implementation:
+PRISM never reimplements or second-guesses BIDS structural rules, so a
+dataset that passes remains valid by the upstream standard's own definition,
+and users are never asked to trust our reading of the specification.
+Section~\ref{sec:validation} demonstrates both layers firing on the same
+dataset.
+
+\textbf{Machine-readable output for automation.} Reports are emitted as
+JSON, SARIF, JUnit, Markdown, or CSV. SARIF surfaces findings as code-scanning
+annotations, and JUnit lets a dataset be checked by the same CI machinery
+that runs a test suite. The validator is distributed as a standalone
+executable, a lightweight Docker image, and a GitHub Action, so validating a
+dataset on every push requires no local installation. In effect a dataset
+can be placed under the same regression discipline as software.
+
+\textbf{Repair, previewed before it is applied.} A subset of findings is
+auto-fixable: creating a \texttt{dataset\_description.json} template,
+generating missing sidecar stubs, updating \texttt{.bidsignore} for PRISM
+compatibility, and creating an optional \texttt{.prismrc.json}.
+\texttt{--list-fixes} enumerates them, \texttt{--dry-run} prints exactly
+what would change, and only \texttt{--fix} writes. The design rule is that
+the tool never silently modifies a researcher's data; a destructive or
+lossy step is always previewable first.
+
+\textbf{Validating the description, not only the data.} Because templates
+are themselves schema-governed artifacts,
+\texttt{--validate-templates <path>} checks an instrument library before it
+is ever used to convert anything, catching a malformed codebook at
+authoring time rather than after it has been applied to a hundred
+participants.
+
+\textbf{Reproducible and extensible.} Validation is pinned with
+\texttt{--schema-version}, so a result is reproducible against the rules the
+dataset was authored under, and extended with custom plugins
+(Section~\ref{sec:openended}) so local conventions are enforced by the same
+command that enforces the standard ones.
+
+\section{Helper functions for the unglamorous work}
+\label{sec:helpers}
+
+Between a raw export and a valid dataset lies a long tail of mundane,
+error-prone data wrangling that standards documents do not address and that
+researchers otherwise solve with disposable scripts. PRISM ships this work
+as fourteen documented command groups under \texttt{prism\_tools}, each
+available both in Studio and as a scriptable CLI subcommand:
+\texttt{convert}, \texttt{wide-to-long}, \texttt{participants},
+\texttt{environment}, \texttt{survey}, \texttt{biometrics},
+\texttt{physio}, \texttt{recipes}, \texttt{dataset}, \texttt{anonymize},
+\texttt{template-export}, \texttt{library}, \texttt{file-management},
+\texttt{json-editor}, and \texttt{demo}.
+
+Representative examples show the intended level of abstraction.
+\texttt{wide-to-long} reshapes a spreadsheet whose column names encode
+session (a near-universal shape for longitudinal questionnaire exports) into
+the long format PRISM stores, rather than leaving the researcher to write
+the pivot by hand. \texttt{participants} detects which column holds the
+participant identifier, previews the normalization, and only then writes
+\texttt{participants.tsv}. \texttt{anonymize} randomizes participant
+identifiers and masks copyrighted item text in an export copy.
+\texttt{template-export} produces a reusable project skeleton with subject
+data stripped, so a validated study design can seed the next study.
+\texttt{recipes} recomputes derived scores from raw items with provenance
+attached, making a published subscale reproducible from the deposited data
+rather than from a description in a methods section.
+
+Individually these are small. Collectively they are the difference between a
+standard that is theoretically satisfiable and one that a lab actually
+satisfies on a deadline.
+
+\section{User experience as a design goal}
+\label{sec:ux}
+
+BIDS defines a structure; it does not make that structure easy to reach.
+We treat the resulting last-mile problem as a legitimate research-software
+contribution rather than as cosmetics, because a correctness guarantee that
+is too costly to obtain is not obtained. The typical entry point is not a
+clean slate but a LimeSurvey archive, an Excel codebook of uncertain
+provenance, and a folder of scanner output, held by a researcher whose
+expertise is psychology rather than data engineering.
+
+PRISM Studio is a local-first web application: it runs on the researcher's
+own machine, and participant data is neither uploaded nor sent to a remote
+service. The single exception is the optional environment-enrichment feature,
+which queries a public weather and air-quality service with coordinates and
+dates in order to annotate sessions with acquisition-time context; it is
+disabled by default, and no participant-level data is transmitted. Studio
+presents around twenty task-oriented screens, including six guided
+converters, a template editor, a survey generator and customizer, a recipe
+builder, a JSON sidecar editor, a file-management view, and a share/export
+wizard. Three conventions run through them.
+
+\textbf{Guidance where the domain knowledge is needed.} Converters ask
+domain questions (which column identifies the participant, which session
+this file belongs to) instead of demanding that the user pre-arrange files
+into a layout they must first learn. The correct BIDS names are then derived
+from the declarative entity rules rather than typed by hand, which removes
+an entire class of naming errors at the source.
+
+\textbf{Preview before commit.} Conversions, participant-ID normalization,
+entity renames, validator fixes, and exports all offer a preview of what
+will change. Operations that could collide or lose data report the conflict
+instead of resolving it silently, a property exercised directly by the
+adversarial cases in Section~\ref{sec:validation}.
+
+\textbf{Parity between the interface and the command line.} Every Studio
+action is reachable from the CLI, so exploratory interactive work and
+automated reproducible pipelines are the same operations rather than
+divergent implementations. A lab can start in the interface and graduate to
+scripting without rewriting its workflow, and results obtained either way
+are identical.
 
 \section{Validation evidence}
 \label{sec:validation}

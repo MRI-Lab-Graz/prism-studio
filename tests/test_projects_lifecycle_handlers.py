@@ -89,6 +89,7 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.handle_validate_project = self.module.handle_validate_project
         self.handle_project_path_status = self.module.handle_project_path_status
         self.handle_set_current = self.module.handle_set_current
+        self.handle_project_summary = self.module.handle_project_summary
         self.handle_get_recent_projects = self.module.handle_get_recent_projects
         self.handle_set_recent_projects = self.module.handle_set_recent_projects
         self.handle_recruitment_location_search = (
@@ -236,6 +237,31 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertEqual(summary["scan"], "shallow")
         self.assertEqual(summary["subjects"], 0)
         self.assertEqual(captured["path"], str(self.project_root))
+
+    def test_project_summary_returns_deep_counts_for_current_project(self):
+        (self.project_root / "project.json").write_text(
+            '{"name": "Resolved Name"}', encoding="utf-8"
+        )
+        (self.project_root / "sub-01" / "ses-01" / "func").mkdir(parents=True)
+
+        with self.app.test_request_context("/api/projects/summary"):
+            session["current_project_path"] = str(self.project_root)
+            response = self.handle_project_summary()
+
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        summary = body["project_summary"]
+        self.assertEqual(summary["scan"], "deep")
+        self.assertEqual(summary["subjects"], 1)
+        self.assertEqual(summary["sessions"], 1)
+        self.assertEqual(summary["modality_labels"], ["func"])
+
+    def test_project_summary_without_current_project_errors(self):
+        with self.app.test_request_context("/api/projects/summary"):
+            response, status_code = self.handle_project_summary()
+
+        self.assertEqual(status_code, 400)
+        self.assertFalse(response.get_json()["success"])
 
     def test_set_current_deferred_datalad_status_keeps_quick_summary(self):
         (self.project_root / "project.json").write_text(

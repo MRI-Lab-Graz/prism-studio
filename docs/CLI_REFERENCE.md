@@ -183,6 +183,21 @@ python prism_tools.py survey export-questionnaire-docx \
   --template library/survey/survey-gad7.json --output gad7.docx
 ```
 
+**`survey export-pavlovia`** — export a PRISM survey template to a
+Pavlovia/PsychoPy experiment (`.psyexp` + `conditions.csv`). CLI equivalent
+of the "Pavlovia/PsychoPy" option in Studio's Survey Generator "Target
+Tool" selector:
+
+```bash
+python prism_tools.py survey export-pavlovia library/survey/survey-gad7.json \
+  --output ./pavlovia_export --experiment-name gad7_study --language en
+```
+
+Pavlovia export is single-language scoped: `--language`/`-l` picks which
+one (default: the template's own default language); `--experiment-name`
+overrides the generated experiment/task name (default: derived from the
+template); `--output` defaults to alongside the input file.
+
 **`survey import-limesurvey`** / **`survey import-limesurvey-batch`**:
 
 ```bash

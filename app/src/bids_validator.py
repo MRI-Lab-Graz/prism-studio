@@ -54,6 +54,7 @@ def run_bids_validator(
     placeholders: Optional[Set[str]] = None,
     structure_only: bool = False,
     check_nifti_headers: bool = False,
+    backend_info: Optional[dict] = None,
 ) -> List[Tuple[str, str, str]]:
     """
     Run the standard BIDS validator CLI and return issues.
@@ -65,6 +66,9 @@ def run_bids_validator(
         structure_only: Whether this is a structure-only upload (suppress content errors)
         check_nifti_headers: Whether to validate NIfTI headers (off by default to
             avoid remote-storage content reads)
+        backend_info: Optional dict to fill in with which backend actually ran
+            ({"engine": "deno"|"legacy", "spec": <version string>}), so callers
+            can report the BIDS validator version alongside PRISM's own.
 
     Returns:
         List of (severity, message, file_path) tuples
@@ -222,6 +226,8 @@ def run_bids_validator(
             stderr=subprocess.PIPE,
         )
         print(f"   Using Deno-based validator ({DENO_BIDS_VALIDATOR_SPEC})")
+        if backend_info is not None:
+            backend_info.update({"engine": "deno", "spec": DENO_BIDS_VALIDATOR_SPEC})
 
         # Run Deno validator
         command = [
@@ -410,12 +416,18 @@ def run_bids_validator(
     print("   ⚠️  Falling back to legacy 'bids-validator' CLI...")
     try:
         # Check if bids-validator is installed
-        subprocess.run(
+        version_check = subprocess.run(
             ["bids-validator", "--version"],
             check=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            text=True,
         )
+        if backend_info is not None:
+            legacy_version = (version_check.stdout or "").strip() or "unknown"
+            backend_info.update(
+                {"engine": "legacy", "spec": f"bids-validator@{legacy_version}"}
+            )
 
         # Run validation
         command = ["bids-validator", root_dir, "--json"]

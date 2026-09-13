@@ -4706,6 +4706,96 @@ class TestProjectManager(unittest.TestCase):
         basics = payload.get("Basics") or {}
         self.assertEqual(basics.get("License"), "")
 
+    def test_record_validation_run_first_time_is_not_a_change(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp)
+            (project_path / "project.json").write_text(
+                json.dumps({"name": "demo"}), encoding="utf-8"
+            )
+
+            result = manager.record_validation_run(
+                project_path,
+                {
+                    "prism_schema_tag": "stable",
+                    "prism_schema_versions": {"survey": "1.1.1"},
+                },
+            )
+
+            payload = json.loads(
+                (project_path / "project.json").read_text(encoding="utf-8")
+            )
+
+        self.assertFalse(result["changed"])
+        self.assertIsNone(result["previous"])
+        self.assertEqual(
+            payload["LastValidation"]["prism_schema_versions"], {"survey": "1.1.1"}
+        )
+        self.assertIn("validatedAt", payload["LastValidation"])
+
+    def test_record_validation_run_flags_a_schema_version_bump(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp)
+            (project_path / "project.json").write_text(
+                json.dumps({"name": "demo"}), encoding="utf-8"
+            )
+
+            manager.record_validation_run(
+                project_path,
+                {
+                    "prism_schema_tag": "stable",
+                    "prism_schema_versions": {"survey": "1.1.1"},
+                },
+            )
+            second = manager.record_validation_run(
+                project_path,
+                {
+                    "prism_schema_tag": "stable",
+                    "prism_schema_versions": {"survey": "1.2.0"},
+                },
+            )
+
+        self.assertTrue(second["changed"])
+        self.assertEqual(
+            second["previous"]["prism_schema_versions"], {"survey": "1.1.1"}
+        )
+
+    def test_record_validation_run_same_versions_is_not_a_change(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp)
+            (project_path / "project.json").write_text(
+                json.dumps({"name": "demo"}), encoding="utf-8"
+            )
+            info = {
+                "prism_schema_tag": "stable",
+                "prism_schema_versions": {"survey": "1.1.1"},
+            }
+
+            manager.record_validation_run(project_path, info)
+            second = manager.record_validation_run(project_path, info)
+
+        self.assertFalse(second["changed"])
+
+    def test_record_validation_run_without_project_json_is_a_noop(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp)
+
+            result = manager.record_validation_run(
+                project_path, {"prism_schema_versions": {"survey": "1.1.1"}}
+            )
+
+            self.assertFalse((project_path / "project.json").exists())
+
+        self.assertFalse(result["changed"])
+        self.assertIsNone(result["previous"])
+
     def test_build_citation_config_prefers_project_json_dataset_links(self):
         manager = ProjectManager()
 
