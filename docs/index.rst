@@ -10,7 +10,8 @@ PRISM Studio Documentation
        <img src="_static/prism_logo.png" alt="PRISM logo">
        <p class="prism-tagline">
          Turn raw psychology and neuroscience study data into clean, BIDS-compatible
-         datasets &mdash; without your data ever leaving your own computer.
+         datasets &mdash; running locally on your machine, with participant data
+         never uploaded or sent to a remote service.
        </p>
        <div class="prism-pill-list">
          <span class="prism-pill">BIDS-compatible</span>
@@ -143,6 +144,7 @@ One structure for multimodal studies
    :caption: Concepts
 
    CONCEPTS
+   INTRODUCTION
    WHAT_IS_PRISM
    PROJECT_OVERVIEW
    SPECIFICATIONS
