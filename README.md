@@ -22,7 +22,9 @@ PRISM (Psychological Research Information System Model) extends BIDS for modalit
 - PRISM Studio web interface for interactive workflows
 - CLI workflows for terminal users
 - Survey and biometrics metadata support
-- Local-first operation (data stays on your machine)
+- Local-first operation (data stays on your machine; the only exception is
+  optional, off-by-default environment enrichment, which sends coordinates
+  and dates — never participant data — to a public weather service)
 
 ## Feature Scope
 

@@ -1,9 +1,12 @@
 # Home
 
 PRISM Studio turns raw psychology and neuroscience study data into clean,
-BIDS-compatible datasets — without your data ever leaving your own computer. The
-Home screen is where every session starts: it makes the case for the tool in one
-glance and gets you to your project in one click.
+BIDS-compatible datasets, running locally on your machine — participant data
+is never uploaded or sent to a remote service. The one exception is the
+optional, off-by-default environment-enrichment feature, which sends
+coordinates and dates (never participant data) to a public weather service.
+The Home screen is where every session starts: it makes the case for the
+tool in one glance and gets you to your project in one click.
 
 ![PRISM Studio Home screen](../_static/screenshots/prism-studio-home.png)
 
