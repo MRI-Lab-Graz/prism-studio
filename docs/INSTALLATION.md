@@ -53,8 +53,18 @@ Download: `prism-studio-Linux.zip`
    - **macOS first launch**: if the OS blocks the app, use
      `Prism Studio Installer.app` or `Open Prism Studio.command` from the extracted
      folder, or right-click `PrismStudio.app` → Open once.
+   - **Windows first launch**: if SmartScreen shows "Windows protected your PC",
+     click **More info** then **Run anyway**.
 4. Confirm it worked: the interface should open automatically. If not, go to
    `http://localhost:5001`.
+
+```{note}
+PRISM Studio's releases aren't code-signed (signing costs money the project
+doesn't currently have) — see
+[Installing an Unsigned Build](INSTALLATION_SECURITY.md) for exactly what
+each OS shows, how to get past it, how to verify your download, and a
+gentler alternative if you'd rather not.
+```
 
 ## Source Install (Advanced)
 
