@@ -54,19 +54,6 @@ Planned scripts that are intentionally not part of active runtime/CI flows yet.
 Files:
 - `scripts/future_feature/build_environment_from_survey.py`
 
-## Archived
-
-### `scripts/_archive/`
-Deprecated or low-priority scripts retained for traceability and rollback.
-
-Subfolders:
-- `scripts/_archive/ci/`
-- `scripts/_archive/data/`
-- `scripts/_archive/dev/`
-- `scripts/_archive/maintenance/`
-- `scripts/_archive/release/`
-- `scripts/_archive/setup/`
-
 ## Notes
 
 - `scripts/data/`, `scripts/dev/`, `scripts/maintenance/`, and `scripts/release/` are intentionally empty in active use after cleanup.

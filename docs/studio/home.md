@@ -43,7 +43,7 @@ syncing a tracked project to a remote DataLad server in one click.
 The top navigation is where you spend most of your time: **Project** (open/switch,
 recent projects), **Prepare Data** (Converter, Template Editor, Recipe Builder),
 **Modify in PRISM** (Validator, File Management, JSON Editor), **Export
-Derivatives** (Survey Export, Analysis Outputs, PRISM App Runner — enabled once a
+Derivatives** (Survey Export, Analysis Outputs — enabled once a
 project has a path and at least one derivative tool is available), **Share &
 Archive** (once the project has data), and **Docs** (this site, plus the in-app
 [Specifications](specifications.md) screen).

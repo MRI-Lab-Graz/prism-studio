@@ -108,8 +108,7 @@ from PRISM's native survey conversion paths. Merged via
 [PR #78](https://github.com/MRI-Lab-Graz/prism-studio/pull/78), round-trip
 regression test in place.
 
-Ongoing (not a release blocker): engage the BIDS phenotype BEP process; keep
-`docs/BIDS_SURVEY_MODALITY_PR_DRAFT.md` aligned.
+Ongoing (not a release blocker): engage the BIDS phenotype BEP process.
 
 ### Phase 2 — Recipe & derivative provenance (v1.18) — DONE (merged, unreleased)
 

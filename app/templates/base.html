@@ -340,13 +340,12 @@
     {% set survey_generator_available = endpoint_exists('tools.survey_generator') %}
     {% set recipes_available = endpoint_exists('tools.recipes') %}
     {% set recipe_builder_available = endpoint_exists('tools.recipe_builder') %}
-    {% set prism_app_runner_available = endpoint_exists('tools.prism_app_runner') %}
-    {% set derivatives_available = survey_generator_available or recipes_available or prism_app_runner_available %}
+    {% set derivatives_available = survey_generator_available or recipes_available %}
     {% set derivatives_enabled = current_project.path and derivatives_available %}
     {% set request_path = request.path or '' %}
     {% set prepare_active = request_path.startswith('/converter') or request_path.startswith('/template-editor') or request_path.startswith('/recipe-builder') or request.endpoint in ['tools.converter', 'tools_template_editor.template_editor', 'tools.recipe_builder'] %}
     {% set modify_active = request_path.startswith('/validate') or request_path.startswith('/file-management') or request_path.startswith('/editor') or request.blueprint in ['validation', 'json_editor'] or request.endpoint in ['tools.file_management'] %}
-    {% set export_active = request_path.startswith('/survey-generator') or request_path.startswith('/recipes') or request_path.startswith('/prism-app-runner') or request.endpoint in ['tools.survey_generator', 'tools.recipes', 'tools.prism_app_runner'] %}
+    {% set export_active = request_path.startswith('/survey-generator') or request_path.startswith('/recipes') or request.endpoint in ['tools.survey_generator', 'tools.recipes'] %}
     {% set share_available = endpoint_exists('projects.share_page') %}
     {% set share_enabled = current_project.path and current_project.has_data and share_available %}
     {% set share_active = request_path.startswith('/projects/share') %}
@@ -515,17 +514,6 @@
                             {% else %}
                             <li><span class="dropdown-item disabled navbar-flow-item" title="Unavailable in this build" aria-disabled="true">
                                 <span class="navbar-flow-item-title"><i class="fas fa-chart-line me-2 text-primary"></i>Analysis Outputs</span>
-                                <span class="navbar-flow-item-hint">Unavailable in this build</span>
-                            </span></li>
-                            {% endif %}
-                            {% if prism_app_runner_available %}
-                            <li><a class="dropdown-item navbar-flow-item{% if not current_project.path %} disabled{% endif %}" href="{% if current_project.path %}{{ url_for('tools.prism_app_runner') }}{% else %}#{% endif %}" id="prismAppRunnerLink" data-target-url="{{ url_for('tools.prism_app_runner') }}"{% if not current_project.path %} aria-disabled="true" title="Please load a project first"{% else %} title="Run downstream PRISM app pipelines on derivative-ready data"{% endif %}>
-                                <span class="navbar-flow-item-title"><i class="fas fa-rocket me-2 text-secondary"></i>PRISM App Runner</span>
-                                <span class="navbar-flow-item-hint">Launch app-specific processing on prepared outputs</span>
-                            </a></li>
-                            {% else %}
-                            <li><span class="dropdown-item disabled navbar-flow-item" title="Unavailable in this build" aria-disabled="true">
-                                <span class="navbar-flow-item-title"><i class="fas fa-rocket me-2 text-secondary"></i>PRISM App Runner</span>
                                 <span class="navbar-flow-item-hint">Unavailable in this build</span>
                             </span></li>
                             {% endif %}
@@ -1393,7 +1381,6 @@
             setProjectGatedLinkState('fileManagementLink', Boolean(path));
             setProjectGatedLinkState('surveyExportLink', Boolean(path), 'Please load a project first', 'Export processed survey data into derivatives outputs');
             setProjectGatedLinkState('analysisOutputsLink', Boolean(path), 'Please load a project first', 'Generate analysis-ready derivative outputs from prepared project data');
-            setProjectGatedLinkState('prismAppRunnerLink', Boolean(path), 'Please load a project first', 'Run downstream PRISM app pipelines on derivative-ready data');
             setProjectGatedLinkState('shareArchiveLink', resolvedHasData, 'Please load a project first', 'Export, push to a DataLad server, or back up the active project');
             renderNavbarDataladState(nextState);
             renderNavbarRecentProjects();
@@ -1450,7 +1437,6 @@
             setProjectGatedLinkState('fileManagementLink', Boolean(nextPath));
             setProjectGatedLinkState('surveyExportLink', Boolean(nextPath), 'Please load a project first', 'Export processed survey data into derivatives outputs');
             setProjectGatedLinkState('analysisOutputsLink', Boolean(nextPath), 'Please load a project first', 'Generate analysis-ready derivative outputs from prepared project data');
-            setProjectGatedLinkState('prismAppRunnerLink', Boolean(nextPath), 'Please load a project first', 'Run downstream PRISM app pipelines on derivative-ready data');
             setProjectGatedLinkState('shareArchiveLink', resolvedHasData, 'Please load a project first', 'Export, push to a DataLad server, or back up the active project');
             renderNavbarDataladState({ path: nextPath, datalad: nextDatalad });
             renderNavbarRecentProjects();
@@ -1520,12 +1506,11 @@
                 setProjectGatedLinkState('fileManagementLink', false);
                 setProjectGatedLinkState('surveyExportLink', false);
                 setProjectGatedLinkState('analysisOutputsLink', false);
-                setProjectGatedLinkState('prismAppRunnerLink', false);
                 setProjectGatedLinkState('shareArchiveLink', false);
                 renderNavbarDataladState({ path: '', datalad: readNavbarDataladStateFromDom() });
             }
 
-            ['fileManagementLink', 'surveyExportLink', 'analysisOutputsLink', 'prismAppRunnerLink', 'shareArchiveLink'].forEach(function(linkId) {
+            ['fileManagementLink', 'surveyExportLink', 'analysisOutputsLink', 'shareArchiveLink'].forEach(function(linkId) {
                 const link = document.getElementById(linkId);
                 link?.addEventListener('click', function(e) {
                     if (link.classList.contains('disabled')) {

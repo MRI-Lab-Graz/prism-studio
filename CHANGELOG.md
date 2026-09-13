@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- **PRISM App Runner**: the deprecated App Runner page, its API routes,
+  handlers, compatibility module, tests, and docs page are removed. Use the
+  dedicated desktop app for running BIDS Apps.
+- **Repository housekeeping**: removed unused `theme_template/`,
+  `scripts/_archive/`, `tutorial/` (a duplicate of a workshop example file),
+  finished internal plan/spec documents under `docs/superpowers/`, orphaned
+  docs pages, and placeholder CLI service modules.
+
 ## [1.18.0] - 2026-08-12
 
 ### Added
