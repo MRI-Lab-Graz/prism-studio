@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `scripts/_archive/`, `tutorial/` (a duplicate of a workshop example file),
   finished internal plan/spec documents under `docs/superpowers/`, orphaned
   docs pages, and placeholder CLI service modules.
+- **Unused scripts and modules**: removed the standalone scripts under
+  `app/helpers/` (except `physio/convert_varioport.py`, which the converters
+  use), the unwired FAIR checker/export modules, the legacy physio filename
+  migration, the survey numeric-metadata backfill tool, session resolution and
+  session assignment audit modules, `scripts/deep_check.sh`, the old docs
+  screenshot script, and the `scripts/future_feature(s)/` folders.
+- **Bundled pyedflib**: `vendor/pyedflib` is removed; pyedflib is installed
+  from PyPI like every other dependency.
 
 ## [1.18.0] - 2026-08-12
 

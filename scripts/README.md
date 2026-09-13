@@ -29,7 +29,6 @@ Active files:
 - `scripts/ci/run_runtime_gate.sh`
 - `scripts/ci/test_bids_compliance.py`
 - `scripts/ci/test_fresh_install.bat`
-- `scripts/ci/test_fresh_install.ps1`
 - `scripts/ci/test_pyedflib.bat`
 - `scripts/ci/test_pyedflib.sh`
 
@@ -45,14 +44,6 @@ Active files:
 - `scripts/setup/show_global_config.py`
 - `scripts/setup/verify_global_library.py`
 - `scripts/setup/windows_workshop_preflight.ps1`
-
-## Future Feature
-
-### `scripts/future_feature/`
-Planned scripts that are intentionally not part of active runtime/CI flows yet.
-
-Files:
-- `scripts/future_feature/build_environment_from_survey.py`
 
 ## Notes
 

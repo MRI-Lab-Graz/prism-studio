@@ -117,11 +117,6 @@ app/src/derivatives/**/*.pyc
 !demo/workshop/recipes/
 !official/library/
 
-# Vendor directory - include pre-compiled packages for Windows
-!vendor/
-!vendor/pyedflib/
-!vendor/pyedflib/**/*.pyd
-
 # Harvest script
 scripts/harvest_testarchiv.py
 backup/

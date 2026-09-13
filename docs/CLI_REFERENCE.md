@@ -423,20 +423,3 @@ python prism_tools.py json-editor save --project /path/to/project \
 Most files under `scripts/` are implementation details called by the CLIs. If
 you're a new user, prefer `prism-validator ...`, `python prism_tools.py ...`, and
 `python prism-studio.py` instead of calling scripts directly.
-
-One environment-enrichment script remains under `scripts/future_feature/` — planned
-work, not part of the active runtime path yet:
-
-```bash
-python scripts/future_feature/build_environment_from_survey.py \
-  --timestamp 2026-02-26T14:30:00 --lat 47.0707 --lon 15.4395 \
-  --location-label survey-site \
-  --output /path/to/sub-01_ses-01_environment.tsv \
-  --subject-id sub-01 --session-id ses-01
-```
-
-Uses a provided timestamp + coordinates (designed for multi-country survey studies),
-queries Open-Meteo hourly weather/air-quality/pollen APIs, and includes moon/sun
-context variables — writes one row per context. (The earlier scanner/DICOM variant
-was removed; the web Environment Data Import panel now scans the project's own BIDS
-JSON sidecars for acquisition timestamps and scanner-location tags directly.)
