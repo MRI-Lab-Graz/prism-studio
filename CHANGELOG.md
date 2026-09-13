@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **CLI commands for the remaining Studio actions**: `dataset rename-sessions`,
+  `dataset renumber-runs`, `dataset undo`, `survey import-lsq`,
+  `participants fix-bids`, and `recipes save` call the same backend code as the
+  matching Studio buttons, so every non-Projects Studio action now has a CLI
+  equivalent. The participants.tsv BIDS fix and the Recipe Builder save logic
+  moved out of their Flask handlers into shared functions for this.
+
+### Fixed
+- **"Fix participants.tsv for BIDS" reported an error after succeeding**: when it
+  converted numeric sex codes, the response included a mapping with mixed
+  number/text keys that Flask could not serialize, so Studio showed an error even
+  though the file had already been fixed.
+
 ## [1.18.0] - 2026-08-12
 
 ### Added

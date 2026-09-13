@@ -889,3 +889,26 @@ def cmd_participants_save_schema(args) -> None:
 
     print(f"✅ Saved {participants_path}")
     print(f"   Fields: {', '.join(schema.keys())}")
+
+
+def cmd_participants_fix_bids(args) -> None:
+    """Make a participants.tsv BIDS-friendly (numeric columns, numeric sex codes
+    to M/F/O), matching the Studio GUI's 'Fix participants.tsv for BIDS' action."""
+    from src.participants_bids_fix import fix_participants_tsv
+
+    as_json = bool(getattr(args, "json", False))
+    try:
+        result = fix_participants_tsv(args.file, dry_run=bool(getattr(args, "dry_run", False)))
+    except (OSError, ValueError) as error:
+        if as_json:
+            _emit_json({"success": False, "error": str(error)})
+        else:
+            print(f"Error: {error}")
+        sys.exit(1)
+
+    if as_json:
+        _emit_json(result)
+        return
+    print(result["message"])
+    for change in result["changes"]:
+        print(f"  - {change['column']}: {change['type']}")

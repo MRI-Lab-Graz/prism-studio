@@ -23,8 +23,11 @@ from src.cli.commands.convert import (
 from src.cli.commands.dataset import (
     cmd_dataset_build_biometrics_smoketest,
     cmd_dataset_cleanup_project_metadata,
+    cmd_dataset_rename_sessions,
     cmd_dataset_rename_subjects,
+    cmd_dataset_renumber_runs,
     cmd_dataset_rewrite_entities,
+    cmd_dataset_undo,
 )
 from src.cli.commands.file_management import (
     cmd_file_management_delete_files,
@@ -49,6 +52,7 @@ from src.cli.commands.library import (
 from src.cli.commands.participants import (
     cmd_participants_convert,
     cmd_participants_detect_id,
+    cmd_participants_fix_bids,
     cmd_participants_merge,
     cmd_participants_neurobagel_schema,
     cmd_participants_preview,
@@ -57,6 +61,7 @@ from src.cli.commands.participants import (
 )
 from src.cli.commands.recipes import (
     cmd_recipes_biometrics,
+    cmd_recipes_save,
     cmd_recipes_surveys,
     cmd_recipes_validate_file,
 )
@@ -72,6 +77,7 @@ from src.cli.commands.survey import (
     cmd_survey_import_excel,
     cmd_survey_import_limesurvey,
     cmd_survey_import_limesurvey_batch,
+    cmd_survey_import_lsq,
     cmd_survey_validate,
 )
 from src.cli.commands.template_export import cmd_template_export
@@ -130,6 +136,12 @@ def main() -> None:
             "participants_save_mapping": cmd_participants_save_mapping,
             "participants_neurobagel_schema": cmd_participants_neurobagel_schema,
             "participants_save_schema": cmd_participants_save_schema,
+            "participants_fix_bids": cmd_participants_fix_bids,
+            "survey_import_lsq": cmd_survey_import_lsq,
+            "dataset_rename_sessions": cmd_dataset_rename_sessions,
+            "dataset_renumber_runs": cmd_dataset_renumber_runs,
+            "dataset_undo": cmd_dataset_undo,
+            "recipes_save": cmd_recipes_save,
             "environment_preview": cmd_environment_preview,
             "environment_convert": cmd_environment_convert,
             "environment_scan_mri": cmd_environment_scan_mri,

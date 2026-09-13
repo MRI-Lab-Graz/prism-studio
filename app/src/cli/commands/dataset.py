@@ -21,12 +21,19 @@ from src.repo_rewrite_datalad_runner import (
     RewriteCancelledError,
     TrackedRewriteError,
     apply_entity_rewrite,
+    apply_run_renumbering,
+    apply_session_rewrite,
     apply_subject_rewrite,
+    undo_last_operation,
 )
+from src.run_renumberer import RunRenumberer
+from src.session_code_rewriter import SessionCodeRewriter
 from src.subject_code_rewriter import SubjectCodeRewriter
+from src.undo_log import UndoLog
 from src.utils.io import ensure_dir as _ensure_dir
 from src.utils.io import read_json as _read_json
 from src.utils.io import write_json as _write_json
+from typing import NoReturn
 
 
 _REWRITE_LOG_PREFIXES = {
@@ -35,6 +42,157 @@ _REWRITE_LOG_PREFIXES = {
     "success": "✓",
     "step": "→",
 }
+
+
+def _exit_with_error(as_json: bool, message: str, code: int = 1, **extra) -> NoReturn:
+    if as_json:
+        print(json.dumps({"success": False, "error": message, **extra}, indent=2))
+    else:
+        print(f"Error: {message}")
+    sys.exit(code)
+
+
+def _confirmed(args, as_json: bool, question: str) -> bool:
+    if getattr(args, "yes", False) or as_json:
+        return True
+    return input(f"{question} [y/N] ").strip().lower() in {"y", "yes"}
+
+
+def _rewrite_logger(as_json: bool):
+    def on_log(message: str, level: str) -> None:
+        if not as_json:
+            print(f"{_REWRITE_LOG_PREFIXES.get(level, ' ')} {message}")
+
+    return on_log
+
+
+def _run_tracked_rewrite(as_json: bool, apply, *apply_args, **apply_kwargs) -> dict:
+    try:
+        return apply(*apply_args, **apply_kwargs)
+    except RewriteCancelledError as error:
+        _exit_with_error(as_json, str(error), code=130, cancelled=True)
+    except TrackedRewriteError as error:
+        _exit_with_error(as_json, str(error), log=error.log)
+    except ValueError as error:
+        _exit_with_error(as_json, str(error))
+
+
+def cmd_dataset_rename_sessions(args) -> None:
+    """Rename session labels across a dataset (DataLad-aware), matching the
+    Studio GUI's File Management session rewrite. Labels are rewritten only by
+    the given rule, never zero-padded or otherwise normalized."""
+    as_json = bool(getattr(args, "json", False))
+    project_root = Path(args.project).resolve()
+    rule = dict(
+        example_session=args.example_session,
+        keep_fragment=args.keep_fragment,
+        add_text=args.add_text,
+        add_position=args.add_position,
+        allow_many_to_one=args.allow_many_to_one,
+    )
+
+    try:
+        preview = SessionCodeRewriter(project_root).preview(**rule)
+    except ValueError as error:
+        _exit_with_error(as_json, str(error))
+
+    if preview.get("conflicts"):
+        if not as_json:
+            print("Cannot proceed — conflicts detected:")
+            for conflict in preview["conflicts"]:
+                print(f"  - {conflict}")
+        _exit_with_error(as_json, "Session rewrite has conflicts", conflicts=preview["conflicts"])
+
+    mapping_count = int(preview.get("mapping_count") or 0)
+    if mapping_count == 0 or getattr(args, "dry_run", False):
+        if as_json:
+            print(json.dumps({"success": True, "applied": False, **preview}, indent=2))
+        elif mapping_count == 0:
+            print(f"No session labels require renaming in {project_root}.")
+        else:
+            print("Dry run — no changes applied. Mapping:")
+            for old_session, new_session in sorted(preview.get("mapping", {}).items()):
+                print(f"  {old_session} -> {new_session}")
+        return
+
+    if not _confirmed(args, as_json, f"Apply this rename to {mapping_count} session label(s) in {project_root}?"):
+        print("Aborted.")
+        return
+
+    result = _run_tracked_rewrite(
+        as_json, apply_session_rewrite, project_root, **rule, on_log=_rewrite_logger(as_json)
+    )
+    if as_json:
+        print(json.dumps({"success": True, **result}, indent=2))
+    else:
+        print(f"Done: {result.get('mapping_count', mapping_count)} session mapping(s) applied.")
+
+
+def cmd_dataset_renumber_runs(args) -> None:
+    """Close gaps in run-XX sequences (e.g. run-01, run-03 -> run-01, run-02),
+    DataLad-aware, matching the Studio GUI's File Management run renumbering."""
+    as_json = bool(getattr(args, "json", False))
+    project_root = Path(args.project).resolve()
+
+    try:
+        preview = RunRenumberer(project_root).preview()
+    except ValueError as error:
+        _exit_with_error(as_json, str(error))
+
+    renames = [rename for group in preview["groups"] for rename in group["renames"]]
+    if not renames or getattr(args, "dry_run", False):
+        if as_json:
+            print(json.dumps({"success": True, **preview}, indent=2))
+        elif not renames:
+            print(f"No run gaps found in {project_root}.")
+        else:
+            print("Dry run — no changes applied. Renames:")
+            for rename in renames:
+                print(f"  {rename['from']} -> {rename['to']}")
+        return
+
+    if not _confirmed(args, as_json, f"Rename {len(renames)} file(s) in {project_root}?"):
+        print("Aborted.")
+        return
+
+    result = _run_tracked_rewrite(
+        as_json, apply_run_renumbering, project_root, on_log=_rewrite_logger(as_json)
+    )
+    if as_json:
+        print(json.dumps({"success": True, **result}, indent=2))
+    else:
+        print(f"Done: {len(renames)} file(s) renamed.")
+
+
+def cmd_dataset_undo(args) -> None:
+    """Reverse the most recent undoable File Management operation, matching the
+    Studio GUI's 'Undo Last Operation'."""
+    as_json = bool(getattr(args, "json", False))
+    project_root = Path(args.project).resolve()
+
+    entry = UndoLog(project_root).peek_last()
+    if entry is None:
+        _exit_with_error(as_json, "Nothing to undo.")
+
+    description = entry.get("description") or entry.get("kind")
+    if getattr(args, "dry_run", False):
+        if as_json:
+            print(json.dumps({"success": True, "applied": False, "last_operation": entry}, indent=2))
+        else:
+            print(f"Would undo: {description}")
+        return
+
+    if not _confirmed(args, as_json, f"Undo '{description}' in {project_root}?"):
+        print("Aborted.")
+        return
+
+    result = _run_tracked_rewrite(
+        as_json, undo_last_operation, project_root, on_log=_rewrite_logger(as_json)
+    )
+    if as_json:
+        print(json.dumps({"success": True, **result}, indent=2))
+    else:
+        print(f"Done: undid {description}.")
 
 
 def cmd_dataset_rename_subjects(args) -> None:
