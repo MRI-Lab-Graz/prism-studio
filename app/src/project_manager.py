@@ -1569,7 +1569,7 @@ class ProjectManager:
             "BIDSVersion": DEFAULT_BIDS_VERSION,
             "DatasetType": self._normalize_dataset_type(config.get("dataset_type")),
             "Description": config.get("description")
-            or "A PRISM-compatible dataset for psychological research.",
+            or "A PRISM-compatible research dataset of data files with JSON sidecars.",
             "Acknowledgements": config.get("acknowledgements", ""),
             "Funding": config.get("funding", []),
             "License": config.get("license", "") or "CC0",

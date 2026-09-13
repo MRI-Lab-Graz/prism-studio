@@ -1,31 +1,35 @@
 # What is PRISM?
 
-Psychological studies often combine well-supported BIDS data with materials that
-do not have a shared practical structure: questionnaires and their item-level
-response options, participant and sociodemographic data, sport-science
-biometrics and performance assessments, environment descriptions, and scoring
-rules. Too often, these details remain in spreadsheets or lab-specific folder
-conventions, making validation, reuse, and reproducible derived results harder.
+PRISM (**Principled Research Information & Sidecar Model**) is built on one
+principle: every data file (a `.nii.gz` image, a `.tsv` table, an `.edf`
+recording) sits next to a JSON sidecar that explains it. Data stored this way
+describes itself and can be checked automatically. PRISM organizes these pairs
+along three axes: subject, session, and modality.
 
-PRISM provides documented structures and validation for these psychology-focused
-workflows. It extends [BIDS](https://bids.neuroimaging.io/) with explicit files
-and metadata for the information BIDS does not standardize, while retaining the
-BIDS organization and naming that existing BIDS tools expect. **PRISM Studio**
-implements the model as a web interface and command-line tools.
+[BIDS](https://bids.neuroimaging.io/) uses the same principle for neuroimaging,
+but its modalities and fields are set by a centrally governed specification.
+PRISM keeps the BIDS organization and naming and opens the vocabulary:
+modalities, file-naming rules, and sidecar contracts are JSON schemas, so a lab
+can describe a new instrument or add a new modality without changing the
+software. **PRISM Studio** implements the model as a web interface and
+command-line tools.
+
+Today PRISM ships modalities and templates for psychological research:
+questionnaires and their item-level response options, participant and
+sociodemographic data, sport-science biometrics and performance assessments,
+environment descriptions, and scoring rules. This is the model's first
+application, not its limit.
 
 ```{important}
-PRISM does not replace BIDS. It adds structure for psychological research while
-preserving the ability to use BIDS-oriented tooling.
+PRISM does not replace BIDS. PRISM datasets keep BIDS naming and organization,
+so BIDS-oriented tools continue to work.
 ```
-
-PRISM stands for **Psychological Research Information System Model** — the data
-and metadata model behind these additions.
 
 ## How PRISM relates to BIDS
 
 | Topic | BIDS | PRISM |
 |---|---|---|
-| Primary baseline | Dataset organization for established BIDS modalities | Adds psychology-focused structure and metadata |
+| Primary baseline | Dataset organization for established BIDS modalities | Adds open, schema-defined modalities and metadata (currently focused on psychology) |
 | Surveys | Limited practical support (phenotype) | Rich sidecars, items, response options, and scoring support |
 | Biometrics and sport-science performance tests | Not a standard focus | Dedicated schema support for sport-science-oriented assessments and biometrics |
 | Environment metadata | Not consistently standardized in practice | Structured sidecars and workflows |

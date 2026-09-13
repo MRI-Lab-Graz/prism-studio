@@ -88,25 +88,16 @@ def load_all_schemas(schema_dir="schemas", version=None):
 
     schemas = {}
 
-    # Standard modalities
-    modalities = [
-        "survey",
-        "biometrics",
-        "environment",
-        "events",
-        "physio",
-        "eyetracking",
-        "dataset_description",
-    ]
-
-    for modality in modalities:
+    # Modality names come from the rules file, which only ships in "stable".
+    entities = load_schema("entities", schema_dir, DEFAULT_SCHEMA_VERSION) or {}
+    for modality in [*entities.get("modalities", {}), "dataset_description"]:
         schema = load_schema(modality, schema_dir, version)
         if schema:
             schemas[modality] = schema
 
-    # Aliases
-    if "physio" in schemas:
-        schemas["physiological"] = schemas["physio"]
+    for alias, target in entities.get("aliases", {}).items():
+        if target in schemas:
+            schemas[alias] = schemas[target]
 
     # MRI nested schemas (if they exist)
     mri_modalities = ["anat", "func", "fmap", "dwi"]

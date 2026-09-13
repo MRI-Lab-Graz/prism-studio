@@ -2,7 +2,8 @@
 """
 PRISM: Streamlined main entry point
 
-A modular, BIDS-inspired validation tool for psychological research datasets.
+A modular validation tool for BIDS-compatible research datasets built on the
+PRISM data-and-sidecar model.
 """
 
 import os
@@ -301,7 +302,7 @@ def main():  # noqa: C901
         return
 
     parser = argparse.ArgumentParser(
-        description="PRISM: BIDS-inspired validation for psychological research data",
+        description="PRISM: validation for BIDS-compatible data-and-sidecar research datasets",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
