@@ -84,6 +84,12 @@ guess.
 <p class="prism-persona-hint" id="prismPersonaHint">Pick one — chapters ahead will speak to it.</p>
 
 <div class="prism-chapter-grid">
+  <a class="prism-chapter-card" href="TUTORIAL_BEGINNER_0_INSTALL.html">
+    <span class="prism-chapter-icon">0</span>
+    <span class="prism-chapter-title">Install and First Launch</span>
+    <span class="prism-chapter-outcome">PRISM Studio open and ready to use</span>
+    <span class="prism-chapter-time">~10 min</span>
+  </a>
   <a class="prism-chapter-card" href="TUTORIAL_BEGINNER_1_NEW_PROJECT.html">
     <span class="prism-chapter-icon">1</span>
     <span class="prism-chapter-title">Create a Project</span>
@@ -124,8 +130,9 @@ guess.
 
 ## Prerequisites
 
-- PRISM Studio installed and launchable — see [Installation](INSTALLATION.md)
-  if you haven't done this yet.
+- Nothing installed yet is fine — [Chapter 0](TUTORIAL_BEGINNER_0_INSTALL.md)
+  covers download through first launch. Already have PRISM Studio open?
+  Skip to [Chapter 1](TUTORIAL_BEGINNER_1_NEW_PROJECT.md).
 - No prior PRISM knowledge assumed. No prior BIDS knowledge assumed either;
   the chapters explain BIDS-specific terms (`sub-`, sessions, sidecars) as
   they come up.
@@ -165,6 +172,7 @@ Once you've completed all six chapters:
 :maxdepth: 1
 :hidden:
 
+TUTORIAL_BEGINNER_0_INSTALL
 TUTORIAL_BEGINNER_1_NEW_PROJECT
 TUTORIAL_BEGINNER_2_PARTICIPANTS
 TUTORIAL_BEGINNER_3_SURVEY_IMPORT
