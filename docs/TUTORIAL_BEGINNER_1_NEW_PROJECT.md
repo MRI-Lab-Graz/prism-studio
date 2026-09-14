@@ -55,7 +55,8 @@ properly now; today is the only day this is cheap.
 
 ### 1. Launch Studio
 
-From a prebuilt release, open the app. From a source checkout:
+Already have PRISM Studio open from [Chapter 0](TUTORIAL_BEGINNER_0_INSTALL.md)?
+Skip to step 2. Otherwise, from a source checkout:
 
 ```bash
 source .venv/bin/activate && python prism-studio.py
