@@ -1582,6 +1582,15 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
                 "A PRISM-compatible dataset for psychological research."
             )
         )
+        default_description = self.project_manager._create_dataset_description("x")
+        self.assertTrue(
+            self.looks_placeholder_description(default_description["Description"])
+        )
+        self.assertFalse(
+            self.looks_placeholder_description(
+                "A PRISM-compatible research dataset on sleep in athletes."
+            )
+        )
 
     def test_apply_citation_precedence_for_display_replaces_only_placeholder_fields(self):
         description = {

@@ -30,6 +30,7 @@ _PLACEHOLDER_ACKNOWLEDGEMENTS_SNIPPETS = (
 )
 _PLACEHOLDER_DESCRIPTION_SNIPPETS = (
     "prism-compatible dataset for psychological research",
+    "a prism-compatible research dataset of data files with json sidecars.",
 )
 
 

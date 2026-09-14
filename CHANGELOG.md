@@ -15,6 +15,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   equivalent. The participants.tsv BIDS fix and the Recipe Builder save logic
   moved out of their Flask handlers into shared functions for this.
 
+### Changed
+- **New name for the PRISM acronym**: PRISM now stands for *Principled
+  Research Information & Sidecar Model* (previously *Psychological Research
+  Information System Model*), reflecting that the data-file + JSON-sidecar
+  model is not specific to psychology. Updated in the README, docs, Studio
+  specifications page, and generated methods text. The README, "What is
+  PRISM?" page, CLI help and package descriptions now describe PRISM by its
+  data-and-sidecar model instead of as a psychology-only tool, and new
+  projects get the default description "A PRISM-compatible research dataset
+  of data files with JSON sidecars."
+  (the old default is still recognized as a placeholder).
+- **Validator schema loading follows the rules file**: `load_all_schemas` now
+  reads modality names and aliases from `entities.schema.json` instead of a
+  hardcoded list, so adding a modality needs only a rules entry and a schema
+  file.
+
 ### Fixed
 - **"Fix participants.tsv for BIDS" reported an error after succeeding**: when it
   converted numeric sex codes, the response included a mapping with mixed
