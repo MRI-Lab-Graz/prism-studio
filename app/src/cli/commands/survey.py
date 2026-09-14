@@ -576,6 +576,44 @@ def cmd_survey_import_limesurvey(args):
         sys.exit(1)
 
 
+def cmd_survey_import_lsq(args):
+    """Import a LimeSurvey question (.lsq) or group (.lsg) export as a PRISM
+    template, matching the Studio Template Editor's 'Import .lsq/.lsg'."""
+    from src.converters.limesurvey import parse_lsg_xml, parse_lsq_xml
+    from src.prism_template_validation import strip_template_editor_internal_keys
+
+    as_json = bool(getattr(args, "json", False))
+    input_path = Path(args.input).resolve()
+    parse = {".lsq": parse_lsq_xml, ".lsg": parse_lsg_xml}.get(input_path.suffix.lower())
+
+    def fail(message: str) -> None:
+        if as_json:
+            print(json.dumps({"success": False, "error": message}, indent=2))
+        else:
+            print(f"Error: {message}")
+        sys.exit(1)
+
+    if parse is None:
+        fail("Unsupported file type. Use .lsq or .lsg")
+    try:
+        xml_content = input_path.read_bytes()
+        template = parse(xml_content) if xml_content else None
+    except Exception as e:
+        fail(f"Import failed: {e}")
+    if template is None:
+        fail(f"Failed to parse {input_path.name}")
+
+    template = strip_template_editor_internal_keys(template)
+    output_path = Path(args.output).resolve()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(template, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    if as_json:
+        print(json.dumps({"success": True, "path": str(output_path)}, indent=2))
+    else:
+        print(f"✅ Wrote template {output_path}")
+
+
 def parse_session_map(map_str):
     mapping = {}
     for item in map_str.split(","):

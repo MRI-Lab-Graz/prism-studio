@@ -43,6 +43,8 @@ def dispatch_prism_tools(
             handlers["participants_neurobagel_schema"](args)
         elif args.action == "save-schema":
             handlers["participants_save_schema"](args)
+        elif args.action == "fix-bids":
+            handlers["participants_fix_bids"](args)
         else:
             parsers["participants"].print_help()
     elif args.command == "environment":
@@ -75,6 +77,8 @@ def dispatch_prism_tools(
             handlers["survey_import_limesurvey"](args)
         elif args.action == "import-limesurvey-batch":
             handlers["survey_import_limesurvey_batch"](args)
+        elif args.action == "import-lsq":
+            handlers["survey_import_lsq"](args)
         elif args.action == "i18n-migrate":
             handlers["survey_i18n_migrate"](args)
         elif args.action == "i18n-build":
@@ -121,6 +125,12 @@ def dispatch_prism_tools(
             handlers["dataset_rename_subjects"](args)
         elif args.action == "rewrite-entities":
             handlers["dataset_rewrite_entities"](args)
+        elif args.action == "rename-sessions":
+            handlers["dataset_rename_sessions"](args)
+        elif args.action == "renumber-runs":
+            handlers["dataset_renumber_runs"](args)
+        elif args.action == "undo":
+            handlers["dataset_undo"](args)
         elif args.action == "build-hostile-demo":
             handlers["dataset_build_hostile_demo"](args)
         else:
@@ -146,6 +156,8 @@ def dispatch_prism_tools(
             handlers["recipes_biometrics"](args)
         elif args.kind == "validate-file":
             handlers["recipes_validate_file"](args)
+        elif args.kind == "save":
+            handlers["recipes_save"](args)
         else:
             parsers["recipes"].print_help()
     else:

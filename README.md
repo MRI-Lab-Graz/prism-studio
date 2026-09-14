@@ -4,7 +4,7 @@
 
 <h1 align="center">PRISM Studio</h1>
 
-<p align="center"><strong>Psychological Research Information System Model</strong></p>
+<p align="center"><strong>Principled Research Information & Sidecar Model</strong></p>
 
 <p align="center">
 	<img src="https://img.shields.io/badge/python-3.10+-blue" alt="Python 3.10+">
@@ -12,9 +12,9 @@
 	<img src="https://img.shields.io/badge/BIDS-compatible-green" alt="BIDS compatible">
 </p>
 
-PRISM Studio is a comprehensive tool for managing psychological research datasets built on the PRISM framework.
+PRISM Studio is a local tool for describing, validating, and managing research datasets built on the PRISM model.
 
-PRISM (Psychological Research Information System Model) extends BIDS for modalities such as surveys and biometrics while staying compatible with standard BIDS apps. PRISM Studio applies that model in practical web and CLI workflows for validation, conversion, and dataset management.
+PRISM (Principled Research Information & Sidecar Model) pairs every data file with a JSON sidecar that explains it, organized by subject, session, and modality. Modalities, file-naming rules, and sidecar contracts are JSON schemas, so the model extends to new instruments and new fields without code changes. PRISM stays compatible with standard BIDS apps and currently ships modalities and templates for psychological research, such as surveys and biometrics. PRISM Studio applies the model in practical web and CLI workflows for validation, conversion, and dataset management.
 
 ## Core Features
 

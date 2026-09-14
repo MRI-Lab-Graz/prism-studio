@@ -7,22 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Removed
-- **PRISM App Runner**: the deprecated App Runner page, its API routes,
-  handlers, compatibility module, tests, and docs page are removed. Use the
-  dedicated desktop app for running BIDS Apps.
-- **Repository housekeeping**: removed unused `theme_template/`,
-  `scripts/_archive/`, `tutorial/` (a duplicate of a workshop example file),
-  finished internal plan/spec documents under `docs/superpowers/`, orphaned
-  docs pages, and placeholder CLI service modules.
-- **Unused scripts and modules**: removed the standalone scripts under
-  `app/helpers/` (except `physio/convert_varioport.py`, which the converters
-  use), the unwired FAIR checker/export modules, the legacy physio filename
-  migration, the survey numeric-metadata backfill tool, session resolution and
-  session assignment audit modules, `scripts/deep_check.sh`, the old docs
-  screenshot script, and the `scripts/future_feature(s)/` folders.
-- **Bundled pyedflib**: `vendor/pyedflib` is removed; pyedflib is installed
-  from PyPI like every other dependency.
+### Added
+- **CLI commands for the remaining Studio actions**: `dataset rename-sessions`,
+  `dataset renumber-runs`, `dataset undo`, `survey import-lsq`,
+  `participants fix-bids`, and `recipes save` call the same backend code as the
+  matching Studio buttons, so every non-Projects Studio action now has a CLI
+  equivalent. The participants.tsv BIDS fix and the Recipe Builder save logic
+  moved out of their Flask handlers into shared functions for this.
+
+### Changed
+- **New name for the PRISM acronym**: PRISM now stands for *Principled
+  Research Information & Sidecar Model* (previously *Psychological Research
+  Information System Model*), reflecting that the data-file + JSON-sidecar
+  model is not specific to psychology. Updated in the README, docs, Studio
+  specifications page, and generated methods text. The README, "What is
+  PRISM?" page, CLI help and package descriptions now describe PRISM by its
+  data-and-sidecar model instead of as a psychology-only tool, and new
+  projects get the default description "A PRISM-compatible research dataset
+  of data files with JSON sidecars."
+  (the old default is still recognized as a placeholder).
+- **Validator schema loading follows the rules file**: `load_all_schemas` now
+  reads modality names and aliases from `entities.schema.json` instead of a
+  hardcoded list, so adding a modality needs only a rules entry and a schema
+  file.
+
+### Fixed
+- **"Fix participants.tsv for BIDS" reported an error after succeeding**: when it
+  converted numeric sex codes, the response included a mapping with mixed
+  number/text keys that Flask could not serialize, so Studio showed an error even
+  though the file had already been fixed.
 
 ## [1.18.0] - 2026-08-12
 

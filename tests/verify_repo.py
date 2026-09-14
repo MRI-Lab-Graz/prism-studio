@@ -1555,54 +1555,10 @@ def check_documentation(repo_path, fix=False):
             print_error("No README found! Please add one.")
 
 
-def _extract_assignment_values(file_path, variable_name):
-    """Extract list/set/dict-key values from a top-level Python assignment."""
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            tree = ast.parse(f.read(), filename=file_path)
-    except Exception:
-        return None
-
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Assign):
-            continue
-
-        target_names = [
-            t.id for t in node.targets if isinstance(t, ast.Name) and hasattr(t, "id")
-        ]
-        if variable_name not in target_names:
-            continue
-
-        value = node.value
-        if isinstance(value, ast.List):
-            out = []
-            for elt in value.elts:
-                if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
-                    out.append(elt.value)
-            return out
-
-        if isinstance(value, ast.Set):
-            out = []
-            for elt in value.elts:
-                if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
-                    out.append(elt.value)
-            return out
-
-        if isinstance(value, ast.Dict):
-            out = []
-            for key in value.keys:
-                if isinstance(key, ast.Constant) and isinstance(key.value, str):
-                    out.append(key.value)
-            return out
-
-    return None
-
-
 def check_schema_sync(repo_path, fix=False):
     print_header("Checking PRISM Modality Sync")
 
     schema_dir = os.path.join(repo_path, "app", "schemas", "stable")
-    schema_manager_file = os.path.join(repo_path, "app", "src", "schema_manager.py")
     index_html_file = os.path.join(repo_path, "app", "templates", "index.html")
 
     if not os.path.isdir(schema_dir):
@@ -1624,35 +1580,7 @@ def check_schema_sync(repo_path, fix=False):
             continue
         schema_modalities.add(stem)
 
-    manager_modalities_raw = _extract_assignment_values(
-        schema_manager_file, "modalities"
-    )
-    if manager_modalities_raw is None:
-        print_error("Could not parse modalities list in app/src/schema_manager.py")
-        return
-
     aliases = {"physiological": "physio"}
-
-    def normalize_modalities(values):
-        normalized = set()
-        for value in values:
-            if value in {"dataset_description"}:
-                continue
-            normalized.add(aliases.get(value, value))
-        return normalized
-
-    manager_modalities = normalize_modalities(manager_modalities_raw)
-
-    if schema_modalities != manager_modalities:
-        missing = sorted(schema_modalities - manager_modalities)
-        extra = sorted(manager_modalities - schema_modalities)
-        print_error(
-            "schema_manager modalities are out of sync with app/schemas/stable."
-        )
-        if missing:
-            print(f"  Missing in schema_manager: {', '.join(missing)}")
-        if extra:
-            print(f"  Extra in schema_manager: {', '.join(extra)}")
 
     # validator.py's MODALITY_PATTERNS/PRISM_MODALITIES and
     # project_manager.py's PRISM_MODALITIES are no longer hardcoded literals

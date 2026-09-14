@@ -213,6 +213,7 @@ One structure for multimodal studies
    :caption: Installation
 
    INSTALLATION
+   INSTALLATION_SECURITY
 
 .. toctree::
    :maxdepth: 2
