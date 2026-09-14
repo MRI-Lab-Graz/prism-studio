@@ -11,10 +11,14 @@ authors:
   - name: Karl Koschutnig
     orcid: 0000-0001-6234-0498
     affiliation: "1"
+  - name: Bernhard Weber
+    affiliation: "1"
+  - name: David Matischek
+    affiliation: "1"
 affiliations:
   - index: 1
     name: MRI-Lab Graz, Department of Psychology, University of Graz, Graz, Austria
-date: 13 September 2026
+date: 14 September 2026
 bibliography: paper.bib
 ---
 
@@ -147,13 +151,13 @@ workflows locally.
 
 Claude (Anthropic) and GitHub Copilot were used to assist with code drafting
 and refactoring, documentation, and manuscript drafting and editing. The
-GitHub Copilot model and version were not recorded. The author reviewed all
-AI-assisted output, accepts full responsibility for the software and this
+GitHub Copilot model and version were not recorded. The authors reviewed all
+AI-assisted output, accept full responsibility for the software and this
 paper, and made the substantive software-design and framing decisions.
 
 # Acknowledgements
 
-The author thanks the MRI-Lab Graz community for testing, issue reports, and
+The authors thank the MRI-Lab Graz community for testing, issue reports, and
 feedback, and the BIDS community for the standard on which PRISM builds.
 
 # References
