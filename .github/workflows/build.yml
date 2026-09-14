@@ -56,7 +56,21 @@ jobs:
       run: |
         sudo softwareupdate --install-rosetta --agree-to-license || true
         if [ ! -x /usr/local/bin/brew ]; then
-          NONINTERACTIVE=1 arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          # Homebrew's install.sh now hard-aborts unless `/usr/bin/uname -m` == arm64,
+          # which is also true under `arch -x86_64` Rosetta emulation on this Apple
+          # Silicon runner, and it no longer has an `/usr/local` (classic Intel) prefix
+          # branch at all. Bootstrap it the same way install.sh does internally (a git
+          # checkout into the prefix) instead -- this is the "unsupported"/custom-prefix
+          # install install.sh's own comments point to (https://github.com/Homebrew/brew/tarball/main).
+          sudo mkdir -p /usr/local/Homebrew /usr/local/bin
+          sudo chown -R "$(whoami)":admin /usr/local
+          git -C /usr/local/Homebrew init --quiet
+          git -C /usr/local/Homebrew config remote.origin.url https://github.com/Homebrew/brew
+          git -C /usr/local/Homebrew config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+          git -C /usr/local/Homebrew fetch --quiet --force --tags origin
+          LATEST_TAG="$(git -C /usr/local/Homebrew tag --list --sort=-version:refname | head -n1)"
+          git -C /usr/local/Homebrew checkout --quiet --force -B stable "${LATEST_TAG}"
+          ln -sf ../Homebrew/bin/brew /usr/local/bin/brew
         fi
         arch -x86_64 /usr/local/bin/brew update
         # Homebrew has downgraded Intel macOS to Tier 3 support and no longer
