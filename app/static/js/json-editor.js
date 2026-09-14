@@ -11,7 +11,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     const openDifferentFileBtn = document.getElementById('openDifferentFileBtn');
 
     const sharedApiModuleUrl = new URL('./shared/api.js', jsonEditorScriptUrl).href;
+    const pathPickerModuleUrl = new URL('./shared/path-picker.js', jsonEditorScriptUrl).href;
     let sharedFetchWithApiFallbackPromise = null;
+    let browseFileWithFallbackPromise = null;
+    const projectRoot = (uploadArea?.dataset.projectRoot || '').trim();
 
     // Check for autoload parameter (coming from project page e.g. ?autoload=participants&from=project)
     const urlParams = new URLSearchParams(window.location.search);
@@ -39,6 +42,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         return sharedFetchWithApiFallback(url, options, fallbackMessage);
     }
 
+    function loadBrowseFileWithFallback() {
+        if (!browseFileWithFallbackPromise) {
+            browseFileWithFallbackPromise = import(pathPickerModuleUrl).then(({ browseFileWithFallback }) => {
+                if (typeof browseFileWithFallback !== 'function') {
+                    throw new Error('Shared path picker is unavailable.');
+                }
+                return browseFileWithFallback;
+            });
+        }
+        return browseFileWithFallbackPromise;
+    }
+
     if (fromProject && autoloadFile) {
         fileOpenCard.style.display = 'none';
         editorSection.style.display = 'block';
@@ -46,8 +61,29 @@ document.addEventListener('DOMContentLoaded', async function() {
         await loadFileFromProject(autoloadFile);
     }
 
-    // Open file button
-    jsonFileBtn.addEventListener('click', () => jsonFileInput.click());
+    // Open file button: use the native/in-app file picker (starting in the current
+    // project's folder). No custom `fallback` here -- omitting it lets the shared
+    // picker fall back to its own in-app directory browser (which still honors
+    // startPath) when a native dialog isn't available; only fall back to the plain
+    // <input type="file"> if the picker module itself fails to load.
+    jsonFileBtn.addEventListener('click', async () => {
+        try {
+            const browseFile = await loadBrowseFileWithFallback();
+            const pickedPath = await browseFile(fetchWithApiFallback, {
+                title: 'Select JSON file',
+                confirmLabel: 'Use This File',
+                extensions: '.json',
+                projectJsonOnly: false,
+                startPath: projectRoot
+            });
+            if (pickedPath) {
+                await openJsonFileFromPath(pickedPath);
+            }
+        } catch (error) {
+            console.warn('File picker unavailable, using browser file input:', error);
+            jsonFileInput.click();
+        }
+    });
 
     // "Open different file" resets to the picker
     openDifferentFileBtn.addEventListener('click', () => {
@@ -80,13 +116,32 @@ document.addEventListener('DOMContentLoaded', async function() {
         try {
             const content = await file.text();
             const jsonData = JSON.parse(content);
-            fileOpenCard.style.display = 'none';
-            editorSection.style.display = 'block';
-            editorFileName.textContent = file.name;
-            await renderJSONForm(jsonData, file.name);
+            await showJsonEditor(jsonData, file.name);
         } catch (e) {
             showAlert('Invalid JSON file: ' + e.message, 'danger');
         }
+    }
+
+    // Open a file the native/server picker resolved to an absolute path (read server-side).
+    async function openJsonFileFromPath(path) {
+        try {
+            const response = await fetchWithApiFallback(`/editor/api/open-path?path=${encodeURIComponent(path)}`);
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                showAlert(result.error || 'Could not open the selected file.', 'danger');
+                return;
+            }
+            await showJsonEditor(result.data, result.filename);
+        } catch (e) {
+            showAlert('Error opening file: ' + e.message, 'danger');
+        }
+    }
+
+    async function showJsonEditor(jsonData, fileName) {
+        fileOpenCard.style.display = 'none';
+        editorSection.style.display = 'block';
+        editorFileName.textContent = fileName;
+        await renderJSONForm(jsonData, fileName);
     }
 
     // Load a file by type from the current project via backend API

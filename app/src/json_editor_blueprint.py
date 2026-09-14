@@ -123,8 +123,13 @@ def create_json_editor_blueprint(bids_folder=None):
     def editor_index():
         """Serve JSON editor main page with unified layout"""
         try:
+            project_root = (
+                str(file_manager.bids_folder)
+                if file_manager and file_manager.bids_folder
+                else ""
+            )
             # Use the new unified template that inherits from base.html
-            return render_template("json_editor.html")
+            return render_template("json_editor.html", project_root=project_root)
 
         except Exception as e:
             print(f"WARN [JSON EDITOR] Could not render template: {e}")
@@ -174,6 +179,29 @@ def create_json_editor_blueprint(bids_folder=None):
         try:
             files = file_manager.list_available_files()
             return jsonify({"success": True, "files": files})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 400
+
+    @bp.route("/api/open-path", methods=["GET"])
+    def open_path():
+        """Load a JSON file from an absolute path chosen via the native file picker."""
+        import json
+
+        raw_path = (request.args.get("path") or "").strip()
+        if not raw_path:
+            return jsonify({"success": False, "error": "No path provided"}), 400
+
+        target = Path(raw_path)
+        if not target.is_file():
+            return jsonify({"success": False, "error": "File not found"}), 404
+        if target.suffix.lower() != ".json":
+            return jsonify({"success": False, "error": "Not a .json file"}), 400
+
+        try:
+            data = json.loads(target.read_text(encoding="utf-8"))
+            return jsonify({"success": True, "data": data, "filename": target.name})
+        except json.JSONDecodeError as e:
+            return jsonify({"success": False, "error": f"Invalid JSON: {e}"}), 400
         except Exception as e:
             return jsonify({"success": False, "error": str(e)}), 400
 

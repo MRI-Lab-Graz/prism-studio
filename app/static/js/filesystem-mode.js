@@ -203,7 +203,10 @@
         let data;
         try {
             const projectJsonOnly = options.projectJsonOnly !== false;
-            const query = projectJsonOnly ? '' : '?project_json_only=0';
+            const params = new URLSearchParams();
+            if (!projectJsonOnly) params.set('project_json_only', '0');
+            if (options.startPath) params.set('start_dir', options.startPath);
+            const query = params.toString() ? `?${params.toString()}` : '';
             response = await fetchWithApiFallback(`/api/browse-file${query}`);
             data = await response.json();
         } catch (error) {

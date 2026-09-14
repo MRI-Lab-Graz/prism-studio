@@ -29,6 +29,10 @@ def _escape_powershell_single_quoted(value: str) -> str:
     return value.replace("'", "''")
 
 
+def _escape_applescript_string(value: str) -> str:
+    return value.replace("\\", "\\\\").replace('"', '\\"')
+
+
 def _run_windows_powershell_dialog(dialog_script: str) -> str:
     executable = _powershell_executable()
     if not executable:
@@ -51,12 +55,19 @@ def _prefer_powershell_dialogs_on_windows() -> bool:
     return bool(getattr(sys, "frozen", False))
 
 
-def _browse_file_windows_powershell(project_json_only: bool) -> str:
+def _browse_file_windows_powershell(
+    project_json_only: bool, initial_dir: str | None = None
+) -> str:
     title = "Select project.json" if project_json_only else "Select file"
     filter_value = (
         "PRISM Project File (project.json)|project.json|All files (*.*)|*.*"
         if project_json_only
         else "All files (*.*)|*.*"
+    )
+    initial_dir_line = (
+        f"$dialog.InitialDirectory = '{_escape_powershell_single_quoted(initial_dir)}'"
+        if initial_dir and os.path.isdir(initial_dir)
+        else ""
     )
     script = f"""
 Add-Type -AssemblyName System.Windows.Forms
@@ -70,6 +81,7 @@ $dialog = New-Object System.Windows.Forms.OpenFileDialog
 $dialog.Title = '{_escape_powershell_single_quoted(title)}'
 $dialog.Filter = '{_escape_powershell_single_quoted(filter_value)}'
 $dialog.FileName = '{_escape_powershell_single_quoted("project.json" if project_json_only else "")}'
+{initial_dir_line}
 $dialog.Multiselect = $false
 $dialog.CheckFileExists = $true
 $dialog.RestoreDirectory = $true
@@ -118,13 +130,21 @@ $owner.Dispose()
     return _run_windows_powershell_dialog(script)
 
 
-def _browse_file_macos(project_json_only: bool) -> str:
+def _browse_file_macos(project_json_only: bool, initial_dir: str | None = None) -> str:
+    default_location = (
+        f' default location (POSIX file "{_escape_applescript_string(initial_dir)}")'
+        if initial_dir and os.path.isdir(initial_dir)
+        else ""
+    )
     if project_json_only:
         # AppleScript can only filter by UTI, not by exact filename.
         # Show all JSON files; the caller validates the selection is project.json.
-        script = 'POSIX path of (choose file with prompt "Select project.json" of type {"public.json"})'
+        script = (
+            'POSIX path of (choose file with prompt "Select project.json"'
+            f' of type {{"public.json"}}{default_location})'
+        )
     else:
-        script = 'POSIX path of (choose file with prompt "Select a file")'
+        script = f'POSIX path of (choose file with prompt "Select a file"{default_location})'
 
     result = subprocess.check_output(["osascript", "-e", script], stderr=subprocess.DEVNULL)
     return result.decode("utf-8").strip()
@@ -139,7 +159,9 @@ def _browse_folder_macos() -> str:
     return path.rstrip("/") or "/"
 
 
-def _browse_file_tk(project_json_only: bool, topmost: bool) -> str:
+def _browse_file_tk(
+    project_json_only: bool, topmost: bool, initial_dir: str | None = None
+) -> str:
     import tkinter as tk
     from tkinter import filedialog
 
@@ -150,6 +172,9 @@ def _browse_file_tk(project_json_only: bool, topmost: bool) -> str:
         root.focus_force()
 
     try:
+        kwargs = {}
+        if initial_dir and os.path.isdir(initial_dir):
+            kwargs["initialdir"] = initial_dir
         return filedialog.askopenfilename(
             title="Select project.json" if project_json_only else "Select file",
             filetypes=(
@@ -158,6 +183,7 @@ def _browse_file_tk(project_json_only: bool, topmost: bool) -> str:
                 else [("All files", "*.*")]
             ),
             parent=root,
+            **kwargs,
         )
     finally:
         root.destroy()
@@ -191,11 +217,13 @@ def _wrong_file_error(file_path: str) -> PickerOutcome:
     )
 
 
-def pick_file(project_json_only: bool = True) -> PickerOutcome:
+def pick_file(
+    project_json_only: bool = True, initial_dir: str | None = None
+) -> PickerOutcome:
     try:
         if sys.platform == "darwin":
             try:
-                file_path = _browse_file_macos(project_json_only)
+                file_path = _browse_file_macos(project_json_only, initial_dir)
                 if (
                     project_json_only
                     and file_path
@@ -211,7 +239,9 @@ def pick_file(project_json_only: bool = True) -> PickerOutcome:
 
             if prefer_powershell:
                 try:
-                    file_path = _browse_file_windows_powershell(project_json_only)
+                    file_path = _browse_file_windows_powershell(
+                        project_json_only, initial_dir
+                    )
                     if (
                         project_json_only
                         and file_path
@@ -224,7 +254,9 @@ def pick_file(project_json_only: bool = True) -> PickerOutcome:
 
             try:
                 file_path = _browse_file_tk(
-                    project_json_only=project_json_only, topmost=True
+                    project_json_only=project_json_only,
+                    topmost=True,
+                    initial_dir=initial_dir,
                 )
                 if (
                     project_json_only
@@ -237,7 +269,9 @@ def pick_file(project_json_only: bool = True) -> PickerOutcome:
                 print(f"Windows tkinter file picker failed: {tk_err}")
                 if not prefer_powershell:
                     try:
-                        file_path = _browse_file_windows_powershell(project_json_only)
+                        file_path = _browse_file_windows_powershell(
+                            project_json_only, initial_dir
+                        )
                         if (
                             project_json_only
                             and file_path
@@ -265,7 +299,11 @@ def pick_file(project_json_only: bool = True) -> PickerOutcome:
 
         try:
             return PickerOutcome(
-                path=_browse_file_tk(project_json_only=project_json_only, topmost=False)
+                path=_browse_file_tk(
+                    project_json_only=project_json_only,
+                    topmost=False,
+                    initial_dir=initial_dir,
+                )
             )
         except Exception as linux_err:
             print(f"Linux file picker error: {linux_err}")
