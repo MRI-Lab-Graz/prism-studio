@@ -376,6 +376,23 @@ class TestSchemaManager:
         assert len(schemas) > 0
         assert "survey" in schemas
         assert "dataset_description" in schemas
+        for name in ("biometrics", "environment", "events", "physio", "eyetracking"):
+            assert name in schemas
+        assert schemas["physiological"] is schemas["physio"]
+
+    def test_load_all_schemas_picks_up_modality_declared_in_rules(self, tmp_path):
+        """A new modality needs only a rules entry and a schema file, no code."""
+        stable = tmp_path / "stable"
+        stable.mkdir()
+        (stable / "entities.schema.json").write_text(
+            json.dumps({"modalities": {"widget": {}}, "aliases": {"gadget": "widget"}})
+        )
+        (stable / "widget.schema.json").write_text(json.dumps({"type": "object"}))
+
+        schemas = load_all_schemas(str(tmp_path), version="stable")
+
+        assert schemas["widget"]["type"] == "object"
+        assert schemas["gadget"] is schemas["widget"]
 
     def test_load_nonexistent_schema(self, schema_dir):
         """Test loading non-existent schema returns None"""

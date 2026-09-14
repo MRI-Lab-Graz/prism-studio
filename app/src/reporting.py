@@ -1129,7 +1129,7 @@ def generate_full_methods(
         ver_suffix = f" (schema version {schema_ver})" if schema_ver else ""
         boilerplate = (
             "Data were organized and validated according to the PRISM "
-            "(Psychological Research Information System Model) standard"
+            "(Principled Research Information & Sidecar Model) standard"
             f"{ver_suffix}, which extends the Brain Imaging Data Structure "
             "(BIDS; Gorgolewski et al., 2016) to psychological and behavioral research. "
             "This framework ensures high interoperability and machine-readability by "
@@ -1261,7 +1261,7 @@ def generate_methods_text(
     sections.append("## Data Standardization and Validation\n")
 
     prism_desc = (
-        "Data were organized and validated according to the PRISM (Psychological Research Information System Model) "
+        "Data were organized and validated according to the PRISM (Principled Research Information & Sidecar Model) "
         "standard, which extends the Brain Imaging Data Structure (BIDS; Gorgolewski et al., 2016) to psychological "
         "and behavioral research. This framework ensures high interoperability and machine-readability by enforcing "
         "standardized filename patterns and comprehensive metadata sidecars in JSON format. All datasets were "

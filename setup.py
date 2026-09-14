@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Setup script for PRISM (Psychological Research Information System Model)
+Setup script for PRISM (Principled Research Information & Sidecar Model)
 """
 
 from setuptools import setup
@@ -22,7 +22,7 @@ def read_requirements(filename):
 setup(
     name="prism",
     version="1.18.0",
-    description="PRISM - BIDS-inspired validation and tools for psychological research datasets",
+    description="PRISM - validation and tools for BIDS-compatible research data built on the data-and-sidecar model",
     long_description=read_file("README.md"),
     long_description_content_type="text/markdown",
     author="MRI-Lab-Graz",

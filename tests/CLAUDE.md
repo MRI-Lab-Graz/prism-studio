@@ -19,7 +19,7 @@ Keep each file lean — avoid dumping detailed logs or reference tables into CLA
 
 ## Project Overview
 
-PRISM (Psychological Research Information System Model) is a BIDS-compatible validator for psychology/neuroscience datasets. Extends BIDS with survey and biometrics modalities without breaking BIDS compatibility.
+PRISM (Principled Research Information & Sidecar Model) is a BIDS-compatible validator for psychology/neuroscience datasets. Extends BIDS with survey and biometrics modalities without breaking BIDS compatibility.
 
 ## Development Standards
 
@@ -84,10 +84,10 @@ black . && flake8 .              # Format and lint
 
 When modifying modalities:
 1. `schemas/` - JSON schema definitions
-2. `src/schema_manager.py` - modalities list
-3. `app/schemas/stable/entities.schema.json` - suffix/extension/entity grammar
+2. `app/schemas/stable/entities.schema.json` - suffix/extension/entity grammar
    per modality (`src/entity_rules.py` compiles this into `validator.py`'s
    `MODALITY_PATTERNS`/`PRISM_MODALITIES`/`BIDS_MODALITIES` and `issues.py`'s
-   fix hints — don't hand-edit those, edit the rules file instead)
-4. `prism-studio.py` - restricted_names
-5. `templates/index.html` - UI list
+   fix hints, and `schema_manager.load_all_schemas` reads its modality names
+   from it — don't hand-edit those, edit the rules file instead)
+3. `prism-studio.py` - restricted_names
+4. `templates/index.html` - UI list
