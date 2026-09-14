@@ -315,22 +315,65 @@ document.addEventListener('DOMContentLoaded', async function() {
             } else if (fileType === 'participants') {
                 renderParticipantsForm(jsonData, fileName, formContainer);
             } else {
-                // Generic textarea editor
+                // Generic textarea editor, with wrapped lines and JSON keys
+                // highlighted (via a synced <pre> overlay, since a plain
+                // <textarea> can't color individual characters).
                 const jsonString = JSON.stringify(jsonData, null, 2);
                 formContainer.innerHTML = `
                     <div class="mb-3">
                         <label for="jsonEditor" class="form-label">
                             <i class="fas fa-file-code me-2"></i>${fileName}
                         </label>
-                        <textarea id="jsonEditor" class="form-control" rows="25"
-                            style="font-family:'Courier New',monospace;font-size:13px;white-space:pre;overflow-wrap:normal;line-height:1.5;"></textarea>
+                        <style>
+                            /* ID selectors, not a shared class: the page's .studio-theme
+                               .form-control rule (specificity 0,2,0) would otherwise beat
+                               a class-based override and silently swap the textarea back
+                               to the UI's sans-serif font, throwing off the pixel-for-pixel
+                               alignment this overlay depends on. */
+                            #jsonEditorHighlight, #jsonEditor {
+                                font-family: 'Courier New', monospace;
+                                font-size: 13px;
+                                line-height: 1.5;
+                                white-space: pre-wrap;
+                                overflow-wrap: break-word;
+                                padding: 0.375rem 0.75rem;
+                                border: 1px solid #ced4da;
+                                border-radius: 0.375rem;
+                                box-sizing: border-box;
+                                margin: 0;
+                            }
+                            #jsonEditorHighlight {
+                                position: absolute;
+                                inset: 0;
+                                overflow: hidden;
+                                pointer-events: none;
+                                background: #fff;
+                                border-color: transparent;
+                                color: #212529;
+                            }
+                            #jsonEditorHighlight .json-key { color: #8250df; font-weight: 600; }
+                            #jsonEditor {
+                                position: relative;
+                                background: transparent;
+                                color: transparent;
+                                caret-color: #212529;
+                            }
+                        </style>
+                        <div style="position:relative;">
+                            <pre id="jsonEditorHighlight" aria-hidden="true"></pre>
+                            <textarea id="jsonEditor" class="form-control" rows="25" spellcheck="false"></textarea>
+                        </div>
                         <small class="text-muted d-block mt-2">
                             <i class="fas fa-info-circle me-1"></i>
-                            Edit the JSON — click Save / Download when done
+                            Edit the JSON — click Save / Download when done.
+                            <span style="color:#8250df;font-weight:600;">Keys</span> are highlighted for reference.
                         </small>
                     </div>
                 `;
-                document.getElementById('jsonEditor').value = jsonString;
+                const jsonEditor = document.getElementById('jsonEditor');
+                const jsonEditorHighlight = document.getElementById('jsonEditorHighlight');
+                jsonEditor.value = jsonString;
+                setupJsonEditorKeyHighlight(jsonEditor, jsonEditorHighlight);
                 showAlert(`Loaded: ${fileName}`, 'success');
             }
         } catch (error) {
@@ -432,6 +475,23 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
 
         showAlert(`Loaded: ${fileName}`, 'info');
+    }
+
+    // Colors JSON keys in the read-only <pre> that sits behind the (text-transparent)
+    // raw-editor textarea, and keeps it in sync as the user types/scrolls.
+    function setupJsonEditorKeyHighlight(textarea, pre) {
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+        function refresh() {
+            const escaped = escapeHtml(textarea.value);
+            pre.innerHTML = escaped.replace(/("(?:[^"\\]|\\.)*")(\s*:)/g, '<span class="json-key">$1</span>$2') + '\n';
+            pre.scrollTop = textarea.scrollTop;
+            pre.scrollLeft = textarea.scrollLeft;
+        }
+        textarea.addEventListener('input', refresh);
+        textarea.addEventListener('scroll', refresh);
+        refresh();
     }
 
     function showAlert(message, type = 'info') {
