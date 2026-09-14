@@ -19,7 +19,7 @@ tooltip explaining why.
 
 Underneath that split is PRISM's core relationship to BIDS: your dataset stays
 BIDS-compatible at its core, with PRISM's schema-driven additions layered on top for
-survey, biometrics, and other psychology-specific modalities — standardized
+survey, biometrics, and other open-ended modalities — standardized
 structure, rich metadata, and validation are the three principles that hold the
 whole model together.
 

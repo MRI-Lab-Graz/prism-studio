@@ -147,13 +147,18 @@ for macOS, Windows, and Linux, workshop materials, and example datasets
 including the synthetic hostile dataset, so that other groups can test the
 workflows locally.
 
+# Conflict of interest
+
+The authors declare no competing interests.
+
 # AI usage disclosure
 
-Claude (Anthropic) and GitHub Copilot were used to assist with code drafting
-and refactoring, documentation, and manuscript drafting and editing. The
-GitHub Copilot model and version were not recorded. The authors reviewed all
-AI-assisted output, accept full responsibility for the software and this
-paper, and made the substantive software-design and framing decisions.
+GPT-5.3 (OpenAI), Claude Sonnet 5 and Claude Opus 4.6 (Anthropic), and
+GitHub Copilot were used to assist with code drafting and refactoring,
+documentation, and manuscript drafting and editing. The GitHub Copilot model
+and version were not recorded. The authors reviewed all AI-assisted output,
+accept full responsibility for the software and this paper, and made the
+substantive software-design and framing decisions.
 
 # Acknowledgements
 

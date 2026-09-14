@@ -13,7 +13,7 @@
 - If a refactor is needed, favor introducing or extending a single canonical backend class/service over adding another helper copy elsewhere.
 
 ## Project Overview
-PRISM is a hybrid dataset validation tool for psychological experiments. It enforces a "PRISM" structure (BIDS-inspired, with additional metadata requirements) while remaining compatible with standard BIDS tools/apps. It consists of a core Python validation library and a Flask-based web interface.
+PRISM (Principled Research Information & Sidecar Model) is a hybrid dataset validation tool built on an extensible data-and-sidecar model. It enforces a "PRISM" structure (BIDS-inspired, with additional metadata requirements) while remaining compatible with standard BIDS tools/apps. Its current modalities and template library serve psychological research, but that is the model's first application, not its boundary. It consists of a core Python validation library and a Flask-based web interface.
 
 ## Web Interface Patterns
 - **Backend Single Source of Truth**:

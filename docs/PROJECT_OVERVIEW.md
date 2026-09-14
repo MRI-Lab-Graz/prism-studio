@@ -36,13 +36,14 @@ Start Studio with `python prism-studio.py` or, after setup, `rtk studio`. The
 
 ## Terms you will see
 
-- **PRISM** is the data and metadata model for psychology-focused research data.
+- **PRISM** is an extensible data-and-sidecar model for research data; its
+  current modalities and template library serve psychological research.
 - **PRISM Studio** is the application that helps you work with a PRISM dataset.
 - A **project** is your working area: study metadata, source material, code,
   derived outputs, and the dataset.
 - A **dataset** is the structured data you validate and eventually share.
 - **BIDS** remains the baseline where it applies; PRISM adds structure for
-  psychology workflows that BIDS does not fully specify.
+  workflows that BIDS does not fully specify.
 
 Read [What is PRISM](WHAT_IS_PRISM.md) for the model and compatibility story.
 
