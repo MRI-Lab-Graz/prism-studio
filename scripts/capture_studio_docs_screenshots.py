@@ -114,7 +114,6 @@ SIMPLE_PROJECT_SHOTS = [
     ("/template-editor", "prism-studio-template-editor.png"),
     ("/editor/", "prism-studio-json-editor.png"),
     ("/projects/share", "prism-studio-export.png"),
-    ("/prism-app-runner", "prism-studio-app-runner.png"),
     ("/specifications", "prism-studio-specifications.png"),
     ("/survey-generator", "prism-studio-survey-export.png"),
 ]

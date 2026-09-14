@@ -114,16 +114,6 @@ and where, and common failures.
   </a>
 </div>
 
-## Tools
-
-<div class="prism-chapter-grid prism-chapter-grid--amber">
-  <a class="prism-chapter-card" href="app_runner.html">
-    <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8.5 16 12l-6 3.5V8.5Z"/></svg></span>
-    <span class="prism-chapter-title">PRISM App Runner</span>
-    <span class="prism-chapter-outcome">Run containerized BIDS Apps pipelines against your project</span>
-  </a>
-</div>
-
 All PRISM Studio screens are covered here now. The older top-level pages this section
 replaces (`CONVERTER.md`, `STUDIO_OVERVIEW.md`, `TOOLS.md`, `WEB_INTERFACE.md`,
 `SPECIFICATIONS.md`) are being retired — see the main navigation for what's still
@@ -151,5 +141,4 @@ survey_customizer
 recipe_builder
 export
 specifications
-app_runner
 ```

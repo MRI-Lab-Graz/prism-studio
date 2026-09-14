@@ -1,7 +1,7 @@
 [tool.black]
 line-length = 88
 exclude = '''
-/(\.venv|\.venv_intel|venv|build|dist|\.git|\.eggs|archive|vendor|prism\.egg-info|prism-studio\.egg-info|docs/_build)/
+/(\.venv|\.venv_intel|venv|build|dist|\.git|\.eggs|archive|prism\.egg-info|prism-studio\.egg-info|docs/_build)/
 '''
 
 [tool.coverage.run]
@@ -10,7 +10,6 @@ omit = [
     "tests/*",
     "scripts/*",
     "docs/*",
-    "vendor/*",
     ".venv/*",
     ".venv_intel/*",
     "src/maintenance/*",

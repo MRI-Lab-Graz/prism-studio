@@ -103,5 +103,4 @@ ignore:
   - "tests/**"
   - "scripts/**"
   - "docs/**"
-  - "vendor/**"
   - "build/**"

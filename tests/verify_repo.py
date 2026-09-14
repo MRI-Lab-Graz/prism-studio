@@ -71,7 +71,6 @@ SYSTEM_FILE_FILTERING_BASELINE_ALLOWLIST = {
     "app/src/web/blueprints/conversion_participants_blueprint.py",
     "app/src/web/blueprints/projects_sourcedata_handlers.py",
     "app/src/web/blueprints/tools_recipes_surveys_handlers.py",
-    "app/src/web/blueprints/tools_prism_app_runner_handlers.py",
     "app/src/web/blueprints/tools_pages_handlers.py",
     "app/src/web/blueprints/tools_template_editor_blueprint.py",
     "app/src/web/blueprints/validation.py",
@@ -99,7 +98,6 @@ TODO_BASELINE_ALLOWLIST_PATHS = {
 FORBIDDEN_BINARY_BASELINE_ALLOWLIST = {
     # Legacy tracked artifact; keep allowlisted until repository history/policy is updated.
     "src/derivatives/__pycache__/__init__.cpython-310.pyc",
-    "src/derivatives/__pycache__/apps_runner_compat.cpython-310.pyc",
 }
 
 # Documentation is currently under active rewrite; treat current warning volume as
@@ -430,7 +428,6 @@ def check_secrets(repo_path, fix=False):
             r"app/static/vendor/jszip/jszip\.min\.js",
             r"docs/WINDOWS_SETUP\.md",
             r"docs/CLI_REFERENCE\.md",
-            r"vendor/pyedflib/version\.py",
             r"tests/test_projects_library_settings_api\.py",
             r"tests/test_convert_get_json_hash\.py",
         ]

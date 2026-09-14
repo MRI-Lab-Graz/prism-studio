@@ -1,8 +1,7 @@
 """One-off: write Study.Category into every official/library/survey/survey-*.json.
 
-Mapping is the explicit ShortName -> Category dict from
-docs/superpowers/specs/2026-09-09-survey-instrument-categorization-design.md
-("Full instrument -> category mapping"), not inferred at run-time. Run once;
+Mapping is the explicit ShortName -> Category dict below, not inferred at
+run-time. Run once;
 re-running is a no-op once every file already carries its Category.
 """
 

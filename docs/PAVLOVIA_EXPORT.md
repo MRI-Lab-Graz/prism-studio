@@ -188,7 +188,7 @@ support in the generated experiment.
 ### Typical Workflow
 
 1. **Design in LimeSurvey or JSON Editor**
-2. **Convert to PRISM**: `python app/helpers/surveys/limesurvey_to_prism.py`
+2. **Convert to PRISM**: `python prism_tools.py survey import-limesurvey --input survey.lss --output survey-demo.json`
 3. **Validate**: `python prism-validator --validate task-demo_beh.json`
 4. **Export to Pavlovia**: Studio GUI Quick Export, `prism_tools.py survey export-pavlovia`, or `python src/converters/pavlovia.py task-demo_beh.json`
 5. **Upload to Pavlovia**: Via PsychoPy or git

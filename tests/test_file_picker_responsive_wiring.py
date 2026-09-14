@@ -14,7 +14,6 @@ CONVERTER_EYETRACKING_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter_ey
 VALIDATOR_TEMPLATE = REPO_ROOT / "app" / "templates" / "index.html"
 PROJECT_SETTINGS_TEMPLATE = REPO_ROOT / "app" / "templates" / "includes" / "projects" / "settings_section.html"
 PROJECT_EXPORT_TEMPLATE = REPO_ROOT / "app" / "templates" / "includes" / "projects" / "export_section.html"
-PRISM_APP_RUNNER_TEMPLATE = REPO_ROOT / "app" / "templates" / "prism_app_runner.html"
 FILE_MANAGEMENT_TEMPLATE = REPO_ROOT / "app" / "templates" / "file_management.html"
 
 
@@ -53,7 +52,6 @@ class TestFilePickerResponsiveWiring(unittest.TestCase):
             VALIDATOR_TEMPLATE: ["selectedFolderPath", "library_path"],
             PROJECT_SETTINGS_TEMPLATE: ["globalLibraryPath", "globalRecipesPath"],
             PROJECT_EXPORT_TEMPLATE: ["exportOutputFolder"],
-            PRISM_APP_RUNNER_TEMPLATE: ["runTemplateflowDir", "runFsLicense", "runContainerPath", "remoteIdentityFile", "remoteKnownHostsFile"],
             FILE_MANAGEMENT_TEMPLATE: ["wideLongPickFileBtn"],
         }
 
