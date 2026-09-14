@@ -76,6 +76,7 @@ def _library_search_roots(
     *,
     modality: str,
     include_global: bool = False,
+    global_root: Path | None = None,
 ) -> list[Path]:
     """Return candidate library folders in priority order.
 
@@ -94,7 +95,7 @@ def _library_search_roots(
         if candidate.is_dir():
             roots.append(candidate)
     if include_global:
-        global_root = _global_library_root()
+        global_root = global_root or _global_library_root()
         if global_root:
             roots.append(global_root)
             for sub in (modality,):
@@ -146,6 +147,7 @@ def _find_templates(
     *,
     modality: str,
     include_global: bool = False,
+    global_root: Path | None = None,
 ) -> list[dict]:
     """Return deduplicated modality template JSON files found in library folders.
 
@@ -158,12 +160,13 @@ def _find_templates(
     """
     found: dict[str, dict] = {}
     dataset_root = Path(dataset_path)
-    global_root = _global_library_root()
+    global_root = global_root or _global_library_root()
 
     for root in _library_search_roots(
         dataset_path,
         modality=modality,
         include_global=include_global,
+        global_root=global_root,
     ):
         for json_file in sorted(root.glob("*.json")):
             cleaned = filter_system_files([json_file.name])
@@ -702,82 +705,89 @@ def handle_api_recipe_builder_load(
     return jsonify({"recipe": None}), 200
 
 
-def handle_api_recipe_builder_save(data: dict):
-    """Save a recipe JSON to the project's code/recipes/{modality} folder."""
-    dataset_path = (data.get("dataset_path") or "").strip()
-    recipe = data.get("recipe")
+class RecipeSaveError(ValueError):
+    def __init__(self, message: str, validation_errors: list | None = None):
+        super().__init__(message)
+        self.validation_errors = validation_errors
 
+
+def save_recipe_to_project(
+    dataset_path: str,
+    recipe,
+    *,
+    modality: str | None = None,
+    global_root: Path | None = None,
+) -> dict:
+    """Validate a recipe against its template and write it to code/recipes/{modality}."""
     if not dataset_path:
-        return jsonify({"error": "dataset_path is required"}), 400
+        raise RecipeSaveError("dataset_path is required")
     if not os.path.isdir(dataset_path):
-        return jsonify({"error": "Project path not found"}), 400
+        raise RecipeSaveError("Project path not found")
     if not isinstance(recipe, dict):
-        return jsonify({"error": "recipe payload is required"}), 400
+        raise RecipeSaveError("recipe payload is required")
 
-    modality = (
-        str(data.get("modality") or recipe.get("Kind") or "survey")
-        .strip()
-        .lower()
-    )
+    modality = str(modality or recipe.get("Kind") or "survey").strip().lower()
     if modality not in _SUPPORTED_MODALITIES:
-        return jsonify({"error": "Invalid modality"}), 400
+        raise RecipeSaveError("Invalid modality")
 
     recipe_kind = str(recipe.get("Kind") or "").strip().lower()
     if recipe_kind and recipe_kind != modality:
-        return jsonify({"error": "Recipe Kind does not match selected modality"}), 400
+        raise RecipeSaveError("Recipe Kind does not match selected modality")
 
     info_key = "Survey" if modality == "survey" else "Biometrics"
     task_key = "TaskName" if modality == "survey" else "BiometricName"
 
     task_name = ((recipe.get(info_key) or {}).get(task_key) or "").strip()
     if not task_name:
-        return jsonify({"error": f"Recipe must have {info_key}.{task_key}"}), 400
-
+        raise RecipeSaveError(f"Recipe must have {info_key}.{task_key}")
     if not re.fullmatch(r"[a-zA-Z0-9_-]+", task_name):
-        return jsonify({"error": f"{task_key} contains invalid characters"}), 400
+        raise RecipeSaveError(f"{task_key} contains invalid characters")
 
-    templates = _find_templates(dataset_path, modality=modality, include_global=True)
+    templates = _find_templates(
+        dataset_path, modality=modality, include_global=True, global_root=global_root
+    )
     matched_template = next((t for t in templates if t["task"] == task_name), None)
     if matched_template is None:
-        return (
-            jsonify(
-                {
-                    "error": (
-                        "Survey template not found in the target project or official library"
-                        if modality == "survey"
-                        else "Biometrics template not found in the target project or official library"
-                    )
-                }
-            ),
-            400,
+        raise RecipeSaveError(
+            "Survey template not found in the target project or official library"
+            if modality == "survey"
+            else "Biometrics template not found in the target project or official library"
         )
 
     known_items = (
         set(_extract_items_from_template(matched_template["full_path"], modality=modality))
         or None
     )
-
     validation_errors = validate_recipe(recipe, known_items=known_items)
     if validation_errors:
-        return (
-            jsonify(
-                {
-                    "error": "Recipe validation failed",
-                    "validation_errors": validation_errors,
-                }
-            ),
-            400,
-        )
+        raise RecipeSaveError("Recipe validation failed", validation_errors)
 
     out_dir = _recipe_output_path(dataset_path, modality=modality)
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"recipe-{task_name}.json"
+    with open(out_path, "w", encoding="utf-8") as fh:
+        json.dump(recipe, fh, indent=2, ensure_ascii=False)
 
+    return {
+        "saved": True,
+        "path": str(out_path),
+        "warnings": validate_recipe_warnings(recipe),
+    }
+
+
+def handle_api_recipe_builder_save(data: dict):
+    """Save a recipe JSON to the project's code/recipes/{modality} folder."""
     try:
-        with open(out_path, "w", encoding="utf-8") as fh:
-            json.dump(recipe, fh, indent=2, ensure_ascii=False)
-    except Exception as exc:
+        result = save_recipe_to_project(
+            (data.get("dataset_path") or "").strip(),
+            data.get("recipe"),
+            modality=data.get("modality"),
+        )
+    except RecipeSaveError as exc:
+        payload: dict[str, object] = {"error": str(exc)}
+        if exc.validation_errors:
+            payload["validation_errors"] = exc.validation_errors
+        return jsonify(payload), 400
+    except OSError as exc:
         return jsonify({"error": f"Failed to write recipe: {exc}"}), 500
-
-    warnings = validate_recipe_warnings(recipe)
-    return jsonify({"saved": True, "path": str(out_path), "warnings": warnings}), 200
+    return jsonify(result), 200

@@ -348,6 +348,21 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
+    parser_participants_fix_bids = participants_subparsers.add_parser(
+        "fix-bids",
+        help="Make a participants.tsv BIDS-friendly (numeric columns, numeric sex codes "
+        "to M/F/O). Matches the Studio GUI's 'Fix participants.tsv for BIDS' action.",
+    )
+    parser_participants_fix_bids.add_argument(
+        "--file", required=True, help="Path to participants.tsv"
+    )
+    parser_participants_fix_bids.add_argument(
+        "--dry-run", action="store_true", help="Report fixes without writing the file"
+    )
+    parser_participants_fix_bids.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
     parser_participants_save_schema = participants_subparsers.add_parser(
         "save-schema",
         help="Save a participants.json schema into a project, canonicalizing "
@@ -966,6 +981,26 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
     )
 
+    parser_recipes_save = recipes_subparsers.add_parser(
+        "save",
+        help="Validate a recipe against its survey/biometrics template and save it to "
+        "<project>/code/recipes/<modality>/. Matches the Studio GUI's Recipe Builder "
+        "'Save' action.",
+    )
+    parser_recipes_save.add_argument("--project", required=True, help="Project root folder")
+    parser_recipes_save.add_argument(
+        "--recipe", required=True, help="Path to the recipe JSON file to save"
+    )
+    parser_recipes_save.add_argument(
+        "--modality",
+        choices=["survey", "biometrics"],
+        default=None,
+        help="Recipe modality (default: the recipe's Kind, else survey)",
+    )
+    parser_recipes_save.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
     parser_biometrics_excel = biometrics_subparsers.add_parser(
         "import-excel", help="Import biometrics templates/library from Excel"
     )
@@ -1238,6 +1273,85 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
     )
 
+    parser_dataset_rename_sessions = dataset_subparsers.add_parser(
+        "rename-sessions",
+        help="Rename session labels (ses-XXX) across a dataset (DataLad-aware). Matches the "
+        "Studio GUI's File Management session rewrite. Labels are never zero-padded or "
+        "otherwise normalized.",
+    )
+    parser_dataset_rename_sessions.add_argument(
+        "--project", required=True, help="Dataset/project root folder"
+    )
+    parser_dataset_rename_sessions.add_argument(
+        "--example-session",
+        required=True,
+        help="One current session label to define the rule from (e.g. ses-baseline1)",
+    )
+    parser_dataset_rename_sessions.add_argument(
+        "--keep-fragment",
+        default=None,
+        help="The part of --example-session that should stay (e.g. baseline)",
+    )
+    parser_dataset_rename_sessions.add_argument(
+        "--add-text", default=None, help="Text to add to every affected session label"
+    )
+    parser_dataset_rename_sessions.add_argument(
+        "--add-position",
+        choices=["prepend", "append"],
+        default=None,
+        help="Where --add-text goes (default: prepend)",
+    )
+    parser_dataset_rename_sessions.add_argument(
+        "--allow-many-to-one",
+        action="store_true",
+        help="Allow multiple source session labels to map to one target (safe merge only)",
+    )
+    parser_dataset_rename_sessions.add_argument(
+        "--dry-run", action="store_true", help="Preview the mapping without renaming anything"
+    )
+    parser_dataset_rename_sessions.add_argument(
+        "--yes", "-y", action="store_true", help="Apply without an interactive confirmation prompt"
+    )
+    parser_dataset_rename_sessions.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
+    parser_dataset_renumber_runs = dataset_subparsers.add_parser(
+        "renumber-runs",
+        help="Close gaps in run-XX sequences (e.g. run-01, run-03 -> run-01, run-02), "
+        "DataLad-aware. Matches the Studio GUI's File Management run renumbering.",
+    )
+    parser_dataset_renumber_runs.add_argument(
+        "--project", required=True, help="Dataset/project root folder"
+    )
+    parser_dataset_renumber_runs.add_argument(
+        "--dry-run", action="store_true", help="Preview the renames without changing files"
+    )
+    parser_dataset_renumber_runs.add_argument(
+        "--yes", "-y", action="store_true", help="Apply without an interactive confirmation prompt"
+    )
+    parser_dataset_renumber_runs.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
+    parser_dataset_undo = dataset_subparsers.add_parser(
+        "undo",
+        help="Reverse the most recent File Management operation (subject/session/entity "
+        "rewrite, run renumbering). Matches the Studio GUI's 'Undo Last Operation'.",
+    )
+    parser_dataset_undo.add_argument(
+        "--project", required=True, help="Dataset/project root folder"
+    )
+    parser_dataset_undo.add_argument(
+        "--dry-run", action="store_true", help="Show what would be undone without changing files"
+    )
+    parser_dataset_undo.add_argument(
+        "--yes", "-y", action="store_true", help="Undo without an interactive confirmation prompt"
+    )
+    parser_dataset_undo.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
     parser_ds_bio.add_argument(
         "--supervisor",
         default="investigator",
@@ -1464,6 +1578,21 @@ def build_prism_tools_parsers(
     parser_survey_limesurvey.add_argument("--output", help="Path to output .json file")
     parser_survey_limesurvey.add_argument(
         "--task", help="Optional task name override (defaults from file name)"
+    )
+
+    parser_survey_import_lsq = survey_subparsers.add_parser(
+        "import-lsq",
+        help="Import a LimeSurvey question (.lsq) or group (.lsg) export as a PRISM "
+        "template. Matches the Studio Template Editor's 'Import .lsq/.lsg' action.",
+    )
+    parser_survey_import_lsq.add_argument(
+        "--input", required=True, help="Path to the .lsq or .lsg file"
+    )
+    parser_survey_import_lsq.add_argument(
+        "--output", required=True, help="Path for the output template .json file"
+    )
+    parser_survey_import_lsq.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
     parser_survey_limesurvey_batch = survey_subparsers.add_parser(

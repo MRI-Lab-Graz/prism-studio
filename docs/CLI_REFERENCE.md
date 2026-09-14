@@ -128,6 +128,15 @@ typo'd item IDs in `Scores`/`Transforms`:
 python prism_tools.py recipes validate-file recipe-ads.json --known-items-from survey-ads.json
 ```
 
+**`recipes save`** — validate a recipe against its matching template (project library
+first, then the official library) and write it to
+`<project>/code/recipes/<modality>/recipe-<task>.json`. This is the same code path
+as Studio's Recipe Builder "Save" action:
+
+```bash
+python prism_tools.py recipes save --project /path/to/project --recipe recipe-ads.json
+```
+
 **`library`** — maintain the PRISM library:
 
 ```bash
@@ -207,6 +216,14 @@ python prism_tools.py survey import-limesurvey-batch \
   --session-map t1:ses-1,t2:ses-2,t3:ses-3
 ```
 
+**`survey import-lsq`** — turn a single LimeSurvey question (`.lsq`) or question group
+(`.lsg`) export into a PRISM template JSON, like Studio's Template Editor
+"Import .lsq/.lsg" button:
+
+```bash
+python prism_tools.py survey import-lsq --input mood.lsq --output survey-mood.json
+```
+
 **`survey i18n-migrate`** / **`i18n-build`** / **`i18n-autotranslate`** — create,
 compile, and auto-translate i18n-capable templates:
 
@@ -273,6 +290,10 @@ python prism_tools.py participants neurobagel-schema --project /absolute/path/to
 # Save a participants.json schema (canonicalizes participant-ID-like fields).
 # Matches Studio's Neurobagel widget "Save Annotations" action.
 python prism_tools.py participants save-schema --project /absolute/path/to/my-project --schema-json schema.json
+
+# Make participants.tsv BIDS-friendly (numeric columns, numeric sex codes -> M/F/O).
+# Matches Studio's "Fix participants.tsv for BIDS" action.
+python prism_tools.py participants fix-bids --file /absolute/path/to/my-project/participants.tsv --dry-run
 ```
 
 ### Environment
@@ -359,6 +380,20 @@ python prism_tools.py dataset rename-subjects --project /path/to/project --mode 
 python prism_tools.py dataset rewrite-entities --project /path/to/project --list-modalities
 python prism_tools.py dataset rewrite-entities --project /path/to/project \
   --modality func --entity task --replacement rest --dry-run
+```
+
+**`dataset rename-sessions`** / **`renumber-runs`** / **`undo`** — the CLI equivalents
+of Studio's File Management session rewrite, run renumbering, and "Undo Last
+Operation". Session labels are rewritten only by the rule you give (`ses-1` and
+`ses-01` stay distinct); `renumber-runs` closes gaps such as `run-01`, `run-03` →
+`run-01`, `run-02`; `undo` reverses the most recent of these File Management
+operations. All three support `--dry-run`, `--yes`, and `--json`.
+
+```bash
+python prism_tools.py dataset rename-sessions --project /path/to/project \
+  --example-session ses-baseline1 --keep-fragment baseline --dry-run
+python prism_tools.py dataset renumber-runs --project /path/to/project --dry-run
+python prism_tools.py dataset undo --project /path/to/project --dry-run
 ```
 
 **`anonymize`** — randomize participant IDs and/or mask copyrighted question text,

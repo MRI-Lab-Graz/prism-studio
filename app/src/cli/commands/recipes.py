@@ -329,3 +329,45 @@ def cmd_recipes_validate_file(args) -> None:
         sys.exit(1)
 
     print(f"✅ {recipe_path} is a valid recipe.")
+
+
+def cmd_recipes_save(args) -> None:
+    """Validate a recipe against its template and save it into the project,
+    matching the Studio GUI's Recipe Builder 'Save' action."""
+    from src.web.blueprints.tools_recipe_builder_handlers import (
+        RecipeSaveError,
+        save_recipe_to_project,
+    )
+
+    as_json = bool(getattr(args, "json", False))
+    official_root = _resolve_default_repo_root() / "official" / "library"
+    try:
+        recipe = json.loads(Path(args.recipe).read_text(encoding="utf-8"))
+        result = save_recipe_to_project(
+            str(Path(args.project).resolve()),
+            recipe,
+            modality=args.modality,
+            global_root=official_root if official_root.is_dir() else None,
+        )
+    except RecipeSaveError as error:
+        errors = error.validation_errors or []
+        if as_json:
+            print(json.dumps({"success": False, "error": str(error), "validation_errors": errors}, indent=2))
+        else:
+            print(f"❌ {error}")
+            for item in errors:
+                print(f"  - {item}")
+        sys.exit(1)
+    except (OSError, json.JSONDecodeError) as error:
+        if as_json:
+            print(json.dumps({"success": False, "error": str(error)}, indent=2))
+        else:
+            print(f"❌ {error}")
+        sys.exit(1)
+
+    if as_json:
+        print(json.dumps({"success": True, **result}, indent=2))
+        return
+    print(f"✅ Saved {result['path']}")
+    for warning in result.get("warnings") or []:
+        print(f"  ⚠ {warning}")
