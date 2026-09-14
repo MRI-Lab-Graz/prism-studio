@@ -1,7 +1,8 @@
 # More Resources
 
-Additional ways to learn PRISM Studio and build survey templates beyond the core
-tutorial series.
+Additional ways to learn PRISM Studio: a live-session example, worked examples,
+and the field-by-field Excel template reference that [Author a
+Survey](TUTORIAL_SURVEY.md) itself relies on for its own Excel-import chapters.
 
 <div class="prism-chapter-grid prism-chapter-grid--amber">
   <a class="prism-chapter-card" href="WORKSHOP.html">
@@ -17,11 +18,11 @@ tutorial series.
   <a class="prism-chapter-card" href="EXCEL_TEMPLATE_BASICS.html">
     <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 10h18"/><path d="M9 4v16"/></svg></span>
     <span class="prism-chapter-title">Excel Survey Template — Basics</span>
-    <span class="prism-chapter-outcome">Build a survey JSON template by filling in an Excel codebook</span>
+    <span class="prism-chapter-outcome">Field-by-field Excel codebook reference — also the material behind Author a Survey's Chapter 2</span>
   </a>
   <a class="prism-chapter-card" href="EXCEL_TEMPLATE_ADVANCED.html">
     <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="M3 12l9 5 9-5"/><path d="M3 16l9 5 9-5"/></svg></span>
     <span class="prism-chapter-title">Excel Survey Template — Multiple Versions</span>
-    <span class="prism-chapter-outcome">Extends the Basics tutorial to instruments with multiple versions</span>
+    <span class="prism-chapter-outcome">Extends Basics to multi-version instruments — also the material behind Author a Survey's Chapter 5</span>
   </a>
 </div>
