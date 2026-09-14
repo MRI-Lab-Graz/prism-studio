@@ -290,10 +290,13 @@ def main() -> int:
         "--hidden-import=pyreadstat",
         "--hidden-import=pyreadr",
         # pandas can otherwise be bundled as an incomplete top-level package on
-        # some platforms, which breaks both frozen imports and the bundle smoke test.
-        "--collect-submodules=pandas",
-        "--collect-data=pandas",
-        "--collect-binaries=pandas",
+        # some platforms, which breaks both frozen imports and the bundle smoke
+        # test. Collection (minus the pandas.tests suite) happens via the
+        # custom hook below rather than --collect-submodules=pandas directly,
+        # since excluding pandas.tests afterwards still leaves it force-added
+        # as a hidden import, producing hundreds of harmless but noisy
+        # "Hidden import ... not found" errors in the build log.
+        f"--additional-hooks-dir={Path(__file__).parent / 'pyinstaller_hooks'}",
         # pyreadstat provides the SPSS .sav writer through native extension modules.
         # Collect the full package so recipe exports keep working in frozen builds.
         "--collect-submodules=pyreadstat",
@@ -304,9 +307,6 @@ def main() -> int:
         "--collect-submodules=pyreadr",
         "--collect-data=pyreadr",
         "--collect-binaries=pyreadr",
-        # Exclude pandas test suite — collected by --collect-submodules but never
-        # needed at runtime; skipping it saves ~50 MB and significant build time.
-        "--exclude-module=pandas.tests",
         # Explicitly exclude optional packages (only for dev/scripts, not release builds)
         "--exclude-module=pyarrow",
         "--exclude-module=nibabel",
