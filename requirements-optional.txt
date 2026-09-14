@@ -10,6 +10,12 @@ pyedflib
 # openMINDS metadata export (BIDS → openMINDS schema)
 bids2openminds
 
+# HED (Hierarchical Event Descriptor) validation for events.json sidecars
+# (see docs on annotating task-<label>_events.json with HED tags). Not
+# imported by core app/validator startup, only by tooling that checks or
+# builds HED annotations.
+hedtools>=1.2.0
+
 # Questionnaire preview export as Word document
 python-docx>=1.1.0
 
