@@ -18,6 +18,26 @@ for _stream in (sys.stdout, sys.stderr):
         pass
 
 
+def make_cli_progress_reporter(machine_output: bool):
+    """Build the progress_callback passed to validate_dataset for the CLI.
+
+    Renders a single overwriting status line on stderr so a long-running
+    validation still shows it's alive. Machine-readable runs (--json/
+    --format) get no callback at all, so stdout stays clean for the report.
+    """
+    if machine_output:
+        return None
+
+    def _report(current, total, message, file_path=None):
+        percent = int(current * 100 / total) if total else 0
+        sys.stderr.write(f"\r  [{percent:3d}%] {message}".ljust(80))
+        sys.stderr.flush()
+        if total and current >= total:
+            sys.stderr.write("\n")
+
+    return _report
+
+
 def _is_help_mode(argv: list[str]) -> bool:
     """Allow running without venv when only asking for help/version."""
     help_flags = {"-h", "--help", "--version", "-V"}
@@ -677,6 +697,7 @@ Examples:
             run_prism=run_prism,
             library_path=library_path,
             check_nifti_headers=args.check_nifti_headers,
+            progress_callback=make_cli_progress_reporter(machine_output),
         )
 
         # Convert legacy tuples to Issue objects for structured output
