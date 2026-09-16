@@ -2,6 +2,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 BUILD_SCRIPT = REPO_ROOT / "scripts" / "build" / "build_app.py"
+PANDAS_HOOK = REPO_ROOT / "scripts" / "build" / "pyinstaller_hooks" / "hook-pandas.py"
 BUNDLE_SMOKE = REPO_ROOT / "scripts" / "ci" / "smoke_bundle_imports.py"
 PRISM_STUDIO_SPEC = REPO_ROOT / "PrismStudio.spec"
 PRISM_VALIDATOR_SPEC = REPO_ROOT / "PrismValidator.spec"
@@ -9,12 +10,20 @@ CI_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "ci.yml"
 
 
 def test_build_script_explicitly_includes_pandas() -> None:
+    # Full pandas.tests-minus collection now happens via the custom
+    # hook-pandas.py (--additional-hooks-dir), not direct CLI flags -- see
+    # that commit's rationale. Guard both halves of the split.
     content = BUILD_SCRIPT.read_text(encoding="utf-8")
 
     assert '"--hidden-import=pandas"' in content
-    assert '"--collect-submodules=pandas"' in content
-    assert '"--collect-data=pandas"' in content
-    assert '"--collect-binaries=pandas"' in content
+    assert '"--hidden-import=cmath"' in content
+    assert "--additional-hooks-dir=" in content
+
+    hook_content = PANDAS_HOOK.read_text(encoding="utf-8")
+    assert "collect_submodules(" in hook_content
+    assert "collect_data_files(" in hook_content
+    assert "collect_dynamic_libs(" in hook_content
+    assert "pandas.tests" in hook_content
 
 
 def test_build_script_explicitly_includes_pyreadstat() -> None:

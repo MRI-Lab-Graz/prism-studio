@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.18.1] - 2026-09-16
+
 ### Added
 - **CLI commands for the remaining Studio actions**: `dataset rename-sessions`,
   `dataset renumber-runs`, `dataset undo`, `survey import-lsq`,
@@ -36,6 +38,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   converted numeric sex codes, the response included a mapping with mixed
   number/text keys that Flask could not serialize, so Studio showed an error even
   though the file had already been fixed.
+- **Windows first launch could show a connection-refused page**: the packaged
+  app's window opened before Waitress finished starting, since Defender's
+  real-time scan and SmartScreen reputation check on a brand-new, freshly
+  installed exe can outlast the previous ~10s wait cap. The wait is now up to
+  45s, and later launches (once Defender's verdict is cached) are unaffected.
+- **Packaged Linux/macOS builds crashed on every page**: a recent PyInstaller
+  packaging change to skip bundling the unused `pandas.tests` suite
+  incidentally stopped `cmath` (a compiled stdlib module numpy/pandas need at
+  runtime) from being bundled on Linux/macOS, breaking several Flask
+  blueprints and the home page in frozen builds. Windows was unaffected since
+  `cmath` is built into `python3.dll` there. `cmath` is now an explicit
+  hidden import.
 
 ## [1.18.0] - 2026-08-12
 
