@@ -5,8 +5,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import PyInstaller.__main__
-
 
 def _maybe_rm_tree(path: Path) -> None:
     try:
@@ -171,6 +169,74 @@ def _generate_icon(name: str) -> str | None:
     return None
 
 
+def _build_pyinstaller_args(name: str, hooks_dir: Path) -> list[str]:
+    return [
+        f"--name={name}",
+        "--clean",
+        "--noconfirm",
+        # Strip assert statements from bundled .pyc files (safe for release builds)
+        "--optimize=1",
+        # Explicitly include hidden imports that PyInstaller might miss
+        "--hidden-import=jsonschema",
+        "--hidden-import=xml.etree.ElementTree",
+        "--hidden-import=flask",
+        "--hidden-import=pandas",
+        "--hidden-import=pyreadstat",
+        "--hidden-import=pyreadr",
+        # cmath is a compiled stdlib extension numpy/pandas need at runtime.
+        # Previously discovered incidentally via static analysis of the
+        # pandas.tests suite pulled in by --collect-submodules=pandas; excluding
+        # pandas.tests (see hook-pandas.py) removed that accidental path on
+        # Linux/macOS, where cmath ships as a separate .so PyInstaller must be
+        # told to bundle (Windows is unaffected since it's built into python3.dll).
+        "--hidden-import=cmath",
+        # pandas can otherwise be bundled as an incomplete top-level package on
+        # some platforms, which breaks both frozen imports and the bundle smoke
+        # test. Collection (minus the pandas.tests suite) happens via the
+        # custom hook below rather than --collect-submodules=pandas directly,
+        # since excluding pandas.tests afterwards still leaves it force-added
+        # as a hidden import, producing hundreds of harmless but noisy
+        # "Hidden import ... not found" errors in the build log.
+        f"--additional-hooks-dir={hooks_dir / 'pyinstaller_hooks'}",
+        # pyreadstat provides the SPSS .sav writer through native extension modules.
+        # Collect the full package so recipe exports keep working in frozen builds.
+        "--collect-submodules=pyreadstat",
+        "--collect-data=pyreadstat",
+        "--collect-binaries=pyreadstat",
+        # pyreadr provides R .rds/.rdata import through native extension modules.
+        # Collect the full package so converter imports keep working in frozen builds.
+        "--collect-submodules=pyreadr",
+        "--collect-data=pyreadr",
+        "--collect-binaries=pyreadr",
+        # Explicitly exclude optional packages (only for dev/scripts, not release builds)
+        "--exclude-module=pyarrow",
+        "--exclude-module=nibabel",
+        "--exclude-module=pyedflib",
+        # Explicitly exclude docs/build packages (never needed in release builds)
+        "--exclude-module=sphinx",
+        "--exclude-module=sphinx_rtd_theme",
+        "--exclude-module=myst_parser",
+        "--exclude-module=babel",
+        "--exclude-module=docutils",
+        "--exclude-module=pygments",
+        # Exclude dev/test packages that may be present in the build environment
+        "--exclude-module=PIL",
+        "--exclude-module=colorama",
+        "--exclude-module=matplotlib",
+        "--exclude-module=pytest",
+        "--exclude-module=unittest",
+        "--exclude-module=test",
+        "--exclude-module=distutils",
+        "--exclude-module=setuptools",
+        "--exclude-module=pip",
+        # Exclude GUI toolkits not needed for the Flask web interface
+        "--exclude-module=tkinter",
+        "--exclude-module=PyQt5",
+        "--exclude-module=PyQt6",
+        "--exclude-module=wx",
+    ]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Build Prism Studio using PyInstaller"
@@ -276,64 +342,7 @@ def main() -> int:
         datas.append(f"examples{sep}examples")
         print("[OK] Including examples")
 
-    pyinstaller_args = [
-        f"--name={args.name}",
-        "--clean",
-        "--noconfirm",
-        # Strip assert statements from bundled .pyc files (safe for release builds)
-        "--optimize=1",
-        # Explicitly include hidden imports that PyInstaller might miss
-        "--hidden-import=jsonschema",
-        "--hidden-import=xml.etree.ElementTree",
-        "--hidden-import=flask",
-        "--hidden-import=pandas",
-        "--hidden-import=pyreadstat",
-        "--hidden-import=pyreadr",
-        # pandas can otherwise be bundled as an incomplete top-level package on
-        # some platforms, which breaks both frozen imports and the bundle smoke
-        # test. Collection (minus the pandas.tests suite) happens via the
-        # custom hook below rather than --collect-submodules=pandas directly,
-        # since excluding pandas.tests afterwards still leaves it force-added
-        # as a hidden import, producing hundreds of harmless but noisy
-        # "Hidden import ... not found" errors in the build log.
-        f"--additional-hooks-dir={Path(__file__).parent / 'pyinstaller_hooks'}",
-        # pyreadstat provides the SPSS .sav writer through native extension modules.
-        # Collect the full package so recipe exports keep working in frozen builds.
-        "--collect-submodules=pyreadstat",
-        "--collect-data=pyreadstat",
-        "--collect-binaries=pyreadstat",
-        # pyreadr provides R .rds/.rdata import through native extension modules.
-        # Collect the full package so converter imports keep working in frozen builds.
-        "--collect-submodules=pyreadr",
-        "--collect-data=pyreadr",
-        "--collect-binaries=pyreadr",
-        # Explicitly exclude optional packages (only for dev/scripts, not release builds)
-        "--exclude-module=pyarrow",
-        "--exclude-module=nibabel",
-        "--exclude-module=pyedflib",
-        # Explicitly exclude docs/build packages (never needed in release builds)
-        "--exclude-module=sphinx",
-        "--exclude-module=sphinx_rtd_theme",
-        "--exclude-module=myst_parser",
-        "--exclude-module=babel",
-        "--exclude-module=docutils",
-        "--exclude-module=pygments",
-        # Exclude dev/test packages that may be present in the build environment
-        "--exclude-module=PIL",
-        "--exclude-module=colorama",
-        "--exclude-module=matplotlib",
-        "--exclude-module=pytest",
-        "--exclude-module=unittest",
-        "--exclude-module=test",
-        "--exclude-module=distutils",
-        "--exclude-module=setuptools",
-        "--exclude-module=pip",
-        # Exclude GUI toolkits not needed for the Flask web interface
-        "--exclude-module=tkinter",
-        "--exclude-module=PyQt5",
-        "--exclude-module=PyQt6",
-        "--exclude-module=wx",
-    ]
+    pyinstaller_args = _build_pyinstaller_args(args.name, Path(__file__).parent)
 
     if not args.console:
         pyinstaller_args.append("--windowed")
@@ -368,6 +377,8 @@ def main() -> int:
     pyinstaller_args.append(args.entry)
 
     print("Building with args:", pyinstaller_args)
+    import PyInstaller.__main__
+
     PyInstaller.__main__.run(pyinstaller_args)
 
     # --- Post-Build Platform-Specific Fixes ---
