@@ -1,5 +1,5 @@
 ---
-title: "PRISM: an extensible data-and-sidecar model for describing and validating research data"
+title: "PRISM: extensible sidecar metadata and validation for research data"
 tags:
   - research data management
   - metadata
@@ -12,13 +12,17 @@ authors:
     orcid: 0000-0001-6234-0498
     affiliation: "1"
   - name: Bernhard Weber
-    affiliation: "1"
+    orcid: 0000-0001-6598-7772
+    affiliation: "2"
   - name: David Matischek
-    affiliation: "1"
+    orcid: 0009-0009-7882-4070
+    affiliation: "2"
 affiliations:
   - index: 1
     name: MRI-Lab Graz, Department of Psychology, University of Graz, Graz, Austria
-date: 14 September 2026
+  - index: 2
+    name: Institute of Psychology, University of Graz, Graz, Austria
+date: 17 September 2026
 bibliography: paper.bib
 ---
 
@@ -92,7 +96,7 @@ warnings, merged into one JSON report, with a non-zero exit status on errors.
 
 **The current library.** The bundled library is the psychology instance of the model, not the model itself: 103 questionnaire templates and one biometrics template, most derived from the PsyToolkit library [@stoet2010psytoolkit; @stoet2017psytoolkit], each with upstream licensing recorded. A project may point PRISM at its own instead.
 
-**Testing.** 3,723 automated tests across 270 files, plus browser-side tests for the Studio interface, run in continuous integration on every push alongside static analysis (`ruff`, `mypy`), secret scanning, and architectural-invariant checks. Data-handling paths are additionally exercised against adversarial input: a seeded generator builds a synthetic dataset of 59 deliberately hostile cases — among them session labels that must stay distinct (`ses-1`, `ses-01`, `ses-pre`), non-ASCII subject labels, and invalid acquisition timestamps — whose documented outcomes 51 tests assert case by case.
+**Testing.** 3,727 automated tests across 268 files, plus browser-side tests for the Studio interface, run in continuous integration on every push alongside static analysis (`ruff`, `mypy`), secret scanning, and architectural-invariant checks. Data-handling paths are additionally exercised against adversarial input: a seeded generator builds a synthetic dataset of 59 deliberately hostile cases — among them session labels that must stay distinct (`ses-1`, `ses-01`, `ses-pre`), non-ASCII subject labels, and invalid acquisition timestamps — whose documented outcomes 51 tests assert case by case.
 
 Usage-level material — installation, the command reference, converter walkthroughs, and the Studio guide — is maintained as documentation at <https://prism-studio.readthedocs.io> rather than reproduced here.
 
