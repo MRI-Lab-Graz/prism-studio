@@ -44,7 +44,7 @@ PRISM datasets remain valid BIDS datasets, with PRISM-specific files declared in
 
 Describing research data at scale requires a vocabulary that can grow where the data is produced. Any approach that enumerates measurements centrally — a specification’s modality list, a curated instrument database — supports what has already been encoded and stalls on what has not, because enumeration scales with maintainer effort, not the variety of measurements researchers produce.
 
-BIDS offers one dedicated home for questionnaire and assessment data — a top-level `phenotype/` directory holding one table per instrument, with participants as rows — and it illustrates the trade-off. Such tables store participant-level measures adequately, but as flat aggregates rather than data-and-sidecar pairs, so session-, run-, and variant-level context for repeated administrations has nowhere to live. PRISM stays inside the sidecar paradigm while offering a deliberate, optional export to `phenotype/` where compatibility matters more than context.
+BIDS offers one dedicated home for questionnaire and assessment data — a top-level `phenotype/` directory holding one table per instrument, with participants as rows — and it illustrates the trade-off. Such tables store participant-level measures adequately, but as flat aggregates rather than data-and-sidecar pairs, so session-, run-, and variant-level context for repeated administrations has nowhere to live. PRISM stays inside the sidecar paradigm while offering a deliberate, optional export to `phenotype/` where compatibility matters more than context (Figure 1).
 
 ![PRISM's native, acquisition-scoped survey layout versus the optional, lossy BIDS `phenotype/` compatibility export.](prism_representations.pdf)
 
