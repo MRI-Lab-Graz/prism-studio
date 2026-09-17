@@ -69,4 +69,4 @@ python prism-studio.py
 ## Screenshot Pack (optional)
 
 If your UI layout changed, regenerate screenshots with:
-`../../docs/workshop/SCREENSHOTS_QUICK_START.md`
+`../../docs/_archive/workshop/SCREENSHOTS_QUICK_START.md`

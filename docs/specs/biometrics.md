@@ -125,7 +125,7 @@ Common fields for each metric:
 
 ## Generating Templates from Excel
 
-You can generate biometrics JSON templates from a single-sheet Excel **codebook** (no data required) using `prism_tools.py biometrics import-excel`. See `docs/PRISM_TOOLS.rst` for the full column list and an example.
+You can generate biometrics JSON templates from a single-sheet Excel **codebook** (no data required) using `prism_tools.py biometrics import-excel`. See [CLI Reference](../CLI_REFERENCE.md#biometrics) for the full column list and an example.
 
 ## Example Sidecar
 

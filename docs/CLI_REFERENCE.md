@@ -250,6 +250,38 @@ Key options: `--equipment` (default `Technical.Equipment` value, default
 `"Legacy/Imported"`), `--supervisor` (`investigator` default, or `physician`,
 `trainer`, `self`).
 
+Recommended Excel columns (header-friendly, case-insensitive):
+
+- `item_id` (aliases: id, code, variable, name) — the TSV column name
+- `description` (aliases: question, text, item)
+- `units` (aliases: unit) — **required** by the biometrics schema
+- `datatype` (optional; one of: string, integer, float)
+- `minvalue` / `maxvalue`, `warnminvalue` / `warnmaxvalue` (optional)
+- `allowedvalues` (optional; comma/semicolon list or `1=foo;2=bar`)
+- `group` (aliases: test, instrument, category) — optional; creates one
+  `biometrics-<group>.json` per group. If omitted, all rows go into
+  `biometrics-biometrics.json`. Special case: set `group` to `participant` to
+  write those rows to `participants.json` instead.
+- `alias_of` (optional)
+- `session` / `run` (optional; normalized to `ses-<n>` / `run-<n>`, written
+  to the metric entries as `SessionHint`/`RunHint`)
+
+Optional per-group metadata columns (repeatable on any row; the first
+non-empty value per group is used to fill the JSON header): `originalname`
+(or `test_name`/`testname`) → `Study.OriginalName`; `protocol` →
+`Study.Protocol`; `instructions` → `Study.Instructions`; `reference` (or
+`citation`/`doi`) → `Study.Reference`; `estimatedduration` (or `duration`) →
+`Study.EstimatedDuration`; `equipment` → `Technical.Equipment`; `supervisor`
+→ `Technical.Supervisor` (enum: investigator|physician|trainer|self).
+
+Labeled values like `0=selten;1=manchmal;2=...` in `allowedvalues` are stored
+as `Levels` (value→label) **and** used to derive `AllowedValues`. A numeric
+range like `1-10` in `allowedvalues` expands to allowed integers 1..10.
+
+If no header row is present, positional columns map in order: item_id,
+description, units, datatype, minvalue, maxvalue, allowedvalues, group,
+alias_of, session, run.
+
 **`dataset build-biometrics-smoketest`** — generate a small biometrics dataset
 (templates + dummy data) for testing:
 
