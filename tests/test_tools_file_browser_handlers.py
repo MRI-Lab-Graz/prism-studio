@@ -32,7 +32,9 @@ class TestToolsFileBrowserHandlers(unittest.TestCase):
         self.assertEqual(
             response.get_json()["path"], r"C:\Users\tester\Study\project.json"
         )
-        mock_pick_file.assert_called_once_with(project_json_only=True)
+        mock_pick_file.assert_called_once_with(
+            project_json_only=True, initial_dir=None
+        )
 
     @patch.object(handlers.file_picker, "pick_folder")
     def test_browse_folder_returns_picker_path(self, mock_pick_folder):
@@ -67,7 +69,9 @@ class TestToolsFileBrowserHandlers(unittest.TestCase):
         with self.app.test_request_context("/api/browse-file?project_json_only=0"):
             handlers.handle_api_browse_file()
 
-        mock_pick_file.assert_called_once_with(project_json_only=False)
+        mock_pick_file.assert_called_once_with(
+            project_json_only=False, initial_dir=None
+        )
 
 
 if __name__ == "__main__":
