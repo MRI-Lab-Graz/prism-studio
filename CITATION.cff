@@ -8,6 +8,13 @@ version: "1.19.0"
 date-released: "2026-09-17"
 repository-code: "https://github.com/MRI-Lab-Graz/prism-studio"
 url: "https://prism-studio.readthedocs.io/en/latest/"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.22809100"
+    description: "This DOI represents all versions of PRISM, and will always resolve to the latest one."
+  - type: doi
+    value: "10.5281/zenodo.22809101"
+    description: "This is the archived snapshot of PRISM v1.19.0."
 authors:
   - family-names: "Koschutnig"
     given-names: "Karl"
