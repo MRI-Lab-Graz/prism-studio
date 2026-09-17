@@ -118,7 +118,7 @@ def handle_generate_pavlovia_endpoint():
     except ImportError:
         export_to_pavlovia = None
 
-    if not export_to_pavlovia:
+    if not export_to_pavlovia:  # type: ignore[truthy-function]
         return jsonify({"error": "Pavlovia exporter not available"}), 500
 
     try:

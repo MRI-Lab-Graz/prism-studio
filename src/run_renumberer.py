@@ -129,8 +129,8 @@ class RunRenumberer:
         skipped_groups: list[dict] = []
 
         for group_key, files_by_run in sorted(buckets.items()):
-            rel_dir, other_tokens, suffix_token, extension = group_key
-            group_label = "/".join([rel_dir, "_".join([*other_tokens, suffix_token]) + extension])
+            rel_dir, other_tokens_tuple, suffix_token, extension = group_key
+            group_label = "/".join([rel_dir, "_".join([*other_tokens_tuple, suffix_token]) + extension])
             run_values = sorted(files_by_run.keys())
 
             non_numeric = [value for value in run_values if not _NUMERIC_RUN_PATTERN.fullmatch(value)]

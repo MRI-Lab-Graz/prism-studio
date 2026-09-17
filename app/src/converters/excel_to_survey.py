@@ -33,11 +33,11 @@ try:
         detect_version_name_from_import,
     )
 except ImportError:  # pragma: no cover - defensive fallback, unreachable in this repo
-    ItemRegistry = None
-    ItemCollisionError = None
-    merge_survey_versions = None
-    save_merged_template = None
-    detect_version_name_from_import = None
+    ItemRegistry = None  # type: ignore[assignment,misc]
+    ItemCollisionError = None  # type: ignore[assignment,misc]
+    merge_survey_versions = None  # type: ignore[assignment]
+    save_merged_template = None  # type: ignore[assignment]
+    detect_version_name_from_import = None  # type: ignore[assignment]
 
 # Add project root to path to import from src
 project_root = Path(__file__).resolve().parent.parent

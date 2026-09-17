@@ -23,7 +23,7 @@ import hashlib
 import os
 import re
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 from src.datalad_execution import (
     is_datalad_dataset,
@@ -1807,7 +1807,9 @@ def _export_recipe_aggregated(
             pyreadstat.write_sav(
                 df_for_sav,
                 str(out_fname),
-                column_labels=sav_var_labels if sav_var_labels else None,
+                column_labels=cast(Optional[Dict[str, Optional[str]]], sav_var_labels)
+                if sav_var_labels
+                else None,
                 variable_value_labels=sav_val_labels if sav_val_labels else None,
                 variable_measure=sav_variable_measure if sav_variable_measure else None,
             )
@@ -2738,7 +2740,9 @@ def compute_survey_recipes(
                 pyreadstat.write_sav(
                     combined_for_sav,
                     str(out_path),
-                    column_labels=sav_var_labels if sav_var_labels else None,
+                    column_labels=cast(Optional[Dict[str, Optional[str]]], sav_var_labels)
+                    if sav_var_labels
+                    else None,
                     variable_value_labels=sav_val_labels if sav_val_labels else None,
                     variable_measure=sav_variable_measure if sav_variable_measure else None,
                 )

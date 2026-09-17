@@ -297,7 +297,7 @@ def _diagnose_preview_error(
                 input_path=input_path,
                 suffix=suffix,
                 sheet_arg=sheet_arg,
-                separator_option=separator_option,
+                separator_option=_normalize_separator_option(separator_option),
             )
             if diagnostic_df is not None:
                 diagnostic_columns = _detect_mixed_time_style_columns(diagnostic_df)

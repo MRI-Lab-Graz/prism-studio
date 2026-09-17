@@ -3147,17 +3147,17 @@ class ProjectManager:
             for source_path in sorted(set(missing_source_paths)):
                 source_candidate = Path(str(source_path))
                 try:
-                    rel_path = source_candidate.relative_to(copy_source_path)
+                    rel_path_obj = source_candidate.relative_to(copy_source_path)
                 except Exception:
                     unresolved_source_paths.append(str(source_candidate))
                     continue
 
-                original_candidate = project_path / rel_path
+                original_candidate = project_path / rel_path_obj
                 if not original_candidate.exists() or original_candidate.is_dir():
                     unresolved_source_paths.append(str(source_candidate))
                     continue
 
-                destination_candidate = export_path / rel_path
+                destination_candidate = export_path / rel_path_obj
                 try:
                     destination_candidate.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(str(original_candidate), str(destination_candidate))
@@ -8898,7 +8898,7 @@ Subfolders:
         record = dict(validator_info)
         record["validatedAt"] = datetime.now(timezone.utc).isoformat()
 
-        changed = bool(previous) and (
+        changed = previous is not None and (
             previous.get("prism_schema_versions")
             != validator_info.get("prism_schema_versions")
             or (previous.get("bids_validator") or {}).get("spec")

@@ -444,6 +444,7 @@ def _resolve_inherited_sidecar_core(
     if root_data and subject_data:
         # Both exist: merge (subject overrides root)
         merged = _deep_merge(root_data, subject_data)
+        assert isinstance(merged, dict)
         return merged, subject_sidecar_path
     elif subject_data:
         # Only subject-level exists

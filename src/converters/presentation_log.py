@@ -36,7 +36,7 @@ def parse_presentation_log(log_text: str) -> pd.DataFrame:
     duration, onset_uncertainty_ms, duration_uncertainty_ms,
     response_time_ms, response_button_code.
     """
-    rows = []
+    rows: list[dict[str, Any]] = []
     t0_ticks: Optional[int] = None
 
     for raw_line in log_text.splitlines():

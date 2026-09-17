@@ -71,8 +71,8 @@ def validate_procedure(
                     )
 
     # Build on-disk set by scanning project root for sub-* folders
-    disk_set = set()
-    disk_sessions = set()
+    disk_set: Set[Tuple[str, str]] = set()
+    disk_sessions: Set[str] = set()
 
     if disk_index is not None:
         disk_sessions, disk_set = disk_index

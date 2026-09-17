@@ -90,7 +90,7 @@ from . import survey_templates as _survey_templates
 from . import survey_processing as _survey_processing
 from . import survey_core as _survey_core
 from . import survey_participants_logic as _survey_participants_logic
-from . import survey_column_mapping as _survey_column_mapping
+from . import survey_column_mapping as _survey_column_mapping  # type: ignore[attr-defined]
 
 SurveyValueOutOfBoundsError = _survey_processing.SurveyValueOutOfBoundsError
 

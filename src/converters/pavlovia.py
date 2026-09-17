@@ -125,11 +125,8 @@ def extract_questions(
     """Extract question data from PRISM JSON, filtering out metadata sections."""
     if language is None:
         i18n = prism_json.get("I18n")
-        language = (
-            i18n.get("DefaultLanguage")
-            if isinstance(i18n, dict) and i18n.get("DefaultLanguage")
-            else "en"
-        )
+        default_lang = i18n.get("DefaultLanguage") if isinstance(i18n, dict) else None
+        language = default_lang if isinstance(default_lang, str) and default_lang else "en"
 
     active_variant = _get_active_variant_id(prism_json)
     questions = []
@@ -143,7 +140,8 @@ def extract_questions(
         if resolved is None:
             continue
 
-        raw_levels = resolved.get("Levels") if isinstance(resolved.get("Levels"), dict) else {}
+        levels_value = resolved.get("Levels")
+        raw_levels = levels_value if isinstance(levels_value, dict) else {}
         flat_levels = {
             level_key: _resolve_text(level_value, language)
             for level_key, level_value in raw_levels.items()
@@ -194,7 +192,8 @@ def extract_questions_from_customized_group(
     questions = []
     for q in ordered:
         original = q.get("originalData") or {}
-        raw_levels = original.get("Levels") if isinstance(original.get("Levels"), dict) else {}
+        levels_value = original.get("Levels")
+        raw_levels = levels_value if isinstance(levels_value, dict) else {}
         flat_levels = {
             level_key: _resolve_text(level_value, resolved_language)
             for level_key, level_value in raw_levels.items()

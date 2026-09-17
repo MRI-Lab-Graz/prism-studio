@@ -62,6 +62,8 @@ def load_decoder(decoder_path: Path) -> ModuleType:
     """
     decoder_path = Path(decoder_path)
     spec = importlib.util.spec_from_file_location(decoder_path.stem, decoder_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load decoder module from {decoder_path}")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
