@@ -9,11 +9,13 @@
     },
     {
       "name": "Weber, Bernhard",
-      "affiliation": "MRI-Lab Graz, Department of Psychology, University of Graz"
+      "affiliation": "Institute of Psychology, University of Graz",
+      "orcid": "0000-0001-6598-7772"
     },
     {
       "name": "Matischek, David",
-      "affiliation": "MRI-Lab Graz, Department of Psychology, University of Graz"
+      "affiliation": "Institute of Psychology, University of Graz",
+      "orcid": "0009-0009-7882-4070"
     }
   ],
   "license": "AGPL-3.0",
@@ -31,6 +33,11 @@
     {
       "identifier": "https://github.com/MRI-Lab-Graz/prism-studio",
       "relation": "isSupplementTo",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://prism-studio.readthedocs.io/en/latest/",
+      "relation": "isDocumentedBy",
       "scheme": "url"
     }
   ]
