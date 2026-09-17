@@ -24,7 +24,7 @@ bibliography: paper.bib
 
 # Summary
 
-Studies of human behavior rarely produce a single kind of data: a single session can yield questionnaires, biometrics, physiological recordings, eye tracking, and brain imaging. Yet raw data files are rarely self-explanatory — a column of questionnaire responses is meaningless without knowing the item wording, the label attached to each response option, which items are reverse-scored, or which version and language was administered.
+Studies of human behavior rarely produce a single kind of data: a single session can yield questionnaires, biometrics, physiological recordings, eye tracking, and brain imaging. Yet raw data files are rarely self-explanatory — a column of questionnaire responses is meaningless without knowing the item wording, each response option's label, which items are reverse-scored, or which version and language was administered.
 
 Neuroimaging addressed an equivalent problem with the Brain Imaging Data Structure (BIDS) [@gorgolewski2016bids], which pairs every data file with a JSON sidecar of the same name, organizes files under predictable directory paths, and provides an official validator, making datasets portable across analysis pipelines. Its vocabulary, however, is centrally governed, meaning measurements the specification does not anticipate remain undescribed.
 
@@ -32,23 +32,23 @@ PRISM (Principled Research Information & Sidecar Model) preserves that core prin
 
 # Statement of need
 
-In practice, behavioral data is still described by a codebook: a spreadsheet or PDF appendix listing item wordings, response options, and scoring rules beside the data rather than inside it. Written for human readers, nothing enforces that they are complete, that they stay synchronized with the file they describe, or that the recorded values are among the ones they declare; and their layout is idiosyncratic to each lab, so no tool can read one reliably. Mismatches surface late — when a second analyst or a repository curator opens the dataset and the responses no longer match the scale they were measured on.
+In practice, behavioral data is still described by a codebook: a spreadsheet or PDF appendix listing item wordings, response options, and scoring rules beside the data rather than inside it. Written for human readers, nothing enforces that they are complete, that they stay synchronized with the file they describe, or that the recorded values are among the ones they declare; and their layout is idiosyncratic to each lab, so no tool can read one reliably. Mismatches surface late — when a second analyst opens the dataset and the responses no longer match the scale they were measured on.
 
-BIDS has expanded steadily across neuroimaging modalities, yet the community extension process through which new modalities are formally adopted can take years. Meanwhile, research data continues to outpace any central specification: new instruments, translations, short forms, and novel sensors generate measurements that remain undescribed. Capturing such data with imaging-grade rigor requires two things. First, the description contract must be open, so a lab can define a new instrument or modality itself and validate it immediately. Second, reaching a valid dataset must be achievable by the researchers who collected the data, not only by those who can write code: the tooling has to meet data where it already is — an Excel, CSV, SPSS, or survey-platform export accompanied by a codebook — and lead from there to a validated dataset through a graphical interface as readily as through a script.
+BIDS has expanded steadily across neuroimaging modalities, yet the community extension process through which new modalities are formally adopted can take years. Meanwhile, research data continues to outpace any central specification: new instruments, translations, short forms, and novel sensors generate measurements that remain undescribed. Capturing such data with imaging-grade rigor requires two things. First, the description contract must be open, so a lab can define a new instrument or modality itself and validate it immediately. Second, reaching a valid dataset must be achievable by the researchers who collected it, not only by those who can write code: the tooling has to meet data where it already is — an Excel, CSV, SPSS, or survey-platform export with a codebook — and lead to a validated dataset through a graphical interface as readily as a script.
 
-Beyond validation and portability, well-structured data unlocks downstream tools that reward machine-readable metadata. AI-assisted analysis, automated pipelines, and large-scale data harmonization all become far more tractable when every file carries an unambiguous, schema-backed description — without waiting for a central specification to adopt it first.
+Beyond validation and portability, AI-assisted analysis, automated pipelines, and large-scale data harmonization all become more tractable when every file carries an unambiguous, schema-backed description — without waiting for a central specification to adopt it first.
 
 PRISM datasets remain valid BIDS datasets, with PRISM-specific files declared in `.bidsignore`. The intended users are researchers, data stewards, and tool developers who need richer, machine-checkable descriptions than a central standard can provide — without giving up compatibility with existing BIDS tooling.
 
 # State of the field
 
-Describing research data at scale requires a vocabulary that can grow where the data is produced. Any approach that enumerates measurements centrally — a specification’s modality list, a curated instrument database — supports what has already been encoded and stalls on what has not, because enumeration scales with maintainer effort rather than with the variety of measurements researchers produce.
+Describing research data at scale requires a vocabulary that can grow where the data is produced. Any approach that enumerates measurements centrally — a specification’s modality list, a curated instrument database — supports what has already been encoded and stalls on what has not, because enumeration scales with maintainer effort, not the variety of measurements researchers produce.
 
-BIDS offers one dedicated home for questionnaire and assessment data — a top-level `phenotype/` directory holding one table per instrument, with participants as rows — and it illustrates the trade-off. Such tables store participant-level measures adequately for many studies, but they are flat aggregates rather than the data-and-sidecar pairs the rest of BIDS rests on, so session-, run-, and variant-level context for repeated administrations has nowhere to live. PRISM stays inside the sidecar paradigm while offering a deliberate, optional export to `phenotype/` where compatibility matters more than context.
+BIDS offers one dedicated home for questionnaire and assessment data — a top-level `phenotype/` directory holding one table per instrument, with participants as rows — and it illustrates the trade-off. Such tables store participant-level measures adequately, but as flat aggregates rather than data-and-sidecar pairs, so session-, run-, and variant-level context for repeated administrations has nowhere to live. PRISM stays inside the sidecar paradigm while offering a deliberate, optional export to `phenotype/` where compatibility matters more than context.
 
-The closest neighbor is Psych-DS [@psychds], a community standard pairing CSV files under a `data/` directory with dataset-level JSON-LD metadata, with its own browser-based validator. It shares PRISM's goal of machine-readable description, but validates chiefly dataset structure and file naming: it describes a dataset rather than binding each file to a versioned, per-item contract, and defines its own layout rather than remaining a valid BIDS dataset. REDCap [@harris2009redcap] does enforce item-level constraints, but at capture time, through a data dictionary that governs a database instance rather than travelling with the exported files — once data leaves the system, the export is undescribed again.
+The closest neighbor is Psych-DS [@psychds], a community standard pairing CSV files under a `data/` directory with dataset-level JSON-LD metadata. It shares PRISM's goal of machine-readable description, but validates chiefly dataset structure and file naming: it describes a dataset rather than binding each file to a versioned, per-item contract, and defines its own layout rather than remaining a valid BIDS dataset. REDCap [@harris2009redcap] does enforce item-level constraints, but at capture time, through a data dictionary that governs a database instance rather than travelling with the exported files — once data leaves the system, the export is undescribed again.
 
-Further tools solve adjacent problems but leave a gap: DataLad [@halchenko2021datalad] versions and distributes datasets without defining file contents — PRISM composes with it rather than competing, integrating it optionally to record provenance for dataset mutations and recipe scoring; instrument-specific converters require a code contribution before an uncoded instrument can be described at all.
+Other tools leave a related gap: DataLad [@halchenko2021datalad] versions and distributes datasets without defining file contents — PRISM composes with it rather than competing, optionally recording provenance for dataset mutations and recipe scoring; instrument-specific converters elsewhere require a code contribution before an uncoded instrument can be described at all.
 
 PRISM fixes the shape of a description and leaves its vocabulary open. An unsupported instrument becomes a data-authoring task rather than a feature request, resolvable locally and immediately without upstream approval.
 
@@ -62,8 +62,8 @@ native window (pywebview on macOS, a Chromium application window elsewhere), wit
 a plain-JavaScript frontend and no build step. Converters add `pandas`,
 `openpyxl`, `pyreadstat`, and `pyreadr` to read and write what researchers
 exchange: CSV, Excel, SPSS, R, and LimeSurvey archives. Command line and
-interface share one core, so a workflow assembled interactively can be re-run
-unattended in continuous integration.
+interface share one core, so an interactive workflow can be re-run
+unattended in CI.
 
 **How validation works.** A run walks the dataset tree in four layers.
 *Structure*: each file path is matched against the entity grammar in
@@ -77,19 +77,16 @@ each value is checked against the definition its sidecar gives for that column �
 membership in the declared `Levels`, data type, numeric range — with `n/a`
 marking missing data and instrument variants honoured, so items of a long form
 are not demanded of a short one. *Delegation*: with `--bids`, the official BIDS
-Validator runs over the same tree. All findings are tagged as errors or warnings
-and merged into one report, emitted as JSON and setting a non-zero exit status on
-errors.
+Validator runs over the same tree. All findings are tagged as errors or
+warnings, merged into one JSON report, with a non-zero exit status on errors.
 
-**Rules live in data, not code.** Entity order, modality suffixes, file extensions, and sidecar contracts are JSON schemas — that rules file plus twelve versioned schemas, six of them modalities — so adding a modality or a site-specific check means adding data rather than changing the software: a new schema, a rules entry, or — for checks no schema can express — a Python module dropped into the dataset's `validators/` directory and picked up automatically as a plugin. The cost is the absence of compile-time guarantees and a vocabulary that may differ between sites; it buys extension without forking.
-
-**Two validators, kept separate.** Delegating the BIDS layer rather than reimplementing its rules costs an external dependency and a slower run; in exchange, PRISM cannot drift from the specification it claims compatibility with.
+**Rules live in data, not code.** Entity order, modality suffixes, file extensions, and sidecar contracts are JSON schemas — that rules file plus twelve versioned schemas, six of them modalities — so adding a modality or a site-specific check means adding data rather than changing the software: a new schema, a rules entry, or — for checks no schema can express — a Python module dropped into the dataset's `validators/` directory and picked up automatically as a plugin. The cost is weaker compile-time guarantees and site-specific vocabulary, traded for extension without forking.
 
 **One schema, two strictness profiles.** An `x-prism` block marks fields required only of the curated library (`officialOnlyRequired`) or only of project data (`projectOnlyRequired`), so one schema can demand curation-grade completeness of bundled templates without rejecting a researcher's in-progress questionnaire for lacking a citation.
 
-**Versions coexist so validation stays reproducible.** Three schema versions (`stable`, `v0.1`, `v0.2`) ship side by side, selectable per run — a standing maintenance cost paid so a dataset can still be validated against the rules it was authored under.
+**Versions coexist so validation stays reproducible.** Three schema versions (`stable`, `v0.1`, `v0.2`) ship side by side, selectable per run, so a dataset can still be validated against the rules it was authored under.
 
-**Nothing is written without a preview.** `--dry-run` precedes `--fix`, conversions show what they will produce, and colliding operations report the conflict instead of resolving it silently. Participant data stays on the local machine; the single network call, environmental enrichment, is opt-in. These are constraints rather than features.
+**Nothing is written without a preview.** `--dry-run` precedes `--fix`, conversions show what they will produce, and colliding operations report the conflict instead of resolving it silently. Participant data stays on the local machine; the single network call, environmental enrichment, is opt-in.
 
 **The current library.** The bundled library is the psychology instance of the model, not the model itself: 103 questionnaire templates and one biometrics template, most derived from the PsyToolkit library [@stoet2010psytoolkit; @stoet2017psytoolkit], each with upstream licensing recorded. A project may point PRISM at its own instead.
 
@@ -106,10 +103,10 @@ creation tool. This is use by the developer's own group; the dataset is
 access-restricted under the Austrian NeuroCloud data-use agreement. A graduate
 seminar built on PRISM, *PRISM in Research Practice: Data Validation for
 Psychological Studies* (PSY.91C), is scheduled at the authors' institution for
-the winter semester 2026/27, introducing the model and Studio workflows to
+the winter semester 2026/27, introducing the model to
 students preparing their own datasets. Development is public: issues raised by
-users outside the core team — installation failures, platform-specific path
-handling, packaging requests — are tracked openly and addressed in subsequent
+users outside the core team — installation failures and packaging requests —
+are tracked openly and addressed in subsequent
 releases. The repository provides tagged releases
 (currently 1.18.0), cross-platform builds,
 workshop materials, and example datasets including the synthetic hostile
