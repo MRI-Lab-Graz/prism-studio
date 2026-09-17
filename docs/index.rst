@@ -138,6 +138,19 @@ One structure for multimodal studies
 .. important::
    Source installation requires Python 3.10 or newer.
 
+Citing PRISM
+============
+
+If PRISM is useful in your work, please cite it. Every tagged release is
+archived on Zenodo with a citable DOI:
+
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.22809100.svg
+   :target: https://doi.org/10.5281/zenodo.22809100
+   :alt: DOI
+
+See `CITATION.cff <https://github.com/MRI-Lab-Graz/prism-studio/blob/main/CITATION.cff>`_
+in the repository root for the full citation, including all authors.
+
 .. toctree::
    :maxdepth: 2
    :hidden:
