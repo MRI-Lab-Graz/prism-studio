@@ -32,6 +32,9 @@ exclude_patterns = [
     # Advanced pages intentionally hidden from public RTD navigation.
     "LIMESURVEY_VERSION_DIFFERENCES.md",
     "PAVLOVIA_EXPORT.md",
+    # Maintainer-only checklist, linked from CONTRIBUTING.md for browsing on
+    # GitHub directly; not part of the public docs site.
+    "RELEASE_CHECKLIST.md",
     # Replaced by TUTORIAL_BEGINNER
     "QUICK_START.md",
 ]
