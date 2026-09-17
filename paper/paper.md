@@ -32,7 +32,7 @@ Studies of human behavior rarely produce a single kind of data: a single session
 
 Neuroimaging addressed an equivalent problem with the Brain Imaging Data Structure (BIDS) [@gorgolewski2016bids], which pairs every data file with a JSON sidecar of the same name, organizes files under predictable directory paths, and provides an official validator, making datasets portable across analysis pipelines. Its vocabulary, however, is centrally governed, meaning measurements the specification does not anticipate remain undescribed.
 
-PRISM (Principled Research Information & Sidecar Model) preserves that core principle while opening up the vocabulary. File-naming rules, modality definitions, and sidecar contracts are defined as JSON schemas that any lab can extend, so an instrument PRISM has never encountered can be fully described and validated without modifying the software itself. PRISM ships a validator, format converters, and PRISM Studio — a local graphical interface paired with a matching command-line interface. Its current modalities and template library are oriented toward psychological research, but the underlying mechanism is entirely domain-agnostic: psychology is PRISM’s first application, not its limit.
+PRISM (Principled Research Information & Sidecar Model) — named for its commitment to the FAIR data principles [@wilkinson2016fair], applied at the level of the individual file rather than the repository as a whole — preserves that core principle while opening up the vocabulary. File-naming rules, modality definitions, and sidecar contracts are defined as JSON schemas that any lab can extend, so an instrument PRISM has never encountered can be fully described and validated without modifying the software itself. PRISM ships a validator, format converters, and PRISM Studio — a local graphical interface paired with a matching command-line interface. Its current modalities and template library are oriented toward psychological research, but the underlying mechanism is entirely domain-agnostic: psychology is PRISM’s first application, not its limit.
 
 # Statement of need
 
@@ -48,11 +48,9 @@ PRISM datasets remain valid BIDS datasets, with PRISM-specific files declared in
 
 Describing research data at scale requires a vocabulary that can grow where the data is produced. Any approach that enumerates measurements centrally — a specification’s modality list, a curated instrument database — supports what has already been encoded and stalls on what has not, because enumeration scales with maintainer effort, not the variety of measurements researchers produce.
 
-BIDS offers one dedicated home for questionnaire and assessment data — a top-level `phenotype/` directory holding one table per instrument, with participants as rows — and it illustrates the trade-off. Such tables store participant-level measures adequately, but as flat aggregates rather than data-and-sidecar pairs, so session-, run-, and variant-level context for repeated administrations has nowhere to live. PRISM stays inside the sidecar paradigm while offering a deliberate, optional export to `phenotype/` where compatibility matters more than context.
+Even BIDS is not fully consistent with its own principle here: imaging files get the full data-plus-sidecar treatment, but its one home for this kind of data, `phenotype/`, falls back to a flat table, one row per participant, dropping the per-file sidecar the rest of the standard insists on. That fallback suits a score recorded once per participant, but has no place to keep session-, run-, or variant-level detail once the same instrument is administered more than once. PRISM applies the sidecar principle uniformly instead: every administration is its own sidecar-described file, with the flat `phenotype/` table available only as an optional export when matching the wider BIDS toolchain outweighs that detail.
 
-The closest neighbor is Psych-DS [@psychds], a community standard pairing CSV files under a `data/` directory with dataset-level JSON-LD metadata. It shares PRISM's goal of machine-readable description, but validates chiefly dataset structure and file naming: it describes a dataset rather than binding each file to a versioned, per-item contract, and defines its own layout rather than remaining a valid BIDS dataset. REDCap [@harris2009redcap] does enforce item-level constraints, but at capture time, through a data dictionary that governs a database instance rather than travelling with the exported files — once data leaves the system, the export is undescribed again.
-
-Other tools leave a related gap: DataLad [@halchenko2021datalad] versions and distributes datasets without defining file contents — PRISM composes with it rather than competing, optionally recording provenance for dataset mutations and recipe scoring; instrument-specific converters elsewhere require a code contribution before an uncoded instrument can be described at all.
+The closest neighbor is Psych-DS [@psychds], a community standard pairing CSV files under a `data/` directory with dataset-level JSON-LD metadata; it targets dataset structure and file naming rather than a per-file, per-item contract, and defines its own layout rather than remaining a valid BIDS dataset. REDCap [@harris2009redcap] enforces item-level constraints, but only inside its own database — once data is exported, that description is lost. DataLad [@halchenko2021datalad] versions and distributes datasets without defining file contents; PRISM composes with it rather than competing, optionally recording provenance for dataset mutations and recipe scoring. Elsewhere, instrument-specific converters require a code contribution before an uncoded instrument can be described at all.
 
 PRISM fixes the shape of a description and leaves its vocabulary open. An unsupported instrument becomes a data-authoring task rather than a feature request, resolvable locally and immediately without upstream approval.
 
@@ -94,9 +92,9 @@ warnings, merged into one JSON report, with a non-zero exit status on errors.
 
 **Nothing is written without a preview.** `--dry-run` precedes `--fix`, conversions show what they will produce, and colliding operations report the conflict instead of resolving it silently. Participant data stays on the local machine; the single network call, environmental enrichment, is opt-in.
 
-**The current library.** The bundled library is the psychology instance of the model, not the model itself: 103 questionnaire templates and one biometrics template, most derived from the PsyToolkit library [@stoet2010psytoolkit; @stoet2017psytoolkit], each with upstream licensing recorded. A project may point PRISM at its own instead.
+**The current library.** The bundled library is the psychology instance of the model, not the model itself: 103 questionnaire templates and one biometrics template, each with upstream licensing recorded. A project may point PRISM at its own instead.
 
-**Testing.** 3,727 automated tests across 268 files, plus browser-side tests for the Studio interface, run in continuous integration on every push alongside static analysis (`ruff`, `mypy`), secret scanning, and architectural-invariant checks. Data-handling paths are additionally exercised against adversarial input: a seeded generator builds a synthetic dataset of 59 deliberately hostile cases — among them session labels that must stay distinct (`ses-1`, `ses-01`, `ses-pre`), non-ASCII subject labels, and invalid acquisition timestamps — whose documented outcomes 51 tests assert case by case.
+**Testing.** 3,730 automated tests across 268 files, plus browser-side tests for the Studio interface, run in continuous integration on every push alongside static analysis (`ruff`, `mypy`), secret scanning, and architectural-invariant checks. Data-handling paths are additionally exercised against adversarial input: a seeded generator builds a synthetic dataset of 59 deliberately hostile cases — among them session labels that must stay distinct (`ses-1`, `ses-01`, `ses-pre`), non-ASCII subject labels, and invalid acquisition timestamps — whose documented outcomes 51 tests assert case by case.
 
 Usage-level material — installation, the command reference, converter walkthroughs, and the Studio guide — is maintained as documentation at <https://prism-studio.readthedocs.io> rather than reproduced here.
 
@@ -113,8 +111,8 @@ the winter semester 2026/27, introducing the model to
 students preparing their own datasets. Development is public: issues raised by
 users outside the core team — installation failures and packaging requests —
 are tracked openly and addressed in subsequent
-releases. The repository provides tagged releases
-(currently 1.19.0), cross-platform builds,
+releases. The repository provides tagged, archived releases
+[@prism_software] (currently 1.19.0), cross-platform builds,
 workshop materials, and example datasets including the synthetic hostile
 dataset, so that other groups can test the workflows locally.
 
@@ -124,12 +122,11 @@ The authors declare no competing interests.
 
 # AI usage disclosure
 
-GPT-5.3 (OpenAI), Claude Sonnet 5 and Claude Opus 4.6 (Anthropic), and
-GitHub Copilot were used to assist with code drafting and refactoring,
-documentation, and manuscript drafting and editing. The GitHub Copilot model
-and version were not recorded. The authors reviewed all AI-assisted output,
-accept full responsibility for the software and this paper, and made the
-substantive software-design and framing decisions.
+GPT-5.3 (OpenAI), Claude Sonnet 5 and Opus 4.6 (Anthropic), and GitHub
+Copilot (model/version unrecorded) assisted with code, documentation, and
+manuscript drafting. The authors reviewed all output, made every
+software-design and framing decision, and accept full responsibility for the
+software and this paper.
 
 # Acknowledgements
 
