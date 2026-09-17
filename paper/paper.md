@@ -75,8 +75,9 @@ contracts create and validate sidecar-described datasets.
 suffixes and extensions a modality permits — and subject and session labels are
 checked for consistency across the dataset. *Metadata*: every data file must have
 a JSON sidecar; sidecars are resolved through BIDS inheritance, merging the
-dataset- and subject-level files before validating the result against the JSON
-Schema (draft-07) registered for that modality. *Content*: for tabular modalities
+dataset- and subject-level files before validating the result against that
+modality's schema, written to the JSON Schema specification's draft-07
+dialect. *Content*: for tabular modalities
 each value is checked against the definition its sidecar gives for that column —
 membership in the declared `Levels`, data type, numeric range — with `n/a`
 marking missing data and instrument variants honoured, so items of a long form
@@ -86,11 +87,11 @@ warnings, merged into one JSON report, with a non-zero exit status on errors.
 
 **Rules live in data, not code.** Entity order, modality suffixes, file extensions, and sidecar contracts are JSON schemas — that rules file plus twelve versioned schemas, six of them modalities — so adding a modality or a site-specific check means adding data rather than changing the software: a new schema, a rules entry, or — for checks no schema can express — a Python module dropped into the dataset's `validators/` directory and picked up automatically as a plugin. The cost is weaker compile-time guarantees and site-specific vocabulary, traded for extension without forking.
 
-**One schema, two strictness profiles.** An `x-prism` block marks fields required only of the curated library (`officialOnlyRequired`) or only of project data (`projectOnlyRequired`), so one schema can demand curation-grade completeness of bundled templates without rejecting a researcher's in-progress questionnaire for lacking a citation.
+**One schema, two strictness profiles.** Each schema carries an `x-prism` block — a vendor-extension keyword, ignored by generic JSON Schema validators and read only by PRISM's own — that marks fields required only of the curated library (`officialOnlyRequired`) or only of project data (`projectOnlyRequired`), so one schema can demand curation-grade completeness of bundled templates without rejecting a researcher's in-progress questionnaire for lacking a citation.
 
 **Versions coexist so validation stays reproducible.** Three schema versions (`stable`, `v0.1`, `v0.2`) ship side by side, selectable per run, so a dataset can still be validated against the rules it was authored under.
 
-**Nothing is written without a preview.** `--dry-run` precedes `--fix`, conversions show what they will produce, and colliding operations report the conflict instead of resolving it silently. Participant data stays on the local machine; the single network call, environmental enrichment, is opt-in.
+**Nothing is written without a preview.** `--fix` auto-repairs common issues (a missing sidecar, a missing `.bidsignore`, and the like); paired with `--dry-run` it reports what it would change without writing anything, so a run with `--fix --dry-run` is expected before the same command without `--dry-run` applies it. Converters likewise preview what they will produce before writing, and an operation that would overwrite existing output reports the conflict instead of resolving it silently. Participant data stays on the local machine; the single network call, environmental enrichment, is opt-in.
 
 **The current library.** The bundled library is the psychology instance of the model, not the model itself: 103 questionnaire templates and one biometrics template, each with upstream licensing recorded. A project may point PRISM at its own instead.
 
