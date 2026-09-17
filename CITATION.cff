@@ -4,8 +4,8 @@ title: "PRISM"
 abstract: "A BIDS-compatible validator and metadata framework for psychological experiment datasets."
 type: software
 license: "AGPL-3.0"
-version: "1.18.1"
-date-released: "2026-09-16"
+version: "1.19.0"
+date-released: "2026-09-17"
 repository-code: "https://github.com/MRI-Lab-Graz/prism-studio"
 url: "https://prism-studio.readthedocs.io/en/latest/"
 authors:
@@ -13,3 +13,7 @@ authors:
     given-names: "Karl"
     orcid: "https://orcid.org/0000-0001-6234-0498"
     email: "karl.koschutnig@uni-graz.at"
+  - family-names: "Weber"
+    given-names: "Bernhard"
+  - family-names: "Matischek"
+    given-names: "David"

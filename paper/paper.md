@@ -110,7 +110,7 @@ students preparing their own datasets. Development is public: issues raised by
 users outside the core team — installation failures and packaging requests —
 are tracked openly and addressed in subsequent
 releases. The repository provides tagged releases
-(currently 1.18.1), cross-platform builds,
+(currently 1.19.0), cross-platform builds,
 workshop materials, and example datasets including the synthetic hostile
 dataset, so that other groups can test the workflows locally.
 

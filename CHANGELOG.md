@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.0] - 2026-09-17
+
+### Added
+- **Zenodo archival**: `.zenodo.json` added and Zenodo↔GitHub integration
+  enabled, so tagged releases from this point on mint a citable DOI
+  automatically.
+
+### Fixed
+- **Two stale test assertions** in `test_tools_file_browser_handlers.py`
+  that predated the file browser's `start_dir` query parameter.
+- **All 27 mypy errors** the repo's static-analysis check was reporting
+  across 12 files (missing variable annotations, unguarded `Optional`
+  results, a couple of same-function variable-name collisions, and a
+  `Dict` invariance issue against `pyreadstat`'s stubs) — CI's mypy gate
+  is green again, matching what the JOSS paper already claimed about it.
+- **`CITATION.cff` was missing two of the paper's three authors** (Bernhard
+  Weber, David Matischek) and had a stale version/date — now lists all
+  three authors and stays in sync with the current release.
+
+### Changed
+- **`paper/paper.md` trimmed to clear JOSS's 750-1750 word limit**
+  (~1831 words → ~1740), added a figure comparing PRISM's native survey
+  layout to the BIDS `phenotype/` compatibility export, and removed three
+  other figure assets that had no corresponding prose. Release version
+  references across `paper.md`, `paper.bib`, and `CITATION.cff` now match
+  the current tag.
+
 ## [1.18.1] - 2026-09-16
 
 ### Added

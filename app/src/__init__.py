@@ -7,7 +7,7 @@ This package validates multi-modal research datasets in which every data file is
 paired with a JSON sidecar, using extensible schemas for each modality.
 """
 
-__version__ = "1.18.1"
+__version__ = "1.19.0"
 __author__ = "MRI-Lab-Graz"
 
 try:

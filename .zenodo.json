@@ -1,0 +1,37 @@
+{
+  "title": "PRISM: an extensible data-and-sidecar model for describing and validating research data",
+  "description": "PRISM (Principled Research Information & Sidecar Model) is a BIDS-compatible validator and toolkit for research data. It pairs every data file with a JSON sidecar of the same name using extensible, lab-definable schemas, so an instrument PRISM has never encountered can be fully described and validated without modifying the software. PRISM ships a validator, format converters, and PRISM Studio, a local graphical interface paired with a matching command-line interface. Its current modalities and template library are oriented toward psychological research, but the underlying mechanism is domain-agnostic.",
+  "creators": [
+    {
+      "name": "Koschutnig, Karl",
+      "affiliation": "MRI-Lab Graz, Department of Psychology, University of Graz",
+      "orcid": "0000-0001-6234-0498"
+    },
+    {
+      "name": "Weber, Bernhard",
+      "affiliation": "MRI-Lab Graz, Department of Psychology, University of Graz"
+    },
+    {
+      "name": "Matischek, David",
+      "affiliation": "MRI-Lab Graz, Department of Psychology, University of Graz"
+    }
+  ],
+  "license": "AGPL-3.0",
+  "upload_type": "software",
+  "access_right": "open",
+  "keywords": [
+    "research data management",
+    "metadata",
+    "validation",
+    "JSON schema",
+    "BIDS",
+    "psychology"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/MRI-Lab-Graz/prism-studio",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}
