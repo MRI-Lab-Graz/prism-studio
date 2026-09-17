@@ -1,0 +1,483 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.2 20190208//EN"
+                  "JATS-publishing1.dtd">
+<article xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" dtd-version="1.2" article-type="other">
+<front>
+<journal-meta>
+<journal-id></journal-id>
+<journal-title-group>
+<journal-title>Journal of Open Source Software</journal-title>
+<abbrev-journal-title>JOSS</abbrev-journal-title>
+</journal-title-group>
+<issn publication-format="electronic">2475-9066</issn>
+<publisher>
+<publisher-name>Open Journals</publisher-name>
+</publisher>
+</journal-meta>
+<article-meta>
+<article-id pub-id-type="publisher-id">0</article-id>
+<article-id pub-id-type="doi">N/A</article-id>
+<title-group>
+<article-title>PRISM: extensible sidecar metadata and validation for
+research data</article-title>
+</title-group>
+<contrib-group>
+<contrib contrib-type="author">
+<contrib-id contrib-id-type="orcid">https://orcid.org/0000-0001-6234-0498</contrib-id>
+<name>
+<surname>Koschutnig</surname>
+<given-names>Karl</given-names>
+</name>
+<xref ref-type="aff" rid="aff-1"/>
+</contrib>
+<contrib contrib-type="author">
+<contrib-id contrib-id-type="orcid">https://orcid.org/0000-0001-6598-7772</contrib-id>
+<name>
+<surname>Weber</surname>
+<given-names>Bernhard</given-names>
+</name>
+<xref ref-type="aff" rid="aff-2"/>
+</contrib>
+<contrib contrib-type="author">
+<contrib-id contrib-id-type="orcid">https://orcid.org/0009-0009-7882-4070</contrib-id>
+<name>
+<surname>Matischek</surname>
+<given-names>David</given-names>
+</name>
+<xref ref-type="aff" rid="aff-2"/>
+</contrib>
+<aff id="aff-1">
+<institution-wrap>
+<institution>MRI-Lab Graz, Department of Psychology, University of Graz,
+Graz, Austria</institution>
+</institution-wrap>
+</aff>
+<aff id="aff-2">
+<institution-wrap>
+<institution>Institute of Psychology, University of Graz, Graz,
+Austria</institution>
+</institution-wrap>
+</aff>
+</contrib-group>
+<pub-date date-type="pub" publication-format="electronic" iso-8601-date="2026-09-17">
+<day>17</day>
+<month>9</month>
+<year>2026</year>
+</pub-date>
+<volume>¿VOL?</volume>
+<issue>¿ISSUE?</issue>
+<fpage>¿PAGE?</fpage>
+<permissions>
+<copyright-statement>Authors of papers retain copyright and release the
+work under a Creative Commons Attribution 4.0 International License (CC
+BY 4.0)</copyright-statement>
+<copyright-year>1970</copyright-year>
+<copyright-holder>The article authors</copyright-holder>
+<license license-type="open-access" xlink:href="https://creativecommons.org/licenses/by/4.0/">
+<license-p>Authors of papers retain copyright and release the work under
+a Creative Commons Attribution 4.0 International License (CC BY
+4.0)</license-p>
+</license>
+</permissions>
+<kwd-group kwd-group-type="author">
+<kwd>research data management</kwd>
+<kwd>metadata</kwd>
+<kwd>validation</kwd>
+<kwd>JSON schema</kwd>
+<kwd>BIDS</kwd>
+<kwd>psychology</kwd>
+</kwd-group>
+</article-meta>
+</front>
+<body>
+<sec id="summary">
+  <title>Summary</title>
+  <p>Studies of human behavior rarely produce a single kind of data: a
+  single session can yield questionnaires, biometrics, physiological
+  recordings, eye tracking, and brain imaging. Yet raw data files are
+  rarely self-explanatory — a column of questionnaire responses is
+  meaningless without knowing the item wording, each response option’s
+  label, which items are reverse-scored, or which version and language
+  was administered.</p>
+  <p>Neuroimaging addressed an equivalent problem with the Brain Imaging
+  Data Structure (BIDS)
+  (<xref alt="Gorgolewski et al., 2016" rid="ref-gorgolewski2016bids" ref-type="bibr">Gorgolewski
+  et al., 2016</xref>), which pairs every data file with a JSON sidecar
+  of the same name, organizes files under predictable directory paths,
+  and provides an official validator, making datasets portable across
+  analysis pipelines. Its vocabulary, however, is centrally governed,
+  meaning measurements the specification does not anticipate remain
+  undescribed.</p>
+  <p>PRISM (Principled Research Information &amp; Sidecar Model)
+  preserves that core principle while opening up the vocabulary.
+  File-naming rules, modality definitions, and sidecar contracts are
+  defined as JSON schemas that any lab can extend, so an instrument
+  PRISM has never encountered can be fully described and validated
+  without modifying the software itself. PRISM ships a validator, format
+  converters, and PRISM Studio — a local graphical interface paired with
+  a matching command-line interface. Its current modalities and template
+  library are oriented toward psychological research, but the underlying
+  mechanism is entirely domain-agnostic: psychology is PRISM’s first
+  application, not its limit.</p>
+</sec>
+<sec id="statement-of-need">
+  <title>Statement of need</title>
+  <p>In practice, behavioral data is still described by a codebook: a
+  spreadsheet or PDF appendix listing item wordings, response options,
+  and scoring rules beside the data rather than inside it. Written for
+  human readers, nothing enforces that they are complete, that they stay
+  synchronized with the file they describe, or that the recorded values
+  are among the ones they declare; and their layout is idiosyncratic to
+  each lab, so no tool can read one reliably. Mismatches surface late —
+  when a second analyst opens the dataset and the responses no longer
+  match the scale they were measured on.</p>
+  <p>BIDS has expanded steadily across neuroimaging modalities, yet the
+  community extension process through which new modalities are formally
+  adopted can take years. Meanwhile, research data continues to outpace
+  any central specification: new instruments, translations, short forms,
+  and novel sensors generate measurements that remain undescribed.
+  Capturing such data with imaging-grade rigor requires two things.
+  First, the description contract must be open, so a lab can define a
+  new instrument or modality itself and validate it immediately. Second,
+  reaching a valid dataset must be achievable by the researchers who
+  collected it, not only by those who can write code: the tooling has to
+  meet data where it already is — an Excel, CSV, SPSS, or
+  survey-platform export with a codebook — and lead to a validated
+  dataset through a graphical interface as readily as a script.</p>
+  <p>Beyond validation and portability, AI-assisted analysis, automated
+  pipelines, and large-scale data harmonization all become more
+  tractable when every file carries an unambiguous, schema-backed
+  description — without waiting for a central specification to adopt it
+  first.</p>
+  <p>PRISM datasets remain valid BIDS datasets, with PRISM-specific
+  files declared in <monospace>.bidsignore</monospace>. The intended
+  users are researchers, data stewards, and tool developers who need
+  richer, machine-checkable descriptions than a central standard can
+  provide — without giving up compatibility with existing BIDS
+  tooling.</p>
+</sec>
+<sec id="state-of-the-field">
+  <title>State of the field</title>
+  <p>Describing research data at scale requires a vocabulary that can
+  grow where the data is produced. Any approach that enumerates
+  measurements centrally — a specification’s modality list, a curated
+  instrument database — supports what has already been encoded and
+  stalls on what has not, because enumeration scales with maintainer
+  effort, not the variety of measurements researchers produce.</p>
+  <p>BIDS offers one dedicated home for questionnaire and assessment
+  data — a top-level <monospace>phenotype/</monospace> directory holding
+  one table per instrument, with participants as rows — and it
+  illustrates the trade-off. Such tables store participant-level
+  measures adequately, but as flat aggregates rather than
+  data-and-sidecar pairs, so session-, run-, and variant-level context
+  for repeated administrations has nowhere to live. PRISM stays inside
+  the sidecar paradigm while offering a deliberate, optional export to
+  <monospace>phenotype/</monospace> where compatibility matters more
+  than context.</p>
+  <p>The closest neighbor is Psych-DS
+  (<xref alt="Kline Struhl et al., 2026" rid="ref-psychds" ref-type="bibr">Kline
+  Struhl et al., 2026</xref>), a community standard pairing CSV files
+  under a <monospace>data/</monospace> directory with dataset-level
+  JSON-LD metadata. It shares PRISM’s goal of machine-readable
+  description, but validates chiefly dataset structure and file naming:
+  it describes a dataset rather than binding each file to a versioned,
+  per-item contract, and defines its own layout rather than remaining a
+  valid BIDS dataset. REDCap
+  (<xref alt="Harris et al., 2009" rid="ref-harris2009redcap" ref-type="bibr">Harris
+  et al., 2009</xref>) does enforce item-level constraints, but at
+  capture time, through a data dictionary that governs a database
+  instance rather than travelling with the exported files — once data
+  leaves the system, the export is undescribed again.</p>
+  <p>Other tools leave a related gap: DataLad
+  (<xref alt="Halchenko et al., 2021" rid="ref-halchenko2021datalad" ref-type="bibr">Halchenko
+  et al., 2021</xref>) versions and distributes datasets without
+  defining file contents — PRISM composes with it rather than competing,
+  optionally recording provenance for dataset mutations and recipe
+  scoring; instrument-specific converters elsewhere require a code
+  contribution before an uncoded instrument can be described at all.</p>
+  <p>PRISM fixes the shape of a description and leaves its vocabulary
+  open. An unsupported instrument becomes a data-authoring task rather
+  than a feature request, resolvable locally and immediately without
+  upstream approval.</p>
+</sec>
+<sec id="software-design">
+  <title>Software design</title>
+  <p><bold>Implementation.</bold> PRISM is written in Python (3.10+).
+  The validation engine needs only <monospace>jsonschema</monospace>,
+  <monospace>defusedxml</monospace>, and the official
+  <monospace>bids-validator</monospace> for the optional BIDS pass, so
+  <monospace>prism-validator</monospace> runs on a machine carrying none
+  of the Studio stack. PRISM Studio is a local Flask application served
+  by <monospace>waitress</monospace> in a native window (pywebview on
+  macOS, a Chromium application window elsewhere), with a
+  plain-JavaScript frontend and no build step. Converters add
+  <monospace>pandas</monospace>, <monospace>openpyxl</monospace>,
+  <monospace>pyreadstat</monospace>, and <monospace>pyreadr</monospace>
+  to read and write what researchers exchange: CSV, Excel, SPSS, R, and
+  LimeSurvey archives. Command line and interface share one core. Figure
+  1 shows the shared engine: adapters and contracts create and validate
+  sidecar-described datasets.</p>
+  <fig>
+    <caption><p>PRISM combines research data and schemas in one engine,
+    creating and validating BIDS-compatible datasets through Studio or
+    the command line.</p></caption>
+    <graphic mimetype="application" mime-subtype="pdf" xlink:href="prism_workflow.pdf" />
+  </fig>
+  <p><bold>How validation works.</bold> A run walks the dataset tree in
+  four layers. <italic>Structure</italic>: each file path is matched
+  against the entity grammar in
+  <monospace>entities.schema.json</monospace> — which entities may
+  appear, in which order, and which suffixes and extensions a modality
+  permits — and subject and session labels are checked for consistency
+  across the dataset. <italic>Metadata</italic>: every data file must
+  have a JSON sidecar; sidecars are resolved through BIDS inheritance,
+  merging the dataset- and subject-level files before validating the
+  result against the JSON Schema (draft-07) registered for that
+  modality. <italic>Content</italic>: for tabular modalities each value
+  is checked against the definition its sidecar gives for that column —
+  membership in the declared <monospace>Levels</monospace>, data type,
+  numeric range — with <monospace>n/a</monospace> marking missing data
+  and instrument variants honoured, so items of a long form are not
+  demanded of a short one. <italic>Delegation</italic>: with
+  <monospace>--bids</monospace>, the official BIDS Validator runs over
+  the same tree. All findings are tagged as errors or warnings, merged
+  into one JSON report, with a non-zero exit status on errors.</p>
+  <p><bold>Rules live in data, not code.</bold> Entity order, modality
+  suffixes, file extensions, and sidecar contracts are JSON schemas —
+  that rules file plus twelve versioned schemas, six of them modalities
+  — so adding a modality or a site-specific check means adding data
+  rather than changing the software: a new schema, a rules entry, or —
+  for checks no schema can express — a Python module dropped into the
+  dataset’s <monospace>validators/</monospace> directory and picked up
+  automatically as a plugin. The cost is weaker compile-time guarantees
+  and site-specific vocabulary, traded for extension without
+  forking.</p>
+  <p><bold>One schema, two strictness profiles.</bold> An
+  <monospace>x-prism</monospace> block marks fields required only of the
+  curated library (<monospace>officialOnlyRequired</monospace>) or only
+  of project data (<monospace>projectOnlyRequired</monospace>), so one
+  schema can demand curation-grade completeness of bundled templates
+  without rejecting a researcher’s in-progress questionnaire for lacking
+  a citation.</p>
+  <p><bold>Versions coexist so validation stays reproducible.</bold>
+  Three schema versions (<monospace>stable</monospace>,
+  <monospace>v0.1</monospace>, <monospace>v0.2</monospace>) ship side by
+  side, selectable per run, so a dataset can still be validated against
+  the rules it was authored under.</p>
+  <p><bold>Nothing is written without a preview.</bold>
+  <monospace>--dry-run</monospace> precedes
+  <monospace>--fix</monospace>, conversions show what they will produce,
+  and colliding operations report the conflict instead of resolving it
+  silently. Participant data stays on the local machine; the single
+  network call, environmental enrichment, is opt-in.</p>
+  <p><bold>The current library.</bold> The bundled library is the
+  psychology instance of the model, not the model itself: 103
+  questionnaire templates and one biometrics template, most derived from
+  the PsyToolkit library
+  (<xref alt="Stoet, 2010" rid="ref-stoet2010psytoolkit" ref-type="bibr">Stoet,
+  2010</xref>,
+  <xref alt="2017" rid="ref-stoet2017psytoolkit" ref-type="bibr">2017</xref>),
+  each with upstream licensing recorded. A project may point PRISM at
+  its own instead.</p>
+  <p><bold>Testing.</bold> 3,727 automated tests across 268 files, plus
+  browser-side tests for the Studio interface, run in continuous
+  integration on every push alongside static analysis
+  (<monospace>ruff</monospace>, <monospace>mypy</monospace>), secret
+  scanning, and architectural-invariant checks. Data-handling paths are
+  additionally exercised against adversarial input: a seeded generator
+  builds a synthetic dataset of 59 deliberately hostile cases — among
+  them session labels that must stay distinct
+  (<monospace>ses-1</monospace>, <monospace>ses-01</monospace>,
+  <monospace>ses-pre</monospace>), non-ASCII subject labels, and invalid
+  acquisition timestamps — whose documented outcomes 51 tests assert
+  case by case.</p>
+  <p>Usage-level material — installation, the command reference,
+  converter walkthroughs, and the Studio guide — is maintained as
+  documentation at
+  <ext-link ext-link-type="uri" xlink:href="https://prism-studio.readthedocs.io">https://prism-studio.readthedocs.io</ext-link>
+  rather than reproduced here.</p>
+</sec>
+<sec id="research-impact-statement">
+  <title>Research impact statement</title>
+  <p>PRISM was built for, and used to prepare, the mixed-modality
+  Austrian NeuroCloud dataset <italic>Creativity: a (white) matter of
+  connectivity</italic>
+  (<xref alt="Koschutnig et al., 2026" rid="ref-koschutnig2026creativity" ref-type="bibr">Koschutnig
+  et al., 2026</xref>), whose metadata record names PRISM Studio as its
+  creation tool. This is use by the developer’s own group; the dataset
+  is access-restricted under the Austrian NeuroCloud data-use agreement.
+  A graduate seminar built on PRISM, <italic>PRISM in Research Practice:
+  Data Validation for Psychological Studies</italic> (PSY.91C), is
+  scheduled at the authors’ institution for the winter semester 2026/27,
+  introducing the model to students preparing their own datasets.
+  Development is public: issues raised by users outside the core team —
+  installation failures and packaging requests — are tracked openly and
+  addressed in subsequent releases. The repository provides tagged
+  releases (currently 1.19.0), cross-platform builds, workshop
+  materials, and example datasets including the synthetic hostile
+  dataset, so that other groups can test the workflows locally.</p>
+</sec>
+<sec id="conflict-of-interest">
+  <title>Conflict of interest</title>
+  <p>The authors declare no competing interests.</p>
+</sec>
+<sec id="ai-usage-disclosure">
+  <title>AI usage disclosure</title>
+  <p>GPT-5.3 (OpenAI), Claude Sonnet 5 and Claude Opus 4.6 (Anthropic),
+  and GitHub Copilot were used to assist with code drafting and
+  refactoring, documentation, and manuscript drafting and editing. The
+  GitHub Copilot model and version were not recorded. The authors
+  reviewed all AI-assisted output, accept full responsibility for the
+  software and this paper, and made the substantive software-design and
+  framing decisions.</p>
+</sec>
+<sec id="acknowledgements">
+  <title>Acknowledgements</title>
+  <p>The authors thank the MRI-Lab Graz community for testing, issue
+  reports, and feedback, and the BIDS community for the standard on
+  which PRISM builds.</p>
+</sec>
+</body>
+<back>
+<ref-list>
+  <title></title>
+  <ref id="ref-stoet2010psytoolkit">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Stoet</surname><given-names>Gijsbert</given-names></name>
+      </person-group>
+      <article-title>PsyToolkit: A software package for programming psychological experiments using Linux</article-title>
+      <source>Behavior Research Methods</source>
+      <year iso-8601-date="2010">2010</year>
+      <volume>42</volume>
+      <issue>4</issue>
+      <pub-id pub-id-type="doi">10.3758/BRM.42.4.1096</pub-id>
+      <fpage>1096</fpage>
+      <lpage>1104</lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-stoet2017psytoolkit">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Stoet</surname><given-names>Gijsbert</given-names></name>
+      </person-group>
+      <article-title>PsyToolkit: A novel web-based method for running online questionnaires and reaction-time experiments</article-title>
+      <source>Teaching of Psychology</source>
+      <year iso-8601-date="2017">2017</year>
+      <volume>44</volume>
+      <issue>1</issue>
+      <pub-id pub-id-type="doi">10.1177/0098628316677643</pub-id>
+      <fpage>24</fpage>
+      <lpage>31</lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-koschutnig2026creativity">
+    <element-citation>
+      <person-group person-group-type="author">
+        <name><surname>Koschutnig</surname><given-names>Karl</given-names></name>
+        <name><surname>Fink</surname><given-names>Andreas</given-names></name>
+        <name><surname>Klepits</surname><given-names>Patrick</given-names></name>
+        <name><surname>Rominger</surname><given-names>Christian</given-names></name>
+        <name><surname>Perchtold-Stefan</surname><given-names>Corinna</given-names></name>
+        <name><surname>Zussner</surname><given-names>Thomas</given-names></name>
+      </person-group>
+      <article-title>Creativity: A (white) matter of connectivity</article-title>
+      <publisher-name>Austrian NeuroCloud</publisher-name>
+      <year iso-8601-date="2026">2026</year>
+      <uri>https://doi.org/10.60817/sama-va10</uri>
+      <pub-id pub-id-type="doi">10.60817/sama-va10</pub-id>
+    </element-citation>
+  </ref>
+  <ref id="ref-halchenko2021datalad">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Halchenko</surname><given-names>Yaroslav O.</given-names></name>
+        <name><surname>Meyer</surname><given-names>Kyle</given-names></name>
+        <name><surname>Poldrack</surname><given-names>Benjamin</given-names></name>
+        <name><surname>others</surname></name>
+      </person-group>
+      <article-title>DataLad: Distributed system for joint management of code, data, and their relationship</article-title>
+      <source>Journal of Open Source Software</source>
+      <year iso-8601-date="2021">2021</year>
+      <volume>6</volume>
+      <issue>63</issue>
+      <pub-id pub-id-type="doi">10.21105/joss.03262</pub-id>
+      <fpage>3262</fpage>
+      <lpage></lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-psychds">
+    <element-citation>
+      <person-group person-group-type="author">
+        <name><surname>Kline Struhl</surname><given-names>Melissa</given-names></name>
+        <name><surname>Leonard</surname><given-names>Brian</given-names></name>
+        <string-name>Psych-DS Community</string-name>
+      </person-group>
+      <article-title>Psych-DS: A community data standard and technical specification for psychological datasets</article-title>
+      <publisher-name>https://psych-ds.github.io/</publisher-name>
+      <year iso-8601-date="2026">2026</year>
+    </element-citation>
+  </ref>
+  <ref id="ref-harris2009redcap">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Harris</surname><given-names>Paul A.</given-names></name>
+        <name><surname>Taylor</surname><given-names>Robert</given-names></name>
+        <name><surname>Thielke</surname><given-names>Robert</given-names></name>
+        <name><surname>Payne</surname><given-names>Jonathon</given-names></name>
+        <name><surname>Gonzalez</surname><given-names>Nathaniel</given-names></name>
+        <name><surname>Conde</surname><given-names>Jose G.</given-names></name>
+      </person-group>
+      <article-title>Research electronic data capture (REDCap) — a metadata-driven methodology and workflow process for providing translational research informatics support</article-title>
+      <source>Journal of Biomedical Informatics</source>
+      <year iso-8601-date="2009">2009</year>
+      <volume>42</volume>
+      <issue>2</issue>
+      <pub-id pub-id-type="doi">10.1016/j.jbi.2008.08.010</pub-id>
+      <fpage>377</fpage>
+      <lpage>381</lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-gorgolewski2016bids">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Gorgolewski</surname><given-names>Krzysztof J.</given-names></name>
+        <name><surname>Auer</surname><given-names>Tibor</given-names></name>
+        <name><surname>Calhoun</surname><given-names>Vince D.</given-names></name>
+        <name><surname>Craddock</surname><given-names>R. Cameron</given-names></name>
+        <name><surname>Das</surname><given-names>Samir</given-names></name>
+        <name><surname>Duff</surname><given-names>Eugene P.</given-names></name>
+        <name><surname>Flandin</surname><given-names>Guillaume</given-names></name>
+        <name><surname>Ghosh</surname><given-names>Satrajit S.</given-names></name>
+        <name><surname>Glatard</surname><given-names>Tristan</given-names></name>
+        <name><surname>Halchenko</surname><given-names>Yaroslav O.</given-names></name>
+        <name><surname>Handwerker</surname><given-names>Daniel A.</given-names></name>
+        <name><surname>Hanke</surname><given-names>Michael</given-names></name>
+        <name><surname>Keator</surname><given-names>David</given-names></name>
+        <name><surname>Li</surname><given-names>Xiangrui</given-names></name>
+        <name><surname>Michael</surname><given-names>Zachary</given-names></name>
+        <name><surname>Maumet</surname><given-names>Camille</given-names></name>
+        <name><surname>Nichols</surname><given-names>B. Nolan</given-names></name>
+        <name><surname>Nichols</surname><given-names>Thomas E.</given-names></name>
+        <name><surname>Pellman</surname><given-names>John</given-names></name>
+        <name><surname>Poline</surname><given-names>Jean-Baptiste</given-names></name>
+        <name><surname>Rokem</surname><given-names>Ariel</given-names></name>
+        <name><surname>Schaefer</surname><given-names>Gunnar</given-names></name>
+        <name><surname>Sochat</surname><given-names>Vanessa</given-names></name>
+        <name><surname>Triplett</surname><given-names>William</given-names></name>
+        <name><surname>Turner</surname><given-names>Jessica A.</given-names></name>
+        <name><surname>Varoquaux</surname><given-names>Ga&quot;el</given-names></name>
+        <name><surname>Poldrack</surname><given-names>Russell A.</given-names></name>
+      </person-group>
+      <article-title>The brain imaging data structure, a format for organizing and describing outputs of neuroimaging experiments</article-title>
+      <source>Scientific Data</source>
+      <year iso-8601-date="2016">2016</year>
+      <volume>3</volume>
+      <pub-id pub-id-type="doi">10.1038/sdata.2016.44</pub-id>
+      <fpage>160044</fpage>
+      <lpage></lpage>
+    </element-citation>
+  </ref>
+</ref-list>
+</back>
+</article>

@@ -48,9 +48,7 @@ PRISM datasets remain valid BIDS datasets, with PRISM-specific files declared in
 
 Describing research data at scale requires a vocabulary that can grow where the data is produced. Any approach that enumerates measurements centrally — a specification’s modality list, a curated instrument database — supports what has already been encoded and stalls on what has not, because enumeration scales with maintainer effort, not the variety of measurements researchers produce.
 
-BIDS offers one dedicated home for questionnaire and assessment data — a top-level `phenotype/` directory holding one table per instrument, with participants as rows — and it illustrates the trade-off. Such tables store participant-level measures adequately, but as flat aggregates rather than data-and-sidecar pairs, so session-, run-, and variant-level context for repeated administrations has nowhere to live. PRISM stays inside the sidecar paradigm while offering a deliberate, optional export to `phenotype/` where compatibility matters more than context (Figure 1).
-
-![PRISM's native, acquisition-scoped survey layout versus the optional, lossy BIDS `phenotype/` compatibility export.](prism_representations.pdf)
+BIDS offers one dedicated home for questionnaire and assessment data — a top-level `phenotype/` directory holding one table per instrument, with participants as rows — and it illustrates the trade-off. Such tables store participant-level measures adequately, but as flat aggregates rather than data-and-sidecar pairs, so session-, run-, and variant-level context for repeated administrations has nowhere to live. PRISM stays inside the sidecar paradigm while offering a deliberate, optional export to `phenotype/` where compatibility matters more than context.
 
 The closest neighbor is Psych-DS [@psychds], a community standard pairing CSV files under a `data/` directory with dataset-level JSON-LD metadata. It shares PRISM's goal of machine-readable description, but validates chiefly dataset structure and file naming: it describes a dataset rather than binding each file to a versioned, per-item contract, and defines its own layout rather than remaining a valid BIDS dataset. REDCap [@harris2009redcap] does enforce item-level constraints, but at capture time, through a data dictionary that governs a database instance rather than travelling with the exported files — once data leaves the system, the export is undescribed again.
 
@@ -68,8 +66,10 @@ native window (pywebview on macOS, a Chromium application window elsewhere), wit
 a plain-JavaScript frontend and no build step. Converters add `pandas`,
 `openpyxl`, `pyreadstat`, and `pyreadr` to read and write what researchers
 exchange: CSV, Excel, SPSS, R, and LimeSurvey archives. Command line and
-interface share one core, so an interactive workflow can be re-run
-unattended in CI.
+interface share one core. Figure 1 shows the shared engine: adapters and
+contracts create and validate sidecar-described datasets.
+
+![PRISM combines research data and schemas in one engine, creating and validating BIDS-compatible datasets through Studio or the command line.](prism_workflow.pdf)
 
 **How validation works.** A run walks the dataset tree in four layers.
 *Structure*: each file path is matched against the entity grammar in

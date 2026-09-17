@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">PRISM software workflow</title>
+  <desc id="desc">Raw research data and declarative schemas enter the shared PRISM engine, available through Studio and the command line. It creates a BIDS-compatible sidecar dataset, validates it with PRISM and optionally the BIDS Validator, and enables scored and exported outputs with provenance.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#385c68"/></marker>
+    <style>
+      .heading { font: 700 31px 'DejaVu Sans', sans-serif; fill: #17343b; }
+      .label { font: 700 23px 'DejaVu Sans', sans-serif; fill: #17343b; }
+      .body { font: 400 18px 'DejaVu Sans', sans-serif; fill: #24434b; }
+      .small { font: 400 16px 'DejaVu Sans', sans-serif; fill: #50636a; }
+      .mono { font: 400 17px 'DejaVu Sans Mono', monospace; fill: #24434b; }
+      .arrow { fill: none; stroke: #385c68; stroke-width: 4; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1600" height="900" fill="#ffffff"/>
+  <text x="80" y="75" class="heading">PRISM: a shared engine from research inputs to validated, reusable data</text>
+  <text x="80" y="108" class="small">Declarative schemas define the contract; Studio and the command line execute the same conversion and validation workflow.</text>
+
+  <rect x="80" y="190" width="300" height="190" rx="8" fill="#e8f2f0" stroke="#4b807c" stroke-width="2"/>
+  <text x="110" y="235" class="label">Research inputs</text>
+  <text x="110" y="275" class="body">CSV, Excel, SPSS, R,</text>
+  <text x="110" y="303" class="body">LimeSurvey exports</text>
+  <text x="110" y="345" class="small">data collected in existing tools</text>
+
+  <rect x="80" y="500" width="300" height="190" rx="8" fill="#f4efe0" stroke="#a9833d" stroke-width="2"/>
+  <text x="110" y="545" class="label">Description contract</text>
+  <text x="110" y="585" class="body">JSON schemas</text>
+  <text x="110" y="613" class="body">Templates and codebooks</text>
+  <text x="110" y="655" class="small">extensible without code changes</text>
+
+  <path d="M 380 285 L 525 365" class="arrow"/>
+  <path d="M 380 595 L 525 505" class="arrow"/>
+
+  <rect x="530" y="235" width="445" height="410" rx="10" fill="#e9edf3" stroke="#52718b" stroke-width="3"/>
+  <text x="570" y="285" class="label">PRISM engine</text>
+  <line x1="570" y1="310" x2="935" y2="310" stroke="#9aaebb" stroke-width="1.5"/>
+  <text x="570" y="355" class="body">Convert and organize</text>
+  <text x="570" y="402" class="body">Attach versioned JSON sidecars</text>
+  <text x="570" y="449" class="body">Validate structure, metadata, and content</text>
+  <text x="570" y="496" class="body">Optionally delegate BIDS checks</text>
+  <text x="570" y="575" class="small">One canonical Python backend</text>
+  <rect x="570" y="595" width="160" height="32" rx="5" fill="#d6e2eb"/>
+  <text x="594" y="617" class="small">PRISM Studio</text>
+  <rect x="750" y="595" width="160" height="32" rx="5" fill="#d6e2eb"/>
+  <text x="778" y="617" class="small">Command line</text>
+
+  <path d="M 975 440 L 1120 440" class="arrow"/>
+  <rect x="1125" y="280" width="390" height="320" rx="8" fill="#edf4e7" stroke="#6b9360" stroke-width="2"/>
+  <text x="1160" y="327" class="label">PRISM dataset</text>
+  <text x="1160" y="370" class="body">BIDS-compatible tree</text>
+  <text x="1160" y="402" class="body">PRISM files in <tspan class="mono">.bidsignore</tspan></text>
+  <text x="1160" y="454" class="body">Data + JSON sidecars</text>
+  <text x="1160" y="486" class="body">schema-backed semantics</text>
+  <text x="1160" y="548" class="small">portable, inspectable, and validated</text>
+
+  <path d="M 1320 600 L 1320 715" class="arrow"/>
+  <rect x="1090" y="720" width="450" height="105" rx="8" fill="#f7eee2" stroke="#ba8551" stroke-width="2"/>
+  <text x="1125" y="762" class="label">Validated downstream outputs</text>
+  <text x="1125" y="798" class="body">Reports, scored derivatives, exports, provenance</text>
+
+  <text x="80" y="820" class="small">The system separates a reusable validation model from format-specific import and export adapters.</text>
+</svg>
