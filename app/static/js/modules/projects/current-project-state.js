@@ -203,7 +203,7 @@ export function createProjectsCurrentStateController({
     });
     updateProjectTypeSelectionVisibility();
 
-    window.addEventListener('prism-project-changed', function(event) {
+    window.addEventListener('prism-project-state', function(event) {
         const eventState = event && event.detail ? event.detail : null;
         const fallbackState = getProjectStateSnapshot();
         const nextPath = eventState && typeof eventState.path === 'string'

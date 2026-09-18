@@ -1283,14 +1283,26 @@
                         || next.datalad.setupIntent !== currentDatalad.setupIntent
                         || next.datalad.askOnOpen !== currentDatalad.askOnOpen
                         || next.datalad.message !== currentDatalad.message;
+                    const previous = state;
                     state = next;
                     syncDomBindings(state);
 
                     if (changed || options.forceEmit) {
                         const eventPayload = { ...state };
-                        window.dispatchEvent(new CustomEvent('prism-project-changed', {
+                        // 'prism-project-state' fires on any change (incl. late DataLad
+                        // status); 'prism-project-changed' only when the project identity
+                        // changes, so page listeners don't reset mid-load on DataLad noise.
+                        window.dispatchEvent(new CustomEvent('prism-project-state', {
                             detail: eventPayload
                         }));
+                        if (options.forceEmit
+                            || next.path !== previous.path
+                            || next.name !== previous.name
+                            || next.icon !== previous.icon) {
+                            window.dispatchEvent(new CustomEvent('prism-project-changed', {
+                                detail: eventPayload
+                            }));
+                        }
 
                         listeners.forEach(listener => {
                             try {
@@ -1466,7 +1478,7 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             ensureProjectStateStore();
-            window.addEventListener('prism-project-changed', function(event) {
+            window.addEventListener('prism-project-state', function(event) {
                 const eventState = event && event.detail ? event.detail : ensureProjectStateStore().getState();
                 applyNavbarStateFromProjectState(eventState);
             });

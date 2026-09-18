@@ -183,7 +183,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("const globalProjectState = getProjectStateSnapshot();", current_state_content)
         self.assertIn("let currentProjectDatalad = null;", current_state_content)
         self.assertIn("window.updateNavbarProject(currentProjectName, currentProjectPath, currentProjectIcon, currentProjectDatalad, currentProjectHasData);", current_state_content)
-        self.assertIn("window.addEventListener('prism-project-changed', function(event) {", current_state_content)
+        self.assertIn("window.addEventListener('prism-project-state', function(event) {", current_state_content)
         self.assertLess(
             core_content.index("const currentProjectStateController = createProjectsCurrentStateController({"),
             core_content.index("const recentProjectsController = createRecentProjectsController({"),

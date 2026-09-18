@@ -9,7 +9,7 @@ class TestNavbarProjectEventWiring(unittest.TestCase):
     def test_project_change_event_wires_navbar_state(self):
         content = BASE_TEMPLATE.read_text(encoding="utf-8")
 
-        self.assertIn("window.addEventListener('prism-project-changed'", content)
+        self.assertIn("window.addEventListener('prism-project-state'", content)
         self.assertIn(
             "function applyNavbarStateFromProjectState(projectState)", content
         )
@@ -20,6 +20,14 @@ class TestNavbarProjectEventWiring(unittest.TestCase):
         self.assertIn("function setProjectGatedLinkState(elementId, enabled", content)
         self.assertIn("setProjectGatedLinkState('fileManagementLink', Boolean(nextPath));", content)
         self.assertIn("setProjectGatedLinkState('surveyExportLink', Boolean(nextPath)", content)
+
+    def test_datalad_only_changes_do_not_emit_project_changed(self):
+        content = BASE_TEMPLATE.read_text(encoding="utf-8")
+
+        # Late DataLad status updates must not look like a project switch to
+        # page listeners (they reset in-flight metadata loads).
+        self.assertIn("window.dispatchEvent(new CustomEvent('prism-project-state'", content)
+        self.assertIn("|| next.path !== previous.path", content)
 
     def test_navbar_datalad_indicator_is_color_only_no_text_badge(self):
         content = BASE_TEMPLATE.read_text(encoding="utf-8")
