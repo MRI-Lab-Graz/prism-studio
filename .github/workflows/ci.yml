@@ -107,7 +107,7 @@ jobs:
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.10'
         # Pin to v5.5.0 commit to avoid transient tag-resolution/codeload issues.
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5
         continue-on-error: true
         with:
           files: coverage.xml
