@@ -11,7 +11,7 @@ requests>=2.33.0
 # requires urllib3>=1.26. GHSA-38jv-5279-wg99 / CVE-2026-21441 (decompression
 # bomb via redirect handling in the streaming API) is fixed in 2.6.3; pinning
 # here stops a resolver from settling on an older, vulnerable urllib3.
-urllib3>=2.6.3
+urllib3>=2.8.0
 bids-validator
 pandas
 openpyxl
