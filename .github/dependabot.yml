@@ -11,3 +11,8 @@ updates:
       interval: "weekly"
     ignore:
       - dependency-name: "python"
+      # semgrep pins pyjwt~=2.13.0 (as of semgrep 1.177.0); a bump to
+      # PyJWT>=2.14.0 is a ResolutionImpossible conflict until semgrep
+      # relaxes/updates its own pin. Remove this once semgrep supports it.
+      - dependency-name: "PyJWT"
+        versions: [">=2.14.0"]
