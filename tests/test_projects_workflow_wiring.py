@@ -82,9 +82,6 @@ PROJECTS_RSYNC_SERVER_MODULE = (
 PROJECTS_METADATA_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "metadata.js"
 )
-PROJECTS_GLOBAL_TIER_TOTALS_MODULE = (
-    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "global-tier-totals.js"
-)
 STUDY_METADATA_CSS = REPO_ROOT / "app" / "static" / "css" / "projects" / "metadata.css"
 PROJECTS_VALIDATION_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "validation.js"
@@ -1469,26 +1466,32 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         """
         template_content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
         metadata_content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
-        tier_totals_content = PROJECTS_GLOBAL_TIER_TOTALS_MODULE.read_text(encoding="utf-8")
         css_content = STUDY_METADATA_CSS.read_text(encoding="utf-8")
 
-        for badge_id, body_id in [
-            ("smCoreSetupGroupBadges", "smCoreSetupGroupBody"),
-            ("smRecruitmentExecutionGroupBadges", "smRecruitmentExecutionGroupBody"),
-            ("smReportingFollowupGroupBadges", "smReportingFollowupGroupBody"),
-        ]:
+        # Every badge slot the JS populates must exist in the template, and
+        # every section it sums must be a real section key (the same keys
+        # sectionOrder/sectionLabels use).
+        group_map = {
+            "smCoreSetupGroupBadges": ["Basics", "Overview", "StudyDesign"],
+            "smRecruitmentExecutionGroupBadges": ["Recruitment", "Eligibility", "Procedure"],
+            "smReportingFollowupGroupBadges": ["DiscoveryCitation", "MissingData", "References"],
+        }
+        for badge_id, section_keys in group_map.items():
             self.assertIn(f'id="{badge_id}"', template_content)
-            self.assertIn(f'id="{body_id}"', template_content)
-            self.assertIn(f"{badge_id}: '{body_id}'", metadata_content)
+            self.assertIn(f"{badge_id}: [", metadata_content)
+            for key in section_keys:
+                self.assertIn(f'id="sm{key}Badge"', template_content)
 
-        # Group membership is read from the DOM (which section badges live
-        # inside each group's body), not a second hardcoded section list that
-        # could drift from the template's actual grouping.
-        self.assertIn("sectionKeyFromBadgeId(el.id)", metadata_content)
-        self.assertIn("computeGroupTierTotals(sections, groupSectionKeys)", metadata_content)
-        self.assertIn("export function sectionKeyFromBadgeId(id)", tier_totals_content)
-        self.assertIn("export function computeGroupTierTotals(sections, sectionKeys)", tier_totals_content)
+        # The grouping must cover every section header badge in the template
+        # exactly once - otherwise a section silently counts twice, or not at
+        # all, in the group sums.
+        all_keys = [k for keys in group_map.values() for k in keys]
+        template_keys = re.findall(
+            r'class="sm-section-toggle__badge" id="sm(\w+)Badge"', template_content
+        )
+        self.assertEqual(sorted(all_keys), sorted(template_keys))
 
+        self.assertIn("computeGlobalTierTotals(", metadata_content)
         self.assertIn(".sm-section-group__badges", css_content)
 
     def test_create_success_hint_names_still_empty_core_fields(self):
@@ -1502,8 +1505,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("missingCoreFields,", content)
-        self.assertIn("function _formatMissingCoreFieldsNote(validation)", content)
-        self.assertIn("_formatMissingCoreFieldsNote(validation)", content)
+        self.assertIn("function _missingCoreFieldsSuffix(validation)", content)
+        self.assertIn("_missingCoreFieldsSuffix(validation)", content)
         self.assertIn("won't block this, but keeps Methods Readiness low.", content)
 
     def test_optional_validation_issues_surface_their_actual_message(self):

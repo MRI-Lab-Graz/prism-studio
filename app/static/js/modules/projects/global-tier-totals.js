@@ -26,28 +26,3 @@ export function computeGlobalTierTotals(sections) {
     return totals;
 }
 
-/**
- * Section-level badge elements are rendered with id `sm<Key>Badge` (e.g.
- * smBasicsBadge -> "Basics"), matching the keys in computeLocalCompleteness()'s
- * `sections` map (metadata.js). Used to derive which sections belong to a
- * collapsed section-group header (Core study setup / Recruitment and
- * execution / Reporting and follow-up) from the DOM itself, instead of a
- * second hardcoded section list the template's actual grouping could drift
- * from if a section is ever moved between groups.
- */
-export function sectionKeyFromBadgeId(id) {
-    return String(id || '').replace(/^sm/, '').replace(/Badge$/, '');
-}
-
-/**
- * Required/Core/FAIR totals for just the given subset of section keys (e.g.
- * the sections inside one collapsed group), reusing computeGlobalTierTotals's
- * summation over that subset.
- */
-export function computeGroupTierTotals(sections, sectionKeys) {
-    const subset = {};
-    for (const key of sectionKeys || []) {
-        if (sections && sections[key]) subset[key] = sections[key];
-    }
-    return computeGlobalTierTotals(subset);
-}

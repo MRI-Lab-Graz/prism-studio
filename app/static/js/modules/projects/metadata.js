@@ -21,7 +21,7 @@ import {
 import { escapeHtml } from '../../shared/dom.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { DEFAULT_REQUIRED_FIELDS_SCHEMA, normalizeRequiredFieldsSchema } from './study-metadata-required-fields.js';
-import { computeGlobalTierTotals, computeGroupTierTotals, sectionKeyFromBadgeId } from './global-tier-totals.js';
+import { computeGlobalTierTotals } from './global-tier-totals.js';
 import { MISSING_FILE_REASON_OPTIONS, combineMissingFilesRow, parseMissingFilesValue } from './missing-files-row.js';
 
 function _getCurrentProjectState() {
@@ -2221,14 +2221,15 @@ export function validateAllMandatoryFields() {
  * Non-blocking heads-up about empty CORE fields, shown alongside (not instead
  * of) the "you can create/save now" message - CORE fields drive Methods
  * Readiness/FAIR, not creation-gating, so this must never read as an error.
+ * Returns a ready-to-append HTML suffix, or '' when nothing is missing.
  */
-function _formatMissingCoreFieldsNote(validation) {
+function _missingCoreFieldsSuffix(validation) {
     const fields = validation?.missingCoreFields || [];
     if (fields.length === 0) return '';
-    const list = fields.length <= 3
-        ? fields.join(', ')
-        : `${fields.slice(0, 3).join(', ')}, +${fields.length - 3} more`;
-    return `${fields.length} Core field${fields.length > 1 ? 's' : ''} still empty (${list}) - won't block this, but keeps Methods Readiness low.`;
+    const note = `${fields.length} Core field${fields.length > 1 ? 's' : ''} still empty `
+        + `(${fields.slice(0, 3).join(', ')}${fields.length > 3 ? `, +${fields.length - 3} more` : ''})`
+        + " - won't block this, but keeps Methods Readiness low.";
+    return ` <span class="text-muted">${escapeHtml(note)}</span>`;
 }
 
 function _getRequiredValidationIssueCount(validation) {
@@ -2636,10 +2637,8 @@ export function updateCreateProjectButton() {
         }
         actionHints.forEach(actionHint => {
             if (requiredIssueCount === 0 && optionalIssueCount === 0) {
-                const coreNote = _formatMissingCoreFieldsNote(validation);
-                actionHint.innerHTML = coreNote
-                    ? `<i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, CITATION.cff, and README.md. <span class="text-muted">${escapeHtml(coreNote)}</span>`
-                    : '<i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, CITATION.cff, and README.md.';
+                actionHint.innerHTML = '<i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, CITATION.cff, and README.md.'
+                    + _missingCoreFieldsSuffix(validation);
             } else if (requiredIssueCount === 0) {
                 actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${optionalIssueCount === 1 ? 'Validation issue' : `${optionalIssueCount} validation issues`} detected:</strong> ${escapeHtml(_formatOptionalIssuesSummary(validation))} Required fields are complete, but remaining validation errors must be fixed before saving changes.`;
             } else {
@@ -2666,12 +2665,8 @@ export function updateCreateProjectButton() {
         actionHints.forEach(actionHint => {
             actionHint.innerHTML = optionalIssueCount > 0
                 ? `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${optionalIssueCount === 1 ? 'Validation issue' : `${optionalIssueCount} validation issues`} detected:</strong> ${escapeHtml(_formatOptionalIssuesSummary(validation))} Required fields are complete, but remaining validation errors must be fixed before creating the project.`
-                : (() => {
-                    const coreNote = _formatMissingCoreFieldsNote(validation);
-                    return coreNote
-                        ? `<i class="fas fa-info-circle me-1"></i>All required fields are complete. You can now create the project. <span class="text-muted">${escapeHtml(coreNote)}</span>`
-                        : '<i class="fas fa-info-circle me-1"></i>All required fields are complete. You can now create the project.';
-                })();
+                : '<i class="fas fa-info-circle me-1"></i>All required fields are complete. You can now create the project.'
+                    + _missingCoreFieldsSuffix(validation);
         });
     } else {
         setPreliminaryHidden(false);
@@ -3858,24 +3853,20 @@ export function updateCompletenessUI(completeness) {
     // Required/Core/FAIR sums on the three collapsed section-group headers
     // (Core study setup / Recruitment and execution / Reporting and
     // follow-up), so a user can see which group still needs attention
-    // without expanding every section inside it first. Group membership is
-    // read from the DOM - which .sm-section-toggle__badge elements live
-    // inside each group's collapse body - instead of a second hardcoded
-    // section list, so moving a section between groups in the template can't
-    // silently desync this from what's actually rendered there.
-    const GROUP_BADGE_SLOTS = {
-        smCoreSetupGroupBadges: 'smCoreSetupGroupBody',
-        smRecruitmentExecutionGroupBadges: 'smRecruitmentExecutionGroupBody',
-        smReportingFollowupGroupBadges: 'smReportingFollowupGroupBody',
+    // without expanding every section inside it first. Mirrors the grouping
+    // in study_metadata.html, same as sectionOrder/sectionLabels above.
+    const SECTION_GROUPS = {
+        smCoreSetupGroupBadges: ['Basics', 'Overview', 'StudyDesign'],
+        smRecruitmentExecutionGroupBadges: ['Recruitment', 'Eligibility', 'Procedure'],
+        smReportingFollowupGroupBadges: ['DiscoveryCitation', 'MissingData', 'References'],
     };
-    for (const [badgeSlotId, bodyId] of Object.entries(GROUP_BADGE_SLOTS)) {
+    for (const [badgeSlotId, groupKeys] of Object.entries(SECTION_GROUPS)) {
         const badgeSlot = document.getElementById(badgeSlotId);
-        const body = document.getElementById(bodyId);
-        if (!badgeSlot || !body) continue;
+        if (!badgeSlot) continue;
 
-        const groupSectionKeys = Array.from(body.querySelectorAll('.sm-section-toggle__badge'))
-            .map(el => sectionKeyFromBadgeId(el.id));
-        const totals = computeGroupTierTotals(sections, groupSectionKeys);
+        const totals = computeGlobalTierTotals(
+            Object.fromEntries(groupKeys.filter(k => sections[k]).map(k => [k, sections[k]]))
+        );
         const reqDone = totals.blockingTotal === 0 || totals.blockingFilled === totals.blockingTotal;
         const coreDone = totals.coreTotal === 0 || totals.coreFilled === totals.coreTotal;
         const fairDone = totals.fairTotal === 0 || totals.fairFilled === totals.fairTotal;
