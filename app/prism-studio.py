@@ -46,6 +46,7 @@ import json
 import re
 import ipaddress
 import http.client
+import requests
 import secrets
 import shlex
 import shutil
@@ -837,25 +838,30 @@ def get_prism_studio_version() -> str:
 
 
 def _fetch_latest_github_release() -> tuple[Optional[str], Optional[str]]:
-    """Return latest GitHub release tag and URL for prism-studio, or (None, None)."""
-    conn: Optional[http.client.HTTPSConnection] = None
+    """Return latest GitHub release tag and URL for prism-studio, or (None, None).
+
+    Uses `requests` (not `http.client.HTTPSConnection`) so TLS verification
+    goes through `requests`/certifi's bundled CA file rather than the stdlib
+    `ssl` module's default verify paths. In a PyInstaller-frozen macOS app
+    those default paths are baked in from the build machine and don't exist
+    on the end user's Mac, so `http.client` HTTPS requests silently fail
+    verification there while everything else in this codebase (which already
+    goes through `requests`) works fine.
+    """
     try:
-        conn = http.client.HTTPSConnection("api.github.com", timeout=3)
-        conn.request(
-            "GET",
-            "/repos/MRI-Lab-Graz/prism-studio/releases/latest",
+        response = requests.get(
+            "https://api.github.com/repos/MRI-Lab-Graz/prism-studio/releases/latest",
             headers={
                 "Accept": "application/vnd.github+json",
                 "User-Agent": "prism-studio-update-check",
                 "X-GitHub-Api-Version": "2022-11-28",
             },
+            timeout=3,
         )
-        response = conn.getresponse()
-        if response.status != 200:
+        if response.status_code != 200:
             return None, None
 
-        payload = response.read()
-        data = json.loads(payload.decode("utf-8"))
+        data = response.json()
         tag_name = data.get("tag_name")
         release_url = data.get("html_url")
 
@@ -868,12 +874,6 @@ def _fetch_latest_github_release() -> tuple[Optional[str], Optional[str]]:
     except Exception as error:
         print(f"[WARN]  Latest release check failed: {error}")
         return None, None
-    finally:
-        if conn is not None:
-            try:
-                conn.close()
-            except Exception:
-                pass
 
 
 def get_latest_prism_studio_version() -> tuple[str, str]:
