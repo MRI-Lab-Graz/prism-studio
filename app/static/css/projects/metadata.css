@@ -174,6 +174,27 @@
     color: #2c4753;
 }
 
+.sm-section-group__title-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    min-width: 0;
+}
+
+/* Required/Core/FAIR sums for every section inside this group, so its
+   completeness is visible without expanding each section first. */
+.sm-section-group__badges {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+}
+
+.sm-section-group__badges:empty {
+    display: none;
+}
+
 .sm-section-group__copy {
     font-size: 0.92rem;
     line-height: 1.45;

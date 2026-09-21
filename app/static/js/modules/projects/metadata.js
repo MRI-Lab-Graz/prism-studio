@@ -21,7 +21,7 @@ import {
 import { escapeHtml } from '../../shared/dom.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { DEFAULT_REQUIRED_FIELDS_SCHEMA, normalizeRequiredFieldsSchema } from './study-metadata-required-fields.js';
-import { computeGlobalTierTotals } from './global-tier-totals.js';
+import { computeGlobalTierTotals, computeGroupTierTotals, sectionKeyFromBadgeId } from './global-tier-totals.js';
 import { MISSING_FILE_REASON_OPTIONS, combineMissingFilesRow, parseMissingFilesValue } from './missing-files-row.js';
 
 function _getCurrentProjectState() {
@@ -45,6 +45,21 @@ let _requiredFieldsSchema = DEFAULT_REQUIRED_FIELDS_SCHEMA;
         }
     } catch { /* use fallback */ }
 })();
+
+// Friendlier labels for "what's missing" messages (CORE badge tooltips, the
+// create/save action hint); falls back to the raw field name. Matches the
+// names computeLocalCompleteness()'s addField() calls use.
+const FIELD_DISPLAY_NAMES = {
+    Name: 'Dataset Name',
+    Authors: 'Authors',
+    EthicsApprovals: 'Ethics Approvals',
+    Keywords: 'Keywords',
+    Funding: 'Funding',
+    Type: 'Study Design Type',
+    Method: 'Recruitment Method',
+    InclusionCriteria: 'Inclusion Criteria',
+    Overview: 'Overview'
+};
 
 let metadataLoadToken = 0;
 let studyMetadataSubmitInFlight = false;
@@ -204,8 +219,13 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
         await refreshCitationHealthStatus();
         await refreshMetadataSyncStatus();
     },
-    setLoadErrorStatus: () => setMetadataSaveStatus('Project metadata could not be loaded.', 'danger'),
+    setLoadErrorStatus: () => setMetadataSaveStatus(
+        'Project metadata could not be loaded. The form stays locked so incomplete '
+        + 'data cannot overwrite what is stored - reopen the project to retry.',
+        'danger'
+    ),
     clearLoadStatus: () => setMetadataSaveStatus('', 'muted'),
+    setFormLocked: _setStudyMetadataFormLocked,
 });
 
 const studyMetadataSaveController = createStudyMetadataSaveController({
@@ -437,6 +457,18 @@ function _captureStudyMetadataBaseline() {
 
 function _resetStudyMetadataTracking() {
     studyMetadataLoadController.resetTracking();
+}
+
+/**
+ * Makes the whole study metadata form non-interactive while its content is
+ * being (re)loaded from the server. `inert` is the native way to do this for a
+ * whole subtree - it needs no per-field disabled bookkeeping to undo.
+ */
+function _setStudyMetadataFormLocked(locked) {
+    const form = document.getElementById('studyMetadataForm');
+    if (!form) return;
+    form.inert = Boolean(locked);
+    form.classList.toggle('sm-form-loading', Boolean(locked));
 }
 
 function _isStudyMetadataReadyForCurrentProject() {
@@ -1993,24 +2025,21 @@ export function setRecMethodList(methods) {
 }
 
 function initRecMethodPicker() {
-    const addBtn = document.getElementById('recMethodAddBtn');
     const picker = document.getElementById('recMethodPicker');
-    if (!addBtn || !picker || addBtn.dataset.bound) return;
-    addBtn.dataset.bound = '1';
+    if (!picker || picker.dataset.bound) return;
+    picker.dataset.bound = '1';
 
-    addBtn.addEventListener('click', () => {
+    // Selecting a method commits it straight away, like every other dropdown
+    // on this form (Study Design Type, Condition Type, Compensation). This
+    // picker used to need a separate "+ Add" click while looking identical to
+    // those, which silently left the CORE Method badge unfilled. A chip added
+    // by mistake is removed with its own x, and _updateRecMethodPickerOptions
+    // disables options already in the list.
+    picker.addEventListener('change', () => {
         const value = picker.value;
         if (!value) return;
-        const label = REC_METHOD_LABELS[value] || value;
-        addRecMethodChip(value, label);
+        addRecMethodChip(value, REC_METHOD_LABELS[value] || value);
         picker.value = '';
-    });
-
-    picker.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            addBtn.click();
-        }
     });
 }
 
@@ -2094,6 +2123,18 @@ export function validateAllMandatoryFields() {
     const emptyFields = [];
     const requiredInvalidFields = [];
     const optionalInvalidFields = [];
+    // CORE-tier fields never block creation/saving (see the field-tier legend
+    // in study_metadata.html), so they were never surfaced as an issue at
+    // all - the success hint just said "All required fields are complete",
+    // even with entire sections still at Core 0/1. Collected here so it can
+    // be shown as a non-blocking heads-up instead.
+    const missingCoreFields = [];
+    Object.entries(completeness.sections || {}).forEach(([sectionName, section]) => {
+        (section.fields || []).forEach(field => {
+            if (!field.required || field.filled || field.blocksCreation) return;
+            missingCoreFields.push(FIELD_DISPLAY_NAMES[field.name] || field.name);
+        });
+    });
 
     // Only fields in creationBlockingFields (see computeLocalCompleteness) ever
     // reach the emptyFields loop below, so this only needs to label those.
@@ -2170,9 +2211,24 @@ export function validateAllMandatoryFields() {
         invalidFields,
         requiredInvalidFields,
         optionalInvalidFields,
+        missingCoreFields,
         hasRequiredIssues: emptyFields.length > 0 || requiredInvalidFields.length > 0,
         hasOptionalValidationIssues: optionalInvalidFields.length > 0,
     };
+}
+
+/**
+ * Non-blocking heads-up about empty CORE fields, shown alongside (not instead
+ * of) the "you can create/save now" message - CORE fields drive Methods
+ * Readiness/FAIR, not creation-gating, so this must never read as an error.
+ */
+function _formatMissingCoreFieldsNote(validation) {
+    const fields = validation?.missingCoreFields || [];
+    if (fields.length === 0) return '';
+    const list = fields.length <= 3
+        ? fields.join(', ')
+        : `${fields.slice(0, 3).join(', ')}, +${fields.length - 3} more`;
+    return `${fields.length} Core field${fields.length > 1 ? 's' : ''} still empty (${list}) - won't block this, but keeps Methods Readiness low.`;
 }
 
 function _getRequiredValidationIssueCount(validation) {
@@ -2181,6 +2237,21 @@ function _getRequiredValidationIssueCount(validation) {
 
 function _getOptionalValidationIssueCount(validation) {
     return validation?.optionalInvalidFields?.length || 0;
+}
+
+/**
+ * Optional-tier validation issues (bad DOI format, "Yes" ethics/funding with
+ * no details, an invalid author ORCID/email/website, ...) used to be
+ * surfaced only as a bare count everywhere except a one-shot toast on
+ * save/create click. If that toast was missed there was no way to find the
+ * issue again short of re-clicking - the count alone doesn't say what or
+ * where. This turns the count into the actual message(s) wherever it's shown.
+ */
+function _formatOptionalIssuesSummary(validation) {
+    const issues = validation?.optionalInvalidFields || [];
+    if (issues.length === 0) return '';
+    if (issues.length === 1) return issues[0];
+    return `${issues[0]} (+${issues.length - 1} more issue${issues.length > 2 ? 's' : ''})`;
 }
 
 function _hasRequiredValidationIssues(validation) {
@@ -2556,7 +2627,7 @@ export function updateCreateProjectButton() {
             addCreateClass('btn-info');
             setCreateButtonHtml('<i class="fas fa-save me-2"></i>Save Changes to Project');
             setCreateTitle(optionalIssueCount > 0
-                ? `${optionalIssueCount} metadata validation issue${optionalIssueCount > 1 ? 's need' : ' needs'} to be fixed before saving.`
+                ? `Fix before saving: ${_formatOptionalIssuesSummary(validation)}`
                 : '');
         } else {
             addCreateClass('btn-warning');
@@ -2565,9 +2636,12 @@ export function updateCreateProjectButton() {
         }
         actionHints.forEach(actionHint => {
             if (requiredIssueCount === 0 && optionalIssueCount === 0) {
-                actionHint.innerHTML = '<i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, CITATION.cff, and README.md.';
+                const coreNote = _formatMissingCoreFieldsNote(validation);
+                actionHint.innerHTML = coreNote
+                    ? `<i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, CITATION.cff, and README.md. <span class="text-muted">${escapeHtml(coreNote)}</span>`
+                    : '<i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, CITATION.cff, and README.md.';
             } else if (requiredIssueCount === 0) {
-                actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${optionalIssueCount} metadata validation issue${optionalIssueCount > 1 ? 's' : ''} detected.</strong> Required fields are complete, but remaining validation errors must be fixed before saving changes.`;
+                actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${optionalIssueCount === 1 ? 'Validation issue' : `${optionalIssueCount} validation issues`} detected:</strong> ${escapeHtml(_formatOptionalIssuesSummary(validation))} Required fields are complete, but remaining validation errors must be fixed before saving changes.`;
             } else {
                 actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${requiredIssueCount} required field${requiredIssueCount > 1 ? 's' : ''} missing.</strong> You can save a preliminary project state now and complete metadata later.`;
             }
@@ -2587,12 +2661,17 @@ export function updateCreateProjectButton() {
         removeCreateClasses('btn-secondary', 'btn-warning');
         addCreateClass(optionalIssueCount > 0 ? 'btn-warning' : 'btn-success');
         setCreateTitle(optionalIssueCount > 0
-            ? `${optionalIssueCount} metadata validation issue${optionalIssueCount > 1 ? 's must' : ' must'} be fixed before project creation.`
+            ? `Fix before creating the project: ${_formatOptionalIssuesSummary(validation)}`
             : '');
         actionHints.forEach(actionHint => {
             actionHint.innerHTML = optionalIssueCount > 0
-                ? `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${optionalIssueCount} metadata validation issue${optionalIssueCount > 1 ? 's' : ''} detected.</strong> Required fields are complete, but remaining validation errors must be fixed before creating the project.`
-                : '<i class="fas fa-info-circle me-1"></i>All required fields are complete. You can now create the project.';
+                ? `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${optionalIssueCount === 1 ? 'Validation issue' : `${optionalIssueCount} validation issues`} detected:</strong> ${escapeHtml(_formatOptionalIssuesSummary(validation))} Required fields are complete, but remaining validation errors must be fixed before creating the project.`
+                : (() => {
+                    const coreNote = _formatMissingCoreFieldsNote(validation);
+                    return coreNote
+                        ? `<i class="fas fa-info-circle me-1"></i>All required fields are complete. You can now create the project. <span class="text-muted">${escapeHtml(coreNote)}</span>`
+                        : '<i class="fas fa-info-circle me-1"></i>All required fields are complete. You can now create the project.';
+                })();
         });
     } else {
         setPreliminaryHidden(false);
@@ -2964,6 +3043,8 @@ export function showStudyMetadataCard() {
 export function resetStudyMetadataForm() {
     const form = document.getElementById('studyMetadataForm');
     if (!form) return;
+
+    _setStudyMetadataFormLocked(false);
 
     form.querySelectorAll('input, textarea, select').forEach(el => {
         el.classList.remove('is-invalid', 'required-field-empty', 'required-field-filled');
@@ -3578,10 +3659,17 @@ export function computeLocalCompleteness() {
 
     const inclusionCriteriaCount = getOverviewList('smEligInclusion').length;
     const exclusionCriteriaCount = getOverviewList('smEligExclusion').length;
-    const eligibilityCriteriaTotal = inclusionCriteriaCount + exclusionCriteriaCount;
 
-    addField('Eligibility', 'InclusionCriteria', eligibilityCriteriaTotal >= 2);
+    // CORE is satisfied by the Inclusion list alone - see
+    // validateEligibilityCriteriaBadges() for why it no longer depends on the
+    // OPTIONAL Exclusion field.
+    addField('Eligibility', 'InclusionCriteria', inclusionCriteriaCount > 0);
     addField('Eligibility', 'ExclusionCriteria', exclusionCriteriaCount > 0);
+    // Both have inputs on the form (smEligSampleSize/smEligPower) and both
+    // count in the backend readiness score - omitting them here made the
+    // Eligibility FAIR counter read 1/1 instead of 1/3.
+    addField('Eligibility', 'TargetSampleSize', textFilled(document.getElementById('smEligSampleSize')?.value));
+    addField('Eligibility', 'PowerAnalysis', textFilled(document.getElementById('smEligPower')?.value));
 
     addField('Procedure', 'Overview', textFilled(document.getElementById('smProcOverview')?.value));
     addField('Procedure', 'InformedConsent', textFilled(document.getElementById('smProcConsent')?.value));
@@ -3670,20 +3758,6 @@ export function updateCompletenessUI(completeness) {
         MissingData: 'Missing Data & Issues',
         References: 'Background Literature'
     };
-    // Friendlier labels for the "what's missing" tooltip; falls back to the
-    // raw field name (matches computeLocalCompleteness's addField() names).
-    const fieldDisplayNames = {
-        Name: 'Dataset Name',
-        Authors: 'Authors',
-        EthicsApprovals: 'Ethics Approvals',
-        Keywords: 'Keywords',
-        Funding: 'Funding',
-        Type: 'Study Design Type',
-        Method: 'Recruitment Method',
-        InclusionCriteria: 'Inclusion Criteria',
-        Overview: 'Overview'
-    };
-
     // The 9 section rows render in a 2-column grid (metadata.css:
     // .section-completeness-grid) to use horizontal space instead of a long
     // half-empty single column; Metadata Sync/Citation Health stay outside
@@ -3728,7 +3802,7 @@ export function updateCompletenessUI(completeness) {
         // specific unfilled CORE-tier fields instead of just a raw count.
         const missingCoreFields = (sec.fields || [])
             .filter(f => f.required && !f.filled)
-            .map(f => fieldDisplayNames[f.name] || f.name);
+            .map(f => FIELD_DISPLAY_NAMES[f.name] || f.name);
         const coreTitleAttr = missingCoreFields.length
             ? ` title="Missing: ${_escapeHtmlAttr(missingCoreFields.join(', '))}"`
             : ' title="All Core fields filled"';
@@ -3746,7 +3820,7 @@ export function updateCompletenessUI(completeness) {
         const blockingDone = blockingTotal === 0 || blockingFilled === blockingTotal;
         const missingRequiredFields = blockingFields
             .filter(f => !f.filled)
-            .map(f => fieldDisplayNames[f.name] || f.name);
+            .map(f => FIELD_DISPLAY_NAMES[f.name] || f.name);
         const requiredTitleAttr = missingRequiredFields.length
             ? ` title="Required to create the project - missing: ${_escapeHtmlAttr(missingRequiredFields.join(', '))}"`
             : ' title="All required fields filled"';
@@ -3779,6 +3853,40 @@ export function updateCompletenessUI(completeness) {
                 <span class="badge ${fairClass} bg-opacity-75">FAIR ${optFilled}/${optTotal}</span>
             `;
         }
+    }
+
+    // Required/Core/FAIR sums on the three collapsed section-group headers
+    // (Core study setup / Recruitment and execution / Reporting and
+    // follow-up), so a user can see which group still needs attention
+    // without expanding every section inside it first. Group membership is
+    // read from the DOM - which .sm-section-toggle__badge elements live
+    // inside each group's collapse body - instead of a second hardcoded
+    // section list, so moving a section between groups in the template can't
+    // silently desync this from what's actually rendered there.
+    const GROUP_BADGE_SLOTS = {
+        smCoreSetupGroupBadges: 'smCoreSetupGroupBody',
+        smRecruitmentExecutionGroupBadges: 'smRecruitmentExecutionGroupBody',
+        smReportingFollowupGroupBadges: 'smReportingFollowupGroupBody',
+    };
+    for (const [badgeSlotId, bodyId] of Object.entries(GROUP_BADGE_SLOTS)) {
+        const badgeSlot = document.getElementById(badgeSlotId);
+        const body = document.getElementById(bodyId);
+        if (!badgeSlot || !body) continue;
+
+        const groupSectionKeys = Array.from(body.querySelectorAll('.sm-section-toggle__badge'))
+            .map(el => sectionKeyFromBadgeId(el.id));
+        const totals = computeGroupTierTotals(sections, groupSectionKeys);
+        const reqDone = totals.blockingTotal === 0 || totals.blockingFilled === totals.blockingTotal;
+        const coreDone = totals.coreTotal === 0 || totals.coreFilled === totals.coreTotal;
+        const fairDone = totals.fairTotal === 0 || totals.fairFilled === totals.fairTotal;
+        const reqBadgeHtml = totals.blockingTotal > 0
+            ? `<span class="badge ${reqDone ? 'bg-success' : 'bg-danger'} bg-opacity-75">Required ${totals.blockingFilled}/${totals.blockingTotal}</span>`
+            : '';
+        badgeSlot.innerHTML = `
+            ${reqBadgeHtml}
+            <span class="badge ${coreDone ? 'bg-success' : 'bg-danger'} bg-opacity-75">Core ${totals.coreFilled}/${totals.coreTotal}</span>
+            <span class="badge ${fairDone ? 'bg-success' : 'bg-warning text-dark'} bg-opacity-75">FAIR ${totals.fairFilled}/${totals.fairTotal}</span>
+        `;
     }
 
     // Compact reminder on the "Project Loaded" panel (open-project.js),
@@ -4040,7 +4148,7 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
         const firstIssue = requiredValidation.optionalInvalidFields?.[0] || 'Please fix metadata validation errors before saving.';
         showToast(firstIssue, 'warning');
         showTopFeedback('Please fix metadata validation errors before saving.', 'warning');
-        setMetadataSaveStatus(`Save blocked: ${optionalIssueCount} metadata validation issue${optionalIssueCount > 1 ? 's require' : ' requires'} attention.`, 'warning');
+        setMetadataSaveStatus(`Save blocked: ${_formatOptionalIssuesSummary(requiredValidation)}`, 'warning');
         window.scrollTo({ top: 0, behavior: 'smooth' });
         updateCreateProjectButton();
         releaseSubmitLock();

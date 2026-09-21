@@ -127,13 +127,19 @@ export function initProjectSelectionController({
         const currentProjectPath = String(getCurrentProjectState().path || '').trim();
 
         if (type === 'create' && currentProjectPath) {
-            const confirmSwitch = confirm(
-                '⚠️ You are editing an existing project.\n\n' +
-                'If you switch to "New Project" without saving, any changes will be lost.\n\n' +
-                'Are you sure you want to continue?'
-            );
-            if (!confirmSwitch) {
-                return;
+            // Only warn when there is actually something to lose. Warning on
+            // every switch - including right after a successful save - trained
+            // users to click through it, and clicking through it discards the
+            // loaded project (clearCurrentProjectForNewDraft + form reset).
+            if (hasUnsavedStudyMetadataChanges()) {
+                const confirmSwitch = confirm(
+                    '⚠️ You have unsaved changes in the current project.\n\n' +
+                    'If you switch to "New Project" now, those changes will be lost.\n\n' +
+                    'Are you sure you want to continue?'
+                );
+                if (!confirmSwitch) {
+                    return;
+                }
             }
 
             clearCurrentProjectForNewDraft();

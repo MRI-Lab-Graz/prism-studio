@@ -82,6 +82,10 @@ PROJECTS_RSYNC_SERVER_MODULE = (
 PROJECTS_METADATA_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "metadata.js"
 )
+PROJECTS_GLOBAL_TIER_TOTALS_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "global-tier-totals.js"
+)
+STUDY_METADATA_CSS = REPO_ROOT / "app" / "static" / "css" / "projects" / "metadata.css"
 PROJECTS_VALIDATION_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "validation.js"
 )
@@ -1435,7 +1439,132 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             submit_content,
         )
 
-    def test_eligibility_requires_two_combined_criteria_instead_of_both_lists(self):
+    def test_create_project_result_scrolls_into_view(self):
+        """#createResult lives in the top "Create New Project" card
+        (create_form.html), but every trigger for it - the create/preliminary
+        buttons at the bottom of the Study Metadata form, and the preflight
+        conflict check that can return before those buttons even show a
+        loading state - can fire while scrolled far below it. Fixed once in
+        setCreateResultHtml() itself (core.js) so every one of its 6 call
+        sites (create-project.js success/error/network-error,
+        create-preflight.js's DataLad and conflict warnings) is covered,
+        including any added later.
+        """
+        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });",
+            core_content,
+        )
+        set_result_fn = core_content.split("function setCreateResultHtml(")[1].split("\n}")[0]
+        self.assertIn("scrollIntoView", set_result_fn)
+
+    def test_section_group_headers_show_required_core_fair_sums(self):
+        """The three collapsed section-group headers (Core study setup /
+        Recruitment and execution / Reporting and follow-up) used to show no
+        completeness info at all, so a user had to expand every section
+        inside a group just to see what still needed filling in. Each header
+        now carries a badge slot populated with that group's summed
+        Required/Core/FAIR counts.
+        """
+        template_content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
+        metadata_content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+        tier_totals_content = PROJECTS_GLOBAL_TIER_TOTALS_MODULE.read_text(encoding="utf-8")
+        css_content = STUDY_METADATA_CSS.read_text(encoding="utf-8")
+
+        for badge_id, body_id in [
+            ("smCoreSetupGroupBadges", "smCoreSetupGroupBody"),
+            ("smRecruitmentExecutionGroupBadges", "smRecruitmentExecutionGroupBody"),
+            ("smReportingFollowupGroupBadges", "smReportingFollowupGroupBody"),
+        ]:
+            self.assertIn(f'id="{badge_id}"', template_content)
+            self.assertIn(f'id="{body_id}"', template_content)
+            self.assertIn(f"{badge_id}: '{body_id}'", metadata_content)
+
+        # Group membership is read from the DOM (which section badges live
+        # inside each group's body), not a second hardcoded section list that
+        # could drift from the template's actual grouping.
+        self.assertIn("sectionKeyFromBadgeId(el.id)", metadata_content)
+        self.assertIn("computeGroupTierTotals(sections, groupSectionKeys)", metadata_content)
+        self.assertIn("export function sectionKeyFromBadgeId(id)", tier_totals_content)
+        self.assertIn("export function computeGroupTierTotals(sections, sectionKeys)", tier_totals_content)
+
+        self.assertIn(".sm-section-group__badges", css_content)
+
+    def test_create_success_hint_names_still_empty_core_fields(self):
+        """CORE fields never block creation/saving (see the field-tier legend
+        in study_metadata.html - only Dataset Name/Authors do), so the
+        success hint used to read "All required fields are complete" even
+        with entire sections still at Core 0/1, which looked like nothing
+        more needed doing. It must now name what's still empty, without
+        implying it blocks anything.
+        """
+        content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("missingCoreFields,", content)
+        self.assertIn("function _formatMissingCoreFieldsNote(validation)", content)
+        self.assertIn("_formatMissingCoreFieldsNote(validation)", content)
+        self.assertIn("won't block this, but keeps Methods Readiness low.", content)
+
+    def test_optional_validation_issues_surface_their_actual_message(self):
+        """A bare count ("1 metadata validation issue detected.") gave no way
+        to find the actual problem short of clicking Create/Save and catching
+        a one-shot toast before it disappeared. The hint/tooltip/status text
+        must show the real message(s) instead.
+        """
+        metadata_content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("function _formatOptionalIssuesSummary(validation)", metadata_content)
+        self.assertIn("_formatOptionalIssuesSummary(validation)", metadata_content)
+        self.assertIn("_formatOptionalIssuesSummary(requiredValidation)", metadata_content)
+        self.assertNotIn(
+            "metadata validation issue${optionalIssueCount > 1 ? 's' : ''} detected.",
+            metadata_content,
+        )
+
+    def test_recruitment_method_dropdown_commits_on_selection(self):
+        """Every other dropdown on the Study Metadata form (Study Design Type,
+        Condition Type, Compensation) commits on selection. The CORE Method
+        picker looked identical but stayed inert until a separate "+ Add"
+        click, which silently left its badge unfilled.
+        """
+        metadata_content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+        template_content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn("picker.addEventListener('change', () => {", metadata_content)
+        self.assertNotIn("recMethodAddBtn", metadata_content)
+        self.assertNotIn("recMethodAddBtn", template_content)
+        self.assertIn('id="recMethodPicker"', template_content)
+
+    def test_study_metadata_form_is_locked_while_its_content_is_loading(self):
+        """applyStudyMetadataPayload() overwrites every field unconditionally,
+        so the form must be non-interactive for the whole round trip -
+        otherwise anything typed while a load is in flight is silently wiped
+        (and then saved back over by the submit path's reload).
+        """
+        load_content = PROJECTS_METADATA_LOAD_MODULE.read_text(encoding="utf-8")
+        metadata_content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("setFormLocked(true);", load_content)
+        self.assertIn("setFormLocked(false);", load_content)
+        self.assertIn("setFormLocked: _setStudyMetadataFormLocked,", metadata_content)
+        self.assertIn("form.inert = Boolean(locked);", metadata_content)
+        # A brand-new project is never mid-load, so its form must be editable.
+        self.assertIn("_setStudyMetadataFormLocked(false);", metadata_content)
+
+    def test_new_project_switch_only_warns_about_real_unsaved_changes(self):
+        """The discard confirm used to fire on every switch, including right
+        after a saving, which trained users to click through it - and clicking
+        through it clears the loaded project and resets the form.
+        """
+        selection_content = PROJECTS_SELECTION_MODULE.read_text(encoding="utf-8")
+
+        switch_block = selection_content.split("function selectProjectType(")[1]
+        guard_index = switch_block.index("hasUnsavedStudyMetadataChanges()")
+        confirm_index = switch_block.index("If you switch to \"New Project\"")
+        self.assertLess(guard_index, confirm_index)
+
+    def test_eligibility_core_badge_depends_only_on_the_inclusion_list(self):
         metadata_content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
         validation_content = PROJECTS_VALIDATION_MODULE.read_text(encoding="utf-8")
         template_content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
@@ -1445,13 +1574,16 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         # study-metadata-required-fields.js) lists InclusionCriteria here;
         # metadata.js only consumes it via _requiredFieldsSchema now.
         self.assertIn("Eligibility: new Set(['InclusionCriteria'])", required_fields_content)
-        self.assertIn("const eligibilityCriteriaTotal =", metadata_content)
+        # A CORE field must be satisfiable from its own input: the badge sits
+        # on Inclusion Criteria, so the OPTIONAL Exclusion list must not be
+        # able to turn it green (or to be required to).
         self.assertIn(
-            "addField('Eligibility', 'InclusionCriteria', eligibilityCriteriaTotal >= 2);",
+            "addField('Eligibility', 'InclusionCriteria', inclusionCriteriaCount > 0);",
             metadata_content,
         )
         self.assertIn("export function validateEligibilityCriteriaBadges()", validation_content)
-        self.assertIn("totalCriteria >= 2", validation_content)
+        self.assertIn("const hasInclusionCriterion = inclusionValues.length > 0;", validation_content)
+        self.assertNotIn("totalCriteria >= 2", validation_content)
         self.assertIn('id="smEligCriteriaRequiredBadge"', template_content)
         self.assertIn('id="smEligExclusionOptionalBadge"', template_content)
 

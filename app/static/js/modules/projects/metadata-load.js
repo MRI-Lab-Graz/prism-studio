@@ -11,6 +11,7 @@ export function createStudyMetadataLoadController({
     refreshStatusSnapshots,
     setLoadErrorStatus,
     clearLoadStatus,
+    setFormLocked,
 }) {
     let studyMetadataLoadInFlight = false;
     let studyMetadataLoadInFlightToken = 0;
@@ -55,6 +56,11 @@ export function createStudyMetadataLoadController({
             if (!requestProjectPath) return;
 
             requestToken = incrementMetadataLoadToken();
+            // Lock the form for the whole round trip. applyStudyMetadataPayload()
+            // overwrites every field unconditionally, so anything typed while a
+            // load is in flight would be silently wiped when it lands - and then
+            // saved back over, because the submit path reloads an unready form.
+            setFormLocked(true);
             studyMetadataLoadInFlight = true;
             studyMetadataLoadInFlightToken = requestToken;
             studyMetadataReadyProjectPath = '';
@@ -93,10 +99,13 @@ export function createStudyMetadataLoadController({
                 if (loadSucceeded) {
                     studyMetadataReadyProjectPath = requestProjectPath;
                     captureBaseline();
+                    setFormLocked(false);
                     if (!getSubmitInFlight()) {
                         clearLoadStatus();
                     }
                 } else {
+                    // Deliberately stays locked: a form that never received the
+                    // stored metadata would save blanks over it.
                     studyMetadataReadyProjectPath = '';
                 }
 

@@ -11,6 +11,16 @@ const DATE_RANGE_BADGE_IDS = {
 };
 
 /**
+ * Tier check for the red-when-empty border. A field with NO tier badge at all
+ * is not CORE/REQUIRED, so it must be treated exactly like an OPTIONAL one -
+ * otherwise every badge-less field (Target Sample Size, Power Analysis, the
+ * Overview lists, Informed Consent, ...) renders as if it were missing.
+ */
+export function isOptionalTierBadge(badge) {
+    return !badge || badge.textContent.trim() === 'OPTIONAL';
+}
+
+/**
  * Sets the red/green "missing"/"filled" border feedback on a field.
  * OPTIONAL-tier fields never get the alarming red-empty treatment - that
  * visual language is reserved for REQUIRED/CORE tiers.
@@ -132,7 +142,7 @@ export function validateDateRangeBadge(yearId, monthId, badgeText) {
     if (badge) {
         updateBadgeColor(badge, hasValue);
     }
-    const isOptionalTier = badge?.textContent.trim() === 'OPTIONAL';
+    const isOptionalTier = isOptionalTierBadge(badge);
 
     // Update border feedback on both selects in the pair
     for (const field of [yearField, monthField]) {
@@ -154,7 +164,9 @@ function _parseEligibilityCriteriaValues(fieldId) {
 
 /**
  * Validate eligibility badges.
- * Required rule: at least 2 criteria in total across Inclusion + Exclusion.
+ * CORE rule: at least one Inclusion criterion. It is deliberately independent
+ * of the OPTIONAL Exclusion list - a CORE field must be satisfiable from its
+ * own input, which the previous "2 criteria across both lists" rule was not.
  */
 export function validateEligibilityCriteriaBadges() {
     const inclusionField = getById('smEligInclusion');
@@ -163,12 +175,12 @@ export function validateEligibilityCriteriaBadges() {
 
     const inclusionValues = _parseEligibilityCriteriaValues('smEligInclusion');
     const exclusionValues = _parseEligibilityCriteriaValues('smEligExclusion');
-    const totalCriteria = inclusionValues.length + exclusionValues.length;
+    const hasInclusionCriterion = inclusionValues.length > 0;
 
     const requiredBadge =
         getById('smEligCriteriaRequiredBadge') || findBadgeByText('Inclusion Criteria');
     if (requiredBadge) {
-        updateBadgeColor(requiredBadge, totalCriteria >= 2);
+        updateBadgeColor(requiredBadge, hasInclusionCriterion);
     }
 
     const optionalBadge =
@@ -179,7 +191,7 @@ export function validateEligibilityCriteriaBadges() {
 
     // Inclusion is the CORE-tier field (red-when-empty applies); Exclusion is
     // OPTIONAL (never gets the alarming red border).
-    setRequiredFieldBorder(inclusionField, totalCriteria >= 2, false);
+    setRequiredFieldBorder(inclusionField, hasInclusionCriterion, false);
     setRequiredFieldBorder(exclusionField, exclusionValues.length > 0, true);
 }
 
@@ -434,8 +446,9 @@ export function validateProjectField(fieldId) {
     // OPTIONAL fields must never show the alarming red "missing" border -
     // that visual language is reserved for REQUIRED/CORE tiers. Tier comes
     // from the badge text already rendered next to the field (CORE tier is
-    // itself backend-driven, see study-metadata-required-fields.js).
-    const isOptionalTier = badge?.textContent.trim() === 'OPTIONAL';
+    // itself backend-driven, see study-metadata-required-fields.js), and a
+    // field with no badge counts as OPTIONAL.
+    const isOptionalTier = isOptionalTierBadge(badge);
     setRequiredFieldBorder(field, isValid && isPatternValid, isOptionalTier);
 
     if (!badge) {

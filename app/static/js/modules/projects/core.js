@@ -73,6 +73,17 @@ function setCreateResultHtml(html, scope = 'server') {
     resultDiv.dataset.scope = scope;
     resultDiv.style.display = 'block';
     resultDiv.innerHTML = html;
+
+    // #createResult sits in the "Create New Project" card at the top of the
+    // page; every trigger for it (the create/preliminary buttons at the
+    // bottom of the Study Metadata form, a preflight conflict check) can fire
+    // while the user is scrolled far below it, so every result written here
+    // must bring itself into view - fixed once here rather than at each of
+    // the 6 call sites, since a caller added later would otherwise silently
+    // reintroduce the same "nothing happened" bug. `block: 'nearest'` is a
+    // no-op when the div is already visible (e.g. during preflight checks
+    // while typing the project name, right next to this card).
+    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function clearCreateResult(scope = null) {

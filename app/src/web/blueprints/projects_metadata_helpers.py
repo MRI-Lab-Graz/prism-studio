@@ -379,8 +379,15 @@ def _compute_methods_completeness(
 
     inclusion_criteria_count = _criteria_count(elig.get("InclusionCriteria"))
     exclusion_criteria_count = _criteria_count(elig.get("ExclusionCriteria"))
-    total_eligibility_criteria = inclusion_criteria_count + exclusion_criteria_count
 
+    # Only fields the Study Metadata form can actually set belong here: a
+    # readiness score must never be capped by something the user has no input
+    # for. Deliberately excluded for that reason:
+    #   - Procedure.MissingDataHandling - in the project schema and read by
+    #     reporting.py, but nothing in the Studio ever writes it.
+    #   - Basics.License - edited in the Export section, not on this form.
+    #   - Basics.DatasetType - not user-editable at all.
+    # Keep this list aligned with computeLocalCompleteness() in metadata.js.
     fields: list[tuple[str, str, int, str, bool]] = [
         (
             "StudyDesign",
@@ -442,8 +449,8 @@ def _compute_methods_completeness(
             "Eligibility",
             "InclusionCriteria",
             3,
-            "List at least 2 criteria total across inclusion and exclusion",
-            total_eligibility_criteria >= 2,
+            "List at least one inclusion criterion",
+            inclusion_criteria_count > 0,
         ),
         (
             "Eligibility",
@@ -489,13 +496,6 @@ def _compute_methods_completeness(
         ),
         (
             "Procedure",
-            "MissingDataHandling",
-            1,
-            "Missing data handling",
-            _filled(proc.get("MissingDataHandling")),
-        ),
-        (
-            "Procedure",
             "Debriefing",
             1,
             "Debriefing procedure",
@@ -532,7 +532,6 @@ def _compute_methods_completeness(
             "Ethics approvals",
             _filled(dd.get("EthicsApprovals")),
         ),
-        ("Basics", "License", 2, "Data license", _filled(dd.get("License"))),
         (
             "Basics",
             "Keywords",
@@ -548,7 +547,6 @@ def _compute_methods_completeness(
             _filled(dd.get("Acknowledgements")),
         ),
         ("Basics", "DatasetDOI", 1, "Dataset DOI", _filled(dd.get("DatasetDOI"))),
-        ("Basics", "DatasetType", 1, "Dataset type", _filled(dd.get("DatasetType"))),
         ("Basics", "HEDVersion", 1, "HED version", _filled(dd.get("HEDVersion"))),
         ("Basics", "Funding", 1, "Funding", _filled(dd.get("Funding"))),
         (

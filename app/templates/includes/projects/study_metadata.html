@@ -56,7 +56,10 @@
                     <button class="btn sm-section-group w-100 text-start sm-group-toggle" type="button"
                             data-bs-toggle="collapse" data-bs-target="#smCoreSetupGroupBody" aria-expanded="false" aria-controls="smCoreSetupGroupBody">
                         <span class="sm-section-group__titleline">
-                            <span class="sm-section-group__eyebrow">Core study setup</span>
+                            <span class="sm-section-group__title-group">
+                                <span class="sm-section-group__eyebrow">Core study setup</span>
+                                <span class="sm-section-group__badges" id="smCoreSetupGroupBadges"></span>
+                            </span>
                             <i class="fas fa-chevron-down sm-group-chevron"></i>
                         </span>
                         <p class="sm-section-group__copy mb-0">Start with the sections that unlock project creation, methods readiness, and cross-file metadata syncing.</p>
@@ -325,7 +328,10 @@
                     <button class="btn sm-section-group w-100 text-start sm-group-toggle" type="button"
                             data-bs-toggle="collapse" data-bs-target="#smRecruitmentExecutionGroupBody" aria-expanded="false" aria-controls="smRecruitmentExecutionGroupBody">
                         <span class="sm-section-group__titleline">
-                            <span class="sm-section-group__eyebrow">Recruitment and execution</span>
+                            <span class="sm-section-group__title-group">
+                                <span class="sm-section-group__eyebrow">Recruitment and execution</span>
+                                <span class="sm-section-group__badges" id="smRecruitmentExecutionGroupBadges"></span>
+                            </span>
                             <i class="fas fa-chevron-down sm-group-chevron"></i>
                         </span>
                         <p class="sm-section-group__copy mb-0">Expand these sections once the core project scaffold is in place and you are ready to document participants and procedure details.</p>
@@ -365,9 +371,9 @@
                                         <option value="other">Other</option>
                                     </select>
                                     <!-- Picker -->
-                                    <div class="input-group input-group-sm flex-nowrap mb-2" id="recMethodPickerGroup">
+                                    <div class="mb-2" id="recMethodPickerGroup">
                                         <select class="form-select form-select-sm" id="recMethodPicker">
-                                            <option value="">-- Select method --</option>
+                                            <option value="">-- Select to add a method --</option>
                                             <option value="online-ads">Online ads</option>
                                             <option value="email-lists">University mailing lists</option>
                                             <option value="participant-pool">Participant pool</option>
@@ -379,9 +385,6 @@
                                             <option value="snowball">Snowball sampling</option>
                                             <option value="other">Other</option>
                                         </select>
-                                        <button type="button" class="btn btn-outline-secondary px-3 flex-shrink-0" id="recMethodAddBtn">
-                                            <i class="fas fa-plus me-1"></i>Add
-                                        </button>
                                     </div>
                                     <!-- Chips list -->
                                     <div id="smRecMethodList" class="d-flex flex-wrap gap-1"></div>
@@ -485,7 +488,7 @@
                                 </div>
                                 <div class="col-12">
                                     <small class="text-muted">
-                                        Provide at least 2 criteria in total across Inclusion and Exclusion.
+                                        At least one Inclusion criterion is required. Exclusion criteria are optional but recommended.
                                     </small>
                                 </div>
                                 <div class="col-md-4">
@@ -574,7 +577,10 @@
                     <button class="btn sm-section-group w-100 text-start sm-group-toggle" type="button"
                             data-bs-toggle="collapse" data-bs-target="#smReportingFollowupGroupBody" aria-expanded="false" aria-controls="smReportingFollowupGroupBody">
                         <span class="sm-section-group__titleline">
-                            <span class="sm-section-group__eyebrow">Reporting and follow-up</span>
+                            <span class="sm-section-group__title-group">
+                                <span class="sm-section-group__eyebrow">Reporting and follow-up</span>
+                                <span class="sm-section-group__badges" id="smReportingFollowupGroupBadges"></span>
+                            </span>
                             <i class="fas fa-chevron-down sm-group-chevron"></i>
                         </span>
                         <p class="sm-section-group__copy mb-0">Use these sections later in the project lifecycle to document gaps, issues, citation/discovery details, and supporting literature.</p>

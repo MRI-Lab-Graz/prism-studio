@@ -81,3 +81,74 @@ describe('updateBadgeColor', () => {
         expect(badge.classes.has('badge-tier-core')).toBe(false);
     });
 });
+
+// Minimal document stub: validation.js reaches the DOM only through
+// getById()/querySelectorAll(), so a map-backed fake is enough and keeps the
+// suite in the repo's existing `environment: 'node'` setup (no jsdom).
+function stubDocument(elementsById) {
+    globalThis.document = {
+        getElementById: (id) => elementsById[id] || null,
+        querySelectorAll: () => [],
+    };
+}
+
+describe('isOptionalTierBadge', () => {
+    it('treats a field with no tier badge as optional', async () => {
+        const { isOptionalTierBadge } = await import('./validation.js');
+        // Target Sample Size / Power Analysis and 15 other fields carry no
+        // tier badge at all - they must never render as "missing".
+        expect(isOptionalTierBadge(null)).toBe(true);
+    });
+
+    it('treats an OPTIONAL badge as optional and CORE/REQUIRED as not', async () => {
+        const { isOptionalTierBadge } = await import('./validation.js');
+        expect(isOptionalTierBadge(stubBadge('OPTIONAL'))).toBe(true);
+        expect(isOptionalTierBadge(stubBadge('CORE'))).toBe(false);
+        expect(isOptionalTierBadge(stubBadge('REQUIRED'))).toBe(false);
+    });
+});
+
+describe('validateEligibilityCriteriaBadges', () => {
+    function setupEligibility(inclusionText, exclusionText) {
+        const inclusionField = { ...stubField(), value: inclusionText };
+        const exclusionField = { ...stubField(), value: exclusionText };
+        const coreBadge = stubBadge('CORE');
+        const optionalBadge = stubBadge('OPTIONAL');
+        stubDocument({
+            smEligInclusion: inclusionField,
+            smEligExclusion: exclusionField,
+            smEligCriteriaRequiredBadge: coreBadge,
+            smEligExclusionOptionalBadge: optionalBadge,
+        });
+        return { inclusionField, exclusionField, coreBadge, optionalBadge };
+    }
+
+    it('turns the CORE badge green on a single inclusion criterion', async () => {
+        const { validateEligibilityCriteriaBadges } = await import('./validation.js');
+        const { coreBadge, inclusionField } = setupEligibility('older than 18', '');
+
+        validateEligibilityCriteriaBadges();
+
+        expect(coreBadge.classes.has('bg-success')).toBe(true);
+        expect(inclusionField.classes.has('required-field-empty')).toBe(false);
+    });
+
+    it('leaves the CORE badge unfilled when no inclusion criterion is given', async () => {
+        const { validateEligibilityCriteriaBadges } = await import('./validation.js');
+        const { coreBadge, inclusionField } = setupEligibility('', 'some exclusion');
+
+        validateEligibilityCriteriaBadges();
+
+        expect(coreBadge.classes.has('bg-success')).toBe(false);
+        expect(inclusionField.classes.has('required-field-empty')).toBe(true);
+    });
+
+    it('never lets the OPTIONAL exclusion field show the red missing border', async () => {
+        const { validateEligibilityCriteriaBadges } = await import('./validation.js');
+        const { exclusionField } = setupEligibility('older than 18', '');
+
+        validateEligibilityCriteriaBadges();
+
+        expect(exclusionField.classes.has('required-field-empty')).toBe(false);
+    });
+});

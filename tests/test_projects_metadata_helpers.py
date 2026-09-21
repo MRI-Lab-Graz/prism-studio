@@ -148,11 +148,34 @@ def test_compute_methods_completeness_excludes_creation_blocking_fields_from_sco
     assert {"Name", "Authors"} <= field_names
 
     # Name/Authors are tracked in "fields" (for creation-gating elsewhere)
-    # but must not be counted in total/optional_total - only the 11
-    # non-creation-blocking fields (13 Basics fields minus Name/Authors).
-    assert basics["total"] == 11
+    # but must not be counted in total/optional_total - only the 9
+    # non-creation-blocking fields (11 Basics fields minus Name/Authors).
+    assert basics["total"] == 9
     assert basics["required_total"] == 3  # EthicsApprovals, Keywords, Funding
-    assert basics["optional_total"] == 8
+    assert basics["optional_total"] == 6
+
+    # License and DatasetType are not editable on the Study Metadata form, so
+    # they must not appear at all - a score the user cannot move is not a
+    # readiness signal.
+    assert "License" not in field_names
+    assert "DatasetType" not in field_names
+
+
+def test_compute_methods_completeness_omits_fields_the_studio_cannot_set():
+    """The readiness score must only count fields the Study Metadata form can
+    actually fill. Procedure.MissingDataHandling is in the project schema and
+    read by reporting.py, but nothing in the Studio ever writes it - counting
+    it capped the Procedure score at a value no user could reach.
+    """
+    project_data = {"Procedure": {"Overview": "Procedure"}}
+
+    completeness = metadata_helpers._compute_methods_completeness(project_data, {})
+    procedure_fields = {
+        f["name"] for f in completeness["sections"]["Procedure"]["fields"]
+    }
+
+    assert "Overview" in procedure_fields
+    assert "MissingDataHandling" not in procedure_fields
 
 
 def test_compute_methods_completeness_recruitment_requires_only_method():
@@ -176,7 +199,12 @@ def test_compute_methods_completeness_recruitment_requires_only_method():
     assert recruitment["optional_total"] == 4
 
 
-def test_compute_methods_completeness_eligibility_requires_two_combined_criteria():
+def test_compute_methods_completeness_eligibility_core_needs_only_inclusion():
+    """The CORE Eligibility field is InclusionCriteria, so it must be
+    satisfiable from the inclusion list alone - filling only the OPTIONAL
+    exclusion list must never turn it green, and a single inclusion criterion
+    must always be enough.
+    """
     project_data = {
         "Overview": {"Main": "Overview"},
         "StudyDesign": {"Type": "cross-sectional", "TypeDescription": "Design"},
@@ -201,14 +229,19 @@ def test_compute_methods_completeness_eligibility_requires_two_combined_criteria
         project_data, {"Name": "Demo"}
     )
 
+    # Two exclusion criteria, no inclusion criterion: CORE stays unfilled.
     eligibility = completeness["sections"]["Eligibility"]
     assert eligibility["required_total"] == 1
-    assert eligibility["required_filled"] == 1
+    assert eligibility["required_filled"] == 0
 
-    project_data["Eligibility"]["ExclusionCriteria"] = ["Cardiovascular diseases"]
+    # A single inclusion criterion is enough, with no exclusion criteria at all.
+    project_data["Eligibility"] = {
+        "InclusionCriteria": ["Older than 18"],
+        "ExclusionCriteria": [],
+    }
     completeness = metadata_helpers._compute_methods_completeness(
         project_data, {"Name": "Demo"}
     )
     eligibility = completeness["sections"]["Eligibility"]
     assert eligibility["required_total"] == 1
-    assert eligibility["required_filled"] == 0
+    assert eligibility["required_filled"] == 1

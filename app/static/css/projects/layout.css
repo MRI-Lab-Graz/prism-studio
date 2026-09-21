@@ -179,6 +179,14 @@
     box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.15) !important;
 }
 
+/* Study metadata form while its content is being loaded from the server.
+   Interaction is already blocked by the `inert` attribute; this only makes
+   the locked state visible so typing into it never looks accepted. */
+.sm-form-loading {
+    opacity: 0.55;
+    cursor: progress;
+}
+
 .project-box-actions {
     display: flex;
     align-items: flex-start;
