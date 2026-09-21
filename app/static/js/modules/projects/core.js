@@ -53,6 +53,7 @@ import {
     setOverviewList,
     resetStudyMetadataForm,
     saveProjectSchemaConfig,
+    persistMetadataDeclarations,
     showStudyMetadataCard,
     showMethodsCard,
     updateCreateProjectButton
@@ -226,6 +227,7 @@ initCreateProjectController({
     getRecLocationList,
     getYearMonthValue,
     saveProjectSchemaConfig,
+    persistMetadataDeclarations,
     applyCurrentProject,
     getCurrentProjectState,
     addRecentProject,

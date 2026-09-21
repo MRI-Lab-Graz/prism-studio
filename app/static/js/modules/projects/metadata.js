@@ -303,12 +303,28 @@ function _getCurrentProjectName() {
 // toggle may show neutral again next load, not a data-loss risk.
 function _saveMetadataDeclaration(key, value) {
     const projectPath = _getCurrentProjectPath();
-    if (!projectPath) return;
-    fetchWithApiFallback('/api/projects/preferences/metadataDeclarations', {
+    if (!projectPath) return Promise.resolve();
+    return fetchWithApiFallback('/api/projects/preferences/metadataDeclarations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ project_path: projectPath, preferences: { [key]: value } })
     }).catch(() => { /* best-effort */ });
+}
+
+/**
+ * Re-persists the Ethics/Funding Yes/No declarations from the current form
+ * state. The Yes/No click handlers can only record them when a project path
+ * already exists, so a choice made while *creating* a project was dropped -
+ * and an explicit "No" writes an empty EthicsApprovals/Funding array, which
+ * is indistinguishable from "never answered" on the next load, so the toggle
+ * came back blank. Call this once the new project path is known, before its
+ * metadata is loaded back.
+ */
+export function persistMetadataDeclarations() {
+    return Promise.all([
+        hasEthicsChoice() ? _saveMetadataDeclaration('ethicsApprovalsDeclared', true) : null,
+        hasFundingChoice() ? _saveMetadataDeclaration('fundingDeclared', true) : null,
+    ].filter(Boolean));
 }
 
 function _setCurrentProjectName(name) {
@@ -2569,13 +2585,19 @@ export function updateCreateProjectButton() {
     const hasOutputFolder = Boolean((document.getElementById('projectPath')?.value || '').trim());
     const createSection = document.getElementById('section-create');
     const createActive = createSection && createSection.classList.contains('active');
-    const isCreateMode = Boolean(createActive);
+    const currentProjectPath = _getCurrentProjectPath();
+    // The Create tab stays active after a successful create, so "is the
+    // Create tab open" alone kept the button saying "Create Project" for a
+    // project that already exists - clicking it again only produced a
+    // "target folder already exists" preflight conflict. Once a project
+    // path exists the action is a save, whichever tab is open. (Switching to
+    // the Create tab clears the path first, see clearCurrentProjectForNewDraft.)
+    const isCreateMode = Boolean(createActive) && !currentProjectPath;
     const actionHints = [
         document.getElementById('metadataActionHint'),
         document.getElementById('projectBoxSaveHint')
     ].filter(Boolean);
 
-    const currentProjectPath = _getCurrentProjectPath();
     const studyMetadataLoadInFlight = studyMetadataLoadController.getLoadInFlight();
     const metadataReadyForCurrentProject = Boolean(currentProjectPath)
         && !studyMetadataLoadInFlight

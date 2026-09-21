@@ -1456,6 +1456,46 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         set_result_fn = core_content.split("function setCreateResultHtml(")[1].split("\n}")[0]
         self.assertIn("scrollIntoView", set_result_fn)
 
+    def test_explicit_ethics_funding_no_survives_project_creation(self):
+        """An explicit "No" for Ethics Approvals / Funding is stored as an
+        empty array, so only the metadataDeclarations preference tells it
+        apart from "never answered". The Yes/No handlers can't write that
+        preference while creating a project (no project path yet), so it must
+        be flushed once the path exists - and before the form is reloaded
+        from the new project, or both toggles come back blank.
+        """
+        metadata_content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+        create_content = PROJECTS_CREATE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("export function persistMetadataDeclarations()", metadata_content)
+        self.assertIn("await persistMetadataDeclarations();", create_content)
+
+        # Ordering is the whole point: flush the declarations, then let
+        # showStudyMetadataCard() reload the form from the new project.
+        flush_index = create_content.index("await persistMetadataDeclarations();")
+        reload_index = create_content.index("showStudyMetadataCard();")
+        self.assertLess(flush_index, reload_index)
+
+    def test_create_buttons_become_save_once_a_project_exists(self):
+        """The Create tab stays active after a successful create, so keying
+        the button off the tab alone left it saying "Create Project" for a
+        project that already exists - and clicking it re-ran the create,
+        which only produced a "target folder already exists" conflict.
+        """
+        metadata_content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+        create_content = PROJECTS_CREATE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "const isCreateMode = Boolean(createActive) && !currentProjectPath;",
+            metadata_content,
+        )
+        # Both create buttons must follow the label and save instead.
+        self.assertEqual(
+            create_content.count("if (getProjectStateSnapshot().path) {"),
+            2,
+        )
+        self.assertIn("function submitStudyMetadataFormInstead()", create_content)
+
     def test_section_group_headers_show_required_core_fair_sums(self):
         """The three collapsed section-group headers (Core study setup /
         Recruitment and execution / Reporting and follow-up) used to show no

@@ -17,6 +17,7 @@ export function initCreateProjectController({
     getRecLocationList,
     getYearMonthValue,
     saveProjectSchemaConfig,
+    persistMetadataDeclarations,
     applyCurrentProject,
     getCurrentProjectState,
     addRecentProject,
@@ -269,6 +270,16 @@ export function initCreateProjectController({
                 `);
 
                 applyCurrentProject(result.current_project);
+                // Must happen before showStudyMetadataCard() below reloads the
+                // form from the new project: an explicit Ethics/Funding "No"
+                // is stored as an empty array, so without this declaration
+                // the reload can't tell it from "never answered" and resets
+                // both toggles to blank.
+                try {
+                    await persistMetadataDeclarations();
+                } catch (declError) {
+                    console.warn('Could not persist metadata declarations after create:', declError);
+                }
                 try {
                     await saveProjectSchemaConfig();
                 } catch (schemaError) {
@@ -303,22 +314,30 @@ export function initCreateProjectController({
         }
     }
 
+    // A project already exists -> the create buttons act as save, whichever
+    // tab is open. The Create tab stays active after a successful create, so
+    // keying off the tab alone re-ran the create and only produced a "target
+    // folder already exists" conflict. Matches the button label, which
+    // updateCreateProjectButton() flips to "Save Changes to Project" under
+    // the same condition.
+    function submitStudyMetadataFormInstead() {
+        const studyMetadataForm = document.getElementById('studyMetadataForm');
+        if (!studyMetadataForm) return;
+        if (typeof studyMetadataForm.requestSubmit === 'function') {
+            studyMetadataForm.requestSubmit();
+        } else {
+            studyMetadataForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        }
+    }
+
     const createProjectSubmitBtn = document.getElementById('createProjectSubmitBtn');
     if (createProjectSubmitBtn) {
         createProjectSubmitBtn.addEventListener('click', (event) => {
-            const createSection = document.getElementById('section-create');
-            const createActive = createSection && createSection.classList.contains('active');
-            if (!createActive && getProjectStateSnapshot().path) {
-                event.preventDefault();
-                const studyMetadataForm = document.getElementById('studyMetadataForm');
-                if (studyMetadataForm && typeof studyMetadataForm.requestSubmit === 'function') {
-                    studyMetadataForm.requestSubmit();
-                } else if (studyMetadataForm) {
-                    studyMetadataForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-                }
+            event.preventDefault();
+            if (getProjectStateSnapshot().path) {
+                submitStudyMetadataFormInstead();
                 return;
             }
-            event.preventDefault();
             submitCreateProject();
         });
     }
@@ -327,6 +346,10 @@ export function initCreateProjectController({
     if (createProjectSubmitBtnTop) {
         createProjectSubmitBtnTop.addEventListener('click', (event) => {
             event.preventDefault();
+            if (getProjectStateSnapshot().path) {
+                submitStudyMetadataFormInstead();
+                return;
+            }
             submitCreateProject({ triggerButton: createProjectSubmitBtnTop });
         });
     }
