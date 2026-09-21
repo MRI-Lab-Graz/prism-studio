@@ -31,6 +31,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+from src.cross_platform import remove_tree
 from src.datalad_execution import (
     DATALAD_DOCS_URL,
     DATALAD_INSTALL_HINT,
@@ -799,7 +800,7 @@ def prepare_defacing_export_copy(
         if clone_process.returncode != 0:
             detail = (clone_process.stderr or clone_process.stdout or "").strip()
             try:
-                shutil.rmtree(target_path, ignore_errors=True)
+                remove_tree(target_path, ignore_errors=True)
             except Exception:
                 pass
             return {
@@ -824,7 +825,7 @@ def prepare_defacing_export_copy(
         )
         if not selected_nifti_files:
             try:
-                shutil.rmtree(target_path, ignore_errors=True)
+                remove_tree(target_path, ignore_errors=True)
             except Exception:
                 pass
             return {
@@ -923,7 +924,7 @@ def prepare_defacing_export_copy(
 
     if copied_nifti_files == 0:
         try:
-            shutil.rmtree(target_path, ignore_errors=True)
+            remove_tree(target_path, ignore_errors=True)
         except Exception:
             pass
         return {

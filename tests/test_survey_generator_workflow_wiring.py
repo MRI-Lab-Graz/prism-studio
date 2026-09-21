@@ -28,7 +28,7 @@ class TestSurveyGeneratorWorkflowWiring(unittest.TestCase):
         self.assertIn("function getCurrentProjectPath() {", content)
         self.assertIn("let libraryLoadToken = 0;", content)
         self.assertIn(
-            "return requestToken === libraryLoadToken && requestProjectPath === getCurrentProjectPath();",
+            "return requestToken === libraryLoadToken && window.isSameProjectPath(requestProjectPath, getCurrentProjectPath());",
             content,
         )
         self.assertIn(

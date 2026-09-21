@@ -1,3 +1,5 @@
+import { isSameProjectPath } from '../../shared/project-state.js';
+
 export function createMetadataMethodsController({
     escapeHtml,
     fetchWithApiFallback,
@@ -31,7 +33,7 @@ export function createMetadataMethodsController({
         if (!card) return;
 
         const currentProjectPath = getCurrentProjectPath();
-        if (currentProjectPath !== lastMethodsProjectPath) {
+        if (!isSameProjectPath(currentProjectPath, lastMethodsProjectPath)) {
             lastMethodsProjectPath = currentProjectPath;
             resetMethodsPreviewState();
         }
@@ -70,7 +72,7 @@ export function createMetadataMethodsController({
                 body: JSON.stringify({ project_path: requestProjectPath, language: lang, detail_level: detailLevel, continuous: continuous })
             });
             const data = await response.json();
-            if (requestToken !== methodsRequestToken || requestProjectPath !== getCurrentProjectPath()) {
+            if (requestToken !== methodsRequestToken || !isSameProjectPath(requestProjectPath, getCurrentProjectPath())) {
                 return;
             }
 
@@ -97,7 +99,7 @@ export function createMetadataMethodsController({
             document.getElementById('methodsPreview').innerHTML = doc.body.innerHTML;
             resultDiv.style.display = 'block';
         } catch (error) {
-            if (requestToken !== methodsRequestToken || requestProjectPath !== getCurrentProjectPath()) {
+            if (requestToken !== methodsRequestToken || !isSameProjectPath(requestProjectPath, getCurrentProjectPath())) {
                 return;
             }
             errorDiv.style.display = 'block';

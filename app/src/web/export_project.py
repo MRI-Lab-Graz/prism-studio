@@ -15,7 +15,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional, Set
 
-from src.cross_platform import describe_case_insensitive_id_collisions
+from src.cross_platform import describe_case_insensitive_id_collisions, remove_tree
 from src.project_export_helpers import (
     _extract_export_task_label,
     _matches_excluded_acq_label,
@@ -844,4 +844,4 @@ def export_project(
         return stats
     finally:
         if defacing_workspace_root is not None:
-            shutil.rmtree(defacing_workspace_root, ignore_errors=True)
+            remove_tree(defacing_workspace_root, ignore_errors=True)

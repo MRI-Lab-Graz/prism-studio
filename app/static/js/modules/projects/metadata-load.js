@@ -1,3 +1,5 @@
+import { isSameProjectPath } from '../../shared/project-state.js';
+
 export function createStudyMetadataLoadController({
     getCurrentProjectPath,
     getSubmitInFlight,
@@ -31,7 +33,8 @@ export function createStudyMetadataLoadController({
 
     function isReadyForCurrentProject() {
         const currentProjectPath = getCurrentProjectPath();
-        return Boolean(currentProjectPath) && studyMetadataReadyProjectPath === currentProjectPath;
+        return Boolean(currentProjectPath)
+            && isSameProjectPath(studyMetadataReadyProjectPath, currentProjectPath);
     }
 
     function isBusy() {

@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function isLibraryRequestCurrent(requestToken, requestProjectPath) {
-        return requestToken === libraryLoadToken && requestProjectPath === getCurrentProjectPath();
+        return requestToken === libraryLoadToken && window.isSameProjectPath(requestProjectPath, getCurrentProjectPath());
     }
 
     // Target tool configuration

@@ -3,6 +3,7 @@ Cross-platform compatibility utilities for prism
 """
 
 import os
+import shutil
 import sys
 import tempfile
 import time
@@ -32,6 +33,42 @@ def _replace_with_retry(source, destination):
             if attempt < _REPLACE_RETRY_ATTEMPTS - 1:
                 time.sleep(_REPLACE_RETRY_DELAY_SECONDS)
     raise last_error
+
+
+def remove_tree(path, ignore_errors=False):
+    """shutil.rmtree() that can also delete read-only git-annex trees.
+
+    git-annex keeps annexed content as read-only objects so accidental edits
+    fail loudly. POSIX only needs write permission on the *parent* directory to
+    unlink a file, so a plain rmtree succeeds there; Windows refuses to unlink a
+    read-only file at all. Left alone, a failed `datalad clone` leaves a partial
+    dataset behind that the retry then trips over, because DataLad wants an
+    empty target.
+
+    ``ignore_errors`` keeps the best-effort semantics of the temp-dir cleanups
+    without giving up the chmod retry the way ``shutil.rmtree(ignore_errors=True)``
+    does - that flag suppresses ``onerror`` entirely, so read-only trees are
+    never even retried.
+    """
+
+    def _make_writable_and_retry(func, target, exc_info):
+        try:
+            # Unlinking needs write permission on the *parent*, not the file,
+            # so a read-only directory blocks deletion of everything inside it.
+            parent = os.path.dirname(target)
+            if parent and not os.access(parent, os.W_OK):
+                os.chmod(parent, 0o700)
+            # Directories need +x as well, or the recursive walk can't enter.
+            os.chmod(target, 0o700 if os.path.isdir(target) else 0o600)
+            func(target)
+        except OSError:
+            if not ignore_errors:
+                raise exc_info[1]
+
+    # ponytail: onerror= is deprecated since 3.12 in favour of onexc=, but still
+    # works (verified on 3.14). CI pins 3.10 (.github/workflows/ci.yml), which
+    # predates onexc, so onerror stays until that floor moves past 3.11.
+    shutil.rmtree(path, onerror=_make_writable_and_retry)
 
 
 def normalize_path(path):

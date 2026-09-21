@@ -1,3 +1,5 @@
+import { isSameProjectPath } from '../shared/project-state.js';
+
 export async function refreshTemplateList(context, { silent = false } = {}) {
   const modality = context.modalityEl.value;
   const requestProjectPath = context.getCurrentProjectPath();
@@ -300,7 +302,7 @@ export async function saveCurrent(context) {
       is_global: wasFork,
       template: obj,
     });
-    if (currentProjectPath !== context.getCurrentProjectPath()) {
+    if (!isSameProjectPath(currentProjectPath, context.getCurrentProjectPath())) {
       context.loadedFromReadonly = false;
       context.loadedFromProjectLibrary = false;
       context.loadedTemplateProjectPath = '';

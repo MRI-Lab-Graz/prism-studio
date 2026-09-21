@@ -1,3 +1,5 @@
+import { isSameProjectPath } from '../../shared/project-state.js';
+
 export function initProjectSelectionController({
     fetchWithApiFallback,
     getCurrentProjectState,
@@ -57,7 +59,7 @@ export function initProjectSelectionController({
         const normalizedTargetPath = String(targetPath || '').trim();
         const normalizedCurrentPath = String(getCurrentProjectState().path || '').trim();
 
-        if (normalizedTargetPath && normalizedCurrentPath && normalizedTargetPath === normalizedCurrentPath) {
+        if (normalizedTargetPath && normalizedCurrentPath && isSameProjectPath(normalizedTargetPath, normalizedCurrentPath)) {
             return true;
         }
 

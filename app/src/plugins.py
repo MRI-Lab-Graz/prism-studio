@@ -394,7 +394,7 @@ def generate_plugin_template(
     # Ensure directory exists
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-    with open(output_path, "w") as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         f.write(content)
 
     return output_path

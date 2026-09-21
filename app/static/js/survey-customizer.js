@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const currentProjectPath = getCurrentProjectPath();
         const hasCurrentProject = Boolean(currentProjectPath);
-        const matchesLoadedProject = !sourceProjectPath || currentProjectPath === sourceProjectPath;
+        const matchesLoadedProject = !sourceProjectPath || window.isSameProjectPath(currentProjectPath, sourceProjectPath);
 
         saveToProjectRow.style.display = hasCurrentProject || Boolean(sourceProjectPath) ? '' : 'none';
 
@@ -1297,7 +1297,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Include "save to project" flag if checked
         const saveToProject = saveToProjectCheckbox && saveToProjectCheckbox.checked;
         const currentProjectPath = getCurrentProjectPath();
-        if (saveToProject && (!currentProjectPath || (sourceProjectPath && currentProjectPath !== sourceProjectPath))) {
+        if (saveToProject && (!currentProjectPath || (sourceProjectPath && !window.isSameProjectPath(currentProjectPath, sourceProjectPath)))) {
             updateSaveToProjectAvailability();
             alert('Save to project is only available for the same project this customizer state was loaded from. Return to Survey Export and reload templates before copying.');
             return;

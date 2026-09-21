@@ -1,3 +1,5 @@
+import { isSameProjectPath } from '../../shared/project-state.js';
+
 export function createMetadataDescriptionController({
     fetchWithApiFallback,
     getCurrentProjectPath,
@@ -268,12 +270,12 @@ export function createMetadataDescriptionController({
             if (result.success) {
                 await saveProjectSchemaConfig();
                 displayMetadataIssues(result.issues || []);
-                if (requestProjectPath === getCurrentProjectPath()) {
+                if (isSameProjectPath(requestProjectPath, getCurrentProjectPath())) {
                     await refreshCitationHealthStatus();
                     await refreshMetadataSyncStatus();
                 }
 
-                if (requestProjectPath === getCurrentProjectPath() && description.Name && description.Name !== getCurrentProjectName()) {
+                if (isSameProjectPath(requestProjectPath, getCurrentProjectPath()) && description.Name && description.Name !== getCurrentProjectName()) {
                     setCurrentProjectName(description.Name);
                 }
             } else {

@@ -154,17 +154,17 @@
   }
 
   function isProjectContextCurrent(projectPath, requestToken) {
-    return requestToken === projectContextRequestToken && projectPath === getCurrentProjectPath();
+    return requestToken === projectContextRequestToken && window.isSameProjectPath(projectPath, getCurrentProjectPath());
   }
 
   function handleProjectContextChange(previousProjectPath, nextProjectPath) {
     const previousPath = String(previousProjectPath || '').trim();
     const nextPath = String(nextProjectPath || '').trim();
-    if (previousPath === nextPath) return;
+    if (window.isSameProjectPath(previousPath, nextPath)) return;
 
     btnSave.disabled = true;
 
-    if (loadedFromProjectLibrary && loadedTemplateProjectPath && loadedTemplateProjectPath !== nextPath) {
+    if (loadedFromProjectLibrary && loadedTemplateProjectPath && !window.isSameProjectPath(loadedTemplateProjectPath, nextPath)) {
       currentTemplateFilename = null;
       loadedFromProjectLibrary = false;
       loadedFromReadonly = false;

@@ -386,7 +386,10 @@ def to_csv(issues: List[Issue]) -> str:
     import io
 
     output = io.StringIO()
-    writer = csv.writer(output)
+    # lineterminator="\n" because this string is handed to a text-mode open()
+    # in write_output(); letting csv emit its default "\r\n" would come out as
+    # "\r\r\n" on Windows (a blank row between every record in Excel).
+    writer = csv.writer(output, lineterminator="\n")
 
     # Header
     writer.writerow(["code", "severity", "message", "file_path", "fix_hint"])

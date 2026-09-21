@@ -63,7 +63,7 @@ class BIDSSchemaLoader:
         # Try cache first
         if not force_reload and self.schema_file.exists():
             try:
-                with open(self.schema_file, "r") as f:
+                with open(self.schema_file, "r", encoding="utf-8") as f:
                     self.schema = json.load(f)
                 _startup_detail_print(f"[OK] Schema loaded from cache: {self.schema_file}")
                 self._extract_version()
@@ -97,7 +97,7 @@ class BIDSSchemaLoader:
             self.schema = response.json()
 
             # Cache it
-            with open(self.schema_file, "w") as f:
+            with open(self.schema_file, "w", encoding="utf-8") as f:
                 json.dump(self.schema, f, indent=2)
 
             _startup_detail_print(f"[OK] Schema loaded from remote and cached to: {self.schema_file}")
@@ -127,7 +127,7 @@ class BIDSSchemaLoader:
             self.schema = self._namespace_to_dict(schema)
 
             # Cache it
-            with open(self.schema_file, "w") as f:
+            with open(self.schema_file, "w", encoding="utf-8") as f:
                 json.dump(self.schema, f, indent=2)
 
             _startup_detail_print("[OK] Schema loaded from bidsschematools and cached")

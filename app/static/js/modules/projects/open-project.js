@@ -1,3 +1,5 @@
+import { isSameProjectPath } from '../../shared/project-state.js';
+
 export function initOpenProjectController({
     fetchWithApiFallback,
     setButtonLoading,
@@ -655,7 +657,7 @@ export function initOpenProjectController({
                 }
 
                 const responsePath = String(current.path || '').trim();
-                if (responsePath !== normalizedPath) {
+                if (!isSameProjectPath(responsePath, normalizedPath)) {
                     continue;
                 }
 
@@ -1211,7 +1213,7 @@ export function initOpenProjectController({
 
         const selectedPath = String(input.value || '').trim().replace(/[\\/]+$/, '');
         const currentPath = String(getCurrentProjectState().path || '').trim().replace(/[\\/]+$/, '');
-        const isCurrentProject = Boolean(selectedPath && currentPath && selectedPath === currentPath);
+        const isCurrentProject = Boolean(selectedPath && currentPath && isSameProjectPath(selectedPath, currentPath));
         button.disabled = isCurrentProject;
         button.title = isCurrentProject ? 'This project is already loaded' : '';
     }
@@ -1231,7 +1233,7 @@ export function initOpenProjectController({
             .then((current) => {
                 if (!current || typeof current !== 'object') return;
                 const currentPath = String(current.path || '').trim();
-                if (currentPath !== path) return; // user navigated to a different project meanwhile
+                if (!isSameProjectPath(currentPath, path)) return; // user navigated to a different project meanwhile
                 applyCurrentProject(current);
                 renderProjectBoxDataladState(current.datalad, currentPath);
             })

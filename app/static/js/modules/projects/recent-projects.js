@@ -1,3 +1,5 @@
+import { isSameProjectPath } from '../../shared/project-state.js';
+
 const recentProjectsKey = 'prism_recent_projects';
 const recentProjectStatusCache = new Map();
 
@@ -61,7 +63,7 @@ export function createRecentProjectsController({
         if (!path) return;
         const safeName = name && name.trim() ? name.trim() : path.split(/[\\/]/).pop();
         const safeIcon = resolveProjectIconClass(icon || getCurrentProjectIcon());
-        const list = getRecentProjects().filter((project) => project.path !== path);
+        const list = getRecentProjects().filter((project) => !isSameProjectPath(project.path, path));
         list.unshift({ name: safeName, path, icon: safeIcon });
         recentProjectStatusCache.delete(path);
         saveRecentProjects(list);

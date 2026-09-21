@@ -148,11 +148,11 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function isProjectRequestCurrent(requestToken, activeToken, requestProjectPath) {
-    return requestToken === activeToken && requestProjectPath === resolveProjectPath();
+    return requestToken === activeToken && window.isSameProjectPath(requestProjectPath, resolveProjectPath());
   }
 
   function isRecipeRunCurrent(runToken, requestProjectPath) {
-    return runToken === recipeRunToken && requestProjectPath === resolveProjectPath();
+    return runToken === recipeRunToken && window.isSameProjectPath(requestProjectPath, resolveProjectPath());
   }
 
   function setRunAvailability() {

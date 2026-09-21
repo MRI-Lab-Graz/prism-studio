@@ -78,7 +78,7 @@ def _ensure_participants(
             part_schema[col] = {"Description": f"Participant attribute '{col}'"}
         inferred = True
     else:
-        with open(participants_json_path, "r") as f:
+        with open(participants_json_path, "r", encoding="utf-8") as f:
             part_schema = json.load(f)
 
     print(
@@ -167,7 +167,7 @@ def process_dataframe(
             "GeneratedBy": [{"Name": "PRISM CSV Converter", "Version": "1.1.1"}],
             "HEDVersion": "8.2.0",
         }
-        with open(desc_path, "w") as f:
+        with open(desc_path, "w", encoding="utf-8") as f:
             json.dump(dataset_description, f, indent=2)
 
     id_cols = [
@@ -389,7 +389,7 @@ def process_dataframe(
                     ]
                     or (isinstance(v, dict) and "AliasOf" not in v)
                 }
-                with open(path, "w") as f:
+                with open(path, "w", encoding="utf-8") as f:
                     json.dump(clean_schema, f, indent=2)
 
     print("Conversion complete.")

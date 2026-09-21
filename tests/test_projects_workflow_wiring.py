@@ -577,7 +577,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "if (requestToken !== exportPreferencesLoadToken || requestProjectPath !== resolveCurrentProjectPath()) {",
+            "if (requestToken !== exportPreferencesLoadToken || !isSameProjectPath(requestProjectPath, resolveCurrentProjectPath())) {",
             content,
         )
         self.assertIn("const inheritedPreferences = data.inherited_preferences || {};", content)
@@ -1084,7 +1084,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "body: JSON.stringify({ project_path: requestProjectPath })", content
         )
         self.assertIn(
-            "if (requestToken !== methodsRequestToken || requestProjectPath !== getCurrentProjectPath()) {",
+            "if (requestToken !== methodsRequestToken || !isSameProjectPath(requestProjectPath, getCurrentProjectPath())) {",
             methods_content,
         )
         self.assertIn("metadataMethodsController.handleProjectChanged();", content)
@@ -1405,7 +1405,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "if (requestProjectPath === getCurrentProjectPath()) {\n                    await refreshMetadataSyncStatus();\n                    captureBaseline();\n                }\n\n                saveSucceeded = true;",
+            "if (isSameProjectPath(requestProjectPath, getCurrentProjectPath())) {\n                    await refreshMetadataSyncStatus();\n                    captureBaseline();\n                }\n\n                saveSucceeded = true;",
             save_content,
         )
 

@@ -7,6 +7,7 @@ import { setButtonLoading } from './helpers.js';
 import { getById, setHtml, hide, show, escapeHtml } from '../../shared/dom.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
+import { isSameProjectPath } from '../../shared/project-state.js';
 
 const EXPORT_VALIDATION_MODES = new Set(['both', 'bids', 'prism', 'ignore']);
 const EXPORT_REPOSITORY_MODES = new Set(['datalad_free', 'datalad_preserving', 'git_lfs']);
@@ -1406,7 +1407,7 @@ export async function loadExportPreferences() {
             `/api/projects/preferences/export?project_path=${encodeURIComponent(requestProjectPath)}`
         );
         const data = await resp.json().catch(() => ({}));
-        if (requestToken !== exportPreferencesLoadToken || requestProjectPath !== resolveCurrentProjectPath()) {
+        if (requestToken !== exportPreferencesLoadToken || !isSameProjectPath(requestProjectPath, resolveCurrentProjectPath())) {
             return lastLoadedExportPreferences;
         }
         const normalized = resp.ok && data.success
@@ -1426,7 +1427,7 @@ export async function loadExportPreferences() {
         updateExportSnapshotUi();
         return normalized;
     } catch {
-        if (requestToken !== exportPreferencesLoadToken || requestProjectPath !== resolveCurrentProjectPath()) {
+        if (requestToken !== exportPreferencesLoadToken || !isSameProjectPath(requestProjectPath, resolveCurrentProjectPath())) {
             return lastLoadedExportPreferences;
         }
         lastLoadedExportPreferences = getDefaultExportPreferences();
@@ -1462,7 +1463,7 @@ export async function loadExportLicense() {
             `/api/projects/description?project_path=${encodeURIComponent(requestProjectPath)}`
         );
         const data = await resp.json().catch(() => ({}));
-        if (requestToken !== exportLicenseLoadToken || requestProjectPath !== resolveCurrentProjectPath()) {
+        if (requestToken !== exportLicenseLoadToken || !isSameProjectPath(requestProjectPath, resolveCurrentProjectPath())) {
             return;
         }
         if (data.success && data.description) {

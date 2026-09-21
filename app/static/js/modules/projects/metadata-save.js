@@ -1,3 +1,5 @@
+import { isSameProjectPath } from '../../shared/project-state.js';
+
 export function createStudyMetadataSaveController({
     fetchWithApiFallback,
     getCurrentProjectPath,
@@ -58,7 +60,7 @@ export function createStudyMetadataSaveController({
 
                 const readmeResult = await generateReadmeSilent(requestProjectPath);
 
-                if (requestProjectPath === getCurrentProjectPath()) {
+                if (isSameProjectPath(requestProjectPath, getCurrentProjectPath())) {
                     await refreshMetadataSyncStatus();
                     captureBaseline();
                 }

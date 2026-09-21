@@ -1424,7 +1424,7 @@ def convert_varioport(
                 "task_plausibility_warning"
             ]
 
-        with open(sidecar_path, "w") as jf:
+        with open(sidecar_path, "w", encoding="utf-8") as jf:
             json.dump(sidecar, jf, indent=4)
 
         print("Conversion complete.")

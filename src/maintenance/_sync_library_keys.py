@@ -44,7 +44,7 @@ def _sync_library_keys(
             continue
 
         filepath = os.path.join(library_dir, filename)
-        with open(filepath, "r") as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         changed = False
@@ -84,7 +84,7 @@ def _sync_library_keys(
                     changed = True
 
         if changed:
-            with open(filepath, "w") as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
             print(f"✅ Synchronized keys for {filename}")
         else:

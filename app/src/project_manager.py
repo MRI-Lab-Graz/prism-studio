@@ -32,6 +32,7 @@ import re
 import stat
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -6119,6 +6120,34 @@ git push -u origin main
         CrossPlatformFile.write_text(str(gitattributes_path), new_content)
         return True
 
+    def _ensure_git_longpaths(self, dataset_root: Path) -> None:
+        """Let Git work past Windows' 260-character MAX_PATH limit.
+
+        BIDS paths are already deep, and git-annex roughly doubles them: an
+        object path repeats the full SHA256E key as both a directory name and
+        the filename inside it. Past 260 characters Windows refuses the call and
+        Git reports a misleading "Filename too long", usually mid-checkout.
+
+        ``core.longpaths`` makes Git use the Unicode path APIs, so it works
+        without the machine-wide LongPathsEnabled registry opt-in (that one is
+        still needed for Python's own file operations). Best effort and a no-op
+        off Windows, where PATH_MAX is 4096.
+        """
+        if not sys.platform.startswith("win"):
+            return
+
+        try:
+            subprocess.run(
+                ["git", "-C", str(dataset_root), "config", "core.longpaths", "true"],
+                capture_output=True,
+                check=False,
+                timeout=15,
+            )
+        except Exception:
+            # A missing/broken git is surfaced by the DataLad status checks;
+            # failing dataset setup over a tuning flag would be worse.
+            pass
+
     def _ensure_datalad_editable_metadata_policy(
         self,
         project_path: Path,
@@ -6126,6 +6155,7 @@ git push -u origin main
         """Keep core project metadata and common text files in Git, regardless of DataLad state."""
         updated = False
         for dataset_root in self._iter_datalad_dataset_roots(project_path):
+            self._ensure_git_longpaths(dataset_root)
             extra_lines = self._derivatives_text_policy_extra_lines(
                 project_path, dataset_root
             )

@@ -337,7 +337,7 @@ def process_folder_upload(
             _, ext = os.path.splitext(lower_path)
 
         placeholder_content = create_placeholder_content(normalized_path, ext)
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             f.write(placeholder_content)
         skipped_count += 1
 
@@ -351,7 +351,7 @@ def process_folder_upload(
 
     # Save manifest
     manifest_path = os.path.join(dataset_root, ".upload_manifest.json")
-    with open(manifest_path, "w") as f:
+    with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
 
     print(
@@ -431,7 +431,7 @@ def process_zip_upload(file, temp_dir: str, filename: str) -> str:
                 # Create informative placeholder
                 os.makedirs(os.path.dirname(safe_target), exist_ok=True)
                 placeholder_content = create_placeholder_content(rel_path, ext)
-                with open(safe_target, "w") as f:
+                with open(safe_target, "w", encoding="utf-8") as f:
                     f.write(placeholder_content)
 
                 skipped_count += 1
@@ -485,7 +485,7 @@ def process_zip_upload(file, temp_dir: str, filename: str) -> str:
     # Save manifest at the dataset root
     try:
         manifest_path = os.path.join(dataset_root, ".upload_manifest.json")
-        with open(manifest_path, "w") as f:
+        with open(manifest_path, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
     except Exception:
         pass

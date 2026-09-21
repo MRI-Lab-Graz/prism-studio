@@ -83,11 +83,11 @@ class TestRecipesWorkflowWiring(unittest.TestCase):
         self.assertIn("function resetRecipesPreferenceControls() {", content)
         self.assertIn("function resetRecipesResultsState() {", content)
         self.assertIn(
-            "return requestToken === activeToken && requestProjectPath === resolveProjectPath();",
+            "return requestToken === activeToken && window.isSameProjectPath(requestProjectPath, resolveProjectPath());",
             content,
         )
         self.assertIn(
-            "return runToken === recipeRunToken && requestProjectPath === resolveProjectPath();",
+            "return runToken === recipeRunToken && window.isSameProjectPath(requestProjectPath, resolveProjectPath());",
             content,
         )
         self.assertIn(

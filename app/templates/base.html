@@ -1775,6 +1775,17 @@
     <script src="{{ url_for('static', filename='js/global-help-mode.js', v=static_token) }}"></script>
     <script src="{{ url_for('static', filename='js/filesystem-mode.js', v=static_token) }}"></script>
     <script src="{{ url_for('static', filename='js/path-browser-modal.js', v=static_token) }}"></script>
+    <!-- Bridges the project-path identity helper to the classic (non-module)
+         page scripts - recipes.js, template-editor.js, survey-generator.js,
+         survey-customizer.js, index.js - so they compare project paths the same
+         way the ES modules do instead of keeping their own copy. Module scripts
+         are deferred, so this runs after parsing but before DOMContentLoaded;
+         every caller compares inside an event or fetch callback, never at
+         parse time. -->
+    <script type="module">
+        import { isSameProjectPath } from "{{ url_for('static', filename='js/shared/project-state.js', v=static_token) }}";
+        window.isSameProjectPath = isSameProjectPath;
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

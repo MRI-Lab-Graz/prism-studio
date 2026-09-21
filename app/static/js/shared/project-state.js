@@ -157,3 +157,33 @@ export function setProjectStateSnapshot(path, name, icon = '') {
     window.currentProjectDatalad = nextState.datalad;
     return { ...nextState };
 }
+
+/**
+ * Identity comparison for project paths.
+ *
+ * The same project reaches the browser spelled more than one way: the server
+ * answers /api/projects/current with `str(Path(...))`, which on Windows is the
+ * backslash form, while the browser may be holding the forward-slash form it
+ * sent (recent-projects entries, `normalize_path()` output, file inputs).
+ * Comparing those as raw strings makes one project look like two, which used to
+ * strand an in-flight study-metadata load: the unlock in metadata-load.js is
+ * gated on "is this still the current project", so a mid-load spelling flip
+ * left the form permanently `inert` (gray, non-editable) with its status rows
+ * stuck on "pending...".
+ *
+ * Separators and trailing slashes are folded; case is NOT, because paths are
+ * case-sensitive on Linux/macOS and the server never changes case here (it does
+ * not call `.resolve()`).
+ */
+export function normalizeProjectPathForCompare(value) {
+    return String(value || '')
+        .trim()
+        .replace(/\\/g, '/')
+        // Keeps a lone root ("/") intact: only strip separators that follow
+        // an actual path character.
+        .replace(/(.)\/+$/, '$1');
+}
+
+export function isSameProjectPath(a, b) {
+    return normalizeProjectPathForCompare(a) === normalizeProjectPathForCompare(b);
+}

@@ -7,6 +7,8 @@ from pathlib import Path
 import io
 import re
 import shutil
+
+from src.cross_platform import remove_tree
 import tempfile
 import zipfile
 import base64
@@ -1504,4 +1506,4 @@ def api_physio_rename():
         return jsonify({"error": str(e)}), 500
     finally:
         if copy_stage_dir is not None:
-            shutil.rmtree(copy_stage_dir, ignore_errors=True)
+            remove_tree(copy_stage_dir, ignore_errors=True)

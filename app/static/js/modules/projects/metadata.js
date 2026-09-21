@@ -11,6 +11,7 @@ import { createMetadataOrcidController } from './metadata-orcid.js';
 import { createStudyMetadataSaveController } from './metadata-save.js';
 import { createMetadataStatusController } from './metadata-status.js';
 import { createStudyMetadataSubmitController } from './metadata-submit.js';
+import { isSameProjectPath } from '../../shared/project-state.js';
 import { validateAuthorsBadge, validateRecLocationBadge, validateProjectField, validateRecMethodBadge, validateDateRangeBadge, validateFundingBadge, validateEthicsBadge, validateEligibilityCriteriaBadges } from './validation.js';
 import {
     getProjectStateSnapshot,
@@ -276,7 +277,12 @@ function _withProjectPathQuery(baseUrl, projectPath) {
 }
 
 function _isProjectRequestCurrent(projectPath, requestToken = null) {
-    if (String(projectPath || '').trim() !== _getCurrentProjectPath()) {
+    // Compared by path identity, not raw string: the server answers with
+    // str(Path(...)), so on Windows the navbar store can replace the
+    // forward-slash spelling with the backslash one mid-load. A raw compare
+    // made that look like a project switch, which skipped the study metadata
+    // form's only unlock and left every field inert. See shared/project-state.js.
+    if (!isSameProjectPath(projectPath, _getCurrentProjectPath())) {
         return false;
     }
     if (requestToken !== null && requestToken !== metadataLoadToken) {
@@ -2601,7 +2607,7 @@ export function updateCreateProjectButton() {
     const studyMetadataLoadInFlight = studyMetadataLoadController.getLoadInFlight();
     const metadataReadyForCurrentProject = Boolean(currentProjectPath)
         && !studyMetadataLoadInFlight
-        && studyMetadataLoadController.getReadyProjectPath() === currentProjectPath;
+        && isSameProjectPath(studyMetadataLoadController.getReadyProjectPath(), currentProjectPath);
 
     if (!isCreateMode && currentProjectPath && !metadataReadyForCurrentProject) {
         const loadingMessage = studyMetadataLoadInFlight

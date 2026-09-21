@@ -194,6 +194,14 @@ class TestToCsv:
         lines = csv.strip().splitlines()
         assert len(lines) == 2  # header + 1 data row
 
+    def test_rows_end_with_bare_newlines(self):
+        # The caller writes this string through a text-mode open(), which turns
+        # "\n" into "\r\n" on Windows. If csv emitted its default "\r\n" here
+        # the file would end up with "\r\r\n" - a blank row between every
+        # record once opened in Excel.
+        csv = to_csv([_error(code="PRISM001", msg="broken")])
+        assert "\r" not in csv
+
 
 # ---------------------------------------------------------------------------
 # format_output / FORMATTERS registry

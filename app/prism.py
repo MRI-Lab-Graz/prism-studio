@@ -725,7 +725,7 @@ Examples:
         # Helper to write output (to file or stdout)
         def write_output(content: str):
             if args.output:
-                with open(args.output, "w") as f:
+                with open(args.output, "w", encoding="utf-8") as f:
                     f.write(content)
                 if not machine_output:
                     print(f"📄 Output written to: {args.output}")

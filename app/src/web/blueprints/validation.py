@@ -397,7 +397,7 @@ def _build_validation_results_payload(
         results["upload_type"] = upload_type
 
     if manifest_path and os.path.exists(manifest_path):
-        with open(manifest_path, "r") as f:
+        with open(manifest_path, "r", encoding="utf-8") as f:
             manifest = json.load(f)
         results["upload_manifest"] = {
             "metadata_files": len(manifest.get("uploaded_files", [])),

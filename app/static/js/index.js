@@ -319,11 +319,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const storedPath = normalizeProjectPath(storedJob.targetPath || '');
         const currentPath = normalizeProjectPath(currentContext.targetPath || '');
-        if (storedPath && currentPath) {
-            return storedPath === currentPath;
-        }
-
-        return storedPath === currentPath;
+        return window.isSameProjectPath(storedPath, currentPath);
     }
 
     function persistActiveValidationJob(job) {
