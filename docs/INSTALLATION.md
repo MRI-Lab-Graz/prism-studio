@@ -148,6 +148,14 @@ environment is active it runs directly (no `python` prefix), and is equivalent t
   policy (`Set-ExecutionPolicy` then fails with `ExecutionPolicyOverride`).
   Or just run `setup.cmd`, which does this for you. Installing with
   `git clone` instead of a ZIP avoids this.
+- **Desktop shortcut icon shows "Die Datei ... enthält keine Symbole" / "The
+  file ... contains no icons"** — pick the icon manually from
+  `app\static\img\MRI_Lab_Logo.ico` (a real multi-size `.ico`) when prompted,
+  or just delete the shortcut and re-run `setup.cmd` /
+  `scripts\setup\create_desktop_shortcut.ps1` after updating: this was fixed
+  by pointing the shortcut at that file instead of `app\static\prism2026.ico`,
+  which despite its extension is a PNG (fine as a browser favicon, not valid
+  as a Windows icon).
 - **`Writing EDF output requires pyedflib`** — `pyedflib` is not installed by
   default (it has no wheels for Python 3.13+). Only EDF output needs it:
   `pip install pyedflib` inside the activated `.venv`.

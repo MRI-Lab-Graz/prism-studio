@@ -87,7 +87,10 @@ environment and starts PRISM Studio. Arguments are passed through
 Desktop, with the app icon — double-click that to start PRISM Studio from then
 on. (The shortcut runs `start.cmd`, which you can also launch directly. To
 recreate the shortcut later:
-`powershell -ExecutionPolicy Bypass -File scripts\setup\create_desktop_shortcut.ps1`.)
+`powershell -ExecutionPolicy Bypass -File scripts\setup\create_desktop_shortcut.ps1`.
+The shortcut uses `app\static\img\MRI_Lab_Logo.ico` — a real multi-size icon
+file, unlike `app\static\prism2026.ico`, which is a PNG that Explorer
+rejects with "contains no icons" despite the `.ico` extension.)
 
 `setup.cmd` exists because Windows marks every file extracted from a
 downloaded ZIP as "from the internet", and PowerShell's default `RemoteSigned`
