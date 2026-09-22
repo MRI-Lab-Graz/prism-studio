@@ -28,7 +28,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             echo_error "Unknown argument: $1"
-            echo "Usage: bash setup.sh [--build] [--dev]"
+            echo "Usage: bash install.sh [--build] [--dev]"
             exit 1
             ;;
     esac
@@ -161,7 +161,7 @@ suggest_install_venv_package() {
             echo_info "Install your distribution's 'python3-venv' or ensurepip support for the selected Python."
             ;;
     esac
-    echo_info "After installing, rerun: bash setup.sh"
+    echo_info "After installing, rerun: bash install.sh"
 }
 
 create_virtualenv() {

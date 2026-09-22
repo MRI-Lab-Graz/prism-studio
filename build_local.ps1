@@ -32,7 +32,7 @@ Write-Host ""
 # ── 1. Activate venv ────────────────────────────────────────────────────────
 $venvPython = Join-Path $root '.venv\Scripts\python.exe'
 if (-not (Test-Path $venvPython)) {
-    Write-Error ".venv not found. Run setup.ps1 first, or create it with: python -m venv .venv"
+    Write-Error ".venv not found. Run install.cmd first, or create it with: python -m venv .venv"
 }
 Write-Host "[1/4] Using Python: $venvPython" -ForegroundColor Green
 

@@ -35,14 +35,19 @@ Active files:
 ### `scripts/setup/`
 Environment setup and global library configuration.
 
+The end-user installers are `install.cmd` / `install.sh` at the repo root
+(the only two files a user should ever run to set up PRISM Studio); this
+folder holds `install.cmd`'s implementation plus unrelated global-library
+config tooling. Don't add another top-level setup/install script here or at
+the repo root - that's the "which file do I run" confusion this layout
+replaced.
+
 Active files:
 - `scripts/setup/configure_global_library.py`
-- `scripts/setup/setup-simple.sh`
-- `scripts/setup/setup-windows.bat`
-- `scripts/setup/setup.bat`
-- `scripts/setup/setup.sh`
+- `scripts/setup/create_desktop_shortcut.ps1`
 - `scripts/setup/show_global_config.py`
 - `scripts/setup/verify_global_library.py`
+- `scripts/setup/windows.ps1` (setup logic invoked by `install.cmd` at the repo root; not meant to be run directly)
 - `scripts/setup/windows_workshop_preflight.ps1`
 
 ## Notes

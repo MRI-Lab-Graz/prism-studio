@@ -147,7 +147,7 @@ def _import_optional_module(module_name: str, *, feature_label: str):
     except Exception as exc:
         raise ValueError(
             f"{feature_label} support requires optional dependency '{module_name}'. "
-            "Install dependencies via setup.sh."
+            "Install dependencies via install.sh (or install.cmd on Windows)."
         ) from exc
 
 
@@ -286,7 +286,7 @@ def read_tabular_file(
         import pandas as pd
     except Exception as exc:  # pragma: no cover
         raise RuntimeError(
-            "pandas is required. Ensure dependencies are installed via setup.sh."
+            "pandas is required. Ensure dependencies are installed via install.sh (or install.cmd on Windows)."
         ) from exc
 
     path = Path(path)

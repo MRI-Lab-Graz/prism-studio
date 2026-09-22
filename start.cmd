@@ -1,5 +1,5 @@
 @echo off
-REM Start PRISM Studio on Windows (run setup.cmd once first).
+REM Start PRISM Studio on Windows (run install.cmd once first).
 REM
 REM Double-click it, or run it from any shell. Arguments are passed
 REM through to prism-studio.py.
@@ -10,7 +10,7 @@ setlocal
 cd /d "%~dp0"
 
 if not exist ".venv\Scripts\activate.bat" echo No virtual environment found in .venv
-if not exist ".venv\Scripts\activate.bat" echo Run setup.cmd first to install PRISM Studio.
+if not exist ".venv\Scripts\activate.bat" echo Run install.cmd first to install PRISM Studio.
 if not exist ".venv\Scripts\activate.bat" pause
 if not exist ".venv\Scripts\activate.bat" exit /b 1
 

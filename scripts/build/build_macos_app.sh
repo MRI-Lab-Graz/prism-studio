@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Build a macOS .app bundle for Prism Studio.
-# This uses the repo-local ./.venv and installs build deps via scripts/setup/setup.sh.
+# This uses the repo-local ./.venv and installs build deps via install.sh.
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
@@ -13,7 +13,7 @@ fi
 
 if [[ ! -d ".venv" ]]; then
   echo "❌ .venv not found. Run setup first:" 
-  echo "   bash scripts/setup/setup.sh --build"
+  echo "   bash install.sh --build"
   exit 1
 fi
 
@@ -26,7 +26,7 @@ fi
 # Ensure build requirements are present (pyinstaller)
 python -c "import PyInstaller" >/dev/null 2>&1 || {
   echo "❌ PyInstaller not installed in the current venv. Install build deps via:" 
-  echo "   bash scripts/setup/setup.sh --build"
+  echo "   bash install.sh --build"
   exit 1
 }
 

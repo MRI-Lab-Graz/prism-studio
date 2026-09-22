@@ -52,8 +52,8 @@ PRISM (Principled Research Information & Sidecar Model) is a BIDS-compatible val
 
 ```bash
 # Setup
-bash setup.sh                    # macOS/Linux
-scripts\setup\setup-windows.bat  # Windows
+bash install.sh    # macOS/Linux
+install.cmd         # Windows
 
 # Run
 python prism-studio.py           # Web UI (port 5001)

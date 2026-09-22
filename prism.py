@@ -30,7 +30,7 @@ def check_and_activate_venv():
     # Check if venv exists
     if not venv_dir.exists():
         print(f"Warning: Virtual environment not found at {venv_dir}")
-        print("Run setup.sh or setup.ps1 to create it.")
+        print("Run install.sh or install.cmd to create it.")
         return
 
     # Determine venv python path

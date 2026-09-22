@@ -72,36 +72,36 @@ One-time setup from repository root.
 macOS/Linux:
 
 ```bash
-bash setup.sh
+bash install.sh
 ```
 
-Windows: double-click **`setup.cmd`**, or run it from any shell:
+Windows: double-click **`install.cmd`**, or run it from any shell:
 
 ```
-setup.cmd
+install.cmd
 ```
 
-It unblocks the downloaded files, runs `setup.ps1`, then activates the
-environment and starts PRISM Studio. Arguments are passed through
-(`setup.cmd -Build -Dev`). It also puts a **PRISM Studio** shortcut on the
-Desktop, with the app icon — double-click that to start PRISM Studio from then
-on. (The shortcut runs `start.cmd`, which you can also launch directly. To
-recreate the shortcut later:
+It unblocks the downloaded files, runs the setup logic in
+`scripts\setup\windows.ps1`, then activates the environment and starts PRISM
+Studio. Arguments are passed through (`install.cmd -Build -Dev`). It also
+puts a **PRISM Studio** shortcut on the Desktop, with the app icon — double-click
+that to start PRISM Studio from then on. (The shortcut runs `start.cmd`,
+which you can also launch directly. To recreate the shortcut later:
 `powershell -ExecutionPolicy Bypass -File scripts\setup\create_desktop_shortcut.ps1`.
 The shortcut uses `app\static\img\MRI_Lab_Logo.ico` — a real multi-size icon
 file, unlike `app\static\prism2026.ico`, which is a PNG that Explorer
 rejects with "contains no icons" despite the `.ico` extension.)
 
-`setup.cmd` exists because Windows marks every file extracted from a
+`install.cmd` exists because Windows marks every file extracted from a
 downloaded ZIP as "from the internet", and PowerShell's default `RemoteSigned`
-policy then refuses to run `setup.ps1` (*"is not digitally signed" / "kann
+policy then refuses to run a bare `.ps1` (*"is not digitally signed" / "kann
 nicht geladen werden"*). Batch files are exempt from that policy, so
-`setup.cmd` works where calling `setup.ps1` directly does not. To run
-`setup.ps1` yourself instead, clear the mark first:
+`install.cmd` works where calling the `.ps1` directly does not. To run
+the setup logic yourself instead, clear the mark first:
 
 ```powershell
 Get-ChildItem -Recurse | Unblock-File
-.\setup.ps1
+.\scripts\setup\windows.ps1
 ```
 
 For detailed installation instructions, see the [documentation](https://prism-studio.readthedocs.io).

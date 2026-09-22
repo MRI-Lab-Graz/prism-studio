@@ -15,9 +15,7 @@
 If running from source:
 
 ```powershell
-scripts\setup\setup-windows.bat
-.\.venv\Scripts\Activate.ps1
-python prism-studio.py
+install.cmd
 ```
 
 ```bash

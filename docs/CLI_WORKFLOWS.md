@@ -10,8 +10,8 @@ understood.
 
 ## Setup and daily entry points
 
-Run setup once from the repository root (`bash setup.sh` on macOS/Linux,
-`.\setup.ps1` on Windows PowerShell), then activate the virtual environment before
+Run setup once from the repository root (`bash install.sh` on macOS/Linux,
+`install.cmd` on Windows), then activate the virtual environment before
 running any commands (`source .venv/bin/activate` / `.venv\Scripts\activate`). If you
 see an error about not running inside the PRISM virtual environment, activate
 `.venv` and retry.

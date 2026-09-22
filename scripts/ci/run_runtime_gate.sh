@@ -8,7 +8,7 @@ cd "$REPO_ROOT"
 
 if [[ ! -d ".venv" ]]; then
   echo "[ERROR] Missing .venv in $REPO_ROOT"
-  echo "Run setup first: bash setup.sh"
+  echo "Run setup first: bash install.sh"
   exit 1
 fi
 

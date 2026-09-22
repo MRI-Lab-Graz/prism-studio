@@ -42,7 +42,9 @@ Set-Location $RepoRoot
 Write-Host "Repo root: $RepoRoot" -ForegroundColor Gray
 
 $VenvPython = Join-Path $RepoRoot ".venv\Scripts\python.exe"
-$SetupBat = Join-Path $RepoRoot "scripts\setup\setup-windows.bat"
+# The setup logic itself, not install.cmd at the repo root - install.cmd also
+# launches the app and blocks on it, which would hang this preflight check.
+$SetupScript = Join-Path $RepoRoot "scripts\setup\windows.ps1"
 $WindowsRunner = Join-Path $RepoRoot "tests\run_windows_tests.py"
 
 Run-Step "Check Python availability" {
@@ -52,11 +54,11 @@ Run-Step "Check Python availability" {
 if (-not $SkipSetup) {
     Run-Step "Ensure virtual environment exists" {
         if (-not (Test-Path $VenvPython)) {
-            if (-not (Test-Path $SetupBat)) {
-                throw "Setup script not found: $SetupBat"
+            if (-not (Test-Path $SetupScript)) {
+                throw "Setup script not found: $SetupScript"
             }
             Write-Host "No .venv detected. Running setup script..." -ForegroundColor Gray
-            cmd /c "`"$SetupBat`""
+            powershell -NoProfile -ExecutionPolicy Bypass -File $SetupScript
             if ($LASTEXITCODE -ne 0) {
                 throw "Setup script failed with exit code $LASTEXITCODE"
             }

@@ -10,7 +10,7 @@ echo.
 echo This script will:
 echo   1. Backup current .venv
 echo   2. Delete .venv
-echo   3. Run setup.ps1
+echo   3. Run scripts\setup\windows.ps1
 echo   4. Verify installation
 echo   5. Restore backup if needed
 echo.
@@ -36,9 +36,9 @@ if exist .venv (
 )
 
 echo.
-echo [2/5] Running setup.ps1...
+echo [2/5] Running scripts\setup\windows.ps1...
 echo.
-powershell -ExecutionPolicy Bypass -File setup.ps1
+powershell -ExecutionPolicy Bypass -File scripts\setup\windows.ps1
 set SETUP_EXIT=%ERRORLEVEL%
 
 if %SETUP_EXIT% neq 0 (

@@ -33,9 +33,9 @@ Feature requests are welcome! Please open an issue with:
    ```
 3. **Set up your development environment**:
    ```bash
-   bash setup.sh  # macOS/Linux
+   bash install.sh              # macOS/Linux
    # OR
-   .\setup.ps1    # Windows
+   .\scripts\setup\windows.ps1  # Windows (or just install.cmd)
    ```
 4. **Make your changes** following our coding standards (see below)
 5. **Run tests** to ensure nothing breaks:

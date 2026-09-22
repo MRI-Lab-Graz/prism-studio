@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Setup scripts renamed to `install.cmd` / `install.sh`** at the repo root,
+  so users aren't left picking between multiple similarly-named `setup.*`
+  files. `setup.ps1`'s logic moved to `scripts/setup/windows.ps1` (invoked by
+  `install.cmd`, not meant to be run directly). Removed
+  `scripts/setup/setup.sh`, `scripts/setup/setup.bat`, and
+  `scripts/setup/setup-windows.bat`, which had drifted into three
+  overlapping, differently-behaved setup flows for end users, the build
+  pipeline, and the workshop/CI path; all three now go through the one
+  root installer.
+
 ## [1.19.0] - 2026-09-17
 
 ### Added

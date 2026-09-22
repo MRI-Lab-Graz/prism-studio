@@ -934,7 +934,7 @@ def _load_id_mapping(path: str | Path | None) -> dict[str, str] | None:
         import pandas as pd
     except Exception as e:  # pragma: no cover
         raise RuntimeError(
-            "pandas is required for survey conversion. Ensure dependencies are installed via setup.sh"
+            "pandas is required for survey conversion. Ensure dependencies are installed via install.sh (or install.cmd on Windows)"
         ) from e
 
     # Choose delimiter based on extension, fall back to auto-sniff
@@ -1402,7 +1402,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         import pandas  # noqa: F401 -- import-only fail-fast guard, see except below
     except Exception as e:  # pragma: no cover
         raise RuntimeError(
-            "pandas is required for survey conversion. Ensure dependencies are installed via setup.sh"
+            "pandas is required for survey conversion. Ensure dependencies are installed via install.sh (or install.cmd on Windows)"
         ) from e
 
     id_normalizers = _survey_core.build_survey_id_normalizers(project_path)

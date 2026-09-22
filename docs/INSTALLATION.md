@@ -70,8 +70,8 @@ gentler alternative if you'd rather not.
 
 Use this only if you need local code changes, development work, or CLI usage from
 the source tree. Requires **Python 3.10-3.12** (3.9 and older are unsupported; 3.13+ has no
-wheels yet for some pinned dependencies). `setup.ps1` pins the version via
-`.python-version` when uv is available.
+wheels yet for some pinned dependencies). `install.cmd`/`scripts\setup\windows.ps1`
+pins the version via `.python-version` when uv is available.
 
 Pick your OS:
 
@@ -85,7 +85,7 @@ Pick your OS:
 ```bash
 git clone https://github.com/MRI-Lab-Graz/prism-studio.git
 cd prism-studio
-./setup.sh
+./install.sh
 source .venv/bin/activate
 python prism-studio.py
 ```
@@ -101,14 +101,14 @@ python prism-studio.py
 ```powershell
 git clone https://github.com/MRI-Lab-Graz/prism-studio.git
 cd prism-studio
-.\setup.ps1
+.\scripts\setup\windows.ps1
 .venv\Scripts\activate
 python prism-studio.py
 ```
 
-Installing from a downloaded ZIP instead of `git clone`? Run **`setup.cmd`**
+Installing from a downloaded ZIP instead of `git clone`? Run **`install.cmd`**
 (double-click works) — it clears the "downloaded from internet" mark that makes
-PowerShell refuse `setup.ps1`, then does all of the above in one go, and
+PowerShell refuse a bare `.ps1`, then does all of the above in one go, and
 finally puts a **PRISM Studio** shortcut (with the app icon) on the Desktop for
 later sessions. That shortcut runs `start.cmd`, which activates the environment
 and starts PRISM Studio without re-running setup.
@@ -133,25 +133,25 @@ python prism_tools.py recipes surveys --prism /path/to/dataset
 environment is active it runs directly (no `python` prefix), and is equivalent to
 `python prism.py`. See [CLI Reference](CLI_REFERENCE.md) for the full command set.
 
-**Updating**: `git pull` then re-run `./setup.sh` (or `setup.ps1` on Windows).
+**Updating**: `git pull` then re-run `./install.sh` (or `install.cmd` on Windows).
 
 ## Troubleshooting
 
 - **App starts but no browser page appears** — open `http://localhost:5001` manually
   and check the terminal output for launch errors.
-- **`setup.ps1 ... is not digitally signed` / `kann nicht geladen werden`
+- **`... is not digitally signed` / `kann nicht geladen werden`
   (PowerShell)** — you installed from a downloaded ZIP. Windows marks every
   extracted file as "from the internet", and the default `RemoteSigned` policy
   refuses those. In the repository folder run `Get-ChildItem -Recurse |
-  Unblock-File`, then `.\setup.ps1` again. No admin rights needed, and unlike
+  Unblock-File`, then `.\scripts\setup\windows.ps1` again. No admin rights needed, and unlike
   `Set-ExecutionPolicy` it also works when the policy is enforced by group
   policy (`Set-ExecutionPolicy` then fails with `ExecutionPolicyOverride`).
-  Or just run `setup.cmd`, which does this for you. Installing with
+  Or just run `install.cmd`, which does this for you. Installing with
   `git clone` instead of a ZIP avoids this.
 - **Desktop shortcut icon shows "Die Datei ... enthält keine Symbole" / "The
   file ... contains no icons"** — pick the icon manually from
   `app\static\img\MRI_Lab_Logo.ico` (a real multi-size `.ico`) when prompted,
-  or just delete the shortcut and re-run `setup.cmd` /
+  or just delete the shortcut and re-run `install.cmd` /
   `scripts\setup\create_desktop_shortcut.ps1` after updating: this was fixed
   by pointing the shortcut at that file instead of `app\static\prism2026.ico`,
   which despite its extension is a PNG (fine as a browser favicon, not valid

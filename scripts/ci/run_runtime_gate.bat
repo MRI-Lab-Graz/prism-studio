@@ -7,7 +7,7 @@ pushd "%REPO_ROOT%"
 
 if not exist ".venv" (
   echo [ERROR] Missing .venv in %CD%
-  echo Run setup first: scripts\setup\setup-windows.bat
+  echo Run setup first: install.cmd
   popd
   exit /b 1
 )

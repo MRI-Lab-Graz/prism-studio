@@ -14,7 +14,7 @@ HELP_TEXT = """Usage: rtk <command> [args...]
 RTK wrapper for common PRISM Studio, git, and gh workflows.
 
 Commands:
-    setup         Run repository setup (setup.sh or setup.ps1)
+    setup         Run repository setup (install.sh or scripts/setup/windows.ps1)
     studio        Run PRISM Studio web app (prism-studio.py)
     validator     Run PRISM validator (prism.py)
     validate      Alias for validator
@@ -88,8 +88,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if command == "setup":
         if sys.platform == "win32":
-            setup_script = project_root / "setup.ps1"
-            if not _require_file(setup_script, "setup.ps1"):
+            setup_script = project_root / "scripts" / "setup" / "windows.ps1"
+            if not _require_file(setup_script, "scripts/setup/windows.ps1"):
                 return 1
             if not _require_program("powershell"):
                 return 1
@@ -103,8 +103,8 @@ def main(argv: list[str] | None = None) -> int:
             ]
             return _run(command, project_root)
 
-        setup_script = project_root / "setup.sh"
-        if not _require_file(setup_script, "setup.sh"):
+        setup_script = project_root / "install.sh"
+        if not _require_file(setup_script, "install.sh"):
             return 1
 
         command = ["bash", str(setup_script), *forwarded_args]
@@ -148,7 +148,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if command == "codecov":
         if not _require_program("codecovcli"):
-            print("Hint: install with `pip install codecov-cli` (for example via `bash setup.sh --dev`).")
+            print("Hint: install with `pip install codecov-cli` (for example via `bash install.sh --dev`).")
             return 1
         return _run(["codecovcli", *forwarded_args], project_root)
 

@@ -33,7 +33,7 @@ if (Test-Path $VenvActivate) {
     & $VenvActivate
 } else {
     Write-Host "⚠️  Virtual environment not found at: $VenvPath" -ForegroundColor Yellow
-    Write-Host "   Using system Python. Run setup.ps1 to create venv." -ForegroundColor Yellow
+    Write-Host "   Using system Python. Run install.cmd to create venv." -ForegroundColor Yellow
 }
 
 Write-Host ""

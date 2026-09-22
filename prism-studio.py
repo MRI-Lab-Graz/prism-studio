@@ -30,7 +30,7 @@ def check_and_activate_venv():
     # Check if venv exists
     if not venv_dir.exists():
         print(f"Error: Virtual environment not found at {venv_dir}")
-        print("Please run 'bash setup.sh' or 'setup.ps1' to create it.")
+        print("Please run 'bash install.sh' or 'install.cmd' to create it.")
         sys.exit(2)
 
     # Determine venv python path
@@ -42,7 +42,7 @@ def check_and_activate_venv():
     # Check if venv python exists
     if not venv_python.exists():
         print(f"Error: Virtual environment Python not found at {venv_python}")
-        print("Please run 'bash setup.sh' to recreate the virtual environment.")
+        print("Please run 'bash install.sh' to recreate the virtual environment.")
         sys.exit(3)
 
     # Strict mode: reject symlinked interpreters to avoid external runtimes.
@@ -53,7 +53,7 @@ def check_and_activate_venv():
             f"but {venv_python} points to {resolved}."
         )
         print(
-            "Please run 'bash setup.sh' to recreate a strict local virtual environment."
+            "Please run 'bash install.sh' to recreate a strict local virtual environment."
         )
         sys.exit(5)
 

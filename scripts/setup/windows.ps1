@@ -1,8 +1,13 @@
 <#
 .SYNOPSIS
-    Setup script for prism on Windows.
-    
+    Setup logic for PRISM Studio on Windows, invoked by install.cmd at the repo root.
+
 .DESCRIPTION
+    Not meant to be run directly - install.cmd unblocks the repo and bypasses
+    PowerShell's execution policy before calling this. Running it standalone
+    works too, but a bare .ps1 may be refused on machines where the policy
+    blocks it (that's exactly why install.cmd exists).
+
     This script will:
     1. Check if 'uv' is installed.
     2. Check if tkinter is available (required for folder picker).
@@ -17,10 +22,10 @@
     Include dependencies required for development and testing.
 
 .EXAMPLE
-    .\setup.ps1
-    
+    ..\..\install.cmd
+
 .EXAMPLE
-    .\setup.ps1 -Build -Dev
+    ..\..\install.cmd -Build -Dev
 #>
 
 Param(
@@ -110,7 +115,7 @@ if (-not $UseUv) {
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Unsupported Python version detected. PRISM source setup requires Python 3.10-3.12."
         Write-Info "Install Python 3.10, 3.11 or 3.12 and make sure it is available as 'python' in PATH,"
-        Write-Info "or re-run setup.cmd and accept installing 'uv' -- it downloads its own managed Python automatically."
+        Write-Info "or re-run install.cmd and accept installing 'uv' -- it downloads its own managed Python automatically."
         exit 1
     }
 }
