@@ -1166,7 +1166,7 @@ def favicon_ico():
 
 @app.route("/assets/prism-logo")
 def prism_logo():
-    """Serve PRISM logo from docs/img with caching (transparent PNG)"""
+    """Serve PRISM logo from docs/img (transparent PNG)"""
     from flask import send_file, Response
 
     candidates = [
@@ -1180,10 +1180,15 @@ def prism_logo():
         file_path = Path(path)
         if file_path.exists():
             mimetype = "image/png" if str(path).endswith(".png") else "image/jpeg"
+            # No positive max-age: SEND_FILE_MAX_AGE_DEFAULT=0 above is a
+            # deliberate site-wide no-cache policy so asset updates (like the
+            # logo crop) show up immediately instead of surviving app rebuilds
+            # via a stale disk cache in the Windows app-mode browser profile
+            # (see _launch_app_mode_window's persistent --user-data-dir).
             return send_file(
                 str(file_path),
                 mimetype=mimetype,
-                max_age=86400,  # Cache for 24 hours
+                max_age=0,
             )
 
     fallback_svg = """<?xml version=\"1.0\" encoding=\"UTF-8\"?>

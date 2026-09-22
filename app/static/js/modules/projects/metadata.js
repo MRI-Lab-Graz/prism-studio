@@ -1510,6 +1510,10 @@ function initOverviewListFields() {
         const addButton = document.getElementById(config.addId);
         if (addButton && !addButton.dataset.bound) {
             addButton.dataset.bound = '1';
+            // Chromium (Windows) focuses buttons on mousedown, blurring the row
+            // input first; its change-triggered re-render shifts the button and
+            // swallows the click. macOS WebKit never focuses buttons, so match it.
+            addButton.addEventListener('mousedown', (e) => e.preventDefault());
             addButton.addEventListener('click', () => {
                 addOverviewListRow(fieldId);
                 const list = document.getElementById(config.listId);
@@ -1643,6 +1647,10 @@ function initTwoFieldListFields() {
         const addButton = document.getElementById(config.addId);
         if (addButton && !addButton.dataset.bound) {
             addButton.dataset.bound = '1';
+            // Chromium (Windows) focuses buttons on mousedown, blurring the row
+            // input first; its change-triggered re-render shifts the button and
+            // swallows the click. macOS WebKit never focuses buttons, so match it.
+            addButton.addEventListener('mousedown', (e) => e.preventDefault());
             addButton.addEventListener('click', () => {
                 addTwoFieldRow(fieldId);
                 const list = document.getElementById(config.listId);
