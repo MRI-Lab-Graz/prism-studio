@@ -128,6 +128,19 @@ export async function initProjectsPageBootstrap({
         });
     });
 
+    // Same cause as the metadata.js "Add" button fix: Chromium focuses the
+    // clicked element on mousedown, which blurs whatever field the user was
+    // just editing. That field's change-triggered re-render (e.g. the study
+    // metadata completeness widget) can shift a fold header out from under
+    // the pointer before mouseup, swallowing the click and needing a second
+    // one. Delegated so it covers every collapse/accordion toggle, nested or
+    // top-level, present now or added later.
+    document.addEventListener('mousedown', (event) => {
+        if (event.target.closest('[data-bs-toggle="collapse"]')) {
+            event.preventDefault();
+        }
+    });
+
     const validationResultDiv = document.getElementById('validationResult');
     if (validationResultDiv) {
         validationResultDiv.addEventListener('click', (event) => {

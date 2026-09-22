@@ -99,11 +99,20 @@ if (-not (Get-Command "uv" -ErrorAction SilentlyContinue)) {
 # Upper bound: several pinned scientific wheels (pyedflib, ...) have no builds
 # for Python 3.13+, and pip then falls back to a source build that needs a C
 # compiler. See .python-version, which pins the uv-created venv.
-$pythonVersionCheck = python -c "import sys; raise SystemExit(0 if (3, 10) <= sys.version_info[:2] <= (3, 12) else 1)" 2>&1
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Unsupported Python version detected. PRISM source setup requires Python 3.10-3.12."
-    Write-Info "Install Python 3.10, 3.11 or 3.12 and make sure it is available as 'python' in PATH."
-    exit 1
+#
+# Only checked on the no-uv fallback path (step 4 below uses plain
+# `python -m venv`, which needs a real system Python). When $UseUv is true,
+# `uv venv` reads .python-version itself and downloads a managed Python 3.12
+# automatically if none is found -- gating on a system `python` here would
+# reject machines uv is fully able to set up on its own.
+if (-not $UseUv) {
+    $pythonVersionCheck = python -c "import sys; raise SystemExit(0 if (3, 10) <= sys.version_info[:2] <= (3, 12) else 1)" 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Unsupported Python version detected. PRISM source setup requires Python 3.10-3.12."
+        Write-Info "Install Python 3.10, 3.11 or 3.12 and make sure it is available as 'python' in PATH,"
+        Write-Info "or re-run setup.cmd and accept installing 'uv' -- it downloads its own managed Python automatically."
+        exit 1
+    }
 }
 
 # 1b. Check for tkinter (required for folder picker in web interface)
