@@ -15,7 +15,10 @@ Param(
 
 $RepoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $Target = Join-Path $RepoRoot "start.cmd"
-$Icon = Join-Path $RepoRoot "app\static\prism2026.ico"
+# Must be a real multi-size .ico: app/static/prism2026.ico is a PNG with an
+# .ico extension (fine as a browser favicon, but Explorer rejects it with
+# "contains no icons").
+$Icon = Join-Path $RepoRoot "app\static\img\MRI_Lab_Logo.ico"
 
 if (-not (Test-Path $Target)) {
     Write-Host "ERROR: start.cmd not found at '$Target'." -ForegroundColor Red
