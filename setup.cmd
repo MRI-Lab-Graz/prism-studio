@@ -22,6 +22,8 @@ if errorlevel 1 echo Setup failed - see the messages above.
 if errorlevel 1 pause
 if errorlevel 1 exit /b 1
 
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\setup\create_desktop_shortcut.ps1"
+
 call ".venv\Scripts\activate.bat"
 python prism-studio.py
 pause

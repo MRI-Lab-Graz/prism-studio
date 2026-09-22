@@ -83,8 +83,11 @@ setup.cmd
 
 It unblocks the downloaded files, runs `setup.ps1`, then activates the
 environment and starts PRISM Studio. Arguments are passed through
-(`setup.cmd -Build -Dev`). Afterwards, use **`start.cmd`** to launch PRISM
-Studio again without re-running setup.
+(`setup.cmd -Build -Dev`). It also puts a **PRISM Studio** shortcut on the
+Desktop, with the app icon — double-click that to start PRISM Studio from then
+on. (The shortcut runs `start.cmd`, which you can also launch directly. To
+recreate the shortcut later:
+`powershell -ExecutionPolicy Bypass -File scripts\setup\create_desktop_shortcut.ps1`.)
 
 `setup.cmd` exists because Windows marks every file extracted from a
 downloaded ZIP as "from the internet", and PowerShell's default `RemoteSigned`

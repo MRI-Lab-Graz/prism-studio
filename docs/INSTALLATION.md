@@ -108,9 +108,10 @@ python prism-studio.py
 
 Installing from a downloaded ZIP instead of `git clone`? Run **`setup.cmd`**
 (double-click works) — it clears the "downloaded from internet" mark that makes
-PowerShell refuse `setup.ps1`, then does all of the above in one go. For later
-sessions, **`start.cmd`** activates the environment and starts PRISM Studio
-without re-running setup.
+PowerShell refuse `setup.ps1`, then does all of the above in one go, and
+finally puts a **PRISM Studio** shortcut (with the app icon) on the Desktop for
+later sessions. That shortcut runs `start.cmd`, which activates the environment
+and starts PRISM Studio without re-running setup.
 
 </div>
 </details>
