@@ -157,9 +157,20 @@ if (-not (Test-Path "$RequirementsFile")) {
 Write-Info "'$RequirementsFile' found."
 
 # 4. Create virtual environment
+# A venv left over from an earlier run can hold an unsupported interpreter
+# (e.g. Python 3.14 picked by uv before .python-version existed). Reusing it
+# only fails later, during the wheel installs, so replace it up front.
 if (Test-Path "$VenvDir") {
-    Write-Info "Virtual environment already exists in '$VenvDir' - reusing it."
-} else {
+    & "$VenvDir\Scripts\python.exe" -c "import sys; raise SystemExit(0 if (3, 10) <= sys.version_info[:2] <= (3, 12) else 1)" 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Info "Virtual environment already exists in '$VenvDir' - reusing it."
+    } else {
+        Write-Info "Existing virtual environment uses an unsupported Python version - recreating it."
+        Remove-Item -Recurse -Force $VenvDir
+    }
+}
+
+if (-not (Test-Path "$VenvDir")) {
     Write-Info "Creating virtual environment in '$VenvDir'..."
     if ($UseUv) {
         & uv venv $VenvDir

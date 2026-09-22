@@ -75,19 +75,27 @@ macOS/Linux:
 bash setup.sh
 ```
 
-Windows (PowerShell):
+Windows: double-click **`setup.cmd`**, or run it from any shell:
+
+```
+setup.cmd
+```
+
+It unblocks the downloaded files, runs `setup.ps1`, then activates the
+environment and starts PRISM Studio. Arguments are passed through
+(`setup.cmd -Build -Dev`).
+
+`setup.cmd` exists because Windows marks every file extracted from a
+downloaded ZIP as "from the internet", and PowerShell's default `RemoteSigned`
+policy then refuses to run `setup.ps1` (*"is not digitally signed" / "kann
+nicht geladen werden"*). Batch files are exempt from that policy, so
+`setup.cmd` works where calling `setup.ps1` directly does not. To run
+`setup.ps1` yourself instead, clear the mark first:
 
 ```powershell
 Get-ChildItem -Recurse | Unblock-File
 .\setup.ps1
 ```
-
-If PowerShell refuses with *"is not digitally signed" / "kann nicht geladen
-werden"*, the first line is what you are missing: Windows marks every file
-extracted from a downloaded ZIP as "from the internet", and the default
-`RemoteSigned` policy then refuses to run it. `Unblock-File` removes that mark.
-No admin rights needed, and it works even where `Set-ExecutionPolicy` is locked
-down by group policy. Cloning with `git clone` avoids the problem entirely.
 
 For detailed installation instructions, see the [documentation](https://prism-studio.readthedocs.io).
 

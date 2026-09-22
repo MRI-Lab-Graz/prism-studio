@@ -106,6 +106,10 @@ cd prism-studio
 python prism-studio.py
 ```
 
+Installing from a downloaded ZIP instead of `git clone`? Run **`setup.cmd`**
+(double-click works) — it clears the "downloaded from internet" mark that makes
+PowerShell refuse `setup.ps1`, then does all of the above in one go.
+
 </div>
 </details>
 
@@ -139,7 +143,8 @@ environment is active it runs directly (no `python` prefix), and is equivalent t
   Unblock-File`, then `.\setup.ps1` again. No admin rights needed, and unlike
   `Set-ExecutionPolicy` it also works when the policy is enforced by group
   policy (`Set-ExecutionPolicy` then fails with `ExecutionPolicyOverride`).
-  Installing with `git clone` instead of a ZIP avoids this.
+  Or just run `setup.cmd`, which does this for you. Installing with
+  `git clone` instead of a ZIP avoids this.
 - **`Writing EDF output requires pyedflib`** — `pyedflib` is not installed by
   default (it has no wheels for Python 3.13+). Only EDF output needs it:
   `pip install pyedflib` inside the activated `.venv`.
