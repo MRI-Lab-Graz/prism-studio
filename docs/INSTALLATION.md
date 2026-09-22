@@ -69,7 +69,9 @@ gentler alternative if you'd rather not.
 ## Source Install (Advanced)
 
 Use this only if you need local code changes, development work, or CLI usage from
-the source tree. Requires **Python 3.10+** (3.9 is not supported).
+the source tree. Requires **Python 3.10-3.12** (3.9 and older are unsupported; 3.13+ has no
+wheels yet for some pinned dependencies). `setup.ps1` pins the version via
+`.python-version` when uv is available.
 
 Pick your OS:
 
@@ -130,6 +132,17 @@ environment is active it runs directly (no `python` prefix), and is equivalent t
 
 - **App starts but no browser page appears** — open `http://localhost:5001` manually
   and check the terminal output for launch errors.
+- **`setup.ps1 ... is not digitally signed` / `kann nicht geladen werden`
+  (PowerShell)** — you installed from a downloaded ZIP. Windows marks every
+  extracted file as "from the internet", and the default `RemoteSigned` policy
+  refuses those. In the repository folder run `Get-ChildItem -Recurse |
+  Unblock-File`, then `.\setup.ps1` again. No admin rights needed, and unlike
+  `Set-ExecutionPolicy` it also works when the policy is enforced by group
+  policy (`Set-ExecutionPolicy` then fails with `ExecutionPolicyOverride`).
+  Installing with `git clone` instead of a ZIP avoids this.
+- **`Writing EDF output requires pyedflib`** — `pyedflib` is not installed by
+  default (it has no wheels for Python 3.13+). Only EDF output needs it:
+  `pip install pyedflib` inside the activated `.venv`.
 - **Python or package errors during source install** — use the prebuilt release
   unless you specifically need source; if you do need source, make sure `.venv` is
   activated before running any commands.

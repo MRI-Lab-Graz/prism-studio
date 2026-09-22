@@ -90,15 +90,14 @@ PY
 
 ensure_min_python_version() {
     local candidate="$1"
-    local min_major=3
-    local min_minor=10
 
     "$candidate" - <<'PY'
 import sys
 
-min_version = (3, 10)
+# Upper bound: several pinned scientific wheels (pyedflib, ...) have no
+# builds for Python 3.13+, and pip then falls back to a source build.
 current = sys.version_info[:3]
-if current < min_version:
+if not ((3, 10) <= current[:2] <= (3, 12)):
     raise SystemExit(1)
 print(f"{current[0]}.{current[1]}.{current[2]}")
 PY
@@ -106,8 +105,8 @@ PY
 
     if [ $status -ne 0 ]; then
         echo_error "Unsupported Python interpreter: $candidate"
-        echo_error "PRISM source setup requires Python 3.10 or newer."
-        echo_info "Install Python 3.10+ and rerun setup (or set PRISM_PYTHON to a compatible interpreter)."
+        echo_error "PRISM source setup requires Python 3.10-3.12."
+        echo_info "Install Python 3.10, 3.11 or 3.12 and rerun setup (or set PRISM_PYTHON to a compatible interpreter)."
         exit 1
     fi
 }

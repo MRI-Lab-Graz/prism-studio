@@ -6,7 +6,6 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Literal, cast, overload
 import numpy as np
-import pyedflib
 
 
 def _find_companion_definition_file(raw_path: str | Path) -> Path | None:
@@ -1141,6 +1140,17 @@ def convert_varioport(
             signal_headers.append(header)
 
         # Initialize EDF Writer
+        # pyedflib is an optional dependency (no wheels for Python 3.13+), so
+        # it is imported here rather than at module import time -- everything
+        # in this module except EDF writing works without it.
+        try:
+            import pyedflib
+        except ImportError as exc:  # pragma: no cover - exercised via test double
+            raise RuntimeError(
+                "Writing EDF output requires pyedflib. Install it with: "
+                "pip install pyedflib"
+            ) from exc
+
         try:
             f_edf = pyedflib.EdfWriter(
                 output_path, len(active_channels), file_type=pyedflib.FILETYPE_EDFPLUS

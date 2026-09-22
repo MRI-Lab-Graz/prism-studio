@@ -96,10 +96,13 @@ if (-not (Get-Command "uv" -ErrorAction SilentlyContinue)) {
 }
 
 # 1a. Enforce minimum Python version for source setup
-$pythonVersionCheck = python -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)" 2>&1
+# Upper bound: several pinned scientific wheels (pyedflib, ...) have no builds
+# for Python 3.13+, and pip then falls back to a source build that needs a C
+# compiler. See .python-version, which pins the uv-created venv.
+$pythonVersionCheck = python -c "import sys; raise SystemExit(0 if (3, 10) <= sys.version_info[:2] <= (3, 12) else 1)" 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "Unsupported Python version detected. PRISM source setup requires Python 3.10 or newer."
-    Write-Info "Install Python 3.10+ and make sure it is available as 'python' in PATH."
+    Write-Error "Unsupported Python version detected. PRISM source setup requires Python 3.10-3.12."
+    Write-Info "Install Python 3.10, 3.11 or 3.12 and make sure it is available as 'python' in PATH."
     exit 1
 }
 

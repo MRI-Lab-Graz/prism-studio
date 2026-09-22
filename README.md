@@ -7,7 +7,7 @@
 <p align="center"><strong>Principled Research Information & Sidecar Model</strong></p>
 
 <p align="center">
-	<img src="https://img.shields.io/badge/python-3.10+-blue" alt="Python 3.10+">
+	<img src="https://img.shields.io/badge/python-3.10--3.12-blue" alt="Python 3.10-3.12">
 	<img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="Platform">
 	<img src="https://img.shields.io/badge/BIDS-compatible-green" alt="BIDS compatible">
 	<a href="https://doi.org/10.5281/zenodo.22809100"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.22809100.svg" alt="DOI"></a>
@@ -57,7 +57,9 @@ macOS first launch: if Gatekeeper blocks the app, run `Prism Studio Installer.ap
 
 ### Prerequisite
 
-- Python 3.10 or newer is required for source installation (Python 3.9 is not supported).
+- Python 3.10, 3.11 or 3.12 is required for source installation. 3.9 and older lack
+  required features; 3.13+ has no wheels yet for some pinned dependencies, so
+  installation falls back to a source build that needs a C compiler.
 
 ### Using Pre-built Binaries (Recommended)
 
@@ -76,8 +78,16 @@ bash setup.sh
 Windows (PowerShell):
 
 ```powershell
+Get-ChildItem -Recurse | Unblock-File
 .\setup.ps1
 ```
+
+If PowerShell refuses with *"is not digitally signed" / "kann nicht geladen
+werden"*, the first line is what you are missing: Windows marks every file
+extracted from a downloaded ZIP as "from the internet", and the default
+`RemoteSigned` policy then refuses to run it. `Unblock-File` removes that mark.
+No admin rights needed, and it works even where `Set-ExecutionPolicy` is locked
+down by group policy. Cloning with `git clone` avoids the problem entirely.
 
 For detailed installation instructions, see the [documentation](https://prism-studio.readthedocs.io).
 
