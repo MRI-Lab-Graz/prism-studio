@@ -50,7 +50,7 @@ Describing research data at scale requires a vocabulary that can grow where the 
 
 Even BIDS is not fully consistent with its own principle here: imaging files get the full data-plus-sidecar treatment, but its one home for this kind of data, `phenotype/`, falls back to a flat table, one row per participant, dropping the per-file sidecar the rest of the standard insists on. That fallback suits a score recorded once per participant, but has no place to keep session-, run-, or variant-level detail once the same instrument is administered more than once. PRISM applies the sidecar principle uniformly instead: every administration is its own sidecar-described file, with the flat `phenotype/` table available only as an optional export when matching the wider BIDS toolchain outweighs that detail.
 
-The closest neighbor is Psych-DS [@psychds], a community standard pairing CSV files under a `data/` directory with dataset-level JSON-LD metadata; it targets dataset structure and file naming rather than a per-file, per-item contract, and defines its own layout rather than remaining a valid BIDS dataset. REDCap [@harris2009redcap] enforces item-level constraints, but only inside its own database — once data is exported, that description is lost. DataLad [@halchenko2021datalad] versions and distributes datasets without defining file contents; PRISM composes with it rather than competing, optionally recording provenance for dataset mutations and recipe scoring. Elsewhere, instrument-specific converters require a code contribution before an uncoded instrument can be described at all.
+The closest neighbor is Psych-DS [@psychds], a community standard pairing CSV files under a `data/` directory with dataset-level JSON-LD metadata; it targets dataset structure and file naming rather than a per-file, per-item contract, and defines its own layout rather than remaining a valid BIDS dataset. DataLad [@halchenko2021datalad] versions and distributes datasets without defining file contents; PRISM composes with it rather than competing, optionally recording provenance for dataset mutations and recipe scoring. Elsewhere, instrument-specific converters require a code contribution before an uncoded instrument can be described at all.
 
 PRISM fixes the shape of a description and leaves its vocabulary open. An unsupported instrument becomes a data-authoring task rather than a feature request, resolvable locally and immediately without upstream approval.
 
@@ -104,12 +104,14 @@ Usage-level material — installation, the command reference, converter walkthro
 PRISM was built for, and used to prepare, the mixed-modality Austrian
 NeuroCloud dataset *Creativity: a (white) matter of connectivity*
 [@koschutnig2026creativity], whose metadata record names PRISM Studio as its
-creation tool. This is use by the developer's own group; the dataset is
-access-restricted under the Austrian NeuroCloud data-use agreement. A graduate
-seminar built on PRISM, *PRISM in Research Practice: Data Validation for
-Psychological Studies* (PSY.91C), is scheduled at the authors' institution for
-the winter semester 2026/27, introducing the model to
-students preparing their own datasets. Development is public: issues raised by
+creation tool; the Austrian NeuroCloud repository accepts datasets organized
+with PRISM. Beyond the developers' group, PRISM is used by the Department of
+Biological Psychology at the University of Graz and by colleagues at the
+University of Salzburg. It was presented to the Austrian research-data community
+at CLARIAH-AT's *Tag der guten Daten 2026* (Graz, February 2026), and a graduate
+seminar, *PRISM in Research Practice: Data Validation for Psychological Studies*
+(PSY.91C), runs in the winter semester 2026/27, alongside hands-on workshops at
+the institute. Development is public: issues raised by
 users outside the core team — installation failures and packaging requests —
 are tracked openly and addressed in subsequent
 releases. The repository provides tagged, archived releases
