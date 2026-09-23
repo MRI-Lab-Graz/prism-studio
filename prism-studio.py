@@ -3,6 +3,9 @@ import os
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from launcher_exec import exec_python  # noqa: E402
+
 
 def find_project_root():
     """Find the project root directory (contains app/ and .venv/)."""
@@ -68,7 +71,7 @@ def check_and_activate_venv():
     # Re-execute with venv python
     print(f"⚠️  Activating virtual environment: {venv_dir}")
     try:
-        os.execv(str(venv_python), [str(venv_python)] + sys.argv)
+        exec_python(venv_python, sys.argv)
     except OSError as e:
         print(f"Error: Failed to exec into virtualenv python: {e}")
         sys.exit(4)
@@ -82,7 +85,7 @@ if __name__ == "__main__":
     project_root = find_project_root()
     app_script = project_root / "app" / "prism-studio.py"
     if app_script.exists():
-        os.execv(sys.executable, [sys.executable, str(app_script)] + sys.argv[1:])
+        exec_python(sys.executable, [app_script] + sys.argv[1:])
     else:
         print(f"Error: {app_script} not found.")
         sys.exit(1)
