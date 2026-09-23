@@ -70,7 +70,7 @@ gentler alternative if you'd rather not.
 
 Use this only if you need local code changes, development work, or CLI usage from
 the source tree. Requires **Python 3.10-3.12** (3.9 and older are unsupported; 3.13+ has no
-wheels yet for some pinned dependencies). `install.cmd`/`scripts\setup\windows.ps1`
+wheels yet for some pinned dependencies). `install.cmd`
 pins the version via `.python-version` when uv is available.
 
 Pick your OS:
@@ -101,17 +101,19 @@ python prism-studio.py
 ```powershell
 git clone https://github.com/MRI-Lab-Graz/prism-studio.git
 cd prism-studio
-.\scripts\setup\windows.ps1
-.venv\Scripts\activate
-python prism-studio.py
+.\install.cmd
 ```
 
-Installing from a downloaded ZIP instead of `git clone`? Run **`install.cmd`**
-(double-click works) — it clears the "downloaded from internet" mark that makes
-PowerShell refuse a bare `.ps1`, then does all of the above in one go, and
-finally puts a **PRISM Studio** shortcut (with the app icon) on the Desktop for
-later sessions. That shortcut runs `start.cmd`, which activates the environment
-and starts PRISM Studio without re-running setup.
+Or download the ZIP, extract it, and double-click **`install.cmd`**. It is the
+only Windows entry point: it clears the "downloaded from internet" mark that
+makes PowerShell refuse scripts (so no execution-policy changes are needed),
+creates `.venv` and installs the dependencies, puts a **PRISM Studio** shortcut
+(with the app icon) on the Desktop, and starts PRISM Studio. For later sessions
+use that shortcut, which runs `start.cmd` — it activates the environment and
+starts the app without re-running setup.
+
+Extra options are passed through, e.g. `.\install.cmd -Build -Dev`. To use the
+CLI tools afterwards, activate the environment with `.venv\Scripts\activate`.
 
 </div>
 </details>
@@ -143,7 +145,7 @@ environment is active it runs directly (no `python` prefix), and is equivalent t
   (PowerShell)** — you installed from a downloaded ZIP. Windows marks every
   extracted file as "from the internet", and the default `RemoteSigned` policy
   refuses those. In the repository folder run `Get-ChildItem -Recurse |
-  Unblock-File`, then `.\scripts\setup\windows.ps1` again. No admin rights needed, and unlike
+  Unblock-File`, then `.\install.cmd` again. No admin rights needed, and unlike
   `Set-ExecutionPolicy` it also works when the policy is enforced by group
   policy (`Set-ExecutionPolicy` then fails with `ExecutionPolicyOverride`).
   Or just run `install.cmd`, which does this for you. Installing with
