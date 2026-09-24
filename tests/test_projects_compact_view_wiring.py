@@ -120,6 +120,10 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
         self.assertIn("Checking whether DataLad and git-annex are available on this machine", create_content)
         self.assertIn('id="initBidsUseDatalad"', init_content)
         self.assertIn('id="initBidsRemoteStatus"', init_content)
+        # Local vs remote is an either/or choice, not two side-by-side field sets.
+        self.assertIn('id="initBidsSourceLocal"', init_content)
+        self.assertIn('id="initBidsSourceRemote"', init_content)
+        self.assertIn('id="initBidsRemoteGroup" class="d-none"', init_content)
         self.assertIn("Use DataLad version control for this dataset", init_content)
 
     def test_projects_cards_explain_starting_points(self):

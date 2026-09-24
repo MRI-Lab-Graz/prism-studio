@@ -120,9 +120,24 @@ export function initProjectInitOnBidsController({
         }
     }
 
+    function isRemoteMode() {
+        return document.getElementById('initBidsSourceRemote')?.checked === true;
+    }
+
+    function syncSourceMode() {
+        const remote = isRemoteMode();
+        document.getElementById('initBidsLocalGroup')?.classList.toggle('d-none', remote);
+        document.getElementById('initBidsRemoteGroup')?.classList.toggle('d-none', !remote);
+        syncDataladToggleVisibility();
+        if (remote) {
+            scheduleRemoteStatusRefresh();
+        } else {
+            initBidsSubmitBtn.disabled = false;
+        }
+    }
+
     function syncDataladToggleVisibility() {
-        const remoteUrl = (document.getElementById('initBidsRemoteUrl')?.value || '').trim();
-        const hasRemote = remoteUrl.length > 0;
+        const hasRemote = isRemoteMode();
         const dataladToggle = document.getElementById('initBidsUseDatalad');
         const dataladToggleContainer = dataladToggle?.closest('.form-check');
 
@@ -256,13 +271,13 @@ export function initProjectInitOnBidsController({
         }, 200);
     }
 
-    document.getElementById('initBidsRemoteUrl')?.addEventListener('input', function() {
-        syncDataladToggleVisibility();
-        scheduleRemoteStatusRefresh();
+    document.getElementById('initBidsRemoteUrl')?.addEventListener('input', scheduleRemoteStatusRefresh);
+    document.querySelectorAll('input[name="initBidsSource"]').forEach(function(radio) {
+        radio.addEventListener('change', syncSourceMode);
     });
 
-    syncDataladToggleVisibility();
     renderRemoteStatus(null);
+    syncSourceMode();
 
     initBidsSubmitBtn.addEventListener('click', async function() {
         const bidsPath = (document.getElementById('initBidsPath')?.value || '').trim();
@@ -274,8 +289,14 @@ export function initProjectInitOnBidsController({
         const fetchRemoteDerivatives = document.getElementById('initBidsFetchDerivatives')?.checked === true;
         const fetchRemoteSourcedata = document.getElementById('initBidsFetchSourcedata')?.checked === true;
         const fetchRemoteRawdata = document.getElementById('initBidsFetchRawdata')?.checked === true;
-        const hasRemote = remoteUrl.length > 0;
+        const hasRemote = isRemoteMode();
         const targetPath = hasRemote ? clonePath : bidsPath;
+
+        if (hasRemote && !remoteUrl) {
+            alert('Please enter the Git/DataLad URL of the dataset to download.');
+            document.getElementById('initBidsRemoteUrl')?.focus();
+            return;
+        }
 
         if (hasRemote && !clonePath) {
             alert('Please select or enter the local clone destination folder.');
@@ -298,7 +319,7 @@ export function initProjectInitOnBidsController({
         }
 
         if (!hasRemote && !bidsPath) {
-            alert('Please provide either a BIDS dataset root or a Git/DataLad URL with clone destination.');
+            alert('Please select the BIDS dataset root folder.');
             document.getElementById('initBidsPath')?.focus();
             return;
         }
@@ -388,8 +409,8 @@ export function initProjectInitOnBidsController({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     path: targetPath || undefined,
-                    bids_path: bidsPath || undefined,
-                    clone_path: clonePath || undefined,
+                    bids_path: hasRemote ? undefined : bidsPath,
+                    clone_path: hasRemote ? clonePath : undefined,
                     name: displayName || undefined,
                     use_datalad: useDatalad,
                     remote_url: hasRemote ? remoteUrl : undefined,
