@@ -110,6 +110,7 @@ const metadataDescriptionController = createMetadataDescriptionController({
     setAuthorsList,
     setEthicsApprovals,
     setFundingFromDescription,
+    setOverviewList,
 });
 
 const studyMetadataLoadController = createStudyMetadataLoadController({
@@ -194,9 +195,7 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
         setMissingFilesList(missingData.MissingFiles || '');
         setTwoFieldList('smKnownIssues', missingData.KnownIssues || '');
 
-        document.getElementById('smReferencesText').value = Array.isArray(sm.References)
-            ? sm.References.join('\n')
-            : (sm.References || '');
+        setOverviewList('smReferencesText', _referencesToDoiLines(sm.References));
 
         _applyHints(data.hints || {});
 
@@ -459,7 +458,7 @@ function _buildStudyMetadataPayload() {
             MissingFiles: document.getElementById('smMissingFiles').value || undefined,
             KnownIssues: document.getElementById('smKnownIssues').value || undefined,
         },
-        References: document.getElementById('smReferencesText').value || undefined,
+        References: _getReferenceDoiLines().map(_normalizeDoi).join('\n') || undefined,
     };
 }
 
@@ -708,6 +707,43 @@ function _normalizeDoi(value) {
     doi = doi.replace(/^https?:\/\/doi\.org\//i, '');
     doi = doi.replace(/^doi:\s*/i, '');
     return doi.trim();
+}
+
+function _getReferenceDoiLines() {
+    return (document.getElementById('smReferencesText')?.value || '')
+        .split(/[\r\n]+/).map(l => l.trim()).filter(Boolean);
+}
+
+// Stored value may be a string or (legacy) objects; never render "[object Object]".
+function _referencesToDoiLines(refs) {
+    const items = Array.isArray(refs) ? refs : String(refs || '').split(/[\r\n]+/);
+    return items
+        .map(r => (r && typeof r === 'object') ? (r.doi || r.DOI || r.url || '') : r)
+        .map(r => String(r || '').trim())
+        .filter(Boolean)
+        .join('\n');
+}
+
+// Crossref check via backend proxy -> {cls, text} for the row's feedback line.
+async function _lookupDoiStatus(value) {
+    try {
+        const res = await fetch(`/api/projects/lookup-doi?doi=${encodeURIComponent(value)}`);
+        const r = await res.json();
+        if (r.status === 'ok') return { cls: 'text-success', text: r.citation || r.doi };
+        if (r.status === 'not_found') return { cls: 'text-danger', text: 'DOI not found in Crossref.' };
+        if (r.status === 'invalid') return { cls: 'text-danger', text: 'Not a valid DOI.' };
+    } catch (_) { /* fall through */ }
+    return { cls: 'text-muted', text: 'Could not check DOI online (offline?).' };
+}
+
+function _isValidHttpUrl(value) {
+    if (!value) return true;
+    try {
+        const url = new URL(value);
+        return (url.protocol === 'http:' || url.protocol === 'https:') && Boolean(url.hostname);
+    } catch (_) {
+        return false;
+    }
 }
 
 function _isValidDoiFormat(value) {
@@ -1373,6 +1409,19 @@ const OVERVIEW_LIST_FIELDS = {
         addId: 'smProcQCAdd',
         placeholder: 'Quality control measure (e.g. attention check)',
     },
+    smReferencesText: {
+        listId: 'smReferencesList',
+        addId: 'smReferencesAdd',
+        placeholder: 'DOI (e.g. 10.1000/xyz123)',
+        validate: value => _isValidDoiFormat(value),
+        lookup: _lookupDoiStatus,
+    },
+    metadataReferences: {
+        listId: 'metadataReferencesList',
+        addId: 'metadataReferencesAdd',
+        placeholder: 'https://example.com/...',
+        validate: value => _isValidHttpUrl(value),
+    },
 };
 
 let _draggedListRow = null;
@@ -1443,10 +1492,31 @@ function addOverviewListRow(fieldId, value = '') {
     removeButton.setAttribute('aria-label', 'Remove item');
     removeButton.innerHTML = '<i class="fas fa-times"></i>';
 
+    const markValidity = () => {
+        if (config.validate) input.classList.toggle('is-invalid', !config.validate(input.value.trim()));
+    };
+    markValidity();
+
+    const feedback = document.createElement('div');
+    feedback.className = 'form-text w-100 mt-0 d-none';
+
+    const runLookup = async () => {
+        const value = input.value.trim();
+        feedback.classList.add('d-none');
+        if (!config.lookup || !value || (config.validate && !config.validate(value))) return;
+        const { cls, text } = await config.lookup(value);
+        if (input.value.trim() !== value) return; // edited while waiting
+        feedback.className = `form-text w-100 mt-0 ${cls}`;
+        feedback.textContent = text;
+    };
+
     input.addEventListener('input', () => {
+        markValidity();
+        feedback.classList.add('d-none');
         _syncOverviewListField(fieldId);
         updateCreateProjectButton();
     });
+    input.addEventListener('change', runLookup);
 
     removeButton.addEventListener('click', () => {
         row.remove();
@@ -1485,8 +1555,10 @@ function addOverviewListRow(fieldId, value = '') {
     row.appendChild(dragHandle);
     row.appendChild(input);
     row.appendChild(removeButton);
+    row.appendChild(feedback);
     list.appendChild(row);
     _syncOverviewListField(fieldId);
+    if (input.value) runLookup();
 }
 
 export function setOverviewList(fieldId, rawValue) {
@@ -2231,6 +2303,16 @@ export function validateAllMandatoryFields() {
         optionalInvalidFields.push('Dataset DOI format is invalid (use 10.xxxx/... or https://doi.org/10.xxxx/...).');
     }
 
+    const badLinks = getOverviewList('metadataReferences').filter(l => !_isValidHttpUrl(l));
+    if (badLinks.length) {
+        optionalInvalidFields.push(`Citation Links must be http(s) URLs. Invalid: ${badLinks.join(', ')}`);
+    }
+
+    const badRefs = _getReferenceDoiLines().filter(l => !_isValidDoiFormat(l));
+    if (badRefs.length) {
+        optionalInvalidFields.push(`Background Literature must be one DOI per line (10.xxxx/... or https://doi.org/10.xxxx/...). Invalid: ${badRefs.join(', ')}`);
+    }
+
     optionalInvalidFields.push(..._getAuthorOptionalFormatErrors());
 
     const invalidFields = [...requiredInvalidFields, ...optionalInvalidFields];
@@ -2933,7 +3015,7 @@ export function buildDraftDatasetDescriptionForValidation() {
         HowToAcknowledge: _cleanMetadataText(document.getElementById('metadataHowToAcknowledge')?.value || ''),
         Funding: getFundingList(),
         ReferencesAndLinks: (document.getElementById('metadataReferences')?.value || '')
-            .split(',').map(s => _cleanMetadataText(s)).filter(Boolean),
+            .split('\n').map(s => _cleanMetadataText(s)).filter(Boolean),
         HEDVersion: _cleanMetadataText(document.getElementById('metadataHED')?.value || ''),
         Description: overviewMain || undefined
     };
@@ -2945,7 +3027,7 @@ function buildDraftCitationFieldsForValidation() {
         License: _cleanMetadataText(document.getElementById('metadataLicense')?.value || '') || 'CC0',
         HowToAcknowledge: _cleanMetadataText(document.getElementById('metadataHowToAcknowledge')?.value || ''),
         ReferencesAndLinks: (document.getElementById('metadataReferences')?.value || '')
-            .split(',').map(s => _cleanMetadataText(s)).filter(Boolean),
+            .split('\n').map(s => _cleanMetadataText(s)).filter(Boolean),
     };
 }
 

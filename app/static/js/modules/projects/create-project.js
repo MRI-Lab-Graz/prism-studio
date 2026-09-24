@@ -165,7 +165,7 @@ export function initCreateProjectController({
             ethics_approvals: getEthicsApprovals(),
             how_to_acknowledge: document.getElementById('metadataHowToAcknowledge').value.trim(),
             funding: getFundingList(),
-            references_and_links: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
+            references_and_links: document.getElementById('metadataReferences').value.split('\n').map(s => s.trim()).filter(s => s),
             hed_version: document.getElementById('metadataHED').value.trim(),
             dataset_type: 'raw',
             Overview: {

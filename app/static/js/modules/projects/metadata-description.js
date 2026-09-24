@@ -27,6 +27,7 @@ export function createMetadataDescriptionController({
     setAuthorsList,
     setEthicsApprovals,
     setFundingFromDescription,
+    setOverviewList,
 }) {
     let descriptionValidationTimer = null;
 
@@ -181,7 +182,7 @@ export function createMetadataDescriptionController({
                 document.getElementById('metadataHED').value = cleanMetadataList(desc.HEDVersion).join(', ');
                 setFundingFromDescription(desc.Funding, declared.fundingDeclared === true);
                 document.getElementById('metadataHowToAcknowledge').value = cleanMetadataText(desc.HowToAcknowledge || '');
-                document.getElementById('metadataReferences').value = cleanMetadataList(desc.ReferencesAndLinks).join(', ');
+                setOverviewList('metadataReferences', cleanMetadataList(desc.ReferencesAndLinks));
 
                 displayMetadataIssues(data.issues || []);
 
@@ -235,7 +236,7 @@ export function createMetadataDescriptionController({
                 DatasetType: 'raw',
                 HowToAcknowledge: document.getElementById('metadataHowToAcknowledge').value,
                 Funding: getFundingList(),
-                ReferencesAndLinks: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
+                ReferencesAndLinks: document.getElementById('metadataReferences').value.split('\n').map(s => s.trim()).filter(s => s),
                 HEDVersion: document.getElementById('metadataHED').value.trim(),
                 Description: overviewText || undefined
             };
@@ -243,7 +244,7 @@ export function createMetadataDescriptionController({
             const citationFields = {
                 Authors: getCitationAuthorsList(),
                 HowToAcknowledge: document.getElementById('metadataHowToAcknowledge').value,
-                ReferencesAndLinks: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
+                ReferencesAndLinks: document.getElementById('metadataReferences').value.split('\n').map(s => s.trim()).filter(s => s),
             };
 
             try {

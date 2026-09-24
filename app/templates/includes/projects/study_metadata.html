@@ -627,8 +627,12 @@
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                         <span class="badge bg-secondary">OPTIONAL</span> Citation Links
                                     </label>
-                                    <textarea class="form-control form-control-sm" id="metadataReferences" rows="2" placeholder="https://doi.org/..., https://example.com/..." ></textarea>
-                                    <small class="text-muted">Add URLs or citations separated by commas. They sync into CITATION.cff and dataset_description.json.</small>
+                                    <textarea class="form-control form-control-sm d-none" id="metadataReferences" rows="2" aria-hidden="true" tabindex="-1"></textarea>
+                                    <div id="metadataReferencesList" class="d-flex flex-column gap-2"></div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="metadataReferencesAdd">
+                                        <i class="fas fa-plus me-1"></i>Add Link
+                                    </button>
+                                    <small class="text-muted d-block">One http(s) URL per box. They sync into CITATION.cff and dataset_description.json.</small>
                                 </div>
                             </div>
                         </div>
@@ -690,16 +694,19 @@
                             <span class="sm-section-toggle__title"><i class="fas fa-book me-1"></i> Background Literature</span>
                             <span class="sm-section-toggle__badge" id="smReferencesBadge"></span>
                         </span>
-                        <span class="sm-section-toggle__summary">Cite related papers, prior work, or supporting literature to include in the README. Not the same as the Citation Links field under Discovery &amp; Citation, which feeds CITATION.cff.</span>
+                        <span class="sm-section-toggle__summary">List DOIs of related papers or prior work to include in the README. Not the same as the Citation Links field under Discovery &amp; Citation, which feeds CITATION.cff.</span>
                     </button>
                     <div class="collapse" id="smReferences">
                         <div class="card card-body border-0 bg-light mt-1">
                             <div class="row g-3">
                                 <div class="col-12">
                                     <label class="form-label fw-bold small">Background Literature</label>
-                                    <textarea class="form-control form-control-sm" id="smReferencesText" rows="4"
-                                              placeholder="One reference per line or formatted citations..."></textarea>
-                                    <small class="text-muted">Included in the README, separate from the Citation Links field under Discovery &amp; Citation (which feeds CITATION.cff).</small>
+                                    <textarea class="form-control form-control-sm d-none" id="smReferencesText" rows="2" aria-hidden="true" tabindex="-1"></textarea>
+                                    <div id="smReferencesList" class="d-flex flex-column gap-2"></div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="smReferencesAdd">
+                                        <i class="fas fa-plus me-1"></i>Add DOI
+                                    </button>
+                                    <small class="text-muted">DOIs only (10.xxxx/... or https://doi.org/...). Included in the README, separate from the Citation Links field under Discovery &amp; Citation (which feeds CITATION.cff).</small>
                                 </div>
                             </div>
                         </div>

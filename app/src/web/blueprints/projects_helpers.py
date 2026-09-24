@@ -4,9 +4,9 @@ import sys
 from pathlib import Path
 
 from src.project_icons import (
-    choose_random_project_icon,
     normalize_project_icon,
     resolve_project_icon,
+    stable_project_icon,
 )
 
 _RECENT_PROJECTS_FILENAME = "prism_recent_projects.json"
@@ -149,7 +149,7 @@ def _resolve_recent_project_icon(canonical_path: str, raw_icon: object) -> str:
         except Exception:
             pass
 
-    return choose_random_project_icon()
+    return stable_project_icon(canonical_path)
 
 
 def _normalize_recent_projects(projects: list) -> list[dict]:

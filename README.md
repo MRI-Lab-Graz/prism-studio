@@ -40,6 +40,10 @@ tiers:
 
 See [ROADMAP.md](ROADMAP.md) for the reasoning behind each scope decision.
 
+## Repository Acceptance
+
+The [Austrian NeuroCloud (ANC)](https://anc.plus.ac.at/) (CoreTrustSeal-certified) officially accepts PRISM-formatted datasets alongside plain BIDS, subject to the same requirements as any other submission. See the ANC handbook's [data format requirements](https://handbook.anc.plus.ac.at/terms/data_format_requirements/).
+
 ## Pre-built Binaries
 
 Download the latest release from the [Releases page](https://github.com/MRI-Lab-Graz/prism-studio/releases).

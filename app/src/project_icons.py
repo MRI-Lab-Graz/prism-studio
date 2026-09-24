@@ -7,6 +7,7 @@ to normalize, assign, and persist icons in project.json metadata.
 from __future__ import annotations
 
 import json
+import zlib
 from pathlib import Path
 from random import SystemRandom
 from typing import Any
@@ -41,6 +42,12 @@ def normalize_project_icon(icon_value: Any) -> str | None:
     if not icon:
         return None
     return icon if icon in _PROJECT_ICON_EMOJIS else None
+
+
+def stable_project_icon(project_root: Path | str) -> str:
+    """Pick an icon deterministically from the project path (same path -> same icon)."""
+    key = str(Path(project_root).expanduser().resolve(strict=False)).encode("utf-8")
+    return _PROJECT_ICON_EMOJIS[zlib.crc32(key) % len(_PROJECT_ICON_EMOJIS)]
 
 
 def choose_random_project_icon() -> str:
@@ -101,7 +108,7 @@ def resolve_project_icon(
         if existing_icon:
             return existing_icon
 
-    resolved_icon = normalize_project_icon(fallback_icon) or choose_random_project_icon()
+    resolved_icon = normalize_project_icon(fallback_icon) or stable_project_icon(project_root)
 
     if persist_when_missing and payload is not None:
         payload["icon"] = resolved_icon

@@ -11,7 +11,7 @@ from .projects_helpers import _load_recent_projects, _save_recent_projects
 from .projects_helpers import _resolve_project_json_path, _resolve_project_root_path
 from .projects_citation_helpers import _validate_recruitment_payload
 from .conversion_job_store import ConversionJobStore
-from src.project_icons import choose_random_project_icon, normalize_project_icon, resolve_project_icon
+from src.project_icons import normalize_project_icon, resolve_project_icon, stable_project_icon
 from src.system_files import filter_system_files
 
 _RECRUITMENT_GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
@@ -65,7 +65,7 @@ def _derive_project_icon(
             persist_when_missing=persist_when_missing,
         )
     except Exception:
-        return normalize_project_icon(fallback_icon) or choose_random_project_icon()
+        return normalize_project_icon(fallback_icon) or stable_project_icon(root_path)
 
 
 def _build_project_quick_summary(root_path: Path, *, deep: bool = True) -> dict[str, Any]:

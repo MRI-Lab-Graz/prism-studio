@@ -104,8 +104,9 @@ Usage-level material — installation, the command reference, converter walkthro
 PRISM was built for, and used to prepare, the mixed-modality Austrian
 NeuroCloud dataset *Creativity: a (white) matter of connectivity*
 [@koschutnig2026creativity], whose metadata record names PRISM Studio as its
-creation tool; the Austrian NeuroCloud repository accepts datasets organized
-with PRISM. Beyond the developers' group, PRISM is used by the Department of
+creation tool; the Austrian NeuroCloud (ANC) repository, which holds the CoreTrustSeal,
+officially accepts PRISM-formatted datasets in its data format requirements
+(<https://handbook.anc.plus.ac.at/terms/data_format_requirements/>). Beyond the developers' group, PRISM is used by the Department of
 Biological Psychology at the University of Graz and by colleagues at the
 University of Salzburg. It was presented to the Austrian research-data community
 at CLARIAH-AT's *Tag der guten Daten 2026* (Graz, February 2026), and a graduate

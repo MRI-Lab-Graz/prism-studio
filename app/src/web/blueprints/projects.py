@@ -868,6 +868,14 @@ def generate_methods_section():
 # =============================================================================
 
 
+@projects_bp.route("/api/projects/lookup-doi", methods=["GET"])
+def lookup_doi_route():
+    """Check a DOI against Crossref and return a short citation."""
+    from src.doi_lookup import lookup_doi
+
+    return jsonify(lookup_doi(request.args.get("doi", "")))
+
+
 @projects_bp.route("/api/projects/study-metadata", methods=["GET"])
 def get_study_metadata():
     """Read study-level editable sections from project.json with completeness info."""
