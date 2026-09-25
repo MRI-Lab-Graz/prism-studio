@@ -12,8 +12,10 @@
     ) }}
 
     {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
-    <p class="mb-1 small">Open a JSON sidecar or metadata file to view fields in editable form controls.</p>
-    <p class="mb-0 small">Use Save / Download to export your updated JSON without changing source files automatically.</p>
+    <div class="small">
+        <p class="mb-2"><strong>Sidecars</strong> are small .json files with the same name as a data file. They describe it (units, device, labels), and analysis tools read them automatically.</p>
+        <p class="mb-0"><strong>Nothing is overwritten automatically.</strong> Save / Download gives you the updated file.</p>
+    </div>
     {% endcall %}
 
     <!-- File Open Card -->

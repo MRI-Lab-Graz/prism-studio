@@ -24,8 +24,11 @@
     </div>
 
     {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
-    <p class="mb-1 small">Review group order and mandatory settings before export so survey flow remains predictable.</p>
-    <p class="mb-0 small">Set LimeSurvey version and language options first, then export with project save enabled when needed.</p>
+    <div class="small">
+        <p class="mb-2"><strong>Groups</strong> become the sections (pages) of your online survey. The order here is the order participants see.</p>
+        <p class="mb-2"><strong>Mandatory questions</strong> cannot be skipped. Making everything mandatory frustrates participants and can conflict with ethics rules on voluntary answers.</p>
+        <p class="mb-0"><strong>After export</strong> import the file in LimeSurvey via <em>Create survey &rarr; Import</em>, and run a test submission before going live.</p>
+    </div>
     {% endcall %}
 
     <!-- Loading Overlay -->

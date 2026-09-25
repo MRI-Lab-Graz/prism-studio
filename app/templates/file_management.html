@@ -143,8 +143,10 @@
             ) }}
 
             {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
-            <p class="mb-1 small">Pick one tool tab first, then complete only the numbered steps in that section.</p>
-            <p class="mb-0 small">Use preview actions before apply/copy so filename and folder changes stay predictable.</p>
+            <div class="small">
+                <p class="mb-2"><strong>Why rename?</strong> PRISM/BIDS expects names like <code>sub-01_ses-pre_task-rest_physio.edf</code>. The Renamer turns your lab's names into this pattern, and the Organizer copies files into the matching <code>sub-*/ses-*</code> folders.</p>
+                <p class="mb-0"><strong>Previews are safe.</strong> Nothing changes on disk until you click the apply / copy button.</p>
+            </div>
             {% endcall %}
 
             <div id="fmUndoBar" class="alert alert-warning d-none d-flex align-items-center justify-content-between shadow-sm mb-3" role="status">

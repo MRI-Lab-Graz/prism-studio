@@ -15,8 +15,10 @@
     ) }}
 
     {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
-    <p class="mb-1 small">Start with modality and schema version, then load a project or global template.</p>
-    <p class="mb-0 small">Validate before saving to project so status badges and on-disk template state stay aligned.</p>
+    <div class="small">
+        <p class="mb-2"><strong>What does a template do?</strong> It defines one questionnaire: items, answer options, valid ranges, translations. The validator uses it to catch bad values, e.g. a 7 on a 1&ndash;5 scale.</p>
+        <p class="mb-0"><strong>Global vs. project:</strong> start from a library template. Saving it to the project gives this study its own copy without touching the shared library.</p>
+    </div>
     {% endcall %}
 
     <div class="card feature-card mb-4">

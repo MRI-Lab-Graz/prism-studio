@@ -41,3 +41,15 @@ def test_home_quick_start_panel_is_linked_to_beginner_mode() -> None:
     content = HOME_TEMPLATE.read_text(encoding="utf-8")
 
     assert "help_panel('Quick Start', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3', 'beginner')" in content
+
+def test_beginner_help_registry_keys_point_at_real_fields() -> None:
+    import re
+
+    registry = (REPO_ROOT / "app" / "static" / "js" / "beginner-help-registry.js").read_text(encoding="utf-8")
+    keys = re.findall(r"^\s{8}(\w+): ", registry, re.M)
+    assert keys
+    templates = "".join(
+        p.read_text(encoding="utf-8") for p in (REPO_ROOT / "app" / "templates").rglob("*.html")
+    )
+    dead = [k for k in keys if not re.search(rf"""(id="{k}"|data-help-key="{k}"|'{k}')""", templates)]
+    assert not dead, f"Beginner hints for fields that no longer exist: {dead}"

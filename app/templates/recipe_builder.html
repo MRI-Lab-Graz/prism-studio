@@ -17,8 +17,10 @@
   ) }}
 
   {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
-  <p class="mb-1 small">Select modality and template first so item pools and scale metadata load with the correct context.</p>
-  <p class="mb-0 small">Save after checking preview JSON to keep recipe structure and scoring formulas aligned.</p>
+  <div class="small">
+      <p class="mb-2"><strong>What is a recipe?</strong> It describes how to score a questionnaire: which items form which scale, which items are reverse-scored, and whether to sum or average.</p>
+      <p class="mb-0"><strong>Check the library first.</strong> Many common scales already have an official recipe. Building one is only needed for new or custom instruments.</p>
+  </div>
   {% endcall %}
 
   {% if not current_project.path %}

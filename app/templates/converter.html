@@ -18,9 +18,9 @@
 
     {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
     <div class="small">
-        <p class="mb-2"><strong>Pick a modality tab:</strong> each tab maps source files into PRISM/BIDS-compliant outputs for that data type.</p>
-        <p class="mb-2"><strong>Use current project context:</strong> conversion and sourcedata helpers follow the active project path.</p>
-        <p class="mb-0"><strong>Run and verify:</strong> use workflow logs/results per tab before moving to export or downstream analysis tools.</p>
+        <p class="mb-2"><strong>What does converting do?</strong> It reads your raw files (Excel exports, device recordings) and writes standardized copies into the project. Your originals are not changed.</p>
+        <p class="mb-2"><strong>Start with Sociodemographics.</strong> It creates <code>participants.tsv</code>, the participant list that all other data types link to.</p>
+        <p class="mb-0"><strong>Keep IDs consistent.</strong> Participant IDs and session labels must be identical in every tab. Otherwise the same person shows up twice.</p>
     </div>
     {% endcall %}
 

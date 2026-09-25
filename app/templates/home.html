@@ -257,7 +257,10 @@
         {% include 'includes/home/hero.html' %}
 
         {% call help_panel('Quick Start', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3', 'beginner') %}
-        <p class="mb-0 small">Run validation early, then convert and export from the same project context.</p>
+        <div class="small">
+            <p class="mb-2"><strong>New here? The usual order:</strong> 1) create a study in <strong>Projects</strong>, 2) bring your data in with the <strong>Converter</strong>, 3) check it with the <strong>Validator</strong>, 4) compute scores in <strong>Recipes</strong> or share via <strong>Share &amp; Archive</strong>.</p>
+            <p class="mb-0"><strong>Too many tips?</strong> Switch off <strong>Beginner Help</strong> in the top bar once you know your way around.</p>
+        </div>
         {% endcall %}
 
         {% include 'includes/home/before_after.html' %}

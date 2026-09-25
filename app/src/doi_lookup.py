@@ -48,7 +48,7 @@ def lookup_doi(value: str, timeout: float = 8.0) -> dict:
     url = "https://api.crossref.org/works/" + urllib.parse.quote(doi, safe="/")
     req = urllib.request.Request(url, headers={"User-Agent": "PRISM-Studio (DOI check)"})
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310  # nosec B310 - hardcoded https URL
             msg = json.load(resp).get("message") or {}
     except urllib.error.HTTPError as exc:
         return {"status": "not_found" if exc.code == 404 else "unreachable", "doi": doi}

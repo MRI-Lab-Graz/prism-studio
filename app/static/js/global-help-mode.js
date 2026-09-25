@@ -51,26 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return exact[helpKey].trim();
         }
 
-        const prefixRules = Array.isArray(registry.prefixRules) ? registry.prefixRules : [];
-        for (const rule of prefixRules) {
-            if (!rule || typeof rule.prefix !== 'string' || typeof rule.hint !== 'string') {
-                continue;
-            }
-            if (helpKey.startsWith(rule.prefix) && rule.hint.trim()) {
-                return rule.hint.trim();
-            }
-        }
-
-        const regexRules = Array.isArray(registry.regexRules) ? registry.regexRules : [];
-        for (const rule of regexRules) {
-            if (!rule || !(rule.regex instanceof RegExp) || typeof rule.hint !== 'string') {
-                continue;
-            }
-            if (rule.regex.test(helpKey) && rule.hint.trim()) {
-                return rule.hint.trim();
-            }
-        }
-
         return '';
     }
 
@@ -95,57 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
-    function isFieldEffectivelyEmpty(field) {
-        if (field instanceof HTMLInputElement && field.type === 'file') {
-            return !(field.files && field.files.length > 0);
-        }
-
-        if (field instanceof HTMLInputElement && (field.type === 'checkbox' || field.type === 'radio')) {
-            return !field.checked;
-        }
-
-        if (field instanceof HTMLSelectElement && field.multiple) {
-            return Array.from(field.selectedOptions || []).length === 0;
-        }
-
-        return !String(field.value || '').trim();
-    }
-
-    function normalizeLabelText(text) {
-        return normalizeHintText(text)
-            .replace(/\b(REQUIRED|OPTIONAL|RECOMMENDED|PROJECT)\b/gi, '')
-            .replace(/\s+/g, ' ')
-            .trim();
-    }
-
-    function getFieldLabelText(field) {
-        let label = null;
-
-        if (field.id) {
-            const safeId = (typeof CSS !== 'undefined' && typeof CSS.escape === 'function')
-                ? CSS.escape(field.id)
-                : field.id.replace(/(["\\])/g, '\\$1');
-            label = document.querySelector(`label[for="${safeId}"]`);
-        }
-
-        if (!label) {
-            const check = field.closest('.form-check');
-            if (check) {
-                label = check.querySelector('.form-check-label');
-            }
-        }
-
-        if (!label) {
-            const group = field.closest('.mb-3, .col-md-3, .col-md-4, .col-md-6, .col-md-12, .col-lg-6, .col-12, .input-group, .card-body, .accordion-body');
-            if (group) {
-                label = group.querySelector('label');
-            }
-        }
-
-        if (!label) return '';
-        return normalizeLabelText(label.textContent || '');
-    }
-
     function getSettingCandidateFields() {
         return Array.from(document.querySelectorAll('input, select, textarea')).filter(field => {
             if (!(field instanceof HTMLElement)) return false;
@@ -155,65 +84,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function shouldShowInlineHint(field) {
-        const hasRegistryHint = Boolean(getRegistryHintByKey(getFieldHelpKey(field)));
-        if (window.prismBeginnerHelpMode && hasRegistryHint) {
-            return true;
-        }
-
-        const isFocused = document.activeElement === field;
-        const isInvalid = field.matches(':invalid') || field.classList.contains('is-invalid');
-        return isFocused || isInvalid || isFieldEffectivelyEmpty(field);
-    }
-
+    // Only curated registry hints are shown. Auto-generated fallbacks
+    // ("Fill this field to continue", "Set <label> to...") just restated the
+    // visible label, which is noise for anyone past their first session.
     function getFieldHintText(field) {
-        const helpKey = getFieldHelpKey(field);
-        const registryHint = getRegistryHintByKey(helpKey);
-        if (registryHint) {
-            return registryHint;
-        }
-
-        const labelText = getFieldLabelText(field);
-        if (field instanceof HTMLInputElement && field.type === 'file') {
-            const acceptList = String(field.getAttribute('accept') || '')
-                .split(',')
-                .map(value => value.trim())
-                .filter(Boolean);
-            const shortAccept = acceptList.slice(0, 4).join(', ');
-            const hasMoreAccept = acceptList.length > 4;
-            const acceptHint = shortAccept
-                ? ` Accepted: ${shortAccept}${hasMoreAccept ? ', ...' : ''}.`
-                : '';
-
-            if (labelText) {
-                return `Select files for "${labelText}".${acceptHint}`;
-            }
-
-            return `Select one or more files to continue.${acceptHint}`;
-        }
-
-        if (field instanceof HTMLInputElement && (field.type === 'checkbox' || field.type === 'radio')) {
-            return labelText
-                ? `Enable "${labelText}" if this applies to your project.`
-                : 'Enable this option if it applies to your project.';
-        }
-
-        if (field.tagName === 'SELECT') {
-            return labelText
-                ? `Set "${labelText}" to the option that matches your data.`
-                : 'Choose the option that best matches your data.';
-        }
-
-        // For plain text/textarea fields, a placeholder adds real information;
-        // restating the (already-visible) label does not, so prefer the
-        // placeholder and otherwise fall through to a generic, non-repeating hint.
-        const placeholder = normalizeHintText(field.getAttribute('placeholder'));
-        if (placeholder) {
-            const alreadyExample = /^(e\.g\.,?|example:?)/i.test(placeholder);
-            return alreadyExample ? placeholder : `Example: ${placeholder}`;
-        }
-
-        return 'Fill this field to continue.';
+        return getRegistryHintByKey(getFieldHelpKey(field));
     }
 
     function getExistingHelpTexts(field) {
@@ -250,7 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         getSettingCandidateFields().forEach(field => {
             if (!isFieldSupported(field)) return;
-            if (!shouldShowInlineHint(field)) return;
 
             const helpKey = getFieldHelpKey(field);
             if (!helpKey) return;

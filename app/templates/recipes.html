@@ -84,9 +84,8 @@
 
   {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
   <div class="small">
-    <p class="mb-2"><strong>Start with scope:</strong> choose modality, sessions, and optional recipe filter in step 1.</p>
-    <p class="mb-2"><strong>Choose structure:</strong> set merge and layout in step 2 before selecting output format in step 3.</p>
-    <p class="mb-0"><strong>Project required:</strong> analysis outputs run against the active project and keep backend recipe execution as the source of truth.</p>
+      <p class="mb-2"><strong>What happens here?</strong> Recipes compute scores (sums, means, subscales, reverse-scored items) from your converted questionnaires and export a table for SPSS, R, or Excel.</p>
+      <p class="mb-0"><strong>Safe to experiment:</strong> your data is not changed. Results are written to <code>derivatives/</code>, so you can re-run with different settings any time.</p>
   </div>
   {% endcall %}
 

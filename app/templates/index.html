@@ -56,9 +56,9 @@
 
         {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
         <div class="small">
-            <p class="mb-2"><strong>Pick a target:</strong> validate the current loaded project by default, or switch to another dataset folder.</p>
-            <p class="mb-2"><strong>Start simple:</strong> run standard validation first, then enable advanced options only when you need overrides.</p>
-            <p class="mb-0"><strong>Track progress:</strong> validation runs locally and updates progress live before opening the results page.</p>
+            <p class="mb-2"><strong>What gets checked?</strong> Folder structure, filenames, and metadata against the BIDS/PRISM rules. Running a check does not change your files.</p>
+            <p class="mb-2"><strong>When to validate?</strong> After every conversion step. A few fresh issues are much easier to fix than a pile of them at the end.</p>
+            <p class="mb-0"><strong>Advanced options?</strong> You can ignore them at first. The defaults are right for almost every dataset.</p>
         </div>
         {% endcall %}
 
