@@ -80,8 +80,9 @@ if (-not (Get-Command "uv" -ErrorAction SilentlyContinue)) {
         Write-Info "Installing uv..."
         powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
         
-        # Refresh Path for current session
-        $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
+        # The installer updates the user's future shells, not this process.
+        # Current uv installs use .local\bin; retain .cargo\bin for older installs.
+        $env:Path = "$env:USERPROFILE\.local\bin;$env:USERPROFILE\.cargo\bin;$env:Path"
         
         if (-not (Get-Command "uv" -ErrorAction SilentlyContinue)) {
             Write-Error "Failed to install uv or it's not in the path."
@@ -118,20 +119,6 @@ if (-not $UseUv) {
         Write-Info "or re-run install.cmd and accept installing 'uv' -- it downloads its own managed Python automatically."
         exit 1
     }
-}
-
-# 1b. Check for tkinter (required for folder picker in web interface)
-Write-Info "Checking for tkinter (required for folder picker)..."
-$tkinterCheck = python -c "import tkinter; print('OK')" 2>&1
-if ($tkinterCheck -match "OK") {
-    Write-Success "tkinter is available"
-} else {
-    Write-Warning "tkinter is NOT available"
-    Write-Warning "The web interface folder picker will not work."
-    Write-Warning "To fix: Reinstall Python and ensure 'tcl/tk and IDLE' is checked."
-    Write-Warning "Or continue without it - you can enter paths manually."
-    Write-Info "Press Enter to continue anyway, or Ctrl+C to abort..."
-    Read-Host
 }
 
 # --- Common logic for using uv or python ---
@@ -197,6 +184,21 @@ if (-not (Test-Path "$VenvDir")) {
         exit 1
     }
     Write-Success "Virtual environment created."
+}
+
+# 4a. Check tkinter using the setup environment, which uv can create without
+# a system Python installation.
+Write-Info "Checking for tkinter (required for folder picker)..."
+$tkinterCheck = & "$VenvDir\Scripts\python.exe" -c "import tkinter; print('OK')" 2>&1
+if ($tkinterCheck -match "OK") {
+    Write-Success "tkinter is available"
+} else {
+    Write-Warning "tkinter is NOT available"
+    Write-Warning "The web interface folder picker will not work."
+    Write-Warning "To fix: Reinstall Python and ensure 'tcl/tk and IDLE' is checked."
+    Write-Warning "Or continue without it - you can enter paths manually."
+    Write-Info "Press Enter to continue anyway, or Ctrl+C to abort..."
+    Read-Host
 }
 
 # 5. Install dependencies

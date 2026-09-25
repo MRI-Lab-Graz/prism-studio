@@ -1,9 +1,17 @@
 # PRISM Studio - Roadmap
 
-Last updated: 2026-08-07
+Last updated: 2026-09-25
 
 ## Recent Checkpoints
 
+- [x] 2026-09-25: Fixed the Windows source installer so a newly installed
+      `uv` is available to the current setup process from its default
+      `%USERPROFILE%\.local\bin` location; retained the legacy Cargo location
+      for existing installations, and deferred the Tkinter check until that
+      managed environment exists. Lesson learned: installers that alter a
+      persistent user PATH must also update their own process PATH before
+      invoking the new executable, and must not invoke an optional system
+      interpreter before a managed interpreter is ready.
 - [x] 2026-09-11: Stopped combined PRISM+BIDS validation from repeating
       PRISM sidecar/content checks for standard BIDS modalities before the
       BIDS validator runs. Lesson learned: duplicate content checks are
