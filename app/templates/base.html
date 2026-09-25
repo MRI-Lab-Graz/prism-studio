@@ -380,7 +380,7 @@
                     </span>
                     {% endif %}
                 </div>
-                <div id="navbarDataladStatusShell">
+                <div id="navbarDataladStatusShell"{% if not current_project_datalad.enabled %} class="d-none"{% endif %}>
                     <a class="btn btn-sm border-0 bg-transparent px-0 py-0 d-inline-flex align-items-center text-decoration-none"
                        id="navbarDataladToggle"
                        href="{{ url_for('projects.projects_page') }}?preserve_current=1"
@@ -1051,6 +1051,8 @@
             toggle.dataset.askOnOpen = dataladState.askOnOpen ? 'true' : 'false';
             icon?.classList.remove('text-success', 'text-dark', 'text-muted');
             cleanIcon?.classList.add('d-none');
+            // Only show the DataLad badge for projects that actually are DataLad datasets.
+            document.getElementById('navbarDataladStatusShell')?.classList.toggle('d-none', !(nextPath && dataladState.enabled));
 
             if (!nextPath) {
                 icon?.classList.add('text-muted');

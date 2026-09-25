@@ -67,6 +67,15 @@ class TestNavbarProjectEventWiring(unittest.TestCase):
         self.assertIn("icon?.classList.add('text-success');", js_snippet)
         self.assertIn("icon?.classList.add('text-dark');", js_snippet)
         self.assertIn("icon?.classList.add('text-muted');", js_snippet)
+        # Badge is hidden entirely unless the loaded project is a DataLad dataset.
+        self.assertIn(
+            '<div id="navbarDataladStatusShell"{% if not current_project_datalad.enabled %} class="d-none"{% endif %}>',
+            content,
+        )
+        self.assertIn(
+            "getElementById('navbarDataladStatusShell')?.classList.toggle('d-none', !(nextPath && dataladState.enabled));",
+            js_snippet,
+        )
 
     def test_navbar_recent_project_loader_uses_credentialed_fallback_fetch(self):
         content = BASE_TEMPLATE.read_text(encoding="utf-8")
