@@ -138,3 +138,4 @@ examples/hostile_demo/
 
 # Deno lockfile regenerated locally by bids-validator tooling (app/src/bids_validator.py)
 deno.lock
+uv.lock

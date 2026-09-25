@@ -14,23 +14,16 @@
     }
 
     .home-hero-logo-frame {
-        max-width: 980px;
-        height: clamp(255px, 39vw, 430px);
+        max-width: 760px;
         margin: 0 auto;
         overflow: hidden;
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
     }
 
+    /* Source art is 1536x580 with ~10% transparent headroom; pull it up to trim it. */
     .home-hero-logo {
-        width: min(100%, 920px);
-        max-width: none;
+        width: 100%;
         height: auto;
-        display: block;
-        background-color: transparent;
-        transform: translateY(-8%);
-        transform-origin: center top;
+        margin-top: -10%;
     }
 
     .home-hero-copy {
@@ -225,15 +218,6 @@
             padding: 1rem;
         }
 
-        .home-hero-logo-frame {
-            height: clamp(195px, 46vw, 285px);
-        }
-
-        .home-hero-logo {
-            width: min(100%, 720px);
-            transform: translateY(-5%);
-        }
-
         .home-proof-grid {
             grid-template-columns: 1fr;
         }
@@ -251,7 +235,7 @@
         {{ page_header(
             'fas fa-house',
             'Welcome to PRISM Studio',
-            'Build BIDS-compatible, analysis-ready datasets without leaving your local machine.'
+            'Extend BIDS to the data your study actually collects — add a schema, not code.'
         ) }}
 
         {% include 'includes/home/hero.html' %}

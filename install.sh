@@ -392,10 +392,14 @@ if [ -n "${VIRTUAL_ENV:-}" ]; then
 fi
 echo_success "Dependencies installed successfully."
 
+# Desktop shortcut (optional; setup still succeeds without it)
+bash scripts/setup/create_desktop_shortcut.sh || echo_info "Skipped Desktop shortcut."
+
 # --- Final Instructions ---
 echo ""
 echo "--------------------------------------------------"
 echo "Setup complete!"
 echo "To activate the virtual environment, run:"
 echo "source $VENV_DIR/bin/activate"
+echo "Or double-click the PRISM Studio shortcut on your Desktop."
 echo "--------------------------------------------------"

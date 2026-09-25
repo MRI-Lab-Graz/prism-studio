@@ -79,6 +79,10 @@ macOS/Linux:
 bash install.sh
 ```
 
+It also puts a **PRISM Studio** shortcut on the Desktop, with the app icon
+(`PRISM Studio.command` on macOS, `prism-studio.desktop` on Linux). To
+recreate it later: `bash scripts/setup/create_desktop_shortcut.sh`.
+
 Windows: double-click **`install.cmd`**, or run it from any shell:
 
 ```

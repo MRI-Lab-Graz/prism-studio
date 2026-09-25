@@ -1067,7 +1067,7 @@ def ensure_project_selected_first():
         return None
     if path == "/favicon.ico":
         return None
-    if path == "/shutdown":
+    if path in ("/shutdown", "/health"):
         return None
     if path == "/projects" or path.startswith("/api/projects/"):
         return None
@@ -1633,13 +1633,22 @@ def main():
 
     args = parser.parse_args()
 
+    host = "0.0.0.0" if args.public else args.host  # nosec B104
+
+    # A second launch (e.g. double-clicking the desktop shortcut again) reuses
+    # the running instance instead of piling up servers and terminal windows.
+    if not args.force_clean_start and is_prism_studio_instance(host, args.port):
+        url = f"http://127.0.0.1:{args.port}" if args.public else f"http://{host}:{args.port}"
+        print(f"[INFO]  PRISM Studio is already running at {url}")
+        if not args.no_browser:
+            webbrowser.open(url)
+        return
+
     if _should_relaunch_in_dedicated_terminal(args):
         if _launch_dedicated_terminal_for_frozen_app():
             print("[INFO]  Relaunching PRISM Studio in dedicated terminal window...")
             return
         print("[WARN]  Dedicated terminal launch failed; continuing in current process")
-
-    host = "0.0.0.0" if args.public else args.host  # nosec B104
 
     # Use the specified port and optionally enforce a force-clean startup.
     port = args.port

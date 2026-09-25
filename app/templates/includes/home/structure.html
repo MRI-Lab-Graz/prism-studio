@@ -10,6 +10,8 @@
 │   └── ses-001/
 │       ├── survey/
 │       ├── biometrics/
+│       ├── physio/
+│       ├── eyetracking/
 │       └── environment/
 └── sub-02/
     └── ...</code></pre>
@@ -17,15 +19,16 @@
     <div class="col-md-6">
         <h6 class="text-primary mb-2">What PRISM adds to a BIDS-style project</h6>
         <p class="text-muted small mb-3">
-            Keep a familiar BIDS layout while adding the extra structure needed for surveys,
-            participant-level assessments, and richer behavioral studies.
+            Keep a familiar BIDS layout. Each folder is a modality defined by a JSON schema:
+            use the ones PRISM ships, or add a schema for whatever your study measures.
         </p>
         <ul class="list-unstyled text-muted small mb-0">
             <li class="mb-2"><i class="fas fa-chart-line text-success me-2"></i><code>survey/</code> - Questionnaires, scoring inputs, and behavioral responses</li>
             <li class="mb-2"><i class="fas fa-heartbeat text-success me-2"></i><code>biometrics/</code> - Fitness, strength, balance, and other assessments</li>
             <li class="mb-2"><i class="fas fa-cloud-sun text-success me-2"></i><code>environment/</code> - Privacy-safe contextual enrichment data</li>
             <li class="mb-2"><i class="fas fa-eye text-success me-2"></i><code>eyetracking/</code> - Eye tracking workflows in the same study layout</li>
-            <li><i class="fas fa-wave-square text-success me-2"></i><code>physiological/</code> - Standard BIDS physio alongside PRISM extensions</li>
+            <li class="mb-2"><i class="fas fa-wave-square text-success me-2"></i><code>physio/</code> - Standard BIDS physio alongside PRISM extensions</li>
+            <li><i class="fas fa-puzzle-piece text-success me-2"></i><em>your modality</em> - Anything else, once you describe it in a schema</li>
         </ul>
     </div>
 </div>

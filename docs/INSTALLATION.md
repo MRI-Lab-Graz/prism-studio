@@ -90,6 +90,10 @@ source .venv/bin/activate
 python prism-studio.py
 ```
 
+`install.sh` also puts a **PRISM Studio** shortcut (with the app icon) on the
+Desktop — double-click it for later sessions. Recreate it with
+`bash scripts/setup/create_desktop_shortcut.sh`.
+
 </div>
 </details>
 

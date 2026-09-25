@@ -5,14 +5,14 @@
                 type="image/webp"
                 srcset="{{ url_for('static', filename='img/prism_logo_960.webp') }} 960w,
                         {{ url_for('static', filename='img/prism_logo_1536.webp') }} 1536w"
-                sizes="(max-width: 768px) 100vw, 920px"
+                sizes="(max-width: 768px) 100vw, 760px"
             >
             <img
                 src="{{ url_for('prism_logo') }}"
                 alt="PRISM Logo"
                 class="img-fluid d-block mx-auto home-hero-logo"
                 width="1536"
-                height="1024"
+                height="580"
                 loading="eager"
                 decoding="async"
                 fetchpriority="high"
@@ -20,13 +20,15 @@
         </picture>
     </div>
     <p class="home-hero-copy mb-0">
-        Turn raw research study data into clean, BIDS-compatible datasets —
-        without your data ever leaving your own computer.
+        Every modality in PRISM is a JSON schema layered on top of BIDS. Adding a new
+        instrument, measure, or field is a schema edit, not a code change. Surveys,
+        biometrics, and physiology come ready to use, and your data never leaves your computer.
     </p>
     <div class="home-pill-list justify-content-center">
+        <span class="home-pill home-pill--green"><i class="fas fa-puzzle-piece"></i>Extensible via schemas</span>
         <span class="home-pill home-pill--green"><i class="fas fa-shield-alt"></i>BIDS-compatible</span>
-        <span class="home-pill home-pill--green"><i class="fas fa-code-branch"></i>Full DataLad support</span>
-        <span class="home-pill home-pill--green"><i class="fas fa-file-import"></i>Version-aware surveys</span>
+        <span class="home-pill home-pill--green"><i class="fas fa-circle-check"></i>Built-in validation</span>
+        <span class="home-pill home-pill--green"><i class="fas fa-code-branch"></i>DataLad provenance &amp; sync</span>
         <span class="home-pill home-pill--green"><i class="fas fa-user-shield"></i>Privacy-safe export</span>
         <span class="home-pill home-pill--green"><i class="fas fa-laptop-house"></i>Local-first</span>
     </div>

@@ -716,7 +716,10 @@ function _getReferenceDoiLines() {
 
 // Stored value may be a string or (legacy) objects; never render "[object Object]".
 function _referencesToDoiLines(refs) {
-    const items = Array.isArray(refs) ? refs : String(refs || '').split(/[\r\n]+/);
+    // Older project.json files store References as {} (or a single object).
+    const items = Array.isArray(refs) ? refs
+        : (refs && typeof refs === 'object') ? [refs]
+        : String(refs || '').split(/[\r\n]+/);
     return items
         .map(r => (r && typeof r === 'object') ? (r.doi || r.DOI || r.url || '') : r)
         .map(r => String(r || '').trim())
@@ -1412,7 +1415,6 @@ const OVERVIEW_LIST_FIELDS = {
     smReferencesText: {
         listId: 'smReferencesList',
         addId: 'smReferencesAdd',
-        placeholder: 'DOI (e.g. 10.1000/xyz123)',
         validate: value => _isValidDoiFormat(value),
         lookup: _lookupDoiStatus,
     },
@@ -1483,7 +1485,7 @@ function addOverviewListRow(fieldId, value = '') {
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'form-control overview-list-input';
-    input.placeholder = config.placeholder;
+    input.placeholder = config.placeholder || '';
     input.value = String(value || '');
 
     const removeButton = document.createElement('button');

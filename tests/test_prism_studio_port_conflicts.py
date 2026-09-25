@@ -177,3 +177,30 @@ def test_inject_utilities_exposes_request_api_origin(
     # app, so it must use the fast DataLad status path; the full per-
     # subdataset scan would otherwise slow down every navbar page load.
     assert fast_flags_seen == [True]
+
+
+def test_health_reachable_without_project(prism_studio_module):
+    # is_prism_studio_instance() probes /health with no session; a redirect to
+    # /projects made every running instance look like a foreign process.
+    resp = prism_studio_module.app.test_client().get("/health")
+    assert resp.status_code == 200
+    assert resp.get_json() == {"status": "ok", "running": True}
+
+
+def test_main_reuses_running_instance(prism_studio_module, monkeypatch):
+    opened = []
+
+    def fail(*args, **kwargs):
+        raise AssertionError("must not start/replace a server when one is running")
+
+    monkeypatch.setattr(
+        prism_studio_module, "is_prism_studio_instance", lambda host, port: True
+    )
+    monkeypatch.setattr(prism_studio_module, "ensure_clean_start", fail)
+    monkeypatch.setattr(prism_studio_module, "_should_relaunch_in_dedicated_terminal", fail)
+    monkeypatch.setattr(prism_studio_module.webbrowser, "open", opened.append)
+    monkeypatch.setattr(prism_studio_module.sys, "argv", ["prism-studio.py"])
+
+    prism_studio_module.main()
+
+    assert opened == ["http://127.0.0.1:5001"]
