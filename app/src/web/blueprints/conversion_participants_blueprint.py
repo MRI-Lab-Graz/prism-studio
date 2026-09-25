@@ -25,7 +25,7 @@ from src.participants_backend import (
     preview_participants_merge,
     save_participant_mapping as save_participant_mapping_backend,
 )
-from .conversion_participants_helpers import (
+from src.participant_columns import (
     _detect_repeated_questionnaire_prefixes,
     _filter_participant_relevant_columns,
     _generate_neurobagel_schema,

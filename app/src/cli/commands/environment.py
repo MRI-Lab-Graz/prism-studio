@@ -5,15 +5,18 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Any, Callable, cast
+from typing import Callable
 
-from src.web.blueprints.conversion_utils import normalize_separator_option
-
-
-def _environment_backend_module() -> Any:
-    import src.web.blueprints.conversion_environment_handlers as environment_module
-
-    return environment_module
+from src.converters.file_reader import normalize_separator_option
+from src.environment_conversion import (
+    ALLOWED_SUFFIXES,
+    perform_environment_conversion,
+    preview_environment_file,
+)
+from src.environment_mri_scan import (
+    build_mri_acquisition_table,
+    resolve_bids_rawdata_root,
+)
 
 
 def _bool_arg(value: object, *, default: bool = False) -> bool:
@@ -29,57 +32,6 @@ def _bool_arg(value: object, *, default: bool = False) -> bool:
 
 def _emit_json(payload: object) -> None:
     print(json.dumps(payload, ensure_ascii=False))
-
-
-def _resolve_environment_preview_payload(
-    input_path: Path, separator_option: str
-) -> dict[str, Any]:
-    environment_module = _environment_backend_module()
-
-    suffix = input_path.suffix.lower()
-    df = environment_module._load_environment_dataframe(
-        input_path,
-        suffix=suffix,
-        separator_option=separator_option,
-    )
-
-    columns = list(df.columns)
-    auto_timestamp = environment_module._detect_col(
-        environment_module._CANDIDATE_TIMESTAMP,
-        columns,
-    )
-    return {
-        "columns": columns,
-        "sample": df.head(5).fillna("").values.tolist(),
-        "compatibility": environment_module._compatibility_report(
-            df,
-            columns,
-            auto_timestamp,
-        ),
-        "auto_detected": {
-            "participant_id": environment_module._detect_col(
-                environment_module._CANDIDATE_PARTICIPANT,
-                columns,
-            ),
-            "session": environment_module._detect_col(
-                environment_module._CANDIDATE_SESSION,
-                columns,
-            ),
-            "timestamp": auto_timestamp,
-            "location": environment_module._detect_col(
-                environment_module._CANDIDATE_LOCATION,
-                columns,
-            ),
-            "lat": environment_module._detect_col(
-                environment_module._CANDIDATE_LAT,
-                columns,
-            ),
-            "lon": environment_module._detect_col(
-                environment_module._CANDIDATE_LON,
-                columns,
-            ),
-        },
-    }
 
 
 def _environment_log_callback(
@@ -101,8 +53,6 @@ def _environment_log_callback(
 
 
 def _resolve_environment_convert_payload(args) -> tuple[dict[str, object], int]:
-    environment_module = _environment_backend_module()
-
     input_path = Path(args.input).expanduser().resolve()
     log_entries: list[dict[str, str]] = []
     log_file_text = str(getattr(args, "log_file", "") or "").strip()
@@ -119,7 +69,7 @@ def _resolve_environment_convert_payload(args) -> tuple[dict[str, object], int]:
     )
 
     try:
-        result = environment_module._perform_environment_conversion(
+        result = perform_environment_conversion(
             input_path=input_path,
             filename=input_path.name,
             suffix=input_path.suffix.lower(),
@@ -178,8 +128,7 @@ def cmd_environment_preview(args) -> None:
             print(f"Error: {message}")
         sys.exit(1)
 
-    environment_module = _environment_backend_module()
-    allowed_suffixes = cast(set[str], environment_module.ALLOWED_SUFFIXES)
+    allowed_suffixes = ALLOWED_SUFFIXES
     suffix = input_path.suffix.lower()
     if suffix not in allowed_suffixes:
         allowed = ", ".join(sorted(allowed_suffixes))
@@ -192,7 +141,7 @@ def cmd_environment_preview(args) -> None:
 
     try:
         separator_option = normalize_separator_option(getattr(args, "separator", None))
-        payload = _resolve_environment_preview_payload(input_path, separator_option)
+        payload = preview_environment_file(input_path, separator_option)
     except ValueError as exc:
         if bool(getattr(args, "json", False)):
             _emit_json({"error": str(exc)})
@@ -282,11 +231,6 @@ def cmd_environment_scan_mri(args) -> None:
     scanner-site location tags, writing a TSV that can be fed straight
     into `environment convert --input`. The CLI equivalent of the Studio
     GUI's Environment/MRI tab "Scan Project MRI Data" action."""
-    from src.web.blueprints.conversion_environment_mri_scan_helpers import (
-        build_mri_acquisition_table,
-        resolve_bids_rawdata_root,
-    )
-
     as_json = bool(getattr(args, "json", False))
     project_root = Path(args.project).expanduser().resolve()
     if not project_root.is_dir():

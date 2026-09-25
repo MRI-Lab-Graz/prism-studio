@@ -334,7 +334,7 @@ def cmd_recipes_validate_file(args) -> None:
 def cmd_recipes_save(args) -> None:
     """Validate a recipe against its template and save it into the project,
     matching the Studio GUI's Recipe Builder 'Save' action."""
-    from src.web.blueprints.tools_recipe_builder_handlers import (
+    from src.recipe_builder import (
         RecipeSaveError,
         save_recipe_to_project,
     )

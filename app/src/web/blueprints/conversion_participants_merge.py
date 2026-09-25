@@ -8,7 +8,7 @@ from src.participants_backend import (
     merge_neurobagel_schema_for_columns as _merge_neurobagel_schema_for_columns,
 )
 
-from .conversion_participants_helpers import (
+from src.participant_columns import (
     _generate_neurobagel_schema,
     _load_project_participant_filter_config,
 )

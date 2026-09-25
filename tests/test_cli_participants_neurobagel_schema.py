@@ -5,7 +5,7 @@ the Studio GUI's Neurobagel widget's real value beyond a raw
 --neurobagel-schema passthrough flag — fetching/augmenting the external
 Neurobagel controlled vocabulary and sampling local participants.tsv
 columns for categorical mapping suggestions — had no CLI equivalent at
-all. src.web.neurobagel.sample_local_participant_columns was extracted
+all. src.neurobagel.sample_local_participant_columns was extracted
 from app/src/web/blueprints/neurobagel.py's inline pandas logic in the
 same change so both the GUI route and this CLI command share it.
 """
@@ -46,7 +46,7 @@ FAKE_VOCAB = {
 
 @pytest.fixture(autouse=True)
 def _mock_neurobagel_network(monkeypatch):
-    import src.web.neurobagel as neurobagel_module
+    import src.neurobagel as neurobagel_module
 
     monkeypatch.setattr(
         neurobagel_module, "fetch_neurobagel_participants", lambda: dict(FAKE_VOCAB)

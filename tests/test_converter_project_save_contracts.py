@@ -817,7 +817,7 @@ def test_environment_convert_start_rejects_stale_project_path(tmp_path):
 def test_environment_conversion_rechecks_project_path_before_write(
     tmp_path, monkeypatch
 ):
-    _app, _biometrics, _survey, _physio, environment = _build_app_and_handlers()
+    environment = importlib.import_module("src.environment_conversion")
 
     input_path = tmp_path / "environment.csv"
     input_path.write_text(
@@ -839,7 +839,7 @@ def test_environment_conversion_rechecks_project_path_before_write(
     )
 
     with pytest.raises(FileNotFoundError, match="no longer exists"):
-        environment._perform_environment_conversion(
+        environment.perform_environment_conversion(
             input_path=input_path,
             filename="environment.csv",
             suffix=".csv",

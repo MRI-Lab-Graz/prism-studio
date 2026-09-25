@@ -4,7 +4,7 @@ import warnings
 from pathlib import Path
 from typing import Any, cast
 
-from src.web.blueprints.conversion_utils import participant_json_candidates
+from src.participants_paths import participant_json_candidates
 
 try:
     from src.converters.survey import _NON_ITEM_TOPLEVEL_KEYS as _SURVEY_NON_ITEM_KEYS
@@ -386,7 +386,7 @@ def _filter_participant_relevant_columns(
     return selected
 
 
-def _collect_default_participant_columns(df, id_column: str | None) -> list[str]:
+def collect_default_participant_columns(df, id_column: str | None) -> list[str]:
     if df is None or getattr(df, "empty", True):
         return []
 

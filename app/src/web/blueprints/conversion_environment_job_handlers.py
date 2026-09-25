@@ -232,7 +232,6 @@ def handle_run_environment_job(
                 job_id, message, level
             ),
             progress_callback=progress_callback,
-            job_id=job_id,
             cancel_check=lambda: is_environment_job_cancelled(job_id),
         )
         environment_job_store.success(job_id, result)

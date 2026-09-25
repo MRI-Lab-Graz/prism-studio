@@ -24,10 +24,10 @@ from src.participants_backend import (
 from src.participants_converter import ParticipantsConverter
 from src.participants_id_selection import resolve_participants_id_selection
 from src.participants_paths import participants_mapping_candidates
-from src.web.blueprints.conversion_participants_helpers import (
-    _collect_default_participant_columns,
+from src.participant_columns import (
+    collect_default_participant_columns,
 )
-from src.web.blueprints.conversion_utils import (
+from src.converters.file_reader import (
     expected_delimiter_for_suffix,
     normalize_separator_option,
 )
@@ -282,7 +282,7 @@ def cmd_participants_preview(args) -> None:
         )
         sys.exit(2)
 
-    output_columns = _collect_default_participant_columns(df, id_column)
+    output_columns = collect_default_participant_columns(df, id_column)
 
     converter = ParticipantsConverter(project_root)
     mapping = None
@@ -758,7 +758,7 @@ def cmd_participants_neurobagel_schema(args) -> None:
     docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md). The output is meant to
     inform hand-building a --neurobagel-schema payload for `participants
     convert`/`merge`/`save-mapping`, not to be passed to them directly."""
-    from src.web.neurobagel import (
+    from src.neurobagel import (
         augment_neurobagel_data,
         fetch_neurobagel_participants,
         sample_local_participant_columns,

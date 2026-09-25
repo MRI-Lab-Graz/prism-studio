@@ -27,7 +27,7 @@ from src.participants_converter import ParticipantsConverter
 from src.recipe_validation import validate_recipe
 from src.recipes_surveys import compute_survey_recipes
 from src.subject_code_rewriter import SubjectCodeRewriter
-from src.web.blueprints.conversion_environment_mri_scan_helpers import (
+from src.environment_mri_scan import (
     discover_mri_acquisition_rows,
     extract_sidecar_location,
     parse_sidecar_timestamp,

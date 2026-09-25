@@ -23,10 +23,10 @@ if str(APP_ROOT) not in sys.path:
 
 import src.environment_temporal as shared  # noqa: E402
 from src.environment import builder  # noqa: E402
-from src.web.blueprints import conversion_environment_handlers as gui_handlers  # noqa: E402
-from src.web.blueprints import (  # noqa: E402
-    conversion_environment_provider_helpers as gui_provider_helpers,
-)
+# The GUI/`environment convert` engine moved out of the Flask blueprint into
+# src.environment_conversion (+ src.environment_provider_helpers).
+import src.environment_conversion as gui_handlers  # noqa: E402
+import src.environment_provider_helpers as gui_provider_helpers  # noqa: E402
 
 
 class TestBuilderDelegatesToSharedModule:

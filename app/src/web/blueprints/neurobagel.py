@@ -6,7 +6,7 @@ Handles NeuroBagel API routes.
 import os
 import json
 from flask import Blueprint, jsonify, request, current_app
-from src.web.neurobagel import (
+from src.neurobagel import (
     augment_neurobagel_data,
     fetch_neurobagel_participants,
     sample_local_participant_columns,

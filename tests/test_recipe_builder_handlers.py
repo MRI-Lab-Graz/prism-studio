@@ -517,10 +517,10 @@ def test_recipe_builder_detects_ranges_from_contiguous_numeric_levels(tmp_path):
     )
 
     with app.app_context():
-        assert handlers._detect_scale_ranges(str(template_path), modality="survey") == {
+        assert handlers.detect_scale_ranges(str(template_path), modality="survey") == {
             "": {"min": 0, "max": 3}
         }
-        assert handlers._extract_item_ranges_from_template(
+        assert handlers.extract_item_ranges_from_template(
             str(template_path),
             modality="survey",
         ) == {

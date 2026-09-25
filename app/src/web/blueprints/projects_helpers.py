@@ -8,26 +8,12 @@ from src.project_icons import (
     resolve_project_icon,
     stable_project_icon,
 )
+from src.project_root import (  # noqa: F401 - re-exported for blueprints
+    resolve_project_root_path as _resolve_project_root_path,
+)
 
 _RECENT_PROJECTS_FILENAME = "prism_recent_projects.json"
 _RECENT_PROJECTS_MAX = 5
-
-
-def _resolve_project_root_path(project_path_value: str) -> Path | None:
-    if not project_path_value:
-        return None
-
-    path_obj = Path(project_path_value)
-    if not path_obj.exists():
-        return None
-
-    if path_obj.is_file() and path_obj.name == "project.json":
-        return path_obj.parent
-
-    if path_obj.is_dir():
-        return path_obj
-
-    return None
 
 
 def _resolve_project_json_path(project_path_value: str) -> Path | None:

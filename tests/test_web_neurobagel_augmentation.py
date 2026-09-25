@@ -1,4 +1,4 @@
-from app.src.web.neurobagel import augment_neurobagel_data
+from src.neurobagel import augment_neurobagel_data
 
 
 def test_group_and_diagnosis_without_source_levels_are_empty() -> None:

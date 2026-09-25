@@ -12,43 +12,17 @@ from pathlib import Path
 from flask import current_app, jsonify
 
 from src.constants import SUPPORTED_MODALITIES as _SUPPORTED_MODALITIES
-from src.recipe_validation import validate_recipe, validate_recipe_warnings
-from src.survey_scale_inference import (
-    apply_implicit_numeric_level_ranges,
-    get_survey_item_map,
+from src.recipe_builder import (  # noqa: F401 - RecipeSaveError re-exported
+    RecipeSaveError,
+    detect_scale_ranges,
+    extract_item_description_metadata_from_template,
+    extract_item_ranges_from_template,
+    extract_items_from_template,
+    extract_items_missing_ranges_from_template,
+    extract_template_reversed_items,
+    find_templates,
+    save_recipe_to_project,
 )
-from src.system_files import filter_system_files
-
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
-# Keys that are structural metadata in a survey template, not item IDs
-_RESERVED_KEYS = {
-    "@context",
-    "Technical",
-    "Study",
-    "Metadata",
-    "Categories",
-    "TaskName",
-    "Name",
-    "BIDSVersion",
-    "Description",
-    "URL",
-    "License",
-    "Authors",
-    "Acknowledgements",
-    "References",
-    "Funding",
-    "I18n",
-    "Scoring",
-    "Normative",
-    "Questions",
-}
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 
 def _global_library_root() -> Path | None:
@@ -69,488 +43,6 @@ def _global_library_root() -> Path | None:
         return None
     except RuntimeError:
         return None
-
-
-def _library_search_roots(
-    dataset_path: str,
-    *,
-    modality: str,
-    include_global: bool = False,
-    global_root: Path | None = None,
-) -> list[Path]:
-    """Return candidate library folders in priority order.
-
-    By default only project-local folders are returned.  Pass
-    ``include_global=True`` to also search the official library.
-    """
-    roots: list[Path] = []
-    project = Path(dataset_path)
-    for sub in (
-        f"code/library/{modality}",
-        "code/library",
-        f"library/{modality}",
-        "library",
-    ):
-        candidate = project / sub
-        if candidate.is_dir():
-            roots.append(candidate)
-    if include_global:
-        global_root = global_root or _global_library_root()
-        if global_root:
-            roots.append(global_root)
-            for sub in (modality,):
-                candidate = global_root / sub
-                if candidate.is_dir():
-                    roots.append(candidate)
-    return roots
-
-
-def _task_from_template_filename(filename: str, *, modality: str) -> str | None:
-    """Extract the task name from a survey/biometrics template filename.
-
-    Survey handles::
-
-        task-personality_survey.json  →  personality
-        task-stress_form_survey.json  →  stress_form
-        survey-wellbeing.json         →  wellbeing
-    Biometrics handles::
-
-        task-ukk_biometrics.json  →  ukk
-        task-grip_strength_biometrics.json  →  grip_strength
-        biometrics-ukk.json       →  ukk
-    """
-    stem = Path(filename).stem  # drop .json
-    if modality == "survey":
-        # BIDS style: task-<name>_survey
-        m = re.search(r"(?:^|_)task-(.+?)(?:_survey(?:_|$)|$)", stem)
-        if m:
-            return m.group(1)
-        # Legacy style: survey-<name>
-        m = re.match(r"survey-(.+)", stem)
-        if m:
-            return m.group(1)
-        return None
-
-    # BIDS style: task-<name>_biometrics
-    m = re.search(r"(?:^|_)task-(.+?)(?:_biometrics(?:_|$)|$)", stem)
-    if m:
-        return m.group(1)
-    # Legacy style: biometrics-<name>
-    m = re.match(r"biometrics-(.+)", stem)
-    if m:
-        return m.group(1)
-    return None
-
-
-def _find_templates(
-    dataset_path: str,
-    *,
-    modality: str,
-    include_global: bool = False,
-    global_root: Path | None = None,
-) -> list[dict]:
-    """Return deduplicated modality template JSON files found in library folders.
-
-    Each entry:
-    - ``task``      – instrument identifier (e.g. ``wellbeing``, ``ukk``)
-      - ``label``     – human-readable display name (from template or task)
-      - ``file``      – display path (relative where possible)
-      - ``source``    – ``"project"`` or ``"official"``
-      - ``full_path`` – absolute path (not returned to client)
-    """
-    found: dict[str, dict] = {}
-    dataset_root = Path(dataset_path)
-    global_root = global_root or _global_library_root()
-
-    for root in _library_search_roots(
-        dataset_path,
-        modality=modality,
-        include_global=include_global,
-        global_root=global_root,
-    ):
-        for json_file in sorted(root.glob("*.json")):
-            cleaned = filter_system_files([json_file.name])
-            if not cleaned:
-                continue
-            task = _task_from_template_filename(json_file.name, modality=modality)
-            if not task:
-                continue
-            if task in found:
-                continue
-
-            # Quick check: must look like a template (has Technical or Study)
-            try:
-                with open(json_file, encoding="utf-8") as fh:
-                    data = json.load(fh)
-            except Exception:
-                continue
-            if not isinstance(data, dict):
-                continue
-            if "Technical" not in data and "Study" not in data:
-                continue
-
-            label = task
-            study = data.get("Study") or {}
-            if isinstance(study, dict):
-                if modality == "biometrics":
-                    name = (
-                        study.get("BiometricName")
-                        or _pick_item_description(study.get("ShortName"))
-                        or _pick_item_description(study.get("OriginalName"))
-                        or study.get("Name")
-                        or ""
-                    )
-                else:
-                    name = study.get("TaskName") or study.get("Name") or ""
-                if name:
-                    label = str(name).strip()
-
-            try:
-                rel = json_file.relative_to(dataset_root)
-                display = rel.as_posix()
-            except ValueError:
-                display = json_file.name
-
-            # Determine source: project-local or official library
-            is_global = False
-            if global_root:
-                try:
-                    json_file.relative_to(global_root)
-                    is_global = True
-                except ValueError:
-                    pass
-
-            found[task] = {
-                "task": task,
-                "label": label,
-                "file": display,
-                "source": "official" if is_global else "project",
-                "full_path": str(json_file),
-            }
-
-    return sorted(found.values(), key=lambda d: d["task"])
-
-
-def _extract_items_from_template(json_path: str, *, modality: str) -> list[str]:
-    """Return item/question IDs from a modality template JSON."""
-    cleaned = filter_system_files([os.path.basename(json_path)])
-    if not cleaned:
-        return []
-    path = Path(json_path)
-    if not path.is_file():
-        return []
-    try:
-        with open(path, encoding="utf-8") as fh:
-            data = json.load(fh)
-    except Exception:
-        return []
-    if not isinstance(data, dict):
-        return []
-
-    if modality == "survey":
-        # Prefer explicit Questions dict (newer PRISM format)
-        if "Questions" in data and isinstance(data["Questions"], dict):
-            return [
-                k
-                for k, v in data["Questions"].items()
-                if isinstance(v, dict) and not v.get("_exclude", False)
-            ]
-
-    # Fallback: top-level keys that look like items (also used for biometrics)
-    return [
-        k
-        for k, v in data.items()
-        if k not in _RESERVED_KEYS
-        and isinstance(v, dict)
-        and "Description" in v
-        and not v.get("_exclude", False)
-    ]
-
-
-def _pick_item_description(value) -> str:
-    """Return a readable item description from plain or localized values."""
-    if isinstance(value, str):
-        return value.strip()
-    if isinstance(value, dict):
-        for key in ("en", "de"):
-            candidate = value.get(key)
-            if isinstance(candidate, str) and candidate.strip():
-                return candidate.strip()
-        for candidate in value.values():
-            if isinstance(candidate, str) and candidate.strip():
-                return candidate.strip()
-    return ""
-
-
-def _extract_item_description_metadata_from_template(
-    json_path: str,
-    *,
-    modality: str,
-) -> tuple[dict[str, str], dict[str, dict[str, str]], list[str], str]:
-    """Return flattened and language-aware item description metadata.
-
-    Returns a tuple of:
-      1) item_descriptions: {itemId: "best available text"}
-      2) item_descriptions_i18n: {itemId: {lang: text}}
-      3) item_description_languages: sorted list of language keys seen in templates
-      4) template_language: Technical.Language hint (if present)
-    """
-    cleaned = filter_system_files([os.path.basename(json_path)])
-    if not cleaned:
-        return {}, {}, [], ""
-    path = Path(json_path)
-    if not path.is_file():
-        return {}, {}, [], ""
-    try:
-        with open(path, encoding="utf-8") as fh:
-            data = json.load(fh)
-    except Exception:
-        return {}, {}, [], ""
-    if not isinstance(data, dict):
-        return {}, {}, [], ""
-
-    template_language = ""
-    technical = data.get("Technical")
-    if isinstance(technical, dict):
-        maybe_lang = technical.get("Language")
-        if isinstance(maybe_lang, str):
-            template_language = maybe_lang.strip()
-
-    items_src = _template_item_map(data, modality=modality)
-    descriptions: dict[str, str] = {}
-    descriptions_i18n: dict[str, dict[str, str]] = {}
-    languages: set[str] = set()
-
-    for item_id, item_def in items_src.items():
-        if item_id in _RESERVED_KEYS or not isinstance(item_def, dict):
-            continue
-        if item_def.get("_exclude", False):
-            continue
-
-        raw_description = item_def.get("Description")
-        descriptions[item_id] = _pick_item_description(raw_description)
-
-        per_item_i18n: dict[str, str] = {}
-        if isinstance(raw_description, dict):
-            for lang_key, lang_text in raw_description.items():
-                if not isinstance(lang_key, str) or not isinstance(lang_text, str):
-                    continue
-                cleaned_key = lang_key.strip()
-                cleaned_text = lang_text.strip()
-                if not cleaned_key or not cleaned_text:
-                    continue
-                per_item_i18n[cleaned_key] = cleaned_text
-                if cleaned_key.lower() != "default":
-                    languages.add(cleaned_key)
-        elif isinstance(raw_description, str) and raw_description.strip():
-            per_item_i18n["default"] = raw_description.strip()
-
-        if per_item_i18n:
-            descriptions_i18n[item_id] = per_item_i18n
-
-    return descriptions, descriptions_i18n, sorted(languages), template_language
-
-
-def _extract_item_descriptions_from_template(
-    json_path: str, *, modality: str
-) -> dict[str, str]:
-    """Return item descriptions keyed by item ID from a survey template JSON."""
-    descriptions, _i18n, _languages, _template_language = (
-        _extract_item_description_metadata_from_template(
-            json_path,
-            modality=modality,
-        )
-    )
-    return descriptions
-
-
-def _detect_scale_ranges(json_path: str, *, modality: str) -> dict:
-    """Return per-variant scale ranges detected from template items.
-
-    The returned dict has:
-      - key "" → most common top-level MinValue/MaxValue across all items
-      - key "<VariantID>" → most common MinValue/MaxValue for that variant
-        (from each item's VariantScales list)
-
-    A missing key means no range could be detected for that variant.
-    """
-    path = Path(json_path)
-    if not path.is_file():
-        return {}
-    try:
-        with open(path, encoding="utf-8") as fh:
-            data = json.load(fh)
-    except Exception:
-        return {}
-    if not isinstance(data, dict):
-        return {}
-
-    data = apply_implicit_numeric_level_ranges(data)
-
-    items_src = _template_item_map(data, modality=modality)
-
-    # counts[variant_id][(min, max)] = frequency
-    from collections import defaultdict
-
-    counts: dict[str, dict[tuple, int]] = defaultdict(dict)
-
-    for v in items_src.values():
-        if not isinstance(v, dict):
-            continue
-        # top-level (default) range
-        min_val = v.get("MinValue")
-        max_val = v.get("MaxValue")
-        if min_val is not None and max_val is not None:
-            pair = (min_val, max_val)
-            counts[""][pair] = counts[""].get(pair, 0) + 1
-        # per-variant ranges
-        for vs in v.get("VariantScales") or []:
-            if not isinstance(vs, dict):
-                continue
-            vid = vs.get("VariantID")
-            vmin = vs.get("MinValue")
-            vmax = vs.get("MaxValue")
-            if vid and vmin is not None and vmax is not None:
-                pair = (vmin, vmax)
-                counts[vid][pair] = counts[vid].get(pair, 0) + 1
-
-    result: dict = {}
-    for variant_id, freq in counts.items():
-        if freq:
-            best = max(freq, key=lambda p: freq[p])
-            result[variant_id] = {"min": best[0], "max": best[1]}
-    return result
-
-
-def _extract_item_ranges_from_template(json_path: str, *, modality: str) -> dict:
-    """Return per-item, per-variant scale ranges from a template.
-
-    Shape: {itemId: {"": {min, max}, variantId: {min, max}, ...}}
-    The "" key holds the item's top-level (default) range.
-    """
-    path = Path(json_path)
-    if not path.is_file():
-        return {}
-    try:
-        with open(path, encoding="utf-8") as fh:
-            data = json.load(fh)
-    except Exception:
-        return {}
-    if not isinstance(data, dict):
-        return {}
-
-    data = apply_implicit_numeric_level_ranges(data)
-
-    items_src = _template_item_map(data, modality=modality)
-    result: dict = {}
-    for item_id, v in items_src.items():
-        if not isinstance(v, dict):
-            continue
-        item_ranges: dict = {}
-        min_val = v.get("MinValue")
-        max_val = v.get("MaxValue")
-        if min_val is not None and max_val is not None:
-            item_ranges[""] = {"min": min_val, "max": max_val}
-        for vs in v.get("VariantScales") or []:
-            if not isinstance(vs, dict):
-                continue
-            vid = vs.get("VariantID")
-            vmin = vs.get("MinValue")
-            vmax = vs.get("MaxValue")
-            if vid and vmin is not None and vmax is not None:
-                item_ranges[vid] = {"min": vmin, "max": vmax}
-        if item_ranges:
-            result[item_id] = item_ranges
-    return result
-
-
-def _extract_template_reversed_items(json_path: str, *, modality: str) -> list[str]:
-    """Return item IDs with template flag Reversed=true."""
-    path = Path(json_path)
-    if not path.is_file():
-        return []
-    try:
-        with open(path, encoding="utf-8") as fh:
-            data = json.load(fh)
-    except Exception:
-        return []
-    if not isinstance(data, dict):
-        return []
-
-    items_src = _template_item_map(data, modality=modality)
-    reversed_items: list[str] = []
-    for item_id, item_def in items_src.items():
-        if item_id in _RESERVED_KEYS or not isinstance(item_def, dict):
-            continue
-        if item_def.get("_exclude", False):
-            continue
-        if bool(item_def.get("Reversed", False)):
-            reversed_items.append(item_id)
-    return reversed_items
-
-
-def _extract_items_missing_ranges_from_template(
-    json_path: str, *, modality: str
-) -> list[str]:
-    """Return item IDs missing a usable MinValue/MaxValue after inference."""
-    path = Path(json_path)
-    if not path.is_file():
-        return []
-    try:
-        with open(path, encoding="utf-8") as fh:
-            data = json.load(fh)
-    except Exception:
-        return []
-    if not isinstance(data, dict):
-        return []
-
-    data = apply_implicit_numeric_level_ranges(data)
-    items_src = _template_item_map(data, modality=modality)
-    missing: list[str] = []
-    for item_id, item_def in items_src.items():
-        if item_id in _RESERVED_KEYS or not isinstance(item_def, dict):
-            continue
-        if item_def.get("_exclude", False):
-            continue
-
-        has_default_range = (
-            item_def.get("MinValue") is not None
-            and item_def.get("MaxValue") is not None
-        )
-        has_variant_range = False
-        for vs in item_def.get("VariantScales") or []:
-            if not isinstance(vs, dict):
-                continue
-            if vs.get("MinValue") is not None and vs.get("MaxValue") is not None:
-                has_variant_range = True
-                break
-
-        if not has_default_range and not has_variant_range:
-            missing.append(item_id)
-
-    return missing
-
-
-def _template_item_map(data: dict, *, modality: str) -> dict[str, dict]:
-    """Return modality-aware template item mappings."""
-    if modality == "survey":
-        items = get_survey_item_map(data)
-        return {
-            k: v
-            for k, v in items.items()
-            if isinstance(v, dict)
-        }
-
-    return {
-        k: v
-        for k, v in data.items()
-        if k not in _RESERVED_KEYS and isinstance(v, dict)
-    }
-
-
-def _recipe_output_path(dataset_path: str, *, modality: str) -> Path:
-    """Return the canonical project-local recipe folder (YODA convention)."""
-    return Path(dataset_path) / "code" / "recipes" / modality
 
 
 # ---------------------------------------------------------------------------
@@ -574,10 +66,11 @@ def handle_api_recipe_builder_surveys(
     if not dataset_path or not os.path.isdir(dataset_path):
         return jsonify({"surveys": []}), 200
 
-    templates = _find_templates(
+    templates = find_templates(
         dataset_path,
         modality=modality,
         include_global=include_global,
+        global_root=_global_library_root(),
     )
     client = [
         {
@@ -616,32 +109,33 @@ def handle_api_recipe_builder_items(
     if not os.path.isdir(dataset_path):
         return jsonify({"error": "Project path not found"}), 400
 
-    templates = _find_templates(
+    templates = find_templates(
         dataset_path,
         modality=modality,
         include_global=include_global,
+        global_root=_global_library_root(),
     )
     match = next((t for t in templates if t["task"] == task), None)
     if match is None:
         return jsonify({"items": []}), 200
 
-    items = _extract_items_from_template(match["full_path"], modality=modality)
+    items = extract_items_from_template(match["full_path"], modality=modality)
     (
         item_descriptions,
         item_descriptions_i18n,
         item_description_languages,
         template_language,
-    ) = _extract_item_description_metadata_from_template(
+    ) = extract_item_description_metadata_from_template(
         match["full_path"],
         modality=modality,
     )
-    scale_ranges = _detect_scale_ranges(match["full_path"], modality=modality)
-    item_ranges = _extract_item_ranges_from_template(match["full_path"], modality=modality)
-    template_reversed_items = _extract_template_reversed_items(
+    scale_ranges = detect_scale_ranges(match["full_path"], modality=modality)
+    item_ranges = extract_item_ranges_from_template(match["full_path"], modality=modality)
+    template_reversed_items = extract_template_reversed_items(
         match["full_path"],
         modality=modality,
     )
-    items_missing_ranges = _extract_items_missing_ranges_from_template(
+    items_missing_ranges = extract_items_missing_ranges_from_template(
         match["full_path"],
         modality=modality,
     )
@@ -705,76 +199,6 @@ def handle_api_recipe_builder_load(
     return jsonify({"recipe": None}), 200
 
 
-class RecipeSaveError(ValueError):
-    def __init__(self, message: str, validation_errors: list | None = None):
-        super().__init__(message)
-        self.validation_errors = validation_errors
-
-
-def save_recipe_to_project(
-    dataset_path: str,
-    recipe,
-    *,
-    modality: str | None = None,
-    global_root: Path | None = None,
-) -> dict:
-    """Validate a recipe against its template and write it to code/recipes/{modality}."""
-    if not dataset_path:
-        raise RecipeSaveError("dataset_path is required")
-    if not os.path.isdir(dataset_path):
-        raise RecipeSaveError("Project path not found")
-    if not isinstance(recipe, dict):
-        raise RecipeSaveError("recipe payload is required")
-
-    modality = str(modality or recipe.get("Kind") or "survey").strip().lower()
-    if modality not in _SUPPORTED_MODALITIES:
-        raise RecipeSaveError("Invalid modality")
-
-    recipe_kind = str(recipe.get("Kind") or "").strip().lower()
-    if recipe_kind and recipe_kind != modality:
-        raise RecipeSaveError("Recipe Kind does not match selected modality")
-
-    info_key = "Survey" if modality == "survey" else "Biometrics"
-    task_key = "TaskName" if modality == "survey" else "BiometricName"
-
-    task_name = ((recipe.get(info_key) or {}).get(task_key) or "").strip()
-    if not task_name:
-        raise RecipeSaveError(f"Recipe must have {info_key}.{task_key}")
-    if not re.fullmatch(r"[a-zA-Z0-9_-]+", task_name):
-        raise RecipeSaveError(f"{task_key} contains invalid characters")
-
-    templates = _find_templates(
-        dataset_path, modality=modality, include_global=True, global_root=global_root
-    )
-    matched_template = next((t for t in templates if t["task"] == task_name), None)
-    if matched_template is None:
-        raise RecipeSaveError(
-            "Survey template not found in the target project or official library"
-            if modality == "survey"
-            else "Biometrics template not found in the target project or official library"
-        )
-
-    known_items = (
-        set(_extract_items_from_template(matched_template["full_path"], modality=modality))
-        or None
-    )
-    validation_errors = validate_recipe(recipe, known_items=known_items)
-    if validation_errors:
-        raise RecipeSaveError("Recipe validation failed", validation_errors)
-
-    out_dir = _recipe_output_path(dataset_path, modality=modality)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / f"recipe-{task_name}.json"
-    with open(out_path, "w", encoding="utf-8") as fh:
-        json.dump(recipe, fh, indent=2, ensure_ascii=False)
-
-    return {
-        "saved": True,
-        "path": str(out_path),
-        "warnings": validate_recipe_warnings(recipe),
-    }
-
-
 def handle_api_recipe_builder_save(data: dict):
     """Save a recipe JSON to the project's code/recipes/{modality} folder."""
     try:
@@ -782,6 +206,7 @@ def handle_api_recipe_builder_save(data: dict):
             (data.get("dataset_path") or "").strip(),
             data.get("recipe"),
             modality=data.get("modality"),
+            global_root=_global_library_root(),
         )
     except RecipeSaveError as exc:
         payload: dict[str, object] = {"error": str(exc)}

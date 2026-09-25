@@ -7,7 +7,7 @@ from flask import session
 from src.participants_id_selection import resolve_participants_id_selection
 from src.participants_paths import participants_mapping_candidates
 
-from .conversion_participants_helpers import (
+from src.participant_columns import (
     _detect_repeated_questionnaire_prefixes,
     _filter_participant_relevant_columns,
     _is_likely_questionnaire_column,

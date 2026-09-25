@@ -61,7 +61,7 @@ SYSTEM_FILE_FILTERING_BASELINE_ALLOWLIST = {
     "app/src/web/blueprints/tools_helpers.py",
     "app/src/web/blueprints/projects_metadata_helpers.py",
     "app/src/web/blueprints/conversion_survey_preview_handlers.py",
-    "app/src/web/blueprints/conversion_participants_helpers.py",
+    "src/participant_columns.py",
     "app/src/web/blueprints/conversion_survey_handlers.py",
     "app/src/web/blueprints/tools_library_handlers.py",
     "app/src/web/blueprints/conversion_physio_handlers.py",

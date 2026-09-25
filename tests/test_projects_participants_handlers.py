@@ -332,7 +332,7 @@ class TestProjectsParticipantsHandlers(unittest.TestCase):
 class TestParticipantsAnnotationFilters(TestProjectsParticipantsHandlers):
     def test_filter_participant_relevant_columns_excludes_session_and_run(self):
         import pandas as pd
-        from src.web.blueprints.conversion_participants_helpers import (
+        from src.participant_columns import (
             _filter_participant_relevant_columns,
         )
 
@@ -358,7 +358,7 @@ class TestParticipantsAnnotationFilters(TestProjectsParticipantsHandlers):
 
     def test_filter_participant_relevant_columns_includes_session_id(self):
         import pandas as pd
-        from src.web.blueprints.conversion_participants_helpers import (
+        from src.participant_columns import (
             _filter_participant_relevant_columns,
         )
 

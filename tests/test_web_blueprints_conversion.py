@@ -5562,7 +5562,9 @@ class TestEnvironmentConversionApiResilience(unittest.TestCase):
                 pollen_payload,
             ),
         ):
-            data, warnings = environment_module._fetch_environment_hour(
+            from src.environment_conversion import _fetch_environment_hour
+
+            data, warnings = _fetch_environment_hour(
                 datetime(2025, 1, 15, 10, 30),
                 47.0667,
                 15.45,

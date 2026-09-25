@@ -1,4 +1,4 @@
-"""Unit tests for src.web.neurobagel.sample_local_participant_columns.
+"""Unit tests for src.neurobagel.sample_local_participant_columns.
 
 Extracted from app/src/web/blueprints/neurobagel.py's inline pandas logic
 so both the Flask route and the new
@@ -8,7 +8,7 @@ See docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md, P2.
 
 import pandas as pd
 
-from src.web.neurobagel import sample_local_participant_columns
+from src.neurobagel import sample_local_participant_columns
 
 
 def test_returns_empty_dict_when_file_missing(tmp_path):

@@ -2,7 +2,7 @@
 
 docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md (P2) found that the Studio
 GUI's Converter -> Environment/MRI tab "Scan Project MRI Data" action
-(src.web.blueprints.conversion_environment_mri_scan_helpers.
+(src.environment_mri_scan.
 build_mri_acquisition_table) had no CLI equivalent, despite being a pure,
 Flask-independent function. The resulting TSV is designed to feed
 straight into the already-CLI-reachable `environment convert --input`.

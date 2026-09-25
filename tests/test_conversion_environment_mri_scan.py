@@ -13,7 +13,7 @@ from src.web.blueprints.conversion_environment_handlers import (
     api_environment_scan_mri_acquisition,
     trigger_automatic_environment_enrichment,
 )
-from src.web.blueprints.conversion_environment_mri_scan_helpers import (
+from src.environment_mri_scan import (
     build_mri_acquisition_table,
     discover_mri_acquisition_rows,
     extract_sidecar_location,

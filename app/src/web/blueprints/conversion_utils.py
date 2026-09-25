@@ -8,68 +8,20 @@ import re
 from pathlib import Path
 from flask import current_app
 import pandas as pd
-from src.converters.file_reader import infer_tabular_kind, read_tabular_file
+from src.converters.file_reader import (  # noqa: F401 - re-exported for blueprints
+    SEPARATOR_MAP,
+    expected_delimiter_for_suffix,
+    infer_tabular_kind,
+    normalize_separator_option,
+    read_tabular_file,
+)
+from src.participants_paths import participant_json_candidates  # noqa: F401
+from src.project_root import (  # noqa: F401 - re-exported for blueprints
+    require_existing_project_root,
+    resolve_existing_project_root,
+)
 from src.utils.naming import normalize_filename
 from src.converters.survey_processing import normalize_run_entity as _normalize_run_entity
-
-SEPARATOR_MAP: dict[str, str] = {
-    "comma": ",",
-    "semicolon": ";",
-    "tab": "\t",
-    "pipe": "|",
-}
-
-
-def normalize_separator_option(value: str | None) -> str:
-    """Normalize separator form value to supported options."""
-    normalized = str(value or "auto").strip().lower()
-    if normalized in {"", "auto", "default"}:
-        return "auto"
-    if normalized in SEPARATOR_MAP:
-        return normalized
-    raise ValueError(
-        "Invalid separator option. Use one of: auto, comma, semicolon, tab, pipe"
-    )
-
-
-def expected_delimiter_for_suffix(suffix: str, separator_option: str) -> str | None:
-    """Return delimiter to use for a file suffix and normalized separator option."""
-    if separator_option != "auto":
-        return SEPARATOR_MAP[separator_option]
-    if suffix == ".tsv":
-        return "\t"
-    if suffix == ".csv":
-        return ","
-    return None
-
-
-def resolve_existing_project_root(project_path_value: str | Path | None) -> Path | None:
-    """Resolve a session project path to an existing project root directory."""
-    raw_value = str(project_path_value or "").strip()
-    if not raw_value:
-        return None
-
-    from .projects_helpers import _resolve_project_root_path
-
-    return _resolve_project_root_path(raw_value)
-
-
-def require_existing_project_root(
-    project_path_value: str | Path | None,
-    *,
-    missing_message: str,
-    missing_path_message: str,
-) -> Path:
-    """Resolve and require an existing project root for project-bound converters."""
-    raw_value = str(project_path_value or "").strip()
-    if not raw_value:
-        raise ValueError(missing_message)
-
-    project_root = resolve_existing_project_root(raw_value)
-    if project_root is None:
-        raise FileNotFoundError(missing_path_message)
-
-    return project_root
 
 
 def summarize_project_output_paths(
@@ -588,15 +540,6 @@ def extract_tasks_from_output(output_root: Path) -> list[str]:
             if match:
                 tasks.add(match.group(1))
     return sorted(tasks)
-
-
-def participant_json_candidates(library_root: Path, depth: int = 3):
-    """List possible participants.json locations above a library root."""
-    library_root = library_root.resolve()
-    candidates = [library_root / "participants.json"]
-    for parent in library_root.parents[:depth]:
-        candidates.append(parent / "participants.json")
-    return candidates
 
 
 def log_file_head(input_path: Path, suffix: str, log_func):

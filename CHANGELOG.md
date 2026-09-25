@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   overlapping, differently-behaved setup flows for end users, the build
   pipeline, and the workshop/CI path; all three now go through the one
   root installer.
+- **CLI no longer reaches into the Flask layer for business logic.** The
+  environment conversion engine (`src/environment_conversion.py` + helpers),
+  Recipe Builder template discovery/save (`src/recipe_builder.py`),
+  participant-column helpers (`src/participant_columns.py`) and the
+  Neurobagel vocabulary module (`src/neurobagel.py`) moved out of
+  `app/src/web/` into `src/`; Studio routes and `prism_tools.py` now import
+  the same backend modules. `tests/test_cli_no_web_layer_imports.py` guards
+  against the CLI importing `src.web.*` again.
 
 ## [1.19.0] - 2026-09-17
 
