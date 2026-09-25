@@ -580,3 +580,26 @@ def test_recipe_builder_save_surfaces_min_valid_warning(tmp_path):
     assert data["saved"] is True
     assert len(data.get("warnings") or []) == 1
     assert "wb_total" in data["warnings"][0]
+
+
+def test_recipe_builder_surveys_include_official_library_from_app_root(tmp_path):
+    """The GUI resolves the official library from the Flask app root and must
+    hand it to src.recipe_builder explicitly (the backend has no Flask)."""
+    _app, handlers = _build_app_and_handlers()
+    app_root = tmp_path / "app"
+    official_dir = app_root / "official" / "library" / "survey"
+    official_dir.mkdir(parents=True)
+    (official_dir / "survey-offtask.json").write_text(
+        json.dumps({"Study": {"TaskName": "offtask"}}), encoding="utf-8"
+    )
+    project = tmp_path / "project"
+    project.mkdir()
+
+    app = Flask(__name__, root_path=str(app_root))
+    with app.test_request_context("/api/recipe-builder/surveys"):
+        response, status_code = handlers.handle_api_recipe_builder_surveys(
+            str(project), include_global=True, modality="survey"
+        )
+
+    assert status_code == 200
+    assert [s["task"] for s in response.get_json()["surveys"]] == ["offtask"]

@@ -378,3 +378,18 @@ def test_customizer_groups_rejects_template_without_questions(tmp_path):
         survey_cmds.cmd_survey_customizer_groups(
             SimpleNamespace(template=[str(template)], output=str(tmp_path / "g.json"), language="en", runs=1)
         )
+
+
+def test_customizer_groups_uses_requested_display_language(tmp_path):
+    template = tmp_path / "survey-bi.json"
+    template.write_text(
+        json.dumps({"Questions": {"Q1": {"Description": {"en": "Hello", "de": "Hallo"}}}}),
+        encoding="utf-8",
+    )
+    groups_path = tmp_path / "groups.json"
+    survey_cmds.cmd_survey_customizer_groups(
+        SimpleNamespace(template=[str(template)], output=str(groups_path), language="de", runs=1)
+    )
+
+    groups = json.loads(groups_path.read_text(encoding="utf-8"))["groups"]
+    assert groups[0]["questions"][0]["description"] == "Hallo"
