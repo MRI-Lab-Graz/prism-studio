@@ -3060,6 +3060,29 @@ class TestParticipantsMixedTimeFormatDiagnostics(unittest.TestCase):
         self.assertIn("does not auto-convert", message.lower())
 
 
+def _participants_convert(client, **post_kwargs):
+    """Run a participants conversion through the live async start/status
+    routes and return a (status_code, get_json) view of the final outcome,
+    mirroring what the Studio UI ends up showing."""
+    import time
+
+    start = client.post("/api/participants-convert-start", **post_kwargs)
+    if start.status_code != 200:
+        return start
+    job_id = start.get_json()["job_id"]
+    deadline = time.monotonic() + 30
+    while True:
+        status = client.get(f"/api/participants-convert-status/{job_id}").get_json()
+        if status["done"] or time.monotonic() > deadline:
+            break
+        time.sleep(0.02)
+    if status.get("success"):
+        payload, code = {**(status.get("result") or {}), "log": status["logs"]}, 200
+    else:
+        payload, code = {"error": status.get("error"), "log": status["logs"]}, 400
+    return SimpleNamespace(status_code=code, get_json=lambda: payload)
+
+
 class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
     """Endpoint-level edge case coverage for participants preview API."""
 
@@ -3295,8 +3318,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             encoding="utf-8",
         )
 
-        response = self.client.post(
-            "/api/participants-convert",
+        response = _participants_convert(
+            self.client,
             data={
                 "mode": "existing",
                 "excluded_columns": json.dumps(["weight"]),
@@ -3332,8 +3355,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             encoding="utf-8",
         )
 
-        response = self.client.post(
-            "/api/participants-convert",
+        response = _participants_convert(
+            self.client,
             data={"mode": "existing"},
             content_type="multipart/form-data",
         )
@@ -3751,8 +3774,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
 
         try:
-            response = self.client.post(
-                "/api/participants-convert",
+            response = _participants_convert(
+                self.client,
                 data={
                     "mode": "file",
                     "separator": "comma",
@@ -3866,8 +3889,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         )
 
         try:
-            response = self.client.post(
-                "/api/participants-convert",
+            response = _participants_convert(
+                self.client,
                 data={
                     "mode": "file",
                     "separator": "auto",
@@ -4175,8 +4198,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
 
         try:
-            response = self.client.post(
-                "/api/participants-convert",
+            response = _participants_convert(
+                self.client,
                 data={
                     "mode": "file",
                     "separator": "auto",
@@ -4233,8 +4256,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
 
         try:
-            response = self.client.post(
-                "/api/participants-convert",
+            response = _participants_convert(
+                self.client,
                 data={
                     "mode": "file",
                     "separator": "comma",
@@ -4314,8 +4337,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
 
         try:
-            response = self.client.post(
-                "/api/participants-convert",
+            response = _participants_convert(
+                self.client,
                 data={
                     "mode": "file",
                     "separator": "auto",
@@ -4374,8 +4397,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
 
         try:
-            response = self.client.post(
-                "/api/participants-convert",
+            response = _participants_convert(
+                self.client,
                 data={
                     "mode": "file",
                     "separator": "auto",
@@ -4435,8 +4458,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
 
         try:
-            response = self.client.post(
-                "/api/participants-convert",
+            response = _participants_convert(
+                self.client,
                 data={
                     "mode": "file",
                     "separator": "auto",

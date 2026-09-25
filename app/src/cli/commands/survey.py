@@ -17,6 +17,7 @@ from src.library_autotranslate import (
 from src.library_i18n import compile_survey_template, migrate_survey_template_to_i18n
 from src.library_validator import check_uniqueness
 from src.limesurvey_exporter import generate_lss, generate_lss_from_customization
+from src.survey_customizer import build_customizer_groups
 from src.utils.io import ensure_dir as _ensure_dir
 from src.utils.io import read_json as _read_json
 from src.utils.io import write_json as _write_json
@@ -904,6 +905,29 @@ def cmd_survey_export_lss_customized(args) -> None:
         sys.exit(1)
 
     print(f"✅ LimeSurvey export written: {output_path}")
+
+
+def cmd_survey_customizer_groups(args) -> None:
+    """Build Survey Customizer groups from PRISM templates and write them as
+    the customization JSON `survey export-lss-customized` consumes -- the CLI
+    equivalent of loading templates into the Studio Survey Customizer."""
+    files = []
+    for template in args.template:
+        template_path = Path(template).resolve()
+        if not template_path.is_file():
+            print(f"Error: --template not found: {template_path}")
+            sys.exit(1)
+        files.append({"path": str(template_path), "runNumber": args.runs})
+
+    groups = build_customizer_groups(files, args.language)
+    total = sum(len(group["questions"]) for group in groups)
+    if not total:
+        print("Error: No valid questions found in the given templates")
+        sys.exit(1)
+
+    output_path = Path(args.output).resolve()
+    _write_json(output_path, {"groups": groups})
+    print(f"✅ {len(groups)} group(s), {total} question(s) written: {output_path}")
 
 
 def cmd_survey_export_questionnaire_docx(args) -> None:

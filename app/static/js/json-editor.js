@@ -193,17 +193,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             });
         } else {
-            const form = document.querySelector('.bids-form');
-            if (form && typeof BIDSFormGenerator !== 'undefined') {
-                updatedJson = BIDSFormGenerator.getFormData(form);
+            const editor = document.getElementById('jsonEditor');
+            if (editor) {
+                updatedJson = JSON.parse(editor.value);
             } else {
-                const editor = document.getElementById('jsonEditor');
-                if (editor) {
-                    updatedJson = JSON.parse(editor.value);
-                } else {
-                    showAlert('No data to save', 'warning');
-                    return null;
-                }
+                showAlert('No data to save', 'warning');
+                return null;
             }
         }
 
@@ -298,21 +293,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                     : `"Save to Project" only works for dataset_description.json, participants.json, samples.json, or task-*.json.`;
             }
 
-            // Try to get a BIDS schema for this file type
-            const response = await fetchWithApiFallback(`/editor/api/schema/${fileType}`);
-            let schema = null;
-            if (response.ok) {
-                const schemaData = await response.json();
-                if (schemaData.success) schema = schemaData.schema;
-            }
-
             formContainer.innerHTML = '';
 
-            if (schema && typeof BIDSFormGenerator !== 'undefined') {
-                const form = BIDSFormGenerator.generateForm(schema, jsonData);
-                formContainer.appendChild(form);
-                showAlert(`Loaded: ${fileName}`, 'success');
-            } else if (fileType === 'participants') {
+            if (fileType === 'participants') {
                 renderParticipantsForm(jsonData, fileName, formContainer);
             } else {
                 // Generic textarea editor, with wrapped lines and JSON keys

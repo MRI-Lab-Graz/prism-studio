@@ -1103,7 +1103,6 @@ def ensure_project_selected_first():
         "/survey-generator",
         "/survey-customizer",
         "/template-editor",
-        "/neurobagel",
     ):
         return None
 

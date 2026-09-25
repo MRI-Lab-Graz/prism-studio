@@ -93,7 +93,7 @@ from src.converters.wide_to_long import (
 from src.participants_id_selection import resolve_participants_id_selection
 
 
-from .tools_template_info_helpers import (
+from src.template_info import (
     detect_languages_from_template as _detect_languages_from_template,
     extract_template_info as _extract_template_info,
 )

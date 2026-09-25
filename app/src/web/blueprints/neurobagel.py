@@ -4,7 +4,6 @@ Handles NeuroBagel API routes.
 """
 
 import os
-import json
 from flask import Blueprint, jsonify, request, current_app
 from src.neurobagel import (
     augment_neurobagel_data,
@@ -53,28 +52,5 @@ def get_local_participants():
     try:
         result = sample_local_participant_columns(tsv_path)
         return jsonify({"columns": result})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@neurobagel_bp.route("/api/neurobagel/save-json", methods=["POST"])
-def save_participants_json():
-    """Save the generated participants.json to the session directory."""
-    data = request.json
-    session_id = data.get("session_id")
-    json_content = data.get("content")
-
-    if not session_id or not json_content:
-        return jsonify({"error": "Missing session_id or content"}), 400
-
-    session_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], session_id)
-    if not os.path.exists(session_dir):
-        return jsonify({"error": "Session directory not found"}), 404
-
-    target_path = os.path.join(session_dir, "participants.json")
-    try:
-        with open(target_path, "w", encoding="utf-8") as f:
-            json.dump(json_content, f, indent=4)
-        return jsonify({"success": True, "path": "participants.json"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

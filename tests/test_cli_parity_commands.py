@@ -325,3 +325,56 @@ def test_recipes_save_finds_official_library_template(tmp_path):
     recipes_cmds.cmd_recipes_save(SimpleNamespace(project=str(root), recipe=str(recipe), modality=None, json=False))
 
     assert (root / "code" / "recipes" / "survey" / "recipe-phq9.json").exists()
+
+
+# --- survey customizer-groups -----------------------------------------------
+
+
+def test_customizer_groups_feeds_export_lss_customized(tmp_path):
+    template = tmp_path / "survey-mini.json"
+    template.write_text(
+        json.dumps(
+            {
+                "Study": {"OriginalName": "Mini"},
+                "Questions": {
+                    "Q1": {"Description": {"en": "How are you?"}, "Levels": {"1": "ok"}},
+                    "Q2": {"Description": "Sleep well?", "Levels": {"1": "yes"}},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    groups_path = tmp_path / "groups.json"
+    survey_cmds.cmd_survey_customizer_groups(
+        SimpleNamespace(template=[str(template)], output=str(groups_path), language="en", runs=2)
+    )
+
+    groups = json.loads(groups_path.read_text(encoding="utf-8"))["groups"]
+    assert [g["name"] for g in groups] == ["Mini (Run 1)", "Mini (Run 2)"]
+    assert [q["questionCode"] for q in groups[0]["questions"]] == ["Q1", "Q2"]
+    assert groups[0]["questions"][0]["description"] == "How are you?"
+
+    lss_path = tmp_path / "out.lss"
+    survey_cmds.cmd_survey_export_lss_customized(
+        SimpleNamespace(
+            customization_json=str(groups_path),
+            output=str(lss_path),
+            language="en",
+            languages=None,
+            base_language=None,
+            ls_version="6",
+            survey_title="Mini",
+            no_matrix=False,
+            no_matrix_global=False,
+        )
+    )
+    assert lss_path.is_file()
+
+
+def test_customizer_groups_rejects_template_without_questions(tmp_path):
+    template = tmp_path / "empty.json"
+    template.write_text(json.dumps({"Study": {}}), encoding="utf-8")
+    with pytest.raises(SystemExit):
+        survey_cmds.cmd_survey_customizer_groups(
+            SimpleNamespace(template=[str(template)], output=str(tmp_path / "g.json"), language="en", runs=1)
+        )

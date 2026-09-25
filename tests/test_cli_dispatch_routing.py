@@ -42,6 +42,10 @@ DISPATCH_CASES = [
     (dict(command="survey", action="validate"), "survey_validate"),
     (dict(command="survey", action="export-lss"), "survey_export_lss"),
     (
+        dict(command="survey", action="customizer-groups"),
+        "survey_customizer_groups",
+    ),
+    (
         dict(command="survey", action="export-lss-customized"),
         "survey_export_lss_customized",
     ),

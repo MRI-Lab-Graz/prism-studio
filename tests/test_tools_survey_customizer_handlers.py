@@ -158,7 +158,7 @@ def test_handle_survey_customizer_load_builds_groups_from_template(tmp_path) -> 
         "src.web.blueprints.tools_survey_customizer_handlers"
     )
     info_helpers = importlib.import_module(
-        "src.web.blueprints.tools_template_info_helpers"
+        "src.template_info"
     )
 
     template_path = tmp_path / "survey-demo.json"

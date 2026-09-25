@@ -69,6 +69,8 @@ def dispatch_prism_tools(
             handlers["survey_export_lss"](args)
         elif args.action == "export-pavlovia":
             handlers["survey_export_pavlovia"](args)
+        elif args.action == "customizer-groups":
+            handlers["survey_customizer_groups"](args)
         elif args.action == "export-lss-customized":
             handlers["survey_export_lss_customized"](args)
         elif args.action == "export-questionnaire-docx":

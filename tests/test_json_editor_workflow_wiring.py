@@ -39,11 +39,8 @@ class TestJsonEditorWorkflowWiring(unittest.TestCase):
         self.assertIn(
             "await fetchWithApiFallback(`/editor/api/file/${fileType}`);", content
         )
-        self.assertIn(
-            "await fetchWithApiFallback(`/editor/api/schema/${fileType}`);", content
-        )
         self.assertNotIn("await fetch(`/editor/api/file/${fileType}`)", content)
-        self.assertNotIn("await fetch(`/editor/api/schema/${fileType}`)", content)
+        self.assertNotIn("BIDSFormGenerator", content)
 
 
 if __name__ == "__main__":

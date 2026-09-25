@@ -58,12 +58,7 @@ def create_json_editor_blueprint(bids_folder=None):
         __name__,
         url_prefix="/editor",
         template_folder=str(Path(__file__).parent.parent / "templates"),
-        static_folder=str(Path(__file__).parent / "json_editor" / "src" / "frontend"),
-        static_url_path="/static",
     )
-
-    # Store reference for use in route handlers
-    bp.template_folder_path = Path(__file__).parent / "json_editor" / "src" / "frontend"
 
     default_bids_folder = Path(bids_folder).resolve() if bids_folder else None
 
@@ -284,18 +279,5 @@ def create_json_editor_blueprint(bids_folder=None):
             )
         except Exception as e:
             return jsonify({"success": False, "error": str(e)}), 400
-
-    @bp.route("/api/status", methods=["GET"])
-    def editor_status():
-        """Return status of JSON editor components"""
-        return jsonify(
-            {
-                "available": True,
-                "file_manager": file_manager is not None,
-                "validator": validator is not None,
-                "schema_loader": schema_loader is not None,
-                "bids_folder": str(bids_folder) if bids_folder else None,
-            }
-        )
 
     return bp

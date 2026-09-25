@@ -184,8 +184,14 @@ questionnaire. CLI equivalents of Studio's Survey Generator "Quick Export", Surv
 Customizer "Export", and the "Export Word" action shared by Template Editor and
 Survey Customizer:
 
+`survey customizer-groups` builds that customization JSON from one or more
+templates (what loading templates into the Survey Customizer does); edit it,
+then pass it to `export-lss-customized`.
+
 ```bash
 python prism_tools.py survey export-lss library/survey/survey-gad7.json --output gad7.lss
+python prism_tools.py survey customizer-groups \
+  --template library/survey/survey-gad7.json --output my_customization.json
 python prism_tools.py survey export-lss-customized \
   --customization-json my_customization.json --output custom.lss
 python prism_tools.py survey export-questionnaire-docx \

@@ -25,6 +25,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `app/src/web/` into `src/`; Studio routes and `prism_tools.py` now import
   the same backend modules. `tests/test_cli_no_web_layer_imports.py` guards
   against the CLI importing `src.web.*` again.
+- **Survey Customizer template loading moved to `src/survey_customizer.py`**
+  and exposed as `prism_tools.py survey customizer-groups`, so the
+  customization JSON for `survey export-lss-customized` can be produced
+  without the GUI.
+
+### Fixed
+- Backend monitoring now shows the CLI command for the Participants
+  "Convert" action; it was keyed to an unused synchronous endpoint instead
+  of the live `/api/participants-convert-start`.
+
+### Removed
+- Dead code from the 2026-08-07 GUI/backend audit: the unused synchronous
+  `/api/participants-convert` route, `/api/neurobagel/save-json` (which also
+  built a path from an unchecked `session_id`), `/editor/api/status`, the
+  never-loaded legacy JSON Editor frontend and its standalone Flask app, and
+  stale `/neurobagel` / `/library-editor` page references.
 
 ## [1.19.0] - 2026-09-17
 

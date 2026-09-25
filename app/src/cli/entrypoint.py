@@ -67,6 +67,7 @@ from src.cli.commands.recipes import (
 )
 from src.cli.commands.survey import (
     cmd_survey_convert,
+    cmd_survey_customizer_groups,
     cmd_survey_export_lss,
     cmd_survey_export_lss_customized,
     cmd_survey_export_pavlovia,
@@ -121,6 +122,7 @@ def main() -> None:
             "survey_convert": cmd_survey_convert,
             "survey_validate": cmd_survey_validate,
             "survey_export_lss": cmd_survey_export_lss,
+            "survey_customizer_groups": cmd_survey_customizer_groups,
             "survey_export_lss_customized": cmd_survey_export_lss_customized,
             "survey_export_pavlovia": cmd_survey_export_pavlovia,
             "survey_export_questionnaire_docx": cmd_survey_export_questionnaire_docx,

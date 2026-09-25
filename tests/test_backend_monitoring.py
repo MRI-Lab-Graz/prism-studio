@@ -850,14 +850,14 @@ def test_emit_backend_request_action_includes_participants_convert_command(capsy
         return "ok"
 
     app.add_url_rule(
-        "/api/participants-convert",
-        endpoint="conversion_participants.api_participants_convert",
+        "/api/participants-convert-start",
+        endpoint="conversion_participants.api_participants_convert_start",
         view_func=_noop_view,
         methods=["POST"],
     )
 
     with app.test_request_context(
-        "/api/participants-convert",
+        "/api/participants-convert-start",
         method="POST",
         data={
             "mode": "file",
@@ -873,8 +873,8 @@ def test_emit_backend_request_action_includes_participants_convert_command(capsy
 
     captured = capsys.readouterr().out
     expected_input = str(Path("participants.xlsx").resolve())
-    assert "POST /api/participants-convert -> participants convert" in captured
-    assert "endpoint=conversion_participants.api_participants_convert" in captured
+    assert "POST /api/participants-convert-start -> participants convert" in captured
+    assert "endpoint=conversion_participants.api_participants_convert_start" in captured
     assert "cmd=python prism_tools.py participants convert" in captured
     assert f"--input {expected_input}" in captured
     assert "--sheet 0" in captured
@@ -1269,14 +1269,14 @@ def test_emit_backend_request_action_includes_participants_dataset_convert_comma
         return "ok"
 
     app.add_url_rule(
-        "/api/participants-convert",
-        endpoint="conversion_participants.api_participants_convert",
+        "/api/participants-convert-start",
+        endpoint="conversion_participants.api_participants_convert_start",
         view_func=_noop_view,
         methods=["POST"],
     )
 
     with app.test_request_context(
-        "/api/participants-convert",
+        "/api/participants-convert-start",
         method="POST",
         data={
             "mode": "dataset",
@@ -1290,7 +1290,7 @@ def test_emit_backend_request_action_includes_participants_dataset_convert_comma
         emit_backend_request_action(request, app_root=str(APP_PATH))
 
     captured = capsys.readouterr().out
-    assert "POST /api/participants-convert -> participants convert" in captured
+    assert "POST /api/participants-convert-start -> participants convert" in captured
     assert "cmd=python prism_tools.py participants convert --mode dataset" in captured
     assert "--project /tmp/demo-project" in captured
     assert "--force" in captured

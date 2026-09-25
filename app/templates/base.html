@@ -1636,7 +1636,7 @@
             {% endif %}
         {% endwith %}
 
-        {% set no_project_hint_paths = ['/converter', '/recipes', '/recipe-builder', '/survey-generator', '/survey-customizer', '/template-editor', '/library-editor', '/neurobagel'] %}
+        {% set no_project_hint_paths = ['/converter', '/recipes', '/recipe-builder', '/survey-generator', '/survey-customizer', '/template-editor'] %}
         {% if not current_project.path and request.path in no_project_hint_paths %}
             <div class="alert alert-info d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3" role="alert">
                 <div>

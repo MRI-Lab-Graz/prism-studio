@@ -1494,6 +1494,31 @@ def build_prism_tools_parsers(
         "Pavlovia export is single-language scoped.",
     )
 
+    parser_survey_customizer_groups = survey_subparsers.add_parser(
+        "customizer-groups",
+        help="Build Survey Customizer groups from PRISM templates and write the "
+        "customization JSON used by 'export-lss-customized'. Matches loading "
+        "templates into the Studio GUI's Survey Customizer.",
+    )
+    parser_survey_customizer_groups.add_argument(
+        "--template",
+        required=True,
+        action="append",
+        help="PRISM survey template JSON (repeat for several templates)",
+    )
+    parser_survey_customizer_groups.add_argument(
+        "--output", required=True, help="Path to write the customization JSON"
+    )
+    parser_survey_customizer_groups.add_argument(
+        "--language", default="en", help="Display language (default: en)"
+    )
+    parser_survey_customizer_groups.add_argument(
+        "--runs",
+        type=int,
+        default=1,
+        help="Repeat each template as this many run groups (default: 1)",
+    )
+
     parser_survey_export_lss_customized = survey_subparsers.add_parser(
         "export-lss-customized",
         help="Export a Survey Customizer-style customization JSON to a LimeSurvey "

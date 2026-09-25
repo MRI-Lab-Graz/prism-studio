@@ -90,7 +90,7 @@ _ENDPOINT_LABELS = {
     "conversion_participants.save_participant_mapping": "save participant mapping",
     "conversion_participants.api_participants_detect_id": "participants detect id",
     "conversion_participants.api_participants_preview": "participants preview",
-    "conversion_participants.api_participants_convert": "participants convert",
+    "conversion_participants.api_participants_convert_start": "participants convert",
     "conversion_participants.api_participants_merge": "participants merge",
     "conversion_participants.api_participants_merge_conflicts": "participants merge conflicts",
 }
@@ -1537,7 +1537,7 @@ def _build_participants_convert_terminal_command(req) -> str:
         if extract_from_biometrics.lower() not in {"1", "true", "yes", "on"}:
             cmd_parts.append("--no-extract-from-biometrics")
     else:
-        endpoint_url = _get_request_url(req, "/api/participants-convert")
+        endpoint_url = _get_request_url(req, "/api/participants-convert-start")
         cmd_parts = [
             "curl",
             "-X",
@@ -1823,7 +1823,7 @@ def _build_terminal_command(req) -> str:
         return _build_participants_detect_id_terminal_command(req)
     if endpoint == "conversion_participants.api_participants_preview":
         return _build_participants_preview_terminal_command(req)
-    if endpoint == "conversion_participants.api_participants_convert":
+    if endpoint == "conversion_participants.api_participants_convert_start":
         return _build_participants_convert_terminal_command(req)
     if endpoint == "conversion_participants.api_participants_merge":
         return _build_participants_merge_terminal_command(req)

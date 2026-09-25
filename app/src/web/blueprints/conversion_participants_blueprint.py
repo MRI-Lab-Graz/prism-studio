@@ -18,7 +18,6 @@ from src.participants_id_selection import resolve_participants_id_selection
 
 from src.participants_backend import (
     apply_participants_merge,
-    convert_dataset_participants,
     describe_participants_workflow,
     export_participants_merge_conflicts_csv,
     preview_dataset_participants,
@@ -62,7 +61,6 @@ from .conversion_participants_mapping import (
 from .conversion_participants_merge import (
     _build_existing_participants_preview_payload,
     _build_participants_merge_schema_preview,
-    _convert_existing_participants_files,
     _parse_participants_merge_request,
     _participants_id_required_response,
     _project_relative_merge_paths,
@@ -72,7 +70,6 @@ from .conversion_participants_convert import (
     _check_existing_participants_files,
     _participants_job_store,
     _run_participants_convert_job,
-    _write_participants_outputs,
 )
 from .conversion_utils import resolve_effective_library_path
 from .projects_helpers import _resolve_project_root_path
@@ -720,195 +717,6 @@ def api_participants_merge_conflicts():
         return jsonify({"error": str(error), "log": logs}), 500
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
-
-
-@conversion_participants_bp.route("/api/participants-convert", methods=["POST"])
-def api_participants_convert():
-    """Convert/extract participant data and create participants.tsv and participants.json."""
-    try:
-        import json
-    except ImportError as e:
-        return jsonify({"error": f"Required module not available: {str(e)}"}), 500
-
-    mode = request.form.get("mode", "file")
-    force_overwrite = request.form.get("force_overwrite", "false").lower() == "true"
-    neurobagel_schema_json = request.form.get("neurobagel_schema")
-    try:
-        separator_option = _normalize_separator_option(request.form.get("separator"))
-    except ValueError as error:
-        return jsonify({"error": str(error)}), 400
-
-    neurobagel_schema = {}
-    if neurobagel_schema_json:
-        try:
-            neurobagel_schema = json.loads(neurobagel_schema_json)
-        except json.JSONDecodeError:
-            pass
-    excluded_columns = set(
-        _parse_requested_column_list(request.form.get("excluded_columns"))
-    )
-
-    project_root = _get_session_project_root()
-    if not project_root:
-        return jsonify({"error": "No project selected"}), 400
-
-    participants_tsv, participants_json, existing_files, error_response = (
-        _check_existing_participants_files(project_root, mode, force_overwrite)
-    )
-    if error_response is not None:
-        return error_response
-
-    logs = []
-
-    def log_msg(level, message):
-        logs.append({"level": level, "message": message})
-
-    try:
-        if mode == "file":
-            try:
-                upload = _save_participants_upload_to_temp(
-                    uploaded_file=request.files.get("file"),
-                    temp_prefix="prism_participants_convert_",
-                )
-            except ValueError as error:
-                return jsonify({"error": str(error)}), 400
-
-            tmp_dir = str(upload["tmp_dir"])
-            try:
-                input_path = Path(str(upload["input_path"]))
-                filename = str(upload["filename"])
-                suffix = str(upload["suffix"])
-
-                sheet_arg = _resolve_participants_sheet_arg(
-                    input_path=input_path,
-                    suffix=suffix,
-                    sheet_value=request.form.get("sheet"),
-                )
-                converter_separator = (
-                    _expected_delimiter_for_suffix(suffix, separator_option) or "auto"
-                )
-
-                log_msg("INFO", f"Processing {filename}...")
-
-                try:
-                    explicit_id_col = request.form.get("id_column", "").strip() or None
-                    extra_columns = _parse_requested_column_list(
-                        request.form.get("extra_columns")
-                    )
-                    context = _resolve_web_participant_import_mapping(
-                        project_root=project_root,
-                        input_path=input_path,
-                        suffix=suffix,
-                        sheet_arg=sheet_arg,
-                        separator_option=separator_option,
-                        explicit_id_column=explicit_id_col,
-                        excluded_columns=excluded_columns,
-                        extra_columns=extra_columns,
-                        log_callback=log_msg,
-                    )
-                except ValueError as resolve_error:
-                    return jsonify({"error": str(resolve_error), "log": logs}), 400
-
-                id_resolution = context.get("id_resolution") or {}
-                source_columns = context.get("source_columns") or []
-                if bool(id_resolution.get("id_selection_required")):
-                    return _participants_id_required_response(
-                        source_columns=source_columns,
-                        suggested_id_column=id_resolution.get("suggested_id_column"),
-                        logs=logs,
-                    )
-
-                detected_id_col = str(context.get("detected_id_column") or "").strip()
-                if not detected_id_col:
-                    return _participants_id_required_response(
-                        source_columns=source_columns,
-                        logs=logs,
-                    )
-
-                mapping = context.get("mapping")
-                if not isinstance(mapping, dict):
-                    return (
-                        jsonify(
-                            {
-                                "error": "Could not resolve participant mapping",
-                                "log": logs,
-                            }
-                        ),
-                        400,
-                    )
-
-                try:
-                    result = _write_participants_outputs(
-                        project_root=project_root,
-                        input_path=input_path,
-                        mapping=mapping,
-                        converter_separator=converter_separator,
-                        sheet_arg=sheet_arg,
-                        participants_tsv=participants_tsv,
-                        participants_json=participants_json,
-                        neurobagel_schema=neurobagel_schema,
-                        existing_files=existing_files,
-                        log_msg=log_msg,
-                    )
-                except ValueError:
-                    return jsonify({"error": "Conversion failed", "log": logs}), 400
-
-                return jsonify({**result, "log": logs})
-
-            finally:
-                shutil.rmtree(tmp_dir, ignore_errors=True)
-
-        elif mode == "existing":
-            log_msg("INFO", "Updating existing participants.tsv/participants.json...")
-            try:
-                result = _convert_existing_participants_files(
-                    project_root=project_root,
-                    neurobagel_schema=neurobagel_schema,
-                    excluded_columns=excluded_columns,
-                    log_callback=log_msg,
-                )
-            except ValueError as e:
-                return jsonify({"error": str(e), "log": logs}), 400
-
-            return jsonify(
-                {
-                    **result,
-                    "log": logs,
-                    "overwrote_existing": bool(existing_files),
-                    "overwritten_files": existing_files if existing_files else [],
-                }
-            )
-
-        elif mode == "dataset":
-            extract_from_survey = (
-                request.form.get("extract_from_survey", "true").lower() == "true"
-            )
-            extract_from_biometrics = (
-                request.form.get("extract_from_biometrics", "true").lower() == "true"
-            )
-
-            log_msg("INFO", "Extracting participant data from dataset...")
-            try:
-                result = convert_dataset_participants(
-                    project_root,
-                    neurobagel_schema=neurobagel_schema,
-                    extract_from_survey=extract_from_survey,
-                    extract_from_biometrics=extract_from_biometrics,
-                    log_callback=log_msg,
-                )
-            except ValueError as e:
-                return jsonify({"error": str(e), "log": logs}), 400
-
-            return jsonify({**result, "log": logs})
-
-        else:
-            return jsonify({"error": f"Unknown mode: {mode}", "log": logs}), 400
-
-    except Exception as e:
-        log_msg("ERROR", f"Error: {str(e)}")
-        if has_app_context():
-            current_app.logger.exception("Participants conversion failed")
-        return jsonify({"error": str(e), "log": logs}), 500
 
 
 @conversion_participants_bp.route("/api/participants-convert-start", methods=["POST"])
