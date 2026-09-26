@@ -7,8 +7,8 @@ repository has reusable sample assets — this page tells you which path to choo
 
 | If you want to... | Start here | Time |
 |---|---|---|
-| Get one quick success | [Quick Start](QUICK_START.md) | 10–15 min |
-| Learn the full beginner workflow | [Getting Started](TUTORIAL_BEGINNER.md) | ~130 min |
+| Get one quick success | [Getting Started](TUTORIAL_BEGINNER.md), chapters 1–2 | 25–35 min |
+| Learn the full beginner workflow | [Getting Started](TUTORIAL_BEGINNER.md), all chapters | ~130 min |
 | Build a survey template from an Excel codebook | [Excel Survey Template — Basics](EXCEL_TEMPLATE_BASICS.md), then [— Multiple Versions](EXCEL_TEMPLATE_ADVANCED.md) | 15–35 min |
 | Reuse import templates only | `docs/examples/` sample files | A few minutes |
 | Teach PRISM in a class or onboarding session | [Workshop](WORKSHOP.md) | 2–3 h |

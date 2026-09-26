@@ -20,7 +20,7 @@
       "Method": "sum",
       "Range": {
         "min": 5,
-        "max": 35
+        "max": 25
       }
     }
   ],
@@ -37,8 +37,8 @@
   },
   "Usage": {
     "ScoringGuidelines": {
-      "en": "Calculate total score by summing all items (WB01-WB05). Higher scores indicate higher wellbeing. Raw scores range from 5-35. For percentage score: multiply by 4 to get 0-100 scale.",
-      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items (WB01-WB05). Höhere Werte bedeuten höheres Wohlbefinden. Rohwerte reichen von 5-35. Für Prozentwert: mit 4 multiplizieren für 0-100 Skala."
+      "en": "Calculate total score by summing all items (WB01-WB05). Higher scores indicate higher wellbeing. Raw scores range from 5-25 (five items, each scored 1-5).",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items (WB01-WB05). Höhere Werte bedeuten höheres Wohlbefinden. Rohwerte reichen von 5-25 (fünf Items, je 1-5 Punkte)."
     },
     "InterpretationGuidelines": {
       "en": "Scores below 13 suggest poor wellbeing and are an indication for testing for depression. This is adapted from the WHO-5 Well-Being Index (Topp et al., 2015).",
