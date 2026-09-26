@@ -1,88 +1,77 @@
 # Workshop
 
-Learn PRISM Studio through one concrete end-to-end example with repository-local
-materials — the best path when you want more than Quick Start but don't want to jump
-straight into reference pages. Takes you from a small source spreadsheet to a
-validated and scored project: project setup, source-data conversion, validation and
-metadata repair, and recipe-based scoring, with optional extensions for participant
-mapping and template creation.
+The [Getting Started tutorial](TUTORIAL_BEGINNER.md) packaged for a live,
+instructor-led session. There is no separate workshop curriculum: participants
+work through the same chapters, from the same example spreadsheet, at the same
+pace you set. This page is the instructor's side of that — timing, delivery,
+and what to cut.
 
-| Exercise | Topic | Time | Outcome |
+Materials live in the repository under `examples/workshop/`, one folder per
+chapter that needs files, with a run sheet in
+`examples/workshop/README.md` and a pre-flight checklist in
+`examples/workshop/PREPARATION.md`.
+
+## What fits in the time you have
+
+Published chapter times total ~100 minutes for chapters 1–5, and run closer to
+120 in a room with questions.
+
+| Slot | Hands-on | Demonstrated | Cut |
 |---|---|---|---|
-| 0 | Project setup | 15 min | A clean project structure |
-| 1 | Data conversion | 30 min | Survey data imported from Excel |
-| 2 | Metadata and validation | 25 min | Validation findings understood and reduced |
-| 3 | Recipes and scoring | 20 min | A simple score and export-ready result |
-| Optional 4 | Templates | 20 min | Reusable survey metadata |
-| Optional 5 | Participant mapping | 30–45 min | Standardized participant metadata |
+| 2 hours | Chapters 1–3 | Chapter 4 | Chapters 5–6 |
+| 3 hours | Chapters 1–3 | Chapters 4–5 | Chapter 6 |
+| Full day | Chapters 1–6 | — | — |
 
-Total: ~90 minutes for the core path, ~2 hours with extensions.
+Chapter 0 is install; assume it is done before the session and push install
+problems to an open block at the end, or the first broken virtual environment
+will eat your first twenty minutes. Chapter 6 is the one to cut from any short
+session — most of its 30 minutes is a dataset download, and it does not go
+well multiplied by a full room.
 
-## Getting started
+## Delivering it without slides
 
-Materials live under `examples/workshop/` (`exercise_0_project_setup/` through
-`exercise_5_participant_mapping/`, plus `WORKSHOP_HANDOUT_WELLBEING.md`/`.pdf` and
-`WORKSHOP_README.md` as the best starting documents). Before you start: make sure
-PRISM Studio launches (`source .venv/bin/activate && python prism-studio.py`), open
-the workshop materials, and decide whether you want the core path only or the
-extensions too.
+A PC room usually has no projector, which is a better constraint than it
+sounds: the tutorial is written to be read and followed at each person's own
+pace, so it does the presenting and you do the helping.
 
-## Core path
+- **Let them read, and walk the room.** Point everyone at
+  [Getting Started](TUTORIAL_BEGINNER.md) and circulate. Don't narrate a
+  chapter they already have in front of them.
+- **Put checkpoints on the board**, not in speech — "`participants.tsv` exists
+  at the project root". Someone who fell behind can locate themselves without
+  having to ask.
+- **A folded card per desk**, red side up for "stuck", beats raised hands when
+  you are crouched at a machine on the other side of the room.
+- **Announce the checkpoint, wait two minutes, move on.** A lockstep room
+  stalls on its slowest machine; the tutorial lets stragglers catch up.
+- **Recruit whoever finishes first** as a second pair of hands. With one
+  instructor and twenty machines this is the only thing that scales.
+- **Both launch commands on the board.** Room machines are Windows, personal
+  laptops usually aren't.
 
-**Exercise 0 — Project setup**: create a clean project (e.g. `wellbeing_study`). Pay
-attention to the project root structure and the separation of source data, validated
-data, code, and derivatives.
+For a demonstration without a projector, run
+`python app/prism-studio.py --public` and have participants open
+`http://<your-ip>:5001` in a second browser tab. It is a single shared
+session, so tell them explicitly to watch rather than click — their clicks
+edit your project.
 
-**Exercise 1 — Data conversion**: convert
-`examples/workshop/exercise_1_raw_data/raw_data/wellbeing.xlsx` into survey data
-inside the project. Confirm the participant ID column and selected item columns,
-preview before saving. Expect survey files written into subject-level folders.
+## Teaching order
 
-**Exercise 2 — Metadata and validation**: see what the validator catches and how
-richer metadata improves the dataset. Expect early findings like missing/incomplete
-survey metadata, item descriptions, or response labels — use the provided template
-material to complete metadata, then re-validate until major issues clear.
+Follow the chapter order as published, even where another order tempts you.
+Validation before scoring arguably teaches metadata better, but participants
+are reading the page while they work, and a room where the screen and the page
+disagree is a room full of raised hands.
 
-**Exercise 3 — Recipes and scoring**: compute one simple wellbeing score, e.g.:
+## What they leave with
 
-```json
-{
-  "RecipeName": "Workshop Dummy Wellbeing",
-  "Scoring": {
-    "wellbeing_total": {
-      "operation": "sum",
-      "items": ["WB01", "WB02", "WB03", "WB04", "WB05"]
-    }
-  }
-}
-```
-
-Expect one derived score and a clearer connection between imported raw responses
-and downstream analysis outputs.
-
-## Optional extensions
-
-**Templates** — practice making the data self-documenting: item wording, translated
-text, response options/labels, saving templates into the project library.
-
-**Participant mapping** — standardize incoming demographic encodings: coded values
-(`1/2/4`) to readable labels, text-based numeric values to canonical numeric form.
-
-## Wrap-up
-
-By the end of the core path you should have a project that loads cleanly, survey
-files imported from the example spreadsheet, at least one validation-cleanup
-iteration completed, and a simple scoring workflow demonstrated.
-
-**For instructors**: this workshop works well for onboarding because it tells one
-full story instead of isolated feature demos. Suggested pattern: show the raw
-spreadsheet first → create the project live → import before discussing every schema
-detail → use validation as the teaching moment for metadata quality → finish with
-scoring or export as the payoff.
+A `wellbeing_study` project containing demographic data, imported survey
+responses, at least one scoring recipe, and a validation pass they can
+interpret — plus the same tutorial open in a tab, to finish the chapters you
+cut.
 
 ## What's next
 
-- [Getting Started](TUTORIAL_BEGINNER.md)
+- [Getting Started](TUTORIAL_BEGINNER.md) — the tutorial this session teaches
 - [Projects](studio/projects.md) · [Survey Import](studio/converter_survey.md) ·
   [Validator](studio/validator.md)
 - [Recipes](RECIPES.md)

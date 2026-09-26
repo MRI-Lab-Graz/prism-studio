@@ -124,7 +124,7 @@ code/recipes/survey/recipe-wellbeing.json
 ```
 
 For comparison, a working version of this exact recipe already ships in the
-repo at `examples/workshop/exercise_3_using_recipes/recipe-wellbeing.json` —
+repo at `examples/workshop/chapter_4_recipe/recipe-wellbeing.json` —
 worth a look if your saved file's `Scores` block doesn't match what you
 expected.
 

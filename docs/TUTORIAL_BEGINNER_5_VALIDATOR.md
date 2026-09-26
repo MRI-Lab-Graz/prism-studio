@@ -168,6 +168,18 @@ prism-validator /path/to/wellbeing_study --fix --dry-run
 prism-validator /path/to/wellbeing_study --fix
 ```
 
+## Optional: thirteen broken files
+
+`examples/workshop/chapter_5_validator/` holds thirteen files that each fail
+validation for a different reason — a missing `participant_id`, a semicolon
+where a tab belongs, out-of-range values, duplicate IDs, an empty file, and so
+on. Validate them one at a time and work out what's wrong from the findings
+alone before checking the answers in that folder's `README.md`.
+
+This is the fastest way to learn to read a validation report, and it's the
+part of this chapter that works well as self-paced practice in a group
+session.
+
 ## Common mistakes
 
 ```{warning}

@@ -24,7 +24,7 @@ sociodemographics import step. Full details: [Projects](studio/projects.md).
 ## 2. Import a small dataset
 
 The simplest first success is the workshop sample material:
-`examples/workshop/exercise_1_raw_data/raw_data/wellbeing.xlsx`.
+`examples/workshop/raw_data/wellbeing.xlsx`.
 
 **Survey data**: open **Converter** → survey tab → select `wellbeing.xlsx` → confirm
 the participant ID column → select item columns → preview → save into your project.

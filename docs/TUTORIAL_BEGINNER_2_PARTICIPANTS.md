@@ -55,7 +55,7 @@ something you can grep for.
 
 ## 1. Look at the source file
 
-Open `examples/workshop/exercise_1_raw_data/raw_data/wellbeing.xlsx`. It has
+Open `examples/workshop/raw_data/wellbeing.xlsx`. It has
 one row per participant with columns like `participant_id`, `session`,
 `age`, `sex`, `education`, `handedness`, `WB01`-`WB05`, `completion_date`.
 Only the demographic columns matter for this chapter — `WB01`-`WB05` are the
@@ -195,7 +195,7 @@ it deliberately refuses to do.
 
 1. Make your own working copy of the source file rather than editing the
    shared example directly: copy
-   `examples/workshop/exercise_1_raw_data/raw_data/wellbeing.tsv` somewhere
+   `examples/workshop/raw_data/wellbeing.tsv` somewhere
    convenient (Desktop, or your project folder) and rename it, e.g.
    `wellbeing_update.tsv`. (This file has all 20 of the same participants
    you already imported in step 6 via `wellbeing.xlsx` — same data, just a
@@ -257,7 +257,7 @@ are preserved as-is in `participants.tsv`; labeling what a code means
 happens separately via the "Participant Annotation" panel into
 `participants.json`, and turning coded values into readable labels
 project-wide is covered by the optional participant-mapping workflow (see
-`examples/workshop/exercise_5_participant_mapping/` for a worked example) —
+`examples/workshop/chapter_2_participants/` for a worked example) —
 not required for this tutorial.
 ```
 

@@ -23,7 +23,7 @@ These files all have something wrong with them. Your task is to upload them to P
 ## Instructions
 
 1. Go to the Data Conversion page in the PRISM web interface.
-2. Select the wellbeing template library: `demo/templates/survey/`.
+2. Select the wellbeing survey template (`../chapter_3_survey_import/survey-wellbeing.json`).
 3. Try uploading each mystery file one by one.
 4. Read the validation error messages carefully.
 5. Can you identify the specific row or column causing the problem?

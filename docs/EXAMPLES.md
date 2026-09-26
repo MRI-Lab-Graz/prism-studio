@@ -7,21 +7,20 @@ repository has reusable sample assets — this page tells you which path to choo
 
 | If you want to... | Start here | Time |
 |---|---|---|
-| Get one quick success | [Getting Started](TUTORIAL_BEGINNER.md) | 10–15 min |
-| Learn the full beginner workflow | [Workshop](WORKSHOP.md) | ~90 min |
+| Get one quick success | [Quick Start](QUICK_START.md) | 10–15 min |
+| Learn the full beginner workflow | [Getting Started](TUTORIAL_BEGINNER.md) | ~130 min |
 | Build a survey template from an Excel codebook | [Excel Survey Template — Basics](EXCEL_TEMPLATE_BASICS.md), then [— Multiple Versions](EXCEL_TEMPLATE_ADVANCED.md) | 15–35 min |
 | Reuse import templates only | `docs/examples/` sample files | A few minutes |
-| Teach PRISM in a class or onboarding session | `examples/workshop/` handouts and exercises | 90–120 min |
+| Teach PRISM in a class or onboarding session | [Workshop](WORKSHOP.md) | 2–3 h |
 
 ## What's in the repository
 
-The main recommended end-to-end example is the wellbeing workshop — project setup,
+The main recommended end-to-end example is the wellbeing study — project setup,
 source-data conversion, metadata completion and validation, recipe-based scoring,
-optional participant mapping and template work. Materials: the
-[Workshop](WORKSHOP.md) guide, the `examples/workshop/` folder (exercise folders for
-the core path plus optional extensions, a full written handout, and a PDF for
-teaching/offline use), and the long-form
-`examples/workshop/WORKSHOP_HANDOUT_WELLBEING.md`.
+participant mapping and template work. It is taught once, as
+[Getting Started](TUTORIAL_BEGINNER.md); its data files live in
+`examples/workshop/`, one folder per chapter that needs them, with a run sheet in
+`examples/workshop/README.md`. To teach it live, see [Workshop](WORKSHOP.md).
 
 For a format reference without running the full workshop, `docs/examples/` has
 sample import files: `survey_import_template.xlsx`, `biometrics_import_template.xlsx`.

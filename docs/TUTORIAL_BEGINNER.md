@@ -143,19 +143,24 @@ Every chapter uses the same fictional dataset, already included in the
 repository under `examples/workshop/` — you don't need to create or download
 anything extra:
 
-- `examples/workshop/exercise_1_raw_data/raw_data/wellbeing.xlsx` — one
+- `examples/workshop/raw_data/wellbeing.xlsx` — one
   spreadsheet with both demographic columns (age, sex, education,
   handedness) and five wellbeing-survey items (`WB01`-`WB05`) for the same
   fake participants. Chapter 2 uses the demographic columns; chapter 3 uses
   the survey items.
-- `examples/workshop/exercise_4_templates/survey-wellbeing.json` — a
+- `examples/workshop/chapter_2_participants/` — a participant-mapping
+  exercise for chapter 2: a template to fill in, and the solution.
+- `examples/workshop/chapter_3_survey_import/survey-wellbeing.json` — a
   ready-made survey template for the instrument used in chapter 3.
-- `examples/workshop/exercise_3_using_recipes/recipe-wellbeing.json` — a
+- `examples/workshop/chapter_4_recipe/recipe-wellbeing.json` — a
   working scoring recipe used as the worked example in chapter 4.
+- `examples/workshop/chapter_5_validator/` — thirteen deliberately broken
+  files, each failing validation for a different reason, as optional practice
+  for chapter 5.
 
-These are the same materials used by [Workshop](WORKSHOP.md) — if you've
-already done that workshop, the data will look familiar, but this tutorial
-explains each step in far more detail and at your own pace.
+[Workshop](WORKSHOP.md) teaches these same chapters in a live session — if
+you're preparing to run one, start there for timing and delivery; the teaching
+itself is here.
 
 ## What's next
 
