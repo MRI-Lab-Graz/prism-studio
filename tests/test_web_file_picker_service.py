@@ -146,6 +146,56 @@ class TestWebFilePickerService(unittest.TestCase):
         script = args[0][2]
         self.assertNotIn("default location", script)
 
+    @patch.object(file_picker, "_browse_save_file_tk")
+    @patch.object(file_picker.sys, "platform", "win32")
+    def test_pick_save_file_prefers_windows_tkinter_picker(
+        self, mock_browse_save_file_tk
+    ):
+        mock_browse_save_file_tk.return_value = r"C:\Users\tester\Study\derivatives\custom.json"
+
+        result = file_picker.pick_save_file(
+            default_name="custom.json", initial_dir=r"C:\Users\tester\Study\derivatives"
+        )
+
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(result.path, r"C:\Users\tester\Study\derivatives\custom.json")
+        self.assertIsNone(result.error)
+        mock_browse_save_file_tk.assert_called_once_with(
+            "custom.json", topmost=True, initial_dir=r"C:\Users\tester\Study\derivatives"
+        )
+
+    @patch.object(file_picker, "_browse_save_file_macos")
+    @patch.object(file_picker.sys, "platform", "darwin")
+    def test_pick_save_file_forwards_default_name_to_macos_picker(
+        self, mock_browse_save_file_macos
+    ):
+        mock_browse_save_file_macos.return_value = "/Users/tester/Study/custom.json"
+
+        result = file_picker.pick_save_file(
+            default_name="custom.json", initial_dir="/Users/tester/Study"
+        )
+
+        self.assertEqual(result.status_code, 200)
+        mock_browse_save_file_macos.assert_called_once_with(
+            "custom.json", "/Users/tester/Study"
+        )
+
+    @patch("os.path.isdir", return_value=True)
+    @patch.object(file_picker.subprocess, "check_output")
+    def test_browse_save_file_macos_includes_default_name_and_location(
+        self, mock_check_output, _mock_isdir
+    ):
+        mock_check_output.return_value = b"/Users/tester/Study/custom.json\n"
+
+        file_picker._browse_save_file_macos(
+            "custom.json", initial_dir="/Users/tester/Study"
+        )
+
+        args, _kwargs = mock_check_output.call_args
+        script = args[0][2]
+        self.assertIn('default name "custom.json"', script)
+        self.assertIn('default location (POSIX file "/Users/tester/Study")', script)
+
 
 if __name__ == "__main__":
     unittest.main()

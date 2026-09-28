@@ -94,6 +94,37 @@ $owner.Dispose()
     return _run_windows_powershell_dialog(script)
 
 
+def _browse_save_file_windows_powershell(
+    default_name: str, initial_dir: str | None = None
+) -> str:
+    initial_dir_line = (
+        f"$dialog.InitialDirectory = '{_escape_powershell_single_quoted(initial_dir)}'"
+        if initial_dir and os.path.isdir(initial_dir)
+        else ""
+    )
+    script = f"""
+Add-Type -AssemblyName System.Windows.Forms
+[System.Windows.Forms.Application]::EnableVisualStyles()
+$owner = New-Object System.Windows.Forms.Form
+$owner.TopMost = $true
+$owner.WindowState = 'Minimized'
+$owner.ShowInTaskbar = $false
+$owner.Show()
+$dialog = New-Object System.Windows.Forms.SaveFileDialog
+$dialog.Title = 'Save JSON file'
+$dialog.Filter = 'JSON files (*.json)|*.json|All files (*.*)|*.*'
+$dialog.FileName = '{_escape_powershell_single_quoted(default_name)}'
+{initial_dir_line}
+$dialog.OverwritePrompt = $true
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+if ($dialog.ShowDialog($owner) -eq [System.Windows.Forms.DialogResult]::OK) {{
+    Write-Output $dialog.FileName
+}}
+$owner.Dispose()
+""".strip()
+    return _run_windows_powershell_dialog(script)
+
+
 def _browse_folder_windows_powershell() -> str:
     # Use OpenFileDialog with ValidateNames=$false trick to get a Vista-style
     # folder picker that is topmost (via hidden owner form). FolderBrowserDialog
@@ -150,6 +181,23 @@ def _browse_file_macos(project_json_only: bool, initial_dir: str | None = None) 
     return result.decode("utf-8").strip()
 
 
+def _browse_save_file_macos(default_name: str, initial_dir: str | None = None) -> str:
+    default_location = (
+        f' default location (POSIX file "{_escape_applescript_string(initial_dir)}")'
+        if initial_dir and os.path.isdir(initial_dir)
+        else ""
+    )
+    default_name_part = (
+        f' default name "{_escape_applescript_string(default_name)}"' if default_name else ""
+    )
+    script = (
+        'POSIX path of (choose file name with prompt "Save JSON file"'
+        f"{default_name_part}{default_location})"
+    )
+    result = subprocess.check_output(["osascript", "-e", script], stderr=subprocess.DEVNULL)
+    return result.decode("utf-8").strip()
+
+
 def _browse_folder_macos() -> str:
     result = subprocess.check_output(
         ["osascript", "-e", "POSIX path of (choose folder)"],
@@ -182,6 +230,34 @@ def _browse_file_tk(
                 if project_json_only
                 else [("All files", "*.*")]
             ),
+            parent=root,
+            **kwargs,
+        )
+    finally:
+        root.destroy()
+
+
+def _browse_save_file_tk(
+    default_name: str, topmost: bool, initial_dir: str | None = None
+) -> str:
+    import tkinter as tk
+    from tkinter import filedialog
+
+    root = tk.Tk()
+    root.withdraw()
+    if topmost:
+        root.wm_attributes("-topmost", 1)
+        root.focus_force()
+
+    try:
+        kwargs = {}
+        if initial_dir and os.path.isdir(initial_dir):
+            kwargs["initialdir"] = initial_dir
+        return filedialog.asksaveasfilename(
+            title="Save JSON file",
+            defaultextension=".json",
+            initialfile=default_name,
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
             parent=root,
             **kwargs,
         )
@@ -378,3 +454,81 @@ def pick_folder() -> PickerOutcome:
             error="Could not open file dialog. Please enter path manually.",
             status_code=500,
         )
+
+
+def pick_save_file(default_name: str = "", initial_dir: str | None = None) -> PickerOutcome:
+    try:
+        if sys.platform == "darwin":
+            try:
+                return PickerOutcome(
+                    path=_browse_save_file_macos(default_name, initial_dir)
+                )
+            except subprocess.CalledProcessError:
+                return PickerOutcome(path="")
+
+        if sys.platform.startswith("win"):
+            prefer_powershell = _prefer_powershell_dialogs_on_windows()
+
+            if prefer_powershell:
+                try:
+                    return PickerOutcome(
+                        path=_browse_save_file_windows_powershell(
+                            default_name, initial_dir
+                        )
+                    )
+                except Exception as powershell_err:
+                    print(f"Windows PowerShell save picker failed: {powershell_err}")
+
+            try:
+                return PickerOutcome(
+                    path=_browse_save_file_tk(
+                        default_name, topmost=True, initial_dir=initial_dir
+                    )
+                )
+            except Exception as tk_err:
+                print(f"Windows tkinter save picker failed: {tk_err}")
+                if not prefer_powershell:
+                    try:
+                        return PickerOutcome(
+                            path=_browse_save_file_windows_powershell(
+                                default_name, initial_dir
+                            )
+                        )
+                    except Exception as powershell_err:
+                        print(
+                            f"Windows PowerShell save picker failed: {powershell_err}"
+                        )
+
+                    return PickerOutcome(
+                        error=(
+                            "Save picker unavailable on Windows. tkinter and PowerShell dialogs failed. "
+                            "Please manually enter the path."
+                        ),
+                        status_code=500,
+                    )
+
+        if not os.environ.get("DISPLAY"):
+            return PickerOutcome(
+                error="Save picker requires a desktop session.", status_code=501
+            )
+
+        try:
+            return PickerOutcome(
+                path=_browse_save_file_tk(
+                    default_name, topmost=False, initial_dir=initial_dir
+                )
+            )
+        except ImportError:
+            print("Linux save picker failed: tkinter not available")
+            return PickerOutcome(
+                error="Save picker requires python3-tk package. Install it or enter path manually.",
+                status_code=500,
+            )
+        except Exception as linux_err:
+            print(f"Linux save picker error: {linux_err}")
+            return PickerOutcome(
+                error=f"Save picker error: {str(linux_err)}", status_code=500
+            )
+    except Exception as err:
+        print(f"Unexpected save picker error: {err}")
+        return PickerOutcome(error=str(err), status_code=500)

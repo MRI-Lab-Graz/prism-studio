@@ -5565,6 +5565,30 @@ class TestRemoveScansTsvFiles(unittest.TestCase):
             )
             self.assertEqual(status.stdout.strip(), "", status.stdout)
 
+    def test_removes_scans_tsv_from_a_plain_project_with_no_git(self):
+        """A project created without DataLad/git (plain filesystem, no
+        .git anywhere) must still delete scans.tsv files directly -- this
+        previously shelled out to `git rm`/`git commit` unconditionally and
+        failed with "fatal: not a git repository" on any non-DataLad
+        project (reported live on a study that never used DataLad)."""
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            project_path.mkdir(parents=True, exist_ok=True)
+            (project_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+            (project_path / "sub-001_scans.tsv").write_text(
+                "filename\tacq_time\nanat/x.nii.gz\tn/a\n", encoding="utf-8"
+            )
+            (project_path / "keep.txt").write_text("keep me\n", encoding="utf-8")
+
+            result = manager.remove_scans_tsv_files(project_path)
+
+            self.assertTrue(result.get("success"), result)
+            self.assertEqual(result.get("removed"), 1)
+            self.assertEqual(result.get("errors"), [])
+            self.assertFalse((project_path / "sub-001_scans.tsv").exists())
+            self.assertTrue((project_path / "keep.txt").exists())
+
     def test_no_scans_tsv_files_is_a_clean_no_op(self):
         manager = ProjectManager()
         with tempfile.TemporaryDirectory() as tmp:

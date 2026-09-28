@@ -30,3 +30,7 @@ export async function browseFolderWithFallback(_fetchWithApiFallback, options = 
 export async function browseFileWithFallback(_fetchWithApiFallback, options = {}) {
     return requirePathPicker('browseFile').browseFile(options);
 }
+
+export async function browseSaveFileWithFallback(_fetchWithApiFallback, options = {}) {
+    return requirePathPicker('browseSaveFile').browseSaveFile(options);
+}

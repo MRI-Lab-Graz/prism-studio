@@ -1520,6 +1520,108 @@ def _find_chromium_browser() -> Optional[str]:
     return None
 
 
+# Browsers --browser-app can target, keyed by the name the user passes.
+# macOS is looked up by app-bundle name (launched via `open -a`); Windows/Linux
+# by executable path, same style as _find_chromium_browser() above.
+_NAMED_BROWSERS: Dict[str, Dict[str, Any]] = {
+    "safari": {"mac_app": "Safari"},
+    "chrome": {
+        "mac_app": "Google Chrome",
+        "win_paths": [os.path.join("Google", "Chrome", "Application", "chrome.exe")],
+        "linux_names": ["google-chrome-stable", "google-chrome"],
+    },
+    "brave": {
+        "mac_app": "Brave Browser",
+        "win_paths": [os.path.join("BraveSoftware", "Brave-Browser", "Application", "brave.exe")],
+        "linux_names": ["brave-browser", "brave"],
+    },
+    "edge": {
+        "mac_app": "Microsoft Edge",
+        "win_paths": [os.path.join("Microsoft", "Edge", "Application", "msedge.exe")],
+        "linux_names": ["microsoft-edge-stable", "microsoft-edge"],
+    },
+    "firefox": {
+        "mac_app": "Firefox",
+        "win_paths": [os.path.join("Mozilla Firefox", "firefox.exe")],
+        "linux_names": ["firefox"],
+    },
+    "opera": {
+        "mac_app": "Opera",
+        "win_paths": [os.path.join("Opera", "launcher.exe")],
+        "linux_names": ["opera"],
+    },
+    "vivaldi": {
+        "mac_app": "Vivaldi",
+        "win_paths": [os.path.join("Vivaldi", "Application", "vivaldi.exe")],
+        "linux_names": ["vivaldi", "vivaldi-stable"],
+    },
+}
+
+
+def _resolve_named_browser(name: str) -> Optional[str]:
+    """Resolve a --browser-app name to a launch target actually installed here.
+
+    Returns an app-bundle name on macOS (for `open -a`), an executable path on
+    Windows/Linux, or None if that browser isn't installed on this machine.
+    """
+    spec = _NAMED_BROWSERS.get(name.lower())
+    if not spec:
+        return None
+    if sys.platform == "darwin":
+        app_name = spec.get("mac_app")
+        if not app_name:
+            return None
+        for base in (Path("/Applications"), Path.home() / "Applications"):
+            if (base / f"{app_name}.app").exists():
+                return app_name
+        return None
+    if sys.platform.startswith("win"):
+        roots = [
+            os.environ.get("PROGRAMFILES", r"C:\Program Files"),
+            os.environ.get("PROGRAMFILES(X86)", r"C:\Program Files (x86)"),
+            os.environ.get("LOCALAPPDATA", ""),
+        ]
+        for rel in spec.get("win_paths", []):
+            for root in roots:
+                if root and os.path.isfile(os.path.join(root, rel)):
+                    return os.path.join(root, rel)
+        return None
+    for cmd in spec.get("linux_names", []):
+        found = shutil.which(cmd)
+        if found:
+            return found
+    return None
+
+
+def _list_installed_browser_names() -> list:
+    """Names from _NAMED_BROWSERS that --browser-app can actually find here."""
+    return sorted(name for name in _NAMED_BROWSERS if _resolve_named_browser(name))
+
+
+def _open_url_with_browser_app(name: str, target: str, url: str) -> bool:
+    """Open url in the resolved browser app/executable. Returns success."""
+    try:
+        if sys.platform == "darwin":
+            subprocess.Popen(["open", "-a", target, url])
+        else:
+            subprocess.Popen([target, url])
+        return True
+    except Exception as e:
+        print(f"[WARN]  Could not open {name}: {e}")
+        return False
+
+
+def _require_named_browser(name: str) -> str:
+    """Resolve --browser-app NAME or exit(1) listing what's installed here."""
+    resolved = _resolve_named_browser(name)
+    if resolved:
+        return resolved
+    installed = _list_installed_browser_names()
+    available = ", ".join(installed) if installed else "none detected"
+    print(f"[ERROR] Browser '{name}' not found. On this machine available: {available}")
+    sys.exit(1)
+
+
 def _launch_app_mode_window(url: str) -> Optional[subprocess.Popen]:
     """Open ``url`` in a Chromium app-mode window (Windows/Linux).
 
@@ -1620,6 +1722,15 @@ def main():
         ),
     )
     parser.add_argument(
+        "--browser-app",
+        metavar="NAME",
+        default=None,
+        help=(
+            "Open PRISM Studio in a specific browser instead of the OS default "
+            f"(supported names: {', '.join(sorted(_NAMED_BROWSERS))})"
+        ),
+    )
+    parser.add_argument(
         "--force-clean-start",
         action="store_true",
         help="Force-stop any process using the selected port before launch",
@@ -1632,6 +1743,10 @@ def main():
 
     args = parser.parse_args()
 
+    resolved_browser_app = (
+        _require_named_browser(args.browser_app) if args.browser_app else None
+    )
+
     host = "0.0.0.0" if args.public else args.host  # nosec B104
 
     # A second launch (e.g. double-clicking the desktop shortcut again) reuses
@@ -1640,7 +1755,10 @@ def main():
         url = f"http://127.0.0.1:{args.port}" if args.public else f"http://{host}:{args.port}"
         print(f"[INFO]  PRISM Studio is already running at {url}")
         if not args.no_browser:
-            webbrowser.open(url)
+            if resolved_browser_app:
+                _open_url_with_browser_app(args.browser_app, resolved_browser_app, url)
+            else:
+                webbrowser.open(url)
         return
 
     if _should_relaunch_in_dedicated_terminal(args):
@@ -1689,7 +1807,7 @@ def main():
         launch_mode = "none"
     elif args.window:
         launch_mode = "window"
-    elif args.browser:
+    elif args.browser or resolved_browser_app:
         launch_mode = "browser"
     else:
         launch_mode = "window" if getattr(sys, "frozen", False) else "browser"
@@ -1707,6 +1825,11 @@ def main():
         import subprocess
 
         time.sleep(1.5)  # Wait for server to start (increased for compiled version)
+        if resolved_browser_app:
+            if _open_url_with_browser_app(args.browser_app, resolved_browser_app, url):
+                print(f"✅ Opened in {args.browser_app}")
+                return
+            print("[INFO]  Falling back to default browser")
         try:
             # Try standard webbrowser module first
             if webbrowser.open(url):

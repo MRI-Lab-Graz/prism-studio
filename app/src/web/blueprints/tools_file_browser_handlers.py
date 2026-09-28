@@ -21,3 +21,13 @@ def handle_api_browse_folder():
     if outcome.error is not None:
         return jsonify({"error": outcome.error}), outcome.status_code
     return jsonify({"path": outcome.path})
+
+
+def handle_api_browse_save_file():
+    """Open a system 'Save As' dialog to choose a destination path for a new file."""
+    default_name = (request.args.get("default_name") or "").strip()
+    start_dir = (request.args.get("start_dir") or "").strip() or None
+    outcome = file_picker.pick_save_file(default_name=default_name, initial_dir=start_dir)
+    if outcome.error is not None:
+        return jsonify({"error": outcome.error}), outcome.status_code
+    return jsonify({"path": outcome.path})

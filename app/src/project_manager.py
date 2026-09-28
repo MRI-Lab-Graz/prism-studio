@@ -5816,6 +5816,25 @@ git push -u origin main
         for index, (root, files) in enumerate(sorted(by_root.items()), start=1):
             rel_paths = [str(f.relative_to(root)) for f in files]
             label = root.name or str(root)
+
+            if not self._is_datalad_dataset(root):
+                # Plain (non-DataLad/non-git) project: no index to update, no
+                # commit to make -- just delete the files. `git rm` here would
+                # fail with "fatal: not a git repository" since there's no
+                # .git to find.
+                self._emit_backend_progress(
+                    f"Removing {len(rel_paths)} scans.tsv file(s) in {label} ({index}/{len(by_root)})."
+                )
+                try:
+                    for file_path in files:
+                        file_path.unlink()
+                except OSError as exc:
+                    errors.append(f"{label}: delete failed: {exc}")
+                    continue
+                result["removed"] += len(rel_paths)
+                touched_roots.append(root)
+                continue
+
             self._emit_backend_progress(
                 f"Removing {len(rel_paths)} scans.tsv file(s) in {label} ({index}/{len(by_root)}).",
                 command=f"git rm -- {' '.join(rel_paths)}",

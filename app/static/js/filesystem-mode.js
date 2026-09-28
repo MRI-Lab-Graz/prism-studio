@@ -243,6 +243,50 @@
         return (data.path || '').trim();
     }
 
+    // No in-app "save as" dialog exists (the folder browser modal only picks
+    // existing folders/files), so the fallback is: pick a folder, then ask for
+    // a filename.
+    async function pickSaveFileFallback(options = {}) {
+        const folder = await pickFolder({
+            title: options.title || 'Select Destination Folder',
+            confirmLabel: 'Choose Folder',
+            startPath: options.startPath || ''
+        });
+        if (!folder) return '';
+        const name = window.prompt('File name:', options.defaultName || 'new-file.json');
+        if (!name) return '';
+        return `${folder.replace(/[\\/]+$/, '')}/${name}`;
+    }
+
+    async function browseSaveFile(options = {}) {
+        await init();
+
+        if (getEffectiveMode() === 'server') {
+            return pickSaveFileFallback(options);
+        }
+
+        let response;
+        let data;
+        try {
+            const params = new URLSearchParams();
+            if (options.defaultName) params.set('default_name', options.defaultName);
+            if (options.startPath) params.set('start_dir', options.startPath);
+            const query = params.toString() ? `?${params.toString()}` : '';
+            response = await fetchWithApiFallback(`/api/browse-save-file${query}`);
+            data = await response.json();
+        } catch (error) {
+            console.warn('Native save picker failed, falling back:', error);
+            return pickSaveFileFallback(options);
+        }
+
+        if (!response.ok || data.error) {
+            console.warn('Native save picker unavailable, falling back:', data.error);
+            return pickSaveFileFallback(options);
+        }
+
+        return (data.path || '').trim();
+    }
+
     window.PrismFileSystemMode = {
         init,
         getState: () => ({
@@ -277,6 +321,7 @@
         prefersServerPicker: () => getEffectiveMode() === 'server',
         browseFolder,
         browseFile,
+        browseSaveFile,
         pickServerFolder: pickFolder,
         pickServerFile: pickFile,
     };

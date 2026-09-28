@@ -200,6 +200,42 @@ def create_json_editor_blueprint(bids_folder=None):
         except Exception as e:
             return jsonify({"success": False, "error": str(e)}), 400
 
+    @bp.route("/api/save-path", methods=["POST"])
+    def save_path():
+        """Save JSON data to an arbitrary absolute path (e.g. a newly created file)."""
+        import json
+
+        payload = request.get_json(silent=True) or {}
+        raw_path = (payload.get("path") or "").strip()
+        data = payload.get("data")
+        if not raw_path:
+            return jsonify({"success": False, "error": "No path provided"}), 400
+        if data is None:
+            return jsonify({"success": False, "error": "No JSON data provided"}), 400
+
+        target = Path(raw_path)
+        if target.suffix.lower() != ".json":
+            return jsonify({"success": False, "error": "Not a .json file"}), 400
+        if not target.parent.is_dir():
+            return (
+                jsonify({"success": False, "error": "Destination folder does not exist"}),
+                400,
+            )
+
+        try:
+            target.write_text(
+                json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
+            )
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "File saved successfully",
+                    "path": str(target),
+                }
+            )
+        except OSError as e:
+            return jsonify({"success": False, "error": str(e)}), 400
+
     @bp.route("/api/file/<json_type>", methods=["GET"])
     def load_file(json_type):
         """Load a BIDS JSON file"""

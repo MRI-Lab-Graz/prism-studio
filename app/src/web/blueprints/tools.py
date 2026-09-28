@@ -53,6 +53,7 @@ from .tools_survey_customizer_handlers import (
 from .tools_file_browser_handlers import (
     handle_api_browse_file,
     handle_api_browse_folder,
+    handle_api_browse_save_file,
 )
 from .conversion_utils import require_existing_project_root
 from .conversion_survey_handlers import (
@@ -1795,6 +1796,12 @@ def api_browse_file():
 def api_browse_folder():
     """Open a system dialog to select a folder"""
     return handle_api_browse_folder()
+
+
+@tools_bp.route("/api/browse-save-file")
+def api_browse_save_file():
+    """Open a system 'Save As' dialog to choose a destination path for a new file"""
+    return handle_api_browse_save_file()
 
 
 @tools_bp.route("/api/fs/browse")

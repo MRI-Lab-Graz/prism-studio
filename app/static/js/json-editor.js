@@ -3,6 +3,7 @@ const jsonEditorScriptUrl = document.currentScript?.src || window.location.href;
 document.addEventListener('DOMContentLoaded', async function() {
     const jsonFileInput = document.getElementById('jsonFileInput');
     const jsonFileBtn = document.getElementById('jsonFileBtn');
+    const newJsonBtn = document.getElementById('newJsonBtn');
     const uploadArea = document.getElementById('uploadArea');
     const fileOpenCard = document.getElementById('fileOpenCard');
     const editorSection = document.getElementById('editorSection');
@@ -14,7 +15,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     const pathPickerModuleUrl = new URL('./shared/path-picker.js', jsonEditorScriptUrl).href;
     let sharedFetchWithApiFallbackPromise = null;
     let browseFileWithFallbackPromise = null;
+    let browseSaveFileWithFallbackPromise = null;
     const projectRoot = (uploadArea?.dataset.projectRoot || '').trim();
+    const KNOWN_PROJECT_FILE_TYPES = ['dataset_description', 'participants', 'samples'];
+    const isKnownProjectFileType = fileType =>
+        KNOWN_PROJECT_FILE_TYPES.includes(fileType) || fileType.startsWith('task-');
 
     // Check for autoload parameter (coming from project page e.g. ?autoload=participants&from=project)
     const urlParams = new URLSearchParams(window.location.search);
@@ -54,6 +59,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         return browseFileWithFallbackPromise;
     }
 
+    function loadBrowseSaveFileWithFallback() {
+        if (!browseSaveFileWithFallbackPromise) {
+            browseSaveFileWithFallbackPromise = import(pathPickerModuleUrl).then(({ browseSaveFileWithFallback }) => {
+                if (typeof browseSaveFileWithFallback !== 'function') {
+                    throw new Error('Shared path picker is unavailable.');
+                }
+                return browseSaveFileWithFallback;
+            });
+        }
+        return browseSaveFileWithFallbackPromise;
+    }
+
     if (fromProject && autoloadFile) {
         fileOpenCard.style.display = 'none';
         editorSection.style.display = 'block';
@@ -83,6 +100,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             console.warn('File picker unavailable, using browser file input:', error);
             jsonFileInput.click();
         }
+    });
+
+    // "Create New": start editing a blank JSON object. The real filename is
+    // chosen later via the Save As dialog. Nothing is written to disk until then.
+    newJsonBtn.addEventListener('click', async () => {
+        await showJsonEditor({}, 'untitled.json');
     });
 
     // "Open different file" resets to the picker
@@ -205,8 +228,63 @@ document.addEventListener('DOMContentLoaded', async function() {
         return updatedJson;
     }
 
-    // Save to Project: writes the edited JSON back into the current
-    // project's matching file on disk (POST /editor/api/file/<type>).
+    // Known project file (dataset_description/participants/samples/task-*):
+    // overwrite it in place (POST /editor/api/file/<type>).
+    async function saveKnownProjectFile(fileType, fileName, updatedJson) {
+        const response = await fetchWithApiFallback(`/editor/api/file/${fileType}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedJson),
+        });
+        const result = await response.json().catch(() => ({
+            success: false,
+            error: 'Server returned an invalid response.',
+        }));
+
+        if (!response.ok || !result.success) {
+            showAlert(result.error || `Could not save ${fileName} to the project.`, 'danger');
+            return;
+        }
+
+        showAlert(`Saved ${fileName} to the current project.`, 'success');
+        if (Array.isArray(result.validation_errors) && result.validation_errors.length) {
+            showAlert(
+                `Saved, but validation found issues: ${result.validation_errors.join('; ')}`,
+                'warning'
+            );
+        }
+    }
+
+    // New/custom file: ask where to put it (native Save As dialog, starting at
+    // the project root -- e.g. to save under derivatives/), then write it there
+    // (POST /editor/api/save-path).
+    async function saveToChosenPath(fileName, updatedJson) {
+        const browseSaveFile = await loadBrowseSaveFileWithFallback();
+        const savePath = await browseSaveFile(fetchWithApiFallback, {
+            title: `Choose where to save ${fileName}`,
+            defaultName: fileName,
+            startPath: projectRoot
+        });
+        if (!savePath) return;
+
+        const response = await fetchWithApiFallback('/editor/api/save-path', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: savePath, data: updatedJson }),
+        });
+        const result = await response.json().catch(() => ({
+            success: false,
+            error: 'Server returned an invalid response.',
+        }));
+
+        if (!response.ok || !result.success) {
+            showAlert(result.error || `Could not save ${fileName}.`, 'danger');
+            return;
+        }
+
+        showAlert(`Saved to ${result.path || savePath}.`, 'success');
+    }
+
     document.getElementById('saveToProjectBtn').addEventListener('click', async function() {
         const btn = this;
         try {
@@ -220,27 +298,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
 
             try {
-                const response = await fetchWithApiFallback(`/editor/api/file/${fileType}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updatedJson),
-                });
-                const result = await response.json().catch(() => ({
-                    success: false,
-                    error: 'Server returned an invalid response.',
-                }));
-
-                if (!response.ok || !result.success) {
-                    showAlert(result.error || `Could not save ${fileName} to the project.`, 'danger');
-                    return;
-                }
-
-                showAlert(`Saved ${fileName} to the current project.`, 'success');
-                if (Array.isArray(result.validation_errors) && result.validation_errors.length) {
-                    showAlert(
-                        `Saved, but validation found issues: ${result.validation_errors.join('; ')}`,
-                        'warning'
-                    );
+                if (isKnownProjectFileType(fileType)) {
+                    await saveKnownProjectFile(fileType, fileName, updatedJson);
+                } else {
+                    await saveToChosenPath(fileName, updatedJson);
                 }
             } finally {
                 btn.disabled = false;
@@ -286,11 +347,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             const saveHint = document.getElementById('saveToProjectHint');
             if (saveHint) {
-                const isKnownProjectType = ['dataset_description', 'participants', 'samples'].includes(fileType)
-                    || fileType.startsWith('task-');
-                saveHint.textContent = isKnownProjectType
+                saveHint.textContent = isKnownProjectFileType(fileType)
                     ? `"Save to Project" overwrites ${fileName} in the current project.`
-                    : `"Save to Project" only works for dataset_description.json, participants.json, samples.json, or task-*.json.`;
+                    : `"Save to Project" will ask where to save ${fileName} (starting from the project root).`;
             }
 
             formContainer.innerHTML = '';

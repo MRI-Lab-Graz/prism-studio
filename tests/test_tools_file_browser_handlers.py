@@ -73,6 +73,39 @@ class TestToolsFileBrowserHandlers(unittest.TestCase):
             project_json_only=False, initial_dir=None
         )
 
+    @patch.object(handlers.file_picker, "pick_save_file")
+    def test_browse_save_file_returns_picker_path(self, mock_pick_save_file):
+        mock_pick_save_file.return_value = handlers.file_picker.PickerOutcome(
+            path=r"C:\Users\tester\Study\derivatives\custom.json"
+        )
+
+        with self.app.test_request_context(
+            "/api/browse-save-file?default_name=custom.json&start_dir=C:%5CStudy"
+        ):
+            response = handlers.handle_api_browse_save_file()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.get_json()["path"],
+            r"C:\Users\tester\Study\derivatives\custom.json",
+        )
+        mock_pick_save_file.assert_called_once_with(
+            default_name="custom.json", initial_dir=r"C:\Study"
+        )
+
+    @patch.object(handlers.file_picker, "pick_save_file")
+    def test_browse_save_file_returns_service_error(self, mock_pick_save_file):
+        mock_pick_save_file.return_value = handlers.file_picker.PickerOutcome(
+            error="PowerShell dialog failed",
+            status_code=500,
+        )
+
+        with self.app.test_request_context("/api/browse-save-file"):
+            response, status_code = handlers.handle_api_browse_save_file()
+
+        self.assertEqual(status_code, 500)
+        self.assertEqual(response.get_json()["error"], "PowerShell dialog failed")
+
 
 if __name__ == "__main__":
     unittest.main()

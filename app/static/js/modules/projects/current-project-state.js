@@ -158,6 +158,7 @@ export function createProjectsCurrentStateController({
         const existingPathInput = document.getElementById('existingPath');
         if (existingPathInput && currentProjectPath) {
             existingPathInput.value = currentProjectPath;
+            existingPathInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
 
         updateProjectTypeSelectionVisibility();
