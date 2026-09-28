@@ -5,6 +5,7 @@ without executing the top-level CLI script.
 """
 
 import os
+import re
 import sys
 import json
 import csv
@@ -748,6 +749,27 @@ def _validate_subject(
     return issues
 
 
+def _extract_task_from_filename(fname):
+    """Extract the BIDS task- entity from a filename, if present."""
+    if "_task-" in fname:
+        task_match = re.search(r"_task-([A-Za-z0-9]+)(?:_|$)", fname)
+        if task_match:
+            return task_match.group(1)
+    return None
+
+
+def _count_modality_files(filtered_files, entries, subject_id, session_id, modality, stats):
+    """Record file counts for a modality directory without running PRISM
+    validation checks on it. Used for BIDS-owned modalities (anat/dwi/fmap/...)
+    in combined mode, where content validation is left to the BIDS validator
+    but the files must still be counted for dataset stats.
+    """
+    for fname in filtered_files:
+        if entries[fname].is_file():
+            task = _extract_task_from_filename(fname)
+            stats.add_file(subject_id, session_id, modality, task, fname)
+
+
 def _validate_session(
     session_dir,
     subject_id,
@@ -770,13 +792,13 @@ def _validate_session(
         item_path = os.path.join(session_dir, item)
         if entries[item].is_dir():
             skipped_by_bids = run_bids and item in BIDS_MODALITIES and item != "func"
-            if skipped_by_bids and not need_procedure_tasks:
-                continue
 
             # Read the directory before any modality filtering: procedure
             # validation needs the task files of *every* sub-*/ses-*/<dir>,
-            # including modalities this walk otherwise hands to the BIDS
-            # validator. One readdir here replaces a second full tree walk.
+            # and dataset stats need every BIDS-owned modality directory
+            # (anat/dwi/fmap/...) counted even though this walk otherwise
+            # hands their content validation to the BIDS validator.
+            # One readdir here replaces a second full tree walk.
             child_entries = _scan_dir(item_path, validator._dir_cache)
             filtered_contents = filter_system_files(list(child_entries))
             if need_procedure_tasks:
@@ -790,6 +812,9 @@ def _validate_session(
                 )
 
             if skipped_by_bids:
+                _count_modality_files(
+                    filtered_contents, child_entries, subject_id, session_id, item, stats
+                )
                 continue
 
             if not filtered_contents:
@@ -847,14 +872,7 @@ def _validate_modality_dir(
     for fname in filtered_files:
         file_path = os.path.join(modality_dir, fname)
         if entries[fname].is_file():
-            # Extract task from filename
-            task = None
-            if "_task-" in fname:
-                import re
-
-                task_match = re.search(r"_task-([A-Za-z0-9]+)(?:_|$)", fname)
-                if task_match:
-                    task = task_match.group(1)
+            task = _extract_task_from_filename(fname)
 
             # Add to stats (acq- extraction happens inside add_file)
             stats.add_file(subject_id, session_id, modality, task, fname)

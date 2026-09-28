@@ -1,5 +1,20 @@
 # Repo Notes for Claude
 
+## Mandatory skills for every chat in this repo
+
+At the start of every conversation in this repository, invoke both of the
+following skills before doing any other work:
+
+- `ponytail` (ponytail:ponytail) — lazy-senior-dev mode: prefer the
+  minimal, boring solution (YAGNI, reuse existing code, stdlib/native
+  features before new dependencies) for any coding task.
+- `superpowers` (superpowers:using-superpowers) — establishes which other
+  superpowers skills (brainstorming, systematic-debugging,
+  test-driven-development, etc.) apply to the task at hand, and requires
+  invoking them before responding.
+
+This applies regardless of how trivial the request looks.
+
 ## `src/` vs `app/src/`: dual-tree drift is a live, recurring bug source
 
 **Intended architecture** (per `docs/PROJECT_OVERVIEW.md`): `src/` is the one

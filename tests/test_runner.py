@@ -642,6 +642,39 @@ class TestValidateDataset:
         assert "func" in visited_modalities
         assert "survey" in visited_modalities
 
+    def test_combined_mode_still_counts_skipped_bids_modality_files(self, tmp_path):
+        """Dataset stats (Studio's Modalities & Content card) must count
+        anat/dwi/fmap/... files even though combined mode leaves their
+        content validation to the BIDS validator and never calls
+        _validate_modality_dir on them.
+        """
+        session_dir = tmp_path / "sub-01" / "ses-01"
+        anat_dir = session_dir / "anat"
+        dwi_dir = session_dir / "dwi"
+        func_dir = session_dir / "func"
+        anat_dir.mkdir(parents=True)
+        dwi_dir.mkdir(parents=True)
+        func_dir.mkdir(parents=True)
+        (anat_dir / "sub-01_ses-01_T1w.nii.gz").write_bytes(b"")
+        (dwi_dir / "sub-01_ses-01_dwi.nii.gz").write_bytes(b"")
+        (func_dir / "sub-01_ses-01_task-rest_bold.nii.gz").write_bytes(b"")
+
+        stats = DatasetStats()
+        runner._validate_session(
+            str(session_dir),
+            "sub-01",
+            "ses-01",
+            DatasetValidator(),
+            stats,
+            str(tmp_path),
+            run_prism=True,
+            run_bids=True,
+        )
+
+        assert stats.modalities.get("anat") == 1
+        assert stats.modalities.get("dwi") == 1
+        assert stats.modalities.get("func") == 1
+
     def test_validate_dataset_records_resolved_prism_schema_versions(self, tmp_path):
         """stats.validator_info must carry the actual loaded schema versions.
 

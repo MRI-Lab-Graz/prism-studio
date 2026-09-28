@@ -20,9 +20,7 @@ def test_converter():
     """Test the participants converter with the workshop example."""
 
     # The mapping is now in code/library/
-    dataset_root = (
-        Path(__file__).parent.parent / "examples" / "workshop" / "exercise_1_raw_data"
-    )
+    dataset_root = Path(__file__).parent.parent / "examples" / "workshop"
     source_file = dataset_root / "raw_data" / "wellbeing.tsv"
 
     # For the converter test, we'll use the rawdata simulation
