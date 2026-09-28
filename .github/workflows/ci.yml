@@ -2,6 +2,12 @@ name: CI Validation
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  # bids2openminds (requirements-optional.txt) transitively depends on pybids's
+  # large, loosely-pinned dependency tree (scipy/sqlalchemy/formulaic/...).
+  # A fully-compatible set of wheels exists, but pip's resolver can wander into
+  # an unsatisfiable sdist-only branch while backtracking through newly
+  # published releases. --prefer-binary keeps it on the wheel-only solution.
+  PIP_PREFER_BINARY: '1'
 
 on:
   push:
