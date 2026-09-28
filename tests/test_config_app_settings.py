@@ -149,7 +149,7 @@ def test_save_and_load_app_settings_roundtrip(tmp_path, monkeypatch):
         backend_monitoring_verbose=True,
         show_dedicated_terminal=True,
         connected_to_server=True,
-        gitlab_access_token="glpat-example-token",
+        gitlab_access_token="gitlab-test-token-123",
         export_defacing_confirmation_mode="always",
         enable_study_application_import=True,
     )
@@ -166,7 +166,7 @@ def test_save_and_load_app_settings_roundtrip(tmp_path, monkeypatch):
     assert loaded.backend_monitoring_verbose is True
     assert loaded.show_dedicated_terminal is True
     assert loaded.connected_to_server is True
-    assert loaded.gitlab_access_token == "glpat-example-token"
+    assert loaded.gitlab_access_token == "gitlab-test-token-123"
     assert loaded.export_defacing_confirmation_mode == "always"
     assert loaded.enable_study_application_import is True
 

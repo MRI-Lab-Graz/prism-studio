@@ -216,7 +216,7 @@ def test_global_library_settings_store_gitlab_token_without_echoing_it(
     client = app.test_client()
     response = client.post(
         "/api/settings/global-library",
-        json={"gitlab_access_token": "glpat-example-token"},
+        json={"gitlab_access_token": "gitlab-test-token-123"},
     )
     assert response.status_code == 200
     payload = response.get_json()
@@ -232,7 +232,7 @@ def test_global_library_settings_store_gitlab_token_without_echoing_it(
     assert "gitlab_access_token" not in get_payload
 
     loaded = config_module.load_app_settings(app_root=str(tmp_path))
-    assert loaded.gitlab_access_token == "glpat-example-token"
+    assert loaded.gitlab_access_token == "gitlab-test-token-123"
 
 
 def test_global_library_settings_can_clear_gitlab_token(tmp_path, monkeypatch):
@@ -244,7 +244,7 @@ def test_global_library_settings_can_clear_gitlab_token(tmp_path, monkeypatch):
     client = app.test_client()
     save_response = client.post(
         "/api/settings/global-library",
-        json={"gitlab_access_token": "glpat-example-token"},
+        json={"gitlab_access_token": "gitlab-test-token-123"},
     )
     assert save_response.status_code == 200
 
