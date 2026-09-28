@@ -12,8 +12,17 @@ Nibabel
 # conversion). Install it on demand: pip install pyedflib
 #   (or: pip install -e .[edf])
 
-# openMINDS metadata export (BIDS → openMINDS schema)
-bids2openminds
+# openMINDS metadata export (BIDS → openMINDS schema). Invoked as the
+# `bids2openminds` CLI via subprocess, not imported -- the export blueprint
+# already handles it being absent ("Install it with: pip install
+# bids2openminds"). NOT installed by default: it depends on the PyPI package
+# named `bids` (an abandoned name-squat stub whose only content is "use
+# pybids instead"), which drags in pybids's large, loosely-pinned dependency
+# tree (scipy/sqlalchemy/formulaic/...). pip's resolver can land on a
+# platform-dependent unsatisfiable branch there (seen failing on Windows CI
+# but not Linux/macOS for the same requirements files), so it does not
+# belong in the batch install. Install it on demand: pip install
+# bids2openminds
 
 # HED (Hierarchical Event Descriptor) validation for events.json sidecars
 # (see docs on annotating task-<label>_events.json with HED tags). Not
