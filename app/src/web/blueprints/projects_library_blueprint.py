@@ -40,6 +40,7 @@ def get_global_library_settings():
             "success": True,
             "global_template_library_path": settings.global_template_library_path,
             "global_recipes_path": settings.global_recipes_path,
+            "has_gitlab_access_token": bool(settings.gitlab_access_token),
             "default_library_path": default_library_path,
             "default_modalities": settings.default_modalities,
             "backend_monitoring": bool(settings.backend_monitoring),
@@ -269,6 +270,13 @@ def set_global_library_settings():
     if "connected_to_server" in data:
         settings.connected_to_server = bool(data.get("connected_to_server"))
 
+    if data.get("clear_gitlab_access_token"):
+        settings.gitlab_access_token = None
+    elif "gitlab_access_token" in data:
+        token = str(data.get("gitlab_access_token") or "").strip()
+        if token:
+            settings.gitlab_access_token = token
+
     if "export_defacing_confirmation_mode" in data:
         raw_mode = data.get("export_defacing_confirmation_mode")
         normalized_mode = normalize_export_defacing_confirmation_mode(raw_mode)
@@ -294,6 +302,7 @@ def set_global_library_settings():
                 "global_template_library_path": settings.global_template_library_path,
                 "global_recipes_path": settings.global_recipes_path,
                 "connected_to_server": bool(settings.connected_to_server),
+                "has_gitlab_access_token": bool(settings.gitlab_access_token),
                 "export_defacing_confirmation_mode": normalize_export_defacing_confirmation_mode(
                     getattr(settings, "export_defacing_confirmation_mode", "risk")
                 ),

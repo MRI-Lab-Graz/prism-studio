@@ -21,6 +21,7 @@ import { initProjectSelectionController } from './project-selection.js';
 import { createProjectMaintenanceActions } from './maintenance-actions.js';
 import { createRecentProjectsController } from './recent-projects.js';
 import {
+    clearGitlabToken,
     clearGlobalLibrary,
     initBackendMonitoringToggle,
     initDedicatedTerminalToggle,
@@ -314,6 +315,7 @@ export function initProjectsPage() {
         clearCurrentProject,
         useDefaultLibrary,
         clearGlobalLibrary,
+        clearGitlabToken,
     });
 }
 

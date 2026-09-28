@@ -205,6 +205,62 @@ def test_global_library_setting_roundtrip_updates_connected_mode(tmp_path, monke
     assert get_payload["global_template_library_path"] == str(library_dir)
 
 
+def test_global_library_settings_store_gitlab_token_without_echoing_it(
+    tmp_path, monkeypatch
+):
+    app = _build_app_for_blueprint()
+    from src import config as config_module
+
+    monkeypatch.setattr(config_module, "_get_user_app_settings_dir", lambda: tmp_path)
+
+    client = app.test_client()
+    response = client.post(
+        "/api/settings/global-library",
+        json={"gitlab_access_token": "glpat-example-token"},
+    )
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["success"] is True
+    assert payload["has_gitlab_access_token"] is True
+    assert "gitlab_access_token" not in payload
+
+    get_response = client.get("/api/settings/global-library")
+    assert get_response.status_code == 200
+    get_payload = get_response.get_json()
+    assert get_payload["success"] is True
+    assert get_payload["has_gitlab_access_token"] is True
+    assert "gitlab_access_token" not in get_payload
+
+    loaded = config_module.load_app_settings(app_root=str(tmp_path))
+    assert loaded.gitlab_access_token == "glpat-example-token"
+
+
+def test_global_library_settings_can_clear_gitlab_token(tmp_path, monkeypatch):
+    app = _build_app_for_blueprint()
+    from src import config as config_module
+
+    monkeypatch.setattr(config_module, "_get_user_app_settings_dir", lambda: tmp_path)
+
+    client = app.test_client()
+    save_response = client.post(
+        "/api/settings/global-library",
+        json={"gitlab_access_token": "glpat-example-token"},
+    )
+    assert save_response.status_code == 200
+
+    clear_response = client.post(
+        "/api/settings/global-library",
+        json={"clear_gitlab_access_token": True},
+    )
+    assert clear_response.status_code == 200
+    clear_payload = clear_response.get_json()
+    assert clear_payload["success"] is True
+    assert clear_payload["has_gitlab_access_token"] is False
+
+    loaded = config_module.load_app_settings(app_root=str(tmp_path))
+    assert loaded.gitlab_access_token is None
+
+
 def test_global_library_setting_rejects_invalid_export_defacing_mode(
     tmp_path, monkeypatch
 ):

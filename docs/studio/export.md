@@ -59,7 +59,8 @@ Accordion section, badge "New". **Export for ANC** writes to a sibling folder
 `.bids-validator-config.json`, and `CITATION.cff`. An optional flag converts the
 export to Git LFS. The page links out to the ANC upload portal
 (`upload.anc.plus.ac.at`) for the actual upload step — Studio only prepares the
-package.
+package. If you only need a GitLab connection, save the token under **Global
+Settings**; the ANC export area does not store GitLab credentials.
 
 ## openMINDS Metadata Export
 

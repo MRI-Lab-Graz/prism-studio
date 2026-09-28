@@ -415,6 +415,11 @@ class AppSettings:
     # If disabled, browser/native picker flows remain the default.
     connected_to_server: bool = False
 
+    # Optional GitLab personal/project/group access token for Git-backed ANC /
+    # GitLab workflows. Stored per-user in the app settings file, never in a
+    # project config.
+    gitlab_access_token: Optional[str] = None
+
     # Default export confirmation behavior when MRI defacing status is checked.
     # 'risk' => ask only when unresolved risk is detected.
     # 'always' => ask before export regardless of risk summary.
@@ -501,6 +506,7 @@ def load_app_settings(app_root: Optional[str] = None) -> AppSettings:
             ),
             show_dedicated_terminal=bool(data.get("showDedicatedTerminal", False)),
             connected_to_server=bool(data.get("connectedToServer", False)),
+            gitlab_access_token=data.get("gitlabAccessToken"),
             export_defacing_confirmation_mode=normalize_export_defacing_confirmation_mode(
                 data.get("exportDefacingConfirmationMode", "risk")
             ),
@@ -542,6 +548,7 @@ def save_app_settings(settings: AppSettings, app_root: Optional[str] = None) -> 
         "backendMonitoringVerbose": settings.backend_monitoring_verbose,
         "showDedicatedTerminal": settings.show_dedicated_terminal,
         "connectedToServer": settings.connected_to_server,
+        "gitlabAccessToken": settings.gitlab_access_token,
         "exportDefacingConfirmationMode": normalize_export_defacing_confirmation_mode(
             settings.export_defacing_confirmation_mode
         ),

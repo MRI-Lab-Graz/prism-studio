@@ -128,6 +128,7 @@ def test_load_app_settings_defaults_when_missing(tmp_path, monkeypatch):
     assert settings.backend_monitoring_verbose is False
     assert settings.show_dedicated_terminal is False
     assert settings.connected_to_server is False
+    assert settings.gitlab_access_token is None
     assert settings.export_defacing_confirmation_mode == "risk"
     assert settings.enable_study_application_import is False
 
@@ -148,6 +149,7 @@ def test_save_and_load_app_settings_roundtrip(tmp_path, monkeypatch):
         backend_monitoring_verbose=True,
         show_dedicated_terminal=True,
         connected_to_server=True,
+        gitlab_access_token="glpat-example-token",
         export_defacing_confirmation_mode="always",
         enable_study_application_import=True,
     )
@@ -164,6 +166,7 @@ def test_save_and_load_app_settings_roundtrip(tmp_path, monkeypatch):
     assert loaded.backend_monitoring_verbose is True
     assert loaded.show_dedicated_terminal is True
     assert loaded.connected_to_server is True
+    assert loaded.gitlab_access_token == "glpat-example-token"
     assert loaded.export_defacing_confirmation_mode == "always"
     assert loaded.enable_study_application_import is True
 

@@ -24,6 +24,7 @@ export async function initProjectsPageBootstrap({
     clearCurrentProject,
     useDefaultLibrary,
     clearGlobalLibrary,
+    clearGitlabToken,
 }) {
     const isWindows = navigator.platform.toUpperCase().indexOf('WIN') > -1;
     const isMac = navigator.platform.toUpperCase().indexOf('MAC') > -1;
@@ -191,6 +192,13 @@ export async function initProjectsPageBootstrap({
     if (clearGlobalLibraryBtn) {
         clearGlobalLibraryBtn.addEventListener('click', () => {
             clearGlobalLibrary();
+        });
+    }
+
+    const clearGitlabTokenBtn = document.getElementById('clearGitlabTokenBtn');
+    if (clearGitlabTokenBtn) {
+        clearGitlabTokenBtn.addEventListener('click', () => {
+            clearGitlabToken();
         });
     }
 }

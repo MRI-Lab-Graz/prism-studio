@@ -2,6 +2,16 @@ import { setButtonLoading } from './helpers.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { escapeHtml } from '../../shared/dom.js';
 
+function updateGitlabTokenStatus(hasToken) {
+    const status = document.getElementById('gitlabTokenStatus');
+    if (!status) return;
+
+    status.className = `small mt-1 ${hasToken ? 'text-success' : 'text-muted'}`;
+    status.innerHTML = hasToken
+        ? '<i class="fas fa-check-circle me-1"></i>GitLab token is saved locally for this user.'
+        : 'No GitLab token saved yet.';
+}
+
 export async function loadGlobalSettings() {
     try {
         const response = await fetchWithApiFallback('/api/settings/global-library');
@@ -25,6 +35,7 @@ export async function loadGlobalSettings() {
                 window.PrismFileSystemMode.setConnectedToServer(Boolean(data.connected_to_server));
             }
 
+            updateGitlabTokenStatus(Boolean(data.has_gitlab_access_token));
             updateLibraryInfoPanel(data.global_template_library_path || data.default_library_path, null);
         }
     } catch (error) {
@@ -328,16 +339,22 @@ export function initProjectSettingsForm() {
         const libraryPath = document.getElementById('globalLibraryPath').value.trim();
         const recipesPath = document.getElementById('globalRecipesPath').value.trim();
         const connectedToServer = Boolean(document.getElementById('connectedToServerToggle')?.checked);
+        const gitlabTokenInput = document.getElementById('gitlabAccessToken');
+        const gitlabAccessToken = gitlabTokenInput?.value.trim() || '';
+        const requestBody = {
+            global_template_library_path: libraryPath,
+            global_recipes_path: recipesPath,
+            connected_to_server: connectedToServer,
+        };
+        if (gitlabAccessToken) {
+            requestBody.gitlab_access_token = gitlabAccessToken;
+        }
 
         try {
             const response = await fetchWithApiFallback('/api/settings/global-library', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    global_template_library_path: libraryPath,
-                    global_recipes_path: recipesPath,
-                    connected_to_server: connectedToServer,
-                })
+                body: JSON.stringify(requestBody)
             });
             const result = await response.json();
 
@@ -349,6 +366,10 @@ export function initProjectSettingsForm() {
                     </div>
                 `;
                 updateLibraryInfoPanel(result.global_template_library_path, null);
+                updateGitlabTokenStatus(Boolean(result.has_gitlab_access_token));
+                if (gitlabTokenInput) {
+                    gitlabTokenInput.value = '';
+                }
             } else {
                 statusDiv.innerHTML = `
                     <div class="alert alert-danger py-2">
@@ -439,5 +460,51 @@ export async function clearGlobalLibrary() {
         }
     } catch (error) {
         console.error('Error clearing library:', error);
+    }
+}
+
+export async function clearGitlabToken() {
+    if (!confirm('Clear the saved GitLab token?')) {
+        return;
+    }
+
+    const tokenInput = document.getElementById('gitlabAccessToken');
+    const statusDiv = document.getElementById('libraryStatusMessage');
+
+    try {
+        const response = await fetchWithApiFallback('/api/settings/global-library', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clear_gitlab_access_token: true })
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            if (tokenInput) {
+                tokenInput.value = '';
+            }
+            updateGitlabTokenStatus(false);
+            if (statusDiv) {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-info py-2">
+                        <i class="fas fa-info-circle me-2"></i>Saved GitLab token cleared.
+                    </div>
+                `;
+            }
+        } else if (statusDiv) {
+            statusDiv.innerHTML = `
+                <div class="alert alert-danger py-2">
+                    <i class="fas fa-exclamation-circle me-2"></i>${escapeHtml(result.error || 'Could not clear the GitLab token.')}
+                </div>
+            `;
+        }
+    } catch (error) {
+        if (statusDiv) {
+            statusDiv.innerHTML = `
+                <div class="alert alert-danger py-2">
+                    <i class="fas fa-exclamation-circle me-2"></i>${escapeHtml(error.message || 'Could not clear the GitLab token.')}
+                </div>
+            `;
+        }
     }
 }

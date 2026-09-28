@@ -94,6 +94,24 @@
                             <div id="libraryStatusMessage"></div>
                         </div>
                         <div class="col-12">
+                            <label for="gitlabAccessToken" class="form-label fw-bold">
+                                <i class="fab fa-gitlab me-1"></i>GitLab Access Token
+                            </label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="gitlabAccessToken"
+                                       placeholder="Paste Personal / Project / Group Access Token"
+                                       autocomplete="new-password">
+                                <button type="button" class="btn btn-outline-danger" id="clearGitlabTokenBtn">
+                                    <i class="fas fa-trash-alt me-1"></i>Clear saved token
+                                </button>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                Saved only in your per-user PRISM Studio settings file, not in the project or export.
+                                Leave this field empty when saving to keep the current token unchanged.
+                            </small>
+                            <div id="gitlabTokenStatus" class="small text-muted mt-1">No GitLab token saved yet.</div>
+                        </div>
+                        <div class="col-12">
                             <button type="submit" class="btn btn-secondary">
                                 <i class="fas fa-save me-2"></i>Save Settings
                             </button>
