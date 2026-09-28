@@ -171,6 +171,19 @@ def test_save_and_load_app_settings_roundtrip(tmp_path, monkeypatch):
     assert loaded.enable_study_application_import is True
 
 
+def test_load_app_settings_normalizes_blank_gitlab_token(tmp_path, monkeypatch):
+    from src import config as config_module
+
+    monkeypatch.setattr(config_module, "_get_user_app_settings_dir", lambda: tmp_path)
+
+    settings_path = tmp_path / "prism_studio_settings.json"
+    settings_path.write_text(json.dumps({"gitlabAccessToken": "   "}), encoding="utf-8")
+
+    loaded = load_app_settings(app_root=str(tmp_path))
+
+    assert loaded.gitlab_access_token is None
+
+
 def test_get_effective_library_paths_from_configured_root(tmp_path):
     official_root = tmp_path / "official"
     (official_root / "library").mkdir(parents=True)

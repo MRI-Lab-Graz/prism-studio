@@ -100,12 +100,13 @@
                             <div class="input-group">
                                 <input type="password" class="form-control" id="gitlabAccessToken"
                                        placeholder="Paste Personal / Project / Group Access Token"
-                                       autocomplete="new-password">
+                                       autocomplete="new-password"
+                                       aria-describedby="gitlabAccessTokenHelp gitlabTokenStatus">
                                 <button type="button" class="btn btn-outline-danger" id="clearGitlabTokenBtn">
                                     <i class="fas fa-trash-alt me-1"></i>Clear saved token
                                 </button>
                             </div>
-                            <small class="text-muted d-block mt-1">
+                            <small class="text-muted d-block mt-1" id="gitlabAccessTokenHelp">
                                 Saved only in your per-user PRISM Studio settings file, not in the project or export.
                                 Leave this field empty when saving to keep the current token unchanged.
                             </small>

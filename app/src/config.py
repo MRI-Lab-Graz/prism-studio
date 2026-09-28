@@ -376,6 +376,11 @@ def _get_user_app_settings_path() -> str:
     return str(_get_user_app_settings_dir() / APP_SETTINGS_FILENAME)
 
 
+def _normalize_optional_secret(value: object) -> Optional[str]:
+    normalized = str(value or "").strip()
+    return normalized or None
+
+
 @dataclass
 class AppSettings:
     """App-level settings for PRISM Studio (global defaults)"""
@@ -506,7 +511,9 @@ def load_app_settings(app_root: Optional[str] = None) -> AppSettings:
             ),
             show_dedicated_terminal=bool(data.get("showDedicatedTerminal", False)),
             connected_to_server=bool(data.get("connectedToServer", False)),
-            gitlab_access_token=data.get("gitlabAccessToken"),
+            gitlab_access_token=_normalize_optional_secret(
+                data.get("gitlabAccessToken")
+            ),
             export_defacing_confirmation_mode=normalize_export_defacing_confirmation_mode(
                 data.get("exportDefacingConfirmationMode", "risk")
             ),
