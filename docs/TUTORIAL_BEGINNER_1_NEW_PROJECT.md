@@ -56,10 +56,20 @@ properly now; today is the only day this is cheap.
 ### 1. Launch Studio
 
 Already have PRISM Studio open from [Chapter 0](TUTORIAL_BEGINNER_0_INSTALL.md)?
-Skip to step 2. Otherwise, from a source checkout:
+Skip to step 2. Otherwise, relaunch it the same way you did there: reopen
+the app from the folder you extracted it to (macOS: `PrismStudio.app`;
+Windows: `PrismStudio.exe`), or the **PRISM Studio** Desktop shortcut if you
+have one — see below.
 
-```bash
-source .venv/bin/activate && python prism-studio.py
+```{note}
+Only the source-checkout install (`install.sh` / `install.cmd`) creates a
+Desktop shortcut for you automatically. Downloaded the prebuilt ZIP instead?
+There's no separate shortcut — just reopen the app from wherever you
+extracted it, which is why [Chapter 0](TUTORIAL_BEGINNER_0_INSTALL.md)
+suggested a folder you'd remember, like Desktop or Documents.
+
+Advanced: running from a source checkout, no Desktop shortcut yet?
+`source .venv/bin/activate && python prism-studio.py`.
 ```
 
 Studio opens at `http://localhost:5001` on its landing page.
