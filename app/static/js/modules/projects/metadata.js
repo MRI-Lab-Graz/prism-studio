@@ -3872,7 +3872,7 @@ export function updateCompletenessUI(completeness) {
         const pct = baseTotal > 0 ? Math.round(baseFilled / baseTotal * 100) : 0;
         const reqDone = reqTotal > 0 ? reqFilled === reqTotal : true;
         const fairDone = optTotal > 0 ? optFilled === optTotal : true;
-        const reqTextClass = reqDone ? 'text-success' : 'text-danger';
+        const reqTextClass = reqDone ? 'text-success' : 'text-tier-core';
         const fairTextClass = fairDone ? 'text-success' : 'text-warning';
         let dotClass = 'empty';
         if (pct === 100) dotClass = 'full';
@@ -3928,7 +3928,7 @@ export function updateCompletenessUI(completeness) {
 
         const badgeEl = document.getElementById('sm' + key + 'Badge');
         if (badgeEl) {
-            const reqClass = reqDone ? 'bg-success' : 'bg-danger';
+            const reqClass = reqDone ? 'bg-success' : 'badge-tier-core';
             const fairClass = fairDone ? 'bg-success' : 'bg-warning text-dark';
             badgeEl.innerHTML = `
                 ${requiredBadgeElHtml}
@@ -3963,7 +3963,7 @@ export function updateCompletenessUI(completeness) {
             : '';
         badgeSlot.innerHTML = `
             ${reqBadgeHtml}
-            <span class="badge ${coreDone ? 'bg-success' : 'bg-danger'} bg-opacity-75">Core ${totals.coreFilled}/${totals.coreTotal}</span>
+            <span class="badge ${coreDone ? 'bg-success' : 'badge-tier-core'} bg-opacity-75">Core ${totals.coreFilled}/${totals.coreTotal}</span>
             <span class="badge ${fairDone ? 'bg-success' : 'bg-warning text-dark'} bg-opacity-75">FAIR ${totals.fairFilled}/${totals.fairTotal}</span>
         `;
     }

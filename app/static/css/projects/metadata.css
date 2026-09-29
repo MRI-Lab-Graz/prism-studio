@@ -139,6 +139,12 @@
    real regression a prior fix-round introduced. Do not change this to
    read var(--bs-bg-opacity) without re-declaring --bs-bg-opacity: 1 first
    AND verifying every ancestor's bg-opacity-* doesn't leak through. */
+/* Incomplete CORE tally text (matches .badge-tier-core); red is reserved for
+   creation-blocking REQUIRED fields. */
+.text-tier-core {
+    color: #0d6efd !important;
+}
+
 .badge-tier-core {
     background-color: #0d6efd !important;
     color: #fff !important;
