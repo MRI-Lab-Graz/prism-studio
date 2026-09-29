@@ -478,7 +478,8 @@ window.canonicalizeCategoricalLevels = function(colData, mapping) {
       continue;
     }
 
-    const canonicalKey = window.getResolvedCanonicalLevelKey(colData, mapping, sourceKey, sourceData);
+    // Only levels the user explicitly harmonized; never guess from aliases.
+    const canonicalKey = window.getManualLevelKeyMapping(colData, sourceKey);
     if (canonicalKey && mapping.levels[canonicalKey]) {
       const mappingLevel = mapping.levels[canonicalKey];
       const manualCanonicalKey = window.getManualLevelKeyMapping(colData, sourceKey);
@@ -600,30 +601,9 @@ window.applyNeurobagelEnrichment = function(colName) {
     console.log(`✅ Applied unit "${mapping.unit}" to ${colName}`);
   }
   
-  // For categorical, try to match existing level keys
-  if (mapping.levels && colData.levels) {
-    for (const [key, mappingLevel] of Object.entries(mapping.levels)) {
-      // Direct match
-      if (colData.levels[key]) {
-        colData.levels[key].label = mappingLevel.label;
-        colData.levels[key].uri = mappingLevel.uri;
-      } else {
-        // Case-insensitive match or label match
-        const existingKey = Object.keys(colData.levels).find(k => 
-          k.toLowerCase() === key.toLowerCase() || 
-          (colData.levels[k].label && colData.levels[k].label.toLowerCase() === mappingLevel.label.toLowerCase())
-        );
-        if (existingKey) {
-          colData.levels[existingKey].label = mappingLevel.label;
-          colData.levels[existingKey].uri = mappingLevel.uri;
-        }
-      }
-    }
+  // Levels are not filled in here: the user approves each level via its
+  // "NeuroBagel Harmonize To" selector in the editor.
 
-    // Rewrite dataset-specific level keys to canonical mapping keys.
-    window.canonicalizeCategoricalLevels(colData, mapping);
-  }
-  
   console.log(`✅ Applied ${concept} enrichment to ${colName}`);
   window.renderNeurobagelEditor(colName, colData);
   
@@ -774,15 +754,10 @@ window.ensureCategoricalLevelsFromObserved = function(colName, colData) {
     const sourceKey = String(v ?? '').trim();
     if (!sourceKey) return;
     if (!colData.levels[sourceKey]) {
-      // Enrich from vocab but preserve source key as-is.
-      const canonicalKey = mapping && mapping.levels
-        ? window.resolveCanonicalLevelKey(mapping, sourceKey, { label: sourceKey })
-        : null;
-      const mappingLevel = canonicalKey && mapping.levels[canonicalKey] ? mapping.levels[canonicalKey] : null;
       colData.levels[sourceKey] = {
-        label: (mappingLevel && mappingLevel.label) || sourceKey,
+        label: sourceKey,
         description: '',
-        uri: (mappingLevel && mappingLevel.uri) || null,
+        uri: null,
       };
     }
   });
@@ -953,6 +928,16 @@ window.renderNeurobagelWidget = async function() {
   
   // Merge TSV unique values with NeuroBagel data for categorical columns
   const enrichedData = data.properties;
+
+  // Nothing is mapped until the user approves it (Map button) or it was saved
+  // earlier in participants.json (restored below). Drop name-based pre-mappings.
+  for (const colData of Object.values(enrichedData)) {
+    if (!colData || typeof colData !== 'object') continue;
+    delete colData.standardized_variable;
+    delete colData.term_url;
+    delete colData.label;
+  }
+
   if (window.participantsTsvData) {
     console.log('🔄 Merging TSV unique values with NeuroBagel data');
     for (const [colName, colData] of Object.entries(enrichedData)) {
@@ -972,19 +957,14 @@ window.renderNeurobagelWidget = async function() {
           if (!sourceKey) return;
           const knownLevel = knownLevels[sourceKey];
           colData.levels[sourceKey] = {
-            label: knownLevel?.label || sourceKey,
+            label: sourceKey,
             description: knownLevel?.description || '',
-            uri: knownLevel?.uri || null
+            uri: null
           };
         });
         
         console.log(`✅ Merged ${colName} with ${Object.keys(colData.levels).length} categorical levels (${uniqueValues.length} from TSV)`);
 
-        // Normalize to canonical keys immediately when we can resolve a mapping.
-        const mapping = window.getNeurobagelMappingForColumn(colData);
-        if (mapping && mapping.levels) {
-          window.canonicalizeCategoricalLevels(colData, mapping);
-        }
       }
     }
     
@@ -1039,7 +1019,7 @@ window.renderNeurobagelWidget = async function() {
       
       // Update with existing metadata
       if (colMeta.Description) enrichedData[colName].description = colMeta.Description;
-      if (colMeta.Units) enrichedData[colName].unit = colMeta.Units;
+      if (colMeta.Unit || colMeta.Units) enrichedData[colName].unit = colMeta.Unit || colMeta.Units;
       
       // NEUROBAGEL ENRICHMENT: Load existing annotations — only for known NB concepts.
       // Synthetic "nb:<colname>" entries written by earlier saves must not be restored.

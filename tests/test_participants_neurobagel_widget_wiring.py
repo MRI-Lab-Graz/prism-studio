@@ -162,11 +162,17 @@ class TestParticipantsNeurobagelWidgetWiring(unittest.TestCase):
         )
         self.assertIn("const sourceKey = String(value ?? '').trim();", widget_content)
         self.assertIn("const knownLevel = knownLevels[sourceKey];", widget_content)
-        self.assertIn("label: knownLevel?.label || sourceKey", widget_content)
-        self.assertIn(
-            "window.canonicalizeCategoricalLevels(colData, mapping);",
-            widget_content,
-        )
+        # Vocabulary labels/URIs are never applied to observed codes on load;
+        # the user approves each level explicitly.
+        self.assertIn("label: sourceKey,", widget_content)
+        self.assertNotIn("label: knownLevel?.label", widget_content)
+
+    def test_widget_does_not_premap_columns_on_load(self):
+        widget_content = WIDGET_FILE.read_text(encoding="utf-8")
+
+        self.assertIn("delete colData.standardized_variable;", widget_content)
+        self.assertIn("delete colData.term_url;", widget_content)
+        self.assertIn("colMeta.Unit || colMeta.Units", widget_content)
 
 
 if __name__ == "__main__":
