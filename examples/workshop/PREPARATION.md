@@ -14,10 +14,10 @@ Pre-flight for a live session. Participant-facing material is
 
 ## Checks before class
 
-- [ ] `Prism.exe` launches on the **workshop** machines, in a normal user
+- [ ] PRISM Studio launches (Desktop shortcut from `install.cmd`, or `PrismStudio.exe` from the ZIP) on the **workshop** machines, in a normal user
       account — not just on yours. The unsigned-binary warnings differ per
       machine policy, and that is the failure you care about.
-- [ ] Source launch works (`source .venv/bin/activate && ./prism-studio.py`)
+- [ ] Source launch works (`source .venv/bin/activate && python prism-studio.py`)
 - [ ] App opens at `http://localhost:5001`
 - [ ] `--public` reaches a second machine, if you plan to demo that way
 - [ ] `examples/workshop/` staged on a USB stick for people bringing laptops

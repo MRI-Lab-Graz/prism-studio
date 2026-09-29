@@ -6,8 +6,8 @@ reusable API, so both the CLI and the Web/GUI can call the same code.
 It reads recipes from the repository's `recipe/survey/*.json`
 folder and writes outputs into the target dataset under:
 
-- `derivatives/survey/<recipe_id>/sub-*/ses-*/survey/*_desc-scores_beh.tsv` (format="prism")
-- or `derivatives/survey/survey_scores.tsv` (format="flat")
+- `derivatives/survey/<layout>_<lang>/<recipe_id>/sub-*/ses-*/survey/*_desc-scores_survey.tsv` (format="prism")
+- or `derivatives/survey/prism_survey_dataset_survey_scores.tsv` (format="flat")
 
 Additionally, it creates `derivatives/survey/dataset_description.json` in the
 output dataset.

@@ -47,7 +47,7 @@ workflow before Review/Save unlock:
   *missing* values, adds new participants, and adds new columns. Any incoming
   non-empty value that differs from an existing one is reported as a **conflict**,
   and Apply Merge is blocked until every conflict is resolved (fix the source and
-  re-preview) — Merge never silently overwrites existing data. Use **Download
+  re-preview) — Merge never silently overwrites existing data. Use **Download Full
   Conflict Report** to see exactly what disagreed.
 
 ## Step 3 — Create Participant Files

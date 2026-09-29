@@ -71,7 +71,7 @@ source files.
 ## 2. Reopen `wellbeing_study`
 
 If Studio is still the same session you created the project in, it's
-already loaded — skip to step 3. Otherwise, go to **Project Manager** and
+already loaded — skip to step 3. Otherwise, go to **Open Project Manager** (in the top navigation) and
 either paste the project's path (e.g. `~/prism_projects/wellbeing_study`)
 into **Select project folder or project.json** and click **Load Project**,
 or click it under **Recent Projects**, which lists every project you've
@@ -222,7 +222,7 @@ in *missing* values, adds new participants, and adds new columns — any
 non-empty value that differs from what's already in `participants.tsv`
 is reported as a conflict, and **Apply Merge stays blocked** until it's
 resolved. This is deliberate: Merge assumes your project's existing data is
-correct unless you tell PRISM otherwise. Use **Download Conflict Report**
+correct unless you tell PRISM otherwise. Use **Download Full Conflict Report**
 to see exactly what disagreed. To actually correct a value (as opposed to
 adding new information), use **Modify** or a full **Replace** instead —
 Merge is the safe option for enrichment, not the tool for corrections.

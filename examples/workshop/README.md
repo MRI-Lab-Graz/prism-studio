@@ -66,15 +66,16 @@ personal laptops are not.
 
 ```bash
 # macOS / Linux
-source .venv/bin/activate && ./prism-studio.py
+source .venv/bin/activate && python prism-studio.py
 
 # Windows
-install.cmd        # first time only, then launch Prism.exe
+install.cmd        # first time only, then use the "PRISM Studio" Desktop shortcut
+                   # (ZIP download: double-click PrismStudio.exe)
 
 # both: http://localhost:5001
 ```
 
-No projector? Run `python app/prism-studio.py --public` and have participants
+No projector? Run `python prism-studio.py --public` and have participants
 open `http://<your-ip>:5001` in a second tab to watch your instance. It is one
 shared session — tell them to look, not click, because their clicks edit your
 project.

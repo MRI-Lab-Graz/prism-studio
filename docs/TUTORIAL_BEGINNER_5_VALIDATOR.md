@@ -186,8 +186,8 @@ session.
 **Narrowing to PRISM Only or BIDS Only and thinking that's the full
 picture.** Full Validation is the default and covers both; only narrow
 scope deliberately, not by accident while exploring Advanced Options.
-Something like a survey conversion issue only shows up as a valid file
-under BIDS-Only mode.
+PRISM-specific problems (e.g. a missing survey sidecar) are invisible in
+BIDS-Only mode.
 ```
 
 ```{note}
@@ -243,9 +243,9 @@ aims for, but built at your own pace with a full explanation at each step.
 
 ## What's next
 
-- Back to [Getting Started overview](TUTORIAL_BEGINNER.md) — the
-  Intermediate tutorial (DataLad, file/folder manipulation) is next in this
-  series
+- [Chapter 6 — Enrich an existing BIDS dataset](TUTORIAL_BEGINNER_6_EXISTING_BIDS.md)
+  — the same workflow on a published dataset
+- Back to [Getting Started overview](TUTORIAL_BEGINNER.md)
 - [Error Codes](ERROR_CODES.md) — the full code reference
 - [CLI Reference](CLI_REFERENCE.md) — running any of these five chapters
   from the terminal instead

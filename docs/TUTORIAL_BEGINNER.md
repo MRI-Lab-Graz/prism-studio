@@ -11,7 +11,7 @@ This sits alongside another on-ramp:
 instructor-led session. Use this tutorial if you want the most explanation and
 plan to work through it alone.
 
-**Time:** ~130 minutes for all six chapters (most of the added time is
+**Time:** ~140 minutes for all six chapters (most of the added time is
 hands-on practice, plus Chapter 6's dataset download). **Outcome:** one new
 project
 (`wellbeing_study`) with sociodemographic data, imported survey responses, a

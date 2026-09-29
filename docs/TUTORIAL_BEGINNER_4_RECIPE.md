@@ -130,14 +130,15 @@ expected.
 
 ## 7. Run the recipe
 
-Recipe Builder doesn't run recipes itself. Go to **Export / Analysis
-Output**, pick modality `survey`, the session(s) to include (`baseline`),
+Recipe Builder doesn't run recipes itself. Go to **Analysis
+Outputs**, pick modality `survey`, the session(s) to include (`baseline`),
 and filter to your new recipe if more than one exists. Choose an output
 format (`sav`/`csv`/`xlsx`) and click **Create Output**. Results land at:
 
 ```text
-derivatives/survey/<recipe_id>/sub-*/ses-*/survey/*_desc-scores_beh.tsv   (per-subject)
-derivatives/survey/survey_scores.tsv                                     (flat/wide, if chosen)
+derivatives/survey/long_en/<recipe_id>/sub-*/ses-*/survey/*_desc-scores_survey.tsv   (per-subject / "prism" layout)
+derivatives/survey/prism_survey_dataset_survey_scores.tsv                              (flat layout)
+derivatives/survey/long_en/prism_survey_dataset_<recipe_id>.csv                        (csv/xlsx/sav exports)
 ```
 
 Equivalent from the terminal:

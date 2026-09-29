@@ -60,9 +60,10 @@ one recipe, choose merge/layout and output format (`sav`/`csv`/`xlsx`), and clic
 **Create Output**. Computed results land under:
 
 ```text
-derivatives/survey/<recipe_id>/sub-*/ses-*/survey/*_desc-scores_beh.tsv   (per-subject / "prism" layout)
-derivatives/survey/survey_scores.tsv                                     (flat/wide layout)
-derivatives/survey/dataset_description.json
+derivatives/survey/long_en/<recipe_id>/sub-*/ses-*/survey/*_desc-scores_survey.tsv   (per-subject / "prism" layout)
+derivatives/survey/prism_survey_dataset_survey_scores.tsv                              (flat layout)
+derivatives/survey/long_en/prism_survey_dataset_<recipe_id>.csv                        (csv/xlsx/sav exports)
+derivatives/survey/long_en/dataset_description.json
 ```
 
 ## Common failures

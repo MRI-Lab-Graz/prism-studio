@@ -50,7 +50,7 @@ pace, so it does the presenting and you do the helping.
   laptops usually aren't.
 
 For a demonstration without a projector, run
-`python app/prism-studio.py --public` and have participants open
+`python prism-studio.py --public` and have participants open
 `http://<your-ip>:5001` in a second browser tab. It is a single shared
 session, so tell them explicitly to watch rather than click — their clicks
 edit your project.

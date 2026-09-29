@@ -96,7 +96,7 @@ applies here since we're starting from nothing.
 |---|---|---|
 | Project Name | `wellbeing_study` | Letters, numbers, `_`, `-` only — no spaces. The field validates live and tells you exactly what's wrong (e.g. names a space or an umlaut) rather than just turning red. |
 | Project Location | a parent folder, e.g. `~/prism_projects` | The new project directory is created *inside* this folder, named after Project Name — so the actual target is `<Location>/wellbeing_study/`. The parent folder itself can already contain other things (other projects, unrelated files); what has to be empty or not-yet-existing is that specific `<Location>/wellbeing_study/` subfolder. |
-| Use DataLad version control | leave unchecked for now | Optional. You can enable DataLad later; the Intermediate tutorial explains when it is useful. |
+| Use DataLad version control | leave unchecked for now | Optional. You can enable DataLad later; [DATALAD](DATALAD.md) explains when it is useful. |
 
 ```{warning}
 PRISM creates `<Location>/wellbeing_study/`. That exact folder must be new or
@@ -269,8 +269,7 @@ reconstruct from memory.
   (Ethics Approvals, Keywords, Funding) never blocks creation, only the red
   REQUIRED badge (Dataset Name, Authors) does.
 - **Expecting a DataLad checkbox mistake to be permanent** — it isn't; this
-  choice can be revisited later and isn't covered in depth until the
-  Intermediate tutorial.
+  choice can be revisited later and is covered in [DATALAD](DATALAD.md).
 
 ## What's next
 
