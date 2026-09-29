@@ -33,6 +33,12 @@ from src.participant_columns import (
     _load_survey_template_item_ids,
     _normalize_column_name,
 )
+from src.participants_backend import (
+    find_identical_value_rows,
+    format_identical_rows_warning,
+)
+
+
 from .conversion_participants_io import (
     _detect_mixed_time_style_columns,
     _diagnose_preview_error,
@@ -73,6 +79,12 @@ from .conversion_participants_convert import (
 )
 from .conversion_utils import resolve_effective_library_path
 from .projects_helpers import _resolve_project_root_path
+
+def _identical_rows_warnings(groups: list[list[str]]) -> list[str]:
+    """Preview warning list for participants that duplicate another row's values."""
+    warning = format_identical_rows_warning(groups)
+    return [warning] if warning else []
+
 
 conversion_participants_bp = Blueprint("conversion_participants", __name__)
 
@@ -470,6 +482,9 @@ def api_participants_preview():
                     "format_warnings": (
                         [mixed_time_warning] if mixed_time_warning else []
                     ),
+                    "data_warnings": _identical_rows_warnings(
+                        find_identical_value_rows(output_df, preview_id_column)
+                    ),
                     "problem_columns": mixed_time_style_columns,
                 }
             )
@@ -615,6 +630,9 @@ def api_participants_merge():
                     log_callback=log_msg,
                 ),
                 "format_warnings": [],
+                "data_warnings": _identical_rows_warnings(
+                    preview_payload.get("identical_value_rows") or []
+                ),
                 "problem_columns": [],
                 "log": logs,
             }

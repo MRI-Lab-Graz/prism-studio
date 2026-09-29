@@ -2759,14 +2759,19 @@ export function initParticipants() {
                             : []
                     }))
                 : [];
-            if (formatWarnings.length > 0) {
-                const escapeHtml = (value) => String(value)
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#39;');
-    
+            const dataWarnings = Array.isArray(data.data_warnings)
+                ? data.data_warnings.filter(Boolean)
+                : [];
+            const escapeHtml = (value) => String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+            const dataWarningsHtml = dataWarnings
+                .map(message => `<div class="mt-2"><i class="fas fa-triangle-exclamation me-2"></i>${escapeHtml(message)}</div>`)
+                .join('');
+            if (formatWarnings.length > 0) {    
                 const columnListHtml = problemColumns.length > 0
                     ? `
                         <div class="mt-2"><strong>Affected columns:</strong></div>
@@ -2789,6 +2794,14 @@ export function initParticipants() {
                         Please fix the listed columns manually in the source file before import.
                         Use one consistent format per column (recommended: all HH:MM or all numeric minutes).
                     </div>
+                    ${dataWarningsHtml}
+                `;
+                infoDiv.classList.remove('d-none');
+            } else if (dataWarnings.length > 0) {
+                infoDiv.innerHTML = `
+                    <i class="fas fa-circle-info me-2"></i>
+                    <strong>Data check:</strong>
+                    ${dataWarningsHtml}
                 `;
                 infoDiv.classList.remove('d-none');
             } else {

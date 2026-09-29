@@ -15,6 +15,8 @@ from src.participants_backend import (
     canonicalize_participants_schema_keys,
     convert_dataset_participants,
     export_participants_merge_conflicts_csv,
+    find_identical_value_rows,
+    format_identical_rows_warning,
     merge_neurobagel_schema_for_columns,
     merge_survey_selected_participants_schema,
     preview_dataset_participants,
@@ -318,6 +320,10 @@ def cmd_participants_preview(args) -> None:
         "participant_count": len(df),
         "preview_rows": preview_df.to_dict(orient="records"),
     }
+    identical_warning = format_identical_rows_warning(
+        find_identical_value_rows(df[output_columns], id_column)
+    )
+    payload["data_warnings"] = [identical_warning] if identical_warning else []
     if bool(getattr(args, "json", False)):
         _emit_json(payload)
     else:
@@ -326,6 +332,8 @@ def cmd_participants_preview(args) -> None:
         print(f"ID col:  {id_column}")
         print(f"Rows:    {len(df)}")
         print(f"Columns: {', '.join(output_columns)}")
+        if identical_warning:
+            print(f"Warning: {identical_warning}")
 
 
 def cmd_participants_convert(args) -> None:

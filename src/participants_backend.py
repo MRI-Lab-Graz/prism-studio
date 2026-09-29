@@ -730,6 +730,43 @@ def _is_missing_participant_value(value: Any) -> bool:
     return str(value).strip().lower() in _MISSING_TOKENS
 
 
+def find_identical_value_rows(
+    df: pd.DataFrame, id_column: str = "participant_id", min_columns: int = 3
+) -> list[list[str]]:
+    """Groups of participant ids whose rows match in every column except the id.
+
+    Only rows with at least ``min_columns`` non-empty values are compared, so two
+    participants who merely share a few coded answers (e.g. sex and handedness)
+    are not flagged. A group is a strong hint for a copy-pasted row.
+    """
+    if id_column not in df.columns:
+        return []
+    value_columns = [str(col) for col in df.columns if str(col) != id_column]
+    groups: dict[tuple[str, ...], list[str]] = {}
+    for _, row in df.iterrows():
+        values = tuple(
+            "" if _is_missing_participant_value(row[col]) else str(row[col]).strip()
+            for col in value_columns
+        )
+        if sum(1 for value in values if value) < min_columns:
+            continue
+        groups.setdefault(values, []).append(str(row[id_column]).strip())
+    return [ids for ids in groups.values() if len(ids) > 1]
+
+
+def format_identical_rows_warning(groups: list[list[str]], max_examples: int = 3) -> str:
+    """Human-readable warning for ``find_identical_value_rows`` results ('' if none)."""
+    if not groups:
+        return ""
+    examples = "; ".join(" = ".join(ids) for ids in groups[:max_examples])
+    more = f" (+{len(groups) - max_examples} more)" if len(groups) > max_examples else ""
+    return (
+        f"{len(groups)} group(s) of participants have identical values in every "
+        f"column except the ID: {examples}{more}. This can happen when a row was "
+        "copied and only the ID changed - please check the source data."
+    )
+
+
 def _participant_value_text(value: Any, *, default: str = "n/a") -> str:
     if _is_missing_participant_value(value):
         return default
@@ -2080,6 +2117,7 @@ def _plan_participants_merge(
         "conflicts": conflicts,
         "preview_rows": preview_df.to_dict(orient="records"),
         "preview_diff": preview_diff,
+        "identical_value_rows": find_identical_value_rows(merged_df),
         "column_values": _collect_preview_column_values(merged_df),
         "messages": messages,
         "schema_fields_added": schema_fields_added,
