@@ -184,6 +184,14 @@ def build_prism_tools_parsers(
         "--id-column", help="Explicit participant ID column (default: auto-detect)"
     )
     parser_participants_preview.add_argument(
+        "--session-column",
+        help="Longitudinal file: column holding the session label (use with --session)",
+    )
+    parser_participants_preview.add_argument(
+        "--session",
+        help="Longitudinal file: keep only the rows of this one session (exact label)",
+    )
+    parser_participants_preview.add_argument(
         "--separator",
         default="auto",
         choices=["auto", "comma", "semicolon", "tab", "pipe"],
@@ -230,6 +238,14 @@ def build_prism_tools_parsers(
     )
     parser_participants_convert.add_argument(
         "--id-column", help="Explicit participant ID column for auto-mapping"
+    )
+    parser_participants_convert.add_argument(
+        "--session-column",
+        help="Longitudinal file: column holding the session label (use with --session)",
+    )
+    parser_participants_convert.add_argument(
+        "--session",
+        help="Longitudinal file: keep only the rows of this one session (exact label)",
     )
     parser_participants_convert.add_argument(
         "--separator",
