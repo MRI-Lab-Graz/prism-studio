@@ -103,6 +103,20 @@ print(f"{current[0]}.{current[1]}.{current[2]}")
 PY
     local status=$?
 
+    if [ $status -ne 0 ] && [ -z "${PRISM_PYTHON:-}" ] && command -v uv >/dev/null 2>&1; then
+        echo_info "System Python ($candidate) is not 3.10-3.12; asking uv to provide one..."
+        local uv_python
+        uv_python="$(uv python find --system '>=3.10,<3.13' 2>/dev/null)"
+        if [ -z "$uv_python" ]; then
+            uv python install 3.12 && uv_python="$(uv python find --system '>=3.10,<3.13' 2>/dev/null)"
+        fi
+        if [ -n "$uv_python" ] && [ -x "$uv_python" ]; then
+            echo_success "Using uv-managed Python: $uv_python"
+            VENV_CREATOR_PYTHON="$uv_python"
+            return 0
+        fi
+    fi
+
     if [ $status -ne 0 ]; then
         echo_error "Unsupported Python interpreter: $candidate"
         echo_error "PRISM source setup requires Python 3.10-3.12."
