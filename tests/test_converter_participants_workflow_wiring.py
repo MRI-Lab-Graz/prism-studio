@@ -377,6 +377,16 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         self.assertIn("classList.toggle('alert-warning', hasWarnings)", block)
         self.assertIn("classList.toggle('alert-info', !hasWarnings)", block)
 
+    def test_participants_file_input_has_no_accept_filter(self):
+        """Safari/macOS greys out every file on first open when accept= lists
+        extensions macOS does not know (.rdata, .lsa, ...). The type is
+        validated after selection (JS hint + server check) instead."""
+        template = PARTICIPANTS_TEMPLATE.read_text(encoding="utf-8")
+        start = template.index('id="participantsDataFile"')
+        tag = template[template.rindex("<input", 0, start) : template.index(">", start)]
+
+        self.assertNotIn("accept=", tag)
+
 
 if __name__ == "__main__":
     unittest.main()
