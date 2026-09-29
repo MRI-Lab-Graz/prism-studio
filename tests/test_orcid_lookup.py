@@ -9,6 +9,7 @@ from src.orcid_lookup import (
     _candidate_rank,
     _extract_orcid_path,
     _extract_public_email,
+    _extract_public_website,
     _extract_primary_affiliation_from_payload,
     _fetch_json,
     _fetch_person_name,
@@ -136,7 +137,7 @@ class TestOrcidLookup(unittest.TestCase):
             )
             self.assertEqual(
                 _fetch_person_profile("0000-0000", timeout_seconds=1.0),
-                ("Ada", "Lovelace", False, ""),
+                ("Ada", "Lovelace", False, {"email": "", "website": ""}),
             )
 
         with patch("src.orcid_lookup._fetch_json", return_value={"name": []}):
@@ -417,15 +418,29 @@ class TestOrcidLookup(unittest.TestCase):
     def test_build_candidate_includes_email(self):
         with patch(
             "src.orcid_lookup._fetch_person_profile",
-            return_value=("Karl", "Koschutnig", True, "k@uni.at"),
+            return_value=("Karl", "Koschutnig", True, {"email": "k@uni.at", "website": "https://lab.at/"}),
         ), patch("src.orcid_lookup._fetch_primary_affiliation", return_value=""):
             candidate = _build_candidate("0000-0001-6234-0498", timeout_seconds=1.0)
         self.assertEqual(candidate["email"], "k@uni.at")
+        self.assertEqual(candidate["website"], "https://lab.at/")
+
+    def test_extract_public_website_first_public_only(self):
+        person = {
+            "researcher-urls": {
+                "researcher-url": [
+                    {"url": {"value": "https://hidden.at"}, "visibility": "limited"},
+                    {"url": {"value": "https://lab.at/"}, "visibility": "public"},
+                ]
+            }
+        }
+        self.assertEqual(_extract_public_website(person), "https://lab.at/")
+        self.assertEqual(_extract_public_website({"researcher-urls": None}), "")
+        self.assertEqual(_extract_public_website({}), "")
 
     def test_build_candidate_marks_limited_public_data(self):
         with patch(
             "src.orcid_lookup._fetch_person_profile",
-            return_value=("Andreas", "Fink", False, ""),
+            return_value=("Andreas", "Fink", False, {"email": "", "website": ""}),
         ), patch(
             "src.orcid_lookup._fetch_primary_affiliation",
             return_value="",

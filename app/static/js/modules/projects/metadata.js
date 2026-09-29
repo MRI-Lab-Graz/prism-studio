@@ -9,6 +9,7 @@ import { createStudyMetadataLoadController } from './metadata-load.js';
 import { createMetadataMethodsController } from './metadata-methods.js';
 import { createMetadataOrcidController } from './metadata-orcid.js';
 import { createStudyMetadataSaveController } from './metadata-save.js';
+import { CREDIT_ROLES, normalizeRoleLabel, parseRolesInput } from './roles.js';
 import { createMetadataStatusController } from './metadata-status.js';
 import { createStudyMetadataSubmitController } from './metadata-submit.js';
 import { isSameProjectPath } from '../../shared/project-state.js';
@@ -521,54 +522,12 @@ function _escapeHtmlAttr(value) {
         .replace(/>/g, '&gt;');
 }
 
-const CREDIT_ROLES = [
-    // Standard CRediT Taxonomy v1 (https://credit.niso.org/)
-    'Conceptualization',
-    'Data curation',
-    'Formal analysis',
-    'Funding acquisition',
-    'Investigation',
-    'Methodology',
-    'Project administration',
-    'Resources',
-    'Software',
-    'Supervision',
-    'Validation',
-    'Visualization',
-    'Writing - original draft',
-    'Writing - review & editing',
-];
-
-function _normalizeRoleLabel(value) {
-    const text = String(value || '').trim();
-    if (!text) return '';
-    const matched = CREDIT_ROLES.find(role => role.toLowerCase() === text.toLowerCase());
-    return matched || text;
-}
-
-function _parseRolesInput(value) {
-    const parts = String(value || '')
-        .split(',')
-        .map(role => _normalizeRoleLabel(role))
-        .filter(Boolean);
-
-    const unique = [];
-    const seen = new Set();
-    parts.forEach(role => {
-        const key = role.toLowerCase();
-        if (seen.has(key)) return;
-        seen.add(key);
-        unique.push(role);
-    });
-    return unique;
-}
-
 function _syncRoleBadges(row) {
     const rolesInput = row.querySelector('.author-roles');
     const rolesBadges = row.querySelector('.author-roles-badges');
     if (!rolesInput || !rolesBadges) return;
 
-    const roles = _parseRolesInput(rolesInput.value);
+    const roles = parseRolesInput(rolesInput.value);
     rolesInput.value = roles.join(', ');
 
     rolesBadges.innerHTML = '';
@@ -579,7 +538,7 @@ function _syncRoleBadges(row) {
         badge.title = `Remove role: ${role}`;
         badge.innerHTML = `${_escapeHtmlAttr(role)} <span aria-hidden="true">&times;</span>`;
         badge.addEventListener('click', () => {
-            const current = _parseRolesInput(rolesInput.value).filter(item => item.toLowerCase() !== role.toLowerCase());
+            const current = parseRolesInput(rolesInput.value).filter(item => item.toLowerCase() !== role.toLowerCase());
             rolesInput.value = current.join(', ');
             _syncRoleBadges(row);
             updateCreateProjectButton();
@@ -590,14 +549,14 @@ function _syncRoleBadges(row) {
 }
 
 function _addRoleToRow(row, roleValue) {
-    const role = _normalizeRoleLabel(roleValue);
+    const role = normalizeRoleLabel(roleValue);
     if (!role) return;
 
     const rolesInput = row.querySelector('.author-roles');
     const rolePicker = row.querySelector('.author-role-picker');
     if (!rolesInput) return;
 
-    const roles = _parseRolesInput(rolesInput.value);
+    const roles = parseRolesInput(rolesInput.value);
     if (!roles.some(item => item.toLowerCase() === role.toLowerCase())) {
         roles.push(role);
         rolesInput.value = roles.join(', ');
@@ -682,6 +641,7 @@ function _applyOrcidCandidateToAuthorRow(row, candidate) {
     const orcidInput = row.querySelector('.author-orcid');
     const affiliationInput = row.querySelector('.author-affiliation');
     const emailInput = row.querySelector('.author-email');
+    const websiteInput = row.querySelector('.author-website');
 
     if (firstInput && !String(firstInput.value || '').trim() && candidate.given_names) {
         firstInput.value = String(candidate.given_names || '').trim();
@@ -697,6 +657,9 @@ function _applyOrcidCandidateToAuthorRow(row, candidate) {
     }
     if (emailInput && !String(emailInput.value || '').trim() && candidate.email) {
         emailInput.value = String(candidate.email || '').trim();
+    }
+    if (websiteInput && !String(websiteInput.value || '').trim() && candidate.website) {
+        websiteInput.value = String(candidate.website || '').trim();
     }
 
     _validateAuthorOptionalFields(row);
@@ -1059,7 +1022,7 @@ function _parseAuthor(author) {
             corresponding: Boolean(author.corresponding),
             roles: Array.isArray(author.roles)
                 ? author.roles.map(role => _cleanMetadataText(role)).filter(Boolean)
-                : String(author.roles || '').split(',').map(role => _cleanMetadataText(role)).filter(Boolean),
+                : parseRolesInput(author.roles),
         };
     }
     const authorText = _cleanMetadataText(author);
@@ -1312,7 +1275,7 @@ export function getCitationAuthorsList() {
         const affiliation = _cleanMetadataText(row.querySelector('.author-affiliation')?.value || '');
         const email = _cleanMetadataText(row.querySelector('.author-email')?.value || '');
         const corresponding = row.querySelector('.author-corresponding')?.checked || false;
-        const roles = _parseRolesInput(row.querySelector('.author-roles')?.value || '');
+        const roles = parseRolesInput(row.querySelector('.author-roles')?.value || '');
 
         if (website && _isValidWebsiteFormat(website)) author.website = website;
         if (orcid && _isValidOrcidFormat(orcid)) author.orcid = _normalizeOrcid(orcid);

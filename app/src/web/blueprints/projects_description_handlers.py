@@ -212,7 +212,7 @@ def _normalize_roles(roles_value):
     if isinstance(roles_value, list):
         raw_roles = roles_value
     elif isinstance(roles_value, str):
-        raw_roles = [item.strip() for item in roles_value.split(",")]
+        raw_roles = [item.strip() for item in re.split(r"[,;\n]", roles_value)]
     else:
         raw_roles = []
 

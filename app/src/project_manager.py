@@ -7875,7 +7875,9 @@ Subfolders:
                 ]
             elif isinstance(roles_value, str):
                 normalized_roles = [
-                    role.strip() for role in roles_value.split(",") if role.strip()
+                    role.strip()
+                    for role in re.split(r"[,;\n]", roles_value)
+                    if role.strip()
                 ]
             if normalized_roles:
                 author_entry["roles"] = normalized_roles
@@ -8158,7 +8160,9 @@ Subfolders:
                         )
                     elif isinstance(source, str):
                         role_values.extend(
-                            item.strip() for item in source.split(",") if item.strip()
+                            item.strip()
+                            for item in re.split(r"[,;\n]", source)
+                            if item.strip()
                         )
 
                 deduped_roles: List[str] = []

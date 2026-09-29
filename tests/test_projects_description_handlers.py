@@ -1657,6 +1657,10 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
             self.normalize_roles("Methodology, software, Methodology"),
             ["Methodology", "software"],
         )
+        self.assertEqual(
+            self.normalize_roles("Investigation; chef,\nMethodology"),
+            ["Investigation", "chef", "Methodology"],
+        )
 
         enriched = self.enrich_authors_with_roles(
             self.project_path,
