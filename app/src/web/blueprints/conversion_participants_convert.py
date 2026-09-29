@@ -75,13 +75,16 @@ def _write_participants_outputs(
         output_file=str(participants_tsv),
         separator=converter_separator,
         sheet=sheet_arg,
+        reject_conflicting_repeats=True,
     )
 
     for msg in messages:
         log_msg("INFO", msg)
 
     if not success or df is None:
-        raise ValueError("Conversion failed")
+        raise ValueError(
+            next((m for m in messages if str(m).startswith("✗")), "Conversion failed")
+        )
 
     df.to_csv(participants_tsv, sep="\t", index=False)
     log_msg("INFO", f"✓ Created {participants_tsv.name}")
@@ -169,8 +172,8 @@ def _run_participants_convert_job(job_id: str, config: dict[str, Any]) -> None:
                         existing_files=existing_files,
                         log_msg=log_msg,
                     )
-                except ValueError:
-                    _participants_job_store.failure(job_id, "Conversion failed")
+                except ValueError as e:
+                    _participants_job_store.failure(job_id, str(e) or "Conversion failed")
                     return
 
                 _participants_job_store.success(job_id, result)

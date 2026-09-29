@@ -320,6 +320,7 @@ class ParticipantsConverter:
         output_file: Optional[str | Path] = None,
         separator: str = "auto",
         sheet: str | int = 0,
+        reject_conflicting_repeats: bool = False,
     ) -> Tuple[bool, pd.DataFrame | None, List[str]]:
         """
         Convert participant data from raw format to standardized format.
@@ -330,6 +331,10 @@ class ParticipantsConverter:
             output_file: Optional path to write converted data. If None, uses participants.tsv
             separator: CSV/TSV separator override ("auto" for auto-detect)
             sheet: Excel sheet name or 0-based index (Excel files only)
+            reject_conflicting_repeats: Fail (and write nothing) when a participant
+                appears in several rows with different values, instead of keeping
+                the first non-empty value with a warning. Merge leaves this off:
+                it resolves such repeats itself (session resolution).
 
         Returns:
             (success: bool, dataframe: pd.DataFrame | None, messages: List[str])
@@ -522,6 +527,30 @@ class ParticipantsConverter:
             messages.append(
                 f"✓ Collapsed repeated rows to one row per participant_id ({len(output_df)} participants)"
             )
+
+        if conflicting_columns and reject_conflicting_repeats:
+            conflict_display = ", ".join(conflicting_columns)
+            session_hint = ""
+            session_columns = [
+                str(col) for col in df.columns
+                if re.sub(r"[^a-z0-9]+", "", str(col).lower())
+                in {"ses", "session", "sessionid", "visit", "timepoint"}
+            ]
+            if session_columns:
+                session_hint = (
+                    f" The file has a session column ({', '.join(session_columns)}): "
+                    "values that change between sessions do not belong in "
+                    "participants.tsv. Remove those columns or keep only one "
+                    "session's rows."
+                )
+            error = (
+                "✗ The same participant_id appears in several rows with different "
+                f"values in: {conflict_display}. participants.tsv needs exactly one "
+                f"row per participant.{session_hint}"
+            )
+            self._log("ERROR", error)
+            messages.append(error)
+            return False, None, messages
 
         if conflicting_columns:
             conflict_display = ", ".join(conflicting_columns)

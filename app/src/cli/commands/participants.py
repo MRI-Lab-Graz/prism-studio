@@ -456,6 +456,7 @@ def cmd_participants_convert(args) -> None:
         input_path,
         mapping,
         output_file=output_path,
+        reject_conflicting_repeats=True,
     )
 
     neurobagel_schema = _parse_neurobagel_schema(

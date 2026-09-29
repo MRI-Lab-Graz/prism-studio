@@ -139,7 +139,8 @@ def test_write_participants_outputs_raises_on_conversion_failure():
             },
         }
 
-        with pytest.raises(ValueError, match="Conversion failed"):
+        # The job now surfaces the converter's specific reason, not a generic text.
+        with pytest.raises(ValueError, match="Could not determine participant_id"):
             _write_participants_outputs(
                 project_root=project_root,
                 input_path=source,

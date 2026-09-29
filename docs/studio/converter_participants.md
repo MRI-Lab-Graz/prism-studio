@@ -79,6 +79,12 @@ Saving from the Studio UI targets `code/library/participants_mapping.json`.
 
 ## Common failures
 
+- **Same participant in several rows with different values** — Create/Replace stops
+  with an error and writes nothing (Merge stops too, unless a session column lets it
+  resolve the repeats). `participants.tsv` needs exactly one row per participant, so
+  values that change between sessions (e.g. age) do not belong there. Remove those
+  columns, keep only one session's rows, or fix the duplicated IDs. Rows that repeat
+  with identical values are still collapsed silently into one.
 - **Wrong ID column picked** — override auto-detect explicitly if your source file
   uses an unusual column name.
 - **Duplicate participant rows after canonicalization** — two source IDs that differ
