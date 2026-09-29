@@ -3040,10 +3040,6 @@ export function initParticipants() {
                 Description: colData.description || colData.Description || ""
             };
     
-            if (colData.unit) {
-                annotatedData[targetColumnName].Unit = colData.unit;
-            }
-    
             if (isCategorical && retainedLevels.length > 0) {
                 annotatedData[targetColumnName].Levels = {};
                 for (const [levelKey, levelData] of retainedLevels) {

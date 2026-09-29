@@ -149,6 +149,18 @@ and re-prefixed with `sub-` — so a source ID like `DEMO001` becomes
 
 You now have both `participants.tsv` and `participants.json` on disk together.
 
+```{note}
+**NeuroBagel annotation is optional and never automatic.** Below the preview,
+the Participant Annotation panel can link a column to a standard NeuroBagel
+term (e.g. `age` → `nb:Age`) and label coded values (e.g. `1` → Male). PRISM
+fills in none of this on its own: a column shows the **NB** badge only after you
+pick a concept and click **Map**, and each coded value is labelled only when you
+choose it under "NeuroBagel Harmonize To". Mapping Age fills in `years` as the
+unit, which you can edit. Codes such as `sex = 1, 2, 4` are not guessed. Skip the
+panel entirely and `participants.json` still records a description for every
+column; you can annotate later.
+```
+
 ```{important}
 **Data and its description belong together.** This is a crucial PRISM and BIDS
 convention: a TSV data table stores the recorded values, and a matching JSON

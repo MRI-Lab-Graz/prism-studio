@@ -114,13 +114,18 @@ def test_resolve_level_label_uses_requested_language_only():
 def test_required_fields_schema_matches_core_tier_only():
     """REQUIRED_FIELDS_SCHEMA drives the "Core X/Y" badge and must only list
     the CORE-tier fields (blue badge) from study_metadata.html, not the
-    REQUIRED-tier (red, creation-blocking: Basics.Name/Authors) or OPTIONAL
+    REQUIRED-tier (red, creation-blocking: Basics.Name/Authors/Keywords) or OPTIONAL
     fields. This is the single source of truth the frontend fetches via
     /api/config instead of keeping its own copy.
     """
     schema = metadata_helpers.REQUIRED_FIELDS_SCHEMA
 
-    assert schema["Basics"] == {"EthicsApprovals", "Keywords", "Funding"}
+    assert schema["Basics"] == {"EthicsApprovals", "Funding"}
+    assert metadata_helpers.CREATION_BLOCKING_FIELDS["Basics"] == {
+        "Name",
+        "Authors",
+        "Keywords",
+    }
     assert schema["Overview"] == set()
     assert schema["StudyDesign"] == {"Type"}
     assert schema["Recruitment"] == {"Method"}
@@ -148,10 +153,10 @@ def test_compute_methods_completeness_excludes_creation_blocking_fields_from_sco
     assert {"Name", "Authors"} <= field_names
 
     # Name/Authors are tracked in "fields" (for creation-gating elsewhere)
-    # but must not be counted in total/optional_total - only the 9
-    # non-creation-blocking fields (11 Basics fields minus Name/Authors).
-    assert basics["total"] == 9
-    assert basics["required_total"] == 3  # EthicsApprovals, Keywords, Funding
+    # but must not be counted in total/optional_total - only the 8
+    # non-creation-blocking fields (11 Basics fields minus Name/Authors/Keywords).
+    assert basics["total"] == 8
+    assert basics["required_total"] == 2  # EthicsApprovals, Funding
     assert basics["optional_total"] == 6
 
     # License and DatasetType are not editable on the Study Metadata form, so

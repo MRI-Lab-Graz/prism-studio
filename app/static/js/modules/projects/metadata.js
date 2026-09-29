@@ -2211,7 +2211,8 @@ export function validateAllMandatoryFields() {
     // reach the emptyFields loop below, so this only needs to label those.
     const labels = {
         Basics: {
-            Name: 'Dataset Name (min. 3 characters)'
+            Name: 'Dataset Name (min. 3 characters)',
+            Keywords: 'Keywords (at least 3, comma-separated)'
         }
     };
 
@@ -3647,9 +3648,9 @@ export function computeLocalCompleteness() {
     // incomplete-metadata confirmation). Everything else in requiredFields is
     // readiness-only: researchers often cannot know it yet at creation time
     // (e.g. recruitment period, compensation) or should not be forced to
-    // decide it immediately (e.g. ethics/funding/keywords).
+    // decide it immediately (e.g. ethics/funding).
     const creationBlockingFields = {
-        Basics: new Set(['Name', 'Authors'])
+        Basics: new Set(['Name', 'Authors', 'Keywords'])
     };
 
     const addField = (section, name, isFilled) => {
@@ -3871,7 +3872,7 @@ export function updateCompletenessUI(completeness) {
         const pct = baseTotal > 0 ? Math.round(baseFilled / baseTotal * 100) : 0;
         const reqDone = reqTotal > 0 ? reqFilled === reqTotal : true;
         const fairDone = optTotal > 0 ? optFilled === optTotal : true;
-        const reqTextClass = reqDone ? 'text-success' : 'text-danger';
+        const reqTextClass = reqDone ? 'text-success' : 'text-tier-core';
         const fairTextClass = fairDone ? 'text-success' : 'text-warning';
         let dotClass = 'empty';
         if (pct === 100) dotClass = 'full';
@@ -3907,8 +3908,7 @@ export function updateCompletenessUI(completeness) {
             ? ` title="Required to create the project - missing: ${_escapeHtmlAttr(missingRequiredFields.join(', '))}"`
             : ' title="All required fields filled"';
         const requiredBadgeHtml = blockingTotal > 0
-            ? `<span class="${blockingDone ? 'text-success' : 'text-danger'}"${requiredTitleAttr}>Required ${blockingFilled}/${blockingTotal}</span>
-                <span class="text-muted"> • </span>`
+            ? `<span class="${blockingDone ? 'text-success' : 'text-danger'}"${requiredTitleAttr}>Required ${blockingFilled}/${blockingTotal}</span>`
             : '';
         const requiredBadgeElHtml = blockingTotal > 0
             ? `<span class="badge ${blockingDone ? 'bg-success' : 'bg-danger'} bg-opacity-75"${requiredTitleAttr}>Required ${blockingFilled}/${blockingTotal}</span>`
@@ -3918,21 +3918,22 @@ export function updateCompletenessUI(completeness) {
             <span class="section-label">${sectionLabels[key] || key}${autoLabel}</span>
             <span class="completeness-dot ${dotClass}" title="${pct}%"></span>
             <span class="section-badge">
-                ${requiredBadgeHtml}
-                <span class="${reqTextClass}"${coreTitleAttr}>Core ${reqFilled}/${reqTotal}</span>
-                <span class="text-muted"> • </span>
-                <span class="${fairTextClass}">FAIR ${optFilled}/${optTotal}</span>
+                ${[
+                    requiredBadgeHtml,
+                    reqTotal > 0 ? `<span class="${reqTextClass}"${coreTitleAttr}>Core ${reqFilled}/${reqTotal}</span>` : '',
+                    optTotal > 0 ? `<span class="${fairTextClass}">FAIR ${optFilled}/${optTotal}</span>` : '',
+                ].filter(Boolean).join('<span class="text-muted"> • </span>')}
             </span>
         </div>`;
 
         const badgeEl = document.getElementById('sm' + key + 'Badge');
         if (badgeEl) {
-            const reqClass = reqDone ? 'bg-success' : 'bg-danger';
+            const reqClass = reqDone ? 'bg-success' : 'badge-tier-core';
             const fairClass = fairDone ? 'bg-success' : 'bg-warning text-dark';
             badgeEl.innerHTML = `
                 ${requiredBadgeElHtml}
-                <span class="badge ${reqClass} bg-opacity-75"${coreTitleAttr}>Core ${reqFilled}/${reqTotal}</span>
-                <span class="badge ${fairClass} bg-opacity-75">FAIR ${optFilled}/${optTotal}</span>
+                ${reqTotal > 0 ? `<span class="badge ${reqClass} bg-opacity-75"${coreTitleAttr}>Core ${reqFilled}/${reqTotal}</span>` : ''}
+                ${optTotal > 0 ? `<span class="badge ${fairClass} bg-opacity-75">FAIR ${optFilled}/${optTotal}</span>` : ''}
             `;
         }
     }
@@ -3962,8 +3963,8 @@ export function updateCompletenessUI(completeness) {
             : '';
         badgeSlot.innerHTML = `
             ${reqBadgeHtml}
-            <span class="badge ${coreDone ? 'bg-success' : 'bg-danger'} bg-opacity-75">Core ${totals.coreFilled}/${totals.coreTotal}</span>
-            <span class="badge ${fairDone ? 'bg-success' : 'bg-warning text-dark'} bg-opacity-75">FAIR ${totals.fairFilled}/${totals.fairTotal}</span>
+            ${totals.coreTotal > 0 ? `<span class="badge ${coreDone ? 'bg-success' : 'badge-tier-core'} bg-opacity-75">Core ${totals.coreFilled}/${totals.coreTotal}</span>` : ''}
+            ${totals.fairTotal > 0 ? `<span class="badge ${fairDone ? 'bg-success' : 'bg-warning text-dark'} bg-opacity-75">FAIR ${totals.fairFilled}/${totals.fairTotal}</span>` : ''}
         `;
     }
 
@@ -3985,6 +3986,7 @@ export function updateCompletenessUI(completeness) {
         coreReminderBadge.textContent = `Core ${globalTierTotals.coreFilled}/${globalTierTotals.coreTotal}`;
         coreReminderBadge.classList.toggle('bg-success', done);
         coreReminderBadge.classList.toggle('badge-tier-core', !done);
+        coreReminderBadge.classList.toggle('d-none', globalTierTotals.coreTotal === 0);
     }
     const fairReminderBadge = document.getElementById('projectLoadedFairBadge');
     if (fairReminderBadge) {
@@ -3992,6 +3994,7 @@ export function updateCompletenessUI(completeness) {
         fairReminderBadge.textContent = `FAIR ${globalTierTotals.fairFilled}/${globalTierTotals.fairTotal}`;
         fairReminderBadge.classList.toggle('bg-success', done);
         fairReminderBadge.classList.toggle('bg-warning', !done);
+        fairReminderBadge.classList.toggle('d-none', globalTierTotals.fairTotal === 0);
         fairReminderBadge.classList.toggle('text-dark', !done);
     }
 

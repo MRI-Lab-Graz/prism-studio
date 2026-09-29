@@ -102,6 +102,8 @@ worth knowing by name:
 - `PRISM201` — missing JSON sidecar
 - `PRISM101` — invalid filename pattern
 - `PRISM402` — a value not in the allowed `Levels` for its column
+- `PRISM301` — a metadata schema problem, e.g. fewer than three `Keywords` in
+  `dataset_description.json` (Chapter 1 asks for three)
 
 The full catalog, with fix hints for every code, is in
 [Error Codes](ERROR_CODES.md) — every finding in the results also links

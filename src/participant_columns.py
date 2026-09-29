@@ -575,59 +575,23 @@ def _generate_neurobagel_schema(
                     is_categorical = unique_count < 20
                     data_type = "categorical" if is_categorical else "string"
 
+        # NeuroBagel annotations (IsAbout, units, level term URLs) are never
+        # auto-applied: the user approves each mapping in the annotation panel.
         if neurobagel_match:
             field["Description"] = neurobagel_match.get("label", col)
-            field["Annotations"]["IsAbout"] = {
-                "TermURL": neurobagel_match["term"],
-                "Label": neurobagel_match["label"],
-            }
             field["Annotations"]["VariableType"] = neurobagel_match["type"].capitalize()
-
-            if "unit" in neurobagel_match:
-                field["Unit"] = neurobagel_match["unit"]
-                if data_type == "continuous":
-                    field["Annotations"]["Format"] = {
-                        "TermURL": "nb:FromFloat",
-                        "Label": "Float",
-                    }
         else:
             field["Description"] = f"{col} (auto-detected)"
             field["Annotations"]["VariableType"] = data_type.capitalize()
 
         if is_categorical and len(col_data) > 0:
             levels: dict[str, str] = {}
-            level_annotations: dict[str, dict[str, str]] = {}
             unique_vals = col_data.unique()[:50]
 
-            if neurobagel_match and "levels" in neurobagel_match:
-                nb_levels_obj = neurobagel_match["levels"]
-                if isinstance(nb_levels_obj, dict):
-                    nb_levels = cast(dict[str, Any], nb_levels_obj)
-                    for val in unique_vals:
-                        val_str = str(val)
-                        if val_str in nb_levels:
-                            nb_info = nb_levels[val_str]
-                            if isinstance(nb_info, dict):
-                                label = str(nb_info.get("label", val_str))
-                                term_url = str(nb_info.get("uri", ""))
-                                levels[val_str] = label
-                                level_annotations[val_str] = {
-                                    "TermURL": term_url,
-                                    "Label": label,
-                                }
-                            else:
-                                levels[val_str] = str(nb_info)
-                        else:
-                            levels[val_str] = val_str
-            else:
-                for val in unique_vals:
-                    levels[str(val)] = str(val)
+            for val in unique_vals:
+                levels[str(val)] = str(val)
 
             field["Levels"] = levels
-            if level_annotations:
-                if "Annotations" not in field:
-                    field["Annotations"] = {}
-                field["Annotations"]["Levels"] = level_annotations
 
         schema[col] = field
 

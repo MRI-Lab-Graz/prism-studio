@@ -45,7 +45,7 @@ of explaining it from memory again.
 <span class="prism-persona-note-badge">🧑🏻 Future-you <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
 
 *Eighteen months from now, someone — probably you — is going to open this
-folder with zero memory of today.* Fill in Dataset Name and Authors
+folder with zero memory of today.* Fill in Dataset Name, Authors and Keywords
 properly now; today is the only day this is cheap.
 
 </div>
@@ -111,8 +111,9 @@ sessions are populated automatically as you import data in later chapters.
 
 The **Study Metadata** card appears once you start filling in the form
 above. It's a large form covering a study's entire lifecycle (design,
-recruitment, procedure, missing-data notes, and more), but only two things
-in it actually block project creation: **Dataset Name** and **Authors**.
+recruitment, procedure, missing-data notes, and more), but only three things
+in it actually block project creation: **Dataset Name**, **Authors** and
+**Keywords**.
 Fill those in properly now rather than dismissing them — it's little extra
 effort at this point, and it means `dataset_description.json` and
 `CITATION.cff` start out correct instead of needing a cleanup pass later.
@@ -149,23 +150,28 @@ marked corresponding and carrying an email address, is what's actually
 required. Add more author rows the same way if the study has more than one
 author.
 
-### 3. Worth doing now, not required: Ethics, Keywords, Funding
+### 3. Keywords
 
-Three more fields sit right below Authors in the same Basics section, under
-a **Core study setup** header and carrying a blue **CORE** badge — not the
-red **REQUIRED** badge Dataset Name and Authors carry. **CORE does not mean
-blocking**: these three fields cannot trigger the Required Fields Missing
-dialog in Part C no matter how you leave them. What CORE *does* mean is that
-they feed the **Methods Readiness / FAIR score** shown at the top of the
-card (the small ring badge labeled **FAIR**) — a completeness/quality
-indicator, not a gate. They're quick to answer honestly right now, so do
-that, but don't go looking for a missing-fields error that these three
-fields can't actually cause:
+Enter a comma-separated list, e.g. `psychology, wellbeing, questionnaire`.
+**At least three keywords are required** (red **REQUIRED** badge): the PRISM
+dataset schema demands them, so leaving this empty would make the Validator
+in [Chapter 5](TUTORIAL_BEGINNER_5_VALIDATOR.md) report `PRISM301`
+("Keywords: [] is too short"), and it triggers the Required Fields Missing
+dialog in Part C.
+
+### 4. Worth doing now, not required: Ethics and Funding
+
+Two more fields sit in the same Basics section under a **Core study setup**
+header and carry a blue **CORE** badge — not the red **REQUIRED** badge that
+Dataset Name, Authors and Keywords carry. **CORE does not mean blocking**:
+these two fields cannot trigger the Required Fields Missing dialog in Part C
+no matter how you leave them. What CORE *does* mean is that they feed the
+**Methods Readiness / FAIR score** shown at the top of the card (the small
+ring badge labeled **FAIR**) — a completeness/quality indicator, not a
+gate. They're quick to answer honestly right now, so do that:
 
 - **Ethics Approvals** — click Yes/No. If Yes, fill in the committee name
   and reference number.
-- **Keywords** — a comma-separated list, e.g. `psychology, wellbeing,
-  questionnaire`. Aim for at least three.
 - **Funding** — click Yes/No. If Yes, add one row per funding source with
   agency and grant number.
 
@@ -187,11 +193,11 @@ depends on them.
 Click **Create Project** (not **Preliminary Save**, which only saves the
 form without creating anything yet).
 
-With Dataset Name and a corresponding Author filled in from Part B, project
-creation should proceed straight through without any warning dialog. If a
-**Required Fields Missing** dialog appears anyway, it means one of those two
-fields didn't save correctly (e.g. the corresponding author's email is
-still empty) — read the listed items, click **Go back and fill fields**,
+With Dataset Name, a corresponding Author and at least three Keywords filled
+in from Part B, project creation should proceed straight through without any
+warning dialog. If a **Required Fields Missing** dialog appears anyway, it
+means one of those fields didn't save correctly (e.g. the corresponding
+author's email is still empty, or only two keywords were entered) — read the listed items, click **Go back and fill fields**,
 and fix exactly what's named rather than guessing.
 
 ## What gets created
@@ -265,9 +271,11 @@ reconstruct from memory.
   common reason the Required Fields Missing dialog still appears after
   filling in Part B; the email is only required *because* that author is
   corresponding, so add it or unmark the checkbox.
-- **Confusing CORE with REQUIRED** — see Part B, step 3: the blue CORE badge
-  (Ethics Approvals, Keywords, Funding) never blocks creation, only the red
-  REQUIRED badge (Dataset Name, Authors) does.
+- **Confusing CORE with REQUIRED** — see Part B, step 4: the blue CORE badge
+  (Ethics Approvals, Funding) never blocks creation, only the red REQUIRED
+  badge (Dataset Name, Authors, Keywords) does.
+- **Fewer than three keywords** — the Required Fields Missing dialog will
+  list Keywords; add at least three, comma-separated.
 - **Expecting a DataLad checkbox mistake to be permanent** — it isn't; this
   choice can be revisited later and is covered in [DATALAD](DATALAD.md).
 
