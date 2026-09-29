@@ -271,6 +271,27 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
             content,
         )
 
+    def test_longitudinal_session_choice_is_wired_into_the_page(self):
+        template = PARTICIPANTS_TEMPLATE.read_text(encoding="utf-8")
+        module = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        for element_id in (
+            "participantsSessionChoiceCard",
+            "participantsSessionLongitudinalYes",
+            "participantsSessionLongitudinalNo",
+            "participantsSessionColumn",
+            "participantsSessionValue",
+        ):
+            self.assertIn(f'id="{element_id}"', template)
+
+        self.assertIn("./participants-session-choice.js", module)
+        # The chosen session travels with every file request ...
+        self.assertIn("sessionChoiceFormFields(participantsSessionChoice)", module)
+        # ... the card is fed by the preview response ...
+        self.assertIn("data.session_candidates", module)
+        # ... and Convert cannot run while the question is unanswered.
+        self.assertIn("sessionChoiceBlockReason(", module)
+
 
 if __name__ == "__main__":
     unittest.main()

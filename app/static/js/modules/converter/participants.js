@@ -7,6 +7,14 @@ import { pollJobStatus } from '../../shared/job-polling.js';
 import { pickServerFile, prefersServerPicker } from './server-picker.js';
 import { createParticipantsSourcedataQuickSelectController } from './participants-sourcedata-quick-select.js';
 import { createParticipantsMergeConflictDownloadController } from './participants-merge-conflict-download.js';
+import {
+    createSessionChoiceState,
+    sessionChoiceBlockReason,
+    sessionChoiceFormFields,
+    setSessionChoiceColumn,
+    setSessionChoiceLongitudinal,
+    setSessionChoiceSession,
+} from './participants-session-choice.js';
 import { createParticipantsMergePreviewRefreshController } from './participants-merge-preview-refresh.js';
 import { createParticipantsMergeSummaryController } from './participants-merge-summary.js';
 import {
@@ -151,6 +159,7 @@ export function initParticipants() {
 
     function clearParticipantsSelectedFile({ resetSourcedataSelection = false } = {}) {
         participantsServerFilePath = '';
+        updateParticipantsSessionCandidates([]);
 
         const fileInput = document.getElementById('participantsDataFile');
         if (fileInput) {
@@ -2500,6 +2509,89 @@ export function initParticipants() {
         participantsMergeSummaryController.render(previewData);
     }
 
+    // Longitudinal source file: the user says so and picks ONE session for everybody.
+    let participantsSessionCandidates = [];
+    let participantsSessionChoice = createSessionChoiceState();
+
+    function renderParticipantsSessionChoice() {
+        const card = document.getElementById('participantsSessionChoiceCard');
+        if (!card) return;
+        card.classList.toggle('d-none', participantsSessionCandidates.length === 0);
+
+        const yesBtn = document.getElementById('participantsSessionLongitudinalYes');
+        const noBtn = document.getElementById('participantsSessionLongitudinalNo');
+        yesBtn?.classList.toggle('active', participantsSessionChoice.longitudinal === true);
+        noBtn?.classList.toggle('active', participantsSessionChoice.longitudinal === false);
+        document.getElementById('participantsSessionNoHint')
+            ?.classList.toggle('d-none', participantsSessionChoice.longitudinal !== false);
+        document.getElementById('participantsSessionPickers')
+            ?.classList.toggle('d-none', participantsSessionChoice.longitudinal !== true);
+
+        const columnSelect = document.getElementById('participantsSessionColumn');
+        const valueSelect = document.getElementById('participantsSessionValue');
+        if (!columnSelect || !valueSelect) return;
+        const option = (value, label, selected) => {
+            const el = document.createElement('option');
+            el.value = value;
+            el.textContent = label;
+            el.selected = selected;
+            return el;
+        };
+        columnSelect.replaceChildren(
+            option('', 'Select column...', participantsSessionChoice.column === ''),
+            ...participantsSessionCandidates.map((c) => option(c.column, c.column, c.column === participantsSessionChoice.column))
+        );
+        const chosen = participantsSessionCandidates.find((c) => c.column === participantsSessionChoice.column);
+        valueSelect.replaceChildren(
+            option('', 'Select session...', participantsSessionChoice.session === ''),
+            ...(chosen ? chosen.values : []).map((v) => option(v, v, v === participantsSessionChoice.session))
+        );
+    }
+
+    function updateParticipantsSessionCandidates(candidates) {
+        const next = Array.isArray(candidates) ? candidates : [];
+        if (JSON.stringify(next) !== JSON.stringify(participantsSessionCandidates)) {
+            participantsSessionCandidates = next;
+            participantsSessionChoice = createSessionChoiceState();
+        }
+        renderParticipantsSessionChoice();
+    }
+
+    function refreshParticipantsPreviewAfterSessionChoice() {
+        const previewResults = document.getElementById('participantsPreviewResults');
+        if (previewResults && !previewResults.classList.contains('d-none')) {
+            document.getElementById('participantsPreviewBtn')?.click();
+        }
+    }
+
+    function applyParticipantsSessionChoice(nextState) {
+        const before = JSON.stringify(sessionChoiceFormFields(participantsSessionChoice));
+        participantsSessionChoice = nextState;
+        renderParticipantsSessionChoice();
+        if (JSON.stringify(sessionChoiceFormFields(participantsSessionChoice)) !== before) {
+            refreshParticipantsPreviewAfterSessionChoice();
+        }
+    }
+
+    document.getElementById('participantsSessionLongitudinalYes')?.addEventListener('click', () => {
+        applyParticipantsSessionChoice(
+            setSessionChoiceLongitudinal(participantsSessionChoice, true, participantsSessionCandidates)
+        );
+    });
+    document.getElementById('participantsSessionLongitudinalNo')?.addEventListener('click', () => {
+        applyParticipantsSessionChoice(
+            setSessionChoiceLongitudinal(participantsSessionChoice, false, participantsSessionCandidates)
+        );
+    });
+    document.getElementById('participantsSessionColumn')?.addEventListener('change', (event) => {
+        applyParticipantsSessionChoice(
+            setSessionChoiceColumn(participantsSessionChoice, event.target.value, participantsSessionCandidates)
+        );
+    });
+    document.getElementById('participantsSessionValue')?.addEventListener('change', (event) => {
+        applyParticipantsSessionChoice(setSessionChoiceSession(participantsSessionChoice, event.target.value));
+    });
+
     function appendParticipantsFileImportFields(formData) {
         const localFile = getParticipantsSelectedLocalFile();
         const sourceFilePath = getParticipantsSelectedServerFilePath();
@@ -2533,6 +2625,9 @@ export function initParticipants() {
             formData.append('id_column', idColumn);
         }
         formData.append('separator', separator);
+        Object.entries(sessionChoiceFormFields(participantsSessionChoice)).forEach(([key, value]) => {
+            formData.append(key, value);
+        });
 
         const allExtra = [
             ...(window.pendingAdditionalParticipantColumns || []),
@@ -2850,6 +2945,7 @@ export function initParticipants() {
                 previewColumnValues[cleanedName] = [...new Set(values)].slice(0, 50);
             });
             window.participantsTsvData = previewColumnValues;
+            updateParticipantsSessionCandidates(data.session_candidates);
             if (Array.isArray(window.pendingAdditionalParticipantColumns) && window.pendingAdditionalParticipantColumns.length > 0) {
                 window.pendingAdditionalParticipantColumns.forEach((columnName) => {
                     const cleanedName = String(columnName || '').trim();
@@ -3236,6 +3332,15 @@ export function initParticipants() {
         setParticipantsPrimaryActionButtonsDisabled(true);
 
         try {
+            const sessionBlockReason = mode === 'file' && !useMergeRoute
+                ? sessionChoiceBlockReason(participantsSessionCandidates, participantsSessionChoice)
+                : '';
+            if (sessionBlockReason) {
+                errorDiv.textContent = sessionBlockReason;
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+
             // Check existing files only when starting real conversion.
             const existingCheck = await checkExistingParticipantFiles({
                 showOverwriteWarning: mode === 'file' && fileAction === 'replace'
