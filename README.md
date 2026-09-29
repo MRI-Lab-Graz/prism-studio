@@ -13,24 +13,29 @@
 	<a href="https://doi.org/10.5281/zenodo.22809100"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.22809100.svg" alt="DOI"></a>
 </p>
 
-PRISM Studio is a local tool for describing, validating, and managing research datasets built on the PRISM model.
+PRISM pairs every research data file with a JSON sidecar that explains it —
+item wordings, response options, units, scoring — organized by subject,
+session, and modality. Modalities, file-naming rules, and sidecar contracts
+are JSON schemas, so the model extends to new instruments without code
+changes, while staying compatible with standard BIDS tooling. PRISM currently
+ships modalities and templates for psychological research (surveys,
+biometrics). **PRISM Studio** is the local web and CLI tool that applies the
+model to validation, conversion, and dataset management.
 
-PRISM (Principled Research Information & Sidecar Model) pairs every data file with a JSON sidecar that explains it, organized by subject, session, and modality. Modalities, file-naming rules, and sidecar contracts are JSON schemas, so the model extends to new instruments and new fields without code changes. PRISM stays compatible with standard BIDS apps and currently ships modalities and templates for psychological research, such as surveys and biometrics. PRISM Studio applies the model in practical web and CLI workflows for validation, conversion, and dataset management.
+Full documentation, including a complete install and usage guide, is on
+[ReadTheDocs](https://prism-studio.readthedocs.io). This README covers the
+essentials to get running.
 
 ## Core Features
 
 - Dataset validation and conversion
-- PRISM Studio web interface for interactive workflows
-- CLI workflows for terminal users
+- PRISM Studio web interface, plus CLI workflows for terminal users
 - Survey and biometrics metadata support
 - Local-first operation (data stays on your machine; the only exception is
   optional, off-by-default environment enrichment, which sends coordinates
   and dates — never participant data — to a public weather service)
 
 ## Feature Scope
-
-To help third parties know what to rely on, PRISM's features fall into three
-tiers:
 
 | Tier | Meaning | Examples |
 |------|---------|----------|
@@ -40,168 +45,68 @@ tiers:
 
 See [ROADMAP.md](ROADMAP.md) for the reasoning behind each scope decision.
 
-## Repository Acceptance
-
-The [Austrian NeuroCloud (ANC)](https://anc.plus.ac.at/) (CoreTrustSeal-certified) officially accepts PRISM-formatted datasets alongside plain BIDS, subject to the same requirements as any other submission. See the ANC handbook's [data format requirements](https://handbook.anc.plus.ac.at/terms/data_format_requirements/).
-
-## Pre-built Binaries
-
-Download the latest release from the [Releases page](https://github.com/MRI-Lab-Graz/prism-studio/releases).
-
-| Platform | Binary | Notes |
-|----------|--------|-------|
-| macOS | `prism-studio-macOS-AppleSilicon.zip` | Apple Silicon (M1/M2/M3/M4) |
-| macOS | `prism-studio-macOS-AppleIntel.zip` | Intel Macs |
-| Windows | `prism-studio-Windows.zip` | x64 |
-| Linux | `prism-studio-Linux.zip` | x64 |
-
-macOS first launch: if Gatekeeper blocks the app, run `Prism Studio Installer.app` from the extracted release folder (fallback: `Open Prism Studio.command`).
+The [Austrian NeuroCloud (ANC)](https://anc.plus.ac.at/) (CoreTrustSeal-certified)
+officially accepts PRISM-formatted datasets alongside plain BIDS — see the
+[data format requirements](https://handbook.anc.plus.ac.at/terms/data_format_requirements/).
 
 ## Installation
 
-### Prerequisite
+Python 3.10, 3.11, or 3.12 is required for source installation (3.9 and older
+lack required features; 3.13+ has no wheels yet for some pinned scientific
+dependencies). `install.sh` checks this automatically and, if your default
+`python3` is outside that range, uses `uv` to find or install a compatible
+version for you — no manual Python install needed.
 
-- Python 3.10, 3.11 or 3.12 is required for source installation. 3.9 and older lack
-  required features; 3.13+ has no wheels yet for some pinned dependencies, so
-  installation falls back to a source build that needs a C compiler.
-  `install.sh` checks this automatically and, if your default `python3` is
-  outside 3.10-3.12 (e.g. a newer Homebrew Python), uses `uv` to find or
-  install a compatible version for you — no manual Python install needed.
+### Pre-built binaries (recommended for most users)
 
-### Using Pre-built Binaries (Recommended)
+Download the latest release for your platform from the
+[Releases page](https://github.com/MRI-Lab-Graz/prism-studio/releases).
 
-Download the latest release for your platform from the [Releases page](https://github.com/MRI-Lab-Graz/prism-studio/releases).
+| Platform | Binary |
+|----------|--------|
+| macOS (Apple Silicon) | `prism-studio-macOS-AppleSilicon.zip` |
+| macOS (Intel) | `prism-studio-macOS-AppleIntel.zip` |
+| Windows | `prism-studio-Windows.zip` |
+| Linux | `prism-studio-Linux.zip` |
 
-### From Source
+macOS: if Gatekeeper blocks the first launch, run `Prism Studio Installer.app`
+from the extracted folder (fallback: `Open Prism Studio.command`).
 
-One-time setup from repository root.
-
-macOS/Linux:
+### From source
 
 ```bash
-bash install.sh
+bash install.sh          # macOS/Linux
+install.cmd               # Windows — double-click, or run from any shell
 ```
 
-It also puts a **PRISM Studio** shortcut on the Desktop, with the app icon
-(`PRISM Studio.command` on macOS, `prism-studio.desktop` on Linux). To
-recreate it later: `bash scripts/setup/create_desktop_shortcut.sh`.
-
-Windows: double-click **`install.cmd`**, or run it from any shell:
-
-```
-install.cmd
-```
-
-It unblocks the downloaded files, runs the setup logic in
-`scripts\setup\windows.ps1`, then activates the environment and starts PRISM
-Studio. Arguments are passed through (`install.cmd -Build -Dev`). It also
-puts a **PRISM Studio** shortcut on the Desktop, with the app icon — double-click
-that to start PRISM Studio from then on. (The shortcut runs `start.cmd`,
-which you can also launch directly. To recreate the shortcut later:
-`powershell -ExecutionPolicy Bypass -File scripts\setup\create_desktop_shortcut.ps1`.
-The shortcut uses `app\static\img\MRI_Lab_Logo.ico` — a real multi-size icon
-file, unlike `app\static\prism2026.ico`, which is a PNG that Explorer
-rejects with "contains no icons" despite the `.ico` extension.)
-
-`install.cmd` exists because Windows marks every file extracted from a
-downloaded ZIP as "from the internet", and PowerShell's default `RemoteSigned`
-policy then refuses to run a bare `.ps1` (*"is not digitally signed" / "kann
-nicht geladen werden"*). Batch files are exempt from that policy, so
-`install.cmd` works where calling the `.ps1` directly does not. To run
-the setup logic yourself instead, clear the mark first:
-
-```powershell
-Get-ChildItem -Recurse | Unblock-File
-.\scripts\setup\windows.ps1
-```
-
-For detailed installation instructions, see the [documentation](https://prism-studio.readthedocs.io).
+Both create a virtual environment, install dependencies, and add a
+**PRISM Studio** desktop shortcut. See the
+[installation guide](https://prism-studio.readthedocs.io) for Windows
+execution-policy notes and other platform-specific details.
 
 ## Quick Usage
 
-After setup, activate the virtual environment (`source .venv/bin/activate`) and use
-the commands below directly — this is the path to reach for first.
-
-### Run PRISM Studio (Web)
+After setup, activate the virtual environment (`source .venv/bin/activate`)
+and run:
 
 ```bash
-python prism-studio.py
+python prism-studio.py                    # Studio web app -> http://127.0.0.1:5001
+python prism-validator /path/to/dataset   # Validator (CLI)
+python prism_tools.py --help              # Other tools (CLI)
 ```
 
-Open `http://127.0.0.1:5001` if it does not open automatically.
+**Use a Chromium-based browser** (Chrome, Edge, Brave) for Studio — Safari can
+be noticeably slower for local apps like this, especially with iCloud Private
+Relay enabled.
 
-**For best performance, use a Chromium-based browser** (Chrome, Edge, Brave, etc.).
-Safari can be significantly slower for local apps like PRISM Studio, especially
-with iCloud Private Relay or "Hide IP address from trackers" enabled - turn
-those off for this site, or switch browsers, if pages feel slow to load.
-
-Pre-built binaries open PRISM Studio in its own app window by default instead
-of a browser tab (a native WebKit window on macOS; a tab-less Chromium/Edge
-"app mode" window on Windows and Linux). Pass `--browser` to open it in your
-default browser instead, `--window` to force the app window when running from
-source, or `--no-browser` to skip auto-opening either. If no suitable window
-backend is available, it falls back to opening your default browser.
-
-### Run PRISM Validator (CLI)
-
-```bash
-python prism-validator /path/to/dataset
-```
-
-### Run PRISM Validator (Docker)
-
-A slim, standalone validator image (just the CLI validation engine - no Flask, pandas, or
-datalad) is published automatically to GHCR on every release:
-
-```bash
-docker pull ghcr.io/mri-lab-graz/prism-validator:latest
-docker run --rm -v "$(pwd)":/data:ro ghcr.io/mri-lab-graz/prism-validator:latest /data
-```
-
-Or build it locally from this repo:
-
-```bash
-docker build -t prism-validator .
-docker run --rm -v "$(pwd)":/data:ro prism-validator /data
-```
-
-For CI, add `--json` or `--format junit|sarif|markdown|csv` for machine-readable output
-(printed to stdout by default - exit code is `0` when the dataset is valid, `1` otherwise).
-Avoid the `-o FILE` flag with a bind-mounted dataset: the container writes as `root`, so any
-file it creates inside the mount ends up `root`-owned on the host. Redirect from your shell
-instead, e.g. `docker run ... --format junit > report.xml`.
-
-For GitHub Actions, [`action.yml`](action.yml) wraps the same image as a one-step
-Action (`uses: MRI-Lab-Graz/prism-studio@main`) — see
-[`official/anc_templates/example-github-actions.yml`](official/anc_templates/example-github-actions.yml)
-for a full workflow. For GitLab CI (which can't consume a GitHub Action), see
-[`official/anc_templates/example-gitlab-ci.yml`](official/anc_templates/example-gitlab-ci.yml)
-for the equivalent direct Docker invocation.
-
-### Run PRISM Tools (CLI)
-
-```bash
-python prism_tools.py --help
-```
-
-### Optional: the `rtk` shortcut
-
-`rtk` is a thin wrapper around the commands above (`rtk studio` == `python
-prism-studio.py`, etc.), plus passthroughs for `test`/`coverage`/`git`/`gh` —
-convenient once you're used to it, but it's installed via the editable
-package install (`uv pip install -e .`) that `install.sh` treats as optional
-and continues past if it fails. If `rtk` isn't found after setup, use the
-direct `python ...` commands above instead.
-
-```bash
-rtk studio
-rtk validator /path/to/dataset --bids
-rtk test -q
-```
+A slim Docker image with just the validation engine is also published on
+every release (`ghcr.io/mri-lab-graz/prism-validator`), with a matching
+GitHub Action — see the [documentation](https://prism-studio.readthedocs.io)
+for both.
 
 ## Documentation
 
-Comprehensive documentation is available on [ReadTheDocs](https://prism-studio.readthedocs.io).
+Full documentation is on [ReadTheDocs](https://prism-studio.readthedocs.io).
 
 ## Report an Issue
 
