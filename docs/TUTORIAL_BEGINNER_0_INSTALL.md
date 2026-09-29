@@ -32,6 +32,13 @@ and download the ZIP for your operating system:
 Not sure which Mac chip you have? Apple menu → **About This Mac** — anything
 saying "Apple M..." is Apple Silicon, "Intel" is Intel.
 
+```{note}
+Windows users who'd rather run from source (for local code changes or CLI
+use) can skip the ZIP and use `install.cmd` instead — see
+[Source Install](INSTALLATION.md#source-install-advanced) in the Installation
+guide.
+```
+
 ## 2. Extract it
 
 Extract the ZIP to a folder you'll remember — your Desktop or Documents is

@@ -30,5 +30,23 @@
     "wellbeing-multi": {
       "modality": "survey"
     }
+  },
+  "LastValidation": {
+    "prism_schema_tag": "stable",
+    "prism_schema_versions": {
+      "survey": "1.1.1",
+      "biometrics": "1.1.1",
+      "environment": "1.1.0",
+      "events": "1.1.0",
+      "physio": "1.2.0",
+      "eyetracking": "1.1.0",
+      "dataset_description": "1.0.0",
+      "physiological": "1.2.0"
+    },
+    "bids_validator": {
+      "engine": "deno",
+      "spec": "jsr:@bids/validator@2.4.1"
+    },
+    "validatedAt": "2026-09-29T05:47:38.339837+00:00"
   }
 }
