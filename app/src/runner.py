@@ -398,13 +398,7 @@ def validate_dataset(
     # the validator at the wrong directory (or the dataset is empty).
     # Treat this as an error so users get a non-zero exit status.
     if run_prism and len(stats.subjects) == 0:
-        issues.append(
-            (
-                "ERROR",
-                "No subjects found in dataset. Did you point the validator at the dataset root?",
-                root_dir,
-            )
-        )
+        issues.append(("ERROR", _no_subjects_message(root_dir), root_dir))
 
     # Run standard BIDS validator if requested
     if run_bids:
@@ -422,6 +416,12 @@ def validate_dataset(
                 **getattr(stats, "validator_info", {}),
                 "bids_validator": bids_backend_info,
             }
+        if not _has_subject_dirs(root_dir):
+            # With no sub-* folders at all, participants.tsv "mismatching" them
+            # is not a separate problem: "No subjects found" already says it.
+            bids_issues = [
+                issue for issue in bids_issues if "PARTICIPANT_ID_MISMATCH" not in issue[1]
+            ]
         issues.extend(bids_issues)
 
     report_progress(100, 100, "Validation complete")
@@ -529,6 +529,38 @@ def _get_upload_manifest(root_dir):
     return None
 
 
+def _has_subject_dirs(root_dir: str) -> bool:
+    """True when the dataset root contains at least one sub-* folder."""
+    return any(
+        child.is_dir() and child.name.startswith("sub-")
+        for child in Path(root_dir).iterdir()
+    )
+
+
+def _no_subjects_message(root_dir: str) -> str:
+    """Message for a dataset without any sub-* folders.
+
+    Keeps the "No subjects found in dataset" prefix (matched by issue-code
+    inference). If participants.tsv already lists people, say so: the real
+    situation is "participants registered, no data imported yet", not a
+    mismatch between the two.
+    """
+    message = "No subjects found in dataset (no sub-* folders)."
+    participants_path = Path(root_dir) / "participants.tsv"
+    try:
+        with participants_path.open("r", encoding="utf-8") as handle:
+            listed = sum(1 for line in handle if line.strip()) - 1
+    except OSError:
+        listed = 0
+    if listed > 0:
+        return (
+            f"{message} participants.tsv lists {listed} participant(s), but no "
+            "subject data has been imported yet - import it with the Converter "
+            "(e.g. Survey) to create the sub-* folders."
+        )
+    return f"{message} Did you point the validator at the dataset root?"
+
+
 def _check_participants_subject_alignment(root_dir: str) -> list[tuple[str, str, str]]:
     """Return explicit mismatch errors between top-level sub-* folders and participants.tsv.
 
@@ -588,7 +620,9 @@ def _check_participants_subject_alignment(root_dir: str) -> list[tuple[str, str,
     except Exception:
         return []
 
-    if not subject_ids and not participant_ids:
+    if not subject_ids:
+        # No sub-* folders at all is a different, deeper problem than a
+        # mismatch; it is reported once as "No subjects found in dataset".
         return []
 
     missing_in_tsv = sorted(subject_ids - participant_ids)
