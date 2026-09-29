@@ -174,6 +174,12 @@ class TestParticipantsNeurobagelWidgetWiring(unittest.TestCase):
         self.assertIn("delete colData.term_url;", widget_content)
         self.assertIn("colMeta.Unit || colMeta.Units", widget_content)
 
+    def test_saved_schema_writes_bids_units_key_only(self):
+        module = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("annotatedData[targetColumnName].Units = colData.unit;", module)
+        self.assertNotIn("annotatedData[targetColumnName].Unit =", module)
+
 
 if __name__ == "__main__":
     unittest.main()
