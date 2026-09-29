@@ -120,8 +120,8 @@ export function initCreateProjectController({
         const optionalIssueCount = validation.optionalInvalidFields?.length || 0;
         if (requiredIssueCount > 0 && !forcePreliminary) {
             const issues = [
-                ...validation.emptyFields.map(f => `• ${f}`),
-                ...(validation.requiredInvalidFields || []).map(f => `• ${f}`)
+                ...validation.emptyFields,
+                ...(validation.requiredInvalidFields || [])
             ];
             const confirmed = await showIncompleteMetadataModal(issues);
             if (!confirmed) return;

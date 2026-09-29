@@ -116,8 +116,10 @@
     color: #ffffff !important;
 }
 
+/* Unanswered Yes/No on CORE-tier fields (Ethics, Funding): use the CORE
+   badge blue, not red - red is reserved for creation-blocking REQUIRED fields. */
 .sm-choice-group.sm-choice-missing {
-    border: 1px solid #dc3545;
+    border: 1px solid #0d6efd;
     padding: 2px;
 }
 
