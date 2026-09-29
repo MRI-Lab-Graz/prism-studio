@@ -24,6 +24,34 @@ before anything is written.
 **Add More Columns (Optional)** lets you pull in source columns beyond the
 automatically-detected participant-relevant set.
 
+## Longitudinal files (several sessions per participant)
+
+`participants.tsv` has exactly one row per participant, while questionnaire data is
+often recorded once per session. If the file has a session-like column (`session`,
+`ses`, `visit`, `timepoint`, `wave`) with two or more different labels, Studio asks:
+
+1. **Is this a longitudinal dataset?** Until you answer, **Create Participant Files** stays
+   blocked.
+2. **No** — every participant must appear in one row only. If a participant repeats with
+   different values, the import stops with an error and writes nothing.
+3. **Yes** — pick the **session column** (preselected when there is only one) and then
+   **one session** for all participants. Only that session's rows are used, and the preview
+   table updates to show them.
+
+Session labels are free-form and compared exactly: `1`, `01` and `baseline` are three
+different sessions. Values that change between sessions (e.g. age) therefore end up
+in `participants.tsv` for the chosen session only.
+
+The same choice from the command line:
+
+```bash
+python prism_tools.py participants preview --input data.xlsx --project P --json   # lists session_candidates
+python prism_tools.py participants convert --input data.xlsx --project P \
+    --session-column session --session baseline
+```
+
+Merge keeps its own session resolution (pick a session, the latest, or split into columns).
+
 ## Value recoding — what actually happens
 
 There is no source-value transform step in the current UI or converter. Raw values

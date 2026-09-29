@@ -183,6 +183,31 @@
                 </div>
             </div>
 
+            <!-- Longitudinal file: which ONE session goes into participants.tsv -->
+            <div id="participantsSessionChoiceCard" class="card border-warning mt-3 d-none">
+                <div class="card-body py-3">
+                    <div class="fw-semibold mb-1"><i class="fas fa-calendar-days me-2"></i>This file contains several sessions</div>
+                    <div class="small text-muted mb-2">participants.tsv has exactly one row per participant. Is this a longitudinal dataset?</div>
+                    <div class="btn-group btn-group-sm mb-2" role="group" aria-label="Longitudinal dataset">
+                        <button type="button" class="btn btn-outline-primary" id="participantsSessionLongitudinalYes">Yes, longitudinal</button>
+                        <button type="button" class="btn btn-outline-secondary" id="participantsSessionLongitudinalNo">No</button>
+                    </div>
+                    <div class="row g-2 d-none" id="participantsSessionPickers">
+                        <div class="col-md-4">
+                            <label for="participantsSessionColumn" class="form-label small mb-1">Session column</label>
+                            <select class="form-select form-select-sm" id="participantsSessionColumn"></select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="participantsSessionValue" class="form-label small mb-1">Session to import (one for all participants)</label>
+                            <select class="form-select form-select-sm" id="participantsSessionValue"></select>
+                        </div>
+                    </div>
+                    <div class="small text-muted mt-2 d-none" id="participantsSessionNoHint">
+                        Each participant must then appear in one row only. If a participant repeats with different values, the import stops.
+                    </div>
+                </div>
+            </div>
+
             <!-- Messages -->
             <div id="participantsError" class="alert alert-danger d-none mt-3"></div>
             <div id="participantsInfo" class="alert alert-info d-none mt-3"></div>
