@@ -2211,7 +2211,8 @@ export function validateAllMandatoryFields() {
     // reach the emptyFields loop below, so this only needs to label those.
     const labels = {
         Basics: {
-            Name: 'Dataset Name (min. 3 characters)'
+            Name: 'Dataset Name (min. 3 characters)',
+            Keywords: 'Keywords (at least 3, comma-separated)'
         }
     };
 
@@ -3647,9 +3648,9 @@ export function computeLocalCompleteness() {
     // incomplete-metadata confirmation). Everything else in requiredFields is
     // readiness-only: researchers often cannot know it yet at creation time
     // (e.g. recruitment period, compensation) or should not be forced to
-    // decide it immediately (e.g. ethics/funding/keywords).
+    // decide it immediately (e.g. ethics/funding).
     const creationBlockingFields = {
-        Basics: new Set(['Name', 'Authors'])
+        Basics: new Set(['Name', 'Authors', 'Keywords'])
     };
 
     const addField = (section, name, isFilled) => {

@@ -317,10 +317,10 @@ _EDITABLE_SECTIONS = (
 # app/templates/includes/projects/study_metadata.html - the frontend fetches
 # this via /api/config instead of keeping its own copy (see CLAUDE.md:
 # "no duplicate implementations" of business rules in frontend/backend).
-# Deliberately excludes Basics.Name/Authors: those are REQUIRED-tier (red,
+# Deliberately excludes Basics.Name/Authors/Keywords: those are REQUIRED-tier (red,
 # creation-blocking) fields, a separate concept from CORE/FAIR readiness.
 REQUIRED_FIELDS_SCHEMA: dict[str, set[str]] = {
-    "Basics": {"EthicsApprovals", "Keywords", "Funding"},
+    "Basics": {"EthicsApprovals", "Funding"},
     "Overview": set(),
     "StudyDesign": {"Type"},
     "Recruitment": {"Method"},
@@ -333,7 +333,7 @@ REQUIRED_FIELDS_SCHEMA: dict[str, set[str]] = {
 # don't inflate "optional_total"; mirrors creationBlockingFields in
 # metadata.js's computeLocalCompleteness.
 CREATION_BLOCKING_FIELDS: dict[str, set[str]] = {
-    "Basics": {"Name", "Authors"},
+    "Basics": {"Name", "Authors", "Keywords"},
 }
 
 

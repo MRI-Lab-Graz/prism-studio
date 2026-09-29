@@ -6606,17 +6606,18 @@ class TestDataladStatusConcurrency(unittest.TestCase):
 
 
 class TestValidateDatasetDescriptionSeverity(unittest.TestCase):
-    """CORE-tier fields (Keywords, Funding, EthicsApprovals - per
+    """CORE-tier fields (Funding, EthicsApprovals - per
     REQUIRED_FIELDS_SCHEMA, the Study Metadata editor's single source of
     truth) are schema-required for full PRISM validity but must not block
-    project creation/editing. The live-preview "Dataset Description Issues"
-    panel must reflect that: a missing/too-short Keywords is a WARNING, not
-    an identical-looking ERROR to a missing Name/Authors (the true
-    creation-blocking REQUIRED tier). See CLAUDE.md scientific-rigor note on
-    error messages needing to be precise and actionable.
+    project creation/editing, so they are WARNINGs in the live-preview
+    "Dataset Description Issues" panel. Name, Authors and Keywords are the
+    REQUIRED tier (CREATION_BLOCKING_FIELDS): the PRISM schema demands at
+    least three keywords, so a missing/too-short Keywords is an ERROR.
+    See CLAUDE.md scientific-rigor note on error messages needing to be
+    precise and actionable.
     """
 
-    def test_short_keywords_is_a_warning_not_an_error(self):
+    def test_short_keywords_is_an_error(self):
         manager = ProjectManager()
         description = {
             "Name": "Demo Study",
@@ -6630,7 +6631,7 @@ class TestValidateDatasetDescriptionSeverity(unittest.TestCase):
 
         keyword_issues = [i for i in issues if i["message"].startswith("Keywords")]
         self.assertEqual(len(keyword_issues), 1)
-        self.assertEqual(keyword_issues[0]["level"], "WARNING")
+        self.assertEqual(keyword_issues[0]["level"], "ERROR")
 
     def test_missing_name_is_still_an_error(self):
         manager = ProjectManager()
@@ -6647,7 +6648,7 @@ class TestValidateDatasetDescriptionSeverity(unittest.TestCase):
         self.assertEqual(len(name_issues), 1)
         self.assertEqual(name_issues[0]["level"], "ERROR")
 
-    def test_missing_keywords_entirely_is_also_a_warning(self):
+    def test_missing_keywords_entirely_is_also_an_error(self):
         """Same as the too-short case, but hits the "required property"
         validator branch instead of "minItems" - error.path is empty here
         (the error is on the containing object), so the field name has to be
@@ -6665,7 +6666,7 @@ class TestValidateDatasetDescriptionSeverity(unittest.TestCase):
 
         keyword_issues = [i for i in issues if "Keywords" in i["message"]]
         self.assertEqual(len(keyword_issues), 1)
-        self.assertEqual(keyword_issues[0]["level"], "WARNING")
+        self.assertEqual(keyword_issues[0]["level"], "ERROR")
 
 
 if __name__ == "__main__":

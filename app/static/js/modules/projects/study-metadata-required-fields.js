@@ -6,7 +6,7 @@
  * sync with the backend value.
  */
 export const DEFAULT_REQUIRED_FIELDS_SCHEMA = {
-    Basics: new Set(['EthicsApprovals', 'Keywords', 'Funding']),
+    Basics: new Set(['EthicsApprovals', 'Funding']),
     Overview: new Set(),
     StudyDesign: new Set(['Type']),
     Recruitment: new Set(['Method']),
