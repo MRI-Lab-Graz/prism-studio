@@ -64,6 +64,9 @@ macOS first launch: if Gatekeeper blocks the app, run `Prism Studio Installer.ap
 - Python 3.10, 3.11 or 3.12 is required for source installation. 3.9 and older lack
   required features; 3.13+ has no wheels yet for some pinned dependencies, so
   installation falls back to a source build that needs a C compiler.
+  `install.sh` checks this automatically and, if your default `python3` is
+  outside 3.10-3.12 (e.g. a newer Homebrew Python), uses `uv` to find or
+  install a compatible version for you — no manual Python install needed.
 
 ### Using Pre-built Binaries (Recommended)
 
@@ -116,19 +119,8 @@ For detailed installation instructions, see the [documentation](https://prism-st
 
 ## Quick Usage
 
-### Run via RTK (recommended)
-
-After setup and virtual environment activation, use the `rtk` command for common workflows:
-
-```bash
-rtk studio
-rtk validator /path/to/dataset --bids
-rtk tools --help
-rtk test -q
-rtk coverage
-rtk codecov upload-process
-rtk git status
-```
+After setup, activate the virtual environment (`source .venv/bin/activate`) and use
+the commands below directly — this is the path to reach for first.
 
 ### Run PRISM Studio (Web)
 
@@ -192,6 +184,21 @@ for the equivalent direct Docker invocation.
 python prism_tools.py --help
 ```
 
+### Optional: the `rtk` shortcut
+
+`rtk` is a thin wrapper around the commands above (`rtk studio` == `python
+prism-studio.py`, etc.), plus passthroughs for `test`/`coverage`/`git`/`gh` —
+convenient once you're used to it, but it's installed via the editable
+package install (`uv pip install -e .`) that `install.sh` treats as optional
+and continues past if it fails. If `rtk` isn't found after setup, use the
+direct `python ...` commands above instead.
+
+```bash
+rtk studio
+rtk validator /path/to/dataset --bids
+rtk test -q
+```
+
 ## Documentation
 
 Comprehensive documentation is available on [ReadTheDocs](https://prism-studio.readthedocs.io).
@@ -209,16 +216,17 @@ Include these details so we can reproduce quickly:
 
 ## Citation
 
-See `CITATION.cff` for citation metadata.
+If you use PRISM, please cite it — see `CITATION.cff` for metadata, or use the
+DOI directly: [10.5281/zenodo.22809100](https://doi.org/10.5281/zenodo.22809100)
+(always resolves to the latest release). A companion paper has been submitted
+to JOSS; see [`paper/paper.md`](paper/paper.md) in the meantime.
 
 ## License
 
 See `LICENSE` (AGPL-3.0) for the software.
 
 **The bundled instrument library is content, not code, and AGPL-3.0 does not
-apply to it.** Most survey templates under `official/library/survey/` derive
-from the [PsyToolkit survey library](https://www.psytoolkit.org/survey-library/)
-and carry their own per-instrument terms in each template's `Study.License`
-field. See [`official/library/NOTICE.md`](official/library/NOTICE.md) for
-provenance, citation requirements, and what you must check before using an
-instrument.
+apply to it.** Survey templates under `official/library/survey/` carry their
+own per-instrument terms in each template's `Study.License` field. See
+[`official/library/NOTICE.md`](official/library/NOTICE.md) for provenance,
+citation requirements, and what you must check before using an instrument.
